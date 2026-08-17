@@ -95,6 +95,56 @@ guard, or make the thing fail loudly instead of silently.
 One or two of these is not enough. A five-line shell command that runs once and fails loudly is
 fine forever.
 
+---
+
+## The "who caught it?" ledger
+
+**Doug, 2026-08-16, asked the question this exists to answer:** *"Are you confident that we will
+now experience less drift and fewer mistakes?"* The honest reply was that nobody could know,
+because **the trigger above was never tallied** — it decided individual sweeps and left no
+record, so "are we improving?" stayed a matter of opinion.
+
+**Append one row per defect, as it is found.** Cheap, and it converts a feeling into a number.
+
+**Read the ratio, not the rows.** If it moves toward the toolchain, the checks are working. If
+Doug keeps finding several a day, the checks are decorating a process that has not changed —
+and that is a result worth having either way.
+
+**Three columns, because two would hide the interesting case.** A defect Claude *introduced and
+caught in the same hour* is not the same as one that survived a week: the first says the
+verification loop is tight, the second says something is unwatched.
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 08-15 | `f_x[N]` ids were decorated labels; deixis resolved to nothing | **Doug** | pointing at a cell |
+| 08-15 | the id fix covered one of three writers | **Doug** | "I rebuilt before running HRW" |
+| 08-15 | ids missing from `matching`/`blocks` too | **Doug** | "Did you fix it for all RHS panes?" |
+| 08-15 | `architecture.md` stale ×3 | toolchain | `architecture_regions_are_current` |
+| 08-15 | notebook 25 days stale | Claude | found while regenerating for the id fix |
+| 08-15 | coupled-block assertions never executed | Claude | writing the id checker |
+| 08-16 | no hint why `C.v` is a state | **Doug** | walking the tour |
+| 08-16 | the Why explanation was hover-only, undiscoverable | **Doug** | "I don't see what you've added" |
+| 08-16 | `view.json` stopped publishing what the pane drew | Claude | prompted by Doug's question about the tours |
+| 08-16 | `tests/msl_resolve.rs` unrun since ≥08-05 | **Doug** | "Do all of the checkers run?" |
+| 08-16 | connections pane nested three scroll areas | **Doug** | lists not using vertical space |
+| 08-16 | tour link hooks never cleared; first click masked the rest | **Doug** | frame 7 and 13 |
+| 08-16 | link navigation dead for 9 of 11 stages | **Doug** | *"still not causing navigation"* — after a wrong fix |
+| 08-16 | divider learned a fraction from a pinned width | **Doug** | maximize from normalized |
+| 08-16 | tests treated the live ad hoc tour as scratch (×3) | Claude | writing one for Doug to test |
+| 08-16 | picker layout regressed the divider | toolchain | `the_left_panel_content_never_detaches…` |
+| 08-16 | duplicate `#[test]`; stolen `#[test]` | toolchain | `no_function_has_two_test_attributes`, `dead_code` |
+
+**Two days: Doug 10, toolchain 5, Claude 5.** The Doug column is dominated by **things that are
+true on screen** — a pane that shows no reason, a link that does nothing, a divider in the wrong
+place. `CLAUDE.md` already records that `egui_kittest` cannot see layout, and half of these
+confirm it. **The toolchain column is dominated by Claude's own fresh mistakes**, caught within
+minutes, which is the loop working as designed.
+
+**The prediction worth checking next week:** the classes now mechanised — equation identity, link
+resolution and dispatch, notebook currency, gate coverage — should stop appearing in the Doug
+column. If a *new* class appears there instead, that is the pattern continuing and the honest
+reading is that point-fixes are not converging.
+
 #### The counter-argument, which is real
 
 **Scripts are editable without a rebuild.** On 2026-08-01 that mattered: the fidelity binary
