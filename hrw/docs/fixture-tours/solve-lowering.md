@@ -135,6 +135,31 @@ not shown anywhere in HRW.
 
 ---
 
+## One count here contradicts the index-reduction tour
+
+**Do not walk `Drivetrain` through this stage without knowing this.** Index reduction demoted its
+nine states to **three**, and reports 3. This stage's `state_scalar_count` reads **9**.
+
+| specimen | `index_reduction` says | this stage says |
+|---|---|---|
+| `Drivetrain` | **3** | **9** |
+| `GearWithBrake` | **2** | **7** |
+| `BouncingBall` | 2 | 2 (nothing was demoted) |
+
+The two agree exactly when nothing is demoted, which is why it looks like demoted states are still
+counted here.
+
+**It is not diagnosed and there are innocent readings** — a dummy-derivative scheme keeps demoted
+states around as algebraic variables, so a *scalar* count of them may be correct and merely named
+confusingly. The investigation is in [`upstream-issues.md`](../upstream-issues.md).
+
+**This tour deliberately used `BouncingBall` and `RcCircuit` for its acts**, both of which demote
+nothing, so every number in Acts 1–3 is unaffected. That was a choice to keep the acts clean, and
+saying so is better than letting you discover the discrepancy on your own model and doubt the
+whole tour.
+
+---
+
 ## What comes next in the chain
 
 Nothing — this is the last compiler phase. What follows is **Simulation**: the solver stepping the

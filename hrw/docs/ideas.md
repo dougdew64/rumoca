@@ -1828,6 +1828,20 @@ upstream issues.
 > that zero into coverage**, and it is small-scale work that lands in the ~90-second pre-commit
 > suite rather than needing the watchdog at all.
 >
+> ### The first missing one has a name and a caller — an OVER-determined model
+>
+> **Found 2026-08-17 while converting `dae-construction.md`.** Every unbalanced specimen in the
+> corpus reports `balance = -1`; **not one reports a positive balance.** So the tour reads the
+> sign as informative — negative means too few equations, positive means over-constrained — and
+> only half of that is testable. The tour now says so in its *"cannot check"* section rather than
+> asserting both halves.
+>
+> **It is the cheapest specimen on this list:** `SingleInertia` plus one redundant equation, e.g.
+> restating `der(phi) = w`. Two states, three equations, `balance = +1`, and it fails at DAE
+> construction like `UnbalancedShaft` does — so it needs no new tour, only an act in an existing
+> one. No specimen exists yet.
+> <!-- unbuilt: specimens/OverDeterminedShaft.mo -->
+>
 > Recorded in [`fidelity-plan.md`](fidelity-plan.md) ("F10's first corpus run") and in the run
 > policy in [`../CLAUDE.md`](../CLAUDE.md).
 

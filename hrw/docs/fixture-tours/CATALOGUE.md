@@ -228,6 +228,7 @@ A curriculum tour. Walk [`blt-ordering.md`](blt-ordering.md) and
   - `act-3-what-actually-happened-to-the-surplus` — Act 3 — What actually happened to the surplus
   - `act-4-what-index-counts-and-why-1-is-the-target` — Act 4 — What "index" counts, and why 1 is the target
   - `what-this-tour-cannot-check` — What this tour cannot check
+  - `a-number-downstream-disagrees-with-this-tour-and-it-is-a-real-open-question` — A number downstream disagrees with this tour, and it is a real open question
   - `what-comes-next-in-the-chain` — What comes next in the chain
 
 ## `initialization`
@@ -319,6 +320,7 @@ A curriculum tour. The last phase before simulation. Walk [`events.md`](events.m
   - `act-2-what-else-is-in-the-arrays` — Act 2 — What else is in the arrays
   - `act-3-the-same-mapping-at-scale` — Act 3 — The same mapping at scale
   - `what-this-tour-cannot-check` — What this tour cannot check
+  - `one-count-here-contradicts-the-index-reduction-tour` — One count here contradicts the index-reduction tour
   - `what-comes-next-in-the-chain` — What comes next in the chain
 
 ## `structural-vs-numerical-rank`

@@ -160,6 +160,32 @@ one.
 
 ---
 
+## A number downstream disagrees with this tour, and it is a real open question
+
+Act 2 established **3 states after reduction**, and that is what this stage reports. Walk on to
+[`solve-lowering.md`](solve-lowering.md) and look at the same model, and you will find
+`state_scalar_count` reading **9** — the count *before* reduction.
+
+| specimen | `index_reduction` says | `solve_lowering` says |
+|---|---|---|
+| `Drivetrain` | **3** | **9** |
+| `GearWithBrake` | **2** | **7** |
+| `BouncingBall` | 2 | 2 (nothing was demoted) |
+
+**The two agree exactly when nothing is demoted**, which is what makes it look like the demoted
+states are still being counted downstream.
+
+**Not diagnosed, and there are two innocent readings.** Either the demoted states genuinely still
+occupy slots — a dummy-derivative scheme keeps them as algebraic variables, so a *scalar count* of
+them is not obviously wrong — or the field means "states before reduction" and is merely named
+badly. Only one of those is a bug.
+
+The investigation is in [`upstream-issues.md`](../upstream-issues.md), written to be filed. It is
+named here rather than left for you to trip over, because a tour that asserts 3 and a pane that
+shows 9 is exactly the situation where you cannot tell which of the two to trust.
+
+---
+
 ## What comes next in the chain
 
 The system is now index-1, square and ordered. It still cannot start: the integrator needs a

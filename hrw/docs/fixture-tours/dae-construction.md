@@ -236,7 +236,19 @@ point, the act is too short rather than wrong.
 question no test reaches.
 
 **Whether Act 6's contrast with `CapacitorLoop` is worth a stop of its own.** It is asserted in
-prose here and demonstrated nowhere in this tour.
+prose here and demonstrated nowhere in this tour. *(It is demonstrated in
+[`matching.md`](matching.md) Act 3, which walks that model's 13-of-14 matching — so the claim is
+checkable, just not here.)*
+
+**And `balance = +1` has no specimen at all.** Act 5 reads the sign as informative — negative means
+too few equations, positive means over-constrained — and **only the negative case exists in the
+corpus.** Every unbalanced specimen reports the same `balance = -1`.
+
+So half of that act's lesson is an assertion you cannot test, which is precisely what this tour is
+built to avoid. Writing the missing specimen is small: `SingleInertia` plus one redundant equation.
+It is logged as part of `docs/ideas.md` #46 — a failure specimen per compiler phase — and until it
+exists, treat the positive half of the sign convention as prose rather than as something the pane
+has shown you.
 
 ---
 
