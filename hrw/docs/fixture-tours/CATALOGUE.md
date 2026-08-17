@@ -216,43 +216,39 @@ This is a test, not an explanation. It verifies that a link can stop an animatio
 
 ## `index-reduction`
 
-**Index reduction — when nine states are really three**
+**Fixture tour — Index reduction: more states than freedoms**
 
-Walk [`matching.md`](matching.md) first, and Act 3 of it especially. That act showed a
+A curriculum tour. Walk [`blt-ordering.md`](blt-ordering.md) and
 
-- **Specimens:** `BouncingBall`, `BenchActuator`, `Drivetrain`
+- **Specimens:** `BouncingBall`, `Drivetrain`
 - **Stages:** `IndexReduction`, `Structural`
 - **Stops:**
-  - `index-reduction-when-nine-states-are-really-three` — Index reduction — when nine states are really three
+  - `fixture-tour-index-reduction-more-states-than-freedoms` — Fixture tour — Index reduction: more states than freedoms
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
-  - `act-1-a-model-that-needs-nothing` — Act 1 — A model that needs nothing
-  - `act-2-one-state-that-was-not-a-state` — Act 2 — One state that was not a state
-  - `act-3-nine-states-three-degrees-of-freedom` — Act 3 — Nine states, three degrees of freedom
-  - `act-4-why-the-previous-phase-failed-and-why-that-was-correct` — Act 4 — Why the previous phase failed, and why that was correct
-  - `act-5-what-rumoca-actually-does-which-is-not-what-the-textbook-name-suggests` — Act 5 — What Rumoca actually does, which is not what the textbook name suggests
-  - `act-6-the-linear-algebra-in-one-paragraph` — Act 6 — The linear algebra, in one paragraph
-  - `what-comes-next-in-the-chain` — What comes next in the chain
+  - `act-1-the-case-that-needs-nothing` — Act 1 — The case that needs nothing
+  - `act-2-the-case-that-does` — Act 2 — The case that does
+  - `act-3-what-actually-happened-to-the-surplus` — Act 3 — What actually happened to the surplus
+  - `act-4-what-index-counts-and-why-1-is-the-target` — Act 4 — What "index" counts, and why 1 is the target
   - `what-this-tour-cannot-check` — What this tour cannot check
+  - `what-comes-next-in-the-chain` — What comes next in the chain
 
 ## `initialization`
 
-**Initialization — the equations that only run once**
+**Fixture tour — Initialization: the values at t = 0**
 
-This tour is a pair one line apart. `RcCircuit` initializes cleanly. `OverInitRc` is the same
+A curriculum tour. Walk [`index-reduction.md`](index-reduction.md) first — this phase runs on
 
-- **Specimens:** `BouncingBall`, `RcCircuit`, `OverInitRc`
+- **Specimens:** `BouncingBall`, `RcCircuit`, `OverInitRc`, `RotationalInertia`
 - **Stages:** `Initialization`
 - **Stops:**
-  - `initialization-the-equations-that-only-run-once` — Initialization — the equations that only run once
+  - `fixture-tour-initialization-the-values-at-t-0` — Fixture tour — Initialization: the values at t = 0
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
-  - `act-1-nothing-specified-and-that-is-fine` — Act 1 — Nothing specified, and that is fine
-  - `act-2-a-real-circuit-initialized-from-one-number` — Act 2 — A real circuit, initialized from one number
-  - `act-3-the-same-circuit-over-determined` — Act 3 — The same circuit, over-determined
-  - `act-4-why-those-two-lines-fight` — Act 4 — Why those two lines fight
-  - `act-5-the-relaxation-hint` — Act 5 — The relaxation hint
-  - `act-6-the-arithmetic-stated-once` — Act 6 — The arithmetic, stated once
-  - `what-comes-next-in-the-chain` — What comes next in the chain
+  - `act-1-the-case-with-nothing-to-solve` — Act 1 — The case with nothing to solve
+  - `act-2-the-case-with-a-real-initialization-system` — Act 2 — The case with a real initialization system
+  - `act-3-the-case-that-specifies-too-much` — Act 3 — The case that specifies too much
+  - `act-4-square-and-still-singular-again` — Act 4 — Square and still singular, again
   - `what-this-tour-cannot-check` — What this tour cannot check
+  - `what-comes-next-in-the-chain` — What comes next in the chain
 
 ## `matching-live`
 
@@ -348,24 +344,22 @@ The first cross-platform tour. Two stops in HRW, then a notebook — because the
 
 ## `tearing`
 
-**Tearing — turning a 3×3 solve into a 1×1 one**
+**Fixture tour — Tearing: guess one number, get the rest for free**
 
-Walk [`blt-ordering.md`](blt-ordering.md) first. It ended with a coupled block of three
+A curriculum tour. Walk [`blt-ordering.md`](blt-ordering.md) first — it produces the coupled
 
-- **Specimens:** `ProportionalLoop`, `TwoLoops`, `MixedLoop`
+- **Specimens:** `ProportionalLoop`, `TwoLoops`, `MixedLoop`, `LoopWithInertia`
 - **Stages:** `Structural`
 - **Stops:**
-  - `tearing-turning-a-3-3-solve-into-a-1-1-one` — Tearing — turning a 3×3 solve into a 1×1 one
-  - `the-problem-this-step-exists-to-solve` — The problem this step exists to solve
+  - `fixture-tour-tearing-guess-one-number-get-the-rest-for-free` — Fixture tour — Tearing: guess one number, get the rest for free
+  - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `act-1-guess-one-number-and-the-rest-falls-out` — Act 1 — Guess one number and the rest falls out
   - `act-2-watch-the-choice-being-made` — Act 2 — Watch the choice being made
   - `act-3-two-blocks-torn-independently` — Act 3 — Two blocks, torn independently
   - `act-4-all-three-kinds-of-block-in-one-model` — Act 4 — All three kinds of block in one model
-  - `act-5-the-linear-algebra-this-is-a-schur-complement` — Act 5 — The linear algebra: this is a Schur complement
-  - `act-6-greedy-and-what-greedy-costs` — Act 6 — Greedy, and what greedy costs
-  - `what-comes-next-in-the-chain` — What comes next in the chain
-  - `owed-a-final-act-on-loopwithinertia-do-this-when-converting-the-tour` — OWED: a final act on `LoopWithInertia` — do this when converting the tour
+  - `act-5-what-it-costs-once-time-is-moving` — Act 5 — What it costs once time is moving
   - `what-this-tour-cannot-check` — What this tour cannot check
+  - `what-comes-next-in-the-chain` — What comes next in the chain
 
 ## `the-mathematics`
 

@@ -2686,6 +2686,13 @@ Some prose.
 
     /// **The tearing tour gains its dynamic-loop act at the moment it is converted.**
     ///
+    /// **DELIVERED 2026-08-17.** `tearing.md` was converted with `LoopWithInertia` as its
+    /// Act 5, so this test now runs its *enforcing* branch — 5 `**Predict.**` markers and
+    /// an `hrw://load/LoopWithInertia` link — rather than the not-yet-converted early
+    /// return. The `## OWED` note it used to guard is gone because the act replaced it,
+    /// which is the outcome the note asked for. What remains guarded: the act cannot be
+    /// removed while the tour stays converted.
+    ///
     /// # A commitment, made mechanical
     ///
     /// Doug, 2026-08-16: *"Eventually, I will want very much to add LoopWithInertia to

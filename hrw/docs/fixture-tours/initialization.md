@@ -1,174 +1,170 @@
-# Initialization — the equations that only run once
+# Fixture tour — Initialization: the values at t = 0
 
-Everything the earlier tours built describes how the system moves. **None of it says where it
-starts.** At `t = 0` a solver needs a number for every state, and those numbers come from a
-different system of equations that is solved exactly once and then never again.
+**A curriculum tour.** Walk [`index-reduction.md`](index-reduction.md) first — this phase runs on
+the reduced, index-1 system.
 
-**This tour is a pair one line apart.** `RcCircuit` initializes cleanly. `OverInitRc` is the same
-circuit with two extra lines, and it is over-determined. The two lines are the lesson.
-
-> Every number below is read from the specimens' generated traces.
+Every count below was read from the committed traces, never remembered.
 
 ---
 
 ## The problem this phase exists to solve
 
-A state needs a starting value, and Modelica offers three ways to supply one:
+The system is square, ordered, and index-1. The integrator still cannot take its first step,
+because it does not have a starting point.
 
-- **a `start` attribute** — `Real x(start = 3)`, a *guess* unless marked `fixed = true`
-- **an `initial equation` section** — equations that hold only at `t = 0`
-- **conditions implied by the model**, such as a steady-state requirement
+That sounds like a non-problem: every state has a `start` attribute, so surely those are the
+starting values. They are not sufficient, for two reasons that pull in opposite directions.
 
-Count the states, count the conditions, and compare. **Too few and the solver guesses; too many
-and the model contradicts itself.** The phase's job is to do that arithmetic and say which case
-you are in — before the integrator wastes its time.
+**Too little.** A state's `start` value fixes the state, but the *algebraic* variables are not
+free — they satisfy equations. Setting `C.v = 0` does not tell you what `R.i` is at *t* = 0; that
+has to be solved for, from the algebraic part of the system, before the first step.
 
----
+**Too much.** Nothing stops a model from specifying a state's initial value twice, in ways that
+disagree. Modelica lets you write `initial equation` blocks *and* `start` attributes, and the
+compiler must notice when they over-determine the problem rather than quietly preferring one.
 
-## Act 1 — Nothing specified, and that is fine
-
-[BouncingBall → Initialization](hrw://load/BouncingBall/Initialization)
-
-**Expected:** the determinacy record reads **2 states**, **0 initial equations**,
-**surplus −2**, verdict *"well-posed (remaining states initialize from their start attributes)"*.
-
-Height and velocity get their values from their `start` attributes. **A negative surplus is not
-an error** — it means the model did not over-specify, and the unspecified states fall back to
-their declared starts.
-
-**But note what "well-posed" is not promising.** It says the arithmetic works out, not that the
-starting values are *right*. A `start` attribute with no `fixed = true` is a guess, and a solver
-is free to move it. That distinction matters the first time a simulation starts somewhere you
-did not intend.
+**This phase settles both.** Three acts: the case with nothing to solve, the case with a real
+initialization system, and the case that specifies too much.
 
 ---
 
-## Act 2 — A real circuit, initialized from one number
+## Act 1 — The case with nothing to solve
 
-[RcCircuit → Initialization](hrw://load/RcCircuit/Initialization)
+`BouncingBall` has two states and two equations.
 
-A 5 V source, a 100 Ω resistor, a 1 mF capacitor, a ground.
+> **Predict.** How large is its initialization problem?
 
-**Expected:** **1 state**, **0 initial equations**, **surplus −1**, verdict *well-posed*.
+[▶ Look — BouncingBall → Initialization](hrw://load/BouncingBall/Initialization)
 
-Twenty-three equations in the model, and exactly **one state**: the capacitor voltage `C.v`.
-Everything else is algebraic — determined instantly once `C.v` is known.
+**Expected:** `n_states` is **2**, `n_equations` is **2**, and `block_count` is **0**. The note
+reads *"no algebraic initialization subsystem (equations ≤ states)."*
 
-**That ratio is the normal case.** Most equations in a component model are constitutive or
-connection equations, and the state count is a much smaller number governed by how many
-independent energy stores the physical system has. One capacitor, one state.
+**Falsified if:** any initialization blocks are reported.
+
+*What just happened.* Both equations are differential — each determines a derivative — so once `h`
+and `v` are given, there is nothing left to compute. The `start` attributes *are* the whole answer.
+
+**Zero blocks is a real result, stated rather than left blank.** A model with no algebraic
+variables has no initialization system, and the pane says so instead of showing an empty list you
+would have to interpret.
 
 ---
 
-## Act 3 — The same circuit, over-determined
+## Act 2 — The case with a real initialization system
 
-[OverInitRc → Initialization](hrw://load/OverInitRc/Initialization)
+`RcCircuit` has one state and twenty-two algebraic variables.
 
-`OverInitRc` is `RcCircuit` with one section added:
+> **Predict.** One state, 23 equations. How many of those equations does initialization have to
+> solve, and for what?
 
-```modelica
-initial equation
-  C.v = 0;
-  der(C.v) = 0;
+[▶ Look — RcCircuit → Initialization](hrw://load/RcCircuit/Initialization)
+
+**Expected:** `n_states` **1**, `n_equations` **23**, and `block_count` **21**. The determinacy
+verdict reads *"well-posed (remaining states initialize from their start attributes)"*, with
+`explicit_initial_conditions: 0` and `surplus_over_states: -1`.
+
+**Falsified if:** `block_count` is 0, or the verdict is not well-posed.
+
+*What just happened.* **21 blocks is a whole solve before time starts.** Given `C.v` from its
+`start` attribute, every other quantity in the circuit — every pin voltage, every branch current,
+the resistor's dissipated power — must be computed to satisfy the algebraic equations at *t* = 0.
+That is a system in its own right, and it gets its own BLT decomposition, which is what those 21
+blocks are.
+
+Read `surplus_over_states: -1` carefully, because the sign convention repeats the DAE tour's
+lesson. Zero explicit initial conditions against one state is a **deficit**, and a deficit is
+fine: the unspecified state falls back to its `start` attribute, which is Modelica's default and
+the verdict says so.
+
+**A surplus is the problem, not a deficit.** Which is Act 3.
+
+---
+
+## Act 3 — The case that specifies too much
+
+`OverInitRc` is `RcCircuit` with initial conditions added.
+
+> **Predict.** The model has one state. What happens if two initial equations both constrain it?
+
+[▶ Look — OverInitRc → Initialization](hrw://load/OverInitRc/Initialization)
+
+**Expected:** the stage reports
+
+```
+OVER-DETERMINED initialization: 2 explicit initial condition(s)
+(2 initial equation(s) + 0 fixed start(s)) for 1 state(s) — 1 too many
 ```
 
-**Expected:** **1 state**, **2 initial equations**, **explicit initial conditions 2**,
-**surplus +1**, verdict **"over-determined"**.
+**Falsified if:** the model initializes successfully, or the surplus is other than 1.
 
-**Expected:** the block structure is otherwise identical to `RcCircuit` — 23 equations, 21
-blocks, the same relaxation hint. Only the initial system differs.
+*What just happened.* **Two constraints on one freedom.** The counting is the same argument as DAE
+construction's balance check, applied to a different system: one state accepts exactly one initial
+condition, and two either agree — in which case one is redundant — or disagree, in which case there
+is no solution at all.
 
-**One state, two conditions.** The arithmetic is the whole diagnosis: you cannot impose two
-independent requirements on one number and expect both to hold.
+The compiler does not try to work out which. It reports the count and stops, because *"these two
+initial conditions conflict"* is a modelling question and the compiler cannot know which one you
+meant.
 
----
-
-## Act 4 — Why those two lines fight
-
-They look innocent, and each is individually reasonable:
-
-- `C.v = 0` — *"the capacitor starts uncharged."*
-- `der(C.v) = 0` — *"the circuit starts in steady state."*
-
-**Now do the physics.** If `C.v = 0`, the full 5 V appears across the 100 Ω resistor, so 50 mA
-flows into the capacitor. A capacitor's current *is* its voltage rate: `i = C · der(C.v)`. So
-`der(C.v) = 0.05 / 0.001 = 50 V/s`, which is emphatically **not** zero.
-
-The two conditions describe two different instants — the moment of switch-on, and the settled
-state long after. **Requiring both asks the circuit to be uncharged and finished charging at the
-same time.**
-
-**This is the most common real initialization failure**, and it almost never looks like an error
-in the source. Each line is defensible; only together are they wrong, and only the count reveals
-it.
-
-**Expected:** nothing in the *structural* stage complains about `OverInitRc` — the trouble is
-confined to the initial system.
+Notice the breakdown in the message: **2 initial equations + 0 fixed starts.** Modelica has two
+mechanisms for specifying an initial value, and over-determination is usually a *mixture* of them —
+someone adds an `initial equation` to a model whose state already had `fixed = true`. Reporting the
+two sources separately is what makes the fix obvious.
 
 ---
 
-## Act 5 — The relaxation hint
+## Act 4 — Square and still singular, again
 
-**Expected:** both `RcCircuit` and `OverInitRc` report a relaxation hint naming **dropped
-equation 17** and **pinned unknown `gnd.p.i`**.
+`RotationalInertia` is a torque source driving an inertia with one flange left unconnected.
 
-The `t = 0` system is not automatically square, and this records what was done about it: one
-equation set aside, one unknown fixed.
+> **Predict.** Its continuous system is 12 equations, 12 unknowns, fully matched. Will its
+> initialization succeed?
 
-**`gnd.p.i` is the ground pin's current**, and pinning it is the electrical modeller's oldest
-move. A ground is a *reference*: it defines where zero volts is, and the current flowing into it
-is whatever the rest of the circuit sends there. Kirchhoff's current law across the whole circuit
-is then redundant with the individual node equations — one equation too many, saying something
-already implied.
+[▶ Look — RotationalInertia → Initialization](hrw://load/RotationalInertia/Initialization)
 
-**So the dropped equation is not information being discarded.** It is a redundancy being
-recognised, and the hint is the compiler showing its work rather than silently making the system
-square.
+**Expected:** it **fails**:
 
----
+```
+IC planning failed: structurally singular system: 8 matched out of 10 equations and 10 unknowns;
+unmatched unknowns: inertia.flange_b.phi, torque.flange.phi
+```
 
-## Act 6 — The arithmetic, stated once
+**Falsified if:** initialization succeeds, or the unmatched unknowns are currents rather than
+angles.
 
-$$ \text{surplus} = (\text{initial equations} + \text{fixed starts}) - \text{states} $$
+*What just happened.* **Ten and ten, and still singular** — the third time this pattern appears,
+and the DAE tour's *"square is necessary, not sufficient"* now has three demonstrations.
 
-| surplus | meaning | what happens |
-|---|---|---|
-| **< 0** | fewer conditions than states | the rest come from `start` attributes — legal, and the values are guesses |
-| **= 0** | exactly determined | the ideal case |
-| **> 0** | more conditions than states | **over-determined** — the conditions may contradict |
+But look at *which* unknowns have nothing to determine them: two **angles**. Yesterday's asymmetry
+explains it exactly. The unconnected flange's *torque* is determined — the zero-flow rule
+manufactures `inertia.flange_b.tau = 0`. Its *angle* is determined only **relative to the body**,
+by the inertia's own equation. Nothing anywhere fixes where the shaft actually is.
 
-| specimen | states | conditions | surplus | verdict |
-|---|---|---|---|---|
-| `BouncingBall` | 2 | 0 | −2 | well-posed |
-| `RcCircuit` | 1 | 0 | −1 | well-posed |
-| `OverInitRc` | 1 | 2 | **+1** | **over-determined** |
-
-**A positive surplus is a rank statement, not a count of mistakes.** Two conditions on one state
-are only a contradiction if they are *independent*; writing `C.v = 0` twice would also give
-surplus +1 while being perfectly consistent. The count finds the candidates; whether they
-genuinely conflict is a question about the equations, which is why the verdict is worth reading
-alongside the numbers rather than instead of them.
-
----
-
-## What comes next in the chain
-
-Initialization and the running system are **two different problems over the same variables**, and
-solve lowering emits both: an initial residual and a continuous one. That separation is visible
-in the next tour's `problem` record, which carries `initialization` and `continuous` as siblings.
+**And that is correct physics, not a compiler defect.** A free-floating inertia's absolute angle is
+genuinely undetermined; you have to say where it starts. In the continuous system it never mattered,
+because only differences of angle appear. Initialization is where *"relative to what?"* becomes a
+question that has to be answered.
 
 ---
 
 ## What this tour cannot check
 
-**Whether the determinacy record is easy to find on the Initialization tab.** Everything above
-depends on those six fields being visible together; if they are buried in a tree, the tour is
-describing data rather than a view.
+**Whether Act 2's 21 blocks read as significant.** A whole BLT decomposition running before time
+starts is the least-known thing in this tour, and it is one number in a tree.
 
-**Whether Act 4's physics is the right depth.** Working through 50 mA and 50 V/s is the thing
-that makes the conflict *obvious* rather than *asserted* — but it assumes the RC circuit is
-familiar enough that arithmetic clarifies rather than distracts.
+**Whether Act 4 is a fourth act or a second tour.** It is the most interesting failure here and it
+depends on `connect-expansion.md`'s potential/flow asymmetry, which not every reader will have
+fresh.
 
-**Whether Act 5 belongs at all.** The relaxation hint is real and appears on both specimens, so
-it is not part of the over-determination story — it may be a genuinely interesting aside, or a
-distraction from a tour that was otherwise about one clean contrast.
+**Whether the over-determined message is actionable.** It names counts and sources; it does not
+name *which two* initial conditions conflict. Whether that is enough to find them in a real model
+is untested — `OverInitRc` is small enough that it does not matter.
+
+---
+
+## What comes next in the chain
+
+Everything is now decided: which variables are states, what order to solve in, what to guess, and
+what the values are at *t* = 0. What remains is turning names into memory.
+
+That is [`solve-lowering.md`](solve-lowering.md).

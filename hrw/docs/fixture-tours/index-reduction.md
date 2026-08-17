@@ -1,204 +1,169 @@
-# Index reduction — when nine states are really three
+# Fixture tour — Index reduction: more states than freedoms
 
-**Walk [`matching.md`](matching.md) first**, and Act 3 of it especially. That act showed a
-*structurally singular* system as a **failure**: `CapacitorLoop` could not be matched, and the
-compiler reported rank deficiency.
+**A curriculum tour.** Walk [`blt-ordering.md`](blt-ordering.md) and
+[`tearing.md`](tearing.md) first. Every model in those was already solvable once ordered; this
+tour is about the models that are not.
 
-**This tour shows the same failure as an ordinary, expected thing** — and shows what fixes it.
-`Drivetrain` is structurally singular too. It is also a perfectly good model of a perfectly
-ordinary machine.
-
-> Every number below is read from the specimens' generated traces.
+Every count below was read from the committed traces, never remembered.
 
 ---
 
 ## The problem this phase exists to solve
 
-A modeller writes `der(x)` and means *"x is a state"*. Nine `der`s means nine states, and a
-solver wants nine initial conditions and nine equations of motion.
+A **state** is a quantity that carries the past forward, and the DAE tour established how one is
+identified: some equation differentiates it. Count the states and you have counted the numbers the
+integrator steps through time.
 
-**Physics disagrees.** Bolt two shafts together through an ideal gear and their angles are not
-independent — one is a fixed multiple of the other. You wrote `der(rotor.phi)` and
-`der(load.phi)`, but the machine has one degree of freedom there, not two.
+Except that the count can be wrong — not miscounted, but *wrong as a description of the system*.
 
-That relationship, `rotor.phi = ratio * load.phi`, is a **constraint hiding among the
-equations**. A DAE carrying such constraints has **index greater than 1**, and a plain ODE solver
-cannot integrate it: it would need the constraint force — the torque the gear teeth exert — and
-no equation gives it directly.
+Connect two rotating bodies with an ideal gear. Each body has an angle and a velocity, so the
+compiler sees four states. But the gear ratio means the second body's angle is a fixed multiple of
+the first's: knowing one tells you the other. **There are four states and two freedoms**, and the
+two surplus states are not independent quantities at all.
 
-**Index reduction finds the constraints and removes the redundant states.**
+A solver handed that system fails, and not for a reason ordering can fix. The equations that
+constrain the states to each other are **algebraic constraints among states** — the definition of a
+higher-index DAE.
 
----
-
-## Act 1 — A model that needs nothing
-
-[BouncingBall → Index Reduction → Summary](hrw://load/BouncingBall/IndexReduction/Summary)
-
-Height and velocity, `der(h) = v` and `der(v) = -g`.
-
-**Expected:** states **2 before, 2 after**. Nothing demoted.
-
-**Expected:** every step of the reduction reports `0 demoted`.
-
-Two `der`s, two genuine degrees of freedom, no constraint between them. **This is index 1**, and
-the phase correctly does nothing. Worth seeing first so the later models' activity is visibly
-*not* routine.
+**Index reduction is the phase that finds and removes them.** Four acts: the case where nothing
+needs doing, the case that does, what actually happened to the surplus, and what "index" means.
 
 ---
 
-## Act 2 — One state that was not a state
+## Act 1 — The case that needs nothing
 
-[BenchActuator → Index Reduction → Summary](hrw://load/BenchActuator/IndexReduction/Summary)
+`BouncingBall` has two states, `h` and `v`.
 
-A motor driving a load through an inductor and an EMF coupling.
+> **Predict.** Are they independent — can you know one without the other?
 
-**Expected:** states **4 before, 3 after**, with exactly one demoted: **`emf.phi`**.
+[▶ Look — BouncingBall → Index reduction](hrw://load/BouncingBall/IndexReduction)
 
-The electromotive-force element's angle is rigidly tied to the rotor it sits on. It appeared as a
-state because someone wrote its derivative; it is not one, because knowing the rotor's angle
-determines it.
+**Expected:** the stage reports **already index-1**, states **2 before and 2 after**, nothing
+demoted, and `differentiated_rows` empty. The note reads *"the reduction funnel is a no-op here."*
 
-**Expected:** the step that did it is `reduce_constrained_dummy_derivatives`, reporting
-`1 demoted`, and every other step reports `0`.
+**Falsified if:** any state is demoted, or the counts differ.
 
----
+*What just happened.* Height and velocity are genuinely independent: a ball can be anywhere at any
+speed. No equation relates them without a derivative in it, so there is no algebraic constraint
+among states and nothing to remove.
 
-## Act 3 — Nine states, three degrees of freedom
-
-[Drivetrain → Index Reduction → Summary](hrw://load/Drivetrain/IndexReduction/Summary)
-
-A motor, a gear, a shaft, a translating load and a compliant mount.
-
-**Expected:** states **9 before, 3 after**. Six demoted:
-
-`emf.phi`, `rotor.phi`, `rotor.w`, `shaft.phi`, `load.s`, `load.v`
-
-**Expected:** the three survivors are `L.i`, `shaft.w`, `mount.s_rel`.
-
-**Read that list as physics.** What survived is the inductor current, the shaft speed, and the
-mount's deflection — one electrical state, one rotational state, one compliance. Everything else
-in the drivetrain is *rigidly geared to* one of those three. The machine has three independent
-ways to store energy, and six of the nine `der`s were describing the same three.
-
-**Notice `rotor.phi` and `rotor.w` were both demoted.** A position *and* its velocity went
-together, which is what an ideal gear does: it removes a whole second-order degree of freedom,
-not half of one.
+**This is the common case**, and it is worth establishing first so the next act reads as a
+discovery rather than as routine. Most models are index-1 and this phase does nothing to them.
 
 ---
 
-## Act 4 — Why the previous phase failed, and why that was correct
+## Act 2 — The case that does
 
-Here is `Drivetrain` **before** reduction:
+`Drivetrain` is a motor driving a load through an ideal gear, with a compliant mount.
 
-[Drivetrain → Structural → Summary](hrw://load/Drivetrain/Structural/Summary)
+> **Predict.** The model has nine states. How many independent freedoms do you expect a motor,
+> gear, shaft and mount to have?
 
-**Expected:** a structural error reading *"structurally singular system: 93 matched out of 97
-equations and 97 unknowns"* — a rank deficiency of **4**.
+[▶ Look — Drivetrain → Index reduction](hrw://load/Drivetrain/IndexReduction)
 
-**Expected:** the unmatched unknowns are `emf.p.v`, `shaft.flange_a.tau`, `load.flange_a.f`,
-`wall.flange.f`.
+**Expected:** **9 states before, 3 after.** The three survivors are `L.i`, `shaft.w` and
+`mount.s_rel`; the six demoted are `emf.phi`, `rotor.phi`, `rotor.w`, `shaft.phi`, `load.s` and
+`load.v`.
 
-**Look at what those four are.** A voltage at a pin, a torque at a flange, a force at a flange, a
-force at a wall. **They are the constraint forces** — precisely the quantities a constrained
-mechanism cannot solve for algebraically. That is not a coincidence and it is not a modelling
-error; it is the signature of a high-index DAE, and the same signature every textbook uses.
+**Falsified if:** the after-count is other than 3, or `shaft.w` is among the demoted.
 
-Now the same model **after** reduction: **20 equations, 20 unknowns, 12 blocks, no singularity.**
+*What just happened. **Six of the nine were never independent.** The gear ties the rotor's angle to
+the shaft's; the rack-and-pinion ties the load's position to the shaft's angle; differentiating
+those relations ties the velocities too. So the system's real freedoms are one electrical (the
+inductor current), one mechanical rotation (the shaft speed), and one mechanical translation (the
+mount deflection).
 
-| | equations | unknowns | matched | outcome |
-|---|---|---|---|---|
-| before | 97 | 97 | 93 | **singular**, deficiency 4 |
-| after | 20 | 20 | 20 | 12 blocks, 1 coupled |
+Look at which survived, because it is physically legible: **exactly one state per independent
+energy store.** The inductor stores magnetic energy, the shaft inertia stores kinetic energy, the
+mount spring stores potential energy. Everything else was bookkeeping about where things are
+relative to each other.
 
-**So `matching.md` Act 3's failure has two completely different meanings**, and telling them
-apart is the point of this tour:
-
-- **`CapacitorLoop`** is singular because the *model* is wrong — a capacitor across an ideal
-  source over-constrains its own voltage. No reduction saves it.
-- **`Drivetrain`** is singular because the *DAE has index > 1* — and index reduction is the
-  standard, expected cure.
-
-**A rank deficiency is a question, not a verdict.**
+**The compiler discovered that from the equations alone**, with no knowledge of gears.
 
 ---
 
-## Act 5 — What Rumoca actually does, which is not what the textbook name suggests
+## Act 3 — What actually happened to the surplus
 
-**A correction worth carrying, and it was found by reading the traces rather than the
-literature.**
+The obvious mechanism for index reduction is **differentiation**: differentiate the offending
+constraint until it can be solved. That is what Pantelides' algorithm does and what every textbook
+describes.
 
-The textbook algorithms here are **Pantelides** — repeatedly differentiate constraint equations
-until the system is index 1 — and **dummy derivatives**, which selects which differentiated
-variables become algebraic. Any course will teach it that way.
+> **Predict.** How many equations did the compiler differentiate to get from 9 states to 3?
 
-**Rumoca's traces show `differentiated_rows` empty on all 21 specimens.** The reduction is
-achieved by **demoting states**, not by differentiating equations, at least on every model in
-this repository.
+[▶ Look — Drivetrain → Index reduction](hrw://load/Drivetrain/IndexReduction)
 
-The phase is a **funnel of ten named steps**, each a different reason a state might turn out not
-to be one:
+[Point at `reduction`](hrw://stage/IndexReduction/node/reduction)
 
-| step | what it looks for |
-|---|---|
-| `demote_exact_alias_component_states` | a state that is literally an alias of another |
-| `demote_direct_assigned_states` | a state given directly by an equation |
-| **`reduce_constrained_dummy_derivatives`** | **states tied by a constraint — the one that fires here** |
-| `index_reduce_missing_state_derivatives` | a state whose derivative never appears |
-| `demote_states_without_assignable_derivative_rows` | a `der` with no equation that can produce it |
-| `eliminate_derivative_aliases` | duplicate derivative references |
-| `demote_states_without_retained_derivative_rows` | derivatives dropped by earlier steps |
-| `expand_compound_derivatives` | `der` of an expression |
-| `substitute_standalone_state_derivatives_in_non_ode_rows` | `der(x)` used as an ordinary term |
-| `eliminate_trivial` | equations reduced to nothing |
+**Expected:** **zero.** `differentiated_rows` is empty. What did the work is **77 eliminations**
+and the demotion steps, and the system went from **97 equations to 20**.
 
-**Expected:** on all three specimens above, the only step reporting a demotion is
-`reduce_constrained_dummy_derivatives` — 1, 5 and 6 respectively for `BenchActuator`,
-`GearWithBrake` and `Drivetrain`.
+**Falsified if:** `differentiated_rows` is non-empty, or the reduced system is not 20 equations.
 
-**Expected:** `eliminate_trivial` reports large numbers — 41, 33 and 77 — because collapsing the
-connection equations is what takes 97 equations down to 20.
+*What just happened.* **The textbook mechanism was not needed.** These constraints are *alias
+relations* — one variable equals another times a constant — and an alias can be eliminated by
+substitution instead of differentiated. Cheaper, exact, and it shrinks the system rather than
+growing it.
 
-**And `funnel_completed` is `true` with `stopped_at` null**, which is the phase saying it ran
-every step rather than bailing early. A model that defeated it would say so there.
+That is why 97 equations became 20 while the state count fell from 9 to 3: most of those 97 were
+connector bookkeeping that substitution removes outright.
+
+**Differentiation is the general answer and the last resort.** A compiler that reached for it first
+would produce a larger system than it started with. That this specimen never needs it is a fact
+about ideal gears, not about the algorithm — a model with a genuine non-alias constraint would show
+`differentiated_rows` filled.
 
 ---
 
-## Act 6 — The linear algebra, in one paragraph
+## Act 4 — What "index" counts, and why 1 is the target
 
-The nine apparent states are a vector; the constraints say that vector is confined to a
-**3-dimensional subspace**. Six of the nine coordinates are determined by the other three, so the
-constraint Jacobian has rank 6 and its null space has dimension 3.
+The phase is named for a number nothing on screen displays.
 
-**The three surviving states are a basis for that null space** — a choice of coordinates on the
-manifold the system actually moves in. `L.i`, `shaft.w`, `mount.s_rel` are not *the* answer;
-they are *an* answer, and a different valid choice would give a different, equally correct model.
+> **Predict.** `Drivetrain` arrived high-index and left index-1. What do you think the number
+> counts?
 
-That "any basis will do, but you must pick one" structure is exactly what makes the dummy
-derivative method a *selection* problem, and it is why two compilers can reduce the same model to
-two different state vectors and both be right.
+[▶ Look — Drivetrain → Structural](hrw://load/Drivetrain/Structural)
 
----
+**Expected:** the Structural stage reports **singular** before reduction, and index reduction
+reports *"index-reduced from a structurally singular (high-index) system — now solvable."*
 
-## What comes next in the chain
+**Falsified if:** Structural reports a solvable system before reduction.
 
-Reduction produced a 20-equation system with one coupled block. Everything you learned in
-[`blt-ordering.md`](blt-ordering.md) and [`tearing.md`](tearing.md) now applies to it — and
-`Drivetrain`'s post-reduction blocks are the realistic version of the tiny examples those tours
-used.
+*What just happened.* **The differentiation index is how many times you must differentiate the
+system before it becomes an ODE you can integrate.** Index 1 means the algebraic part can be solved
+for at each instant, given the states — which is exactly what the solver needs. Index 2 means one
+round of differentiation stands between you and that, and so on.
+
+So "high-index" and "structurally singular before reduction" are the same observation from two
+angles: the matching could not find a perfect pairing precisely because some equations constrained
+states to each other rather than determining anything new.
+
+**And note the order of the pipeline.** Matching runs, fails, and its failure is the *input* to
+this phase — which is why a structural singularity is a diagnosis and not a verdict. Five of the
+eight specimens that report `singular` are rescued here; three are not, and those are genuinely
+ill-posed models.
 
 ---
 
 ## What this tour cannot check
 
-**Whether Act 4 lands as the reframe it is meant to be.** "The same error means two opposite
-things" is the most useful idea here, and it depends on `matching.md` Act 3 being fresh in mind.
-If it isn't, this reads as a list of numbers.
+**Whether Act 3 lands as the surprise it is.** Zero differentiations in the tour named for the
+algorithm that differentiates is the most interesting fact here, and it is asserted in one line
+against a JSON field that must be found in a tree.
 
-**Whether Act 5's correction is welcome or disorienting.** Being told the textbook name and then
-told the implementation does something else may be exactly the honesty that helps, or may be
-confusing before the textbook version is understood at all. It is placed fifth for that reason,
-and might belong last — or in a footnote.
+**Whether the reduction view reads as a funnel.** It is a summary of ten steps, most of which
+demote nothing, and whether the progression is visible or reads as noise is your report.
 
-**Whether the Index Reduction tab shows the before/after split usefully.** `architecture.md` says
-comparative views render Before/After there, which is the natural way to see 97 equations become
-20 — but whether that comparison is legible for a model this size is exactly what no test reaches.
+**Whether `Drivetrain` is too large to learn from.** 97 equations and 88 algebraics is a real
+model, and the counts are honest, but nothing here lets you see the gear relation being eliminated
+— only that 77 eliminations happened. A two-body specimen would show the mechanism; there is not
+one.
+
+---
+
+## What comes next in the chain
+
+The system is now index-1, square and ordered. It still cannot start: the integrator needs a
+consistent set of values at *t* = 0, and the states' `start` attributes are not automatically
+consistent with the algebraic equations.
+
+That is [`initialization.md`](initialization.md).
