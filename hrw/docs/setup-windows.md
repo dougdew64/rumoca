@@ -219,16 +219,32 @@ Create `.claude/settings.json` at the **repository root**:
     "allow": [
       "Bash(cargo test -p hrw --lib *)",
       "Bash(cargo clippy -p hrw --all-targets)",
-      "Bash(rustfmt --edition 2024 --check *)"
+      "Bash(rustfmt --edition 2024 --check *)",
+      "Bash(cargo fmt -p hrw -- --check)",
+      "Bash(cargo fmt --all -- --check)"
     ]
   }
 }
 ```
 
-**Why only these three.** Everything else Claude runs often is either already auto-allowed by
+**Why only these five.** Everything else Claude runs often is either already auto-allowed by
 Claude Code (`grep`, `sed -n`, `cat`, `echo`, `git status`, `git diff`) or genuinely mutating and
 *should* keep asking — `git push`, `git commit`, and `cargo run --example gen_*`, which rewrites
 `architecture.md` and `CATALOGUE.md`.
+
+**The two `--check` forms are read-only** and pair with the rule that every `crates/rumoca-*` edit
+runs `fmt` as well as `clippy` (`CLAUDE.md`). The bare `cargo fmt -p hrw` that *rewrites* files is
+deliberately not here.
+
+**THIS BLOCK DRIFTED FROM THE LIVE FILE WITHIN TWO DAYS, AND NOTHING COULD NOTICE.** The two `fmt`
+entries were added on 2026-08-16 and this section still listed three on 2026-08-17 — found only
+because Doug asked, before travelling, whether everything needed to resume on another machine had
+been pushed. **A durable record of an uncommittable file is itself uncheckable**: no test can
+compare a block of JSON in a document against a gitignored file, and the whole reason this section
+exists is that the file cannot be tracked. So the discipline has to be manual and it belongs here:
+**after editing `.claude/settings.json`, paste it into this block in the same act.** The failure is
+silent and its cost is paid on a different machine, weeks later, by the person who cannot see the
+prompts.
 
 **The one judgement call, recorded so it can be revisited rather than rediscovered:** `cargo test`
 executes code, and the general rule is not to allowlist patterns permitting arbitrary execution. It
