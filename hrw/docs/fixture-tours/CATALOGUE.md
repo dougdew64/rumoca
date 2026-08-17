@@ -8,22 +8,21 @@
 
 ## `blt-ordering`
 
-**BLT — finding an order, and finding out there isn't one**
+**Fixture tour — BLT: finding an order, and finding out there isn't one**
 
-Walk [`matching.md`](matching.md) first. Matching answered *which* equation solves *which*
+A curriculum tour. Walk [`matching.md`](matching.md) first — it answers *which* equation
 
 - **Specimens:** `RcCircuit`, `ProportionalLoop`, `TwoLoops`
 - **Stages:** `Structural`
 - **Stops:**
-  - `blt-finding-an-order-and-finding-out-there-isn-t-one` — BLT — finding an order, and finding out there isn't one
-  - `the-problem-this-step-exists-to-solve` — The problem this step exists to solve
+  - `fixture-tour-blt-finding-an-order-and-finding-out-there-isn-t-one` — Fixture tour — BLT: finding an order, and finding out there isn't one
+  - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `act-1-when-an-order-exists` — Act 1 — When an order exists
   - `act-2-when-no-order-exists` — Act 2 — When no order exists
   - `act-3-when-the-system-splits` — Act 3 — When the system splits
   - `act-4-what-you-have-been-building-is-a-block-triangular-form` — Act 4 — What you have been building is a block triangular form
-  - `act-5-how-rumoca-spells-it` — Act 5 — How Rumoca spells it
-  - `what-comes-next-in-the-chain` — What comes next in the chain
   - `what-this-tour-cannot-check` — What this tour cannot check
+  - `what-comes-next-in-the-chain` — What comes next in the chain
 
 ## `camera-aiming`
 
@@ -275,20 +274,19 @@ Walk [`matching.md`](matching.md) first. That tour shows the algorithm running, 
 
 ## `matching`
 
-**Fixture tour — Matching: when greed is not enough**
+**Fixture tour — Matching: which equation solves which unknown**
 
-A curriculum tour, and the second in the chain. `dae-construction.md` ended with DAE
+A curriculum tour. It teaches a step of the chain and uses HRW as the instrument. It is still
 
 - **Specimens:** `BouncingBall`, `ProportionalLoop`, `CapacitorLoop`
 - **Stages:** `Structural`
 - **Stops:**
-  - `fixture-tour-matching-when-greed-is-not-enough` — Fixture tour — Matching: when greed is not enough
+  - `fixture-tour-matching-which-equation-solves-which-unknown` — Fixture tour — Matching: which equation solves which unknown
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
-  - `act-1-when-greed-works` — Act 1 — When greed works
-  - `act-2-when-greed-fails-and-the-algorithm-backs-up` — Act 2 — When greed fails, and the algorithm backs up
-  - `act-3-when-no-augmenting-path-exists` — Act 3 — When no augmenting path exists
-  - `act-4-the-thing-you-have-been-building-is-a-permutation` — Act 4 — The thing you have been building is a permutation
-  - `act-5-how-rumoca-spells-it` — Act 5 — How Rumoca spells it
+  - `act-1-the-case-where-it-is-obvious` — Act 1 — The case where it is obvious
+  - `act-2-the-case-that-is-not-obvious-at-all` — Act 2 — The case that is not obvious at all
+  - `act-3-the-case-with-no-answer` — Act 3 — The case with no answer
+  - `act-4-what-this-is-called-and-why-the-name-helps` — Act 4 — What this is called, and why the name helps
   - `what-this-tour-cannot-check` — What this tour cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
 

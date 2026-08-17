@@ -1,209 +1,157 @@
-# BLT — finding an order, and finding out there isn't one
+# Fixture tour — BLT: finding an order, and finding out there isn't one
 
-**Walk [`matching.md`](matching.md) first.** Matching answered *which* equation solves *which*
-unknown. It said nothing about **when** to solve them, and that is this tour.
+**A curriculum tour.** Walk [`matching.md`](matching.md) first — it answers *which* equation
+solves *which* unknown, and this tour asks *in what order*.
 
-Three models, three answers. `RcCircuit` can be solved one equation at a time, in an order.
-`ProportionalLoop` cannot be solved one at a time at all. `TwoLoops` splits into two independent
-pieces. **All three come out of the same algorithm**, and the algorithm is Tarjan's
-strongly-connected-components search.
-
-> Every count below is read from the specimens' generated notebook traces, not estimated.
+Every count below was read from the committed traces, never remembered.
 
 ---
 
-## The problem this step exists to solve
+## The problem this phase exists to solve
 
-A matching pairs equation `f_x[0]` with unknown `error`. That makes `error` the **output** of that
-equation — so any *other* equation mentioning `error` now depends on it.
+Matching gave every equation a job. That is still not a recipe.
 
-Those dependencies form a directed graph over the equations. If the graph has **no cycles**, a
-topological order exists: solve `f_x[3]`, then `f_x[15]`, and so on, each equation needing only
-values already computed. That is the cheapest possible thing a solver can do — one unknown at a
-time, no iteration.
+To evaluate `f_x[9]` — Ohm's law, which determines `R.v` — you need `R.R_actual` and `R.i`, and
+those come from other equations. So the equations have **dependencies**, and a dependency graph
+either can be laid out in a line or it cannot.
 
-**If the graph has a cycle, no such order exists**, and the equations in that cycle have to be
-solved *together* as a system. Finding the cycles is therefore the whole question, and a cycle in
-a digraph is exactly a **strongly connected component**.
+If it can, the whole system is a sequence of direct assignments: compute this, then that, then the
+next. No iteration anywhere. If it cannot, some group of equations is circular and has to be
+solved **simultaneously**.
+
+**This phase finds out which, and where.** Three acts: a system that orders completely, one that
+does not order at all, and one that splits into independent pieces.
 
 ---
 
 ## Act 1 — When an order exists
 
-[RcCircuit → Structural → Spy-plot](hrw://load/RcCircuit/Structural/SpyPlot)
+`RcCircuit` is 23 equations in 23 unknowns.
 
-A resistor, a capacitor, a voltage source and a ground. 23 equations, 23 unknowns.
+> **Predict.** How many groups will the compiler need to solve simultaneously?
 
-**Expected:** the spy-plot shows **23 cells on the diagonal and no outlined boxes** — 23 blocks,
-none coupled. *(The Summary view is not offered here: it exists to explain a singular system, and
-this one is not. Hover any cell for that block's equation.)*
+[▶ Look — RcCircuit → Structural → Spy plot](hrw://load/RcCircuit/Structural/SpyPlot)
 
-Twenty-three blocks for twenty-three equations means **every block holds exactly one equation**.
-The system was fully ordered: there is a sequence in which each unknown can be computed from
-values already known.
+**Expected:** **23 blocks, every one of size 1**, and `coupled_block_count` is **0**.
 
-Read the first block and the last:
+**Falsified if:** any block has size greater than 1.
 
-| block | equation | solves for |
-|---|---|---|
-| **0** | `f_x[3]` (equation from `src`) | `src.v` |
-| **1** | `f_x[15]` (equation from `gnd`) | `gnd.p.v` |
-| **2** | `f_x[22]` (connection: `src.n.v = gnd.p.v`) | `src.n.v` |
-| … | | |
-| **22** | `f_x[18]` (flow sum: `C.n.i + src.n.i + gnd.p.i = 0`) | `gnd.p.i` |
+*What just happened.* A block of size 1 is one equation determining one unknown from values
+already known. Twenty-three of them in a row is **forward substitution** — the solver walks the
+list once, evaluating, and never iterates.
 
-**Expected:** block 0 solves `src.v` and block 22 solves `gnd.p.i`.
+On the spy plot this is the diagonal: every marked cell on or below it, nothing above. That shape
+is why the phase is named as it is, and Act 4 comes back to it.
 
-**The order is not the equation order.** Block 0 is `f_x[3]`, block 1 is `f_x[15]`, block 2 is
-`f_x[22]`. The compiler permuted them. `src.v` comes first because the voltage source's value
-depends on nothing — it is a known constant — and `gnd.p.i` comes last because the ground's
-current is whatever is left over once everything else is determined.
-
-**That permutation is the output of this phase.** It is not cosmetic; it is the evaluation order
-the generated code will run in.
+**This is the best possible outcome**, and it is worth knowing that a 23-equation circuit
+achieves it. Wiring components together does not by itself create anything circular.
 
 ---
 
 ## Act 2 — When no order exists
 
-[ProportionalLoop → Structural → Spy-plot](hrw://load/ProportionalLoop/Structural/SpyPlot)
+`ProportionalLoop` is 3 equations in 3 unknowns, and you already know from `matching.md` that a
+perfect matching exists.
 
-Three equations: `error = reference - measurement`, `command = controllerGain * error`,
-`measurement = plantGain * command`.
+> **Predict.** Given that every equation has an unknown assigned, how many blocks?
 
-**Expected:** the spy-plot shows **one outlined box covering the whole 3×3** — 1 block, and it is
-coupled. Contrast Act 1's twenty-three separate cells: same picture language, opposite verdict.
+[▶ Look — ProportionalLoop → Structural → Spy plot](hrw://load/ProportionalLoop/Structural/SpyPlot)
 
-One block for three equations. **Nothing was ordered at all.**
+**Expected:** **one** block, **coupled**, of size **3** — containing all three equations and all
+three unknowns.
 
-**Expected:** that block has size **3**, and lists unknowns `command`, `error`, `measurement` —
-every unknown in the model.
+**Falsified if:** three scalar blocks appear, or the block's size is other than 3.
 
-Follow the dependency by hand and you will see why: `error` needs `measurement`, `measurement`
-needs `command`, `command` needs `error`. A cycle of length three. There is no equation you can
-solve first, because each one needs a value only another can produce.
+*What just happened.* **A matching does not imply an order.** Each equation had a job and the jobs
+could not be sequenced, because `command` needs `error`, `error` needs `measurement`, and
+`measurement` needs `command`.
 
-**So the solver must treat all three as one simultaneous system** — and that is a categorically
-more expensive thing than Act 1's 23 direct assignments. Act 1 evaluates; Act 2 must *solve*.
+So the compiler stops trying to sequence and declares a **simultaneous block**: three equations
+that must be solved together, which at run time means a numerical solve — Newton iteration for a
+nonlinear block, one linear solve for a linear one.
 
-[Watch the search find it](hrw://load/ProportionalLoop/Structural/TarjanAnim)
-
-**Expected:** the animation ends with all three equation nodes in a single component.
+**The circularity is real, not an artifact.** It came from closing a feedback loop with no
+integrator in it. `LoopWithInertia` is the same loop with the inertia restored, and it is worth
+comparing later: the loop survives, and it is re-solved at every time step.
 
 ---
 
 ## Act 3 — When the system splits
 
-[TwoLoops → Structural → Summary](hrw://load/TwoLoops/Structural/TarjanAnim)
+`TwoLoops` is 4 equations in 4 unknowns, written as two independent controller loops.
 
-Two independent proportional loops in one model — an `A` loop and a `B` loop, sharing nothing.
+> **Predict.** One coupled block of 4, or something else?
 
-**Expected:** **2 blocks**, both **coupled**, each of size **2**.
+[▶ Look — TwoLoops → Structural → Spy plot](hrw://load/TwoLoops/Structural/SpyPlot)
 
-| block | unknowns |
-|---|---|
-| 0 | `errorA`, `commandA` |
-| 1 | `errorB`, `commandB` |
+**Expected:** **two** coupled blocks, each of size **2** — `{f_x[1], f_x[0]}` on
+`{errorA, commandA}`, and `{f_x[3], f_x[2]}` on `{errorB, commandB}`.
 
-**Expected:** no block mixes an `A` unknown with a `B` one.
+**Falsified if:** one block of 4 appears.
 
-**This is the result worth pausing on.** Four equations that a naive solver would throw at one
-4×4 nonlinear solve are actually **two independent 2×2 problems**. Solving two 2×2 systems is
-dramatically cheaper than one 4×4 — and it parallelises, which a single 4×4 does not.
+*What just happened.* **The decomposition is the point of the phase.** These four equations are
+not one 4×4 problem; they are two 2×2 problems, and the second depends on the first only through
+`commandA`, which the first block produces.
 
-**Tarjan found that decomposition without being told the model had two loops in it.** Nothing in
-the Modelica source says "these are separable"; it falls out of the graph.
+So the solver does a 2×2 solve, then another 2×2 solve. Never a 4×4. On a large model that
+difference is the difference between tractable and not — Newton's cost grows faster than linearly
+in block size, so finding the *smallest* simultaneous groups is the whole game.
+
+Notice also the ordering *between* blocks: loop A must go first. The phase produces both facts at
+once — which equations are entangled, and what sequence the entangled groups go in.
 
 ---
 
 ## Act 4 — What you have been building is a block triangular form
 
-Act 1 gave a permutation with 23 blocks of size 1. Act 2 gave one block of size 3. Act 3 gave two
-blocks of size 2. **These are the same object at different extremes.**
+The three shapes you have seen have one name between them.
 
-Take the incidence matrix, apply the matching's permutation to the columns, and apply the block
-order to the rows. The result is **block lower triangular** — everything above the diagonal
-blocks is zero:
+> **Predict.** Look again at `RcCircuit`'s spy plot and `TwoLoops`'s. What do both have in common
+> that a single 4×4 block would not?
 
-```
-Act 1 (RcCircuit)        Act 2 (ProportionalLoop)     Act 3 (TwoLoops)
-■ . . . .                ┌─────┐                      ┌───┐ . .
-■ ■ . . .                │ ■ ■ ■│                     │■ ■│ . .
-■ ■ ■ . .                │ ■ ■ ■│                     └───┘ . .
-■ ■ ■ ■ .                │ ■ ■ ■│                     . . ┌───┐
-■ ■ ■ ■ ■                └─────┘                      . . │■ ■│
-                                                      . . └───┘
-23 blocks of size 1      1 block of size 3            2 blocks of size 2
-fully triangular         irreducible                  block diagonal
-```
+[▶ Look — TwoLoops → Structural → Spy plot](hrw://load/TwoLoops/Structural/SpyPlot)
 
-**Every diagonal block is irreducible** — it cannot be split further, which is precisely what
-"strongly connected" means. A size-1 block is the ideal case: solve by substitution. A size-*n*
-block is an *n*×*n* system that must be solved as a unit.
+**Expected:** in both, every marked cell lies **on or below the diagonal** — as blocks for
+`TwoLoops`, as single cells for `RcCircuit`.
 
-**The zeros above the diagonal are the whole payoff.** They say that when you reach block *k*,
-every value it needs has already been computed. That is what makes forward substitution valid,
-and it is the same structure that makes a triangular matrix cheap to solve in linear algebra —
-here obtained by permutation rather than by elimination.
+**Falsified if:** marks appear above the diagonal in either.
 
-**The name.** BLT is *Block Lower Triangular*. In the numerical-linear-algebra literature the same
-decomposition is the **Dulmage-Mendelsohn decomposition**, and the coarse version is exactly
-"matching, then SCCs of the resulting digraph" — the two phases you have now walked.
+*What just happened.* Permute the rows and columns by the matching and the solve order, and the
+incidence matrix becomes **block lower triangular**. That is the phase's output and its name:
+**BLT**.
 
----
+Reading it is mechanical once you know the shape. Each diagonal block is a group to solve
+together; its size is how many equations at once; everything strictly below is a dependency
+already computed. `RcCircuit` has 23 blocks of size 1, `ProportionalLoop` has one of size 3,
+`TwoLoops` has two of size 2 — and the largest block is the honest measure of how hard the model
+is to solve.
 
-## Act 5 — How Rumoca spells it
-
-`crates/rumoca-phase-structural/src/tarjan.rs`, and it is **Tarjan's algorithm**, published 1972.
-
-**One depth-first pass.** Each node gets an index when first visited and a *lowlink* — the
-smallest index reachable from its subtree. When a node's lowlink equals its own index, that node
-roots a strongly connected component, and the component is everything above it on a stack.
-
-**Two properties matter here, and both are why this algorithm rather than another:**
-
-- **It is O(V + E)** — one pass, linear in the graph. For a model with thousands of equations
-  that is the difference between practical and not.
-- **It emits components in reverse topological order.** So the SCCs come out *already sorted* —
-  Tarjan does not find the cycles and then sort them; the order is a side effect of the DFS.
-  **Act 1's block order is free.**
-
-[The search itself, on the coupled case](hrw://load/ProportionalLoop/Structural/TarjanAnim)
-
-**Expected:** the animation's frames are the DFS — visiting a node, following an edge, and
-popping a completed component.
-
-**The dependency graph is built from the matching**, which is why this tour required the previous
-one. Equation A points at equation B when A mentions a variable that B was matched to. Change the
-matching and you change the graph; that is why `matching.md` insisted on the sort that makes the
-matching deterministic.
-
----
-
-## What comes next in the chain
-
-A coupled block of size 3 says *"solve these together"*, and says nothing about **how**.
-Act 2's block is a 3×3 nonlinear system, and solving it directly means a 3×3 Jacobian at every
-iteration.
-
-**Tearing** asks whether you can guess one variable, solve the rest by substitution, and be left
-with a single residual to drive to zero — turning a 3×3 solve into a 1×1 one. That is a Schur
-complement, it is the next tour, and `NonlinearLoop` and `TwoLoops` both carry torn blocks to
-look at.
+**The algorithm is Tarjan's strongly-connected-components**, on the graph whose vertices are
+equations and whose edges follow the matching. An SCC *is* a simultaneous block, and Tarjan
+returns them in reverse topological order, which is the solve order for free. The animated
+stepper under **Structural → Tarjan** replays that search.
 
 ---
 
 ## What this tour cannot check
 
-**Whether the Tarjan animation reads as a search.** The matching animation draws on a matrix,
-where the moving highlight has an obvious meaning. This one draws a node graph, and whether the
-DFS is legible as *descending and backing up* — or just as dots changing colour — is the half no
-test reaches.
+**Whether the spy plot reads as triangular.** It is custom-painted and unreachable by any
+accessibility-tree test, so whether the orange coupled boxes and the diagonal are *visible* as the
+shape Act 4 describes is your report alone.
 
-**Whether Act 4's ASCII matrices help or patronise.** They are the one place this tour draws
-rather than points, and a reader who already sees the permutation may find them noise.
+**Whether Act 3 lands as the important one.** Decomposition matters more at scale than either
+extreme, and this tour demonstrates it on four equations, where two 2×2 solves and one 4×4 feel
+equally cheap.
 
-**Whether Act 3 lands as remarkable.** "Tarjan found two independent loops without being told" is
-the strongest claim here. It may read as obvious in a model whose name is `TwoLoops` — the
-decomposition is impressive precisely when nobody knew it was there, which a four-equation
-example cannot demonstrate.
+**Whether Tarjan is named too late.** The algorithm arrives in Act 4 after three acts of its
+output, which is deliberate — but a reader who wanted the mechanism first will have spent three
+acts wondering.
+
+---
+
+## What comes next in the chain
+
+A coupled block of 3 is not the end of the story: the compiler will try to make it smaller before
+handing it to a numerical solver, by guessing one variable and computing the rest.
+
+That is [`tearing.md`](tearing.md).

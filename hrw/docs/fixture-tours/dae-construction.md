@@ -161,6 +161,8 @@ Real tau "drive torque — NO EQUATION DETERMINES THIS, and that is the point";
 `tau` is declared and never assigned. It is the most common Modelica authoring error there is:
 declare a variable, forget its equation.
 
+[Show the line](hrw://source/18)
+
 > **Predict.** The DAE tab is about to open on a model that cannot be built. What will it show —
 > a partition with something missing, or something else?
 
