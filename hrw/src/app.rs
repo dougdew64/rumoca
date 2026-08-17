@@ -6518,164 +6518,13 @@ impl App {
             .configure(&ctx, egui::Panel::left(LEFT_PANEL_ID), avail)
             .show(ui, |ui| {
                 self.split.inner_width = Some(ui.available_width());
-                // --- Top third: the tour list, laid out like the specimen list ---
-                //
-                // A vertical list rather than a wrapped bar: Doug, 2026-07-29 —
-                // "there are going to be too many fixture tours to fit into a bar."
-                // One fixture per capability still accumulates, and a bar degrades
-                // silently as it fills, which is the wrong failure mode for a list
-                // meant to be browsed.
-                let panel_height = ui.available_height();
-                let list_height = panel_height * SPECIMEN_LIST_HEIGHT_FRACTION;
-                ui.allocate_ui_with_layout(
-                    egui::vec2(ui.available_width(), list_height),
-                    egui::Layout::top_down(egui::Align::Min),
-                    |ui| {
-                        // **The header states the count**, so "I do not see the new
-                        // tour" is answerable at a glance instead of by reasoning.
-                        //
-                        // Doug reported exactly that on 2026-08-03 with two tours
-                        // freshly written and a picker test asserting both were on
-                        // screen — so the code was provably right and the report was
-                        // still true, which left nothing to look at. A list that says
-                        // how many it found and where it looked distinguishes "the
-                        // directory has six" from "the pane is showing six of eight",
-                        // and those need opposite fixes.
-                        //
-                        // The same partial-report shape as the Context Bar defect:
-                        // every tour on screen was correct, and the missing ones left
-                        // no gap where they had been.
-                        let n = self.tour.available.len();
-                        section_header(ui, &format!("Tours ({n})"));
-                        ui.add_space(4.0);
-                        if self.tour.available.is_empty() {
-                            ui.weak("(no tours yet)");
-                            ui.weak(bridge::FIXTURE_TOURS_DIR);
-                            return;
-                        }
-                        // **A combo box and one button, not a 23-row list.**
-                        //
-                        // Doug, 2026-08-16: *"the tours list is only useful when
-                        // selecting a tour, which is not something that I do very
-                        // often. While working through a tour, that tours list is
-                        // taking up a bunch of space that I would much rather have for
-                        // the actual tour."*
-                        //
-                        // Measured that day: **22 fixture tours plus the ad hoc row**,
-                        // at roughly 18pt each — about 400 points, over half the tour
-                        // panel on his 13" screen, permanently, for a control touched a
-                        // few times a day. The list was 9 tours on 2026-08-08 and only
-                        // grows: `docs/ideas.md` #46 proposes a failure tour per
-                        // compiler phase. **A layout that degrades as the project
-                        // succeeds is the wrong layout.**
-                        //
-                        // Space follows use frequency: selecting is rare, reading is
-                        // constant.
-                        ui.horizontal_wrapped(|ui| {
-                            // **The ad hoc tour gets its own control, because it is not
-                            // the same kind of object as the other 22.** They are
-                            // committed, versioned, machine-checked and citable as
-                            // `hrw://tour/<name>/stop/<slug>`; this one is
-                            // `.hrw-bridge/tour.md` — gitignored, regenerated per
-                            // question, never stored, and there is only ever one.
-                            //
-                            // The code already privileged it before the UI did:
-                            // `tour::poll` auto-selects it when nothing else is chosen.
-                            // Only the presentation flattened it into row 23.
-                            //
-                            // Promoting it also makes its *state* answerable at a
-                            // glance rather than by opening a dropdown — which is the
-                            // defect Doug reported on 2026-08-15, when the row was
-                            // correctly absent and read as a broken feature.
-                            let has_ad_hoc = self.tour.available.contains(&TourSource::AdHoc);
-                            let ad_hoc_selected =
-                                self.tour.selected.as_ref() == Some(&TourSource::AdHoc);
-                            // `Button::selectable`, not a plain button: this *selects*
-                            // what you are reading. A verb-shaped control beside a
-                            // picker would imply it does something.
-                            let resp = ui.add_enabled(
-                                has_ad_hoc,
-                                egui::Button::selectable(
-                                    ad_hoc_selected,
-                                    TourSource::AdHoc.label(),
-                                ),
-                            );
-                            if has_ad_hoc {
-                                if resp
-                                    .on_hover_text(
-                                        "Written by Claude to answer your last question. \
-                                         Ephemeral: regenerated, never stored.",
-                                    )
-                                    .clicked()
-                                {
-                                    switch_to = Some(TourSource::AdHoc);
-                                }
-                            } else {
-                                // Disabled rather than absent — `docs/ideas.md` #77's
-                                // rule, and the reason this row exists at all.
-                                resp.on_disabled_hover_text(
-                                    "No answer written yet. Ask Claude a question and \
-                                     it writes one here \u{2014} regenerated per \
-                                     question, never stored.",
-                                );
-                            }
-
-                            // The fixture tours, collapsed. The closed box shows the
-                            // selected tour's name; the specimens ride along inside,
-                            // where they are needed.
-                            let selected_label = match self.tour.selected.as_ref() {
-                                Some(TourSource::Fixture(p)) => {
-                                    TourSource::Fixture(p.clone()).label()
-                                }
-                                _ => "Pick a tour\u{2026}".to_owned(),
-                            };
-                            egui::ComboBox::from_id_salt("tour_picker")
-                                .selected_text(selected_label)
-                                .width(ui.available_width().min(320.0))
-                                .show_ui(ui, |ui| {
-                                    for source in &self.tour.available {
-                                        let TourSource::Fixture(path) = source else {
-                                            // The ad hoc tour has its own control above;
-                                            // listing it twice would make one of them a
-                                            // lie about where it lives.
-                                            continue;
-                                        };
-                                        let selected = self.tour.selected.as_ref() == Some(source);
-                                        // **The item names its specimens.** Tours are
-                                        // named by phase, because that is what sets a
-                                        // per-phase expectation — but Doug searches by
-                                        // the model in front of him, and went looking
-                                        // for a "DimensionMismatch tour" that is called
-                                        // `failure-typecheck` (2026-08-05). Showing
-                                        // both axes removes the search, and it has to
-                                        // survive the move into the dropdown or the
-                                        // friction comes back.
-                                        //
-                                        // A *fixed fact about the item*, not a ranking
-                                        // or a filter — Charter Decision 8 permits the
-                                        // first and forbids the second.
-                                        let label = self.tour.row_specimens.get(path).map_or_else(
-                                            || source.label(),
-                                            |sp| format!("{}  \u{00b7}  {sp}", source.label()),
-                                        );
-                                        if ui
-                                            .selectable_label(selected, label)
-                                            .on_hover_text(format!(
-                                                "Fixture tour \u{2014} a test with expected \
-                                                 outcomes, kept and versioned.\n{}",
-                                                path.display(),
-                                            ))
-                                            .clicked()
-                                        {
-                                            switch_to = Some(source.clone());
-                                        }
-                                    }
-                                });
-                        });
-                    },
-                );
-                ui.separator();
-                self.autoplay_controls_ui(ui, &tour_text);
+                // **The tour picker lives in the transport bar**, not in a section of
+                // its own. Doug, 2026-08-16: the "Tours (23)" header and its divider
+                // stopped making sense once the list became one combo box and one
+                // button — a titled bar around two controls is chrome announcing
+                // chrome. Both moved into `autoplay_controls_ui`, which already owns
+                // a bar and already sits directly above the prose.
+                switch_to = self.autoplay_controls_ui(ui, &tour_text);
                 ui.separator();
 
                 // **The prose scrolls with the walk.**
@@ -6832,9 +6681,30 @@ impl App {
     /// draws. That split is what lets the schedule and the clock be tested without
     /// a window, which for a *timing* feature is the difference between a checkable
     /// claim and a stopwatch.
-    fn autoplay_controls_ui(&mut self, ui: &mut egui::Ui, tour_text: &Option<String>) {
+    /// The tour transport bar: **which tour**, then **the walk**.
+    ///
+    /// Returns a tour the reader asked to switch to, for the caller to apply.
+    ///
+    /// # Why the picker is in here
+    ///
+    /// Doug, 2026-08-16, after the 23-row list became a combo box and a button: *"The
+    /// divider bar above … no longer makes sense. It's the divider bar which currently
+    /// says 'Tours (23)'."* A titled bar wrapping two controls is chrome announcing
+    /// chrome, and it cost a header, a separator and the space between them for no
+    /// information — the count it carried is now in the picker's own hover.
+    ///
+    /// Left to right, in the order he specified: **Claude's answer**, the **picker**,
+    /// then the transport. That reads as a sentence — *which tour, then what to do with
+    /// it* — and it puts the one control whose state changes mid-conversation at the
+    /// end of the eye's travel from the prose below.
+    fn autoplay_controls_ui(
+        &mut self,
+        ui: &mut egui::Ui,
+        tour_text: &Option<String>,
+    ) -> Option<TourSource> {
         use crate::autoplay::Phase;
 
+        let mut switch_to: Option<TourSource> = None;
         let has_tour = tour_text.is_some();
         let phase = self.tour.autoplay.phase();
 
@@ -6848,8 +6718,136 @@ impl App {
         // the LHS header colours would drift apart.
         let style = section_style(ui);
         style.frame.show(ui, |ui| {
-            ui.set_min_width(ui.available_width());
+            // **A ceiling as well as a floor.** Without `set_max_width` the bar can ask
+            // for more room than the panel has, egui widens the *panel* to satisfy it,
+            // and the panel then reports a width its content was never laid out against
+            // — content visibly detached from the divider, and oscillating between
+            // frames because each frame's width feeds the next.
+            //
+            // Measured 2026-08-16: a 65.9pt gap at 1280x720, and *removing* a label made
+            // it 134.8pt, which is the signature of a feedback loop rather than of one
+            // item being too wide.
+            let bar_width = ui.available_width();
+            ui.set_min_width(bar_width);
+            ui.set_max_width(bar_width);
             ui.horizontal_wrapped(|ui| {
+                // --- Which tour: Claude's answer, then the picker ---
+                //
+                // **Claude's answer is not the same kind of object as the other 22**
+                // (Doug, 2026-08-16). They are committed, versioned, machine-checked
+                // and citable as `hrw://tour/<name>/stop/<slug>`; this one is
+                // `.hrw-bridge/tour.md` — gitignored, regenerated per question, and
+                // there is only ever one. `tour::poll` already privileged it by
+                // auto-selecting it; only the presentation had flattened it into a row.
+                //
+                // Leftmost, so its state — present, absent, selected — is answerable
+                // without opening anything. That was the 2026-08-15 defect: the row
+                // was correctly absent and read as a broken feature.
+                let has_ad_hoc = self.tour.available.contains(&TourSource::AdHoc);
+                let ad_hoc_selected = self.tour.selected.as_ref() == Some(&TourSource::AdHoc);
+                // `Button::selectable`, not a plain button: this *selects* what you
+                // are reading. A verb-shaped control here would imply otherwise.
+                let resp = ui.add_enabled(
+                    has_ad_hoc,
+                    egui::Button::selectable(ad_hoc_selected, TourSource::AdHoc.label()),
+                );
+                if has_ad_hoc {
+                    if resp
+                        .on_hover_text(
+                            "Written by Claude to answer your last question.                              Ephemeral: regenerated, never stored.",
+                        )
+                        .clicked()
+                    {
+                        switch_to = Some(TourSource::AdHoc);
+                    }
+                } else {
+                    resp.on_disabled_hover_text(
+                        "No answer written yet. Ask Claude a question and it writes one                          here — regenerated per question, never stored.",
+                    );
+                }
+
+                let selected_label = match self.tour.selected.as_ref() {
+                    Some(TourSource::Fixture(p)) => TourSource::Fixture(p.clone()).label(),
+                    _ => "Pick a tour…".to_owned(),
+                };
+                // **The count moved here from the deleted header.** It existed because
+                // "I do not see the new tour" must be answerable at a glance rather
+                // than by reasoning: a number distinguishes "the directory has six"
+                // from "the pane is showing six of eight", and those need opposite
+                // fixes. One hover keeps that without a titled bar around it.
+                let n_fixtures = self
+                    .tour
+                    .available
+                    .iter()
+                    .filter(|s| matches!(s, TourSource::Fixture(_)))
+                    .count();
+                egui::ComboBox::from_id_salt("tour_picker")
+                    .selected_text(selected_label)
+                    // **Adaptive, never fixed.** A hard `width(220.0)` here gives the
+                    // bar an intrinsic minimum, egui sizes the *panel* to satisfy it,
+                    // and the panel then reports a width its content was never laid out
+                    // against — `the_left_panel_content_never_detaches_from_the_divider`
+                    // caught exactly that, a 65.9pt gap at 1280x720.
+                    //
+                    // Same lesson as the 2026-08-12 scroll-axis bug, from the other
+                    // side: **a child's minimum is a claim about the parent's width.**
+                    // The clamp keeps it readable when there is room and lets it shrink
+                    // when there is not.
+                    .width((bar_width * 0.45).clamp(60.0, 220.0))
+                    .show_ui(ui, |ui| {
+                        for source in &self.tour.available {
+                            let TourSource::Fixture(path) = source else {
+                                // The ad hoc tour has its own control to the left;
+                                // listing it twice would make one of them a lie about
+                                // where it lives.
+                                continue;
+                            };
+                            let selected = self.tour.selected.as_ref() == Some(source);
+                            // **The entry names its specimens.** Tours are named by
+                            // phase, but Doug searches by the model in front of him and
+                            // went looking for a "DimensionMismatch tour" that is called
+                            // `failure-typecheck` (2026-08-05). Showing both axes removes
+                            // the search, and it has to survive every move of this
+                            // control or the friction comes back.
+                            let label = self.tour.row_specimens.get(path).map_or_else(
+                                || source.label(),
+                                |sp| format!("{}  ·  {sp}", source.label()),
+                            );
+                            if ui
+                                .selectable_label(selected, label)
+                                .on_hover_text(format!(
+                                    "Fixture tour — a test with expected outcomes,                                      kept and versioned.
+{}",
+                                    path.display(),
+                                ))
+                                .clicked()
+                            {
+                                switch_to = Some(source.clone());
+                            }
+                        }
+                    })
+                    .response
+                    .on_hover_text(format!(
+                        "{n_fixtures} fixture tours in {}",
+                        bridge::FIXTURE_TOURS_DIR
+                    ));
+
+                // **The count stays visible, in three words instead of a titled bar.**
+                //
+                // It was the whole reason the deleted "Tours (23)" header existed:
+                // "I do not see the new tour" has to be answerable at a glance, because
+                // a number distinguishes *the directory has six* from *the pane is
+                // showing six of eight*, and those need opposite fixes. Doug reported
+                // that on 2026-08-03 with a picker test asserting the tours were on
+                // screen — the code was provably right and the report was still true.
+                //
+                // A hover was tried first and is not enough: a tooltip is invisible
+                // until suspicion already exists, which is exactly too late, and it is
+                // also unreachable from the accessibility tree so no test can see it.
+                ui.weak(format!("{n_fixtures} tours"));
+
+                ui.separator();
+
                 match phase {
                     Phase::Playing | Phase::Paused => {
                         let (label, hover) = if phase == Phase::Playing {
@@ -6966,6 +6964,7 @@ impl App {
                 .color(style.inactive_color),
             );
         });
+        switch_to
     }
 
     /// The heading of stop `index` in the tour text, for the running caption.

@@ -287,6 +287,26 @@ fn the_tour_picker_shows_every_fixture_and_no_readme() {
 /// tour cannot make the header quietly wrong.
 #[test]
 fn the_tours_header_counts_what_is_actually_on_disk() {
+    // **The count outlived the header it was written for.** The "Tours (23)" bar was
+    // removed on 2026-08-16, once the list became one combo box and one button — Doug:
+    // *"that divider bar no longer makes sense."* A titled frame around two controls is
+    // chrome announcing chrome.
+    //
+    // The *count* is not chrome. It exists because "I do not see the new tour" has to
+    // be answerable at a glance: a number distinguishes *the directory has six* from
+    // *the pane is showing six of eight*, and those need opposite fixes. He reported
+    // exactly that on 2026-08-03, with a picker test asserting the tours were on screen
+    // — the code was provably right and the report was still true.
+    //
+    // So it moved into the transport bar as three words beside the picker, and this
+    // test followed it rather than being deleted with the header. **A hover was tried
+    // first and rejected twice over**: a tooltip is invisible until suspicion already
+    // exists, which is too late, and it is unreachable from the accessibility tree, so
+    // no test can see it either.
+    //
+    // Still asserted **against the filesystem**, never a literal, so adding a tour
+    // cannot make it quietly wrong.
+    let _tour_state = AdHocTour::absent();
     let h = harness(App::test_default());
 
     let on_disk = crate::bridge::fixture_tours().len();
@@ -295,18 +315,12 @@ fn the_tours_header_counts_what_is_actually_on_disk() {
         "expected the committed fixtures, found {on_disk}"
     );
 
-    // The ad hoc tour is offered too when `.hrw-bridge/tour.md` exists, so the
-    // header is either the fixture count or one more.
-    let with_adhoc = on_disk + 1;
-    let shown = [on_disk, with_adhoc]
-        .into_iter()
-        .find(|n| h.query_by_label(&format!("Tours ({n})")).is_some());
-
+    let expected = format!("{on_disk} tours");
     assert!(
-        shown.is_some(),
-        "the Tours header must state a count matching the {on_disk} tours on disk \
-         (or {with_adhoc} with the ad hoc tour). A header with no count cannot \
-         distinguish a missing file from a pane that failed to list it.",
+        h.query_by_label_contains(&expected).is_some(),
+        "the tour bar must state a count matching the {on_disk} tours on disk. Without \
+         it, a missing file and a pane that failed to list it look identical — which is \
+         the report that put this number on screen in the first place.",
     );
 }
 
@@ -1867,6 +1881,35 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
     // without asserting an exact chrome width that styling may legitimately change.
     const MAX_CHROME: f32 = 40.0;
 
+    // **Tour mode has a floor, and that is now a decision rather than a defect**
+    // *(Doug, 2026-08-16)*.
+    //
+    // The tour transport bar carries controls that cannot compress — a button whose
+    // label is fixed text, a combo box, the playback controls. A *vertical list* of
+    // labels shrinks; a *horizontal bar of widgets* does not. So once the picker moved
+    // into that bar, the panel stopped tracking the divider below about 250pt while its
+    // content laid out at 194 — a **stable** 56pt difference across four frames and
+    // every drag position, not a drift and not an oscillation.
+    //
+    // Measured before deciding:
+    //
+    // ```text
+    // tour=true   panel floors at 250–255, inner 194  → 56pt
+    // tour=false  panel floors at 212,     inner 194  → 19pt (ordinary chrome)
+    // ```
+    //
+    // Doug's call, having seen the divider open further right than before: *"it would
+    // be ok to accept a minimum width for the LHS to make everything work… I choose #2:
+    // change the guard deliberately."* His reasoning is that the zoom fix removed most
+    // of the 13" pressure, so he rarely drags the divider at all now.
+    //
+    // **What this bound still forbids** is the failure it was written for: a panel that
+    // keeps growing away from its content (98–148pt, and unbounded as the tour got
+    // wider). A named floor 16pt above ordinary chrome is a different thing from a
+    // panel that has stopped listening, and `the_tour_panel_still_reaches_its_floor`
+    // below asserts the floor is *reached* rather than merely tolerated.
+    const MAX_TOUR_CHROME: f32 = 62.0;
+
     // Point-space sizes, with whether the divider can move at all at that size.
     //
     // 640×360 is the 13" laptop case. **500×340 cannot be dragged**, and that is
@@ -1945,8 +1988,35 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
                     .expect("the panel must have recorded its inner width");
                 moved |= (panel_w - started_at * w).abs() > 1.0;
 
+                // **The floor must be REACHED, not merely tolerated.** Widening
+                // `MAX_TOUR_CHROME` accepts that the transport bar cannot compress; it
+                // must not accept a panel that keeps drifting wider, which is the
+                // defect this test was written for and which Doug saw again on
+                // 2026-08-16 as *"the vertical divider defaulting far to the right when
+                // starting HRW."*
+                //
+                // At the narrowest pointer position the panel has nowhere left to go,
+                // so it is sitting on its floor and the floor is measurable. 300pt
+                // leaves room for a label changing width without admitting the ~445pt
+                // the panel opens at.
+                if x <= 8.0 {
+                    assert!(
+                        panel_w <= 300.0,
+                        "{w}x{h_px} tour={mode_is_tour}: dragged hard left, the panel \
+                         settled at {panel_w:.1}pt. Its floor was measured at 250–255pt \
+                         on 2026-08-16; a panel that no longer reaches it is drifting \
+                         wider, and `MAX_TOUR_CHROME` tolerates the symptom of that, \
+                         not the cause.",
+                    );
+                }
+
+                let budget = if mode_is_tour {
+                    MAX_TOUR_CHROME
+                } else {
+                    MAX_CHROME
+                };
                 assert!(
-                    panel_w - inner_w <= MAX_CHROME,
+                    panel_w - inner_w <= budget,
                     "{w}x{h_px} tour={mode_is_tour}, pointer at x={x:.0}: the panel is \
                      {panel_w:.1}pt wide but its content was laid out against \
                      {inner_w:.1}pt \u{2014} a {:.1}pt gap, so the content has detached \
