@@ -459,22 +459,35 @@ impl SplitState {
         // keeps that true and puts a line on screen exactly when there is
         // something to explain — which is also better instrumentation, since a
         // log that always says something is a log nobody reads.
-        if !moved || self.reports_left == 0 {
+        if !moved {
             return None;
         }
-        self.reports_left -= 1;
         let msg = format!(
             "split: {:.3} of window (panel {:.0}px, available {:.0}px)",
             f, width, avail,
         );
-        // **Always to the diagnostics file, only anomalies to the log view.**
+        // **Recorded before the budget is consulted, which the code below used to get
+        // backwards.** The comment beneath has always said *"always to the diagnostics
+        // file, only anomalies to the log view"* — and the `reports_left == 0` check sat
+        // above this line, so once six observations had gone by, nothing was recorded
+        // anywhere.
         //
-        // The log view is the *compile* log and is cleared when a specimen
-        // loads, which is how the first attempt at this instrument destroyed its
-        // own evidence: Doug had to open a specimen to reach the log, and
-        // opening one wiped the startup lines. The session file survives that,
-        // and Claude can read it directly.
+        // That budget was sized for diagnosing *startup*, and startup spends it. Doug,
+        // 2026-08-16: the divider jumps to ~70 % when the window is **maximized**, which
+        // happens long after the sixth observation — so the one instrument that could
+        // name the cause was already switched off by the time the bug occurred. Five
+        // theories about the opening width were wrong before somebody looked at these
+        // numbers; this is what keeps them lookable at.
         crate::diagnostics::record_action("split", msg.clone());
+        if self.reports_left == 0 {
+            return None;
+        }
+        self.reports_left -= 1;
+        // The log view is the *compile* log and is cleared when a specimen loads, which
+        // is how the first attempt at this instrument destroyed its own evidence: Doug
+        // had to open a specimen to reach the log, and opening one wiped the startup
+        // lines. The session file survives that, and Claude can read it directly — which
+        // is why the recording above is unconditional and only this message is rationed.
         ((f - LEFT_PANEL_WIDTH_FRACTION).abs() > 0.02).then_some(msg)
     }
 

@@ -5300,3 +5300,48 @@ Two mechanisms, because a promise in a conversation does not survive the session
   — abandoning the act is a decision to record, not a line to remove.
 
 Verified must-fire on both paths 2026-08-16.
+
+---
+
+## 80. The divider jumps to ~70 % when the window is MAXIMIZED
+
+**Doug, 2026-08-16**, correcting an earlier report he had made about startup: *"The vertical
+divider is not positioned far to the right when HRW starts. Instead, the vertical divider bar
+positions far to the right (~70%) when I maximize the HRW window from the normalized window
+size."*
+
+**Not diagnosed, and deliberately not theorised about.** Six blind tuning attempts on a
+different layout defect the same day produced non-monotonic results and cost an hour; the thing
+that resolved it was instrumenting and reading the numbers. This entry exists so the same
+mistake is not repeated on this one.
+
+### What is known
+
+- It is **maximize**, not startup. The opening fraction is correct.
+- ~70 % is suspiciously close to `MAX_LEFT_FRACTION` (75 %), which is where the
+  **2026-08-03** bug landed too: a transient `avail` produced a stored pixel width that
+  exceeded the maximum on the real window and clamped. `SplitState::configure` carries the
+  full account of that one.
+- `SplitState` means a **fraction**; egui stores a **width**. Every bug in this area so far
+  has been a disagreement between those two at a moment when the window size was changing.
+
+### The instrument now works past startup, which it did not
+
+`observe` records `split: 0.400 of window (panel 2000px, available 5000px)` — exactly the line
+that solved the 2026-08-03 bug after five wrong theories. It was **rationed to six
+observations**, a budget sized for diagnosing startup and consumed by startup, and the
+`reports_left == 0` check sat *above* the recording despite the comment beneath it saying
+*"always to the diagnostics file, only anomalies to the log view."*
+
+Fixed 2026-08-16: recording is unconditional, only the log-view message is rationed. So the
+next maximize writes the numbers to `.hrw-bridge/diagnostics/session.json`.
+
+### How to close this, cheaply
+
+1. Doug maximizes the window once.
+2. Claude reads the `split` actions in `diagnostics/session.json` and reads off the
+   `(panel, available)` pair at the moment of the jump.
+3. The pair says which of the two candidate mechanisms it is — a stale `avail` with a fresh
+   panel width, or the reverse — and each has a different fix.
+
+**Do not attempt step 3 without step 1.** That is the whole point of this entry.
