@@ -82,22 +82,20 @@ A curriculum tour. It teaches a step of the chain
 
 ## `events`
 
-**Events — the equations that are not always true**
+**Fixture tour — Events: the equations that are not always true**
 
-A `when` clause is therefore not an `if`. An `if` chooses between values whenever it is
+A curriculum tour. Walk [`initialization.md`](initialization.md) first. Everything so far has
 
-- **Specimens:** `RcCircuit`, `BouncingBall`, `MotorWithBrake`, `GearWithBrake`
+- **Specimens:** `BouncingBall`, `RcCircuit`, `GearWithBrake`
 - **Stages:** `Events`
 - **Stops:**
-  - `events-the-equations-that-are-not-always-true` — Events — the equations that are not always true
+  - `fixture-tour-events-the-equations-that-are-not-always-true` — Fixture tour — Events: the equations that are not always true
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
-  - `act-1-a-model-with-no-events` — Act 1 — A model with no events
-  - `act-2-a-state-that-jumps` — Act 2 — A state that jumps
-  - `act-3-a-mode-that-flips-with-no-state-jumping` — Act 3 — A mode that flips, with no state jumping
-  - `act-4-the-three-families-and-why-they-are-counted-separately` — Act 4 — The three families, and why they are counted separately
-  - `act-5-what-the-solver-actually-does-at-a-bounce` — Act 5 — What the solver actually does at a bounce
-  - `what-comes-next` — What comes next
+  - `act-1-a-model-with-a-real-event` — Act 1 — A model with a real event
+  - `act-2-a-model-with-none-and-what-the-pane-says` — Act 2 — A model with none, and what the pane says
+  - `act-3-a-model-with-several` — Act 3 — A model with several
   - `what-this-tour-cannot-check` — What this tour cannot check
+  - `what-comes-next-in-the-chain` — What comes next in the chain
 
 ## `failure-flatten`
 
@@ -252,21 +250,21 @@ A curriculum tour. Walk [`index-reduction.md`](index-reduction.md) first — thi
 
 ## `matching-live`
 
-**Matching, live — standing inside the search**
+**Fixture tour — Matching, live: the call stack is the augmenting path**
 
-Walk [`matching.md`](matching.md) first. That tour shows the algorithm running, what it
+A pass-two tour. [`matching.md`](matching.md) taught the idea; this one is about Rumoca's
 
 - **Specimens:** `ProportionalLoop`, `TwiceDefined`
 - **Stages:** `Structural`
 - **Stops:**
-  - `matching-live-standing-inside-the-search` — Matching, live — standing inside the search
+  - `fixture-tour-matching-live-the-call-stack-is-the-augmenting-path` — Fixture tour — Matching, live: the call stack is the augmenting path
   - `scene-0-two-things-must-be-true-before-any-of-this-works` — Scene 0 — Two things must be true before any of this works
-  - `scene-1-arm-it-and-learn-to-name-a-stop` — Scene 1 — Arm it, and learn to name a stop
-  - `scene-2-the-call-stack-is-the-augmenting-path` — Scene 2 — The call stack *is* the augmenting path
-  - `scene-3-the-same-machinery-refusing` — Scene 3 — The same machinery, refusing
-  - `scene-4-what-the-two-runs-say-together` — Scene 4 — What the two runs say together
-  - `scene-5-what-this-instrument-can-and-cannot-show-you` — Scene 5 — What this instrument can and cannot show you
+  - `act-1-arm-an-anchor-and-learn-what-a-stop-is-named` — Act 1 — Arm an anchor, and learn what a stop is named
+  - `act-2-the-call-stack-is-the-augmenting-path` — Act 2 — The call stack is the augmenting path
+  - `act-3-the-same-machinery-refusing` — Act 3 — The same machinery, refusing
+  - `act-4-what-this-instrument-can-and-cannot-show-you` — Act 4 — What this instrument can and cannot show you
   - `what-this-tour-cannot-check` — What this tour cannot check
+  - `what-comes-next` — What comes next
 
 ## `matching`
 
@@ -308,22 +306,20 @@ This is a test, not an explanation. It verifies the last two verbs of the answer
 
 ## `solve-lowering`
 
-**Solve lowering — where names become numbers**
+**Fixture tour — Solve lowering: names become indices**
 
-This is the last compilation phase, and the one where the model stops being a model.
+A curriculum tour. The last phase before simulation. Walk [`events.md`](events.md) first.
 
-- **Specimens:** `BouncingBall`, `ProportionalLoop`, `RcCircuit`
+- **Specimens:** `BouncingBall`, `RcCircuit`
 - **Stages:** `SolveLowering`
 - **Stops:**
-  - `solve-lowering-where-names-become-numbers` — Solve lowering — where names become numbers
+  - `fixture-tour-solve-lowering-names-become-indices` — Fixture tour — Solve lowering: names become indices
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
-  - `act-1-two-states-five-parameters-and-a-starting-vector` — Act 1 — Two states, five parameters, and a starting vector
-  - `act-2-a-model-with-no-dynamics-at-all` — Act 2 — A model with no dynamics at all
-  - `act-3-one-state-carrying-twenty-two-algebraic-variables` — Act 3 — One state carrying twenty-two algebraic variables
-  - `act-4-three-problems-not-one` — Act 4 — Three problems, not one
-  - `act-5-why-the-layout-is-frozen-at-compile-time` — Act 5 — Why the layout is frozen at compile time
-  - `what-comes-next-in-the-chain` — What comes next in the chain
+  - `act-1-where-your-variables-went` — Act 1 — Where your variables went
+  - `act-2-what-else-is-in-the-arrays` — Act 2 — What else is in the arrays
+  - `act-3-the-same-mapping-at-scale` — Act 3 — The same mapping at scale
   - `what-this-tour-cannot-check` — What this tour cannot check
+  - `what-comes-next-in-the-chain` — What comes next in the chain
 
 ## `structural-vs-numerical-rank`
 
