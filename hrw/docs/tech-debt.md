@@ -1448,6 +1448,29 @@ delete.
 ordinary use — different window sizes, a maximise, a restart or two — without a surprise. If it
 is still there and nothing has gone wrong for weeks, that is the answer.
 
+### The trigger fired, and it fired the other way — 2026-08-16
+
+**It named "a maximise" specifically, and a maximise produced a surprise.** Doug normalised the
+window and maximised it; the divider jumped to 75 %. The two recorded lines named the cause
+outright — `panel 200px, available 267px`, a window narrow enough that the legal range collapses
+to a point — and the fix took **one reading**, against five wrong theories for the 2026-08-03
+version of the same class.
+
+**And the instrument was very nearly not there.** `reports_left` capped it at six observations,
+a budget sized for diagnosing startup and spent by startup, with the check sitting *above* the
+recording despite the comment beneath saying *"always to the diagnostics file"*. It was switched
+off before the bug it was needed for. Fixed the same day: recording is unconditional, only the
+log-view message is rationed.
+
+**So this item is now KEEP, and the reasoning has inverted.** It has paid for itself twice, on
+two different mechanisms, and the second time it was the difference between one reading and
+another five-theory loop. Deleting it would be removing the only thing that has ever resolved a
+bug in this area quickly.
+
+**Reopen only if** the split survives a long stretch including maximise, restore, restart and a
+monitor change with no surprise — which is a higher bar than the original, deliberately, because
+the evidence moved.
+
 **If it is removed, remove the whole path**: `reports_left`, `log_split`, and the
 `record_action("split", ..)` call. Leaving a disabled reporter behind is worse than either
 choice, because the next reader cannot tell whether it is off on purpose.
