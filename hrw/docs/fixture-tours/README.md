@@ -97,6 +97,19 @@ questions from the panes:**
 | 2 | Doug walks it and iterates with Claude | **here** — the repair loop is the teaching (`vision.md`) |
 | 3 | Doug re-walks, reads the panes, asks detailed questions | **here** — and the tour deliberately does not answer these |
 
+**Phase 2 tests the prose. Phase 3 tests the instrument** *(observed 2026-08-16, when
+`connect-expansion.md` became the first tour to complete all three)*. In phase 2 he follows the
+tour, so the tour is what fails. In phase 3 he *explores* — clicking links out of order, reading
+panes the prose never mentions, hovering things — so the **panes and the navigation** are what
+fail. That day's phase 3 produced three teaching answers and, alongside them: a missing UI
+explanation, a bridge that had stopped publishing what a pane drew, three dead scroll areas, tour
+links that worked once per session, link navigation broken for nine of eleven stages, and a
+divider that misremembered its width.
+
+**None of those are connection-specific.** They are shared surfaces, so the expectation for the
+*next* tour's phase 3 is that it finds far fewer — and if it does not, the finding is that phase 3
+exercises something the tests still cannot reach, which is worth more than the individual bugs.
+
 **The test for "not too little, not too much" is therefore operational, not aesthetic:** *could
 this question have been asked before the tour?* One of the three that morning — *why must an
 unconnected flow variable get an equation when an unconnected potential need not?* — is only
