@@ -5303,7 +5303,7 @@ Verified must-fire on both paths 2026-08-16.
 
 ---
 
-## 80. The divider jumps to ~70 % when the window is MAXIMIZED
+## 80. ~~The divider jumps to ~70 % when the window is MAXIMIZED~~ — FIXED 2026-08-16
 
 **Doug, 2026-08-16**, correcting an earlier report he had made about startup: *"The vertical
 divider is not positioned far to the right when HRW starts. Instead, the vertical divider bar
@@ -5345,3 +5345,29 @@ next maximize writes the numbers to `.hrw-bridge/diagnostics/session.json`.
    panel width, or the reverse — and each has a different fix.
 
 **Do not attempt step 3 without step 1.** That is the whole point of this entry.
+
+### Closed the same day, by doing exactly that
+
+Doug reproduced it, and the two recorded observations named the cause outright:
+
+```text
+split: 0.400 of window (panel 461px, available 1152px)   <- startup, correct
+split: 0.750 of window (panel 200px, available  267px)   <- the jump
+```
+
+At `avail = 267` the legal range **collapses to a point**: the maximum is 267 × 0.75 = 200.25
+and the 210pt floor sits above it, so the panel has exactly one legal width. **0.750 was
+arithmetic, not a decision** — and `observe` stored it as a *proportion*, which then applied to
+the maximized window.
+
+**The floor is absolute and the memory is proportional, and that is the category error.**
+`MIN_LEFT_POINTS` says "the content needs 210 points", a different claim at every window size, so
+it must be re-derived per frame rather than remembered as a ratio.
+
+Fix: `observe` no longer learns a fraction from a width the panel had no choice about, so the
+reader's own split survives a trip through a narrow window. `last_rendered` was added beside
+`fraction` because *what is on screen* and *what will be restored* became genuinely different
+questions — collapsing them back into one field reintroduces this bug.
+
+Five theories were wrong about the 2026-08-03 version of this before anyone read the numbers.
+This one took **one** reading, because the instrument was fixed first.

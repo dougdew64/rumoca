@@ -297,6 +297,17 @@ struct SplitState {
     /// A change here means the *window* resized, not that the reader dragged —
     /// and a stored pixel width is meaningless across that.
     last_avail: Option<f32>,
+    /// The fraction the panel was **actually drawn at** on the last frame.
+    ///
+    /// Distinct from [`Self::fraction`], which is the split the *reader chose* and is
+    /// deliberately not updated while the panel is pinned at a limit — see `observe`.
+    /// The two agree except on a window too narrow to honour a choice, which is exactly
+    /// the case the 2026-08-16 maximize bug lived in, so collapsing them back into one
+    /// field would reintroduce it.
+    ///
+    /// Written every frame and read by tests and diagnostics: *what is on screen* is a
+    /// different question from *what will be restored*.
+    last_rendered: Option<f32>,
     /// How many more split changes to report to the log view.
     ///
     /// Startup is the interesting window and it is short; after that a resize is
@@ -345,6 +356,7 @@ impl Default for SplitState {
         Self {
             fraction: None,
             last_avail: None,
+            last_rendered: None,
             inner_width: None,
             reports_left: 6,
             reset_until: None,
@@ -452,7 +464,42 @@ impl SplitState {
         }
         let f = width / avail;
         let moved = self.fraction.is_none_or(|old| (old - f).abs() > 0.001);
-        self.fraction = Some(f);
+
+        // **A pinned width is not a chosen one, so no fraction is learned from it.**
+        //
+        // Doug, 2026-08-16: *"the vertical divider bar positions far to the right
+        // (~75%) when I maximize the HRW window from the normalized window size."* The
+        // recorded observations named it exactly:
+        //
+        // ```text
+        // split: 0.400 of window (panel 461px, available 1152px)   <- startup, correct
+        // split: 0.750 of window (panel 200px, available  267px)   <- the jump
+        // ```
+        //
+        // At `avail = 267` the permitted range **collapses to a point**: the maximum is
+        // 267 × 0.75 = 200.25 and the 210pt floor sits above it, so the panel has
+        // exactly one legal width. 0.750 was arithmetic, not a decision — and storing
+        // it as a *proportion* then applied it to a maximized window, which is 75 % of
+        // something much larger.
+        //
+        // **The floor is absolute and the memory is proportional, and that is the
+        // category error.** `MIN_LEFT_POINTS` says "the content needs 210 points",
+        // which is a different claim at every window size, so it must be re-derived per
+        // frame rather than remembered as a ratio. Every bug in this area has been this
+        // same disagreement — `SplitState` means a fraction, egui stores a width — and
+        // this is the first one where the *floor itself* was the thing being
+        // misremembered.
+        //
+        // Skipping the update keeps the last width the reader actually chose, so
+        // restoring the window restores their split. `configure` still clamps to the
+        // legal range every frame, so the pinned panel continues to render correctly
+        // while narrow.
+        self.last_rendered = Some(f);
+        let (min_w, max_w) = Self::width_range(avail);
+        let pinned = width <= min_w + 1.0 || width >= max_w - 1.0;
+        if !pinned {
+            self.fraction = Some(f);
+        }
         // **Only when it is wrong.** The log view is the *compile* log, and a
         // routine startup measurement in it would break the one thing that view
         // promises: empty means nothing has compiled. Reporting only the anomaly
@@ -8999,7 +9046,9 @@ impl App {
 
     /// The left panel's share of the window, as last drawn.
     pub(crate) fn test_split_fraction(&self) -> Option<f32> {
-        self.split.fraction
+        // **What was drawn**, not what is remembered — the two differ while the panel
+        // is pinned, and a layout test is asking about the screen.
+        self.split.last_rendered
     }
 
     /// The width the LHS content was laid out against, for comparison with the
@@ -11320,6 +11369,53 @@ mod tests {
     #[test]
     fn parse_hrw_link_not_hrw_scheme() {
         assert!(parse_hrw_link("https://example.com").is_none());
+    }
+
+    /// **A width the panel had no choice about must not become a remembered fraction.**
+    ///
+    /// Doug, 2026-08-16: the divider jumps to ~75 % when the window is maximized after
+    /// being normalized. The numbers `observe` recorded named the cause exactly, and
+    /// this test is built from them rather than from invented ones:
+    ///
+    /// ```text
+    /// split: 0.400 of window (panel 461px, available 1152px)   <- startup, correct
+    /// split: 0.750 of window (panel 200px, available  267px)   <- the jump
+    /// ```
+    ///
+    /// At `avail = 267` the legal range collapses to a single point — the maximum is
+    /// 267 × 0.75 = 200.25 and the 210pt floor is above it. So 0.750 was arithmetic
+    /// forced by the window being narrow, and remembering it as a **proportion**
+    /// applied it to the maximized window.
+    ///
+    /// The property: after a narrow window pins the panel, the reader's own split
+    /// survives, so restoring the window restores what they chose.
+    #[test]
+    fn a_pinned_panel_width_does_not_overwrite_the_chosen_split() {
+        let mut split = SplitState::default();
+
+        // A real choice on a roomy window is learned.
+        split.observe(461.0, 1152.0);
+        let chosen = split.fraction.expect("a chosen split is remembered");
+        assert!(
+            (chosen - 0.4).abs() < 0.01,
+            "expected ~0.40 from 461/1152, got {chosen}",
+        );
+
+        // The narrow window pins the panel: at 267 points the range is a single value.
+        let (min_w, max_w) = SplitState::width_range(267.0);
+        assert!(
+            max_w - min_w < 1.0,
+            "precondition: at 267pt the legal range must be degenerate ({min_w}..{max_w}) \
+             — if the constants change, this test is no longer about the reported bug",
+        );
+
+        split.observe(200.0, 267.0);
+        assert_eq!(
+            split.fraction,
+            Some(chosen),
+            "a width the panel had no choice about became the remembered split, so \
+             maximizing the window would put the divider at 75%",
+        );
     }
 
     #[test]
