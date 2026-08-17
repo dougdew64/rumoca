@@ -138,6 +138,38 @@ impl TourState {
         self.cached.as_ref().map(|(t, _)| t.as_str())
     }
 
+    /// **The order the picker lists tours in, and where the separator goes.**
+    ///
+    /// Returns the tours with [`OVERVIEW_TOUR`] hoisted to the front, plus the count of
+    /// hoisted entries — which is both the index the separator is drawn at and the answer
+    /// to *"is the overview on disk at all?"*. Zero means no separator: a rule with
+    /// nothing above it is just a line.
+    ///
+    /// **Why hoisting, and why here.** Doug, 2026-08-17: *"I really want to be able to
+    /// navigate backward from a subordinate tour to the top-level tour so that I can then
+    /// navigate downward to another subordinate tour."* Nine phase tours hang off the
+    /// overview, which in a flat alphabetical list sits between `frame-seeking` and
+    /// `initialization` — a hub rendered as a peer. Hoisting makes that structure visible
+    /// at **no cost in panel width**, which is why it was chosen over a dedicated "up"
+    /// button: the transport bar already sets `MIN_LEFT_POINTS`, and another control
+    /// raises it.
+    ///
+    /// **Ordering only — not filtering and not ranking.** Every tour is still offered, so
+    /// charter Decision 8 holds: the hoist encodes a *fixed* fact about the set (one of
+    /// these is the hub), not a judgement about which tour is relevant now.
+    ///
+    /// Extracted from the combo-box closure rather than left inline, per
+    /// `format-and-app-plan.md`: the position of a row inside a popup that exists only
+    /// while open is awkward to assert, and the ordering is the part that can be wrong.
+    pub(crate) fn picker_order(&self) -> (Vec<&TourSource>, usize) {
+        let (mut ordered, rest): (Vec<&TourSource>, Vec<&TourSource>) =
+            self.available.iter().partition(|s| s.is_overview());
+        // Taken *before* the extend, so the boundary cannot drift as the tail is appended.
+        let hoisted = ordered.len();
+        ordered.extend(rest);
+        (ordered, hoisted)
+    }
+
     /// **Forget where the text was scrolled to.**
     ///
     /// These are pixel positions measured in *one particular document at one
@@ -269,11 +301,35 @@ pub(crate) enum TourSource {
     Fixture(PathBuf),
 }
 
+/// The one tour that is a **hub** rather than a peer: it links to the nine phase tours,
+/// and each of them links back to it.
+///
+/// **Named once, here, because three places need the same answer** — the picker hoists it,
+/// `doc_citations` reads its rows to know which tours must carry a back-link, and the
+/// bidirectionality check needs both ends. Spelling it three times is how one of them
+/// would end up disagreeing after a rename, silently, since a tour that is merely
+/// mis-sorted still works.
+///
+/// The stem, not the filename: `TourSource::Fixture` holds a full path and every
+/// comparison in the codebase goes through `file_stem`.
+pub(crate) const OVERVIEW_TOUR: &str = "the-mathematics";
+
 impl TourSource {
     pub(crate) fn path(&self) -> PathBuf {
         match self {
             Self::AdHoc => PathBuf::from(bridge::TOUR_FILE),
             Self::Fixture(p) => p.clone(),
+        }
+    }
+
+    /// Whether this is the chain overview — the hub the phase tours hang off.
+    ///
+    /// `AdHoc` is never the overview: it is Claude's answer to the last question, and it
+    /// has its own control beside the picker.
+    pub(crate) fn is_overview(&self) -> bool {
+        match self {
+            Self::AdHoc => false,
+            Self::Fixture(p) => p.file_stem().and_then(|s| s.to_str()) == Some(OVERVIEW_TOUR),
         }
     }
 

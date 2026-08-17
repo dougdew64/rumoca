@@ -5275,6 +5275,28 @@ this project.
   from `egui_kittest` — assert that a jump then Back restores stage *and* sub-view, that Forward
   returns, and that Back at the start is disabled rather than absent.
 
+### The tour-navigation case is NOT this, and was solved without it (2026-08-17)
+
+**Doug asked for tour-to-tour navigation and explicitly ring-fenced these buttons for the RHS:**
+*"I don't want to use up those buttons for tours as I would probably prefer to have those buttons
+for use in the RHS later on."* That reservation stands — **this entry is still open and still
+unclaimed.**
+
+What was built instead is a **back-link in the document plus picker ordering** (`DECISIONS.md`,
+2026-08-17), and the distinction is worth keeping straight because it is the reason one problem
+needed history and the other did not:
+
+| | the tour hub | this entry |
+|---|---|---|
+| the move that needs undoing | **authored** — the overview's table sent him there | **unpredictable** — he clicked an equation out of curiosity |
+| what "back" means | a fixed edge in the tour graph, same on every visit | wherever he happened to be last |
+| so the fix is | a link in the document | a recorded history |
+
+**The section above already says this**, from the other direction: *"the stop Doug was on does not
+tell him to click an equation… so no authored link can be waiting for it."* The tour hub is the
+exact complement — the overview *does* tell him which tour to open, so an authored link is waiting
+for it, and history would be the wrong instrument.
+
 ---
 
 ## 79. `LoopWithInertia` becomes the final act of the tearing tour

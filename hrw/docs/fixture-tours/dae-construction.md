@@ -1,5 +1,7 @@
 # Fixture tour — DAE construction: the count that decides everything
 
+[▲ The chain overview](hrw://tour/the-mathematics)
+
 **A curriculum tour.** It teaches a step of the chain
 (`docs/compiler-phases/the-chain-of-problems.md`) and uses HRW as the instrument rather than the
 subject. It is **still a test**: every **Expected** line is violable, and a lesson built on a
@@ -302,3 +304,5 @@ square system does not come with an assignment.
 
 That is matching and BLT ordering: [`matching.md`](matching.md), then
 [`blt-ordering.md`](blt-ordering.md).
+
+Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)

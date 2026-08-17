@@ -1,5 +1,7 @@
 # Fixture tour — Events: the equations that are not always true
 
+[▲ The chain overview](hrw://tour/the-mathematics)
+
 **A curriculum tour.** Walk [`initialization.md`](initialization.md) first. Everything so far has
 assumed one fixed set of equations; this tour is about models where the equations change.
 
@@ -136,3 +138,5 @@ The compiler now knows everything: states, order, tears, initial values, and wha
 mid-run. All of it is still expressed in *your names*.
 
 Turning those into memory addresses is [`solve-lowering.md`](solve-lowering.md).
+
+Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)

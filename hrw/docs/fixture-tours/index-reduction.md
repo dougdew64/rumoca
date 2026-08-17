@@ -1,5 +1,7 @@
 # Fixture tour — Index reduction: more states than freedoms
 
+[▲ The chain overview](hrw://tour/the-mathematics)
+
 **A curriculum tour.** Walk [`blt-ordering.md`](blt-ordering.md) and
 [`tearing.md`](tearing.md) first. Every model in those was already solvable once ordered; this
 tour is about the models that are not.
@@ -193,3 +195,5 @@ consistent set of values at *t* = 0, and the states' `start` attributes are not 
 consistent with the algebraic equations.
 
 That is [`initialization.md`](initialization.md).
+
+Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)

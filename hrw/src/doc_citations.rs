@@ -2039,6 +2039,126 @@ Some prose.
         println!("equation strings checked against the traces: {checked}");
     }
 
+    /// **Every tour the chain overview sends you into must link back to it.**
+    ///
+    /// # The friction this closes
+    ///
+    /// Doug, 2026-08-17: *"I encountered yet again an annoying bit of friction which
+    /// happens when there's a top-level tour which links to subordinate tours. I really
+    /// want to be able to navigate backward from a subordinate tour to the top-level tour
+    /// so that I can then navigate downward to another subordinate tour."*
+    ///
+    /// `the-mathematics.md` is a hub: ten rows, each an `hrw://tour/<name>` link into a
+    /// phase tour. **The links ran one way only.** Walking the chain therefore meant
+    /// opening the picker between every pair of tours — with the hub sitting alphabetically
+    /// in the middle of the list, indistinguishable from its own children.
+    ///
+    /// # Why a checker rather than just the ten edits
+    ///
+    /// **A missing back-link is invisible from inside the tour that lacks it.** Every
+    /// other tour checker asks *"is what this document says true?"*, and a document with
+    /// no way back says nothing false — the ten tours were internally perfect and the
+    /// chain was still a dead end at every stop. Same shape as the Context Bar's missing
+    /// background and the notebook's absent specimens: **a partial report leaves no gap
+    /// where the missing part was.**
+    ///
+    /// So the property has to be stated across *two* files, which is exactly what nothing
+    /// checked before. It is also the property most likely to rot: the eleventh tour added
+    /// to the overview's table is one line in one file, and remembering the second edit is
+    /// the part that fails.
+    ///
+    /// # What it checks
+    ///
+    /// For every `hrw://tour/<name>` the overview links to, `<name>.md` must contain
+    /// `hrw://tour/the-mathematics` — an **`hrw://` link, not a markdown one**. That
+    /// distinction is the defect it was written against: `solve-lowering.md` and
+    /// `matching-live.md` both referenced the overview as `[the-mathematics.md](…)`, which
+    /// HRW's commonmark renderer hands to the *operating system* as a relative file URL.
+    /// It opens nothing, or opens a text editor. Only the `hrw://` form is a tour link.
+    #[test]
+    fn every_tour_the_overview_links_to_links_back() {
+        let tours = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+        let overview = tours.join(format!("{}.md", crate::tour::OVERVIEW_TOUR));
+        let text = std::fs::read_to_string(&overview).unwrap_or_else(|e| {
+            panic!(
+                "{} is the entry point every phase tour hangs off: {e}",
+                overview.display()
+            )
+        });
+
+        // The rows the overview sends the reader into, in order, deduplicated. Derived
+        // from the links rather than from a list here, so adding a row to the table is the
+        // only edit needed to bring a new tour under this check.
+        let mut referenced: Vec<String> = Vec::new();
+        for tail in text.split("hrw://tour/").skip(1) {
+            let name: String = tail
+                .chars()
+                .take_while(|c| c.is_alphanumeric() || *c == '-' || *c == '_')
+                .collect();
+            if name.is_empty() || name == crate::tour::OVERVIEW_TOUR {
+                continue;
+            }
+            if !referenced.contains(&name) {
+                referenced.push(name);
+            }
+        }
+
+        // **Non-vacuity.** An extraction that finds nothing would report a chain of
+        // perfect back-links across zero tours — the failure mode this file has hit four
+        // times, most recently with three source-text checks matching their own prose.
+        assert!(
+            referenced.len() >= 9,
+            "found only {} tours referenced by {}: {referenced:?} — the chain has nine \
+             phases plus the live variant, so the extraction is broken rather than the \
+             overview",
+            referenced.len(),
+            crate::tour::OVERVIEW_TOUR,
+        );
+
+        let mut missing: Vec<String> = Vec::new();
+        let mut markdown_only: Vec<String> = Vec::new();
+        for name in &referenced {
+            let path = tours.join(format!("{name}.md"));
+            let Ok(body) = std::fs::read_to_string(&path) else {
+                // A dangling row is `fixture_tour_links_all_resolve`'s business, not this
+                // test's; reporting it twice would give one defect two names.
+                continue;
+            };
+            if body.contains("hrw://tour/the-mathematics") {
+                continue;
+            }
+            // Distinguish "no way back at all" from "a way back that goes to the OS",
+            // because they read identically in a diff and only one of them looks done.
+            if body.contains(&format!("]({}.md)", crate::tour::OVERVIEW_TOUR)) {
+                markdown_only.push(name.clone());
+            } else {
+                missing.push(name.clone());
+            }
+        }
+
+        assert!(
+            markdown_only.is_empty(),
+            "{} tour(s) reference the overview as a plain markdown file link, which HRW \
+             hands to the operating system rather than opening as a tour — it looks like a \
+             back-link in the source and does nothing when clicked. Use \
+             `[▲ The chain overview](hrw://tour/{})`: {:?}",
+            markdown_only.len(),
+            crate::tour::OVERVIEW_TOUR,
+            markdown_only,
+        );
+        assert!(
+            missing.is_empty(),
+            "{} tour(s) the overview links into offer no way back to it, so walking the \
+             chain means reopening the picker at every stop. Add \
+             `[▲ The chain overview](hrw://tour/{})` after the H1 and in the closing \
+             section: {:?}",
+            missing.len(),
+            crate::tour::OVERVIEW_TOUR,
+            missing,
+        );
+        println!("tours linked back to the overview: {}", referenced.len());
+    }
+
     /// **An equation id a tour cites must name the equation the prose claims.**
     ///
     /// # The gap this closes, found by falling into it

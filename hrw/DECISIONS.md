@@ -3093,3 +3093,74 @@ a full `ArmVerdict`. `vscode-extension/out/` was built **2026-08-08 07:35** whil
 (`BreakpointAck::Unreportable`), so nothing is broken; but breakpoint arming cannot be *verified*
 on that machine until `npm run build` and a window reload. This is the per-machine setup step
 `CLAUDE.md` already names, and it had silently not been done.
+
+## 2026-08-17 — the tour hub links both ways, and sorts first
+
+**The friction, in Doug's words:** *"I encountered yet again an annoying bit of friction which
+happens when there's a top-level tour which links to subordinate tours. I really want to be able
+to navigate backward from a subordinate tour to the top-level tour so that I can then navigate
+downward to another subordinate tour. I know that this begs for something like a browser back
+button and forward button, but I don't want to use up those buttons for tours as I would probably
+prefer to have those buttons for use in the RHS later on."*
+
+`the-mathematics.md` links into ten phase tours; **none of the ten linked back.** So the chain was
+a tree walked depth-first with no return edge: every hop between phases meant opening the picker,
+in which the hub sat alphabetically at **position 21 of 23**, indistinguishable from its own
+children.
+
+### What was built, and what was declined
+
+| # | change | status |
+|---|---|---|
+| 1 | two `hrw://tour/the-mathematics` back-links per phase tour — after the H1, and in the closing section | **built** |
+| 2 | the overview hoisted to the top of the picker, separator beneath | **built** (`TourState::picker_order`) |
+| 3 | a dedicated "▲ up" button in the transport bar | **declined** |
+
+**#3 was declined on two counts, and the second is the stronger one.** It costs panel width, and
+`MIN_LEFT_POINTS` is already set by the transport bar — the same floor the 13" screen work
+(`ideas.md` #77) spent a day lowering. But more: **thirteen of the twenty-three tours have no
+parent.** The capability tours and the six `failure-*` tours hang off nothing, so the button would
+be dead or lying most of the time it was on screen, and a control whose meaning depends on which
+document is loaded is the kind of affordance Doug has to *test* rather than read.
+
+**Doug's reservation of Back/Forward is respected, not worked around.** Those buttons remain
+unclaimed for the RHS (`ideas.md` #78). A back-link inside the document is a different thing from
+history navigation: it is a fixed edge in the tour graph, and it means the same thing on every
+visit — which history does not.
+
+### The `hrw://` form is the whole point, and two tours had the other one
+
+`solve-lowering.md` and `matching-live.md` already referenced the overview, as
+`[the-mathematics.md](the-mathematics.md)`. **HRW's commonmark renderer hands that to the
+operating system** — it opens a text editor, or nothing at all. In a diff it is indistinguishable
+from a working back-link, which is why the checker reports *"a way back that goes nowhere"*
+separately from *"no way back"*: they need different fixes and only one of them looks unfinished.
+
+### Why this needed a checker rather than ten edits
+
+**A missing back-link is invisible from inside the tour that lacks it.** Every other tour checker
+asks *"is what this document says true?"*, and a document with no way back says nothing false. The
+ten tours were internally perfect and the chain was still a dead end at each stop — the same shape
+as the Context Bar's omitted background and the notebook's two absent specimens: **a partial
+report leaves no gap where the missing part was.**
+
+The property therefore lives across *two* files, which is precisely what nothing checked. It is
+also the part most likely to rot: an eleventh row in the overview's table is one edit in one file,
+and the second edit is the one that gets forgotten.
+`doc_citations::every_tour_the_overview_links_to_links_back` derives the roster from the overview's
+own links, so adding a row brings the new tour under the check automatically.
+
+### The ordering was extracted rather than left inline
+
+`TourState::picker_order` returns the ordered tours **and the separator index**, because the
+boundary and the order are the same fact and computing them twice is how they disagree. It exists
+as a function because the position of a row inside a popup that only exists while open is awkward
+to assert, and the ordering is the part that can be wrong — `format-and-app-plan.md`'s rule that
+no extraction lands without a test that could not have been written before it.
+
+**The hoist is ordering, not filtering or ranking**, so charter Decision 8 holds: every tour is
+still offered, and the hoist encodes a fixed fact about the set (one of these is the hub) rather
+than a judgement about which tour is relevant now.
+
+**Both new tests were reverted and checked.** Deleting the hoist prints the tour list with
+`the-mathematics` at index 21 — Doug's symptom, in the failure message.

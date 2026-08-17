@@ -1,5 +1,7 @@
 # Fixture tour — Matching: which equation solves which unknown
 
+[▲ The chain overview](hrw://tour/the-mathematics)
+
 **A curriculum tour.** It teaches a step of the chain and uses HRW as the instrument. It is still
 a test: every **Expected** line is violable.
 
@@ -187,3 +189,5 @@ is true and it is unsettling; the tour states it and does not explore it.
 Each equation now has a job. It still is not known **what order to do them in** — and in
 `ProportionalLoop` no order exists at all, which is the discovery
 [`blt-ordering.md`](blt-ordering.md) is built on.
+
+Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)

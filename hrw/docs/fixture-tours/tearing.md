@@ -1,5 +1,7 @@
 # Fixture tour — Tearing: guess one number, get the rest for free
 
+[▲ The chain overview](hrw://tour/the-mathematics)
+
 **A curriculum tour.** Walk [`blt-ordering.md`](blt-ordering.md) first — it produces the coupled
 blocks this tour tries to shrink.
 
@@ -180,3 +182,5 @@ compiler will find *more states than degrees of freedom*, which no amount of ord
 can fix.
 
 That is [`index-reduction.md`](index-reduction.md).
+
+Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)

@@ -1,5 +1,7 @@
 # Fixture tour — Solve lowering: names become indices
 
+[▲ The chain overview](hrw://tour/the-mathematics)
+
 **A curriculum tour.** The last phase before simulation. Walk [`events.md`](events.md) first.
 
 Every count below was read from the committed traces, never remembered.
@@ -165,4 +167,4 @@ whole tour.
 Nothing — this is the last compiler phase. What follows is **Simulation**: the solver stepping the
 vector through time, which is the Plot tab rather than a stage.
 
-The whole chain, end to end, is [`the-mathematics.md`](the-mathematics.md).
+Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)

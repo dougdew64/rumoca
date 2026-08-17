@@ -1,5 +1,7 @@
 # Flatten — what `connect` actually means
 
+[▲ The chain overview](hrw://tour/the-mathematics)
+
 `connect(src.p, R.p)` looks like wiring two things together. In the equations it is **neither an
 assignment nor an equality** — it is one edge in a graph, and the equations do not exist until that
 graph has been solved.
@@ -354,3 +356,5 @@ solves which unknown.
   **same member set**, so joining a `{v, i}` connector to a `{v}` connector is accepted. That gap
   has its own tour: [▶ the-oracle](hrw://tour/the-oracle).
 - **Stream connectors.** Named in Act 2 and exercised by no specimen here.
+
+Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)

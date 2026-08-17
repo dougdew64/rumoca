@@ -6855,7 +6855,14 @@ impl App {
                     // when there is not.
                     .width((bar_width * 0.45).clamp(60.0, 220.0))
                     .show_ui(ui, |ui| {
-                        for source in &self.tour.available {
+                        // **The overview sorts first, set apart** — the reasoning and the
+                        // rejected alternatives are on `TourState::picker_order`.
+                        let (ordered, hoisted) = self.tour.picker_order();
+
+                        for (i, source) in ordered.into_iter().enumerate() {
+                            if i == hoisted && hoisted > 0 {
+                                ui.separator();
+                            }
                             let TourSource::Fixture(path) = source else {
                                 // The ad hoc tour has its own control to the left;
                                 // listing it twice would make one of them a lie about
@@ -12135,6 +12142,56 @@ mod tests {
         app.poll_tour_file();
         assert_eq!(app.tour.selected, Some(fixture));
         assert!(app.tour.cached.is_some(), "the chosen fixture is loaded");
+    }
+
+    /// **The chain overview sorts first in the picker, and the separator follows it.**
+    ///
+    /// Doug, 2026-08-17: *"I really want to be able to navigate backward from a
+    /// subordinate tour to the top-level tour so that I can then navigate downward to
+    /// another subordinate tour."* Two things answer that — a back-link inside each phase
+    /// tour (checked by `doc_citations::every_tour_the_overview_links_to_links_back`) and
+    /// the hub sitting at the top of the picker, which is this.
+    ///
+    /// **Asserted against `available`, not against a literal list**, so a new tour cannot
+    /// slip in above the overview: the check is *position relative to everything else*.
+    ///
+    /// **And the non-vacuity guard matters here more than usual.** Alphabetically
+    /// `the-mathematics` already sorts after most tours, so a test that merely looked for
+    /// it in the list would pass with the hoist deleted. This asserts index 0 *and* that
+    /// there is something below it to be above.
+    #[test]
+    fn the_chain_overview_sorts_first_in_the_picker() {
+        let mut app = App::test_default();
+        app.poll_tour_file();
+
+        let (ordered, hoisted) = app.tour.picker_order();
+        let labels: Vec<String> = ordered.iter().map(|s| s.label()).collect();
+
+        assert_eq!(
+            hoisted, 1,
+            "exactly one tour is the chain overview; the picker draws its separator at \
+             this index, so 0 would silently mean 'no hub on disk' and 2 would mean the \
+             predicate matched something else. Order was: {labels:?}",
+        );
+        assert!(
+            ordered[0].is_overview(),
+            "the-mathematics.md is the hub the nine phase tours hang off and must be the \
+             first row in the picker; it was {:?}",
+            labels.first(),
+        );
+        assert!(
+            ordered.len() > 1,
+            "the hoist is vacuous with nothing beneath it — the corpus should hold every \
+             phase tour as well: {labels:?}",
+        );
+        // The tail keeps the enumeration's own order. Not sorted here, deliberately: the
+        // hoist is the only reordering, and asserting more would pin `bridge::fixture_tours`
+        // twice.
+        assert!(
+            ordered[1..].iter().all(|s| !s.is_overview()),
+            "the overview appears once, at the top, and not again below the separator: \
+             {labels:?}",
+        );
     }
 
     /// **The tour catalogue is current.**

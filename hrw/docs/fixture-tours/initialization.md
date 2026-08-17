@@ -1,5 +1,7 @@
 # Fixture tour — Initialization: the values at t = 0
 
+[▲ The chain overview](hrw://tour/the-mathematics)
+
 **A curriculum tour.** Walk [`index-reduction.md`](index-reduction.md) first — this phase runs on
 the reduced, index-1 system.
 
@@ -168,3 +170,5 @@ Everything is now decided: which variables are states, what order to solve in, w
 what the values are at *t* = 0. What remains is turning names into memory.
 
 That is [`solve-lowering.md`](solve-lowering.md).
+
+Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)

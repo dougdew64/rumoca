@@ -300,6 +300,42 @@ That history is not lost, it is **filed where it belongs**: the decision and its
 [`../question-ledger.md`](../question-ledger.md), and the mechanism in a code comment or
 [`../compiler-phases/`](../compiler-phases/). A tour states what is true now.
 
+### A tour the overview links into must link back — with `hrw://`, twice
+
+**Doug, 2026-08-17:** *"There's a top-level tour which links to subordinate tours. I really want
+to be able to navigate backward from a subordinate tour to the top-level tour so that I can then
+navigate downward to another subordinate tour."*
+
+[`the-mathematics.md`](the-mathematics.md) is a **hub**: ten rows, each an `hrw://tour/<name>`
+link into a phase tour. Those links ran one way only, so walking the chain meant reopening the
+picker between every pair — with the hub sitting alphabetically among its own children, at
+position 21 of 23.
+
+**The convention is two back-links per tour**, and each placement answers a different moment:
+
+```markdown
+# Fixture tour — <phase>: <the idea>
+
+[▲ The chain overview](hrw://tour/the-mathematics)
+```
+
+- **After the H1** — for *"wrong tour, take me back"*, before any reading has happened.
+- **In the closing section** — `Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)`
+  — for the reader who finished and wants the next phase.
+
+**It must be the `hrw://` form.** A plain `[the-mathematics.md](the-mathematics.md)` is handed to
+the *operating system* by the commonmark renderer: it opens a text editor, or nothing. Two tours
+carried exactly that and read as done in the source while doing nothing when clicked.
+
+`doc_citations::every_tour_the_overview_links_to_links_back` derives the list from the overview's
+own links and reports the two failures separately, because *no way back* and *a way back that
+goes nowhere* look identical in a diff.
+
+**And the hub sorts first in the picker**, with a separator beneath it
+(`TourState::picker_order`). That was chosen over a dedicated "up" button because the transport
+bar already sets the panel's width floor and another control raises it — and because a capability
+tour has no parent to go up to, so the button would be dead most of the time.
+
 ### The rules this rests on
 
 **One capability per tour, and keep it narrow.** The scarce resource is **attention per

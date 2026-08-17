@@ -1,5 +1,7 @@
 # Fixture tour — BLT: finding an order, and finding out there isn't one
 
+[▲ The chain overview](hrw://tour/the-mathematics)
+
 **A curriculum tour.** Walk [`matching.md`](matching.md) first — it answers *which* equation
 solves *which* unknown, and this tour asks *in what order*.
 
@@ -155,3 +157,5 @@ A coupled block of 3 is not the end of the story: the compiler will try to make 
 handing it to a numerical solver, by guessing one variable and computing the rest.
 
 That is [`tearing.md`](tearing.md).
+
+Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)
