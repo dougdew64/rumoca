@@ -315,6 +315,95 @@ report. **Adjudicate before filing** — `docs/ideas.md` #43's System Modeler re
 
 ---
 
+---
+
+## `zero_crossing_conditions` counts a condition the event partition does not contain
+
+**Found 2026-08-16** while writing `docs/fixture-tours/events.md`, which needed to explain a
+number Doug can see on screen. Reproduced across five specimens.
+
+### Reproduction
+
+```bash
+cargo run -p hrw --example gen_trace -- RcCircuit
+```
+
+Then read `docs/specimen-notebook/RcCircuit/trace/events.json`. `RcCircuit` is a plain
+source–resistor–capacitor–ground circuit with **no `when` clause anywhere** in the specimen.
+
+### Expected
+
+A smooth continuous model reports no events, and the summary counts agree with the collections
+they summarise.
+
+### Actual
+
+```json
+"summary": { "condition_equations": 0, "relations": 0,
+             "discrete_real_updates": 0, "discrete_valued_updates": 0,
+             "zero_crossing_conditions": 1, "scheduled_time_events": 0 },
+"conditions": { "equations_f_c": [], "relations": [] }
+```
+
+**`zero_crossing_conditions` is 1 while both `equations_f_c` and `relations` are empty.** The
+count reports a condition that is not in the partition, so a consumer cannot inspect the thing
+being counted.
+
+### The pattern, across the corpus
+
+| specimen | `zero_crossing_conditions` | `equations_f_c` | `relations` | MSL `Resistor`? |
+|---|---|---|---|---|
+| `RcCircuit` | **1** | 0 | 0 | yes |
+| `OverInitRc` | **1** | 0 | 0 | yes |
+| `BenchActuator` | **1** | 0 | 0 | yes |
+| `Drivetrain` | **1** | 0 | 0 | yes |
+| `MotorWithBrake` | **1** | 2 | 2 | yes |
+| `GearWithBrake` | 0 | 4 | 4 | no |
+| `BouncingBall` | 0 | 1 | 1 | no |
+
+**Every specimen containing `Modelica.Electrical.Analog.Basic.Resistor` reports exactly 1, and no
+specimen without one reports any.** `GearWithBrake` has four real condition equations and reports
+**0**, so the field is not counting condition equations at all.
+
+### Suspect mechanism — UNVERIFIED
+
+`Resistor.mo:15` is the component's only relation, and it is inside an `assert`:
+
+```modelica
+assert((1 + alpha*(T_heatPort - T_ref)) >= Modelica.Constants.eps,
+       "Temperature outside scope of model!");
+```
+
+**Hypothesis:** the assert's relation is registered as a zero crossing — which is arguably
+*correct*, since an assert has to be monitored — but is not then emitted into `equations_f_c` or
+`relations`, so the count and the collections diverge.
+
+**Not verified.** The correlation is exact across seven specimens and the mechanism is a guess
+from reading one MSL file. Before filing, confirm by compiling a one-line model whose only
+content is an `assert` with a relation, and by checking whether Rumoca's event partitioning walks
+assert conditions.
+
+### Which bug this is
+
+Two readings, and they need different reports:
+
+1. **The count is right and the partition is incomplete** — asserts must be monitored, and the
+   condition should appear in `equations_f_c` so a consumer can see it. This is the more likely
+   reading and the more useful fix.
+2. **The count is wrong** — assert conditions are not zero crossings and should not be counted.
+
+Either way the current state is inconsistent, which is what makes it filable without settling
+which reading is intended.
+
+### Impact on consumers
+
+HRW's Events pane reports the summary counts. On a smooth model it therefore says *"1 zero
+crossing"* and can show nothing behind it — a number with no evidence, which is the one thing
+`hrw/CLAUDE.md` forbids a pane from doing. `events.md` Act 2 currently names the anomaly and
+points here rather than reasoning around it.
+
+**A one-line fix in either direction removes the need for that paragraph.**
+
 ## Adding to this file
 
 One entry per bug, and only for bugs **reproduced**, not suspected. Include the

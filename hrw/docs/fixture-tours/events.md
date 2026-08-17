@@ -72,11 +72,18 @@ rather than showing an empty list you would have to interpret. That distinction 
 an empty pane and a broken pane look identical.
 
 **One number here does not fit, and the tour will not pretend otherwise.**
-`zero_crossing_conditions` reads **1** for this model, which has no `when` clause anywhere. The
-other four counts are 0 and explicable; this one is not explained, it is recorded in
-`docs/upstream-issues.md`, and it is exactly the kind of thing to bring back as a question rather
-than to reason around. A tour that smoothed it over would be teaching you something false about a
-number you can see.
+`zero_crossing_conditions` reads **1** for this model, which has no `when` clause anywhere.
+
+It is worth knowing what is and is not established about it. Across the corpus, **every specimen
+containing an MSL `Resistor` reports exactly 1, and no specimen without one reports any** — and in
+this model the collections behind the count, `equations_f_c` and `relations`, are both **empty**.
+So the count names something the event partition does not contain. The suspect is the `assert`
+inside `Resistor.mo`, which holds the component's only relation; that part is a **hypothesis**, not
+a finding.
+
+The whole investigation is in [`upstream-issues.md`](../upstream-issues.md), written to be filed.
+**A tour that smoothed this over would be teaching you something false about a number you can
+see** — and this one is a genuine Rumoca question, not an HRW defect.
 
 ---
 
