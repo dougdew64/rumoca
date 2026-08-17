@@ -157,7 +157,21 @@ fn the_harness_renders_hrw_and_sees_widgets() {
 /// exist.
 #[test]
 fn the_tour_picker_shows_every_fixture_and_no_readme() {
-    let h = harness(App::test_default());
+    let mut h = harness(App::test_default());
+
+    // **The picker is a combo box since 2026-08-16, so its items exist only while the
+    // popup is open.** Opening it is now part of the act being tested, not setup: with
+    // 22 tours the always-open list cost about 400 points of vertical space, over half
+    // the tour panel on a 13" screen, for a control used a few times a day.
+    //
+    // Asserting against the closed box instead would have been the easy way to keep
+    // this test green, and it would have stopped checking that every fixture is
+    // offered — which is the only thing it is for.
+    // **Queried by `value`, not by label.** A ComboBox exposes its selected text as
+    // the node value and carries no label, so `label_contains` finds nothing — which
+    // is how this test failed after the change, rather than by finding the wrong node.
+    h.get_by_value("Pick a tour…").click();
+    h.run_steps(2);
 
     for tour in [
         "node-pointing",
@@ -490,20 +504,20 @@ fn switching_tours_clears_the_stage_side_on_screen() {
         "precondition: the RHS has something on it"
     );
 
-    // Now pick a *different* tour. `contains`, because a row now carries its
+    // Now pick a *different* tour. `contains`, because an entry carries its
     // specimens after the name.
     //
-    // **Pick one near the TOP of the alphabetical list.** This was `the-oracle`
-    // until 2026-08-08, when eight curriculum tours took the picker from 14
-    // entries to 22 and pushed the last row outside the harness's viewport: the
-    // node is still in the accessibility tree, so the query succeeds, but the
-    // click lands nowhere and the assertion below fails with a message about
-    // tour state that has nothing to do with the cause.
+    // **The picker is a combo box since 2026-08-16, so it must be opened first.**
+    // Queried by `value`: a ComboBox exposes its selected text as the node value and
+    // carries no label, so `label_contains` finds nothing at all — which is how this
+    // failed, rather than by clicking the wrong thing.
     //
-    // **The app itself is fine** — the list is inside an
-    // `egui::ScrollArea::vertical`, so a real reader scrolls to it. This is a
-    // constraint on the *test*, and the rule it produces is: name a tour that
-    // sorts early, or this fails again the next time tours are added.
+    // *(The previous note here — "pick a tour that sorts early, or the last row falls
+    // outside the harness viewport" — no longer applies: the popup is its own scroll
+    // area and the old always-open list is gone. Kept in the history rather than the
+    // comment.)*
+    h.get_by_value("Pick a tour\u{2026}").click();
+    h.run_steps(2);
     h.get_by_label_contains("camera-aiming").click();
     h.run_steps(2);
 
@@ -2093,5 +2107,73 @@ fn the_ad_hoc_tour_row_is_present_even_with_no_ad_hoc_tour() {
         h.query_by_label_contains(&label).is_some(),
         "the {label:?} row must be listed even with no ad hoc tour \u{2014} its absence \
          is indistinguishable from the feature being broken",
+    );
+}
+
+/// **The ad hoc tour has exactly one control, and it is not inside the picker.**
+///
+/// Doug, 2026-08-16: *"It seems to me that the 'Claude's Answer' tour item is special.
+/// So special that perhaps it could be its own UI button beside the drop-down."*
+///
+/// It is a different kind of object from the other 22: they are committed, versioned,
+/// machine-checked and citable as `hrw://tour/<name>/stop/<slug>`; this one is
+/// `.hrw-bridge/tour.md` — gitignored, regenerated per question, and there is only ever
+/// one. The code already privileged it (`tour::poll` auto-selects it); only the
+/// presentation flattened it into row 23.
+///
+/// **Listing it in both places is the regression this guards.** A duplicate would make
+/// one of the two a lie about where the tour lives, and the obvious way to write the
+/// combo — iterate `available` — produces exactly that, because `available` still
+/// contains `AdHoc`.
+#[test]
+fn the_ad_hoc_tour_is_a_button_and_not_a_picker_entry() {
+    let label = crate::tour::TourSource::AdHoc.label();
+
+    // **The ad hoc tour must actually EXIST, or the duplication half of this test
+    // checks nothing.** Injecting `tour.available` does not work: `poll_tour_file`
+    // rebuilds the list from disk on the first frame and erases it — measured, after an
+    // injected version passed while the tour was listed in both places.
+    //
+    // So the file is written, and removed by a **guard** rather than by a line at the
+    // end: a failing assertion between the two would leave it behind and break
+    // `the_ad_hoc_tour_row_is_present_even_with_no_ad_hoc_tour`, which asserts its
+    // absence as a precondition.
+    struct AdHocTourFile;
+    impl Drop for AdHocTourFile {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_file(crate::bridge::TOUR_FILE);
+        }
+    }
+    let path = std::path::Path::new(crate::bridge::TOUR_FILE);
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).expect("bridge dir");
+    }
+    std::fs::write(
+        path,
+        "# Claude's answer\n\nA fixture for the picker test.\n",
+    )
+    .expect("write the ad hoc tour");
+    let _cleanup = AdHocTourFile;
+
+    let mut h = harness(App::test_default());
+
+    // Present as its own control while the picker is closed — the whole point of
+    // promoting it, and the state Doug reported as a broken feature when it vanished.
+    assert_eq!(
+        h.get_all_by_label_contains(&label).count(),
+        1,
+        "the ad hoc tour must have exactly one control, visible without opening the \
+         picker",
+    );
+
+    h.get_by_value("Pick a tour\u{2026}").click();
+    h.run_steps(2);
+
+    assert_eq!(
+        h.get_all_by_label_contains(&label).count(),
+        1,
+        "opening the picker must not add a second {label:?} \u{2014} it lives beside \
+         the picker, not inside it, and two controls for one tour makes one of them \
+         wrong about where it comes from",
     );
 }

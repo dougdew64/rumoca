@@ -1236,7 +1236,14 @@ pub struct App {
     /// puts filesystem work in the paint path, which the debugging conventions
     /// rule out. A few polls a second is indistinguishable to a reader, and a
     /// tour Claude writes mid-conversation still appears without a restart.
-    tour: TourState,
+    ///
+    /// `pub(crate)` for `ui_tests` only: a headless test has to be able to say "an ad
+    /// hoc tour exists" without writing `.hrw-bridge/tour.md`, which is shared with a
+    /// running HRW and asserted *absent* by another test. Injecting the state is the
+    /// race-free way to give a check a subject — and without one,
+    /// `the_ad_hoc_tour_is_a_button_and_not_a_picker_entry` passed while the ad hoc
+    /// tour was listed in both places.
+    pub(crate) tour: TourState,
     /// A pending camera aim from `hrw://…/equation/<n>`, consumed by whichever canvas
     /// view paints next. `None` means no link asked for one.
     ///
@@ -6546,74 +6553,125 @@ impl App {
                             ui.weak(bridge::FIXTURE_TOURS_DIR);
                             return;
                         }
-                        egui::ScrollArea::vertical()
-                            .id_salt("tour_list")
-                            .show(ui, |ui| {
-                                // **The ad hoc row is shown even when there is none**,
-                                // disabled rather than absent.
-                                //
-                                // Doug, 2026-08-15: *"the 'Claude's Answer' tour seems
-                                // to have disappeared from the tours list"* — and it
-                                // had not; no ad hoc tour had been written, so the row
-                                // was correctly absent. That is the defect. A row that
-                                // silently ceases to exist gives no way to tell
-                                // **"nothing written yet"** from **"the feature
-                                // broke"**, and he read it, reasonably, as the second.
-                                //
-                                // Same rule as `LiveState`'s disabled controls, stated
-                                // in `docs/ideas.md` #77: *controls are enabled and
-                                // disabled, never shown and hidden.* This is the tour
-                                // list's instance of it.
-                                if !self.tour.available.contains(&TourSource::AdHoc) {
-                                    ui.add_enabled(
-                                        false,
-                                        egui::Button::selectable(false, TourSource::AdHoc.label()),
-                                    )
-                                    .on_disabled_hover_text(
-                                        "No answer written yet. Ask Claude a question and \
-                                         it writes one here \u{2014} regenerated per \
-                                         question, never stored.",
-                                    );
-                                }
-                                for source in &self.tour.available {
-                                    let selected = self.tour.selected.as_ref() == Some(source);
-                                    // **The row names its specimens.** Tours are named
-                                    // by phase, because that is what sets a per-phase
-                                    // expectation — but Doug searches by the model in
-                                    // front of him, and went looking for a
-                                    // "DimensionMismatch tour" that is called
-                                    // `failure-typecheck` (2026-08-05). Showing both
-                                    // axes costs one line and removes the search.
-                                    //
-                                    // A *fixed fact about the row*, not a ranking or a
-                                    // filter — Charter Decision 8 permits the first and
-                                    // forbids the second.
-                                    let label = match source {
-                                        TourSource::Fixture(p) => {
-                                            self.tour.row_specimens.get(p).map_or_else(
-                                                || source.label(),
-                                                |sp| format!("{}  \u{00b7}  {sp}", source.label()),
-                                            )
-                                        }
-                                        TourSource::AdHoc => source.label(),
-                                    };
-                                    let resp = ui.selectable_label(selected, label);
-                                    let resp = match source {
-                                        TourSource::AdHoc => resp.on_hover_text(
-                                            "Written by Claude to answer your last question. \
+                        // **A combo box and one button, not a 23-row list.**
+                        //
+                        // Doug, 2026-08-16: *"the tours list is only useful when
+                        // selecting a tour, which is not something that I do very
+                        // often. While working through a tour, that tours list is
+                        // taking up a bunch of space that I would much rather have for
+                        // the actual tour."*
+                        //
+                        // Measured that day: **22 fixture tours plus the ad hoc row**,
+                        // at roughly 18pt each — about 400 points, over half the tour
+                        // panel on his 13" screen, permanently, for a control touched a
+                        // few times a day. The list was 9 tours on 2026-08-08 and only
+                        // grows: `docs/ideas.md` #46 proposes a failure tour per
+                        // compiler phase. **A layout that degrades as the project
+                        // succeeds is the wrong layout.**
+                        //
+                        // Space follows use frequency: selecting is rare, reading is
+                        // constant.
+                        ui.horizontal_wrapped(|ui| {
+                            // **The ad hoc tour gets its own control, because it is not
+                            // the same kind of object as the other 22.** They are
+                            // committed, versioned, machine-checked and citable as
+                            // `hrw://tour/<name>/stop/<slug>`; this one is
+                            // `.hrw-bridge/tour.md` — gitignored, regenerated per
+                            // question, never stored, and there is only ever one.
+                            //
+                            // The code already privileged it before the UI did:
+                            // `tour::poll` auto-selects it when nothing else is chosen.
+                            // Only the presentation flattened it into row 23.
+                            //
+                            // Promoting it also makes its *state* answerable at a
+                            // glance rather than by opening a dropdown — which is the
+                            // defect Doug reported on 2026-08-15, when the row was
+                            // correctly absent and read as a broken feature.
+                            let has_ad_hoc = self.tour.available.contains(&TourSource::AdHoc);
+                            let ad_hoc_selected =
+                                self.tour.selected.as_ref() == Some(&TourSource::AdHoc);
+                            // `Button::selectable`, not a plain button: this *selects*
+                            // what you are reading. A verb-shaped control beside a
+                            // picker would imply it does something.
+                            let resp = ui.add_enabled(
+                                has_ad_hoc,
+                                egui::Button::selectable(
+                                    ad_hoc_selected,
+                                    TourSource::AdHoc.label(),
+                                ),
+                            );
+                            if has_ad_hoc {
+                                if resp
+                                    .on_hover_text(
+                                        "Written by Claude to answer your last question. \
                                          Ephemeral: regenerated, never stored.",
-                                        ),
-                                        TourSource::Fixture(p) => resp.on_hover_text(format!(
-                                            "Fixture tour \u{2014} a test with expected \
-                                         outcomes, kept and versioned.\n{}",
-                                            p.display(),
-                                        )),
-                                    };
-                                    if resp.clicked() {
-                                        switch_to = Some(source.clone());
-                                    }
+                                    )
+                                    .clicked()
+                                {
+                                    switch_to = Some(TourSource::AdHoc);
                                 }
-                            });
+                            } else {
+                                // Disabled rather than absent — `docs/ideas.md` #77's
+                                // rule, and the reason this row exists at all.
+                                resp.on_disabled_hover_text(
+                                    "No answer written yet. Ask Claude a question and \
+                                     it writes one here \u{2014} regenerated per \
+                                     question, never stored.",
+                                );
+                            }
+
+                            // The fixture tours, collapsed. The closed box shows the
+                            // selected tour's name; the specimens ride along inside,
+                            // where they are needed.
+                            let selected_label = match self.tour.selected.as_ref() {
+                                Some(TourSource::Fixture(p)) => {
+                                    TourSource::Fixture(p.clone()).label()
+                                }
+                                _ => "Pick a tour\u{2026}".to_owned(),
+                            };
+                            egui::ComboBox::from_id_salt("tour_picker")
+                                .selected_text(selected_label)
+                                .width(ui.available_width().min(320.0))
+                                .show_ui(ui, |ui| {
+                                    for source in &self.tour.available {
+                                        let TourSource::Fixture(path) = source else {
+                                            // The ad hoc tour has its own control above;
+                                            // listing it twice would make one of them a
+                                            // lie about where it lives.
+                                            continue;
+                                        };
+                                        let selected = self.tour.selected.as_ref() == Some(source);
+                                        // **The item names its specimens.** Tours are
+                                        // named by phase, because that is what sets a
+                                        // per-phase expectation — but Doug searches by
+                                        // the model in front of him, and went looking
+                                        // for a "DimensionMismatch tour" that is called
+                                        // `failure-typecheck` (2026-08-05). Showing
+                                        // both axes removes the search, and it has to
+                                        // survive the move into the dropdown or the
+                                        // friction comes back.
+                                        //
+                                        // A *fixed fact about the item*, not a ranking
+                                        // or a filter — Charter Decision 8 permits the
+                                        // first and forbids the second.
+                                        let label = self.tour.row_specimens.get(path).map_or_else(
+                                            || source.label(),
+                                            |sp| format!("{}  \u{00b7}  {sp}", source.label()),
+                                        );
+                                        if ui
+                                            .selectable_label(selected, label)
+                                            .on_hover_text(format!(
+                                                "Fixture tour \u{2014} a test with expected \
+                                                 outcomes, kept and versioned.\n{}",
+                                                path.display(),
+                                            ))
+                                            .clicked()
+                                        {
+                                            switch_to = Some(source.clone());
+                                        }
+                                    }
+                                });
+                        });
                     },
                 );
                 ui.separator();
