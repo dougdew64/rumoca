@@ -1428,6 +1428,67 @@ reporter ships with a must-fire test.** Retrofitting the existing 17 is the debt
 not growing it is free. The Context Bar is the worked example — two guards, both
 of which fail against the code as it stood that morning.
 
+## `CATALOGUE.md` should carry each stop's `Expected` line
+
+**Logged 2026-08-17 at Doug's request**, immediately after `hrw://tour/<name>/stop/<slug>` was
+made to actually land at its stop. Doug: *"Your proposal would eliminate a cause for bugs."*
+
+### The bug class it removes
+
+The catalogue lists every stop's **heading and slug** — 169 rows — and nothing about what the
+stop *claims*. So citing one accurately means opening the tour, reading the stop, and writing a
+summary beside the link. **That summary is written from recollection of something read minutes
+earlier, which is a mechanism this repository has already watched fail:**
+
+> On 2026-08-16 a new stop of `connect-expansion.md` was written claiming `C.v` reads
+> `der in f_x[19]` — a real, existing equation, and the wrong one: `f_x[19]` is the connection
+> equation `src.p.v = R.p.v`, while the capacitor's rate law is `f_x[14]`. **The number was
+> written from memory of one seen an hour earlier.**
+
+That one was caught by building `an_equation_id_a_tour_cites_names_the_equation_the_prose_claims`.
+**The general case is not covered**: an equation *id* is checkable against a trace, and a prose
+claim about what a stop says is not.
+
+**Carrying the `Expected` line into the catalogue removes the recollection step entirely** —
+the claim is quoted from the index rather than remembered from a reading. And because the
+catalogue is **generated**, the quote cannot drift: `tour_catalogue_is_current` already fails
+when the file no longer matches the tours.
+
+### Why the cost of not doing it is now rising
+
+**Before 2026-08-17 a stop link did not work**, so the corpus contained exactly one and citation
+was rare. It works now, which makes composing an answer out of checked stops the natural move
+rather than an unusual one — see `.hrw-bridge/tour.md`'s four-citation example. **The debt's cost
+scales with how often the feature is used, and the feature just became usable.**
+
+### What it does NOT close, and this needs saying
+
+**An ad hoc tour's summary is still unchecked, and will remain so.** `.hrw-bridge/tour.md` is
+gitignored by construction — it is the answer to the question just asked — so no test runs on it.
+The asymmetry to keep in mind:
+
+| | today | with this item |
+|---|---|---|
+| a **dead** slug | loud — *"has no stop `x` — opened at the top"* | unchanged |
+| a **wrong** paraphrase | **silent** | less likely, still silent |
+
+This makes the mistake harder to make. It does not make it detectable. **The verification stays
+with Doug**, which is why the example tour tells him to check that each stop says what the
+citation claims.
+
+### How to do it
+
+`examples/gen_tour_catalogue.rs` already walks every heading to build the slug list. For each
+numbered stop, take the first `**Expected:**` line of its body — `every_stop_of_every_tour_owes_an_expected`
+guarantees one exists — and emit it under the row.
+
+**Two judgement calls to make with measurement, not guesswork:** the file is **21 KB** today and
+some `Expected` lines run to several sentences with tables under them, so decide whether to quote
+the first line or the whole block **after seeing the size**; and the catalogue's audience is
+Claude, so legibility to a human is not a constraint — but its own generator test compares whole
+file contents, which means a long quote makes every diff noisier. **If it doubles the file,
+quote the first sentence.**
+
 ## Remove the split reporting once the LHS width has proven itself
 
 **Logged 2026-08-03 at Doug's request**, immediately after the width was confirmed working.
