@@ -2489,3 +2489,68 @@ fn a_stale_stop_offset_is_discarded_without_panicking() {
         "an offset inside a character must be consumed and ignored, never sliced",
     );
 }
+
+/// **No marker from a real tour reaches the accessibility tree.**
+///
+/// Doug, 2026-08-17: *"The 'kind' metadata which you've added to the tours is now visible
+/// in the HRW rendering of those tours."*
+///
+/// # Why the unit tests are not enough
+///
+/// `tour::tests_comment_stripping` proves the function removes comments. **It cannot
+/// prove the function is called**, and the bug was never in the stripping — there was no
+/// stripping. This loads a real tour off disk, through the real poll, and looks at what
+/// the pane published.
+///
+/// **It also covers markers this session did not add.** Thirty-three comments were being
+/// rendered before the kind tag existed — `pane-groups`, `pane-origins`, `pane-frames`,
+/// `unbuilt:` — unreported because they sit beside tables in the middle of a document
+/// rather than under the title. Doug's report was about the new one; the defect was
+/// older, and asserting on the general form is what keeps the fix honest about that.
+#[test]
+fn a_tour_renders_none_of_its_html_markers() {
+    let _guard = AdHocTour::absent();
+    let mut h = harness(App::test_default());
+    h.run_steps(2);
+
+    // `connect-expansion` carries a `kind` tag and the `pane-groups` markers, so one
+    // tour exercises both the new marker and the pre-existing ones.
+    assert!(
+        h.state_mut().test_select_fixture_tour("connect-expansion"),
+        "the fixture must be readable, or nothing is rendered to inspect",
+    );
+    h.run_steps(2);
+
+    let text = h.state().tour.text().unwrap_or_default().to_owned();
+
+    // Non-vacuity, both ways: the document really is loaded, and the file on disk
+    // really does contain a marker. Without the second, this test would pass forever
+    // if the tags were quietly dropped from the corpus.
+    assert!(
+        text.contains("Stop 1"),
+        "precondition: the tour text is actually loaded",
+    );
+    let on_disk = std::fs::read_to_string(
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("docs/fixture-tours/connect-expansion.md"),
+    )
+    .expect("the tour must be readable from disk");
+    assert!(
+        on_disk.contains("<!-- kind: concept -->"),
+        "precondition: the file still declares its kind — the marker must survive on \
+         disk, since the kind checkers read it from there",
+    );
+
+    assert!(
+        !text.contains("<!--") && !text.contains("-->"),
+        "no HTML marker may reach the pane. The kind tag sat under the title of every \
+         tour because `egui_commonmark` renders a comment as literal text, and the \
+         claim that it would be invisible was written into the README without ever \
+         being checked",
+    );
+    assert!(
+        h.query_by_label_contains("kind: concept").is_none(),
+        "and nothing in the accessibility tree carries it either — the pane is what \
+         Doug reads, and the cached string is only where it comes from",
+    );
+}

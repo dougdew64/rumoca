@@ -77,7 +77,17 @@ naming them.
 <!-- kind: concept -->
 ```
 
-Invisible in the pane, greppable by a checker — the same convention as `<!-- pane-groups -->`.
+Greppable by a checker, and invisible in the pane — **but not because markdown hides it.**
+`egui_commonmark` renders an HTML comment as *literal text*, so `TourState::poll` strips every
+`<!-- … -->` span out of the tour before anything sees it, and the file on disk keeps the marker
+for the checkers that read it there.
+
+**That distinction is load-bearing**, and it is written here because the opposite was asserted
+first: this line used to read *"invisible in the pane"* as though it were a property of the
+format. It was an assumption, never checked, and Doug found the tag sitting under the title of
+every tour. The pre-existing markers — `pane-groups`, `pane-origins`, `unbuilt:` — had been
+rendering for weeks; they went unnoticed only because they sit beside tables mid-document.
+`ui_tests::a_tour_renders_none_of_its_html_markers` now fails if any marker reaches the pane.
 Without it, no check can tell *"a concept tour missing its predictions"* from *"a feature tour
 correctly having none."*
 

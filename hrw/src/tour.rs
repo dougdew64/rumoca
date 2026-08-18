@@ -310,7 +310,7 @@ impl TourState {
                 if !unchanged || list_changed {
                     self.cached = std::fs::read_to_string(&path)
                         .ok()
-                        .map(|text| (text, mtime));
+                        .map(|text| (strip_html_comments(&text), mtime));
                 }
             }
             // The file vanished between listing and reading. Drop the text rather
@@ -340,6 +340,60 @@ impl TourState {
 pub(crate) enum TourSource {
     AdHoc,
     Fixture(PathBuf),
+}
+
+/// **Remove `<!-- … -->` spans from tour text before anything sees it.**
+///
+/// # Why this exists
+///
+/// Doug, 2026-08-17: *"The 'kind' metadata which you've added to the tours is now visible
+/// in the HRW rendering of those tours."* `egui_commonmark` renders an HTML comment as
+/// literal text rather than hiding it, so `<!-- kind: concept -->` sat under the title of
+/// every tour.
+///
+/// **The claim that it would be invisible was an assumption, never checked** — written
+/// into `fixture-tours/README.md` as *"invisible in the pane, greppable by a checker"* on
+/// the strength of the marker convention already in use. Which is the second half of the
+/// story: `<!-- pane-groups -->` and friends have been rendering for weeks. Thirty-three
+/// comments were on screen before this; they went unreported because they sit beside
+/// tables in the middle of a document, and the kind tag put one under every H1.
+///
+/// # Why it strips at CACHE time rather than at render time
+///
+/// Byte offsets. `parse_stops` slugs, autoplay's beat positions and a `stop/<slug>`
+/// link's destination are all computed from [`TourState::text`], and the pane splits the
+/// document at those offsets. Stripping later would shift every one of them and the
+/// splits would land mid-word.
+///
+/// So the cached string **is** the display string, and every offset in the program is
+/// measured against the same text. The checkers are unaffected: they read the files from
+/// disk, where the markers still are.
+///
+/// Comments are removed rather than their whole lines, which can leave a blank line
+/// behind. That is deliberate — a blank line is invisible in rendered markdown, while
+/// deleting lines would make the stripped text disagree with the file about line
+/// numbers, and `matching-live.md` cites source lines.
+fn strip_html_comments(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(start) = rest.find("<!--") {
+        out.push_str(&rest[..start]);
+        match rest[start..].find("-->") {
+            Some(end) => rest = &rest[start + end + "-->".len()..],
+            // **An unterminated comment keeps its text rather than eating the rest of
+            // the document.** A tour is re-read on every mtime change, so a save
+            // mid-keystroke is a normal state to render, not a corrupt file — and a
+            // pane that empties while Doug types reads as a much worse bug than a
+            // stray `<!--`.
+            None => {
+                out.push_str(&rest[start..]);
+                rest = "";
+                break;
+            }
+        }
+    }
+    out.push_str(rest);
+    out
 }
 
 /// The one tour that is a **hub** rather than a peer: it links to the nine phase tours,
@@ -519,4 +573,108 @@ pub fn catalogue() -> String {
         s.push('\n');
     }
     s
+}
+
+#[cfg(test)]
+mod tests_comment_stripping {
+    use super::*;
+
+    /// **A marker never reaches the pane, and the text around it survives intact.**
+    ///
+    /// Doug found `<!-- kind: concept -->` under the title of every tour. The claim that
+    /// it would be invisible was written into the README without being checked, on the
+    /// strength of a convention that had in fact been rendering for weeks.
+    #[test]
+    fn html_comments_are_stripped_from_what_the_pane_sees() {
+        assert_eq!(
+            strip_html_comments("# Title\n\n<!-- kind: concept -->\n\nBody.\n"),
+            "# Title\n\n\n\nBody.\n",
+            "the marker goes and everything else stays; the blank line it leaves is \
+             invisible in rendered markdown",
+        );
+
+        // Every marker shape actually present in the corpus, not just the new one.
+        for marker in [
+            "<!-- pane-groups -->",
+            "<!-- pane-origins -->",
+            "<!-- pane-frames -->",
+            "<!-- unbuilt: survey::sort_rows -->",
+            "<!-- kind: adjudication -->",
+        ] {
+            let stripped = strip_html_comments(&format!("a {marker} b"));
+            assert!(
+                !stripped.contains("<!--") && !stripped.contains("-->"),
+                "{marker:?} must not survive into the pane; got {stripped:?}",
+            );
+            assert!(
+                stripped.starts_with('a') && stripped.ends_with('b'),
+                "the prose around {marker:?} must be untouched; got {stripped:?}",
+            );
+        }
+    }
+
+    /// **Two markers in one document, and one is enough to prove neither is special.**
+    ///
+    /// The loop has to continue past the first `-->`; an early implementation that
+    /// returned after one match would have left the second visible and passed the test
+    /// above.
+    #[test]
+    fn every_comment_is_stripped_not_only_the_first() {
+        let out = strip_html_comments("<!-- one -->A<!-- two -->B<!-- three -->");
+        assert_eq!(out, "AB");
+    }
+
+    /// **An unterminated comment keeps its text instead of eating the document.**
+    ///
+    /// Tours are re-read on every mtime change and Doug edits them while walking, so a
+    /// file saved mid-keystroke is a normal thing to render. **A pane that empties while
+    /// he types would read as a far worse bug than a stray `<!--`** — and it would be
+    /// blamed on whatever he had just typed.
+    #[test]
+    fn an_unterminated_comment_does_not_swallow_the_rest_of_the_tour() {
+        let out = strip_html_comments("# Title\n\nBody.\n\n<!-- kind: conc");
+        assert!(
+            out.contains("# Title") && out.contains("Body."),
+            "the document before an unterminated comment must survive: {out:?}",
+        );
+    }
+
+    /// **Stripping must not disturb what the rest of the program measures.**
+    ///
+    /// Every byte offset in HRW — `parse_stops` slugs, autoplay beat positions, a
+    /// `stop/<slug>` destination — is computed from the cached text, and the pane splits
+    /// the document at those offsets. Stripping at *render* time would shift all of them
+    /// and the splits would land mid-word.
+    ///
+    /// This is the property that makes cache-time stripping correct rather than merely
+    /// convenient, so it is asserted rather than left to the comment above.
+    #[test]
+    fn offsets_are_measured_against_the_stripped_text() {
+        let raw = "# T\n\n<!-- kind: concept -->\n\n## Stop 1 — First\n\n[x](hrw://load/M/Dae)\n";
+        let shown = strip_html_comments(raw);
+
+        // **Not `first()` — the H1 is a stop too.** `parse_stops` slugifies *every*
+        // heading, which is why `CATALOGUE.md` lists a tour's title among its stops.
+        // Doug named that over-breadth on 2026-08-17; it is out of scope here and
+        // logged in `tour-kinds-plan.md` §6, but it will trip anyone who assumes the
+        // first stop is Stop 1.
+        let stops = crate::autoplay::parse_stops(&shown);
+        let stop = stops
+            .iter()
+            .find(|s| s.heading.contains("Stop 1"))
+            .expect("the sample has a Stop 1");
+        assert!(
+            shown[stop.heading_offset..].starts_with("## Stop 1"),
+            "an offset taken from the stripped text must resolve inside it — this is \
+             what breaks if stripping ever moves to the render path: {:?}",
+            &shown[stop.heading_offset..],
+        );
+        // And the same offset against the RAW text lands somewhere else entirely, which
+        // is the failure this arrangement avoids.
+        assert!(
+            !raw[stop.heading_offset..].starts_with("## Stop 1"),
+            "precondition: the two texts really do disagree about offsets, or this test \
+             proves nothing",
+        );
+    }
 }
