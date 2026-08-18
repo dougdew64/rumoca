@@ -1077,3 +1077,74 @@ fn the_preparation_funnel_reports_each_step_to_an_observer() {
         "and the same equations",
     );
 }
+
+/// **Observing the reduction passes does not change what they compute.**
+///
+/// `prepare_dae_for_structural_analysis_fully_observed` routes the two index-reduction
+/// passes through their `_with_trace` variants when an inner observer is supplied — and
+/// those are **parallel implementations of the same algorithm**, not wrappers. Two
+/// copies of a loop are two things that can disagree.
+///
+/// **This is the one property an observation API may never break.** If a traced run
+/// reduced differently from an untraced one, every consumer watching the compiler would
+/// be watching a slightly different compiler, and the discrepancy would surface as a
+/// number that is wrong only when someone is looking.
+#[test]
+fn the_traced_and_untraced_reduction_agree() {
+    use std::cell::RefCell;
+
+    use super::structural_lowering::{
+        prepare_dae_for_structural_analysis, prepare_dae_for_structural_analysis_fully_observed,
+    };
+
+    let opts = SimOptions::default();
+
+    let mut untraced = symbolic_loop_dae();
+    prepare_dae_for_structural_analysis(&mut untraced, &opts).expect("the fixture prepares");
+
+    let inner_frames = RefCell::new(0usize);
+    let mut traced = symbolic_loop_dae();
+    {
+        let watch = |_: &rumoca_phase_structural::dae_prepare::IndexReductionFrame| {
+            *inner_frames.borrow_mut() += 1;
+        };
+        prepare_dae_for_structural_analysis_fully_observed(&mut traced, &opts, None, Some(&watch))
+            .expect("the fixture prepares under observation too");
+    }
+
+    assert_eq!(
+        untraced.variables.states.len(),
+        traced.variables.states.len(),
+        "a traced run demoted a different number of states than an untraced one \u{2014} \
+         the `_with_trace` variants have diverged from the plain ones, and every \
+         observed number is now about a different compiler",
+    );
+    assert_eq!(
+        untraced.continuous.equations.len(),
+        traced.continuous.equations.len(),
+        "and it produced a different number of equations",
+    );
+    assert_eq!(
+        untraced
+            .variables
+            .states
+            .keys()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>(),
+        traced
+            .variables
+            .states
+            .keys()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>(),
+        "and the surviving states are not even the same ones",
+    );
+
+    // Non-vacuity: the inner observer really was consulted. Without this the test
+    // would pass by comparing two untraced runs.
+    assert!(
+        inner_frames.into_inner() > 0,
+        "no index-reduction frame arrived, so the traced path was never taken and this \
+         comparison is between two identical runs",
+    );
+}

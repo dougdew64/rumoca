@@ -4,7 +4,7 @@
 
 use rumoca_ir_dae as dae;
 use rumoca_phase_structural::dae_prepare::{
-    FunnelStepFrame, FunnelStepOutcome, dae_shape, emit_funnel_step,
+    FunnelStepFrame, FunnelStepOutcome, IndexReductionFrame, dae_shape, emit_funnel_step,
 };
 use rumoca_solver::SimOptions;
 
@@ -98,8 +98,31 @@ pub fn prepare_dae_for_structural_analysis_observed(
     opts: &SimOptions,
     observer: Option<rumoca_core::FrameObserver<'_, FunnelStepFrame>>,
 ) -> Result<(), rumoca_phase_solve::SolveModelLowerError> {
+    prepare_dae_for_structural_analysis_fully_observed(lowered, opts, observer, None)
+}
+
+/// The funnel, reporting **both** levels: each step, and the inside of the two
+/// index-reduction passes.
+///
+/// Two observers rather than one because they answer different questions and have very
+/// different volumes. `observer` fires once per step — nine or ten frames. `inner`
+/// fires per candidate, per differentiation and per demotion, which on a large model is
+/// hundreds. A consumer wanting only the shape of the funnel should not pay for the
+/// second, and one wanting the animation should not have to re-run the phase to get it.
+///
+/// **Supplying `inner` routes the two reduction passes through their `_with_trace`
+/// variants.** Those are parallel implementations of the same algorithm, so
+/// `the_traced_and_untraced_reduction_agree` pins them to the same result — without it
+/// this parameter could quietly change what the compiler computes, which is the one
+/// thing an observation API may never do.
+pub fn prepare_dae_for_structural_analysis_fully_observed(
+    lowered: &mut dae::Dae,
+    opts: &SimOptions,
+    observer: Option<rumoca_core::FrameObserver<'_, FunnelStepFrame>>,
+    inner: Option<rumoca_core::FrameObserver<'_, IndexReductionFrame>>,
+) -> Result<(), rumoca_phase_solve::SolveModelLowerError> {
     scalarize_and_demote_pseudo_states(lowered, opts, observer)?;
-    reduce_index_and_eliminate_aliases(lowered, observer)?;
+    reduce_index_and_eliminate_aliases(lowered, observer, inner)?;
     rewrite_derivative_references(lowered, observer)?;
     trace_prepared_equations(lowered);
     Ok(())
@@ -148,32 +171,73 @@ fn scalarize_and_demote_pseudo_states(
 
 /// Reduce the index, then remove the derivative aliases it leaves behind.
 ///
-/// **The two reduction passes here are the ones with per-step tracing of their own**
-/// (`IndexReductionFrame`), so a consumer wanting the inside of
-/// `reduce_constrained_dummy_derivatives` has that; this level reports only that it
-/// ran and what it demoted.
+/// **The two reduction passes here have per-step tracing of their own**
+/// (`IndexReductionFrame`: every candidate considered, every constraint
+/// differentiated, every state demoted). When `inner` is supplied they run through
+/// their `_with_trace` variants so that detail reaches the caller from **this** run —
+/// the alternative being that a consumer re-runs them itself to see inside, which is
+/// a second execution presented as the first.
 fn reduce_index_and_eliminate_aliases(
     lowered: &mut dae::Dae,
     observer: Option<rumoca_core::FrameObserver<'_, FunnelStepFrame>>,
+    inner: Option<rumoca_core::FrameObserver<'_, IndexReductionFrame>>,
 ) -> Result<(), rumoca_phase_solve::SolveModelLowerError> {
+    // Shared across both passes: the second continues the first's rounds and its list
+    // of what has been demoted so far, which is what makes the two read as one replay.
+    let mut frames: Vec<IndexReductionFrame> = Vec::new();
+    let mut demoted_so_far: Vec<String> = Vec::new();
+
+    if inner.is_some() {
+        rumoca_phase_structural::dae_prepare::emit_index_reduction_start(
+            &mut frames,
+            inner,
+            lowered,
+            &demoted_so_far,
+        );
+    }
+
     observed_step(
         lowered,
         observer,
         "prepare.reduce_constrained_dummy_derivatives",
         |d| {
-            rumoca_phase_structural::dae_prepare::reduce_constrained_dummy_derivatives(d)
-                .map(FunnelStepOutcome::Demoted)
-                .map_err(|source| rumoca_phase_solve::SolveModelLowerError::Structural { source })
+            match inner {
+                Some(_) => rumoca_phase_structural::dae_prepare::
+                    reduce_constrained_dummy_derivatives_with_trace(
+                        d,
+                        inner,
+                        &mut frames,
+                        &mut demoted_so_far,
+                    ),
+                None => {
+                    rumoca_phase_structural::dae_prepare::reduce_constrained_dummy_derivatives(d)
+                }
+            }
+            .map(FunnelStepOutcome::Demoted)
+            .map_err(|source| rumoca_phase_solve::SolveModelLowerError::Structural { source })
         },
     )?;
+    let round_offset = frames.last().map_or(0, |f| f.round + 1);
     observed_step(
         lowered,
         observer,
         "prepare.index_reduce_missing_state_derivatives",
         |d| {
-            rumoca_phase_structural::dae_prepare::index_reduce_missing_state_derivatives(d)
-                .map(FunnelStepOutcome::Demoted)
-                .map_err(|source| rumoca_phase_solve::SolveModelLowerError::Structural { source })
+            match inner {
+                Some(_) => rumoca_phase_structural::dae_prepare::
+                    index_reduce_missing_state_derivatives_with_trace(
+                        d,
+                        inner,
+                        &mut frames,
+                        &demoted_so_far,
+                        round_offset,
+                    ),
+                None => {
+                    rumoca_phase_structural::dae_prepare::index_reduce_missing_state_derivatives(d)
+                }
+            }
+            .map(FunnelStepOutcome::Demoted)
+            .map_err(|source| rumoca_phase_solve::SolveModelLowerError::Structural { source })
         },
     )?;
     observed_step::<rumoca_phase_solve::SolveModelLowerError>(

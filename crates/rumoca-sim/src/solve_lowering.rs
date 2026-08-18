@@ -40,7 +40,10 @@ pub use probe::{
     steady_state_adjoint_objective_gradient_for_dae, steady_state_objective_gradient_for_dae,
     steady_state_parameter_sensitivity_for_dae,
 };
-pub use structural_lowering::prepare_dae_for_structural_analysis_observed;
+pub use structural_lowering::{
+    prepare_dae_for_structural_analysis_fully_observed,
+    prepare_dae_for_structural_analysis_observed,
+};
 pub use structure_report::{
     SingularityDiagnosis, UnmatchedEquationDiagnosis, UnmatchedUnknownDiagnosis,
     diagnose_structural_singularity, structural_report_for_dae,
