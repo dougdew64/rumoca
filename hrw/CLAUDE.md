@@ -531,6 +531,40 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > *existence* and cannot read the prompts. **Only one of us can detect this, and it is not the one
 > paying for it.**
 >
+> ## WHERE INDEX REDUCTION STANDS (2026-08-18) — read before touching that tour or tab
+>
+> **Doug walked the phase-1 tours and reported that `index-reduction.md` was "way, way too
+> short".** Following that took four steps down and found a defect at each:
+>
+> 1. **The tour's headline claim was false.** It said `Drivetrain` performs *zero*
+>    differentiations. It performs **six**. `differentiated_rows` counts rows *surviving in the
+>    final DAE*, and `eliminate_trivial` removes them at the end. Corrected in place; the wrong
+>    version is kept visible in the stop, because the mechanism is the lesson.
+> 2. **Nothing cross-checked a stage summary against the frames from the same run.** Every other
+>    checker here compares a document to a trace, and the trace said zero.
+>    `a_reduction_summary_never_claims_more_than_its_frames_recorded` now does, and its
+>    *"some specimen must differentiate"* clause encodes the exact mistake.
+> 3. **The Index Reduction tab was a re-execution, not an observation**, with HRW maintaining
+>    Rumoca's step order by hand — and it had **already drifted**, missing `scalarize_equations`.
+>    Rumoca gained a funnel observer (`prepare_dae_for_structural_analysis_fully_observed`), HRW
+>    switched onto it, and the mirror is deleted. `updating-rumoca.md` step 3 is now moot.
+> 4. **Rumoca does not reduce the canonical index-3 DAE.** `CartesianPendulum` compiles, every
+>    funnel step reports zero, and it is left structurally singular — unmatched equation
+>    `f_x[4]` (the constraint) against unmatched unknown `lambda` (its force). **Rumoca's index
+>    reduction is pattern-based, not general Pantelides**, and every other constraint in the
+>    corpus is an alias, which is why nobody noticed. Filed in `docs/upstream-issues.md` as a
+>    question, not a defect claim; **not yet adjudicated against System Modeler**.
+>
+> **The corpus now spans the phase** — `BouncingBall` (no reduction needed), `BenchActuator`
+> (1 differentiation, 48 equations), `Drivetrain` (6, at 97), `CartesianPendulum` (cannot be
+> reduced). Smallest-first is the tour's spine, and the pendulum is its ending.
+>
+> **STILL OWED, in order:** the Index Reduction tab rendering the new per-step trace (deltas,
+> the reduction passes expandable into their frames, a visible failure location), then the
+> rewritten tour. Doug: *"my education is more important than strict adherence to the
+> template"* — though the template constrains shape, not length, so a long tour needs no
+> exemption. `docs/tour-kinds-plan.md` §4 is the governing principle.
+>
 > ## Open questions a walk may hit
 >
 > - **A reproduced state-count inconsistency**, in `docs/upstream-issues.md`: `Drivetrain`'s index

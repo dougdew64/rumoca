@@ -3343,3 +3343,65 @@ false claim, a misread field, a misattributed mechanism and an unlabelled derive
 a document agrees with a trace; the trace itself said zero. **Nothing cross-checks a stage's
 summary against the frames captured from the same run**, which is the gap that let a pane report
 zero while its own animation showed four.
+
+## 2026-08-18 — the Index Reduction tab became an observation, and the pendulum ended the story
+
+Four commits, following one report: Doug walked the phase-1 tours and said the index-reduction
+one was *"way, way too short"*. The account of steps 1–2 is in the 2026-08-17 entry; this records
+3 and 4.
+
+### The mirror is gone
+
+`worker.rs` re-ran Rumoca's preparation funnel on a clone of the compiled DAE, calling
+`dae_prepare`'s steps **in an order HRW maintained by hand**. Legitimate under `CLAUDE.md` — a
+derived view — but unlabelled, and `updating-rumoca.md` step 3 (re-verify the order on a rebase)
+was the only guard.
+
+**It had already drifted.** The real funnel runs `scalarize_equations` first, because
+`SimOptions::scalarize` defaults to true and the simulation path takes the default. HRW's copy
+never had that step, so the tab was describing a funnel the compiler does not run.
+
+Rumoca gained `prepare_dae_for_structural_analysis_observed` and its two-level sibling
+`..._fully_observed`; the pre-existing entry point delegates, so **one implementation** rather
+than two that can drift. HRW now watches the real funnel and the copy is deleted.
+
+**Two observers rather than one**, because they differ in volume by two orders of magnitude: the
+step observer fires nine or ten times, the inner one fires per candidate, per differentiation and
+per demotion. A consumer wanting the funnel's shape should not pay for the animation's detail.
+
+**And `_with_trace` variants are parallel implementations, not wrappers**, so
+`the_traced_and_untraced_reduction_agree` pins them. Without it, supplying an observer could
+quietly change what the compiler computes.
+
+**Verified rather than assumed:** differentiation counts are unchanged corpus-wide (Drivetrain 6,
+GearWithBrake 5, BenchActuator 1), so `scalarize` is a no-op on these specimens. The committed
+traces changed in exactly three inspected ways, and no number moved.
+
+**A correction the switch forced upstream:** diffing the new API's output against the mirror
+showed the API *losing* two counts the hand-written copy had. `FunnelStepOutcome::Rewrote(n)` was
+added, kept distinct from `Demoted(n)` because rewriting a row and demoting a state are different
+acts and a consumer showing "n" needs to know which noun it counts.
+
+### `CartesianPendulum`, and what it settled
+
+Built to give the tour a model small enough to differentiate by hand. It answered a larger
+question instead: **Rumoca compiles the canonical index-3 DAE and does not reduce it.** Every
+funnel step reports zero; the system is left structurally singular with unmatched equation
+`f_x[4]` — the constraint `x² + y² = L²` — against unmatched unknown `lambda`, its force.
+
+**Rumoca's index reduction is pattern-based, not general Pantelides.** Its step names each target
+a shape, and the pendulum matches none: all four states have derivative rows, and the constraint
+is nonlinear in two of them at once. **Every other constraint in the corpus is an alias**, which
+is why this was invisible — `Drivetrain` reduces nine states to three without ever needing the
+general algorithm.
+
+Filed in `upstream-issues.md` as a question rather than a defect claim, since "intended and
+missing", "intended and deferred" and "deliberately out of scope" are all reasonable answers and
+the right diagnostic differs for each.
+
+### What the whole chain says about who catches what
+
+**The entry point was an aesthetic report** — a tour felt thin — and four defects sat under it,
+none of which any checker was looking for. The toolchain caught none; it caught the
+*consequences* once each was named. That is `tech-debt.md`'s trigger 2 in its purest form, and
+the trigger fired on dissatisfaction rather than on a wrong number.
