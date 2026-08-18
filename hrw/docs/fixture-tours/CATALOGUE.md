@@ -217,9 +217,9 @@ This is a test, not an explanation. It verifies that a link can stop an animatio
 
 **Fixture tour — Index reduction: when differentiating is the only way out**
 
-A concept tour. Walk [`blt-ordering.md`](blt-ordering.md) and [`tearing.md`](tearing.md)
+A concept tour. Walk [▶ blt-ordering](hrw://tour/blt-ordering) and
 
-- **Specimens:** `BouncingBall`, `BenchActuator`, `Drivetrain`, `CartesianPendulum`
+- **Specimens:** `CartesianPendulum`, `BouncingBall`, `BenchActuator`, `Drivetrain`
 - **Stages:** `IndexReduction`, `Structural`
 - **Stops:**
   - `fixture-tour-index-reduction-when-differentiating-is-the-only-way-out` — Fixture tour — Index reduction: when differentiating is the only way out

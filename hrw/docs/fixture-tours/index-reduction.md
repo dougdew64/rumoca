@@ -4,9 +4,13 @@
 
 [▲ The chain overview](hrw://tour/the-concepts)
 
-**A concept tour.** Walk [`blt-ordering.md`](blt-ordering.md) and [`tearing.md`](tearing.md)
-first. Every model in those was solvable once ordered; this tour is about models that are not,
-and it ends with one that Rumoca cannot rescue at all.
+**A concept tour.** Walk [▶ blt-ordering](hrw://tour/blt-ordering) and
+[▶ tearing](hrw://tour/tearing) first. Every model in those was solvable once ordered; this tour
+is about models that are not, and it ends with one that Rumoca cannot rescue at all.
+
+**Every backward reference in this tour is a link, not a retelling.** A result restated in prose
+can drift from the pane that produced it; a link cannot. Click them — landing on the stop that
+established something is faster than my summary of it, and it is the real thing.
 
 **This tour assumes only that you know what a derivative is.** Everything else — what "index"
 counts, why differentiating a constraint helps, why solvers want index 1 — is built here.
@@ -18,9 +22,12 @@ your screen, the tour is wrong and I want to know.**
 
 ## The problem this phase exists to solve
 
-A **state** carries the past forward, and the DAE tour established how one is identified: some
-equation differentiates it. Count the states and you have counted the numbers the integrator
-steps through time.
+A **state** carries the past forward, and you already established how one is identified — nothing
+declares it, some equation *differentiates* it, and the equation sheet's Why column names which:
+
+[◂ Re-read it — DAE construction, Stop 2](hrw://tour/dae-construction/stop/stop-2-what-makes-a-variable-a-state)
+
+Count the states and you have counted the numbers the integrator steps through time.
 
 Except the count can be wrong — not miscounted, but *wrong as a description of the system*.
 
@@ -38,47 +45,33 @@ Here is the real one, and it needs nothing but the matching you already walked.
 
 **Step 1 — what is actually unknown at an instant.**
 
-The DAE tour's Stop 3 established the surprising half: a state is **two things at once**. When a
-step begins, the solver already *has* `x`, `y`, `vx`, `vy` — those are carried forward from the
-last step, which is what "state" means. What it does *not* have is **how fast they are changing**.
+You established this in the DAE tour and it is worth re-reading rather than being retold: a state
+is **two things at once**, a known value on the way in and an unknown rate on the way out.
 
-So for the pendulum of Stop 5, the list of things to work out at this instant is:
+[◂ Re-read it — DAE construction, Stop 3](hrw://tour/dae-construction/stop/stop-3-what-is-the-solver-actually-solving-for)
 
-```text
-der(x)   der(y)   der(vx)   der(vy)      the four rates
-lambda                                    the rod's tension
-```
+So when a step begins, the solver already *has* the pendulum's `x`, `y`, `vx`, `vy`. What it must
+work out is the four rates — plus `lambda`, the rod's tension, which is on the list because
+nothing carries it forward. **Five unknowns, and the model has five equations.**
 
-`lambda` is on that list because nothing carries it forward — it is not a state, so it must be
-worked out afresh every time, from the equations.
+**Step 2 — counting is not enough, and HRW will show you why.**
 
-**Five unknowns. And the model has five equations, so the counting works out.**
+An equation can only help determine a quantity **it actually mentions**, and pairing each equation
+with the one unknown it determines is the **matching** you have already walked. The Incidence view
+draws exactly that: one row per equation, marking which unknowns it touches.
 
-**Step 2 — counting is not enough, and you have seen why before.**
+[▶ Look — CartesianPendulum → Structural → Incidence](hrw://load/CartesianPendulum/Structural/Incidence)
 
-`blt-ordering.md` and the DAE tour both made this point: square is necessary, not sufficient. An
-equation can only help determine a quantity **it actually mentions**. Pairing each equation with
-the one unknown it will determine is precisely the **matching** of
-[`matching.md`](matching.md).
+**Read the rows and the argument makes itself.** Four of them touch something on our list. The
+fifth, `f_x[4]` — the constraint `x^2 + y^2 - L^2` — **touches nothing at all**: it is built from
+`x`, `y` and `L`, every one of them already known. It is a true statement that cannot do any work.
 
-So try it by hand. Which equation determines each of the five?
+And that strands `lambda`. It appears in only two rows, `f_x[2]` and `f_x[3]`, and both are needed
+for `der(vx)` and `der(vy)`.
 
-| equation | mentions, of our five unknowns |
-|---|---|
-| `der(x) = vx` | `der(x)` |
-| `der(y) = vy` | `der(y)` |
-| `m*der(vx) = -lambda*x` | `der(vx)`, `lambda` |
-| `m*der(vy) = -lambda*y - m*g` | `der(vy)`, `lambda` |
-| `x^2 + y^2 = L^2` | **none of them** |
-
-**The constraint mentions nothing we are trying to find.** It is made entirely of `x`, `y` and
-`L` — all known already. It is a true statement that cannot do any work, so it can be paired with
-nothing.
-
-And now `lambda` is stranded. Only the two force equations mention it, and both are needed for
-`der(vx)` and `der(vy)` — nothing is left over to pin `lambda` down.
-
-**One useless equation, one undetermined unknown.** Five and five, and it cannot be solved.
+**One row that can pair with nothing, one unknown that nothing is left to determine.** Five
+equations, five unknowns, unsolvable — and you are looking at the reason rather than reading my
+account of it.
 
 **That is what high index means:** not *"there is a constraint"*, but *"a constraint mentions none
 of the quantities being solved for."*
