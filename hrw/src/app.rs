@@ -6651,9 +6651,18 @@ impl App {
                 // **Consumed only on a frame that has text.** Switching clears `cached`,
                 // so the frame in between renders nothing — clearing the flag there
                 // would spend it on a document that was never drawn.
+                //
+                // **A pending stop request outranks this**, and both are live at once
+                // by construction: `hrw://tour/<name>/stop/<slug>` switches the tour
+                // (which asks for the top) and *then* asks for the stop. The top
+                // request is still consumed — leaving it pending would fire it at the
+                // next document — it simply does not get to move anything.
+                let stop_pending = self.tour.scroll_to_offset.is_some();
                 if self.tour.scroll_to_top && tour_text.is_some() {
                     self.tour.scroll_to_top = false;
-                    area = area.vertical_scroll_offset(0.0);
+                    if !stop_pending {
+                        area = area.vertical_scroll_offset(0.0);
+                    }
                 }
 
                 if self.tour.autoplay.is_running()
@@ -6700,10 +6709,32 @@ impl App {
                             // reading. Rendering one markdown document as two is not
                             // free of consequence, and doing it when nothing needs it
                             // is a difference from the plain path with no upside.
+                            //
+                            // **And the same split serves a stop link**, which is why
+                            // that feature costs almost nothing here. `hrw://tour/<t>/
+                            // stop/<slug>` records the heading's *byte* offset, and the
+                            // problem it faces is the one the autoplay scroll already
+                            // solved the hard way: a byte offset cannot be converted to
+                            // a pixel position by arithmetic, because rendered height
+                            // per character is not constant.
+                            //
+                            // Splitting there puts the **cursor** exactly at the stop,
+                            // and a cursor is a real position rather than an estimate.
+                            //
+                            // **The offset is validated, not trusted.** A tour is
+                            // re-read whenever its mtime changes, so an offset recorded
+                            // against the previous text can land mid-character after an
+                            // edit — and slicing a `str` off a char boundary panics.
+                            // These documents are edited *while* Doug walks them, so
+                            // that is the expected case rather than a corner one.
+                            let stop_split = self
+                                .tour
+                                .scroll_to_offset
+                                .filter(|n| *n <= text.len() && text.is_char_boundary(*n));
                             let split = if self.tour.autoplay.is_running() {
                                 self.tour.autoplay.current_byte_offset().min(text.len())
                             } else {
-                                0
+                                stop_split.unwrap_or(0)
                             };
                             let top = ui.cursor().top();
                             if split > 0 {
@@ -6714,6 +6745,22 @@ impl App {
                                 );
                             }
                             measured = Some(ui.cursor().top() - top);
+
+                            // **egui does the scrolling, and that is the whole trick.**
+                            // Asking the `ScrollArea` for an offset would mean computing
+                            // one; asking it to bring the cursor into view means it
+                            // computes one, from a position it already knows exactly.
+                            //
+                            // A run in progress owns the scroll, so a stop request is
+                            // still *consumed* but not acted on — otherwise it would
+                            // fight the interpolation for the rest of the walk.
+                            if self.tour.scroll_to_offset.take().is_some()
+                                && stop_split.is_some()
+                                && !self.tour.autoplay.is_running()
+                            {
+                                ui.scroll_to_cursor(Some(egui::Align::TOP));
+                            }
+
                             egui_commonmark::CommonMarkViewer::new().show(
                                 ui,
                                 &mut self.commonmark_cache,
@@ -13212,6 +13259,83 @@ mod tests {
         // Non-vacuity: the run really did start, so this is not passing because
         // nothing happened.
         assert_eq!(app.test_autoplay_phase(), crate::autoplay::Phase::Playing);
+    }
+
+    /// **A `stop/<slug>` link records where that stop actually begins.**
+    ///
+    /// The first half of the citation feature: `hrw://tour/<name>/stop/<slug>` exists so
+    /// an answer can send Doug to *a stop* rather than to a tour he then has to scan.
+    ///
+    /// **It was written and never read for as long as it existed.** The handler set
+    /// `scroll_to_offset` and no frame ever consumed it, so a stop link opened the tour
+    /// and landed wherever the pane happened to be. Two things hid it: the corpus holds
+    /// exactly **one** such link, and the symptom is indistinguishable from the
+    /// stale-scroll bug fixed the same day — both look like *"it opened in the wrong
+    /// place"*.
+    ///
+    /// This asserts the offset **points at the heading it names**, not merely that it is
+    /// `Some`. An offset that resolves to the wrong place would scroll confidently to the
+    /// wrong stop, which is worse than not scrolling at all.
+    #[test]
+    fn a_stop_link_records_where_that_stop_begins() {
+        let mut app = App::test_default();
+
+        // The corpus's only stop link, from `failure-resolve.md`.
+        app.dispatch_hrw_link(HrwLink::OpenTour {
+            tour: "failure-parse".to_owned(),
+            stop: Some("stop-4-the-distinction-this-specimen-anchors".to_owned()),
+        });
+
+        let offset = app
+            .tour
+            .scroll_to_offset
+            .expect("a stop link must record where to land");
+        let text = app.tour.text().expect("the tour must be loaded");
+        assert!(
+            text[offset..].starts_with("## Stop 4"),
+            "the offset must name the heading the slug asked for, or the pane scrolls \
+             confidently to the wrong stop. It landed on: {:?}",
+            &text[offset..(offset + 40).min(text.len())],
+        );
+        assert!(
+            app.notice.is_none(),
+            "a stop that resolves must not also report a problem: {:?}",
+            app.notice,
+        );
+    }
+
+    /// **A stop that is gone says so, and does not silently land at the top.**
+    ///
+    /// The handler's own message — *"opened at the top"* — was a promise the code did not
+    /// keep until 2026-08-17, since nothing scrolled anywhere. Now that a stop link does
+    /// move the pane, the failure branch matters more, not less: *"it opened at the top"*
+    /// and *"it opened at the stop I asked for"* have to be distinguishable, or a renamed
+    /// heading reads as a tour whose first stop is the one you wanted.
+    #[test]
+    fn a_stop_link_naming_nothing_reports_it_rather_than_landing_anywhere() {
+        let mut app = App::test_default();
+
+        app.dispatch_hrw_link(HrwLink::OpenTour {
+            tour: "failure-parse".to_owned(),
+            stop: Some("no-such-stop-anywhere".to_owned()),
+        });
+
+        assert!(
+            app.tour.scroll_to_offset.is_none(),
+            "an unresolved stop must record no destination",
+        );
+        let notice = app.notice.as_deref().unwrap_or_default();
+        assert!(
+            notice.contains("no-such-stop-anywhere") && notice.contains("opened at the top"),
+            "the reader must be told which stop is missing and where they ended up \
+             instead; got {notice:?}",
+        );
+        // Non-vacuity: the tour itself did open, so this is the *stop* failing rather
+        // than the whole link.
+        assert!(
+            app.tour.text().is_some(),
+            "the tour still opens — only the stop within it was not found",
+        );
     }
 
     /// **Switching tours requests a return to the top.**

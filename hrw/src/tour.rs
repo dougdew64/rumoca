@@ -49,6 +49,18 @@ pub(crate) struct TourState {
     /// rather than at the top of the tour. One-shot deliberately: a persistent target
     /// would fight the scrollbar on every frame, which is the defect the autoplay
     /// scroll work spent four attempts on (`ui-findings.md` C15).
+    ///
+    /// **It was written and never read until 2026-08-17** — set here, consumed nowhere,
+    /// so every stop link opened its tour and landed wherever the pane happened to be.
+    /// It survived because the corpus holds exactly **one** such link, and because the
+    /// symptom is indistinguishable from the scroll bug fixed the same day: both look
+    /// like *"the tour opened in the wrong place"*.
+    ///
+    /// **The pane consumes it by splitting the document at this offset and calling
+    /// `scroll_to_cursor`** — the same split the autoplay scroll uses. The byte offset
+    /// is never converted to a pixel position, because that conversion is exactly what
+    /// four attempts proved impossible: rendered height per character is not constant.
+    /// The cursor at the split *is* the position, and egui computes the offset from it.
     pub(crate) scroll_to_offset: Option<usize>,
     /// **Put the tour panel back at the top on the next frame that renders text.**
     ///
@@ -56,13 +68,11 @@ pub(crate) struct TourState {
     /// clears `cached`, so the frame in between has nothing to scroll and consuming the
     /// flag there would drop it on the floor.
     ///
-    /// **It cannot conflict with [`Self::scroll_to_offset`], because that field is
-    /// written and never read** — `hrw://tour/<name>/stop/<slug>` records a byte offset
-    /// that nothing consumes, so a stop link has never actually landed at its stop.
-    /// Found while fixing this; **not** fixed here, because landing on a heading needs
-    /// the same measurement the autoplay scroll took several attempts to get right, and
-    /// bundling it would hide one change inside another. The corpus contains exactly one
-    /// such link. <!-- unbuilt: tour_stop_offset_scroll -->
+    /// **[`Self::scroll_to_offset`] outranks it when both are pending**, which is the
+    /// normal case rather than a corner one: a `stop/<slug>` link switches the tour —
+    /// asking for the top — and *then* asks for the stop. The top request is still
+    /// consumed on that frame, because leaving it pending would fire it at whatever
+    /// document came next; it simply does not move anything.
     pub(crate) scroll_to_top: bool,
 
     /// **The self-running walk** of whichever tour is showing.

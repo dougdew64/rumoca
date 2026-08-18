@@ -2399,3 +2399,93 @@ fn a_return_to_the_top_is_not_spent_on_a_frame_with_no_tour() {
          still be pending when one arrives",
     );
 }
+
+/// **The pane spends a stop request, so a `stop/<slug>` link actually lands.**
+///
+/// The paint half of `app::tests::a_stop_link_records_where_that_stop_begins`. The
+/// feature was broken for its whole existence in exactly this gap: the handler recorded
+/// a destination and **no frame ever read it**, so the offset sat there while the tour
+/// opened wherever the pane already was.
+///
+/// **What is asserted is that the request is consumed**, not the resulting pixel offset.
+/// The scroll is performed by `ui.scroll_to_cursor` inside the `ScrollArea`, so the
+/// number belongs to egui — reconstructing it here would mean recomputing the thing the
+/// implementation deliberately refuses to compute, since rendered height per character
+/// is not constant and four attempts proved no constant corrects for it.
+#[test]
+fn a_stop_request_is_spent_by_the_pane() {
+    let _guard = AdHocTour::absent();
+    let mut h = harness(App::test_default());
+    h.run_steps(2);
+
+    assert!(
+        h.state_mut().test_select_fixture_tour("failure-parse"),
+        "the fixture must be readable, or there is no document to scroll",
+    );
+
+    // A real destination inside that document, found the way the handler finds it.
+    let offset = h
+        .state()
+        .tour
+        .text()
+        .and_then(|t| t.find("## Stop 4"))
+        .expect("failure-parse.md must have a Stop 4 to aim at");
+    h.state_mut().tour.scroll_to_offset = Some(offset);
+
+    h.run_steps(4);
+
+    assert!(
+        h.state().tour.scroll_to_offset.is_none(),
+        "a painting frame must spend the stop request. Still pending means no frame \
+         reads it — which is precisely how this feature shipped broken: the handler \
+         recorded where to go and nothing ever went there",
+    );
+}
+
+/// **A stale offset is discarded rather than slicing a `str` in half.**
+///
+/// Tours are re-read whenever their mtime changes, and Doug walks them *while* they are
+/// being edited — that is the working mode of this project, not a corner case. So an
+/// offset recorded against the previous text is expected, and `&text[..n]` panics if `n`
+/// is not a character boundary.
+///
+/// **Both bad shapes are checked**, because they fail differently: past the end, and
+/// inside a multi-byte character. Every tour here contains em-dashes and arrows, so the
+/// second is reachable by ordinary editing rather than by contrivance.
+#[test]
+fn a_stale_stop_offset_is_discarded_without_panicking() {
+    let _guard = AdHocTour::absent();
+    let mut h = harness(App::test_default());
+    h.run_steps(2);
+
+    assert!(
+        h.state_mut().test_select_fixture_tour("failure-parse"),
+        "the fixture must be readable",
+    );
+    let len = h.state().tour.text().map(str::len).unwrap_or_default();
+    assert!(len > 0, "precondition: the tour has text");
+
+    // Past the end — an offset from a longer, earlier version of the document.
+    h.state_mut().tour.scroll_to_offset = Some(len + 5_000);
+    h.run_steps(2);
+    assert!(
+        h.state().tour.scroll_to_offset.is_none(),
+        "an unusable offset must still be consumed, or it is retried on every frame \
+         forever",
+    );
+
+    // Inside a multi-byte character. Found rather than assumed, so this test fails
+    // loudly if the tour ever stops containing one instead of passing vacuously.
+    let mid = h
+        .state()
+        .tour
+        .text()
+        .and_then(|t| (1..t.len()).find(|i| !t.is_char_boundary(*i)))
+        .expect("the tour must contain a multi-byte character to aim inside of");
+    h.state_mut().tour.scroll_to_offset = Some(mid);
+    h.run_steps(2);
+    assert!(
+        h.state().tour.scroll_to_offset.is_none(),
+        "an offset inside a character must be consumed and ignored, never sliced",
+    );
+}
