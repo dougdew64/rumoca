@@ -5392,6 +5392,133 @@ mod tests {
 
     /// Drivetrain's index-reduction trace produces animation frames — the
     /// constrained-dummy reduction finds multiple demotions, each emitting
+    /// **A stage's summary may not claim more than the frames from the same run
+    /// recorded, and the corpus must differentiate somewhere.**
+    ///
+    /// # The defect this is built from
+    ///
+    /// `index-reduction.md` taught, for its whole existence, that `Drivetrain`
+    /// performs **zero** differentiations — *"the textbook mechanism was not
+    /// needed"* — in the tour named for the algorithm that differentiates. The
+    /// compiler differentiates at least four times on that model.
+    ///
+    /// **Both halves of HRW were telling the truth.** `differentiated_rows` is
+    /// built by scanning the *final* DAE for surviving `index_reduction:d_dt_for_`
+    /// origin markers, and step 10 (`eliminate_trivial`) removes 77 equations,
+    /// taking them with it. The frames record what *happened*; the summary reports
+    /// what *survived*. Nothing said so, and nothing compared them.
+    ///
+    /// **Every other checker in this repository compares a document to a trace,
+    /// and the trace said zero.** So the tour was consistent with the artefact and
+    /// wrong about the compiler, and no amount of document-versus-trace checking
+    /// could have found it. This is the first check that holds two views of the
+    /// *same run* against each other.
+    ///
+    /// # What it asserts, and why not equality
+    ///
+    /// **`survivors <= events`** — the summary cannot report more differentiated
+    /// rows than differentiations that occurred. That is a real invariant and the
+    /// gap between the two is legitimate, being exactly the elimination above.
+    ///
+    /// **And at least one specimen must differentiate.** That clause is the one
+    /// that matters most, because it encodes the thing Claude got wrong: reading
+    /// `differentiated_rows: []` across all 17 specimens produced the confident
+    /// conclusion that *Rumoca never differentiates*, and a tour was written on it.
+    /// **A green corpus-wide zero is indistinguishable from a feature that never
+    /// runs** — the same shape as `fidelity-plan.md`'s F10, whose absence clause
+    /// had nothing to act on.
+    #[test]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
+    fn a_reduction_summary_never_claims_more_than_its_frames_recorded() {
+        use rumoca_phase_structural::dae_prepare::IndexReductionStep;
+
+        // Specimens that reach index reduction with something to reduce. Named
+        // rather than globbed: a glob that silently matched nothing would make
+        // every assertion below vacuous, which is this file's recurring failure.
+        const SPECIMENS: &[&str] = &[
+            "Drivetrain",
+            "GearWithBrake",
+            "BouncingBall",
+            "RcCircuit",
+            "BenchActuator",
+        ];
+
+        let mut total_events = 0usize;
+        let mut checked = 0usize;
+        let mut rows: Vec<String> = Vec::new();
+
+        for name in SPECIMENS {
+            let FromWorker::Compiled {
+                stages,
+                index_reduction_frames,
+                ..
+            } = compile_specimen_shared(name)
+            else {
+                panic!("expected {name} to compile");
+            };
+
+            let events = index_reduction_frames
+                .iter()
+                .filter(|f| matches!(&f.step, IndexReductionStep::Differentiated { .. }))
+                .count();
+
+            // Absent is not zero: a stage that never produced a report is a
+            // different fact from one reporting an empty list, and conflating them
+            // is how a silent failure reads as a passing check.
+            let Some(value) = stages.index_reduction.value.as_ref() else {
+                rows.push(format!("{name}: no index-reduction stage"));
+                continue;
+            };
+            let Some(survivors) = value
+                .get("reduction")
+                .and_then(|r| r.get("differentiated_rows"))
+                .and_then(|d| d.as_array())
+                .map(Vec::len)
+            else {
+                rows.push(format!("{name}: no differentiated_rows field"));
+                continue;
+            };
+
+            checked += 1;
+            total_events += events;
+            rows.push(format!(
+                "{name}: {events} differentiated, {survivors} survived"
+            ));
+
+            assert!(
+                survivors <= events,
+                "{name}: the summary reports {survivors} differentiated row(s) but the \
+                 frames from the same run recorded only {events} differentiation(s). A \
+                 summary may report FEWER than happened — later steps eliminate rows — \
+                 but never more, and more means the two are describing different runs",
+            );
+        }
+
+        assert!(
+            checked >= 3,
+            "only {checked} specimen(s) yielded both a summary and frames — the \
+             extraction is broken, not the compiler:\n  {}",
+            rows.join("\n  "),
+        );
+        assert!(
+            total_events > 0,
+            "no specimen in this set differentiates anything, so the comparison above \
+             ran against nothing on the side that matters. **This clause exists because \
+             the corpus-wide zero in `differentiated_rows` was once read as proof that \
+             Rumoca never differentiates, and a tour was written on it.** If this fires, \
+             either the specimens changed or index reduction stopped differentiating — \
+             and the second is a finding, not a test to relax:\n  {}",
+            rows.join("\n  "),
+        );
+        println!(
+            "reduction summaries checked against their frames:\n  {}",
+            rows.join("\n  ")
+        );
+    }
+
     /// BeginState, Differentiated, and Demoted frames.
     #[test]
     #[cfg_attr(
