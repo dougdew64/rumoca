@@ -28,25 +28,57 @@ Connect two rotating bodies with an ideal gear. Each has an angle and a velocity
 sees four states. But the gear ratio fixes the second angle as a multiple of the first: knowing
 one tells you the other. **Four states, two freedoms.**
 
-### Why a solver cannot simply be told about the constraint
+### The problem is not that there is a constraint
 
-This is the part usually skipped, and it is the whole phase.
+**A DAE solver handles algebraic constraints — that is its job.** It solves `F(t, y, y') = 0`,
+constraints included, and index-1 systems are full of them. So "the solver cannot cope with a
+constraint" is not the difficulty, and any explanation that says so is hiding the real one.
 
-**An integrator can be asked for exactly one thing.** You hand it the current states and it
-tells you their *rates*; it multiplies those by a small step and adds. That is its only move.
+Here is the real one.
 
-Now hand it `phi_2 = 5 * phi_1` and ask it to respect that. **It has no lever.** The constraint
-talks about *positions*, and the integrator's move is about *rates*. Nothing in the step it takes
-can be adjusted to honour a statement about the quantities it is not computing. Take one step and
-the two angles drift apart; nothing pulls them back, because nothing was ever told how.
+**At each step the solver solves for a specific list of unknowns: the state derivatives and the
+algebraic variables, together.** For the pendulum you will meet in Stop 5, that list is
+`der(x)`, `der(y)`, `der(vx)`, `der(vy)` and `lambda`. It finds them by Newton iteration, which
+needs the Jacobian **with respect to those unknowns** to be nonsingular.
 
-**Differentiating converts the sentence into the integrator's vocabulary.** Differentiate both
-sides of `phi_2 = 5 * phi_1` and you get `w_2 = 5 * w_1` — the same physical fact, now stated
-about the rates the solver actually computes. *That* it can honour.
+Now look at that model's constraint:
 
-**And that is all "index" counts: how many differentiations it takes to get there.** A system
-already speaking about rates is index 1, which is why index 1 is the target. It is not a quality
-score; it is a distance, measured in differentiations.
+```modelica
+x ^ 2 + y ^ 2 = L ^ 2
+```
+
+**It contains none of them.** No derivative, no `lambda` — only `x` and `y`, which are already
+known when the step begins. Its row in that Jacobian is **entirely zero**, so the system cannot
+be solved for its unknowns at any step, and no amount of solver sophistication repairs a singular
+Jacobian.
+
+**That is what high index means.** Not *"there is a constraint"* — it is *"a constraint mentions
+none of the quantities being solved for."*
+
+### Why differentiating is the fix
+
+Differentiate that constraint once and you get `x*vx + y*vy = 0`. Still no `lambda`, still no
+unknown derivative — not enough. Differentiate again and `der(vx)` and `der(vy)` appear; substitute
+the two force equations for them, and the result determines `lambda` outright:
+
+```text
+lambda = m * (vx^2 + vy^2 - g*y) / L^2
+```
+
+**The row now has an entry for an unknown.** The Jacobian is nonsingular, Newton converges, and
+the system is solvable. Two differentiations — which is why this model is called index 3.
+
+**So "index" is a distance, not a quality score:** how many differentiations stand between the
+system as written and a system whose constraints mention the unknowns. **Index 1 means none do,
+which is why index 1 is the target.**
+
+### You will see this measured, not asserted
+
+**The structural matching you met in [`matching.md`](matching.md) is that Jacobian's sparsity
+pattern**, and a matching failure is a zero row found combinatorially instead of numerically. When
+Stop 5 reports `unmatched equations: f_x[4]; unmatched unknowns: lambda`, that is exactly *"the
+constraint row has no entry for `lambda`"* — the same fact, in the vocabulary of an algorithm you
+have already walked.
 
 **Index reduction is the phase that walks that distance.** Five stops: a model needing nothing,
 the smallest model that needs something, the same idea at scale, what the compiler actually
