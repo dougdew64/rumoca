@@ -1,0 +1,105 @@
+{
+  "incidence": {
+    "n_eq": 5,
+    "n_var": 5,
+    "unknown_names": [
+      "der(x)",
+      "der(y)",
+      "der(vx)",
+      "der(vy)",
+      "lambda"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
+        "unknowns": [
+          0
+        ],
+        "equation_text": "der(x) - vx"
+      },
+      {
+        "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
+        "unknowns": [
+          1
+        ],
+        "equation_text": "der(y) - vy"
+      },
+      {
+        "equation": "f_x[2] (top-level model equation)",
+        "id": "f_x[2]",
+        "unknowns": [
+          2,
+          4
+        ],
+        "equation_text": "m * der(vx) - -(lambda * x)"
+      },
+      {
+        "equation": "f_x[3] (top-level model equation)",
+        "id": "f_x[3]",
+        "unknowns": [
+          3,
+          4
+        ],
+        "equation_text": "m * der(vy) - (-(lambda * y) - m * g)"
+      },
+      {
+        "equation": "f_x[4] (top-level model equation)",
+        "id": "f_x[4]",
+        "unknowns": [],
+        "equation_text": "x ^ 2 + y ^ 2 - L ^ 2"
+      }
+    ]
+  },
+  "matching": [
+    {
+      "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
+      "unknown": "der(x)"
+    },
+    {
+      "equation": "f_x[1] (top-level model equation)",
+      "id": "f_x[1]",
+      "unknown": "der(y)"
+    },
+    {
+      "equation": "f_x[2] (top-level model equation)",
+      "id": "f_x[2]",
+      "unknown": "der(vx)"
+    },
+    {
+      "equation": "f_x[3] (top-level model equation)",
+      "id": "f_x[3]",
+      "unknown": "der(vy)"
+    }
+  ],
+  "error": {
+    "kind": "singular",
+    "message": "structurally singular system: 4 matched out of 5 equations and 5 unknowns; unmatched equations: f_x[4]; unmatched unknowns: lambda",
+    "n_equations": 5,
+    "n_unknowns": 5,
+    "n_matched": 4,
+    "rank_deficiency": 1,
+    "unmatched_equations": [
+      "f_x[4]"
+    ],
+    "unmatched_unknowns": [
+      "lambda"
+    ],
+    "unmatched_unknown_locations": [
+      {
+        "unknown": "lambda",
+        "location": {
+          "line": 10,
+          "column": 3,
+          "excerpt": "Real lambda",
+          "line_text": "  Real lambda \"rod tension per unit length — the constraint force\";",
+          "byte_start": 551,
+          "byte_end": 562
+        }
+      }
+    ],
+    "guidance": "The maximum matching could not pair every equation with a unique unknown. Each unmatched unknown is a variable no equation determines; `unmatched_unknown_locations` gives the source line that declares it. If the Index Reduction stage also reports singular, the model is genuinely ill-posed rather than merely high-index."
+  }
+}

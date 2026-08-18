@@ -473,6 +473,66 @@ anyone, not only to HRW.
 `dae_prepare` step. That is a maintainer's call about the crate's shape, and the reason this is
 written as a request rather than a patch.
 
+## Index reduction does not reduce the canonical index-3 DAE
+
+**Reproduced 2026-08-18** with `hrw/specimens/CartesianPendulum.mo` — a point mass on a rigid rod
+in Cartesian coordinates, the example every treatment of index reduction opens with.
+
+### Reproduction
+
+```modelica
+der(x) = vx;
+der(y) = vy;
+m * der(vx) = -lambda * x;
+m * der(vy) = -lambda * y - m * g;
+x ^ 2 + y ^ 2 = L ^ 2;
+```
+
+Five equations, five unknowns (`x`, `y`, `vx`, `vy`, `lambda`).
+
+### Expected vs actual
+
+**Expected:** the constraint is differentiated twice — introducing first velocities, then
+accelerations, at which point `lambda` enters it and the system becomes index-1 and solvable.
+
+**Actual:** every step of the preparation funnel reports zero. States stay at 4, nothing is
+demoted, `differentiated_rows` is empty, and the system is left structurally singular:
+
+```text
+structurally singular system: 4 matched out of 5 equations and 5 unknowns;
+unmatched equations: f_x[4]; unmatched unknowns: lambda
+```
+
+Simulation then fails as an unreduced high-index system does, with a step-size message rather
+than an index one:
+
+```text
+BDF step: ODE solver error: Step size is too small at time = 0.00004774281227423659
+```
+
+### The reading, and it is a design observation rather than a defect claim
+
+**Rumoca's index reduction appears to be a set of pattern-based demotions rather than general
+Pantelides.** The step names say so: `demote_exact_alias_component_states`,
+`demote_direct_assigned_states`, `reduce_constrained_dummy_derivatives`,
+`index_reduce_missing_state_derivatives`. Each targets a shape.
+
+The pendulum matches none of them — all four states *have* derivative rows, and the constraint is
+nonlinear in two states at once, so no substitution removes it.
+
+**Every constraint in our 24-specimen corpus other than this one is an alias**, which is why this
+went unnoticed: `Drivetrain` reduces 9 states to 3 with 6 differentiations and never needs the
+general algorithm.
+
+**Unverified, and it is the question for a maintainer:** whether general index reduction for
+nonlinear constraints is intended and missing, intended and deferred, or deliberately out of
+scope. All three are reasonable answers and the diagnostics would differ for each — at minimum, a
+model that cannot be reduced could say so where it is diagnosed, rather than surfacing as a
+step-size failure four decimal places into the simulation.
+
+**Not yet adjudicated against System Modeler**, which is the obvious next step and would turn the
+reading into a fact.
+
 ## Adding to this file
 
 One entry per bug, and only for bugs **reproduced**, not suspected. Include the

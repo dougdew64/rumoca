@@ -1,0 +1,57 @@
+{
+  "model": "CartesianPendulum",
+  "specimen": "specimens/CartesianPendulum.mo",
+  "specimen_fnv1a": "95583943547159b1",
+  "rumoca_rev": "86fc2b08",
+  "rumoca_version": "0.9.20",
+  "stages": {
+    "parse": {
+      "has_ir": true,
+      "note": null
+    },
+    "resolve": {
+      "has_ir": true,
+      "note": null
+    },
+    "instantiate": {
+      "has_ir": true,
+      "note": null
+    },
+    "typecheck": {
+      "has_ir": true,
+      "note": null
+    },
+    "flatten": {
+      "has_ir": true,
+      "note": null
+    },
+    "dae": {
+      "has_ir": true,
+      "note": "4 state(s), 1 algebraic(s), 5 continuous equation(s)"
+    },
+    "structural": {
+      "has_ir": true,
+      "note": "singular"
+    },
+    "index_reduction": {
+      "has_ir": true,
+      "note": "still singular after index reduction: structurally singular system: 4 matched out of 5 equations and 5 unknowns; unmatched equations: f_x[4]; unmatched unknowns: lambda"
+    },
+    "initialization": {
+      "has_ir": true,
+      "note": "IC planning failed: structurally singular system: 0 matched out of 1 equations and 1 unknowns; unmatched equations: top-level model equation; unmatched unknowns: lambda"
+    },
+    "events": {
+      "has_ir": true,
+      "note": "no events — this model is a smooth (continuous) system"
+    },
+    "solve_lowering": {
+      "has_ir": true,
+      "note": null
+    }
+  },
+  "simulation": {
+    "simulated": false,
+    "error": "simulation failed: solver error: solver error: BDF step: ODE solver error: Step size is too small at time = 0.00004774281227423659"
+  }
+}
