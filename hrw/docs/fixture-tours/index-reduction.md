@@ -34,51 +34,103 @@ one tells you the other. **Four states, two freedoms.**
 constraints included, and index-1 systems are full of them. So "the solver cannot cope with a
 constraint" is not the difficulty, and any explanation that says so is hiding the real one.
 
-Here is the real one.
+Here is the real one, and it needs nothing but the matching you already walked.
 
-**At each step the solver solves for a specific list of unknowns: the state derivatives and the
-algebraic variables, together.** For the pendulum you will meet in Stop 5, that list is
-`der(x)`, `der(y)`, `der(vx)`, `der(vy)` and `lambda`. It finds them by Newton iteration, which
-needs the Jacobian **with respect to those unknowns** to be nonsingular.
+**Step 1 — what is actually unknown at an instant.**
 
-Now look at that model's constraint:
+The DAE tour's Stop 3 established the surprising half: a state is **two things at once**. When a
+step begins, the solver already *has* `x`, `y`, `vx`, `vy` — those are carried forward from the
+last step, which is what "state" means. What it does *not* have is **how fast they are changing**.
 
-```modelica
-x ^ 2 + y ^ 2 = L ^ 2
+So for the pendulum of Stop 5, the list of things to work out at this instant is:
+
+```text
+der(x)   der(y)   der(vx)   der(vy)      the four rates
+lambda                                    the rod's tension
 ```
 
-**It contains none of them.** No derivative, no `lambda` — only `x` and `y`, which are already
-known when the step begins. Its row in that Jacobian is **entirely zero**, so the system cannot
-be solved for its unknowns at any step, and no amount of solver sophistication repairs a singular
-Jacobian.
+`lambda` is on that list because nothing carries it forward — it is not a state, so it must be
+worked out afresh every time, from the equations.
 
-**That is what high index means.** Not *"there is a constraint"* — it is *"a constraint mentions
-none of the quantities being solved for."*
+**Five unknowns. And the model has five equations, so the counting works out.**
+
+**Step 2 — counting is not enough, and you have seen why before.**
+
+`blt-ordering.md` and the DAE tour both made this point: square is necessary, not sufficient. An
+equation can only help determine a quantity **it actually mentions**. Pairing each equation with
+the one unknown it will determine is precisely the **matching** of
+[`matching.md`](matching.md).
+
+So try it by hand. Which equation determines each of the five?
+
+| equation | mentions, of our five unknowns |
+|---|---|
+| `der(x) = vx` | `der(x)` |
+| `der(y) = vy` | `der(y)` |
+| `m*der(vx) = -lambda*x` | `der(vx)`, `lambda` |
+| `m*der(vy) = -lambda*y - m*g` | `der(vy)`, `lambda` |
+| `x^2 + y^2 = L^2` | **none of them** |
+
+**The constraint mentions nothing we are trying to find.** It is made entirely of `x`, `y` and
+`L` — all known already. It is a true statement that cannot do any work, so it can be paired with
+nothing.
+
+And now `lambda` is stranded. Only the two force equations mention it, and both are needed for
+`der(vx)` and `der(vy)` — nothing is left over to pin `lambda` down.
+
+**One useless equation, one undetermined unknown.** Five and five, and it cannot be solved.
+
+**That is what high index means:** not *"there is a constraint"*, but *"a constraint mentions none
+of the quantities being solved for."*
 
 ### Why differentiating is the fix
 
-Differentiate that constraint once and you get `x*vx + y*vy = 0`. Still no `lambda`, still no
-unknown derivative — not enough. Differentiate again and `der(vx)` and `der(vy)` appear; substitute
-the two force equations for them, and the result determines `lambda` outright:
+The constraint is true at every instant, so **it stays true when you differentiate it** — and
+differentiating is exactly the operation that turns a statement about positions into one about
+rates. Do it once, by the chain rule:
+
+```text
+x^2 + y^2 = L^2      differentiates to      2*x*vx + 2*y*vy = 0
+```
+
+Better — it now mentions `vx` and `vy` — but those are *known* at this instant, so it still helps
+with none of our five unknowns. Differentiate once more and the rates of `vx` and `vy` appear:
+
+```text
+vx^2 + x*der(vx) + vy^2 + y*der(vy) = 0
+```
+
+**Now it mentions `der(vx)` and `der(vy)`, which are on our list.** Substitute what the two force
+equations say those equal, and the whole thing collapses to a formula for the one unknown nothing
+could reach:
 
 ```text
 lambda = m * (vx^2 + vy^2 - g*y) / L^2
 ```
 
-**The row now has an entry for an unknown.** The Jacobian is nonsingular, Newton converges, and
-the system is solvable. Two differentiations — which is why this model is called index 3.
+**Every unknown now has an equation that mentions it**, the matching completes, and the system is
+solvable at each step.
 
-**So "index" is a distance, not a quality score:** how many differentiations stand between the
-system as written and a system whose constraints mention the unknowns. **Index 1 means none do,
-which is why index 1 is the target.**
+**Two differentiations were needed — which is where "index 3" comes from.** So *index* is a
+**distance**, not a quality score: how far a system is from one whose constraints talk about the
+unknowns. **Index 1 means it is already there**, which is why index 1 is the target and why this
+phase exists.
+
+> **If you know the numerical version**, this is the same statement: the solver finds the unknowns
+> by Newton iteration, the constraint contributes a row of zeros to the Jacobian with respect to
+> them, and a zero row makes it singular. **The matching is that pattern found by counting rather
+> than by arithmetic** — which is why a compiler can detect it before any number is computed.
 
 ### You will see this measured, not asserted
 
-**The structural matching you met in [`matching.md`](matching.md) is that Jacobian's sparsity
-pattern**, and a matching failure is a zero row found combinatorially instead of numerically. When
-Stop 5 reports `unmatched equations: f_x[4]; unmatched unknowns: lambda`, that is exactly *"the
-constraint row has no entry for `lambda`"* — the same fact, in the vocabulary of an algorithm you
-have already walked.
+Stop 5 reports exactly the failure you just worked out by hand:
+
+```text
+unmatched equations: f_x[4]; unmatched unknowns: lambda
+```
+
+`f_x[4]` **is** the constraint, and `lambda` **is** the unknown it stranded. **The compiler found
+by algorithm what you found by reading the table above.**
 
 **Index reduction is the phase that walks that distance.** Five stops: a model needing nothing,
 the smallest model that needs something, the same idea at scale, what the compiler actually
