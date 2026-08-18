@@ -215,21 +215,21 @@ This is a test, not an explanation. It verifies that a link can stop an animatio
 
 ## `index-reduction`
 
-**Fixture tour — Index reduction: more states than freedoms**
+**Fixture tour — Index reduction: when differentiating is the only way out**
 
-A concept tour. Walk [`blt-ordering.md`](blt-ordering.md) and
+A concept tour. Walk [`blt-ordering.md`](blt-ordering.md) and [`tearing.md`](tearing.md)
 
-- **Specimens:** `BouncingBall`, `Drivetrain`
+- **Specimens:** `BouncingBall`, `BenchActuator`, `Drivetrain`, `CartesianPendulum`
 - **Stages:** `IndexReduction`, `Structural`
 - **Stops:**
-  - `fixture-tour-index-reduction-more-states-than-freedoms` — Fixture tour — Index reduction: more states than freedoms
+  - `fixture-tour-index-reduction-when-differentiating-is-the-only-way-out` — Fixture tour — Index reduction: when differentiating is the only way out
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `stop-1-the-case-that-needs-nothing` — Stop 1 — The case that needs nothing
-  - `stop-2-the-case-that-does` — Stop 2 — The case that does
-  - `stop-3-what-actually-happened-to-the-surplus` — Stop 3 — What actually happened to the surplus
-  - `stop-4-what-index-counts-and-why-1-is-the-target` — Stop 4 — What "index" counts, and why 1 is the target
+  - `stop-2-the-smallest-model-that-needs-something` — Stop 2 — The smallest model that needs something
+  - `stop-3-the-same-idea-at-a-scale-you-could-not-do-by-hand` — Stop 3 — The same idea, at a scale you could not do by hand
+  - `stop-4-what-the-compiler-actually-reached-for` — Stop 4 — What the compiler actually reached for
+  - `stop-5-the-model-rumoca-cannot-reduce` — Stop 5 — The model Rumoca cannot reduce
   - `what-this-tour-cannot-check` — What this tour cannot check
-  - `a-number-downstream-disagrees-with-this-tour-and-it-is-a-real-open-question` — A number downstream disagrees with this tour, and it is a real open question
   - `what-comes-next-in-the-chain` — What comes next in the chain
 
 ## `initialization`

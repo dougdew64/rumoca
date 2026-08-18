@@ -559,11 +559,16 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > (1 differentiation, 48 equations), `Drivetrain` (6, at 97), `CartesianPendulum` (cannot be
 > reduced). Smallest-first is the tour's spine, and the pendulum is its ending.
 >
-> **STILL OWED, in order:** the Index Reduction tab rendering the new per-step trace (deltas,
-> the reduction passes expandable into their frames, a visible failure location), then the
-> rewritten tour. Doug: *"my education is more important than strict adherence to the
-> template"* — though the template constrains shape, not length, so a long tour needs no
-> exemption. `docs/tour-kinds-plan.md` §4 is the governing principle.
+> **DONE 2026-08-18:** the pane now publishes `n_differentiations` beside the survivor list, so
+> it can no longer be silent about six differentiations because none survived — the defect that
+> started all of this. A funnel that did nothing also says so, which is `CartesianPendulum`'s
+> whole lesson.
+>
+> **STILL OWED:** per-step deltas in the funnel table (states/equations either side of each
+> step — the numbers are in `FunnelStepFrame` and are not yet published), and the reduction
+> passes expandable into their frames. Doug: *"my education is more important than strict
+> adherence to the template"* — though the template constrains shape, not length, so a long
+> tour needs no exemption. `docs/tour-kinds-plan.md` §4 is the governing principle.
 >
 > ## Open questions a walk may hit
 >
