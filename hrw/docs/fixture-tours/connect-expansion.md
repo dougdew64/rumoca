@@ -9,13 +9,13 @@ graph has been solved.
 **This tour counts.** `RcCircuit` has four `connect` statements and twenty-three equations, and every
 step from one number to the other is something you can predict before you look.
 
-Each act asks you to **commit to an answer**, then sends you to the pane that settles it. The
+Each stop asks you to **commit to an answer**, then sends you to the pane that settles it. The
 answers are read from generated compiler traces, so if a count disagrees with your screen, the tour
 is wrong and I want to know.
 
 ---
 
-## Act 1 — How many nodes?
+## Stop 1 — How many nodes?
 
 Here is every `connect` in `RcCircuit`:
 
@@ -52,7 +52,7 @@ declaring **6 connection sets** producing **7 equations**.
 **Falsified if** you count four nodes, or if all three are the same size, or if any connector
 appears on two nodes — or if the set count is anything but **twice** the node count.
 
-**Three and six are both right**, and the gap between them is the point of the rest of this act.
+**Three and six are both right**, and the gap between them is the point of the rest of this stop.
 
 ### What just happened
 
@@ -89,7 +89,7 @@ of three `.i`** — six variables, in two sets that never mix.
 the compiler never forms them; it counts the sets it actually built. Step through and you can watch
 them arrive in two runs of three — **the flow sets first, then the potential sets.** That ordering
 is not cosmetic: it is why the flow equations end up with *lower* indices than the potential ones,
-which you will meet again in Act 3.
+which you will meet again in Stop 3.
 
 **One frame does nothing, and it is worth knowing why.** Near the end, an `unconnected flow` step
 reports **0 equations added**. MLS §9.2 requires a flow variable in no connection set to be given
@@ -102,9 +102,9 @@ the earlier `connect(C.n, src.n)` is worth.
 
 ---
 
-## Act 2 — How many equations do three nodes make?
+## Stop 2 — How many equations do three nodes make?
 
-Act 1 left you with two sets per node — the `.v` and the `.i`. They do **not** produce equations the
+Stop 1 left you with two sets per node — the `.v` and the `.i`. They do **not** produce equations the
 same way, and `Pin`'s two members are why:
 
 | variable | kind | what it means on a node |
@@ -177,7 +177,7 @@ there to be counted:
 A potential set of size *n* becomes ***n* − 1 rows, each naming only a pair**, so a set of three
 arrives as two rows and **its size is never printed anywhere**. If you go looking for "2, 2, 3"
 among the potential rows you will not find it — you will find four pairs, and you have to
-reassemble the sets yourself. That is Act 3.
+reassemble the sets yourself. That is Stop 3.
 
 Both sub-groups sit under **`Connector equations`** because both exist for the same reason: two
 connectors were joined. A flow sum is every bit as connection-derived as a potential equality.
@@ -194,12 +194,12 @@ The readable form has not been lost — each row's **origin** carries it, readin
 row.
 
 **Why *n* − 1 and not every pair.** Writing all pairwise equalities would be redundant, and
-redundant equations make a system structurally singular — the rank deficiency `matching.md` Act 3
+redundant equations make a system structurally singular — the rank deficiency `matching.md` Stop 3
 diagnoses. The phase produces a **spanning tree** of each potential set, never its complete graph.
 
 ---
 
-## Act 3 — Which rows belong to the same node?
+## Stop 3 — Which rows belong to the same node?
 
 The sheet groups equations by *kind*, not by node. Nodes A, B and C are nowhere on the
 screen — but they are still recoverable, and the two kinds give them up differently.
@@ -237,11 +237,11 @@ not the union of the connectors in that chain.
 naming all *n*.** So the flow row is the only place a node appears whole, and the potential rows
 *are* the spanning tree — drawn one edge at a time.
 
-That is the same asymmetry as Act 2's arithmetic, seen from the other side.
+That is the same asymmetry as Stop 2's arithmetic, seen from the other side.
 
 ---
 
-## Act 4 — How big is a four-component circuit?
+## Stop 4 — How big is a four-component circuit?
 
 `RcCircuit` is a voltage source, a resistor, a capacitor and a ground. Seven of its equations come
 from the connect graph.
@@ -308,7 +308,7 @@ been written by hand at model scale, and they are what determines the system's s
 
 ---
 
-## Act 5 — What if there are no connectors at all?
+## Stop 5 — What if there are no connectors at all?
 
 `TwoLoops` writes its equations directly, with no components and no `connect`.
 
@@ -349,12 +349,12 @@ solves which unknown.
 
 ## What this tour cannot check
 
-- **That the `Connections` replay in Act 1 shows nodes the way the prose implies.** The counts
+- **That the `Connections` replay in Stop 1 shows nodes the way the prose implies.** The counts
   come from a trace; how the replay presents them is unverified.
 - **Whether a connection is legal.** Rumoca checks that *paired* variables agree — flow with flow,
   `Real` with `Real`, matching array shapes — but nothing checks that both connectors have the
   **same member set**, so joining a `{v, i}` connector to a `{v}` connector is accepted. That gap
   has its own tour: [▶ the-oracle](hrw://tour/the-oracle).
-- **Stream connectors.** Named in Act 2 and exercised by no specimen here.
+- **Stream connectors.** Named in Stop 2 and exercised by no specimen here.
 
 Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)

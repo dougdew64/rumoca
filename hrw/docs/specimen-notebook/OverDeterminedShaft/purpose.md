@@ -16,7 +16,7 @@ together they make the sign in that message mean something.
 
 ## Authored because half a lesson was untestable
 
-`dae-construction.md` Act 5 reads the sign as informative — negative means a variable with nothing
+`dae-construction.md` Stop 5 reads the sign as informative — negative means a variable with nothing
 to determine it, positive means something determined twice. Found 2026-08-17: **every unbalanced
 specimen in the corpus reported `-1`**, so the positive half was prose a reader had to accept. Now
 it is a stop.
@@ -35,4 +35,4 @@ different fixes.
 
 ## Where it has been used
 
-- [`dae-construction.md`](../../fixture-tours/dae-construction.md) Act 6 — the mirror of Act 5.
+- [`dae-construction.md`](../../fixture-tours/dae-construction.md) Stop 6 — the mirror of Stop 5.

@@ -28,7 +28,7 @@
 //! means the loop *ended*, and the frame-delay paint race. None of that is in
 //! the source, and none of it is derivable here. Neither is the check that
 //! matters most — **whether a tour's promised rhythm survives contact with a
-//! human**, which `#73` requires before Act 5 ships.
+//! human**, which `#73` requires before Stop 5 ships.
 //!
 //! **The error this would have caught**: `EquationFailed` was stated as
 //! `matching.rs:137` for a day. 137 is where the variant is *named*; 133 is the

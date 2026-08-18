@@ -2,7 +2,7 @@
 
 [▲ The chain overview](hrw://tour/the-mathematics)
 
-**A curriculum tour.** Walk [`blt-ordering.md`](blt-ordering.md) and
+**A concept tour.** Walk [`blt-ordering.md`](blt-ordering.md) and
 [`tearing.md`](tearing.md) first. Every model in those was already solvable once ordered; this
 tour is about the models that are not.
 
@@ -27,12 +27,12 @@ A solver handed that system fails, and not for a reason ordering can fix. The eq
 constrain the states to each other are **algebraic constraints among states** — the definition of a
 higher-index DAE.
 
-**Index reduction is the phase that finds and removes them.** Four acts: the case where nothing
+**Index reduction is the phase that finds and removes them.** Four stops: the case where nothing
 needs doing, the case that does, what actually happened to the surplus, and what "index" means.
 
 ---
 
-## Act 1 — The case that needs nothing
+## Stop 1 — The case that needs nothing
 
 `BouncingBall` has two states, `h` and `v`.
 
@@ -49,12 +49,12 @@ demoted, and `differentiated_rows` empty. The note reads *"the reduction funnel 
 speed. No equation relates them without a derivative in it, so there is no algebraic constraint
 among states and nothing to remove.
 
-**This is the common case**, and it is worth establishing first so the next act reads as a
+**This is the common case**, and it is worth establishing first so the next stop reads as a
 discovery rather than as routine. Most models are index-1 and this phase does nothing to them.
 
 ---
 
-## Act 2 — The case that does
+## Stop 2 — The case that does
 
 `Drivetrain` is a motor driving a load through an ideal gear, with a compliant mount.
 
@@ -84,7 +84,7 @@ relative to each other.
 
 ---
 
-## Act 3 — What actually happened to the surplus
+## Stop 3 — What actually happened to the surplus
 
 The obvious mechanism for index reduction is **differentiation**: differentiate the offending
 constraint until it can be solved. That is what Pantelides' algorithm does and what every textbook
@@ -116,7 +116,7 @@ about ideal gears, not about the algorithm — a model with a genuine non-alias 
 
 ---
 
-## Act 4 — What "index" counts, and why 1 is the target
+## Stop 4 — What "index" counts, and why 1 is the target
 
 The phase is named for a number nothing on screen displays.
 
@@ -148,7 +148,7 @@ ill-posed models.
 
 ## What this tour cannot check
 
-**Whether Act 3 lands as the surprise it is.** Zero differentiations in the tour named for the
+**Whether Stop 3 lands as the surprise it is.** Zero differentiations in the tour named for the
 algorithm that differentiates is the most interesting fact here, and it is asserted in one line
 against a JSON field that must be found in a tree.
 
@@ -164,7 +164,7 @@ one.
 
 ## A number downstream disagrees with this tour, and it is a real open question
 
-Act 2 established **3 states after reduction**, and that is what this stage reports. Walk on to
+Stop 2 established **3 states after reduction**, and that is what this stage reports. Walk on to
 [`solve-lowering.md`](solve-lowering.md) and look at the same model, and you will find
 `state_scalar_count` reading **9** — the count *before* reduction.
 

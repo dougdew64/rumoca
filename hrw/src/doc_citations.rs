@@ -1311,7 +1311,7 @@ Some prose.
     fn tour_group_tables_match_the_real_equation_sheet() {
         // (tour file, specimen) pairs. Grows as tours gain group tables.
         // Every (tour, specimen) pane a tour makes a table claim about. `TwoLoops` was
-        // added 2026-08-15: Act 5's claims had rested on a hand-read trace, which is the
+        // added 2026-08-15: Stop 5's claims had rested on a hand-read trace, which is the
         // footing every other act had already been lifted off.
         const PANES: &[(&str, &str)] = &[
             ("connect-expansion.md", "RcCircuit"),
@@ -1368,7 +1368,7 @@ Some prose.
                 .filter_map(|r| Some((r.first()?.clone(), r.get(1)?.clone())))
                 .collect();
 
-            // **Act 4's per-origin breakdown**, checked the same way. It is a different
+            // **Stop 4's per-origin breakdown**, checked the same way. It is a different
             // question from the group table — origins are per *row*, groups are the
             // headings — and it was the last table in this tour holding numbers that
             // only a hand-count had ever confirmed.
@@ -1447,11 +1447,11 @@ Some prose.
         );
     }
 
-    /// **`connect-expansion.md` Act 1's node sizes match the connection replay.**
+    /// **`connect-expansion.md` Stop 1's node sizes match the connection replay.**
     ///
     /// # The last claim in that tour nobody could check
     ///
-    /// Act 1 predicts *three nodes, of sizes 2, 2 and 3*, and sends the reader to
+    /// Stop 1 predicts *three nodes, of sizes 2, 2 and 3*, and sends the reader to
     /// **Flatten → Connections** — the only pane that shows connection sets. Every other
     /// claim in the tour became checkable when the equation sheet started publishing;
     /// this one rested on Claude having read a trace correctly and never on anything a
@@ -1459,7 +1459,7 @@ Some prose.
     ///
     /// # What it checks, and the distinction it is careful about
     ///
-    /// Act 1 counts **nodes**, which are sets of *connectors*. The compiler never groups
+    /// Stop 1 counts **nodes**, which are sets of *connectors*. The compiler never groups
     /// connectors — it groups **variables**, in two independent graphs, one per kind. So
     /// a node of size 3 shows up as a **potential set of three `.v`** *and* a **flow set
     /// of three `.i`**, and the tour's `2, 2, 3` must appear as the set sizes of **each
@@ -1516,7 +1516,7 @@ Some prose.
         assert_eq!(
             potential,
             vec![2, 2, 3],
-            "Act 1 predicts nodes of 2, 2 and 3 connectors, so the POTENTIAL sets must be \
+            "Stop 1 predicts nodes of 2, 2 and 3 connectors, so the POTENTIAL sets must be \
              three sets of 2, 2 and 3 `.v` variables"
         );
         assert_eq!(
@@ -1528,7 +1528,7 @@ Some prose.
 
         // **The set count the pane declares**, which is not the node count and was the
         // first thing reading the live pane turned up: the replay's last frame says
-        // 6 sets, while Act 1 predicts 3 nodes. Both are right — one node yields one
+        // 6 sets, while Stop 1 predicts 3 nodes. Both are right — one node yields one
         // set per kind — and the tour now states both numbers, so both are pinned.
         let complete = frames
             .iter()
@@ -1551,7 +1551,7 @@ Some prose.
 
         // **Every frame the tour cites by ORDINAL is the frame it says it is.**
         //
-        // Act 2 links `…/Connections/frame/7` and `/frame/13` to point at the moment the
+        // Stop 2 links `…/Connections/frame/7` and `/frame/13` to point at the moment the
         // n-1 asymmetry happens. `fixture_tour_links_all_resolve` checks only that such a
         // link *parses*. An ordinal citation is the fragility this repository already
         // designed around once — `OpenTour` addresses stops by **slug**, because
@@ -1565,7 +1565,7 @@ Some prose.
         // before potential — which the size assertions above cannot see, since they
         // sort.
         let cited = marked_rows(&tour, "pane-frames", "RcCircuit")
-            .expect("Act 2 cites frames by number; the table pinning them must exist");
+            .expect("Stop 2 cites frames by number; the table pinning them must exist");
         assert!(
             !cited.is_empty(),
             "the pane-frames table is empty, so the frame links it exists to pin are \
@@ -1610,7 +1610,7 @@ Some prose.
         }
         assert!(
             tour.contains("/frame/") && cited.len() >= 2,
-            "Act 2's two frame citations must both be pinned"
+            "Stop 2's two frame citations must both be pinned"
         );
         for claim in [
             "**three** nodes, of sizes **2, 2 and 3**",
@@ -1618,7 +1618,7 @@ Some prose.
         ] {
             assert!(
                 tour.contains(claim),
-                "Act 1 no longer states {claim:?}; this check pins that wording and must be \
+                "Stop 1 no longer states {claim:?}; this check pins that wording and must be \
                  updated with it, or it silently stops matching the tour it guards"
             );
         }
@@ -2807,7 +2807,7 @@ Some prose.
     /// **The tearing tour gains its dynamic-loop act at the moment it is converted.**
     ///
     /// **DELIVERED 2026-08-17.** `tearing.md` was converted with `LoopWithInertia` as its
-    /// Act 5, so this test now runs its *enforcing* branch — 5 `**Predict.**` markers and
+    /// Stop 5, so this test now runs its *enforcing* branch — 5 `**Predict.**` markers and
     /// an `hrw://load/LoopWithInertia` link — rather than the not-yet-converted early
     /// return. The `## OWED` note it used to guard is gone because the act replaced it,
     /// which is the outcome the note asked for. What remains guarded: the act cannot be
@@ -2876,7 +2876,7 @@ Some prose.
             text.contains("hrw://load/LoopWithInertia"),
             "tearing.md has been converted to the Predict/Look template ({predicts} \
              Predict markers) but still has no ▶ Look link for LoopWithInertia. The \
-             owed act is: the same 3-cycle as Act 1, now re-solved between every pair \
+             owed act is: the same 3-cycle as Stop 1, now re-solved between every pair \
              of integrator steps \u{2014} what a coupled block costs when time is \
              advancing.",
         );

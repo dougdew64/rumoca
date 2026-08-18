@@ -2,7 +2,7 @@
 
 [▲ The chain overview](hrw://tour/the-mathematics)
 
-**A curriculum tour.** The last phase before simulation. Walk [`events.md`](events.md) first.
+**A concept tour.** The last phase before simulation. Walk [`events.md`](events.md) first.
 
 Every count below was read from the committed traces, never remembered.
 
@@ -21,12 +21,12 @@ array**, and every equation must become arithmetic on those slots.
 **This phase does the translation, and it is the last chance to get it wrong.** After it, there are
 no names left to check against — only numbers, which is why the mapping itself is worth looking at.
 
-Three acts: the mapping, what else ends up in the arrays, and what the same mapping looks like at
+Three stops: the mapping, what else ends up in the arrays, and what the same mapping looks like at
 scale.
 
 ---
 
-## Act 1 — Where your variables went
+## Stop 1 — Where your variables went
 
 `BouncingBall` has two continuous variables, `h` and `v`.
 
@@ -56,7 +56,7 @@ array**: it is a distinguished binding, because the solver supplies it rather th
 
 ---
 
-## Act 2 — What else is in the arrays
+## Stop 2 — What else is in the arrays
 
 `BouncingBall` declares two parameters, `g` and `e`.
 
@@ -94,7 +94,7 @@ declared.
 
 ---
 
-## Act 3 — The same mapping at scale
+## Stop 3 — The same mapping at scale
 
 `RcCircuit` is 23 continuous variables and a handful of parameters.
 
@@ -111,7 +111,7 @@ declared.
 one state and twenty-two algebraics, and all twenty-three get slots — because the solver has to
 *store* every quantity it computes, even the ones it recomputes from scratch at each step.
 
-That is worth holding next to the DAE tour's Act 3. The **unknowns** the solver solves for are the
+That is worth holding next to the DAE tour's Stop 3. The **unknowns** the solver solves for are the
 derivatives; the **vector** it carries is every continuous variable. Two different counts, both
 correct, easy to conflate.
 
@@ -123,13 +123,13 @@ of five. **The overhead is event machinery, and a smooth model barely pays it.**
 
 ## What this tour cannot check
 
-**Whether the bindings table is findable.** Acts 1 and 2 send you into a generic serde tree to a
+**Whether the bindings table is findable.** Stops 1 and 2 send you into a generic serde tree to a
 nested path. Whether `problem.layout.bindings` reads as a mapping or as a wall of JSON is your
 report, and it is the one thing this tour depends on being legible.
 
 **Whether the enum constants are noise or context.** The bindings map also contains dozens of
 entries like `StateSelect.never -> Constant(1)` from the MSL. They are real and this tour ignores
-them, which may make the pane look busier than the acts suggest.
+them, which may make the pane look busier than the stops suggest.
 
 **What the generated code actually looks like.** This phase's output is a layout, and the tour
 stops there. Whether the residual function reads as recognisable arithmetic on `Y[0]` and `Y[1]` is
@@ -155,8 +155,8 @@ counted here.
 states around as algebraic variables, so a *scalar* count of them may be correct and merely named
 confusingly. The investigation is in [`upstream-issues.md`](../upstream-issues.md).
 
-**This tour deliberately used `BouncingBall` and `RcCircuit` for its acts**, both of which demote
-nothing, so every number in Acts 1–3 is unaffected. That was a choice to keep the acts clean, and
+**This tour deliberately used `BouncingBall` and `RcCircuit` for its stops**, both of which demote
+nothing, so every number in Stops 1–3 is unaffected. That was a choice to keep the stops clean, and
 saying so is better than letting you discover the discrepancy on your own model and doubt the
 whole tour.
 

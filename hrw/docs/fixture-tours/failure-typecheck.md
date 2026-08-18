@@ -90,7 +90,7 @@ of a bad model is still a flat model.
 
 ---
 
-## Stop 4 — Compare with a stop
+## Stop 4 — Compare where the compile halts
 
 [Load UnclosedModel → Flatten](hrw://load/UnclosedModel/Flatten)
 

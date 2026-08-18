@@ -2,15 +2,22 @@
 
 [▲ The chain overview](hrw://tour/the-mathematics)
 
-**A pass-two tour.** [`matching.md`](matching.md) taught the idea; this one is about **Rumoca's
-code**, stepped in a debugger while it runs. Walk the pass-one tour first — the acts below assume
-you know what a matching is and what a rank deficiency means.
+**A concept tour, pass two.** [`matching.md`](matching.md) taught the idea; this one is about
+**Rumoca's code**, stepped in a debugger while it runs. Walk the pass-one tour first — the stops
+below assume you know what a matching is and what a rank deficiency means.
 
-**This is the only tour that needs setup.** Scene 0 is not optional and is not an act.
+**This is the only tour that needs setup.** Stop 0 is not optional, and it is setup rather than
+teaching: it has an expectation to check, but nothing to predict.
+
+**A vocabulary note, because this tour needs three words other tours do not.** A **stop** is a
+place in *this document*. A **break** is where the *debugger* halts execution. An **anchor** is
+the named location a break is armed at — `decision`, `recurse`, `give_up`, `push`, `gate`. Keeping
+them apart matters here more than anywhere else in the corpus, because all three are in play at
+once.
 
 ---
 
-## Scene 0 — Two things must be true before any of this works
+## Stop 0 — Two things must be true before any of this works
 
 **A debugger must be attached, and the bridge extension must be alive.** They are independent, and
 one machine had the first without the second for twelve days: the Debug button looked completely
@@ -28,7 +35,7 @@ silently. That notice is the feature; a silent successful-looking run is what it
 
 ---
 
-## Act 1 — Arm an anchor, and learn what a stop is named
+## Stop 1 — Arm an anchor, and learn what an anchor is named
 
 [▶ Look — ProportionalLoop → Structural → Matching animation](hrw://load/ProportionalLoop/Structural/MatchingAnim)
 
@@ -62,7 +69,7 @@ algorithm makes* rather than a place in a file.
 
 ---
 
-## Act 2 — The call stack is the augmenting path
+## Stop 2 — The call stack is the augmenting path
 
 Continue (F5) until you stop at the decision anchor a few times, then look at the **call stack**
 rather than at the variables.
@@ -74,9 +81,9 @@ rather than at the variables.
 the outer at `matching.rs:210`, which is the recursive call site. Each frame's `eq` local is a
 different equation. **N nested frames is an N-edge alternating path.**
 
-**Falsified if:** the stack is flat at every stop, or two frames report the same `eq`.
+**Falsified if:** the stack is flat at every break, or two frames report the same `eq`.
 
-*What just happened.* **This is the act the tour exists for, and it is not visible from the
+*What just happened.* **This is the stop the tour exists for, and it is not visible from the
 animation.** The augmenting-path search walks alternately along unmatched and matched edges, looking
 for an unmatched unknown. That walk is implemented as recursion — so the *path* the algorithm is
 currently exploring is literally the sequence of frames on the stack, and its length is the depth.
@@ -84,14 +91,14 @@ currently exploring is literally the sequence of frames on the stack, and its le
 Read the stack bottom-up and you are reading the path from its start. Step until it deepens and you
 are watching the path extend; step until it returns and you are watching a dead end abandoned.
 
-**Claude cannot see any of this**, which is worth knowing while you work: a debugger stop yields no
-location, no stack and no values to a tool. If you want to ask about a stop, the extension publishes
+**Claude cannot see any of this**, which is worth knowing while you work: a break yields no
+location, no stack and no values to a tool. If you want to ask about a break, the extension publishes
 it to `.hrw-bridge/debug-state.json` — stack frames, the innermost location, and the locals of the
 most local scope.
 
 ---
 
-## Act 3 — The same machinery, refusing
+## Stop 3 — The same machinery, refusing
 
 `TwiceDefined` is two equations in two unknowns, and `matching.md` established that only one pairs.
 
@@ -119,7 +126,7 @@ of equations for which this path exists and terminates without success.
 
 ---
 
-## Act 4 — What this instrument can and cannot show you
+## Stop 4 — What this instrument can and cannot show you
 
 > **Predict.** You have now seen the same algorithm succeed and fail. What could a debugger show
 > you here that the animation could not, and what can it not show?
@@ -148,15 +155,15 @@ going:
 
 ## What this tour cannot check
 
-**Whether the stack reads as a path.** Act 2 is the whole point and it depends on the call stack
+**Whether the stack reads as a path.** Stop 2 is the whole point and it depends on the call stack
 being legible in the VS Code UI, which no test reaches. If the frames collapse or the `eq` local is
-optimised away, the act says nothing.
+optimised away, the stop says nothing.
 
 **Whether the anchors are still where the algorithm decides.** They are resolved by name, so they
 cannot point at a stale line — but nothing checks that `decision` still sits at a *decision*. A
 refactor could move it somewhere valid and uninteresting.
 
-**Everything in Scene 0.** Whether the extension is alive, the junction exists, and the launch
+**Everything in Stop 0.** Whether the extension is alive, the junction exists, and the launch
 configuration is right are all environment facts, and the only signal is what the output channel
 says.
 

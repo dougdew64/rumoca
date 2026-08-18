@@ -206,7 +206,7 @@ impl ConnectionAnimation {
     /// # Why this pane, and why it was the one left
     ///
     /// It is the **only view that shows connection sets**, which makes it the only
-    /// evidence for `connect-expansion.md` Act 1 — *three nodes, of sizes 2, 2 and 3*.
+    /// evidence for `connect-expansion.md` Stop 1 — *three nodes, of sizes 2, 2 and 3*.
     /// Every other claim in that tour became checkable when the equation sheet started
     /// publishing; this one stayed on Claude's word alone.
     ///

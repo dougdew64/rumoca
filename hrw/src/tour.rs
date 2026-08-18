@@ -83,7 +83,7 @@ pub(crate) struct TourState {
     ///
     /// A tour stop may legitimately leave Tour mode: `hrw://source/<line>` switches
     /// to Specimen mode because that is the only place the source renders, and a
-    /// reader clicking it wants to be taken there. `matching.md` ends Act 3 with one,
+    /// reader clicking it wants to be taken there. `matching.md` ends Stop 3 with one,
     /// so a Play run finished in Specimen mode with the tour nowhere on screen —
     /// Doug, 2026-08-03: *"at the completion of the tour, the mode is being switched
     /// from tour mode to specimen mode."*

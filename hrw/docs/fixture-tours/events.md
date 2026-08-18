@@ -2,7 +2,7 @@
 
 [▲ The chain overview](hrw://tour/the-mathematics)
 
-**A curriculum tour.** Walk [`initialization.md`](initialization.md) first. Everything so far has
+**A concept tour.** Walk [`initialization.md`](initialization.md) first. Everything so far has
 assumed one fixed set of equations; this tour is about models where the equations change.
 
 Every count below was read from the committed traces, never remembered.
@@ -24,12 +24,12 @@ If the bounce happens between two steps, integrating straight through it produce
 ball ends up below the floor, moving down. So the solver must **detect** the instant, stop there,
 apply the change, and restart.
 
-**This phase finds what can change and what has to be watched.** Three acts: a model with a real
+**This phase finds what can change and what has to be watched.** Three stops: a model with a real
 event, a model with none, and a model with several.
 
 ---
 
-## Act 1 — A model with a real event
+## Stop 1 — A model with a real event
 
 `BouncingBall` is two equations plus a `when` clause that reverses velocity at the floor.
 
@@ -56,7 +56,7 @@ lets the integrator search for the crossing time without applying anything.
 
 ---
 
-## Act 2 — A model with none, and what the pane says
+## Stop 2 — A model with none, and what the pane says
 
 `RcCircuit` has no `when` clauses at all.
 
@@ -89,7 +89,7 @@ see** — and this one is a genuine Rumoca question, not an HRW defect.
 
 ---
 
-## Act 3 — A model with several
+## Stop 3 — A model with several
 
 `GearWithBrake` is a drivetrain whose brake engages and releases.
 
@@ -107,7 +107,7 @@ not one comparison: it is stuck or sliding, and sliding in one direction or the 
 needs several relations to say which regime it is in.
 
 And the update is **discrete-valued**, not discrete-real — a mode flag rather than a number. That
-is the same distinction as Act 1's split, one level up: `BouncingBall` changes a *value* when it
+is the same distinction as Stop 1's split, one level up: `BouncingBall` changes a *value* when it
 fires, `GearWithBrake` changes which *equations apply*.
 
 **Four conditions means four things to watch on every step**, and each is a potential event time
@@ -118,7 +118,7 @@ friction, and why a model that looks small can simulate slowly.
 
 ## What this tour cannot check
 
-**Whether Act 2's anomaly is the right thing to include.** A tour that names an unexplained number
+**Whether Stop 2's anomaly is the right thing to include.** A tour that names an unexplained number
 risks reading as *"the tool is unreliable"* rather than *"this is a real open question."* It is
 here because you can see the number, and a tour that omitted it would be the less honest choice.
 

@@ -314,7 +314,7 @@ be confirmed or killed later.
 **Doug, verbatim:** *"In the connection tour, you wrote: 'it is one edge in a graph, and the graph is
 solved before any equation exists.' Which graph are you referencing?"*
 
-**Traces back to:** the tour's lead paragraph, before Act 1 — so the very first sentence of prose in
+**Traces back to:** the tour's lead paragraph, before Stop 1 — so the very first sentence of prose in
 the tour, not a stop.
 
 ### Which shape of question this is

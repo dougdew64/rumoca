@@ -10,17 +10,17 @@
 
 **Fixture tour — BLT: finding an order, and finding out there isn't one**
 
-A curriculum tour. Walk [`matching.md`](matching.md) first — it answers *which* equation
+A concept tour. Walk [`matching.md`](matching.md) first — it answers *which* equation
 
 - **Specimens:** `RcCircuit`, `ProportionalLoop`, `TwoLoops`
 - **Stages:** `Structural`
 - **Stops:**
   - `fixture-tour-blt-finding-an-order-and-finding-out-there-isn-t-one` — Fixture tour — BLT: finding an order, and finding out there isn't one
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
-  - `act-1-when-an-order-exists` — Act 1 — When an order exists
-  - `act-2-when-no-order-exists` — Act 2 — When no order exists
-  - `act-3-when-the-system-splits` — Act 3 — When the system splits
-  - `act-4-what-you-have-been-building-is-a-block-triangular-form` — Act 4 — What you have been building is a block triangular form
+  - `stop-1-when-an-order-exists` — Stop 1 — When an order exists
+  - `stop-2-when-no-order-exists` — Stop 2 — When no order exists
+  - `stop-3-when-the-system-splits` — Stop 3 — When the system splits
+  - `stop-4-what-you-have-been-building-is-a-block-triangular-form` — Stop 4 — What you have been building is a block triangular form
   - `what-this-tour-cannot-check` — What this tour cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
 
@@ -51,11 +51,11 @@ This tour counts. `RcCircuit` has four `connect` statements and twenty-three equ
 - **Stages:** `Flatten`
 - **Stops:**
   - `flatten-what-connect-actually-means` — Flatten — what `connect` actually means
-  - `act-1-how-many-nodes` — Act 1 — How many nodes?
-  - `act-2-how-many-equations-do-three-nodes-make` — Act 2 — How many equations do three nodes make?
-  - `act-3-which-rows-belong-to-the-same-node` — Act 3 — Which rows belong to the same node?
-  - `act-4-how-big-is-a-four-component-circuit` — Act 4 — How big is a four-component circuit?
-  - `act-5-what-if-there-are-no-connectors-at-all` — Act 5 — What if there are no connectors at all?
+  - `stop-1-how-many-nodes` — Stop 1 — How many nodes?
+  - `stop-2-how-many-equations-do-three-nodes-make` — Stop 2 — How many equations do three nodes make?
+  - `stop-3-which-rows-belong-to-the-same-node` — Stop 3 — Which rows belong to the same node?
+  - `stop-4-how-big-is-a-four-component-circuit` — Stop 4 — How big is a four-component circuit?
+  - `stop-5-what-if-there-are-no-connectors-at-all` — Stop 5 — What if there are no connectors at all?
   - `what-comes-next-in-the-chain` — What comes next in the chain
   - `what-this-tour-cannot-check` — What this tour cannot check
 
@@ -63,20 +63,20 @@ This tour counts. `RcCircuit` has four `connect` statements and twenty-three equ
 
 **Fixture tour — DAE construction: the count that decides everything**
 
-A curriculum tour. It teaches a step of the chain
+A concept tour. It teaches a step of the chain
 
 - **Specimens:** `SingleInertia`, `UnbalancedShaft`, `OverDeterminedShaft`
 - **Stages:** `Dae`, `Flatten`, `Structural`
 - **Stops:**
   - `fixture-tour-dae-construction-the-count-that-decides-everything` — Fixture tour — DAE construction: the count that decides everything
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
-  - `act-1-which-declarations-carry-the-past` — Act 1 — Which declarations carry the past?
-  - `act-2-what-makes-a-variable-a-state` — Act 2 — What makes a variable a state?
-  - `act-3-what-is-the-solver-actually-solving-for` — Act 3 — What is the solver actually solving for?
-  - `act-4-the-claim` — Act 4 — The claim
-  - `act-5-what-the-compiler-says-when-the-claim-fails` — Act 5 — What the compiler says when the claim fails
-  - `act-6-the-other-sign` — Act 6 — The other sign
-  - `act-7-where-it-fails-and-why-that-is-the-right-place` — Act 7 — Where it fails, and why that is the right place
+  - `stop-1-which-declarations-carry-the-past` — Stop 1 — Which declarations carry the past?
+  - `stop-2-what-makes-a-variable-a-state` — Stop 2 — What makes a variable a state?
+  - `stop-3-what-is-the-solver-actually-solving-for` — Stop 3 — What is the solver actually solving for?
+  - `stop-4-the-claim` — Stop 4 — The claim
+  - `stop-5-what-the-compiler-says-when-the-claim-fails` — Stop 5 — What the compiler says when the claim fails
+  - `stop-6-the-other-sign` — Stop 6 — The other sign
+  - `stop-7-where-it-fails-and-why-that-is-the-right-place` — Stop 7 — Where it fails, and why that is the right place
   - `two-excursions-if-you-want-them` — Two excursions, if you want them
   - `what-this-tour-cannot-check` — What this tour cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
@@ -85,16 +85,16 @@ A curriculum tour. It teaches a step of the chain
 
 **Fixture tour — Events: the equations that are not always true**
 
-A curriculum tour. Walk [`initialization.md`](initialization.md) first. Everything so far has
+A concept tour. Walk [`initialization.md`](initialization.md) first. Everything so far has
 
 - **Specimens:** `BouncingBall`, `RcCircuit`, `GearWithBrake`
 - **Stages:** `Events`
 - **Stops:**
   - `fixture-tour-events-the-equations-that-are-not-always-true` — Fixture tour — Events: the equations that are not always true
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
-  - `act-1-a-model-with-a-real-event` — Act 1 — A model with a real event
-  - `act-2-a-model-with-none-and-what-the-pane-says` — Act 2 — A model with none, and what the pane says
-  - `act-3-a-model-with-several` — Act 3 — A model with several
+  - `stop-1-a-model-with-a-real-event` — Stop 1 — A model with a real event
+  - `stop-2-a-model-with-none-and-what-the-pane-says` — Stop 2 — A model with none, and what the pane says
+  - `stop-3-a-model-with-several` — Stop 3 — A model with several
   - `what-this-tour-cannot-check` — What this tour cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
 
@@ -191,7 +191,7 @@ Specimen: `DimensionMismatch` — a 2-vector assigned from a 3-vector.
   - `stop-1-the-diagnosis` — Stop 1 — The diagnosis
   - `stop-2-the-surprise` — Stop 2 — The surprise
   - `stop-3-where-the-truth-is-kept` — Stop 3 — Where the truth is kept
-  - `stop-4-compare-with-a-stop` — Stop 4 — Compare with a stop
+  - `stop-4-compare-where-the-compile-halts` — Stop 4 — Compare where the compile halts
   - `what-to-bring-back` — What to bring back
 
 ## `frame-seeking`
@@ -217,17 +217,17 @@ This is a test, not an explanation. It verifies that a link can stop an animatio
 
 **Fixture tour — Index reduction: more states than freedoms**
 
-A curriculum tour. Walk [`blt-ordering.md`](blt-ordering.md) and
+A concept tour. Walk [`blt-ordering.md`](blt-ordering.md) and
 
 - **Specimens:** `BouncingBall`, `Drivetrain`
 - **Stages:** `IndexReduction`, `Structural`
 - **Stops:**
   - `fixture-tour-index-reduction-more-states-than-freedoms` — Fixture tour — Index reduction: more states than freedoms
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
-  - `act-1-the-case-that-needs-nothing` — Act 1 — The case that needs nothing
-  - `act-2-the-case-that-does` — Act 2 — The case that does
-  - `act-3-what-actually-happened-to-the-surplus` — Act 3 — What actually happened to the surplus
-  - `act-4-what-index-counts-and-why-1-is-the-target` — Act 4 — What "index" counts, and why 1 is the target
+  - `stop-1-the-case-that-needs-nothing` — Stop 1 — The case that needs nothing
+  - `stop-2-the-case-that-does` — Stop 2 — The case that does
+  - `stop-3-what-actually-happened-to-the-surplus` — Stop 3 — What actually happened to the surplus
+  - `stop-4-what-index-counts-and-why-1-is-the-target` — Stop 4 — What "index" counts, and why 1 is the target
   - `what-this-tour-cannot-check` — What this tour cannot check
   - `a-number-downstream-disagrees-with-this-tour-and-it-is-a-real-open-question` — A number downstream disagrees with this tour, and it is a real open question
   - `what-comes-next-in-the-chain` — What comes next in the chain
@@ -236,17 +236,17 @@ A curriculum tour. Walk [`blt-ordering.md`](blt-ordering.md) and
 
 **Fixture tour — Initialization: the values at t = 0**
 
-A curriculum tour. Walk [`index-reduction.md`](index-reduction.md) first — this phase runs on
+A concept tour. Walk [`index-reduction.md`](index-reduction.md) first — this phase runs on
 
 - **Specimens:** `BouncingBall`, `RcCircuit`, `OverInitRc`, `RotationalInertia`
 - **Stages:** `Initialization`
 - **Stops:**
   - `fixture-tour-initialization-the-values-at-t-0` — Fixture tour — Initialization: the values at t = 0
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
-  - `act-1-the-case-with-nothing-to-solve` — Act 1 — The case with nothing to solve
-  - `act-2-the-case-with-a-real-initialization-system` — Act 2 — The case with a real initialization system
-  - `act-3-the-case-that-specifies-too-much` — Act 3 — The case that specifies too much
-  - `act-4-square-and-still-singular-again` — Act 4 — Square and still singular, again
+  - `stop-1-the-case-with-nothing-to-solve` — Stop 1 — The case with nothing to solve
+  - `stop-2-the-case-with-a-real-initialization-system` — Stop 2 — The case with a real initialization system
+  - `stop-3-the-case-that-specifies-too-much` — Stop 3 — The case that specifies too much
+  - `stop-4-square-and-still-singular-again` — Stop 4 — Square and still singular, again
   - `what-this-tour-cannot-check` — What this tour cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
 
@@ -254,17 +254,17 @@ A curriculum tour. Walk [`index-reduction.md`](index-reduction.md) first — thi
 
 **Fixture tour — Matching, live: the call stack is the augmenting path**
 
-A pass-two tour. [`matching.md`](matching.md) taught the idea; this one is about Rumoca's
+A concept tour, pass two. [`matching.md`](matching.md) taught the idea; this one is about
 
 - **Specimens:** `ProportionalLoop`, `TwiceDefined`
 - **Stages:** `Structural`
 - **Stops:**
   - `fixture-tour-matching-live-the-call-stack-is-the-augmenting-path` — Fixture tour — Matching, live: the call stack is the augmenting path
-  - `scene-0-two-things-must-be-true-before-any-of-this-works` — Scene 0 — Two things must be true before any of this works
-  - `act-1-arm-an-anchor-and-learn-what-a-stop-is-named` — Act 1 — Arm an anchor, and learn what a stop is named
-  - `act-2-the-call-stack-is-the-augmenting-path` — Act 2 — The call stack is the augmenting path
-  - `act-3-the-same-machinery-refusing` — Act 3 — The same machinery, refusing
-  - `act-4-what-this-instrument-can-and-cannot-show-you` — Act 4 — What this instrument can and cannot show you
+  - `stop-0-two-things-must-be-true-before-any-of-this-works` — Stop 0 — Two things must be true before any of this works
+  - `stop-1-arm-an-anchor-and-learn-what-an-anchor-is-named` — Stop 1 — Arm an anchor, and learn what an anchor is named
+  - `stop-2-the-call-stack-is-the-augmenting-path` — Stop 2 — The call stack is the augmenting path
+  - `stop-3-the-same-machinery-refusing` — Stop 3 — The same machinery, refusing
+  - `stop-4-what-this-instrument-can-and-cannot-show-you` — Stop 4 — What this instrument can and cannot show you
   - `what-this-tour-cannot-check` — What this tour cannot check
   - `what-comes-next` — What comes next
 
@@ -272,17 +272,17 @@ A pass-two tour. [`matching.md`](matching.md) taught the idea; this one is about
 
 **Fixture tour — Matching: which equation solves which unknown**
 
-A curriculum tour. It teaches a step of the chain and uses HRW as the instrument. It is still
+A concept tour. It teaches a step of the chain and uses HRW as the instrument. It is still
 
 - **Specimens:** `BouncingBall`, `ProportionalLoop`, `CapacitorLoop`
 - **Stages:** `Structural`
 - **Stops:**
   - `fixture-tour-matching-which-equation-solves-which-unknown` — Fixture tour — Matching: which equation solves which unknown
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
-  - `act-1-the-case-where-it-is-obvious` — Act 1 — The case where it is obvious
-  - `act-2-the-case-that-is-not-obvious-at-all` — Act 2 — The case that is not obvious at all
-  - `act-3-the-case-with-no-answer` — Act 3 — The case with no answer
-  - `act-4-what-this-is-called-and-why-the-name-helps` — Act 4 — What this is called, and why the name helps
+  - `stop-1-the-case-where-it-is-obvious` — Stop 1 — The case where it is obvious
+  - `stop-2-the-case-that-is-not-obvious-at-all` — Stop 2 — The case that is not obvious at all
+  - `stop-3-the-case-with-no-answer` — Stop 3 — The case with no answer
+  - `stop-4-what-this-is-called-and-why-the-name-helps` — Stop 4 — What this is called, and why the name helps
   - `what-this-tour-cannot-check` — What this tour cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
 
@@ -310,16 +310,16 @@ This is a test, not an explanation. It verifies the last two verbs of the answer
 
 **Fixture tour — Solve lowering: names become indices**
 
-A curriculum tour. The last phase before simulation. Walk [`events.md`](events.md) first.
+A concept tour. The last phase before simulation. Walk [`events.md`](events.md) first.
 
 - **Specimens:** `BouncingBall`, `RcCircuit`
 - **Stages:** `SolveLowering`
 - **Stops:**
   - `fixture-tour-solve-lowering-names-become-indices` — Fixture tour — Solve lowering: names become indices
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
-  - `act-1-where-your-variables-went` — Act 1 — Where your variables went
-  - `act-2-what-else-is-in-the-arrays` — Act 2 — What else is in the arrays
-  - `act-3-the-same-mapping-at-scale` — Act 3 — The same mapping at scale
+  - `stop-1-where-your-variables-went` — Stop 1 — Where your variables went
+  - `stop-2-what-else-is-in-the-arrays` — Stop 2 — What else is in the arrays
+  - `stop-3-the-same-mapping-at-scale` — Stop 3 — The same mapping at scale
   - `what-this-tour-cannot-check` — What this tour cannot check
   - `one-count-here-contradicts-the-index-reduction-tour` — One count here contradicts the index-reduction tour
   - `what-comes-next-in-the-chain` — What comes next in the chain
@@ -345,18 +345,18 @@ The first cross-platform tour. Two stops in HRW, then a notebook — because the
 
 **Fixture tour — Tearing: guess one number, get the rest for free**
 
-A curriculum tour. Walk [`blt-ordering.md`](blt-ordering.md) first — it produces the coupled
+A concept tour. Walk [`blt-ordering.md`](blt-ordering.md) first — it produces the coupled
 
 - **Specimens:** `ProportionalLoop`, `TwoLoops`, `MixedLoop`, `LoopWithInertia`
 - **Stages:** `Structural`
 - **Stops:**
   - `fixture-tour-tearing-guess-one-number-get-the-rest-for-free` — Fixture tour — Tearing: guess one number, get the rest for free
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
-  - `act-1-guess-one-number-and-the-rest-falls-out` — Act 1 — Guess one number and the rest falls out
-  - `act-2-watch-the-choice-being-made` — Act 2 — Watch the choice being made
-  - `act-3-two-blocks-torn-independently` — Act 3 — Two blocks, torn independently
-  - `act-4-all-three-kinds-of-block-in-one-model` — Act 4 — All three kinds of block in one model
-  - `act-5-what-it-costs-once-time-is-moving` — Act 5 — What it costs once time is moving
+  - `stop-1-guess-one-number-and-the-rest-falls-out` — Stop 1 — Guess one number and the rest falls out
+  - `stop-2-watch-the-choice-being-made` — Stop 2 — Watch the choice being made
+  - `stop-3-two-blocks-torn-independently` — Stop 3 — Two blocks, torn independently
+  - `stop-4-all-three-kinds-of-block-in-one-model` — Stop 4 — All three kinds of block in one model
+  - `stop-5-what-it-costs-once-time-is-moving` — Stop 5 — What it costs once time is moving
   - `what-this-tour-cannot-check` — What this tour cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
 

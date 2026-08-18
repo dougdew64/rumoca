@@ -1836,7 +1836,7 @@ upstream issues.
 >
 > **Built the same day.** `SingleInertia` plus `w = der(phi)` — nine lines, and it reports
 > `unbalanced model: 3 equations, 2 unknowns (balance = 1)` with the reading *"more equations than
-> unknowns — something is determined twice"*. It needed no new tour, only Act 6 of
+> unknowns — something is determined twice"*. It needed no new tour, only Stop 6 of
 > `dae-construction.md`.
 >
 > **The surplus equation is deliberately consistent**, which is the design rather than an
@@ -3926,7 +3926,7 @@ A tour that closes with *"you now understand matching"* has taught the means and
 curriculum tour should end with what it buys when a simulation misbehaves** — one section, named
 plainly, of the form *"when a solve fails/crawls, here is what this phase tells you."*
 
-`matching.md`'s Act 4 is half of this already: it ends on the permutation and what BLT needs it
+`matching.md`'s Stop 4 is half of this already: it ends on the permutation and what BLT needs it
 for. What it does not yet say is that **the blocks are what Newton faces**, and that a large
 coupled block is a slow simulation waiting to happen. That is the shape the section should take,
 and it is cheap to add to a tour that already exists.
@@ -4092,7 +4092,7 @@ The chain a non-convergence question would walk:
 ```
 Newton fails on block B                      (solver — no instrumentation yet, #68)
   <- B is a coupled SCC                      (Tarjan, over the matched incidence)
-    <- its members are f_x[i], f_x[j], ...   (the matching's permutation, matching.md Act 4)
+    <- its members are f_x[i], f_x[j], ...   (the matching's permutation, matching.md Stop 4)
       <- each has a span                     (BUILT 2026-08-05)
         <- which is a line in the model      (BUILT 2026-08-05)
 ```
@@ -4448,7 +4448,7 @@ Verified against a real breakpoint in `augment_traced` on a 2×2 system:
 **What one stop looked like** — line 189, `let can_augment = match match_var[var]`: `eq=0`,
 `var=0`, `vars=[0]`, `visited=[true,false]`, `match_eq=[None,None]`, `match_var=[None,None]`,
 `frames=[TryEquation, Explore]`. **That is enough to predict the algorithm's next four steps**,
-and the stack showed **depth 1** — no displacement yet, Act 1 territory rather than Act 2. So
+and the stack showed **depth 1** — no displacement yet, Stop 1 territory rather than Stop 2. So
 `#73`'s premise is confirmed rather than hoped for.
 
 ### Four findings, each bought with a wrong first attempt
@@ -4463,7 +4463,7 @@ cannot say what was asked is not a measurement.**
 **2. Aggregates arrive as summaries.** A slice renders `{ len=2 }`; elements live behind another
 `variables` request keyed by `variablesReference`, which the first build discarded. **One level is
 now expanded**, bounded by `CHILD_LIMIT` (64), truncation declared via `childrenTruncated`. This
-is the field that matters most: **`match_eq`'s contents are Act 4's partial permutation.**
+is the field that matters most: **`match_eq`'s contents are Stop 4's partial permutation.**
 
 **3. `cppvsdbg` MIXES SYNTHETIC CHILDREN IN WITH REAL ELEMENTS — the live trap.** `match_eq`
 expands to `[len]=2`, `[0]=None`, `[1]=None`, `[Raw View]={data_ptr=0x…}`. **Only `[0]` and `[1]`
@@ -4512,12 +4512,12 @@ known by four.
 
 ---
 
-## 73. Act 5 should be a live-trace debugging session, not a map of the code
+## 73. Stop 5 should be a live-trace debugging session, not a map of the code
 
 **Doug, 2026-08-08**, on reading Act 5: *"It seems that for Act 5, we have an opportunity to
 accomplish something much more spectacular: live trace debugging."*
 
-**He is right, and Act 5 as shipped under-uses machinery that was built for exactly this.** It
+**He is right, and Stop 5 as shipped under-uses machinery that was built for exactly this.** It
 names `maximum_matching_with_trace` and `augment_traced`, offers a breakpoint to set, and stops
 there — ending the tour on *"go and read this"*, which is the homework failure the tour's own
 *What this cannot check* section warns about.
@@ -4536,7 +4536,7 @@ stop cannot do this at all.
 
 **2. The call stack IS the augmenting path** — not an analogy. `augment_traced` recurses once per
 displacement attempt, so N nested frames is an N-edge alternating path and each frame's `eq` is
-a node on it. Acts 1-3 spend a dozen expectations animating that structure from outside; the
+a node on it. Stops 1-3 spend a dozen expectations animating that structure from outside; the
 debugger holds it exactly, in the stack pane, for free. Plausibly the strongest single teaching
 artifact in the tour.
 
@@ -4581,7 +4581,7 @@ lowering), so the shape is worth getting right once here rather than five times 
 
 Doug stepped `ProportionalLoop` through `augment_traced` with the anchor plus a breakpoint at
 `matching.rs:189`, reading `debug-state.json` at every stop. **Twelve of twelve predictions about
-the next stop held**, which is the evidence that the model Act 5 will be written from is sound.
+the next stop held**, which is the evidence that the model Stop 5 will be written from is sound.
 
 **Unknown 1 — do two breakpoints interleave cleanly? Neither answer above.** It is **not** a
 two-stop rhythm, because the anchor fires for *every* frame while `189` fires only after
@@ -4645,7 +4645,7 @@ content**, and "N-edge" hides it — which matters directly for `#67`'s linear-a
 - **An anchor stop exposes only `frame_index`.** The innermost scope is `live_trace_breakpoint`,
   whose sole local it is; the algorithm's state is four frames up and the tracker fetches one
   scope. So **`173` tells you *which step*, `189` tells you *what the algorithm knows*** — the two
-  breakpoints are not interchangeable and Act 5 must say so.
+  breakpoints are not interchangeable and Stop 5 must say so.
 - **`Option` payloads are invisible.** `match_var[0]` renders as `Some` with no holder, because
   `#72` expands one level and the payload is one deeper. On a 3×3 the holder is deducible from
   history; **on `Drivetrain` it would not be.** This is the concrete question `#72`'s "do not
@@ -4679,9 +4679,9 @@ a shape: two flat greedy assignments, a descent, a discovery, and an unwind comm
 on the way back. `frameCount` moves 19 → 20 → 19 across rows 6-10 and is the cheapest way to see
 it.
 
-**Act 5 should be built on the depth column and the naming table, not on the value readouts.**
+**Stop 5 should be built on the depth column and the naming table, not on the value readouts.**
 
-### ✅ THE FAILURE PATH WALKED 2026-08-08 — `TwiceDefined`, and Act 5 gets a second specimen
+### ✅ THE FAILURE PATH WALKED 2026-08-08 — `TwiceDefined`, and Stop 5 gets a second specimen
 
 **Doug: *"Comparisons between working models and models which don't work are very helpful for me.
 So, I want a tour which compares and contrasts two models."*** The success path alone could not
@@ -4699,7 +4699,7 @@ the generated notebook traces:
 
 **CapacitorLoop's failure is at its LAST equation**, so the interesting stops sit ~110 Continues
 in — an ordeal, not a walk. `TwiceDefined` reaches both failure steps in nine frames. It stays the
-right specimen for Act 4's *physical* story (a capacitor across an ideal source is a real
+right specimen for Stop 4's *physical* story (a capacitor across an ideal source is a real
 modelling mistake); for learning the algorithm's failure path under a debugger, the synthetic 2×2
 is strictly better. **Sizing a walk from the notebook trace before doing one is the reusable move
 here.**
@@ -4720,7 +4720,7 @@ here.**
 | — | *outer give-up* | **243** | 1 | **NO FRAME** |
 | 8 | `EquationFailed(1)` | **133** | 0 | |
 
-### The two unnumbered rows are the argument for Act 5
+### The two unnumbered rows are the argument for Stop 5
 
 **Both `243` stops are real algorithm steps that never reach the frame stream.** The inner one is
 equation 0 being asked to move and refusing: its only candidate is `a`, `visited[a]` is already
@@ -5037,7 +5037,7 @@ what VS Code was asked to hold, not what `cppvsdbg` resolved. <!-- unverified --
 **Doug, 2026-08-08**, after the platform discussion: *"some of HRW's features only make sense if
 HRW is launched as a debugged process. For example, the live trace 'Debug' buttons and related UI
 features should not even be visible if HRW is not launched as a debugged process. And, relevant
-to our upcoming Act 5 effort, some tour links should be disabled if HRW is not launched as a
+to our upcoming Stop 5 effort, some tour links should be disabled if HRW is not launched as a
 debugged process."*
 
 **Deferred by Doug the same day**, alongside the platform question: *"neither the tech debt nor
@@ -5085,7 +5085,7 @@ it moves *"why didn't it stop?"* from a question asked in chat to an answer on s
 
 ### Tour links declare their requirement rather than going quiet
 
-For Act 5 and every algorithm tour's third leg: a stop that needs a live session should **say so**,
+For Stop 5 and every algorithm tour's third leg: a stop that needs a live session should **say so**,
 and say what is missing when it is. **Absence is stated, never filled** — and the tours are
 Markdown read outside HRW too, so a declared requirement is honest in both places. A stop that is
 merely inert teaches the learner that the tour is broken.
@@ -5321,7 +5321,7 @@ question its own subject raises:
 `command → measurement → error → command`, now with `der(w)` beside it. The torn block is
 re-solved **between every pair of integrator steps, for the whole run**. Tearing stops being a
 compile-time tidy-up and becomes a decision about the inner loop of the simulation. That reframes
-Act 1 rather than repeating it.
+Stop 1 rather than repeating it.
 
 ### Why it is not written yet
 

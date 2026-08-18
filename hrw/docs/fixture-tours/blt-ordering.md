@@ -2,7 +2,7 @@
 
 [▲ The chain overview](hrw://tour/the-mathematics)
 
-**A curriculum tour.** Walk [`matching.md`](matching.md) first — it answers *which* equation
+**A concept tour.** Walk [`matching.md`](matching.md) first — it answers *which* equation
 solves *which* unknown, and this tour asks *in what order*.
 
 Every count below was read from the committed traces, never remembered.
@@ -21,12 +21,12 @@ If it can, the whole system is a sequence of direct assignments: compute this, t
 next. No iteration anywhere. If it cannot, some group of equations is circular and has to be
 solved **simultaneously**.
 
-**This phase finds out which, and where.** Three acts: a system that orders completely, one that
+**This phase finds out which, and where.** Three stops: a system that orders completely, one that
 does not order at all, and one that splits into independent pieces.
 
 ---
 
-## Act 1 — When an order exists
+## Stop 1 — When an order exists
 
 `RcCircuit` is 23 equations in 23 unknowns.
 
@@ -43,14 +43,14 @@ already known. Twenty-three of them in a row is **forward substitution** — the
 list once, evaluating, and never iterates.
 
 On the spy plot this is the diagonal: every marked cell on or below it, nothing above. That shape
-is why the phase is named as it is, and Act 4 comes back to it.
+is why the phase is named as it is, and Stop 4 comes back to it.
 
 **This is the best possible outcome**, and it is worth knowing that a 23-equation circuit
 achieves it. Wiring components together does not by itself create anything circular.
 
 ---
 
-## Act 2 — When no order exists
+## Stop 2 — When no order exists
 
 `ProportionalLoop` is 3 equations in 3 unknowns, and you already know from `matching.md` that a
 perfect matching exists.
@@ -78,7 +78,7 @@ comparing later: the loop survives, and it is re-solved at every time step.
 
 ---
 
-## Act 3 — When the system splits
+## Stop 3 — When the system splits
 
 `TwoLoops` is 4 equations in 4 unknowns, written as two independent controller loops.
 
@@ -104,7 +104,7 @@ once — which equations are entangled, and what sequence the entangled groups g
 
 ---
 
-## Act 4 — What you have been building is a block triangular form
+## Stop 4 — What you have been building is a block triangular form
 
 The three shapes you have seen have one name between them.
 
@@ -139,15 +139,15 @@ stepper under **Structural → Tarjan** replays that search.
 
 **Whether the spy plot reads as triangular.** It is custom-painted and unreachable by any
 accessibility-tree test, so whether the orange coupled boxes and the diagonal are *visible* as the
-shape Act 4 describes is your report alone.
+shape Stop 4 describes is your report alone.
 
-**Whether Act 3 lands as the important one.** Decomposition matters more at scale than either
+**Whether Stop 3 lands as the important one.** Decomposition matters more at scale than either
 extreme, and this tour demonstrates it on four equations, where two 2×2 solves and one 4×4 feel
 equally cheap.
 
-**Whether Tarjan is named too late.** The algorithm arrives in Act 4 after three acts of its
+**Whether Tarjan is named too late.** The algorithm arrives in Stop 4 after three stops of its
 output, which is deliberate — but a reader who wanted the mechanism first will have spent three
-acts wondering.
+stops wondering.
 
 ---
 

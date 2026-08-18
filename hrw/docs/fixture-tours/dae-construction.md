@@ -2,7 +2,7 @@
 
 [▲ The chain overview](hrw://tour/the-mathematics)
 
-**A curriculum tour.** It teaches a step of the chain
+**A concept tour.** It teaches a step of the chain
 (`docs/compiler-phases/the-chain-of-problems.md`) and uses HRW as the instrument rather than the
 subject. It is **still a test**: every **Expected** line is violable, and a lesson built on a
 wrong number teaches the wrong thing.
@@ -28,13 +28,13 @@ So something has to sort every variable into a role — carried forward through 
 whole run, or solved for afresh at each instant — and then make one claim about the result:
 **this system is square.** Everything downstream is entitled to assume that claim.
 
-**DAE construction is that phase.** Seven acts: the sorting, why it sorts that way, what the solver
+**DAE construction is that phase.** Seven stops: the sorting, why it sorts that way, what the solver
 is really solving for, the claim, what happens when the claim fails in each direction, and why it is
 checked here rather than later.
 
 ---
 
-## Act 1 — Which declarations carry the past?
+## Stop 1 — Which declarations carry the past?
 
 `SingleInertia` declares four things:
 
@@ -66,12 +66,12 @@ your declarations.
 compiler takes you at your word.
 
 But nothing you wrote says `phi` and `w` are states. There is no `state` keyword in Modelica.
-That half of the partition was **derived from the equations**, and Act 2 is where you can see
+That half of the partition was **derived from the equations**, and Stop 2 is where you can see
 which ones.
 
 ---
 
-## Act 2 — What makes a variable a state?
+## Stop 2 — What makes a variable a state?
 
 You met the rule this morning in another pane: a variable is a state exactly when some equation
 **differentiates** it. The equation sheet's **Why** column names the equation that did it.
@@ -101,7 +101,7 @@ differentiated?* for the whole model at once.
 
 ---
 
-## Act 3 — What is the solver actually solving for?
+## Stop 3 — What is the solver actually solving for?
 
 Here is the part that usually surprises people. Structural analysis lists the system's
 **unknowns**, and the model has four variables, two of which are states.
@@ -127,11 +127,11 @@ moment later; repeat.
 
 **A state is therefore two things at once** — a known value on the way in, and an unknown rate on
 the way out. That double role is why states are counted separately from everything else, and it
-is what the next act's count is really about.
+is what the next stop's count is really about.
 
 ---
 
-## Act 4 — The claim
+## Stop 4 — The claim
 
 Every downstream phase assumes one thing about this system.
 
@@ -150,11 +150,11 @@ a well-posed problem, not a sufficient one — a square system can still be unso
 what `blt-ordering.md` and `structural-vs-numerical-rank.md` are about.
 
 But the *count* is checkable immediately, cheaply, and before any hard work. Rumoca checks it
-here, at the end of DAE construction, and that timing is the subject of the last act.
+here, at the end of DAE construction, and that timing is the subject of the last stop.
 
 ---
 
-## Act 5 — What the compiler says when the claim fails
+## Stop 5 — What the compiler says when the claim fails
 
 `UnbalancedShaft` is `SingleInertia` with one extra line:
 
@@ -194,7 +194,7 @@ which is this model. Positive would mean *too many* — over-constrained, a diff
 
 ---
 
-## Act 6 — The other sign
+## Stop 6 — The other sign
 
 `OverDeterminedShaft` is `SingleInertia` with one extra line:
 
@@ -205,7 +205,7 @@ which is this model. Positive would mean *too many* — over-constrained, a diff
 Which says exactly what `der(phi) = w` already said, two lines above. **Nothing contradicts
 anything** — the model is merely repetitive.
 
-> **Predict.** Act 5's model was short one equation and reported `balance = -1`. This one is long
+> **Predict.** Stop 5's model was short one equation and reported `balance = -1`. This one is long
 > one equation and says nothing new. Will the compiler accept it?
 
 [▶ Look — OverDeterminedShaft → DAE](hrw://load/OverDeterminedShaft/Dae)
@@ -239,7 +239,7 @@ as a surplus.
 
 ---
 
-## Act 7 — Where it fails, and why that is the right place
+## Stop 7 — Where it fails, and why that is the right place
 
 > **Predict.** Structural analysis is the phase that finds singular systems. Will it report this
 > one?
@@ -276,20 +276,20 @@ result and a real trajectory answer better than a paragraph.
 
 ## What this tour cannot check
 
-**Whether Act 3 lands.** The `der(phi)`/`der(w)` result is the one genuinely counter-intuitive
+**Whether Stop 3 lands.** The `der(phi)`/`der(w)` result is the one genuinely counter-intuitive
 thing here, and it is asserted in one line. If it reads as a technicality rather than as the
-point, the act is too short rather than wrong.
+point, the stop is too short rather than wrong.
 
-**Whether the DAE tree is legible.** Acts 1 and 5 send you to a generic serde tree. Whether `x`,
+**Whether the DAE tree is legible.** Stops 1 and 5 send you to a generic serde tree. Whether `x`,
 `y` and `p` read as a partition — or as three collapsed nodes among thirty — is a rendering
 question no test reaches.
 
-**Whether Act 6's contrast with `CapacitorLoop` is worth a stop of its own.** It is asserted in
+**Whether Stop 6's contrast with `CapacitorLoop` is worth a stop of its own.** It is asserted in
 prose here and demonstrated nowhere in this tour. *(It is demonstrated in
-[`matching.md`](matching.md) Act 3, which walks that model's 13-of-14 matching — so the claim is
+[`matching.md`](matching.md) Stop 3, which walks that model's 13-of-14 matching — so the claim is
 checkable, just not here.)*
 
-**Whether Act 6 needed its own specimen or could have been prose.** It could not: until
+**Whether Stop 6 needed its own specimen or could have been prose.** It could not: until
 `OverDeterminedShaft` was written on 2026-08-17, every unbalanced specimen in the corpus reported
 `-1`, and the positive half of the sign convention was an assertion. Whether a whole model is the
 right price for one stop is a fair question — the answer here is that the model is nine lines.

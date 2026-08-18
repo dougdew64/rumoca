@@ -399,7 +399,7 @@ which reading is intended.
 
 HRW's Events pane reports the summary counts. On a smooth model it therefore says *"1 zero
 crossing"* and can show nothing behind it — a number with no evidence, which is the one thing
-`hrw/CLAUDE.md` forbids a pane from doing. `events.md` Act 2 currently names the anomaly and
+`hrw/CLAUDE.md` forbids a pane from doing. `events.md` Stop 2 currently names the anomaly and
 points here rather than reasoning around it.
 
 **A one-line fix in either direction removes the need for that paragraph.**

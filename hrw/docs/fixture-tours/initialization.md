@@ -2,7 +2,7 @@
 
 [▲ The chain overview](hrw://tour/the-mathematics)
 
-**A curriculum tour.** Walk [`index-reduction.md`](index-reduction.md) first — this phase runs on
+**A concept tour.** Walk [`index-reduction.md`](index-reduction.md) first — this phase runs on
 the reduced, index-1 system.
 
 Every count below was read from the committed traces, never remembered.
@@ -25,12 +25,12 @@ has to be solved for, from the algebraic part of the system, before the first st
 disagree. Modelica lets you write `initial equation` blocks *and* `start` attributes, and the
 compiler must notice when they over-determine the problem rather than quietly preferring one.
 
-**This phase settles both.** Three acts: the case with nothing to solve, the case with a real
+**This phase settles both.** Three stops: the case with nothing to solve, the case with a real
 initialization system, and the case that specifies too much.
 
 ---
 
-## Act 1 — The case with nothing to solve
+## Stop 1 — The case with nothing to solve
 
 `BouncingBall` has two states and two equations.
 
@@ -52,7 +52,7 @@ would have to interpret.
 
 ---
 
-## Act 2 — The case with a real initialization system
+## Stop 2 — The case with a real initialization system
 
 `RcCircuit` has one state and twenty-two algebraic variables.
 
@@ -78,11 +78,11 @@ lesson. Zero explicit initial conditions against one state is a **deficit**, and
 fine: the unspecified state falls back to its `start` attribute, which is Modelica's default and
 the verdict says so.
 
-**A surplus is the problem, not a deficit.** Which is Act 3.
+**A surplus is the problem, not a deficit.** Which is Stop 3.
 
 ---
 
-## Act 3 — The case that specifies too much
+## Stop 3 — The case that specifies too much
 
 `OverInitRc` is `RcCircuit` with initial conditions added.
 
@@ -115,7 +115,7 @@ two sources separately is what makes the fix obvious.
 
 ---
 
-## Act 4 — Square and still singular, again
+## Stop 4 — Square and still singular, again
 
 `RotationalInertia` is a torque source driving an inertia with one flange left unconnected.
 
@@ -151,10 +151,10 @@ question that has to be answered.
 
 ## What this tour cannot check
 
-**Whether Act 2's 21 blocks read as significant.** A whole BLT decomposition running before time
+**Whether Stop 2's 21 blocks read as significant.** A whole BLT decomposition running before time
 starts is the least-known thing in this tour, and it is one number in a tree.
 
-**Whether Act 4 is a fourth act or a second tour.** It is the most interesting failure here and it
+**Whether Stop 4 is a fourth stop or a second tour.** It is the most interesting failure here and it
 depends on `connect-expansion.md`'s potential/flow asymmetry, which not every reader will have
 fresh.
 

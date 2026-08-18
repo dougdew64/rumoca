@@ -1604,7 +1604,7 @@ impl App {
         }
         // Remember where we started, so the run can put it back. A stop may
         // legitimately leave Tour mode — `hrw://source/<line>` must, since the
-        // source only renders in Specimen mode — and `matching.md` ends Act 3 with
+        // source only renders in Specimen mode — and `matching.md` ends Stop 3 with
         // exactly that, so the walk used to finish with the tour off screen.
         self.tour.mode_before_autoplay = Some(self.ui_mode);
 
@@ -3242,7 +3242,7 @@ impl App {
                 .as_ref()
                 .map(equation_sheet::EquationSheet::to_bridge_json),
             // The only pane that shows connection sets, and therefore the only
-            // evidence for `connect-expansion.md` Act 1.
+            // evidence for `connect-expansion.md` Stop 1.
             StageKind::Flatten if self.viewport.flatten == FlattenView::Connections => self
                 .stage_views
                 .connection_anim
@@ -8823,7 +8823,7 @@ fn register_hrw_hooks(cache: &mut egui_commonmark::CommonMarkCache, links: &[Str
 ///
 /// It read as "nothing happens" rather than as chaos because dispatching a link that
 /// navigates where the app already is has no visible effect — the app was busy
-/// re-arriving at Act 1's destination while Doug clicked Act 2. And it hid for as long
+/// re-arriving at Stop 1's destination while Doug clicked Stop 2. And it hid for as long
 /// as it did because **restarting HRW clears the cache**, so the next link clicked
 /// after any rebuild worked, and this project rebuilds constantly.
 ///
@@ -11510,7 +11510,7 @@ mod tests {
 
     /// **A fired hook is consumed, so a link below it is still reachable.**
     ///
-    /// The regression behind Doug's report that two Act 2 links "don't cause any
+    /// The regression behind Doug's report that two Stop 2 links "don't cause any
     /// action when clicked". `egui_commonmark` never clears a hook it sets, and
     /// `drain_hrw_hooks` only *read* it — so the first link clicked anywhere in a tour
     /// was re-dispatched every frame forever, and being first in document order it
@@ -13087,7 +13087,7 @@ mod tests {
     ///
     /// The stop that does it is not wrong. `hrw://source/<line>` *must* switch to
     /// Specimen mode, because that is the only place the source renders, and a reader
-    /// clicking it wants to be taken there. But `matching.md` ends Act 3 with one, so
+    /// clicking it wants to be taken there. But `matching.md` ends Stop 3 with one, so
     /// an unattended run finished with the tour nowhere on screen — and the last two
     /// stops played to nobody.
     ///

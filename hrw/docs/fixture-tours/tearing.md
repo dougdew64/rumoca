@@ -2,7 +2,7 @@
 
 [▲ The chain overview](hrw://tour/the-mathematics)
 
-**A curriculum tour.** Walk [`blt-ordering.md`](blt-ordering.md) first — it produces the coupled
+**A concept tour.** Walk [`blt-ordering.md`](blt-ordering.md) first — it produces the coupled
 blocks this tour tries to shrink.
 
 Every count below was read from the committed traces, never remembered.
@@ -23,13 +23,13 @@ But a block's *size* is not fixed. Here is the trick, and it is worth seeing bef
 
 So the solver iterates on the guess alone. A 3×3 simultaneous solve becomes a 1×1 one.
 
-**Tearing is the phase that chooses what to guess.** Five acts: the trick, the choice being made,
+**Tearing is the phase that chooses what to guess.** Five stops: the trick, the choice being made,
 two blocks torn independently, all three kinds of block in one model, and what it costs once time
 is moving.
 
 ---
 
-## Act 1 — Guess one number and the rest falls out
+## Stop 1 — Guess one number and the rest falls out
 
 `ProportionalLoop` gave you one coupled block of size 3, on `error`, `command` and `measurement`:
 
@@ -60,7 +60,7 @@ one unknown, not three. **The block is still coupled; it is just cheaper.**
 
 ---
 
-## Act 2 — Watch the choice being made
+## Stop 2 — Watch the choice being made
 
 The tear variable was not arbitrary. Step the animation rather than reading its result.
 
@@ -79,11 +79,11 @@ applied rather than asserting it.
 
 It is a *heuristic*, and that word is doing real work: choosing the tear set that minimises
 iteration is NP-hard in general, so every Modelica compiler uses a greedy rule and none claims
-optimality. Act 5 is about what that costs.
+optimality. Stop 5 is about what that costs.
 
 ---
 
-## Act 3 — Two blocks, torn independently
+## Stop 3 — Two blocks, torn independently
 
 `TwoLoops` gave you two coupled blocks of size 2 rather than one of size 4.
 
@@ -105,7 +105,7 @@ The run-time shape is now: iterate one number, then iterate one number. Compare 
 
 ---
 
-## Act 4 — All three kinds of block in one model
+## Stop 4 — All three kinds of block in one model
 
 `MixedLoop` is 5 equations, and it is the most realistic model in this tour.
 
@@ -128,14 +128,14 @@ the equations, and tearing shrinks them further.
 
 ---
 
-## Act 5 — What it costs once time is moving
+## Stop 5 — What it costs once time is moving
 
 Every specimen so far is **timeless** — no states, so each block is solved once and the model is
 finished. That is a simplification, and it hides what the phase is really deciding.
 
 `LoopWithInertia` is `ProportionalLoop` with the inertia restored: the same cycle, plus a state.
 
-> **Predict.** The block is torn on one variable, as in Act 1. How many times will that torn block
+> **Predict.** The block is torn on one variable, as in Stop 1. How many times will that torn block
 > be solved over a simulation?
 
 [▶ Look — LoopWithInertia → Structural → Spy plot](hrw://load/LoopWithInertia/Structural/SpyPlot)
@@ -148,12 +148,12 @@ and a **scalar** block holding `f_x[0]`, which is the equation containing `der(w
 *What just happened.* There is a state, so the integrator takes a step, and a step, and a step —
 and **the torn block is re-solved between every pair of steps, for the whole run.**
 
-That reframes Acts 1 to 4. Tearing is not a compile-time tidy-up whose benefit you count once. The
+That reframes Stops 1 to 4. Tearing is not a compile-time tidy-up whose benefit you count once. The
 choice of *which single variable to guess* is a decision about the innermost loop of the
 simulation, executed thousands of times. A greedy choice that is one variable worse than optimal
 is one extra unknown in every Newton iteration of every time step.
 
-**Which is why the phase bothers, and why "heuristic" in Act 2 is uncomfortable rather than
+**Which is why the phase bothers, and why "heuristic" in Stop 2 is uncomfortable rather than
 reassuring.**
 
 ---
@@ -161,15 +161,15 @@ reassuring.**
 ## What this tour cannot check
 
 **Whether the tearing animation shows the choice as a choice.** The frames carry `appearances` and
-`competitors` precisely so Act 2 can ask *"why that variable?"* — but whether those numbers are
+`competitors` precisely so Stop 2 can ask *"why that variable?"* — but whether those numbers are
 visible and legible on screen is the half no test reaches.
 
-**Whether Act 4 is the right ending or the right beginning.** `MixedLoop` is the most realistic
+**Whether Stop 4 is the right ending or the right beginning.** `MixedLoop` is the most realistic
 model here and arguably the point; it is placed fourth because the machinery has to be understood
 first, and that ordering may be exactly backwards for a reader who wants to know what a compiled
 model looks like before learning how it got that way.
 
-**Whether Act 5's claim about cost is believable without a measurement.** It asserts thousands of
+**Whether Stop 5's claim about cost is believable without a measurement.** It asserts thousands of
 re-solves and shows none. A profile would settle it and there is no profiler here.
 
 ---
