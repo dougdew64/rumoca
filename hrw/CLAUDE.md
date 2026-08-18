@@ -564,6 +564,12 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > started all of this. A funnel that did nothing also says so, which is `CartesianPendulum`'s
 > whole lesson.
 >
+> **⟶ IF THIS SESSION IS ON THE MACHINE WITH SYSTEM MODELER**, the one owed experiment is
+> simulating `hrw/specimens/CartesianPendulum.mo`. The protocol, and what each of the three
+> possible outcomes establishes, are written down in `docs/upstream-issues.md` under the
+> index-reduction entry — decided in advance so the result is not read to taste. It turns
+> `index-reduction.md` Stop 5 from Claude's inference into an adjudicated fact.
+>
 > **The tour is rewritten** (2026-08-18): five stops, smallest-first —
 > `BouncingBall` (nothing needed) → `BenchActuator` (**1** differentiation, 4→3 states, the
 > mechanism at a size you can hold) → `Drivetrain` (6, at 97 equations) → `CartesianPendulum`

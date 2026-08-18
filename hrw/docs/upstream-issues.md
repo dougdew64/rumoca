@@ -533,6 +533,33 @@ step-size failure four decimal places into the simulation.
 **Not yet adjudicated against System Modeler**, which is the obvious next step and would turn the
 reading into a fact.
 
+### How to adjudicate it — for whichever machine has System Modeler
+
+**Doug, 2026-08-18:** *"I don't have System Modeler on this machine. When I get home I will use
+my other machine to test the pendulum specimen with System Modeler."* Written here rather than
+left in a conversation, because **the memory store does not travel between machines** and this
+file does.
+
+1. Open `hrw/specimens/CartesianPendulum.mo`. It is portable Modelica with no Wolfram
+   extensions and no MSL dependency, so it should load as-is.
+2. **Simulate it**, 0 → 10 s, default solver. That is the whole test.
+
+**What each outcome means, decided in advance so the result is not read to taste:**
+
+| System Modeler | what it establishes |
+|---|---|
+| **simulates cleanly** | An independent implementation reduces this system. Rumoca's index reduction is then **narrower than a mainstream compiler's**, and the upstream entry above becomes a well-evidenced gap rather than an open question. This is the expected outcome — it is the textbook example. |
+| **fails the same way** | The reading is wrong, or the model is. Check the model first: a bad initial condition (`x=1, y=0` must satisfy `x²+y²=L²`, and it does at `L=1`) would fail in both. **This outcome retires the entry** rather than weakening it. |
+| **rejects it at compile time** | The most interesting answer. Read the diagnostic — a compiler that *declines* a model it cannot reduce, and says so, is the behaviour the entry above argues Rumoca should have. |
+
+**Record the result here**, with the version of System Modeler, and update
+[`specimen-notebook/CartesianPendulum/purpose.md`](specimen-notebook/CartesianPendulum/purpose.md),
+whose Provenance section currently says the round-trip has not been done. **`the-oracle.md` is the
+tour for this gesture** and its stop 3 is the worked example of asking the other implementation.
+
+**And it settles charter §4.3 for this specimen**, which requires *"compiles and runs equivalently
+in both"* — a bar `CartesianPendulum` currently fails on the Rumoca side, deliberately.
+
 ## Adding to this file
 
 One entry per bug, and only for bugs **reproduced**, not suspected. Include the
