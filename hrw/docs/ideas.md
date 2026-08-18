@@ -5413,3 +5413,51 @@ questions — collapsing them back into one field reintroduces this bug.
 
 Five theories were wrong about the 2026-08-03 version of this before anyone read the numbers.
 This one took **one** reading, because the instrument was fixed first.
+
+## 81. A pendulum specimen for index reduction — pedagogy, no longer capability
+
+**Doug, 2026-08-17, on the index-reduction tour:** *"index reduction is a large topic and so is not
+well served by a short tour… the tour needs to assume that I have only a basic knowledge of
+calculus."*
+
+**The case for this changed mid-investigation, and the change is the point.** The original argument
+was that no specimen in the corpus ever differentiates, so the tour named for Pantelides could not
+show Pantelides. **That argument was wrong**: `Drivetrain` differentiates at least four times, and
+HRW's captured frames record them (`DECISIONS.md`, 2026-08-17). The tour said zero because it read
+a field whose name misled it.
+
+**So this is no longer needed to see the phenomenon.** It is wanted because **97 equations and 88
+algebraics cannot be done by hand**, and a reader meeting differentiation for the first time needs
+a model small enough to work through on paper alongside the pane.
+
+### What it should be
+
+A pendulum in **Cartesian** coordinates — the canonical index-3 DAE that every treatment of
+Pantelides opens with:
+
+```text
+der(x) = vx,   der(y) = vy
+m*der(vx) = -lambda*x
+m*der(vy) = -lambda*y - m*g
+x^2 + y^2 = L^2          <- the constraint, and it is NONLINEAR
+```
+
+**Nonlinear is the load-bearing word.** Every constraint in the corpus today is an *alias* — one
+variable equal to another times a constant — which substitution can remove. `x² + y² = L²` cannot
+be substituted away, so differentiation is the only route, and the reader sees why rather than
+being told.
+
+Two states, one constraint, four equations: small enough to differentiate by hand and check the
+pane against your own arithmetic. That is the whole reason to prefer it over `Drivetrain`.
+
+### Unknowns to settle before writing prose around it
+
+- **Whether Rumoca handles it at all.** Untried. It may fail, which is a finding rather than a
+  setback — and possibly an upstream entry.
+- **Whether MSL has a better one.** Doug's suggestion, worth keeping: HRW can compile any MSL model
+  by name, so the corpus is searchable rather than guessable. The canonical high-index MSL examples
+  live in **MultiBody**, which charter §4.3 excludes as a *specimen* dependency — using one as a
+  diagnostic probe is a different act and probably fine, but it should be a deliberate call.
+- **Which order to work in.** Specimen first, then read `dae_prepare` to find out what
+  `reduce_constrained_dummy_derivatives` actually does, then rewrite the tour. Writing prose first
+  is what produced the error being corrected.

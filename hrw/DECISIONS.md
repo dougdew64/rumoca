@@ -3275,3 +3275,71 @@ is written here so a future grep still finds the trail** — which is the one th
 record owes when a name it uses stops resolving.
 
 Gate: 689 lib + 2 `msl_resolve` green, clippy clean, both generators run.
+
+## 2026-08-17 — a stage reported zero while its own frames recorded four
+
+**Doug, having walked the phase-1 tours:** *"one of the tours was way, way too short: the index
+reduction tour."* He asked for a bigger tour. What the investigation found was a **false claim**,
+and then something larger behind it.
+
+### The false claim
+
+`index-reduction.md` Stop 3 read *"**zero.** `differentiated_rows` is empty… **The textbook
+mechanism was not needed**"* — the tour's most interesting line, in the tour named for the
+algorithm that differentiates.
+
+**`Drivetrain` differentiates at least four times.** A test that has been passing the whole time
+asserts it against the frames captured from the run:
+
+```rust
+let n_differentiated = index_reduction_frames.iter()
+    .filter(|f| matches!(&f.step, IndexReductionStep::Differentiated { .. })).count();
+assert!(n_differentiated >= 4, "expected at least 4 differentiations, got {n_differentiated}");
+```
+
+**`differentiated_rows` does not mean what its name says.** `finish_report` builds it by scanning
+the **final** DAE for equations still carrying an `index_reduction:d_dt_for_` origin marker — so it
+counts *survivors*, not differentiations. Step 10, `eliminate_trivial`, removes 77 equations and
+takes them with it.
+
+**The lesson was built on the field's name rather than its semantics**, which is the same failure
+as the `f_x[19]` citation eight days earlier: a real thing, read too quickly, asserted confidently.
+
+### Three facts the corrected stop now carries, and one it cannot
+
+Reading the ten steps closed a second gap. The tour said *"77 eliminations and the demotion steps"*
+did the work, which reads as though elimination reduced the states. It did not: **one step demoted
+all six** — `reduce_constrained_dummy_derivatives`, named for the dummy-derivative method that is
+Pantelides' standard companion. The 77 eliminations are a later simplification of the *equation*
+count.
+
+What the stop still cannot do is **show** the differentiations. They are in the reduction
+**animation**, which the tour never opens.
+
+### And the thing behind it: the Index Reduction stage is a re-run, and nothing says so
+
+`worker.rs` clones the compiler's DAE and runs **HRW's own funnel** over it —
+`index_reduce_for_structural_analysis`, calling Rumoca's `dae_prepare` steps **in an order HRW
+maintains**. Its own doc comment is candid: *"HRW mirrors Rumoca's funnel order… re-verify it
+against `rumoca-sim/src/solve_lowering/structural_lowering.rs` on a Rumoca pin bump."*
+
+**The steps are Rumoca's and the data is Rumoca's; the ORDER is HRW's.** Under `CLAUDE.md` that is
+a legitimate derived view — *"re-running a phase to observe it is sometimes the only way to see
+inside it, and that is legitimate when labelled."*
+
+**It is not labelled.** Neither `reduction_view.rs` nor `index-reduction.md` says the tab is a
+re-execution rather than an observation of the compile. So a reordering upstream would leave the
+tab looking identical and being wrong, and a reader has no way to know which he is seeing. Logged
+as debt rather than fixed in passing, because the honest fix is upstream observability rather than
+a disclaimer.
+
+### Who caught it
+
+**Doug, and not by finding an error.** He reported that a tour *felt thin* — an aesthetic
+observation, three steps removed from a wrong number — and the investigation it triggered found a
+false claim, a misread field, a misattributed mechanism and an unlabelled derived view.
+
+**The toolchain could not have caught any of them.** Every checker in this repository asks whether
+a document agrees with a trace; the trace itself said zero. **Nothing cross-checks a stage's
+summary against the frames captured from the same run**, which is the gap that let a pane report
+zero while its own animation showed four.

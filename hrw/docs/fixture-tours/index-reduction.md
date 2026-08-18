@@ -98,23 +98,34 @@ describes.
 
 [Point at `reduction`](hrw://stage/IndexReduction/node/reduction)
 
-**Expected:** **zero.** `differentiated_rows` is empty. What did the work is **77 eliminations**
-and the demotion steps, and the system went from **97 equations to 20**.
+**Expected:** `differentiated_rows` is **empty**, `steps` shows **`reduce_constrained_dummy_derivatives`
+demoting all 6**, and the system went from **97 equations to 20** via `eliminate_trivial`.
 
-**Falsified if:** `differentiated_rows` is non-empty, or the reduced system is not 20 equations.
+**Falsified if:** the demotions come from any step other than `reduce_constrained_dummy_derivatives`,
+or the reduced system is not 20 equations.
 
-*What just happened.* **The textbook mechanism was not needed.** These constraints are *alias
-relations* — one variable equals another times a constant — and an alias can be eliminated by
-substitution instead of differentiated. Cheaper, exact, and it shrinks the system rather than
-growing it.
+*What just happened.* **It differentiated — and the empty field does not mean what its name
+suggests.**
 
-That is why 97 equations became 20 while the state count fell from 9 to 3: most of those 97 were
-connector bookkeeping that substitution removes outright.
+`differentiated_rows` is built by scanning the **final** DAE for equations still carrying an
+`index_reduction:d_dt_for_` origin marker. So it counts **differentiated rows that survived to the
+end**, not differentiations performed. `eliminate_trivial` removed 77 equations at the last step
+and took them with it.
 
-**Differentiation is the general answer and the last resort.** A compiler that reached for it first
-would produce a larger system than it started with. That this specimen never needs it is a fact
-about ideal gears, not about the algorithm — a model with a genuine non-alias constraint would show
-`differentiated_rows` filled.
+**The compiler differentiated at least four times on this model.** The frames captured from the run
+record them, and `worker::tests::drivetrain_index_reduction_produces_trace_frames` asserts
+`n_differentiated >= 4`. You cannot see that from this node — it is in the reduction **animation**,
+which this tour does not yet visit.
+
+> ### This stop taught the opposite of the truth until 2026-08-17
+>
+> It read *"**zero.** The textbook mechanism was not needed"* — built on the field name rather than
+> its semantics. **Doug found it by reporting that this tour felt too short**, which sent the
+> investigation into the pane and then into the code.
+>
+> **Kept visible rather than quietly rewritten**, because the mechanism is the lesson: a summary
+> field and the frames from the same run disagreed, and nothing cross-checked them. The full
+> rewrite of this tour is phase 2; this is the correction that could not wait for it.
 
 ---
 
@@ -150,9 +161,21 @@ ill-posed models.
 
 ## What this tour cannot check
 
-**Whether Stop 3 lands as the surprise it is.** Zero differentiations in the tour named for the
-algorithm that differentiates is the most interesting fact here, and it is asserted in one line
-against a JSON field that must be found in a tree.
+**The differentiations themselves.** Stop 3 now tells you the compiler differentiated at least four
+times and that this pane cannot show it — the count comes from captured frames rendered by the
+reduction *animation*, which this tour never opens. **A tour that asserts something it does not
+send you to look at is asking to be believed**, which is the position this stop was in when its
+claim was wrong.
+
+**What any of the ten steps mean.** The pane names them — `demote_exact_alias_component_states`,
+`reduce_constrained_dummy_derivatives`, `eliminate_trivial` — and this tour explains none. Doug,
+2026-08-17: *"the HRW RHS for index reduction shows a list of many index reduction algorithm steps,
+yet the tour offers no explanation for any of those steps."*
+
+**Why differentiating a constraint helps at all, and why index-1 is the target.** Both are asserted
+and neither is explained. Doug: *"the tour casually declares that an obvious solution is to
+differentiate the system. That is not obvious to me."* The two are one missing idea — what a solver
+is able to be asked for at each step — and it is the centre of this phase.
 
 **Whether the reduction view reads as a funnel.** It is a summary of ten steps, most of which
 demote nothing, and whether the progression is visible or reads as noise is your report.

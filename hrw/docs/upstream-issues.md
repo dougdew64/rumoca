@@ -404,6 +404,58 @@ points here rather than reasoning around it.
 
 **A one-line fix in either direction removes the need for that paragraph.**
 
+## The index-reduction funnel is not observable, so HRW mirrors its step order
+
+**This is a feature request rather than a bug**, and it is the clearest candidate in this file for
+the observability API `hrw/CLAUDE.md` describes as the intended shape of an upstream contribution.
+
+### What HRW does today, and why
+
+`rumoca-sim` index-reduces the DAE inside `solve_lowering/structural_lowering.rs`. **Nothing in the
+public surface reports what that funnel did** — which steps ran, what each demoted, which rows were
+differentiated. The result is observable; the process is not.
+
+So HRW clones the compiled DAE and **re-runs the funnel itself**, calling
+`rumoca_phase_structural::dae_prepare`'s steps in an order it maintains by hand:
+
+```text
+demote_exact_alias_component_states, demote_direct_assigned_states,
+reduce_constrained_dummy_derivatives, index_reduce_missing_state_derivatives,
+demote_states_without_assignable_derivative_rows, eliminate_derivative_aliases,
+demote_states_without_retained_derivative_rows, expand_compound_derivatives,
+substitute_standalone_state_derivatives_in_non_ode_rows, eliminate_trivial
+```
+
+**The steps and the data are Rumoca's; only the order is HRW's** — and that order is a copy of
+rumoca-sim's internals, kept in sync by a human on every rebase.
+
+### Why it matters to a maintainer
+
+**A reordering upstream is invisible to the compiler.** Nothing breaks, nothing fails to build, and
+HRW's Index Reduction tab keeps rendering a plausible funnel that no longer matches what
+`rumoca-sim` does. It is a silent divergence by construction, and the only guard is a step in a
+rebase checklist.
+
+**And the same gap produced a documented teaching error here.** HRW's summary
+(`differentiated_rows`) reported zero for a model whose captured frames recorded four
+differentiations, because the summary scans the *final* DAE while the differentiated rows are
+removed by a later elimination step. A tour taught the opposite of what the compiler did for its
+whole existence (`DECISIONS.md`, 2026-08-17).
+
+### The ask
+
+An **additive, observation-only** hook on the real funnel — a callback or a returned report naming
+each step and its outcome, in the order `rumoca-sim` actually ran them. Semantics-preserving; no
+behaviour change; the existing entry point keeps working untouched.
+
+That would let HRW **delete its mirrored copy**, which is the outcome worth having on both sides:
+one fewer place for the order to drift, and a compiler that can explain its own index reduction to
+anyone, not only to HRW.
+
+**Unverified:** whether a hook is better placed on the funnel as a whole or on each
+`dae_prepare` step. That is a maintainer's call about the crate's shape, and the reason this is
+written as a request rather than a patch.
+
 ## Adding to this file
 
 One entry per bug, and only for bugs **reproduced**, not suspected. Include the

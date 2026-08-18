@@ -1428,6 +1428,74 @@ reporter ships with a must-fire test.** Retrofitting the existing 17 is the debt
 not growing it is free. The Context Bar is the worked example — two guards, both
 of which fail against the code as it stood that morning.
 
+## Nothing cross-checks a stage's summary against the frames from the same run
+
+**Logged 2026-08-17**, after `index-reduction.md` spent its whole existence teaching the opposite
+of what the compiler did. Full account in `DECISIONS.md`, same date.
+
+**The Index Reduction stage reported `differentiated_rows: []` while the frames captured from that
+same compile recorded four `IndexReductionStep::Differentiated` events.** Both are true. The
+summary scans the *final* DAE for surviving origin markers; the frames record what happened along
+the way; and step 10 (`eliminate_trivial`) removes 77 equations, taking the differentiated rows
+with them.
+
+**Every checker in this repository compares a document to a trace, and the trace said zero.** So
+the tour was consistent with the artefact and wrong about the compiler, and no amount of
+document-versus-trace checking could have found it.
+
+### The check that would have
+
+For each stage that publishes both a **summary** and **frames**, assert they tell the same story
+about the same run. On `Drivetrain`: `differentiated_rows.len()` versus the count of
+`Differentiated` frames. They will legitimately differ — that is the whole finding — so the
+assertion is **not** equality but *"if the frames record N > 0 events of a kind, the summary must
+not describe zero of that kind without saying why."*
+
+**Cheaper first move: rename or document the field.** `differentiated_rows` means *rows still
+carrying a differentiation marker at the end*. A name like `differentiated_rows_retained`, or a
+one-line note in the pane, removes the trap for a fraction of the cost. The checker is the durable
+fix; the rename is what stops the next reader falling in.
+
+### Why it is worth building rather than noting
+
+**This is trigger 2 — a defect only a human caught** — and the human did not even catch *it*. Doug
+reported that the tour *felt thin*. The wrong number was three steps down from that. **A defect
+found by aesthetic dissatisfaction is one nothing else was looking for**, which is exactly the
+signal this file says should fire a sweep.
+
+## The Index Reduction tab is a re-run, and nothing on screen says so
+
+**Logged 2026-08-17**, found while investigating the above.
+
+`worker.rs` clones the compiler's DAE and runs **HRW's own funnel** over it —
+`index_reduce_for_structural_analysis`, which calls Rumoca's `dae_prepare` steps **in an order HRW
+maintains**. Its doc comment says so plainly: *"HRW mirrors Rumoca's funnel order… re-verify it
+against `rumoca-sim/src/solve_lowering/structural_lowering.rs` on a Rumoca pin bump."*
+
+**This is not a fiction, and the distinction matters.** The steps are Rumoca's, the data is
+Rumoca's compiled DAE, and the results are real. `CLAUDE.md` permits exactly this: *"re-running a
+phase to observe it is sometimes the only way to see inside it, and that is legitimate **when
+labelled**."*
+
+**It is not labelled.** `reduction_view.rs` does not say it, and `index-reduction.md` does not say
+it. So:
+
+- A reader takes the tab for an observation of what the compiler did. It is a faithful
+  re-execution, which is *nearly* the same thing and not the same thing.
+- **A reordering upstream leaves the tab looking identical and being wrong.** The doc comment
+  names this risk and `docs/updating-rumoca.md` step 3 exists because of it — a rebase check, which
+  is a human remembering, not a test.
+
+### Two fixes, and they are not alternatives
+
+1. **Label it now** — one line in the pane and one in the tour. Cheap, honest, and it satisfies the
+   rule as written.
+2. **Ask upstream for the real thing.** rumoca-sim runs this funnel during compilation and HRW
+   cannot see it, which is why the mirror exists at all. An observation hook there would make the
+   tab an observation rather than a re-execution, and delete the ordering risk outright. Filed in
+   `upstream-issues.md`; it is the kind of additive observability change `CLAUDE.md` says to make
+   rather than approximate around.
+
 ## `CATALOGUE.md` should carry each stop's `Expected` line
 
 **Logged 2026-08-17 at Doug's request**, immediately after `hrw://tour/<name>/stop/<slug>` was
