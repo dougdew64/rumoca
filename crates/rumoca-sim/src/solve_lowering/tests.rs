@@ -983,3 +983,97 @@ fn eval_dae_at_reports_finite_values_from_initial_state() {
     assert_eq!(der_x.value, 0.0);
     assert_eq!(der_v.value, 0.0);
 }
+
+/// **The funnel reports every step it ran, in order, and `None` changes nothing.**
+///
+/// # Why this exists
+///
+/// The funnel's *result* has always been observable and its *process* has not. A
+/// consumer wanting the sequence had to reproduce the step order by hand from this
+/// file — and a reordering here would leave that copy silently wrong.
+///
+/// **The must-fire half is the point.** An observation API whose observer is never
+/// called is indistinguishable from one that works, right up until somebody depends
+/// on it: this asserts frames actually arrive, not merely that the call compiles.
+#[test]
+fn the_preparation_funnel_reports_each_step_to_an_observer() {
+    use std::cell::RefCell;
+
+    use super::structural_lowering::{
+        prepare_dae_for_structural_analysis, prepare_dae_for_structural_analysis_observed,
+    };
+
+    let opts = SimOptions::default();
+
+    let seen: RefCell<Vec<(&'static str, usize, usize)>> = RefCell::new(Vec::new());
+    let mut observed_dae = symbolic_loop_dae();
+    {
+        let observe = |f: &super::FunnelStepFrame| {
+            seen.borrow_mut()
+                .push((f.step, f.states_before, f.states_after));
+        };
+        prepare_dae_for_structural_analysis_observed(&mut observed_dae, &opts, Some(&observe))
+            .expect("the fixture prepares cleanly");
+    }
+    let seen = seen.into_inner();
+
+    assert!(
+        !seen.is_empty(),
+        "no frame arrived, so the observer is wired to nothing \u{2014} which looks \
+         identical to a working API until something depends on it",
+    );
+
+    // The order is the payload. A consumer reproducing this sequence by hand is
+    // exactly what the API exists to stop, so the sequence itself is asserted.
+    let steps: Vec<&str> = seen.iter().map(|(s, _, _)| *s).collect();
+    assert_eq!(
+        steps,
+        vec![
+            // **First, and conditional on `opts.scalarize`** — which defaults to on.
+            // The first draft of this list omitted it, written from a consumer's copy
+            // of the funnel that does not have it: the exact drift this API exists to
+            // remove, caught by the API on its first run.
+            "scalarize_equations",
+            "demote_exact_alias_component_states",
+            "demote_direct_assigned_states",
+            "reduce_constrained_dummy_derivatives",
+            "index_reduce_missing_state_derivatives",
+            "demote_states_without_assignable_derivative_rows",
+            "eliminate_derivative_aliases",
+            "demote_states_without_retained_derivative_rows",
+            "expand_compound_derivatives",
+            "substitute_standalone_state_derivatives_in_non_ode_rows",
+        ],
+        "the funnel must report its steps in the order it runs them; if this fails \
+         because a step was added, moved or renamed, that is the change consumers \
+         could not previously see and the list here is the fix",
+    );
+
+    // **Each frame's `states_before` is the previous frame's `states_after`.** Without
+    // this the counts could be snapshots of anything; with it they describe one
+    // continuous run through the funnel.
+    for pair in seen.windows(2) {
+        assert_eq!(
+            pair[0].2, pair[1].1,
+            "frame for {:?} ends at {} states and {:?} begins at {} \u{2014} the frames \
+             are not describing one continuous run",
+            pair[0].0, pair[0].2, pair[1].0, pair[1].1,
+        );
+    }
+
+    // **Observing changes nothing.** The whole contract rests on this: an
+    // instrumented run and a plain one must produce the same DAE, or the instrument
+    // is part of the compiler rather than a window onto it.
+    let mut plain_dae = symbolic_loop_dae();
+    prepare_dae_for_structural_analysis(&mut plain_dae, &opts).expect("the fixture prepares");
+    assert_eq!(
+        plain_dae.variables.states.len(),
+        observed_dae.variables.states.len(),
+        "an observed run must leave the same states as an unobserved one",
+    );
+    assert_eq!(
+        plain_dae.continuous.equations.len(),
+        observed_dae.continuous.equations.len(),
+        "and the same equations",
+    );
+}

@@ -25,6 +25,7 @@ mod timing;
 // Re-exported through the sim facade so the root stays a curated same-crate
 // facade (see `architecture_hardening_test::test_sim_facade_cross_crate_exports_are_curated`).
 pub use rumoca_eval_solve::{EvalAtReport, EvalAtSlot, JacobianReport};
+pub use rumoca_phase_structural::dae_prepare::{FunnelStepFrame, FunnelStepOutcome};
 pub use rumoca_phase_structural::{BlockReport, StructuralReport, TearingReport};
 
 pub use diagnostics::SimulationDiagnosticError;
@@ -39,6 +40,7 @@ pub use probe::{
     steady_state_adjoint_objective_gradient_for_dae, steady_state_objective_gradient_for_dae,
     steady_state_parameter_sensitivity_for_dae,
 };
+pub use structural_lowering::prepare_dae_for_structural_analysis_observed;
 pub use structure_report::{
     SingularityDiagnosis, UnmatchedEquationDiagnosis, UnmatchedUnknownDiagnosis,
     diagnose_structural_singularity, structural_report_for_dae,

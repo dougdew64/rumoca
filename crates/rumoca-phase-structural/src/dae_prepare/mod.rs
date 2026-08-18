@@ -52,7 +52,10 @@ pub use dummy_state_metadata::{
     constrained_dummy_state_names,
 };
 mod direct_demotion;
+mod funnel_trace;
 mod state_row_reduction;
+pub use funnel_trace::{FunnelStepFrame, FunnelStepOutcome, dae_shape, emit_funnel_step};
+
 pub use direct_demotion::demote_direct_assigned_states;
 use direct_demotion::{
     collect_non_state_continuous_unknown_names, equation_defining_expr_for_unknown,

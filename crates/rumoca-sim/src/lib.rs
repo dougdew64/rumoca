@@ -57,13 +57,14 @@ pub(crate) use simulation_session_api::SimulationSessionApi;
 // through `solve_lowering` so the root stays a curated same-crate facade; the
 // report types are re-exported from there rather than as root cross-crate uses.
 pub use solve_lowering::{
-    BlockReport, EvalAtProbe, EvalAtReport, EvalAtSlot, JacobianProbe, JacobianReport,
-    ObjectiveGradientProbe, ParameterJacobianProbe, SimulationDiagnosticError,
-    SingularityDiagnosis, StateAndParameterJacobianProbe, SteadyStateSensitivityProbe,
-    StructuralReport, TearingReport, UnmatchedEquationDiagnosis, UnmatchedUnknownDiagnosis,
-    diagnose_structural_singularity, eval_dae_at, jacobian_for_dae, lower_dae_for_gpu_preparation,
-    lower_dae_for_simulation, lower_for_differentiation_with_overrides,
-    lower_for_simulation_with_overrides, parameter_jacobian_for_dae,
+    BlockReport, EvalAtProbe, EvalAtReport, EvalAtSlot, FunnelStepFrame, FunnelStepOutcome,
+    JacobianProbe, JacobianReport, ObjectiveGradientProbe, ParameterJacobianProbe,
+    SimulationDiagnosticError, SingularityDiagnosis, StateAndParameterJacobianProbe,
+    SteadyStateSensitivityProbe, StructuralReport, TearingReport, UnmatchedEquationDiagnosis,
+    UnmatchedUnknownDiagnosis, diagnose_structural_singularity, eval_dae_at, jacobian_for_dae,
+    lower_dae_for_gpu_preparation, lower_dae_for_simulation,
+    lower_for_differentiation_with_overrides, lower_for_simulation_with_overrides,
+    parameter_jacobian_for_dae, prepare_dae_for_structural_analysis_observed,
     state_and_parameter_jacobian_for_dae, steady_state_adjoint_objective_gradient_for_dae,
     steady_state_objective_gradient_for_dae, steady_state_parameter_sensitivity_for_dae,
     structural_report_for_dae, structurally_lowered_dae_for_simulation_artifact,
