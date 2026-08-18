@@ -2307,3 +2307,95 @@ A fixture for the picker test.
          wrong about where it comes from",
     );
 }
+
+/// **Switching tours puts the new one at its top, and the PAINT PATH is what does it.**
+///
+/// Doug, 2026-08-17: *"When I click a subordinate tour link in the-concepts hub tour, the
+/// subordinate tour opens partially scrolled down instead of fully scrolled to the top."*
+///
+/// # Why the state-level half is not enough
+///
+/// `TourState::reset_scroll` sets a flag; egui's `ScrollArea` is what actually holds the
+/// offset, under the stable `id_salt("tour")`. A test that only checked the flag would
+/// have stayed green through the entire life of the bug — the three fields
+/// `reset_scroll` already cleared were HRW's *own* measurements, and clearing them is
+/// exactly what looked like a fix for eleven days.
+///
+/// **So this paints.** The flag being consumed proves the call site is wired, which is
+/// the coupling a state-only test cannot see. That lesson is one day old here: the first
+/// attempt at the tour-link navigation fix was written at the wrong level and stayed
+/// green when the call site was re-gated.
+///
+/// The offset itself is not asserted, and that is deliberate rather than lazy: the
+/// `ScrollArea`'s `Id` is derived from its parent `Ui`, so reconstructing it in a test
+/// would hard-code a layout detail that a reshuffle silently invalidates. What is
+/// checkable without guessing is that a frame carrying text consumes the request and a
+/// frame carrying none preserves it.
+#[test]
+fn switching_tours_asks_the_pane_to_return_to_the_top() {
+    let _guard = AdHocTour::absent();
+    let mut h = harness(App::test_default());
+    h.run_steps(2);
+
+    // The reported gesture: leave whatever is showing for another tour. Routed through
+    // `test_select_fixture_tour`, which calls `select_tour` — the same path the picker
+    // and an `hrw://tour/…` link both take, so the request is made exactly as it is in
+    // the app.
+    //
+    // **Not driven by clicking the picker, and the reason is a harness trap this file
+    // already warns about.** The popup is a scroll area: a tour that sorts late is in
+    // the accessibility tree but clipped, so the click lands on nothing. The first
+    // version of this test did exactly that with `node-pointing` (17th of 22), selected
+    // nothing, and **passed with the fix switched off** — "not set" reading as "set and
+    // spent".
+    assert!(
+        h.state_mut().test_select_fixture_tour("node-pointing"),
+        "the fixture must be readable, or no switch happens and nothing below is a test",
+    );
+
+    // Non-vacuity: the switch really did request a return before any frame ran.
+    assert!(
+        h.state().tour.scroll_to_top,
+        "precondition: switching must set the request — that half is \
+         `app::tests::switching_tours_requests_a_return_to_the_top`",
+    );
+
+    h.run_steps(4);
+
+    assert!(
+        !h.state().tour.scroll_to_top,
+        "switching tours must ask the pane to return to the top, and the painting frame \
+         must consume that request. Still set means the paint path never reads it, which \
+         is the shape the bug had: `reset_scroll` cleared three fields that do not \
+         position anything, while egui kept the previous document's offset under the \
+         stable `id_salt(\"tour\")`",
+    );
+}
+
+/// **The request survives a frame with no text to apply it to.**
+///
+/// Switching clears `cached`, so at least one frame renders no document. Consuming the
+/// flag there would spend it on a document that was never drawn — and the reader would
+/// land mid-page anyway, with every field looking correctly reset.
+///
+/// **A one-shot spent on the wrong frame is the classic form of this bug**, and it fails
+/// intermittently: whether the text is cached yet depends on poll timing, so the fix
+/// would work when tested and not when walked.
+#[test]
+fn a_return_to_the_top_is_not_spent_on_a_frame_with_no_tour() {
+    let _guard = AdHocTour::absent();
+    let mut h = harness(App::test_default());
+    h.run_steps(2);
+
+    // No tour selected, and a pending request.
+    h.state_mut().tour.selected = None;
+    h.state_mut().tour.cached = None;
+    h.state_mut().tour.scroll_to_top = true;
+    h.run_steps(2);
+
+    assert!(
+        h.state().tour.scroll_to_top,
+        "with no document on screen there is nothing to scroll, so the request must \
+         still be pending when one arrives",
+    );
+}

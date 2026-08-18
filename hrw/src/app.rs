@@ -6635,6 +6635,27 @@ impl App {
                 // Note what this cost before it was found: the tour panel was quietly
                 // taking 70 % of a 1280pt window rather than the 40 % it reports.
                 let mut area = egui::ScrollArea::both().id_salt("tour");
+
+                // **A new tour opens at its top.**
+                //
+                // `id_salt("tour")` is stable on purpose — it is what lets a reader's
+                // scroll position survive a repaint — and the cost is that it survives
+                // the *document* too. Doug, 2026-08-17: *"When I click a subordinate
+                // tour link in the-concepts hub tour, the subordinate tour opens
+                // partially scrolled down instead of fully scrolled to the top."*
+                //
+                // The hub is the worst case and the reason it surfaced now: its links
+                // sit in a ten-row table you scroll down to reach, so the tour that
+                // opened inherited however far down the row was.
+                //
+                // **Consumed only on a frame that has text.** Switching clears `cached`,
+                // so the frame in between renders nothing — clearing the flag there
+                // would spend it on a document that was never drawn.
+                if self.tour.scroll_to_top && tour_text.is_some() {
+                    self.tour.scroll_to_top = false;
+                    area = area.vertical_scroll_offset(0.0);
+                }
+
                 if self.tour.autoplay.is_running()
                     && let Some(max_scroll) = self.tour.tour_max_scroll
                 {
@@ -13132,8 +13153,15 @@ mod tests {
     /// rescrolls very visibly from the stopped position back up to the top before the
     /// tour begins playing."*
     ///
-    /// The pane itself was correct: re-selecting a tour puts it at the top. **The
-    /// bookkeeping was not.** `tour_link_y` and `tour_prev_link_y` are pixel positions
+    /// **The pane was believed correct at the time, and it was not** — re-selecting a
+    /// tour did *not* put it at the top, which Doug reported on 2026-08-17 and
+    /// `switching_tours_asks_the_pane_to_return_to_the_top` now holds. The sentence that
+    /// stood here ("the pane itself was correct") is corrected rather than deleted,
+    /// because believing it is what kept the search inside HRW's own bookkeeping and
+    /// away from the `ScrollArea` that actually holds the offset.
+    ///
+    /// **The bookkeeping was also wrong, and this test is about that half.**
+    /// `tour_link_y` and `tour_prev_link_y` are pixel positions
     /// measured in one document at one beat, and nothing cleared them — so the first
     /// frame of the new run interpolated *from* the stopped position and travelled
     /// back over the full window.
@@ -13184,6 +13212,56 @@ mod tests {
         // Non-vacuity: the run really did start, so this is not passing because
         // nothing happened.
         assert_eq!(app.test_autoplay_phase(), crate::autoplay::Phase::Playing);
+    }
+
+    /// **Switching tours requests a return to the top.**
+    ///
+    /// The state half of Doug's 2026-08-17 report; the paint half — that a rendering
+    /// frame actually spends the request — is
+    /// `ui_tests::switching_tours_asks_the_pane_to_return_to_the_top`. **Both are
+    /// needed, and this one alone would have been the wrong test**: the bug lived
+    /// precisely in the gap, where `reset_scroll` diligently cleared three fields and
+    /// none of them positions the view.
+    #[test]
+    fn switching_tours_requests_a_return_to_the_top() {
+        let mut app = App::test_default();
+
+        // A switch that really happens. `test_select_fixture_tour` routes through
+        // `select_tour`, so this exercises the same path the picker and an
+        // `hrw://tour/…` link both take.
+        assert!(
+            app.test_select_fixture_tour("node-pointing"),
+            "the fixture must be readable, or the switch below does nothing",
+        );
+        assert!(
+            app.tour.scroll_to_top,
+            "arriving at a tour must ask the pane to start at the beginning",
+        );
+
+        // Spent by a paint, which this test does not do — so clear it by hand and
+        // confirm a *second* switch asks again. A one-shot that only ever fires once
+        // would fix the first navigation of a session and no other.
+        app.tour.scroll_to_top = false;
+        assert!(
+            app.test_select_fixture_tour("camera-aiming"),
+            "the second fixture must be readable too",
+        );
+        assert!(
+            app.tour.scroll_to_top,
+            "every switch asks, not just the first",
+        );
+
+        // **Re-selecting the tour already showing must NOT ask.** `select_tour` returns
+        // false there deliberately, to keep a reader's place in a tour they are partway
+        // through — and yanking them to the top would be the same defect wearing the
+        // opposite sign.
+        app.tour.scroll_to_top = false;
+        app.test_select_fixture_tour("camera-aiming");
+        assert!(
+            !app.tour.scroll_to_top,
+            "re-picking the tour already open is not a switch, and must leave the \
+             reader where they were",
+        );
     }
 
     /// **Non-vacuity for the test above**: the scenario is real, not hypothetical.

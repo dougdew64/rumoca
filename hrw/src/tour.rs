@@ -50,6 +50,20 @@ pub(crate) struct TourState {
     /// would fight the scrollbar on every frame, which is the defect the autoplay
     /// scroll work spent four attempts on (`ui-findings.md` C15).
     pub(crate) scroll_to_offset: Option<usize>,
+    /// **Put the tour panel back at the top on the next frame that renders text.**
+    ///
+    /// One-shot, and consumed only on a frame that actually drew a document — a switch
+    /// clears `cached`, so the frame in between has nothing to scroll and consuming the
+    /// flag there would drop it on the floor.
+    ///
+    /// **It cannot conflict with [`Self::scroll_to_offset`], because that field is
+    /// written and never read** — `hrw://tour/<name>/stop/<slug>` records a byte offset
+    /// that nothing consumes, so a stop link has never actually landed at its stop.
+    /// Found while fixing this; **not** fixed here, because landing on a heading needs
+    /// the same measurement the autoplay scroll took several attempts to get right, and
+    /// bundling it would hide one change inside another. The corpus contains exactly one
+    /// such link. <!-- unbuilt: tour_stop_offset_scroll -->
+    pub(crate) scroll_to_top: bool,
 
     /// **The self-running walk** of whichever tour is showing.
     ///
@@ -105,6 +119,7 @@ impl Default for TourState {
             polled_at: None,
             row_specimens: std::collections::HashMap::new(),
             scroll_to_offset: None,
+            scroll_to_top: false,
             autoplay: crate::autoplay::Autoplay::default(),
             autoplay_total: crate::autoplay::DEFAULT_TOTAL,
             tour_link_y: None,
@@ -191,6 +206,22 @@ impl TourState {
         self.tour_link_y = None;
         self.tour_prev_link_y = None;
         self.tour_measured_beat = None;
+        // **And put the new document at its top.**
+        //
+        // The three fields above are HRW's *own* measurements, used to interpolate an
+        // autoplay scroll. Clearing them was never enough, because **none of them is
+        // what positions the view** — that is egui's `ScrollArea`, which keeps an offset
+        // per id, and the tour panel's id (`id_salt("tour")`) is deliberately stable.
+        //
+        // So the offset survived the document. Doug, 2026-08-17: *"When I click a
+        // subordinate tour link in the-concepts hub tour, the subordinate tour opens
+        // partially scrolled down instead of fully scrolled to the top."* Exactly the
+        // hub's shape — its links live in a table you scroll down to reach, and the
+        // tour that opened inherited however far down that was.
+        //
+        // **The bug reads as "sometimes"**, which is why it survived: arrive at a tour
+        // from the top of a short document and nothing looks wrong.
+        self.scroll_to_top = true;
     }
 
     /// Re-read the list and the selected tour, at most once per
