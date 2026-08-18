@@ -2,7 +2,7 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-mathematics)
+[▲ The chain overview](hrw://tour/the-concepts)
 
 **A concept tour.** Walk [`initialization.md`](initialization.md) first. Everything so far has
 assumed one fixed set of equations; this tour is about models where the equations change.
@@ -141,4 +141,4 @@ mid-run. All of it is still expressed in *your names*.
 
 Turning those into memory addresses is [`solve-lowering.md`](solve-lowering.md).
 
-Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)
+Or go back up: [▲ The chain overview](hrw://tour/the-concepts)

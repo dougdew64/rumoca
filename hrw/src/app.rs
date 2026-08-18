@@ -6616,7 +6616,7 @@ impl App {
                 //
                 // A vertical-only scroll area reports its content's **full width** as
                 // the width it wants, and `egui_commonmark` does not wrap tables or
-                // code blocks — `the-mathematics.md` has a 178-character line. So the
+                // code blocks — `the-concepts.md` has a 178-character line. So the
                 // tour panel's intrinsic minimum width became the widest table in the
                 // document, egui sized the panel to it, and the divider had nothing
                 // left to give:
@@ -12156,7 +12156,7 @@ mod tests {
     /// slip in above the overview: the check is *position relative to everything else*.
     ///
     /// **And the non-vacuity guard matters here more than usual.** Alphabetically
-    /// `the-mathematics` already sorts after most tours, so a test that merely looked for
+    /// `the-concepts` already sorts after most tours, so a test that merely looked for
     /// it in the list would pass with the hoist deleted. This asserts index 0 *and* that
     /// there is something below it to be above.
     #[test]
@@ -12175,7 +12175,7 @@ mod tests {
         );
         assert!(
             ordered[0].is_overview(),
-            "the-mathematics.md is the hub the nine phase tours hang off and must be the \
+            "the-concepts.md is the hub the nine phase tours hang off and must be the \
              first row in the picker; it was {:?}",
             labels.first(),
         );

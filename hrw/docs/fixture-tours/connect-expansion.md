@@ -2,7 +2,7 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-mathematics)
+[▲ The chain overview](hrw://tour/the-concepts)
 
 `connect(src.p, R.p)` looks like wiring two things together. In the equations it is **neither an
 assignment nor an equality** — it is one edge in a graph, and the equations do not exist until that
@@ -359,4 +359,4 @@ solves which unknown.
   has its own tour: [▶ the-oracle](hrw://tour/the-oracle).
 - **Stream connectors.** Named in Stop 2 and exercised by no specimen here.
 
-Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)
+Or go back up: [▲ The chain overview](hrw://tour/the-concepts)

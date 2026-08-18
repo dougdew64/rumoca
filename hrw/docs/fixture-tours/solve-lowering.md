@@ -2,7 +2,7 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-mathematics)
+[▲ The chain overview](hrw://tour/the-concepts)
 
 **A concept tour.** The last phase before simulation. Walk [`events.md`](events.md) first.
 
@@ -169,4 +169,4 @@ whole tour.
 Nothing — this is the last compiler phase. What follows is **Simulation**: the solver stepping the
 vector through time, which is the Plot tab rather than a stage.
 
-Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)
+Or go back up: [▲ The chain overview](hrw://tour/the-concepts)

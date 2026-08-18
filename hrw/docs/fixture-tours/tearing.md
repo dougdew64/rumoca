@@ -2,7 +2,7 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-mathematics)
+[▲ The chain overview](hrw://tour/the-concepts)
 
 **A concept tour.** Walk [`blt-ordering.md`](blt-ordering.md) first — it produces the coupled
 blocks this tour tries to shrink.
@@ -185,4 +185,4 @@ can fix.
 
 That is [`index-reduction.md`](index-reduction.md).
 
-Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)
+Or go back up: [▲ The chain overview](hrw://tour/the-concepts)

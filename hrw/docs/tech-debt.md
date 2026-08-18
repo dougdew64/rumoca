@@ -1385,7 +1385,7 @@ instructive than the fact.
 
 **What differs is the SIZE OF THE ENCLOSING PANEL.** A vertical-only scroll area reports
 its content's full width as the width it *wants*, and that propagates outward: with the
-real `the-mathematics.md` loaded, the tour panel opened at **899pt of a 1280pt window
+real `the-concepts.md` loaded, the tour panel opened at **899pt of a 1280pt window
 instead of 512pt, and the divider froze solid** — the panel had been sized to the widest
 table in the document. Under `both()` the same document opens at 512pt and drags freely.
 Both numbers are read from `App`, and

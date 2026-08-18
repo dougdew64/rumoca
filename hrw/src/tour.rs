@@ -312,7 +312,7 @@ pub(crate) enum TourSource {
 ///
 /// The stem, not the filename: `TourSource::Fixture` holds a full path and every
 /// comparison in the codebase goes through `file_stem`.
-pub(crate) const OVERVIEW_TOUR: &str = "the-mathematics";
+pub(crate) const OVERVIEW_TOUR: &str = "the-concepts";
 
 impl TourSource {
     pub(crate) fn path(&self) -> PathBuf {

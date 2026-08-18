@@ -3252,3 +3252,26 @@ stop worth stopping at.** The concept template is frozen at the shape Doug valid
 
 **The signal that this went wrong is his report that a tour reads as going through the motions**,
 and no test can find it.
+
+### The hub is renamed too — `the-mathematics` → `the-concepts` (same day)
+
+**Doug:** *"Let's rename 'the-mathematics' to 'the-concepts' to be consistent with all of the work
+which you just completed."* 45 live references across 19 files, plus the file itself and the H1.
+
+**The tour kind and the hub had drifted apart in the same way the kind and the charter had.** The
+kind became *concept* because `solve-lowering` is memory layout and `connect-expansion` is language
+semantics — and the hub that routes into all ten was still called the mathematics, so the entry
+point contradicted the taxonomy at the first click.
+
+**Two mentions of mathematics inside the tour were deliberately kept**, because they say something
+true rather than naming the file: *"compiling it is six mathematical problems"*, and the reading
+order note *"if you want more mathematics than the machinery, walk 3 → 4 → 5 first"*. **That
+sentence is in fact the argument for the rename** — it distinguishes the mathematical tours from
+the rest, which is precisely why the whole set could not be called mathematics.
+
+**`DECISIONS.md` keeps the old slug**, on the rule the Act→Stop rename established: this file
+records what was decided when, and the hub really was called `the-mathematics` then. **The old name
+is written here so a future grep still finds the trail** — which is the one thing a historical
+record owes when a name it uses stops resolving.
+
+Gate: 689 lib + 2 `msl_resolve` green, clippy clean, both generators run.

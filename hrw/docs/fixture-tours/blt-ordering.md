@@ -2,7 +2,7 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-mathematics)
+[▲ The chain overview](hrw://tour/the-concepts)
 
 **A concept tour.** Walk [`matching.md`](matching.md) first — it answers *which* equation
 solves *which* unknown, and this tour asks *in what order*.
@@ -160,4 +160,4 @@ handing it to a numerical solver, by guessing one variable and computing the res
 
 That is [`tearing.md`](tearing.md).
 
-Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)
+Or go back up: [▲ The chain overview](hrw://tour/the-concepts)

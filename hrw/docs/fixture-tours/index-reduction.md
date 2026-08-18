@@ -2,7 +2,7 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-mathematics)
+[▲ The chain overview](hrw://tour/the-concepts)
 
 **A concept tour.** Walk [`blt-ordering.md`](blt-ordering.md) and
 [`tearing.md`](tearing.md) first. Every model in those was already solvable once ordered; this
@@ -198,4 +198,4 @@ consistent with the algebraic equations.
 
 That is [`initialization.md`](initialization.md).
 
-Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)
+Or go back up: [▲ The chain overview](hrw://tour/the-concepts)

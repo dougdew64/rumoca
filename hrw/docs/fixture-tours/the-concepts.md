@@ -1,4 +1,4 @@
-# The mathematics — a week's walk through the pipeline
+# The concepts — a week's walk through the pipeline
 
 <!-- kind: hub -->
 

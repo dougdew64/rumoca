@@ -469,7 +469,7 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >
 > ## He is on VACATION, walking the tours (week of 2026-08-09)
 >
-> **Entry point: [`docs/fixture-tours/the-mathematics.md`](docs/fixture-tours/the-mathematics.md)**
+> **Entry point: [`docs/fixture-tours/the-concepts.md`](docs/fixture-tours/the-concepts.md)**
 > — the overview, whose rows are `hrw://tour/…` links that open each tour.
 >
 > **Nine tours cover the pipeline, and SEVEN OF THEM HAVE NEVER BEEN WALKED.** Written in one
@@ -485,7 +485,7 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > | `initialization.md` | one state, two conditions |
 > | `solve-lowering.md` | names become indices |
 > | `events.md` | the equations that are not always true |
-> | `the-mathematics.md` | the overview |
+> | `the-concepts.md` | the overview |
 >
 > **Every COUNT in them is read from the specimens' generated notebook traces. Every RENDERING
 > claim is unverified.** Each tour's closing *"What this tour cannot check"* section names its own

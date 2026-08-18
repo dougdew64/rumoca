@@ -2,7 +2,7 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-mathematics)
+[▲ The chain overview](hrw://tour/the-concepts)
 
 **A concept tour.** Walk [`index-reduction.md`](index-reduction.md) first — this phase runs on
 the reduced, index-1 system.
@@ -173,4 +173,4 @@ what the values are at *t* = 0. What remains is turning names into memory.
 
 That is [`solve-lowering.md`](solve-lowering.md).
 
-Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)
+Or go back up: [▲ The chain overview](hrw://tour/the-concepts)

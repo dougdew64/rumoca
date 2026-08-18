@@ -110,7 +110,7 @@ project"*, and he will say when that changes.
 them.** `blt-ordering.md` can say *"a connection set is a set of variables of one kind, from
 `connect-expansion`"* and build from there. That turns the nine tours from independent documents
 into a **sequence**, in the route order
-[`the-mathematics.md`](fixture-tours/the-mathematics.md) already defines — so a tour that assumes
+[`the-concepts.md`](fixture-tours/the-concepts.md) already defines — so a tour that assumes
 a predecessor must **say which one at the top**, or a reader entering mid-route is stranded with
 no way to know why.
 

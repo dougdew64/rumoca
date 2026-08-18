@@ -2,7 +2,7 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-mathematics)
+[▲ The chain overview](hrw://tour/the-concepts)
 
 **A concept tour, pass two.** [`matching.md`](matching.md) taught the idea; this one is about
 **Rumoca's code**, stepped in a debugger while it runs. Walk the pass-one tour first — the stops
@@ -176,4 +176,4 @@ says.
 This is the first pass-two tour. The rest of the pipeline has pass-one tours only, and the same
 treatment — read the phase's code while it runs — is available for every one of them.
 
-Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)
+Or go back up: [▲ The chain overview](hrw://tour/the-concepts)

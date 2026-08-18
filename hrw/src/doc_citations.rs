@@ -2048,7 +2048,7 @@ Some prose.
     /// want to be able to navigate backward from a subordinate tour to the top-level tour
     /// so that I can then navigate downward to another subordinate tour."*
     ///
-    /// `the-mathematics.md` is a hub: ten rows, each an `hrw://tour/<name>` link into a
+    /// `the-concepts.md` is a hub: ten rows, each an `hrw://tour/<name>` link into a
     /// phase tour. **The links ran one way only.** Walking the chain therefore meant
     /// opening the picker between every pair of tours — with the hub sitting alphabetically
     /// in the middle of the list, indistinguishable from its own children.
@@ -2070,9 +2070,9 @@ Some prose.
     /// # What it checks
     ///
     /// For every `hrw://tour/<name>` the overview links to, `<name>.md` must contain
-    /// `hrw://tour/the-mathematics` — an **`hrw://` link, not a markdown one**. That
+    /// `hrw://tour/the-concepts` — an **`hrw://` link, not a markdown one**. That
     /// distinction is the defect it was written against: `solve-lowering.md` and
-    /// `matching-live.md` both referenced the overview as `[the-mathematics.md](…)`, which
+    /// `matching-live.md` both referenced the overview as `[the-concepts.md](…)`, which
     /// HRW's commonmark renderer hands to the *operating system* as a relative file URL.
     /// It opens nothing, or opens a text editor. Only the `hrw://` form is a tour link.
     #[test]
@@ -2124,7 +2124,7 @@ Some prose.
                 // test's; reporting it twice would give one defect two names.
                 continue;
             };
-            if body.contains("hrw://tour/the-mathematics") {
+            if body.contains("hrw://tour/the-concepts") {
                 continue;
             }
             // Distinguish "no way back at all" from "a way back that goes to the OS",

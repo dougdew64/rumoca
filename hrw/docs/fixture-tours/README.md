@@ -445,7 +445,7 @@ That history is not lost, it is **filed where it belongs**: the decision and its
 to be able to navigate backward from a subordinate tour to the top-level tour so that I can then
 navigate downward to another subordinate tour."*
 
-[`the-mathematics.md`](the-mathematics.md) is a **hub**: ten rows, each an `hrw://tour/<name>`
+[`the-concepts.md`](the-concepts.md) is a **hub**: ten rows, each an `hrw://tour/<name>`
 link into a phase tour. Those links ran one way only, so walking the chain meant reopening the
 picker between every pair — with the hub sitting alphabetically among its own children, at
 position 21 of 23.
@@ -455,14 +455,14 @@ position 21 of 23.
 ```markdown
 # Fixture tour — <phase>: <the idea>
 
-[▲ The chain overview](hrw://tour/the-mathematics)
+[▲ The chain overview](hrw://tour/the-concepts)
 ```
 
 - **After the H1** — for *"wrong tour, take me back"*, before any reading has happened.
-- **In the closing section** — `Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)`
+- **In the closing section** — `Or go back up: [▲ The chain overview](hrw://tour/the-concepts)`
   — for the reader who finished and wants the next phase.
 
-**It must be the `hrw://` form.** A plain `[the-mathematics.md](the-mathematics.md)` is handed to
+**It must be the `hrw://` form.** A plain `[the-concepts.md](the-concepts.md)` is handed to
 the *operating system* by the commonmark renderer: it opens a text editor, or nothing. Two tours
 carried exactly that and read as done in the source while doing nothing when clicked.
 

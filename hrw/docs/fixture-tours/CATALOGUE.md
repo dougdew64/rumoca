@@ -360,14 +360,14 @@ A concept tour. Walk [`blt-ordering.md`](blt-ordering.md) first — it produces 
   - `what-this-tour-cannot-check` — What this tour cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
 
-## `the-mathematics`
+## `the-concepts`
 
-**The mathematics — a week's walk through the pipeline**
+**The concepts — a week's walk through the pipeline**
 
 Start here. This tour walks nothing itself; it is the map for the nine that do, in the order
 
 - **Stops:**
-  - `the-mathematics-a-week-s-walk-through-the-pipeline` — The mathematics — a week's walk through the pipeline
+  - `the-concepts-a-week-s-walk-through-the-pipeline` — The concepts — a week's walk through the pipeline
   - `the-route` — The route
   - `the-four-numbers-that-connect-the-tours` — The four numbers that connect the tours
   - `the-one-structural-idea-the-whole-pipeline-turns-on` — The one structural idea the whole pipeline turns on

@@ -2,7 +2,7 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-mathematics)
+[▲ The chain overview](hrw://tour/the-concepts)
 
 **A concept tour.** It teaches a step of the chain and uses HRW as the instrument. It is still
 a test: every **Expected** line is violable.
@@ -192,4 +192,4 @@ Each equation now has a job. It still is not known **what order to do them in** 
 `ProportionalLoop` no order exists at all, which is the discovery
 [`blt-ordering.md`](blt-ordering.md) is built on.
 
-Or go back up: [▲ The chain overview](hrw://tour/the-mathematics)
+Or go back up: [▲ The chain overview](hrw://tour/the-concepts)

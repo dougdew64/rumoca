@@ -1863,7 +1863,7 @@ fn a_rendered_frame_publishes_the_current_view() {
 /// tour.** `App::test_default` has no tour text and `test_set_walked_state` seeds one
 /// short line of source, so every width in the LHS was small and every drag worked.
 /// **A fixture narrow enough to pass is a fixture that tests nothing here** — so the
-/// tour case now loads `the-mathematics.md` from disk, the real document with the
+/// tour case now loads `the-concepts.md` from disk, the real document with the
 /// widest table in the set, and asserts the panel *opens at the default width* rather
 /// than at its content's.
 #[allow(
@@ -1922,10 +1922,9 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
     // and it carries the route table; a synthetic short document is exactly what let
     // the 899pt freeze through unnoticed.
     let real_tour = std::fs::read_to_string(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("docs/fixture-tours/the-mathematics.md"),
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours/the-concepts.md"),
     )
-    .expect("the-mathematics.md must be readable — it is the widest tour");
+    .expect("the-concepts.md must be readable — it is the widest tour");
 
     for (w, h_px, expect_movement) in [
         (1280.0_f32, 720.0_f32, true),
