@@ -388,6 +388,7 @@
         "replacement": "{\"VarRef\":{\"name\":{\"name\":\"C.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"C\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39483}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}}"
       }
     ],
+    "n_differentiations": 0,
     "stopped_at": null,
     "funnel_completed": true
   },

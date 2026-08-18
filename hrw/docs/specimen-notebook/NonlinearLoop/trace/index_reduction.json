@@ -158,6 +158,7 @@
         "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"controllerGain\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15628019766462556768,\"start\":974,\"end\":993},\"parts\":[{\"ident\":\"controllerGain\",\"span\":{\"source\":15628019766462556768,\"start\":974,\"end\":993},\"subs\":[]}],\"def_id\":39464}},\"subscripts\":[],\"span\":{\"source\":15628019766462556768,\"start\":1294,\"end\":1308}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"reference\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15628019766462556768,\"start\":929,\"end\":943},\"parts\":[{\"ident\":\"reference\",\"span\":{\"source\":15628019766462556768,\"start\":929,\"end\":943},\"subs\":[]}],\"def_id\":39463}},\"subscripts\":[],\"span\":{\"source\":15628019766462556768,\"start\":1257,\"end\":1266}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"measurement\",\"component_ref\":{\"local\":false,\"span\":{\"source\":15628019766462556768,\"start\":1195,\"end\":1211},\"parts\":[{\"ident\":\"measurement\",\"span\":{\"source\":15628019766462556768,\"start\":1195,\"end\":1211},\"subs\":[]}],\"def_id\":39468}},\"subscripts\":[],\"span\":{\"source\":15628019766462556768,\"start\":1269,\"end\":1280}}},\"span\":{\"source\":15628019766462556768,\"start\":1257,\"end\":1280}}},\"span\":{\"source\":15628019766462556768,\"start\":1294,\"end\":1316}}}"
       }
     ],
+    "n_differentiations": 0,
     "stopped_at": null,
     "funnel_completed": true
   }

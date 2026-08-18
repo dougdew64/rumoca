@@ -196,6 +196,7 @@
     ],
     "differentiated_rows": [],
     "eliminations": [],
+    "n_differentiations": 0,
     "stopped_at": null,
     "funnel_completed": true
   },

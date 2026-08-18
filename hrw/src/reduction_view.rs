@@ -61,8 +61,16 @@ pub struct ReductionView {
     // Each funnel step: (step_name, outcome_description).
     // Example: ("demote_exact_alias_component_states", "1 demoted")
     steps: Vec<(String, String)>,
-    // Equations manufactured by differentiating a constraint.
+    // Equations manufactured by differentiating a constraint **and still present at
+    // the end**. Empty does NOT mean no differentiation happened — see below.
     differentiated_rows: Vec<DiffRow>,
+    /// **Differentiations the funnel actually performed**, from its own frames.
+    ///
+    /// The pane reported differentiation only when `differentiated_rows` was
+    /// non-empty, so on `Drivetrain` — six differentiations, none surviving
+    /// `eliminate_trivial` — it said **nothing at all**. A tour read that silence as
+    /// zero and taught the opposite of the truth for its whole existence.
+    n_differentiations: usize,
     // Variables removed by symbolic substitution.
     eliminations: Vec<Elimination>,
     /// **What the report contained that this view could not read.**
@@ -169,6 +177,10 @@ impl ReductionView {
             demoted_states,
             steps,
             differentiated_rows,
+            n_differentiations: red
+                .get("n_differentiations")
+                .and_then(serde_json::Value::as_u64)
+                .unwrap_or(0) as usize,
             eliminations,
             unreadable,
         })
@@ -237,16 +249,46 @@ impl ReductionView {
             self.n_states_after,
             n_demoted,
         ));
-        if !self.differentiated_rows.is_empty() {
+        // **Reported whenever the funnel differentiated, not only when rows survived.**
+        // Keyed on `n_differentiations`, because the survivor list is empty on every
+        // specimen in the corpus that differentiates at all — so keying on it meant the
+        // pane was silent exactly when it had the most to say.
+        if self.n_differentiations > 0 {
+            let survivors = self.differentiated_rows.len();
             ui.label(format!(
-                "{} equation{} manufactured by differentiation",
-                self.differentiated_rows.len(),
-                if self.differentiated_rows.len() == 1 {
+                "{} differentiation{} performed \u{2014} {} of the manufactured \
+                 equation{} survive{} to the end",
+                self.n_differentiations,
+                if self.n_differentiations == 1 {
                     ""
                 } else {
                     "s"
                 },
+                survivors,
+                if survivors == 1 { "" } else { "s" },
+                if survivors == 1 { "s" } else { "" },
             ));
+            if survivors == 0 {
+                // The gap is the interesting part, so it is explained where it is seen
+                // rather than left as two numbers that appear to contradict each other.
+                ui.label(
+                    egui::RichText::new(
+                        "the rows they produced were removed by a later elimination step",
+                    )
+                    .weak(),
+                );
+            }
+        } else if self.n_states_before == self.n_states_after && self.n_states_before > 0 {
+            // **A funnel that did nothing says so.** `CartesianPendulum` runs every step
+            // to completion and changes nothing; an unannotated pane of zeroes reads as
+            // "reduction happened and was small" rather than "reduction did not act".
+            ui.label(
+                egui::RichText::new(
+                    "no differentiation and no demotion \u{2014} this funnel did not act \
+                     on the system",
+                )
+                .weak(),
+            );
         }
         if !self.eliminations.is_empty() {
             ui.label(format!(
@@ -871,5 +913,72 @@ mod tests {
             "{:?}",
             view.unreadable[0]
         );
+    }
+}
+
+#[cfg(test)]
+mod tests_differentiation_count {
+    use super::*;
+    use serde_json::json;
+
+    fn report(n_differentiations: u64, survivors: usize) -> Value {
+        json!({
+            "reduction": {
+                "funnel_completed": true,
+                "stopped_at": null,
+                "n_states_before": 9,
+                "n_states_after": 3,
+                "states_before": [], "states_after": [],
+                "demoted_states": [],
+                "steps": [],
+                "n_differentiations": n_differentiations,
+                "differentiated_rows": (0..survivors)
+                    .map(|i| json!({
+                        "equation_origin": format!("index_reduction:d_dt_for_x{i}"),
+                        "for_state": format!("x{i}"),
+                    }))
+                    .collect::<Vec<_>>(),
+                "eliminations": [],
+            }
+        })
+    }
+
+    /// **The pane knows how many differentiations happened, not just how many rows
+    /// survived.**
+    ///
+    /// `Drivetrain` differentiates six times and retains none, and the pane reported
+    /// differentiation *only* when the survivor list was non-empty — so it was silent
+    /// exactly when it had the most to say. A tour read that silence as zero and taught
+    /// the opposite of the truth for its whole existence (`DECISIONS.md`, 2026-08-17).
+    #[test]
+    fn the_view_carries_differentiations_performed_separately_from_survivors() {
+        let view = ReductionView::from_report(&report(6, 0)).expect("the report parses");
+        assert_eq!(
+            view.n_differentiations, 6,
+            "the count of differentiations performed must survive into the view; it is \
+             the number whose absence caused the defect",
+        );
+        assert!(
+            view.differentiated_rows.is_empty(),
+            "and it must stay distinct from the survivor list, which is the whole point \
+             \u{2014} equal counts would collapse two different facts into one",
+        );
+    }
+
+    /// **An older report without the field reads as zero, not as garbage.**
+    ///
+    /// Traces committed before 2026-08-18 have no `n_differentiations`. A missing field
+    /// must degrade to "nothing to say" rather than to a panic, because
+    /// `from_report` returning `None` would blank the whole pane over one absent key.
+    #[test]
+    fn a_report_predating_the_field_still_parses() {
+        let mut old = report(0, 0);
+        old["reduction"]
+            .as_object_mut()
+            .expect("object")
+            .remove("n_differentiations");
+
+        let view = ReductionView::from_report(&old).expect("an older report must still parse");
+        assert_eq!(view.n_differentiations, 0);
     }
 }

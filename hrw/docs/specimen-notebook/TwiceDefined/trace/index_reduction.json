@@ -104,6 +104,7 @@
         "replacement": "{\"Literal\":{\"value\":{\"Real\":1.0},\"span\":{\"source\":9237349070360541563,\"start\":807,\"end\":810}}}"
       }
     ],
+    "n_differentiations": 0,
     "stopped_at": null,
     "funnel_completed": true
   },

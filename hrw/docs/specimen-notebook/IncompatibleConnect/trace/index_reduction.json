@@ -123,6 +123,7 @@
         "replacement": "{\"VarRef\":{\"name\":{\"name\":\"b.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10351280120072388815,\"start\":1664,\"end\":1670},\"parts\":[{\"ident\":\"b\",\"span\":{\"source\":10351280120072388815,\"start\":1664,\"end\":1670},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":10351280120072388815,\"start\":1664,\"end\":1670},\"subs\":[]}],\"def_id\":39470}},\"subscripts\":[],\"span\":{\"source\":10351280120072388815,\"start\":1557,\"end\":1563}}}"
       }
     ],
+    "n_differentiations": 0,
     "stopped_at": null,
     "funnel_completed": true
   },

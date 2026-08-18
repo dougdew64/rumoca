@@ -9714,6 +9714,19 @@ struct ReductionReport {
     eliminations: Vec<(String, String)>,
     /// The step at which the funnel stopped (if it bailed early on error).
     stopped_at: Option<&'static str>,
+    /// **How many differentiations the funnel actually performed**, counted from the
+    /// frames captured on this run.
+    ///
+    /// Distinct from [`Self::differentiated_rows`], which scans the FINAL DAE for
+    /// surviving origin markers and is therefore a count of *survivors*. The two
+    /// disagree whenever a later step removes a differentiated row, which on this
+    /// corpus is always: `Drivetrain` differentiates six times and retains none.
+    ///
+    /// **The gap between them taught a tour the opposite of the truth for its whole
+    /// existence** (`DECISIONS.md`, 2026-08-17). Publishing both is what makes the
+    /// pane unable to repeat that: a reader seeing an empty list beside "6 performed"
+    /// asks the right question instead of concluding zero.
+    n_differentiations: usize,
 }
 
 /// Apply Rumoca's index-reduction / dummy-derivative funnel to a DAE in place,
@@ -9829,8 +9842,9 @@ fn index_reduce_for_structural_analysis(
             .rev()
             .find(|(_, text)| text.starts_with("stopped:"))
             .map(|(name, _)| *name);
+        let n_differentiations = count_differentiations(&ir_frames);
         return (
-            finish_report(dae, states_before, steps, stopped_at),
+            finish_report(dae, states_before, steps, stopped_at, n_differentiations),
             ir_frames,
         );
     }
@@ -9862,10 +9876,29 @@ fn index_reduce_for_structural_analysis(
         ));
     }
 
+    let n_differentiations = count_differentiations(&ir_frames);
     (
-        finish_report(dae, states_before, steps, stopped_at).with_eliminations(eliminations),
+        finish_report(dae, states_before, steps, stopped_at, n_differentiations)
+            .with_eliminations(eliminations),
         ir_frames,
     )
+}
+
+/// Count the differentiations the funnel actually performed, from its own frames.
+///
+/// **The one number the Index Reduction stage could not previously report.** Its
+/// `differentiated_rows` scans the *final* DAE for surviving origin markers, so it
+/// reports zero whenever a later step removes them — which on this corpus is always.
+/// A tour read that zero as *"the compiler did not differentiate"* and taught the
+/// opposite of the truth for its whole existence.
+fn count_differentiations(
+    frames: &[rumoca_phase_structural::dae_prepare::IndexReductionFrame],
+) -> usize {
+    use rumoca_phase_structural::dae_prepare::IndexReductionStep;
+    frames
+        .iter()
+        .filter(|f| matches!(&f.step, IndexReductionStep::Differentiated { .. }))
+        .count()
 }
 
 /// Build a `ReductionReport` from the post-reduction DAE state. Called at
@@ -9878,6 +9911,7 @@ fn finish_report(
     states_before: Vec<String>,
     steps: Vec<(&'static str, String)>,
     stopped_at: Option<&'static str>,
+    n_differentiations: usize,
 ) -> ReductionReport {
     let states_after: Vec<String> = dae.variables.states.keys().map(|k| k.to_string()).collect();
     const DIFF_ROW_MARKER: &str = "index_reduction:d_dt_for_";
@@ -9899,6 +9933,7 @@ fn finish_report(
         differentiated_rows,
         eliminations: Vec::new(),
         stopped_at,
+        n_differentiations,
     }
 }
 
@@ -9936,6 +9971,7 @@ impl ReductionReport {
             "eliminations": self.eliminations.iter().map(|(var, expr)| {
                 serde_json::json!({ "variable": var, "replacement": expr })
             }).collect::<Vec<_>>(),
+            "n_differentiations": self.n_differentiations,
             "stopped_at": self.stopped_at,
             "funnel_completed": self.stopped_at.is_none(),
         })

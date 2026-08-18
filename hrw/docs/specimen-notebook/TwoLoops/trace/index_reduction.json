@@ -196,6 +196,7 @@
         "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"gainB\",\"component_ref\":{\"local\":false,\"span\":{\"source\":7235249937028297655,\"start\":923,\"end\":933},\"parts\":[{\"ident\":\"gainB\",\"span\":{\"source\":7235249937028297655,\"start\":923,\"end\":933},\"subs\":[]}],\"def_id\":39469}},\"subscripts\":[],\"span\":{\"source\":7235249937028297655,\"start\":1440,\"end\":1445}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"errorB\",\"component_ref\":{\"local\":false,\"span\":{\"source\":7235249937028297655,\"start\":1127,\"end\":1138},\"parts\":[{\"ident\":\"errorB\",\"span\":{\"source\":7235249937028297655,\"start\":1127,\"end\":1138},\"subs\":[]}],\"def_id\":39473}},\"subscripts\":[],\"span\":{\"source\":7235249937028297655,\"start\":1448,\"end\":1454}}},\"span\":{\"source\":7235249937028297655,\"start\":1440,\"end\":1454}}}"
       }
     ],
+    "n_differentiations": 0,
     "stopped_at": null,
     "funnel_completed": true
   }

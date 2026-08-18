@@ -1126,6 +1126,7 @@
         "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.phi_rel\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12696880220293854861,\"start\":251,\"end\":267},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12696880220293854861,\"start\":251,\"end\":267},\"subs\":[]},{\"ident\":\"phi_rel\",\"span\":{\"source\":12696880220293854861,\"start\":251,\"end\":267},\"subs\":[]}],\"def_id\":39526}},\"subscripts\":[],\"span\":{\"source\":12696880220293854861,\"start\":1355,\"end\":1362}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"spring.flange_b.phi\",\"component_ref\":{\"local\":false,\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"parts\":[{\"ident\":\"spring\",\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"flange_b\",\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"subs\":[]},{\"ident\":\"phi\",\"span\":{\"source\":12345605953554932806,\"start\":105,\"end\":117},\"subs\":[]}],\"def_id\":39536}},\"subscripts\":[],\"span\":{\"source\":12696880220293854861,\"start\":1365,\"end\":1377}}},\"span\":{\"source\":12696880220293854861,\"start\":1355,\"end\":1362}}},\"span\":{\"source\":12696880220293854861,\"start\":1355,\"end\":1362}}}"
       }
     ],
+    "n_differentiations": 5,
     "stopped_at": null,
     "funnel_completed": true
   }
