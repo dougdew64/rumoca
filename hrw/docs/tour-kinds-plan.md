@@ -167,14 +167,28 @@ That is not something a test can find.
 
 ## 5. Phases
 
-| # | phase | scope |
-|---|---|---|
-| 0 | **this document** | committed before any edit lands |
-| 1 | **vocabulary rules** into `fixture-tours/README.md` | 6 rules, §2 and §3 above |
-| 2 | **the rename + the 4 collisions** | 43 headings, 10 tours, in-text refs, 19 `src/` refs |
-| 3 | **kinds machine-readable** | `<!-- kind: … -->`, CATALOGUE carries it, one template per kind |
-| 4 | **checkers** | 7 checks, each reverted and confirmed to fire |
-| 5 | **regenerate + gate** | fmt → generators → clippy → slow gate |
+**All phases executed 2026-08-17.** The decision record is `DECISIONS.md`, same date.
+
+| # | phase | scope | |
+|---|---|---|---|
+| 0 | **this document** | committed before any edit lands | ✅ |
+| 1 | **vocabulary rules** into `fixture-tours/README.md` | §2 and §3 above | ✅ |
+| 2 | **the rename + the 4 collisions** | 110 occurrences in 10 tours, 36 refs outside | ✅ |
+| 3 | **kinds machine-readable** | `<!-- kind: … -->` on 22 tours, one template per kind | ✅ |
+| 4 | **checkers** | **5** checks, each reverted and confirmed to fire | ✅ |
+| 5 | **regenerate + gate** | 689 lib + 2 `msl_resolve`, clippy clean | ✅ |
+
+**Two things came out different from the plan, both found while executing:**
+
+- **`matching-live.md` also had a `## Scene 0`** — more theatrical than "Act", and unnoticed when
+  the plan was written. It became `Stop 0`, following `frame-seeking.md`'s existing one, and the
+  tour gained the stop/break/anchor vocabulary note.
+- **Seven checks became five.** *"Prose agrees with the tag"* was dropped: `connect-expansion.md`
+  opens with its own crafted lead and declares no kind in prose, and requiring one would have
+  edited the template Doug validated. The tag is required; a prose sentence is optional. And
+  *"`matching-live.md` uses no noun `stop`"* was wrong as stated — that tour legitimately calls
+  **its own units** stops. It became: the vocabulary note must be present, and the three phrasings
+  that were actually wrong must not return.
 
 ### Phase 2 detail
 

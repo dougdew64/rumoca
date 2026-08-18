@@ -3164,3 +3164,91 @@ than a judgement about which tour is relevant now.
 
 **Both new tests were reverted and checked.** Deleting the hoist prints the tour list with
 `the-mathematics` at index 21 — Doug's symptom, in the failure message.
+
+## 2026-08-17 — the tour unit is a stop, and each kind of tour has its own activity
+
+**Doug:** *"The tours are fundamentally important for this HRW project. We have to get the concepts
+and names right."* The plan and its full reasoning are
+[`docs/tour-kinds-plan.md`](docs/tour-kinds-plan.md); this is the decision and what it cost.
+
+### The unit is a stop, because the top-level noun is already "tour"
+
+*"'Act' is something that I associate with a theater or movie script."* The association is the
+word's origin, and it fights the design: a script's acts are watched, while the README's own rule
+says the falsifiable numbers make the reader *"an instrument rather than an audience"*. **A tour
+has stops** — importing a second metaphor put two on one job, which is what the template's own rule
+2 forbids one level down.
+
+**Nobody had ever chosen it.** `dae-construction.md` shipped with Stops on 2026-08-03;
+`matching.md` shipped with Acts later the *same day*, its commit message using both words in
+adjacent sentences. The discrepancy stood for thirteen days.
+
+### "Observations" was proposed, and the right half of it was kept
+
+Doug's intermediate proposal. Dropped as the unit name for two reasons: `README.md` already used
+*"a list of observations"* for the **failure mode**, and — the same argument that killed "Act" — an
+observation is made *after* looking, so naming the unit for its second half drops the prediction.
+
+**What survived is that it names something real that had no word: what Doug produces.** A stop is
+the document's; an observation is his.
+
+### Concept, not math, and not curriculum
+
+*Math* is wrong for `solve-lowering` (memory layout) and `connect-expansion` (language semantics).
+*Curriculum* was already taken — `CHARTER.md` §4.2 uses it for the seven-arc programme — so the
+kind had been borrowing the charter's word for something broader. **Concept removes an overload.**
+
+### The corpus supplied a refinement nobody claimed
+
+Doug: *"each kind of tour might have different activities at its stops."* Counted across 22 tours:
+`Predict` is **0** in all 12 non-concept tours and **~1 per stop** in all 10 concept tours;
+`Expected` is at **every stop of every kind**.
+
+**So the invariant is `Expected`, not the activity** — a violable claim is what makes a tour a test
+rather than an explanation, and `Predict` is merely how a *concept* tour earns one.
+
+**This corrected a framing that was steering work.** Claude had written, two turns earlier, that
+the other twelve tours were *"unconverted, not differently designed"*. Zero predictions across
+twelve tours **with no gradient anywhere** is a design. Conversions stop at the concept tours, and
+`a_tour_predicts_if_and_only_if_its_kind_says_so` now fails in **both** directions.
+
+### The collision was real, was four lines, and three of them the rename created
+
+**The rule: `stop` is a noun only for a tour stop.** The verb is free — *"the compile stops at
+Parse"* cannot be misread — which is why 13 of the corpus's ~17 noun uses were already correct.
+
+`matching-live.md` held three (the debugger sense) and `failure-typecheck.md` one that **shipped
+ambiguous**: `Stop 4 — Compare with a stop`, whose own table column reads `stops at`. Both
+colliding senses already had better words here — **anchor** and **break** for the debugger, *halt*
+for the compile — so every fix is a correction rather than a dodge. The live tour also carried a
+`Scene 0`, more theatrical than Act; it became `Stop 0`, following `frame-seeking.md`'s existing
+one.
+
+**A claim withdrawn:** that the capability tours coexisting with the ⏹ Stop button proved the
+collision tolerable. **No tour references the transport bar at all**, so there was never any
+contact to be evidence of — arguing from an absence of contact as though it were tested
+coexistence.
+
+### Quotations stay verbatim, references update
+
+Twelve lines quote Doug saying "Act" and are untouched forever; 36 surrounding references were
+updated. **Editing a quotation so it matches a later rename falsifies the record** this
+repository's discipline rests on. `DECISIONS.md` and `CHARTER.md` were not touched at all.
+
+### What was declined
+
+**A bug-report template**, because no instance exists — and it is the first kind whose reader is
+**not Doug**, which flips who judges it under the two-audience rule and means his walk cannot
+validate one. **Changing `parse_stops`** so Play walks only numbered stops: a real imprecision
+(`CATALOGUE.md` lists "What this tour cannot check" as a stop) but it changes autoplay behaviour
+and deserves its own decision. **Renaming the ⏹ Stop button**: no contact surface.
+
+### The risk this carries, and its guard
+
+A documented convention can become a checklist Claude writes *to*, and checklist-driven writing
+degrades invisibly from the inside. **The checkers verify structure only** — kind declared,
+predictions present or absent, an Expected per stop — **and never prose, judgement, or what makes a
+stop worth stopping at.** The concept template is frozen at the shape Doug validated by walking it.
+
+**The signal that this went wrong is his report that a tour reads as going through the motions**,
+and no test can find it.
