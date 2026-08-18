@@ -1,5 +1,7 @@
 # Failure tour — Flatten, where the count is checked
 
+<!-- kind: failure -->
+
 **Specimen:** `UnbalancedShaft` — `SingleInertia` with one line changed.
 
 **The question to hold:** Modelica requires a model to have as many equations as unknowns

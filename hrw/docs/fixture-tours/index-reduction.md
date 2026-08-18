@@ -1,5 +1,7 @@
 # Fixture tour — Index reduction: more states than freedoms
 
+<!-- kind: concept -->
+
 [▲ The chain overview](hrw://tour/the-mathematics)
 
 **A concept tour.** Walk [`blt-ordering.md`](blt-ordering.md) and

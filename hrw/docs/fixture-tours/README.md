@@ -37,13 +37,65 @@ real bug this suite has already produced.
 **When something does not match, say so even if it looks minor.** Every off-stop finding so
 far came from attention left spare by a short tour, which is why they stay short.
 
-## The tours
+## The vocabulary — `tour`, `stop`, `observation`
 
-**There are two kinds, and they are judged differently.** Both are run by
-`fixture_tour_links_all_resolve` and both hold every `**Expected:**` line to being violable —
-that discipline is common to all of them. What differs is what a walk is *for*.
+**The top-level noun is `tour`, so the unit is a `stop`.** A tour has stops; that metaphor was
+already chosen by the word "tour", and importing a second one (the units were briefly called
+*acts*) put two metaphors on one job. The full reasoning, and the four name collisions it
+uncovered, are in [`../tour-kinds-plan.md`](../tour-kinds-plan.md).
 
-### Capability tours — the subject is HRW
+| word | what it is | whose it is |
+|---|---|---|
+| **tour** | a sequence of stops with one goal | the repository's |
+| **stop** | a question, and something to look at | the document's |
+| **observation** | what was found, and whether it matched | **Doug's** |
+| **guide** | who answers what the document cannot | Claude's role |
+
+**`stop` is a noun only for a tour stop.** The *verb* is free — *"the compile stops at Parse"*
+cannot be misread. This matters because two other things in this project legitimately stop: a
+**compile** (say *halts*, or *not reached*) and a **debugger** (say **break**, at an **anchor**).
+`matching-live.md` is the one document where all three are in play, and it opens with a note
+naming them.
+
+## The kinds
+
+**Every kind has stops. What varies is the activity at them** — Doug's model, 2026-08-17.
+
+| kind | tours | the activity at a stop | goal |
+|---|---|---|---|
+| **concept** | 10 | prose → **Predict** → ▶ Look → confirm or reject | teach one step of the chain |
+| **feature** | 3 | **do** the action → check what happened | verify one HRW capability |
+| **failure** | 6 | **read** the diagnosis → check what it says | show what a broken model looks like |
+| **adjudication** | 2 | **ask another implementation** | settle what HRW cannot settle |
+| **hub** | 1 | none — a table of links | route into the concept tours |
+| **ad hoc** | live | anything | answer the question just asked |
+| **bug report** | none yet | narrate a failure for a recording | hand a maintainer a reproduction <!-- unbuilt: bug_report_tour --> |
+
+**Each tour declares its kind machine-readably**, immediately under the H1:
+
+```markdown
+<!-- kind: concept -->
+```
+
+Invisible in the pane, greppable by a checker — the same convention as `<!-- pane-groups -->`.
+Without it, no check can tell *"a concept tour missing its predictions"* from *"a feature tour
+correctly having none."*
+
+### The invariant is `Expected`, not `Predict`
+
+**Counted, not asserted:** `Predict` appears **zero** times in all 12 non-concept tours, and
+**once per stop** in all 10 concept tours. No gradient, no partial cases.
+
+So **`Expected` — a violable claim — is what every stop of every kind owes**, and it is what
+makes a tour a *test* rather than an explanation. `Predict` is merely how a **concept** tour
+earns its Expected. A feature tour earns the same claim by having you *do* the action; a failure
+tour by having you *read* the diagnosis.
+
+**This corrects a framing that was steering work.** The template below used to be presented as
+the shape of *every* tour, "applied as tours are touched" — which read as *"the other twelve are
+unconverted."* They are **differently designed**, and conversions stop at the concept tours.
+
+### Feature tours — the subject is HRW
 
 Each verifies one feature. A failed stop implicates exactly one thing.
 
@@ -52,15 +104,24 @@ Each verifies one feature. A failed stop implicates exactly one thing.
 | [`node-pointing.md`](node-pointing.md) | pointing at a tree node, and following an identifier |
 | [`frame-seeking.md`](frame-seeking.md) | stopping an animation on a given frame; addressing an equation |
 | [`camera-aiming.md`](camera-aiming.md) | whether the canvas camera lands where a link says |
-| [`structural-vs-numerical-rank.md`](structural-vs-numerical-rank.md) | **cross-platform** — two stops in HRW, then a notebook, because full structural rank with numerical singularity is a thing HRW cannot show |
-| [`the-oracle.md`](the-oracle.md) | **cross-platform** — a model Rumoca accepts and System Modeler rejects |
 
-### Curriculum tours — the subject is the compiler, and HRW is the instrument
+### Adjudication tours — the subject is a question HRW cannot settle
+
+| Tour | Settles |
+|---|---|
+| [`structural-vs-numerical-rank.md`](structural-vs-numerical-rank.md) | full structural rank with numerical singularity — two stops in HRW, then a notebook |
+| [`the-oracle.md`](the-oracle.md) | a model Rumoca accepts and System Modeler rejects |
+
+**These mark every stop with the instrument it uses** — 📐 HRW, ⚙ System Modeler, 🧮 Wolfram — so
+the activity varies *within* the tour, not only between tours. The convention was invented ad hoc
+and is written down here because it turned out to be the clearest thing in the corpus.
+
+### Concept tours — the subject is the compiler, and HRW is the instrument
 
 Each teaches one step of
 [`the-chain-of-problems.md`](../compiler-phases/the-chain-of-problems.md). **The prose is
 load-bearing** (Doug, 2026-08-03): a stop is the explanation, and the pane is the evidence for
-it. These are longer than a capability tour on purpose.
+it. These are longer than a feature tour on purpose.
 
 | Tour | Teaches |
 |---|---|
@@ -74,8 +135,8 @@ step. **Do not transcribe the frame number by hand** — links are 1-based and t
 list is 0-based, and that tool spent a day telling authors otherwise.
 
 **Why the "keep it narrow" rule below does not bind these.** That rule protects *attention per
-expectation*, because a capability tour spends your surplus attention on finding off-stop bugs
-in HRW. A curriculum tour is spending it on the concept instead. The rule it does keep is the
+expectation*, because a feature tour spends your surplus attention on finding off-stop bugs
+in HRW. A concept tour is spending it on the concept instead. The rule it does keep is the
 one that matters for both: **claims stay austere and trace-sourced, however long the prose
 gets.** Length is bought with explanation, never with hedging.
 
@@ -193,7 +254,7 @@ the stop that lands is the one you check yourself.
 
 ### The rule the others now serve: prose to the first PREDICTION, then the pane
 
-**Agreed with Doug 2026-08-12, and curriculum tours are to be written on this assumption.**
+**Agreed with Doug 2026-08-12, and concept tours are to be written on this assumption.**
 It came out of his own account of walking the first two: the tours felt like **books** —
 gaps, and a struggle to read — while the conversation was unlike a **lecture**, because
 questions get answered *and the tour gets fixed*. See
@@ -246,13 +307,23 @@ implied by a table that had no counterpart, and a claim that two renderings of a
 lived in different panes when both are columns of the same row. Four of the six are now the
 kind a test catches.
 
-### The template — `connect-expansion.md`
+## The templates — one per kind
 
-**Doug, after walking it: *"That is the template for all other tours."*** It is the worked example;
-read it before writing or converting one. The shape of every act:
+**Every kind's template ends the same way: a claim that can fail.** What differs is how the stop
+earns it. Each template below is **derived from tours that already work**, not designed — read the
+named exemplar before writing a new tour of that kind.
+
+### Concept — `connect-expansion.md`
+
+**Doug, after walking it: *"That is the template for all other tours."*** — and after the phase-1
+sweep: *"all of your phase 1 concept tours have been great. You have completely nailed that
+format."*
+
+**This template is frozen.** It is validated by Doug's walks, which is the one signal Claude cannot
+generate, so it changes only on his report. The shape of every stop:
 
 ```markdown
-## Act N — <a question, not a topic>
+## Stop N — <a question, not a topic>
 
 <setup: the least that makes the prediction possible>
 
@@ -271,23 +342,91 @@ read it before writing or converting one. The shape of every act:
 
 **Five things make it work, and four of them are not the format:**
 
-1. **Acts chain.** Each prediction is answerable from the previous act's *result* — nodes in Act 1
-   become the input to Act 2's equation count, which becomes Act 3's row-pairing. A tour whose acts
-   could be reordered is a list of observations, which is what this one was before.
+1. **Stops chain.** Each prediction is answerable from the previous stop's *result* — nodes in
+   Stop 1 become the input to Stop 2's equation count, which becomes Stop 3's row-pairing. **A tour
+   whose stops could be reordered is a list of observations**, which is what this one was before.
+   *(The chaining is a property of the content, not of the word: it survived the rename from "act"
+   and must not be lost with it.)*
 2. **Every term is defined at first use, and one word never does two jobs.** This tour needs three
    levels — **connector**, **node**, **connection set** — and conflating any two of them broke it
    three separate times. Fixing the wording was never enough; the levels had to be named.
 3. **Say where a claim is *not* visible.** A flow set of *n* prints as one row naming all *n*; a
    potential set prints as *n* − 1 pairs and its size appears nowhere. Stating that turned the
    tour's most persistent confusion into its spine. **If a number you assert cannot be found on the
-   screen, say so in the act that asserts it.**
+   screen, say so in the stop that asserts it.**
 4. **Numbers are declared falsifiable up front.** The tour opens by saying its counts come from
    generated traces and asks to be told when one disagrees — which is what makes the reader an
    instrument rather than an audience.
 5. **No historical asides.** See below.
 
-**Applied as tours are touched, not as a campaign.** `connect-expansion.md` is the first one
-converted, because it was being revised anyway.
+**A `Stop 0` is legitimate and carries no prediction** — it is setup, with an expectation to check
+and nothing to predict. `matching-live.md` and `frame-seeking.md` both have one.
+
+### Feature — `node-pointing.md`
+
+**No prediction, and that is correct.** You are being asked to *do* the action; there is nothing to
+guess, because the point is whether clicking the thing does the thing.
+
+```markdown
+## Stop N — <the action, imperatively>
+
+[<the link that performs it>](hrw://stage/Structural/Tree/node/…)
+
+**Expected:** <what changes on screen, precisely enough to be wrong>
+```
+
+**Keep it narrow — one capability per tour.** The scarce resource is attention per expectation, and
+a failed stop in a narrow tour implicates exactly one feature. And **say where to look**: several
+stops expect a status-bar notice, and a reader who does not know that reports "nothing happened".
+
+### Failure — `failure-parse.md`
+
+**You read a diagnosis rather than predicting one.** The specimen is stated up front with the line
+that breaks it, because the interest is in what the compiler *says* and how far it gets.
+
+```markdown
+**Specimen:** `<Model>` — <the one thing wrong with it>
+
+**The question to hold:** <what the reader should be wondering>
+
+## Stop N — <what this pane reveals>
+
+[<load link>](hrw://load/…)
+
+**Expected:** <the diagnosis, or "not reached", exactly>
+```
+
+**Close with `## What to bring back`** — open questions for Doug, since a failure tour's real
+output is a design opinion about whether the diagnosis is actionable.
+
+### Adjudication — `the-oracle.md`
+
+**The stop's activity is asking a different implementation**, so every heading carries the
+instrument as an emoji: 📐 HRW, ⚙ System Modeler, 🧮 Wolfram.
+
+```markdown
+## 📐 Stop N — <what HRW claims>
+
+**Expected:** <HRW's answer>
+
+## ⚙ Stop N+1 — Ask the other implementation
+
+**Expected:** <what the other tool says, and whether they agree>
+```
+
+**Claude evaluates every notebook cell through the kernel first**, then ships it for Doug to
+evaluate — the stop that lands is the one he checks himself. Fixture notebooks are versioned in
+[`notebooks/`](notebooks/); ad hoc ones are ephemeral.
+
+### Bug report — not built <!-- unbuilt: bug_report_tour -->
+
+A tour that narrates the steps of a failure for a screen recording, to hand a Rumoca maintainer a
+reproduction. **No template until an instance exists** — writing one from imagination is how a
+convention becomes load-bearing before it is known to work.
+
+**And it is the first kind whose reader is not Doug.** Its audience is maintainers, which flips who
+judges it under the two-audience rule ([`../../DECISIONS.md`](../../DECISIONS.md)): the test becomes
+*"did a maintainer act on it without asking Claude?"* — so **Doug's walk cannot validate one.**
 
 ### Keep the tour's history out of the tour
 

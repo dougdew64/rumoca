@@ -1,5 +1,7 @@
 # Failure tour — Resolve, where a name is looked up and the answer is recorded
 
+<!-- kind: failure -->
+
 **Specimens:** `UndefinedRef` and `MissingComponentClass`. Walk them together; neither is worth
 much alone.
 

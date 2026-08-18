@@ -1,5 +1,7 @@
 # Fixture tour — DAE construction: the count that decides everything
 
+<!-- kind: concept -->
+
 [▲ The chain overview](hrw://tour/the-mathematics)
 
 **A concept tour.** It teaches a step of the chain

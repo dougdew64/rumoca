@@ -1,5 +1,7 @@
 # Fixture tour — Events: the equations that are not always true
 
+<!-- kind: concept -->
+
 [▲ The chain overview](hrw://tour/the-mathematics)
 
 **A concept tour.** Walk [`initialization.md`](initialization.md) first. Everything so far has

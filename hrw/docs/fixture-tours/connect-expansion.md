@@ -1,5 +1,7 @@
 # Flatten — what `connect` actually means
 
+<!-- kind: concept -->
+
 [▲ The chain overview](hrw://tour/the-mathematics)
 
 `connect(src.p, R.p)` looks like wiring two things together. In the equations it is **neither an

@@ -1,5 +1,7 @@
 # Fixture tour — pointing at a tree node, and following
 
+<!-- kind: feature -->
+
 **This is a test, not an explanation.** It verifies the last two verbs of the answer
 channel: pointing at a node inside a stage tree, and setting the follow.
 

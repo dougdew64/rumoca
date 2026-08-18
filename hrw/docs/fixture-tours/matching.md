@@ -1,5 +1,7 @@
 # Fixture tour — Matching: which equation solves which unknown
 
+<!-- kind: concept -->
+
 [▲ The chain overview](hrw://tour/the-mathematics)
 
 **A concept tour.** It teaches a step of the chain and uses HRW as the instrument. It is still

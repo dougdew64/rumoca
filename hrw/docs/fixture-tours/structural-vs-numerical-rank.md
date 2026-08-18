@@ -1,5 +1,7 @@
 # Structural rank vs numerical rank
 
+<!-- kind: adjudication -->
+
 **The first cross-platform tour.** Two stops in HRW, then a notebook — because the point
 it makes cannot be made in either place alone.
 

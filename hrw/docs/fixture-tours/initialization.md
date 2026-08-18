@@ -1,5 +1,7 @@
 # Fixture tour — Initialization: the values at t = 0
 
+<!-- kind: concept -->
+
 [▲ The chain overview](hrw://tour/the-mathematics)
 
 **A concept tour.** Walk [`index-reduction.md`](index-reduction.md) first — this phase runs on

@@ -1,5 +1,7 @@
 # Fixture tour — seeking to a frame
 
+<!-- kind: feature -->
+
 **This is a test, not an explanation.** It verifies that a link can stop an animation on
 a specific frame — the capability that lets a stop point at *the moment a decision is
 made* rather than at the view containing it.

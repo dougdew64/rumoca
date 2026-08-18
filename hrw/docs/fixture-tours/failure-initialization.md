@@ -1,5 +1,7 @@
 # Failure tour — Initialization, where too much information is the problem
 
+<!-- kind: failure -->
+
 **Specimens:** `OverInitRc` and `RotationalInertia`. Two ways the t=0 problem goes wrong, and
 they are opposites.
 

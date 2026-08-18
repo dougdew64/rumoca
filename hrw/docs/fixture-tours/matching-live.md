@@ -1,5 +1,7 @@
 # Fixture tour — Matching, live: the call stack is the augmenting path
 
+<!-- kind: concept -->
+
 [▲ The chain overview](hrw://tour/the-mathematics)
 
 **A concept tour, pass two.** [`matching.md`](matching.md) taught the idea; this one is about

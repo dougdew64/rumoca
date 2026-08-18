@@ -1,5 +1,7 @@
 # Failure tour — Structural analysis, where counting stops being enough
 
+<!-- kind: failure -->
+
 **Specimens:** `TwiceDefined` and `CapacitorLoop`. Both are flagged `singular`. **They are not
 the same problem**, and telling them apart is the point of this tour.
 

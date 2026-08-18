@@ -1,5 +1,7 @@
 # Fixture tour — camera aiming
 
+<!-- kind: feature -->
+
 **This is a test, not an explanation.** It exists so Doug can verify the half of camera
 aiming that Claude cannot see: whether the camera actually lands where a link says.
 

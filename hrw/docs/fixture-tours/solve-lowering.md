@@ -1,5 +1,7 @@
 # Fixture tour — Solve lowering: names become indices
 
+<!-- kind: concept -->
+
 [▲ The chain overview](hrw://tour/the-mathematics)
 
 **A concept tour.** The last phase before simulation. Walk [`events.md`](events.md) first.

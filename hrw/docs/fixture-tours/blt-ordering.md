@@ -1,5 +1,7 @@
 # Fixture tour — BLT: finding an order, and finding out there isn't one
 
+<!-- kind: concept -->
+
 [▲ The chain overview](hrw://tour/the-mathematics)
 
 **A concept tour.** Walk [`matching.md`](matching.md) first — it answers *which* equation

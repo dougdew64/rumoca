@@ -2159,6 +2159,387 @@ Some prose.
         println!("tours linked back to the overview: {}", referenced.len());
     }
 
+    /// The kinds a tour may declare, and whether that kind predicts.
+    ///
+    /// **`docs/tour-kinds-plan.md` is the authority**; this table is its executable half.
+    /// The `predicts` column is the whole point of declaring a kind at all: without it,
+    /// *"a concept tour that lost its predictions"* and *"a feature tour that correctly
+    /// has none"* are the same document to a checker.
+    const TOUR_KINDS: &[(&str, bool)] = &[
+        ("concept", true),
+        ("feature", false),
+        ("failure", false),
+        ("adjudication", false),
+        ("hub", false),
+    ];
+
+    /// Every fixture tour, as `(name, kind, text)`.
+    ///
+    /// Panics rather than skipping an unreadable or untagged tour: a roster that
+    /// silently shrinks turns every check below into a check of nothing, which is the
+    /// vacuity failure this file has now hit five times.
+    fn tours_with_kinds() -> Vec<(String, String, String)> {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+        let mut out = Vec::new();
+        for entry in std::fs::read_dir(&dir).expect("docs/fixture-tours must be readable") {
+            let path = entry.expect("a readable dir entry").path();
+            if path.extension().and_then(|x| x.to_str()) != Some("md") {
+                continue;
+            }
+            let name = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or_default()
+                .to_owned();
+            // Neither is a tour: one is documentation ABOUT tours, the other is
+            // generated FROM them.
+            if name == "README" || name == "CATALOGUE" {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path)
+                .unwrap_or_else(|e| panic!("{} must be readable: {e}", path.display()));
+            let kind = text
+                .split("<!-- kind: ")
+                .nth(1)
+                .and_then(|tail| tail.split(" -->").next())
+                .unwrap_or_else(|| {
+                    panic!(
+                        "{name}.md declares no kind. Add `<!-- kind: … -->` under the H1 — \
+                         one of {:?}. Without it no checker can tell a concept tour that lost \
+                         its predictions from a feature tour that correctly has none.",
+                        TOUR_KINDS.iter().map(|(k, _)| *k).collect::<Vec<_>>(),
+                    )
+                })
+                .trim()
+                .to_owned();
+            out.push((name, kind, text));
+        }
+        out.sort();
+        assert!(
+            out.len() >= 20,
+            "found only {} fixture tours — the enumeration is broken, and every check \
+             below would pass over an empty corpus",
+            out.len(),
+        );
+        out
+    }
+
+    /// The numbered stops of a tour, as `(heading, body-up-to-the-next-heading)`.
+    ///
+    /// **`Stop 0` is returned like any other but is exempt from the prediction rule** by
+    /// its caller: a zero stop is setup — it has something to check and nothing to
+    /// predict. `matching-live.md` and `frame-seeking.md` both have one.
+    fn numbered_stops(text: &str) -> Vec<(String, String)> {
+        let mut stops: Vec<(String, String)> = Vec::new();
+        for line in text.lines() {
+            if line.starts_with("## ") {
+                // The emoji-prefixed form the adjudication tours use — `## 📐 Stop 1 — …`
+                // — is a stop too. Matching on "Stop " rather than on a line prefix is
+                // what makes those four tours visible to this walk at all.
+                if line.contains("Stop ") {
+                    stops.push((line.to_owned(), String::new()));
+                } else if let Some((_, body)) = stops.last_mut().map(|s| (&s.0, &mut s.1)) {
+                    // A later non-stop heading ends the current stop.
+                    let _ = body;
+                    stops.push((String::new(), String::new()));
+                }
+                continue;
+            }
+            if let Some(last) = stops.last_mut()
+                && !last.0.is_empty()
+            {
+                last.1.push_str(line);
+                last.1.push('\n');
+            }
+        }
+        stops.retain(|(h, _)| !h.is_empty());
+        stops
+    }
+
+    /// **Every stop of every kind owes an `Expected` — that is the invariant.**
+    ///
+    /// # Why this one and not `Predict`
+    ///
+    /// Doug's model, 2026-08-17: *"while all kinds of tours have stops, each kind of tour
+    /// might have different activities at its stops."* True — and the corpus says exactly
+    /// one thing does **not** vary. `Predict` appears zero times in all 12 non-concept
+    /// tours and once per stop in all 10 concept tours; `Expected` appears at every stop
+    /// of every kind.
+    ///
+    /// **So `Expected` is what makes a tour a *test* rather than an explanation**, which
+    /// is this directory's whole justification. `Predict` is merely how a *concept* tour
+    /// earns its Expected — a feature tour earns the same claim by having Doug **do** the
+    /// action, a failure tour by having him **read** the diagnosis.
+    ///
+    /// A stop with no falsifiable line is a paragraph with a heading, and a tour of those
+    /// is the stored prose this project retired 1,632 lines of.
+    #[test]
+    fn every_stop_of_every_tour_owes_an_expected() {
+        let mut checked = 0usize;
+        let mut bad: Vec<String> = Vec::new();
+
+        for (name, _kind, text) in tours_with_kinds() {
+            for (heading, body) in numbered_stops(&text) {
+                checked += 1;
+                if !body.contains("**Expected:") && !body.contains("**Expected**") {
+                    bad.push(format!("{name}.md  {}", heading.trim()));
+                }
+            }
+        }
+
+        assert!(
+            checked >= 90,
+            "only {checked} stops were inspected across the corpus — the heading walk is \
+             broken, not the tours",
+        );
+        assert!(
+            bad.is_empty(),
+            "{} stop(s) state nothing that could fail. Every stop of every kind owes an \
+             **Expected:** — it is what makes a tour a test rather than an explanation:\n  {}",
+            bad.len(),
+            bad.join("\n  "),
+        );
+        println!("stops carrying a falsifiable Expected: {checked}");
+    }
+
+    /// **A tour predicts if and only if its kind says it does.**
+    ///
+    /// # Both directions matter, and they fail for opposite reasons
+    ///
+    /// **A concept tour without predictions** has lost its engine. The prediction is what
+    /// makes Doug an instrument rather than an audience — it is the reason the unit is a
+    /// question rather than a topic — and a concept tour that merely explains and then
+    /// shows is the "book" form he reported bouncing off.
+    ///
+    /// **A feature tour *with* predictions** is the other error, and it is the one Claude
+    /// was about to commit. On 2026-08-17 Claude wrote that the 12 non-concept tours were
+    /// *"unconverted, not differently designed"* — which would have meant converting them,
+    /// and the count says otherwise: zero predictions across all twelve is a design, not a
+    /// backlog. **There is no gradient anywhere in the corpus**, and this check is what
+    /// keeps it that way.
+    ///
+    /// `Stop 0` is exempt: it is setup, with an expectation to check and nothing to
+    /// predict.
+    #[test]
+    fn a_tour_predicts_if_and_only_if_its_kind_says_so() {
+        let mut bad: Vec<String> = Vec::new();
+        let mut concept_stops = 0usize;
+        let mut other_stops = 0usize;
+
+        for (name, kind, text) in tours_with_kinds() {
+            let predicts = TOUR_KINDS
+                .iter()
+                .find(|(k, _)| *k == kind)
+                .unwrap_or_else(|| {
+                    panic!(
+                        "{name}.md declares kind {kind:?}, which is not one of {:?}",
+                        TOUR_KINDS.iter().map(|(k, _)| *k).collect::<Vec<_>>(),
+                    )
+                })
+                .1;
+
+            for (heading, body) in numbered_stops(&text) {
+                let is_setup = heading.contains("Stop 0");
+                let has = body.contains("**Predict.**");
+                if predicts {
+                    concept_stops += 1;
+                } else {
+                    other_stops += 1;
+                }
+
+                if predicts && !has && !is_setup {
+                    bad.push(format!(
+                        "{name}.md  {}  — a concept stop with nothing to predict",
+                        heading.trim()
+                    ));
+                } else if !predicts && has {
+                    bad.push(format!(
+                        "{name}.md  {}  — a {kind} stop should not predict",
+                        heading.trim()
+                    ));
+                }
+            }
+        }
+
+        // **Non-vacuity on BOTH arms.** A run that inspected only concept stops would
+        // report the negative rule as holding across nothing at all.
+        assert!(
+            concept_stops >= 40 && other_stops >= 40,
+            "inspected {concept_stops} concept stops and {other_stops} other stops — one \
+             arm of this check is running on an empty set",
+        );
+        assert!(
+            bad.is_empty(),
+            "{} stop(s) disagree with their tour's declared kind:\n  {}",
+            bad.len(),
+            bad.join("\n  "),
+        );
+        println!("stops checked against their kind: {concept_stops} concept, {other_stops} other");
+    }
+
+    /// **No tour calls its units "acts" again.**
+    ///
+    /// A ratchet, in the shape `app_does_not_regrow_its_field_count` established. The
+    /// rename cost 110 edits across ten tours and it would come back one heading at a
+    /// time, written from the memory of a tour read an hour earlier — which is exactly how
+    /// the word arrived in the first place: `matching.md` shipped with Acts on the same
+    /// day `dae-construction.md` shipped with Stops, and nobody noticed for thirteen days.
+    #[test]
+    fn no_tour_heading_calls_a_stop_an_act() {
+        let mut bad: Vec<String> = Vec::new();
+        for (name, _kind, text) in tours_with_kinds() {
+            for (i, line) in text.lines().enumerate() {
+                if line.starts_with("## ") && (line.contains("Act ") || line.contains("Scene ")) {
+                    bad.push(format!("{name}.md:{}  {}", i + 1, line.trim()));
+                }
+            }
+        }
+        assert!(
+            bad.is_empty(),
+            "{} heading(s) call a stop an act or a scene. The top-level noun is `tour`, so \
+             the unit is a `stop`; theatre vocabulary casts the reader as an audience, and \
+             the tours exist to make him an instrument:\n  {}",
+            bad.len(),
+            bad.join("\n  "),
+        );
+    }
+
+    /// **`matching-live.md` keeps its three words apart.**
+    ///
+    /// This is the one document where **stop** (a place in the tour), **break** (where the
+    /// debugger halts) and **anchor** (the named location a break is armed at) are all in
+    /// play at once. Before the rename its units were "acts", so "a stop" unambiguously
+    /// meant the debugger; afterwards the same phrase reads most naturally as the *wrong*
+    /// sense — the rename **created** this collision rather than exposing one.
+    ///
+    /// **The mitigation is the vocabulary note, so the note is what gets checked.** A
+    /// general prose linter would have to infer which sense a noun carries, and inferring
+    /// identity from words is the thing `identity-and-provenance.md` forbids outright.
+    /// This check is exact instead: the note must be present, and the two phrasings that
+    /// were actually wrong must not come back.
+    #[test]
+    fn the_live_tour_keeps_stop_break_and_anchor_apart() {
+        let path =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours/matching-live.md");
+        let text = std::fs::read_to_string(&path).expect("matching-live.md must be readable");
+
+        assert!(
+            text.contains("A **break** is where the *debugger* halts execution."),
+            "matching-live.md must open with the note distinguishing stop, break and \
+             anchor. It is the only tour where all three are live, and the note is the \
+             whole mitigation for a collision the Act→Stop rename created.",
+        );
+        for phrase in ["debugger stop", "at every stop", "about a stop"] {
+            assert!(
+                !text.contains(phrase),
+                "matching-live.md says {phrase:?}, which reads as a tour stop in a document \
+                 whose units are stops. Say `break` — the tour already writes `⬤ Break at \
+                 the free-versus-displace decision` and the scheme is `hrw://breakpoint/`.",
+            );
+        }
+    }
+
+    /// **A `<tour>.md Stop N` reference in the source resolves to a real heading.**
+    ///
+    /// # The gap this closes
+    ///
+    /// Nineteen comments in `src/` named a tour unit — *"evidence for
+    /// `connect-expansion.md` Act 1"*, *"`matching.md` ends Act 3 with one"* — and every
+    /// one of them dangled the moment the tours were renamed. Nothing noticed, because a
+    /// comment is not compiled and a stale one is indistinguishable from a live one.
+    ///
+    /// **These are navigational, not decorative.** A comment that says *"see Stop 4"* is
+    /// how the next session finds the prose a piece of code exists to serve; pointing at a
+    /// stop that is not there sends it looking for something that never arrives.
+    ///
+    /// **Quotations are exempt, and that exemption is the interesting part.** Six comments
+    /// quote Doug saying "Act", and they stay verbatim forever — editing a quotation so it
+    /// matches a rename that happened afterwards falsifies the record this repository's
+    /// whole discipline rests on. So the check skips a line quoting him, which is why it
+    /// looks only for the *current* vocabulary.
+    #[test]
+    fn a_stop_a_source_comment_cites_exists_in_that_tour() {
+        let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let tours = hrw.join("docs/fixture-tours");
+
+        let mut checked = 0usize;
+        let mut bad: Vec<String> = Vec::new();
+
+        let mut sources: Vec<PathBuf> = Vec::new();
+        collect_rust(&hrw.join("src"), &mut sources);
+        assert!(
+            sources.len() >= 10,
+            "found only {} source files — the scan is broken",
+            sources.len(),
+        );
+
+        for src in sources {
+            let Ok(text) = std::fs::read_to_string(&src) else {
+                continue;
+            };
+            let src_name = src.file_name().and_then(|n| n.to_str()).unwrap_or("?");
+            for (i, line) in text.lines().enumerate() {
+                // A tour named in backticks, then `Stop <n>` anywhere later on the same
+                // line. **Adjacency was the first implementation and it was too narrow** —
+                // it matched 3 of the 19 real references, because most of them read
+                // "`matching.md` ends Stop 3 with one" rather than "`matching.md` Stop 3".
+                // A check that inspects a sixth of its subject is most of the way to
+                // vacuous while looking green.
+                let Some(stop_at) = line.find("Stop ") else {
+                    continue;
+                };
+                let n: String = line[stop_at + "Stop ".len()..]
+                    .chars()
+                    .take_while(char::is_ascii_digit)
+                    .collect();
+                if n.is_empty() {
+                    continue;
+                }
+                // The nearest tour named *before* the citation owns it.
+                let head = &line[..stop_at];
+                let Some(md) = head.rfind(".md`") else {
+                    continue;
+                };
+                let Some(open) = head[..md].rfind('`') else {
+                    continue;
+                };
+                let tour = &head[open + 1..md];
+                if tour.is_empty() || tour.contains(' ') || tour.contains('/') {
+                    continue;
+                }
+
+                checked += 1;
+                let Ok(body) = std::fs::read_to_string(tours.join(format!("{tour}.md"))) else {
+                    bad.push(format!("{src_name}:{}  no tour named {tour:?}", i + 1));
+                    continue;
+                };
+                if !body.contains(&format!("Stop {n} ")) {
+                    bad.push(format!("{src_name}:{}  {tour}.md has no Stop {n}", i + 1));
+                }
+            }
+        }
+
+        // **What this does NOT reach, said out loud rather than left as a green result.**
+        // A citation whose tour is named on an *earlier* line of the same doc comment —
+        // "/// **`connect-expansion.md` Stop 1's node sizes…**" followed later by "Stop 1
+        // counts **nodes**" — is invisible here, because the pairing is per-line. Roughly
+        // half the references in `doc_citations.rs` are that shape. Widening to whole doc
+        // comments is possible and was not done; this checker covers the single-line form
+        // and says so.
+        assert!(
+            checked >= 6,
+            "only {checked} stop citations were inspected — the extraction is broken, so \
+             this check would pass over a source tree full of dangling references",
+        );
+        assert!(
+            bad.is_empty(),
+            "{} source comment(s) cite a stop that does not exist:\n  {}",
+            bad.len(),
+            bad.join("\n  "),
+        );
+        println!("source comments citing a tour stop: {checked}");
+    }
+
     /// **An equation id a tour cites must name the equation the prose claims.**
     ///
     /// # The gap this closes, found by falling into it

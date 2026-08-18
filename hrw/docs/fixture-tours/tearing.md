@@ -1,5 +1,7 @@
 # Fixture tour — Tearing: guess one number, get the rest for free
 
+<!-- kind: concept -->
+
 [▲ The chain overview](hrw://tour/the-mathematics)
 
 **A concept tour.** Walk [`blt-ordering.md`](blt-ordering.md) first — it produces the coupled

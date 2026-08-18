@@ -1,5 +1,7 @@
 # The mathematics — a week's walk through the pipeline
 
+<!-- kind: hub -->
+
 **Start here.** This tour walks nothing itself; it is the map for the nine that do, in the order
 the compiler runs them, with what each is *for* and which specimens make the point.
 

@@ -1,5 +1,7 @@
 # Failure tour — Typecheck, which reports and does not stop at all
 
+<!-- kind: failure -->
+
 **Specimen:** `DimensionMismatch` — a 2-vector assigned from a 3-vector.
 
 ```modelica

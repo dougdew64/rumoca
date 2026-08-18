@@ -1,5 +1,7 @@
 # Failure tour — Parse, the only phase that truly stops
 
+<!-- kind: failure -->
+
 **Specimen:** `UnclosedModel` — ten lines of valid Modelica with its `end` clause removed.
 
 **What this tour is for.** Every other failure tour in this set shows a phase *reporting* a

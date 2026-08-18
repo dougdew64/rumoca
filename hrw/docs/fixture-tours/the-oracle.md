@@ -1,5 +1,7 @@
 # The oracle — when Rumoca and System Modeler disagree
 
+<!-- kind: adjudication -->
+
 **A tour that leaves HRW to settle a question HRW cannot settle.** Rumoca accepts a model
 that System Modeler rejects, and the disagreement is the finding.
 
