@@ -442,11 +442,28 @@ differentiations, because the summary scans the *final* DAE while the differenti
 removed by a later elimination step. A tour taught the opposite of what the compiler did for its
 whole existence (`DECISIONS.md`, 2026-08-17).
 
-### The ask
+### The ask — ✅ BUILT 2026-08-18, and ready to offer
 
 An **additive, observation-only** hook on the real funnel — a callback or a returned report naming
 each step and its outcome, in the order `rumoca-sim` actually ran them. Semantics-preserving; no
 behaviour change; the existing entry point keeps working untouched.
+
+**Implemented as `prepare_dae_for_structural_analysis_observed`**, with
+`prepare_dae_for_structural_analysis` delegating to it — one implementation, so the two cannot
+drift. `FunnelStepFrame` carries the step name, the system's size on either side of it, and a
+`FunnelStepOutcome` of `Completed` / `Demoted(n)` / `Failed(_)`; delivery is
+`rumoca_core::FrameObserver`, the contract every other traced phase here already uses.
+
+**The `Failed` variant is what makes it a diagnostic rather than a report** — it is emitted before
+the error propagates, so a funnel that stops has a location instead of one error at the top naming
+none of ten steps.
+
+**And it justified itself on the first run.** The test that pins the step order was drafted from
+HRW's mirrored copy of the funnel and omitted `scalarize_equations`, which the real funnel runs
+first under default options. **HRW's mirror has never had that step.** The drift this API exists to
+remove was already there, and one run of the API found it.
+
+Commit `cc821f07`, `crates/` only, so the cherry-pick is clean.
 
 That would let HRW **delete its mirrored copy**, which is the outcome worth having on both sides:
 one fewer place for the order to drift, and a compiler that can explain its own index reduction to
