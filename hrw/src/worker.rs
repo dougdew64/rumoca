@@ -9694,6 +9694,23 @@ mod tests {
     }
 }
 
+/// One funnel step, with the system's shape on either side of it.
+///
+/// **The shapes are the part that was missing.** The pane used to show a step's name
+/// and an outcome string, and an outcome of `"ok"` says a step *ran* while saying
+/// nothing about what it *did*. Ten steps reporting "ok" with one of them changing the
+/// counts is a different picture from ten that all moved something, and the pane could
+/// not tell those apart — which is how a funnel that did nothing at all
+/// (`CartesianPendulum`) looked the same as one doing quiet work.
+struct StepRow {
+    name: &'static str,
+    outcome: String,
+    states_before: usize,
+    states_after: usize,
+    equations_before: usize,
+    equations_after: usize,
+}
+
 /// Record of what the index-reduction funnel did, step by step.
 ///
 /// This is HRW's observability layer over the index-reduction process: it
@@ -9705,8 +9722,8 @@ struct ReductionReport {
     states_before: Vec<String>,
     /// State variable names remaining after reduction.
     states_after: Vec<String>,
-    /// Per-step log: (step name, outcome description).
-    steps: Vec<(&'static str, String)>,
+    /// Per-step log, one row per funnel step.
+    steps: Vec<StepRow>,
     /// Equations manufactured by differentiation (origin contains
     /// `"index_reduction:d_dt_for_"`), with the state they were created for.
     differentiated_rows: Vec<(String, String)>,
@@ -9805,8 +9822,7 @@ fn index_reduce_for_structural_analysis(
     // Both levels, from one run. `RefCell` because the two observers are `Fn`
     // closures called from inside the funnel, and the frames they collect outlive
     // each call.
-    let steps: std::cell::RefCell<Vec<(&'static str, String)>> =
-        std::cell::RefCell::new(Vec::new());
+    let steps: std::cell::RefCell<Vec<StepRow>> = std::cell::RefCell::new(Vec::new());
     let ir_frames: std::cell::RefCell<Vec<dp::IndexReductionFrame>> =
         std::cell::RefCell::new(Vec::new());
 
@@ -9818,7 +9834,20 @@ fn index_reduce_for_structural_analysis(
                 rumoca_sim::FunnelStepOutcome::Completed => "ok".to_owned(),
                 rumoca_sim::FunnelStepOutcome::Failed(why) => format!("stopped: {why}"),
             };
-            steps.borrow_mut().push((f.step, text));
+            // **The sizes either side, not just the outcome text.** An outcome of
+            // "ok" says a step ran and nothing about what it did; the pair of
+            // shapes says whether the system actually changed under it. Ten steps
+            // reporting "ok" and one changing the counts is a very different
+            // picture from ten steps that all moved something, and until now the
+            // pane could not tell those apart.
+            steps.borrow_mut().push(StepRow {
+                name: f.step,
+                outcome: text,
+                states_before: f.states_before,
+                states_after: f.states_after,
+                equations_before: f.equations_before,
+                equations_after: f.equations_after,
+            });
         };
         let on_frame = |f: &dp::IndexReductionFrame| ir_frames.borrow_mut().push(f.clone());
         rumoca_sim::prepare_dae_for_structural_analysis_fully_observed(
@@ -9840,8 +9869,8 @@ fn index_reduce_for_structural_analysis(
         stopped_at = steps
             .iter()
             .rev()
-            .find(|(_, text)| text.starts_with("stopped:"))
-            .map(|(name, _)| *name);
+            .find(|row| row.outcome.starts_with("stopped:"))
+            .map(|row| row.name);
         let n_differentiations = count_differentiations(&ir_frames);
         return (
             finish_report(dae, states_before, steps, stopped_at, n_differentiations),
@@ -9859,21 +9888,33 @@ fn index_reduce_for_structural_analysis(
     // the Index Reduction tab shows the system the *later* views are computed over —
     // but it is now visibly a separate act rather than step 10 of a funnel.
     let mut eliminations = Vec::new();
+    // Its own before/after, measured here rather than reported by the funnel — this
+    // step is not in the funnel, so nothing upstream can supply them.
+    let (states_before_elim, equations_before_elim) =
+        (dae.variables.states.len(), dae.continuous.equations.len());
     if let Ok(elim) = eliminate::eliminate_trivial(dae) {
-        steps.push((
-            "eliminate_trivial",
-            format!("{} eliminated", elim.n_eliminated),
-        ));
         for sub in &elim.substitutions {
             let expr_json = serde_json::to_string(&sub.expr).unwrap_or_default();
             eliminations.push((sub.var_name.to_string(), expr_json));
         }
         let _ = eliminate::apply_elimination_substitutions_to_dae(dae, &elim.substitutions);
+        steps.push(StepRow {
+            name: "eliminate_trivial",
+            outcome: format!("{} eliminated", elim.n_eliminated),
+            states_before: states_before_elim,
+            states_after: dae.variables.states.len(),
+            equations_before: equations_before_elim,
+            equations_after: dae.continuous.equations.len(),
+        });
     } else {
-        steps.push((
-            "eliminate_trivial",
-            "failed (system may still be singular)".to_owned(),
-        ));
+        steps.push(StepRow {
+            name: "eliminate_trivial",
+            outcome: "failed (system may still be singular)".to_owned(),
+            states_before: states_before_elim,
+            states_after: dae.variables.states.len(),
+            equations_before: equations_before_elim,
+            equations_after: dae.continuous.equations.len(),
+        });
     }
 
     let n_differentiations = count_differentiations(&ir_frames);
@@ -9909,7 +9950,7 @@ fn count_differentiations(
 fn finish_report(
     dae: &rumoca_ir_dae::Dae,
     states_before: Vec<String>,
-    steps: Vec<(&'static str, String)>,
+    steps: Vec<StepRow>,
     stopped_at: Option<&'static str>,
     n_differentiations: usize,
 ) -> ReductionReport {
@@ -9962,8 +10003,17 @@ impl ReductionReport {
             "demoted_states": demoted,
             "n_states_before": self.states_before.len(),
             "n_states_after": self.states_after.len(),
-            "steps": self.steps.iter().map(|(name, outcome)| {
-                serde_json::json!({ "step": name, "outcome": outcome })
+            // **The shapes travel with the step**, so a reader can see which steps
+            // moved the system rather than only that each one ran.
+            "steps": self.steps.iter().map(|row| {
+                serde_json::json!({
+                    "step": row.name,
+                    "outcome": row.outcome,
+                    "states_before": row.states_before,
+                    "states_after": row.states_after,
+                    "equations_before": row.equations_before,
+                    "equations_after": row.equations_after,
+                })
             }).collect::<Vec<_>>(),
             "differentiated_rows": self.differentiated_rows.iter().map(|(origin, state)| {
                 serde_json::json!({ "equation_origin": origin, "for_state": state })

@@ -564,6 +564,12 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > started all of this. A funnel that did nothing also says so, which is `CartesianPendulum`'s
 > whole lesson.
 >
+> **The tour is rewritten** (2026-08-18): five stops, smallest-first —
+> `BouncingBall` (nothing needed) → `BenchActuator` (**1** differentiation, 4→3 states, the
+> mechanism at a size you can hold) → `Drivetrain` (6, at 97 equations) → `CartesianPendulum`
+> (0, and cannot be reduced). It builds *why differentiating helps* from what an integrator can
+> be asked for, and defines **index as a distance** rather than a score. **Not yet walked.**
+>
 > **STILL OWED:** per-step deltas in the funnel table (states/equations either side of each
 > step — the numbers are in `FunnelStepFrame` and are not yet published), and the reduction
 > passes expandable into their frames. Doug: *"my education is more important than strict

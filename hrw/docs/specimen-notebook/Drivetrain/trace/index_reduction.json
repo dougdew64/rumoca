@@ -1947,47 +1947,91 @@
     "steps": [
       {
         "step": "scalarize_equations",
-        "outcome": "ok"
+        "outcome": "ok",
+        "states_before": 9,
+        "states_after": 9,
+        "equations_before": 97,
+        "equations_after": 97
       },
       {
         "step": "demote_exact_alias_component_states",
-        "outcome": "0 demoted"
+        "outcome": "0 demoted",
+        "states_before": 9,
+        "states_after": 9,
+        "equations_before": 97,
+        "equations_after": 97
       },
       {
         "step": "demote_direct_assigned_states",
-        "outcome": "0 demoted"
+        "outcome": "0 demoted",
+        "states_before": 9,
+        "states_after": 9,
+        "equations_before": 97,
+        "equations_after": 97
       },
       {
         "step": "reduce_constrained_dummy_derivatives",
-        "outcome": "6 demoted"
+        "outcome": "6 demoted",
+        "states_before": 9,
+        "states_after": 3,
+        "equations_before": 97,
+        "equations_after": 97
       },
       {
         "step": "index_reduce_missing_state_derivatives",
-        "outcome": "0 demoted"
+        "outcome": "0 demoted",
+        "states_before": 3,
+        "states_after": 3,
+        "equations_before": 97,
+        "equations_after": 97
       },
       {
         "step": "demote_states_without_assignable_derivative_rows",
-        "outcome": "0 demoted"
+        "outcome": "0 demoted",
+        "states_before": 3,
+        "states_after": 3,
+        "equations_before": 97,
+        "equations_after": 97
       },
       {
         "step": "eliminate_derivative_aliases",
-        "outcome": "ok"
+        "outcome": "ok",
+        "states_before": 3,
+        "states_after": 3,
+        "equations_before": 97,
+        "equations_after": 97
       },
       {
         "step": "demote_states_without_retained_derivative_rows",
-        "outcome": "0 demoted"
+        "outcome": "0 demoted",
+        "states_before": 3,
+        "states_after": 3,
+        "equations_before": 97,
+        "equations_after": 97
       },
       {
         "step": "expand_compound_derivatives",
-        "outcome": "ok"
+        "outcome": "ok",
+        "states_before": 3,
+        "states_after": 3,
+        "equations_before": 97,
+        "equations_after": 97
       },
       {
         "step": "substitute_standalone_state_derivatives_in_non_ode_rows",
-        "outcome": "0 rewritten"
+        "outcome": "0 rewritten",
+        "states_before": 3,
+        "states_after": 3,
+        "equations_before": 97,
+        "equations_after": 97
       },
       {
         "step": "eliminate_trivial",
-        "outcome": "77 eliminated"
+        "outcome": "77 eliminated",
+        "states_before": 3,
+        "states_after": 3,
+        "equations_before": 97,
+        "equations_after": 20
       }
     ],
     "differentiated_rows": [],

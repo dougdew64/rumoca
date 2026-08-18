@@ -58,9 +58,8 @@ pub struct ReductionView {
     n_states_after: usize,
     // Names of variables that were demoted from state to algebraic.
     demoted_states: Vec<String>,
-    // Each funnel step: (step_name, outcome_description).
-    // Example: ("demote_exact_alias_component_states", "1 demoted")
-    steps: Vec<(String, String)>,
+    // Each funnel step, with the system's shape either side of it.
+    steps: Vec<StepRow>,
     // Equations manufactured by differentiating a constraint **and still present at
     // the end**. Empty does NOT mean no differentiation happened — see below.
     differentiated_rows: Vec<DiffRow>,
@@ -87,6 +86,21 @@ pub struct ReductionView {
     /// a case where reasoning about that list being empty would have been confidently
     /// wrong.
     unreadable: Vec<String>,
+}
+
+/// One funnel step, with the system's shape on either side of it.
+///
+/// **The shapes are what let the pane say whether a step acted.** An outcome string
+/// reports that a step ran; only the pair of shapes reports what it did — and
+/// `CartesianPendulum` runs every step to completion while moving nothing, which
+/// looked identical to quiet work until these numbers arrived.
+struct StepRow {
+    name: String,
+    outcome: String,
+    states_before: usize,
+    states_after: usize,
+    equations_before: usize,
+    equations_after: usize,
 }
 
 // An equation that was created by differentiating an existing constraint,
@@ -146,10 +160,16 @@ impl ReductionView {
 
         let mut unreadable = Vec::new();
 
-        let steps: Vec<(String, String)> = parse_list(red, "steps", &mut unreadable, |s| {
-            let step = s.get("step")?.as_str()?.to_owned();
-            let outcome = s.get("outcome")?.as_str()?.to_owned();
-            Some((step, outcome))
+        let steps: Vec<StepRow> = parse_list(red, "steps", &mut unreadable, |s| {
+            let num = |k: &str| s.get(k).and_then(serde_json::Value::as_u64).unwrap_or(0) as usize;
+            Some(StepRow {
+                name: s.get("step")?.as_str()?.to_owned(),
+                outcome: s.get("outcome")?.as_str()?.to_owned(),
+                states_before: num("states_before"),
+                states_after: num("states_after"),
+                equations_before: num("equations_before"),
+                equations_after: num("equations_after"),
+            })
         });
 
         let differentiated_rows: Vec<DiffRow> =
@@ -315,28 +335,61 @@ impl ReductionView {
         let err_color = ui.visuals().error_fg_color;
         let neutral_color = ui.visuals().weak_text_color();
 
+        // **Three columns, because the outcome string alone cannot say whether a step
+        // acted.** An outcome of "ok" reports that a step ran; the shape either side
+        // reports what it did. `CartesianPendulum` runs every step to completion and
+        // moves nothing, and until these columns existed it looked exactly like a
+        // funnel doing quiet work.
         egui::Grid::new("funnel_steps")
-            .num_columns(2)
+            .num_columns(3)
             .spacing([12.0, 4.0])
             .show(ui, |ui| {
-                for (step, outcome) in &self.steps {
-                    let short = step
+                for row in &self.steps {
+                    let short = row
+                        .name
                         .strip_prefix("demote_")
-                        .or_else(|| step.strip_prefix("reduce_"))
-                        .or_else(|| step.strip_prefix("index_reduce_"))
-                        .unwrap_or(step);
+                        .or_else(|| row.name.strip_prefix("reduce_"))
+                        .or_else(|| row.name.strip_prefix("index_reduce_"))
+                        .unwrap_or(&row.name);
                     ui.label(egui::RichText::new(short).monospace());
 
-                    let is_err = outcome.starts_with("stopped");
-                    let is_noop = outcome == "0 demoted" || outcome == "0 substituted";
+                    let is_err = row.outcome.starts_with("stopped");
+                    let acted = row.states_before != row.states_after
+                        || row.equations_before != row.equations_after;
                     let color = if is_err {
                         err_color
-                    } else if is_noop {
-                        neutral_color
-                    } else {
+                    } else if acted {
                         ok_color
+                    } else {
+                        // **Keyed on the shape, not on the outcome text.** The old
+                        // version tested for the literal strings "0 demoted" and
+                        // "0 substituted", so a step reporting "ok" while changing
+                        // nothing was coloured as though it had worked — and the
+                        // wording changed under it twice this week.
+                        neutral_color
                     };
-                    ui.label(egui::RichText::new(outcome).color(color));
+                    ui.label(egui::RichText::new(&row.outcome).color(color));
+
+                    // Shown only where something moved. A column of unchanged pairs
+                    // beside every row is noise that hides the two rows that matter.
+                    if acted {
+                        let mut parts: Vec<String> = Vec::new();
+                        if row.states_before != row.states_after {
+                            parts.push(format!(
+                                "states {}\u{2192}{}",
+                                row.states_before, row.states_after
+                            ));
+                        }
+                        if row.equations_before != row.equations_after {
+                            parts.push(format!(
+                                "eqs {}\u{2192}{}",
+                                row.equations_before, row.equations_after
+                            ));
+                        }
+                        ui.label(egui::RichText::new(parts.join("  ")).weak().monospace());
+                    } else {
+                        ui.label("");
+                    }
                     ui.end_row();
                 }
             });
@@ -980,5 +1033,80 @@ mod tests_differentiation_count {
 
         let view = ReductionView::from_report(&old).expect("an older report must still parse");
         assert_eq!(view.n_differentiations, 0);
+    }
+}
+
+#[cfg(test)]
+mod tests_step_shapes {
+    use super::*;
+    use serde_json::json;
+
+    /// **A step carries the system's shape either side of it, so the pane can say
+    /// whether it acted.**
+    ///
+    /// The funnel table showed a name and an outcome string, and `"ok"` reports that a
+    /// step *ran* while saying nothing about what it *did*. `CartesianPendulum` runs
+    /// all eleven steps to completion and moves nothing — which looked exactly like a
+    /// funnel doing quiet work.
+    #[test]
+    fn a_step_that_moved_nothing_is_distinguishable_from_one_that_did() {
+        let report = json!({
+            "reduction": {
+                "funnel_completed": true, "stopped_at": null,
+                "n_states_before": 4, "n_states_after": 3,
+                "states_before": [], "states_after": [], "demoted_states": [],
+                "n_differentiations": 1,
+                "differentiated_rows": [], "eliminations": [],
+                "steps": [
+                    { "step": "expand_compound_derivatives", "outcome": "ok",
+                      "states_before": 4, "states_after": 4,
+                      "equations_before": 48, "equations_after": 48 },
+                    { "step": "reduce_constrained_dummy_derivatives", "outcome": "1 demoted",
+                      "states_before": 4, "states_after": 3,
+                      "equations_before": 48, "equations_after": 48 },
+                ],
+            }
+        });
+
+        let view = ReductionView::from_report(&report).expect("parses");
+        let inert = &view.steps[0];
+        let acted = &view.steps[1];
+
+        assert_eq!(
+            (inert.states_before, inert.states_after),
+            (4, 4),
+            "an inert step's shapes must survive parsing; without them the pane is back \
+             to guessing from the outcome text",
+        );
+        assert_eq!((acted.states_before, acted.states_after), (4, 3));
+        assert!(
+            inert.states_before == inert.states_after
+                && inert.equations_before == inert.equations_after,
+            "the inert step must be recognisable as inert from its shapes alone \u{2014} \
+             its outcome string says \"ok\", which is exactly the case the old \
+             literal-string test could not colour correctly",
+        );
+    }
+
+    /// **An older trace without the shape fields still parses.**
+    ///
+    /// Every committed trace predating 2026-08-18 has bare `{step, outcome}` rows. A
+    /// missing number must read as zero rather than blanking the pane over one absent
+    /// key — the same rule the differentiation count follows.
+    #[test]
+    fn a_step_row_predating_the_shape_fields_still_parses() {
+        let report = json!({
+            "reduction": {
+                "funnel_completed": true, "stopped_at": null,
+                "n_states_before": 2, "n_states_after": 2,
+                "states_before": [], "states_after": [], "demoted_states": [],
+                "differentiated_rows": [], "eliminations": [],
+                "steps": [{ "step": "eliminate_trivial", "outcome": "0 eliminated" }],
+            }
+        });
+
+        let view = ReductionView::from_report(&report).expect("an older trace must parse");
+        assert_eq!(view.steps.len(), 1, "the row survives");
+        assert_eq!(view.steps[0].states_before, 0);
     }
 }
