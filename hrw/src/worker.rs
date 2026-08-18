@@ -9782,128 +9782,68 @@ fn index_reduce_for_structural_analysis(
     use rumoca_phase_structural::eliminate;
 
     let states_before: Vec<String> = dae.variables.states.keys().map(|k| k.to_string()).collect();
-    let mut steps: Vec<(&str, String)> = Vec::new();
-    let mut stopped_at: Option<&str> = None;
-    let mut ir_frames = Vec::new();
-    let mut demoted_so_far = Vec::new();
 
-    macro_rules! run_step {
-        ($name:expr, $call:expr, $outcome:expr) => {
-            match $call {
-                Ok(v) => steps.push(($name, $outcome(v))),
-                Err(e) => {
-                    steps.push(($name, format!("stopped: {e}")));
-                    stopped_at = Some($name);
-                    return (
-                        finish_report(dae, states_before, steps, stopped_at),
-                        ir_frames,
-                    );
-                }
-            }
+    // **The compile's own options.** `scalarize` defaults to true and the simulation
+    // path takes the default, so the real funnel scalarizes first — a step HRW's
+    // mirror never had. Passing anything else here would put the tab back to
+    // describing a funnel the compiler does not run.
+    let opts = rumoca_sim::SimOptions::default();
+
+    // Both levels, from one run. `RefCell` because the two observers are `Fn`
+    // closures called from inside the funnel, and the frames they collect outlive
+    // each call.
+    let steps: std::cell::RefCell<Vec<(&'static str, String)>> =
+        std::cell::RefCell::new(Vec::new());
+    let ir_frames: std::cell::RefCell<Vec<dp::IndexReductionFrame>> =
+        std::cell::RefCell::new(Vec::new());
+
+    let outcome = {
+        let on_step = |f: &rumoca_sim::FunnelStepFrame| {
+            let text = match &f.outcome {
+                rumoca_sim::FunnelStepOutcome::Demoted(n) => format!("{n} demoted"),
+                rumoca_sim::FunnelStepOutcome::Rewrote(n) => format!("{n} rewritten"),
+                rumoca_sim::FunnelStepOutcome::Completed => "ok".to_owned(),
+                rumoca_sim::FunnelStepOutcome::Failed(why) => format!("stopped: {why}"),
+            };
+            steps.borrow_mut().push((f.step, text));
         };
-    }
-
-    run_step!(
-        "demote_exact_alias_component_states",
-        dp::demote_exact_alias_component_states(dae),
-        |n| format!("{n} demoted")
-    );
-
-    run_step!(
-        "demote_direct_assigned_states",
-        dp::demote_direct_assigned_states(dae),
-        |n| format!("{n} demoted")
-    );
-
-    // Opening frame: the system as the traced reduction begins. Note the two
-    // demotion steps above are untraced, so this is the animation's baseline
-    // rather than the raw DAE — `IndexReductionStep::Start` documents that.
-    dp::emit_index_reduction_start(&mut ir_frames, None, dae, &demoted_so_far);
-
-    match dp::reduce_constrained_dummy_derivatives_with_trace(
-        dae,
-        None,
-        &mut ir_frames,
-        &mut demoted_so_far,
-    ) {
-        Ok(n) => steps.push((
-            "reduce_constrained_dummy_derivatives",
-            format!("{n} demoted"),
-        )),
-        Err(e) => {
-            steps.push((
-                "reduce_constrained_dummy_derivatives",
-                format!("stopped: {e}"),
-            ));
-            stopped_at = Some("reduce_constrained_dummy_derivatives");
-            return (
-                finish_report(dae, states_before, steps, stopped_at),
-                ir_frames,
-            );
-        }
-    }
-
-    let round_offset = ir_frames
-        .iter()
-        .filter_map(|f| match &f.step {
-            dp::IndexReductionStep::RoundComplete { round, .. } => Some(*round + 1),
-            _ => None,
-        })
-        .max()
-        .unwrap_or(0);
-    match dp::index_reduce_missing_state_derivatives_with_trace(
-        dae,
-        None,
-        &mut ir_frames,
-        &demoted_so_far,
-        round_offset,
-    ) {
-        Ok(n) => steps.push((
-            "index_reduce_missing_state_derivatives",
-            format!("{n} demoted"),
-        )),
-        Err(e) => {
-            steps.push((
-                "index_reduce_missing_state_derivatives",
-                format!("stopped: {e}"),
-            ));
-            stopped_at = Some("index_reduce_missing_state_derivatives");
-            return (
-                finish_report(dae, states_before, steps, stopped_at),
-                ir_frames,
-            );
-        }
-    }
-
-    let n_unassignable = dp::demote_states_without_assignable_derivative_rows(dae);
-    steps.push((
-        "demote_states_without_assignable_derivative_rows",
-        format!("{n_unassignable} demoted"),
-    ));
-
-    run_step!(
-        "eliminate_derivative_aliases",
-        dp::eliminate_derivative_aliases(dae),
-        |()| "ok".to_owned()
-    );
-
-    run_step!(
-        "demote_states_without_retained_derivative_rows",
-        dp::demote_states_without_retained_derivative_rows(dae),
-        |(no_der_ref, unassignable)| format!(
-            "{no_der_ref} no-derivative-ref + {unassignable} unassignable demoted"
+        let on_frame = |f: &dp::IndexReductionFrame| ir_frames.borrow_mut().push(f.clone());
+        rumoca_sim::prepare_dae_for_structural_analysis_fully_observed(
+            dae,
+            &opts,
+            Some(&on_step),
+            Some(&on_frame),
         )
-    );
+    };
 
-    dp::expand_compound_derivatives(dae);
-    steps.push(("expand_compound_derivatives", "ok".to_owned()));
+    let mut steps = steps.into_inner();
+    let mut ir_frames = ir_frames.into_inner();
 
-    let n_subst = dp::substitute_standalone_state_derivatives_in_non_ode_rows(dae);
-    steps.push((
-        "substitute_standalone_state_derivatives_in_non_ode_rows",
-        format!("{n_subst} substituted"),
-    ));
+    // A failing funnel names the step it stopped at, which the observer already
+    // reported — so the report's `stopped_at` is read off the frames rather than
+    // tracked separately.
+    let mut stopped_at: Option<&'static str> = None;
+    if outcome.is_err() {
+        stopped_at = steps
+            .iter()
+            .rev()
+            .find(|(_, text)| text.starts_with("stopped:"))
+            .map(|(name, _)| *name);
+        return (
+            finish_report(dae, states_before, steps, stopped_at),
+            ir_frames,
+        );
+    }
+    // Nothing below can set it; kept so the shape of the report is unchanged.
+    let _ = &mut stopped_at;
+    let _ = &mut ir_frames;
 
+    // **`eliminate_trivial` is NOT part of the preparation funnel**, and this is where
+    // the mirror was most misleading: it listed the step as though it were, so the
+    // tab attributed 77 eliminations to index reduction. In `rumoca-sim` it belongs
+    // to the next phase (`structural.eliminate_trivial`). HRW applies it here because
+    // the Index Reduction tab shows the system the *later* views are computed over —
+    // but it is now visibly a separate act rather than step 10 of a funnel.
     let mut eliminations = Vec::new();
     if let Ok(elim) = eliminate::eliminate_trivial(dae) {
         steps.push((

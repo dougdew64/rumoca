@@ -2,7 +2,7 @@
   "model": "TwoLoops",
   "specimen": "specimens/TwoLoops.mo",
   "specimen_fnv1a": "5955efec1865143e",
-  "rumoca_rev": "4c2d3039",
+  "rumoca_rev": "86fc2b08",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {

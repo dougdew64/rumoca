@@ -2,7 +2,7 @@
   "model": "ProportionalLoop",
   "specimen": "specimens/ProportionalLoop.mo",
   "specimen_fnv1a": "dad9634ca4e839d5",
-  "rumoca_rev": "4c2d3039",
+  "rumoca_rev": "86fc2b08",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {

@@ -323,6 +323,10 @@
     "n_states_after": 2,
     "steps": [
       {
+        "step": "scalarize_equations",
+        "outcome": "ok"
+      },
+      {
         "step": "demote_exact_alias_component_states",
         "outcome": "0 demoted"
       },
@@ -348,7 +352,7 @@
       },
       {
         "step": "demote_states_without_retained_derivative_rows",
-        "outcome": "0 no-derivative-ref + 0 unassignable demoted"
+        "outcome": "0 demoted"
       },
       {
         "step": "expand_compound_derivatives",
@@ -356,7 +360,7 @@
       },
       {
         "step": "substitute_standalone_state_derivatives_in_non_ode_rows",
-        "outcome": "0 substituted"
+        "outcome": "0 rewritten"
       },
       {
         "step": "eliminate_trivial",
