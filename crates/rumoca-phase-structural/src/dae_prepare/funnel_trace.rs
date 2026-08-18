@@ -41,6 +41,12 @@ pub enum FunnelStepOutcome {
     /// that reports nothing are different facts, and collapsing them is how "the step
     /// did nothing" becomes indistinguishable from "the step does not say".
     Demoted(usize),
+    /// Ran to completion and reported a count of rows it rewrote.
+    ///
+    /// Separate from [`Self::Demoted`] because rewriting a row and demoting a state are
+    /// different acts on different objects, and a consumer showing "n" beside a step
+    /// name needs to know which noun it counts.
+    Rewrote(usize),
     /// Returned an error. The funnel stops here, so no later step ran.
     ///
     /// **This is the variant that makes the trace a diagnostic rather than a report.**

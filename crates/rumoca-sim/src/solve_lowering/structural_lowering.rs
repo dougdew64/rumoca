@@ -245,10 +245,10 @@ fn reduce_index_and_eliminate_aliases(
         observer,
         "prepare.demote_states_without_assignable_derivative_rows",
         |d| {
-            rumoca_phase_structural::dae_prepare::demote_states_without_assignable_derivative_rows(
+            let n = rumoca_phase_structural::dae_prepare::demote_states_without_assignable_derivative_rows(
                 d,
             );
-            Ok(FunnelStepOutcome::Completed)
+            Ok(FunnelStepOutcome::Demoted(n))
         },
     )?;
     observed_step(
@@ -313,8 +313,8 @@ fn rewrite_derivative_references(
         observer,
         "prepare.substitute_standalone_state_derivatives_in_non_ode_rows",
         |d| {
-            rumoca_phase_structural::dae_prepare::substitute_standalone_state_derivatives_in_non_ode_rows(d);
-            Ok(FunnelStepOutcome::Completed)
+            let n = rumoca_phase_structural::dae_prepare::substitute_standalone_state_derivatives_in_non_ode_rows(d);
+            Ok(FunnelStepOutcome::Rewrote(n))
         },
     )?;
     Ok(())
