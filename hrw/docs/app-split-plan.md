@@ -160,7 +160,42 @@ plan's own rule forbids an extraction whose only justification is line count.
 achieved.** The first three moves were correct as *mechanism* rehearsal on items that could not
 fail interestingly; they were never going to reach the target.
 
-**So the remaining plan is by RENDERING CONCERN, not by field group:**
+### The coupling measurement — 2026-08-19, and it reorders the work again
+
+**Distinct `self.<field>` accesses per function**, which is the real cost of extracting one:
+
+| fields | lines | function |
+|---|---|---|
+| **43** | 602 | `central_panel_ui` |
+| 36 | — | `drain_worker` |
+| **32** | 299 | `frame_ui` |
+| 25 | — | `diagnostic_snapshot` |
+| 23 | — | `dispatch_hrw_link` |
+| 14 | 280 | `stage_tab_bar_ui` |
+| 13 | 255 | `context_bar_ui` |
+| **7** | 274 | `specimen_source_ui` |
+| **7** | 246 | `tour_panel_ui` |
+| **6** | 331 | `autoplay_controls_ui` |
+| **4** | 244 | `source_map_ui` |
+
+**Size and coupling are nearly uncorrelated, and coupling is what decides the cost.**
+`autoplay_controls_ui` is 331 lines and touches **6** fields; `frame_ui` is 299 lines and touches
+**32**. Ordering by size would have started on one of the worst.
+
+**Revised order, cheapest first:**
+
+1. **`source_map_ui`** (244 lines, 4 fields) — the genuine easiest, and a real test of whether a
+   rendering function can leave at all.
+2. **`specimen_source_ui`** (274, 7) — same concern, so it joins the same module.
+3. **`autoplay_controls_ui` + `tour_panel_ui`** (577, 6 and 7) — the tour panel, whose state
+   already lives in `tour.rs`.
+
+**`central_panel_ui` (43) and `frame_ui` (32) are last and may never qualify.** At 43 fields an
+extraction is a signature with forty-three arguments or a `&mut App` parameter — which the plan's
+"what NOT to do" list rejects as reducing nothing. **They shrink as their callees leave**, and
+that is the only mechanism likely to help them.
+
+**So the remaining plan is by RENDERING CONCERN, ordered by coupling:**
 
 1. **`specimen_source_ui` + `source_map_ui`** (518) — one concern, the specimen's own text.
 2. **`autoplay_controls_ui` + `tour_panel_ui`** (577) — the tour panel, whose state already lives
