@@ -116,6 +116,43 @@ Not a step of §3 — those turned out to be too large to be atomic.
 types will not get there.** The weight is in the rendering blocks, and §3's field-group order says
 nothing about where those sit — see the second finding below.
 
+### §3's seam order is WRONG for the remaining work — measured 2026-08-19
+
+**Three iterations took `app.rs` from 14,437 to 14,127 — and the next planned step buys nothing.**
+Field group 10, "compilation log", is **three fields and no struct**: `log_entries`,
+`viewing_log`, `tracing_enabled`. Grouping them into a type is a state-tidying change, and the
+plan's own rule forbids an extraction whose only justification is line count.
+
+**The mass is in the rendering functions, and the field-group map never mentions them.** Measured:
+
+| lines | function |
+|---|---|
+| **602** | `central_panel_ui` |
+| 331 | `autoplay_controls_ui` |
+| 299 | `frame_ui` |
+| 280 | `stage_tab_bar_ui` |
+| 274 | `specimen_source_ui` |
+| 255 | `context_bar_ui` |
+| 246 | `tour_panel_ui` |
+| 244 | `source_map_ui` |
+
+**Those eight are 2,531 lines — eight times what three iterations of state-struct moves
+achieved.** The first three moves were correct as *mechanism* rehearsal on items that could not
+fail interestingly; they were never going to reach the target.
+
+**So the remaining plan is by RENDERING CONCERN, not by field group:**
+
+1. **`specimen_source_ui` + `source_map_ui`** (518) — one concern, the specimen's own text.
+2. **`autoplay_controls_ui` + `tour_panel_ui`** (577) — the tour panel, whose state already lives
+   in `tour.rs`.
+3. **`central_panel_ui`** (602) — last, because it is the stage-routing hub and every other move
+   shrinks what it has to route.
+
+**And each needs a decision the state moves did not.** These take `&mut self` and reach across
+`App`. Moving one behind a new name reduces nothing — the plan's "what NOT to do" list says so
+directly. **Each extraction must first establish what state it actually touches**, which means
+reading it, which means the estimate for these is *hours*, not the minutes the state moves took.
+
 ### A FOURTH trap, and it is Claude's own rule being broken repeatedly
 
 **Do not write prose containing backticks through `node -e` or any shell string.** It happened

@@ -734,7 +734,8 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > of the plan's §3; those proved too large to be atomic.
 >
 > **Done so far:** the sub-view enums, `Viewport` and `sub_view_name_for` → `stage_view.rs` (266
-> lines). **`app.rs` 14,437 → 14,199.** Progress table in the plan.
+> lines), plus StageViewCaches to stage_caches.rs (99). **app.rs 14,437 → 14,127.** Progress
+> table in the plan, which also lists four mechanical traps the loop has hit.
 >
 > **Regenerate `architecture.md` BEFORE the slow gate** — it carries module line counts, so every
 > move stales it and the gate fails on it 300 seconds in.
