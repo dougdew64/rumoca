@@ -103,6 +103,20 @@ step's findings are safe before the current one can go wrong.
 **A "bit" of refactoring is one item or one small cluster, built and tested before the next.**
 Not a step of §3 — those turned out to be too large to be atomic.
 
+**THE LOOP'S COST PROFILE CHANGES AFTER ITERATION FIVE, AND THAT NEEDS A DECISION.** The first
+five were cheap *because the items could not fail interestingly*: leaf types with no `App`
+coupling, moved by marker, verified by a build. **That supply is now exhausted.**
+
+What remains is eight rendering functions reaching across `App` — a 602-line `central_panel_ui`
+touching fifteen-odd fields. **"A bit of refactoring per iteration" may not survive contact with
+one of those**, because the unit of work is no longer "move an item" but "establish what state
+this function actually touches", and that cannot be half-done and left green.
+
+**Decide the rhythm before starting one, rather than discovering it mid-extraction.** Two honest
+options: spend a whole session on *one* function, or spend one first on **measuring the coupling**
+of all eight and let the numbers pick the order. The second is cheaper and is what the plan's own
+"estimate each step by locating its items first" rule already asks for.
+
 ### Progress
 
 | date | move | `app.rs` | new module |
