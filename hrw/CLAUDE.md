@@ -716,6 +716,24 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > capturing *what was selected* rather than *where the pane is scrolled*. Different mechanism;
 > do not design it until #1 has been used and found wanting.
 >
+> ### ⟶ NEXT: SPLIT `app.rs` — [`docs/app-split-plan.md`](docs/app-split-plan.md)
+>
+> **Doug, 2026-08-19:** size the pieces to reduce context-maintenance frequency, and on *"an
+> absolute need of never, ever ruling out potential work simply because `app.rs` is too large for
+> you to even consider."* **That floor was already breached** — the same day's sweep filed
+> `app.rs` under "not looked at" because reading it did not fit.
+>
+> **Target: no module over ~1,500 lines**, derived from the nine `hrw/src` modules already in the
+> 1,000–1,500 band that have never produced this week's failures. `app.rs` is 14,437.
+>
+> **The first attempt at step 1 was reverted**, and its two findings bind the next one: `app.rs`'s
+> types are **interleaved**, so items must move **individually, each by its own marker, with a
+> build after each** — never as a span. And the field-group map describes where *state* is
+> grouped, not where *code* is, so step size must be estimated by locating items first.
+>
+> **`worker.rs` (10,594) is deliberately deferred**, which is what makes this an experiment: if
+> handoff frequency does not improve, splitting more files is not the answer.
+>
 > ### ✅ THE TRANSPORT BAR IS FIXED AND THE BACK BUTTON SHIPPED — 2026-08-19
 >
 > **Un-wrapped** (`ui.horizontal`), so its minimum width is now **monotonic** in its contents —

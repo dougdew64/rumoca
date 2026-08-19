@@ -89,6 +89,25 @@ three steps, steps 4 and 5 need re-justifying on their own merits.
 the new `app.rs` line count. The count goes in the commit message so the trend is greppable
 without a tool.
 
+### Two findings from the first attempt at step 1 — 2026-08-19, reverted
+
+**`app.rs`'s types are INTERLEAVED, not clustered. Never move a span.** The first attempt cut
+from `StructuralView`'s doc comment to the end of `impl Default for Viewport` as one slice, on
+the assumption that the viewport cluster was contiguous. It is not: `NavEntry`, `UiMode`,
+`SpecimenDetail`, `StageViewCaches` and `CompileFrames` all live *between* those items. The cut
+moved 530 lines and produced **179 errors**.
+
+**So an extraction must move items individually, each located by its own marker**, and must
+verify the build **after each item** rather than after the cluster. A mistake then costs one item
+instead of the whole step. This is the line-number-arithmetic lesson one level up: **a span
+between two known-good points is not itself known-good.**
+
+**And the seam list maps FIELDS, not CODE.** `architecture.md`'s field groups describe where
+`App`'s *state* is grouped; the code implementing a group is scattered across the file. So §3's
+order is sound about *what* to extract and says nothing about *how hard each is* — which is what
+actually decides whether a step fits in one session. **Estimate each step by locating its items
+first**, and treat "how many separate places is this in?" as the real size, not the field count.
+
 ---
 
 ## 4. Explicitly deferred
