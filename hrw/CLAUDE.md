@@ -734,10 +734,18 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > of the plan's §3; those proved too large to be atomic.
 >
 > **Done so far:** the sub-view enums, `Viewport` and `sub_view_name_for` → `stage_view.rs` (266
-> lines), plus StageViewCaches to stage_caches.rs (99). **app.rs 14,437 → 14,127.** Progress
+> lines), StageViewCaches to stage_caches.rs (99), and UiMode/SpecimenDetail/NavEntry to
+> ui_state.rs (73). **app.rs 14,437 → 14,076 over five iterations.** Progress
 > table in the plan, which also lists four mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest: the mass is in eight rendering fns totalling 2,531 lines, not in
 > field groups. Those take &mut self, so each costs hours, not minutes.
+>
+> **THE CHEAP MOVES ARE EXHAUSTED — decide the rhythm before starting the next one.** The five
+> done were cheap *because the items could not fail interestingly*. What remains cannot be
+> half-done and left green, because the unit of work stops being "move an item" and becomes
+> "establish what state this function touches". **The plan recommends spending one session
+> measuring the coupling of all eight** and letting the numbers pick the order, rather than
+> committing a whole session to `central_panel_ui` blind.
 >
 > **Regenerate `architecture.md` BEFORE the slow gate** — it carries module line counts, so every
 > move stales it and the gate fails on it 300 seconds in.
