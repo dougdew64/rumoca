@@ -270,7 +270,7 @@ const MAX_LEFT_FRACTION: f32 = 0.75;
 /// this one cannot straddle the content minimum again. If content grows past it,
 /// `the_left_panel_content_never_detaches_from_the_divider` fails rather than the
 /// gap silently returning.
-const MIN_LEFT_POINTS: f32 = 465.0;
+const MIN_LEFT_POINTS: f32 = 410.0;
 
 /// The draggable LHS/RHS split (`docs/ideas.md` #59).
 ///
@@ -7074,6 +7074,19 @@ impl App {
                         .map(|(l, _)| *l)
                         .unwrap_or("custom");
                     egui::ComboBox::from_id_salt("autoplay_total")
+                        // **Sized to its labels.** With no `width` egui applies its
+                        // default `combo_width` of 100pt, which was invisible while the
+                        // labels read `90s — standard` and became obvious the moment they
+                        // became `90s`. Doug: *"Why is the time selector combobox so wide?
+                        // It is much wider than necessary for the labels."*
+                        //
+                        // A constant is safe *here* although it was not for the tour
+                        // picker: that one needed to shrink on a narrow panel, so a fixed
+                        // width forced the panel wider. These four labels never exceed
+                        // four characters, so this width is an upper bound rather than a
+                        // demand — and since the bar stopped wrapping, its contribution to
+                        // the panel floor is now simply additive.
+                        .width(52.0)
                         .selected_text(current)
                         .show_ui(ui, |ui| {
                             for (label, secs) in crate::autoplay::TOTAL_CHOICES {

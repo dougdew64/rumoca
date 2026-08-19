@@ -1935,7 +1935,7 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
             // matters at any size is that the floor is the **bar's** width and not the
             // tour prose's: 480pt is the bar plus chrome, and the 899pt failure this
             // assertion was written for would still trip it.
-            let ceiling = if w >= 1000.0 { 0.55 } else { 480.0 / w };
+            let ceiling = if w >= 1000.0 { 0.55 } else { 425.0 / w };
             assert!(
                 started_at <= ceiling,
                 "{w}x{h_px} tour={mode_is_tour}: the panel opened at {:.0}% of the \
@@ -1983,10 +1983,10 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
                 // gets back.
                 if x <= 8.0 {
                     assert!(
-                        panel_w <= 480.0,
+                        panel_w <= 425.0,
                         "{w}x{h_px} tour={mode_is_tour}: dragged hard left, the panel \
                          settled at {panel_w:.1}pt. Since 2026-08-19 the un-wrapped tour \
-                         bar's one-row width IS this floor, measured at 450.5pt — so a \
+                         bar's one-row width IS this floor, measured at 351.8pt — so a \
                          higher number means something was added to that bar without a \
                          matching reduction, and the RHS pays for it permanently.",
                     );
