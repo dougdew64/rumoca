@@ -576,9 +576,22 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > (0, and cannot be reduced). It builds *why differentiating helps* from what an integrator can
 > be asked for, and defines **index as a distance** rather than a score. **Not yet walked.**
 >
-> **STILL OWED:** per-step deltas in the funnel table (states/equations either side of each
-> step — the numbers are in `FunnelStepFrame` and are not yet published), and the reduction
-> passes expandable into their frames. Doug: *"my education is more important than strict
+> **THE TOUR IS BEING WALKED NOW, and three corrections have already come from it** — each a
+> prose failure, none a wrong number, and none findable by any checker here:
+>
+> 1. *"Why a solver cannot simply be told about the constraint"* said **solver** and described
+>    an **integrator**. A DAE solver handles constraints; that is its job. Wrong difficulty named.
+> 2. The replacement assumed Newton iteration, Jacobians and singularity. Rebuilt on **matching**,
+>    which he has walked — the same fact found by counting rather than arithmetic.
+> 3. Backward references **retold** earlier results as prose, including a hand-written table that
+>    duplicated the Incidence view. Doug: *"HRW is your platform. Use it."* Now
+>    `hrw://tour/<name>/stop/<slug>` links and a pane link.
+>
+> **The standing offer that came with it:** *"if ever HRW does not meet your needs but could meet
+> your needs with improvements, then let's pause and make those improvements."* Take it.
+>
+> **STILL OWED:** the reduction passes expandable into their frames. Doug: *"my education is
+> more important than strict
 > adherence to the template"* — though the template constrains shape, not length, so a long
 > tour needs no exemption. `docs/tour-kinds-plan.md` §4 is the governing principle.
 >

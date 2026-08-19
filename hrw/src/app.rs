@@ -3020,6 +3020,22 @@ impl App {
                 // Deferred: turning an equation index into a world position needs the
                 // view's own layout, which exists only at paint time.
                 self.aim_at_equation = Some(equation);
+                // **And the same verb points at a row of the incidence matrix.**
+                //
+                // `equation` used to reach only the canvas views, where it aims a
+                // camera. The Incidence view has rows *named for equations* and no way
+                // to link to one, so a tour could say "open the matrix" and then had to
+                // describe the row in prose — which on a 97-row model is the difference
+                // between pointing and gesturing.
+                //
+                // Doug, 2026-08-18, on a tour that hand-copied a five-row table the
+                // pane already draws: *"HRW is your platform. Use it."*
+                //
+                // **One verb, not two.** A separate `row` would put two words on one
+                // job — the thing the tour template's own rule 2 forbids — when "point
+                // at equation N" is what both views are being asked for. Each does it
+                // in its own idiom: the canvas moves a camera, the matrix marks a row.
+                self.viewport.highlighted_eq_row = Some(equation);
             }
             HrwLink::PointAtNode(kind, sub, path) => {
                 self.stage = kind;
@@ -14084,5 +14100,78 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
         // A second call with nothing changed must return before touching the disk.
         app.publish_current_view();
         assert_eq!(app.viewport.last_published_view, first);
+    }
+}
+
+#[cfg(test)]
+mod tests_incidence_row_link {
+    use super::*;
+
+    /// **`hrw://stage/<Stage>/Incidence/equation/<n>` marks the row.**
+    ///
+    /// # Why this verb was extended rather than a new one added
+    ///
+    /// `equation` reached only the canvas views, where it aims a camera. The Incidence
+    /// view's rows *are* equations and nothing could link to one — so a tour could open
+    /// the matrix and then had to describe the row in prose. On `Drivetrain`'s 97 rows
+    /// that is the difference between pointing and gesturing, and the index-reduction
+    /// tour hit it: it hand-copied a five-row table the pane already draws.
+    ///
+    /// **A separate `row` verb would put two words on one job.** The tour template's own
+    /// rule 2 forbids exactly that, and "point at equation N" is what both views are
+    /// being asked for — the canvas moves a camera, the matrix marks a row.
+    #[test]
+    fn an_equation_link_marks_the_incidence_row() {
+        let mut app = App::test_default();
+        // **A stage link is refused with no model loaded** — the guard behind Doug's
+        // "no specimen loaded" report on 2026-08-16. Without this the test asserts
+        // against a dispatch that never ran.
+        app.test_set_walked_state(
+            "/x/RcCircuit.mo",
+            "RcCircuit",
+            crate::worker::StageKind::Structural,
+        );
+        assert!(
+            app.viewport.highlighted_eq_row.is_none(),
+            "precondition: nothing is marked before the link is dispatched",
+        );
+
+        let link = parse_hrw_link("hrw://stage/Structural/Incidence/equation/4")
+            .expect("the link form must parse");
+        app.dispatch_hrw_link(link);
+
+        assert_eq!(
+            app.viewport.highlighted_eq_row,
+            Some(4),
+            "the row a tour points at must be marked; without this the link opens the \
+             matrix and says nothing about which row it meant",
+        );
+        assert_eq!(app.stage, crate::worker::StageKind::Structural);
+    }
+
+    /// **The canvas aim still happens, so the verb did not change meaning for the views
+    /// that already used it.**
+    ///
+    /// Extending a verb is only safe if the old consumers keep working; a test that
+    /// checked the new behaviour alone would pass while `matching.md`'s camera links
+    /// silently stopped aiming.
+    #[test]
+    fn extending_the_verb_did_not_break_the_camera_aim() {
+        let mut app = App::test_default();
+        app.test_set_walked_state(
+            "/x/RcCircuit.mo",
+            "RcCircuit",
+            crate::worker::StageKind::Structural,
+        );
+        let link = parse_hrw_link("hrw://stage/Structural/TarjanAnim/equation/2")
+            .expect("the canvas form must parse");
+        app.dispatch_hrw_link(link);
+
+        assert_eq!(
+            app.aim_at_equation,
+            Some(2),
+            "the deferred camera aim must still be set \u{2014} the canvas views have \
+             used this verb since before the Incidence view had any link at all",
+        );
     }
 }

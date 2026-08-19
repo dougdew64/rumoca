@@ -63,8 +63,12 @@ draws exactly that: one row per equation, marking which unknowns it touches.
 [▶ Look — CartesianPendulum → Structural → Incidence](hrw://load/CartesianPendulum/Structural/Incidence)
 
 **Read the rows and the argument makes itself.** Four of them touch something on our list. The
-fifth, `f_x[4]` — the constraint `x^2 + y^2 - L^2` — **touches nothing at all**: it is built from
-`x`, `y` and `L`, every one of them already known. It is a true statement that cannot do any work.
+fifth touches nothing at all — and rather than describe it, here it is:
+
+[Point at the constraint row, `f_x[4]`](hrw://stage/Structural/Incidence/equation/4)
+
+**Its row is empty.** The constraint `x^2 + y^2 - L^2` is built from `x`, `y` and `L`, every one
+of them already known when the step begins. It is a true statement that cannot do any work.
 
 And that strands `lambda`. It appears in only two rows, `f_x[2]` and `f_x[3]`, and both are needed
 for `der(vx)` and `der(vy)`.
