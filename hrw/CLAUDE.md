@@ -632,6 +632,44 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > capturing *what was selected* rather than *where the pane is scrolled*. Different mechanism;
 > do not design it until #1 has been used and found wanting.
 >
+> ### THE TOUR TRANSPORT BAR HAS A NON-MONOTONIC WIDTH BUG — 2026-08-19, unfixed
+>
+> **Two requested changes are both blocked by it**, and neither is at fault:
+>
+> - Remove the visible tour count (Doug: *"I have not used that label's information a single
+>   time"*).
+> - Add a tour-history **Back** control (Doug: *"I cannot navigate back"* from a cross-tour link).
+>
+> **Four measurements, and the failure MOVES rather than shrinking** —
+> `the_left_panel_content_never_detaches_from_the_divider` catches every variant:
+>
+> | change | gap | at pointer |
+> |---|---|---|
+> | remove the label only | 136.8pt | x=448 |
+> | add `◂ Back` only | 62.7pt | x=230 |
+> | swap label → bare `◂` | 136.8pt | x=448 |
+> | swap label → `◂ Back` | 67.3pt | **x=128** |
+>
+> **The defect is not "Back does not fit".** It is that the bar's minimum width depends on its
+> item count **non-monotonically**: it is `horizontal_wrapped`, so removing an item can make the
+> remaining row *wider* by stopping it wrapping. That is a latent trap for every future change to
+> this bar.
+>
+> **Removing `horizontal_wrapped` was proposed and is WRONG.** Doug: *"With all widgets such as
+> 'Claude's Answer' in the same header, that minimum LHS width would cause the LHS to occupy more
+> than 50% of my 13" screen."* A one-row bar demands well over 640pt; wrapping is what lets the
+> bar survive a narrow panel. **Do not re-propose it.**
+>
+> **Instrument, do not tune.** Claude tuned four times here after saying he would not, repeating
+> the six-attempt divider episode `ui-findings.md` C15 records. The test already knows
+> `available`, `panel` and `content` at each sampled pointer position — **print the triple across
+> the sweep** and the question ("is the panel tracking the pointer while the content is not, or
+> the reverse?") is answered in one run.
+>
+> **Fallback if the bar is genuinely full:** make Back a keyboard shortcut (`Alt+←`), which costs
+> no width and carries no layout risk. It does not help the label removal, which needs the bar
+> bug fixed regardless.
+>
 > **STILL OWED:** the reduction passes expandable into their frames. Doug: *"my education is
 > more important than strict
 > adherence to the template"* — though the template constrains shape, not length, so a long
