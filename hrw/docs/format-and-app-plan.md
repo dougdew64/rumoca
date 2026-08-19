@@ -132,6 +132,39 @@ says it is.
 > else has been shown to buy a test. **The step stops when extractions stop buying tests, which
 > is where it is now**, so the next useful work is `ideas.md` #46 rather than more extraction.
 
+### REOPENED 2026-08-19 — the "buys a test" gate is not the only gate any more
+
+**Doug:** *"I see that you have not proposed refactoring `app.rs`, despite your earlier
+statements that the size of `app.rs` was causing problems for you."* He is right, and the
+omission had a reason that is itself the finding.
+
+**What changed.** `CLAUDE.md` now records **trigger 2 — Claude's ability to maintain it degrades —
+as FIRED**, on this week's evidence rather than on a line count: line-number arithmetic used to
+locate an edit, Rust generated through a shell three times with doc references silently swallowed
+twice, and repeated edits against stale assumptions about surrounding code. `app.rs` is **14,437
+lines**, up from 9,434 on 2026-08-02.
+
+**Trigger 2 and trigger 3 are different gates**, and only trigger 3 requires an extraction to buy
+a test. The step went empty in August because *nothing bought a test* — a trigger-3 answer to a
+trigger-3 question. **It was never asked whether anything relieves trigger 2**, because trigger 2
+had not fired yet.
+
+**And the circularity, which is the argument for doing it rather than an excuse.** The reason no
+proposal was made during the 2026-08-19 sweep is that reading `app.rs` did not fit in the
+context left — *the file is too large to read, so the work that would make it smaller does not get
+proposed.* That is self-perpetuating, and it gets worse on its own: every session that adds to
+`app.rs` makes the next session likelier to skip it for the same reason.
+
+**What survives unchanged:** the "what NOT to do" list below, and the rule that an extraction
+justified on **testability** must still buy a test. What is added is that an extraction justified
+on **maintainability** must instead show it reduces what a session has to hold to make a change —
+and that claim is measurable, not aesthetic.
+
+**The cheap first move is not reading the file.** `docs/architecture.md` is generated and already
+carries module line counts and `App`'s field groups. **Start from the generated map**, pick the
+seam with the largest ratio of size to coupling, and check it against the "what NOT to do" list —
+rather than reading 14,437 lines to rediscover a structure that is already written down.
+
 ### What the UI pause settled, and what it explicitly did not
 
 `docs/ui-pause-plan.md` (2026-08-02) cut `App` from 105 fields to 57, `frame_ui` from 727 lines
