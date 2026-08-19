@@ -110,7 +110,13 @@ Not a step of §3 — those turned out to be too large to be atomic.
 | 2026-08-19 | *(baseline)* | 14,437 | — |
 | 2026-08-19 | sub-view enums, impls, name helpers (12 items) | 14,298 | `stage_view.rs` (165) |
 | 2026-08-19 | `Viewport`, its `Default`, `sub_view_name_for` | 14,199 | `stage_view.rs` (266) |
-| 2026-08-19 | `StageViewCaches` + impl | **14,127** | `stage_caches.rs` (99) |
+| 2026-08-19 | `StageViewCaches` + impl | 14,127 | `stage_caches.rs` (99) |
+| 2026-08-19 | `UiMode`, `SpecimenDetail`, `NavEntry` | **14,076** | `ui_state.rs` (73) |
+
+**Trap 2 fired again on that last move** — a `sed` insert landed between `#[derive]` and its enum,
+an hour after the trap was written down. **Reading a rule is not the same as it being available at
+the moment it applies.** The durable fix is not another note: it is to stop inserting imports by
+line and put them in the module's header when the file is first written.
 
 **Scale check, recorded so it is not rediscovered:** −139 lines against a ~12,800-line gap. **Leaf
 types will not get there.** The weight is in the rendering blocks, and §3's field-group order says

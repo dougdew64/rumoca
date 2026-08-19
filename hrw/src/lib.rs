@@ -81,6 +81,7 @@ pub mod tearing_anim;
 pub mod test_support;
 pub mod tour;
 pub mod tree;
+pub mod ui_state;
 pub mod worker;
 
 /// Headless UI tests (`docs/verification-plan.md` item 2). Test-only: the

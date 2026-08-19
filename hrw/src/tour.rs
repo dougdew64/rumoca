@@ -142,7 +142,7 @@ pub(crate) struct TourState {
     ///
     /// **The stop is not wrong; the run just has to clean up after itself.** A walk
     /// is a round trip, so it restores what it borrowed, on finishing *or* on Stop.
-    pub(crate) mode_before_autoplay: Option<crate::app::UiMode>,
+    pub(crate) mode_before_autoplay: Option<crate::ui_state::UiMode>,
 }
 
 impl Default for TourState {

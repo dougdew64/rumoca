@@ -602,58 +602,6 @@ follows them. Where the view shows IR nodes \u{2014} trees, stage tabs, incidenc
 left-click points at them, and right-click offers Follow for names the model knows. Hover \
 anything clickable and it will say which.";
 
-/// What the bottom two-thirds of the Specimen mode LHS shows.
-///
-/// `Debug` so the crash log can name it — the derived variant name is exactly
-/// the right thing to record, and hand-writing a second mapping would let the
-/// two drift.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-enum SpecimenDetail {
-    /// The specimen's Modelica source text.
-    #[default]
-    Source,
-    /// The specimen's purpose note from
-    /// `docs/specimen-notebook/<Model>/purpose.md`. Renamed from `narrative.md`
-    /// 2026-07-29 when the stage-by-stage prose was retired — a file called
-    /// `narrative.md` containing no narrative is the kind of stale signal that
-    /// retirement was meant to remove. See `docs/ideas.md` #42.
-    /// The specimen's purpose note (`purpose.md`). Was `Narrative` until
-    /// 2026-07-29; the stage-by-stage prose it named is retired.
-    Purpose,
-}
-
-/// One level of "go to definition" navigation: a class extracted from the
-/// resolved tree, shown in the same generic tree the specimen stages use.
-///
-/// Navigation forms a stack: clicking "Go to definition" pushes a `NavEntry`,
-/// "Back" pops one, and "Specimen" clears the stack entirely. Each entry
-/// carries its own `def_index` so the tree inspector can resolve DefIds
-/// (numeric cross-references) to human-readable class names within that class.
-struct NavEntry {
-    name: String,
-    /// The serde_json representation of this class's IR — the same format every
-    /// stage uses, so the generic tree inspector renders it without any special
-    /// logic.
-    value: serde_json::Value,
-    /// Maps numeric DefIds (compiler-internal identifiers) to their resolved
-    /// class names, enabling the tree view to show "type_def_id: 27579 ->
-    /// model Resistor" rather than a bare number.
-    def_index: BTreeMap<u64, DefInfo>,
-}
-
-/// Which left-panel content is active. Determines both what occupies the LHS
-/// of the window and whether the LHS is visible at all.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum UiMode {
-    /// Guided tour: LHS shows the tour document, RHS shows stage tabs.
-    #[default]
-    Tour,
-    /// Specimen exploration: LHS shows specimen list + purpose note, RHS shows stage tabs.
-    Specimen,
-    /// Debugger-assisted: LHS hidden, stage tabs fill the window. VS Code alongside.
-    Debug,
-}
-
 /// The algorithm **frame sets** one compile produced, grouped because they are one
 /// thing.
 ///
@@ -812,6 +760,7 @@ use crate::stage_view::{
     flatten_view_name, init_view_name, structural_view_name, sub_view_name_for,
 };
 use crate::tour::{TourSource, TourState};
+use crate::ui_state::{NavEntry, SpecimenDetail, UiMode};
 
 /// The entire application state. In immediate-mode UI, this struct IS the
 /// application — every frame, `ui()` reads and writes these fields to decide

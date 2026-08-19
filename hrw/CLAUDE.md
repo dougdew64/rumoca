@@ -735,7 +735,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >
 > **Done so far:** the sub-view enums, `Viewport` and `sub_view_name_for` → `stage_view.rs` (266
 > lines), plus StageViewCaches to stage_caches.rs (99). **app.rs 14,437 → 14,127.** Progress
-> table in the plan, which also lists four mechanical traps the loop has hit.
+> table in the plan, which also lists four mechanical traps and the measurement that §3 seam
+> order is WRONG for the rest: the mass is in eight rendering fns totalling 2,531 lines, not in
+> field groups. Those take &mut self, so each costs hours, not minutes.
 >
 > **Regenerate `architecture.md` BEFORE the slow gate** — it carries module line counts, so every
 > move stales it and the gate fails on it 300 seconds in.
