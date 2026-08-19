@@ -58,6 +58,36 @@ will pause and fix code as often as necessary in order to deliver accuracy."* A 
 removing fictions is not a detour from the curriculum. 2026-08-04 was spent entirely on it and
 was the correct use of the day.
 
+**AND THE PRIMARY REASON IS NOT DOUG'S COMFORT — IT IS WHETHER CLAUDE CAN STILL FIX IT AT ALL**
+*(Doug, 2026-08-19, stating the principle that has governed the project all along)*: *"the
+primary reason is so that we can increase the probability of you being able to fix bugs at all.
+If we wait too long to fix bugs, it will become too difficult for you to fix those bugs without
+also breaking other code which has been built atop those bugs."*
+
+**One day supplied three demonstrations and one counter-example that sharpens the rule.**
+
+- **The tour transport bar.** Nobody had noticed its wrap behaviour, but `MIN_LEFT_POINTS`, two
+  divider-test thresholds, `MAX_TOUR_CHROME` and the picker's adaptive width had all been tuned
+  *around* it. By the time it was touched, **five perturbations each failed differently**,
+  because the surrounding code encoded the equilibrium. Two theories died before the third
+  worked.
+- **`differentiated_rows`.** A tour was written on the misreading, so correcting the field meant
+  rewriting the tour.
+- **The mirrored funnel.** It existed because Rumoca had no observation API, so deleting it
+  required building one first.
+- **The eighteen browser-opening links** — same age, and they cost **minutes**. Mechanical, all
+  at once, no theories. **Because nothing depended on them:** nobody clicked them, so nothing had
+  grown on top.
+
+**So the cost scales with how much has come to DEPEND on the broken behaviour, not with how long
+it has been broken. The danger sign is load, not age.** A three-day-old bug that things are
+already leaning on is more urgent than a three-week-old one nothing touches.
+
+**And the corollary that binds Claude specifically: he is bad at telling what depends on a
+behaviour.** The divider proved it — four changes made on the assumption of independence, each
+revealing another coupling. **So "I cannot tell what is built on this yet" is itself an argument
+for fixing now**, while the answer is still small enough to discover.
+
 **NOTHING HRW SHOWS MAY BE INVENTED.** Every number, structure, tree, animation frame and log
 line must be traceable to something Rumoca **actually did on this run**. Three corollaries,
 each bought with a fiction removed on 2026-08-04:
