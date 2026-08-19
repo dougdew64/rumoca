@@ -606,16 +606,29 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >
 > 1. **Publish which tour is selected** — small, and gets most of the benefit. `TourState` knows
 >    it; `publish_current_view` is where it goes.
-> 2. **Publish which stop is on screen** — bigger, and the interesting one. The mechanism is
->    already proven: the pane splits the document and measures `ui.cursor().top()` between the
->    halves, the technique that replaced **four** failed attempts at estimating position from
->    character offsets. Splitting per-heading gives every stop's y; comparing against the scroll
->    offset gives the topmost visible one. **Measure the cost first** — it means rendering N
->    documents per frame where the code already warns that two is "not free of consequence", and
->    `connect-expansion` has eleven headings.
+> 2. **Publish which stop is on screen** — **RECOMMENDED AGAINST, 2026-08-19.** Doug asked
+>    whether the recommendation was for or against; the honest answer is against, and one reason
+>    originally given for it was wrong.
 >
-> **#2 also fixes `stop/<slug>` links landing precisely** rather than approximately, since it
-> produces exactly the per-heading positions that feature lacks.
+> **Why against**, in the order that decides it:
+>
+> - **It does not deliver the request.** Doug wants to point at *statements*; this publishes
+>   *stops*, and a stop is often a page. He would still say "the Newton paragraph in this stop",
+>   which is barely shorter than "the Newton paragraph in the intro" — already unambiguous under
+>   #1.
+> - **It fails in the normal reading position.** With two or three stops visible, "this" is
+>   ambiguous again. It works only when one stop fills the pane.
+> - **The side benefit claimed for it does not exist.** It was said to make `stop/<slug>` links
+>   land precisely. **That shipped on 2026-08-17**: the pane splits at the byte offset and calls
+>   `scroll_to_cursor`, so egui computes the position from a cursor it knows exactly. That was
+>   the strongest argument for #2 and it is already done.
+> - **The cost is real and falls on a pane in constant use** — N markdown documents per frame,
+>   where the code warns that two is "not free of consequence", and `connect-expansion` has
+>   eleven headings.
+>
+> **If statement-level deixis still matters after living with #1**, the answer is not #2 — it is
+> capturing *what was selected* rather than *where the pane is scrolled*. Different mechanism;
+> do not design it until #1 has been used and found wanting.
 >
 > **STILL OWED:** the reduction passes expandable into their frames. Doug: *"my education is
 > more important than strict
