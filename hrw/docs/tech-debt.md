@@ -20,6 +20,36 @@ tech debt schedule is a prime example of old fashioned software development
 mentality where teams have to agree upon weekly schedules and other such stuff
 which absolutely do not matter for this project. We are entirely agile."*
 
+**A THIRD TRIGGER, ADDED 2026-08-19: SCHEDULED AND COMPREHENSIVE, TO COVER OUR BLIND SPOTS.**
+
+**Doug:** *"it's possible and perhaps likely that both of us has blind spots and is not
+recognizing that we are building new code atop defective code… we are going to protect the code
+from our blindness by also performing scheduled comprehensive tech debt sweeps."*
+
+**This is not the weekly scan rejected in July.** That was refused on ceremony grounds — *"old
+fashioned software development mentality… we are entirely agile"* — and this argument is
+different in kind, which is why it is added rather than a reversal. **A forward-looking sweep is
+structurally incapable of finding what neither of us anticipates**, because its scope is drawn
+from what we expect to touch.
+
+**2026-08-19 demonstrated it.** The tour transport bar's non-monotonic width had `MIN_LEFT_POINTS`,
+two divider-test thresholds, `MAX_TOUR_CHROME` and the picker's adaptive width all tuned *around*
+it. **It was never on anyone's list** — nobody planned to touch that bar until a Back button
+needed a slot — so no targeted sweep would have scoped it in. It was found by walking into it, at
+the cost of an evening and two dead theories.
+
+**During a comprehensive sweep, general software-engineering principle is admissible grounds** —
+including refactoring for size, which the targeted triggers deliberately refuse.
+
+**With one guard, because the failure mode of a scheduled sweep is churn that looks like
+progress:** `format-and-app-plan.md`'s rule applies to every change made on principle alone —
+**no extraction lands without a test that could not have been written before it.** A refactor
+that enables no test needs a justification other than the principle.
+
+**Why it matters more than tidiness** — `hrw/CLAUDE.md`, "fixability decay": the cost of a
+deferred fix scales with **how much has come to depend on the broken behaviour**, and a blind
+spot is precisely where dependants accumulate unobserved.
+
 The rules, in full:
 
 - **Measure, never re-estimate.** This rule keeps paying. The 2026-07-28 sweep found

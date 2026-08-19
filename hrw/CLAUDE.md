@@ -331,6 +331,42 @@ those functions, or will improve your ability to test those functions and keep t
 reasoning). They encode a human-comprehension heuristic, and enforcing it would reward splitting
 a function *to satisfy the lint* — extraction with no new seam and no new test.
 
+### Trigger 2 HAS FIRED for `app.rs` — 2026-08-19, and the framing matters
+
+**`app.rs` is 14,437 lines**, up from the 9,434 recorded on 2026-08-02. The case for splitting it
+is **not** that it is large — that is the heuristic this policy exists to refuse, and it would
+equally license splitting `worker.rs` (10,594 lines), which has caused none of the trouble below.
+
+**The case is that it exceeds what Claude can hold, and there are defects to show for it.** In one
+session: line-number arithmetic used to locate an edit (one of the three silent-corruption causes
+this file names), Rust generated through a shell three times with doc references silently
+swallowed twice, and repeated edits made against stale assumptions about surrounding code. Each
+was cheaper than reading the region first — which is the definition of a file too big to maintain.
+
+**So record the trigger as "exceeds what Claude can hold, with defects to show for it", never as
+"large".** The distinction is what stops the next session splitting files by line count.
+
+### And a second observable signal: HANDOFF FREQUENCY
+
+**Doug, 2026-08-19:** *"it has seemed that you are needing to perform context maintenance more
+frequently lately. Perhaps the increasingly large files such as `app.rs` are contributing to that.
+I hope that you will consider context maintenance as a trigger for code refactoring."*
+
+**This is worth having because it is external and countable.** This file already warns that
+**Claude is a poor sensor for his own comprehension failures** — both August examples were caught
+by the compiler, not by noticing confusion — and the only reliable signal recorded so far is
+*"defects only a human caught"*. Handoff frequency is a second one that does not depend on
+Claude's self-report at all.
+
+**The mechanism is plausible:** a large file costs context per edit, context spent is session
+length lost, and shorter sessions mean more handoffs. So rising handoff frequency is a candidate
+proxy for maintainability decay.
+
+**It is a trigger to MEASURE, not to refactor on.** Handoffs also rise with prose volume, long
+gates and simply doing more in a session — 2026-08-19 involved a great deal of writing — so the
+correlation is unestablished. When it fires, the response is to find out *which files the session
+was reading*, not to start extracting.
+
 **What the evidence says length does to Claude, measured 2026-08-05.** It bit twice this week,
 and both times the cause was **local context at the edit point**, not total length: the
 `Provenance` enum inserted between `#[derive]` and its struct, and an `events_stage` borrow
