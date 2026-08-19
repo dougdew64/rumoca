@@ -640,25 +640,38 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >   time"*).
 > - Add a tour-history **Back** control (Doug: *"I cannot navigate back"* from a cross-tour link).
 >
-> **Four measurements, and the failure MOVES rather than shrinking** —
-> `the_left_panel_content_never_detaches_from_the_divider` catches every variant:
+> **THE BAR PASSES TODAY BY COINCIDENCE.** Five perturbations were measured against
+> `the_left_panel_content_never_detaches_from_the_divider`, in both directions — more items,
+> fewer items, wider, narrower — and **every one fails**:
 >
-> | change | gap | at pointer |
+> | perturbation | gap | at pointer |
 > |---|---|---|
-> | remove the label only | 136.8pt | x=448 |
-> | add `◂ Back` only | 62.7pt | x=230 |
+> | *(today, untouched)* | **passes** | — |
+> | remove the count label | 136.8pt | x=448 |
+> | add `◂ Back` | 62.7pt | x=230 |
 > | swap label → bare `◂` | 136.8pt | x=448 |
-> | swap label → `◂ Back` | 67.3pt | **x=128** |
+> | swap label → `◂ Back` | 67.3pt | x=128 |
+> | shorten `✨ Claude's answer` → `✨ Answer` | 106.1pt | x=448 |
 >
-> **The defect is not "Back does not fit".** It is that the bar's minimum width depends on its
-> item count **non-monotonically**: it is `horizontal_wrapped`, so removing an item can make the
-> remaining row *wider* by stopping it wrapping. That is a latent trap for every future change to
-> this bar.
+> **That last row is the one that settles the diagnosis.** Shortening a label makes the bar
+> *narrower* and the failure *worse* — impossible under a width-budget theory, and exactly what a
+> moving wrap point produces. **Budget was never the constraint.** The bar sits in a narrow
+> equilibrium that any change to any item's width knocks it out of.
 >
-> **Removing `horizontal_wrapped` was proposed and is WRONG.** Doug: *"With all widgets such as
-> 'Claude's Answer' in the same header, that minimum LHS width would cause the LHS to occupy more
-> than 50% of my 13" screen."* A one-row bar demands well over 640pt; wrapping is what lets the
-> bar survive a narrow panel. **Do not re-propose it.**
+> **So "free up room for Back" cannot work**, and neither can trimming other labels. The fix is
+> to make the bar's intrinsic minimum a **monotonic** function of what it contains. After that,
+> removing the label, adding Back and renaming the button are three independent one-line changes
+> that need no measurement at all.
+>
+> **Removing `horizontal_wrapped` was proposed, tested, and is WRONG — measured, not argued.**
+> Un-wrapped, the bar's one-row minimum is **580pt** as it stands and **641pt** with Back added.
+> On Doug's 1280pt window that is **50.1%**, against the **40%** he walks tours at: the divider
+> could never go below half, and the RHS would permanently lose a fifth of its width on the
+> screen with least to spare. His objection — *"that minimum LHS width would cause the LHS to
+> occupy more than 50% of my 13" screen"* — was exactly right. **Do not re-propose it.**
+>
+> **The keyboard-shortcut fallback (`Alt+←`) is not a fix either.** It dodges the bug rather than
+> removing it, and the bug will bite whoever next touches this bar for any reason.
 >
 > **Instrument, do not tune.** Claude tuned four times here after saying he would not, repeating
 > the six-attempt divider episode `ui-findings.md` C15 records. The test already knows
