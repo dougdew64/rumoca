@@ -10,7 +10,7 @@
 
 **Fixture tour — BLT: finding an order, and finding out there isn't one**
 
-A concept tour. Walk [`matching.md`](matching.md) first — it answers *which* equation
+A concept tour. Walk [▶ matching](hrw://tour/matching) first — it answers *which* equation
 
 - **Specimens:** `RcCircuit`, `ProportionalLoop`, `TwoLoops`
 - **Stages:** `Structural`
@@ -85,7 +85,7 @@ A concept tour. It teaches a step of the chain
 
 **Fixture tour — Events: the equations that are not always true**
 
-A concept tour. Walk [`initialization.md`](initialization.md) first. Everything so far has
+A concept tour. Walk [▶ initialization](hrw://tour/initialization) first. Everything so far has
 
 - **Specimens:** `BouncingBall`, `RcCircuit`, `GearWithBrake`
 - **Stages:** `Events`
@@ -236,7 +236,7 @@ A concept tour. Walk [▶ blt-ordering](hrw://tour/blt-ordering) and
 
 **Fixture tour — Initialization: the values at t = 0**
 
-A concept tour. Walk [`index-reduction.md`](index-reduction.md) first — this phase runs on
+A concept tour. Walk [▶ index-reduction](hrw://tour/index-reduction) first — this phase runs on
 
 - **Specimens:** `BouncingBall`, `RcCircuit`, `OverInitRc`, `RotationalInertia`
 - **Stages:** `Initialization`
@@ -254,7 +254,7 @@ A concept tour. Walk [`index-reduction.md`](index-reduction.md) first — this p
 
 **Fixture tour — Matching, live: the call stack is the augmenting path**
 
-A concept tour, pass two. [`matching.md`](matching.md) taught the idea; this one is about
+A concept tour, pass two. [▶ matching](hrw://tour/matching) taught the idea; this one is about
 
 - **Specimens:** `ProportionalLoop`, `TwiceDefined`
 - **Stages:** `Structural`
@@ -310,7 +310,7 @@ This is a test, not an explanation. It verifies the last two verbs of the answer
 
 **Fixture tour — Solve lowering: names become indices**
 
-A concept tour. The last phase before simulation. Walk [`events.md`](events.md) first.
+A concept tour. The last phase before simulation. Walk [▶ events](hrw://tour/events) first.
 
 - **Specimens:** `BouncingBall`, `RcCircuit`
 - **Stages:** `SolveLowering`
@@ -345,7 +345,7 @@ The first cross-platform tour. Two stops in HRW, then a notebook — because the
 
 **Fixture tour — Tearing: guess one number, get the rest for free**
 
-A concept tour. Walk [`blt-ordering.md`](blt-ordering.md) first — it produces the coupled
+A concept tour. Walk [▶ blt-ordering](hrw://tour/blt-ordering) first — it produces the coupled
 
 - **Specimens:** `ProportionalLoop`, `TwoLoops`, `MixedLoop`, `LoopWithInertia`
 - **Stages:** `Structural`

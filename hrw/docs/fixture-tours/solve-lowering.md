@@ -4,7 +4,7 @@
 
 [▲ The chain overview](hrw://tour/the-concepts)
 
-**A concept tour.** The last phase before simulation. Walk [`events.md`](events.md) first.
+**A concept tour.** The last phase before simulation. Walk [▶ events](hrw://tour/events) first.
 
 Every count below was read from the committed traces, never remembered.
 

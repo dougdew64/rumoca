@@ -4,7 +4,7 @@
 
 [▲ The chain overview](hrw://tour/the-concepts)
 
-**A concept tour.** Walk [`index-reduction.md`](index-reduction.md) first — this phase runs on
+**A concept tour.** Walk [▶ index-reduction](hrw://tour/index-reduction) first — this phase runs on
 the reduced, index-1 system.
 
 Every count below was read from the committed traces, never remembered.
@@ -171,6 +171,6 @@ is untested — `OverInitRc` is small enough that it does not matter.
 Everything is now decided: which variables are states, what order to solve in, what to guess, and
 what the values are at *t* = 0. What remains is turning names into memory.
 
-That is [`solve-lowering.md`](solve-lowering.md).
+That is [▶ solve-lowering](hrw://tour/solve-lowering).
 
 Or go back up: [▲ The chain overview](hrw://tour/the-concepts)

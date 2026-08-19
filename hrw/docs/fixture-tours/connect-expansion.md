@@ -346,7 +346,7 @@ says, with no expansion in between — which is exactly why `blt-ordering.md` us
 
 The flat model is a pile of equations with no order and no classification. **DAE construction**
 partitions it — which variables are states, which are algebraic, which equations are which kind —
-and that is [`dae-construction`](dae-construction.md). After that, `matching.md` asks which equation
+and that is [▶ dae-construction](hrw://tour/dae-construction). After that, `matching.md` asks which equation
 solves which unknown.
 
 ## What this tour cannot check

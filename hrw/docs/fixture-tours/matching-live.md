@@ -4,7 +4,7 @@
 
 [▲ The chain overview](hrw://tour/the-concepts)
 
-**A concept tour, pass two.** [`matching.md`](matching.md) taught the idea; this one is about
+**A concept tour, pass two.** [▶ matching](hrw://tour/matching) taught the idea; this one is about
 **Rumoca's code**, stepped in a debugger while it runs. Walk the pass-one tour first — the stops
 below assume you know what a matching is and what a rank deficiency means.
 

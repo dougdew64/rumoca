@@ -3312,3 +3312,88 @@ Some prose.
         out
     }
 }
+
+#[cfg(test)]
+mod tests_tour_link_form {
+    use std::path::PathBuf;
+
+    /// **A tour referenced from a tour must be an `hrw://` link, not a file link.**
+    ///
+    /// Doug, 2026-08-19, testing the new Back control: *"I found a broken link in the
+    /// blt-ordering tour. The link for matching.md causes an external browser window to
+    /// open instead of opening that tour in HRW."*
+    ///
+    /// **There were eighteen of them.** HRW's commonmark renderer hands a relative file
+    /// link to the operating system, so `[`matching.md`](matching.md)` opens a browser —
+    /// or nothing — while looking in the source exactly like a working navigation. That
+    /// is the same defect the hub back-links had on 2026-08-17, fixed there and never
+    /// generalised, which is why it was still waiting in ten other documents.
+    ///
+    /// **Nothing could have caught it.** `fixture_tour_links_all_resolve` checks `hrw://`
+    /// links; a markdown file link is not one, so it was invisible to every checker here
+    /// — and invisible in the rendered pane too, since it looks like an ordinary link
+    /// until clicked.
+    ///
+    /// The hub's `[file](x.md)` cells are exempt: they sit beside an `hrw://tour/…` link
+    /// in the same cell and are labelled "file", which is a different offer rather than a
+    /// broken one.
+    #[test]
+    fn a_tour_is_never_referenced_by_a_plain_file_link() {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+        let mut checked = 0usize;
+        let mut bad: Vec<String> = Vec::new();
+
+        for entry in std::fs::read_dir(&dir).expect("the tour directory must be readable") {
+            let path = entry.expect("a readable entry").path();
+            if path.extension().and_then(|x| x.to_str()) != Some("md") {
+                continue;
+            }
+            let name = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or_default()
+                .to_owned();
+            if name == "CATALOGUE" || name == "README" || name == "the-concepts" {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).expect("readable");
+
+            for (i, line) in text.lines().enumerate() {
+                let mut rest = line;
+                while let Some(at) = rest.find("](") {
+                    let tail = &rest[at + 2..];
+                    let Some(close) = tail.find(')') else { break };
+                    let href = &tail[..close];
+                    rest = &tail[close..];
+                    if !href.ends_with(".md") || href.contains('/') {
+                        continue;
+                    }
+                    checked += 1;
+                    bad.push(format!("{name}.md:{}  [..]({href})", i + 1));
+                }
+            }
+        }
+
+        // **Non-vacuity.** The extraction must be looking at links at all; a scan finding
+        // none would report a clean corpus over a corpus it never read.
+        let total_links = std::fs::read_to_string(dir.join("index-reduction.md"))
+            .expect("readable")
+            .matches("](")
+            .count();
+        assert!(
+            total_links > 5,
+            "only {total_links} links seen in a tour known to be full of them \u{2014} the \
+             scan is broken, not the corpus",
+        );
+        assert!(
+            bad.is_empty(),
+            "{} tour reference(s) use a plain markdown file link. HRW hands those to the \
+             operating system, so they open a browser rather than the tour \u{2014} and \
+             they look identical to a working link in the source. Use \
+             `[\u{25b6} name](hrw://tour/name)`:\n  {}",
+            bad.len(),
+            bad.join("\n  "),
+        );
+        let _ = checked;
+    }
+}

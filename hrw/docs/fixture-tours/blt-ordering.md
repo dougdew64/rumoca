@@ -4,7 +4,7 @@
 
 [▲ The chain overview](hrw://tour/the-concepts)
 
-**A concept tour.** Walk [`matching.md`](matching.md) first — it answers *which* equation
+**A concept tour.** Walk [▶ matching](hrw://tour/matching) first — it answers *which* equation
 solves *which* unknown, and this tour asks *in what order*.
 
 Every count below was read from the committed traces, never remembered.
@@ -158,6 +158,6 @@ stops wondering.
 A coupled block of 3 is not the end of the story: the compiler will try to make it smaller before
 handing it to a numerical solver, by guessing one variable and computing the rest.
 
-That is [`tearing.md`](tearing.md).
+That is [▶ tearing](hrw://tour/tearing).
 
 Or go back up: [▲ The chain overview](hrw://tour/the-concepts)

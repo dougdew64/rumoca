@@ -4,7 +4,7 @@
 
 [▲ The chain overview](hrw://tour/the-concepts)
 
-**A concept tour.** Walk [`initialization.md`](initialization.md) first. Everything so far has
+**A concept tour.** Walk [▶ initialization](hrw://tour/initialization) first. Everything so far has
 assumed one fixed set of equations; this tour is about models where the equations change.
 
 Every count below was read from the committed traces, never remembered.
@@ -139,6 +139,6 @@ demonstrated nowhere, because nothing in HRW shows the solver's step-by-step sea
 The compiler now knows everything: states, order, tears, initial values, and what can change
 mid-run. All of it is still expressed in *your names*.
 
-Turning those into memory addresses is [`solve-lowering.md`](solve-lowering.md).
+Turning those into memory addresses is [▶ solve-lowering](hrw://tour/solve-lowering).
 
 Or go back up: [▲ The chain overview](hrw://tour/the-concepts)

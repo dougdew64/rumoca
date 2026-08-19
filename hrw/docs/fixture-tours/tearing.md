@@ -4,7 +4,7 @@
 
 [▲ The chain overview](hrw://tour/the-concepts)
 
-**A concept tour.** Walk [`blt-ordering.md`](blt-ordering.md) first — it produces the coupled
+**A concept tour.** Walk [▶ blt-ordering](hrw://tour/blt-ordering) first — it produces the coupled
 blocks this tour tries to shrink.
 
 Every count below was read from the committed traces, never remembered.
@@ -183,6 +183,6 @@ once ordered. That is not guaranteed. Connect two rotating bodies with an ideal 
 compiler will find *more states than degrees of freedom*, which no amount of ordering or tearing
 can fix.
 
-That is [`index-reduction.md`](index-reduction.md).
+That is [▶ index-reduction](hrw://tour/index-reduction).
 
 Or go back up: [▲ The chain overview](hrw://tour/the-concepts)

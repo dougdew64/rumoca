@@ -334,6 +334,6 @@ The system is now index-1, square and ordered — or it is not, and you have see
 like. What remains is starting it: the integrator needs consistent values at *t* = 0, and the
 states' `start` attributes are not automatically consistent with the algebraic equations.
 
-That is [`initialization.md`](initialization.md).
+That is [▶ initialization](hrw://tour/initialization).
 
 Or go back up: [▲ The chain overview](hrw://tour/the-concepts)

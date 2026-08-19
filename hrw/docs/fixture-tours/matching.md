@@ -162,11 +162,11 @@ So "structurally singular" means **no perfect matching exists**, and `rank_defic
 gap. That is a graph-theory result, not a numerical one — it depends only on *which* variables
 appear, never on their values. A model can be structurally fine and still numerically singular,
 which is a different failure and a different tour
-([`structural-vs-numerical-rank.md`](structural-vs-numerical-rank.md)).
+([▶ structural-vs-numerical-rank](hrw://tour/structural-vs-numerical-rank)).
 
 The algorithm is **augmenting paths** — take an unmatched equation, walk alternately along
 unmatched and matched edges, and if you reach an unmatched unknown, flip the path to gain one
-pair. [`matching-live.md`](matching-live.md) steps that search in the debugger, where the call
+pair. [▶ matching-live](hrw://tour/matching-live) steps that search in the debugger, where the call
 stack *is* the path.
 
 ---
@@ -190,6 +190,6 @@ is true and it is unsettling; the tour states it and does not explore it.
 
 Each equation now has a job. It still is not known **what order to do them in** — and in
 `ProportionalLoop` no order exists at all, which is the discovery
-[`blt-ordering.md`](blt-ordering.md) is built on.
+[▶ blt-ordering](hrw://tour/blt-ordering) is built on.
 
 Or go back up: [▲ The chain overview](hrw://tour/the-concepts)

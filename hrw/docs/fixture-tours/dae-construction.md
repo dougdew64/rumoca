@@ -288,7 +288,7 @@ question no test reaches.
 
 **Whether Stop 6's contrast with `CapacitorLoop` is worth a stop of its own.** It is asserted in
 prose here and demonstrated nowhere in this tour. *(It is demonstrated in
-[`matching.md`](matching.md) Stop 3, which walks that model's 13-of-14 matching — so the claim is
+[▶ matching](hrw://tour/matching) Stop 3, which walks that model's 13-of-14 matching — so the claim is
 checkable, just not here.)*
 
 **Whether Stop 6 needed its own specimen or could have been prose.** It could not: until
@@ -304,7 +304,7 @@ The system is square, and the solver has been told which quantities carry the pa
 not know **which equation to use for which unknown**, or **what order to solve them in** — a
 square system does not come with an assignment.
 
-That is matching and BLT ordering: [`matching.md`](matching.md), then
-[`blt-ordering.md`](blt-ordering.md).
+That is matching and BLT ordering: [▶ matching](hrw://tour/matching), then
+[▶ blt-ordering](hrw://tour/blt-ordering).
 
 Or go back up: [▲ The chain overview](hrw://tour/the-concepts)
