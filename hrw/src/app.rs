@@ -3295,6 +3295,24 @@ impl App {
             "specimen": self.selected.as_ref().map(|p| p.display().to_string()),
             "model": self.model,
             "ui_mode": format!("{:?}", self.ui_mode),
+            // **Which tour is open**, so a question about "this stop" can be answered.
+            //
+            // Doug, 2026-08-19: *"I'd like to enjoy the convenience of deixis when asking
+            // questions about statements which you've made in tours. Currently, it seems
+            // that I have to copy / paste those tour statements."* The capture said
+            // `ui_mode: "Tour"` and nothing more, so **which document he was reading was
+            // unrecoverable** and pasting was the only way to ask about it.
+            //
+            // The name, not the text: the tours are on disk, so naming the document is
+            // enough to read the exact wording from it. Publishing the prose would
+            // duplicate a file that is already the source of truth, and a duplicate can
+            // disagree with it.
+            //
+            // **Deliberately not the scroll position.** Publishing which *stop* is on
+            // screen was considered and recommended against the same day (`CLAUDE.md`):
+            // it answers a question Doug did not ask — he points at statements, not stops
+            // — and costs a per-heading render on a pane in constant use.
+            "tour": self.tour.selected.as_ref().map(TourSource::label),
             "specimen_detail": format!("{:?}", self.specimen_detail),
             "stage_tab": self.stage.name(),
             // **Which sub-tab of that stage**, which `stage_tab` alone does not say.
@@ -14172,6 +14190,55 @@ mod tests_incidence_row_link {
             Some(2),
             "the deferred camera aim must still be set \u{2014} the canvas views have \
              used this verb since before the Incidence view had any link at all",
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests_tour_in_diagnostics {
+    use super::*;
+
+    /// **The diagnostic capture names the tour that is open.**
+    ///
+    /// Doug, 2026-08-19: *"I'd like to enjoy the convenience of deixis when asking
+    /// questions about statements which you've made in tours. Currently, it seems that
+    /// I have to copy / paste those tour statements."*
+    ///
+    /// The capture reported `ui_mode: "Tour"` and nothing else about the tour, so
+    /// **which document he was reading was unrecoverable** — and pasting was the only
+    /// way to ask a question about it. With the name published, *"the Newton paragraph"*
+    /// resolves, because the tours are on disk and can be read once the document is
+    /// known.
+    ///
+    /// **Absence stays distinguishable from silence**, which is why the null case is
+    /// asserted too: no tour open must read as `null`, not as a missing key that could
+    /// equally mean the field was never written.
+    #[test]
+    fn the_capture_names_the_open_tour() {
+        let mut app = App::test_default();
+
+        let none_open = app.diagnostic_snapshot();
+        assert_eq!(
+            none_open.get("tour"),
+            Some(&serde_json::Value::Null),
+            "with no tour open the key must be present and null \u{2014} a missing key \
+             cannot be told apart from a field that was never published",
+        );
+
+        assert!(
+            app.test_select_fixture_tour("index-reduction"),
+            "the fixture must be readable, or nothing below is testing a selection",
+        );
+
+        let open = app.diagnostic_snapshot();
+        let name = open
+            .get("tour")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default();
+        assert!(
+            name.contains("index-reduction"),
+            "the capture must name the open tour so a question about it can be answered \
+             without pasting; got {name:?}",
         );
     }
 }

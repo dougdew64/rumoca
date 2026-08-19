@@ -604,8 +604,10 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >
 > Two improvements, agreed as a plan and **not yet built**:
 >
-> 1. **Publish which tour is selected** — small, and gets most of the benefit. `TourState` knows
->    it; `publish_current_view` is where it goes.
+> 1. **Publish which tour is selected** — ✅ **BUILT 2026-08-19.** `diagnostic_snapshot` now
+>    carries `"tour"`, so a question about *"the Newton paragraph"* resolves: the name identifies
+>    the document and the tours are on disk. **Read the capture before asking Doug which tour he
+>    means.**
 > 2. **Publish which stop is on screen** — **RECOMMENDED AGAINST, 2026-08-19.** Doug asked
 >    whether the recommendation was for or against; the honest answer is against, and one reason
 >    originally given for it was wrong.
