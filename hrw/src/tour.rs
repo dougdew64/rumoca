@@ -74,6 +74,34 @@ pub(crate) struct TourState {
     /// consumed on that frame, because leaving it pending would fire it at whatever
     /// document came next; it simply does not move anything.
     pub(crate) scroll_to_top: bool,
+    /// **Where the reader came from**, so a cross-tour link can be undone.
+    ///
+    /// Doug, 2026-08-19: *"while in the index reduction tour, I can click a link to
+    /// navigate to the blt-ordering tour, but then I cannot navigate back."*
+    ///
+    /// **Authored back-links cannot solve this**, which is why a stack exists at all. The
+    /// hub-to-tour edge is 1:many with a canonical parent, so every phase tour carries one
+    /// `▲ The chain overview` link. Cross-references are many:many with no canonical
+    /// parent — `blt-ordering` is cited by index-reduction, tearing and the hub — so it
+    /// cannot link back to all of them.
+    ///
+    /// Each entry is the tour **and the offset it was left at**: returning to the top of a
+    /// document you were halfway down is most of the friction, not a detail.
+    ///
+    /// **A tour's location is one value**, which is why this is a `Vec` rather than the
+    /// design problem `ideas.md` #78 describes. The RHS's location is five — stage, its
+    /// sub-view, `viewing_log`, `ui_mode`, `specimen_detail` — and deciding what a location
+    /// *is* is the hard part there. **That reservation is untouched:** this is the tour
+    /// panel's history, and the RHS pair will live in the stage tab bar.
+    pub(crate) history: Vec<(TourSource, f32)>,
+    /// The tour pane's scroll offset as of the last painted frame, read from the
+    /// `ScrollArea`'s own output so it cannot drift from what is on screen.
+    pub(crate) current_scroll_y: f32,
+    /// **Restore this exact offset on the next frame with text**, set by Back.
+    ///
+    /// Outranks [`Self::scroll_to_top`], which every switch requests: going *back* is the
+    /// one navigation for which the top of the document is the wrong answer.
+    pub(crate) restore_scroll_y: Option<f32>,
 
     /// **The self-running walk** of whichever tour is showing.
     ///
@@ -130,6 +158,9 @@ impl Default for TourState {
             row_specimens: std::collections::HashMap::new(),
             scroll_to_offset: None,
             scroll_to_top: false,
+            history: Vec::new(),
+            current_scroll_y: 0.0,
+            restore_scroll_y: None,
             autoplay: crate::autoplay::Autoplay::default(),
             autoplay_total: crate::autoplay::DEFAULT_TOTAL,
             tour_link_y: None,

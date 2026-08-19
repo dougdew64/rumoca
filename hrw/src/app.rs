@@ -270,7 +270,7 @@ const MAX_LEFT_FRACTION: f32 = 0.75;
 /// this one cannot straddle the content minimum again. If content grows past it,
 /// `the_left_panel_content_never_detaches_from_the_divider` fails rather than the
 /// gap silently returning.
-const MIN_LEFT_POINTS: f32 = 410.0;
+const MIN_LEFT_POINTS: f32 = 435.0;
 
 /// The draggable LHS/RHS split (`docs/ideas.md` #59).
 ///
@@ -5350,9 +5350,45 @@ impl App {
         //
         // Only on an actual change: re-clicking the tour already showing should not
         // throw away a specimen the reader is partway through.
+        // **Remember where we were, before the selection changes.** Every switch is
+        // undoable — picker, `hrw://tour/…` link, or the Answer button — because a reader
+        // who lands somewhere unintended wants out regardless of how they arrived.
+        if let Some(previous) = self.tour.selected.clone()
+            && previous != source
+        {
+            self.tour
+                .history
+                .push((previous, self.tour.current_scroll_y));
+        }
         if self.tour.select(source) {
             self.reset_for_new_tour();
         }
+    }
+
+    /// **Return to the tour the reader came from, at the offset they left it.**
+    ///
+    /// Pops rather than pushes, which is the whole of the *"do not record your own
+    /// navigation"* problem `ideas.md` #78 warns about: a Back that pushed the tour it is
+    /// leaving would ping-pong between two documents and never reach the rest of the
+    /// stack.
+    ///
+    /// **No Forward, deliberately.** The back destination is unreachable — nothing in
+    /// `blt-ordering` links to `index-reduction`, which is why Back exists at all. The
+    /// forward destination is one click away, because the link that went there sits in the
+    /// prose being returned to. Forward would duplicate an available navigation and bring
+    /// the suppression-flag bug Back does not have. Purely additive if the friction ever
+    /// appears: the same stack, pushed instead of dropped.
+    fn tour_back(&mut self) {
+        let Some((previous, offset)) = self.tour.history.pop() else {
+            return;
+        };
+        if self.tour.select(previous) {
+            self.reset_for_new_tour();
+        }
+        // After `reset_for_new_tour`, which requests the top.
+        self.tour.restore_scroll_y = Some(offset);
+        self.tour.polled_at = None;
+        self.poll_tour_file();
     }
 
     /// Re-initialise the right-hand side for a tour that just became current.
@@ -6692,11 +6728,21 @@ impl App {
                 // request is still consumed — leaving it pending would fire it at the
                 // next document — it simply does not get to move anything.
                 let stop_pending = self.tour.scroll_to_offset.is_some();
+                // **Back outranks both**: returning to where you were is the one
+                // navigation for which the top of the document is the wrong answer.
+                let restore = self.tour.restore_scroll_y.take();
                 if self.tour.scroll_to_top && tour_text.is_some() {
                     self.tour.scroll_to_top = false;
-                    if !stop_pending {
+                    if !stop_pending && restore.is_none() {
                         area = area.vertical_scroll_offset(0.0);
                     }
+                }
+                match (restore, tour_text.is_some()) {
+                    (Some(y), true) => area = area.vertical_scroll_offset(y),
+                    // No text this frame, so the request has nothing to apply to and must
+                    // survive — the one-shot discipline `scroll_to_top` already follows.
+                    (Some(y), false) => self.tour.restore_scroll_y = Some(y),
+                    (None, _) => {}
                 }
 
                 if self.tour.autoplay.is_running()
@@ -6815,6 +6861,11 @@ impl App {
                 self.tour.tour_link_y = measured;
                 self.tour.tour_max_scroll =
                     Some((out.content_size.y - out.inner_rect.height()).max(0.0));
+                // **Where the reader actually is**, from the scroll area's own output
+                // rather than tracked alongside it, so it cannot drift from the screen.
+                // Every frame, because a switch can happen at any moment and the offset
+                // must be the one from just before it.
+                self.tour.current_scroll_y = out.state.offset.y;
             });
         if let Some(msg) = self.split.observe(shown.response.rect.width(), avail) {
             self.log_split(msg);
@@ -6893,6 +6944,43 @@ impl App {
             ui.set_min_width(bar_width);
             ui.set_max_width(bar_width);
             ui.horizontal(|ui| {
+                // --- Back: undo a cross-tour link ---
+                //
+                // Doug, 2026-08-19: *"while in the index reduction tour, I can click a
+                // link to navigate to the blt-ordering tour, but then I cannot navigate
+                // back."* Placed where the tour count used to be, at his suggestion.
+                //
+                // **This does not consume the RHS Back/Forward** reserved in `ideas.md`
+                // #78. It is the tour panel's history; the RHS pair belongs in the stage
+                // tab bar. #78's own analysis leaned to exactly this — two histories,
+                // visually distinct, because the scopes really are different — and HRW
+                // already has a third in `nav`'s go-to-definition Back.
+                //
+                // **Enabled and disabled, never shown and hidden** (`lib.rs`'s LiveState
+                // rule), and the hover names the destination rather than leaving an arrow
+                // to be interpreted.
+                //
+                // **It costs panel floor and that is now a stated price**, not a
+                // surprise: un-wrapping made the bar's width monotonic, so this button's
+                // ~60pt lands directly on `MIN_LEFT_POINTS`. It was affordable only after
+                // the tour count, the duration words and the time combo's default width
+                // were removed.
+                let back_to = self.tour.history.last().map(|(source, _)| source.label());
+                let back = ui.add_enabled(
+                    back_to.is_some(),
+                    egui::Button::new("\u{25c2}").small(),
+                );
+                if let Some(name) = &back_to {
+                    if back.on_hover_text(format!("Back to {name}")).clicked() {
+                        self.tour_back();
+                    }
+                } else {
+                    back.on_hover_text(
+                        "Nothing to go back to \u{2014} follow a link into another tour \
+                         and this returns you here",
+                    );
+                }
+
                 // --- Which tour: Claude's answer, then the picker ---
                 //
                 // **Claude's answer is not the same kind of object as the other 22**
@@ -14264,5 +14352,86 @@ mod tests_tour_in_diagnostics {
             "the capture must name the open tour so a question about it can be answered \
              without pasting; got {name:?}",
         );
+    }
+}
+
+#[cfg(test)]
+mod tests_tour_back {
+    use super::*;
+
+    /// **Back returns to the tour a link came from, at the offset it was left at.**
+    ///
+    /// Doug, 2026-08-19: *"while in the index reduction tour, I can click a link to
+    /// navigate to the blt-ordering tour, but then I cannot navigate back."* Authored
+    /// back-links solved the hub case in August and cannot solve this one: the
+    /// hub-to-tour edge has a canonical parent, cross-references do not.
+    #[test]
+    fn back_returns_to_the_previous_tour_where_it_was_left() {
+        let mut app = App::test_default();
+        assert!(app.test_select_fixture_tour("index-reduction"));
+
+        // Stand in for having read part way down before following a link.
+        app.tour.current_scroll_y = 812.0;
+        assert!(app.test_select_fixture_tour("blt-ordering"));
+        assert_eq!(
+            app.tour.history.len(),
+            1,
+            "following a link must record where it came from, or Back has nothing to pop",
+        );
+
+        app.tour_back();
+
+        let back_on = app
+            .tour
+            .selected
+            .as_ref()
+            .and_then(|s| match s {
+                TourSource::Fixture(p) => p.file_stem().and_then(|n| n.to_str()),
+                TourSource::AdHoc => None,
+            })
+            .unwrap_or_default()
+            .to_owned();
+        assert_eq!(back_on, "index-reduction");
+        assert_eq!(
+            app.tour.restore_scroll_y,
+            Some(812.0),
+            "and to the place in it the reader had reached \u{2014} landing at the top of \
+             a document you were halfway down is most of the friction, not a detail",
+        );
+        assert!(
+            app.tour.history.is_empty(),
+            "the entry is consumed, not reusable"
+        );
+    }
+
+    /// **Back does not record its own navigation.**
+    ///
+    /// The classic history bug named in `ideas.md` #78: a Back that pushes the tour it is
+    /// leaving ping-pongs between two documents, and nothing further up the stack is ever
+    /// reachable.
+    #[test]
+    fn back_does_not_push_what_it_is_leaving() {
+        let mut app = App::test_default();
+        assert!(app.test_select_fixture_tour("index-reduction"));
+        assert!(app.test_select_fixture_tour("blt-ordering"));
+        app.tour_back();
+
+        assert!(
+            app.tour.history.is_empty(),
+            "a stack that grows when you go back is one you can never reach the bottom of",
+        );
+        // And Back with nothing to return to is a no-op rather than a panic.
+        app.tour_back();
+        assert!(app.tour.history.is_empty());
+    }
+
+    /// **Re-selecting the tour already open records nothing**, or the stack fills with
+    /// entries that go nowhere and Back looks enabled while doing nothing visible.
+    #[test]
+    fn reselecting_the_open_tour_does_not_grow_the_history() {
+        let mut app = App::test_default();
+        assert!(app.test_select_fixture_tour("index-reduction"));
+        assert!(app.test_select_fixture_tour("index-reduction"));
+        assert!(app.tour.history.is_empty());
     }
 }
