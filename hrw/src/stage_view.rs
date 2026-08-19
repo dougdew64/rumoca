@@ -21,6 +21,9 @@
 //! strings are read by Claude and appear in `docs/context-assembly.md` — a `#[derive]`
 //! rename would silently change the emitted vocabulary. The enums stay display-only.
 
+use crate::canvas::Canvas;
+use crate::worker::StageKind;
+
 /// How to render the Structural / Index-reduction stages: the custom BLT
 /// spy-plot, the incidence matrix, the reduction process
 /// summary (Index reduction only), or the generic serde tree.
@@ -161,5 +164,103 @@ pub(crate) fn flatten_view_name(v: FlattenView) -> &'static str {
         FlattenView::SourceMap => "SourceMap",
         FlattenView::Connections => "Connections",
         FlattenView::Tree => "Tree",
+    }
+}
+
+/// The name of the sub-view the given stage is currently showing.
+///
+/// `None` for the stages that have only one view — a tree-only stage has no sub-tab,
+/// and reporting an invented name for it would be a claim about UI that does not exist.
+pub(crate) fn sub_view_name_for(stage: StageKind, viewport: &Viewport) -> Option<&'static str> {
+    match stage {
+        StageKind::Flatten => Some(flatten_view_name(viewport.flatten)),
+        StageKind::Structural | StageKind::IndexReduction => {
+            Some(structural_view_name(viewport.structural))
+        }
+        StageKind::Initialization => Some(init_view_name(viewport.init)),
+        StageKind::Events => Some(events_view_name(viewport.events)),
+        _ => None,
+    }
+}
+
+/// **How the reader is looking at the current stage** — not what it holds.
+///
+/// Eleven fields with one thing in common: each records a *choice the reader
+/// made about the view*, and none of them is derived from a compile. Which
+/// sub-view is open, where each camera is panned, which row is highlighted.
+///
+/// # Why this is the right seam
+///
+/// It is the complement of [`StageViewCaches`], and the pair together are the
+/// whole story of a stage view: **the caches are what was computed, the viewport
+/// is what is being looked at.** They also have opposite lifetimes — a cache is
+/// dropped whenever the stage changes, while a camera deliberately survives, so
+/// returning to a view finds it where you left it.
+///
+/// Keeping them apart is what makes that difference visible. Together on `App`
+/// they were eleven fields among eighty-five, and nothing said which ones a
+/// stage switch was allowed to touch.
+pub(crate) struct Viewport {
+    /// Which sub-view is open on the Flatten stage.
+    pub(crate) flatten: FlattenView,
+    /// Which sub-view is open on the Events stage.
+    pub(crate) events: EventsView,
+    /// Which sub-view is open on the Initialization stage.
+    pub(crate) init: InitView,
+    /// Which sub-view is open on the report stages (Structural, Index Reduction).
+    pub(crate) structural: StructuralView,
+    /// Pan/zoom camera for the spy plot.
+    pub(crate) spy: Canvas,
+    /// Pan/zoom camera for the incidence matrix.
+    pub(crate) incidence: Canvas,
+    /// Pan/zoom camera for the matching animation.
+    pub(crate) matching_anim: Canvas,
+    /// Pan/zoom camera for the Tarjan animation.
+    pub(crate) tarjan_anim: Canvas,
+    /// Pan/zoom camera for the "before" incidence matrix in the Index Reduction
+    /// split.
+    pub(crate) before_incidence: Canvas,
+    /// Equation-sheet row under the reader's attention, if any.
+    pub(crate) highlighted_eq_row: Option<usize>,
+    /// Source line under the reader's attention, if any.
+    pub(crate) highlighted_source_line: Option<u32>,
+    /// What `.hrw-bridge/view.json` was last written for, as `"Stage/SubView"`.
+    ///
+    /// **Here rather than on `App` deliberately**: this is viewport state, and `App`'s
+    /// field count is ratcheted by
+    /// `doc_citations::app_does_not_regrow_its_field_count`. A field that genuinely
+    /// belongs to an existing grouping should go into it rather than spend the budget
+    /// — which is the question the ratchet exists to force.
+    ///
+    /// **Change detection rather than interception.** The sub-view is set from several
+    /// places — a sub-tab click, an `hrw://` link through `apply_sub_view`, and the
+    /// default-sub-view logic that forces Summary on a singular report stage. Comparing
+    /// once per frame catches all of them; hooking each one would miss whichever is
+    /// added next.
+    pub(crate) last_published_view: Option<String>,
+}
+
+impl Default for Viewport {
+    fn default() -> Self {
+        Self {
+            // **Not `FlattenView::default()`.** Equations is the sub-view worth
+            // opening on, and `FlattenView` has no meaningful default of its own
+            // — which is why `derive(Default)` does not compile here, and a good
+            // thing: it forced these two choices to stay explicit.
+            flatten: FlattenView::Equations,
+            events: EventsView::default(),
+            init: InitView::default(),
+            structural: StructuralView::SpyPlot,
+            // The bias lifts the fitted content slightly above centre, leaving
+            // room for the labels drawn under each matrix.
+            spy: Canvas::default().with_fit_vertical_bias(0.15),
+            incidence: Canvas::default().with_fit_vertical_bias(0.15),
+            matching_anim: Canvas::default().with_fit_vertical_bias(0.15),
+            tarjan_anim: Canvas::default().with_fit_vertical_bias(0.15),
+            before_incidence: Canvas::default().with_fit_vertical_bias(0.15),
+            highlighted_eq_row: None,
+            highlighted_source_line: None,
+            last_published_view: None,
+        }
     }
 }

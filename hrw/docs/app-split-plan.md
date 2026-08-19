@@ -108,7 +108,8 @@ Not a step of §3 — those turned out to be too large to be atomic.
 | date | move | `app.rs` | new module |
 |---|---|---|---|
 | 2026-08-19 | *(baseline)* | 14,437 | — |
-| 2026-08-19 | sub-view enums, impls, name helpers (12 items) | **14,298** | `stage_view.rs` (165) |
+| 2026-08-19 | sub-view enums, impls, name helpers (12 items) | 14,298 | `stage_view.rs` (165) |
+| 2026-08-19 | `Viewport`, its `Default`, `sub_view_name_for` | **14,200** | `stage_view.rs` (266) |
 
 **Scale check, recorded so it is not rediscovered:** −139 lines against a ~12,800-line gap. **Leaf
 types will not get there.** The weight is in the rendering blocks, and §3's field-group order says
