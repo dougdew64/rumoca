@@ -89,6 +89,31 @@ three steps, steps 4 and 5 need re-justifying on their own merits.
 the new `app.rs` line count. The count goes in the commit message so the trend is greppable
 without a tool.
 
+### The working mode is a LOOP — Doug, 2026-08-19
+
+> *"This refactor is going to require many steps. Let's just go ahead and assume that you're
+> going to use a loop of performing context maintenance, doing a bit of refactoring, recording
+> your findings and updating the plan. Repeat."*
+
+**Four beats, in this order, and maintenance comes first rather than last.** That inverts the
+usual instinct and is deliberate: a session that refactors until its context runs out leaves the
+next one with a moved boundary and no account of why. Maintenance first means the *previous*
+step's findings are safe before the current one can go wrong.
+
+**A "bit" of refactoring is one item or one small cluster, built and tested before the next.**
+Not a step of §3 — those turned out to be too large to be atomic.
+
+### Progress
+
+| date | move | `app.rs` | new module |
+|---|---|---|---|
+| 2026-08-19 | *(baseline)* | 14,437 | — |
+| 2026-08-19 | sub-view enums, impls, name helpers (12 items) | **14,298** | `stage_view.rs` (165) |
+
+**Scale check, recorded so it is not rediscovered:** −139 lines against a ~12,800-line gap. **Leaf
+types will not get there.** The weight is in the rendering blocks, and §3's field-group order says
+nothing about where those sit — see the second finding below.
+
 ### Two findings from the first attempt at step 1 — 2026-08-19, reverted
 
 **`app.rs`'s types are INTERLEAVED, not clustered. Never move a span.** The first attempt cut

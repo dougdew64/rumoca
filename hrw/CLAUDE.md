@@ -726,10 +726,22 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > **Target: no module over ~1,500 lines**, derived from the nine `hrw/src` modules already in the
 > 1,000–1,500 band that have never produced this week's failures. `app.rs` is 14,437.
 >
-> **The first attempt at step 1 was reverted**, and its two findings bind the next one: `app.rs`'s
-> types are **interleaved**, so items must move **individually, each by its own marker, with a
-> build after each** — never as a span. And the field-group map describes where *state* is
-> grouped, not where *code* is, so step size must be estimated by locating items first.
+> **THE WORKING MODE IS A LOOP** (Doug): **maintenance → a bit of refactoring → record findings →
+> update the plan → repeat.** Maintenance comes *first* deliberately — a session that refactors
+> until its context runs out leaves a moved boundary and no account of why.
+>
+> **A "bit" is one item or one small cluster**, built and tested before the next. Not a whole step
+> of the plan's §3; those proved too large to be atomic.
+>
+> **Done so far:** the sub-view enums → `stage_view.rs` (165 lines). **`app.rs` 14,437 → 14,298.**
+>
+> **The first attempt was reverted**, and its findings bind every later one: `app.rs`'s types are
+> **interleaved**, so items move **individually, each by its own marker, with a build after each**
+> — never as a span, and assert the located items do not overlap before cutting. The field-group
+> map describes where *state* is grouped, not where *code* is.
+>
+> **Scale check: −139 against a ~12,800 gap. Leaf types will not get there** — the weight is in
+> the rendering blocks.
 >
 > **`worker.rs` (10,594) is deliberately deferred**, which is what makes this an experiment: if
 > handoff frequency does not improve, splitting more files is not the answer.
