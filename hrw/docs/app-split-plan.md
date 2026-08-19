@@ -116,19 +116,34 @@ Not a step of §3 — those turned out to be too large to be atomic.
 types will not get there.** The weight is in the rendering blocks, and §3's field-group order says
 nothing about where those sit — see the second finding below.
 
+### A FOURTH trap, and it is Claude's own rule being broken repeatedly
+
+**Do not write prose containing backticks through `node -e` or any shell string.** It happened
+**four times on 2026-08-19** — in `worker.rs`, `tour.rs`, `reduction_view.rs` and this very
+section, where three trap descriptions had every backticked term silently deleted while the shell
+printed `command not found` for each one.
+
+**`CLAUDE.md` forbids exactly this**, names three prior corruptions, and says to use the Edit
+tool. The rule was read, recorded, quoted in a commit message the same day — and broken again
+within the hour, because a one-liner *feels* cheaper than an Edit call.
+
+**The tell is in the output, not the file:** lines like `` /usr/bin/bash: `app.rs`: No such file
+or directory `` mean content was eaten. The file still compiles or renders, so nothing else
+notices. **Read the shell's stderr after any generated write.**
+
 ### Three mechanical traps the loop hit — 2026-08-19
 
 **None cost more than a build**, because the loop builds after each cut. Recorded so the next
 iteration spends no time rediscovering them.
 
-1. ** is not the same directory for  and for bash.** A cut body written by node
-   landed at  while bash looked in its own  — and the  that would have
-   reassembled it failed *after* the items were already removed from . **Write scratch
-   files inside the repo's temp dir or pass absolute Windows paths to node.**
-2. **A  insert before a struct lands between its  and the item.** Exactly the
-   attribute-orphaning trap  records for tests. **Insert imports after the module doc
+1. **`/tmp` is not the same directory for `node` and for bash.** A cut body written by node
+   landed at `C:\tmp\` while bash looked in its own `/tmp` — and the `cat` that would have
+   reassembled it failed *after* the items were already removed from `app.rs`. **Write scratch
+   files inside the repo's temp dir, or pass absolute Windows paths to node.**
+2. **A `sed` insert before a struct lands between its `#[derive]` and the item.** Exactly the
+   attribute-orphaning trap `CLAUDE.md` records for tests. **Insert imports after the module doc
    comment, never above the first item.**
-3. **Regenerate  BEFORE the slow gate.** It carries module line counts, so
+3. **Regenerate `architecture.md` BEFORE the slow gate.** It carries module line counts, so
    every move stales it and  fails ~300 seconds in.
 
 ### Two findings from the first attempt at step 1 — 2026-08-19, reverted
