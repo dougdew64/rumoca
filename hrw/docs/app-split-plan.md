@@ -184,8 +184,21 @@ fail interestingly; they were never going to reach the target.
 
 **Revised order, cheapest first:**
 
-1. **`source_map_ui`** (244 lines, 4 fields) — the genuine easiest, and a real test of whether a
+1. **`source_map_ui`** (245 lines, 4 fields) — the genuine easiest, and a real test of whether a
    rendering function can leave at all.
+
+   **The four fields are already identified, so the next session starts at the edit:**
+
+   ```text
+   self.cached_equation_sheet   self.identifier_index
+   self.tracked_identifier      self.viewport
+   ```
+
+   **Shape to aim for:** a free `pub(crate) fn source_map_ui(ui, …four refs…)` in
+   `source_map.rs`, with `App::source_map_ui` reduced to a one-line delegate. **Check first
+   whether `viewport` is mutated** — if it is, that parameter is `&mut` and the rest stay shared,
+   which is still four parameters and still qualifies. **If it needs `&mut self`, stop**: the
+   "what NOT to do" list rejects an extraction that moves a method behind a new name.
 2. **`specimen_source_ui`** (274, 7) — same concern, so it joins the same module.
 3. **`autoplay_controls_ui` + `tour_panel_ui`** (577, 6 and 7) — the tour panel, whose state
    already lives in `tour.rs`.
