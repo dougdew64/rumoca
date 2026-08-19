@@ -733,7 +733,11 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > **A "bit" is one item or one small cluster**, built and tested before the next. Not a whole step
 > of the plan's §3; those proved too large to be atomic.
 >
-> **Done so far:** the sub-view enums → `stage_view.rs` (165 lines). **`app.rs` 14,437 → 14,298.**
+> **Done so far:** the sub-view enums, `Viewport` and `sub_view_name_for` → `stage_view.rs` (266
+> lines). **`app.rs` 14,437 → 14,199.** Progress table in the plan.
+>
+> **Regenerate `architecture.md` BEFORE the slow gate** — it carries module line counts, so every
+> move stales it and the gate fails on it 300 seconds in.
 >
 > **The first attempt was reverted**, and its findings bind every later one: `app.rs`'s types are
 > **interleaved**, so items move **individually, each by its own marker, with a build after each**

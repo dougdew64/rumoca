@@ -687,79 +687,6 @@ struct CompileFrames {
     connection: Vec<rumoca_phase_flatten::connections::trace::ConnectionFrame>,
 }
 
-/// Views derived from a **stage's report**, all valid for exactly one stage.
-///
-/// # Why these eleven and not the other nine `cached_*` fields
-///
-/// Measured 2026-08-02 before the extraction, because the plan assumed all
-/// twenty caches shared one lifetime and **they do not**. Three families:
-///
-/// - **These** — rebuilt whenever the displayed report stage changes, and
-///   again on every new compile.
-/// - **Compile outputs** (`cached_flat`, `cached_dae`, `cached_equation_sheet`)
-///   — named "cached" but never invalidated, because they are *results*
-///   assigned from a finished compile.
-/// - **Self-keying memos** (`cached_purpose_notes` keyed by model,
-///   `cached_tour` keyed by mtime, `cached_source` per specimen) — each already
-///   carries whatever tells it when it is stale.
-///
-/// Folding all twenty into one bag would have cleared the memos on every stage
-/// change, which is a behaviour change disguised as a refactor.
-///
-/// # What the struct buys
-///
-/// The eleven were listed **by hand in two places** — once at compile
-/// completion, once on stage change — so a new view cache had to be added to
-/// both or it would silently serve a previous stage's data. `reset_for` makes
-/// that impossible: it assigns a whole `Self`, so a field added tomorrow is
-/// covered by construction. **The bug class is removed rather than tested for.**
-#[derive(Default)]
-struct StageViewCaches {
-    /// The stage these views were built from. `None` means "nothing built yet".
-    built_for: Option<StageKind>,
-    // Outer `Option` is cache state (None = not yet computed); inner `Option` is
-    // the parse result (None = the report held no data for this view).
-    spy_plot: Option<Option<spyplot::Plot>>,
-    incidence: Option<Option<incidence_view::IncidenceMatrix>>,
-    reduction: Option<Option<reduction_view::ReductionView>>,
-    matching_anim: Option<Option<matching_anim::MatchingAnimation>>,
-    tarjan_anim: Option<Option<tarjan_anim::TarjanAnimation>>,
-    tearing_anim: Option<Option<tearing_anim::TearingAnimation>>,
-    alias_anim: Option<Option<alias_anim::AliasAnimation>>,
-    ic_plan_anim: Option<Option<ic_plan_anim::IcPlanAnimation>>,
-    connection_anim: Option<Option<connection_anim::ConnectionAnimation>>,
-    reduction_anim: Option<Option<reduction_anim::ReductionAnimation>>,
-    before_incidence: Option<Option<incidence_view::IncidenceMatrix>>,
-}
-
-impl StageViewCaches {
-    /// Drop every view unless it was already built for `stage`.
-    ///
-    /// Returns `true` when it actually reset, so the caller can do the rest of
-    /// its stage-change work — picking a default sub-view — only when the stage
-    /// really changed.
-    fn reset_for(&mut self, stage: StageKind) -> bool {
-        if self.built_for == Some(stage) {
-            return false;
-        }
-        // **Whole-struct assignment, deliberately.** Clearing field by field is
-        // what produced two lists to keep in step; this cannot go out of date.
-        *self = Self {
-            built_for: Some(stage),
-            ..Self::default()
-        };
-        true
-    }
-
-    /// Drop every view **and** the key, so the next frame rebuilds from scratch.
-    ///
-    /// Used when a compile lands: the reports themselves changed, so even the
-    /// stage that is already showing must be rebuilt.
-    fn invalidate_all(&mut self) {
-        *self = Self::default();
-    }
-}
-
 /// Everything the **source view** owns.
 ///
 /// One file's text on screen, plus everything about *how it is being shown*: the
@@ -879,6 +806,7 @@ struct ContextBarState {
 }
 
 use crate::model_list::{ModelListNav, ModelListState};
+use crate::stage_caches::StageViewCaches;
 use crate::stage_view::{
     EventsView, FlattenView, InitView, StructuralView, Viewport, events_view_name,
     flatten_view_name, init_view_name, structural_view_name, sub_view_name_for,

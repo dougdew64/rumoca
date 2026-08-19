@@ -109,11 +109,27 @@ Not a step of §3 — those turned out to be too large to be atomic.
 |---|---|---|---|
 | 2026-08-19 | *(baseline)* | 14,437 | — |
 | 2026-08-19 | sub-view enums, impls, name helpers (12 items) | 14,298 | `stage_view.rs` (165) |
-| 2026-08-19 | `Viewport`, its `Default`, `sub_view_name_for` | **14,200** | `stage_view.rs` (266) |
+| 2026-08-19 | `Viewport`, its `Default`, `sub_view_name_for` | 14,199 | `stage_view.rs` (266) |
+| 2026-08-19 | `StageViewCaches` + impl | **14,127** | `stage_caches.rs` (99) |
 
 **Scale check, recorded so it is not rediscovered:** −139 lines against a ~12,800-line gap. **Leaf
 types will not get there.** The weight is in the rendering blocks, and §3's field-group order says
 nothing about where those sit — see the second finding below.
+
+### Three mechanical traps the loop hit — 2026-08-19
+
+**None cost more than a build**, because the loop builds after each cut. Recorded so the next
+iteration spends no time rediscovering them.
+
+1. ** is not the same directory for  and for bash.** A cut body written by node
+   landed at  while bash looked in its own  — and the  that would have
+   reassembled it failed *after* the items were already removed from . **Write scratch
+   files inside the repo's temp dir or pass absolute Windows paths to node.**
+2. **A  insert before a struct lands between its  and the item.** Exactly the
+   attribute-orphaning trap  records for tests. **Insert imports after the module doc
+   comment, never above the first item.**
+3. **Regenerate  BEFORE the slow gate.** It carries module line counts, so
+   every move stales it and  fails ~300 seconds in.
 
 ### Two findings from the first attempt at step 1 — 2026-08-19, reverted
 
