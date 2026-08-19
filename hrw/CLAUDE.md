@@ -367,6 +367,24 @@ gates and simply doing more in a session — 2026-08-19 involved a great deal of
 correlation is unestablished. When it fires, the response is to find out *which files the session
 was reading*, not to start extracting.
 
+**AND THERE IS A CONFOUND THAT LARGELY DISARMS IT, NAMED THE SAME DAY IT WAS ADOPTED.** Doug,
+2026-08-19: *"ever since I switched to Opus 5, you've been context-limited. You seemed not to
+experience context maintenance problems when we used Opus 4.6."* **A model change and a file
+growing cannot be told apart by counting handoffs**, so the signal cannot currently attribute
+anything to `app.rs`. Use it only when the model has been stable across the compared period, and
+say which model when recording a count. **Claude has no reliable introspective access to his own
+context size and must not estimate one** — that number belongs to the tooling, not to a guess.
+
+**Three costs measured that day, which do not depend on the model:**
+
+- **`app.rs` at 14,437 lines.** Editing it repeatedly caused the whole file to be re-injected —
+  hundreds of lines per occurrence. The largest single lever, and the reason
+  `format-and-app-plan.md` Step 3 reopened.
+- **Claude's own verbosity.** Commit messages ran 30–40 lines each that day. Thoroughness had
+  been treated as free and is not.
+- **Measure-revert cycles.** The divider investigation took nine or ten build-test rounds. Worth
+  paying, and worth *noticing* — a session doing that has less room for everything else.
+
 **What the evidence says length does to Claude, measured 2026-08-05.** It bit twice this week,
 and both times the cause was **local context at the edit point**, not total length: the
 `Provenance` enum inserted between `#[derive]` and its struct, and an `events_stage` borrow
