@@ -3624,9 +3624,12 @@ says what each one covers without opening it.
   proposes for the picker** — which is the argument for doing #62 first and letting both consumers
   read one source. `feedback-claude-is-the-context-consumer` applies: design the front-matter for
   Claude's lookup, and let the picker use what is there.
-- **A way to say "start here"** — a link form that opens a fixture tour at a named stop, so an
-  answer can be *"walk `failure-typecheck` from stop 2"* rather than prose describing it.
-  <!-- unbuilt: hrw tour-stop link form -->
+- ~~**A way to say "start here"**~~ — ✅ **BUILT.** `hrw://tour/<name>/stop/<slug>` opens a
+  fixture tour at a named stop, so an answer can be *"walk `failure-typecheck` from stop 2"*. The
+  form existed from the start; the handler recorded a destination that **nothing consumed**, so
+  every such link opened its tour and landed wherever the pane happened to be. Fixed 2026-08-17.
+  **The `unbuilt:` tag here was false for two days and could never have fired**, because its
+  target named a phrase rather than a symbol — `sweep-2026-08-19.md`, Finding 1.
 - **A rule about when to reuse rather than write.** Reuse when the existing tour's expectations
   answer the question as asked. Write fresh when the question is about a *different* specimen or a
   narrower slice — a tour that nearly fits, walked as though it fits, is worse than a new one.

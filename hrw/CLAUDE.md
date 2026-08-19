@@ -698,7 +698,30 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > capturing *what was selected* rather than *where the pane is scrolled*. Different mechanism;
 > do not design it until #1 has been used and found wanting.
 >
-> ### THE TOUR TRANSPORT BAR HAS A NON-MONOTONIC WIDTH BUG — 2026-08-19, unfixed
+> ### ✅ THE TRANSPORT BAR IS FIXED AND THE BACK BUTTON SHIPPED — 2026-08-19
+>
+> **Un-wrapped** (`ui.horizontal`), so its minimum width is now **monotonic** in its contents —
+> the property that made it editable again. Bought with three reductions: the tour count removed,
+> `30s — teaser` → `30s`, `✨ Claude's answer` → `✨ Answer`, plus the time combo's missing
+> `.width()` (it was taking egui's 100pt default). One-row minimum **580 → 351.8pt**.
+>
+> **`◂ Back` ships**, in the slot the count vacated, with per-entry scroll offsets so it returns
+> to where you were. `MIN_LEFT_POINTS` **210 → 435**. Doug confirmed both work.
+>
+> **The RHS Back/Forward reservation is untouched** — a tour's location is one value, the RHS's is
+> five (`ideas.md` #78).
+>
+> **Both divider guards were re-aimed**, and they now catch *"something was added to the bar
+> without a matching reduction"* — which is the live risk once width is monotonic, and permanent,
+> since every point is one the RHS never gets back. The 640pt row's expectation is now per-mode.
+>
+> **And Back immediately exposed 18 tour references that opened a browser** — `[`x.md`](x.md)` is
+> handed to the OS. Fixed corpus-wide with a checker on the form. They had been wrong since the
+> tours were written; nobody clicked them because coming back was too annoying to risk.
+>
+> ### The record below is the investigation that got there — keep it
+>
+> ### THE TOUR TRANSPORT BAR HAD A NON-MONOTONIC WIDTH BUG — how it was found
 >
 > **Two requested changes are both blocked by it**, and neither is at fault:
 >
