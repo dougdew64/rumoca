@@ -590,6 +590,33 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > **The standing offer that came with it:** *"if ever HRW does not meet your needs but could meet
 > your needs with improvements, then let's pause and make those improvements."* Take it.
 >
+> ### DEIXIS — Doug cannot point at a tour statement, and asked for it 2026-08-19
+>
+> *"I'd like to enjoy the convenience of deixis when asking questions about statements which
+> you've made in tours. Currently, it seems that I have to copy / paste those tour statements."*
+>
+> **HRW publishes `ui_mode: "Tour"` and nothing else about the tour** — not which one, not where
+> he is in it. So "this statement" cannot be resolved.
+>
+> **Tell him he does not need to paste**, which is the immediate relief and cost nothing: the
+> tours are on disk, so *"the Newton paragraph in the intro"* or *"Stop 2's table"* is enough to
+> find the exact text. He had been pasting because nobody said so.
+>
+> Two improvements, agreed as a plan and **not yet built**:
+>
+> 1. **Publish which tour is selected** — small, and gets most of the benefit. `TourState` knows
+>    it; `publish_current_view` is where it goes.
+> 2. **Publish which stop is on screen** — bigger, and the interesting one. The mechanism is
+>    already proven: the pane splits the document and measures `ui.cursor().top()` between the
+>    halves, the technique that replaced **four** failed attempts at estimating position from
+>    character offsets. Splitting per-heading gives every stop's y; comparing against the scroll
+>    offset gives the topmost visible one. **Measure the cost first** — it means rendering N
+>    documents per frame where the code already warns that two is "not free of consequence", and
+>    `connect-expansion` has eleven headings.
+>
+> **#2 also fixes `stop/<slug>` links landing precisely** rather than approximately, since it
+> produces exactly the per-heading positions that feature lacks.
+>
 > **STILL OWED:** the reduction passes expandable into their frames. Doug: *"my education is
 > more important than strict
 > adherence to the template"* — though the template constrains shape, not length, so a long
@@ -830,6 +857,29 @@ Claude's loop has a clock: correctness in this repository has must-fire, non-vac
 ratchets and a dozen checkers, and elapsed time has no mechanism whatever. Doug feels the cost
 and cannot see what is about to run; Claude can see it and does not feel it — the same asymmetry
 this file already records for the permission allowlist.
+
+**AND THE LAST STEP BEFORE PUSHING IS THE HANDOFF — Claude does this unprompted** *(added
+2026-08-19, after Doug had to ask three times)*.
+
+**Ask one question before every push: does a fresh session need to know something it would not
+learn from the diff?** A finding, a decision, a correction, or work left owed. If yes, update the
+handoff box in *this* commit. If no — most commits — do nothing and move on.
+
+**It is standing authorisation, not a request to be granted.** This file already says *"Claude
+never needs permission for context maintenance"*, and Doug still had to prompt for it on
+2026-08-18 and twice on 2026-08-19: *"It seems that you should be performing context maintenance
+automatically. Are you not able to do that?"*
+
+**The cause, so the fix targets it.** Maintenance was being treated as a **task** — something
+done when asked — rather than a **step** in a sequence that already runs every time. And it
+competes for context budget against the work, which is exactly backwards: **the work is what gets
+lost without it.** A session that runs out of context having shipped code and no handoff has
+spent its budget on the half that a `git log` could partly reconstruct, and skipped the half that
+nothing can.
+
+**This is the same asymmetry the permission allowlist and the cost-announcement rules record:**
+Claude can see the need and does not feel the cost; Doug feels it and cannot see the need.
+Whenever that shape appears, the mechanism belongs on Claude's side.
 
 **The pre-commit order is FMT, then GENERATE, then GATE — and it is an order, not a set.**
 `docs/architecture.md` carries module **line counts** derived from the source, so:
