@@ -673,6 +673,41 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > **The keyboard-shortcut fallback (`Alt+←`) is not a fix either.** It dodges the bug rather than
 > removing it, and the bug will bite whoever next touches this bar for any reason.
 >
+> #### The picker's adaptive width is LOAD-BEARING — do not remove it *(measured 2026-08-19)*
+>
+> `.width((bar_width * 0.45).clamp(60.0, 220.0))` looks like a bug: it asks for a fraction of the
+> available width while the available width is being determined by the content it belongs to.
+> That circularity was the second theory for the non-monotonicity, and **it is wrong**.
+>
+> Replacing it with a truncated label and no `.width()` call produced a **62.6pt gap where the
+> current code passes** — the bar's minimum rose to 486.6pt against a drag wanting 424.
+>
+> **The formula is the responsive mechanism**, not a defect: it lets the combo shrink to **60pt**
+> exactly when the panel is narrowest. Without it the combo always sizes to its text, which is
+> widest precisely when there is least room. A constant width fails too, and worse — that was the
+> 2026-08-16 attempt, and this formula was its fix.
+>
+> **Two theories are now dead by measurement** — the wrap (Doug's screen budget) and the circular
+> width (this). Do not propose a third without instrumenting first; the score for reasoning about
+> this bar is 0 for 2.
+>
+> #### Consequence: OPTION 3 is the live path
+>
+> Un-wrapped width is **monotonic by construction**, so reductions compose predictably and each is
+> measurable alone — the property this bar has never had. Doug's four candidates, re-ranked after
+> the above:
+>
+> 1. **Time combo** — `30s — teaser` … `3min — deep` become `30s` … `3min`. Best ratio, and a
+>    strict improvement rather than a compromise: the durations already say everything.
+> 2. **Count label** — free, and wanted anyway.
+> 3. **`✨ Claude's answer` → `✨ Answer`** — biggest single saving, and the only one with a real
+>    cost: Doug asked for it to be prominent and reported it as broken when it once vanished. Try
+>    the word before going icon-only.
+> 4. **Picker** — **excluded**, per the measurement above.
+>
+> Estimated: ~190pt off a 580pt baseline → ~390pt (~30% of 1280), or ~450pt (~35%) with Back.
+> **Estimate, not measurement** — and estimation is what has been wrong all evening.
+>
 > **Instrument, do not tune.** Claude tuned four times here after saying he would not, repeating
 > the six-attempt divider episode `ui-findings.md` C15 records. The test already knows
 > `available`, `panel` and `content` at each sampled pointer position — **print the triple across
