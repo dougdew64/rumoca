@@ -271,58 +271,10 @@ fn the_tour_picker_shows_every_fixture_and_no_readme() {
     );
 }
 
-/// **The Tours header states how many it found, and the number is true.**
-///
-/// Doug, 2026-08-03: *"I don't see new tours in the tours list"* — with two tours
-/// freshly written and `the_tour_picker_shows_every_fixture_and_no_readme` asserting
-/// both were on screen. The code was provably right and the report was still true,
-/// which left nothing to look at and no way to tell "the directory has six" from
-/// "the pane is showing six of eight". **Those need opposite fixes.**
-///
-/// The same partial-report shape as the Context Bar defect: every tour on screen was
-/// correct, and the missing ones left no gap where they had been. A count converts
-/// that into something checkable at a glance.
-///
-/// **Asserts the count against the filesystem, not against a literal**, so adding a
-/// tour cannot make the header quietly wrong.
-#[test]
-fn the_tours_header_counts_what_is_actually_on_disk() {
-    // **The count outlived the header it was written for.** The "Tours (23)" bar was
-    // removed on 2026-08-16, once the list became one combo box and one button — Doug:
-    // *"that divider bar no longer makes sense."* A titled frame around two controls is
-    // chrome announcing chrome.
-    //
-    // The *count* is not chrome. It exists because "I do not see the new tour" has to
-    // be answerable at a glance: a number distinguishes *the directory has six* from
-    // *the pane is showing six of eight*, and those need opposite fixes. He reported
-    // exactly that on 2026-08-03, with a picker test asserting the tours were on screen
-    // — the code was provably right and the report was still true.
-    //
-    // So it moved into the transport bar as three words beside the picker, and this
-    // test followed it rather than being deleted with the header. **A hover was tried
-    // first and rejected twice over**: a tooltip is invisible until suspicion already
-    // exists, which is too late, and it is unreachable from the accessibility tree, so
-    // no test can see it either.
-    //
-    // Still asserted **against the filesystem**, never a literal, so adding a tour
-    // cannot make it quietly wrong.
-    let _tour_state = AdHocTour::absent();
-    let h = harness(App::test_default());
-
-    let on_disk = crate::bridge::fixture_tours().len();
-    assert!(
-        on_disk >= 7,
-        "expected the committed fixtures, found {on_disk}"
-    );
-
-    let expected = format!("{on_disk} tours");
-    assert!(
-        h.query_by_label_contains(&expected).is_some(),
-        "the tour bar must state a count matching the {on_disk} tours on disk. Without \
-         it, a missing file and a pane that failed to list it look identical — which is \
-         the report that put this number on screen in the first place.",
-    );
-}
+// **The visible tour count was removed 2026-08-19, and so was its test.**
+//
+// Doug went sixteen days without reading it once. Deleted rather than weakened: a
+// test kept for a removed feature is a standing claim that the feature exists.
 
 /// **A tree opens its root, so its children are on screen to be named.**
 ///
@@ -1926,9 +1878,24 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
     )
     .expect("the-concepts.md must be readable — it is the widest tour");
 
+    // **640×360 no longer expects movement, and that is a cost accepted rather than a
+    // bug tolerated** *(2026-08-19)*. Un-wrapping the tour transport bar makes its
+    // one-row width a hard floor on the panel — the price of a minimum that varies
+    // *monotonically* with the bar's contents, which the wrapped version never did:
+    // five separate edits to it each failed this test in a different place.
+    //
+    // The floor was bought down first — the tour count removed, `30s — teaser` → `30s`,
+    // `✨ Claude's answer` → `✨ Answer` — taking the one-row minimum from 580pt to
+    // 405.9pt. At 1280 the panel settles at 450.5pt, **35%**, against the 40% Doug walks
+    // tours at, so he never meets it.
+    //
+    // **At 640 he does**: a ~410pt floor is most of the window, which is HRW at half
+    // width beside VS Code — the `matching-live.md` debugger layout. That tour wants a
+    // wider window now. Recorded here rather than in a commit message because this line
+    // *is* the decision.
     for (w, h_px, expect_movement) in [
         (1280.0_f32, 720.0_f32, true),
-        (640.0, 360.0, true),
+        (640.0, 360.0, false),
         (500.0, 340.0, false),
     ] {
         for mode_is_tour in [true, false] {
@@ -1961,8 +1928,16 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
             // reporting a 40 % default — because wide unwrapped content was setting
             // the minimum. The floor may legitimately push it *wider* than 40 % on a
             // narrow window, so this bounds it from above only.
+            // **Bounded in POINTS on a narrow window, not as a fraction** *(2026-08-19)*.
+            // The floor is an absolute number — the un-wrapped bar's one-row width — so on
+            // a 640pt window it is necessarily a large *fraction*, and asserting a
+            // fraction there tests the window size rather than the layout. What still
+            // matters at any size is that the floor is the **bar's** width and not the
+            // tour prose's: 480pt is the bar plus chrome, and the 899pt failure this
+            // assertion was written for would still trip it.
+            let ceiling = if w >= 1000.0 { 0.55 } else { 480.0 / w };
             assert!(
-                started_at <= 0.55,
+                started_at <= ceiling,
                 "{w}x{h_px} tour={mode_is_tour}: the panel opened at {:.0}% of the \
                  window ({:.1}pt) \u{2014} content is dictating the width instead of \
                  the split, so there is nothing left to drag",
@@ -1998,14 +1973,22 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
                 // so it is sitting on its floor and the floor is measurable. 300pt
                 // leaves room for a label changing width without admitting the ~445pt
                 // the panel opens at.
+                // **Raised to 480pt on 2026-08-19**, when the bar stopped wrapping and its
+                // one-row width became the panel's floor — measured at 450.5pt.
+                //
+                // It no longer catches "the panel is drifting wider", which is unreachable
+                // by construction now. It catches **something was added to the bar without
+                // a matching reduction**, which is the live risk once width is monotonic,
+                // and that cost is permanent: every point here is a point the RHS never
+                // gets back.
                 if x <= 8.0 {
                     assert!(
-                        panel_w <= 300.0,
+                        panel_w <= 480.0,
                         "{w}x{h_px} tour={mode_is_tour}: dragged hard left, the panel \
-                         settled at {panel_w:.1}pt. Its floor was measured at 250–255pt \
-                         on 2026-08-16; a panel that no longer reaches it is drifting \
-                         wider, and `MAX_TOUR_CHROME` tolerates the symptom of that, \
-                         not the cause.",
+                         settled at {panel_w:.1}pt. Since 2026-08-19 the un-wrapped tour \
+                         bar's one-row width IS this floor, measured at 450.5pt — so a \
+                         higher number means something was added to that bar without a \
+                         matching reduction, and the RHS pays for it permanently.",
                     );
                 }
 

@@ -270,7 +270,7 @@ const MAX_LEFT_FRACTION: f32 = 0.75;
 /// this one cannot straddle the content minimum again. If content grows past it,
 /// `the_left_panel_content_never_detaches_from_the_divider` fails rather than the
 /// gap silently returning.
-const MIN_LEFT_POINTS: f32 = 210.0;
+const MIN_LEFT_POINTS: f32 = 465.0;
 
 /// The draggable LHS/RHS split (`docs/ideas.md` #59).
 ///
@@ -6892,7 +6892,7 @@ impl App {
             let bar_width = ui.available_width();
             ui.set_min_width(bar_width);
             ui.set_max_width(bar_width);
-            ui.horizontal_wrapped(|ui| {
+            ui.horizontal(|ui| {
                 // --- Which tour: Claude's answer, then the picker ---
                 //
                 // **Claude's answer is not the same kind of object as the other 22**
@@ -7013,7 +7013,13 @@ impl App {
                 // A hover was tried first and is not enough: a tooltip is invisible
                 // until suspicion already exists, which is exactly too late, and it is
                 // also unreachable from the accessibility tree so no test can see it.
-                ui.weak(format!("{n_fixtures} tours"));
+                //
+                // **REMOVED 2026-08-19.** Doug: *"I have not used that label's
+                // information a single time"* — sixteen days, by the person it was built
+                // for, which is better evidence than the reasoning above. The count
+                // survives on the picker's hover; if *"I don't see the new tour"* ever
+                // recurs, restoring this line is the fix.
+                // <!-- unbuilt: visible_tour_count -->
 
                 ui.separator();
 
@@ -11503,7 +11509,12 @@ mod tests {
         let mut split = SplitState::default();
 
         // A real choice on a roomy window is learned.
-        split.observe(461.0, 1152.0);
+        //
+        // **480/1200 rather than 461/1152 since 2026-08-19**: `MIN_LEFT_POINTS` rose to
+        // 465 when the tour bar stopped wrapping, so 461 is now *below the floor* and is
+        // correctly read as pinned rather than chosen. The ratio is still 0.40 — the
+        // property under test is unchanged, only the window it needs to fit in.
+        split.observe(480.0, 1200.0);
         let chosen = split.fraction.expect("a chosen split is remembered");
         assert!(
             (chosen - 0.4).abs() < 0.01,
@@ -12123,7 +12134,7 @@ mod tests {
     #[test]
     fn tour_labels_name_what_the_tour_is() {
         assert!(
-            TourSource::AdHoc.label().contains("Claude's answer"),
+            TourSource::AdHoc.label().contains("Answer"),
             "the ad hoc tour is named by its role; its filename is an implementation \
              detail nobody should need to know",
         );

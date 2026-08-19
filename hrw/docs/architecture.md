@@ -93,22 +93,22 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**41 modules, 58,996 lines**, largest first. Every file under `src/`, including the test-only ones (`ui_tests.rs`, `test_support.rs`).
+**41 modules, 58,992 lines**, largest first. Every file under `src/`, including the test-only ones (`ui_tests.rs`, `test_support.rs`).
 
 | module | lines |
 |---|---:|
-| `app.rs` | 14,244 |
+| `app.rs` | 14,255 |
 | `worker.rs` | 10,594 |
 | `bridge.rs` | 3,772 |
 | `doc_citations.rs` | 3,314 |
-| `ui_tests.rs` | 2,556 |
+| `ui_tests.rs` | 2,539 |
 | `fidelity.rs` | 1,765 |
 | `equation_sheet.rs` | 1,540 |
 | `tree.rs` | 1,302 |
 | `incidence_view.rs` | 1,219 |
 | `connection_anim.rs` | 1,117 |
 | `reduction_view.rs` | 1,112 |
-| `autoplay.rs` | 1,083 |
+| `autoplay.rs` | 1,078 |
 | `lib.rs` | 1,051 |
 | `diagnostics.rs` | 986 |
 | `matching_anim.rs` | 961 |
@@ -116,8 +116,8 @@ showing 48 equations. They are derived now, and
 | `matching_ledger.rs` | 822 |
 | `survey.rs` | 769 |
 | `tearing_anim.rs` | 699 |
+| `tour.rs` | 687 |
 | `canvas.rs` | 681 |
-| `tour.rs` | 680 |
 | `arch_doc.rs` | 634 |
 | `ic_plan_anim.rs` | 624 |
 | `expr_format.rs` | 621 |
@@ -138,7 +138,7 @@ showing 48 equations. They are derived now, and
 | `json_read.rs` | 119 |
 | `field_help.rs` | 67 |
 | `test_support.rs` | 60 |
-| **total** | **58,996** |
+| **total** | **58,992** |
 <!-- END GENERATED module-sizes -->
 
 

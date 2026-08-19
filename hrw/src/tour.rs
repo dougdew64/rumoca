@@ -457,7 +457,14 @@ impl TourSource {
 
     pub(crate) fn label(&self) -> String {
         match self {
-            Self::AdHoc => "\u{2728} Claude's answer".to_owned(),
+            // **`✨ Answer`, shortened 2026-08-19.** The sparkle identifies it — the only
+            // emoji in the bar — and "Claude's" was the widest word in a strip whose
+            // one-row width is now a hard floor on the left panel.
+            //
+            // **The word is kept rather than going icon-only:** Doug asked for this
+            // control to be prominent and reported it as a broken feature the day it
+            // briefly vanished. An unlabelled sparkle is a puzzle; `✨ Answer` is not.
+            Self::AdHoc => "\u{2728} Answer".to_owned(),
             Self::Fixture(p) => p
                 .file_stem()
                 .and_then(|s| s.to_str())

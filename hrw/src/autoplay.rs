@@ -45,12 +45,7 @@ use std::time::Duration;
 /// **These are conventional social-video lengths, not a measured optimum**, and
 /// they are a picker rather than a constant because the guidance moves and the
 /// judgement is the author's. The default is [`DEFAULT_TOTAL`].
-pub const TOTAL_CHOICES: [(&str, u64); 4] = [
-    ("30s \u{2014} teaser", 30),
-    ("60s \u{2014} short", 60),
-    ("90s \u{2014} standard", 90),
-    ("3min \u{2014} deep", 180),
-];
+pub const TOTAL_CHOICES: [(&str, u64); 4] = [("30s", 30), ("60s", 60), ("90s", 90), ("3min", 180)];
 
 /// Default run length: 90 seconds.
 ///
