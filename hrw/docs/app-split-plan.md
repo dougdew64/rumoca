@@ -103,6 +103,36 @@ step's findings are safe before the current one can go wrong.
 **A "bit" of refactoring is one item or one small cluster, built and tested before the next.**
 Not a step of §3 — those turned out to be too large to be atomic.
 
+### THE STOPPING RULE: one extraction per session, then `/clear` — 2026-08-19
+
+**One unit of work, gated, committed, and then a deliberate fresh session.** Not "continue until
+the context runs out."
+
+**Because context maintenance is insurance, not recovery.** It *costs* context — reading, editing,
+committing — to make running out **survivable**. It frees nothing. Doug had been requesting it
+expecting relief, and each request spent more of the budget it was meant to protect. Saying that
+plainly is the point of this section.
+
+**What running to exhaustion actually cost on 2026-08-19:** the last third of a very long session
+went on limping — reverted extractions, four backtick corruptions repaired, handoff boxes that had
+drifted two iterations behind. **Two or three fresh sessions would have moved more code.**
+
+**The rule makes each iteration's cost bounded**, and it makes maintenance cheap for the reason
+that matters: there is little accumulated state to write down when you stop after one thing.
+
+**Claude's side of it, since three of these are self-inflicted:**
+
+- **Commit messages of 20–40 lines are context spent by choice.** The reasoning belongs in the
+  code and the docs, where it is greppable; the message needs what changed and why it was safe.
+- **Do not narrate each step.** Doug asked for the loop to run without updates and got essays
+  anyway. Each one was real budget.
+- **Read the body before scripting an extraction.** The two reverts and the `specimen_source_ui`
+  cascade all came from rewriting first and discovering the shape afterwards.
+
+**And this confounds the handoff-frequency signal a third time** (`CLAUDE.md`): model change, file
+growth, *and* verbosity discipline all move it. Isolating `app.rs`'s contribution needs the other
+two held still.
+
 **THE LOOP'S COST PROFILE CHANGES AFTER ITERATION FIVE, AND THAT NEEDS A DECISION.** The first
 five were cheap *because the items could not fail interestingly*: leaf types with no `App`
 coupling, moved by marker, verified by a build. **That supply is now exhausted.**

@@ -730,7 +730,10 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > update the plan → repeat.** Maintenance comes *first* deliberately — a session that refactors
 > until its context runs out leaves a moved boundary and no account of why.
 >
-> **A "bit" is one item or one small cluster**, built and tested before the next. Not a whole step
+> **STOPPING RULE: one extraction per session, then `/clear`.** Context maintenance is insurance,
+> not recovery — it COSTS context to make running out survivable and frees nothing. Running to
+> exhaustion on 2026-08-19 spent the last third of the session limping. **A "bit" is one item or
+> one small cluster**, built and tested before the next. Not a whole step
 > of the plan's §3; those proved too large to be atomic.
 >
 > **Done so far:** the sub-view enums, `Viewport` and `sub_view_name_for` → `stage_view.rs` (266
