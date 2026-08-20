@@ -33,9 +33,19 @@
 //! attention; now it is a property of the pane, and a caller that passes a stage's live
 //! jump target gets the same suppression.
 //!
-//! **The other five `TreeOptions` fields are NOT blanked, and that is an open question
-//! rather than a decision** — see `App::specimen_tree_options`. They too describe the
-//! specimen rather than the class on screen.
+//! **The other five `TreeOptions` fields are NOT blanked yet, and that is a KNOWN DEFECT
+//! with a decision already made** — Doug, 2026-08-20: *the navigated tree is annotated from
+//! the class or not at all.* `tracked`, `known_variables`, `declaring_classes`,
+//! `variable_lines` and `path_lines` all describe **the specimen**, so a library class here
+//! can be underlined, offered for Follow, and shown a *"declared at line N"* naming a line of
+//! the specimen's file. They join the two above; the edit, the test's exact name and the
+//! must-fire recipe are queued in [`docs/app-split-plan.md`](../docs/app-split-plan.md).
+//!
+//! **Why nothing caught it:** `docs/identity-and-provenance.md` forbids *substring* search
+//! deciding identity, and all five use exact equality, so they comply as written. What they
+//! step outside is that rule's unstated precondition — **that both sides are the same
+//! model**, true of everything until "Go to definition" existed. Exact equality across two
+//! namespaces is a collision wearing identity's clothes.
 
 use std::collections::HashMap;
 

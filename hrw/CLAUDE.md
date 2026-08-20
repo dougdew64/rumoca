@@ -791,13 +791,35 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > here*) is now **a property of the pane** applied over whatever the caller passes, not two `None`s
 > in a literal.
 >
-> **⟶ IT ALSO LEFT A QUESTION FOR DOUG, and the plan carries the table: `App::specimen_tree_options`
-> hands BOTH trees the specimen's `path_lines`, `variable_lines`, `declaring_classes` and
-> `known_variables`.** The very argument that blanks `jump_to` applies to at least three of them —
-> a name or path that collides resolves to the **specimen's** line while the reader is looking at a
-> library class. **Probably a defect, unproven, deliberately not fixed**: what the navigated tree is
-> *for* is a design question, and "presence substituted" is the failure mode if the answer is
-> "nothing but the class". Same profile as the alias defect and the stranded `Animate` arm.
+> ### ⟶ START HERE: THE NAVIGATED TREE IS ANNOTATED FROM THE WRONG MODEL — decided, not yet fixed
+>
+> **This is the next unit of work, ahead of any further router extraction.** Doug ruled on it
+> 2026-08-20; the shape of the edit, the test's exact name and the must-fire recipe are in
+> [`docs/app-split-plan.md`](docs/app-split-plan.md) under *"⟶ THE NEXT SESSION'S UNIT OF WORK"*.
+>
+> **`App::specimen_tree_options` hands BOTH trees the specimen's `tracked`, `known_variables`,
+> `declaring_classes`, `variable_lines` and `path_lines`** — so a library class reached by "Go to
+> definition" gets underlined, offered for Follow, and can show *"declared at line N"* naming a
+> line of **your specimen's file**. `nav_view_ui` blanks all five, joining `jump_to` and
+> `highlight` in the suppression it already applies.
+>
+> **The reason it hid: these five do NOT break the written rule.**
+> [`docs/identity-and-provenance.md`](docs/identity-and-provenance.md) forbids *substring* search
+> deciding identity; all five use exact equality and comply as written. **What they step outside is
+> the rule's unstated precondition — that both sides are the same model**, which was true of
+> everything until go-to-definition existed. **Exact equality across two namespaces is a collision
+> wearing identity's clothes.** Add that precondition to that document as part of the fix; it is
+> the durable half.
+>
+> **The confirming detail is what the fix does NOT remove:** `def_index` is per-`NavEntry` — the
+> class's own DefId table, resolved structurally — so "Go to definition" keeps working through
+> DefIds while the name-matched shortcuts go. **The structural route the authority prescribes
+> survives untouched**, which is the rule working rather than a coincidence.
+>
+> **The rule is "annotate from the class, or not at all"**, and blanking is the correct answer
+> *now* rather than the destination: nothing indexes an MSL class's own variables or source lines,
+> so there is no class-derived version to substitute. If the navigated tree should ever be
+> annotated, build it **from the class** — never re-derive it from the specimen.
 >
 > **A ROUTER'S SEAM IS AN ASYMMETRY AMONG ITS ARMS, NOT A REGION — and this box previously said
 > the opposite.** It read *"the cut is inside, the way `tour_prose_ui` was cut"*, i.e. find a

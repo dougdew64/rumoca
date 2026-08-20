@@ -3627,3 +3627,46 @@ in a different dress, where the property under test belonged to the gate and not
 of the live-debug path already says the session end does not release the breakpoint and that the
 code which did is deleted. It was updated when the behaviour changed; the five source comments were
 not, because nothing links a doc comment to the field whose behaviour it describes.
+
+## 2026-08-20 — the navigation view left `app.rs`, and the two trees' shared options are a defect
+
+**`nav_view.rs`** takes the `else` of `if self.nav.is_empty()` out of `central_panel_ui`
+(552 → 484; `app.rs` 12,273 → 12,250). **The branch was on no list** — the `_ui` census, the
+coupling table and both "next" boxes enumerate what is *inside* the `if`, and the `else` is their
+sibling. The `matrix_panes` rule (*a router is a list; find the member shaped differently*) was
+being applied one level too deep: **find the outermost list first, then descend.**
+
+**−23 lines, the smallest reduction of any extraction here, and deliberately not what it rests
+on.** It buys eight tests in 0.08 s on a pane previously reachable only by building an `App` with
+a worker and pushing a `NavEntry` — the precondition that failed four times during the
+`CompileViewCaches` work the same day. And the jump/highlight suppression became **a property of
+the pane**, applied over whatever the caller passes, where it had been two `None`s in a literal
+that were correct because whoever wrote them was paying attention.
+
+**Two identical seven-field `TreeOptions` literals — 100 lines apart, verbatim comment included —
+became `App::specimen_tree_options`.** Neither copy was near the other, so no column-read and no
+region scan could have seen the duplication; it took moving one of them.
+
+**And that helper asserted something false, which is the finding.** It hands **both** trees the
+specimen's `tracked`, `known_variables`, `declaring_classes`, `variable_lines` and `path_lines`,
+so a library class reached by "Go to definition" can be underlined, offered for Follow, and show
+*"declared at line N"* naming a line of the specimen's file. **Presence substituted, not absence
+filled** — the same class as the stranded `Animate` arm.
+
+**Doug's ruling (2026-08-20): the navigated tree is annotated from the class or not at all**, and
+since nothing indexes an MSL class's own variables or source lines, today that means **not at
+all**. `nav_view_ui` blanks all five. Queued as the next session's unit of work in
+`docs/app-split-plan.md`, tagged `unbuilt:`.
+
+**Why it hid, which is the transferable half.**
+`docs/identity-and-provenance.md` forbids *substring* search deciding identity and prescribes
+exact equality modulo one `der(…)`. **All five comply as written.** What they step outside is the
+rule's **unstated precondition — that both sides are the same model**, true of everything until
+go-to-definition existed. Exact equality across two namespaces is a collision wearing identity's
+clothes, and nothing flagged it because the rule it violates was never written down.
+
+**The confirming detail is what the fix does not remove:** `def_index` is per-`NavEntry`, the
+class's own DefId table resolved structurally by the worker, and is not one of the five — so
+"Go to definition" keeps working *through DefIds* while the name-matched shortcuts go. The
+structural route that document prescribes survives untouched, which is the rule working rather
+than a coincidence.

@@ -1219,10 +1219,10 @@ comment.** Neither copy is near the other, so no column-read and no region scan 
 took moving one of them. They are now `App::specimen_tree_options`, and each tree adds only what
 it addresses.
 
-**THE SHARED HELPER ASSERTS THAT THE FIVE FIELDS BELONG IN BOTH TREES, AND THEY MAY NOT — this is
-a QUESTION, filed rather than answered.** Per the rule this plan already carries (*when an
-extraction exposes an asymmetry, the next sentence must say whether it is principled or a defect*),
-here is the judgement: **probably a defect, unproven, and not this session's to fix.**
+**THE SHARED HELPER ASSERTS THAT THE FIVE FIELDS BELONG IN BOTH TREES, AND THEY DO NOT.** Per the
+rule this plan already carries (*when an extraction exposes an asymmetry, the next sentence must
+say whether it is principled or a defect*): **a defect. Ruled on by Doug, 2026-08-20 — the
+navigated tree is annotated from the class or not at all, and today it can only be "not at all".**
 
 The argument that blanks `jump_to` for the navigated tree — *a library class is a different IR, so
 an address computed against a stage means nothing here* — **applies unchanged to three of the five
@@ -1239,13 +1239,60 @@ fields that are not blanked:**
 **Nobody has reported this**, and it may be unreachable in practice: `path_lines` is `None`
 outside Dae/Flatten, and a library class's paths are shaped differently from a DAE's. **That is
 exactly the profile of the alias defect and the stranded `Animate` arm** — a wrong answer nothing
-on screen admits to, in a pane visited rarely. Worth a session; **worth Doug's ruling on what the
-navigated tree is *for* before any code changes**, because "show the specimen's knowledge while
-drilled into a library class" is a defensible design and "show nothing but the class" is another.
+on screen admits to, in a pane visited rarely.
 
-**Note the failure mode if it is wrong: presence substituted, not absence filled.** The gutter
-would say *"declared at line 41"* over a row of the Resistor, naming a line of the specimen. Same
-class as the arm that drew the index-reduction replay under the Events tab.
+**The failure mode is presence substituted, not absence filled.** The gutter would say *"declared
+at line 41"* over a row of the Resistor, naming a line of the specimen. Same class as the arm that
+drew the index-reduction replay under the Events tab.
+
+#### ⟶ THE NEXT SESSION'S UNIT OF WORK — decided 2026-08-20, implement after a `/clear`
+
+**`nav_view_ui` blanks all five, joining `jump_to` and `highlight` in the suppression it already
+applies.** <!-- unbuilt: a_navigated_class_is_not_annotated_from_the_specimen -->
+
+**THE AUTHORITY IS `docs/identity-and-provenance.md`, and the interesting part is that these five
+do NOT break its written rule.** That document forbids *substring* search deciding identity and
+prescribes exact equality modulo one `der(…)`; all five use exact equality and are compliant as
+written. **What they step outside is the rule's unstated precondition — that both sides are the
+same model.** Until "Go to definition" existed, they always were. **Exact equality across two
+namespaces is a collision wearing identity's clothes**, and nothing flags it because the rule it
+violates was never written down. *(Add that precondition to that document as part of this work; it
+is the durable half.)*
+
+**THE CONFIRMING DETAIL IS WHAT THE FIX DOES NOT REMOVE.** `def_index` is per-`NavEntry` — the
+class's own DefId table, resolved structurally by the worker — and it is **not** one of the five,
+so "Go to definition" keeps working *through DefIds* while the name-matched shortcuts go. The
+structural route that document prescribes survives untouched. That is the rule working rather than
+a coincidence, and it is the strongest single argument for this shape of fix.
+
+**`tracked` is the one judgement call in the five, and it goes with the others.** The tracked
+identifier is a *flat* name (`resistor.R`), so no key inside the `Resistor` class equals it and the
+highlight rarely fires at all; when it does fire it is a bare-name collision. Blanked for
+consistency, and recorded here as a call rather than a consequence.
+
+**What it costs, stated so the trade is visible:** the navigated tree loses its underlines, its
+follow offers and its "declared at line N" links entirely. **Absence stated rather than filled**,
+which is the trade this repository makes everywhere else.
+
+**And the rule is "annotate from the class, or not at all" — blanking is the correct answer NOW,
+not the destination.** Nothing indexes an MSL class's own variables, declaring positions or source
+lines, so the class-derived versions do not exist to substitute. If the navigated tree should ever
+be annotated, they must be **built from the class**; do not re-derive them from the specimen.
+
+**Shape of the work**, so the next session starts at the edit:
+
+- Extend the `TreeOptions` literal inside `nav_view_ui` to blank `tracked`, `known_variables`,
+  `declaring_classes`, `variable_lines` and `path_lines` beside the two already there. The
+  suppression is already a property of the pane, so this is the same construct widened.
+- **The test is named `a_navigated_class_is_not_annotated_from_the_specimen`** — spelled exactly
+  that, because the `unbuilt:` tag above resolves against it and a misspelled target is silently
+  permanent. `Nav::one`'s fixture already nests a leaf; give the harness a `known_variables`
+  containing the leaf's value and assert the row is **not** offered as trackable.
+  `query_by_label_contains`, never `get_all_by_label_contains`, for the negative.
+- Must-fire it the way `a_jump_target_is_not_honoured_against_a_navigated_class` was: restore one
+  field and confirm exactly that test fails.
+- **Then delete the `unbuilt:` tag on this section**, or `claims_of_absence_are_still_true` fails —
+  which is the mechanism doing its job.
 
 ### A ROUTER'S SEAM IS AN ASYMMETRY AMONG ITS ARMS — 2026-08-20, `matrix_panes.rs`
 
