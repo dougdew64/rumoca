@@ -664,6 +664,7 @@ struct ContextBarState {
 use crate::model_list::{ModelListNav, ModelListState};
 use crate::specimen_source::{self, SourceViewState};
 use crate::stage_caches::StageViewCaches;
+use crate::stage_tabs;
 use crate::stage_view::{
     EventsView, FlattenView, InitView, StructuralView, Viewport, events_view_name,
     flatten_view_name, init_view_name, structural_view_name, sub_view_name_for,
@@ -5346,50 +5347,21 @@ impl App {
     /// Lifted out of `central_panel_ui` on 2026-08-02, when that was 760 lines
     /// and the largest thing left in the file.
     ///
-    /// **Still `&mut self`, and here that is the right answer rather than an
-    /// unfinished one.** Measured before extracting: this row reads `stage`,
-    /// `stages`, `selected`, `viewing_log` and `compiling` -- four of which the
-    /// field census found *genuinely shared*, not pane-local. There is no
-    /// `TabBarState` to extract, because the row's whole job is to report and
-    /// mutate state belonging to the application. Narrowing it would mean passing
-    /// five references and gaining nothing.
+    /// **What is left here is the chrome that genuinely needs the application**, after
+    /// the tabs left for [`crate::stage_tabs`] on 2026-08-19: the Debug-mode specimen
+    /// switcher, the Log button, the inline ▶ button, and the two status spinners.
+    ///
+    /// **Still `&mut self`, and that is now a finding rather than an admission.** The
+    /// two `App` methods this row calls — `open` and `start_simulation` — are the reason
+    /// the whole function could not move: both set state that the widgets *below* them
+    /// read in the same frame, so reporting the press instead of performing it would
+    /// draw one stale frame. Everything downstream of them reads state and was
+    /// extractable; the region rule in `docs/app-split-plan.md` is exactly this
+    /// distinction.
     ///
     /// Guarded by three headless tests from the baseline suite's chunk 3: a tab
     /// click selects the stage, leaves the log view, and reaches the Context Bar.
     fn stage_tab_bar_ui(&mut self, ui: &mut egui::Ui, intent: &mut FrameIntent) {
-        // ---- Stage tab bar ----
-        //
-        // WHY `selectable_label` INSTEAD OF `selectable_value`:
-        //
-        // egui has two selection widgets:
-        // - `selectable_value(&mut val, variant, text)` — ALWAYS highlights
-        //   when `val == variant`. Good for radio-button groups.
-        // - `selectable_label(is_selected, text)` — highlights when the
-        //   bool is true. You control the condition explicitly.
-        //
-        // We use `selectable_label` here because we need to SUPPRESS
-        // highlighting while compiling: when a fresh specimen is loading,
-        // no tab should appear selected (the previous specimen's stage
-        // would be misleading). The `stage_selected` bool below gates
-        // this: it's false while compiling or while viewing the log, so
-        // no tab highlights. `selectable_value` can't express this
-        // conditional because it always highlights the current value.
-        //
-        // THE `stage_tab_clicked` PATTERN:
-        //
-        // Each stage tab checks `.clicked()` and sets the same
-        // `stage_tab_clicked` flag. After the tab row, a single block
-        // acts on that flag to turn off `viewing_log` and emit a stage
-        // capture for the bridge. This avoids duplicating that logic
-        // in every tab's click handler.
-        //
-        // TAB COLORING:
-        //
-        // Each tab label is colored via `tab_label()`:
-        // - Red if the stage errored (so you see pipeline failures at a glance)
-        // - Green if the stage produced IR (success)
-        // - Default color if not yet reached or still compiling
-        // Specimen switcher — a compact dropdown showing the
         // Specimen switcher dropdown — only in Debug mode, where
         // the specimen list is hidden.
         if self.ui_mode == UiMode::Debug {
@@ -5460,166 +5432,31 @@ impl App {
         if self.sim_running {
             ui.spinner();
         }
-        ui.separator();
-        let err = ui.visuals().error_fg_color;
-        let ok = crate::colors::ok_color(ui.visuals().dark_mode);
-        // While a freshly-selected specimen is still compiling, NO tab is
-        // highlighted — the previous specimen's stage must not appear selected
-        // over an empty/loading one. The highlight returns once results land
-        // (`self.stage` = the furthest clean stage). Hence `selectable_label`
-        // with an explicit `stage_selected && …` bool, not `selectable_value`
-        // (which would always highlight the current stage).
+        // ---- The tabs themselves ----
         //
-        // Selecting an IR stage tab ALSO captures that stage for the chat (no
-        // separate 🔎 button) — so its context is ready the instant you view
-        // it; the capture fires once below. Simulation is excluded: it's a
-        // run/plot action, not an IR capture.
-        let stage_selected = !self.compiling && !self.viewing_log;
-        let mut stage_tab_clicked = false;
-        let tabs: &[(StageKind, &str, &Stage, Option<&str>)] = &[
-            (StageKind::Parse, "Parse", &self.stages.parse, None),
-            (StageKind::Resolve, "Resolve", &self.stages.resolve, None),
-            (
-                StageKind::Instantiate,
-                "Instantiate",
-                &self.stages.instantiate,
-                None,
-            ),
-            (
-                StageKind::Typecheck,
-                "Typecheck",
-                &self.stages.typecheck,
-                Some(
-                    "The model-scoped instanced typecheck: it types the instantiated \
-                     overlay (fills in type_ids, evaluates dimensions), so it runs AFTER \
-                     Instantiate — not in Rumoca's nominal phase-3 slot. HRW can't use the \
-                     pre-instantiation whole-tree typecheck; it fails on the full MSL.",
-                ),
-            ),
-            (StageKind::Flatten, "Flatten", &self.stages.flatten, None),
-            (
-                StageKind::Dae,
-                "DAE",
-                &self.stages.dae,
-                Some(
-                    "DAE construction (Rumoca phase 6): the flat equation list becomes a \
-                     mathematical system. Variables are partitioned into states (x), \
-                     algebraics (y), inputs (u), parameters (p) and discretes (z, m); \
-                     equations into the MLS Appendix B partitions — f_x (continuous), \
-                     f_z / f_m (discrete updates), f_c (conditions). The note reports the \
-                     counts, and it is the count that decides everything downstream: \
-                     matching cannot assign one equation per unknown unless they agree.",
-                ),
-            ),
-            (
-                StageKind::Structural,
-                "Structural",
-                &self.stages.structural,
-                Some(
-                    "Structural analysis of the RAW DAE (Rumoca phase 7): maximum matching \
-                     (equation↔unknown), BLT blocks (size>1 = algebraic loop), and tearing. \
-                     A high-index system (rigid constraints) reports SINGULAR here — see the \
-                     Index reduction tab for the reduced, solvable form. BLT spy-plot (drag \
-                     to pan, scroll to zoom, click a block to capture) or the raw report tree.",
-                ),
-            ),
-            (
-                StageKind::IndexReduction,
-                "Index reduction",
-                &self.stages.index_reduction,
-                Some(
-                    "Structural analysis of the DAE AFTER index reduction (Pantelides / \
-                     dummy derivatives): the funnel differentiates constraints and demotes states \
-                     so a high-index singular system becomes matchable. For an already-index-1 \
-                     model this equals Structural. Same BLT spy-plot / tree.",
-                ),
-            ),
-            (
-                StageKind::Initialization,
-                "Initialization",
-                &self.stages.initialization,
-                Some(
-                    "The consistent-initial-condition solve plan (build_ic_plan): the \
-                     ordered blocks that compute a valid state at t=0 — direct symbolic solves, \
-                     scalar Newton, torn/coupled loops — plus the relaxation hint (equations \
-                     dropped / unknowns pinned) when the initial subsystem is singular, and a \
-                     determinacy check that flags an OVER-determined init (more explicit initial \
-                     conditions than states — conflicting/redundant ICs).",
-                ),
-            ),
-            (
-                StageKind::Events,
-                "Events",
-                &self.stages.events,
-                Some(
-                    "The DAE's hybrid / event structure: the conditions (relations that \
-                     trigger events), the discrete updates lowered from `when` clauses (f_z real, \
-                     f_m valued), and the event partition (zero-crossing root conditions + scheduled \
-                     time events). A smooth (continuous) model shows none.",
-                ),
-            ),
-            (
-                StageKind::SolveLowering,
-                "Solve lowering",
-                &self.stages.solve_lowering,
-                Some(
-                    "The DAE lowered to a SolveModel (phase 8): the solvable form the \
-                     simulator runs — residual programs, variable layout, mass matrix, Jacobian \
-                     sparsity. This is the compile step just before simulation.",
-                ),
-            ),
-        ];
-        for &(kind, label, stage, hover) in tabs {
-            let mut resp = ui.selectable_label(
-                stage_selected && self.stage == kind,
-                tab_label(label, stage, ok, err),
-            );
-            // A tab click is a point-at too — at the stage as a
-            // whole. Appended to the tab's own explanation rather
-            // than replacing it: what the stage *is* matters more
-            // than what clicking does, and this is the row where a
-            // reader is most likely to be learning the pipeline.
-            let tip = match hover {
-                Some(t) => format!("{t}\n\n{}", crate::POINT_AT_HOVER),
-                None => crate::POINT_AT_HOVER.to_owned(),
-            };
-            resp = resp.on_hover_text(tip);
-            if resp.clicked() {
-                diagnostics::record_action("stage-tab", kind.name());
-                self.stage = kind;
-                stage_tab_clicked = true;
-            }
-        }
-        // Simulation is a run/plot action, not an IR capture — no stage_tab_clicked.
-        ui.separator();
-        let sim_label = {
-            let text = egui::RichText::new("Simulation");
-            if self.sim_error.is_some() {
-                text.color(err)
-            } else if self.sim_data.is_some() {
-                text.color(ok)
-            } else {
-                text
-            }
-        };
-        if ui
-            .selectable_label(
-                stage_selected && self.stage == StageKind::Simulation,
-                sim_label,
-            )
-            .on_hover_text(
-                "Run the model (phase 9): compile → lower to a SolveModel → integrate \
-                     (Auto: BDF for stiff, RK45 otherwise), then plot the state trajectories. Runs \
-                     on the worker thread, so the UI stays live.",
-            )
-            .clicked()
-        {
-            self.stage = StageKind::Simulation;
+        // Everything from here down left for `stage_tabs.rs` on 2026-08-19: it is the
+        // longest contiguous span of this function that calls no `App` method, which is
+        // what made it extractable at all. The two presses above (`open`,
+        // `start_simulation`) cannot be deferred, because the row below reads the state
+        // they set in the same frame — see that module's header.
+        //
+        // The row reports rather than performs, so both consequences of a tab click are
+        // answered here: leaving the log view, which both variants share, and capturing
+        // the stage for the chat, which only an IR stage asks for.
+        let click = stage_tabs::stage_tabs_ui(
+            ui,
+            &self.stages,
+            &mut self.stage,
+            self.compiling,
+            self.viewing_log,
+            self.sim_error.is_some(),
+            self.sim_data.is_some(),
+        );
+        if let Some(click) = click {
             self.viewing_log = false;
-        }
-        if stage_tab_clicked {
-            self.viewing_log = false;
-            if self.selected.is_some() {
+            // Guarded on a specimen because the capture describes *this run's* stage;
+            // with nothing loaded there is no stage to describe.
+            if click == stage_tabs::TabClick::Stage && self.selected.is_some() {
                 intent.want_stage_ask = true;
             }
         }
@@ -7637,36 +7474,6 @@ const GOLDEN_RATIO: f32 = 0.618_034;
 /// automatically.
 fn series_color(i: usize) -> egui::Color32 {
     egui::ecolor::Hsva::new(i as f32 * GOLDEN_RATIO, 0.85, 0.5, 1.0).into()
-}
-
-/// A stage-tab label, coloured by outcome so the whole pipeline's health reads off
-/// the tab row without opening each stage: **red** if the stage errored, **green**
-/// if it produced its IR (succeeded), and the normal colour for an
-/// in-between/neutral status — "not reached" after an upstream failure, or no data
-/// yet (before/while compiling).
-///
-/// `RichText` is egui's styled-text type: you create it with `RichText::new(…)`
-/// and chain formatting methods (`.color()`, `.monospace()`, `.strong()`, etc.).
-/// The resulting `RichText` can be passed anywhere a label/button expects text.
-/// Here we use `.color()` to tint the tab label — the text itself is unchanged,
-/// only its rendering color varies based on the stage's outcome.
-fn tab_label(
-    label: &str,
-    stage: &Stage,
-    ok_color: egui::Color32,
-    err_color: egui::Color32,
-) -> egui::RichText {
-    let text = egui::RichText::new(label);
-    if stage.note_is_error() {
-        text.color(err_color)
-    } else if stage.value.is_some() {
-        text.color(ok_color)
-    } else {
-        // No color override — uses the theme's default text color. This
-        // neutral state covers "not yet reached" (an upstream stage failed
-        // or hasn't completed) and "still compiling".
-        text
-    }
 }
 
 #[cfg(test)]

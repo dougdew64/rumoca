@@ -75,6 +75,7 @@ pub mod source_view;
 pub mod specimen_source;
 pub mod spyplot;
 pub mod stage_caches;
+pub mod stage_tabs;
 pub mod stage_view;
 pub mod survey;
 pub mod tarjan_anim;

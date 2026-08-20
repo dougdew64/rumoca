@@ -741,12 +741,45 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > lines), StageViewCaches to stage_caches.rs (99), and UiMode/SpecimenDetail/NavEntry to
 > ui_state.rs (73), **source_map_ui — the first RENDERING fn — to source_map.rs (281)**,
 > **specimen_source_ui + SourceViewState to specimen_source.rs (397)**,
-> **autoplay_controls_ui to tour_transport.rs (458)**, and **`tour_panel_ui`'s inner scroll area
-> → `tour_panel.rs` (735, renamed from `tour_transport.rs`)**.
-> **app.rs 14,437 → 12,908.** Progress
-> table in the plan, which also lists four mechanical traps and the measurement that §3 seam
+> **autoplay_controls_ui to tour_transport.rs (458)**, **`tour_panel_ui`'s inner scroll area
+> → `tour_panel.rs` (735, renamed from `tour_transport.rs`)**, and **the tabs of
+> `stage_tab_bar_ui` → `stage_tabs.rs` (493, 190 of them tests)**.
+> **app.rs 14,437 → 12,715.** Progress
+> table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest: the mass is in eight rendering fns totalling 2,531 lines, not in
 > field groups. Those take &mut self, so each costs hours, not minutes.
+>
+> ### THE `App`-METHOD COUNT IS NOT THE TEST — ASK WHETHER DEFERRING THE PRESS COSTS A FRAME
+> *(2026-08-19, `stage_tab_bar_ui`)*
+>
+> **It had the fewest `App` methods of anything left — two — and still could not move whole.**
+> Both `open` and `start_simulation` set state that widgets *below them in the same function*
+> read on the same frame, so reporting the press instead of performing it would draw one stale
+> frame. **A press is cheap to defer only when nothing downstream of it reads what it wrote**,
+> and the two extractions that made the pattern look free both called their method as the last
+> thing they did. **Record the call's POSITION, not just its existence:** a method at the end of
+> a body is a callback; a method in the middle is a barrier, and a barrier forces the cut inside
+> the function.
+>
+> **The region rule then did the rest** — the 163 lines after the ▶ button call no `App` method.
+> `App::stage_tab_bar_ui` is ~100 lines of chrome that genuinely needs the application: the
+> Debug-mode specimen switcher, the Log button, the ▶ button, two status spinners.
+>
+> **The third callback enum finally arrived** — `Option<TabClick>`, `Stage` | `Simulation` — and
+> its shape is new: the variants ask `App` for a different *amount* of the same work, not for
+> different work. Both leave the log view; only `Stage` asks for a capture.
+>
+> **AND A NEW TEST TRAP THAT IMPERSONATES THE CODE UNDER TEST: a clipped widget is queryable but
+> not clickable.** A harness built without the caller's `ui.horizontal_wrapped` stacked the tabs
+> vertically; `query_by_label_contains` still found the Simulation tab (a clipped widget stays in
+> the accessibility tree — the same property behind both scroll-area bugs), `.click()` silently
+> did nothing, and the failing assertion read as *"the row did not report the press"*. **A widget
+> harness must reproduce the caller's layout, not merely call the function.**
+>
+> **⟶ NEXT IS `context_bar_ui`** (255, 13 fields, 7 `App` methods) — and the seven now get the
+> deferral test rather than the count. Two of them (`background_ui`, `empty_context_hint`) are
+> render helpers, not presses, and a `&self` helper can simply move with the pane. The census
+> order is in the plan.
 >
 > ### THE FUNCTION IS NOT THE UNIT — CUT INSIDE IT *(2026-08-19, `tour_prose_ui`)*
 >
@@ -765,12 +798,12 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > earlier extractions invented a report because they contained a decision the pane could not
 > make; this one was chosen *because* it contained none.
 >
-> **⟶ NEXT IS `stage_tab_bar_ui`** (280 lines, 12 fields, **2 `App` methods**) — and it goes
-> **before `context_bar_ui`** (255, 6 fields, **7 `App` methods**), inverting the coupling
-> table. Six fields wrapped around seven methods is a pane made of policy; twelve fields
-> answered by two presses (`open`, `start_simulation`) is a pane made of rendering, and several
-> of the twelve look like clusters (`sim_data`/`sim_error`/`sim_running`, `model`/`model_list`)
-> that a `&mut` struct would collapse the way `self.tour` did.
+> **`stage_tab_bar_ui` was chosen next on this reasoning** (280 lines, 12 fields, **2 `App`
+> methods**), **before `context_bar_ui`** (255, 6 fields, **7 `App` methods**), inverting the
+> coupling table: six fields wrapped around seven methods is a pane made of policy; twelve
+> fields answered by two presses is a pane made of rendering. **The ordering was right and the
+> reason was wrong** — see the deferral test above. Two presses did not make it cheap to move
+> whole; it moved by the region rule, like the one before it.
 >
 > **The module rename cost four references** (`lib.rs`, a `use`, a call, a doc link) plus
 > `git mv`, and was done in the same commit: a module named for a third of its contents teaches

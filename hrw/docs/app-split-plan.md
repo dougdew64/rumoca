@@ -160,6 +160,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-19 | **`specimen_source_ui`** + `SourceViewState` — *the reverted one, redone by hand* | **13,507** | `specimen_source.rs` (397) |
 | 2026-08-19 | **`autoplay_controls_ui`** + `autoplay_stop_heading` + two constants | **13,152** | `tour_transport.rs` (458) |
 | 2026-08-19 | **`tour_prose_ui`** — the inner scroll area of `tour_panel_ui`, + `no_tour_ui` + a constant | **12,908** | `tour_panel.rs` (735, renamed from `tour_transport.rs`) |
+| 2026-08-19 | **the tabs of `stage_tab_bar_ui`** — the span below the ▶ button, + `tab_label` + the row's teaching comment | **12,715** | `stage_tabs.rs` (493, of which 190 are tests) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -374,6 +375,101 @@ two presses is a pane made of rendering — and several of its twelve (`sim_data
 
 **So: `stage_tab_bar_ui` next**, and apply the region rule first — find the span that calls
 neither `self.open` nor `self.start_simulation` before deciding whether the whole function moves.
+
+### The tabs left `stage_tab_bar_ui` — 2026-08-19, and the `App`-method COUNT is not the test
+
+**−193 lines, first attempt, no revert.** `stage_tabs.rs` is 493 lines, 190 of them tests.
+
+**The prediction above was half right and half wrong, and the wrong half is the finding.** It
+was right that the region rule should be applied first. It was wrong that two `App` methods
+made this a candidate for moving *whole* — **it has the fewest `App` methods of any function
+left, and it still could not move whole.**
+
+**The real test is not how many `App` methods a function calls. It is whether DEFERRING the
+press changes what this frame draws.** Both of these fail it, and neither failure is visible in
+a count:
+
+- **`App::open`** sets `compiling`, clears the stage bundle and switches to the log view — and
+  the tabs *below the switcher* read all three in the same frame. Reporting the press would
+  draw one frame of the previous specimen's tabs, highlighted and enabled, over a specimen that
+  is no longer loaded.
+- **`App::start_simulation`** sets `sim_running`, and the spinner three lines later reads it.
+
+**So a press is cheap to defer only when nothing downstream of it in the same function reads
+what it wrote.** `specimen_source_ui`'s `set_tracked_identifier` and `tour_prose_ui`'s
+`select_tour` were both the last thing their functions did, which is why the pattern looked
+free. **Add the position of the call to the census, not just its existence** — a method at the
+end of a body is a callback, a method in the middle is a barrier.
+
+**The region rule then did the rest**: the 163 lines after the ▶ button call no `App` method,
+and that is the tab row proper. What stays is the chrome that genuinely needs the application —
+the Debug-mode specimen switcher, the Log button, the ▶ button, and the two status spinners —
+at about 100 lines, down from 280.
+
+**The third callback enum arrived**, as predicted after `autoplay_controls_ui` and not delivered
+by `tour_prose_ui`. `Option<TabClick>`, `Stage` | `Simulation`. **Its shape is new**: the two
+variants do not ask `App` for different *work* so much as for a different *amount* of it — both
+leave the log view, only `Stage` asks for a capture. The row still owns the selection itself
+(`&mut StageKind`), because selecting is what a tab row is.
+
+**A mutation was moved out of the module and it is behaviour-identical, which is worth the
+sentence.** The row used to clear `viewing_log` in two click handlers; it now takes the flag by
+value and lets `App` clear it. That is only safe because **both writes happened after the only
+read** — `stage_selected` is computed before any tab is drawn. Check that ordering before
+demoting any `&mut` to a value; it is not a general licence.
+
+### THE NEW MECHANICAL TRAP: a clipped widget is queryable but not clickable
+
+**Cost one debug cycle, and the failure impersonated the thing under test.** The first version
+of `the_simulation_tab_is_reported_separately_from_a_stage` built its harness without the
+`ui.horizontal_wrapped` that both real call sites wrap the row in. The tabs stacked vertically,
+Simulation fell below the viewport, and:
+
+- `query_by_label_contains("Simulation")` **found it** — a clipped widget is still in the
+  accessibility tree, the same property `CLAUDE.md` records for both scroll-area bugs.
+- `.click()` **did nothing**, silently.
+- The assertion that failed was `stage == Simulation`, which reads exactly like *"the row did
+  not report the press"* — a defect in the code under test.
+
+**So a widget harness must reproduce the caller's layout, not merely call the function.** Two
+other traps met the same day, both trivial once seen: `StageKind` has **no `Default`**, so a
+test-state struct cannot derive one (it is a position in a pipeline; there is no neutral
+position), and the moved body's `self.stages` must be rewritten **before** `self.stage`, since
+the second pattern is a prefix of the first.
+
+### What the extraction bought that no earlier test could have
+
+**The row was already covered** — `ui_tests` drives it through a real `App` and asserts that a
+tab click selects the stage, leaves the log view and reaches the Context Bar. **Every one of
+those assertions runs downstream of the row**, so they see only the consequences `App` chose to
+apply, and the distinction that matters most is invisible from there: a Simulation click and a
+stage click look identical on screen and differ only in a capture.
+
+`the_simulation_tab_is_reported_separately_from_a_stage` asserts it in two lines against a
+`StageBundle` and three bools — no worker, no channels, no compile. Its companion
+`drawing_the_row_without_clicking_reports_nothing` is the non-vacuity guard the must-fire rule
+asks for: without it, a row that reported a click every frame passes the other two.
+
+**Both `App`-side halves of the wiring were revert-checked**, and each is caught by an existing
+test: swapping the variant in `App`'s handler fails
+`clicking_a_stage_tab_reaches_the_context_bar`, and the log-clearing is
+`clicking_a_stage_tab_leaves_the_log_view`.
+
+### ⟶ NEXT: `context_bar_ui`, and its seven methods now get the deferral test
+
+255 lines, 13 fields, **7 `App` methods**. Under the old reading that made it the most expensive
+thing left; under the sharpened test above it is an open question, because **the cost is how
+many of the seven sit mid-body**. Two of them — `background_ui` and `empty_context_hint` — are
+rendering helpers rather than presses, and a rendering helper that takes `&self` can simply
+move with the pane.
+
+**Run the census in this order:** for each `self.<method>(` in the body, record (a) is it a
+press or a render helper, (b) does anything *after* it in the same function read what it wrote.
+Only the calls that answer *press* and *yes* are barriers, and only barriers force the cut to
+be inside the function.
+
+**`central_panel_ui` (602 lines, 43 fields) and `frame_ui` (299, 32) still look unreachable**,
+and still shrink as their callees leave.
 
 ### §3's seam order is WRONG for the remaining work — measured 2026-08-19
 
