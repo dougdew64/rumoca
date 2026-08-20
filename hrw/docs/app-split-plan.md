@@ -170,6 +170,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-19 | **the live-debug prologue, six copies → one `live_debug_gate`** — *the first move that made the file BIGGER* | **12,026** | *(none — it cannot leave `app.rs`)* |
 | 2026-08-20 | *(seam, not a move)* the ack path forwarded to `live_debug_poll` + `live_debug_gate_at` — *bought the order test; 8 lines of it are production* | 12,132 | *(none)* |
 | 2026-08-20 | **the four compile replays → `CompileViewCaches`** — *a lifetime decision, and it found a second defect* | 12,305 | `compile_caches.rs` (101), `stage_caches.rs` 99 → 120 |
+| 2026-08-20 | *(test split, not a move)* the four ack verdicts become four named tests — *zero production lines; it expired a second comment that had been a no-op for five days* | 12,356 | *(none)* |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -991,6 +992,43 @@ expires silently when the seam it describes is added.** Not done here, under the
 the four call sites were left pointing at the real constant so this change asserts nothing new
 about them.
 
+### ✅ DONE 2026-08-20 — the four verdicts are four tests, and a second comment expired with them
+
+**+51 lines, zero production lines.** `an_armed_verdict_starts_the_run_and_stays_quiet`,
+`a_disabled_breakpoint_spawns_and_names_the_cause`,
+`a_stale_bridge_reply_claims_nothing_and_names_its_fix` and
+`a_timed_out_arm_claims_nothing_and_says_so` — one per verdict of
+[`bridge::check_breakpoint_ack_at`], each against its own `std::env::temp_dir()` ack file, in the
+shape `the_arming_badge_survives_the_frame_its_ack_lands` already used.
+
+**The split is what made the must-fire evidence legible, and that is the whole purchase.** Three
+perturbations, and each one lands on a *named* subset instead of a line number:
+
+| perturbation | fails |
+|---|---|
+| `live_breakpoint_armed = ack.is_armed()` → `= true` (#71's fiction) | disabled, stale, timeout — **not** armed |
+| `BreakpointAck::Armed => {}` → `=> self.notify("armed")` | armed only |
+| the `Unreportable` notice stops saying `npm run build` | stale only |
+
+The old single test could only report *"app.rs:8057"*. **A must-fire perturbation's value is in
+which tests it does NOT break**, and one function covering four paths throws that away — the first
+perturbation above is the interesting one precisely because `Armed` stays green under it.
+
+**A SECOND EXPIRED LINE CAME OUT WITH THE FIRST, AND IT HAD BEEN A NO-OP LONGER.** The old body
+carried `app.prewarm = Prewarm::Done;` under *"Keep the pre-warm out of the way; it competes for
+the same ack file."* The line arrived with the test on **2026-08-07** (`1e2fcb23`) and stopped
+meaning anything on **2026-08-15**, when `3037fca1` pinned `prewarm: Prewarm::Done` in
+`App::test_with_sender` to stop harnesses arming a real breakpoint in Doug's editor — so for five
+days it had been assigning a value to itself, under a comment describing a competition the
+constructor had already ended. **Two expiries, two causes**: the ack-file sentence expired when a
+seam was added *here*, the pre-warm line when a default changed *elsewhere*. The second kind is
+worse, because nothing in this file changed on the day it stopped being true. `#[test]` bodies get
+no dead-store lint, so both survived a `cargo clippy --all-targets` every session since.
+
+**And a doc that had been correct became a citation to fix**: `ideas.md` #71 item 4 states the
+one-test rationale as fact. Corrected in place rather than deleted, per the standing rule, since
+what expired it is the finding.
+
 ### ⟶ NEXT — and the remaining `_ui` census says the job has changed shape
 
 **Measured 2026-08-19, after `equation_sheet_ui`.** Every rendering method still on `App`, with its
@@ -1086,9 +1124,11 @@ routers (~1,100 lines between them) and everything that is not a pane at all.
      answer. Box below.
    - **The four `live_debug_lifecycle` citations**, which describe a removed mechanism. Needs the
      behaviour established before the prose is rewritten. **The only accuracy item left in this
-     cluster**, and the one with a real question in front of it.
-   - **Split `a_timed_out_arm_claims_nothing_and_says_so` into its four paths** — the successor
-     the ack-path seam left, and the cheapest thing on this list.
+     cluster**, and the one with a real question in front of it. **Now the only item left on this
+     list**, so the next session either answers its question or starts a router.
+   - ~~**Split `a_timed_out_arm_claims_nothing_and_says_so` into its four paths** — the successor
+     the ack-path seam left, and the cheapest thing on this list.~~ ✅ **DONE 2026-08-20** — four
+     named tests, and the perturbation table is the purchase. Box above.
 
 **The rhythm decision the plan asked for is now forced.** The loop's cheap supply is exhausted in
 both directions: no leaf types, no panes. The next *extraction* is a router, and a router is the

@@ -751,16 +751,16 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > `equation_sheet_view.rs` (446, 208 of them tests)**, and **`report_sub_view_row_ui` →
 > `report_sub_view.rs` (650, 428 of them tests)**, and **the four compile replays →
 > `compile_caches.rs` (101)**.
-> **app.rs 14,437 → 12,305** (11,857 after `report_sub_view`, plus the alias-defect guard below,
-> plus **+41 from the live-debug deduplication, +113 from the ack-path seam and +173 from the
-> cache-lifetime split, which are the finding rather than a slip** — an accuracy or testability
-> item is paid for *in* `app.rs`, so it cannot be scored on `app.rs`'s line count; see the boxes
-> below).
+> **app.rs 14,437 → 12,356** (11,857 after `report_sub_view`, plus the alias-defect guard below,
+> plus **+41 from the live-debug deduplication, +113 from the ack-path seam, +173 from the
+> cache-lifetime split and +51 from the ack-verdict test split, which are the finding rather than
+> a slip** — an accuracy or testability item is paid for *in* `app.rs`, so it cannot be scored on
+> `app.rs`'s line count; see the boxes below).
 > Progress
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest.
 >
-> ### ⟶ NEXT: NOT AN EXTRACTION — three follow-ups, then a router gets a whole session
+> ### ⟶ NEXT: ONE FOLLOW-UP LEFT, THEN A ROUTER GETS A WHOLE SESSION
 >
 > **The census is spent.** Every `_ui` method is extracted or judged not worth it, so the cheap
 > supply is gone in both directions — no leaf types, no panes. What is left in `app.rs` is
@@ -769,15 +769,17 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > moves whole; the cut is inside, and finding it is a whole fresh session. **Do not start one on a
 > session that has already spent context.**
 >
-> **Recommended next instead — the bounded items this cluster left.** Two are **DONE** (boxes
-> below: the ack-path seam, and the cache lifetime). **Two remain:**
+> **Recommended next instead — the bounded items this cluster left.** Three are **DONE** (boxes
+> below: the ack-path seam, the cache lifetime, and the four-verdict test split). **One remains:**
 >
 > - **The four docs citing `live_debug_lifecycle`**, a function that no longer exists, describing
 >   a safety net that was deliberately removed. **The last accuracy item in the cluster**, and a
 >   question before it is an edit: correcting them means first establishing what, if anything, now
 >   releases a breakpoint left by a session that never started.
-> - **Split `a_timed_out_arm_claims_nothing_and_says_so` into its four paths**, now that the ack
->   path is a parameter and they need not share one file. The cheapest thing left.
+>
+> With that answered the cluster is empty and the router is what is left, so **the next session
+> either answers that question or starts a router** — and a router wants a session that has spent
+> nothing.
 >
 > Details and verdicts in the plan.
 >
@@ -863,11 +865,31 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > perturbation (both polls present) fails on `spawn_live` instead, so it catches double-polling too.
 >
 > **AND IT EXPIRED A COMMENT THAT WAS A MEASUREMENT.**
-> `a_timed_out_arm_claims_nothing_and_says_so` tests four paths in one function because *"as
+> `a_timed_out_arm_claims_nothing_and_says_so` tested four paths in one function because *"as
 > separate tests they would race for that file"* — **true until this change, and nothing would have
 > said so.** Same shape as the `equation_sheet_ui` finding: a comment explaining why a test cannot
 > be split is someone's coupling measurement, and **adding the seam it describes expires it
-> silently.** Splitting it into four named tests is the cheapest thing left in this cluster.
+> silently.** ✅ **Split 2026-08-20** — box below.
+>
+> ### A MUST-FIRE PERTURBATION'S VALUE IS IN WHICH TESTS IT DOES *NOT* BREAK
+> *(2026-08-20, the four ack verdicts became four named tests — +51 lines, zero production)*
+>
+> **One test per verdict of `bridge::check_breakpoint_ack_at`** (`Armed`, `NotArmed`,
+> `Unreportable`, `Pending`), each against its own `temp_dir()` ack file. Three perturbations were
+> run, and each lands on a *named* subset: reinstating `live_breakpoint_armed = true` fails three
+> and **leaves `Armed` green**; making the `Armed` arm `notify` fails only that one; blunting the
+> `Unreportable` notice fails only the stale one. **The single test could report only a line
+> number**, so the discrimination that makes a perturbation informative was the thing the split
+> bought — not the naming.
+>
+> **AND A SECOND EXPIRED LINE CAME OUT WITH IT, WITH A DIFFERENT CAUSE.** The body carried
+> `app.prewarm = Prewarm::Done;` under *"it competes for the same ack file"* — a **no-op since
+> 2026-08-15**, when the fix for harnesses arming a real breakpoint pinned that same value in
+> `App::test_with_sender`. **The ack-file sentence expired because a seam was added HERE; the
+> pre-warm line expired because a default changed ELSEWHERE** — and the second kind is worse,
+> because nothing in the file changed on the day it stopped being true, so no review of that
+> commit could have caught it. `#[test]` bodies get no dead-store lint; both survived every
+> `cargo clippy --all-targets` since.
 >
 > ### DEDUPLICATION IS NOT EXTRACTION, AND IT MADE `app.rs` BIGGER
 > *(2026-08-19, `App::live_debug_gate` — the six-copy live-debug prologue)*

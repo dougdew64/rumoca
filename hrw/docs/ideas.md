@@ -4305,6 +4305,20 @@ answer written into this file as fact.
    half separately** — the armed assertion and the notice assertion were each shown to fail on
    the old code, since the first would otherwise mask the second.
 
+   **UPDATE 2026-08-20 — it is four tests now, and the parenthesis above expired.** Giving
+   `App::live_debug_poll` an `ack_path` parameter (`#74`'s ack-path seam) removed the shared
+   file, so each verdict of `bridge::check_breakpoint_ack_at` drives a path nobody else reads:
+   `an_armed_verdict_starts_the_run_and_stays_quiet` (`Armed`),
+   `a_disabled_breakpoint_spawns_and_names_the_cause` (`NotArmed`),
+   `a_stale_bridge_reply_claims_nothing_and_names_its_fix` (`Unreportable`), and this one
+   (`Pending`). A failure now names the verdict rather than a line number.
+   **Must-fire re-verified with three perturbations**: restoring `live_breakpoint_armed = true`
+   fails the last three by name and leaves `Armed` green; making the `Armed` arm `notify` fails
+   only the first; and blunting the `Unreportable` notice so it stops saying `npm run build`
+   fails only the third. **The corrected sentence is kept above rather than deleted**, because
+   the expiry is the finding: a comment explaining why a test cannot be split is a coupling
+   measurement, and adding the seam it describes retires it silently.
+
 **The accepted trade, recorded because it is a real regression in bookkeeping:** an ack arriving
 *after* the timeout leaves a real breakpoint HRW no longer tracks. That is the honest side of
 the trade — **HRW must not claim state it cannot see** — and `HRW: Clear Armed Breakpoints`

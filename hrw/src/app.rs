@@ -7964,39 +7964,46 @@ mod tests {
     /// **An ack and a timeout are different outcomes, and only one of them arms
     /// a breakpoint** (`docs/ideas.md` #71).
     ///
-    /// Both paths used to be one branch: `if acked || timed_out` set
+    /// Both used to be one branch: `if acked || timed_out` set
     /// `live_breakpoint_armed = true` and spawned the thread. With no extension
     /// installed — the state of any fresh clone, since `out/` is gitignored —
     /// HRW recorded a breakpoint that did not exist, ran the algorithm to
     /// completion, and **said nothing**. The claim also left the screen: the
     /// context capture emits `breakpoint_armed`.
     ///
-    /// The timeout still spawns, which is deliberate: a wedged extension must
-    /// not deadlock the UI. What it may not do is *pass for success*.
+    /// # The four verdicts, and why they are four tests
     ///
-    /// Both paths share the single `.hrw-bridge/breakpoint-ack.json`, so they
-    /// live in one test for the same reason `prewarm_arms_awaits_ack_then_removes`
-    /// above does — as separate tests they would race for that file.
+    /// [`bridge::check_breakpoint_ack_at`] reports one of four things, and
+    /// [`App::live_debug_poll`] owes each a different pair of answers — *does a
+    /// breakpoint exist*, and *what is the user told*. This test holds `Armed`;
+    /// its siblings hold the other three:
+    /// [`a_disabled_breakpoint_spawns_and_names_the_cause`] (`NotArmed`),
+    /// [`a_stale_bridge_reply_claims_nothing_and_names_its_fix`]
+    /// (`Unreportable`) and [`a_timed_out_arm_claims_nothing_and_says_so`]
+    /// (`Pending`, which is #71's own path).
+    ///
+    /// **They were one `#[test]` until 2026-08-20**, and that function's doc
+    /// said why: *"Both paths share the single
+    /// `.hrw-bridge/breakpoint-ack.json` … as separate tests they would race for
+    /// that file."* **That sentence was a coupling measurement, and the
+    /// `ack_path` parameter added to [`App::live_debug_poll`] expired it** —
+    /// each verdict now drives a file nobody else reads, so a failure names the
+    /// verdict rather than a line number, and no path inherits the state the
+    /// previous one left behind.
     #[test]
-    fn a_timed_out_arm_claims_nothing_and_says_so() {
+    fn an_armed_verdict_starts_the_run_and_stays_quiet() {
         let ctx = egui::Context::default();
         let (mut app, _tx) = App::test_with_sender();
-        let ack = std::path::Path::new(bridge::BREAKPOINT_ACK_FILE);
-        let _ = std::fs::remove_file(ack);
+        let ack = std::env::temp_dir().join("hrw-verdict-armed-ack.json");
+        let _ = std::fs::remove_file(&ack);
 
-        // Keep the pre-warm out of the way; it competes for the same ack file.
-        app.prewarm = Prewarm::Done;
-
-        // --- Path 1: the extension reports a breakpoint IS in place. ---
-        //
         // `#75`: the evidence is the *verdict*, not the reply. This payload used
-        // to read `{"acked":true}`, which now means "cannot say" — see Path 3.
-        std::fs::write(ack, r#"{"version":2,"breakpointPresent":true}"#).unwrap();
-        app.notice = None;
-        app.live_breakpoint_armed = false;
+        // to read `{"acked":true}`, which now means "cannot say" — see
+        // `a_stale_bridge_reply_claims_nothing_and_names_its_fix`.
+        std::fs::write(&ack, r#"{"version":2,"breakpointPresent":true}"#).unwrap();
         app.pending_live_debug = Some((std::time::Instant::now(), PendingLiveDebug::Reduction));
 
-        let action = app.live_debug_poll(&ctx, PendingLiveDebug::Reduction, ack);
+        let action = app.live_debug_poll(&ctx, PendingLiveDebug::Reduction, &ack);
 
         assert!(
             matches!(action, LiveDebugAction::SpawnLive),
@@ -8008,29 +8015,44 @@ mod tests {
         );
         assert_eq!(
             app.notice, None,
-            "the happy path must stay quiet — a notice on every Debug click would \
-             train the eye to ignore the one that matters"
+            "the happy path must stay quiet \u{2014} a notice on every Debug click \
+             would train the eye to ignore the one that matters"
         );
 
-        // --- Path 1b: the extension replies that NOTHING is armed. ---
-        //
-        // The reachable case is a disabled breakpoint: one click of VS Code's
-        // "Disable All Breakpoints" and the old code armed nothing, acked true,
-        // and ran to completion in silence.
+        let _ = std::fs::remove_file(&ack);
+    }
+
+    /// **The bridge replied that nothing is armed, so HRW may not say otherwise**
+    /// — the `NotArmed` verdict of the four in
+    /// [`an_armed_verdict_starts_the_run_and_stays_quiet`].
+    ///
+    /// The reachable case is a disabled breakpoint: one click of VS Code's
+    /// "Disable All Breakpoints" and the pre-`#75` code armed nothing, acked
+    /// true, and ran to completion in silence.
+    ///
+    /// **The run still starts.** Refusing to run would be a worse answer than
+    /// running unstepped — the recorded animation is still worth watching, and
+    /// it is what the user asked for.
+    #[test]
+    fn a_disabled_breakpoint_spawns_and_names_the_cause() {
+        let ctx = egui::Context::default();
+        let (mut app, _tx) = App::test_with_sender();
+        let ack = std::env::temp_dir().join("hrw-verdict-disabled-ack.json");
+        let _ = std::fs::remove_file(&ack);
+
         std::fs::write(
-            ack,
+            &ack,
             r#"{"version":2,"breakpointPresent":false,"reason":"a breakpoint exists at live_trace.rs:173 but is DISABLED"}"#,
         )
         .unwrap();
-        app.notice = None;
-        app.live_breakpoint_armed = false;
         app.pending_live_debug = Some((std::time::Instant::now(), PendingLiveDebug::Reduction));
 
-        let action = app.live_debug_poll(&ctx, PendingLiveDebug::Reduction, ack);
+        let action = app.live_debug_poll(&ctx, PendingLiveDebug::Reduction, &ack);
 
         assert!(
             matches!(action, LiveDebugAction::SpawnLive),
-            "it must still spawn — refusing to run would be a worse answer than running unstepped"
+            "it must still spawn \u{2014} refusing to run would be a worse answer \
+             than running unstepped"
         );
         assert!(
             !app.live_breakpoint_armed,
@@ -8043,22 +8065,36 @@ mod tests {
         assert!(
             notice.contains("DISABLED"),
             "the bridge's reason must reach the user, not be replaced by a generic \
-             failure — the cause is the whole value here, got: {notice}"
+             failure \u{2014} the cause is the whole value here, got: {notice}"
         );
 
-        // --- Path 1c: a stale extension replies in the pre-#75 format. ---
-        //
-        // Not hypothetical: on 2026-08-08 this machine ran a build twelve days
-        // behind its source, because `git pull` runs no `tsc`. Reading it as
-        // armed would reinstate #71's fiction; reading it as a plain failure
-        // would blame the wrong thing. It gets its own message.
-        std::fs::write(ack, r#"{"acked":true}"#).unwrap();
-        app.notice = None;
-        app.live_breakpoint_armed = false;
+        let _ = std::fs::remove_file(&ack);
+    }
+
+    /// **A reply in the pre-`#75` format cannot say what it armed, and that is
+    /// its own answer** — the `Unreportable` verdict of the four in
+    /// [`an_armed_verdict_starts_the_run_and_stays_quiet`].
+    ///
+    /// Not hypothetical: on 2026-08-08 this machine ran a build twelve days
+    /// behind its source, because `git pull` runs no `tsc`. Reading it as armed
+    /// would reinstate #71's fiction; reading it as a plain failure would blame
+    /// the wrong thing. It gets its own message, and that message names the fix.
+    #[test]
+    fn a_stale_bridge_reply_claims_nothing_and_names_its_fix() {
+        let ctx = egui::Context::default();
+        let (mut app, _tx) = App::test_with_sender();
+        let ack = std::env::temp_dir().join("hrw-verdict-stale-ack.json");
+        let _ = std::fs::remove_file(&ack);
+
+        std::fs::write(&ack, r#"{"acked":true}"#).unwrap();
         app.pending_live_debug = Some((std::time::Instant::now(), PendingLiveDebug::Reduction));
 
-        let _ = app.live_debug_poll(&ctx, PendingLiveDebug::Reduction, ack);
+        let action = app.live_debug_poll(&ctx, PendingLiveDebug::Reduction, &ack);
 
+        assert!(
+            matches!(action, LiveDebugAction::SpawnLive),
+            "a reply is a reply \u{2014} the wait ends here, however uninformative it was"
+        );
         assert!(
             !app.live_breakpoint_armed,
             "an ack that cannot say what it armed is not evidence of anything"
@@ -8069,32 +8105,47 @@ mod tests {
             .expect("a stale bridge must announce itself rather than fail silently");
         assert!(
             notice.contains("npm run build"),
-            "the notice must name the fix — the whole point is that a stale \
+            "the notice must name the fix \u{2014} the whole point is that a stale \
              extension is otherwise invisible, got: {notice}"
         );
 
-        // --- Path 2: nothing acks, and the wait expires. ---
-        let _ = std::fs::remove_file(ack);
-        app.notice = None;
-        app.live_breakpoint_armed = false;
+        let _ = std::fs::remove_file(&ack);
+    }
+
+    /// **Nothing acked and the wait expired: the run starts, and HRW claims
+    /// nothing** — the `Pending` verdict of the four in
+    /// [`an_armed_verdict_starts_the_run_and_stays_quiet`], and the path
+    /// `docs/ideas.md` #71 is named after.
+    ///
+    /// The timeout still spawns, which is deliberate: a wedged extension must
+    /// not deadlock the UI. What it may not do is *pass for success* — with no
+    /// extension installed, the old `if acked || timed_out` branch recorded a
+    /// breakpoint that did not exist and said nothing about it.
+    #[test]
+    fn a_timed_out_arm_claims_nothing_and_says_so() {
+        let ctx = egui::Context::default();
+        let (mut app, _tx) = App::test_with_sender();
+        // Nothing ever writes this file: the absence of a reply IS the input.
+        let ack = std::env::temp_dir().join("hrw-verdict-timeout-ack.json");
+        let _ = std::fs::remove_file(&ack);
 
         // Backdate the arm past the timeout. `expect` rather than a fallback:
-        // silently landing on "not yet timed out" would make this path vacuous,
+        // silently landing on "not yet timed out" would make this test vacuous,
         // which is the failure mode the must-fire rule exists to refuse.
         let long_ago = std::time::Instant::now()
             .checked_sub(LIVE_DEBUG_ACK_TIMEOUT * 2)
             .expect("the process must have been running longer than the ack timeout");
         app.pending_live_debug = Some((long_ago, PendingLiveDebug::Reduction));
 
-        let action = app.live_debug_poll(&ctx, PendingLiveDebug::Reduction, ack);
+        let action = app.live_debug_poll(&ctx, PendingLiveDebug::Reduction, &ack);
 
         assert!(
             matches!(action, LiveDebugAction::SpawnLive),
-            "the timeout must still spawn — a missing extension may not deadlock the UI"
+            "the timeout must still spawn \u{2014} a missing extension may not deadlock the UI"
         );
         assert!(
             !app.live_breakpoint_armed,
-            "nothing acked, so nothing is armed — this is the claim #71 was about"
+            "nothing acked, so nothing is armed \u{2014} this is the claim #71 was about"
         );
         let notice = app
             .notice
