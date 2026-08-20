@@ -726,9 +726,11 @@ mod tests {
         assert!(!anim.is_empty());
     }
 
-    /// A recorded animation must report that no live session is running — see
-    /// `recorded_animation_reports_no_live_session` in `matching_anim` for why
-    /// `live_debug_lifecycle` depends on this.
+    /// A recorded animation must report that no live session is running, so the
+    /// Debug button and the playback controls stay enabled — see
+    /// `recorded_animation_reports_no_live_session` in `matching_anim` for the
+    /// full account, **including the correction**: this used to say
+    /// `live_debug_lifecycle` depends on it, and that function no longer exists.
     #[test]
     fn recorded_animation_reports_no_live_session() {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();

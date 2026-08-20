@@ -719,6 +719,12 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
   answer to "is a live session still running?" is no — and `live_debug_lifecycle` relies on it as a
   breakpoint-cleanup safety net, releasing an armed breakpoint when no live session is coming. With
   `false` that net was inert for two of the three views, so a stray armed breakpoint could leak.
+  **Corrected 2026-08-20 — everything after the first dash is now false, and the guard it
+  produced never worked.** The safety net was deleted on 2026-08-08 (`docs/ideas.md` #74) and
+  `live_debug_lifecycle` with it; and measured that day, the two per-view tests this entry
+  motivated **pass with `live_done` flipped back to `false`**, because `live_state` answers from
+  `is_live()` before reading the flag. `true` remains correct on the honesty argument alone. See
+  the 2026-08-20 entry at the end of this file.
 - **2026-07-27 — UI rule: controls are enabled/disabled, never shown/hidden (`LiveState`).** Doug:
   "Buttons should not be disappearing. Instead, buttons should be disabled (or enabled as
   appropriate)." A control that vanishes gives no clue the action exists or why it is unavailable,
@@ -3575,3 +3581,49 @@ wrong guesses preceded the answer (`nav`, `selected`, `ui_mode`), and the fourth
 chain's guards. **The lesson is the one already recorded for the divider — instrument rather than
 theorise** — with a second half worth adding: *a test whose precondition fails is a finding, not
 an obstacle.* The temptation was to fix the fixture until the precondition passed.
+
+## 2026-08-20 — five docs described a deleted safety net, and the guard two of them cited was vacuous
+
+**The stale symbol was `live_debug_lifecycle`**, named by `matching_anim.rs` twice, `playback.rs`
+and `tarjan_anim.rs`, each describing a breakpoint-cleanup safety net that was deliberately deleted
+on 2026-08-08 (`docs/ideas.md` #74). `app-split-plan.md` counted **four** sites; there are **five**
+— `playback.rs`'s test doc describes the same mechanism without naming the function, so the grep
+that found the others missed it. **A stale-mechanism sweep cannot be a symbol grep**, which is the
+transferable half.
+
+**The plan called this "a question about behaviour" that had to be established before the prose
+could be rewritten. It was already answered in the repository, twice**, and needed verifying rather
+than establishing: `docs/ideas.md` #74 names the three releases it deliberately left ungated, and
+the comment on `App::live_breakpoint_armed` lists the same three. Confirmed against the call sites
+— five `start_live`-returned-`None` releases in the `*_anim_ui` panes, two specimen-change releases
+(`open` and the `Compiled` reselect branch), and `release_live_breakpoint_at_exit` — plus the
+manual `HRW: Clear Armed Breakpoints` for the late-ack case HRW cannot see. **None of the eight
+reads a `LiveState`.** That is the whole difference: the deleted net asked the *animation* "is
+anything running?", and every surviving release asks the *app* "was I told a breakpoint exists?" —
+a guess about the world replaced by a record of what the bridge said.
+
+**And the correction that matters more than the prose: the must-fire guard was vacuous.**
+`matching_anim` and `tarjan_anim` each carry a `recorded_animation_reports_no_live_session`, written
+after the 2026-07-27 regression in which `live_done` was `false` for two of three views. Flipping
+`Playback::recorded` back to `false` and running the fast suite fails **exactly one** test —
+`playback::tests::a_recorded_animation_reports_no_running_session`, which reads the flag directly.
+**Both purpose-written guards stay green**, because `live_state` returns `Idle` from `is_live()`
+being false and never consults `live_finished()`.
+
+**They are kept, with corrected docs, because they hold a real property one layer up**: a recorded
+view must report `Idle` or `LiveState::is_busy` disables its Debug button and playback controls
+forever. `alias_anim` and `ic_plan_anim` hardcode `Idle`, and `connection_anim` still carried a
+hardcoded stub *after* gaining a live path — that is the class these catch. What changed is what
+they claim to catch.
+
+**The shape to look for: a test named for a field it cannot see.** Both were written at the view
+layer for a defect in a type two layers down, and the abstraction between them (`live_state`
+short-circuiting on `is_live()`) makes the flag unreachable. Nothing about the test reads as wrong;
+it asserts a true thing and passes for a reason unrelated to its name. **Ask which line of the
+implementation the assertion actually exercises** — the same question the ack-path seam turned up
+in a different dress, where the property under test belonged to the gate and not the poll.
+
+**`docs/architecture.md` needed no change** and is worth naming as the counter-example: its account
+of the live-debug path already says the session end does not release the breakpoint and that the
+code which did is deleted. It was updated when the behaviour changed; the five source comments were
+not, because nothing links a doc comment to the field whose behaviour it describes.

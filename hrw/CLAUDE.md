@@ -760,28 +760,62 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest.
 >
-> ### ⟶ NEXT: ONE FOLLOW-UP LEFT, THEN A ROUTER GETS A WHOLE SESSION
+> ### ⟶ NEXT: THE CLUSTER IS EMPTY — A ROUTER GETS THE WHOLE NEXT SESSION
 >
-> **The census is spent.** Every `_ui` method is extracted or judged not worth it, so the cheap
-> supply is gone in both directions — no leaf types, no panes. What is left in `app.rs` is
-> `central_panel_ui` (~620 lines, 43 fields) and `frame_ui` (~483, 32), and **a router's coupling
-> is not incidental**: it reads 43 fields *because* its job is to decide which pane runs. Neither
-> moves whole; the cut is inside, and finding it is a whole fresh session. **Do not start one on a
-> session that has already spent context.**
+> **The census is spent and so are the follow-ups.** Every `_ui` method is extracted or judged not
+> worth it, so the cheap supply is gone in both directions — no leaf types, no panes — and all four
+> bounded items the live-debug cluster left are **DONE** (boxes below: the ack-path seam, the cache
+> lifetime, the four-verdict test split, and the `live_debug_lifecycle` citations).
 >
-> **Recommended next instead — the bounded items this cluster left.** Three are **DONE** (boxes
-> below: the ack-path seam, the cache lifetime, and the four-verdict test split). **One remains:**
->
-> - **The four docs citing `live_debug_lifecycle`**, a function that no longer exists, describing
->   a safety net that was deliberately removed. **The last accuracy item in the cluster**, and a
->   question before it is an edit: correcting them means first establishing what, if anything, now
->   releases a breakpoint left by a session that never started.
->
-> With that answered the cluster is empty and the router is what is left, so **the next session
-> either answers that question or starts a router** — and a router wants a session that has spent
-> nothing.
+> **What is left in `app.rs` is `central_panel_ui` (~620 lines, 43 fields) and `frame_ui` (~483,
+> 32), and a router's coupling is not incidental**: it reads 43 fields *because* its job is to
+> decide which pane runs. Neither moves whole; the cut is inside, the way `tour_prose_ui` and the
+> `stage_tab_bar_ui` tabs were cut, and finding it is a whole fresh session with no guarantee it
+> ends green. **Do not start one on a session that has already spent context** — that is now the
+> only thing on the list, so a session that has spent context should do maintenance and `/clear`.
 >
 > Details and verdicts in the plan.
+>
+> ### A TEST CAN BE NAMED FOR A FIELD IT CANNOT SEE
+> *(2026-08-20, the `live_debug_lifecycle` citations — five sites, not four)*
+>
+> **Three corrections, in ascending order of value**, and only the third is about code:
+>
+> - **FIVE stale sites, not the four the plan counted.** `playback.rs`'s test doc describes the
+>   deleted safety net *without naming the function*, so the symbol grep that found the other four
+>   walked past it. **A stale-mechanism sweep cannot be a symbol grep** — prose describing a thing
+>   outlives prose naming it.
+> - **The question in front of the edit was already answered in the repository, twice.** The plan
+>   priced this as research — *"establishing what, if anything, now releases a breakpoint left by a
+>   session that never started"* — and `docs/ideas.md` #74 plus the comment on
+>   `App::live_breakpoint_armed` both name the same three: a failed `start_live`, a specimen
+>   change, app exit. Verified against the call sites (five, two and one respectively, plus the
+>   manual `HRW: Clear Armed Breakpoints`). **None of them reads a `LiveState`**, and that is the
+>   substance rather than the symbol: the deleted net asked the *animation* "is anything running?",
+>   and every survivor asks the *app* "was I told a breakpoint exists?" — a guess about the world
+>   replaced by a record of what the bridge said. **Grep for the answer before booking a session to
+>   find it.**
+> - **THE MUST-FIRE GUARD TWO OF THOSE DOCS CITED COULD NOT FIRE.** Flipping `Playback::recorded`'s
+>   `live_done` to `false` fails **exactly one** test in the fast suite, and it is neither of the
+>   two written for the job: `matching_anim` and `tarjan_anim`'s
+>   `recorded_animation_reports_no_live_session` both **stay green**, because `live_state` returns
+>   `Idle` from `is_live()` being false and never consults the flag.
+>   `playback::tests::a_recorded_animation_reports_no_running_session` is the one that fails.
+>
+> **The shape, which is the transferable part: a test written at the view layer for a defect two
+> types down, with an abstraction between them that short-circuits.** Nothing about it reads as
+> wrong — it asserts a true thing and passes, for a reason unrelated to its name. **Ask which line
+> of the implementation the assertion actually exercises**, the same question the ack-path seam
+> raised in a different dress (the property belonged to the gate, not the poll). Both tests are
+> **kept with corrected docs**, because they hold a real property one layer up: a recorded view
+> must report `Idle` or `is_busy` disables its Debug button forever, and `connection_anim` carried
+> a hardcoded `Idle` stub *after* gaining a live path.
+>
+> **And the counter-example is worth as much: `docs/architecture.md` needed no change.** Its
+> account of the live-debug path already says the session end does not release the breakpoint and
+> that the code which did is deleted — it was updated when the behaviour changed. **The five source
+> comments were not, because nothing links a doc comment to the field whose behaviour it
+> describes.**
 >
 > ### THE LIFETIME QUESTION WAS ASKED ABOUT THE RIGHT FIELD AND HAD THE WRONG SUBJECT
 > *(2026-08-20, `CompileViewCaches`)*

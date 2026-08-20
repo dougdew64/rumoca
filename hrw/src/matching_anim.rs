@@ -223,8 +223,12 @@ impl MatchingAnimation {
         Self {
             // `Playback::recorded` sets `live_done` true, which is the honest
             // answer to "is a live session still running?" for a recorded
-            // animation — and what `live_debug_lifecycle` relies on to release a
-            // breakpoint armed for a session that is never coming.
+            // animation. **The second half of this comment was wrong and is
+            // corrected here**: it said `live_debug_lifecycle` relies on the
+            // flag to release a breakpoint armed for a session that is never
+            // coming. That function is gone, that safety net was deliberately
+            // deleted (`docs/ideas.md` #74), and nothing reads the flag on a
+            // recorded playback at all — see `Playback::recorded`.
             playback: Playback::recorded(result.frames, FRAME_INTERVAL),
             n_eq: mat.n_eq(),
             n_var: mat.n_var(),
@@ -858,13 +862,23 @@ mod tests {
         assert!(anim.position().1 > 3); // at least TryEquation + Explore + Assign per eq
     }
 
-    /// A recorded animation must report that no live session is running.
+    /// A recorded animation must report that no live session is running, so the
+    /// Debug button and the playback controls stay enabled.
     ///
-    /// `live_debug_lifecycle` uses this as its breakpoint-cleanup safety net: an
-    /// armed breakpoint with no live session coming has to be released. It was
-    /// once `false` here, which made that net inert. Now guaranteed by
-    /// `Playback::recorded` for every view at once, but asserted here too —
-    /// this is the view whose regression prompted it.
+    /// `LiveState::is_busy` gates both, so a view that reported `Running` over
+    /// recorded frames would be permanently inert. That is the property this
+    /// holds, and it is per-view on purpose: `alias_anim` and `ic_plan_anim`
+    /// hardcode `Idle`, and `connection_anim`'s did too **after it had a live
+    /// path**, which is the kind of stub this catches.
+    ///
+    /// **It does NOT guard `live_done`, and its previous doc claimed it did.**
+    /// That version said the flag fed `live_debug_lifecycle`'s breakpoint-cleanup
+    /// safety net and that being `false` here once made the net inert. The
+    /// function is gone and the net was deliberately deleted (`docs/ideas.md`
+    /// #74) — and measured 2026-08-20, this test **passes** with
+    /// `Playback::recorded` flipped to `false`, because `live_state` decides
+    /// from `is_live()` before it ever reads the flag. The one test that fails
+    /// is `playback::tests::a_recorded_animation_reports_no_running_session`.
     #[test]
     fn recorded_animation_reports_no_live_session() {
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();

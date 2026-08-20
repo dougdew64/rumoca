@@ -939,6 +939,34 @@ started. That is a question about behaviour, not a rename, and answering it wron
 one false statement with another. **A dangling symbol reference is a cheap fix; a dangling
 *mechanism* description is not.**
 
+### ✅ DONE 2026-08-20 — and the count was five, the question was already answered, and the guard was vacuous
+
+**Three corrections to the box above, in ascending order of value.** Full account in
+`DECISIONS.md`, 2026-08-20.
+
+- **FIVE sites, not four.** `playback.rs`'s test doc — *"which is what lets the lifecycle release a
+  breakpoint armed for a session that never began"* — describes the same deleted mechanism without
+  naming the function, so the symbol grep that found the other four walked straight past it.
+  **A stale-mechanism sweep cannot be a symbol grep**, because prose describing a thing outlives
+  prose naming it.
+- **The question needed verifying, not establishing.** It was answered in the repository twice
+  already: `docs/ideas.md` #74 names the three releases it deliberately left ungated, and the
+  comment on `App::live_breakpoint_armed` lists the same three. Confirmed against the call sites —
+  five spawn-failure releases in the `*_anim_ui` panes, two specimen-change releases, and
+  `release_live_breakpoint_at_exit`, plus the manual `HRW: Clear Armed Breakpoints`. **None reads a
+  `LiveState`**, which is the substance: the deleted net asked the animation *"is anything
+  running?"* and every survivor asks the app *"was I told a breakpoint exists?"*. **Grep for the
+  answer before booking a session to find it** — the plan had priced this as research.
+- **The must-fire guard those docs cited could not fire.** Flipping `Playback::recorded`'s
+  `live_done` to `false` and running the fast suite fails **exactly one** test, and it is not
+  either of the two named for the job: `matching_anim` and `tarjan_anim`'s
+  `recorded_animation_reports_no_live_session` both stay green, because `live_state` returns `Idle`
+  from `is_live()` being false and never consults the flag. **A test named for a field it cannot
+  see** — written at the view layer for a defect two types down, with an abstraction between them
+  that short-circuits. Both are kept with corrected docs (they hold a real property one layer up),
+  and `playback::tests::a_recorded_animation_reports_no_running_session` is named as the guard that
+  actually fires.
+
 ### THE TEST THE GATE WANTED IS BLOCKED BY A SEAM THAT ALREADY EXISTS ONE LAYER DOWN
 
 **The property worth asserting is the ORDER** — `is_arming` must be read *before* `live_debug_poll`,
@@ -1122,10 +1150,13 @@ routers (~1,100 lines between them) and everything that is not a pane at all.
      `self.frames` currently get two different ones. A question first, an edit second.~~
      ✅ **DONE 2026-08-20** — it was **four** views, not three, and the question was Doug's to
      answer. Box below.
-   - **The four `live_debug_lifecycle` citations**, which describe a removed mechanism. Needs the
-     behaviour established before the prose is rewritten. **The only accuracy item left in this
-     cluster**, and the one with a real question in front of it. **Now the only item left on this
-     list**, so the next session either answers its question or starts a router.
+   - ~~**The four `live_debug_lifecycle` citations**, which describe a removed mechanism. Needs the
+     behaviour established before the prose is rewritten.~~ ✅ **DONE 2026-08-20** — **five** sites,
+     not four; the question was already answered twice in the repository rather than needing
+     research; and the must-fire guard two of them cited turned out to be **vacuous**. Box above.
+
+**THE CLUSTER IS NOW EMPTY, so the next session starts a router** — `central_panel_ui` or
+`frame_ui`, per option 1 above, on a session that has spent nothing.
    - ~~**Split `a_timed_out_arm_claims_nothing_and_says_so` into its four paths** — the successor
      the ack-path seam left, and the cheapest thing on this list.~~ ✅ **DONE 2026-08-20** — four
      named tests, and the perturbation table is the purchase. Box above.

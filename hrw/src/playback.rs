@@ -110,9 +110,25 @@ pub struct Playback<T> {
 impl<T> Playback<T> {
     /// Playback over frames already computed during compilation.
     ///
-    /// `live_done` starts **true**: a recorded animation has no live session
-    /// running, and `live_debug_lifecycle` uses that to release a breakpoint
-    /// left armed by a session that never started.
+    /// `live_done` starts **true** because that is the honest answer to *"is a
+    /// live session still running?"* for frames that came out of a compile —
+    /// **and for no other reason, which is a correction.** This doc used to say
+    /// `live_debug_lifecycle` released a stray breakpoint on the strength of it.
+    /// That function no longer exists, and the breakpoint-cleanup safety net it
+    /// names was deliberately deleted (`docs/ideas.md` #74): releasing the anchor
+    /// when nothing was in flight is what stopped the *next* Debug press
+    /// working. What releases it now is on `App::live_breakpoint_armed` — a
+    /// failed `start_live`, a specimen change, app exit — and **not one of those
+    /// reads a [`LiveState`], so none of them can see this flag.**
+    ///
+    /// **Measured 2026-08-20, because the field still looks load-bearing:**
+    /// flipping this to `false` fails exactly **one** test in the suite,
+    /// [`tests::a_recorded_animation_reports_no_running_session`], which reads it
+    /// directly. Every other reader arrives through [`Self::live_state`], which
+    /// consults `live_finished()` only inside `if self.is_live()` — and a
+    /// recorded playback has no `live_rx`, so the flag is unreachable from
+    /// there. It is `true` because it is true, not because something depends
+    /// on it.
     pub fn recorded(frames: Vec<T>, interval: f64) -> Self {
         Self {
             frames,
@@ -392,8 +408,22 @@ mod tests {
         assert_eq!(p.live_state(true), LiveState::Arming);
     }
 
-    /// A recorded animation reports its session as finished, which is what lets
-    /// the lifecycle release a breakpoint armed for a session that never began.
+    /// A recorded animation reports its session as finished.
+    ///
+    /// **This is the only test in the suite that can see `live_done`'s value for
+    /// a recorded playback**, verified 2026-08-20 by flipping
+    /// [`Playback::recorded`] to `false` and running the fast suite: this one
+    /// failed and nothing else did. In particular the two view-level guards
+    /// named `recorded_animation_reports_no_live_session`
+    /// (`matching_anim`, `tarjan_anim`) **stayed green**, because they assert
+    /// [`Playback::live_state`] and that returns `Idle` from `is_live()` being
+    /// false, without ever consulting the flag.
+    ///
+    /// Those two were written as the must-fire guard for the 2026-07-27
+    /// regression where `live_done` was `false` here, and **they could not have
+    /// caught it** — a wrong negative of exactly the kind `CLAUDE.md` warns
+    /// about, since believing them means not looking. They still assert
+    /// something worth holding, one layer up; this holds the flag itself.
     #[test]
     fn a_recorded_animation_reports_no_running_session() {
         let p = recorded(2);
