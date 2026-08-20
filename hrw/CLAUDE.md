@@ -748,10 +748,51 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > them tests)**, and **`generic_error_summary` + `structural_singular_summary` →
 > `error_summary.rs` (440, 140 of them tests)**, and **`ContextBarState` + `PointedAt` +
 > `PointKind` + `next_seq` → `context_bar.rs` (649)**, and **`equation_sheet_ui` →
-> `equation_sheet_view.rs` (446, 208 of them tests)**.
-> **app.rs 14,437 → 12,008.** Progress
+> `equation_sheet_view.rs` (446, 208 of them tests)**, and **`report_sub_view_row_ui` →
+> `report_sub_view.rs` (541, 320 of them tests)**.
+> **app.rs 14,437 → 11,857.** Progress
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest.
+>
+> ### A DOC COMMENT CAN BE ADOPTED BY THE WRONG FUNCTION, AND NOTHING HERE CATCHES IT
+> *(found 2026-08-19, while extracting `report_sub_view_row_ui`; it was three days old)*
+>
+> **`apply_pending_view_and_seek` was inserted between `report_sub_view_row_ui`'s doc comment
+> and its `fn` line** by `545b4aaa` on 2026-08-16. Rust merges contiguous `///` lines, so that
+> method carried nineteen lines describing a *different* function — including *"`&mut self` is
+> right here for the same reason as the tab row"*, about a method that takes no `ui` — and the
+> row itself had no documentation at all.
+>
+> **The rule above names TESTS and the plan's trap 2 names `#[derive]`. Both are instances of
+> one trap, and it is broader than either:** an attribute, a `#[test]` and a doc comment all
+> bind *downward*, so **any item inserted above any of them steals it.** Read the rule as
+> *insert any item after a function's closing brace*, never as a rule about tests.
+>
+> **`no_function_has_two_test_attributes` catches the `#[test]` case; nothing catches this
+> one**, because a merged doc block is well-formed Rust that rustdoc renders happily. **The
+> exact detector is that the orphaned item ends up with ZERO doc comment** — `app.rs` has 19
+> such methods today, mostly one-line `test_*` accessors, so the checker is about an hour of
+> one-line docs away. Filed in the plan, not built, under the one-extraction rule.
+>
+> ### THE `App` METHOD MAY BE A QUESTION RATHER THAN A PRESS — and a question cannot be deferred
+> *(2026-08-19, `report_sub_view_row_ui`)*
+>
+> **−151 lines, zero build errors, and the fifth distinct seam shape.** Four extractions
+> invented a *report* because the pane held a decision it could not make. This pane held a
+> **question**: `structural_view_available` decides whether a tab exists at all, four times,
+> mid-render. **A press can be deferred to the caller; an answer is needed before the widget is
+> drawn** — so the caller answers all four first and passes a `TabAvailability` struct.
+>
+> **The parameter-list rule gains a clause: a helper also stays when DOCUMENTS name where it
+> lives.** The predicate's inputs were nearly all in the pane's signature, so the rule alone
+> would have allowed moving it — but `DECISIONS.md`, `fidelity-plan.md` and `worker.rs` cite it
+> by name as the one predicate the tab bar and the link guard share. Four booleans cost nothing;
+> the move would have cost four documents.
+>
+> **And the state-group count over-counts: the unit is the NARROWEST BORROW.** The census rated
+> this pane 5 fields, but every `viewport` access is `self.viewport.structural`, so the
+> parameter is `&mut StructuralView`. Mirror image of the `autoplay_controls_ui` finding — a
+> whole struct can cost one parameter, and a struct can cost *less* than one.
 >
 > ### THE UNTESTABILITY COMMENT IS THE JUSTIFICATION, ALREADY WRITTEN DOWN
 > *(2026-08-19, `equation_sheet_ui`)*
@@ -799,9 +840,12 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > handshake written out six times**, with the variant, the `stage_views` field and the
 > constructor swapped. **So the move is deduplication, not extraction** — justified not by line
 > count but by the fact that six copies of one protocol have nothing enforcing they agree. Verify
-> they really are identical first; a difference is either a bug or a reason. **`report_sub_view_row_ui`
-> (154 lines, 5 fields, 1 method) is the cheapest single pane left** and the last one shaped like
-> the seven already done.
+> they really are identical first; a difference is either a bug or a reason.
+>
+> **`report_sub_view_row_ui` was the cheapest single pane left and is DONE** (2026-08-19, box
+> above). It was *"the last one shaped like the seven already done"*, and it was — so **nothing
+> shaped like those eight remains**, which is what makes this deduplication the next move rather
+> than the next extraction.
 >
 > ### SIX OF SEVEN `App` METHODS WERE FREE — LOOK FOR THE TRAILING BLOCK FIRST
 > *(2026-08-19, `context_bar_ui`)*

@@ -165,6 +165,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-19 | **`generic_error_summary` + `structural_singular_summary`** — *the `self`-free pair* | **12,292** | `error_summary.rs` (440, of which 140 are tests) |
 | 2026-08-19 | **`ContextBarState` + `PointedAt` + `PointKind` + `next_seq`** — *the state follows its pane* | **12,194** | `context_bar.rs` (649) |
 | 2026-08-19 | **`equation_sheet_ui`** — *two accumulators collapsed into one report* | **12,008** | `equation_sheet_view.rs` (446, of which 208 are tests) |
+| 2026-08-19 | **`report_sub_view_row_ui`** — *the pane whose only `App` method was a QUESTION* | **11,857** | `report_sub_view.rs` (541, of which 320 are tests) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -699,6 +700,86 @@ tests failed at first, and the two causes had to be fixed separately:
 
 **Both failures read as "the pane did not report the press."** Any pane extracted with a callback
 return needs both fixes before its click test means anything.
+
+### `report_sub_view_row_ui` left, and its `App` method was a QUESTION, not a press — 2026-08-19
+
+**−151 lines, zero build errors on the first attempt**, and the second such run after
+`ContextBarState`. The obstacle checklist came back clean: four state groups, no multiline
+`self\n    .field` access, no mutated parameter, no local shadowing a parameter.
+
+**The new shape, and it is the inverse of the callback pattern.** Four extractions invented a
+report because the pane contained a *decision* it could not make. This one contained a **question**
+it could not answer: `structural_view_available` is consulted four times, mid-render, to decide
+whether a tab exists at all. A press can be deferred to the caller; **a question cannot — the
+answer is needed before the widget is drawn.** So the caller answers all four *before* the call
+and passes a `TabAvailability` struct:
+
+```rust
+let available = report_sub_view::TabAvailability {
+    summary:  self.structural_view_available(StructuralView::Summary),
+    animate:  self.structural_view_available(StructuralView::Animate),
+    aliases:  self.structural_view_available(StructuralView::AliasAnim),
+    spy_plot: self.structural_view_available(StructuralView::SpyPlot),
+};
+```
+
+**Moving the predicate instead was considered and rejected, on the parameter-list rule plus one
+more.** Its inputs are *nearly* all in the pane's signature — only `frames.index_reduction` is not
+— so the rule alone would have allowed it. What decided it is that `structural_view_available` and
+`structural_view_available_from_stage` are **cited by name from `DECISIONS.md`,
+`fidelity-plan.md` and `worker.rs`** as the one predicate the tab bar and the link guard share.
+Moving them costs four documents and buys the row nothing it does not get from four booleans.
+**So the rule gains a clause: a helper also stays when documents outside the code name where it
+lives.**
+
+**And the field count over-counted, for a new reason: count the NARROWEST BORROW.** The census
+rated this pane **5 fields**, one of which was `viewport` — but every access is
+`self.viewport.structural`, so the parameter is `&mut StructuralView`, not `&mut Viewport`. A
+state group that is only touched through *one* of its own fields costs one parameter of that
+field's type, and the signature then says exactly what the pane may move. This is the mirror image
+of the `autoplay_controls_ui` finding (a whole struct costs one parameter): **the unit is the
+narrowest borrow that compiles, which may be smaller than a group or larger than a field.**
+
+**What it bought: ten tests in 0.03 s, on a pane that had never had one.** Reaching it before
+meant building an `App`, giving it a worker, compiling a specimen and driving it to Structural or
+Index Reduction with the right singularity — so nothing had ever asserted which banner appears,
+which tabs a singular system hides, or where a stage change lands. Two are must-fire in the strict
+sense and both were **probed by reverting**: deleting the singular banner fails
+`a_singular_structural_stage_shows_the_singular_banner`, and ignoring `reset_for`'s return value
+fails `redrawing_the_row_does_not_re_apply_the_default_sub_view`.
+
+**`default_sub_view_for` is the piece worth having separately.** The stage-change default was
+three branches buried in a `&mut self` render body; as a pure
+`fn(is_index_reduction, is_singular, current) -> StructuralView` it is four assertions, and it
+exposed an asymmetry nobody had written down: **only Summary and Animate are redirected to the spy
+plot**, because they are the two views non-singular Structural does not offer. Incidence and Tree
+*carry over* across the stage change, which is why switching stages keeps you looking at the same
+kind of thing.
+
+#### THE DEFECT THIS FOUND: a doc comment had been adopted by the wrong function for three days
+
+**`report_sub_view_row_ui` had no doc comment.** Its nineteen lines of documentation sat above
+`apply_pending_view_and_seek`, which was inserted between the doc block and the `fn` line by
+`545b4aaa` on **2026-08-16**. Rust merges contiguous `///` lines into one doc, so that method
+carried a doc whose first three paragraphs describe a *different* function — including
+*"`&mut self` is right here for the same reason as the tab row"*, about a method that takes no
+`ui`. The row itself was undocumented and nothing said so.
+
+**This is the third target of one mechanical trap, and `CLAUDE.md` names only two.** The rule
+reads *"INSERT A TEST AFTER A FUNCTION'S CLOSING BRACE, never before its `fn` line"*, and trap 2
+here names `#[derive]`. **The trap is not about tests or derives — it is about anything that binds
+downward:** an attribute, a `#[test]`, and a doc comment all attach to the item that follows, so
+an item inserted above any of them steals it. `doc_citations::no_function_has_two_test_attributes`
+catches the `#[test]` case and **nothing catches this one**, because a merged doc block is
+well-formed Rust that rustdoc renders happily.
+
+**There is an exact detector, and it is worth knowing even though it is not built here.** The
+orphaning necessarily leaves the *original* item with **zero** doc comment — so "every method in
+`impl App` is documented" would have failed by name on 2026-08-16. **Measured: 19 methods in
+`app.rs` are undocumented**, most of them one-line `test_*` accessors, so the checker costs about
+an hour of one-line docs and then holds permanently. Filed rather than built, under the
+one-extraction-per-session rule. <!-- unbuilt: doc_citations::every_app_method_is_documented -->
+
 ### ⟶ NEXT — and the remaining `_ui` census says the job has changed shape
 
 **Measured 2026-08-19, after `equation_sheet_ui`.** Every rendering method still on `App`, with its
@@ -706,7 +787,7 @@ line count, its distinct `self.<field>` accesses, and the `App` methods it calls
 
 | lines | fields | function | `App` methods called |
 |---|---|---|---|
-| 154 | 5 | `report_sub_view_row_ui` | `structural_view_available` |
+| ~~154~~ | ~~5~~ | ~~`report_sub_view_row_ui`~~ | **done 2026-08-19** → `report_sub_view.rs` |
 | 93 | 14 | `tarjan_anim_ui` | the live-debug four, `structural_frames_for_stage`, `structural_unavailable`, `notify` |
 | 86 | 12 | `matching_anim_ui` | the live-debug four, `structural_frames_for_stage`, `structural_unavailable` |
 | 80 | 7 | `menu_bar_ui` | `notify` |
@@ -741,9 +822,10 @@ a shrug. Estimate ~30 lines saved per pane, so ~150–200 lines, plus the two th
 method at all. **Verify the six really are identical before assuming it** — a difference would be
 either a bug or a reason one of them is genuinely different, and both are worth knowing.
 
-**`report_sub_view_row_ui` (154 lines, 5 fields, one `App` method) is the cheapest single pane
-left** and the last one shaped like the seven already done. Apply the region rule, then the
-deferral test on whatever presses remain.
+**`report_sub_view_row_ui` was that cheapest single pane and is DONE** — see the box above. It was
+*"the last one shaped like the seven already done"*, and it was: zero build errors, four state
+groups, ten tests. **With it gone, nothing shaped like it remains**, which is what makes the
+live-debug deduplication the next move rather than a next extraction.
 
 **`menu_bar_ui` (80, 7, one `notify`) is small enough that moving it buys little**, and `notify` is
 the `App`-wide toast channel rather than a policy decision — likely a callback return, but at 80

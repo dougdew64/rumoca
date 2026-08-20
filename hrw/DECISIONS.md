@@ -3453,3 +3453,39 @@ behind `slow-tests`". Against a free function taking `Option<&EquationSheet>` th
 constructed by the test, and six of them run in 0.04 s. **The note was corrected in place rather
 than deleted** — a comment explaining why something is untestable is a coupling measurement
 someone else already took, and that is now the sweep to run next.
+
+## 2026-08-19 — the report sub-view row left app.rs, and its `App` method was a question
+
+**`report_sub_view_row_ui` moved to `src/report_sub_view.rs`** (541 lines, 320 of them tests;
+app.rs 12,008 → 11,857). Zero build errors on the first attempt — the second such run, after
+`ContextBarState`.
+
+**The row takes a `TabAvailability` struct rather than the predicate that fills it.** Four of the
+nine tabs exist only for some models, and `App::structural_view_available` decides — four times,
+mid-render. **A press can be deferred to the caller and a question cannot**, because the answer is
+needed before the widget is drawn, so the caller answers all four first. That is the inverse of
+the callback pattern the four previous extractions established.
+
+**The predicate stayed on `App` for a reason the parameter-list rule does not cover.** Its inputs
+are nearly all in the pane's signature, so the rule alone would have allowed the move; what
+decided it is that `DECISIONS.md`, `docs/fidelity-plan.md` and `worker.rs` all cite
+`structural_view_available` / `structural_view_available_from_stage` by name as the one predicate
+the tab bar and the `hrw://` link guard share. **A helper also stays when documents outside the
+code name where it lives.**
+
+**The parameter is `&mut StructuralView`, not `&mut Viewport`.** Every access was
+`self.viewport.structural`, so the narrowest borrow is one field of one group — the unit is
+neither the field nor the group but the smallest borrow that compiles.
+
+**`default_sub_view_for` is a pure function, and separating it exposed an asymmetry.** Only
+Summary and Animate are redirected to the spy plot on a stage change, because they are the two
+views non-singular Structural does not offer; Incidence and Tree carry over. Ten tests now run in
+0.03 s against a hand-built `StageBundle`, on a pane that previously needed an `App`, a worker and
+a compiled specimen to reach at all. Two are must-fire and both were probed by reverting.
+
+**A defect found on the way: `apply_pending_view_and_seek` had been carrying this row's doc
+comment since `545b4aaa` (2026-08-16)**, having been inserted between that doc block and its `fn`
+line. Same trap as the `#[test]` and `#[derive]` orphanings already recorded — the general form is
+that anything binding downward is stolen by an item inserted above it. Nothing catches the doc
+case; the exact detector ("the orphaned item ends up undocumented") is filed in
+`docs/app-split-plan.md`, unbuilt.
