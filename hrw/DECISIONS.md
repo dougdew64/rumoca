@@ -3489,3 +3489,30 @@ line. Same trap as the `#[test]` and `#[derive]` orphanings already recorded —
 that anything binding downward is stolen by an item inserted above it. Nothing catches the doc
 case; the exact detector ("the orphaned item ends up undocumented") is filed in
 `docs/app-split-plan.md`, unbuilt.
+
+## 2026-08-19 — the stranded alias view, found by the extraction that had just landed
+
+**`AliasAnim` was missing from the stage-change redirect list.** Three structural sub-views are
+Index-Reduction-only — Summary, Animate, AliasAnim — and `default_sub_view_for` redirected only
+the first two, because the Aliases tab was added after that condition was written.
+
+**Symptom, on `RcCircuit`, `TwoLoops`, `ProportionalLoop` and `MixedLoop`** (non-singular, with
+non-empty `reduction.eliminations` in their committed traces): choose Aliases on Index Reduction,
+click Structural. The selection survived, Structural offers no such tab, so the row drew nothing
+highlighted — and the panel rendered the alias view against the Structural report, which carries
+no eliminations, producing *"(no alias eliminations in this report)"* for a model with several.
+**Absence filled rather than stated**, and no checker here compares a pane's claim against a
+different stage's report.
+
+**Fixed twice, deliberately.** `default_sub_view_for` now redirects all three, guarded by a test
+that asserts them as a **set** so a fourth such view fails there rather than on screen. And
+`App::clamp_structural_sub_view` checks the *result* of all three doors that write
+`viewport.structural` — the tab row, the stage-change default and the `hrw://` link guard each had
+their own guard while nothing checked the outcome, which is how a door added without its guard got
+through. It falls back to Tree and **notifies**: after the first fix there is no known path to it,
+so a silent clamp would hide exactly the regression it exists to catch.
+
+**Doug's question is what turned it up.** The asymmetry had been written into the plan as a
+*finding* — "only Summary and Animate are redirected" — and he asked whether that was a bug
+report. It was not, as written; checking it made it one. **A behaviour described neutrally is not
+a behaviour that has been judged**, and the write-up read as though it had been.

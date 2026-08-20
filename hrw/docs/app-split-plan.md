@@ -166,6 +166,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-19 | **`ContextBarState` + `PointedAt` + `PointKind` + `next_seq`** — *the state follows its pane* | **12,194** | `context_bar.rs` (649) |
 | 2026-08-19 | **`equation_sheet_ui`** — *two accumulators collapsed into one report* | **12,008** | `equation_sheet_view.rs` (446, of which 208 are tests) |
 | 2026-08-19 | **`report_sub_view_row_ui`** — *the pane whose only `App` method was a QUESTION* | **11,857** | `report_sub_view.rs` (541, of which 320 are tests) |
+| 2026-08-19 | *(fix, not a move)* the stranded-alias defect the extraction exposed | 11,985 | `report_sub_view.rs` (650) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -748,13 +749,52 @@ sense and both were **probed by reverting**: deleting the singular banner fails
 `a_singular_structural_stage_shows_the_singular_banner`, and ignoring `reset_for`'s return value
 fails `redrawing_the_row_does_not_re_apply_the_default_sub_view`.
 
-**`default_sub_view_for` is the piece worth having separately.** The stage-change default was
-three branches buried in a `&mut self` render body; as a pure
+**`default_sub_view_for` is the piece worth having separately, and it turned up a live defect.**
+The stage-change default was three branches buried in a `&mut self` render body; as a pure
 `fn(is_index_reduction, is_singular, current) -> StructuralView` it is four assertions, and it
-exposed an asymmetry nobody had written down: **only Summary and Animate are redirected to the spy
-plot**, because they are the two views non-singular Structural does not offer. Incidence and Tree
-*carry over* across the stage change, which is why switching stages keeps you looking at the same
-kind of thing.
+exposed an asymmetry: **only Summary and Animate were redirected to the spy plot**, while
+Incidence and Tree carried over. That was first written up here as a finding — *"the asymmetry
+nobody had written down"* — and Doug asked whether it was a finding or a bug. **Checking it made
+it a bug**, fixed the same day; see the box below.
+
+#### AND THE ASYMMETRY WAS A DEFECT: `AliasAnim` was missing from the redirect list
+
+**Three views are Index-Reduction-only — Summary, Animate and AliasAnim — and only two were
+redirected.** The Aliases tab was added after that condition was written, and nothing compared the
+two lists.
+
+**The symptom, verified with a harness probe before anything was changed:** on a non-singular model
+with aliases (`RcCircuit`, `TwoLoops`, `ProportionalLoop`, `MixedLoop` all qualify — checked
+against their committed traces), choose **Aliases ▶** on Index Reduction, then click the
+**Structural** tab. `viewport.structural` stays `AliasAnim`, Structural offers no such tab, so
+**the row draws with nothing highlighted** — and the panel dispatch, which checked only
+`report_ready`, rendered the alias view against the *Structural* report. That report carries no
+eliminations, so the pane said *"(no alias eliminations in this report)"* about a model with
+several.
+
+**That is the absence-filled class, not a cosmetic one.** A reader standing on Structural would
+conclude `RcCircuit` has no aliases. Nothing in the corpus checks a pane's claim against a
+*different stage's* report, which is why no checker here could have caught it.
+
+**Two fixes, and they close different things:**
+
+1. **`default_sub_view_for` redirects all three.** The regression guard asserts them **as a set**
+   (`no_index_reduction_only_view_survives_a_move_to_structural`), so a fourth such view added
+   without the redirect fails there rather than on screen — the exact mistake, encoded. A second
+   test walks the reader's route through the widget, because the pure function is only half the
+   path: the row must actually *call* it. Both fail against the old code.
+2. **`App::clamp_structural_sub_view` checks the RESULT of every door.** Three places write
+   `viewport.structural` — the tab row, the stage-change default, the `hrw://` link guard — and
+   each had its own guard while **nothing checked the outcome**. Adding a door without its guard
+   is precisely what happened. The clamp falls back to Tree (the one view every report stage
+   offers) **and notifies**, because after fix 1 there is no known path to it: a silent correction
+   would hide the regression it exists to catch. Three tests, including the non-vacuity one that
+   a clamp-everything implementation would fail.
+
+**The seam is what found it.** As three branches inside a render body reachable only through a
+worker and a compiled specimen, the missing case had nowhere to show up. This is the strongest
+instance so far of the plan's own claim that extraction buys testability — the test it bought
+found a defect in the code it was extracted from, on the same day.
 
 #### THE DEFECT THIS FOUND: a doc comment had been adopted by the wrong function for three days
 

@@ -18,7 +18,10 @@
 //! [`default_sub_view_for`] holds that choice as a pure function, so the rule can be
 //! asserted without a compile, an `App` or a frame. The old `&mut self` body could only
 //! be reached by building an `App`, giving it a worker and driving a specimen to a report
-//! stage — which is why nothing had ever checked it.
+//! stage — which is why nothing had ever checked it, and why a missing case had survived
+//! there: **`AliasAnim` was not redirected on a stage change**, so it could stay selected
+//! on a Structural stage that offers no such tab. Fixed the day the function was
+//! separated; see its doc comment for the symptom.
 //!
 //! # Why availability arrives as a struct rather than being computed here
 //!
@@ -68,13 +71,34 @@ pub(crate) struct TabAvailability {
 /// The sub-view a reader lands on when the report stage changes.
 ///
 /// Singular Structural and Index Reduction open on **Summary**, because that is where the
-/// explanation is. Everything else opens on the **spy plot** — but only if the reader was
-/// previously on Summary or Animate, which are the two views the *other* report stage
-/// offers; any other view carries over, so switching stages keeps you looking at the same
-/// kind of thing.
+/// explanation is.
+///
+/// # The rule for everything else: carry over what the new stage still offers
+///
+/// A view the reader chose is kept across the stage change, so switching stages leaves you
+/// looking at the same *kind* of thing. That is only sound for the views both report stages
+/// have — Incidence, Matching, BLT, Tearing, Tree — so the three that are **Index-Reduction
+/// only** are redirected to the spy plot instead: Summary (the reduction report), Animate
+/// (the reduction replay) and AliasAnim (the alias replay).
+///
+/// # AliasAnim was missing from that list until 2026-08-19, and it stranded the pane
+///
+/// Doug asked whether the asymmetry recorded here was a finding or a bug; checking it made
+/// it a bug. On a non-singular model with aliases — `RcCircuit`, `TwoLoops`,
+/// `ProportionalLoop`, `MixedLoop` all qualify — choosing **Aliases ▶** on Index Reduction
+/// and then clicking the **Structural** tab kept `AliasAnim` selected. Structural never
+/// offers that tab (`App::structural_view_available` requires the Index Reduction stage),
+/// so the row drew **no highlighted tab at all**, and the panel below rendered the alias
+/// view against the *Structural* report, which carries no eliminations: the pane said
+/// *"(no alias eliminations in this report)"* about a model that has several.
+///
+/// **That is absence being filled rather than stated** — a reader standing on Structural
+/// would conclude `RcCircuit` has no aliases. `Animate` was in the redirect list and
+/// `AliasAnim` was not, for no reason beyond the Aliases tab having been added later.
 ///
 /// Pure, and separated from the row for that reason: it is the one piece of this pane that
-/// is a rule rather than a widget.
+/// is a rule rather than a widget — and the separation is what made the missing case
+/// visible, having been three branches inside a `&mut self` render body before.
 fn default_sub_view_for(
     is_index_reduction: bool,
     is_singular: bool,
@@ -82,7 +106,13 @@ fn default_sub_view_for(
 ) -> StructuralView {
     if is_index_reduction || is_singular {
         StructuralView::Summary
-    } else if matches!(current, StructuralView::Summary | StructuralView::Animate) {
+    } else if matches!(
+        current,
+        // The three Index-Reduction-only views. Keep this list in step with
+        // `App::structural_view_available`: a view that stage does not offer must never
+        // survive the change, or it survives with no tab to un-select it.
+        StructuralView::Summary | StructuralView::Animate | StructuralView::AliasAnim
+    ) {
         StructuralView::SpyPlot
     } else {
         current
@@ -472,13 +502,12 @@ mod tests {
         );
     }
 
-    /// A **non**-singular Structural stage lands on the spy plot — but only from the two
+    /// A **non**-singular Structural stage lands on the spy plot — but only from the three
     /// views that do not exist there.
     ///
-    /// This is the asymmetry the pure function makes visible: coming from Incidence or
-    /// Tree, the reader keeps looking at the same kind of thing across the stage change.
-    /// Only Summary and Animate, which non-singular Structural does not offer, are
-    /// redirected.
+    /// Coming from Incidence or Tree, the reader keeps looking at the same kind of thing
+    /// across the stage change. Summary, Animate and AliasAnim are Index-Reduction-only,
+    /// so each is redirected instead.
     #[test]
     fn a_stage_change_into_a_healthy_structural_stage_keeps_a_view_it_still_offers() {
         assert_eq!(
@@ -500,6 +529,86 @@ mod tests {
             default_sub_view_for(false, false, StructuralView::Tree),
             StructuralView::Tree,
             "and so does the tree",
+        );
+    }
+
+    /// **The alias replay must not survive a move to Structural** — the regression guard
+    /// for the 2026-08-19 defect.
+    ///
+    /// The three Index-Reduction-only views are asserted **together**, so that adding a
+    /// fourth such view and forgetting the redirect fails here rather than on screen. That
+    /// is exactly how `AliasAnim` came to be missing: `Animate` was in the list, the
+    /// Aliases tab was added later, and nothing compared the two.
+    #[test]
+    fn no_index_reduction_only_view_survives_a_move_to_structural() {
+        for view in [
+            StructuralView::Summary,
+            StructuralView::Animate,
+            StructuralView::AliasAnim,
+        ] {
+            assert_eq!(
+                default_sub_view_for(false, false, view),
+                StructuralView::SpyPlot,
+                "{view:?} exists only on Index Reduction, so a non-singular Structural \
+                 stage must not keep it selected — it would leave the row with no \
+                 highlighted tab and the panel rendering against the wrong report",
+            );
+        }
+    }
+
+    /// And the same thing through the widget, because the pure function is only half the
+    /// path: the row must actually *call* it when the stage changes.
+    ///
+    /// This is the probe that found the defect, kept as a test. It walks the reader's
+    /// route — pick Aliases on Index Reduction, then click the Structural tab — and
+    /// asserts on what the tab row shows afterwards, which is where the symptom was
+    /// visible: no tab highlighted at all.
+    #[test]
+    fn choosing_aliases_then_moving_to_structural_leaves_a_real_tab_selected() {
+        let mut h = harness(Row {
+            stage: StageKind::IndexReduction,
+            structural: StructuralView::Summary,
+            available: TabAvailability {
+                summary: true,
+                animate: true,
+                aliases: true,
+                spy_plot: true,
+            },
+            ..Row::default()
+        });
+        h.run_steps(2);
+
+        h.get_all_by_label_contains("Aliases")
+            .next()
+            .expect("Index Reduction offers an Aliases tab")
+            .click();
+        h.run_steps(2);
+        assert_eq!(
+            h.state().structural,
+            StructuralView::AliasAnim,
+            "precondition: the reader is watching the alias replay",
+        );
+
+        // The reader clicks the Structural stage tab. `App` swaps the stage and
+        // re-answers the availability questions; Structural offers no alias view.
+        h.state_mut().stage = StageKind::Structural;
+        h.state_mut().available = TabAvailability {
+            summary: false,
+            animate: false,
+            aliases: false,
+            spy_plot: true,
+        };
+        h.run_steps(2);
+
+        assert_eq!(
+            h.state().structural,
+            StructuralView::SpyPlot,
+            "the alias view has no tab here, so keeping it selected would strand the pane",
+        );
+        assert!(
+            h.query_by_label_contains("Aliases").is_none(),
+            "and the tab itself must still be absent — the fix is the selection moving, \
+             not the tab appearing",
         );
     }
 

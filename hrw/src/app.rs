@@ -2338,6 +2338,51 @@ impl App {
         }
     }
 
+    /// Force the structural sub-view back to something this stage actually offers.
+    ///
+    /// # The class of bug this closes, rather than the instance
+    ///
+    /// Three doors set `viewport.structural`, and each has its own guard: the tab row only
+    /// draws tabs [`Self::structural_view_available`] approved, the `hrw://` link guard in
+    /// [`Self::apply_pending_view_and_seek`] refuses a view the model has no tab for, and
+    /// the stage-change default in [`crate::report_sub_view`] redirects the
+    /// Index-Reduction-only views. **Nothing checked the result**, so a door added without
+    /// its guard — which is exactly what happened when the Aliases tab was added and the
+    /// stage-change default was not updated with it (2026-08-19) — produced a selected
+    /// view with no tab, and the panel below rendered it against the wrong stage's report.
+    ///
+    /// The symptom is *silent and plausible*: the alias view read the Structural report,
+    /// found no eliminations there, and said *"(no alias eliminations in this report)"*
+    /// about `RcCircuit`, which has several. **Absence filled rather than stated.**
+    ///
+    /// # Why it notifies rather than clamping quietly
+    ///
+    /// After the 2026-08-19 fix there is no known path here, so reaching it means a guard
+    /// somewhere upstream has gone missing — the thing a silent correction would hide. The
+    /// notice puts it in `session.json`'s action trail, where a bug report can start from
+    /// it. **Tree is the fallback because it is the one view available on every report
+    /// stage**, singular or not.
+    fn clamp_structural_sub_view(&mut self) {
+        if !matches!(
+            self.stage,
+            StageKind::Structural | StageKind::IndexReduction
+        ) {
+            return;
+        }
+        let v = self.viewport.structural;
+        if !self.structural_view_available(v) {
+            // Named *before* the clamp, or the notice reports the fallback rather than
+            // the view that was stranded — which is the only useful part of it.
+            let stranded = structural_view_name(v);
+            self.viewport.structural = StructuralView::Tree;
+            self.notify(format!(
+                "{} has no {stranded} view for this model \u{2014} showing the tree \
+                 instead. This is an HRW bug; please report it.",
+                self.stage.name(),
+            ));
+        }
+    }
+
     /// Show a notice **and record it**.
     ///
     /// Every notice is something HRW is telling Doug went wrong — an unresolvable node
@@ -4122,6 +4167,11 @@ impl App {
                 // Initialization link naming a non-default sub-view, and every frame
                 // seek into them, was discarded in silence.
                 self.apply_pending_view_and_seek();
+                // **Last, so it sees every door.** The row above, the stage-change default
+                // inside it and the link guard on the line above are the three ways the
+                // structural sub-view gets set; this checks the result of all three rather
+                // than trusting each. It is a no-op on every known path — see the method.
+                self.clamp_structural_sub_view();
 
                 // Whether the Index Reduction tab shows a Before/After split for
                 // comparative views. True when index reduction was actually needed
@@ -11134,6 +11184,84 @@ mod tests {
             !app.structural_view_available(StructuralView::Animate),
             "no frames yet"
         );
+    }
+
+    /// **A selected sub-view with no tab is corrected AND reported**, never quietly
+    /// tolerated.
+    ///
+    /// The backstop for the 2026-08-19 alias defect, and it guards the *class*: three
+    /// separate doors write `viewport.structural`, each with its own guard, and nothing
+    /// checked the result. Adding a door without its guard is what happened when the
+    /// Aliases tab arrived and the stage-change default was not updated with it.
+    ///
+    /// **The notice is half the test.** After the fix in `report_sub_view` there is no
+    /// known path here, so a silent clamp would hide the very regression this exists to
+    /// catch — the "silence must be a failure" rule applied to a guard whose success is
+    /// invisible.
+    #[test]
+    fn a_sub_view_with_no_tab_is_clamped_and_reported() {
+        let mut app = App::test_default();
+        app.stage = StageKind::Structural;
+        app.stages.structural = Stage::ok(serde_json::json!({}));
+        // Structural never offers the alias replay: `structural_view_available` requires
+        // the Index Reduction stage for it, whatever the report holds.
+        app.viewport.structural = StructuralView::AliasAnim;
+
+        app.clamp_structural_sub_view();
+
+        assert_eq!(
+            app.viewport.structural,
+            StructuralView::Tree,
+            "Tree is the one view every report stage offers, singular or not",
+        );
+        let notice = app.notice.as_deref().expect(
+            "reaching this means an upstream guard is missing \u{2014} it must be said, \
+             not silently corrected",
+        );
+        assert!(
+            notice.contains("AliasAnim"),
+            "the notice must name the view that was stranded, not the fallback: {notice}",
+        );
+        assert!(
+            !notice.contains("Tree"),
+            "naming the fallback would read as though the tree were the problem: {notice}",
+        );
+    }
+
+    /// And the guard is **a no-op on a healthy selection** — otherwise the test above is
+    /// satisfied by a method that clamps everything to Tree and notifies every frame.
+    #[test]
+    fn a_sub_view_that_has_a_tab_is_left_alone() {
+        let mut app = App::test_default();
+        app.stage = StageKind::Structural;
+        app.stages.structural = Stage::ok(serde_json::json!({}));
+        app.viewport.structural = StructuralView::Incidence;
+
+        app.clamp_structural_sub_view();
+
+        assert_eq!(app.viewport.structural, StructuralView::Incidence);
+        assert!(
+            app.notice.is_none(),
+            "nothing went wrong, so nothing may be reported",
+        );
+    }
+
+    /// A **non-report stage** is left alone entirely.
+    ///
+    /// `viewport.structural` keeps its value while the reader is on Flatten or Events —
+    /// that is the point of a viewport surviving the stage change — so clamping there
+    /// would destroy the camera the reader set and notify about a view nobody is looking
+    /// at.
+    #[test]
+    fn the_clamp_does_not_touch_a_non_report_stage() {
+        let mut app = App::test_default();
+        app.stage = StageKind::Flatten;
+        app.viewport.structural = StructuralView::AliasAnim;
+
+        app.clamp_structural_sub_view();
+
+        assert_eq!(app.viewport.structural, StructuralView::AliasAnim);
+        assert!(app.notice.is_none());
     }
 
     /// The System Modeler verb parses, needs a name, and stands alone.

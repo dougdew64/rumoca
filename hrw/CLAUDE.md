@@ -749,8 +749,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > `error_summary.rs` (440, 140 of them tests)**, and **`ContextBarState` + `PointedAt` +
 > `PointKind` + `next_seq` → `context_bar.rs` (649)**, and **`equation_sheet_ui` →
 > `equation_sheet_view.rs` (446, 208 of them tests)**, and **`report_sub_view_row_ui` →
-> `report_sub_view.rs` (541, 320 of them tests)**.
-> **app.rs 14,437 → 11,857.** Progress
+> `report_sub_view.rs` (650, 428 of them tests)**.
+> **app.rs 14,437 → 11,985** (11,857 after the move, plus the alias-defect guard below).
+> Progress
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest.
 >
@@ -793,6 +794,34 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > this pane 5 fields, but every `viewport` access is `self.viewport.structural`, so the
 > parameter is `&mut StructuralView`. Mirror image of the `autoplay_controls_ui` finding — a
 > whole struct can cost one parameter, and a struct can cost *less* than one.
+>
+> ### THE EXTRACTION'S TEST FOUND A REAL DEFECT THE SAME DAY — and Doug's question found it
+> *(2026-08-19, the stranded alias view; fixed)*
+>
+> **`AliasAnim` was missing from the stage-change redirect list.** Three structural sub-views
+> are Index-Reduction-only — Summary, Animate, AliasAnim — and only two were redirected,
+> because the Aliases tab was added after that condition was written. On `RcCircuit`,
+> `TwoLoops`, `ProportionalLoop` or `MixedLoop`: choose **Aliases ▶** on Index Reduction,
+> click **Structural**, and the selection survived onto a stage with no such tab — nothing
+> highlighted in the row, and the panel rendering the alias view against the *Structural*
+> report, which says *"(no alias eliminations in this report)"* about a model with several.
+> **Absence filled rather than stated**, and nothing here compares a pane's claim against a
+> different stage's report.
+>
+> **Two fixes: the redirect (guarded as a SET, so a fourth such view fails by name) and
+> `App::clamp_structural_sub_view`, which checks the RESULT of all three doors that write
+> `viewport.structural`.** Each door had its own guard and nothing checked the outcome — which
+> is how a door added without its guard got through. The clamp falls back to Tree **and
+> notifies**, because after the first fix nothing should reach it and a silent correction would
+> hide the next regression.
+>
+> **THE TRANSFERABLE LESSON IS ABOUT THE WRITE-UP, NOT THE CODE.** The asymmetry was recorded
+> in the plan as a *finding* — "only Summary and Animate are redirected" — in neutral,
+> admiring prose, and it sat there until Doug asked *"are you reporting a bug?"* **A behaviour
+> described neutrally has not thereby been judged**, and prose that explains a mechanism reads
+> as though someone had. When an extraction "exposes an asymmetry", the next sentence must say
+> whether it is *principled or a defect* — that question is the whole value of having exposed
+> it.
 >
 > ### THE UNTESTABILITY COMMENT IS THE JUSTIFICATION, ALREADY WRITTEN DOWN
 > *(2026-08-19, `equation_sheet_ui`)*
