@@ -172,6 +172,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-20 | **the four compile replays → `CompileViewCaches`** — *a lifetime decision, and it found a second defect* | 12,305 | `compile_caches.rs` (101), `stage_caches.rs` 99 → 120 |
 | 2026-08-20 | *(test split, not a move)* the four ack verdicts become four named tests — *zero production lines; it expired a second comment that had been a no-op for five days* | 12,356 | *(none)* |
 | 2026-08-20 | **the spy-plot and incidence arms of `central_panel_ui`'s dispatch → `matrix_panes.rs`** — *the first cut INTO a router; the chain is now thirteen one-line arms* | **12,273** | `matrix_panes.rs` (451, of which 246 are tests) |
+| 2026-08-20 | **the navigation branch of `central_panel_ui` → `nav_view.rs`** — *the router's OUTERMOST list, which no census row had ever counted* | **12,250** | `nav_view.rs` (388, of which 220 are tests) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -1164,6 +1165,12 @@ routers (~1,100 lines between them) and everything that is not a pane at all.
 > **`central_panel_ui` 640 → 552, `app.rs` 12,356 → 12,273.** Box below. The recommendation
 > above said *"the cut is inside, the way `tour_prose_ui` was cut"* — a **contiguous region**
 > that calls no `App` method. That is not what was found, and the difference is the finding.
+>
+> ### ✅ CONTINUED 2026-08-20 — `central_panel_ui` 552 → 484, and the branch taken was on nobody's list
+>
+> **The navigation branch → `nav_view.rs`.** `app.rs` 12,273 → **12,250**, which is the smallest
+> reduction of any extraction so far and is not what the move rests on — see the box below for
+> the eight tests and the open question it surfaced.
    - ~~**Split `a_timed_out_arm_claims_nothing_and_says_so` into its four paths** — the successor
      the ack-path seam left, and the cheapest thing on this list.~~ ✅ **DONE 2026-08-20** — four
      named tests, and the perturbation table is the purchase. Box above.
@@ -1172,6 +1179,73 @@ routers (~1,100 lines between them) and everything that is not a pane at all.
 both directions: no leaf types, no panes. The next *extraction* is a router, and a router is the
 "spend a whole session on one function" option — so it wants a fresh session, and the items
 above are what fits in a shared one.
+
+### THE ROUTER'S OUTERMOST LIST HAS TWO MEMBERS, AND EVERY CENSUS COUNTED ONLY ONE — 2026-08-20, `nav_view.rs`
+
+**`central_panel_ui` 552 → 484; `app.rs` 12,273 → 12,250; the new module is 388 lines, 220 of
+them tests.** The unit of work was the **`else` of `if self.nav.is_empty()`** — the router's
+outermost branch, 73 lines, calling **zero `App` methods**.
+
+**IT WAS NOT ON ANY LIST, AND THAT IS THE FINDING.** The `_ui` census, the coupling table and both
+"⟶ NEXT" boxes enumerate what is inside the `nav.is_empty()` *if*: the sub-view row block, the
+thirteen dispatch arms, the default artifact pane. **The `else` is a sibling of all of them and was
+never a row anywhere.** The previous box's rule — *a router is a list, and a list's defect is the
+member that does not look like the others* — was applied one level too deep: **the outermost `if`
+is itself a two-member list**, and its second member is a whole pane about a different IR.
+
+**So the rule gains a step: find the OUTERMOST list first, then descend.** The dispatch chain is a
+list of thirteen; the block that chooses between the stage view and the navigation view is a list
+of two, and it is the one a reader meets first.
+
+**THE LINE COUNT IS THE WEAKEST RESULT HERE — −23 — AND IT IS SUPPOSED TO BE.** The branch is 73
+lines, and 42 came back as `App::specimen_tree_options` and its doc. Scored on `app.rs`'s size
+this barely registers; the plan's rule forbids resting on that number anyway, and the two
+justifications are:
+
+- **Eight tests in 0.08 s on a pane that had none and could not have had any.** Reaching it before
+  meant building an `App`, giving it a worker, and pushing a `NavEntry` onto the go-to-definition
+  stack — which is the precondition that failed *four times* while testing `CompileViewCaches`
+  two boxes above. The crumb's composition, both buttons, the spinner's naming, the error line and
+  the jump suppression are now assertions rather than reading.
+- **The jump suppression became a property of the pane instead of a literal.** `jump_to: None` and
+  `highlight: None` were two lines in a `TreeOptions` literal in `app.rs`, correct because whoever
+  wrote them was paying attention. They are now applied inside `nav_view_ui` over whatever the
+  caller passes, so a caller that hands it a live stage jump target gets the same answer.
+
+**AND THE EXTRACTION EXPOSED A DUPLICATE THAT HAD BEEN INVISIBLE BECAUSE ITS TWO HALVES WERE 100
+LINES APART.** The stage tree and the navigated tree each built a seven-field `TreeOptions`
+literal, and **the five model-knowledge fields were identical down to a verbatim seven-line
+comment.** Neither copy is near the other, so no column-read and no region scan could see it; it
+took moving one of them. They are now `App::specimen_tree_options`, and each tree adds only what
+it addresses.
+
+**THE SHARED HELPER ASSERTS THAT THE FIVE FIELDS BELONG IN BOTH TREES, AND THEY MAY NOT — this is
+a QUESTION, filed rather than answered.** Per the rule this plan already carries (*when an
+extraction exposes an asymmetry, the next sentence must say whether it is principled or a defect*),
+here is the judgement: **probably a defect, unproven, and not this session's to fix.**
+
+The argument that blanks `jump_to` for the navigated tree — *a library class is a different IR, so
+an address computed against a stage means nothing here* — **applies unchanged to three of the five
+fields that are not blanked:**
+
+| field | what it is | on a navigated class |
+|---|---|---|
+| `path_lines` | *stage* node path → source line | a path string that collides resolves to the **specimen's** DAE line |
+| `variable_lines` | variable name → declaring line **in the specimen** | `R` in `Resistor` gets the specimen's `R` |
+| `declaring_classes` | variable name → declaring class, **of the specimen** | same collision, feeding "Go to definition" |
+| `known_variables` | the specimen's variables | decides what is *trackable*; a name that exists in both is offered |
+| `tracked` | the identifier being followed | arguably right — following it across an IR boundary is the point |
+
+**Nobody has reported this**, and it may be unreachable in practice: `path_lines` is `None`
+outside Dae/Flatten, and a library class's paths are shaped differently from a DAE's. **That is
+exactly the profile of the alias defect and the stranded `Animate` arm** — a wrong answer nothing
+on screen admits to, in a pane visited rarely. Worth a session; **worth Doug's ruling on what the
+navigated tree is *for* before any code changes**, because "show the specimen's knowledge while
+drilled into a library class" is a defensible design and "show nothing but the class" is another.
+
+**Note the failure mode if it is wrong: presence substituted, not absence filled.** The gutter
+would say *"declared at line 41"* over a row of the Resistor, naming a line of the specimen. Same
+class as the arm that drew the index-reduction replay under the Events tab.
 
 ### A ROUTER'S SEAM IS AN ASYMMETRY AMONG ITS ARMS — 2026-08-20, `matrix_panes.rs`
 

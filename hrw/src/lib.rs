@@ -69,6 +69,7 @@ pub mod matching_ledger;
 pub mod matrix_panes;
 pub mod model_list;
 pub mod modelica_lex;
+pub mod nav_view;
 pub mod playback;
 pub mod pre_lowering_anim;
 pub mod promote;

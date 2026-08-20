@@ -51,6 +51,7 @@ use crate::incidence_view;
 use crate::log_view;
 use crate::matching_anim;
 use crate::matrix_panes;
+use crate::nav_view;
 use crate::playback::Animated;
 use crate::pre_lowering_anim;
 use crate::reduction_anim;
@@ -3994,6 +3995,50 @@ impl App {
         }
     }
 
+    /// What either tree is told about the loaded specimen: the tracked name and the four
+    /// indexes built from the compile.
+    ///
+    /// **`jump_to` and `highlight` are deliberately left `None`** — they address a *node*
+    /// rather than describing the model, so they belong to whichever tree is being drawn.
+    /// The stage tree fills them in; [`crate::nav_view`] blanks them again on principle.
+    ///
+    /// # One method because the question has one answer, not because the answer is known
+    ///
+    /// The stage tree and the navigated-class tree were handed these five fields by two
+    /// identical literals, comment included, and **for the navigated tree they are an open
+    /// question rather than a settled fact.** A library class reached by "Go to
+    /// definition" is a different IR: `path_lines` maps *stage* node paths to source
+    /// lines, `variable_lines` and `declaring_classes` are the *specimen's* identifiers,
+    /// and a name that collides resolves confidently and wrongly — the same argument that
+    /// blanks `jump_to` next door, applied to five fields nobody has yet ruled on.
+    ///
+    /// Kept as one method so that ruling on it is one edit. Two copies would have to be
+    /// found first, which is how they came to disagree about nothing for as long as they
+    /// have.
+    fn specimen_tree_options(&self) -> tree::TreeOptions<'_> {
+        tree::TreeOptions {
+            tracked: self.tracked_identifier.as_deref(),
+            known_variables: self.known_variables.as_ref(),
+            declaring_classes: Some(&self.declaring_classes),
+            variable_lines: self.identifier_index.as_ref().map(|i| &i.variables),
+            // **Each stage gets ITS OWN map, or none.** Flatten numbers equations
+            // differently from the DAE, so sharing one map would resolve confidently and
+            // wrongly. Index reduction, initialization and structural carry no spans at
+            // all and get `None`, which also keeps them from paying for a path string per
+            // row.
+            path_lines: self
+                .cached_equation_sheet
+                .as_ref()
+                .and_then(|s| match self.stage {
+                    StageKind::Dae => Some(&s.node_lines),
+                    StageKind::Flatten => Some(&s.flat_node_lines),
+                    _ => None,
+                }),
+            jump_to: None,
+            highlight: None,
+        }
+    }
+
     /// The central panel: stage tab bar, status banners, sub-tab bars, and the
     /// per-stage view dispatch. The bulk of the frame.
     ///
@@ -4424,31 +4469,13 @@ impl App {
                                     },
                                     None => None,
                                 };
+                                // **The two node addresses are what this tree adds** to
+                                // what every tree is told about the specimen; see
+                                // `specimen_tree_options` for why the rest is shared.
                                 let opts = tree::TreeOptions {
-                                    tracked: self.tracked_identifier.as_deref(),
-                                    known_variables: self.known_variables.as_ref(),
-                                    declaring_classes: Some(&self.declaring_classes),
-                                    variable_lines: self
-                                        .identifier_index
-                                        .as_ref()
-                                        .map(|i| &i.variables),
-                                    // **Each stage gets ITS OWN map, or none.**
-                                    // Flatten numbers equations differently from the
-                                    // DAE, so sharing one map would resolve
-                                    // confidently and wrongly. Index reduction,
-                                    // initialization and structural carry no spans at
-                                    // all and get `None`, which also keeps them from
-                                    // paying for a path string per row.
-                                    path_lines: self.cached_equation_sheet.as_ref().and_then(|s| {
-                                        match self.stage {
-                                            StageKind::Dae => Some(&s.node_lines),
-                                            StageKind::Flatten => Some(&s.flat_node_lines),
-                                            _ => None,
-                                        }
-                                    }),
-
                                     jump_to: jump_to.as_deref(),
                                     highlight: self.context.jump_highlight.as_deref(),
+                                    ..self.specimen_tree_options()
                                 };
                                 egui::ScrollArea::both()
                                     .id_salt("tree")
@@ -4485,76 +4512,26 @@ impl App {
             } // end: non-Simulation stage rendering
         } else {
             // ---- Navigation view (a class reached via "Go to definition") ----
-            ui.horizontal(|ui| {
-                if ui
-                    .button("Specimen")
-                    .on_hover_text("Return to the specimen stages (top of navigation)")
-                    .clicked()
-                {
-                    intent.go_home = true;
-                }
-                if ui.button("← Back").clicked() {
-                    intent.go_back = true;
-                }
-                ui.separator();
-                let mut crumb = self.model.clone().unwrap_or_else(|| "model".to_owned());
-                for e in &self.nav {
-                    crumb.push_str("  ▸  ");
-                    crumb.push_str(&e.name);
-                }
-                ui.label(egui::RichText::new(crumb).monospace().strong());
-                if let Some(n) = &self.nav_loading {
-                    ui.weak(format!("opening {n}…"));
-                    ui.spinner();
-                }
-            });
-            if let Some(err) = &self.nav_error {
-                ui.colored_label(ui.visuals().error_fg_color, err);
+            // The whole branch lives in `nav_view`; it shares nothing with the stage view
+            // above but the tree widget. The two buttons cannot touch `self.nav` from
+            // inside a panel closure, so they report — the `FrameIntent` pattern, one
+            // pane's worth.
+            match nav_view::nav_view_ui(
+                ui,
+                &self.nav,
+                nav_view::NavChrome {
+                    model: self.model.as_deref(),
+                    loading: self.nav_loading.as_deref(),
+                    error: self.nav_error.as_deref(),
+                },
+                &self.field_help,
+                self.specimen_tree_options(),
+                &mut intent.tree,
+            ) {
+                Some(nav_view::NavCommand::Home) => intent.go_home = true,
+                Some(nav_view::NavCommand::Back) => intent.go_back = true,
+                None => {}
             }
-            ui.separator();
-
-            let entry = self.nav.last().unwrap();
-            egui::ScrollArea::both()
-                .id_salt("nav_tree")
-                .auto_shrink(false)
-                .show(ui, |ui| {
-                    tree::tree_ui(
-                        ui,
-                        &entry.name,
-                        &entry.value,
-                        None,
-                        &mut intent.tree,
-                        &entry.def_index,
-                        &self.field_help,
-                        tree::TreeOptions {
-                            tracked: self.tracked_identifier.as_deref(),
-                            known_variables: self.known_variables.as_ref(),
-                            declaring_classes: Some(&self.declaring_classes),
-                            variable_lines: self.identifier_index.as_ref().map(|i| &i.variables),
-                            // **Each stage gets ITS OWN map, or none.**
-                            // Flatten numbers equations differently from the
-                            // DAE, so sharing one map would resolve
-                            // confidently and wrongly. Index reduction,
-                            // initialization and structural carry no spans at
-                            // all and get `None`, which also keeps them from
-                            // paying for a path string per row.
-                            path_lines: self.cached_equation_sheet.as_ref().and_then(
-                                |s| match self.stage {
-                                    StageKind::Dae => Some(&s.node_lines),
-                                    StageKind::Flatten => Some(&s.flat_node_lines),
-                                    _ => None,
-                                },
-                            ),
-
-                            // A navigated library class is a different IR, so a
-                            // jump target addressed into the stage tree would
-                            // land on an unrelated node or nothing at all. The
-                            // highlight is suppressed for the same reason.
-                            jump_to: None,
-                            highlight: None,
-                        },
-                    );
-                });
         }
     }
 

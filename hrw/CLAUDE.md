@@ -761,8 +761,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > `equation_sheet_view.rs` (446, 208 of them tests)**, and **`report_sub_view_row_ui` →
 > `report_sub_view.rs` (650, 428 of them tests)**, and **the four compile replays →
 > `compile_caches.rs` (101)**, and **the spy-plot + incidence arms of `central_panel_ui`'s
-> dispatch → `matrix_panes.rs` (451, 246 of them tests)**.
-> **app.rs 14,437 → 12,273** (11,857 after `report_sub_view`, plus the alias-defect guard below,
+> dispatch → `matrix_panes.rs` (451, 246 of them tests)**, and **the navigation branch of
+> `central_panel_ui` → `nav_view.rs` (388, 220 of them tests)**.
+> **app.rs 14,437 → 12,250** (11,857 after `report_sub_view`, plus the alias-defect guard below,
 > plus **+41 from the live-debug deduplication, +113 from the ack-path seam, +173 from the
 > cache-lifetime split and +51 from the ack-verdict test split, which are the finding rather than
 > a slip** — an accuracy or testability item is paid for *in* `app.rs`, so it cannot be scored on
@@ -771,11 +772,32 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest.
 >
-> ### ⟶ NEXT: THE ROUTER IS STARTED — `central_panel_ui` 640 → 552
+> ### ⟶ NEXT: THE ROUTER IS UNDERWAY — `central_panel_ui` 640 → 552 → 484
 >
-> **`matrix_panes.rs` landed 2026-08-20** (spy-plot + incidence arms, 6 tests in 0.02 s). The
-> census and the follow-ups are spent; the routers are all that is left. `central_panel_ui` is
-> **552 lines**, `frame_ui` **300**.
+> **`matrix_panes.rs` landed 2026-08-20** (spy-plot + incidence arms, 6 tests in 0.02 s), then
+> **`nav_view.rs`** (the navigation branch, 8 tests in 0.08 s). The census and the follow-ups are
+> spent; the routers are all that is left. `central_panel_ui` is **484 lines**, `frame_ui` **300**.
+>
+> **AND `nav_view` FOUND THE RULE ONE LEVEL UP: the router's OUTERMOST list has two members, and
+> every census counted only one.** The `_ui` census, the coupling table and both "next" boxes
+> enumerate what is inside `if self.nav.is_empty()`. **The `else` is a sibling of all of them and
+> was never a row anywhere** — 73 lines, zero `App` methods, its own IR. So: **find the outermost
+> list first, then descend.**
+>
+> **−23 lines, the smallest yet, and the move does not rest on that.** It buys eight tests on a
+> pane that could previously be reached only by building an `App` with a worker and pushing a
+> `NavEntry` — the precondition that failed four times during the `CompileViewCaches` work. And
+> the jump suppression (*a navigated class is a different IR, so a stage's address means nothing
+> here*) is now **a property of the pane** applied over whatever the caller passes, not two `None`s
+> in a literal.
+>
+> **⟶ IT ALSO LEFT A QUESTION FOR DOUG, and the plan carries the table: `App::specimen_tree_options`
+> hands BOTH trees the specimen's `path_lines`, `variable_lines`, `declaring_classes` and
+> `known_variables`.** The very argument that blanks `jump_to` applies to at least three of them —
+> a name or path that collides resolves to the **specimen's** line while the reader is looking at a
+> library class. **Probably a defect, unproven, deliberately not fixed**: what the navigated tree is
+> *for* is a design question, and "presence substituted" is the failure mode if the answer is
+> "nothing but the class". Same profile as the alias defect and the stranded `Animate` arm.
 >
 > **A ROUTER'S SEAM IS AN ASYMMETRY AMONG ITS ARMS, NOT A REGION — and this box previously said
 > the opposite.** It read *"the cut is inside, the way `tour_prose_ui` was cut"*, i.e. find a
