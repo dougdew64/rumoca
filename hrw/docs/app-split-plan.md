@@ -212,7 +212,24 @@ fail interestingly; they were never going to reach the target.
    whether `viewport` is mutated** — if it is, that parameter is `&mut` and the rest stay shared,
    which is still four parameters and still qualifies. **If it needs `&mut self`, stop**: the
    "what NOT to do" list rejects an extraction that moves a method behind a new name.
-2. **`specimen_source_ui`** (274, 7) — same concern, so it joins the same module.
+2. **`specimen_source_ui`** (274, 7) — **ATTEMPTED AND REVERTED 2026-08-19. Do not retry with a
+   regex rewrite.** Four cascading problems, each invisible until the previous was fixed:
+
+   - **`self.set_tracked_identifier(name)`** — a method, not a field, called once at the very end.
+     Solved cleanly by returning `Option<String>` and letting `App` perform the follow, which is
+     the pattern `model_list` already uses. **That part was right and is worth keeping.**
+   - **Multiline `self\n    .field` accesses** that a single-line rewrite cannot see.
+   - **`source` is mutated** (`source.scrolled_for = …`), so it needs `&mut`, discovered only
+     after the field accesses were fixed.
+   - **A local `let source = …` shadows the parameter**, so the rewrite silently retargeted field
+     accesses at a `Option<&str>`. This is where it stopped: regex cannot distinguish a parameter
+     from a shadowing local.
+
+   **The lesson is about method, not difficulty.** `source_map_ui` extracted cleanly by script
+   because its four fields were all simple single-line reads. **This one needs the body read and
+   edited by hand** — and that is the real reason it costs hours: not the coupling number, but
+   whether the accesses are mechanically rewritable. **Add that to the estimate for every
+   remaining function.**
 3. **`autoplay_controls_ui` + `tour_panel_ui`** (577, 6 and 7) — the tour panel, whose state
    already lives in `tour.rs`.
 
