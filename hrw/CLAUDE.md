@@ -750,10 +750,63 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > `PointKind` + `next_seq` → `context_bar.rs` (649)**, and **`equation_sheet_ui` →
 > `equation_sheet_view.rs` (446, 208 of them tests)**, and **`report_sub_view_row_ui` →
 > `report_sub_view.rs` (650, 428 of them tests)**.
-> **app.rs 14,437 → 11,985** (11,857 after the move, plus the alias-defect guard below).
+> **app.rs 14,437 → 12,026** (11,857 after `report_sub_view`, plus the alias-defect guard below,
+> plus **+41 from the live-debug deduplication, which is the finding rather than a slip** — see
+> the box below).
 > Progress
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest.
+>
+> ### ⟶ NEXT: NOT AN EXTRACTION — three follow-ups, then a router gets a whole session
+>
+> **The census is spent.** Every `_ui` method is extracted or judged not worth it, so the cheap
+> supply is gone in both directions — no leaf types, no panes. What is left in `app.rs` is
+> `central_panel_ui` (~620 lines, 43 fields) and `frame_ui` (~483, 32), and **a router's coupling
+> is not incidental**: it reads 43 fields *because* its job is to decide which pane runs. Neither
+> moves whole; the cut is inside, and finding it is a whole fresh session. **Do not start one on a
+> session that has already spent context.**
+>
+> **Recommended next instead — three bounded items this cluster left, two of them accuracy:**
+> give `live_debug_poll` the `path` parameter `bridge::check_breakpoint_ack_at` already has (buys
+> the order test); **decide `pre_lowering_anim`'s cache lifetime** (three views built from
+> `self.frames` currently get two different ones); and **the four docs citing
+> `live_debug_lifecycle`**, a function that no longer exists, describing a safety net that was
+> deliberately removed. Details and verdicts in the plan.
+>
+> ### DEDUPLICATION IS NOT EXTRACTION, AND IT MADE `app.rs` BIGGER
+> *(2026-08-19, `App::live_debug_gate` — the six-copy live-debug prologue)*
+>
+> **Six copies of an eighteen-line prologue (113 lines) became one thirty-line method, and the
+> file grew by 41.** Production code −62, tests +32, **comments +69**. The plan predicted
+> "~150–200 lines saved" and a new `live_debug` module; **both were wrong, and the reason is
+> structural.** The duplication cost nothing to explain — nobody documents a copy — while an
+> abstraction must be explained once, thoroughly, where it is introduced. And **the handshake
+> cannot leave `app.rs`**: the parameter-list rule keeps `is_arming`, `has_live_debug_data` and
+> `live_debug_poll` on `App` (four to six fields apiece), and a caller of three `App` methods is
+> an `App` method.
+>
+> **So a deduplication cannot be scored on `app.rs`'s line count**, because the duplicate and its
+> replacement live in the same file — unlike every earlier iteration, which moved code *out*. The
+> justification held even though the estimate did not: the protocol has one implementation, and a
+> seventh view gets its three answers in the right order or does not compile.
+>
+> **THE SIX WERE NOT IDENTICAL — the plan was right to demand that be checked first.** Four
+> differences, and per the rule below each one is judged rather than admired: the **prologue** is
+> identical (deduplicated); **`request_fit` in only two views** is principled (only those two have
+> a camera); **`connection_anim_ui` never releasing the breakpoint** is principled (its
+> `start_live` cannot fail — the worker owns the run); and **`pre_lowering_anim` cached outside
+> `StageViewCaches`** is a behavioural asymmetry that is *probably a defect* — three views built
+> from `self.frames` get two different lifetimes, so leaving a stage and returning restarts the
+> reduction animation but resumes `pre()` lowering. Recorded, not patched: which behaviour is
+> intended is a real question.
+>
+> **AND A WILDCARD SURVIVED INSIDE THE CLUSTER A REGRESSION TEST ALREADY GUARDS.**
+> `has_live_debug_data` ended in `_ =>`, so a seventh variant would compile and silently be told to
+> look for an incidence matrix. That is the exact shape
+> `every_live_debug_variant_is_recognised_while_arming` was written for, one function away. **A
+> test that iterates `ALL` proves today's variants work; it cannot make tomorrow's loud if the code
+> has a wildcard.** Fixed by naming both variants. **Grep a guarded cluster for `_ =>` before
+> trusting its test.**
 >
 > ### A DOC COMMENT CAN BE ADOPTED BY THE WRONG FUNCTION, AND NOTHING HERE CATCHES IT
 > *(found 2026-08-19, while extracting `report_sub_view_row_ui`; it was three days old)*
@@ -774,6 +827,25 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > exact detector is that the orphaned item ends up with ZERO doc comment** — `app.rs` has 19
 > such methods today, mostly one-line `test_*` accessors, so the checker is about an hour of
 > one-line docs away. Filed in the plan, not built, under the one-extraction rule.
+>
+> **CORRECTED 2026-08-19: there are two more causes, and the ZERO-doc detector catches neither.**
+> Both were found in the live-debug cluster, and in both the victim ended up with **too many** doc
+> lines rather than none:
+>
+> - **SPLIT.** `has_live_debug_data` carried four lines describing `live_debug_lifecycle` —
+>   *"Returns `SpawnLive` when the ack handshake completes"*, about a function returning `bool`.
+>   Nothing was inserted: the original was **split into four methods** and its doc stayed above
+>   whichever piece landed first.
+> - **REWRITE.** `connection_anim_ui` carried two doc paragraphs and **the first was false** —
+>   *"there is no Debug button yet"* above a paragraph explaining how the Debug button works. The
+>   new doc was written above the old instead of replacing it, and Rust merged them.
+>
+> **So the trap is not about insertion, and the detector is not "zero doc comments" — it is a doc
+> block that contradicts its item's signature or itself.** Both of these are worse than an
+> undocumented function: an undocumented function teaches nothing, and these teach something
+> false. Two cheap partial checks that would have fired: a doc block with two `///` paragraphs
+> that each read as an opening summary, and a doc naming a return type the signature does not
+> have.
 >
 > ### THE `App` METHOD MAY BE A QUESTION RATHER THAN A PRESS — and a question cannot be deferred
 > *(2026-08-19, `report_sub_view_row_ui`)*

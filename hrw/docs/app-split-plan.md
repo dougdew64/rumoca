@@ -167,6 +167,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-19 | **`equation_sheet_ui`** — *two accumulators collapsed into one report* | **12,008** | `equation_sheet_view.rs` (446, of which 208 are tests) |
 | 2026-08-19 | **`report_sub_view_row_ui`** — *the pane whose only `App` method was a QUESTION* | **11,857** | `report_sub_view.rs` (541, of which 320 are tests) |
 | 2026-08-19 | *(fix, not a move)* the stranded-alias defect the extraction exposed | 11,985 | `report_sub_view.rs` (650) |
+| 2026-08-19 | **the live-debug prologue, six copies → one `live_debug_gate`** — *the first move that made the file BIGGER* | **12,026** | *(none — it cannot leave `app.rs`)* |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -820,6 +821,135 @@ orphaning necessarily leaves the *original* item with **zero** doc comment — s
 an hour of one-line docs and then holds permanently. Filed rather than built, under the
 one-extraction-per-session rule. <!-- unbuilt: doc_citations::every_app_method_is_documented -->
 
+### THE LIVE-DEBUG DEDUPLICATION IS DONE, AND IT MADE `app.rs` BIGGER — 2026-08-19
+
+**+41 lines, and that is the finding rather than an embarrassment.** The plan estimated
+*"~30 lines saved per pane, so ~150–200 lines"*. The measured result:
+
+| | added | removed | net |
+|---|---|---|---|
+| production code | 51 | 113 | **−62** |
+| test code | 32 | 0 | +32 |
+| comments | 85 | 16 | **+69** |
+| **file** | **168** | **129** | **+41** |
+
+**Six copies of an eighteen-line prologue (113 lines) became one thirty-line method, and the file
+grew.** The duplication cost nothing to explain — a reader who understood one copy understood all
+six, and nobody documents a copy. An abstraction must be explained *once, thoroughly*, at the
+place it is introduced: why the cache arrives as a `fn` pointer, why the step order is
+load-bearing, what deliberately stayed with the callers.
+
+**So a deduplication cannot be scored on `app.rs`'s line count, because the duplicate and its
+replacement live in the same file.** Every earlier iteration moved code *out*, where the count
+measured something real. **`live_debug_gate` cannot move out**: it calls `is_arming`,
+`has_live_debug_data` and `live_debug_poll`, all of which read four to six `App` fields apiece, so
+the parameter-list rule keeps them — and a caller of three `App` methods is an `App` method. **The
+count and the goal came apart here for the first time**, and the plan's target ("no module over
+~1,500 lines") does not name what this iteration bought. What it bought is that the protocol has
+one implementation: a seventh view gets the three answers in the right order or does not compile.
+
+**Read the trigger-2 rule carefully before the next one of these.** It forbids an extraction whose
+*only* justification is line count. It does not promise that a justified change reduces the count,
+and this one raises it.
+
+### THE SIX WERE NOT IDENTICAL, AND THE PLAN WAS RIGHT TO SAY SO FIRST
+
+The plan required *"verify the six really are identical before assuming it — a difference would be
+either a bug or a reason."* Four differences, each judged, because a difference described neutrally
+has not thereby been judged:
+
+- **The prologue is identical in all six.** Verified line by line. That part deduplicated.
+- **`pre_lowering_anim` is cached OUTSIDE `StageViewCaches`** — `self.cached_pre_lowering_anim`,
+  where the other five live in `self.stage_views`. **A behavioural asymmetry, and probably a
+  defect, but not certainly** — recorded rather than fixed. `StageViewCaches` is dropped on every
+  stage change; this field is dropped only on a new compile. Yet `reduction_anim` and
+  `connection_anim` are built from `self.frames`, which is compile-scoped exactly like
+  pre-lowering's, so **three views with one lifetime are given two.** The visible consequence:
+  leave the Index Reduction stage and return, and the reduction animation restarts at frame 0
+  while `pre()` lowering resumes where it was — and a *live* session on those two would be dropped
+  mid-run. Which behaviour is intended is a real question, so it needs deciding, not patching.
+- **`connection_anim_ui` never releases the armed breakpoint when the live start fails.** The other
+  five run `if live.is_none() { remove_live_trace_breakpoint(); … }`. **Principled, not a defect:**
+  `ConnectionAnimation::start_live` returns the animation rather than an `Option`, because the
+  worker owns the run and there is no local failure to detect. **The real gap it exposes is
+  elsewhere** — nothing releases that breakpoint if the *worker* never reaches connection
+  expansion, and the session-end safety net that used to cover this was deliberately removed
+  (`docs/ideas.md` #74).
+- **`request_fit()` after a live start, only in Matching and Tarjan.** **Principled** — those two
+  are the only views with a camera.
+
+**And the epilogue could not be deduplicated for a borrow-checker reason worth recording.** The
+four-line breakpoint release sits inside `if let Some(Some(mat)) = &self.stage_views.incidence`,
+which holds an immutable borrow of `self` across the whole block, so a `&mut self` helper cannot be
+called there — where a *field* assignment can, being disjoint. **A repeated block inside a borrow
+of `self` is not extractable into a method without restructuring its caller**, and that restructure
+differs per view, which is the duplication back in another shape. A free function taking
+`&mut self.live_breakpoint_armed` would compile, but it enforces nothing that the five already do.
+
+### THE `_ =>` ARM WAS THE SAME SILENT-OMISSION SHAPE A TEST ALREADY GUARDS — fixed
+
+**`has_live_debug_data` ended in `_ => matches!(&self.stage_views.incidence, …)`.** A seventh
+variant would have compiled cleanly and been told to look for an incidence matrix it may have no
+use for. **That is exactly the shape `every_live_debug_variant_is_recognised_while_arming` exists
+for** — its doc describes the `pre()`-lowering Debug button doing nothing because a hand-written
+list of matching pairs never grew a fourth entry — **and it was still present one function over,
+in the same cluster the test guards.**
+
+**A test that iterates `ALL` proves the machinery handles today's variants; it cannot make tomorrow's
+loud if the code has a wildcard.** Naming `Matching | Tarjan` makes the next view a compile error.
+**Grep the cluster a regression test covers for `_ =>` before trusting the test.**
+
+### THE DOC-COMMENT TRAP HAS A THIRD AND FOURTH CAUSE — and the proposed detector catches neither
+
+The trap recorded on 2026-08-19 was *"an item inserted above a doc comment steals it"*, with the
+proposed detector *"the orphaned item ends up with ZERO doc comment."* **Two more instances were
+found in this cluster, and both victims ended up with too MANY doc lines, not zero:**
+
+- **Split.** `has_live_debug_data` carried four lines describing `live_debug_lifecycle` — *"Returns
+  `SpawnLive` when the ack handshake completes"*, about a function that returns `bool`. Nothing was
+  inserted: `live_debug_lifecycle` was **split into four methods**, and its doc stayed above
+  whichever piece landed first. That function no longer exists.
+- **Rewrite.** `connection_anim_ui` carried two doc paragraphs, and **the first was false**:
+  *"Recorded only — see `connection_anim`'s module note on why there is no Debug button yet."*
+  There has been a Debug button for some time; the replacement paragraph was written *above* the
+  old one instead of replacing it, and Rust merged them. **A reader of the rendered doc is told
+  there is no Debug button and then told how it works.**
+
+**So the detector is not "zero doc comments" — it is a doc block that contradicts its item's
+signature or itself.** The zero-doc check would have found neither of these, and both are worse
+than an undocumented function: an undocumented function teaches nothing, and these teach something
+false. Cheap partial detectors that would have fired: a doc block containing two `///`-paragraphs
+that each read like an opening summary, and a doc naming a return type the signature does not have.
+
+### FOUR DOCS CITE `live_debug_lifecycle`, WHICH DOES NOT EXIST — filed, not fixed
+
+`matching_anim.rs:226`, `matching_anim.rs:863`, `playback.rs:114` and `tarjan_anim.rs:731` all name
+it, and all four describe **a breakpoint-release safety net that `live_debug_poll`'s own doc says was
+deliberately removed** (*"there is no session-end safety net… With the release gone…"*, `ideas.md`
+#74). `playback.rs` explains that `Playback::recorded` starts `live_done` at `true` *"so
+`live_debug_lifecycle` can release a breakpoint left armed by a session that never started"* —
+nothing reads it for that any more.
+
+**Not fixed here, and the reason is the accuracy rule rather than budget:** correcting them means
+first establishing what, if anything, now releases a breakpoint left by a session that never
+started. That is a question about behaviour, not a rename, and answering it wrongly would replace
+one false statement with another. **A dangling symbol reference is a cheap fix; a dangling
+*mechanism* description is not.**
+
+### THE TEST THE GATE WANTED IS BLOCKED BY A SEAM THAT ALREADY EXISTS ONE LAYER DOWN
+
+**The property worth asserting is the ORDER** — `is_arming` must be read *before* `live_debug_poll`,
+because the poll clears `pending_live_debug` on the frame the ack lands, so a reordering would drop
+the "Arming…" badge on exactly that frame. Reaching that frame in a test needs the poll's
+`SpawnLive` branch, which calls `bridge::check_breakpoint_ack()` — the live path, which **deletes**
+the ack file in the real `.hrw-bridge` directory.
+
+**`bridge::check_breakpoint_ack_at(path)` exists precisely so tests need not touch it**, and
+`live_debug_poll` does not take that seam. So the test that shipped asserts the *composition*
+(no variant offers Debug without its data, across `ALL`, touching no bridge file) rather than the
+order. **Giving `live_debug_poll` the same path parameter its callee already has is the next
+cheap thing in this cluster**, and it would buy the order test.
+
 ### ⟶ NEXT — and the remaining `_ui` census says the job has changed shape
 
 **Measured 2026-08-19, after `equation_sheet_ui`.** Every rendering method still on `App`, with its
@@ -862,6 +992,16 @@ a shrug. Estimate ~30 lines saved per pane, so ~150–200 lines, plus the two th
 method at all. **Verify the six really are identical before assuming it** — a difference would be
 either a bug or a reason one of them is genuinely different, and both are worth knowing.
 
+> **DONE 2026-08-19 — `App::live_debug_gate`, and every prediction in this paragraph was wrong
+> except the justification.** The six were **not** identical (four differences, judged in the box
+> above). The estimate of 150–200 lines saved was **+41 lines added**, because the handshake
+> **cannot leave `app.rs`** — a `live_debug` module was the plan's guess, and the parameter-list
+> rule forbids it: the three methods the gate calls read four to six `App` fields apiece. **The
+> one thing that held is the justification**, which is why it is worth doing anyway: the protocol
+> now has one implementation, and a seventh view gets its three answers in the right order or does
+> not compile. `alias_anim_ui` and `ic_plan_anim_ui` — the two with no live debug at all — were
+> left alone; they are 18 lines each and have nothing to share.
+
 **`report_sub_view_row_ui` was that cheapest single pane and is DONE** — see the box above. It was
 *"the last one shaped like the seven already done"*, and it was: zero build errors, four state
 groups, ten tests. **With it gone, nothing shaped like it remains**, which is what makes the
@@ -874,6 +1014,37 @@ lines the trigger-2 justification is thin. Do it only if it falls out of somethi
 **`frame_ui` and `central_panel_ui` are still last, and still shrinking as their callees leave.**
 Both *grew* in line count while `app.rs` shrank: they are the routers, and routing survives every
 extraction.
+
+### ⟶ NEXT, after the live-debug gate — the census is spent and the routers are what is left
+
+**Every `_ui` method in the census above is now either extracted or judged not worth extracting**,
+which means the supply of *panes* is gone. What remains in `app.rs` at 12,026 lines is the two
+routers (~1,100 lines between them) and everything that is not a pane at all.
+
+**Three candidates, and the recommendation is the third:**
+
+1. **`central_panel_ui` (~620 lines, 43 fields) or `frame_ui` (~483, 32).** The mass, and the only
+   things left that could reach the target. **But a router's coupling is not incidental** — it is
+   43 fields *because* its job is to decide which pane runs, and every pane's state is a candidate.
+   Neither will move whole. The cut is inside, the way `tour_prose_ui` and the `stage_tab_bar_ui`
+   tabs were cut, and finding it is a whole session's work with no guarantee it ends green. **Do
+   not start one on a session that has already spent context.**
+2. **`menu_bar_ui` (80 lines, 7 fields, one `notify`).** Cheap, and the trigger-2 justification is
+   thin at 80 lines. Do it only if it falls out of something else.
+3. **The three follow-ups this cluster left, none of which is an extraction.** Recommended next,
+   because each is small, each is bounded, and two of them are *accuracy* items — which outrank
+   the line count outright:
+   - **Give `live_debug_poll` the `path` parameter `check_breakpoint_ack_at` already has.** Buys
+     the order test the gate wanted and cannot currently have.
+   - **Decide `pre_lowering_anim`'s cache lifetime**, since three views built from `self.frames`
+     currently get two different ones. A question first, an edit second.
+   - **The four `live_debug_lifecycle` citations**, which describe a removed mechanism. Needs the
+     behaviour established before the prose is rewritten.
+
+**The rhythm decision the plan asked for is now forced.** The loop's cheap supply is exhausted in
+both directions: no leaf types, no panes. The next *extraction* is a router, and a router is the
+"spend a whole session on one function" option — so it wants a fresh session, and the three items
+above are what fits in a shared one.
 
 ### §3's seam order is WRONG for the remaining work — measured 2026-08-19
 

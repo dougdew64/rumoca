@@ -935,6 +935,36 @@ enum LiveDebugAction {
     SpawnLive,
 }
 
+/// One frame of the live-debug handshake, answered for a single animated view.
+///
+/// # Why this exists
+///
+/// Six views — Matching, Tarjan, Reduction, Tearing, Connections and
+/// `pre()` lowering — opened with the *same* eighteen-line prologue: ask
+/// [`App::is_arming`], fold the cached animation's [`LiveState`], gate the
+/// button on [`App::has_live_debug_data`], then advance
+/// [`App::live_debug_poll`]. Six copies of one protocol, with nothing
+/// requiring them to agree — a seventh view could have been written with the
+/// steps in the wrong order, or with one missing, and it would have compiled.
+///
+/// **The point is not the lines saved, it is that the protocol now has one
+/// implementation.** A view gets these three answers or it does not get them.
+///
+/// What is *not* here is deliberate: constructing the live animation, building
+/// the recorded fallback, and drawing genuinely differ per view — see
+/// [`App::live_debug_gate`] for the seam and what stayed behind it.
+struct LiveDebugGate {
+    /// This view's Debug press is still waiting for the bridge's ack, so its
+    /// controls show the "Arming…" badge and stay disabled.
+    arming: bool,
+    /// The Debug button may be pressed this frame: the view has the data its
+    /// algorithm needs, and no session is already running.
+    debug_enabled: bool,
+    /// True on the single frame the ack lands (or the wait times out), which is
+    /// when the caller should start its algorithm.
+    spawn_live: bool,
+}
+
 /// State of the one-shot breakpoint pre-warm.
 ///
 /// ## The problem this solves
@@ -1150,11 +1180,15 @@ impl App {
         self.dispatch_hrw_link(link);
     }
 
-    /// Three-phase live-debug lifecycle shared by Matching, Tarjan, and Reduction views.
-    ///
-    /// Returns `SpawnLive` when the ack handshake completes and the caller
-    /// should spawn the algorithm thread.
     /// Whether this view has the data its algorithm needs — gates the Debug button.
+    ///
+    /// **Every variant is named, and the wildcard arm is deliberately absent.**
+    /// This used to end in `_ => matches!(&self.stage_views.incidence, …)`, so a
+    /// seventh view would have compiled cleanly and silently been told to look
+    /// for an incidence matrix it may have no use for — the *same* silent-omission
+    /// shape that `every_live_debug_variant_is_recognised_while_arming` was
+    /// written for after the `pre()`-lowering Debug button did nothing. Listing
+    /// the two makes the next view a compile error instead of a wrong answer.
     fn has_live_debug_data(&self, variant: PendingLiveDebug) -> bool {
         match variant {
             PendingLiveDebug::Reduction | PendingLiveDebug::Tearing => self.cached_dae.is_some(),
@@ -1164,7 +1198,10 @@ impl App {
             // A specimen with a compiled model is all the worker needs; the
             // session it will re-compile through lives there, not here.
             PendingLiveDebug::Connections => self.selected.is_some() && self.model.is_some(),
-            _ => matches!(&self.stage_views.incidence, Some(Some(_))),
+            // Both search the incidence matrix the Structural report carries.
+            PendingLiveDebug::Matching | PendingLiveDebug::Tarjan => {
+                matches!(&self.stage_views.incidence, Some(Some(_)))
+            }
         }
     }
 
@@ -1263,6 +1300,59 @@ impl App {
     /// between the Debug click and the algorithm thread spawning.
     fn is_arming(&self, variant: PendingLiveDebug) -> bool {
         self.pending_live_debug.is_some_and(|(_, v)| v == variant)
+    }
+
+    /// Advance the live-debug handshake for one animated view. Renders nothing.
+    ///
+    /// The prologue every animated view shares, in the order it must happen:
+    /// **arming, then the button gate, then the poll.** The order is load-bearing
+    /// — `live_debug_poll` clears `pending_live_debug` on the frame the ack
+    /// lands, so asking `is_arming` after it would report `false` on the very
+    /// frame the badge is still wanted.
+    ///
+    /// # Why the cache arrives as a `fn` pointer
+    ///
+    /// The [`LiveState`] fold reads the view's own animation cache, whose type
+    /// differs per view; the poll needs `&mut self`. Taking `&Option<Option<A>>`
+    /// directly would hold an immutable borrow of `self` across the mutable
+    /// call. A `fn(&Self) -> _` accessor is applied and dropped inside, so each
+    /// caller writes `|a| &a.stage_views.tarjan_anim` and the borrows never
+    /// overlap. It is a `fn` rather than a closure so it costs no allocation
+    /// and cannot capture — the accessor is a field path, nothing more.
+    ///
+    /// # What stayed with the callers
+    ///
+    /// Everything after `spawn_live`. Starting the live session differs in kind
+    /// and not just in detail — five views spawn a thread over copied data while
+    /// [`PendingLiveDebug::Connections`] hands a producer to the worker — and the
+    /// recorded fallback and the drawing differ again. Folding those in would
+    /// mean a parameter per difference, which is the duplication back in another
+    /// shape.
+    fn live_debug_gate<A: crate::playback::Animated>(
+        &mut self,
+        ctx: &egui::Context,
+        variant: PendingLiveDebug,
+        cache: fn(&Self) -> &Option<Option<A>>,
+    ) -> LiveDebugGate {
+        let arming = self.is_arming(variant);
+        let live = cache(self).as_ref().and_then(|o| o.as_ref()).map_or(
+            if arming {
+                LiveState::Arming
+            } else {
+                LiveState::Idle
+            },
+            |a| a.live_state(arming),
+        );
+        let debug_enabled = self.has_live_debug_data(variant) && !live.is_busy();
+        let spawn_live = matches!(
+            self.live_debug_poll(ctx, variant),
+            LiveDebugAction::SpawnLive
+        );
+        LiveDebugGate {
+            arming,
+            debug_enabled,
+            spawn_live,
+        }
     }
 
     /// Create the application. Called once by eframe at startup.
@@ -3388,13 +3478,17 @@ impl App {
 
     /// The Matching animation view (Structural Analysis tab).
     ///
-    /// Extracted from `ui` during the 2026-07-28 sweep. This and its two
-    /// siblings below are near-identical — same six-step live-debug sequence,
-    /// differing only in the `PendingLiveDebug` variant and which cached
-    /// animation field they touch. Sitting adjacent makes that obvious; the
-    /// actual de-duplication needs a trait over the three animation types and
-    /// is logged in `docs/tech-debt.md`, deliberately not attempted here since
-    /// Phase 7 will rework these views anyway.
+    /// Extracted from `ui` during the 2026-07-28 sweep. It and the five animated
+    /// views below it — Tarjan, Reduction, Tearing, Connections, `pre()` lowering
+    /// — once opened with the same eighteen-line live-debug prologue written out
+    /// by hand six times. That prologue is now [`Self::live_debug_gate`], and the
+    /// [`playback::Animated`] trait it is generic over is the "trait over the
+    /// animation types" this comment used to say was still owed.
+    ///
+    /// **What differs between the six is what is left here**, and the differences
+    /// are real rather than accidental: this view starts its live session from
+    /// the incidence matrix, aims a camera at it, and has a split "before/after"
+    /// header the scrolling views do not.
     fn matching_anim_ui(&mut self, ui: &mut egui::Ui, ir_split: bool) {
         if self.stage_views.incidence.is_none() {
             self.stage_views.incidence = Some(
@@ -3405,24 +3499,11 @@ impl App {
                     .and_then(incidence_view::IncidenceMatrix::from_report),
             );
         }
-        let arming = self.is_arming(PendingLiveDebug::Matching);
-        let live = self
-            .stage_views
-            .matching_anim
-            .as_ref()
-            .and_then(|o| o.as_ref())
-            .map_or(
-                if arming {
-                    LiveState::Arming
-                } else {
-                    LiveState::Idle
-                },
-                |a| a.live_state(arming),
-            );
-        let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Matching) && !live.is_busy();
+        let gate = self.live_debug_gate(ui.ctx(), PendingLiveDebug::Matching, |a| {
+            &a.stage_views.matching_anim
+        });
         let mut debug_clicked = false;
-        let action = self.live_debug_poll(ui.ctx(), PendingLiveDebug::Matching);
-        if matches!(action, LiveDebugAction::SpawnLive)
+        if gate.spawn_live
             && let Some(Some(mat)) = &self.stage_views.incidence
         {
             // The delay is chosen from whether a breakpoint was actually acked:
@@ -3469,8 +3550,8 @@ impl App {
                 ui,
                 &mut self.viewport.matching_anim,
                 self.tracked_identifier.as_deref(),
-                arming,
-                debug_enabled,
+                gate.arming,
+                gate.debug_enabled,
             );
         } else {
             // Was "(no incidence data)" — which is often false and always unhelpful.
@@ -3493,24 +3574,11 @@ impl App {
                     .and_then(incidence_view::IncidenceMatrix::from_report),
             );
         }
-        let arming = self.is_arming(PendingLiveDebug::Tarjan);
-        let live = self
-            .stage_views
-            .tarjan_anim
-            .as_ref()
-            .and_then(|o| o.as_ref())
-            .map_or(
-                if arming {
-                    LiveState::Arming
-                } else {
-                    LiveState::Idle
-                },
-                |a| a.live_state(arming),
-            );
-        let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Tarjan) && !live.is_busy();
+        let gate = self.live_debug_gate(ui.ctx(), PendingLiveDebug::Tarjan, |a| {
+            &a.stage_views.tarjan_anim
+        });
         let mut debug_clicked = false;
-        let action = self.live_debug_poll(ui.ctx(), PendingLiveDebug::Tarjan);
-        if matches!(action, LiveDebugAction::SpawnLive)
+        if gate.spawn_live
             && let Some(Some(mat)) = &self.stage_views.incidence
         {
             let delay = crate::live_frame_delay(self.live_breakpoint_armed);
@@ -3564,8 +3632,8 @@ impl App {
                 ui,
                 &mut self.viewport.tarjan_anim,
                 self.tracked_identifier.as_deref(),
-                arming,
-                debug_enabled,
+                gate.arming,
+                gate.debug_enabled,
             );
         } else {
             // The dependency graph exists whenever matching succeeded; when this pane
@@ -3579,25 +3647,11 @@ impl App {
 
     /// The index-reduction animation view. See [`Self::matching_anim_ui`].
     fn reduction_anim_ui(&mut self, ui: &mut egui::Ui) {
-        let arming = self.is_arming(PendingLiveDebug::Reduction);
-        let live = self
-            .stage_views
-            .reduction_anim
-            .as_ref()
-            .and_then(|o| o.as_ref())
-            .map_or(
-                if arming {
-                    LiveState::Arming
-                } else {
-                    LiveState::Idle
-                },
-                |a| a.live_state(arming),
-            );
-        let debug_enabled =
-            self.has_live_debug_data(PendingLiveDebug::Reduction) && !live.is_busy();
+        let gate = self.live_debug_gate(ui.ctx(), PendingLiveDebug::Reduction, |a| {
+            &a.stage_views.reduction_anim
+        });
         let mut debug_clicked = false;
-        let action = self.live_debug_poll(ui.ctx(), PendingLiveDebug::Reduction);
-        if matches!(action, LiveDebugAction::SpawnLive)
+        if gate.spawn_live
             && let Some(dae) = &self.cached_dae
         {
             let delay = crate::live_frame_delay(self.live_breakpoint_armed);
@@ -3621,7 +3675,7 @@ impl App {
         if let Some(Some(anim)) = &mut self.stage_views.reduction_anim {
             debug_clicked = egui::ScrollArea::vertical()
                 .auto_shrink(false)
-                .show(ui, |ui| anim.ui(ui, arming, debug_enabled))
+                .show(ui, |ui| anim.ui(ui, gate.arming, gate.debug_enabled))
                 .inner;
         } else {
             ui.weak("(no index-reduction trace for this model)");
@@ -3644,24 +3698,11 @@ impl App {
     /// its report describes -- and for a high-index model the raw DAE has no
     /// full matching, hence no blocks, hence nothing to tear.
     fn tearing_anim_ui(&mut self, ui: &mut egui::Ui) {
-        let arming = self.is_arming(PendingLiveDebug::Tearing);
-        let live = self
-            .stage_views
-            .tearing_anim
-            .as_ref()
-            .and_then(|o| o.as_ref())
-            .map_or(
-                if arming {
-                    LiveState::Arming
-                } else {
-                    LiveState::Idle
-                },
-                |a| a.live_state(arming),
-            );
-        let debug_enabled = self.has_live_debug_data(PendingLiveDebug::Tearing) && !live.is_busy();
+        let gate = self.live_debug_gate(ui.ctx(), PendingLiveDebug::Tearing, |a| {
+            &a.stage_views.tearing_anim
+        });
         let mut debug_clicked = false;
-        let action = self.live_debug_poll(ui.ctx(), PendingLiveDebug::Tearing);
-        if matches!(action, LiveDebugAction::SpawnLive)
+        if gate.spawn_live
             && let Some(dae) = self.tearing_dae()
         {
             let delay = crate::live_frame_delay(self.live_breakpoint_armed);
@@ -3705,7 +3746,7 @@ impl App {
         if let Some(Some(anim)) = &mut self.stage_views.tearing_anim {
             debug_clicked = egui::ScrollArea::vertical()
                 .auto_shrink(false)
-                .show(ui, |ui| anim.ui(ui, arming, debug_enabled))
+                .show(ui, |ui| anim.ui(ui, gate.arming, gate.debug_enabled))
                 .inner;
         } else {
             ui.label(self.structural_unavailable("tearing"));
@@ -3731,11 +3772,6 @@ impl App {
         }
     }
 
-    /// The connection-expansion replay, on the Flatten stage.
-    ///
-    /// Recorded only — see `connection_anim`'s module note on why there is no
-    /// Debug button yet (re-running flatten needs the resolved ClassTree, which
-    /// contains the whole MSL).
     /// The connection-expansion replay, with live debug driven by the **worker**.
     ///
     /// Follows the same six-step lifecycle as every other animated view, with one
@@ -3743,26 +3779,11 @@ impl App {
     /// the channel's producer to the worker and lets the real compile drive it. See
     /// [`PendingLiveDebug::Connections`].
     fn connection_anim_ui(&mut self, ui: &mut egui::Ui) {
-        let arming = self.is_arming(PendingLiveDebug::Connections);
-        let live = self
-            .stage_views
-            .connection_anim
-            .as_ref()
-            .and_then(|o| o.as_ref())
-            .map_or(
-                if arming {
-                    LiveState::Arming
-                } else {
-                    LiveState::Idle
-                },
-                |a| a.live_state(arming),
-            );
-        let debug_enabled =
-            self.has_live_debug_data(PendingLiveDebug::Connections) && !live.is_busy();
+        let gate = self.live_debug_gate(ui.ctx(), PendingLiveDebug::Connections, |a| {
+            &a.stage_views.connection_anim
+        });
         let mut debug_clicked = false;
-
-        let action = self.live_debug_poll(ui.ctx(), PendingLiveDebug::Connections);
-        if matches!(action, LiveDebugAction::SpawnLive)
+        if gate.spawn_live
             && let (Some(path), Some(model)) = (self.selected.clone(), self.model.clone())
         {
             // The UI owns the consumer; the worker gets the producer. Reversed from
@@ -3794,7 +3815,7 @@ impl App {
         if let Some(Some(anim)) = &mut self.stage_views.connection_anim {
             debug_clicked = egui::ScrollArea::vertical()
                 .auto_shrink(false)
-                .show(ui, |ui| anim.ui(ui, arming, debug_enabled))
+                .show(ui, |ui| anim.ui(ui, gate.arming, gate.debug_enabled))
                 .inner;
         } else {
             ui.weak("(no connections in this model)");
@@ -3879,24 +3900,11 @@ impl App {
     /// because this pass happens *inside* DAE construction and the DAE HRW holds
     /// is already past it.
     fn pre_lowering_anim_ui(&mut self, ui: &mut egui::Ui) {
-        let arming = self.is_arming(PendingLiveDebug::PreLowering);
-        let live = self
-            .cached_pre_lowering_anim
-            .as_ref()
-            .and_then(|o| o.as_ref())
-            .map_or(
-                if arming {
-                    LiveState::Arming
-                } else {
-                    LiveState::Idle
-                },
-                |a| a.live_state(arming),
-            );
-        let debug_enabled =
-            self.has_live_debug_data(PendingLiveDebug::PreLowering) && !live.is_busy();
+        let gate = self.live_debug_gate(ui.ctx(), PendingLiveDebug::PreLowering, |a| {
+            &a.cached_pre_lowering_anim
+        });
         let mut debug_clicked = false;
-        let action = self.live_debug_poll(ui.ctx(), PendingLiveDebug::PreLowering);
-        if matches!(action, LiveDebugAction::SpawnLive)
+        if gate.spawn_live
             && let Some(flat) = &self.cached_flat
         {
             let delay = crate::live_frame_delay(self.live_breakpoint_armed);
@@ -3920,7 +3928,7 @@ impl App {
         if let Some(Some(anim)) = &mut self.cached_pre_lowering_anim {
             debug_clicked = egui::ScrollArea::vertical()
                 .auto_shrink(false)
-                .show(ui, |ui| anim.ui(ui, arming, debug_enabled))
+                .show(ui, |ui| anim.ui(ui, gate.arming, gate.debug_enabled))
                 .inner;
         } else {
             ui.weak("(no pre() lowering in this model)");
@@ -7379,6 +7387,39 @@ mod tests {
                     );
                 }
             }
+        }
+    }
+
+    /// No view may offer a live Debug session before its data exists.
+    ///
+    /// The gate answers three questions at once, and this is the one with a
+    /// wrong answer that is *silent*: an enabled Debug button on a bare app arms
+    /// a breakpoint for an algorithm that has nothing to run on, and the reader
+    /// sees an "Arming…" badge that never becomes a session.
+    ///
+    /// **Iterating `ALL` is the point, as it is in
+    /// `every_live_debug_variant_is_recognised_while_arming`.** Until the gate
+    /// existed, this composition — "has the data" AND "not already busy" — was
+    /// written out once per view, so it could only have been checked six times
+    /// by name, and a seventh view would have been checked zero times.
+    ///
+    /// It touches no bridge file: with `pending_live_debug` unset,
+    /// `live_debug_poll` returns before it looks for an ack.
+    #[test]
+    fn no_variant_enables_debug_without_its_data() {
+        let ctx = egui::Context::default();
+        for &variant in PendingLiveDebug::ALL {
+            let mut app = App::test_default();
+            let gate = app.live_debug_gate(&ctx, variant, |a| &a.stage_views.matching_anim);
+            assert!(
+                !gate.debug_enabled,
+                "{variant:?} offered Debug with no data loaded"
+            );
+            assert!(!gate.arming, "{variant:?} reported arming unprompted");
+            assert!(
+                !gate.spawn_live,
+                "{variant:?} asked for a live session nobody requested"
+            );
         }
     }
 
