@@ -53,6 +53,7 @@ pub mod context_bar;
 pub mod diagnostics;
 pub mod doc_citations;
 pub mod equation_sheet;
+pub mod error_summary;
 pub mod expr_format;
 pub mod fidelity;
 pub mod field_help;

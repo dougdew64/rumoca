@@ -745,8 +745,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > → `tour_panel.rs` (735, renamed from `tour_transport.rs`)**, and **the tabs of
 > `stage_tab_bar_ui` → `stage_tabs.rs` (493, 190 of them tests)**, and
 > **the assembled state of `context_bar_ui` + `background_ui` → `context_bar.rs` (520, 205 of
-> them tests)**.
-> **app.rs 14,437 → 12,519.** Progress
+> them tests)**, and **`generic_error_summary` + `structural_singular_summary` →
+> `error_summary.rs` (440, 140 of them tests)**.
+> **app.rs 14,437 → 12,292.** Progress
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest: the mass is in eight rendering fns totalling 2,531 lines, not in
 > field groups. Those take &mut self, so each costs hours, not minutes.
@@ -793,13 +794,37 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > `..Default::default()` needs **every** field visible, not just the ones being set, which is why
 > all ten `ContextBarState` fields are `pub(crate)` where the pane reads five.
 >
-> **⟶ NEXT IS `generic_error_summary` (236 lines), AND IT TAKES NO `self` AT ALL.** The cheapest
-> thing left in `app.rs` is not a coupling problem — it is an associated function that is already
-> free: a `git mv`, a `pub(crate)` and an import. **Sweep for that whole class first** (one `awk`
-> pass over `impl App` for bodies with no `self`); no iteration has looked, because every one has
-> gone hunting for seams in methods that have real coupling. Then `ContextBarState` into
-> `context_bar.rs` (~35 lines, all fields already `pub(crate)`), then `equation_sheet_ui` (246),
-> which the coupling table never measured. Order and reasoning in the plan.
+> ### CHECK FOR *ZERO* COUPLING BEFORE MEASURING COUPLING — and that class is now EMPTY
+> *(2026-08-19, `generic_error_summary`)*
+>
+> **−227 lines, first attempt, and the first extraction that needed no design at all.** It plus
+> its Structural entry point `structural_singular_summary` sat in `impl App` and never mentioned
+> `self` across 228 lines. No signature to establish, no callback to invent, no press to defer —
+> three call sites changed from `Self::` to `crate::error_summary::` and that was the edit.
+>
+> **THE SWEEP'S RESULT IS "DO NOT RUN IT AGAIN."** One `awk` pass over `impl App` for bodies with
+> no `self` found **five** candidates, and **228 of the 281 `self`-free lines were this one
+> function.** The other three — `build_declaring_classes` (30), `structural_view_available_from_stage`
+> (20), `note_says_singular` (3) — stay where a reader looks for them. The class held one item,
+> not a supply; do not re-run the pass expecting a second harvest.
+>
+> **But the rule generalises past this file.** Five iterations each measured *coupling* and
+> sorted by it, which silently assumes coupling is non-zero. **Ask whether anything has zero
+> first** — one `awk` pass, and it found the cheapest 227 lines in `app.rs` after five iterations
+> of hunting seams in methods that have real coupling.
+>
+> **AND THE TEST IT BOUGHT IS THE PART THE LINE COUNT HIDES.** As a private associated function,
+> the summary could only be exercised by building an `App`, giving it a worker, and driving a
+> specimen to a *failing* stage — so nothing had ever asserted what it renders. Five tests now
+> run in **0.02 s** against a `serde_json::Value`. One of them holds a property nobody had
+> written down: **the singularity grid is all-or-nothing**, because the four counts are read as a
+> tuple, and three of four on screen would invite the reader to infer the fourth — an inferred
+> rank deficiency being HRW's number, not the compiler's.
+>
+> **⟶ NEXT: `ContextBarState` into `context_bar.rs`** (~35 lines, all ten fields already
+> `pub(crate)`, `Viewport`/`SourceViewState` precedent — it finishes that pane), then
+> **`equation_sheet_ui`** (246), which the coupling table never measured and whose state already
+> lives in `crate::equation_sheet`. Order and reasoning in the plan.
 >
 > ### THE `App`-METHOD COUNT IS NOT THE TEST — ASK WHETHER DEFERRING THE PRESS COSTS A FRAME
 > *(2026-08-19, `stage_tab_bar_ui`)*

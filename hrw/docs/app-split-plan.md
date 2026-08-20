@@ -162,6 +162,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-19 | **`tour_prose_ui`** — the inner scroll area of `tour_panel_ui`, + `no_tour_ui` + a constant | **12,908** | `tour_panel.rs` (735, renamed from `tour_transport.rs`) |
 | 2026-08-19 | **the tabs of `stage_tab_bar_ui`** — the span below the ▶ button, + `tab_label` + the row's teaching comment | **12,715** | `stage_tabs.rs` (493, of which 190 are tests) |
 | 2026-08-19 | **the assembled state of `context_bar_ui`** + `background_ui` — *the seven-method one* | **12,519** | `context_bar.rs` (520, of which 205 are tests) |
+| 2026-08-19 | **`generic_error_summary` + `structural_singular_summary`** — *the `self`-free pair* | **12,292** | `error_summary.rs` (440, of which 140 are tests) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -524,20 +525,59 @@ fields to `pub(crate)`, where the pane itself reads only five. **That is a cost 
 of the extraction**, and it is the argument for the follow-up below rather than a reason to
 regret it.
 
-### ⟶ NEXT: `generic_error_summary` (236 lines) — it takes no `self` at all
+### `generic_error_summary` left, and the `self`-free class is now EXHAUSTED — 2026-08-19
 
-**Re-measured after this move, and the cheapest thing left is not a coupling problem — it is an
-associated function that is already free.** `fn generic_error_summary(ui, error, stage)` sits
-inside `impl App` and never mentions `self`. There is nothing to establish, no signature to
-design, and no callback to invent: it is a `git mv` with a `pub(crate)` and an import.
+**−227 lines, first attempt, no revert, and the first extraction that required no design at
+all.** `error_summary.rs` is 440 lines, 140 of them tests. `generic_error_summary` and its
+Structural entry point `structural_singular_summary` both sat in `impl App` and never mentioned
+`self` across 228 lines: no signature to establish, no callback to invent, no press to defer.
+Three call sites changed from `Self::` to `crate::error_summary::`, and that was the whole edit.
 
-**Sweep for the rest of that class before designing another extraction.** The measurement is one
-`awk` pass over `impl App` for bodies with no `self`, and it found `generic_error_summary` (236)
-plus `StageSubView::from_slug` (219, already outside `impl App` but in `app.rs`). **A `self`-free
-associated function is a free function wearing an `impl` block**, and no iteration so far has
-looked for them — every one has gone hunting for seams in methods that have real coupling.
+**THE SWEEP IS THE FINDING, AND ITS RESULT IS "DO NOT RUN IT AGAIN."** One `awk` pass over
+`impl App` for bodies containing no `self` returned five candidates, and this iteration
+consumed the only ones worth moving:
 
-**Then, in order:**
+| lines | fn | verdict |
+|---|---|---|
+| 220 | `generic_error_summary` | **moved** |
+| 8 | `structural_singular_summary` | **moved** — its only caller, and one concern with it |
+| 30 | `build_declaring_classes` | stays: it is `StageBundle` → `DefInfo` plumbing, not a pane |
+| 20 | `structural_view_available_from_stage` | stays: sub-view policy, 20 lines |
+| 3 | `note_says_singular` | stays |
+
+**So the class held one item, not a supply.** The previous iteration's advice — *"sweep for that
+whole class first"* — was worth taking exactly once, and the honest record is that **228 of the
+281 `self`-free lines were a single function.** A future session should not re-run this pass
+expecting a second harvest; the remaining three are under 30 lines each and belong where a
+reader looks for them.
+
+**The rule the five iterations before it were missing:** every one measured *coupling* and
+sorted by it, which silently assumes coupling is non-zero. **Check for zero first** — it costs
+one `awk` pass, and it found the cheapest 227 lines in the file after five iterations of
+hunting for seams in methods that have real coupling.
+
+### What the extraction bought, which is the part the line count does not show
+
+**The summary was previously reachable only through a whole compile.** As a private associated
+function of `App`, exercising it meant building an `App`, giving it a worker, and driving a
+specimen to a *failing* stage — so no test had ever asserted what the pane renders, only that a
+failure reached it. Against a free function taking `(ui, &Value, StageKind)`, the error object
+is an argument, and five tests run in **0.02 s** with no worker and no compile.
+
+**And one of them documents a correctness property that nothing held before.** The singularity
+grid is **all-or-nothing**: the four counts are read as a tuple, so a missing `rank_deficiency`
+withholds the equation, unknown and matched counts with it. That is `CLAUDE.md`'s
+*nothing-may-be-invented* rule in a place nobody had written it down — three of four counts on
+screen invite the reader to infer the fourth, and the inferred number would be HRW's rather than
+the compiler's. `the_singularity_grid_needs_all_four_counts` now fails if that is ever
+"improved" into four independent `if let`s.
+
+**Each test carries its own non-vacuity guard in the same body** — the absence assertions are
+paired with a presence assertion using the same query, so a query that finds nothing at all
+fails rather than passing quietly. `query_by_label_contains` throughout, per the trap recorded
+above: `get_all_by_label_contains` panics on no match and cannot express absence.
+
+### ⟶ NEXT, in order:
 
 1. **`ContextBarState` into `context_bar.rs`** (~35 lines) — its own doc says *"Everything the
    Context Bar owns"*, all ten fields are already `pub(crate)`, and the `Viewport` /
