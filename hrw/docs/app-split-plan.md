@@ -1426,7 +1426,25 @@ method made ruling on it one edit. **That is exactly what happened, so the parag
 **A doc that describes a pending decision expires the moment the decision lands**, and nothing
 links the two.
 
+
 ## ⟶ THE NEXT TWO STEPS — decided 2026-08-20, do them in this order after a `/clear`
+
+> **STEP 1 IS DONE — 2026-08-20, `arch_doc` commit. STEP 2 IS THE NEXT UNIT OF WORK**, and it is
+> the whole session. The step-1 section below is kept as the record of what was decided and why;
+> read step 2.
+>
+> **What landed**, in case step 2 needs it: `module_sizes()` splits into a floor plus
+> `scan_modules(root)` (recursion, key, sort), rows are keyed by `/`-joined path relative to
+> `src/`, and `the_scan_recurses_and_keys_rows_by_relative_path` runs against a temp tree — so
+> **`app/tests.rs` will appear in the generated table the moment it exists**, keyed as
+> `` `app/tests.rs` ``, and step 2's only obligation to that document is to re-run
+> `cargo run -p hrw --example gen_architecture`. Both perturbations were verified to fire. Also
+> fixed: `MIN_MODULES`' comment said *"30 against 38"* against 55 files.
+>
+> **Still owed by step 2**, carried here so it is not lost with the section it sits in:
+> `module_sizes_are_scanned_and_ordered` asserts `app.lines > 5_000` with the message
+> *"`app.rs` is a five-figure file"* — **step 2 makes that message false** (6,637 is four
+> figures). Fix it in step 2's commit, or the perturbation it describes stops matching the code.
 
 **Doug's direction: `Continue the app.rs split` should land on these two, in order, and then go
 back to the routers.** They are one unit of work each under the stopping rule, so **step 1, then

@@ -3700,3 +3700,30 @@ than a coincidence.
   every query-by-label test until a right-click. **An assertion surface that had been treated as
   unreachable** — same correction shape as the `matrix_panes` narrowing of the
   "panes cannot be tested" claim.
+
+- **2026-08-20 — `arch_doc::module_sizes()` recurses, and rows are keyed by path relative to
+  `src/` rather than by `file_name()`.** The scan was one `read_dir` with no `is_dir` branch, so
+  a module in a subdirectory did not exist to a generated table that prints *"Every file under
+  `src/`"* — **scanned rather than listed and silently incomplete anyway**, which is the exact
+  failure its own doc comment was written to prevent. Nothing under `src/` had ever had a
+  subdirectory, so the bug needed one to exist before it could bite; the queued move of
+  `app.rs`'s 5,613 test lines into a submodule is what would have created it.
+
+  **The row key is the decision, not the recursion.** Recursing while still keying on
+  `file_name()` names the new module `` `tests.rs` `` — ambiguous on sight, and it **collides
+  outright** the moment a second module grows a `tests.rs`, which is the obvious next thing to
+  happen. The relative path is unique by construction and reads as a location. It is joined with
+  `/` on every platform deliberately: the key is printed into a document a test requires to be
+  byte-identical to a fresh generation, and `std::path`'s separator would make that table differ
+  by the machine that generated it.
+
+  **`MIN_MODULES` could not have caught this, and the shape is worth keeping.** It is a *floor*,
+  so it only ever sees the row count fall; a whole subdirectory going unscanned makes the count
+  fail to **rise**. Same class as `recorded_animation_reports_no_live_session` — a non-vacuity
+  guard that cannot fire on the change it appears to cover. The scan was split into
+  `scan_modules(root)` (recursion, key, sort — no floor) so
+  `the_scan_recurses_and_keys_rows_by_relative_path` can run against a temp tree: a test that
+  only becomes meaningful once someone happens to create a subdirectory is not a guard. Its
+  equal-line pair (`bbb.rs`, `zz/aaa.rs`) makes **one** assertion fire on all three regressions —
+  dropping the recursion, keying on `file_name()`, and tiebreaking on the old key. Both were
+  verified by perturbation.

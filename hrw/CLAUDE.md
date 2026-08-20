@@ -828,25 +828,28 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > menu items are *not* independent are in
 > [`docs/app-split-plan.md`](docs/app-split-plan.md).
 >
-> ### ⟶ START HERE: TWO STEPS, IN THIS ORDER — decided 2026-08-20, spelled out in the plan
+> ### ⟶ START HERE: MOVE `app.rs`'s TEST BLOCKS OUT — step 1 of two landed 2026-08-20
 >
-> **`Continue the app.rs split` means these two next**, then back to the routers. Full detail,
-> including the row-key decision and the five block boundaries, is in
+> **`Continue the app.rs split` means this next**, then back to the routers. Full detail,
+> including the five block boundaries, is in
 > [`docs/app-split-plan.md`](docs/app-split-plan.md) under *"⟶ THE NEXT TWO STEPS"*. One unit of
-> work each under the stopping rule.
+> work under the stopping rule.
 >
-> 1. **Make `arch_doc::module_sizes()` recurse, keying rows by path relative to `src/`.** It reads
->    `src/` with `read_dir` and has **no `is_dir` branch**, so the file step 2 creates would be
->    absent from a table that prints *"Every file under `src/`"*. **Its own doc comment already
->    argues for the fix** (*"a hard-coded list would let a new module be silently absent"*) — it has
->    the failure mode it was written to prevent. **`MIN_MODULES` cannot catch it**: the row count
->    fails to *rise*, and a floor only sees it fall. **Key by relative path, not `file_name()`** —
->    bare names collide the moment a second module gains a `tests.rs`.
-> 2. **Move `app.rs`'s five `cfg(test)` blocks to `app/tests.rs` (new, under `src/`).** Everything from line 6,638
->    to the end is test code — **5,613 of 12,250 lines** — and it is a clean tail, verified. No
->    `#[path]`, no `mod.rs`: Rust 2018 lets a file-module own a subdirectory, so `src/app.rs` keeps
->    `#[cfg(test)] mod tests;` and the body moves beneath it. `super` still means `app`, and a
->    child module keeps its parent's private access.
+> **Move `app.rs`'s five `cfg(test)` blocks to `app/tests.rs` (new, under `src/`).** Everything
+> from line 6,638 to the end is test code — **5,613 of 12,250 lines** — and it is a clean tail,
+> verified. No `#[path]`, no `mod.rs`: Rust 2018 lets a file-module own a subdirectory, so
+> `src/app.rs` keeps `#[cfg(test)] mod tests;` and the body moves beneath it. `super` still means
+> `app`, and a child module keeps its parent's private access. **Move the five verbatim; do not
+> merge them** — a move plus a merge is two changes and only one is verified by the suite going
+> green unchanged. Afterwards re-run `cargo run -p hrw --example gen_architecture`, and fix
+> `module_sizes_are_scanned_and_ordered`'s *"`app.rs` is a five-figure file"* message, which the
+> move makes false.
+>
+> **Step 1 is done and needs nothing further** *(`arch_doc`, 2026-08-20)*. `module_sizes()` now
+> recurses and keys rows by path relative to `src/`, so the new module appears in the generated
+> table as `` `app/tests.rs` `` rather than silently not existing. It had the failure mode its own
+> doc comment was written to prevent, and **`MIN_MODULES` could not have caught it** — a floor
+> only sees the count *fall*, and this makes it fail to *rise*.
 >
 > **THE RULE AGAINST LINE-COUNT-ONLY EXTRACTIONS DOES NOT BAR THIS, and reading it as though it
 > did was a misreading of the rule's own second clause** — §2 admits *"the specific thing it stops

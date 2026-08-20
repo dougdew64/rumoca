@@ -55,8 +55,10 @@
 //! - [`pipeline_stages`] — read from `StageKind::ALL` *itself*, not from a text
 //!   parse of it. The stage roster is a compiled constant; there is no reason to
 //!   re-derive it from characters.
-//! - [`module_sizes`] — every `src/*.rs` and its line count, by scanning the
-//!   directory rather than a list, so a **new module cannot be silently missing**.
+//! - [`module_sizes`] — every `.rs` file under `src/` **at any depth** and its
+//!   line count, by scanning the tree rather than a list, so a **new module
+//!   cannot be silently missing**. It scanned only the top level until
+//!   2026-08-20, which is the same silence one level down.
 //! - [`app_field_groups`] — the `// ---- N. Title ----` headers inside
 //!   `pub struct App`. The document's hand-written list still carried a `Bridge`
 //!   group that had been extracted and lacked the `Breakpoint pre-warm` group that
@@ -100,13 +102,17 @@ const REGIONS: &[(&str, RegionFn)] = &[
     ("app-field-groups", app_field_groups_table),
 ];
 
-/// Minimum number of `src/*.rs` files a healthy scan finds.
+/// Minimum number of `.rs` files under `src/` a healthy scan finds.
 ///
 /// **A non-vacuity floor, in the sense `docs/fidelity-plan.md` uses.** Without it
 /// a scan that silently returned nothing would emit an empty table, and an empty
 /// table is a well-formed table — the failure would read as "this crate has no
-/// modules" rather than as "the scan broke". 30 against 38 today: loose enough to
+/// modules" rather than as "the scan broke". 30 against 55 today: loose enough to
 /// survive ordinary deletion, tight enough that a broken read cannot pass.
+///
+/// **It is a floor, so it only ever sees the count fall.** A scan that stopped
+/// finding a whole subdirectory would leave the count too *high*, not too low —
+/// `the_scan_recurses_and_keys_rows_by_relative_path` is what covers that.
 const MIN_MODULES: usize = 30;
 
 /// Absolute path of `architecture.md` in this checkout.
@@ -260,45 +266,39 @@ fn pipeline_stages_table() -> Result<String, String> {
 // Fact family 2 — module sizes
 // ---------------------------------------------------------------------------
 
-/// One `src/*.rs` file and its length.
+/// One `.rs` file under `src/` and its length.
 pub struct ModuleSize {
-    /// File name, e.g. `app.rs`.
+    /// Path relative to `src/`, `/`-separated — e.g. `app.rs`, `app/tests.rs`.
+    ///
+    /// **A relative path rather than a bare file name, and that is the whole
+    /// design of this field.** `file_name()` would key a submodule as
+    /// `` `tests.rs` `` — ambiguous on sight, and it *collides outright* the
+    /// moment a second module grows a `tests.rs` of its own, which is the obvious
+    /// next thing to happen. A relative path is unique by construction and reads
+    /// as a location.
     pub file: String,
     /// Lines in the file.
     pub lines: usize,
 }
 
-/// Every `src/*.rs` file with its line count, largest first.
+/// Every `.rs` file under `src/` **at any depth**, with its line count, largest
+/// first.
 ///
 /// **Scanned, not listed.** A hard-coded list would let a new module be silently
 /// absent from the table, and absence leaves no gap where the missing thing was —
 /// the failure mode `CLAUDE.md` records for the Context Bar, which showed three
 /// true things and omitted a fourth for weeks.
+///
+/// **It had the failure mode it was written to prevent** *(fixed 2026-08-20)*.
+/// The scan was one `read_dir` with no `is_dir` branch, so a module in a
+/// subdirectory did not exist to a table that prints *"Every file under `src/`"* —
+/// scanned rather than listed, and silently incomplete anyway. Nothing in `src/`
+/// had ever had a subdirectory, so the bug needed one to exist before it could
+/// bite. **`MIN_MODULES` cannot catch this**: the row count fails to *rise*, and
+/// a floor only ever sees it fall.
 pub fn module_sizes() -> Result<Vec<ModuleSize>, String> {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-    let entries =
-        std::fs::read_dir(&dir).map_err(|e| format!("cannot read {}: {e}", dir.display()))?;
-
-    let mut rows: Vec<ModuleSize> = Vec::new();
-    for entry in entries {
-        let path = entry
-            .map_err(|e| format!("cannot read an entry of {}: {e}", dir.display()))?
-            .path();
-        if path.extension().and_then(|x| x.to_str()) != Some("rs") {
-            continue;
-        }
-        let text = std::fs::read_to_string(&path)
-            .map_err(|e| format!("cannot read {}: {e}", path.display()))?;
-        let file = path
-            .file_name()
-            .and_then(|x| x.to_str())
-            .ok_or_else(|| format!("{} has no usable file name", path.display()))?
-            .to_owned();
-        rows.push(ModuleSize {
-            lines: text.lines().count(),
-            file,
-        });
-    }
+    let rows = scan_modules(&dir)?;
 
     if rows.len() < MIN_MODULES {
         return Err(format!(
@@ -309,10 +309,76 @@ pub fn module_sizes() -> Result<Vec<ModuleSize>, String> {
         ));
     }
 
-    // Largest first, then alphabetical, so the ordering is total and the file is
-    // byte-stable across runs and platforms.
+    Ok(rows)
+}
+
+/// The scan itself, over an arbitrary root, sorted but with no floor applied.
+///
+/// Separate from [`module_sizes`] so the recursion and the row key can be tested
+/// against a temp tree — the real `src/` is whatever shape it happens to be today,
+/// and a test that only passes once a subdirectory exists is not a test of the
+/// scan.
+///
+/// **No skip list, unlike `doc_citations::rust_sources`.** That one walks
+/// `crates/` and must dodge `target/`; this walks `src/` only, where the
+/// extension filter is the entire guard needed (`field_help.json` is the one
+/// non-`.rs` file there).
+fn scan_modules(root: &Path) -> Result<Vec<ModuleSize>, String> {
+    let mut rows: Vec<ModuleSize> = Vec::new();
+    walk_modules(root, root, &mut rows)?;
+
+    // Largest first, then alphabetical **by relative path**, so the ordering is
+    // total and the file is byte-stable across runs and platforms.
     rows.sort_by(|a, b| b.lines.cmp(&a.lines).then_with(|| a.file.cmp(&b.file)));
     Ok(rows)
+}
+
+/// One directory level, recursing into subdirectories. Errors rather than
+/// skipping, since an unreadable entry under `src/` means the scan broke.
+fn walk_modules(root: &Path, dir: &Path, rows: &mut Vec<ModuleSize>) -> Result<(), String> {
+    let entries =
+        std::fs::read_dir(dir).map_err(|e| format!("cannot read {}: {e}", dir.display()))?;
+    for entry in entries {
+        let path = entry
+            .map_err(|e| format!("cannot read an entry of {}: {e}", dir.display()))?
+            .path();
+        if path.is_dir() {
+            walk_modules(root, &path, rows)?;
+            continue;
+        }
+        if path.extension().and_then(|x| x.to_str()) != Some("rs") {
+            continue;
+        }
+        let text = std::fs::read_to_string(&path)
+            .map_err(|e| format!("cannot read {}: {e}", path.display()))?;
+        rows.push(ModuleSize {
+            lines: text.lines().count(),
+            file: relative_key(root, &path)?,
+        });
+    }
+    Ok(())
+}
+
+/// `…/src/app/tests.rs` under `…/src` → `app/tests.rs`.
+///
+/// **`/` on every platform, and that is not cosmetic.** The key is printed into a
+/// committed document that a test requires to be byte-identical to a fresh
+/// generation; `std::path`'s separator is `\` on Windows, so joining components
+/// with it would make the table differ by the machine that ran the generator.
+fn relative_key(root: &Path, path: &Path) -> Result<String, String> {
+    let rel = path
+        .strip_prefix(root)
+        .map_err(|_| format!("{} is not under {}", path.display(), root.display()))?;
+    let mut parts: Vec<&str> = Vec::new();
+    for component in rel.components() {
+        parts.push(
+            component
+                .as_os_str()
+                .to_str()
+                .ok_or_else(|| format!("{} has a non-UTF-8 path component", path.display()))?,
+        );
+    }
+    Ok(parts.join("/"))
 }
 
 fn module_sizes_table() -> Result<String, String> {
@@ -323,8 +389,9 @@ fn module_sizes_table() -> Result<String, String> {
     let mut s = String::new();
     let _ = writeln!(
         s,
-        "**{n} modules, {} lines**, largest first. Every file under `src/`, including the \
-         test-only ones (`ui_tests.rs`, `test_support.rs`).\n",
+        "**{n} modules, {} lines**, largest first. Every `.rs` file under `src/` at any \
+         depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module \
+         in a subdirectory is keyed by its path relative to `src/`.\n",
         thousands(total)
     );
     let _ = writeln!(s, "| module | lines |");
@@ -572,6 +639,52 @@ mod tests {
         assert!(
             rows.iter().any(|r| r.variant == "Dae"),
             "the stage that went undocumented must be in the roster"
+        );
+    }
+
+    /// A module in a **subdirectory** appears, keyed by its path relative to
+    /// `src/`.
+    ///
+    /// **The test that would have caught the scan's own bug.** Until 2026-08-20
+    /// [`module_sizes`] was a single `read_dir` with no `is_dir` branch, so a
+    /// module one level down did not exist to a table that prints *"Every file
+    /// under `src/`"*. `MIN_MODULES` could not see it — a floor watches the count
+    /// *fall*, and this failure makes it fail to *rise*, the same shape as
+    /// `recorded_animation_reports_no_live_session`.
+    ///
+    /// **Against a temp tree, not the real `src/`**, so it pins the scan's
+    /// behaviour rather than today's layout — a test that only becomes meaningful
+    /// once someone happens to create a subdirectory is not a guard.
+    ///
+    /// **The equal-line pair is doing work.** `bbb.rs` and `zz/aaa.rs` are both
+    /// one line, so the ordering falls to the alphabetical tiebreak: by relative
+    /// path `bbb.rs` precedes `zz/aaa.rs`, by bare file name `aaa.rs` would
+    /// precede it. **One assertion therefore fires on all three regressions** —
+    /// dropping the recursion, keying on `file_name()`, and tiebreaking on the
+    /// old key.
+    #[test]
+    fn the_scan_recurses_and_keys_rows_by_relative_path() {
+        let root = std::env::temp_dir().join("hrw-module-scan-test");
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("zz")).unwrap();
+        std::fs::write(root.join("app.rs"), "one\ntwo\nthree\n").unwrap();
+        std::fs::write(root.join("bbb.rs"), "one\n").unwrap();
+        std::fs::write(root.join("zz").join("aaa.rs"), "one\n").unwrap();
+        // A non-`.rs` file, as `src/field_help.json` is: not a module.
+        std::fs::write(root.join("field_help.json"), "{}\n").unwrap();
+
+        let rows = scan_modules(&root).expect("scan the temp tree");
+        let keys: Vec<&str> = rows.iter().map(|r| r.file.as_str()).collect();
+        assert_eq!(
+            keys,
+            ["app.rs", "bbb.rs", "zz/aaa.rs"],
+            "the scan must recurse, key rows by `/`-separated relative path, and \
+             tiebreak on that key"
+        );
+        assert_eq!(
+            rows.iter().map(|r| r.lines).collect::<Vec<_>>(),
+            [3, 1, 1],
+            "line counts must come from the file the key names"
         );
     }
 
