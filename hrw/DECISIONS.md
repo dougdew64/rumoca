@@ -3516,3 +3516,62 @@ so a silent clamp would hide exactly the regression it exists to catch.
 *finding* — "only Summary and Animate are redirected" — and he asked whether that was a bug
 report. It was not, as written; checking it made it one. **A behaviour described neutrally is not
 a behaviour that has been judged**, and the write-up read as though it had been.
+
+## 2026-08-20 — the compile replays get their own cache, and the misfiling was a third lifetime
+
+**`CompileViewCaches` (`compile_caches.rs`) splits four replays out of `StageViewCaches`** —
+`reduction_anim`, `connection_anim`, `ic_plan_anim` and `pre_lowering_anim`. The first three were
+in `StageViewCaches`; the fourth had been sitting on `App` as `cached_pre_lowering_anim`, cleared
+by one hand-written line at compile completion, and the plan had it filed as an *asymmetry to
+decide* — "which behaviour is intended is a real question". Doug decided: per-compile, for all
+four.
+
+**The struct's own doc was the evidence.** `StageViewCaches` promises *"views derived from a
+stage's report, all valid for exactly one stage"*, and that is checkable by reading the build
+sites: the eight that stay all call `stages.get(self.stage)` or branch on `self.stage`; the three
+that left never mentioned it. Each of the four appears on **exactly one stage**, so its input
+cannot vary with the stage. The original 2026-08-02 lifetime measurement found three families and
+missed this one — because three of its four members were already sitting inside another family,
+wearing its lifetime.
+
+**The behaviour was not a design, and the reason is `reset_for`'s single call site.** It is called
+only from `report_sub_view_row_ui`, which draws only on Structural and Index Reduction — so
+`built_for` never held any other stage, and the rule actually in force was *"a replay restarts if
+you happened to pass through a report stage in between."* Events → Flatten → Events dropped
+nothing; Flatten → Structural → Flatten dropped the connection replay. Since
+`Playback::recorded` starts at `cursor: 0, playing: false`, the cost was losing your place: paused
+on frame 12 of the index-reduction replay, clicking Structural to compare and clicking back put
+you on frame 0. **It also removed a way to strand a live session** — a live replay owns the
+receiving end of the trace channel, and dropping it mid-run left the algorithm thread pushing into
+a closed channel with the armed breakpoint released by nothing.
+
+**`a_replay_keeps_its_place_across_a_stage_switch` drives the real paint path**, and the first
+draft did not. That draft set the four cache fields, called `reset_for`, and asserted they
+survived — which cannot fail, because they are in a different struct now: it asserted the refactor
+rather than the behaviour. The shipped test paints `frame_ui`, walks the IC plan to block 2,
+switches to Structural and back, and asserts `(2, 3)`. Must-fire verified by restoring the old
+clearing at the row's call site; it fails with `(0, 3)`, exactly the number its message names.
+
+## 2026-08-20 — a stranded sub-view was drawing the wrong phase's animation, and one arm of eight explains it
+
+**`report_ready` was missing from the `StructuralView::Animate` arm of the central panel's
+dispatch chain**, and present on the other seven. `viewport.structural` deliberately survives a
+stage change (it is a camera), and `clamp_structural_sub_view` returns early on every non-report
+stage — also deliberately — so that guard was the only thing between a left-behind `Animate` and
+another stage's pane. Because the arm sits above the Events, Initialization and Flatten arms, it
+won: choose **Animate ▶** on Index Reduction, click **Events**, and the index-reduction replay was
+drawn under the Events tab, with the Events sub-view row above it offering Tree / pre() lowering.
+
+**Third instance of the stranded-sub-view class and the worst-looking.** The alias defect
+(2026-08-19) was *absence filled* — a pane claiming a model had no alias eliminations when it had
+several. This is **presence substituted**: a correct animation of the wrong phase, under another
+phase's tab, with nothing on screen admitting it. The two earlier fixes were both about *which
+sub-view is selected*; this one is about **whether the dispatch honours a selection the current
+stage does not offer**, which no amount of clamping on report stages could have reached.
+
+**Found by a probe asking a different question.** While splitting `CompileViewCaches` out, the new
+test's precondition failed: the IC plan cache was `None` when the pane should have built it. Three
+wrong guesses preceded the answer (`nav`, `selected`, `ui_mode`), and the fourth probe printed the
+chain's guards. **The lesson is the one already recorded for the divider — instrument rather than
+theorise** — with a second half worth adding: *a test whose precondition fails is a finding, not
+an obstacle.* The temptation was to fix the fixture until the precondition passed.

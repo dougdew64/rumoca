@@ -93,11 +93,11 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**52 modules, 61,541 lines**, largest first. Every file under `src/`, including the test-only ones (`ui_tests.rs`, `test_support.rs`).
+**53 modules, 61,837 lines**, largest first. Every file under `src/`, including the test-only ones (`ui_tests.rs`, `test_support.rs`).
 
 | module | lines |
 |---|---:|
-| `app.rs` | 12,132 |
+| `app.rs` | 12,305 |
 | `worker.rs` | 10,594 |
 | `bridge.rs` | 3,772 |
 | `doc_citations.rs` | 3,399 |
@@ -109,7 +109,7 @@ showing 48 equations. They are derived now, and
 | `connection_anim.rs` | 1,117 |
 | `reduction_view.rs` | 1,112 |
 | `autoplay.rs` | 1,078 |
-| `lib.rs` | 1,062 |
+| `lib.rs` | 1,063 |
 | `diagnostics.rs` | 986 |
 | `matching_anim.rs` | 961 |
 | `tarjan_anim.rs` | 867 |
@@ -144,12 +144,13 @@ showing 48 equations. They are derived now, and
 | `log_view.rs` | 229 |
 | `colors.rs` | 221 |
 | `main.rs` | 178 |
+| `stage_caches.rs` | 120 |
 | `json_read.rs` | 119 |
-| `stage_caches.rs` | 99 |
+| `compile_caches.rs` | 101 |
 | `ui_state.rs` | 73 |
 | `field_help.rs` | 67 |
 | `test_support.rs` | 60 |
-| **total** | **61,541** |
+| **total** | **61,837** |
 <!-- END GENERATED module-sizes -->
 
 

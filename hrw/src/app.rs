@@ -614,6 +614,7 @@ struct CompileFrames {
     connection: Vec<rumoca_phase_flatten::connections::trace::ConnectionFrame>,
 }
 
+use crate::compile_caches::CompileViewCaches;
 use crate::context_bar::{self, ContextBarPress, ContextBarState, PointKind, PointedAt};
 use crate::model_list::{ModelListNav, ModelListState};
 use crate::report_sub_view;
@@ -758,8 +759,9 @@ pub struct App {
     // not yet computed); inner Option is the parse result (None = report
     // had no data for this view).
     /// Every view derived from the current stage's report. See
-    /// [`StageViewCaches`] for why these eleven live together and the other nine
-    /// `cached_*` fields do not.
+    /// [`StageViewCaches`] for why these eight live together and the other nine
+    /// `cached_*` fields do not — and [`CompileViewCaches`] for the three that used to
+    /// be here and had no business being.
     stage_views: StageViewCaches,
     cached_equation_sheet: Option<equation_sheet::EquationSheet>,
     identifier_index: Option<identifier_index::IdentifierIndex>,
@@ -777,7 +779,14 @@ pub struct App {
     /// as designed rather than being appeased.
     frames: CompileFrames,
     cached_flat: Option<rumoca_ir_flat::Model>,
-    cached_pre_lowering_anim: Option<Option<pre_lowering_anim::PreLoweringAnimation>>,
+    /// **The replays built from `frames`**, which live exactly as long as `frames` does.
+    ///
+    /// One field where `pre_lowering_anim` used to sit alone, because it never was alone:
+    /// `reduction_anim`, `connection_anim` and `ic_plan_anim` have the same lifetime and
+    /// were filed under [`StageViewCaches`], which dropped them whenever a *report* stage
+    /// was entered. See [`CompileViewCaches`] for what that did and why nobody designed
+    /// it.
+    compile_views: CompileViewCaches,
     cached_dae: Option<rumoca_ir_dae::Dae>,
 
     // ---- 13. Markdown rendering ----
@@ -1493,7 +1502,7 @@ impl App {
             tracked_identifier: None,
             frames: CompileFrames::default(),
             cached_flat: None,
-            cached_pre_lowering_anim: None,
+            compile_views: CompileViewCaches::default(),
             cached_dae: None,
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             problem_lines: Vec::new(),
@@ -1839,10 +1848,15 @@ impl App {
                         connection: connection_frames,
                     };
                     self.cached_flat = flat;
-                    self.cached_pre_lowering_anim = None;
                     self.cached_dae = dae;
-                    // A new compile means new reports, so even the stage already
-                    // on screen must be rebuilt — hence the key goes too.
+                    // **The two cache families, dropped together.** New frames mean the
+                    // replays built from them are stale; new reports mean even the stage
+                    // already on screen must be rebuilt — hence `stage_views`' key goes
+                    // too. Each is a whole-struct assignment, so a view added to either
+                    // family tomorrow is covered here by construction. Until 2026-08-20
+                    // the first of these was a hand-written `self.cached_pre_lowering_anim
+                    // = None` — a list of one, which is how a list of two goes wrong.
+                    self.compile_views.invalidate_all();
                     self.stage_views.invalidate_all();
                     // **A library model's source, seeded into the same cache a
                     // specimen fills from disk.** Everything downstream —
@@ -2328,11 +2342,6 @@ impl App {
         }
     }
 
-    /// The on-screen animation's position, if the current stage is showing one.
-    ///
-    /// Reported only for the *current* stage tab: the caches hold several
-    /// animations at once, and naming a stale one would say the user was
-    /// looking at something they were not.
     /// The animation the current stage tab is showing, if any.
     ///
     /// One place that answers "which animation is on screen?" — the capture and
@@ -2358,15 +2367,17 @@ impl App {
                 StructuralView::AliasAnim => Some(self.stage_views.alias_anim.as_ref()?.as_ref()?),
                 _ => None,
             },
-            StageKind::IndexReduction => Some(self.stage_views.reduction_anim.as_ref()?.as_ref()?),
+            StageKind::IndexReduction => {
+                Some(self.compile_views.reduction_anim.as_ref()?.as_ref()?)
+            }
             StageKind::Events if self.viewport.events == EventsView::PreLowering => {
-                Some(self.cached_pre_lowering_anim.as_ref()?.as_ref()?)
+                Some(self.compile_views.pre_lowering_anim.as_ref()?.as_ref()?)
             }
             StageKind::Initialization if self.viewport.init == InitView::IcPlan => {
-                Some(self.stage_views.ic_plan_anim.as_ref()?.as_ref()?)
+                Some(self.compile_views.ic_plan_anim.as_ref()?.as_ref()?)
             }
             StageKind::Flatten if self.viewport.flatten == FlattenView::Connections => {
-                Some(self.stage_views.connection_anim.as_ref()?.as_ref()?)
+                Some(self.compile_views.connection_anim.as_ref()?.as_ref()?)
             }
             _ => None,
         }
@@ -2783,15 +2794,17 @@ impl App {
                 StructuralView::AliasAnim => Some(self.stage_views.alias_anim.as_mut()?.as_mut()?),
                 _ => None,
             },
-            StageKind::IndexReduction => Some(self.stage_views.reduction_anim.as_mut()?.as_mut()?),
+            StageKind::IndexReduction => {
+                Some(self.compile_views.reduction_anim.as_mut()?.as_mut()?)
+            }
             StageKind::Events if self.viewport.events == EventsView::PreLowering => {
-                Some(self.cached_pre_lowering_anim.as_mut()?.as_mut()?)
+                Some(self.compile_views.pre_lowering_anim.as_mut()?.as_mut()?)
             }
             StageKind::Initialization if self.viewport.init == InitView::IcPlan => {
-                Some(self.stage_views.ic_plan_anim.as_mut()?.as_mut()?)
+                Some(self.compile_views.ic_plan_anim.as_mut()?.as_mut()?)
             }
             StageKind::Flatten if self.viewport.flatten == FlattenView::Connections => {
-                Some(self.stage_views.connection_anim.as_mut()?.as_mut()?)
+                Some(self.compile_views.connection_anim.as_mut()?.as_mut()?)
             }
             _ => None,
         }
@@ -2906,7 +2919,7 @@ impl App {
             // The only pane that shows connection sets, and therefore the only
             // evidence for `connect-expansion.md` Stop 1.
             StageKind::Flatten if self.viewport.flatten == FlattenView::Connections => self
-                .stage_views
+                .compile_views
                 .connection_anim
                 .as_ref()
                 .and_then(Option::as_ref)
@@ -3691,7 +3704,7 @@ impl App {
     /// The index-reduction animation view. See [`Self::matching_anim_ui`].
     fn reduction_anim_ui(&mut self, ui: &mut egui::Ui) {
         let gate = self.live_debug_gate(ui.ctx(), PendingLiveDebug::Reduction, |a| {
-            &a.stage_views.reduction_anim
+            &a.compile_views.reduction_anim
         });
         let mut debug_clicked = false;
         if gate.spawn_live
@@ -3703,11 +3716,11 @@ impl App {
                 let _ = bridge::remove_live_trace_breakpoint();
                 self.live_breakpoint_armed = false;
             }
-            self.stage_views.reduction_anim = Some(live);
+            self.compile_views.reduction_anim = Some(live);
         }
-        if self.stage_views.reduction_anim.is_none() {
+        if self.compile_views.reduction_anim.is_none() {
             let frames = &self.frames.index_reduction;
-            self.stage_views.reduction_anim = Some(if frames.is_empty() {
+            self.compile_views.reduction_anim = Some(if frames.is_empty() {
                 None
             } else {
                 Some(reduction_anim::ReductionAnimation::from_frames(
@@ -3715,7 +3728,7 @@ impl App {
                 ))
             });
         }
-        if let Some(Some(anim)) = &mut self.stage_views.reduction_anim {
+        if let Some(Some(anim)) = &mut self.compile_views.reduction_anim {
             debug_clicked = egui::ScrollArea::vertical()
                 .auto_shrink(false)
                 .show(ui, |ui| anim.ui(ui, gate.arming, gate.debug_enabled))
@@ -3823,7 +3836,7 @@ impl App {
     /// [`PendingLiveDebug::Connections`].
     fn connection_anim_ui(&mut self, ui: &mut egui::Ui) {
         let gate = self.live_debug_gate(ui.ctx(), PendingLiveDebug::Connections, |a| {
-            &a.stage_views.connection_anim
+            &a.compile_views.connection_anim
         });
         let mut debug_clicked = false;
         if gate.spawn_live
@@ -3840,14 +3853,14 @@ impl App {
                 trace,
                 done: std::sync::Arc::clone(&done),
             });
-            self.stage_views.connection_anim = Some(Some(
+            self.compile_views.connection_anim = Some(Some(
                 connection_anim::ConnectionAnimation::start_live(rx, done),
             ));
         }
 
-        if self.stage_views.connection_anim.is_none() {
+        if self.compile_views.connection_anim.is_none() {
             let frames = &self.frames.connection;
-            self.stage_views.connection_anim = Some(if frames.is_empty() {
+            self.compile_views.connection_anim = Some(if frames.is_empty() {
                 None
             } else {
                 Some(connection_anim::ConnectionAnimation::from_frames(
@@ -3855,7 +3868,7 @@ impl App {
                 ))
             });
         }
-        if let Some(Some(anim)) = &mut self.stage_views.connection_anim {
+        if let Some(Some(anim)) = &mut self.compile_views.connection_anim {
             debug_clicked = egui::ScrollArea::vertical()
                 .auto_shrink(false)
                 .show(ui, |ui| anim.ui(ui, gate.arming, gate.debug_enabled))
@@ -3906,8 +3919,8 @@ impl App {
 
     /// The initial-condition plan walk, on the Initialization stage.
     fn ic_plan_anim_ui(&mut self, ui: &mut egui::Ui) {
-        if self.stage_views.ic_plan_anim.is_none() {
-            self.stage_views.ic_plan_anim = Some(
+        if self.compile_views.ic_plan_anim.is_none() {
+            self.compile_views.ic_plan_anim = Some(
                 self.stages
                     .initialization
                     .value
@@ -3915,7 +3928,7 @@ impl App {
                     .and_then(ic_plan_anim::IcPlanAnimation::from_report),
             );
         }
-        if let Some(Some(anim)) = &mut self.stage_views.ic_plan_anim {
+        if let Some(Some(anim)) = &mut self.compile_views.ic_plan_anim {
             egui::ScrollArea::vertical()
                 .auto_shrink(false)
                 .show(ui, |ui| anim.ui(ui));
@@ -3944,7 +3957,7 @@ impl App {
     /// is already past it.
     fn pre_lowering_anim_ui(&mut self, ui: &mut egui::Ui) {
         let gate = self.live_debug_gate(ui.ctx(), PendingLiveDebug::PreLowering, |a| {
-            &a.cached_pre_lowering_anim
+            &a.compile_views.pre_lowering_anim
         });
         let mut debug_clicked = false;
         if gate.spawn_live
@@ -3956,11 +3969,11 @@ impl App {
                 let _ = bridge::remove_live_trace_breakpoint();
                 self.live_breakpoint_armed = false;
             }
-            self.cached_pre_lowering_anim = Some(live);
+            self.compile_views.pre_lowering_anim = Some(live);
         }
-        if self.cached_pre_lowering_anim.is_none() {
+        if self.compile_views.pre_lowering_anim.is_none() {
             let frames = &self.frames.pre_lowering;
-            self.cached_pre_lowering_anim = Some(if frames.is_empty() {
+            self.compile_views.pre_lowering_anim = Some(if frames.is_empty() {
                 None
             } else {
                 Some(pre_lowering_anim::PreLoweringAnimation::from_frames(
@@ -3968,7 +3981,7 @@ impl App {
                 ))
             });
         }
-        if let Some(Some(anim)) = &mut self.cached_pre_lowering_anim {
+        if let Some(Some(anim)) = &mut self.compile_views.pre_lowering_anim {
             debug_clicked = egui::ScrollArea::vertical()
                 .auto_shrink(false)
                 .show(ui, |ui| anim.ui(ui, gate.arming, gate.debug_enabled))
@@ -4385,7 +4398,16 @@ impl App {
                             ui.weak("(no reduction data in this report)");
                         }
                     }
-                } else if self.viewport.structural == StructuralView::Animate {
+                } else if report_ready && self.viewport.structural == StructuralView::Animate {
+                    // **`report_ready` was missing here and nowhere else in this chain**
+                    // (fixed 2026-08-20). `Animate` is an Index-Reduction-only sub-view,
+                    // and `viewport.structural` deliberately survives a stage change —
+                    // it is a camera. Nothing clamps it off a report stage either:
+                    // `clamp_structural_sub_view` returns early on every other stage, by
+                    // design. So an unguarded branch here meant *this* pane won on
+                    // Events, Initialization and Flatten too, since it sits above all
+                    // three of theirs: leave Index Reduction ▸ Animate for Events and
+                    // the index-reduction replay was drawn under the Events tab.
                     self.reduction_anim_ui(ui);
                 } else if events_ready && self.viewport.events == EventsView::PreLowering {
                     self.pre_lowering_anim_ui(ui);
@@ -7112,7 +7134,7 @@ impl App {
             tracked_identifier: None,
             frames: CompileFrames::default(),
             cached_flat: None,
-            cached_pre_lowering_anim: None,
+            compile_views: CompileViewCaches::default(),
             cached_dae: None,
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             problem_lines: Vec::new(),
@@ -8499,7 +8521,7 @@ mod tests {
         assert!(msg.contains("denied"), "should carry the cause: {msg}");
     }
 
-    /// Switching stages drops **every** view, including ones added later.
+    /// Switching stages drops **every stage-keyed** view, including ones added later.
     ///
     /// **This test used to re-implement the invalidation inline**, clearing five
     /// fields by hand and then asserting they were clear — so it verified its own
@@ -8509,6 +8531,12 @@ mod tests {
     ///
     /// The assertion is `built_for` plus a *whole-struct* check, so a view added
     /// tomorrow is covered without touching this test.
+    ///
+    /// **The word "every" was load-bearing and wrong until 2026-08-20.** Three replays
+    /// on this list were not stage-keyed at all, and dropping them here was the defect
+    /// [`the_compile_replays_survive_a_stage_switch`] now guards against. The two tests
+    /// are a pair: this one says what a stage switch *must* clear, that one says what it
+    /// **must not**, and a field moved between the two families fails one of them.
     #[test]
     fn report_cache_invalidated_on_stage_switch() {
         let mut app = App::test_default();
@@ -8539,11 +8567,156 @@ mod tests {
                 && app.stage_views.tarjan_anim.is_none()
                 && app.stage_views.tearing_anim.is_none()
                 && app.stage_views.alias_anim.is_none()
-                && app.stage_views.ic_plan_anim.is_none()
-                && app.stage_views.connection_anim.is_none()
-                && app.stage_views.reduction_anim.is_none()
                 && app.stage_views.before_incidence.is_none(),
             "a stage switch must leave no view built for the previous stage",
+        );
+    }
+
+    /// A stage switch must **not** touch the replays the compile produced.
+    ///
+    /// The mirror of [`report_cache_invalidated_on_stage_switch`], and the guard for the
+    /// defect that split `CompileViewCaches` out of `StageViewCaches` on 2026-08-20.
+    ///
+    /// **What it was like before.** `reduction_anim`, `connection_anim` and
+    /// `ic_plan_anim` sat in `StageViewCaches`, so the whole-struct assignment above
+    /// dropped them — and since `reset_for` is called only from the report sub-view row,
+    /// the rule in force was *"a replay restarts if you happened to pass through
+    /// Structural or Index Reduction in between."* Paused on frame 12 of the
+    /// index-reduction replay, clicking Structural to compare and clicking back put you
+    /// on frame 0, because [`crate::playback::Playback::recorded`] starts there.
+    ///
+    /// **It goes through the paint path, and that is the whole design of it.** The first
+    /// draft set the four cache fields directly, called `reset_for`, and asserted they
+    /// survived — which cannot fail, because they are in a different struct now. It
+    /// asserted the refactor rather than the behaviour. This one drives the real
+    /// `frame_ui`, so the stage switch reaches `report_sub_view_row_ui` the way a click
+    /// does, and it fails at **runtime** rather than at compile time if a replay moves
+    /// back into `StageViewCaches` — the loud failure, since it names the cursor.
+    ///
+    /// **Initialization ▸ IC Plan is the cheapest of the four to stage**, because
+    /// `IcPlanAnimation::from_report` takes plain JSON while the other three want
+    /// captured compiler frames. Three blocks, so a cursor at 2 is distinguishable from
+    /// a reset to 0; the structural report exists only so the sub-view row draws at all
+    /// (it needs `current_stage().value`), which is what calls `reset_for`.
+    #[test]
+    fn a_replay_keeps_its_place_across_a_stage_switch() {
+        use crate::ui_tests::{AdHocTour, harness};
+        use crate::worker::Stage;
+
+        // Auto-selecting an ad hoc tour resets the stage side. See the note on
+        // `AdHocTour` — its presence is environment, not code.
+        let _tour_state = AdHocTour::absent();
+
+        let mut app = App::test_default();
+        app.stages.initialization = Stage {
+            value: Some(serde_json::json!({
+                "blocks": [
+                    { "kind": "scalar_direct", "var": "a" },
+                    { "kind": "scalar_direct", "var": "b" },
+                    { "kind": "scalar_direct", "var": "c" },
+                ]
+            })),
+            ..Stage::default()
+        };
+        // Any non-empty report: the row only asks whether the stage has a value.
+        app.stages.structural = Stage {
+            value: Some(serde_json::json!({ "blocks": [] })),
+            ..Stage::default()
+        };
+        app.stage = StageKind::Initialization;
+        app.viewport.init = InitView::IcPlan;
+        // **A specimen must be selected or `central_panel_ui` returns before the stage
+        // view** — and `nav` must stay *empty*, which reads backwards until you know
+        // what it is: `nav` is the go-to-definition stack, so a non-empty one means the
+        // reader has drilled into a class and the pane shows that class instead of the
+        // stage. Both were found by probe rather than by reading, and the failure in
+        // each case was the same one — "the replay is missing", when the truth was "the
+        // pane never ran".
+        app.selected = Some(std::path::PathBuf::from("specimens/RcCircuit.mo"));
+
+        let mut h = harness(app);
+        h.run_steps(2);
+
+        // Part-way through the walk, which is the state worth preserving.
+        assert!(
+            h.state_mut()
+                .on_screen_animation_mut()
+                .expect("precondition: the IC plan replay is on screen")
+                .seek(2),
+            "precondition: a three-block plan has a frame 2",
+        );
+
+        // Off to a report stage and back — the exact round trip that used to reset it.
+        h.state_mut().stage = StageKind::Structural;
+        h.run_steps(2);
+        h.state_mut().stage = StageKind::Initialization;
+        h.run_steps(2);
+
+        assert_eq!(
+            h.state()
+                .on_screen_animation()
+                .expect("the replay must still be on screen")
+                .position(),
+            (2, 3),
+            "a replay built from the compile outlives a visit to another stage — \
+             nothing it was built from changed. Before 2026-08-20 this returned (0, 3): \
+             the report sub-view row cleared it on the way through, and a reader who had \
+             walked to block 2 was silently put back at the start",
+        );
+    }
+
+    /// A sub-view left behind on a report stage must not take over another stage's pane.
+    ///
+    /// **The third instance of the stranded-sub-view class**, after the alias view
+    /// (2026-08-19) and the redirect list it exposed — and the worst-looking of the
+    /// three. `viewport.structural` deliberately survives a stage change, because it is
+    /// a camera; `clamp_structural_sub_view` returns early on every non-report stage, by
+    /// design. So the only thing standing between a stranded `Animate` and another
+    /// stage's pane is the `report_ready` guard on its dispatch branch, and that branch
+    /// was **the one arm of eight without it**.
+    ///
+    /// **What it looked like**: on Index Reduction choose **Animate ▶**, then click
+    /// **Events**, **Initialization** or **Flatten**. The Events tab is highlighted, the
+    /// sub-view row offers Tree / pre() lowering — and the pane below draws the
+    /// *index-reduction* replay, because that arm sits above all three of theirs in the
+    /// chain. Not "absence filled" this time but **presence substituted**: a correct
+    /// animation of the wrong phase, under another phase's tab.
+    ///
+    /// Found while splitting `CompileViewCaches` out, by a probe that was asking a
+    /// different question — the IC plan cache was `None` when it should have been built.
+    #[test]
+    fn a_stranded_structural_sub_view_does_not_take_over_another_stage() {
+        use crate::ui_tests::{AdHocTour, harness};
+        use crate::worker::Stage;
+
+        let _tour_state = AdHocTour::absent();
+
+        let mut app = App::test_default();
+        app.stages.initialization = Stage {
+            value: Some(serde_json::json!({
+                "blocks": [{ "kind": "scalar_direct", "var": "a" }]
+            })),
+            ..Stage::default()
+        };
+        app.selected = Some(std::path::PathBuf::from("specimens/RcCircuit.mo"));
+        app.stage = StageKind::Initialization;
+        app.viewport.init = InitView::IcPlan;
+        // The reader's last report-stage sub-view, still set — which is correct, and is
+        // exactly the state the dispatch has to ignore.
+        app.viewport.structural = StructuralView::Animate;
+
+        let mut h = harness(app);
+        h.run_steps(2);
+
+        assert!(
+            h.state().compile_views.ic_plan_anim.is_some(),
+            "the stage the reader is ON decides the pane: Initialization ▸ IC Plan must \
+             render even when a report stage's sub-view is still selected behind it",
+        );
+        assert!(
+            h.state().compile_views.reduction_anim.is_none(),
+            "and the index-reduction replay must not have been built at all — building \
+             it is the symptom that it was drawn under the Initialization tab",
         );
     }
 

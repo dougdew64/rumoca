@@ -169,6 +169,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-19 | *(fix, not a move)* the stranded-alias defect the extraction exposed | 11,985 | `report_sub_view.rs` (650) |
 | 2026-08-19 | **the live-debug prologue, six copies → one `live_debug_gate`** — *the first move that made the file BIGGER* | **12,026** | *(none — it cannot leave `app.rs`)* |
 | 2026-08-20 | *(seam, not a move)* the ack path forwarded to `live_debug_poll` + `live_debug_gate_at` — *bought the order test; 8 lines of it are production* | 12,132 | *(none)* |
+| 2026-08-20 | **the four compile replays → `CompileViewCaches`** — *a lifetime decision, and it found a second defect* | 12,305 | `compile_caches.rs` (101), `stage_caches.rs` 99 → 120 |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -1079,15 +1080,96 @@ routers (~1,100 lines between them) and everything that is not a pane at all.
      the gate's. Box above. It left a cheaper successor: **split
      `a_timed_out_arm_claims_nothing_and_says_so` into its four paths**, now that they need not
      share one ack file.
-   - **Decide `pre_lowering_anim`'s cache lifetime**, since three views built from `self.frames`
-     currently get two different ones. A question first, an edit second.
+   - ~~**Decide `pre_lowering_anim`'s cache lifetime**, since three views built from
+     `self.frames` currently get two different ones. A question first, an edit second.~~
+     ✅ **DONE 2026-08-20** — it was **four** views, not three, and the question was Doug's to
+     answer. Box below.
    - **The four `live_debug_lifecycle` citations**, which describe a removed mechanism. Needs the
-     behaviour established before the prose is rewritten.
+     behaviour established before the prose is rewritten. **The only accuracy item left in this
+     cluster**, and the one with a real question in front of it.
+   - **Split `a_timed_out_arm_claims_nothing_and_says_so` into its four paths** — the successor
+     the ack-path seam left, and the cheapest thing on this list.
 
 **The rhythm decision the plan asked for is now forced.** The loop's cheap supply is exhausted in
 both directions: no leaf types, no panes. The next *extraction* is a router, and a router is the
-"spend a whole session on one function" option — so it wants a fresh session, and the three items
+"spend a whole session on one function" option — so it wants a fresh session, and the items
 above are what fits in a shared one.
+
+### THE CACHE LIFETIME WAS THE WRONG QUESTION ASKED ABOUT THE RIGHT FIELD — 2026-08-20
+
+**`CompileViewCaches` (`compile_caches.rs`, 101 lines) now owns four replays**, and `app.rs` grew
+by 173: +51 for one behavioural test, +58 for a second defect's fix and guard, the rest doc. Scored
+on line count this is another loss, and per the rule established by the live-debug deduplication
+that is the wrong scoreboard — an accuracy item is paid for *in* `app.rs`.
+
+**The plan asked "what lifetime should `pre_lowering_anim` have?" and the answer was that it
+already had the right one and three of its siblings did not.** `reduction_anim`,
+`connection_anim` and `ic_plan_anim` sat in `StageViewCaches`, whose own doc promises *"views
+derived from a stage's report, all valid for exactly one stage"* — **false of all three**, and
+checkable in one pass: the eight that stay read `stages.get(self.stage)` or branch on
+`self.stage`, and the three that left never mention it. Each of the four is shown on exactly one
+stage, so its input cannot vary with the stage.
+
+**`ic_plan_anim` was the one nobody had counted.** The plan said *three views built from
+`self.frames`*, which is the right instinct pointed at the wrong attribute: `ic_plan_anim` is
+built from a **report**, just not the *current* stage's — it reads `stages.initialization`
+unconditionally. **The membership test is "does the input depend on `self.stage`?", not "where
+does the input come from?"** — and only the first is checkable by reading the build site.
+
+**AND THE BEHAVIOUR WAS NEVER A DESIGN, WHICH IS WHAT MADE THE DECISION EASY.**
+`StageViewCaches::reset_for` is called from **one place**, `report_sub_view_row_ui`, which draws
+only on Structural and Index Reduction. So `built_for` never held any other stage, and the rule in
+force was not *"a replay restarts when you come back to it"* but ***"a replay restarts if you
+happened to pass through a report stage in between."*** Events → Flatten → Events dropped nothing;
+Flatten → Structural → Flatten dropped the connection replay. **Nobody designs that**, and saying
+so is what turned a question about intent into a question about which accident to keep. Doug chose
+per-compile for all four.
+
+**Present the evidence that a behaviour is unintended, not just the two options.** The question
+put to Doug carried the single call site and the round-trip asymmetry, and that is why it took one
+exchange.
+
+**THE FIRST TEST ASSERTED THE REFACTOR RATHER THAN THE BEHAVIOUR, and it looked fine.** It set the
+four cache fields, called `reset_for`, and asserted they survived — which **cannot fail**, because
+after the split they are in a different struct. Its doc comment even claimed it would catch
+someone adding `compile_views.invalidate_all()` beside the `reset_for` call; it would not, since
+it never runs that code. **The tell is that a test's setup and its assertion touch the same struct
+the change just separated.** The shipped test paints `frame_ui`, walks the IC plan to block 2,
+switches to Structural and back, and asserts `(2, 3)` — must-fire verified by restoring the old
+clearing, which fails with `(0, 3)`.
+
+**Four wrong guesses before that test ran, and the fourth probe found the real bug.** The
+precondition *"the IC plan replay is on screen"* failed, and the causes were: no `selected`
+specimen (early return), a pushed `NavEntry` (`nav` is the **go-to-definition stack**, so
+non-empty means the pane shows a drilled-into class — the guard reads backwards until you know
+that), and finally a missing `report_ready` on one dispatch arm. **A failing precondition is a
+finding, not an obstacle** — the pull was to keep adjusting the fixture until it passed, and doing
+that would have hidden the box below.
+
+### A STRANDED SUB-VIEW WAS DRAWING THE WRONG PHASE'S ANIMATION — 2026-08-20, fixed
+
+**One arm of eight in `central_panel_ui`'s dispatch chain was missing `report_ready`**, and it was
+the `StructuralView::Animate` arm. `viewport.structural` deliberately survives a stage change (it
+is a camera) and `clamp_structural_sub_view` returns early on every non-report stage (also
+deliberate), so that guard was the *only* thing between a left-behind `Animate` and another
+stage's pane — and the arm sits **above** the Events, Initialization and Flatten arms, so it won.
+
+**Choose Animate ▶ on Index Reduction, click Events: the index-reduction replay is drawn under the
+Events tab**, with the Events sub-view row above it offering Tree / pre() lowering. Same for
+Initialization ▸ IC Plan and Flatten ▸ Equations.
+
+**Third instance of the stranded-sub-view class, and a different failure mode.** The alias defect
+was **absence filled** — a pane saying a model had no alias eliminations when it had several.
+This is **presence substituted**: a correct animation of the wrong phase, under another phase's
+tab, with nothing on screen admitting it. Both earlier fixes were about *which sub-view is
+selected*; this is about **whether the dispatch honours a selection the current stage does not
+offer**, which no amount of clamping on report stages could reach.
+
+**The generalisable check is cheap and was never run: read a dispatch chain's arms as a column and
+look for the odd one.** Seven arms carried `report_ready &&`; one did not. That is visible in a
+single `grep` of the `} else if` lines, and it is the same shape as the `_ =>` wildcard found
+inside the live-debug cluster — **a guarded cluster is only as good as its least-guarded member,
+and nothing here compares members to each other.**
 
 ### §3's seam order is WRONG for the remaining work — measured 2026-08-19
 

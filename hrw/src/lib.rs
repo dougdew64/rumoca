@@ -48,6 +48,7 @@ pub mod autoplay;
 pub mod bridge;
 pub mod canvas;
 pub mod colors;
+pub mod compile_caches;
 pub mod connection_anim;
 pub mod context_bar;
 pub mod diagnostics;

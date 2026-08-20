@@ -749,11 +749,13 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > `error_summary.rs` (440, 140 of them tests)**, and **`ContextBarState` + `PointedAt` +
 > `PointKind` + `next_seq` → `context_bar.rs` (649)**, and **`equation_sheet_ui` →
 > `equation_sheet_view.rs` (446, 208 of them tests)**, and **`report_sub_view_row_ui` →
-> `report_sub_view.rs` (650, 428 of them tests)**.
-> **app.rs 14,437 → 12,132** (11,857 after `report_sub_view`, plus the alias-defect guard below,
-> plus **+41 from the live-debug deduplication and +113 from the ack-path seam, which are the
-> finding rather than a slip** — an accuracy or testability item is paid for *in* `app.rs`, so it
-> cannot be scored on `app.rs`'s line count; see the two boxes below).
+> `report_sub_view.rs` (650, 428 of them tests)**, and **the four compile replays →
+> `compile_caches.rs` (101)**.
+> **app.rs 14,437 → 12,305** (11,857 after `report_sub_view`, plus the alias-defect guard below,
+> plus **+41 from the live-debug deduplication, +113 from the ack-path seam and +173 from the
+> cache-lifetime split, which are the finding rather than a slip** — an accuracy or testability
+> item is paid for *in* `app.rs`, so it cannot be scored on `app.rs`'s line count; see the boxes
+> below).
 > Progress
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest.
@@ -767,13 +769,74 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > moves whole; the cut is inside, and finding it is a whole fresh session. **Do not start one on a
 > session that has already spent context.**
 >
-> **Recommended next instead — three bounded items this cluster left, two of them accuracy.**
-> The first is **DONE** (box below); **two remain**, and both are questions before they are edits:
-> **decide `pre_lowering_anim`'s cache lifetime** (three views built from `self.frames` currently
-> get two different ones); and **the four docs citing `live_debug_lifecycle`**, a function that no
-> longer exists, describing a safety net that was deliberately removed — correcting them means
-> first establishing what, if anything, now releases a breakpoint left by a session that never
-> started. Details and verdicts in the plan.
+> **Recommended next instead — the bounded items this cluster left.** Two are **DONE** (boxes
+> below: the ack-path seam, and the cache lifetime). **Two remain:**
+>
+> - **The four docs citing `live_debug_lifecycle`**, a function that no longer exists, describing
+>   a safety net that was deliberately removed. **The last accuracy item in the cluster**, and a
+>   question before it is an edit: correcting them means first establishing what, if anything, now
+>   releases a breakpoint left by a session that never started.
+> - **Split `a_timed_out_arm_claims_nothing_and_says_so` into its four paths**, now that the ack
+>   path is a parameter and they need not share one file. The cheapest thing left.
+>
+> Details and verdicts in the plan.
+>
+> ### THE LIFETIME QUESTION WAS ASKED ABOUT THE RIGHT FIELD AND HAD THE WRONG SUBJECT
+> *(2026-08-20, `CompileViewCaches`)*
+>
+> **`pre_lowering_anim` already had the right lifetime; three of its siblings did not.**
+> `reduction_anim`, `connection_anim` and `ic_plan_anim` sat in `StageViewCaches`, whose own doc
+> promises *"views derived from a stage's report, all valid for exactly one stage"* — **false of
+> all three.** All four are shown on exactly one stage, so their inputs cannot vary with the stage.
+> They are now in `compile_caches.rs`, invalidated only when a compile lands, which is what
+> `pre_lowering_anim` had been doing alone by hand.
+>
+> **`ic_plan_anim` was the one nobody had counted**, because the plan looked for *"views built
+> from `self.frames`"* and it is built from a report — just not the *current* stage's. **The
+> membership test is "does the input depend on `self.stage`?", never "where does the input come
+> from?"**; only the first is checkable by reading a build site.
+>
+> **AND THE BEHAVIOUR WAS NEVER A DESIGN, WHICH IS WHAT MADE THE DECISION EASY.**
+> `reset_for` is called from **one place** — the report sub-view row — which draws only on
+> Structural and Index Reduction. So the rule in force was not *"a replay restarts when you come
+> back"* but ***"a replay restarts if you passed through a report stage in between"***: Events →
+> Flatten → Events dropped nothing, Flatten → Structural → Flatten dropped the connection replay.
+> Doug chose per-compile for all four in one exchange, because the question carried the single
+> call site and the asymmetry rather than just the two options. **Show that a behaviour is
+> unintended; do not present two options as equals when one of them is an accident.**
+>
+> **THE FIRST TEST ASSERTED THE REFACTOR AND NOT THE BEHAVIOUR — and read as fine.** It set the
+> four fields, called `reset_for`, and asserted they survived, which **cannot fail** once they are
+> in a different struct. **The tell: a test whose setup and assertion both touch the struct the
+> change just separated.** The shipped one paints `frame_ui`, walks the IC plan to block 2,
+> round-trips through Structural and asserts `(2, 3)`; must-fire gives `(0, 3)`.
+>
+> **A FAILING PRECONDITION IS A FINDING, NOT AN OBSTACLE.** That test's *"the replay is on
+> screen"* precondition failed four times — no `selected` specimen, then a pushed `NavEntry`
+> (`nav` is the **go-to-definition stack**, so non-empty means the pane shows a drilled-into class
+> and the guard reads backwards), and finally a real defect. The pull each time was to adjust the
+> fixture until it passed, and doing that would have hidden the box below.
+>
+> ### A STRANDED SUB-VIEW WAS DRAWING THE WRONG PHASE'S ANIMATION — fixed 2026-08-20
+>
+> **One arm of eight in `central_panel_ui`'s dispatch chain was missing `report_ready`** — the
+> `StructuralView::Animate` arm. `viewport.structural` deliberately survives a stage change (it is
+> a camera), and `clamp_structural_sub_view` deliberately returns early on every non-report stage,
+> so that guard was the only thing between a left-behind `Animate` and another stage's pane — and
+> the arm sits **above** the Events, Initialization and Flatten arms. **Choose Animate ▶ on Index
+> Reduction, click Events: the index-reduction replay is drawn under the Events tab**, with the
+> Events sub-view row above it.
+>
+> **Third instance of the stranded-sub-view class, and a new failure mode.** The alias defect was
+> *absence filled*; this is **presence substituted** — a correct animation of the wrong phase
+> under another phase's tab, with nothing on screen admitting it. The two earlier fixes were about
+> *which sub-view is selected*; this is about **whether the dispatch honours a selection the
+> current stage does not offer**, which no clamping on report stages could reach.
+>
+> **The check is one grep and had never been run: read a dispatch chain's arms as a column and
+> look for the odd one.** Seven carried `report_ready &&` and one did not. Same shape as the `_ =>`
+> wildcard inside the live-debug cluster — **nothing here compares a guarded cluster's members to
+> each other.**
 >
 > ### A SEAM CAN BE MISSING FROM TWO FUNCTIONS AND ONLY ONE IS OBVIOUS
 > *(2026-08-20, the ack path — `live_debug_poll` + `live_debug_gate_at`)*
@@ -832,6 +895,15 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > from `self.frames` get two different lifetimes, so leaving a stage and returning restarts the
 > reduction animation but resumes `pre()` lowering. Recorded, not patched: which behaviour is
 > intended is a real question.
+>
+> > **RESOLVED 2026-08-20, and both facts in that last sentence were wrong** — corrected here
+> > rather than deleted, because the corrections are the finding. **"Three views built from
+> > `self.frames`"**: it is **four**, and the fourth (`ic_plan_anim`) is built from a *report*, so
+> > the attribute that sorts them is *"does the input depend on `self.stage`?"*, not where the
+> > input comes from. **"Leaving a stage and returning restarts the reduction animation"**:
+> > leaving and returning restarts **nothing** — `reset_for` runs only on report stages, so the
+> > real rule was *"restarts if you passed through a report stage in between."* `pre_lowering_anim`
+> > was the one that had it right, and the other three joined it. Box above.
 >
 > **AND A WILDCARD SURVIVED INSIDE THE CLUSTER A REGRESSION TEST ALREADY GUARDS.**
 > `has_live_debug_data` ended in `_ =>`, so a seventh variant would compile and silently be told to
