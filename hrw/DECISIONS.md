@@ -3405,3 +3405,27 @@ the right diagnostic differs for each.
 none of which any checker was looking for. The toolchain caught none; it caught the
 *consequences* once each was named. That is `tech-debt.md`'s trigger 2 in its purest form, and
 the trigger fired on dissatisfaction rather than on a wrong number.
+
+## 2026-08-19 — the specimen source pane left app.rs, and enumeration is why the second attempt worked
+
+**`specimen_source_ui` and `SourceViewState` moved to `src/specimen_source.rs`** (397 lines;
+app.rs 13,838 → 13,507). The same function had been attempted and reverted hours earlier.
+
+**The difference was method, not effort.** The first attempt rewrote by regex and learned the
+shape from the compiler's errors, hitting four obstacles one at a time — a method call rather
+than a field, multiline `self` accesses, a mutated parameter, and a local shadowing the
+parameter. The second listed all four before editing, then scripted ~90% of the rewrite anyway.
+**Three of the four were one-line fixes once seen.** Recorded in `docs/app-split-plan.md` as the
+predictor for every remaining rendering function.
+
+**The pane returns `Option<String>` — the clicked identifier — and `App` performs the follow.**
+`set_tracked_identifier` is shared with the tree and the equation sheet, so pushing it into the
+pane would give the pane a policy it does not own and would cost it the `&mut self` it just shed.
+
+**`SourceViewState`'s nine fields became `pub(crate)`.** The unavoidable price of a state struct
+crossing a module boundary, with the `Viewport` precedent; the alternative was leaving the state
+behind, which would reduce what app.rs holds without reducing what it declares.
+
+**Two modules, not one.** The plan groups this with `source_map_ui` as a single *concern*; they
+ship separately because both already sit inside the ~1,500-line target and merging would have
+meant renaming `source_map.rs` in the same commit. Concern is the ordering unit, not the file.

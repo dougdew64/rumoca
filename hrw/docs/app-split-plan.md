@@ -157,6 +157,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-19 | `StageViewCaches` + impl | 14,127 | `stage_caches.rs` (99) |
 | 2026-08-19 | `UiMode`, `SpecimenDetail`, `NavEntry` | 14,076 | `ui_state.rs` (73) |
 | 2026-08-19 | **`source_map_ui`** + its constant — *first rendering fn* | **13,838** | `source_map.rs` (281) |
+| 2026-08-19 | **`specimen_source_ui`** + `SourceViewState` — *the reverted one, redone by hand* | **13,507** | `specimen_source.rs` (397) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -178,6 +179,50 @@ line and put them in the module's header when the file is first written.
 **Scale check, recorded so it is not rediscovered:** −139 lines against a ~12,800-line gap. **Leaf
 types will not get there.** The weight is in the rendering blocks, and §3's field-group order says
 nothing about where those sit — see the second finding below.
+
+### `specimen_source_ui` extracted on the second attempt — 2026-08-19, and the method is the finding
+
+**−331 lines, the largest single move so far**, and it succeeded for one reason: **the body was
+read before anything was written.** The first attempt rewrote first and discovered the shape from
+the errors; this one enumerated the seven fields and the three multiline `self` accesses up front,
+so every obstacle the revert had hit was already known when the edit started.
+
+**The four obstacles, and what each actually cost once seen in advance:**
+
+| obstacle | fix | cost |
+|---|---|---|
+| `self.set_tracked_identifier(name)` — a method | return `Option<String>`, `App` follows | 6 lines |
+| three multiline `self\n .field` accesses | one `perl -0777` pass instead of line-wise `sed` | one regex |
+| `source` is mutated | `&mut SourceViewState` | a keyword |
+| a local `let source` **shadowing** the parameter | rename the local to `source_text` | one line |
+
+**Three of the four were one-line fixes.** What made the first attempt cost hours was not their
+difficulty — it was meeting them one at a time, each invisible until the previous was repaired.
+**The generalisable rule is therefore not "hand-edit the hard ones"**: it is *enumerate the
+obstacles before editing*, after which a script does most of the work anyway. This extraction was
+still 90% scripted.
+
+**Two type errors the rewrite introduced that no enumeration would have caught**, both from
+`&Option<T>` parameters replacing owned fields, and both caught by the first build:
+
+- `self.tracked_identifier != self.source.scrolled_for` needs `*tracked_identifier` once the left
+  side is a reference.
+- the early `return;` in the library-error arm becomes `return None;`.
+
+**`SourceViewState` moved with it**, the same rule that moved `SOURCE_MAP_SPLIT_FRACTION`: state
+used by exactly one pane is state that pane owns. Its nine fields became `pub(crate)`, which is
+the unavoidable price and has the `Viewport` precedent — a struct cannot cross a module boundary
+and stay private to `App`.
+
+**Eight parameters, and that is deliberately not a rename.** `too_many_arguments` is `allow` in
+`hrw/Cargo.toml` because multi-arg widget fns are egui idiom, so the lint did not decide this; the
+plan's own test did. Seven named pieces of state is a signature a reader learns the pane's reach
+from — `&mut App` would not be.
+
+**Split into two modules rather than one.** The plan groups `specimen_source_ui` and
+`source_map_ui` as one *concern*; they ship as `specimen_source.rs` (397) and `source_map.rs`
+(281) because both sit inside the target band already and merging them would have meant renaming
+`source_map.rs` in the same commit. **Concern is the ordering unit, not necessarily the file.**
 
 ### §3's seam order is WRONG for the remaining work — measured 2026-08-19
 
@@ -242,8 +287,12 @@ fail interestingly; they were never going to reach the target.
    whether `viewport` is mutated** — if it is, that parameter is `&mut` and the rest stay shared,
    which is still four parameters and still qualifies. **If it needs `&mut self`, stop**: the
    "what NOT to do" list rejects an extraction that moves a method behind a new name.
-2. **`specimen_source_ui`** (274, 7) — **ATTEMPTED AND REVERTED 2026-08-19. Do not retry with a
-   regex rewrite.** Four cascading problems, each invisible until the previous was fixed:
+2. **`specimen_source_ui`** (274, 7) — ✅ **DONE 2026-08-19, on the second attempt**, after the
+   revert below. `specimen_source.rs` (397), −331 lines. The finding is above; the history is
+   kept because it is the evidence for *enumerate before editing*.
+
+   **ATTEMPTED AND REVERTED 2026-08-19 first.** Four cascading problems, each invisible until the
+   previous was fixed:
 
    - **`self.set_tracked_identifier(name)`** — a method, not a field, called once at the very end.
      Solved cleanly by returning `Option<String>` and letting `App` perform the follow, which is
@@ -270,9 +319,14 @@ that is the only mechanism likely to help them.
 
 **So the remaining plan is by RENDERING CONCERN, ordered by coupling:**
 
-1. **`specimen_source_ui` + `source_map_ui`** (518) — one concern, the specimen's own text.
-2. **`autoplay_controls_ui` + `tour_panel_ui`** (577) — the tour panel, whose state already lives
-   in `tour.rs`.
+1. ✅ **`specimen_source_ui` + `source_map_ui`** (518) — one concern, the specimen's own text.
+   **Both shipped 2026-08-19**, as two modules rather than one.
+2. ⟶ **NEXT: `autoplay_controls_ui` + `tour_panel_ui`** (577) — the tour panel, whose state
+   already lives in `tour.rs`. **Enumerate first**, per the finding above: the fields each
+   touches (6 and 7), which accesses are multiline, whether any parameter is mutated, and whether
+   any local shadows a parameter name. `tour.rs` already owning `TourState` may mean these take
+   fewer parameters than `specimen_source_ui` did — or may mean the state to pass is a `&mut
+   TourState` plus little else, which would be the cheapest signature yet.
 3. **`central_panel_ui`** (602) — last, because it is the stage-routing hub and every other move
    shrinks what it has to route.
 
@@ -310,6 +364,14 @@ iteration spends no time rediscovering them.
    comment, never above the first item.**
 3. **Regenerate `architecture.md` BEFORE the slow gate.** It carries module line counts, so
    every move stales it and  fails ~300 seconds in.
+4. **`cargo test -p hrw --lib` with default parallelism HANGS.** Observed twice on 2026-08-19,
+   reproducibly: the test binary sits at ~1 GB with **frozen CPU time** after roughly 250 of the
+   623 tests, and never returns. `-- --test-threads=1` runs the same 623 in **21 seconds**.
+   **Not attributed to any change** — no baseline run was taken, and the extraction that day was
+   a pure refactor of a rendering function. It is recorded because it cost this session two
+   ten-minute waits, and because `CLAUDE.md`'s gate already passes `--test-threads=1`, so the
+   documented workflow never meets it. **Always pass `--test-threads=1`**, including for the
+   fast between-edits run that `Cargo.toml` documents without it.
 
 ### Two findings from the first attempt at step 1 — 2026-08-19, reverted
 

@@ -738,8 +738,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >
 > **Done so far:** the sub-view enums, `Viewport` and `sub_view_name_for` → `stage_view.rs` (266
 > lines), StageViewCaches to stage_caches.rs (99), and UiMode/SpecimenDetail/NavEntry to
-> ui_state.rs (73), and **source_map_ui — the first RENDERING fn — to source_map.rs (281)**.
-> **app.rs 14,437 → 13,838.** Progress
+> ui_state.rs (73), **source_map_ui — the first RENDERING fn — to source_map.rs (281)**, and
+> **specimen_source_ui + SourceViewState to specimen_source.rs (397)**.
+> **app.rs 14,437 → 13,507.** Progress
 > table in the plan, which also lists four mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest: the mass is in eight rendering fns totalling 2,531 lines, not in
 > field groups. Those take &mut self, so each costs hours, not minutes.
@@ -749,16 +750,28 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > and may never qualify — at 43 the only signatures are forty-three parameters or `&mut App`, and
 > the plan rejects the second as reducing nothing. Those two shrink as their callees leave.
 >
-> **AND THE REAL PREDICTOR IS NOT COUPLING — IT IS WHETHER A SCRIPT CAN DO IT.**
-> `source_map_ui` (4 fields, all single-line reads) extracted by script in minutes.
-> `specimen_source_ui` (7 fields) was **attempted and reverted**: a method callback, multiline
-> `self\n .field` accesses, a mutated parameter, and finally a local `let source` **shadowing the
-> parameter** — which regex cannot distinguish. **Read the body before estimating**, and expect to
-> hand-edit anything with shadowing or multiline accesses.
+> **AND THE REAL PREDICTOR IS: ENUMERATE THE OBSTACLES BEFORE EDITING.** `specimen_source_ui`
+> was **reverted** when rewritten first and diagnosed from the errors — a method callback,
+> multiline `self\n .field` accesses, a mutated parameter, a local `let source` **shadowing the
+> parameter**, each invisible until the previous was fixed. **Redone the same day by listing all
+> four first, it took one pass and was still 90% scripted** — three of the four were one-line
+> fixes. So the rule is *not* "hand-edit the hard ones"; it is **read the body and list every
+> obstacle, then script it.** The checklist: fields touched, multiline accesses, mutated
+> parameters, locals shadowing a parameter name.
 >
-> **The callback pattern from that attempt is reusable and worth keeping:** return
-> `Option<String>` — the clicked identifier — and let `App` perform the follow, exactly as
-> `model_list` already does.
+> **Two errors no enumeration catches, both from `&Option<T>` params replacing owned fields** —
+> a `!=` needing `*deref` on the left, and a bare `return;` needing `return None;`. **The first
+> build finds them**, which is why the loop builds after each item.
+>
+> **The callback pattern is reusable and shipped:** return `Option<String>` — the clicked
+> identifier — and let `App` perform the follow, exactly as `model_list` already does. Keeping
+> the follow on `App` is what let the pane shed `&mut self`.
+>
+> **A struct that crosses a module boundary loses `App`-privacy**, and that is the price rather
+> than a smell: `SourceViewState`'s nine fields are now `pub(crate)`, with the `Viewport`
+> precedent. **`too_many_arguments` is `allow` in `hrw/Cargo.toml`** (egui idiom), so eight
+> parameters is not a lint question — the plan's own test decides, and seven named pieces of
+> state teach a reader the pane's reach where `&mut App` would not.
 >
 > **Regenerate `architecture.md` BEFORE the slow gate** — it carries module line counts, so every
 > move stales it and the gate fails on it 300 seconds in.

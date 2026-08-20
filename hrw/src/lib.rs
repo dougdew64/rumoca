@@ -72,6 +72,7 @@ pub mod reduction_view;
 pub mod report;
 pub mod source_map;
 pub mod source_view;
+pub mod specimen_source;
 pub mod spyplot;
 pub mod stage_caches;
 pub mod stage_view;
