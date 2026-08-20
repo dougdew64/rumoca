@@ -1229,15 +1229,29 @@ impl App {
     /// and releasing the anchor is what made that press fail, silently
     /// (`docs/ideas.md` #74). With the release gone, the state was the only
     /// thing this function read it for.
+    ///
+    /// # Why the ack file arrives as a parameter
+    ///
+    /// [`bridge::check_breakpoint_ack_at`] exists so a test can exercise the
+    /// consume-and-delete behaviour without touching the live bridge directory,
+    /// and this function used to throw that seam away by calling the
+    /// default-path wrapper. **The consequence was a property that could not be
+    /// asserted at all**: reaching the frame the ack lands on means writing a
+    /// real `.hrw-bridge/breakpoint-ack.json`, which every other test in the
+    /// suite shares — so the tests that do it must run as one function to avoid
+    /// racing for that file, and [`Self::live_debug_gate`]'s ordering could not
+    /// be tested from the gate at all. Taking the path forwards the seam that
+    /// was already one layer down.
     fn live_debug_poll(
         &mut self,
         ctx: &egui::Context,
         variant: PendingLiveDebug,
+        ack_path: &Path,
     ) -> LiveDebugAction {
         if let Some((armed_at, v)) = self.pending_live_debug
             && v == variant
         {
-            let ack = bridge::check_breakpoint_ack();
+            let ack = bridge::check_breakpoint_ack_at(ack_path);
             let timed_out = armed_at.elapsed() >= LIVE_DEBUG_ACK_TIMEOUT;
             if ack.replied() || timed_out {
                 self.pending_live_debug = None;
@@ -1304,6 +1318,12 @@ impl App {
 
     /// Advance the live-debug handshake for one animated view. Renders nothing.
     ///
+    /// **The body is [`Self::live_debug_gate_at`]**; this is the default-path
+    /// wrapper the six views call, in the same shape as
+    /// [`bridge::check_breakpoint_ack`] over `check_breakpoint_ack_at`. What is
+    /// written here is what a *caller* needs; the reason the seam exists is on
+    /// the `_at` form.
+    ///
     /// The prologue every animated view shares, in the order it must happen:
     /// **arming, then the button gate, then the poll.** The order is load-bearing
     /// — `live_debug_poll` clears `pending_live_debug` on the frame the ack
@@ -1334,6 +1354,29 @@ impl App {
         variant: PendingLiveDebug,
         cache: fn(&Self) -> &Option<Option<A>>,
     ) -> LiveDebugGate {
+        self.live_debug_gate_at(ctx, variant, cache, Path::new(bridge::BREAKPOINT_ACK_FILE))
+    }
+
+    /// [`Self::live_debug_gate`] against an arbitrary ack file.
+    ///
+    /// Named for [`bridge::check_breakpoint_ack_at`], which is where the seam
+    /// originates and what it is for: **the ordering below is the whole point of
+    /// this method existing, and it cannot be observed without controlling the
+    /// ack file.** `live_debug_poll` clears `pending_live_debug` on the frame the
+    /// ack lands, so a test that wants to see `arming` and `spawn_live` true
+    /// *together* — the frame where the badge is still wanted and the thread is
+    /// about to start — must be able to make the ack land on demand, in a file
+    /// no other test is reading.
+    ///
+    /// The default-path wrapper above is what the six views call; nothing in the
+    /// paint path knows this parameter exists.
+    fn live_debug_gate_at<A: crate::playback::Animated>(
+        &mut self,
+        ctx: &egui::Context,
+        variant: PendingLiveDebug,
+        cache: fn(&Self) -> &Option<Option<A>>,
+        ack_path: &Path,
+    ) -> LiveDebugGate {
         let arming = self.is_arming(variant);
         let live = cache(self).as_ref().and_then(|o| o.as_ref()).map_or(
             if arming {
@@ -1345,7 +1388,7 @@ impl App {
         );
         let debug_enabled = self.has_live_debug_data(variant) && !live.is_busy();
         let spawn_live = matches!(
-            self.live_debug_poll(ctx, variant),
+            self.live_debug_poll(ctx, variant, ack_path),
             LiveDebugAction::SpawnLive
         );
         LiveDebugGate {
@@ -7423,6 +7466,65 @@ mod tests {
         }
     }
 
+    /// **The badge and the spawn must be true on the SAME frame.**
+    ///
+    /// [`App::live_debug_gate`]'s doc calls its order load-bearing; this is the
+    /// assertion that claim was missing. `live_debug_poll` clears
+    /// `pending_live_debug` on the frame the ack lands, so a gate that polled
+    /// *before* asking `is_arming` would report `arming: false` on exactly that
+    /// frame — and the live animation does not exist yet, because the caller
+    /// constructs it from `spawn_live`, after the gate returns. The result is one
+    /// frame in which a view mid-handshake claims nothing is happening.
+    ///
+    /// **Nothing observable fails when that regresses**: the session still
+    /// starts and the animation still runs. That is the must-fire rule's own
+    /// shape — the only way to catch it is to look at the frame directly.
+    ///
+    /// **This test is why [`App::live_debug_gate_at`] exists.** Reaching this
+    /// frame means making an ack land, and `.hrw-bridge/breakpoint-ack.json` is
+    /// shared by the whole suite — which is why the two tests that do use it each
+    /// have to be one function covering several paths, to avoid racing
+    /// themselves. Its own file costs nothing and races nobody.
+    #[test]
+    fn the_arming_badge_survives_the_frame_its_ack_lands() {
+        let ctx = egui::Context::default();
+        let ack = std::env::temp_dir().join("hrw-gate-order-ack.json");
+        let _ = std::fs::remove_file(&ack);
+
+        let (mut app, _tx) = App::test_with_sender();
+        app.pending_live_debug = Some((std::time::Instant::now(), PendingLiveDebug::Matching));
+
+        // A positive verdict, so the poll ends the wait on this very call
+        // rather than requesting another repaint.
+        std::fs::write(&ack, r#"{"version":2,"breakpointPresent":true}"#).unwrap();
+
+        let gate = app.live_debug_gate_at(
+            &ctx,
+            PendingLiveDebug::Matching,
+            |a| &a.stage_views.matching_anim,
+            &ack,
+        );
+
+        assert!(
+            gate.spawn_live,
+            "the ack landed, so this is the frame the algorithm thread starts"
+        );
+        assert!(
+            gate.arming,
+            "\u{2026}and the badge must still be lit on that frame \u{2014} \
+             `is_arming` is read BEFORE `live_debug_poll` consumes the handshake, \
+             and swapping those two lines blanks the badge for one frame with no \
+             other symptom"
+        );
+        assert!(
+            app.pending_live_debug.is_none(),
+            "the poll did consume the handshake \u{2014} without that, the \
+             assertion above would pass for the wrong reason"
+        );
+
+        let _ = std::fs::remove_file(&ack);
+    }
+
     /// Every combination of the two primitives must be reachable, and the
     /// emitted file must describe each one honestly.
     ///
@@ -7812,7 +7914,11 @@ mod tests {
         // No handshake in flight, so nothing here should touch the bridge.
         app.pending_live_debug = None;
 
-        let action = app.live_debug_poll(&ctx, PendingLiveDebug::Matching);
+        let action = app.live_debug_poll(
+            &ctx,
+            PendingLiveDebug::Matching,
+            std::path::Path::new(bridge::BREAKPOINT_ACK_FILE),
+        );
         assert!(
             matches!(action, LiveDebugAction::None),
             "a finished session with no pending handshake spawns nothing"
@@ -7868,7 +7974,7 @@ mod tests {
         app.live_breakpoint_armed = false;
         app.pending_live_debug = Some((std::time::Instant::now(), PendingLiveDebug::Reduction));
 
-        let action = app.live_debug_poll(&ctx, PendingLiveDebug::Reduction);
+        let action = app.live_debug_poll(&ctx, PendingLiveDebug::Reduction, ack);
 
         assert!(
             matches!(action, LiveDebugAction::SpawnLive),
@@ -7898,7 +8004,7 @@ mod tests {
         app.live_breakpoint_armed = false;
         app.pending_live_debug = Some((std::time::Instant::now(), PendingLiveDebug::Reduction));
 
-        let action = app.live_debug_poll(&ctx, PendingLiveDebug::Reduction);
+        let action = app.live_debug_poll(&ctx, PendingLiveDebug::Reduction, ack);
 
         assert!(
             matches!(action, LiveDebugAction::SpawnLive),
@@ -7929,7 +8035,7 @@ mod tests {
         app.live_breakpoint_armed = false;
         app.pending_live_debug = Some((std::time::Instant::now(), PendingLiveDebug::Reduction));
 
-        let _ = app.live_debug_poll(&ctx, PendingLiveDebug::Reduction);
+        let _ = app.live_debug_poll(&ctx, PendingLiveDebug::Reduction, ack);
 
         assert!(
             !app.live_breakpoint_armed,
@@ -7958,7 +8064,7 @@ mod tests {
             .expect("the process must have been running longer than the ack timeout");
         app.pending_live_debug = Some((long_ago, PendingLiveDebug::Reduction));
 
-        let action = app.live_debug_poll(&ctx, PendingLiveDebug::Reduction);
+        let action = app.live_debug_poll(&ctx, PendingLiveDebug::Reduction, ack);
 
         assert!(
             matches!(action, LiveDebugAction::SpawnLive),

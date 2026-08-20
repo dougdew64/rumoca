@@ -168,6 +168,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-19 | **`report_sub_view_row_ui`** — *the pane whose only `App` method was a QUESTION* | **11,857** | `report_sub_view.rs` (541, of which 320 are tests) |
 | 2026-08-19 | *(fix, not a move)* the stranded-alias defect the extraction exposed | 11,985 | `report_sub_view.rs` (650) |
 | 2026-08-19 | **the live-debug prologue, six copies → one `live_debug_gate`** — *the first move that made the file BIGGER* | **12,026** | *(none — it cannot leave `app.rs`)* |
+| 2026-08-20 | *(seam, not a move)* the ack path forwarded to `live_debug_poll` + `live_debug_gate_at` — *bought the order test; 8 lines of it are production* | 12,132 | *(none)* |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -950,6 +951,45 @@ the ack file in the real `.hrw-bridge` directory.
 order. **Giving `live_debug_poll` the same path parameter its callee already has is the next
 cheap thing in this cluster**, and it would buy the order test.
 
+### ✅ DONE 2026-08-20 — the seam was forwarded, and the order test exists
+
+**`live_debug_poll` takes `ack_path: &Path`, and `live_debug_gate` gained an `_at` sibling**
+holding the body while the default-path wrapper keeps the six paint-path callers unchanged — the
+same two-function shape `bridge::check_breakpoint_ack` / `check_breakpoint_ack_at` already uses,
+one layer up. **+113 lines, of which 8 are production logic**; the rest is the test and the
+reasoning.
+
+**`the_arming_badge_survives_the_frame_its_ack_lands` asserts `arming` and `spawn_live` true
+TOGETHER**, which is the whole property: the poll consumes `pending_live_debug` on the frame the
+ack lands, so reading `is_arming` after it reports `false` on exactly the frame the badge is still
+wanted — and the live animation does not exist yet, because the caller builds it from
+`spawn_live`. One frame of a view mid-handshake claiming nothing is happening.
+
+**Must-fire verified by swapping the two lines**, and it fails on the badge assertion by name.
+**A second perturbation was run by accident and is worth recording**: leaving *both* polls in
+place (the swap applied without removing the original) failed on `spawn_live` instead — the first
+poll consumed the ack and the second returned `None`. So the test also catches double-polling,
+which is a plausible edit for someone "clarifying" this function.
+
+**THE SEAM WAS ONE LAYER DOWN AND ONE LAYER UP AT THE SAME TIME, AND ONLY ONE HALF WAS NOTICED.**
+The section above spotted that `check_breakpoint_ack_at` existed and `live_debug_poll` threw it
+away. What it did not spot is that **forwarding the parameter to the poll is not enough** — the
+property under test belongs to the *gate*, which composes three methods, so the seam has to reach
+the gate too. That is the second `_at` function, and it was invisible until the test was written.
+**When a missing seam is diagnosed, ask which function the ASSERTION is about, not which function
+touches the resource** — they were one apart here.
+
+**AND IT LEFT A CHEAPER FOLLOW-UP THAN THE ONE IT CAME FROM.**
+`a_timed_out_arm_claims_nothing_and_says_so` covers **four** distinct paths in one `#[test]`, and
+its own doc explains why: *"Both paths share the single `.hrw-bridge/breakpoint-ack.json` … as
+separate tests they would race for that file."* **That sentence stopped being true with this
+change** — they can each take their own path now and split into four named tests, so a failure
+names the path instead of a line number. It is the same shape as the `equation_sheet_ui` finding:
+**a comment explaining why a test cannot be split is a measurement someone already took, and it
+expires silently when the seam it describes is added.** Not done here, under the one-item rule;
+the four call sites were left pointing at the real constant so this change asserts nothing new
+about them.
+
 ### ⟶ NEXT — and the remaining `_ui` census says the job has changed shape
 
 **Measured 2026-08-19, after `equation_sheet_ui`.** Every rendering method still on `App`, with its
@@ -1034,8 +1074,11 @@ routers (~1,100 lines between them) and everything that is not a pane at all.
 3. **The three follow-ups this cluster left, none of which is an extraction.** Recommended next,
    because each is small, each is bounded, and two of them are *accuracy* items — which outrank
    the line count outright:
-   - **Give `live_debug_poll` the `path` parameter `check_breakpoint_ack_at` already has.** Buys
-     the order test the gate wanted and cannot currently have.
+   - ~~**Give `live_debug_poll` the `path` parameter `check_breakpoint_ack_at` already has.**~~
+     ✅ **DONE 2026-08-20** — and it needed a second `_at` on the *gate*, because the property is
+     the gate's. Box above. It left a cheaper successor: **split
+     `a_timed_out_arm_claims_nothing_and_says_so` into its four paths**, now that they need not
+     share one ack file.
    - **Decide `pre_lowering_anim`'s cache lifetime**, since three views built from `self.frames`
      currently get two different ones. A question first, an edit second.
    - **The four `live_debug_lifecycle` citations**, which describe a removed mechanism. Needs the

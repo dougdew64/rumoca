@@ -750,9 +750,10 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > `PointKind` + `next_seq` → `context_bar.rs` (649)**, and **`equation_sheet_ui` →
 > `equation_sheet_view.rs` (446, 208 of them tests)**, and **`report_sub_view_row_ui` →
 > `report_sub_view.rs` (650, 428 of them tests)**.
-> **app.rs 14,437 → 12,026** (11,857 after `report_sub_view`, plus the alias-defect guard below,
-> plus **+41 from the live-debug deduplication, which is the finding rather than a slip** — see
-> the box below).
+> **app.rs 14,437 → 12,132** (11,857 after `report_sub_view`, plus the alias-defect guard below,
+> plus **+41 from the live-debug deduplication and +113 from the ack-path seam, which are the
+> finding rather than a slip** — an accuracy or testability item is paid for *in* `app.rs`, so it
+> cannot be scored on `app.rs`'s line count; see the two boxes below).
 > Progress
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest.
@@ -766,12 +767,44 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > moves whole; the cut is inside, and finding it is a whole fresh session. **Do not start one on a
 > session that has already spent context.**
 >
-> **Recommended next instead — three bounded items this cluster left, two of them accuracy:**
-> give `live_debug_poll` the `path` parameter `bridge::check_breakpoint_ack_at` already has (buys
-> the order test); **decide `pre_lowering_anim`'s cache lifetime** (three views built from
-> `self.frames` currently get two different ones); and **the four docs citing
-> `live_debug_lifecycle`**, a function that no longer exists, describing a safety net that was
-> deliberately removed. Details and verdicts in the plan.
+> **Recommended next instead — three bounded items this cluster left, two of them accuracy.**
+> The first is **DONE** (box below); **two remain**, and both are questions before they are edits:
+> **decide `pre_lowering_anim`'s cache lifetime** (three views built from `self.frames` currently
+> get two different ones); and **the four docs citing `live_debug_lifecycle`**, a function that no
+> longer exists, describing a safety net that was deliberately removed — correcting them means
+> first establishing what, if anything, now releases a breakpoint left by a session that never
+> started. Details and verdicts in the plan.
+>
+> ### A SEAM CAN BE MISSING FROM TWO FUNCTIONS AND ONLY ONE IS OBVIOUS
+> *(2026-08-20, the ack path — `live_debug_poll` + `live_debug_gate_at`)*
+>
+> **+113 lines, 8 of them production.** `live_debug_poll` now takes `ack_path: &Path` instead of
+> calling the default-path wrapper, and `live_debug_gate` gained an `_at` sibling — the same
+> two-function shape `bridge::check_breakpoint_ack` / `check_breakpoint_ack_at` already uses one
+> layer down, so the six paint-path callers are untouched and nothing in the render path knows the
+> parameter exists.
+>
+> **The previous session diagnosed half of it.** It saw that `check_breakpoint_ack_at` existed and
+> the poll threw it away. What it missed is that **the property under test belongs to the GATE**,
+> which composes `is_arming`, `has_live_debug_data` and the poll — so forwarding the parameter to
+> the poll alone would not have bought the test either. **Ask which function the ASSERTION is
+> about, not which one touches the resource**; here they were one apart, and the gap was invisible
+> until the test was written.
+>
+> **`the_arming_badge_survives_the_frame_its_ack_lands` asserts `arming` and `spawn_live` true on
+> the SAME frame.** The poll consumes `pending_live_debug` on the frame the ack lands, so reading
+> `is_arming` after it reports `false` on exactly that frame — while the live animation does not
+> exist yet, because the caller builds it from `spawn_live`. One frame of a view mid-handshake
+> claiming nothing is happening, with **no other symptom**: the session still starts and the
+> animation still runs. Must-fire verified by swapping the two lines; a second, accidental
+> perturbation (both polls present) fails on `spawn_live` instead, so it catches double-polling too.
+>
+> **AND IT EXPIRED A COMMENT THAT WAS A MEASUREMENT.**
+> `a_timed_out_arm_claims_nothing_and_says_so` tests four paths in one function because *"as
+> separate tests they would race for that file"* — **true until this change, and nothing would have
+> said so.** Same shape as the `equation_sheet_ui` finding: a comment explaining why a test cannot
+> be split is someone's coupling measurement, and **adding the seam it describes expires it
+> silently.** Splitting it into four named tests is the cheapest thing left in this cluster.
 >
 > ### DEDUPLICATION IS NOT EXTRACTION, AND IT MADE `app.rs` BIGGER
 > *(2026-08-19, `App::live_debug_gate` — the six-copy live-debug prologue)*
