@@ -791,35 +791,46 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > here*) is now **a property of the pane** applied over whatever the caller passes, not two `None`s
 > in a literal.
 >
-> ### ⟶ START HERE: THE NAVIGATED TREE IS ANNOTATED FROM THE WRONG MODEL — decided, not yet fixed
+> ### ✅ DONE 2026-08-20 — THE NAVIGATED TREE IS NO LONGER ANNOTATED FROM THE SPECIMEN
 >
-> **This is the next unit of work, ahead of any further router extraction.** Doug ruled on it
-> 2026-08-20; the shape of the edit, the test's exact name and the must-fire recipe are in
-> [`docs/app-split-plan.md`](docs/app-split-plan.md) under *"⟶ THE NEXT SESSION'S UNIT OF WORK"*.
+> **The five fields turned out to be the WHOLE STRUCT, so `nav_view_ui` lost its `TreeOptions`
+> parameter** instead of gaining five `None`s. `TreeOptions` has seven fields; `jump_to` and
+> `highlight` were already blanked there, and five plus two is all of them — so the queued edit
+> was, unnoticed, *"ignore this parameter entirely"*. **The caller can no longer hand that pane
+> the specimen's annotations at all**, which the compiler enforces and no test has to.
 >
-> **`App::specimen_tree_options` hands BOTH trees the specimen's `tracked`, `known_variables`,
-> `declaring_classes`, `variable_lines` and `path_lines`** — so a library class reached by "Go to
-> definition" gets underlined, offered for Follow, and can show *"declared at line N"* naming a
-> line of **your specimen's file**. `nav_view_ui` blanks all five, joining `jump_to` and
-> `highlight` in the suppression it already applies.
+> **The argument that decided it is a future field, not tidiness.** The blanking literal ended in
+> `..opts`, so an eighth `TreeOptions` field would flow straight through and silently re-open the
+> defect. **A blanking literal fails open on tomorrow's field; a missing parameter fails closed** —
+> the same class as the `_ =>` arm inside the live-debug cluster.
 >
-> **The reason it hid: these five do NOT break the written rule.**
-> [`docs/identity-and-provenance.md`](docs/identity-and-provenance.md) forbids *substring* search
-> deciding identity; all five use exact equality and comply as written. **What they step outside is
-> the rule's unstated precondition — that both sides are the same model**, which was true of
-> everything until go-to-definition existed. **Exact equality across two namespaces is a collision
-> wearing identity's clothes.** Add that precondition to that document as part of the fix; it is
-> the durable half.
+> **The durable half landed in
+> [`docs/identity-and-provenance.md`](docs/identity-and-provenance.md)**: exact equality decides
+> identity *within one model*, and **"Go to definition" was the first thing that ever put two
+> namespaces on screen at once.** All five complied with that page as written; what they stepped
+> outside was a precondition nobody had needed to state. It is stated now.
 >
-> **The confirming detail is what the fix does NOT remove:** `def_index` is per-`NavEntry` — the
-> class's own DefId table, resolved structurally — so "Go to definition" keeps working through
-> DefIds while the name-matched shortcuts go. **The structural route the authority prescribes
-> survives untouched**, which is the rule working rather than a coincidence.
+> **`egui_kittest` CAN DRIVE A CONTEXT MENU, and nothing here had ever tried.** `click_secondary()`,
+> `run_steps(2)`, and the menu items are ordinary queryable labels. **Nine `.context_menu(` call
+> sites in this codebase and zero tests had opened one** — an assertion surface that had been
+> treated as unreachable. It is how the two new tests see the annotations at all: none of the five
+> changes a *label*, so Follow, the source-line item and "Go to" are invisible until a right-click.
 >
-> **The rule is "annotate from the class, or not at all"**, and blanking is the correct answer
-> *now* rather than the destination: nothing indexes an MSL class's own variables or source lines,
-> so there is no class-derived version to substitute. If the navigated tree should ever be
-> annotated, build it **from the class** — never re-derive it from the specimen.
+> **It cost a must-fire-verified test, and that is recorded rather than glossed.**
+> `a_jump_target_is_not_honoured_against_a_navigated_class` worked by passing a stage's jump target
+> in; with no parameter it cannot be written. **A property that moves from a test into the type
+> system takes its test with it** — leaving one that can only fail by re-adding a parameter would
+> be theatre.
+>
+> **`app.rs` is unchanged at 12,250** — one argument out, one doc line in. **A net of zero is the
+> plan's own rule at its clearest**: an accuracy item is paid for *in* `app.rs` and cannot be
+> scored there. Details, the fixture's three hidden preconditions and the finding that the three
+> menu items are *not* independent are in
+> [`docs/app-split-plan.md`](docs/app-split-plan.md).
+>
+> **⟶ NEXT is back to the router**: `central_panel_ui`'s sub-view row block (~125 lines, four
+> `*_ready` gates) and the **default artifact pane** — the final `else` arm, ~152 lines, the
+> largest single block left in `app.rs`.
 >
 > **A ROUTER'S SEAM IS AN ASYMMETRY AMONG ITS ARMS, NOT A REGION — and this box previously said
 > the opposite.** It read *"the cut is inside, the way `tour_prose_ui` was cut"*, i.e. find a

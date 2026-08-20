@@ -18,34 +18,52 @@
 //! once on a router. The two buttons want to mutate `self.nav`, which is why they report
 //! a [`NavCommand`] instead: the same deferred-intent pattern the rest of the frame uses.
 //!
-//! # A navigated class is a DIFFERENT IR, and that governs everything here
+//! # A navigated class is a DIFFERENT IR, and that is why this pane takes NO annotations
 //!
 //! The tree on screen is a library class — `Modelica.Electrical.Analog.Basic.Resistor`,
 //! say — pulled out of the resolved tree by the worker. It is **not** a stage of the
-//! specimen's compilation. Every address computed against a stage therefore means
-//! nothing here, which is why [`nav_view_ui`] blanks `jump_to` and `highlight` no matter
-//! what it is handed: an `hrw://` node link addressed into the DAE would land on an
-//! unrelated node of the Resistor, or on nothing, and either way would look like it
-//! worked.
+//! specimen's compilation, and **every field of [`tree::TreeOptions`] describes the
+//! specimen**: two of them address a node of a stage's tree, and five carry what the
+//! specimen's compile learned about its own variables. So [`nav_view_ui`] takes no
+//! `TreeOptions` at all and hands `tree_ui` a `TreeOptions::default()`.
 //!
-//! **The blanking lives here rather than at the call site on purpose.** It used to be two
-//! `None`s written into a `TreeOptions` literal in `app.rs`, correct by the author's
-//! attention; now it is a property of the pane, and a caller that passes a stage's live
-//! jump target gets the same suppression.
+//! **Doug ruled on it, 2026-08-20:** *the navigated tree is annotated from the class, or
+//! not at all.* What each of the five would otherwise claim about a library class:
 //!
-//! **The other five `TreeOptions` fields are NOT blanked yet, and that is a KNOWN DEFECT
-//! with a decision already made** — Doug, 2026-08-20: *the navigated tree is annotated from
-//! the class or not at all.* `tracked`, `known_variables`, `declaring_classes`,
-//! `variable_lines` and `path_lines` all describe **the specimen**, so a library class here
-//! can be underlined, offered for Follow, and shown a *"declared at line N"* naming a line of
-//! the specimen's file. They join the two above; the edit, the test's exact name and the
-//! must-fire recipe are queued in [`docs/app-split-plan.md`](../docs/app-split-plan.md).
+//! | field | what it is | on a navigated class |
+//! |---|---|---|
+//! | `path_lines` | *stage* node path → source line | a colliding path resolves to the **specimen's** DAE line |
+//! | `variable_lines` | variable name → declaring line **in the specimen** | `R` in `Resistor` gets the specimen's `R` |
+//! | `declaring_classes` | variable name → declaring class, **of the specimen** | the same collision, feeding "Go to definition" |
+//! | `known_variables` | the **specimen's** variables | decides what is *trackable*; a name in both is offered |
+//! | `tracked` | the identifier being followed | a flat name (`resistor.R`), so a hit here is a bare-name collision |
+//!
+//! The failure mode is **presence substituted, not absence filled**: the tooltip would say
+//! *"declared at line 41"* over a row of the Resistor, naming a line of your specimen's
+//! file, with nothing on screen admitting where the number came from.
+//!
+//! **The five turned out to be the WHOLE STRUCT** — `jump_to` and `highlight` were already
+//! blanked here for the same reason (a stage's address means nothing against another IR),
+//! and five plus two is every field `TreeOptions` has. So the parameter went instead of
+//! gaining five `None`s: **the caller can no longer hand this pane the specimen's
+//! annotations at all**, which the compiler enforces and no test has to.
 //!
 //! **Why nothing caught it:** `docs/identity-and-provenance.md` forbids *substring* search
 //! deciding identity, and all five use exact equality, so they comply as written. What they
 //! step outside is that rule's unstated precondition — **that both sides are the same
 //! model**, true of everything until "Go to definition" existed. Exact equality across two
 //! namespaces is a collision wearing identity's clothes.
+//!
+//! **What the fix does NOT remove is the confirming detail.** `def_index` is per-[`NavEntry`]
+//! — the class's *own* DefId table, resolved structurally by the worker — so "Go to
+//! definition" keeps working *through DefIds* while the name-matched shortcuts go. The
+//! structural route that document prescribes survives untouched.
+//!
+//! **Blanking is the correct answer NOW, not the destination.** Nothing indexes an MSL
+//! class's own variables, declaring positions or source lines, so the class-derived versions
+//! do not exist to substitute. If this tree should ever be annotated, the annotations must be
+//! built **from the class** — never re-derived from the specimen, which is exactly what the
+//! missing parameter now prevents.
 
 use std::collections::HashMap;
 
@@ -95,12 +113,19 @@ pub(crate) struct NavChrome<'a> {
 /// unreachable from `central_panel_ui`, which tests `nav.is_empty()` to choose this pane
 /// at all, and an early return rather than an `unwrap` because a pane that panics on
 /// empty state is one more thing a test must avoid rather than assert.
+///
+/// **There is no [`tree::TreeOptions`] parameter, and its absence is load-bearing** — see
+/// the module docs. Every field of that struct describes the specimen, and this tree is a
+/// different IR; the caller cannot pass one, so it cannot pass the wrong one.
+///
+/// `field_help` is the exception that proves the rule: it maps a *field name* to Rumoca's
+/// own documentation for that field, so it is about the IR's schema rather than about any
+/// one model, and it is as true of a library class as of a specimen.
 pub(crate) fn nav_view_ui(
     ui: &mut egui::Ui,
     nav: &[NavEntry],
     chrome: NavChrome<'_>,
     field_help: &HashMap<String, String>,
-    opts: tree::TreeOptions<'_>,
     actions: &mut tree::TreeActions,
 ) -> Option<NavCommand> {
     let entry = nav.last()?;
@@ -147,16 +172,14 @@ pub(crate) fn nav_view_ui(
                 actions,
                 &entry.def_index,
                 field_help,
-                tree::TreeOptions {
-                    // **A navigated library class is a different IR**, so a jump target
-                    // addressed into the stage tree would land on an unrelated node or on
-                    // nothing at all. The highlight is suppressed for the same reason, and
-                    // travels with it: highlighting the row a stage link named would mark
-                    // an arbitrary row of this class.
-                    jump_to: None,
-                    highlight: None,
-                    ..opts
-                },
+                // **Every field of `TreeOptions` describes the specimen, and this is a
+                // different IR** — so the default, in full, rather than a literal that
+                // blanks seven fields one at a time. A jump target addressed into the
+                // stage tree would open an unrelated node of this class; a name matched
+                // against the specimen's variables would underline it, offer it for
+                // Follow, and cite a line of the specimen's file. Absence stated, not
+                // filled. See the module docs for the ruling and the table.
+                tree::TreeOptions::default(),
             );
         });
 
@@ -176,7 +199,6 @@ pub(crate) fn nav_view_ui(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bridge::Seg;
     use egui_kittest::Harness;
     use egui_kittest::kittest::Queryable;
     use serde_json::json;
@@ -188,31 +210,38 @@ mod tests {
         loading: Option<String>,
         error: Option<String>,
         field_help: HashMap<String, String>,
-        /// Set by the jump-suppression test; every other test leaves it `None`.
-        jump_to: Option<Vec<Seg>>,
         actions: tree::TreeActions,
         command: Option<NavCommand>,
     }
 
+    /// The one IR every fixture renders: a class with a leaf that **looks exactly like a
+    /// specimen variable**, and a nested one.
+    ///
+    /// `name: "R"` is the shape the annotation defect needs — `trackable_name` accepts a
+    /// *string* leaf under a non-prose key, and `R` is a name a real specimen very
+    /// plausibly also declares. A number could never be trackable, so a numeric fixture
+    /// would make the annotation tests pass for the wrong reason.
+    ///
+    /// **The nesting is the second half of the point.** `tree_ui` opens the root and
+    /// nothing else, so `inner_leaf` reaches the screen only if something forced `outer`
+    /// open — which is what a `jump_to` does, and what this pane can no longer be handed.
+    fn class_ir() -> serde_json::Value {
+        json!({ "name": "R", "outer": { "inner_leaf": 42 } })
+    }
+
     impl Nav {
-        /// A stack of one class whose IR nests a leaf one level down.
-        ///
-        /// **The nesting is the fixture's whole point.** `tree_ui` opens the root by
-        /// default and nothing else, so `inner_leaf` is on screen exactly when something
-        /// forced `outer` open — which is what `jump_to` does and what this pane must not
-        /// let it do.
+        /// A stack of one class.
         fn one(name: &str) -> Self {
             Nav {
                 nav: vec![NavEntry {
                     name: name.to_owned(),
-                    value: json!({ "outer": { "inner_leaf": 42 } }),
+                    value: class_ir(),
                     def_index: std::collections::BTreeMap::new(),
                 }],
                 model: Some("Specimen".to_owned()),
                 loading: None,
                 error: None,
                 field_help: HashMap::new(),
-                jump_to: None,
                 actions: tree::TreeActions::default(),
                 command: None,
             }
@@ -222,7 +251,7 @@ mod tests {
         fn then(mut self, name: &str) -> Self {
             self.nav.push(NavEntry {
                 name: name.to_owned(),
-                value: json!({ "outer": { "inner_leaf": 42 } }),
+                value: class_ir(),
                 def_index: std::collections::BTreeMap::new(),
             });
             self
@@ -248,10 +277,6 @@ mod tests {
                             error: s.error.as_deref(),
                         },
                         &s.field_help,
-                        tree::TreeOptions {
-                            jump_to: s.jump_to.as_deref(),
-                            ..Default::default()
-                        },
                         &mut s.actions,
                     );
                     if cmd.is_some() {
@@ -365,31 +390,94 @@ mod tests {
         );
     }
 
-    /// **The defect this pane exists to prevent: a stage's address honoured against
-    /// another IR.**
+    /// **The defect this pane exists to prevent: a library class annotated from the
+    /// specimen.** Doug's ruling, 2026-08-20 — *annotated from the class, or not at all.*
     ///
-    /// `jump_to` force-opens every ancestor of its target and scrolls to it. Handed a
-    /// path from the specimen's DAE, it would open whatever node of the *library class*
-    /// happens to sit at that address and scroll the reader to it — a correct-looking
-    /// reveal of an unrelated node, with nothing on screen admitting the address came
-    /// from somewhere else. Same shape as the stranded sub-view of 2026-08-20: presence
-    /// substituted, not absence filled.
+    /// Four of the five annotations reach the reader through the **row menu**, which is
+    /// why this test right-clicks: `known_variables` decides whether *"🔎 Follow R"* is
+    /// offered, `variable_lines` adds *"📄 Show R in the Modelica source"*, and
+    /// `declaring_classes` adds *"↪ Go to …"*. All three are gated on `trackable_name`,
+    /// so a fixture whose leaf is *not* a plausible variable would pass vacuously — see
+    /// [`class_ir`] for why the leaf is `name: "R"`.
     ///
-    /// Must-fire verified by deleting `jump_to: None` from the `TreeOptions` literal:
-    /// `inner_leaf` then reaches the screen and this fails.
+    /// **What the menu keeps is as much the assertion as what it loses.** *"Point at"*,
+    /// *"Show this being set"* and *"Copy text"* are properties of a JSON node, true of
+    /// any IR; the three that go are claims about a model this tree is not. Asserting the
+    /// survivors is what makes the negatives mean *"suppressed"* rather than *"the menu
+    /// never opened"*.
+    ///
+    /// **Must-fire recipe — the perturbation is the defect itself.** Replace the
+    /// `TreeOptions::default()` in [`nav_view_ui`] with a literal setting
+    /// `known_variables` to a set containing `"R"`; the Follow item appears and this
+    /// fails on that assertion, while the seven tests around it stay green. Verified
+    /// 2026-08-20.
+    ///
+    /// **THE THREE ITEMS ARE NOT INDEPENDENT, and the perturbation is what showed it.**
+    /// All three are gated on `trackable_name`, which returns `None` without
+    /// `known_variables` — so restoring `variable_lines` or `declaring_classes` *alone*
+    /// changes nothing on screen, and their assertions can only fire in company. That
+    /// makes `known_variables` the one field whose blanking suppresses the other two, and
+    /// the two later assertions guard the combined regression rather than one apiece.
+    ///
+    /// **What it cannot catch: `tracked`.** A tracked identifier is a painted fill behind
+    /// the row, not a widget, so it leaves no accessibility node to query. It is blanked
+    /// with the rest and rests on the signature alone.
     #[test]
-    fn a_jump_target_is_not_honoured_against_a_navigated_class() {
-        let mut state = Nav::one("Resistor");
-        state.jump_to = Some(vec![Seg::Key("outer".to_owned())]);
-        let h = draw(state);
+    fn a_navigated_class_is_not_annotated_from_the_specimen() {
+        let mut h = draw(Nav::one("Resistor"));
+
+        // The tree renders a string value with `{:?}`, so the row reads `name: "R"`.
+        h.get_by_label_contains(r#"name: "R""#).click_secondary();
+        h.run_steps(2);
 
         assert!(
-            h.query_by_label_contains("outer").is_some(),
-            "precondition: the root opened by itself, so `outer` is on screen to be opened"
+            h.query_by_label_contains("Point at").is_some(),
+            "precondition: the right-click must actually have opened the row menu"
         );
         assert!(
-            h.query_by_label_contains("inner_leaf").is_none(),
-            "a jump target addressed into the stage tree must not open this class's nodes"
+            h.query_by_label_contains("Follow").is_none(),
+            "`known_variables` is the SPECIMEN's variables — a library class's `R` that \
+             collides with one must not be offered for Follow"
+        );
+        assert!(
+            h.query_by_label_contains("Modelica source").is_none(),
+            "`variable_lines` maps the specimen's names to the specimen's lines — citing \
+             one over a row of this class would name a line of the wrong file"
+        );
+        assert!(
+            h.query_by_label_contains("Go to").is_none(),
+            "`declaring_classes` is the specimen's name-to-class map; go-to-definition \
+             from here must go through this entry's own `def_index` or not at all"
+        );
+    }
+
+    /// The fifth annotation, `path_lines`, and it takes a **different route through the
+    /// tree**: it is keyed by node *path* rather than by name, so it is offered on a
+    /// collapsible header rather than on a leaf, and by the arm of `node_ui` the test
+    /// above never reaches.
+    ///
+    /// **The collision is the cheapest of the five to hit.** `path_lines` maps a *stage*
+    /// node path — `outer`, say — to a line of the specimen's DAE, and a library class has
+    /// nodes at ordinary paths too. The reader would be offered a jump into the specimen's
+    /// source from a row of the Resistor.
+    ///
+    /// Must-fire: set `path_lines` to a map containing `outer` in [`nav_view_ui`]'s
+    /// options; the source item appears on this header and this fails.
+    #[test]
+    fn a_navigated_node_is_not_given_the_specimens_source_line() {
+        let mut h = draw(Nav::one("Resistor"));
+
+        h.get_by_label_contains("outer").click_secondary();
+        h.run_steps(2);
+
+        assert!(
+            h.query_by_label_contains("Point at").is_some(),
+            "precondition: the right-click must actually have opened the header's menu"
+        );
+        assert!(
+            h.query_by_label_contains("Modelica source").is_none(),
+            "a node path resolved against the specimen's DAE must not offer this class's \
+             rows a jump into the specimen's source"
         );
     }
 }

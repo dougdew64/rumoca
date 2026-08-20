@@ -43,6 +43,46 @@ function had been answering at once:
 the tracked variable uses identity; deciding whether something *refers* to it uses structure,
 or the lexer — never a substring search.
 
+### THE UNSTATED PRECONDITION: both sides must be the same MODEL
+
+*(added 2026-08-20, after a defect that complied with every word above)*
+
+**Exact equality decides identity only within one model.** Everything on this page was written
+when the only names in play came from the specimen's own compilation, so *"the same string"*
+and *"the same thing"* could not come apart. **"Go to definition" ended that**: it puts a
+library class — `Modelica.Electrical.Analog.Basic.Resistor`, pulled from the resolved tree —
+on screen beside indexes built from the specimen. A `Resistor` has an `R`; so does the
+specimen. Both are exact matches, and they are different variables.
+
+**So the rule gains a precondition rather than an exception:**
+
+> Before comparing two names, establish that they are drawn from **one namespace**. Exact
+> equality across two models is a collision wearing identity's clothes, and it is invisible
+> here because the comparison itself is correct.
+
+**Why this hid for a day and could have hidden for months.** `App::specimen_tree_options`
+handed the *navigated* tree the specimen's `known_variables`, `variable_lines`,
+`declaring_classes`, `path_lines` and `tracked` — five name-keyed indexes, all using exact
+equality, **all compliant as written.** The failure is *presence substituted, not absence
+filled*: a row of the Resistor offered *"declared at line 41"*, naming a line of the
+specimen's file, with nothing on screen admitting where the number came from.
+
+**The fix, and it is the shape to copy:** `nav_view_ui` stopped *taking* a `TreeOptions`
+(2026-08-20) — the five plus `jump_to` and `highlight` are the whole struct, so removing the
+parameter makes the cross-namespace comparison unrepresentable rather than merely absent.
+Doug's ruling: **the navigated tree is annotated from the class, or not at all.**
+
+**And the confirming detail belongs to this document rather than to that pane.** `def_index`
+is per-`NavEntry` — the class's *own* DefId table, resolved structurally by the worker — and
+it was **not** one of the five, so go-to-definition keeps working *through DefIds* while every
+name-matched shortcut goes. **The structural route this page prescribes was the one that
+survived**, which is the rule working rather than a coincidence.
+
+**Blanking is the correct answer now, not the destination.** Nothing indexes an MSL class's
+own variables, declaring positions or source lines, so there is no class-derived version to
+substitute. If a navigated tree should ever be annotated, build the indexes **from the class**
+— never re-derive them from the specimen.
+
 ## What provenance Rumoca already preserves
 
 Relevant whenever a feature needs to know what identity information is available to it:

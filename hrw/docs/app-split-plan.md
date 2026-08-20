@@ -173,6 +173,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-20 | *(test split, not a move)* the four ack verdicts become four named tests — *zero production lines; it expired a second comment that had been a no-op for five days* | 12,356 | *(none)* |
 | 2026-08-20 | **the spy-plot and incidence arms of `central_panel_ui`'s dispatch → `matrix_panes.rs`** — *the first cut INTO a router; the chain is now thirteen one-line arms* | **12,273** | `matrix_panes.rs` (451, of which 246 are tests) |
 | 2026-08-20 | **the navigation branch of `central_panel_ui` → `nav_view.rs`** — *the router's OUTERMOST list, which no census row had ever counted* | **12,250** | `nav_view.rs` (388, of which 220 are tests) |
+| 2026-08-20 | *(accuracy, not a move)* the navigated tree stops being annotated from the specimen — *`nav_view_ui` loses its `TreeOptions` parameter; net **zero** lines on `app.rs`* | 12,250 | `nav_view.rs` (483, of which 285 are tests) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -1245,10 +1246,15 @@ on screen admits to, in a pane visited rarely.
 at line 41"* over a row of the Resistor, naming a line of the specimen. Same class as the arm that
 drew the index-reduction replay under the Events tab.
 
-#### ⟶ THE NEXT SESSION'S UNIT OF WORK — decided 2026-08-20, implement after a `/clear`
+#### ✅ DONE 2026-08-20 — and the five were the WHOLE STRUCT, so the PARAMETER went instead
 
-**`nav_view_ui` blanks all five, joining `jump_to` and `highlight` in the suppression it already
-applies.** <!-- unbuilt: a_navigated_class_is_not_annotated_from_the_specimen -->
+**`nav_view_ui` no longer takes a `TreeOptions` at all.** The box below records why that is the
+same ruling implemented one step further, what it cost, and the two tests it bought.
+
+**The original shape of the work, kept because the correction is the finding:**
+
+> **`nav_view_ui` blanks all five, joining `jump_to` and `highlight` in the suppression it
+> already applies.**
 
 **THE AUTHORITY IS `docs/identity-and-provenance.md`, and the interesting part is that these five
 do NOT break its written rule.** That document forbids *substring* search deciding identity and
@@ -1293,6 +1299,82 @@ be annotated, they must be **built from the class**; do not re-derive them from 
   field and confirm exactly that test fails.
 - **Then delete the `unbuilt:` tag on this section**, or `claims_of_absence_are_still_true` fails —
   which is the mechanism doing its job.
+
+### THE FIVE FIELDS WERE THE WHOLE STRUCT, SO THE PARAMETER WENT — done 2026-08-20
+
+**`app.rs` 12,250 → 12,250; `nav_view.rs` 388 → 483, of which 285 are tests.** The file is
+**exactly unchanged in length**: the call site lost the `self.specimen_tree_options()` argument
+and the method's doc gained one line. **Not scored on `app.rs`'s line count** — this is an
+accuracy fix, and the plan's rule already says an accuracy or testability item is paid for *in*
+`app.rs` and cannot be measured there. **A net of zero is the clearest instance of that rule the
+loop has produced**, and it is worth having on the record: a session scored on the size number
+would read this as a wasted iteration.
+
+**THE PLANNED EDIT WAS FIVE `None`s, AND COUNTING THE STRUCT CHANGED IT.** `TreeOptions` has
+**seven** fields; `jump_to` and `highlight` were already blanked here. Five plus two is all of
+them — so the queued edit was, without anyone noticing, *"ignore this parameter entirely"*.
+**A parameter that is wholly ignored is a lie in the signature**, so `nav_view_ui` stopped taking
+one and hands `tree_ui` a `TreeOptions::default()`.
+
+**And the argument that settles it is not tidiness — it is what happens when `TreeOptions` gains
+an eighth field.** The blanking literal ended in `..opts`, so a new field would flow straight
+through to the navigated tree and re-open exactly this defect, silently. **Shape B fails open on
+a future field; the missing parameter fails closed.** Same class as the `_ =>` arm two boxes up:
+a construct that silently accepts tomorrow's variant.
+
+**THE COST IS REAL AND IS A DELETED TEST.**
+`a_jump_target_is_not_honoured_against_a_navigated_class` — must-fire-verified two boxes above —
+**is gone, because it can no longer be written**: it worked by passing a stage's jump target in,
+and there is no longer a parameter to pass it through. **A property that moved from a test to the
+type system takes its test with it**, and the honest way to record that is to say so rather than
+to leave a test that can only be made to fail by re-adding a parameter.
+
+**Two tests replace it, and they are on the four annotations that DO still have a route in.**
+
+- **`a_navigated_class_is_not_annotated_from_the_specimen`** right-clicks a leaf and reads the
+  row menu. **The context menu is the only surface these five reach** — no annotation changes a
+  label, so `known_variables`, `variable_lines` and `declaring_classes` are invisible to a query
+  until a right-click opens *"🔎 Follow R"*, *"📄 Show R in the Modelica source"* and *"↪ Go to …"*.
+- **`a_navigated_node_is_not_given_the_specimens_source_line`** covers `path_lines`, which takes a
+  **different arm of `node_ui`**: it is keyed by node *path*, so it appears on a collapsible
+  header, not a leaf.
+
+**`egui_kittest` CAN DRIVE A CONTEXT MENU — `click_secondary()`, and nothing here had used it.**
+Nine `.context_menu(` call sites across the codebase and not one test had ever opened one. It
+works with no ceremony: right-click, `run_steps(2)`, and the items are ordinary queryable labels.
+**That is a whole class of assertion this project had been treating as unreachable**, and it is
+the same correction shape as the `matrix_panes` narrowing — *a surface nobody had tried*, filed
+under what cannot be tested.
+
+**THE PERTURBATION FOUND THAT THE THREE MENU ITEMS ARE NOT INDEPENDENT.** All three are gated on
+`trackable_name`, which returns `None` without `known_variables` — so restoring `variable_lines`
+or `declaring_classes` alone changes **nothing on screen**, and those two assertions can only
+fire in company. `known_variables` is the master switch. Recorded in the test's doc, because a
+reader would otherwise assume three independent guards.
+
+**Must-fire, verified:** a literal setting `known_variables` fails the first test **on its Follow
+assertion** and leaves the other seven green; `path_lines` fails the second **on its source-line
+assertion**. Both preconditions (*the right-click opened a menu at all*) held in every run — which
+is what stops these negatives passing because nothing was drawn.
+
+**`tracked` has no test and cannot have one here**: it is a painted fill behind the row, leaving
+no accessibility node. It rests on the signature, which is now the only thing it needs.
+
+**THE FIXTURE HAD TO CHANGE, AND THE OLD ONE WOULD HAVE PASSED VACUOUSLY.** `Nav::one`'s IR was
+`{"outer": {"inner_leaf": 42}}` — and the plan's own recipe said *"give the harness a
+`known_variables` containing the leaf's value"*. **`42` is a number, and `trackable_name` requires
+a string**, so that test could never have failed however the options were set. The IR now carries
+`name: "R"` at the top level: a string, under a non-prose key, at a depth the tree actually opens.
+**Three separate preconditions, none of them visible from the plan's description** — which is the
+*"read the body before scripting"* rule applying to test fixtures as much as to extractions.
+
+**AND THE CALLER'S DOC WAS A QUESTION THAT IS NOW ANSWERED.** `App::specimen_tree_options`
+carried a section headed *"One method because the question has one answer, not because the answer
+is known"*, explaining that the five were an open question for the navigated tree and that one
+method made ruling on it one edit. **That is exactly what happened, so the paragraph had to go**
+— it now records that the method had two callers for a day and that the second one was the defect.
+**A doc that describes a pending decision expires the moment the decision lands**, and nothing
+links the two.
 
 ### A ROUTER'S SEAM IS AN ASYMMETRY AMONG ITS ARMS — 2026-08-20, `matrix_panes.rs`
 

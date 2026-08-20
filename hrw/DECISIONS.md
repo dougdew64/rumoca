@@ -3655,8 +3655,8 @@ filled** — the same class as the stranded `Animate` arm.
 
 **Doug's ruling (2026-08-20): the navigated tree is annotated from the class or not at all**, and
 since nothing indexes an MSL class's own variables or source lines, today that means **not at
-all**. `nav_view_ui` blanks all five. Queued as the next session's unit of work in
-`docs/app-split-plan.md`, tagged `unbuilt:`.
+all**. ~~`nav_view_ui` blanks all five.~~ **Fixed 2026-08-20 — and the edit was not this one;
+see the entry below.** The five were the whole of `TreeOptions`, so the *parameter* went.
 
 **Why it hid, which is the transferable half.**
 `docs/identity-and-provenance.md` forbids *substring* search deciding identity and prescribes
@@ -3670,3 +3670,33 @@ class's own DefId table resolved structurally by the worker, and is not one of t
 "Go to definition" keeps working *through DefIds* while the name-matched shortcuts go. The
 structural route that document prescribes survives untouched, which is the rule working rather
 than a coincidence.
+
+- **2026-08-20 — `nav_view_ui` takes NO `TreeOptions`, rather than blanking five fields.** The
+  fix above was queued as *"blank the other five"*; counting the struct changed the edit.
+  `TreeOptions` has **seven** fields, `jump_to` and `highlight` were already blanked there, and
+  five plus two is all of them — so the planned literal was *"ignore this parameter entirely"*,
+  and a parameter that is wholly ignored is a lie in the signature. The pane now hands `tree_ui`
+  a `TreeOptions::default()` and the caller cannot pass one.
+
+  **Decided on a future field, not on tidiness.** The blanking literal would have ended in
+  `..opts`, so an eighth `TreeOptions` field flows straight through to the navigated tree and
+  silently re-opens the defect. A blanking literal **fails open** on tomorrow's field; a missing
+  parameter **fails closed** — the same class as the `_ =>` arm found inside the live-debug
+  cluster. `field_help` stays, and is the exception that proves the rule: it maps a *field name*
+  to Rumoca's documentation for that field, so it describes the IR's schema rather than any one
+  model.
+
+  **The cost is a deleted test, recorded rather than glossed.**
+  `a_jump_target_is_not_honoured_against_a_navigated_class` worked by passing a stage's jump
+  target in and cannot be written without a parameter. **A property that moves from a test into
+  the type system takes its test with it**; a test that can only be made to fail by re-adding a
+  parameter is theatre.
+
+- **2026-08-20 — `egui_kittest` can drive a context menu, and this project had never tried.**
+  `node.click_secondary()` + `run_steps(2)` opens `Response::context_menu` and its items are
+  ordinary queryable labels. Nine `.context_menu(` call sites existed and **zero** tests had
+  opened one. It matters beyond this fix: none of the five annotations changes a tree row's
+  *label*, so "🔎 Follow", "📄 Show … in the Modelica source" and "↪ Go to …" are invisible to
+  every query-by-label test until a right-click. **An assertion surface that had been treated as
+  unreachable** — same correction shape as the `matrix_panes` narrowing of the
+  "panes cannot be tested" claim.

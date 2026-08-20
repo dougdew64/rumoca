@@ -3995,26 +3995,27 @@ impl App {
         }
     }
 
-    /// What either tree is told about the loaded specimen: the tracked name and the four
-    /// indexes built from the compile.
+    /// What the **stage** tree is told about the loaded specimen: the tracked name and the
+    /// four indexes built from the compile.
     ///
     /// **`jump_to` and `highlight` are deliberately left `None`** — they address a *node*
-    /// rather than describing the model, so they belong to whichever tree is being drawn.
-    /// The stage tree fills them in; [`crate::nav_view`] blanks them again on principle.
+    /// rather than describing the model, so they belong to whichever tree is being drawn,
+    /// and the one caller fills them in.
     ///
-    /// # One method because the question has one answer, not because the answer is known
+    /// # It had two callers for a day, and that was the defect
     ///
-    /// The stage tree and the navigated-class tree were handed these five fields by two
-    /// identical literals, comment included, and **for the navigated tree they are an open
-    /// question rather than a settled fact.** A library class reached by "Go to
-    /// definition" is a different IR: `path_lines` maps *stage* node paths to source
-    /// lines, `variable_lines` and `declaring_classes` are the *specimen's* identifiers,
-    /// and a name that collides resolves confidently and wrongly — the same argument that
-    /// blanks `jump_to` next door, applied to five fields nobody has yet ruled on.
+    /// The navigated-class tree ([`crate::nav_view`]) was handed the same five fields, and
+    /// **every one of them describes the specimen** — so a library class reached by "Go to
+    /// definition" was underlined, offered for Follow, and could cite *"declared at line
+    /// N"* naming a line of the specimen's file. Doug ruled on 2026-08-20 that the
+    /// navigated tree is annotated *from the class or not at all*; since the five plus
+    /// `jump_to` and `highlight` are the whole of [`tree::TreeOptions`], `nav_view_ui`
+    /// stopped taking one rather than blanking each field. **The pane it must not reach
+    /// can no longer name this method's return type**, which is why this doc no longer has
+    /// to warn about it.
     ///
-    /// Kept as one method so that ruling on it is one edit. Two copies would have to be
-    /// found first, which is how they came to disagree about nothing for as long as they
-    /// have.
+    /// Kept as a method though it now has one caller: it names the answer to *"what does a
+    /// tree know about the specimen?"*, and the caller is a router already too long.
     fn specimen_tree_options(&self) -> tree::TreeOptions<'_> {
         tree::TreeOptions {
             tracked: self.tracked_identifier.as_deref(),
@@ -4525,7 +4526,6 @@ impl App {
                     error: self.nav_error.as_deref(),
                 },
                 &self.field_help,
-                self.specimen_tree_options(),
                 &mut intent.tree,
             ) {
                 Some(nav_view::NavCommand::Home) => intent.go_home = true,
