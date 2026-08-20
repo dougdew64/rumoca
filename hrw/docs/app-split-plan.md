@@ -125,7 +125,20 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-19 | sub-view enums, impls, name helpers (12 items) | 14,298 | `stage_view.rs` (165) |
 | 2026-08-19 | `Viewport`, its `Default`, `sub_view_name_for` | 14,199 | `stage_view.rs` (266) |
 | 2026-08-19 | `StageViewCaches` + impl | 14,127 | `stage_caches.rs` (99) |
-| 2026-08-19 | `UiMode`, `SpecimenDetail`, `NavEntry` | **14,076** | `ui_state.rs` (73) |
+| 2026-08-19 | `UiMode`, `SpecimenDetail`, `NavEntry` | 14,076 | `ui_state.rs` (73) |
+| 2026-08-19 | **`source_map_ui`** + its constant — *first rendering fn* | **13,838** | `source_map.rs` (281) |
+
+**The first rendering function left, and the signature is the result.** Four parameters instead of
+`&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
+camera. **That is what makes it an extraction rather than a rename** — the compiler now enforces
+what the source map may touch, and a reader learns it from the signature.
+
+**`SOURCE_MAP_SPLIT_FRACTION` moved with it.** A constant used by exactly one function is state
+that function owns; leaving it behind would reduce what `app.rs` *holds* without reducing what it
+*declares*.
+
+**−238 lines from one function** — more than the first three state moves put together (−310 across
+three), which is the coupling measurement paying for itself.
 
 **Trap 2 fired again on that last move** — a `sed` insert landed between `#[derive]` and its enum,
 an hour after the trap was written down. **Reading a rule is not the same as it being available at

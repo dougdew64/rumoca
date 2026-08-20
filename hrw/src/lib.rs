@@ -70,6 +70,7 @@ pub mod promote;
 pub mod reduction_anim;
 pub mod reduction_view;
 pub mod report;
+pub mod source_map;
 pub mod source_view;
 pub mod spyplot;
 pub mod stage_caches;
