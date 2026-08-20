@@ -49,6 +49,7 @@ pub mod bridge;
 pub mod canvas;
 pub mod colors;
 pub mod connection_anim;
+pub mod context_bar;
 pub mod diagnostics;
 pub mod doc_citations;
 pub mod equation_sheet;

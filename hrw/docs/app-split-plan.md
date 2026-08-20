@@ -161,6 +161,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-19 | **`autoplay_controls_ui`** + `autoplay_stop_heading` + two constants | **13,152** | `tour_transport.rs` (458) |
 | 2026-08-19 | **`tour_prose_ui`** — the inner scroll area of `tour_panel_ui`, + `no_tour_ui` + a constant | **12,908** | `tour_panel.rs` (735, renamed from `tour_transport.rs`) |
 | 2026-08-19 | **the tabs of `stage_tab_bar_ui`** — the span below the ▶ button, + `tab_label` + the row's teaching comment | **12,715** | `stage_tabs.rs` (493, of which 190 are tests) |
+| 2026-08-19 | **the assembled state of `context_bar_ui`** + `background_ui` — *the seven-method one* | **12,519** | `context_bar.rs` (520, of which 205 are tests) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -455,21 +456,97 @@ test: swapping the variant in `App`'s handler fails
 `clicking_a_stage_tab_reaches_the_context_bar`, and the log-clearing is
 `clicking_a_stage_tab_leaves_the_log_view`.
 
-### ⟶ NEXT: `context_bar_ui`, and its seven methods now get the deferral test
+### `context_bar_ui`'s assembled state left — 2026-08-19, and six of the seven methods were free
 
-255 lines, 13 fields, **7 `App` methods**. Under the old reading that made it the most expensive
-thing left; under the sharpened test above it is an open question, because **the cost is how
-many of the seven sit mid-body**. Two of them — `background_ui` and `empty_context_hint` — are
-rendering helpers rather than presses, and a rendering helper that takes `&self` can simply
-move with the pane.
+**−196 lines, first attempt, no revert.** `context_bar.rs` is 520 lines, 205 of them tests.
 
-**Run the census in this order:** for each `self.<method>(` in the body, record (a) is it a
-press or a render helper, (b) does anything *after* it in the same function read what it wrote.
-Only the calls that answer *press* and *yes* are barriers, and only barriers force the cut to
-be inside the function.
+**The seven-`App`-method count that put this last in the coupling table was almost entirely
+noise, and the census that shows why is about *position*.** Applying the sharpened test from
+`stage_tab_bar_ui` — *does anything after this call read what it wrote?* — sorted the seven in
+one pass:
 
-**`central_panel_ui` (602 lines, 43 fields) and `frame_ui` (299, 32) still look unreachable**,
-and still shrink as their callees leave.
+| the call | verdict |
+|---|---|
+| `refresh_jump_matches` | **the one barrier.** It rebuilds the match list the Following row reports two lines later. Stayed in `App`, called before the extracted function. |
+| `jump_to_next_match`, `next_seq` ×2, `emit_context` ×2, `navigate_to` | **free.** All five sit in a trailing block *below* `ui.separator()` — below the last `ui` call in the whole function. |
+| `background_ui` | a render helper; **moved with the pane**. |
+| `empty_context_hint` | a render helper; **stayed**. See below. |
+
+**THE TEST SHARPENS ONCE MORE: a press below the last `ui` call costs exactly zero frames to
+defer.** `stage_tab_bar_ui` distinguished *end of body* (callback) from *mid-body* (barrier);
+this one shows the end-of-body case is not merely cheap but **provably identical** — the same
+statements run in the same order, one function boundary later, with nothing drawn in between.
+Seven methods reduced to one obstacle because six of them were in that trailing block. **Look
+for the trailing block first**: a rendering function that accumulates presses into locals and
+acts on them below the last widget is already shaped for this cut.
+
+**AND THE PARAMETER LIST DECIDES WHICH `&self` HELPER MOVES.** The previous iteration's note
+said a `&self` render helper "can simply move with the pane". That is too permissive:
+
+- **`background_ui` moved** — its three inputs (`model`, `selected.is_some()`, `stage`) were
+  already needed by the pane, so it cost **zero** new parameters.
+- **`empty_context_hint` stayed** — it reads `ui_mode`, `specimen_detail` and `viewing_log`,
+  three pieces of state the bar otherwise never touches, purely to phrase one sentence. Moving
+  it would have added three arguments that teach a reader nothing about what the bar *reports*,
+  and would have broken three existing `App`-side tests that call it directly.
+
+**So the rule is: a helper moves if its inputs are already in the signature, and stays if it
+would widen it.** That decision is also what kept the empty-state branch in `App` — it is four
+lines of rendering around that hint — so `App::context_bar_ui` is now the empty state, the one
+barrier, and a `match` over four presses.
+
+**The fourth callback instance, and the first to COLLAPSE accumulators rather than add one.**
+The function carried five independent locals — `clear_point`, `clear_thread`, `jump_forward`,
+`jump_back`, `go_to_class` — and acted on all of them below the rows. One
+`Option<ContextBarPress>` replaces all five. **That is sound and not merely convenient**: every
+one is set by a distinct `small_button` or `link`, and egui delivers a pointer press to a
+single widget, so two could never be true in the same frame. The old shape could *express* it;
+nothing could *produce* it. Say that in the module doc, because the collapse looks lossy.
+
+**THE GREP CENSUS UNDERCOUNTS — it cannot see a multiline `self` access.** `self.identifier_index`
+and `self.stages` both showed as **zero** in `grep -o 'self\.[a-z_]*'` because both are written
+as `self\n    .field` by `rustfmt`. Two real state groups, invisible to the metric the coupling
+table is built from. **The multiline access was already on the obstacle checklist as an editing
+hazard; it is also a measurement hazard**, and every number in that table may be low by one or
+two. `perl -0777 -ne` with `self\s*\.\s*(\w+)` is the honest count.
+
+### The two mechanical costs, both in the tests rather than the extraction
+
+**`get_all_by_label_contains` PANICS when nothing matches — it cannot express absence.** The
+must-fire test for the pre-slot branch asserts that "declared at line" is *not* rendered, and
+`.next().is_none()` never runs: the query panics first, with a full accessibility-tree dump that
+reads like the widget was missing for some other reason. **Use `query_by_label_contains` for any
+negative assertion**; it returns `Option`. Cost one test cycle.
+
+**`..Default::default()` requires EVERY field visible, not just the ones being set.** Avoiding
+`clippy::field_reassign_with_default` in a cross-module test widened all ten `ContextBarState`
+fields to `pub(crate)`, where the pane itself reads only five. **That is a cost of the test, not
+of the extraction**, and it is the argument for the follow-up below rather than a reason to
+regret it.
+
+### ⟶ NEXT: `generic_error_summary` (236 lines) — it takes no `self` at all
+
+**Re-measured after this move, and the cheapest thing left is not a coupling problem — it is an
+associated function that is already free.** `fn generic_error_summary(ui, error, stage)` sits
+inside `impl App` and never mentions `self`. There is nothing to establish, no signature to
+design, and no callback to invent: it is a `git mv` with a `pub(crate)` and an import.
+
+**Sweep for the rest of that class before designing another extraction.** The measurement is one
+`awk` pass over `impl App` for bodies with no `self`, and it found `generic_error_summary` (236)
+plus `StageSubView::from_slug` (219, already outside `impl App` but in `app.rs`). **A `self`-free
+associated function is a free function wearing an `impl` block**, and no iteration so far has
+looked for them — every one has gone hunting for seams in methods that have real coupling.
+
+**Then, in order:**
+
+1. **`ContextBarState` into `context_bar.rs`** (~35 lines) — its own doc says *"Everything the
+   Context Bar owns"*, all ten fields are already `pub(crate)`, and the `Viewport` /
+   `SourceViewState` precedent is exactly this. Cheap, and it finishes the pane.
+2. **`equation_sheet_ui`** (246) — a rendering pane the coupling table never measured, and its
+   state already lives in `crate::equation_sheet`.
+3. **`frame_ui`** (483 after the moves, 32 fields) and **`central_panel_ui`** (619, 43) — still
+   last, still shrinking as their callees leave. Note that both *grew* in line count while
+   `app.rs` shrank: they are the routers, and routing survives every extraction.
 
 ### §3's seam order is WRONG for the remaining work — measured 2026-08-19
 
@@ -582,18 +659,22 @@ that is the only mechanism likely to help them.
    prose left. `App::tour_panel_ui` is 37 lines of pure policy now. See the finding above for
    the rule it generalises to.
 
-4. ⟶ **NEXT: `stage_tab_bar_ui`** (280, 12 fields, **2 `App` methods**) — and it is next
-   *instead of* `context_bar_ui` (255, 6 fields, **7 `App` methods**), which the coupling table
-   ordered first. The measurement and the reasoning are in the finding above. **Apply the region
-   rule before the obstacle checklist:** find the span that calls neither `self.open` nor
-   `self.start_simulation`, and check whether `sim_data`/`sim_error`/`sim_running` and
-   `model`/`model_list` collapse into structs the way `self.tour` did.
+4. ✅ **`stage_tab_bar_ui`** (280, 12 fields, **2 `App` methods**) — **DONE 2026-08-19**,
+   `stage_tabs.rs` (493), **−193 lines**. It was taken *instead of* `context_bar_ui`, which the
+   coupling table ordered first, and the ordering was right for the wrong reason: two `App`
+   methods did not make it cheap to move whole. It moved by the region rule, and the deferral
+   test came out of it.
 
-5. **`context_bar_ui`** (255, 6, 7) — after it, because seven `App` methods around six fields is
-   a pane made of policy, and the region rule may find no clean middle in it at all.
+5. ✅ **`context_bar_ui`** (255, 6 fields, **7 `App` methods**) — **DONE 2026-08-19**,
+   `context_bar.rs` (520), **−196 lines**. **The prediction in this line was wrong in both
+   halves.** Seven `App` methods did not make it "a pane made of policy": six of the seven were
+   free, five of them because they sat below the last `ui` call. And the region rule found a
+   very clean middle — everything between the empty-state early return and the trailing press
+   block. See the finding above.
 
-6. **`central_panel_ui`** (602) — last, because it is the stage-routing hub and every other move
-   shrinks what it has to route.
+6. **`central_panel_ui`** (619) — last, because it is the stage-routing hub and every other move
+   shrinks what it has to route. **It has not shrunk yet**; it grew by 17 lines across five
+   extractions, because routing is what survives them.
 
 **And each needs a decision the state moves did not.** These take `&mut self` and reach across
 `App`. Moving one behind a new name reduces nothing — the plan's "what NOT to do" list says so

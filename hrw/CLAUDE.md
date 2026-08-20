@@ -743,11 +743,63 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > **specimen_source_ui + SourceViewState to specimen_source.rs (397)**,
 > **autoplay_controls_ui to tour_transport.rs (458)**, **`tour_panel_ui`'s inner scroll area
 > → `tour_panel.rs` (735, renamed from `tour_transport.rs`)**, and **the tabs of
-> `stage_tab_bar_ui` → `stage_tabs.rs` (493, 190 of them tests)**.
-> **app.rs 14,437 → 12,715.** Progress
+> `stage_tab_bar_ui` → `stage_tabs.rs` (493, 190 of them tests)**, and
+> **the assembled state of `context_bar_ui` + `background_ui` → `context_bar.rs` (520, 205 of
+> them tests)**.
+> **app.rs 14,437 → 12,519.** Progress
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest: the mass is in eight rendering fns totalling 2,531 lines, not in
 > field groups. Those take &mut self, so each costs hours, not minutes.
+>
+> ### SIX OF SEVEN `App` METHODS WERE FREE — LOOK FOR THE TRAILING BLOCK FIRST
+> *(2026-08-19, `context_bar_ui`)*
+>
+> **It had the MOST `App` methods of anything left — seven — and was the cheapest rendering
+> extraction yet.** The deferral test from the previous iteration sorted them in one pass, and
+> the answer sharpens it: **five of the seven sat below the last `ui` call in the function**, in
+> a trailing block that acts on presses accumulated into locals. Deferring those to the caller
+> is not merely cheap, it is **provably identical** — the same statements in the same order, one
+> function boundary later, with nothing drawn in between. Only `refresh_jump_matches` was a real
+> barrier, because the Following row reads the match list it rebuilds. **A rendering function
+> that accumulates presses into locals and acts on them below the last widget is already shaped
+> for this cut; look for that block before counting anything.**
+>
+> **AND THE PARAMETER LIST DECIDES WHICH `&self` HELPER MOVES** — the previous box said a `&self`
+> helper "can simply move with the pane", and that is too permissive. `background_ui` moved
+> because its three inputs were already in the pane's signature; **`empty_context_hint` stayed**,
+> because it reads `ui_mode`, `specimen_detail` and `viewing_log` — three groups the bar never
+> otherwise touches — purely to phrase one sentence, and three `App`-side tests call it directly.
+> **A helper moves if its inputs are already there and stays if it would widen the signature.**
+> That is also what kept the empty-state branch in `App`.
+>
+> **The fourth callback enum, and the first that COLLAPSES accumulators instead of adding one.**
+> Five locals (`clear_point`, `clear_thread`, `jump_forward`, `jump_back`, `go_to_class`) became
+> one `Option<ContextBarPress>`. **Sound, not merely tidy:** each is set by a distinct
+> `small_button` or `link`, and egui delivers a press to a single widget, so two could never be
+> true in one frame. The old shape could express it; nothing could produce it.
+>
+> **THE GREP CENSUS UNDERCOUNTS: it cannot see a multiline `self` access.**
+> `self.identifier_index` and `self.stages` both read **zero** under
+> `grep -o 'self\.[a-z_]*'` because `rustfmt` writes them as `self\n    .field`. Two real state
+> groups, invisible to the metric the plan's coupling table is built from — **every number in
+> that table may be low.** The multiline access was already on the obstacle checklist as an
+> *editing* hazard; it is a *measurement* hazard too.
+>
+> **A NEW TEST TRAP: `get_all_by_label_contains` PANICS on no match, so it cannot assert
+> absence.** The must-fire test that a generated `pre` slot is *not* labelled "declared at line"
+> never reached its `.is_none()`; the query panicked first and dumped the whole accessibility
+> tree, which reads like the widget was missing for an unrelated reason. **Use
+> `query_by_label_contains` for any negative assertion** — it returns `Option`. And
+> `..Default::default()` needs **every** field visible, not just the ones being set, which is why
+> all ten `ContextBarState` fields are `pub(crate)` where the pane reads five.
+>
+> **⟶ NEXT IS `generic_error_summary` (236 lines), AND IT TAKES NO `self` AT ALL.** The cheapest
+> thing left in `app.rs` is not a coupling problem — it is an associated function that is already
+> free: a `git mv`, a `pub(crate)` and an import. **Sweep for that whole class first** (one `awk`
+> pass over `impl App` for bodies with no `self`); no iteration has looked, because every one has
+> gone hunting for seams in methods that have real coupling. Then `ContextBarState` into
+> `context_bar.rs` (~35 lines, all fields already `pub(crate)`), then `equation_sheet_ui` (246),
+> which the coupling table never measured. Order and reasoning in the plan.
 >
 > ### THE `App`-METHOD COUNT IS NOT THE TEST — ASK WHETHER DEFERRING THE PRESS COSTS A FRAME
 > *(2026-08-19, `stage_tab_bar_ui`)*
@@ -776,10 +828,8 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > did nothing, and the failing assertion read as *"the row did not report the press"*. **A widget
 > harness must reproduce the caller's layout, not merely call the function.**
 >
-> **⟶ NEXT IS `context_bar_ui`** (255, 13 fields, 7 `App` methods) — and the seven now get the
-> deferral test rather than the count. Two of them (`background_ui`, `empty_context_hint`) are
-> render helpers, not presses, and a `&self` helper can simply move with the pane. The census
-> order is in the plan.
+> **`context_bar_ui` was next and is DONE** — see the box above for what its seven methods
+> actually cost.
 >
 > ### THE FUNCTION IS NOT THE UNIT — CUT INSIDE IT *(2026-08-19, `tour_prose_ui`)*
 >

@@ -627,40 +627,41 @@ struct CompileFrames {
 /// equation sheet marks its rows. The Context Bar *displays* the follow; it does
 /// not own it.
 #[derive(Default)]
-struct ContextBarState {
+pub(crate) struct ContextBarState {
     // ---- The capture ----
     /// What is pointed at, if anything.
-    pointed_at: Option<PointedAt>,
+    pub(crate) pointed_at: Option<PointedAt>,
     /// Why the last capture could not be written, if it could not. **Reported,
     /// never swallowed** — a capture that silently failed would have Claude
     /// answer about a screen nobody is looking at.
-    point_error: Option<String>,
+    pub(crate) point_error: Option<String>,
     /// A one-line summary of the followed identifier: how many mentions, across
     /// how many stages.
-    tracking_summary: Option<(usize, usize)>,
+    pub(crate) tracking_summary: Option<(usize, usize)>,
     /// Bumped when the follow changes, so the capture can be re-emitted.
-    track_seq: u64,
+    pub(crate) track_seq: u64,
     /// Bumped on every capture, so `focus.json` carries a monotonic sequence and
     /// Claude can tell a stale read from a fresh one.
-    context_seq: u64,
+    pub(crate) context_seq: u64,
 
     // ---- Moving through the capture ----
     /// Where the followed identifier is mentioned, in render order.
-    jump_matches: Vec<Vec<Seg>>,
+    pub(crate) jump_matches: Vec<Vec<Seg>>,
     /// What [`Self::jump_matches`] was computed for, so it is rebuilt only when
     /// the question changes rather than every frame.
-    jump_key: Option<(StageKind, String)>,
+    pub(crate) jump_key: Option<(StageKind, String)>,
     /// Which mention the reader is on.
-    jump_index: usize,
+    pub(crate) jump_index: usize,
     /// A mention to scroll to next frame. **Lasts exactly one frame**: holding it
     /// longer would re-scroll every frame and pin the view.
-    jump_target: Option<Vec<Seg>>,
+    pub(crate) jump_target: Option<Vec<Seg>>,
     /// A row to flash so the reader can see which one the jump meant. Cleared as
     /// soon as they point at something themselves — they have just answered a
     /// different question.
-    jump_highlight: Option<Vec<Seg>>,
+    pub(crate) jump_highlight: Option<Vec<Seg>>,
 }
 
+use crate::context_bar::{self, ContextBarPress};
 use crate::model_list::{ModelListNav, ModelListState};
 use crate::specimen_source::{self, SourceViewState};
 use crate::stage_caches::StageViewCaches;
@@ -936,12 +937,12 @@ pub struct App {
 /// screen. They diverge as soon as the user switches tabs, and the bar must
 /// report the former — anything else describes context Claude does not have.
 #[derive(Clone)]
-struct PointedAt {
+pub(crate) struct PointedAt {
     /// Stamp from the shared context counter — comparable against
     /// `track_seq`, which is stamped from the same source.
-    seq: u64,
+    pub(crate) seq: u64,
     /// Human-readable description, exactly as emitted.
-    target: String,
+    pub(crate) target: String,
     /// Which of the three capture shapes this was.
     ///
     /// **All three must be recorded, not just `Node`.** Only node captures were
@@ -949,15 +950,15 @@ struct PointedAt {
     /// capture — rewrote `focus.json` while the bar went on displaying the
     /// previous node. The bar and the file disagreed, which is precisely the
     /// drift its governing rule forbids.
-    kind: PointKind,
-    stage: StageKind,
-    request: bridge::AskRequest,
+    pub(crate) kind: PointKind,
+    pub(crate) stage: StageKind,
+    pub(crate) request: bridge::AskRequest,
 }
 
 /// What a capture pointed at, kept so the focus can be rebuilt when the
 /// followed identifier changes.
 #[derive(Clone)]
-enum PointKind {
+pub(crate) enum PointKind {
     /// A specific IR node, addressed from the stage root.
     Node(Vec<Seg>),
     /// A whole stage's IR.
@@ -5314,33 +5315,6 @@ impl App {
         format!("\u{2014} {}", ways.join(", or "))
     }
 
-    /// The **background**: specimen and stage, always context, always shown.
-    ///
-    /// `docs/context-assembly.md`: *"Specimen and stage are always context, so
-    /// they are always shown."* One renderer for both branches of
-    /// [`Self::context_bar_ui`], because the two drifted apart the moment there
-    /// were two of them -- the empty-state branch returned before ever reaching
-    /// the background, so the bar showed *no* context at all in the state a
-    /// reader is in most of the time.
-    ///
-    /// Both halves went unrendered in different ways: the stage was **never**
-    /// drawn (since `b2732393`, the commit that created the bar), and the
-    /// specimen was drawn only once something was pointed at. Found 2026-08-01
-    /// by Doug, who counted three kinds of context and saw two.
-    fn background_ui(&self, ui: &mut egui::Ui) {
-        match (&self.model, self.selected.is_some()) {
-            (Some(model), _) => {
-                ui.weak(format!("\u{00b7} {model} \u{00b7} {}", self.stage.name()));
-            }
-            // Mid-compile, or a compile that yielded no model name: still name
-            // the stage rather than showing a bare "Context".
-            (None, true) => {
-                ui.weak(format!("\u{00b7} {}", self.stage.name()));
-            }
-            (None, false) => {}
-        }
-    }
-
     /// The **stage tab row**: one tab per compilation phase, plus Simulation and
     /// the Log.
     ///
@@ -5796,6 +5770,19 @@ impl App {
         None
     }
 
+    /// The **Context Bar** — what Claude will actually have behind the next question.
+    ///
+    /// **What is left here is policy**, after the assembled state left for
+    /// [`crate::context_bar`] on 2026-08-19: the empty-state branch (whose hint is
+    /// built from view state this pane otherwise never touches), the one call that
+    /// must run *before* the rows that report it, and the four presses the bar
+    /// reports rather than performs.
+    ///
+    /// **`refresh_jump_matches` stays because position, not count, decides.** It is
+    /// the only one of the seven `App` methods this function used to call that sits
+    /// mid-body: the Following row reads `jump_matches` two lines later. The other
+    /// four presses all sat *below* the last `ui` call, so performing them here
+    /// costs no frame at all.
     fn context_bar_ui(&mut self, ui: &mut egui::Ui) {
         let has_point = self.context.pointed_at.is_some();
         let has_thread = self.tracked_identifier.is_some();
@@ -5816,7 +5803,12 @@ impl App {
                 let hint = self.empty_context_hint();
                 ui.horizontal(|ui| {
                     ui.label(egui::RichText::new("Context").strong());
-                    self.background_ui(ui);
+                    context_bar::background_ui(
+                        ui,
+                        self.model.as_deref(),
+                        self.selected.is_some(),
+                        self.stage,
+                    );
                     ui.weak(hint).on_hover_text(EMPTY_CONTEXT_RULE);
                 });
                 ui.separator();
@@ -5827,229 +5819,41 @@ impl App {
         // The match list has to be current before the row that reports it.
         self.refresh_jump_matches();
 
-        let mut clear_thread = false;
-        let mut clear_point = false;
-        let mut jump_forward = false;
-        let mut jump_back = false;
-        let mut go_to_class: Option<String> = None;
+        let press = context_bar::context_bar_ui(
+            ui,
+            &self.context,
+            &self.tracked_identifier,
+            self.stage,
+            &self.stages,
+            &self.identifier_index,
+            &self.declaring_classes,
+            &self.def_index,
+            self.model.as_deref(),
+            self.selected.is_some(),
+        );
 
-        ui.horizontal(|ui| {
-            ui.label(egui::RichText::new("Context").strong());
-            self.background_ui(ui);
-            if let Some(point) = &self.context.pointed_at {
-                // Worth saying only when it **differs** from the background
-                // stage; otherwise it repeats the line above as if it were a
-                // second, independent fact.
-                if point.stage != self.stage {
-                    ui.weak(format!("\u{00b7} pointed at in {}", point.stage.name()));
-                }
+        match press {
+            Some(ContextBarPress::Jump { forward }) => self.jump_to_next_match(forward),
+            Some(ContextBarPress::ClearPoint) => {
+                self.context.pointed_at = None;
+                // A stale failure would otherwise keep warning about an emission
+                // for a point that no longer exists.
+                self.context.point_error = None;
+                // Clearing is a context change like any other, so it advances the
+                // shared counter and re-emits. Emitting matters more here than
+                // anywhere: the file still holds the old node until it is rewritten,
+                // and a bar showing no point over a file holding one is exactly the
+                // disagreement this design exists to prevent.
+                self.context.context_seq = self.next_seq();
+                self.emit_context();
             }
-            // An emission failure must be stated here, not swallowed. Otherwise
-            // the bar claims context Claude does not have — it would still be
-            // holding the *previous* focus — which is the confident lie this
-            // whole design exists to prevent.
-            if let Some(err) = &self.context.point_error {
-                ui.colored_label(
-                    ui.visuals().error_fg_color,
-                    format!("\u{26a0} not emitted \u{2014} {err}"),
-                );
+            Some(ContextBarPress::ClearThread) => {
+                self.tracked_identifier = None;
+                self.context.track_seq = self.next_seq();
+                self.emit_context();
             }
-        });
-
-        if let Some(point) = &self.context.pointed_at {
-            let request = point.request.as_str();
-            let target = point.target.clone();
-            ui.horizontal(|ui| {
-                ui.weak("   Pointing at  ");
-                ui.label(egui::RichText::new(&target).monospace());
-                ui.weak(format!("({request})"));
-                // Symmetric with Following. Without it the point could only be
-                // *replaced*, never removed — so "explain only what I am
-                // following" was unaskable, and the sole escape was reloading
-                // the specimen, which recompiles and discards everything.
-                if ui
-                    .small_button("\u{00d7}")
-                    .on_hover_text(
-                        "Stop pointing at this \u{2014} leaves only what you are \
-                         following in the context Claude has",
-                    )
-                    .clicked()
-                {
-                    clear_point = true;
-                }
-            });
-        }
-
-        if let Some(name) = self.tracked_identifier.clone() {
-            ui.horizontal(|ui| {
-                ui.weak("   Following    ");
-                ui.label(
-                    egui::RichText::new(&name)
-                        .monospace()
-                        .color(crate::colors::TRACKED_GOLD),
-                );
-                // A synthesized name is checked FIRST, because it also carries a
-                // source line — inherited from the variable it shadows — and
-                // reporting that as "declared at line 41" sends the reader to a
-                // declaration of a *different* variable. The emitted context had
-                // the same defect; the two must agree, and both must be honest.
-                //
-                // Recognition uses Rumoca's own inverse, never a string match:
-                // `generated_names.rs` owns the convention and says consumers
-                // must not spell it out themselves.
-                match rumoca_core::pre_slot_base(&name) {
-                    Some(base) => {
-                        ui.weak(format!("\u{2014} generated: pre({base})"))
-                            .on_hover_text(
-                                "Synthesized by DAE pre-lowering, not declared anywhere. \
-                                 A `when` equation needs a value to hold when no branch \
-                                 fires, and a DAE has no way to say \u{201c}unchanged\u{201d} \
-                                 \u{2014} so the previous value gets a variable of its own.",
-                            );
-                    }
-                    None => match self
-                        .identifier_index
-                        .as_ref()
-                        .and_then(|idx| idx.variables.get(&name))
-                        .map(|v| v.source_line)
-                    {
-                        Some(line) => {
-                            ui.weak(format!("\u{2014} declared at line {line}"));
-                        }
-                        None => match self.declaring_classes.get(&name) {
-                            Some(class) => {
-                                ui.weak("\u{2014} in");
-                                if ui
-                                    .link(class)
-                                    .on_hover_text(format!(
-                                        "Open {class} \u{2014} the type of the component this \
-                                     variable belongs to. Use Back to return here.",
-                                    ))
-                                    .clicked()
-                                {
-                                    go_to_class = Some(class.clone());
-                                }
-                            }
-                            None => {
-                                ui.weak("\u{2014} not declared in this specimen")
-                                    .on_hover_text(
-                                        "Neither the specimen nor a component type declares \
-                                     this name, so a compiler phase created it. Ask \
-                                     Claude to trace where it came from.",
-                                    );
-                            }
-                        },
-                    },
-                }
-                // What the question will actually have behind it.
-                if let Some((mentions, stages)) = self.context.tracking_summary {
-                    ui.weak(format!(
-                        "\u{00b7} {mentions} mention{} across {stages} stage{}",
-                        if mentions == 1 { "" } else { "s" },
-                        if stages == 1 { "" } else { "s" },
-                    ));
-                }
-                // Jump to where it lives in THIS stage.
-                //
-                // Replaces hunting for it by eye. "Reveal identifiers" tried to
-                // solve this by expanding every path that leads to *any*
-                // trackable name — which surfaces N nodes to reveal one, making
-                // the haystack bigger. Here the target is already known: the
-                // user said which identifier they are following, so the app
-                // should not also make them find it.
-                //
-                // **That checkbox was removed 2026-08-04**, and this is what it
-                // was superseded by. The supersession had been recorded here for
-                // days while the control stayed on screen — worth noting, because
-                // a comment saying "X failed" is not the same as deleting X, and
-                // only Doug using it closed the gap.
-                let n = self.context.jump_matches.len();
-                if n == 0 {
-                    // Meaningful, not a failure — the same information as
-                    // `mentions: 0` in the emitted context. A variable absent
-                    // from Parse but present in Flatten is showing you the
-                    // flattening boundary.
-                    ui.weak(format!("\u{00b7} not in {}", self.stage.name()));
-                } else {
-                    ui.weak(format!(
-                        "\u{00b7} {} of {n} in {}",
-                        self.context.jump_index + 1,
-                        self.stage.name(),
-                    ));
-                    if ui
-                        .small_button("\u{2190}")
-                        .on_hover_text("Previous occurrence in this stage")
-                        .clicked()
-                    {
-                        jump_back = true;
-                    }
-                    if ui
-                        .small_button("\u{2192}")
-                        .on_hover_text(
-                            "Scroll the tree to where this identifier appears in this \
-                             stage, opening whatever is collapsed above it",
-                        )
-                        .clicked()
-                    {
-                        jump_forward = true;
-                    }
-                }
-                if ui
-                    .small_button("\u{00d7}")
-                    .on_hover_text("Stop following")
-                    .clicked()
-                {
-                    clear_thread = true;
-                }
-            });
-        }
-
-        // Standing context — true for the whole session, and never previously
-        // stated anywhere. Without it the user underestimates what Claude can
-        // already see without doing anything.
-        ui.horizontal(|ui| {
-            ui.weak("   Always       ");
-            let stage_count = self
-                .stages
-                .as_stage_pairs()
-                .iter()
-                .filter(|(_, v)| v.is_some())
-                .count();
-            ui.weak(format!(
-                "{stage_count} stage IRs \u{00b7} {} DefIds",
-                self.def_index.len(),
-            ))
-            .on_hover_text(
-                "Every pipeline stage's full IR is on disk under .hrw-bridge/stages/, \
-                 and the DefId table resolves numeric ids to names. Claude reads these \
-                 without you pointing at anything.",
-            );
-        });
-        ui.separator();
-
-        if jump_forward || jump_back {
-            self.jump_to_next_match(jump_forward);
-        }
-        if clear_point {
-            self.context.pointed_at = None;
-            // A stale failure would otherwise keep warning about an emission
-            // for a point that no longer exists.
-            self.context.point_error = None;
-            // Clearing is a context change like any other, so it advances the
-            // shared counter and re-emits. Emitting matters more here than
-            // anywhere: the file still holds the old node until it is rewritten,
-            // and a bar showing no point over a file holding one is exactly the
-            // disagreement this design exists to prevent.
-            self.context.context_seq = self.next_seq();
-            self.emit_context();
-        }
-        if clear_thread {
-            self.tracked_identifier = None;
-            self.context.track_seq = self.next_seq();
-            self.emit_context();
-        }
-        if let Some(class) = go_to_class {
-            self.navigate_to(class);
+            Some(ContextBarPress::GoToClass(class)) => self.navigate_to(class),
+            None => {}
         }
     }
 
