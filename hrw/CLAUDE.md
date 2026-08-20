@@ -740,17 +740,41 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > **Done so far:** the sub-view enums, `Viewport` and `sub_view_name_for` → `stage_view.rs` (266
 > lines), StageViewCaches to stage_caches.rs (99), and UiMode/SpecimenDetail/NavEntry to
 > ui_state.rs (73), **source_map_ui — the first RENDERING fn — to source_map.rs (281)**,
-> **specimen_source_ui + SourceViewState to specimen_source.rs (397)**, and
-> **autoplay_controls_ui to tour_transport.rs (458)**.
-> **app.rs 14,437 → 13,152.** Progress
+> **specimen_source_ui + SourceViewState to specimen_source.rs (397)**,
+> **autoplay_controls_ui to tour_transport.rs (458)**, and **`tour_panel_ui`'s inner scroll area
+> → `tour_panel.rs` (735, renamed from `tour_transport.rs`)**.
+> **app.rs 14,437 → 12,908.** Progress
 > table in the plan, which also lists four mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest: the mass is in eight rendering fns totalling 2,531 lines, not in
 > field groups. Those take &mut self, so each costs hours, not minutes.
 >
-> **⟶ NEXT IS `tour_panel_ui`** (246 lines, 7 fields) — the other half of the tour panel, and
-> likeliest to merge into `tour_transport.rs` rather than get its own module. The plan lists what
-> is already known about it, including the two fields the transport bar did not touch
-> (`split`, `commonmark_cache`).
+> ### THE FUNCTION IS NOT THE UNIT — CUT INSIDE IT *(2026-08-19, `tour_prose_ui`)*
+>
+> **`tour_panel_ui` rated 7 fields and would have been expensive to move whole**: four `App`
+> methods, a compound return carrying three unrelated reports, and Back/Play/Stop deferred by a
+> frame. **Its inner 209 lines touched two state groups and called no `App` method at all** —
+> four parameters, `-> ()`, no behaviour change, −244 lines on the first attempt.
+>
+> **So the rule that goes BEFORE the obstacle checklist is: ask which contiguous region of the
+> body calls no `App` method.** One grep answers it (`grep -o 'self\.[a-z_]*('`). `App` policy
+> clusters at a rendering function's *edges* — where the panel is opened and the presses are
+> answered — and the middle is usually pure rendering over one or two structs. What is left
+> after the cut is not a delegate; `App::tour_panel_ui` is 37 lines and every one is policy.
+>
+> **The predicted third callback instance did not happen, and that is the point.** The two
+> earlier extractions invented a report because they contained a decision the pane could not
+> make; this one was chosen *because* it contained none.
+>
+> **⟶ NEXT IS `stage_tab_bar_ui`** (280 lines, 12 fields, **2 `App` methods**) — and it goes
+> **before `context_bar_ui`** (255, 6 fields, **7 `App` methods**), inverting the coupling
+> table. Six fields wrapped around seven methods is a pane made of policy; twelve fields
+> answered by two presses (`open`, `start_simulation`) is a pane made of rendering, and several
+> of the twelve look like clusters (`sim_data`/`sim_error`/`sim_running`, `model`/`model_list`)
+> that a `&mut` struct would collapse the way `self.tour` did.
+>
+> **The module rename cost four references** (`lib.rs`, a `use`, a call, a doc link) plus
+> `git mv`, and was done in the same commit: a module named for a third of its contents teaches
+> a reader something false.
 >
 > **THE CHEAP MOVES ARE EXHAUSTED, AND THE COUPLING TABLE IS MEASURED** (in the plan). Order the
 > rest by **fields touched**, not lines: `source_map_ui` was 4 fields, `central_panel_ui` is 43

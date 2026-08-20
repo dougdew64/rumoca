@@ -159,6 +159,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-19 | **`source_map_ui`** + its constant — *first rendering fn* | **13,838** | `source_map.rs` (281) |
 | 2026-08-19 | **`specimen_source_ui`** + `SourceViewState` — *the reverted one, redone by hand* | **13,507** | `specimen_source.rs` (397) |
 | 2026-08-19 | **`autoplay_controls_ui`** + `autoplay_stop_heading` + two constants | **13,152** | `tour_transport.rs` (458) |
+| 2026-08-19 | **`tour_prose_ui`** — the inner scroll area of `tour_panel_ui`, + `no_tour_ui` + a constant | **12,908** | `tour_panel.rs` (735, renamed from `tour_transport.rs`) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -291,6 +292,89 @@ widening more of `app.rs`; there is no reason to do it before then.
   also strip four spaces from inside any multi-line string literal. `rustfmt` reindents code and
   leaves literals alone.
 
+### `tour_prose_ui` → `tour_panel.rs` — 2026-08-19, and the seam is inside the function
+
+**−244 lines, first attempt, no revert.** But the finding is not the number — it is that
+**the function was never the unit.**
+
+**`tour_panel_ui` rated 7 fields and looked expensive, and extracting it whole would have
+been.** Its `self` census splits cleanly in two:
+
+| what it touches | where |
+|---|---|
+| `poll_tour_file`, `autoplay_controls_ui`, `log_split`, `select_tour` — **four `App` methods** | the outer 37 lines |
+| `self.split` — configure, `inner_width`, `observe` | the outer 37 lines |
+| `self.tour` (21 accesses) and `self.commonmark_cache` (2) — **and nothing else** | the inner 209 |
+
+**So the whole-function move needed a compound return** carrying three unrelated reports — a
+[`TransportRequest`], a split-log line, and the switched-to tour — and it would have **deferred
+Back, Play and Stop by a frame**, because `App::autoplay_controls_ui` performs them *inside* the
+panel closure today. A behaviour change bought nothing.
+
+**The inner scroll area needed no return value at all.** Two state groups, four parameters,
+`-> ()`. The prose renders a document and records where it ended up; there is no decision in it
+to report.
+
+**THE RULE THIS ADDS, and it goes before the obstacle checklist rather than into it:**
+
+> **Ask which contiguous region of the body calls no `App` method.** One grep answers it
+> (`grep -o 'self\.[a-z_]*('`), and here it separated 209 cheap lines from 37 expensive ones.
+
+**The previous two iterations each refined the *cost metric* — fields, then state groups. This
+one says the metric is being applied to the wrong object.** A rendering function is not
+homogeneous: `App` policy clusters at its edges, where the panel is opened and the presses are
+answered, and the middle is usually pure rendering over one or two structs. **Cut the middle
+out, and what is left is not a delegate — it is the shell that genuinely is the panel.**
+`App::tour_panel_ui` is now 37 lines and every one of them is policy.
+
+**The prediction of a third callback instance did not come true, and that is the point.** Two
+extractions invented a report because they contained a decision the pane could not make; this
+one was chosen *because* it contained none.
+
+### The module was renamed, and four references is the whole cost
+
+`tour_transport.rs` → **`tour_panel.rs`**: the bar and the prose beneath it are one pane, which
+[`app-split-plan.md`](app-split-plan.md) predicted before either half moved. Four references
+(`lib.rs`, a `use`, a call, a doc link) plus `git mv`. **Done in the same commit deliberately** —
+a module whose name describes a third of its contents teaches a reader something false, and
+`docs/architecture.md` regenerates the size table either way.
+
+### A third instance of the error class the first build catches
+
+`&mut self.commonmark_cache` rewrites to `&mut cache`, and `cache` is **already** `&mut T` —
+`E0596`, twice, fixed by `&mut *cache`. Joins the `*deref` on a `!=` and the `return;` →
+`return None;` from `specimen_source_ui`. **All three come from a reference parameter replacing
+an owned field, and all three are found by the first `cargo build`** — which is the argument for
+building after each item rather than for a longer checklist.
+
+### The dedent warning has an exception, and it is checkable
+
+The plan says never blanket-`sed` a moved body's indentation because it strips four spaces from
+inside multi-line string literals. `no_tour_ui` has four such literals and was dedented anyway,
+**safely** — every one of them uses a `\`-continuation, and Rust strips the newline *and all
+leading whitespace* after `\`. **So the test is not "does it contain a multi-line literal" but
+"is the continuation escaped".** `cargo fmt` still reindents everything else, so the dedent
+bought only a readable intermediate file.
+
+### The next candidate is NOT the one the coupling table names — measured 2026-08-19
+
+Re-censused by the two metrics that have actually predicted cost — **state groups** and
+**`App` methods called**:
+
+| function | fields | `App` methods | the tell |
+|---|---|---|---|
+| `stage_tab_bar_ui` (280) | 12 | **2** — `open`, `start_simulation` | both are *presses*, so both are the callback pattern already proven twice |
+| `context_bar_ui` (255) | 6 | **7** — `emit_context`, `navigate_to`, `jump_to_next_match`, `refresh_jump_matches`, `next_seq`, `background_ui`, `empty_context_hint` | fewer fields, far more policy |
+
+**The coupling table ordered these 13 then 14 and put `context_bar_ui` first. That is backwards.**
+Six fields wrapped around seven `App` methods is a pane made of policy; twelve fields answered by
+two presses is a pane made of rendering — and several of its twelve (`sim_data`, `sim_error`,
+`sim_running`; `model`, `model_list`) are clusters that a `&mut` struct would collapse the way
+`self.tour` did.
+
+**So: `stage_tab_bar_ui` next**, and apply the region rule first — find the span that calls
+neither `self.open` nor `self.start_simulation` before deciding whether the whole function moves.
+
 ### §3's seam order is WRONG for the remaining work — measured 2026-08-19
 
 **Three iterations took `app.rs` from 14,437 to 14,127 — and the next planned step buys nothing.**
@@ -394,24 +478,25 @@ that is the only mechanism likely to help them.
    TourState` plus little else, which would be the cheapest signature yet."* It is four
    parameters, and the finding above explains why the field count did not show that in advance.
 
-3. ⟶ **NEXT: `tour_panel_ui`** (246, 7) — the other half of the tour panel, and the direct
-   caller of the function that just left. **Enumerate first**, per the checklist: which of the
-   seven fields it touches are `self.tour` (the transport bar's eighteen were, and that decided
-   its cost), which accesses are multiline, whether any parameter is mutated, whether any local
-   shadows a parameter name.
+3. ✅ **`tour_panel_ui`'s inner scroll area** (209 of 246 lines) — **DONE 2026-08-19**,
+   `tour_panel.rs` (735, renamed from `tour_transport.rs`), **−244 lines**. **The question this
+   line asked was the right one and the answer was yes:** *"check whether the `SplitState`
+   configuration can stay in `App` with only the inner closure moving."* It can, and that is
+   the whole extraction — the panel, the split and the four `App` methods stayed; only the
+   prose left. `App::tour_panel_ui` is 37 lines of pure policy now. See the finding above for
+   the rule it generalises to.
 
-   **Two things are already known and should not be rediscovered.** It calls
-   `self.autoplay_controls_ui`, which is now a thin delegate — so the extracted function will
-   either call `tour_transport::autoplay_controls_ui` directly and return the request upward, or
-   the two merge into one module. **The second is likelier the right shape**: the transport bar
-   and the prose beneath it are one pane, and `tour_transport.rs` at 458 lines has room. And it
-   returns `Option<HrwLink>`, so the callback pattern is *already* how it reports — that part
-   needs no design.
+4. ⟶ **NEXT: `stage_tab_bar_ui`** (280, 12 fields, **2 `App` methods**) — and it is next
+   *instead of* `context_bar_ui` (255, 6 fields, **7 `App` methods**), which the coupling table
+   ordered first. The measurement and the reasoning are in the finding above. **Apply the region
+   rule before the obstacle checklist:** find the span that calls neither `self.open` nor
+   `self.start_simulation`, and check whether `sim_data`/`sim_error`/`sim_running` and
+   `model`/`model_list` collapse into structs the way `self.tour` did.
 
-   **It also touches `self.split` and `self.commonmark_cache`**, which the transport bar did
-   not. Check whether the `SplitState` configuration can stay in `App` with only the inner
-   closure moving; if it cannot, this is a bigger job than the transport bar was.
-4. **`central_panel_ui`** (602) — last, because it is the stage-routing hub and every other move
+5. **`context_bar_ui`** (255, 6, 7) — after it, because seven `App` methods around six fields is
+   a pane made of policy, and the region rule may find no clean middle in it at all.
+
+6. **`central_panel_ui`** (602) — last, because it is the stage-routing hub and every other move
    shrinks what it has to route.
 
 **And each needs a decision the state moves did not.** These take `&mut self` and reach across

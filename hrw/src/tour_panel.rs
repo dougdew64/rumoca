@@ -1,13 +1,30 @@
-//! **The tour transport bar** — pick a tour, go back, play, pause, stop, and the
-//! running readout under it.
+//! **The tour panel** — the whole left-hand column in Tour mode: the transport bar
+//! at the top (pick a tour, go back, play, pause, stop, and the running readout),
+//! and the scrolling prose beneath it.
 //!
-//! Lifted out of `app.rs` on 2026-08-19, the third *rendering* function to leave.
-//! See [`docs/app-split-plan.md`](../docs/app-split-plan.md).
+//! Lifted out of `app.rs` on 2026-08-19 in two steps — the bar first, then the prose
+//! — which is why the file was called `tour_transport.rs` for an afternoon. See
+//! [`docs/app-split-plan.md`](../docs/app-split-plan.md).
 //!
-//! # What the signature buys
+//! # What stayed in `App`, and it is the seam
+//!
+//! `App::tour_panel_ui` still owns the *panel*: polling the tour file, configuring
+//! the draggable `SplitState`, performing a transport press, and draining the
+//! markdown link hooks. What moved is everything **inside** the scroll area — and
+//! that half touches exactly two pieces of state, [`TourState`] and the commonmark
+//! cache, with no reach into `App` at all.
+//!
+//! **So [`tour_prose_ui`] returns nothing.** The two extractions before it had to
+//! invent a report — `Option<String>` for a clicked identifier, [`TransportRequest`]
+//! for a press — because they contained a decision the pane could not make. This one
+//! contains none: it renders a document and records where it ended up. That is worth
+//! naming, because *"which half of this function has no policy in it"* turned out to
+//! be a better seam-finder than the field count was.
+//!
+//! # What the bar's signature buys
 //!
 //! The bar touched **six** fields, and eighteen of its twenty `self` accesses were
-//! `self.tour`. So the whole pane reduces to one `&mut TourState` — the state that
+//! `self.tour`. So the whole bar reduces to one `&mut TourState` — the state that
 //! already lives in [`crate::tour`] — plus `compiling`, which the readout names
 //! because a walk holds its clock while a specimen builds. **That is the cheapest
 //! signature any extraction here has produced**, and it is cheap for a reason worth
@@ -40,13 +57,14 @@
 //! # The constants moved with the view
 //!
 //! `TOUR_PROGRESS_HEIGHT` and `TOUR_PROGRESS_MARGIN` are used by exactly this readout,
-//! and the same rule that moved `SOURCE_MAP_SPLIT_FRACTION` into [`crate::source_map`]
-//! applies: state used by one pane is state that pane owns. Leaving them behind would
-//! reduce what `app.rs` *holds* without reducing what it *declares*.
+//! and `TOUR_CONTEXT_ABOVE` by exactly the prose scroll; the same rule that moved
+//! `SOURCE_MAP_SPLIT_FRACTION` into [`crate::source_map`] applies: state used by one
+//! pane is state that pane owns. Leaving them behind would reduce what `app.rs`
+//! *holds* without reducing what it *declares*.
 
 use eframe::egui;
 
-use crate::app::section_style;
+use crate::app::{section_style, set_markdown_text_sizes};
 use crate::bridge;
 use crate::tour::{TourSource, TourState};
 
@@ -455,4 +473,263 @@ pub(crate) fn autoplay_controls_ui(
 fn autoplay_stop_heading(text: Option<&str>, index: usize) -> Option<String> {
     let stops = crate::autoplay::parse_stops(text?);
     stops.get(index).map(|s| s.heading.clone())
+}
+
+/// How much tour text to keep **above** the link a beat is dispatching.
+///
+/// Doug, 2026-08-03: *"the scrolling should be paused with that frame link showing
+/// with perhaps a line or two of text which is above that frame link. The frame link
+/// and the lines of text above the link document the animation frame."*
+///
+/// Roughly two lines. Scrolling the link to the very top would put its introduction
+/// off-screen, and the pair — lead-in and link — is what names the frame.
+const TOUR_CONTEXT_ABOVE: f32 = 48.0;
+
+/// The tour prose — the scrolling markdown beneath the transport bar.
+///
+/// Everything inside the panel's scroll area, and **nothing outside it**: the panel
+/// itself, the split, the transport press and the link hooks stay in
+/// `App::tour_panel_ui`. The division is not a line count — it is that this half
+/// reaches nothing but [`TourState`] and the markdown cache, so it can be a free
+/// function with four parameters and no return value.
+///
+/// `tour_text` is the document as of this frame, already read from disk by the
+/// caller's poll. `None` means no tour is loaded, which is a state with prose of its
+/// own rather than an empty pane — see [`no_tour_ui`].
+pub(crate) fn tour_prose_ui(
+    ui: &mut egui::Ui,
+    tour: &mut TourState,
+    cache: &mut egui_commonmark::CommonMarkCache,
+    tour_text: &Option<String>,
+) {
+    // **The prose scrolls with the walk.**
+    //
+    // Without this the stage side moves while the tour text sits at the
+    // top, and a viewer of the recording cannot tell which stop they are
+    // in — which matters more here than it would have a week ago, now
+    // that the prose is load-bearing rather than captioning.
+    //
+    // Driven by beat *position* rather than by locating the stop's
+    // heading in the rendered markdown: `egui_commonmark` lays out its
+    // own content and exposes no anchor per heading, so there is nothing
+    // to scroll *to*. Proportional scrolling is an approximation, and an
+    // honest one — it drifts from the exact heading position when stops
+    // differ in length, which the caption above the pane covers.
+    //
+    // **`scroll_fraction`, not `fraction`.** The first version used the
+    // clock, so the text crept continuously and never held still — Doug,
+    // 2026-08-03: *"the scrolling never pauses when a frame is being
+    // displayed"*, which was worst exactly where the tour is best, with a
+    // deliberately paused animation under sliding prose. `scroll_fraction`
+    // travels to the new beat's place and then stops.
+    //
+    // **Only while running.** Forcing the offset when idle would fight a
+    // reader who scrolled somewhere themselves.
+    // **`both`, not `vertical`, and the horizontal axis is load-bearing**
+    // (Doug, 2026-08-12: *"the divider does not move. Instead, only the
+    // right edge of the LHS tour content moves"*).
+    //
+    // A vertical-only scroll area reports its content's **full width** as
+    // the width it wants, and `egui_commonmark` does not wrap tables or
+    // code blocks — `the-concepts.md` has a 178-character line. So the
+    // tour panel's intrinsic minimum width became the widest table in the
+    // document, egui sized the panel to it, and the divider had nothing
+    // left to give:
+    //
+    // ```text
+    // no tour loaded    panel opens 512pt (the 40% default), drags to 213pt
+    // real tour loaded  panel opens 899pt and is FROZEN; the inner Ui still
+    //                   follows the pointer, so the gap reached 705pt
+    // ```
+    //
+    // Enabling the horizontal axis makes wide content **scroll instead of
+    // push**, so the panel keeps the width the reader chose and the table
+    // is still reachable. Wrapping is not the alternative: a Markdown table
+    // does not wrap into anything readable.
+    //
+    // Note what this cost before it was found: the tour panel was quietly
+    // taking 70 % of a 1280pt window rather than the 40 % it reports.
+    let mut area = egui::ScrollArea::both().id_salt("tour");
+
+    // **A new tour opens at its top.**
+    //
+    // `id_salt("tour")` is stable on purpose — it is what lets a reader's
+    // scroll position survive a repaint — and the cost is that it survives
+    // the *document* too. Doug, 2026-08-17: *"When I click a subordinate
+    // tour link in the-concepts hub tour, the subordinate tour opens
+    // partially scrolled down instead of fully scrolled to the top."*
+    //
+    // The hub is the worst case and the reason it surfaced now: its links
+    // sit in a ten-row table you scroll down to reach, so the tour that
+    // opened inherited however far down the row was.
+    //
+    // **Consumed only on a frame that has text.** Switching clears `cached`,
+    // so the frame in between renders nothing — clearing the flag there
+    // would spend it on a document that was never drawn.
+    //
+    // **A pending stop request outranks this**, and both are live at once
+    // by construction: `hrw://tour/<name>/stop/<slug>` switches the tour
+    // (which asks for the top) and *then* asks for the stop. The top
+    // request is still consumed — leaving it pending would fire it at the
+    // next document — it simply does not get to move anything.
+    let stop_pending = tour.scroll_to_offset.is_some();
+    // **Back outranks both**: returning to where you were is the one
+    // navigation for which the top of the document is the wrong answer.
+    let restore = tour.restore_scroll_y.take();
+    if tour.scroll_to_top && tour_text.is_some() {
+        tour.scroll_to_top = false;
+        if !stop_pending && restore.is_none() {
+            area = area.vertical_scroll_offset(0.0);
+        }
+    }
+    match (restore, tour_text.is_some()) {
+        (Some(y), true) => area = area.vertical_scroll_offset(y),
+        // No text this frame, so the request has nothing to apply to and must
+        // survive — the one-shot discipline `scroll_to_top` already follows.
+        (Some(y), false) => tour.restore_scroll_y = Some(y),
+        (None, _) => {}
+    }
+
+    if tour.autoplay.is_running()
+        && let Some(max_scroll) = tour.tour_max_scroll
+    {
+        // **Interpolate between two MEASURED positions.** Both come from
+        // the split below, so neither is an estimate of anything.
+        let to = tour.tour_link_y.unwrap_or(0.0);
+        let from = tour.tour_prev_link_y.unwrap_or(0.0);
+        let y = from + (to - from) * tour.autoplay.travel_t();
+        // Leave a little above the link, so the line or two introducing
+        // it stays on screen with it. Doug: "the frame link and the lines
+        // of text above the link document the animation frame."
+        let target = (y - TOUR_CONTEXT_ABOVE).clamp(0.0, max_scroll.max(0.0));
+        area = area.vertical_scroll_offset(target);
+    }
+
+    // **Where the current beat's link actually renders**, measured rather
+    // than estimated from character offsets.
+    //
+    // Two earlier attempts guessed this position — first from the beat's
+    // ordinal, then from the link's character offset over the document —
+    // and both were wrong, because rendered height per character is not
+    // constant: prose wraps in a narrow panel and a code block does not.
+    // **No constant corrects an estimate that is wrong in both
+    // directions**, so this stops estimating.
+    //
+    // The markdown is split at the link's line and rendered as two
+    // documents. The cursor between them *is* the link's y position. The
+    // split falls on a line start, and every link in these tours is its
+    // own paragraph, so no markdown construct is cut in half.
+    let mut measured: Option<f32> = None;
+    let out = area.show(ui, |ui| {
+        set_markdown_text_sizes(ui);
+        match tour_text {
+            Some(text) => {
+                // **Only split while a walk is running.**
+                //
+                // The split exists to measure one beat's link position.
+                // Idle, it buys nothing — and it does not go away by
+                // itself: a *finished* run keeps its beats, so
+                // `current_byte_offset` still names the last link and the
+                // document stayed cut in two for all subsequent manual
+                // reading. Rendering one markdown document as two is not
+                // free of consequence, and doing it when nothing needs it
+                // is a difference from the plain path with no upside.
+                //
+                // **And the same split serves a stop link**, which is why
+                // that feature costs almost nothing here. `hrw://tour/<t>/
+                // stop/<slug>` records the heading's *byte* offset, and the
+                // problem it faces is the one the autoplay scroll already
+                // solved the hard way: a byte offset cannot be converted to
+                // a pixel position by arithmetic, because rendered height
+                // per character is not constant.
+                //
+                // Splitting there puts the **cursor** exactly at the stop,
+                // and a cursor is a real position rather than an estimate.
+                //
+                // **The offset is validated, not trusted.** A tour is
+                // re-read whenever its mtime changes, so an offset recorded
+                // against the previous text can land mid-character after an
+                // edit — and slicing a `str` off a char boundary panics.
+                // These documents are edited *while* Doug walks them, so
+                // that is the expected case rather than a corner one.
+                let stop_split = tour
+                    .scroll_to_offset
+                    .filter(|n| *n <= text.len() && text.is_char_boundary(*n));
+                let split = if tour.autoplay.is_running() {
+                    tour.autoplay.current_byte_offset().min(text.len())
+                } else {
+                    stop_split.unwrap_or(0)
+                };
+                let top = ui.cursor().top();
+                if split > 0 {
+                    egui_commonmark::CommonMarkViewer::new().show(ui, &mut *cache, &text[..split]);
+                }
+                measured = Some(ui.cursor().top() - top);
+
+                // **egui does the scrolling, and that is the whole trick.**
+                // Asking the `ScrollArea` for an offset would mean computing
+                // one; asking it to bring the cursor into view means it
+                // computes one, from a position it already knows exactly.
+                //
+                // A run in progress owns the scroll, so a stop request is
+                // still *consumed* but not acted on — otherwise it would
+                // fight the interpolation for the rest of the walk.
+                if tour.scroll_to_offset.take().is_some()
+                    && stop_split.is_some()
+                    && !tour.autoplay.is_running()
+                {
+                    ui.scroll_to_cursor(Some(egui::Align::TOP));
+                }
+
+                egui_commonmark::CommonMarkViewer::new().show(ui, &mut *cache, &text[split..]);
+            }
+            None => no_tour_ui(ui),
+        }
+    });
+
+    // A new beat means a new split, so the position measured last frame
+    // becomes the one to travel *from*.
+    let beat = tour.autoplay.progress().0;
+    if tour.tour_measured_beat != Some(beat) {
+        tour.tour_prev_link_y = tour.tour_link_y.or(Some(0.0));
+        tour.tour_measured_beat = Some(beat);
+    }
+    tour.tour_link_y = measured;
+    tour.tour_max_scroll = Some((out.content_size.y - out.inner_rect.height()).max(0.0));
+    // **Where the reader actually is**, from the scroll area's own output
+    // rather than tracked alongside it, so it cannot drift from the screen.
+    // Every frame, because a switch can happen at any moment and the offset
+    // must be the one from just before it.
+    tour.current_scroll_y = out.state.offset.y;
+}
+
+/// What tour mode shows when Claude has not written a tour.
+///
+/// Deliberately **not** `end_to_end_tour.md`, which used to be compiled in
+/// here with `include_str!`. That document's prose was retired 2026-07-29
+/// (ideas #42) — it described a 7x7 incidence matrix on a tab that shows 48
+/// equations — so keeping it as the default would put the exact stale
+/// content this change exists to remove back on screen.
+pub(crate) fn no_tour_ui(ui: &mut egui::Ui) {
+    ui.label(egui::RichText::new("No tour right now.").strong());
+    ui.add_space(6.0);
+    ui.label(
+        "Tour mode shows a tour Claude wrote for a question you asked \u{2014} a \
+         sequence of places to look, with links that drive HRW to each one.",
+    );
+    ui.add_space(6.0);
+    ui.weak(
+        "Ask Claude for one. Answers come as text first; a tour is for the ones \
+         where a sequence of places beats a paragraph.",
+    );
+    ui.add_space(10.0);
+    ui.weak(
+        "Fixture tours \u{2014} tests with expected outcomes \u{2014} can be picked above \
+             when any exist.",
+    );
+    ui.weak(format!(
+        "Claude writes an ad hoc tour to {}",
+        bridge::TOUR_FILE
+    ));
+    ui.weak("It appears here within a moment, and a rewrite is picked up live.");
 }
