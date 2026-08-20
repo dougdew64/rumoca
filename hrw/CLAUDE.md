@@ -747,11 +747,61 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > **the assembled state of `context_bar_ui` + `background_ui` → `context_bar.rs` (520, 205 of
 > them tests)**, and **`generic_error_summary` + `structural_singular_summary` →
 > `error_summary.rs` (440, 140 of them tests)**, and **`ContextBarState` + `PointedAt` +
-> `PointKind` + `next_seq` → `context_bar.rs` (649)**.
-> **app.rs 14,437 → 12,194.** Progress
+> `PointKind` + `next_seq` → `context_bar.rs` (649)**, and **`equation_sheet_ui` →
+> `equation_sheet_view.rs` (446, 208 of them tests)**.
+> **app.rs 14,437 → 12,008.** Progress
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
-> order is WRONG for the rest: the mass is in eight rendering fns totalling 2,531 lines, not in
-> field groups. Those take &mut self, so each costs hours, not minutes.
+> order is WRONG for the rest.
+>
+> ### THE UNTESTABILITY COMMENT IS THE JUSTIFICATION, ALREADY WRITTEN DOWN
+> *(2026-08-19, `equation_sheet_ui`)*
+>
+> **−186 lines, first attempt, and the cheapest kind of finding there is: a past session had
+> already measured this one and filed the result as a note instead of a test.** `ui_tests.rs`
+> carried twenty lines ending *"the sheet's real behaviour … needs a populated `EquationSheet`,
+> so it belongs with the tests that compile a specimen behind `slow-tests`."* **That sentence is
+> the extraction's whole justification**, and it stopped being true the instant the sheet became
+> an argument rather than a field — six tests now run in **0.04 s** against a hand-built sheet.
+>
+> **So the next sweep is not another `awk` pass over `impl App`; it is a grep over the TEST files
+> for deferrals.** `error_summary` was found by asking *"what has zero coupling?"*. This one was
+> found already labelled. **A comment explaining why something cannot be tested from here is a
+> coupling measurement someone else already took** — and unlike the coupling table it comes with
+> the reason attached. The note was corrected in place rather than deleted, because the
+> correction is the finding.
+>
+> **The trailing-block rule and the region rule agreed, and the collapse happened again.** 190
+> lines between the `ScrollArea` and the closing brace call no `App` method; the one method that
+> is called sits below the last `ui` call. Two accumulators became one `Option<SheetClick>` —
+> the second instance of that collapse, sound for the same reason as `ContextBarPress`. **Worth
+> noticing on its own: `clicked_row` was `Option<Option<usize>>`**, the outer layer meaning *was
+> there a press* and the inner *is it highlighted now*. The enum separates them, so
+> `Equation(None)` reads as un-highlight instead of as no-press.
+>
+> **`has_incidence` stayed behind, and that is the parameter-list rule deciding a COMPUTATION.**
+> It reads two state groups the pane never otherwise touches to produce one `bool`; the `bool` is
+> one parameter and the computation would have been two groups. Five parameters total.
+>
+> **THE CLIPPED-WIDGET TRAP HAS A SECOND CAUSE AND A SECOND FORM — BOTH READ AS "the pane did
+> not report the press."** Both click tests failed, and the fixes were independent:
+> **(1) size the harness like a pane** (`1200×900`). Probed by shrinking it to `200×120`: the
+> four query tests still passed and both click tests failed — `stage_tabs`'s trap reproduced by a
+> **`ScrollArea`** rather than by a missing `horizontal_wrapped`, so **the cause is any container
+> that clips, not the layout wrapper.** **(2) ACCUMULATE the returned press, never assign it** —
+> `*out = pane_ui(...)` each frame discards the press on the following frame, and `run_steps(2)`
+> guarantees there is one. `build_ui_state` + `if click.is_some() { … }`, as `stage_tabs` does.
+>
+> ### ⟶ NEXT: THE EIGHT `*_anim_ui` PANES ARE NOT PANES — census in the plan
+>
+> **Six of them call the same four `App` methods** (`is_arming`, `has_live_debug_data`,
+> `live_debug_poll`, `start_live_debug`). Their rendering already left: each ends in one
+> `anim.ui(...)` call into an existing `*_anim.rs`. What remains in `app.rs` is the **live-debug
+> handshake written out six times**, with the variant, the `stage_views` field and the
+> constructor swapped. **So the move is deduplication, not extraction** — justified not by line
+> count but by the fact that six copies of one protocol have nothing enforcing they agree. Verify
+> they really are identical first; a difference is either a bug or a reason. **`report_sub_view_row_ui`
+> (154 lines, 5 fields, 1 method) is the cheapest single pane left** and the last one shaped like
+> the seven already done.
 >
 > ### SIX OF SEVEN `App` METHODS WERE FREE — LOOK FOR THE TRAILING BLOCK FIRST
 > *(2026-08-19, `context_bar_ui`)*
@@ -861,9 +911,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > shadowing local. **Its whole risk is `#[derive]` orphaning**, so cut every type with its
 > attributes using Edit, never a line range.
 >
-> **⟶ NEXT: `equation_sheet_ui`** (246), which the coupling table never measured and whose state
-> already lives in `crate::equation_sheet`. Apply the region rule first, then the deferral test
-> on whatever presses remain. Order and reasoning in the plan.
+> **`equation_sheet_ui` was next and is DONE** — see the box above, and note that it *did* buy
+> tests, found by a route this box did not anticipate: a comment in `ui_tests.rs` had already
+> written down why it could not be tested.
 >
 > ### THE `App`-METHOD COUNT IS NOT THE TEST — ASK WHETHER DEFERRING THE PRESS COSTS A FRAME
 > *(2026-08-19, `stage_tab_bar_ui`)*

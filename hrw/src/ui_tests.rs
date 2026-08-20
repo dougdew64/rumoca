@@ -1057,14 +1057,14 @@ fn an_empty_log_view_says_so_rather_than_rendering_blank() {
     );
 }
 
-// **The equation sheet is deferred to a later chunk, and here is what tried to
-// test it.**
+// **The equation sheet's empty state is UNREACHABLE, and its real behaviour now
+// lives in `equation_sheet_view.rs`.**
 //
-// `equation_sheet_ui` opens with `let Some(sheet) = &self.cached_equation_sheet
-// else { ui.weak("(no equation sheet)"); return; }` — which looks exactly like
-// the empty state this chunk is built to check. It is **unreachable**. There is
-// one call site (`app.rs`, the Flatten sub-view row) and it is gated on
-// `flatten_ready`, which is itself `cached_equation_sheet.is_some()`.
+// `equation_sheet_ui` opens with `let Some(sheet) = sheet else { ui.weak("(no
+// equation sheet)"); return None; }` — which looks exactly like the empty state
+// this chunk is built to check. There is one call site (`app.rs`, the Flatten
+// sub-view row) and it is gated on `flatten_ready`, which is itself
+// `cached_equation_sheet.is_some()`.
 //
 // The branch is defensive rather than wrong, so it stays. But a test asserting
 // that message would have been **testing a string, not a behaviour** — passing
@@ -1072,9 +1072,13 @@ fn an_empty_log_view_says_so_rather_than_rendering_blank() {
 // purest form. Worth writing down, because the message reads as evidence that
 // the empty case is handled and reachable, and it is only the first of those.
 //
-// The sheet's real behaviour — that it renders the equations it holds — needs a
-// populated `EquationSheet`, so it belongs with the tests that compile a
-// specimen behind `slow-tests`.
+// **What this comment used to say next was that the sheet's real behaviour
+// "needs a populated `EquationSheet`, so it belongs with the tests that compile
+// a specimen behind `slow-tests`." That is no longer true, and the reason is
+// worth the correction:** the pane left `impl App` on 2026-08-19 and takes
+// `Option<&EquationSheet>` as an argument, so the sheet is now something a test
+// *constructs* rather than something a compile must produce. Six tests live
+// beside it in `equation_sheet_view.rs` and run in 0.04 s.
 
 // ===========================================================================
 // Baseline suite, chunk 2 — the panes whose emptiness is LEGITIMATE

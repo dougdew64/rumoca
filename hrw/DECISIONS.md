@@ -3429,3 +3429,27 @@ behind, which would reduce what app.rs holds without reducing what it declares.
 **Two modules, not one.** The plan groups this with `source_map_ui` as a single *concern*; they
 ship separately because both already sit inside the ~1,500-line target and merging would have
 meant renaming `source_map.rs` in the same commit. Concern is the ordering unit, not the file.
+
+## 2026-08-19 — the equation sheet pane left app.rs, and its justification was found in a comment
+
+**`equation_sheet_ui` moved to `src/equation_sheet_view.rs`** (446 lines, 208 of them tests;
+app.rs 12,194 → 12,008). Named `_view` after the `incidence_view` / `reduction_view` precedent —
+`equation_sheet.rs` holds the data and is already 1,540 lines, so the pane could not join it
+without pushing that module past the ~1,500 target.
+
+**The pane returns `Option<SheetClick>` — `Equation(Option<usize>)` | `Variable(String)` — and
+`App` performs both follows.** Two accumulators collapsed into one report, which is sound because
+each was set by a distinct widget and egui delivers a press to one widget per frame. The old
+`clicked_row: Option<Option<usize>>` conflated *was there a press* with *is the row highlighted
+now*; the enum separates them.
+
+**`has_incidence` is a `bool` parameter rather than a computation that moved.** It reads
+`stage_views.incidence` and `stages` — two groups the pane never otherwise touches — so passing
+the answer costs one parameter where moving the question would have cost two state groups.
+
+**The extraction's justification was already written down in `ui_tests.rs`**, by a session that
+had tried to test the sheet and concluded it "belongs with the tests that compile a specimen
+behind `slow-tests`". Against a free function taking `Option<&EquationSheet>` the sheet is
+constructed by the test, and six of them run in 0.04 s. **The note was corrected in place rather
+than deleted** — a comment explaining why something is untestable is a coupling measurement
+someone else already took, and that is now the sweep to run next.

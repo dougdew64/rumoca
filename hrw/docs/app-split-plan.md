@@ -164,6 +164,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-19 | **the assembled state of `context_bar_ui`** + `background_ui` — *the seven-method one* | **12,519** | `context_bar.rs` (520, of which 205 are tests) |
 | 2026-08-19 | **`generic_error_summary` + `structural_singular_summary`** — *the `self`-free pair* | **12,292** | `error_summary.rs` (440, of which 140 are tests) |
 | 2026-08-19 | **`ContextBarState` + `PointedAt` + `PointKind` + `next_seq`** — *the state follows its pane* | **12,194** | `context_bar.rs` (649) |
+| 2026-08-19 | **`equation_sheet_ui`** — *two accumulators collapsed into one report* | **12,008** | `equation_sheet_view.rs` (446, of which 208 are tests) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -635,14 +636,122 @@ rewrites, all in plain statement position. **The obstacle checklist is about fun
 for a type move the whole risk is `#[derive]` orphaning** (trap 2), which is why both types were
 cut with their attributes by Edit rather than by line range.
 
-### ⟶ NEXT, in order:
+### `equation_sheet_ui` — the trailing-block cut, generalised — 2026-08-19
 
-1. **`equation_sheet_ui`** (246) — a rendering pane the coupling table never measured, and its
-   state already lives in `crate::equation_sheet`. **Apply the region rule first** (which
-   contiguous span calls no `App` method), then the deferral test on whatever presses remain.
-2. **`frame_ui`** (483 after the moves, 32 fields) and **`central_panel_ui`** (619, 43) — still
-   last, still shrinking as their callees leave. Note that both *grew* in line count while
-   `app.rs` shrank: they are the routers, and routing survives every extraction.
+**−186 lines, first attempt, no revert.** `app.rs` 12,194 → 12,008; `equation_sheet_view.rs` is
+446 lines, **208 of them tests**.
+
+**The region rule and the deferral test agreed for once, and the shape is now named.** Everything
+between the `ScrollArea` and the closing brace — 190 lines — calls no `App` method. The one method
+it does call, `set_tracked_identifier`, sits *below the last `ui` call*, in the trailing block that
+`context_bar_ui` taught us to look for first. So the cut is provably identical: the same statements
+in the same order, one function boundary later, with nothing drawn in between.
+
+**Two accumulators became one report, and this is the second instance of that collapse.**
+`clicked_row: Option<Option<usize>>` and `clicked_variable: Option<String>` became
+`Option<SheetClick>` — `Equation(Option<usize>)` | `Variable(String)`. Sound for the same reason
+`ContextBarPress` was: each is set by a distinct widget, and egui delivers a press to one widget
+per frame. **The `Option<Option<usize>>` is worth noticing on its own** — the outer layer meant
+"was there a click" and the inner meant "is the row now highlighted", two questions in one type.
+The enum separates them, so `Equation(None)` reads as *un-highlight* rather than as *no press*.
+
+**`has_incidence` stayed in `App`, and that is the parameter-list rule deciding a computation
+rather than a helper.** It reads `self.stage_views.incidence` and `self.stages` — two groups this
+pane never otherwise touches — to produce one `bool`. Passing the `bool` costs one parameter;
+moving the computation would have cost two state groups. Final signature: five parameters
+(`ui`, `Option<&EquationSheet>`, `bool`, `Option<&str>`, `Option<usize>`).
+
+**THE TEST THIS BOUGHT WAS WRITTEN DOWN IN ADVANCE, BY A COMMENT THAT HAD GIVEN UP.** `ui_tests.rs`
+carried a 20-line note ending: *"The sheet's real behaviour — that it renders the equations it
+holds — needs a populated `EquationSheet`, so it belongs with the tests that compile a specimen
+behind `slow-tests`."* That sentence **is** the extraction's justification, recorded weeks before
+anyone was looking for one, and it stopped being true the moment the sheet became an argument
+rather than a field. Six tests now run in **0.04 s** against a hand-built `EquationSheet`.
+
+**So the sweep to run is not another `awk` pass over `impl App` — it is a grep over the test files
+for deferrals.** `error_summary` was found by asking *"what has zero coupling?"*; this one was
+already labelled *"cannot be tested from here"* by a past session that hit the wall and wrote a
+note instead of a test. **A comment explaining why something is untestable is a coupling
+measurement someone else already took.** The note has been corrected in place rather than deleted,
+because the correction is the finding.
+
+**What the six tests hold**, none of it previously asserted:
+
+| the property | why it can break |
+|---|---|
+| the family heading totals *every* group in the family (3, not 2) | a heading that reported its own group's length under-counts what `connect` contributed — the exact misreading Doug flagged on 2026-08-13 |
+| the heading is drawn **once** above the contiguous run | one per group re-implies the separateness the heading exists to deny |
+| no incidence matrix ⇒ no "click an equation" hint | offering a highlight that has nowhere to land |
+| the row click **toggles**: clicking the highlighted row reports `Equation(None)` | the pane's whole click contract, previously observable only from inside `App` |
+| a variable name reports itself | reverse tracking (#37) |
+
+**AND THE CLIPPED-WIDGET TRAP FIRED AGAIN, IN A NEW PLACE AND WITH A SECOND CAUSE.** Both click
+tests failed at first, and the two causes had to be fixed separately:
+
+1. **The harness must be sized like a pane** — `1200×900`. Probed deliberately by shrinking it to
+   `200×120`: the four *query* tests still passed and both *click* tests failed. That is
+   `stage_tabs`'s trap exactly — a clipped widget stays in the accessibility tree and refuses
+   clicks — reproduced here by a `ScrollArea` instead of by a missing `horizontal_wrapped`. **The
+   cause is not the layout wrapper; it is any container that clips.**
+2. **A returned press must be accumulated, not assigned.** `*out = pane_ui(...)` every frame throws
+   the press away on the frame after it lands, and `run_steps(2)` guarantees there is one. Use
+   `build_ui_state` with `if click.is_some() { state.reported = click }`, as `stage_tabs` does.
+
+**Both failures read as "the pane did not report the press."** Any pane extracted with a callback
+return needs both fixes before its click test means anything.
+### ⟶ NEXT — and the remaining `_ui` census says the job has changed shape
+
+**Measured 2026-08-19, after `equation_sheet_ui`.** Every rendering method still on `App`, with its
+line count, its distinct `self.<field>` accesses, and the `App` methods it calls:
+
+| lines | fields | function | `App` methods called |
+|---|---|---|---|
+| 154 | 5 | `report_sub_view_row_ui` | `structural_view_available` |
+| 93 | 14 | `tarjan_anim_ui` | the live-debug four, `structural_frames_for_stage`, `structural_unavailable`, `notify` |
+| 86 | 12 | `matching_anim_ui` | the live-debug four, `structural_frames_for_stage`, `structural_unavailable` |
+| 80 | 7 | `menu_bar_ui` | `notify` |
+| 71 | 11 | `tearing_anim_ui` | the live-debug four, + `tearing_dae` |
+| 61 | 10 | `connection_anim_ui` | the live-debug four |
+| 52 | 8 | `reduction_anim_ui` | the live-debug four |
+| 51 | 8 | `pre_lowering_anim_ui` | the live-debug four |
+| 18 | 3 | `alias_anim_ui` | — |
+| 18 | 2 | `ic_plan_anim_ui` | — |
+| **~620** | **43** | `central_panel_ui` | the router |
+| **~483** | **32** | `frame_ui` | the router |
+
+**"The live-debug four" is `is_arming`, `has_live_debug_data`, `live_debug_poll` and
+`start_live_debug`, and SIX PANES CALL ALL FOUR.** That is the finding, and it means the eight
+`*_anim_ui` bodies are **not panes waiting to be extracted**. Their rendering already left — each
+ends in a single `anim.ui(ui, arming, debug_enabled)` call into an existing `*_anim.rs` module.
+What is left in `app.rs` is the **live-debug handshake**, written out six times with the
+`PendingLiveDebug` variant, the `stage_views` field and the animation constructor swapped:
+
+```text
+is_arming → derive LiveState → has_live_debug_data → live_debug_poll → SpawnLive?
+  → construct live anim (or clear the breakpoint) → fall back to captured frames
+  → draw → if the button was clicked, start_live_debug
+```
+
+**So the next move is deduplication, not extraction, and it must be justified as such.** The
+plan's rule forbids an extraction whose only justification is line count; collapsing six copies of
+one handshake is justified by something else — **the six are supposed to be the same protocol, and
+nothing enforces that they are.** A `live_debug` module owning the handshake (parameterised by
+variant, `stage_views` accessor and constructor) would make a divergence a compile error instead of
+a shrug. Estimate ~30 lines saved per pane, so ~150–200 lines, plus the two that call no `App`
+method at all. **Verify the six really are identical before assuming it** — a difference would be
+either a bug or a reason one of them is genuinely different, and both are worth knowing.
+
+**`report_sub_view_row_ui` (154 lines, 5 fields, one `App` method) is the cheapest single pane
+left** and the last one shaped like the seven already done. Apply the region rule, then the
+deferral test on whatever presses remain.
+
+**`menu_bar_ui` (80, 7, one `notify`) is small enough that moving it buys little**, and `notify` is
+the `App`-wide toast channel rather than a policy decision — likely a callback return, but at 80
+lines the trigger-2 justification is thin. Do it only if it falls out of something else.
+
+**`frame_ui` and `central_panel_ui` are still last, and still shrinking as their callees leave.**
+Both *grew* in line count while `app.rs` shrank: they are the routers, and routing survives every
+extraction.
 
 ### §3's seam order is WRONG for the remaining work — measured 2026-08-19
 

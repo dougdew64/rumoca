@@ -53,6 +53,7 @@ pub mod context_bar;
 pub mod diagnostics;
 pub mod doc_citations;
 pub mod equation_sheet;
+pub mod equation_sheet_view;
 pub mod error_summary;
 pub mod expr_format;
 pub mod fidelity;
