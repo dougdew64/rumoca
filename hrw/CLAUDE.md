@@ -828,9 +828,51 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > menu items are *not* independent are in
 > [`docs/app-split-plan.md`](docs/app-split-plan.md).
 >
-> **⟶ NEXT is back to the router**: `central_panel_ui`'s sub-view row block (~125 lines, four
-> `*_ready` gates) and the **default artifact pane** — the final `else` arm, ~152 lines, the
-> largest single block left in `app.rs`.
+> ### ⟶ START HERE: TWO STEPS, IN THIS ORDER — decided 2026-08-20, spelled out in the plan
+>
+> **`Continue the app.rs split` means these two next**, then back to the routers. Full detail,
+> including the row-key decision and the five block boundaries, is in
+> [`docs/app-split-plan.md`](docs/app-split-plan.md) under *"⟶ THE NEXT TWO STEPS"*. One unit of
+> work each under the stopping rule.
+>
+> 1. **Make `arch_doc::module_sizes()` recurse, keying rows by path relative to `src/`.** It reads
+>    `src/` with `read_dir` and has **no `is_dir` branch**, so the file step 2 creates would be
+>    absent from a table that prints *"Every file under `src/`"*. **Its own doc comment already
+>    argues for the fix** (*"a hard-coded list would let a new module be silently absent"*) — it has
+>    the failure mode it was written to prevent. **`MIN_MODULES` cannot catch it**: the row count
+>    fails to *rise*, and a floor only sees it fall. **Key by relative path, not `file_name()`** —
+>    bare names collide the moment a second module gains a `tests.rs`.
+> 2. **Move `app.rs`'s five `cfg(test)` blocks to `app/tests.rs` (new, under `src/`).** Everything from line 6,638
+>    to the end is test code — **5,613 of 12,250 lines** — and it is a clean tail, verified. No
+>    `#[path]`, no `mod.rs`: Rust 2018 lets a file-module own a subdirectory, so `src/app.rs` keeps
+>    `#[cfg(test)] mod tests;` and the body moves beneath it. `super` still means `app`, and a
+>    child module keeps its parent's private access.
+>
+> **THE RULE AGAINST LINE-COUNT-ONLY EXTRACTIONS DOES NOT BAR THIS, and reading it as though it
+> did was a misreading of the rule's own second clause** — §2 admits *"the specific thing it stops
+> a session from having to hold"*, and 5,613 lines is that, stated. Doug ruled on it directly.
+> **The rule bars line count as a JUSTIFICATION, not as a MECHANISM.**
+>
+> **And it is the best-shaped probe the experiment has.** The outcome metric is noisy — the
+> Opus 4.6 → Opus 5 confound and Claude's verbosity both move it — and **a single −5,613 step is
+> readable through noise that would swallow twenty −150 extractions.** `worker.rs` stays the
+> control.
+>
+> **⟶ THEN back to the routers**: `central_panel_ui`'s sub-view row block (~125 lines, four
+> `*_ready` gates), the **default artifact pane** (the final `else` arm, ~152 lines, the largest
+> single block left), and `frame_ui`'s Specimen left panel (~113).
+>
+> ### AND THE SIZE NUMBER IS NOT THE RETURN — Doug ruled on this 2026-08-20
+>
+> *"This `app.rs` refactoring effort has been beneficial, regardless of the reduction in size of
+> `app.rs`. You've identified and fixed bugs and you've identified and fixed testing gaps."*
+>
+> **This governs how a session reports its own iteration: what it found and what it made checkable
+> first, the line count last.** Scored on size alone, four of the best iterations read as failures
+> — the live-debug gate **added** 41 lines, the cache-lifetime split added 173, the ack-path seam
+> added 113, and the wrong-model annotation fix was a **net zero**. The plan carries the countable
+> inventory (eight defects found *by extracting*, and the panes that went from unreachable to
+> hundredths of a second). **The size target is the experiment's proxy, not its purpose.**
 >
 > **A ROUTER'S SEAM IS AN ASYMMETRY AMONG ITS ARMS, NOT A REGION — and this box previously said
 > the opposite.** It read *"the cut is inside, the way `tour_prose_ui` was cut"*, i.e. find a
