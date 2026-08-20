@@ -50,11 +50,11 @@ use crate::ic_plan_anim;
 use crate::incidence_view;
 use crate::log_view;
 use crate::matching_anim;
+use crate::matrix_panes;
 use crate::playback::Animated;
 use crate::pre_lowering_anim;
 use crate::reduction_anim;
 use crate::reduction_view;
-use crate::spyplot;
 use crate::tarjan_anim;
 use crate::tearing_anim;
 use crate::tree;
@@ -4250,126 +4250,37 @@ impl App {
                         .is_some_and(|n| n.contains("singular"));
 
                 if report_ready && self.viewport.structural == StructuralView::SpyPlot {
-                    if ir_split {
-                        // No spy-plot for the Before pane (needs full matching),
-                        // show only the After pane.
-                        ui.label(
-                            egui::RichText::new("Before (raw DAE)")
-                                .strong()
-                                .color(crate::colors::ANIM_FAIL),
-                        );
-                        ui.weak("Spy-plot unavailable (structurally singular \u{2014} no BLT decomposition)");
-                        ui.add_space(12.0);
-                        ui.label(
-                            egui::RichText::new("After (reduced)")
-                                .strong()
-                                .color(crate::colors::ANIM_PATH_FOUND),
-                        );
-                    }
-                    let cached = self.stage_views.spy_plot.get_or_insert_with(|| {
-                        self.stages
-                            .get(self.stage)
-                            .value
-                            .as_ref()
-                            .and_then(spyplot::Plot::from_report)
-                    });
-                    if let Some(plot) = cached {
-                        ui.weak(plot.caption());
-                        plot.ui(
-                            ui,
-                            &mut self.viewport.spy,
-                            &mut intent.canvas_capture,
-                            self.tracked_identifier.as_deref(),
-                        );
-                    } else {
-                        ui.weak("(the structural report has no BLT blocks to plot)");
-                    }
+                    matrix_panes::spy_plot_pane_ui(
+                        ui,
+                        self.stages.get(self.stage).value.as_ref(),
+                        matrix_panes::MatrixPane {
+                            cache: &mut self.stage_views.spy_plot,
+                            camera: &mut self.viewport.spy,
+                        },
+                        &mut intent.canvas_capture,
+                        self.tracked_identifier.as_deref(),
+                        ir_split,
+                    );
                 } else if report_ready && self.viewport.structural == StructuralView::Incidence {
-                    if ir_split {
-                        // Before/After split for incidence matrices.
-                        let before_cached =
-                            self.stage_views.before_incidence.get_or_insert_with(|| {
-                                self.stages
-                                    .get(self.stage)
-                                    .value
-                                    .as_ref()
-                                    .and_then(|v| v.get("before"))
-                                    .and_then(incidence_view::IncidenceMatrix::from_report)
-                            });
-                        let after_cached = self.stage_views.incidence.get_or_insert_with(|| {
-                            self.stages
-                                .get(self.stage)
-                                .value
-                                .as_ref()
-                                .and_then(incidence_view::IncidenceMatrix::from_report)
-                        });
-                        ui.columns(2, |cols| {
-                            // Before pane
-                            cols[0].label(
-                                egui::RichText::new("Before (raw DAE)")
-                                    .strong()
-                                    .color(crate::colors::ANIM_FAIL),
-                            );
-                            if let Some(mat) = before_cached {
-                                mat.caption_ui(&mut cols[0]);
-                                mat.ui(
-                                    &mut cols[0],
-                                    &mut self.viewport.before_incidence,
-                                    &mut intent.canvas_capture,
-                                    self.viewport.highlighted_eq_row,
-                                    None,
-                                );
-                            } else {
-                                cols[0].weak("(no before incidence data)");
-                            }
-                            // After pane
-                            cols[1].label(
-                                egui::RichText::new("After (reduced)")
-                                    .strong()
-                                    .color(crate::colors::ANIM_PATH_FOUND),
-                            );
-                            if let Some(mat) = after_cached {
-                                mat.caption_ui(&mut cols[1]);
-                                let tracked_col = self
-                                    .tracked_identifier
-                                    .as_deref()
-                                    .and_then(|name| mat.column_index(name));
-                                mat.ui(
-                                    &mut cols[1],
-                                    &mut self.viewport.incidence,
-                                    &mut intent.canvas_capture,
-                                    self.viewport.highlighted_eq_row,
-                                    tracked_col,
-                                );
-                            } else {
-                                cols[1].weak("(no after incidence data)");
-                            }
-                        });
-                    } else {
-                        let cached = self.stage_views.incidence.get_or_insert_with(|| {
-                            self.stages
-                                .get(self.stage)
-                                .value
-                                .as_ref()
-                                .and_then(incidence_view::IncidenceMatrix::from_report)
-                        });
-                        if let Some(mat) = cached {
-                            mat.caption_ui(ui);
-                            let tracked_col = self
-                                .tracked_identifier
-                                .as_deref()
-                                .and_then(|name| mat.column_index(name));
-                            mat.ui(
-                                ui,
-                                &mut self.viewport.incidence,
-                                &mut intent.canvas_capture,
-                                self.viewport.highlighted_eq_row,
-                                tracked_col,
-                            );
-                        } else {
-                            ui.weak("(no incidence data in this report)");
-                        }
-                    }
+                    matrix_panes::incidence_pane_ui(
+                        ui,
+                        self.stages.get(self.stage).value.as_ref(),
+                        matrix_panes::MatrixPane {
+                            cache: &mut self.stage_views.incidence,
+                            camera: &mut self.viewport.incidence,
+                        },
+                        // **The Before pane exists exactly when the split is on**, so the
+                        // pane cannot be handed a camera it must not draw into. See the
+                        // module: the spy plot next door keeps a `bool` because it has no
+                        // Before pane at all.
+                        ir_split.then_some(matrix_panes::MatrixPane {
+                            cache: &mut self.stage_views.before_incidence,
+                            camera: &mut self.viewport.before_incidence,
+                        }),
+                        &mut intent.canvas_capture,
+                        self.tracked_identifier.as_deref(),
+                        self.viewport.highlighted_eq_row,
+                    );
                 } else if report_ready && self.viewport.structural == StructuralView::MatchingAnim {
                     self.matching_anim_ui(ui, ir_split);
                 } else if report_ready && self.viewport.structural == StructuralView::TarjanAnim {
@@ -6094,9 +6005,15 @@ fn section_header_toggle<T: PartialEq + Copy>(
 struct FrameIntent {
     /// What the IR tree wants: capture, debug-capture, navigate, track.
     tree: tree::TreeActions,
-    /// Copied out of `self` because the stage-tree block holds an immutable
     /// A spy-plot or incidence block was clicked — treated identically to a
     /// tree-node click for capture purposes.
+    ///
+    /// **The line above this one used to be an orphan**, and it is worth a sentence
+    /// because it is a *fifth* cause of the doc-comment trap: `71d0dcbf` (2026-08-04)
+    /// deleted the `expand_trackable` field and the *second* line of its two-line doc,
+    /// so *"Copied out of `self` because the stage-tree block holds an immutable"* — a
+    /// sentence that does not even finish — was merged into this field's doc and read as
+    /// its opening summary for sixteen days.
     canvas_capture: Option<Vec<Seg>>,
     /// A stage tab was clicked, so the capture should describe the stage.
     want_stage_ask: bool,

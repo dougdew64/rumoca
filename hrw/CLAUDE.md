@@ -206,6 +206,16 @@ testing debt"), which also records what `egui_kittest` genuinely cannot reach �
 surfaces**: `incidence_view.rs` cells and `spyplot.rs`. The animations *are* testable.
 **Not growing the debt is free.**
 
+**NARROWED 2026-08-20: that is a claim about the PIXELS, and it had been read as a claim about
+the panes.** `matrix_panes.rs` — the pane that decides which cache is filled from which half of
+the report, which camera looks at it and what is said when there is nothing to show — now has
+**six tests running in 0.02 s**, because captions, split headings and absence notices are
+ordinary labels and a cache is a field a test reads after the frame. Nothing in either painter
+changed to allow it. **Two surfaces cannot be reached; the panes around them always could**, and
+one of those tests catches a Before/After swap that is invisible to every check about what
+reached the screen. Same shape as the scroll-area correction below: *a null result measured at
+one level was generalised into a property of the whole thing.*
+
 **SCROLL-AREA CONFIGURATION WAS THE THIRD, AND THAT CLAIM WAS FALSE** *(corrected
 2026-08-12, after a defect hid behind it for eight days)*. `both()` vs `vertical()` was
 recorded as *"config, not behaviour — nothing observable differs"*, on three real
@@ -750,8 +760,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > `PointKind` + `next_seq` → `context_bar.rs` (649)**, and **`equation_sheet_ui` →
 > `equation_sheet_view.rs` (446, 208 of them tests)**, and **`report_sub_view_row_ui` →
 > `report_sub_view.rs` (650, 428 of them tests)**, and **the four compile replays →
-> `compile_caches.rs` (101)**.
-> **app.rs 14,437 → 12,356** (11,857 after `report_sub_view`, plus the alias-defect guard below,
+> `compile_caches.rs` (101)**, and **the spy-plot + incidence arms of `central_panel_ui`'s
+> dispatch → `matrix_panes.rs` (451, 246 of them tests)**.
+> **app.rs 14,437 → 12,273** (11,857 after `report_sub_view`, plus the alias-defect guard below,
 > plus **+41 from the live-debug deduplication, +113 from the ack-path seam, +173 from the
 > cache-lifetime split and +51 from the ack-verdict test split, which are the finding rather than
 > a slip** — an accuracy or testability item is paid for *in* `app.rs`, so it cannot be scored on
@@ -760,21 +771,34 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest.
 >
-> ### ⟶ NEXT: THE CLUSTER IS EMPTY — A ROUTER GETS THE WHOLE NEXT SESSION
+> ### ⟶ NEXT: THE ROUTER IS STARTED — `central_panel_ui` 640 → 552
 >
-> **The census is spent and so are the follow-ups.** Every `_ui` method is extracted or judged not
-> worth it, so the cheap supply is gone in both directions — no leaf types, no panes — and all four
-> bounded items the live-debug cluster left are **DONE** (boxes below: the ack-path seam, the cache
-> lifetime, the four-verdict test split, and the `live_debug_lifecycle` citations).
+> **`matrix_panes.rs` landed 2026-08-20** (spy-plot + incidence arms, 6 tests in 0.02 s). The
+> census and the follow-ups are spent; the routers are all that is left. `central_panel_ui` is
+> **552 lines**, `frame_ui` **300**.
 >
-> **What is left in `app.rs` is `central_panel_ui` (~620 lines, 43 fields) and `frame_ui` (~483,
-> 32), and a router's coupling is not incidental**: it reads 43 fields *because* its job is to
-> decide which pane runs. Neither moves whole; the cut is inside, the way `tour_prose_ui` and the
-> `stage_tab_bar_ui` tabs were cut, and finding it is a whole fresh session with no guarantee it
-> ends green. **Do not start one on a session that has already spent context** — that is now the
-> only thing on the list, so a session that has spent context should do maintenance and `/clear`.
+> **A ROUTER'S SEAM IS AN ASYMMETRY AMONG ITS ARMS, NOT A REGION — and this box previously said
+> the opposite.** It read *"the cut is inside, the way `tour_prose_ui` was cut"*, i.e. find a
+> contiguous span calling no `App` method. **That rule is right for a body and wrong for a
+> dispatch chain**, which has no interesting regions — only members. Eleven of thirteen arms were
+> one-line delegations; two carried their whole pane inline, and they were **not adjacent**, so no
+> region-shaped cut could have taken them without the delegations in between.
 >
-> Details and verdicts in the plan.
+> **The check that found it is one already written down here**: *read a dispatch chain's arms as a
+> column and look for the odd one* — the check that caught the stranded `Animate` arm, run for
+> extraction instead of for defects. **Every arm is now one line**, so that check works on sight
+> rather than after a grep past two long bodies. **That uniformity, not the 83 lines, is what the
+> move rests on.**
+>
+> **⟶ THE NEXT ONE: apply the same reading to the OTHER lists.** `central_panel_ui`'s remaining
+> mass is the sub-view row block (four `*_ready` gates, ~125 lines) and the **default artifact
+> pane** — the final `else` arm, ~152 lines of error-summary-beside-tree, the largest single block
+> left in `app.rs`. `frame_ui`'s is the Specimen left panel (~113), whose Purpose half (~48, zero
+> `App` methods) is the twin of the already-extracted `specimen_source_ui` and would sit beside
+> it. **Ask "what is this a list of, and which member is shaped differently?" before looking for
+> a region.**
+>
+> Details, the perturbation table and the four earlier verdicts are in the plan.
 >
 > ### A TEST CAN BE NAMED FOR A FIELD IT CANNOT SEE
 > *(2026-08-20, the `live_debug_lifecycle` citations — five sites, not four)*

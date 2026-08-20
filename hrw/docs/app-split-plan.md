@@ -171,6 +171,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-20 | *(seam, not a move)* the ack path forwarded to `live_debug_poll` + `live_debug_gate_at` — *bought the order test; 8 lines of it are production* | 12,132 | *(none)* |
 | 2026-08-20 | **the four compile replays → `CompileViewCaches`** — *a lifetime decision, and it found a second defect* | 12,305 | `compile_caches.rs` (101), `stage_caches.rs` 99 → 120 |
 | 2026-08-20 | *(test split, not a move)* the four ack verdicts become four named tests — *zero production lines; it expired a second comment that had been a no-op for five days* | 12,356 | *(none)* |
+| 2026-08-20 | **the spy-plot and incidence arms of `central_panel_ui`'s dispatch → `matrix_panes.rs`** — *the first cut INTO a router; the chain is now thirteen one-line arms* | **12,273** | `matrix_panes.rs` (451, of which 246 are tests) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -1157,6 +1158,12 @@ routers (~1,100 lines between them) and everything that is not a pane at all.
 
 **THE CLUSTER IS NOW EMPTY, so the next session starts a router** — `central_panel_ui` or
 `frame_ui`, per option 1 above, on a session that has spent nothing.
+
+> ### ✅ STARTED 2026-08-20 — and the router's seam was an ASYMMETRY AMONG ITS ARMS, not a region
+>
+> **`central_panel_ui` 640 → 552, `app.rs` 12,356 → 12,273.** Box below. The recommendation
+> above said *"the cut is inside, the way `tour_prose_ui` was cut"* — a **contiguous region**
+> that calls no `App` method. That is not what was found, and the difference is the finding.
    - ~~**Split `a_timed_out_arm_claims_nothing_and_says_so` into its four paths** — the successor
      the ack-path seam left, and the cheapest thing on this list.~~ ✅ **DONE 2026-08-20** — four
      named tests, and the perturbation table is the purchase. Box above.
@@ -1165,6 +1172,71 @@ routers (~1,100 lines between them) and everything that is not a pane at all.
 both directions: no leaf types, no panes. The next *extraction* is a router, and a router is the
 "spend a whole session on one function" option — so it wants a fresh session, and the items
 above are what fits in a shared one.
+
+### A ROUTER'S SEAM IS AN ASYMMETRY AMONG ITS ARMS — 2026-08-20, `matrix_panes.rs`
+
+**−83 net on `app.rs`; `central_panel_ui` 640 → 552; the new module is 451 lines, 246 of them
+tests.** The unit of work was **two arms of a thirteen-arm dispatch chain**, not a region.
+
+**THE SEAM WAS FOUND BY READING THE CHAIN AS A COLUMN — the same check that caught the stranded
+`Animate` arm, run for a different purpose.** Eleven arms were a single delegation
+(`self.tarjan_anim_ui(ui, ir_split)`); **two carried their whole pane inline**, 35 and 86 lines.
+That is a seam a region scan cannot see, because the odd arms are *not contiguous* — the spy plot
+and incidence arms sit at the top of the chain with eleven one-liners below them, and any
+region-shaped cut would have taken the delegations with them.
+
+**So the router rule is: a router is a LIST, and a list's defect is a member that does not look
+like the others.** `tour_prose_ui`'s rule (*"which contiguous region calls no `App` method"*) is
+right for a **body**; a dispatch chain has no interesting regions, only members. Both arms called
+**zero** `App` methods, which the region rule would have reported as one 121-line region only if
+the intervening eleven arms had not existed.
+
+**AND THE UNIFORMITY IS THE REAL PURCHASE, not the 83 lines.** The column-read check that found
+the `report_ready` omission now works **on sight**: thirteen arms, thirteen single lines, and a
+missing guard is a difference in a short line rather than something to be found by grepping past
+two long bodies. The line count is the weakest justification available here and is not the one
+this move rests on.
+
+**`before: Option<MatrixPane>` REPLACED A BOOLEAN AND A CACHE, and that is a contract rather than
+a tidy-up.** The old code carried `ir_split` and touched `stage_views.before_incidence`
+separately, so *"the split is on"* and *"the Before pane has somewhere to draw"* were two facts
+that could disagree. As an `Option`, the Before pane exists exactly when the split does.
+
+**The spy plot deliberately did NOT get that shape**, and refusing to make the two signatures
+match is the accurate choice: it has no Before pane at all, so its `bool` asks a different
+question — *do I owe the reader an explanation for an empty left half?* — which is exactly what
+the "Spy-plot unavailable" notice answers. **Two panes that look symmetrical are not, and a
+signature that hid that would have been the tidier lie.**
+
+| perturbation | fails | stays green |
+|---|---|---|
+| swap the two `get_or_insert_with` report sources | `the_before_pane_reads_the_before_half_of_the_report`, `a_missing_before_half_is_reported_rather_than_substituted` | the other four — **including `the_split_labels_both_halves`** |
+| `get_or_insert_with` → `insert` (rebuild every frame) | `a_built_matrix_is_not_rebuilt_on_the_next_frame` | the other five |
+
+**THE SECOND COLUMN IS WHY THE DIMENSION ASSERTION EXISTS.** `the_split_labels_both_halves`
+survives the swap, because both headings still render over both matrices — **the swap is
+invisible to every check about what is on screen.** A Before/After exchange puts the *reduced*
+system under "Before (raw DAE)": well-formed, correctly labelled, and the exact inverse of what
+Index Reduction teaches. Only `n_eq × n_var` catches it, and only because the fixture gives the
+two halves different sizes on purpose.
+
+**"NOT QUERYABLE" WAS A CLAIM ABOUT THE PIXELS AND HAD BEEN READ AS A CLAIM ABOUT THE PANE.**
+`ui_tests.rs` lists the incidence matrix and spy plot in its *"not queryable"* column, and
+`CLAUDE.md` names them as the two surfaces `egui_kittest` cannot reach. **True of the `Painter`
+output; false of everything around it** — captions, split headings and four absence notices are
+ordinary labels, and the caches are fields a test reads after the frame. **Six tests in 0.02 s on
+a surface recorded as untestable**, and nothing had to change in either painter to get them.
+Same shape as the 2026-08-12 scroll-area correction: *a null result taken at one level was
+generalised into a property of the whole thing.*
+
+**A FIFTH CAUSE OF THE DOC-COMMENT TRAP, found while reading the region: DELETION.**
+`FrameIntent::canvas_capture` carried *"Copied out of `self` because the stage-tree block holds an
+immutable"* — **a sentence that does not finish** — as its opening summary. `71d0dcbf`
+(2026-08-04) deleted the `expand_trackable` field and only the *second* line of its two-line doc;
+Rust merged the survivor downward. **Sixteen days, and the four earlier causes were insertion,
+split, rewrite and adoption — all of which leave grammatical prose.** This one does not, which
+makes it the first instance with a cheap mechanical tell: *a doc block whose first sentence has no
+terminator.* Fixed in place, with the account kept in the comment.
 
 ### THE CACHE LIFETIME WAS THE WRONG QUESTION ASKED ABOUT THE RIGHT FIELD — 2026-08-20
 
