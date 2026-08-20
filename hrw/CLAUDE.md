@@ -735,17 +735,27 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >
 > **Done so far:** the sub-view enums, `Viewport` and `sub_view_name_for` → `stage_view.rs` (266
 > lines), StageViewCaches to stage_caches.rs (99), and UiMode/SpecimenDetail/NavEntry to
-> ui_state.rs (73). **app.rs 14,437 → 14,076 over five iterations.** Progress
+> ui_state.rs (73), and **source_map_ui — the first RENDERING fn — to source_map.rs (281)**.
+> **app.rs 14,437 → 13,838.** Progress
 > table in the plan, which also lists four mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest: the mass is in eight rendering fns totalling 2,531 lines, not in
 > field groups. Those take &mut self, so each costs hours, not minutes.
 >
-> **THE CHEAP MOVES ARE EXHAUSTED — decide the rhythm before starting the next one.** The five
-> done were cheap *because the items could not fail interestingly*. What remains cannot be
-> half-done and left green, because the unit of work stops being "move an item" and becomes
-> "establish what state this function touches". **The plan recommends spending one session
-> measuring the coupling of all eight** and letting the numbers pick the order, rather than
-> committing a whole session to `central_panel_ui` blind.
+> **THE CHEAP MOVES ARE EXHAUSTED, AND THE COUPLING TABLE IS MEASURED** (in the plan). Order the
+> rest by **fields touched**, not lines: `source_map_ui` was 4 fields, `central_panel_ui` is 43
+> and may never qualify — at 43 the only signatures are forty-three parameters or `&mut App`, and
+> the plan rejects the second as reducing nothing. Those two shrink as their callees leave.
+>
+> **AND THE REAL PREDICTOR IS NOT COUPLING — IT IS WHETHER A SCRIPT CAN DO IT.**
+> `source_map_ui` (4 fields, all single-line reads) extracted by script in minutes.
+> `specimen_source_ui` (7 fields) was **attempted and reverted**: a method callback, multiline
+> `self\n .field` accesses, a mutated parameter, and finally a local `let source` **shadowing the
+> parameter** — which regex cannot distinguish. **Read the body before estimating**, and expect to
+> hand-edit anything with shadowing or multiline accesses.
+>
+> **The callback pattern from that attempt is reusable and worth keeping:** return
+> `Option<String>` — the clicked identifier — and let `App` perform the follow, exactly as
+> `model_list` already does.
 >
 > **Regenerate `architecture.md` BEFORE the slow gate** — it carries module line counts, so every
 > move stales it and the gate fails on it 300 seconds in.
