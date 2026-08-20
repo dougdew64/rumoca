@@ -82,6 +82,7 @@ pub mod tearing_anim;
 #[cfg(test)]
 pub mod test_support;
 pub mod tour;
+pub mod tour_transport;
 pub mod tree;
 pub mod ui_state;
 pub mod worker;

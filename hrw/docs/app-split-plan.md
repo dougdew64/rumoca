@@ -158,6 +158,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-19 | `UiMode`, `SpecimenDetail`, `NavEntry` | 14,076 | `ui_state.rs` (73) |
 | 2026-08-19 | **`source_map_ui`** + its constant — *first rendering fn* | **13,838** | `source_map.rs` (281) |
 | 2026-08-19 | **`specimen_source_ui`** + `SourceViewState` — *the reverted one, redone by hand* | **13,507** | `specimen_source.rs` (397) |
+| 2026-08-19 | **`autoplay_controls_ui`** + `autoplay_stop_heading` + two constants | **13,152** | `tour_transport.rs` (458) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -223,6 +224,72 @@ from — `&mut App` would not be.
 `source_map_ui` as one *concern*; they ship as `specimen_source.rs` (397) and `source_map.rs`
 (281) because both sit inside the target band already and merging them would have meant renaming
 `source_map.rs` in the same commit. **Concern is the ordering unit, not necessarily the file.**
+
+### `autoplay_controls_ui` → `tour_transport.rs` — 2026-08-19, and it corrects the coupling metric
+
+**−355 lines, the largest single move so far, built on the first attempt with no revert.** The
+method from the previous iteration was followed exactly — enumerate every obstacle before
+writing anything — and it held: the extraction was ~90 % scripted, the first `cargo build`
+succeeded, and the only test that failed was the generated `architecture.md`.
+
+**THE COUPLING NUMBER WAS COUNTING THE WRONG THING.** The table below rates this function at
+**6 fields**, which sits it between `source_map_ui` (4) and `specimen_source_ui` (7) — and it
+was far cheaper than either. The reason is visible only in the raw accesses:
+
+| accesses | of what |
+|---|---|
+| **18** | `self.tour` — one already-grouped struct |
+| 1 | `self.compiling` — one `bool` |
+| 3 | `self.tour_back`, `self.start_autoplay`, `self.restore_mode_after_autoplay` — methods |
+| 1 | `self.autoplay_stop_heading` — a method that **never used `self`** |
+
+**So the signature is four parameters, of which one carries eighteen accesses.** The real
+predictor is not *how many fields* but **how many distinct state groups**, because a field
+already inside a struct costs the same as one field: `&mut TourState`.
+
+**Which means the 2026-08-02 UI pause paid for this extraction in advance.** That pause created
+`TourState` and dropped `App` from 105 fields to 57. Grouping state *is* the preparation for
+extracting the views that read it, and this is the first move that demonstrates it — an argument
+for finishing the grouping of any pane that resists.
+
+**Re-count the remaining functions by state groups before trusting their order.** The table
+below is still the best evidence available, but a function whose fifteen fields turn out to be
+three structs is a cheap extraction wearing an expensive number.
+
+**The callback pattern generalises to an ENUM, and that is now the second instance.**
+`specimen_source_ui` returned `Option<String>` for one follow; this one has three presses that
+`App` must perform, so it returns `Option<TransportRequest>` — `Switch`, `Back`, `Play`,
+`Stopped` — and `App` matches on it. **Render and report, own no policy.** Two instances make it
+a pattern rather than a special case; expect the third.
+
+**One behaviour was preserved deliberately, and one was allowed to change — both stated in the
+module docs rather than hidden:**
+
+- **Stop still stops the clock inside the module.** `Autoplay::stop` is pure `TourState`, so
+  deferring it would have let the readout below render one more frame of a run that had ended.
+  Only the *mode restore* leaves, which is why the variant is `Stopped` — a report that it
+  happened, not a request to do it.
+- **Play is deferred by exactly one frame.** `start_autoplay` parses the tour, builds a schedule
+  and dispatches a beat; it cannot run mid-paint. On the click frame the length picker is still
+  enabled and the progress bar is not yet drawn. **Say this in the module doc**, because a
+  future session comparing the two variants will otherwise read the asymmetry as an oversight.
+
+**The chrome helper leaked, and it will keep leaking.** `section_style` and `SectionStyle` had
+to become `pub(crate)` — the first cross-module use, following `model_list.rs`'s precedent of
+importing `read_purpose` and `section_header` from `crate::app`. **Every left-panel pane that
+leaves will need it.** When the third one does, move the pair into its own module rather than
+widening more of `app.rs`; there is no reason to do it before then.
+
+**Two mechanical notes worth more than they look:**
+
+- **A quoted heredoc (`<<'RUSTEOF'`) writes backticked prose safely**, which is the concrete
+  answer to trap 4 below. The corruptions came from `node -e` and *unquoted* shell strings, where
+  the shell expands `` ` `` before the file is written. `grep -c '`'` on the result confirms it
+  in one command.
+- **Do not dedent a moved body — let `cargo fmt` reindent it.** The body drops from 8-space
+  method indentation to 4-space free-function indentation, and a blanket `sed 's/^    //'` would
+  also strip four spaces from inside any multi-line string literal. `rustfmt` reindents code and
+  leaves literals alone.
 
 ### §3's seam order is WRONG for the remaining work — measured 2026-08-19
 
@@ -310,7 +377,8 @@ fail interestingly; they were never going to reach the target.
    whether the accesses are mechanically rewritable. **Add that to the estimate for every
    remaining function.**
 3. **`autoplay_controls_ui` + `tour_panel_ui`** (577, 6 and 7) — the tour panel, whose state
-   already lives in `tour.rs`.
+   already lives in `tour.rs`. ✅ **The first half shipped 2026-08-19** and proved the guess in
+   that last clause: state that already lives in a struct costs one parameter, not one per field.
 
 **`central_panel_ui` (43) and `frame_ui` (32) are last and may never qualify.** At 43 fields an
 extraction is a signature with forty-three arguments or a `&mut App` parameter — which the plan's
@@ -321,13 +389,29 @@ that is the only mechanism likely to help them.
 
 1. ✅ **`specimen_source_ui` + `source_map_ui`** (518) — one concern, the specimen's own text.
    **Both shipped 2026-08-19**, as two modules rather than one.
-2. ⟶ **NEXT: `autoplay_controls_ui` + `tour_panel_ui`** (577) — the tour panel, whose state
-   already lives in `tour.rs`. **Enumerate first**, per the finding above: the fields each
-   touches (6 and 7), which accesses are multiline, whether any parameter is mutated, and whether
-   any local shadows a parameter name. `tour.rs` already owning `TourState` may mean these take
-   fewer parameters than `specimen_source_ui` did — or may mean the state to pass is a `&mut
-   TourState` plus little else, which would be the cheapest signature yet.
-3. **`central_panel_ui`** (602) — last, because it is the stage-routing hub and every other move
+2. ✅ **`autoplay_controls_ui`** (331, 6) — **DONE 2026-08-19**, `tour_transport.rs` (458),
+   **−355 lines**. The prediction in this line was right: *"the state to pass is a `&mut
+   TourState` plus little else, which would be the cheapest signature yet."* It is four
+   parameters, and the finding above explains why the field count did not show that in advance.
+
+3. ⟶ **NEXT: `tour_panel_ui`** (246, 7) — the other half of the tour panel, and the direct
+   caller of the function that just left. **Enumerate first**, per the checklist: which of the
+   seven fields it touches are `self.tour` (the transport bar's eighteen were, and that decided
+   its cost), which accesses are multiline, whether any parameter is mutated, whether any local
+   shadows a parameter name.
+
+   **Two things are already known and should not be rediscovered.** It calls
+   `self.autoplay_controls_ui`, which is now a thin delegate — so the extracted function will
+   either call `tour_transport::autoplay_controls_ui` directly and return the request upward, or
+   the two merge into one module. **The second is likelier the right shape**: the transport bar
+   and the prose beneath it are one pane, and `tour_transport.rs` at 458 lines has room. And it
+   returns `Option<HrwLink>`, so the callback pattern is *already* how it reports — that part
+   needs no design.
+
+   **It also touches `self.split` and `self.commonmark_cache`**, which the transport bar did
+   not. Check whether the `SplitState` configuration can stay in `App` with only the inner
+   closure moving; if it cannot, this is a bigger job than the transport bar was.
+4. **`central_panel_ui`** (602) — last, because it is the stage-routing hub and every other move
    shrinks what it has to route.
 
 **And each needs a decision the state moves did not.** These take `&mut self` and reach across

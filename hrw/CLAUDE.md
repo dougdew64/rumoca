@@ -724,7 +724,8 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > `app.rs` under "not looked at" because reading it did not fit.
 >
 > **Target: no module over ~1,500 lines**, derived from the nine `hrw/src` modules already in the
-> 1,000–1,500 band that have never produced this week's failures. `app.rs` is 14,437.
+> 1,000–1,500 band that have never produced this week's failures. `app.rs` **started at 14,437**;
+> the current count is in the plan's progress table, and in `docs/architecture.md`.
 >
 > **THE WORKING MODE IS A LOOP** (Doug): **maintenance → a bit of refactoring → record findings →
 > update the plan → repeat.** Maintenance comes *first* deliberately — a session that refactors
@@ -738,17 +739,49 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >
 > **Done so far:** the sub-view enums, `Viewport` and `sub_view_name_for` → `stage_view.rs` (266
 > lines), StageViewCaches to stage_caches.rs (99), and UiMode/SpecimenDetail/NavEntry to
-> ui_state.rs (73), **source_map_ui — the first RENDERING fn — to source_map.rs (281)**, and
-> **specimen_source_ui + SourceViewState to specimen_source.rs (397)**.
-> **app.rs 14,437 → 13,507.** Progress
+> ui_state.rs (73), **source_map_ui — the first RENDERING fn — to source_map.rs (281)**,
+> **specimen_source_ui + SourceViewState to specimen_source.rs (397)**, and
+> **autoplay_controls_ui to tour_transport.rs (458)**.
+> **app.rs 14,437 → 13,152.** Progress
 > table in the plan, which also lists four mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest: the mass is in eight rendering fns totalling 2,531 lines, not in
 > field groups. Those take &mut self, so each costs hours, not minutes.
+>
+> **⟶ NEXT IS `tour_panel_ui`** (246 lines, 7 fields) — the other half of the tour panel, and
+> likeliest to merge into `tour_transport.rs` rather than get its own module. The plan lists what
+> is already known about it, including the two fields the transport bar did not touch
+> (`split`, `commonmark_cache`).
 >
 > **THE CHEAP MOVES ARE EXHAUSTED, AND THE COUPLING TABLE IS MEASURED** (in the plan). Order the
 > rest by **fields touched**, not lines: `source_map_ui` was 4 fields, `central_panel_ui` is 43
 > and may never qualify — at 43 the only signatures are forty-three parameters or `&mut App`, and
 > the plan rejects the second as reducing nothing. Those two shrink as their callees leave.
+>
+> **BUT THE FIELD COUNT IS THE WRONG UNIT — COUNT STATE GROUPS** *(2026-08-19,
+> `autoplay_controls_ui`)*. It rated **6 fields**, between `source_map_ui` (4) and
+> `specimen_source_ui` (7), and was **far cheaper than either**: **18 of its 20 `self` accesses
+> were `self.tour`**, one already-grouped struct, so the signature is four parameters and the
+> move was −355 lines on the first attempt with no revert. **A field already inside a struct
+> costs the same as one field.** So the 2026-08-02 UI pause that created `TourState` paid for
+> this extraction in advance — **grouping state IS the preparation for extracting the views that
+> read it**, and a pane that resists is a pane whose state wants grouping first. Re-count the
+> remaining functions by *groups* before trusting the coupling table's order.
+>
+> **The callback pattern generalised to an ENUM, and that is the second instance.**
+> `specimen_source_ui` returns `Option<String>`; the transport bar returns
+> `Option<TransportRequest>` — Switch/Back/Play/Stopped — and `App` matches on it. **Render and
+> report, own no policy.** Expect the third.
+>
+> **`section_style`/`SectionStyle` are now `pub(crate)`** — the first cross-module use of the
+> left-panel chrome helper, with `model_list.rs`'s `read_purpose` import as precedent. **Every
+> left-panel pane that leaves will need it; move the pair to its own module when the third one
+> does**, not before.
+>
+> **A quoted heredoc (`<<'EOF'`) writes backticked prose safely** — the concrete answer to the
+> plan's trap 4. The corruptions came from `node -e` and *unquoted* shell strings, where the
+> shell expands the backtick before the file is written. And **do not dedent a moved body**: let
+> `cargo fmt` reindent, because a blanket `sed 's/^    //'` also strips four spaces from inside
+> multi-line string literals.
 >
 > **AND THE REAL PREDICTOR IS: ENUMERATE THE OBSTACLES BEFORE EDITING.** `specimen_source_ui`
 > was **reverted** when rewritten first and diagnosed from the errors — a method callback,
