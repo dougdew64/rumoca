@@ -1,8 +1,26 @@
-//! **The Context Bar's assembled state** — what is pointed at, what is being
-//! followed, and what is always context.
+//! **The Context Bar** — what is pointed at, what is being followed, and what is
+//! always context: the state it owns, and the pane that draws it.
 //!
-//! Lifted out of `App::context_bar_ui` on 2026-08-19. See
+//! Lifted out of `App::context_bar_ui` on 2026-08-19, in two steps: the rendering
+//! first, then [`ContextBarState`] and the capture types behind it. See
 //! [`docs/app-split-plan.md`](../docs/app-split-plan.md).
+//!
+//! # Why the state followed the pane rather than leading it
+//!
+//! The rendering moved while [`ContextBarState`], [`PointedAt`] and [`PointKind`]
+//! stayed in `app.rs`, which left this module importing its own state back from the
+//! module it had just left — `app` → `context_bar` for the pane, `context_bar` →
+//! `app` for the types it draws. Bringing the three types here makes the dependency
+//! **one-directional**, which is the whole of what this step buys; the same
+//! `Viewport` → `stage_view.rs` and `SourceViewState` → `specimen_source.rs`
+//! precedent, arriving one iteration late because the pane was the expensive half.
+//!
+//! **It bought no new test, and that is recorded rather than dressed up.** Both
+//! properties worth holding here were already asserted through `App::test_default()`
+//! — the shared counter's recency ordering and the jump cursor's wrap-around — and
+//! neither needed a worker or a compile to begin with. The justification is
+//! `app-split-plan.md`'s *other* admissible one: what a session no longer has to
+//! hold.
 //!
 //! # Why the middle of the function, again
 //!
@@ -17,7 +35,8 @@
 //! - `jump_to_next_match`, `next_seq`, `emit_context` and `navigate_to` all sit in a
 //!   trailing block *after* `ui.separator()`, where nothing downstream draws. Moving
 //!   them to the caller costs **no frame at all** — the same statements run in the
-//!   same order, one function boundary later.
+//!   same order, one function boundary later. (`next_seq` has since come here as a
+//!   method on [`ContextBarState`]; `App` still calls it from that same block.)
 //! - `empty_context_hint` stays behind, and that decision is the parameter list:
 //!   it reads `ui_mode`, `specimen_detail` and `viewing_log`, three pieces of state
 //!   this pane otherwise never touches, purely to phrase one sentence. Moving it
@@ -51,9 +70,121 @@ use std::collections::{BTreeMap, HashMap};
 
 use eframe::egui;
 
-use crate::app::ContextBarState;
+use crate::bridge::{self, Seg};
 use crate::identifier_index::IdentifierIndex;
 use crate::worker::{DefInfo, StageBundle, StageKind};
+
+/// Everything the **Context Bar** owns: what has been captured, and how the
+/// reader moves through it.
+///
+/// Two cohorts, kept in one struct because the second exists only to serve the
+/// first — you jump between *mentions of the identifier being followed*, so the
+/// jump fields are meaningless without the capture.
+///
+/// # What stays on `App`
+///
+/// `tracked_identifier` does. It is one of the four fields the census found
+/// genuinely shared: the source view underlines it, the tree highlights it, the
+/// equation sheet marks its rows. The Context Bar *displays* the follow; it does
+/// not own it.
+///
+/// `refresh_jump_matches` and `jump_to_next_match` stay too, and that is the
+/// same rule pointed at behaviour rather than state: both read three pieces of
+/// `App` (`tracked_identifier`, `stage`, and the current stage's IR; the second
+/// also clears `viewing_log`), so moving them here would widen the signature to
+/// carry state this module otherwise never touches — and they are already
+/// covered by an `App`-level test that needs no worker and no compile.
+#[derive(Default)]
+pub(crate) struct ContextBarState {
+    // ---- The capture ----
+    /// What is pointed at, if anything.
+    pub(crate) pointed_at: Option<PointedAt>,
+    /// Why the last capture could not be written, if it could not. **Reported,
+    /// never swallowed** — a capture that silently failed would have Claude
+    /// answer about a screen nobody is looking at.
+    pub(crate) point_error: Option<String>,
+    /// A one-line summary of the followed identifier: how many mentions, across
+    /// how many stages.
+    pub(crate) tracking_summary: Option<(usize, usize)>,
+    /// Bumped when the follow changes, so the capture can be re-emitted.
+    pub(crate) track_seq: u64,
+    /// Bumped on every capture, so `focus.json` carries a monotonic sequence and
+    /// Claude can tell a stale read from a fresh one.
+    pub(crate) context_seq: u64,
+
+    // ---- Moving through the capture ----
+    /// Where the followed identifier is mentioned, in render order.
+    pub(crate) jump_matches: Vec<Vec<Seg>>,
+    /// What [`Self::jump_matches`] was computed for, so it is rebuilt only when
+    /// the question changes rather than every frame.
+    pub(crate) jump_key: Option<(StageKind, String)>,
+    /// Which mention the reader is on.
+    pub(crate) jump_index: usize,
+    /// A mention to scroll to next frame. **Lasts exactly one frame**: holding it
+    /// longer would re-scroll every frame and pin the view.
+    pub(crate) jump_target: Option<Vec<Seg>>,
+    /// A row to flash so the reader can see which one the jump meant. Cleared as
+    /// soon as they point at something themselves — they have just answered a
+    /// different question.
+    pub(crate) jump_highlight: Option<Vec<Seg>>,
+}
+
+impl ContextBarState {
+    /// The next stamp from the **shared** context counter.
+    ///
+    /// One counter for both halves, so `seq` and `tracking.seq` are directly
+    /// comparable and "which did the user touch last?" has an answer. Two
+    /// independent counters looked comparable and were not: after twelve
+    /// captures and one follow they read 12 and 1, which says nothing about
+    /// recency — and a reader trusting the instructions would conclude the
+    /// wrong thing. Found on the first real `explain`.
+    ///
+    /// It came here with the struct because it is the *only* one of the four
+    /// `App` methods over this state that mentions nothing else: two lines, one
+    /// field, and the invariant it protects is a property of the counter rather
+    /// than of the application.
+    pub(crate) fn next_seq(&mut self) -> u64 {
+        self.context_seq += 1;
+        self.context_seq
+    }
+}
+
+/// The last deliberate capture, retained so the Context Bar can state it and so
+/// re-emission preserves it.
+///
+/// `stage` is the stage the capture was **made** in, not the one currently on
+/// screen. They diverge as soon as the user switches tabs, and the bar must
+/// report the former — anything else describes context Claude does not have.
+#[derive(Clone)]
+pub(crate) struct PointedAt {
+    /// Stamp from the shared context counter — comparable against
+    /// `track_seq`, which is stamped from the same source.
+    pub(crate) seq: u64,
+    /// Human-readable description, exactly as emitted.
+    pub(crate) target: String,
+    /// Which of the three capture shapes this was.
+    ///
+    /// **All three must be recorded, not just `Node`.** Only node captures were
+    /// retained at first, so clicking a stage tab — which emits a *stage*
+    /// capture — rewrote `focus.json` while the bar went on displaying the
+    /// previous node. The bar and the file disagreed, which is precisely the
+    /// drift its governing rule forbids.
+    pub(crate) kind: PointKind,
+    pub(crate) stage: StageKind,
+    pub(crate) request: bridge::AskRequest,
+}
+
+/// What a capture pointed at, kept so the focus can be rebuilt when the
+/// followed identifier changes.
+#[derive(Clone)]
+pub(crate) enum PointKind {
+    /// A specific IR node, addressed from the stage root.
+    Node(Vec<Seg>),
+    /// A whole stage's IR.
+    Stage,
+    /// The specimen as a whole.
+    Specimen,
+}
 
 /// What the Context Bar was asked to do, for `App` to perform.
 ///
@@ -316,8 +447,6 @@ pub(crate) fn background_ui(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::{PointKind, PointedAt};
-    use crate::bridge;
     use crate::identifier_index::IndexedVariable;
     use egui_kittest::Harness;
     use egui_kittest::kittest::Queryable;

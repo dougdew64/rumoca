@@ -613,55 +613,7 @@ struct CompileFrames {
     connection: Vec<rumoca_phase_flatten::connections::trace::ConnectionFrame>,
 }
 
-/// Everything the **Context Bar** owns: what has been captured, and how the
-/// reader moves through it.
-///
-/// Two cohorts, kept in one struct because the second exists only to serve the
-/// first — you jump between *mentions of the identifier being followed*, so the
-/// jump fields are meaningless without the capture.
-///
-/// # What stays on `App`
-///
-/// `tracked_identifier` does. It is one of the four fields the census found
-/// genuinely shared: the source view underlines it, the tree highlights it, the
-/// equation sheet marks its rows. The Context Bar *displays* the follow; it does
-/// not own it.
-#[derive(Default)]
-pub(crate) struct ContextBarState {
-    // ---- The capture ----
-    /// What is pointed at, if anything.
-    pub(crate) pointed_at: Option<PointedAt>,
-    /// Why the last capture could not be written, if it could not. **Reported,
-    /// never swallowed** — a capture that silently failed would have Claude
-    /// answer about a screen nobody is looking at.
-    pub(crate) point_error: Option<String>,
-    /// A one-line summary of the followed identifier: how many mentions, across
-    /// how many stages.
-    pub(crate) tracking_summary: Option<(usize, usize)>,
-    /// Bumped when the follow changes, so the capture can be re-emitted.
-    pub(crate) track_seq: u64,
-    /// Bumped on every capture, so `focus.json` carries a monotonic sequence and
-    /// Claude can tell a stale read from a fresh one.
-    pub(crate) context_seq: u64,
-
-    // ---- Moving through the capture ----
-    /// Where the followed identifier is mentioned, in render order.
-    pub(crate) jump_matches: Vec<Vec<Seg>>,
-    /// What [`Self::jump_matches`] was computed for, so it is rebuilt only when
-    /// the question changes rather than every frame.
-    pub(crate) jump_key: Option<(StageKind, String)>,
-    /// Which mention the reader is on.
-    pub(crate) jump_index: usize,
-    /// A mention to scroll to next frame. **Lasts exactly one frame**: holding it
-    /// longer would re-scroll every frame and pin the view.
-    pub(crate) jump_target: Option<Vec<Seg>>,
-    /// A row to flash so the reader can see which one the jump meant. Cleared as
-    /// soon as they point at something themselves — they have just answered a
-    /// different question.
-    pub(crate) jump_highlight: Option<Vec<Seg>>,
-}
-
-use crate::context_bar::{self, ContextBarPress};
+use crate::context_bar::{self, ContextBarPress, ContextBarState, PointKind, PointedAt};
 use crate::model_list::{ModelListNav, ModelListState};
 use crate::specimen_source::{self, SourceViewState};
 use crate::stage_caches::StageViewCaches;
@@ -928,43 +880,6 @@ pub struct App {
     // first (slow) resolution of live_trace.rs does not happen on the critical
     // path of the first Debug click.
     prewarm: Prewarm,
-}
-
-/// The last deliberate capture, retained so the Context Bar can state it and so
-/// re-emission preserves it.
-///
-/// `stage` is the stage the capture was **made** in, not the one currently on
-/// screen. They diverge as soon as the user switches tabs, and the bar must
-/// report the former — anything else describes context Claude does not have.
-#[derive(Clone)]
-pub(crate) struct PointedAt {
-    /// Stamp from the shared context counter — comparable against
-    /// `track_seq`, which is stamped from the same source.
-    pub(crate) seq: u64,
-    /// Human-readable description, exactly as emitted.
-    pub(crate) target: String,
-    /// Which of the three capture shapes this was.
-    ///
-    /// **All three must be recorded, not just `Node`.** Only node captures were
-    /// retained at first, so clicking a stage tab — which emits a *stage*
-    /// capture — rewrote `focus.json` while the bar went on displaying the
-    /// previous node. The bar and the file disagreed, which is precisely the
-    /// drift its governing rule forbids.
-    pub(crate) kind: PointKind,
-    pub(crate) stage: StageKind,
-    pub(crate) request: bridge::AskRequest,
-}
-
-/// What a capture pointed at, kept so the focus can be rebuilt when the
-/// followed identifier changes.
-#[derive(Clone)]
-pub(crate) enum PointKind {
-    /// A specific IR node, addressed from the stage root.
-    Node(Vec<Seg>),
-    /// A whole stage's IR.
-    Stage,
-    /// The specimen as a whole.
-    Specimen,
 }
 
 /// `PartialEq` so "is the pending session this view's?" is `==`.
@@ -2196,7 +2111,7 @@ impl App {
         if matches!(focus, Focus::Nothing) {
             return;
         }
-        let seq = self.next_seq();
+        let seq = self.context.next_seq();
         // A point of Doug's own supersedes the link's — the highlight answers "which
         // row did that link mean?", and he has just answered a different question.
         self.context.jump_highlight = None;
@@ -2943,19 +2858,6 @@ impl App {
         })
     }
 
-    /// The next stamp from the **shared** context counter.
-    ///
-    /// One counter for both halves, so `seq` and `tracking.seq` are directly
-    /// comparable and "which did the user touch last?" has an answer. Two
-    /// independent counters looked comparable and were not: after twelve
-    /// captures and one follow they read 12 and 1, which says nothing about
-    /// recency — and a reader trusting the instructions would conclude the
-    /// wrong thing. Found on the first real `explain`.
-    fn next_seq(&mut self) -> u64 {
-        self.context.context_seq += 1;
-        self.context.context_seq
-    }
-
     /// Capture the node the user acted on — scoped to the navigated class when
     /// navigating, else to the current specimen stage (with cross-stage diff).
     /// `request` is "explain" (Ask Claude) or "debug-where-set" (the debugger).
@@ -2973,7 +2875,7 @@ impl App {
         // and specimen — and clearing in only one is exactly the omission the test for
         // this caught.
         self.context.jump_highlight = None;
-        let seq = self.next_seq();
+        let seq = self.context.next_seq();
         let target = bridge::describe_path(&key_path);
         let request_str = request.as_str();
 
@@ -5849,12 +5751,12 @@ impl App {
                 // anywhere: the file still holds the old node until it is rewritten,
                 // and a bar showing no point over a file holding one is exactly the
                 // disagreement this design exists to prevent.
-                self.context.context_seq = self.next_seq();
+                self.context.context_seq = self.context.next_seq();
                 self.emit_context();
             }
             Some(ContextBarPress::ClearThread) => {
                 self.tracked_identifier = None;
-                self.context.track_seq = self.next_seq();
+                self.context.track_seq = self.context.next_seq();
                 self.emit_context();
             }
             Some(ContextBarPress::GoToClass(class)) => self.navigate_to(class),
@@ -5890,7 +5792,7 @@ impl App {
         // Recency, not identity: the counter advances on *any* change,
         // including clearing, so the emitted context can say which half of it
         // the user touched most recently.
-        self.context.track_seq = self.next_seq();
+        self.context.track_seq = self.context.next_seq();
         // Following is context, so changing it changes what Claude has. Emit
         // now rather than waiting for the next capture, or the Context Bar
         // would show a thread that had never been sent.
@@ -7857,7 +7759,7 @@ mod tests {
         // ...and back to neither, by clearing the point.
         app.context.pointed_at = None;
         app.context.point_error = None;
-        app.context.context_seq = app.next_seq();
+        app.context.context_seq = app.context.next_seq();
         app.emit_context();
         let doc = emitted();
         assert_eq!(doc["kind"], serde_json::json!("none"));

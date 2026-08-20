@@ -746,8 +746,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > `stage_tab_bar_ui` → `stage_tabs.rs` (493, 190 of them tests)**, and
 > **the assembled state of `context_bar_ui` + `background_ui` → `context_bar.rs` (520, 205 of
 > them tests)**, and **`generic_error_summary` + `structural_singular_summary` →
-> `error_summary.rs` (440, 140 of them tests)**.
-> **app.rs 14,437 → 12,292.** Progress
+> `error_summary.rs` (440, 140 of them tests)**, and **`ContextBarState` + `PointedAt` +
+> `PointKind` + `next_seq` → `context_bar.rs` (649)**.
+> **app.rs 14,437 → 12,194.** Progress
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest: the mass is in eight rendering fns totalling 2,531 lines, not in
 > field groups. Those take &mut self, so each costs hours, not minutes.
@@ -821,10 +822,48 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > tuple, and three of four on screen would invite the reader to infer the fourth — an inferred
 > rank deficiency being HRW's number, not the compiler's.
 >
-> **⟶ NEXT: `ContextBarState` into `context_bar.rs`** (~35 lines, all ten fields already
-> `pub(crate)`, `Viewport`/`SourceViewState` precedent — it finishes that pane), then
-> **`equation_sheet_ui`** (246), which the coupling table never measured and whose state already
-> lives in `crate::equation_sheet`. Order and reasoning in the plan.
+> ### AN EXTRACTION MAY BUY NO TEST — CHECK BEFORE CLAIMING ONE
+> *(2026-08-19, `ContextBarState`)*
+>
+> **−98 lines, first attempt, and the first move that produced ZERO build errors.** It is also
+> **the first since `source_map_ui` that buys no test at all**, and that is recorded plainly
+> because six consecutive iterations could claim one and the habit was forming.
+>
+> **Both properties worth holding were already asserted** — the shared counter's recency
+> ordering, and the jump cursor's wrap-and-reset — and both already ran on `App::test_default()`
+> with no worker and no compile. `error_summary` bought five tests because that function was
+> reachable *only* through a failing compile; **grep for the property before writing "this could
+> not be tested before"**, since the claim is about the OLD code and is checkable in advance.
+> The plan admits a second justification and this move rests on it: what a session no longer has
+> to hold.
+>
+> **THE PURCHASE WAS THE DEPENDENCY'S DIRECTION.** After the pane moved last iteration,
+> `context_bar.rs` imported its own state back out of `app.rs` — `app` → `context_bar` for the
+> rendering, `context_bar` → `app` for the two types it draws. **Rust permits that cycle and
+> says nothing about it**, so nothing would ever have failed; a reader asking *"where does the
+> Context Bar live?"* simply got two answers. **After a pane moves, check which way its imports
+> now point.**
+>
+> **A TYPE DOES NOT TRAVEL ALONE — the plan estimated 35 lines and it was 98.** `PointedAt` is
+> the type of one field and `PointKind` the type of one of *its* fields, so the cluster is
+> three types. **Estimate a type move by its field types**, the same *"how many separate places
+> is this in?"* rule the plan applies to functions, pointed at data instead.
+>
+> **Only `next_seq` moved with it, and the filter is the parameter-list rule again**: it touches
+> `context_seq` and nothing else, so it cost zero new arguments. `refresh_jump_matches`,
+> `jump_to_next_match` and the capture paths all stayed — each reads two or three pieces of
+> `App` this module never otherwise touches, so moving them would have widened the seam and
+> traded away a working test. **That rule now sorts three things: `&self` render helpers,
+> deferred presses, and methods over a moved struct.**
+>
+> **Mechanically it is the cheapest shape there is**: a type move has none of the four obstacles
+> on the checklist — no `self` accesses, no multiline `self\n .field`, no mutated parameter, no
+> shadowing local. **Its whole risk is `#[derive]` orphaning**, so cut every type with its
+> attributes using Edit, never a line range.
+>
+> **⟶ NEXT: `equation_sheet_ui`** (246), which the coupling table never measured and whose state
+> already lives in `crate::equation_sheet`. Apply the region rule first, then the deferral test
+> on whatever presses remain. Order and reasoning in the plan.
 >
 > ### THE `App`-METHOD COUNT IS NOT THE TEST — ASK WHETHER DEFERRING THE PRESS COSTS A FRAME
 > *(2026-08-19, `stage_tab_bar_ui`)*

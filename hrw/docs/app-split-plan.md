@@ -163,6 +163,7 @@ of all eight and let the numbers pick the order. The second is cheaper and is wh
 | 2026-08-19 | **the tabs of `stage_tab_bar_ui`** — the span below the ▶ button, + `tab_label` + the row's teaching comment | **12,715** | `stage_tabs.rs` (493, of which 190 are tests) |
 | 2026-08-19 | **the assembled state of `context_bar_ui`** + `background_ui` — *the seven-method one* | **12,519** | `context_bar.rs` (520, of which 205 are tests) |
 | 2026-08-19 | **`generic_error_summary` + `structural_singular_summary`** — *the `self`-free pair* | **12,292** | `error_summary.rs` (440, of which 140 are tests) |
+| 2026-08-19 | **`ContextBarState` + `PointedAt` + `PointKind` + `next_seq`** — *the state follows its pane* | **12,194** | `context_bar.rs` (649) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -577,14 +578,69 @@ paired with a presence assertion using the same query, so a query that finds not
 fails rather than passing quietly. `query_by_label_contains` throughout, per the trap recorded
 above: `get_all_by_label_contains` panics on no match and cannot express absence.
 
+### `ContextBarState` followed its pane — 2026-08-19, and the estimate was low for a reason worth keeping
+
+**−98 lines, first attempt, no revert, and the first extraction that produced ZERO build
+errors.** `context_bar.rs` is 520 → 649.
+
+**The plan said "~35 lines" and it was 98, because a type does not travel alone.** `PointedAt`
+is the type of `ContextBarState::pointed_at` and `PointKind` is the type of `PointedAt::kind`,
+so the cluster is three types, not one. **Estimate a type move by its field types, not by the
+struct's own line count** — the same rule the plan already applies to functions (*"how many
+separate places is this in?"*), pointed at data.
+
+**What decided the cluster boundary is the DIRECTION of the module dependency.** After the pane
+moved last iteration, `context_bar.rs` imported its own state back out of `app.rs`: `app` →
+`context_bar` for the rendering, `context_bar` → `app` for the two types that rendering draws.
+Rust permits the cycle and says nothing about it, so nothing would ever have failed — but a
+reader asking *"where does the Context Bar live?"* got two answers. **That is the whole purchase
+of this step**, and it is trigger 2, not trigger 3.
+
+**AND IT BOUGHT NO TEST, WHICH IS RECORDED RATHER THAN DRESSED UP.** The plan's rule admits two
+justifications — a test it buys, or what a session no longer has to hold — and every iteration
+since `source_map_ui` has been able to claim the first. This one cannot, and the check that
+proved it is worth repeating before writing any "this could not be tested before" sentence:
+
+| the property | already asserted by |
+|---|---|
+| the shared counter makes `seq` and `track_seq` comparable for recency | `app.rs`, three assertions around `track_seq > after_point` |
+| the jump cursor wraps, and resets across a stage switch | `jumping_cycles_within_the_current_stage_and_resets_across_stages` |
+
+**Both run on `App::test_default()` — no worker, no compile.** `error_summary`'s five new tests
+were bought because that function was reachable *only* through a failing compile; nothing here
+was. **Grep for the property before claiming the extraction buys it**, because the claim is
+about the old code and is therefore checkable in advance.
+
+**ONLY `next_seq` MOVED WITH THE STATE, AND THE FILTER IS THE SAME PARAMETER-LIST RULE.** Four
+`App` methods operate on this state; three stayed:
+
+| method | verdict |
+|---|---|
+| `next_seq` (2 lines) | **moved** — touches `context_seq` and nothing else. Zero new parameters. |
+| `refresh_jump_matches` | stays — reads `tracked_identifier`, `stage`, and `current_stage().value` |
+| `jump_to_next_match` | stays — same two, plus it clears `viewing_log` |
+| `emit_context` and the capture paths | stay — they *build* a `PointedAt` from `App`-wide state |
+
+**So the helper rule that sorted `background_ui` from `empty_context_hint` sorts methods onto a
+moved struct too:** it moves if its inputs are already there, and stays if it would widen the
+signature. Three of the four would have needed three arguments to carry state this module never
+otherwise touches — and moving them would have traded a working `App`-level test for a wider
+seam, which is the trade the plan's "what NOT to do" list rejects.
+
+**The mechanical note: this is the first move with no `cargo build` errors at all**, because a
+type move has none of the four obstacles on the checklist — no `self` accesses to rewrite, no
+multiline `self\n .field`, no mutated parameter, no shadowing local. The only edits outside the
+cut were one `use` line in each direction and six `self.next_seq()` → `self.context.next_seq()`
+rewrites, all in plain statement position. **The obstacle checklist is about function bodies;
+for a type move the whole risk is `#[derive]` orphaning** (trap 2), which is why both types were
+cut with their attributes by Edit rather than by line range.
+
 ### ⟶ NEXT, in order:
 
-1. **`ContextBarState` into `context_bar.rs`** (~35 lines) — its own doc says *"Everything the
-   Context Bar owns"*, all ten fields are already `pub(crate)`, and the `Viewport` /
-   `SourceViewState` precedent is exactly this. Cheap, and it finishes the pane.
-2. **`equation_sheet_ui`** (246) — a rendering pane the coupling table never measured, and its
-   state already lives in `crate::equation_sheet`.
-3. **`frame_ui`** (483 after the moves, 32 fields) and **`central_panel_ui`** (619, 43) — still
+1. **`equation_sheet_ui`** (246) — a rendering pane the coupling table never measured, and its
+   state already lives in `crate::equation_sheet`. **Apply the region rule first** (which
+   contiguous span calls no `App` method), then the deferral test on whatever presses remain.
+2. **`frame_ui`** (483 after the moves, 32 fields) and **`central_panel_ui`** (619, 43) — still
    last, still shrinking as their callees leave. Note that both *grew* in line count while
    `app.rs` shrank: they are the routers, and routing survives every extraction.
 
