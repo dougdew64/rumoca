@@ -2019,6 +2019,51 @@ platforms.
 
 ## 48. Get the full gate under one minute — REOPENED AND RESCOPED 2026-08-20
 
+### ⟶ THE AGREED METHOD — Doug, 2026-08-21, and this is the live starting point
+
+**The `app.rs` split is finished, so this is the arc in flight.** Gate measured **~285–354 s**
+on 2026-08-21. Doug's framing: *"that test time is subtracting from learning time."*
+
+**1. MEASURE BEFORE COMMITTING TO A LEVER — the ten-minute experiment comes first.** Cut `t_end`
+on a single simulation test and time it before and after. That settles whether **integration** or
+**compilation** dominates, which is genuinely open: `all_healthy_specimens_simulate` (16 s)
+compiles nine specimens before simulating any, and the two next-slowest tests
+(`every_stage_serializes_without_panicking` 15 s, `a_rumoca_failure_is_represented_faithfully`
+14 s) **do not simulate at all.** Four levers already died here after being proposed from
+arithmetic over slow-looking test names — **a sum of names is not a measurement**, and one of the
+four was proposed by Claude and withdrawn on measuring.
+
+**2. COST REDUCTION RANKS ABOVE SELECTIVE EXECUTION.** The failure modes are not symmetric: a
+test made cheaper still runs, while a test skipped by a wrong selection heuristic is a **silent
+wrong negative** — the error this repository treats as the one nobody catches, because acting on
+it means *not looking*. The safe forms of selection already exist (`slow-tests`, the FAST/FULL
+table, `compile_specimen_shared`). Reach for more only where a test cannot be made cheap.
+
+**3. CUT `t_end`, AND PAY FOR IT WITH A NON-VACUITY ASSERTION PER TEST.** Doug: for current
+purposes 0.1 s of simulated time is as useful as more. **The exception is any test asserting a
+PHENOMENON rather than that integration ran** — and `BouncingBall` is exactly that. A bounce is an
+**event**, so `has_discontinuities`, `discontinuity_segments` and the *"discontinuities render as
+discontinuities"* claim all require one to occur inside `t_end`. **Cut below the first bounce and
+every one of them passes while checking nothing.** So: name the phenomenon each simulation test
+depends on and assert it. That converts `t_end` from a number nobody dares touch into one anyone
+can tune, because going too far then fails loudly by name.
+
+**4. CHANGE `t_end` AT THE CALL SITE, NEVER IN A SPECIMEN'S `experiment` ANNOTATION.** Those
+annotations are part of the System Modeler differential-test contract — identical solver
+tolerances and initial conditions (charter §4.3). `t_end` is already a parameter to `simulate`,
+so this costs nothing and keeps the protocol intact.
+
+**A CANDIDATE COST NEITHER LEVER REACHES, and it is worth measuring early.** The suite is forced
+to `--test-threads=1`, and the expensive tests serialise on a global `Mutex<WorkerState>`. **They
+are serial precisely because they SHARE the expensive resource — the loaded MSL — and sharing is
+what makes them individually cheap.** So the dominant cost may be MSL loading, which neither
+`t_end` nor selective execution touches. **Measuring that is free. Acting on it is not:**
+`CLAUDE.md`'s compile-path prohibition stands, revisable only on evidence **brought to Doug**, and
+a session must not read its own measurement as authorisation. Splitting `worker.rs` into modules
+is *not* a compile-path redesign; changing how the MSL session is loaded, cached or shared **is**.
+
+---
+
 **Status: LIVE, and it is the next arc after the `app.rs` split finishes.** Split out
 2026-07-29 as *"memoize compiled specimens"*; **that sketch shipped** (see *Already
 delivered* below), so this number now carries the goal rather than the mechanism. The

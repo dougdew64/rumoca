@@ -203,6 +203,20 @@ without a test that could not have been written before it.* An extraction that o
 buys nothing measurable and costs a large diff. If a candidate has no such test, **leave it
 where it is** and say so.
 
+> **SCOPE — added 2026-08-21, after this rule was applied outside it and cost days.** This rule
+> governs **extracting a function or a type**, and its target is a specific abuse: splitting a
+> function to satisfy a lint or to make a number go down, producing no seam and no test.
+>
+> **It does NOT govern relocating a file's `#[cfg(test)]` module, and reading it that way
+> deferred the single highest-value move of the `app.rs` arc.** Moving `app.rs`'s test blocks to
+> `app/tests.rs` was **−5,613 lines — 71 % of everything that file ever shed** — at zero risk,
+> and it buys no test *because it isn't claiming to*: there is no seam to create, so the rule's
+> question does not apply. It sat unscheduled while a dozen genuine extractions went ahead.
+>
+> **The generalisation is in `CLAUDE.md` under the scope-error class.** The tell was available
+> the whole time: **when a rule forbids the most valuable, lowest-risk move on the board, the
+> odds favour a misreading over the move being wrong.**
+
 ### What NOT to do
 
 - **Do not extract `Default::default`** (391 lines). It is long because `App` has 57 fields, it

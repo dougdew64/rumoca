@@ -3871,3 +3871,64 @@ than a coincidence.
   doc. And the Tarjan **edge rule** — *equation A depends on B when A references a variable
   matched to B* — survived only inside a stale `from_incidence` summary, so it moved to
   `build_dep_graph`, which builds that graph and had never stated what an edge means.
+
+## 2026-08-21 — three rulings from the post-`app.rs` review, and one of them is about rules
+
+Doug's review of the whole arc, paragraph by paragraph, after the split closed. Recorded here
+because the conversation that produced them scrolls away and two of the three **contradict what
+the repository said the previous day**.
+
+- **THE REFACTOR'S RETURN WAS DEFECTS, NOT LINES — so refactoring resumes with defects as the
+  stated goal.** The two curves separate cleanly: `app.rs` shed **7,961 lines and 5,613 of them
+  (71 %) came from one move that refactored nothing**, while the defect yield held steady across
+  the whole arc — eight found by extracting, the last three iterations each still turning
+  something up. **`app.rs` resumes, then `worker.rs`.** This is trigger 3 (testability), never a
+  line-count target.
+
+  **Two consequences that change how the work is chosen.** Seams were mostly picked by
+  *cheapness* (the coupling table, the zero-`self` sweep); **with defects as the goal, pick by
+  where defects are likely** — never-closely-read code, untestable code, and sibling clusters
+  where one member may differ. And **four of the eight defects came from one tool**, the
+  column-read of a list of siblings, which **needs no extraction at all** — so it runs as a cheap
+  parallel activity rather than as a side effect of moving code.
+
+- **THE `worker.rs` CONTROL EXPERIMENT IS ABANDONED**, and it was never going to yield a
+  measurement. Its outcome variable was confounded (handoff frequency cannot separate a growing
+  file from the Opus 4.6 → 5 change), and **a control must differ in one variable** while
+  `worker.rs` differed in many — a rarely-edited compile path against UI code edited constantly
+  throughout. A control in name only. **The compile-path prohibition is unchanged**, now carrying
+  its revision condition: *"until we have an evidence-based reason to change our policy"* —
+  and **evidence-based means brought to Doug, not concluded in-session.**
+
+- **A RULE IS ALSO A CLAIM ABOUT ITS SCOPE, AND SCOPE ERROR IS THIS REPOSITORY'S MOST FREQUENT
+  FAILURE.** Doug: *"we didn't immediately perform the obvious refactor of test code out of
+  `app.rs` because of an incorrect interpretation of a policy."* The policy was
+  `format-and-app-plan.md`'s *no extraction lands without a test that could not have been written
+  before it* — written to block **splitting a function to satisfy a lint**, and read as governing
+  **a file-level move of a `#[cfg(test)]` module**, which buys no test *because it is not
+  claiming to*. It deferred the largest, safest step of the arc.
+
+  **Four instances of the identical shape** — a statement true in one domain applied in a wider
+  one — had each been filed as a separate correction: `fmt` missing from a two-gate rule; a claim
+  about pixels read as a claim about panes; three null results inside a widget generalised into a
+  property of the widget; and this. **Naming them as one class is the finding.**
+
+  **Two mechanisms, both now in `CLAUDE.md`.** *State what a rule does NOT forbid, beside what it
+  does* — the proven template being *"REPLAY means two things, and only one is forbidden."* And
+  the interpretive half: *a policy blocking something obviously valuable and zero-risk is evidence
+  about the policy, not about the action.*
+
+  **Two contributing causes worth keeping separately.** A **quality bar became a discouragement
+  for the second time** — the first was the Rumoca instrumentation checklist, where the ungated
+  path won and fictions accumulated; here it ran the other way, the gated act deferred *because*
+  it was gated. The fix is the one that worked before: **price it explicitly, out loud.** And **a
+  plan organised around one kind of act hides every other kind** — `app-split-plan.md` was
+  structured around *seams*, so an act that was not a seam had no row and stayed invisible.
+
+- **TEST TIME IS SUBTRACTING FROM LEARNING TIME, and `#48` is the immediate next task.** Method
+  agreed and recorded in `docs/ideas.md` #48: measure before committing to a lever; cost reduction
+  ranks above selective execution (a cheaper test still runs, a skipped one is a silent wrong
+  negative); cut `t_end` but pay for it with a **non-vacuity assertion per test**, since
+  `BouncingBall`'s bounce is an *event* and a short `t_end` would leave three assertions passing
+  while checking nothing; and change `t_end` **at the call site**, never in a specimen's
+  `experiment` annotation, which is part of the System Modeler differential-test contract.

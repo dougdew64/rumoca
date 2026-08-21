@@ -253,6 +253,51 @@ fixed height at all.
 `egui_kittest` — a clipped child is still in the accessibility tree. Layout remains the
 surface where his report *is* the verification.
 
+**A RULE IS ALSO A CLAIM ABOUT ITS SCOPE, AND THAT IS THIS REPOSITORY'S MOST FREQUENT
+FAILURE** *(named 2026-08-21, from four instances that had each been filed as a separate
+correction)*. Every one is the same shape — **a statement true in one domain, applied in a
+wider one**:
+
+- **`fmt` missing from a two-gate rule**, which "read as complete" and cost 82 unformatted
+  hunks across a week in which clippy was run every single time.
+- **A claim about the PIXELS read as a claim about the PANES** — `matrix_panes` had six
+  tests available the whole time it was filed as untestable.
+- **Three null results inside one widget generalised into a property of the widget**, which
+  stopped anyone looking at the scroll axis for eight days.
+- **A rule about extracting a function applied to relocating a test module**, which deferred
+  the largest and safest step of the `app.rs` arc — 71 % of everything that file shed.
+
+**So the mechanism, and it costs one clause: state what a rule does NOT forbid, beside what
+it does.** The template already exists here and is proven — *"REPLAY means two things, and
+only one is forbidden"* was written precisely so a later session would not delete a working
+feature. **Every rule that has bitten us this way would have been safe with one such
+sentence.**
+
+**AND THE INTERPRETIVE HALF, which is what a reader can act on when the rule is already
+written badly: a policy blocking something obviously valuable and zero-risk is evidence about
+the POLICY, not about the action.** When a rule forbids the highest-value, lowest-risk move
+available, the odds favour a misreading over the move being wrong. **Stop and re-read the rule
+before abandoning the move.**
+
+**A QUALITY BAR CAN BECOME A DISCOURAGEMENT, AND IT HAS NOW DONE SO TWICE.** The first was
+the Rumoca instrumentation checklist: every Rumoca edit carried one and every HRW edit carried
+none, so the ungated path won and fictions accumulated for weeks. The second ran the other
+direction — **the test-block move was deferred *because* it appeared to need justification**,
+while ordinary extractions that fit the rule's template proceeded unexamined. **A rule shapes
+behaviour by making one option feel illegitimate, whatever it says.**
+
+**The fix that worked the first time is the fix: price it explicitly, out loud.** The capture
+scopes landed in two days once Doug said *"it is much better to defend a rumoca api change to
+the repo maintainers than to defend replays."* They were **unpriced, not difficult.** When a
+rule seems to forbid the obvious move, say what each option actually costs before concluding
+the rule wins.
+
+**A PLAN ORGANISED AROUND ONE KIND OF ACT HIDES EVERY OTHER KIND** — the contributing cause
+of the same episode, and it is not a policy failure at all. `app-split-plan.md` was structured
+around **seams**, so an act that is not a seam had no row in it and stayed invisible until
+someone stepped outside the frame. **When a plan has produced no progress on something
+obvious, check whether its own structure has a place to put it.**
+
 **INSERT A TEST AFTER A FUNCTION'S CLOSING BRACE, never before its `fn` line.** A doc comment
 and its attributes sit *above* the item, so anything placed between them is adopted by the
 wrong one — the new test gets two `#[test]`s and **the old function silently stops being a
@@ -335,7 +380,10 @@ those functions, or will improve your ability to test those functions and keep t
 2. Claude's **ability to maintain** it degrades.
 3. A refactor would **improve testability** — the same rule
    [`docs/format-and-app-plan.md`](docs/format-and-app-plan.md) already states: *no extraction
-   lands without a test that could not have been written before it.*
+   lands without a test that could not have been written before it.* **That rule governs
+   extracting a FUNCTION OR A TYPE and nothing else** — see its scope note, added after it was
+   read as governing a file-level move of a `#[cfg(test)]` module and deferred the largest,
+   safest step of the whole arc.
 
 **This is why the three complexity lints are declined** (`hrw/Cargo.toml` carries the full
 reasoning). They encode a human-comprehension heuristic, and enforcing it would reward splitting
@@ -474,6 +522,25 @@ limits, so be it."* The stage JSON trees, equation sheet, identifier index and a
 calibration, not optimisation, and is fine. **HRW is an education project, not a production
 tool.**
 
+**THE PROHIBITION IS REVISABLE ON EVIDENCE, AND "PERHAPS EVER" WAS HIDING THAT** *(Doug,
+2026-08-21)*: *"until we have an evidence-based reason to change our policy, let's maintain our
+prohibition against a redesign of worker.rs's compile path."* Unchanged in force — **and now
+carrying the condition under which it could change**, which the old phrasing gave a reader no way
+to find. That is the *"state what the rule does not forbid"* mechanism applied to this rule.
+
+**AND THE OPERATIONAL HALF, because this is where it will be got wrong: "evidence-based reason"
+means bringing the evidence to DOUG, never concluding in-session that the evidence authorises
+proceeding.** The live temptation is concrete — `#48` may measure MSL loading as the dominant test
+cost, and a session could read that finding as permission. **It is not.** The measurement is a
+finding; the policy change is Doug's call. **Splitting `worker.rs` into modules is not a redesign
+of the compile path** and needs no such permission; changing how the MSL session is loaded, cached
+or shared does.
+
+**Refactoring `worker.rs` therefore has a boundary `app.rs`'s never had: extract AROUND the
+compile path, do not restructure it.** `compile_target` (1,085 lines) will invite exactly that,
+and it is on record as hard to *test* because it takes `&mut self` and emits through a closure —
+**not because it is long.** That is a testability seam, which is the licensed kind.
+
 **The composition primitives are frozen** — one point-at + one follow + background, unchanged
 until a practical scenario demonstrates a need. Multiple `follow` items and a third "compare"
 primitive were considered and deliberately not built; **do not re-propose them from first
@@ -530,10 +597,70 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > built** — `compile_specimen_shared`, so 47 of 59 call sites are free), and feature-set thrashing
 > (1–2 s; cargo keeps both variants). The full reasoning is in *Running things* below.
 >
+> **THE METHOD, AGREED WITH DOUG 2026-08-21 — `docs/ideas.md` #48 carries it in full.** Four
+> points, and the first is the one a session will be tempted to skip:
+>
+> - **MEASURE BEFORE COMMITTING TO A LEVER.** The four dead levers above all died on contact with
+>   a clock after being proposed from arithmetic over slow-looking test names. **The first
+>   experiment is ten minutes**: cut `t_end` on one simulation test and time it, which settles
+>   whether *integration* or *compilation* dominates. `all_healthy_specimens_simulate` (16 s)
+>   compiles nine specimens before simulating any, and the next two slowest tests do not simulate
+>   at all — so the answer is genuinely open.
+> - **COST REDUCTION RANKS ABOVE SELECTIVE EXECUTION**, because the failure modes differ: a test
+>   made cheaper still runs, while a test skipped by a wrong selection heuristic is a **silent
+>   wrong negative** — the error this repository treats as the one nobody catches. The safe
+>   version of selection already exists (`slow-tests`, the FAST/FULL table); reach for more of it
+>   only where a test cannot be made cheap.
+> - **CUT `t_end`, AND PAY FOR IT WITH A NON-VACUITY ASSERTION PER TEST.** Doug: simulating 0.1 s
+>   is as useful as more, *for our current purposes*. **The exception is a test asserting a
+>   PHENOMENON rather than that integration ran.** `BouncingBall` is the case — a bounce is an
+>   event, and `has_discontinuities`, `discontinuity_segments` and *"discontinuities render as
+>   discontinuities"* all need one to occur inside `t_end`. Cut below the first bounce and they
+>   pass while checking nothing. **So name the phenomenon each simulation test needs and assert
+>   it**, which turns `t_end` from a number nobody dares touch into one anyone can tune safely.
+> - **CHANGE `t_end` AT THE CALL SITE, NEVER IN A SPECIMEN'S `experiment` ANNOTATION.** Those
+>   annotations are part of the System Modeler differential-test contract — identical tolerances
+>   and initial conditions (charter §4.3). `t_end` is already a parameter to `simulate`, so this
+>   costs nothing.
+>
+> **AND A CANDIDATE COST NEITHER LEVER REACHES, offered as a thing to measure.** The suite is
+> forced to `--test-threads=1`, and the expensive tests serialise on a global
+> `Mutex<WorkerState>` — **they are serial precisely because they SHARE the expensive resource,
+> the loaded MSL, and sharing is what makes them cheap.** So the real cost may be MSL loading,
+> which is invisible to both `t_end` and selective execution. **Measuring it is free; acting on
+> it is not** — see the compile-path prohibition in *The rules*, which that work would run
+> straight into.
+>
 > **The pattern that killed all four: a sum of slow-looking test names is not a measurement.**
 > Three were proposed from arithmetic over names and died on contact with a clock. **Measure
 > first.** `Running things` records where the ~354 s actually goes — about twenty tests carry ~129 s
 > of it, led by `all_healthy_specimens_simulate` (16 s).
+>
+> ### ⟶ AFTER `#48`: RESUME REFACTORING, AND THE GOAL IS BUGS — Doug, 2026-08-21
+>
+> **The `app.rs` arc's real return was defects found, not lines moved, and the numbers separate
+> cleanly.** `app.rs` shed **7,961 lines — and 5,613 of them, 71 %, came from one move that
+> refactored nothing** (the `cfg(test)` blocks). Extraction accounted for ~2,348. Meanwhile the
+> defect yield held steady across the whole arc: **eight found by extracting**, with the last three
+> iterations each still turning something up. **Two diverging curves, and the bugs are the one
+> worth buying.**
+>
+> **So: resume `app.rs` with bug discovery as the stated goal, then `worker.rs`.** The order is
+> Doug's. This is trigger 3 (testability), not a line-count target — which the policy above
+> refuses, and which the 71 % figure shows was never the thing delivering value anyway.
+>
+> **THE SEAM-SELECTION HEURISTIC CHANGES WITH THE GOAL, and this is the part a session will
+> otherwise get wrong.** Most of the arc chose seams by **cheapness** — the coupling table, the
+> zero-`self` sweep. **If the goal is defects, choose by where defects are likely**: code never
+> closely read, code that cannot currently be tested, and clusters of siblings where one member
+> may differ. The plan's cheap seams are spent; that is expected and is not a reason to stop.
+>
+> **AND RUN COLUMN-READ AUDITS AS A CHEAP PARALLEL ACTIVITY, because four of the eight defects
+> came from that ONE tool** — reading a list of siblings as a column and finding the odd member.
+> It found the stranded `Animate` arm, the alias defect, the Flatten stranding and the artifact
+> pane's missing gate. **It needs no extraction at all**, so it does not consume the
+> one-item-per-session budget. Extraction was the forcing function that made someone look, not the
+> mechanism that found them — so schedule the looking directly.
 >
 > ### ✅ THE `app.rs` SPLIT IS CLOSED — 2026-08-19 to 2026-08-21
 >
@@ -581,11 +708,13 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > - **An extraction may buy no test. Grep for the property before claiming it buys one**, since the
 >   claim is about the OLD code and is checkable in advance.
 >
-> **AND THE MEASUREMENT THE EXPERIMENT WAS FOR IS STILL OPEN.** `worker.rs` (10,594) was
-> deliberately **not** split, as the control: *if handoff frequency does not improve, splitting more
-> files is not the answer.* **Nothing has yet been measured against it**, and the confound named on
-> 2026-08-19 still stands — a model change and a file growing cannot be told apart by counting
-> handoffs, so the signal can only be read across a period where the model was stable.
+> **THE `worker.rs` CONTROL EXPERIMENT IS ABANDONED — Doug, 2026-08-21.** It was never going to
+> yield a measurement, for two reasons that are worth keeping because they generalise. **The
+> outcome variable was confounded**: handoff frequency cannot separate a file growing from the
+> Opus 4.6 → 5 change, which this file already says. **And a control must differ in one variable**,
+> while `worker.rs` differs in many — a compile path edited rarely, against UI code edited
+> constantly through the whole arc. It was a control in name only, so keeping it unsplit bought
+> nothing. **`worker.rs` is refactored after `app.rs`**, under the campaign below.
 >
 > ### A DOC COMMENT CAN BE ADOPTED BY THE WRONG ITEM — and there is now a checker
 >
