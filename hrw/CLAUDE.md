@@ -2002,8 +2002,18 @@ practice change on that theory before measuring it.
 were proposed from arithmetic over test names and died on contact with a clock. Measure the
 thing, then decide.
 
-**`--test-threads=1` is required** — two pre-existing tests race on process-global stdout and
-on `focus.json`, and the suite can **hang** under the default harness on a clean tree.
+**`--test-threads=1` is required, and since 2026-08-20 it is the DEFAULT** — two pre-existing
+tests race on process-global stdout and on `focus.json`, and the suite **deadlocks** under the
+default harness on a clean tree. `.cargo/config.toml` at the **workspace root** now sets
+`RUST_TEST_THREADS = "1"`, so a bare `cargo test` is correct too. The commands below keep the
+explicit flag: it is free, it survives someone running from a directory whose config differs, and
+it documents the requirement where the reader is.
+
+**Recognising it costs fifteen seconds, and output will not tell you.** `OutputCapture` owns
+fd 1, so a hung run **stops printing which test it is on** — the last line is whichever test
+flushed, not the culprit, and it will accuse an innocent one. Check the process instead:
+**frozen CPU time with every thread in `Wait`** is hung; accumulating CPU is merely slow. It was
+misread as slow for ninety minutes on 2026-08-20.
 
 **`cargo test` does not build the binary, and that gap is not theoretical.** On 2026-07-31 a
 `#[cfg(test)]` was placed above the first of three lifted helpers — **the attribute applies to

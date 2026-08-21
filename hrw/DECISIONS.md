@@ -3727,3 +3727,38 @@ than a coincidence.
   equal-line pair (`bbb.rs`, `zz/aaa.rs`) makes **one** assertion fire on all three regressions —
   dropping the recursion, keying on `file_name()`, and tiebreaking on the old key. Both were
   verified by perturbation.
+
+- **2026-08-20 — `RUST_TEST_THREADS = "1"` moves from prose into `.cargo/config.toml`.** The
+  parallel harness **deadlocks** this suite: two tests race on process-global state —
+  `worker::OutputCapture` hijacks fd 1/2 for the whole process, and `focus.json` is a fixed path —
+  and the test binary then sits at 1–2 GB with **frozen CPU time**, every thread in `Wait`, and
+  never returns. It was already documented as *"always pass `--test-threads=1`"* in `CLAUDE.md`
+  and in `docs/app-split-plan.md`, **and that did not prevent a third occurrence** (2026-08-19
+  twice, 2026-08-20 once, the last costing about ninety minutes). Prose cannot stop a bare
+  `cargo test`, so the setting now makes the *forgetful* invocation correct.
+
+  **The hang is uniquely expensive because it is SILENT, and that is the part worth remembering.**
+  `OutputCapture` owns fd 1, so once it is stuck **libtest's own result lines go into the capture
+  pipe** rather than to the terminal. The run stops reporting where it got to, so the ordinary
+  diagnostic — *which test was last?* — reads as a partial line from whichever test happened to
+  flush, and accuses the wrong one. The reliable signal is not the output at all: it is **frozen
+  CPU time on a process whose threads are all in `Wait`**, which distinguishes "hung" from "slow"
+  in fifteen seconds and needs no output whatsoever.
+
+  **Verified by perturbation in both directions**, since a setting that silently does nothing
+  would be worse than none: `cargo test -p hrw --lib worker::tests` from the workspace root, with
+  no flag, timed out at 300 s *before* and finished in 12.4 s *after*. Placement is the workspace
+  root rather than `hrw/`, and that is the whole point — cargo reads config from the CWD upward,
+  so an `hrw/.cargo/config.toml` is not read when running `-p hrw` from the root, which is exactly
+  how the third occurrence happened.
+
+  **The cost is about two seconds and is already paid**: hrw's 47 worker tests hold a global
+  `Mutex<WorkerState>` (Rumoca's `Session` is not thread-safe), so they serialize whatever
+  `--test-threads` says — `docs/ideas.md` #48 measured it. **This is not a reversal of #48.**
+  That item ruled out the *concurrency work* (per-test bridge directories, de-globalising the
+  stdout capture, per-thread workers) on a two-second speed return, and that ruling stands
+  untouched; this decision changes a default, not an architecture.
+
+  **It carries an upstream note in the file itself.** The line is HRW-motivated, applies to
+  `crates/rumoca-*` tests as well, and is **not** part of the instrumentation intended for a
+  CogniPilot PR — so it is marked for dropping when a cherry-pick is prepared.

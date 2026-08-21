@@ -1962,14 +1962,25 @@ iteration spends no time rediscovering them.
    comment, never above the first item.**
 3. **Regenerate `architecture.md` BEFORE the slow gate.** It carries module line counts, so
    every move stales it and  fails ~300 seconds in.
-4. **`cargo test -p hrw --lib` with default parallelism HANGS.** Observed twice on 2026-08-19,
-   reproducibly: the test binary sits at ~1 GB with **frozen CPU time** after roughly 250 of the
-   623 tests, and never returns. `-- --test-threads=1` runs the same 623 in **21 seconds**.
-   **Not attributed to any change** — no baseline run was taken, and the extraction that day was
-   a pure refactor of a rendering function. It is recorded because it cost this session two
-   ten-minute waits, and because `CLAUDE.md`'s gate already passes `--test-threads=1`, so the
-   documented workflow never meets it. **Always pass `--test-threads=1`**, including for the
-   fast between-edits run that `Cargo.toml` documents without it.
+4. **`cargo test -p hrw --lib` with default parallelism HANGS — FIXED AT THE DEFAULT 2026-08-20.**
+   Observed twice on 2026-08-19 and once more on 2026-08-20: the test binary sits at 1–2 GB with
+   **frozen CPU time**, every thread in `Wait`, and never returns. `.cargo/config.toml` at the
+   **workspace root** now sets `RUST_TEST_THREADS = "1"`, so this no longer depends on remembering
+   the flag; see `DECISIONS.md`. **Verified by perturbation both ways** — the same
+   `cargo test -p hrw --lib worker::tests` timed out at 300 s before and finished in 12.4 s after.
+
+   **THE THIRD OCCURRENCE IS THE FINDING, NOT THE HANG.** This entry already said *"always pass
+   `--test-threads=1`"*, and `CLAUDE.md` said it too, **and a session hit it anyway** — because a
+   documented rule does not survive contact with a command typed from memory. It cost about ninety
+   minutes. **A rule that has been written down twice and broken three times is not a documentation
+   problem; it is a missing default.**
+
+   **AND THE HANG HIDES WHICH TEST IT IS.** `worker::OutputCapture` hijacks fd 1 process-wide, so
+   once it is stuck **libtest's own output goes into the capture pipe** — the run stops reporting
+   progress, and the last visible line is whichever test flushed, not the one that hung. Ninety
+   minutes went into interrogating an innocent test that passes alone in 0.02 s. **The signal that
+   works is frozen CPU time on a process whose threads are all in `Wait`**, which separates hung
+   from slow in fifteen seconds and needs no output at all.
 
 ### Two findings from the first attempt at step 1 — 2026-08-19, reverted
 

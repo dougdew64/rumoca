@@ -40,6 +40,12 @@ too_many_arguments = "allow"
 #   cargo test -p hrw --lib                          # ~3s   (between edits)
 #   cargo test -p hrw --lib --features slow-tests    # ~3min (before committing)
 #
+# **Both lines are correct as written since 2026-08-20.** They omit
+# `-- --test-threads=1`, which used to make them a trap: the default parallel
+# harness DEADLOCKS this suite (two tests race on process-global stdout and on
+# `focus.json`). `.cargo/config.toml` at the workspace root now sets
+# `RUST_TEST_THREADS = "1"`, so the omission is safe — see `DECISIONS.md`.
+#
 # NOT a parallelism fix. Those 49 hold a global `Mutex<WorkerState>` (Rumoca's
 # `Session` is not thread-safe), so they serialize whatever `--test-threads` says;
 # removing `--test-threads=1` would save about two seconds. See `docs/ideas.md` #48
