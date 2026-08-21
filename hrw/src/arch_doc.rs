@@ -11,7 +11,10 @@
 //! Measured 2026-08-09, on a familiarisation read: **every one of its twenty
 //! module line counts was understated, several by more than 3×.** `app.rs` was
 //! cited at "~3,850" against a real 12,570; `worker.rs` at "~3,950 lines, the
-//! largest module" against 9,921 — and it is no longer the largest. Worse than
+//! largest module" against 9,921 — which was not the largest *that day*. It is
+//! again, since `app.rs`'s tests left for `app/tests.rs` on 2026-08-20, and this
+//! comment said otherwise until someone happened to read it: **a rank asserted in
+//! prose expires exactly like a count does, and neither leaves a gap.** Worse than
 //! any count, the pipeline it described had **ten stages and was missing `Dae`**,
 //! which was added on 2026-08-03 and never written in, so the document showed the
 //! chain jumping Flatten → Structural with the phase they both depend on absent.
@@ -705,9 +708,17 @@ mod tests {
             .iter()
             .find(|r| r.file == "app.rs")
             .expect("app.rs must be found");
+        // **The floor is deliberately loose, and it had been tightened one step too
+        // far.** It read `> 5_000` with the message *"`app.rs` is a five-figure
+        // file"*, which stopped being true the moment its 5,613 test lines left for
+        // `app/tests.rs` — the assertion still passed at 6,639, so the *message* was
+        // the part that went stale, silently. A tight floor here would fire on the
+        // split doing its job rather than on the thing this actually guards: a read
+        // that returns a truncated file.
         assert!(
-            app.lines > 5_000,
-            "app.rs is a five-figure file; {} suggests a truncated read",
+            app.lines > 1_000,
+            "app.rs runs to thousands of lines even with its tests in `app/tests.rs`; \
+             {} suggests a truncated read",
             app.lines
         );
     }

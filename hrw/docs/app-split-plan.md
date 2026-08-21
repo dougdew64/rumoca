@@ -224,6 +224,7 @@ purpose.
 | 2026-08-20 | **the spy-plot and incidence arms of `central_panel_ui`'s dispatch → `matrix_panes.rs`** — *the first cut INTO a router; the chain is now thirteen one-line arms* | **12,273** | `matrix_panes.rs` (451, of which 246 are tests) |
 | 2026-08-20 | **the navigation branch of `central_panel_ui` → `nav_view.rs`** — *the router's OUTERMOST list, which no census row had ever counted* | **12,250** | `nav_view.rs` (388, of which 220 are tests) |
 | 2026-08-20 | *(accuracy, not a move)* the navigated tree stops being annotated from the specimen — *`nav_view_ui` loses its `TreeOptions` parameter; net **zero** lines on `app.rs`* | 12,250 | `nav_view.rs` (483, of which 285 are tests) |
+| 2026-08-20 | **the five `cfg(test)` blocks → `app/tests.rs`** — *the experiment's **STEP CHANGE**, not an extraction: nothing refactored, no behaviour touched* | **6,639** | `app/tests.rs` (5,650, all of them tests) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -1429,22 +1430,22 @@ links the two.
 
 ## ⟶ THE NEXT TWO STEPS — decided 2026-08-20, do them in this order after a `/clear`
 
-> **STEP 1 IS DONE — 2026-08-20, `arch_doc` commit. STEP 2 IS THE NEXT UNIT OF WORK**, and it is
-> the whole session. The step-1 section below is kept as the record of what was decided and why;
-> read step 2.
+> **BOTH STEPS ARE DONE — 2026-08-20. THE NEXT UNIT OF WORK IS BACK TO THE ROUTERS**, listed at
+> the end of §Step 2. The two sections below are kept as the record of what was decided and why;
+> **what actually happened, and the one place the plan was wrong, is in
+> *"THE VERBATIM MOVE WOULD HAVE FALSIFIED FIFTEEN CITATIONS"* immediately after step 2.**
 >
-> **What landed**, in case step 2 needs it: `module_sizes()` splits into a floor plus
+> **Step 1 landed** (`arch_doc` commit): `module_sizes()` splits into a floor plus
 > `scan_modules(root)` (recursion, key, sort), rows are keyed by `/`-joined path relative to
-> `src/`, and `the_scan_recurses_and_keys_rows_by_relative_path` runs against a temp tree — so
-> **`app/tests.rs` will appear in the generated table the moment it exists**, keyed as
-> `` `app/tests.rs` ``, and step 2's only obligation to that document is to re-run
-> `cargo run -p hrw --example gen_architecture`. Both perturbations were verified to fire. Also
-> fixed: `MIN_MODULES`' comment said *"30 against 38"* against 55 files.
+> `src/`, and `the_scan_recurses_and_keys_rows_by_relative_path` runs against a temp tree. It paid
+> off exactly as designed — `` `app/tests.rs` `` appeared in the generated table the moment the
+> file existed, and step 2's whole obligation to that document was one
+> `cargo run -p hrw --example gen_architecture`. Also fixed there: `MIN_MODULES`' comment said
+> *"30 against 38"* against 55 files.
 >
-> **Still owed by step 2**, carried here so it is not lost with the section it sits in:
-> `module_sizes_are_scanned_and_ordered` asserts `app.lines > 5_000` with the message
-> *"`app.rs` is a five-figure file"* — **step 2 makes that message false** (6,637 is four
-> figures). Fix it in step 2's commit, or the perturbation it describes stops matching the code.
+> **Step 2 landed**: `app.rs` **12,250 → 6,639**, `app/tests.rs` 5,650. The owed message fix is
+> done and went further than owed — see the findings section, which records **two** expired
+> claims, the second of which was flipped back to false *by this move* after eleven days.
 
 **Doug's direction: `Continue the app.rs split` should land on these two, in order, and then go
 back to the routers.** They are one unit of work each under the stopping rule, so **step 1, then
@@ -1568,6 +1569,95 @@ block (~125), the default artifact pane (~152, the largest single block left), a
 Specimen left panel (~113).
 
 ---
+
+### ✅ DONE 2026-08-20 — THE VERBATIM MOVE WOULD HAVE FALSIFIED FIFTEEN CITATIONS
+
+**`app.rs` 12,250 → 6,639; `app/tests.rs` is 5,650.** The estimate of ~6,637 was three lines low
+(a blank line and the two-line `#[cfg(test)] mod tests;` declaration), which is the only thing
+about the size that needs saying.
+
+**THE PLAN'S ONE WRONG INSTRUCTION WAS "MOVE THE FIVE VERBATIM; DO NOT MERGE THEM".** Its reason
+was sound — *a move plus a merge is two changes, and only one of them can be verified by the suite
+going green unchanged* — but it was written before the naming consequence was visible. **This file
+*is* the module `app::tests`.** Nesting the old `mod tests { … }` inside it renames every one of
+its ~134 tests to `app::tests::tests::<name>`, and **fifteen places cite them as
+`app::tests::<name>`**: `DECISIONS.md`, `docs/ideas.md`, `docs/tech-debt.md`, `arch_doc.rs`,
+`doc_citations.rs` and `ui_tests.rs` — one of them inside an *assertion message*.
+
+**So the bulk block was flattened into the file body** and the other four moved verbatim. Every
+externally cited path is byte-identical; only the three small `tests_*` modules moved a level
+down, and nothing cites those.
+
+#### A TEST PATH IS A CITATION THAT NO CITATION CHECKER COVERS — the durable finding
+
+**`doc_citations` resolves cited *paths*, and a green suite says nothing about what the tests are
+*called*.** Renaming 134 tests breaks no build, fails no assertion, and leaves fifteen documents
+quietly pointing at nothing. This is the *count*-drift problem `arch_doc` was built for, wearing a
+different hat.
+
+**The check that closes it, and it is cheap enough to be routine:**
+
+```
+cargo test -p hrw --lib -- --list | grep ': test$' | sed 's/: test$//' | sort > before.txt
+# … do the move …
+diff before.txt after.txt
+```
+
+**Run it for any change that relocates a `mod tests`.** Here it read: 770 tests before, 770 after,
+every `app::tests::<name>` unchanged, and **exactly six lines moved** — the three nested modules
+gaining their `tests::` prefix. That is the assertion the suite cannot make, made in one command.
+
+**THE SECOND CHECK PROVES THE MOVE IS A MOVE, and together the two leave nothing to trust.** Diff
+the extracted body against the tail it came from, whitespace-insensitively:
+
+```
+git show HEAD:hrw/src/app.rs | sed -n '6638,12250p' > orig_tail.rs
+tail -n +46 src/app/tests.rs > new_body.rs
+diff -w -B orig_tail.rs new_body.rs
+```
+
+**Four differences, every one of them predicted**: `use super::*;` hoisted to the header, the
+`#[cfg(test)] mod tests {` wrapper and its closing `}` gone, and **two lines `cargo fmt` re-joined
+because the dedent let them fit inside `max_width`**. Token-identical everywhere else. A review
+that reads a 5,650-line new file cannot see that; this sees it in one command.
+
+#### TWO EXPIRED CLAIMS, AND THE SECOND WAS FLIPPED BY THIS MOVE ITSELF
+
+- **`module_sizes_are_scanned_and_ordered`** asserted `app.lines > 5_000` saying *"`app.rs` is a
+  five-figure file"*. The plan owed this fix and correctly predicted it. **The instructive half is
+  that the assertion still passed** at 6,639 — only the *message* went stale, so nothing could
+  have failed. Now `> 1_000`: a floor tight enough to track today's size would fire on the split
+  doing its job rather than on the truncated read it exists to catch.
+- **`arch_doc.rs`'s own module header** said `worker.rs` *"is no longer the largest"* module. True
+  when written on 2026-08-09, and **made false by this move eleven days later** — `worker.rs` is
+  the largest again at 10,594, because `app.rs` shed 5,613 lines. **That module exists to stop
+  `architecture.md` transcribing counts, and its header had been transcribing a *rank*.** A rank
+  expires exactly like a count and leaves no gap where it used to be true; the fix makes the
+  expiry itself the lesson rather than restating the new rank.
+
+#### What was checked and needed no fixing
+
+- **`use super::*;` resolves transitively through the file module.** The three nested `tests_*`
+  modules glob-import from `app::tests`, which glob-imports from `app` — a glob of a glob, which
+  Rust resolves because a private `use` in a parent is visible to its descendants. Checked by the
+  build, not assumed.
+- **The `#[cfg(test)] impl App` accessor block** kept its `pub(crate)` visibility to `ui_tests`,
+  which is still a *sibling of `app`* — an inherent impl is legal in any module of the crate, so
+  the methods are reachable as `App::…` regardless of where the impl sits. The comment inside it
+  saying *"`app::tests` reaches `App`'s private fields because it is a child module"* is **still
+  literally true**, which is the tell that the relationship did not change.
+- **The dedent was never performed.** The flattened body kept its old four-space indent and
+  `cargo fmt` reindented it, which is the plan's own dedent rule taken to its conclusion:
+  rustfmt will not touch the inside of a string literal, so letting it do the work removes the
+  hazard rather than checking for it. `cargo fmt --check` was clean before and after.
+- **The inner `#[cfg(test)]` attributes were kept** even though the module is already gated. They
+  are redundant, not false, and keeping them is what makes the diff readable as a pure move.
+
+**⟶ NEXT: back to the routers** — the sub-view row block (~125), the default artifact pane (~152,
+the largest single block left), and `frame_ui`'s Specimen left panel (~113).
+
+---
+
 
 ### A ROUTER'S SEAM IS AN ASYMMETRY AMONG ITS ARMS — 2026-08-20, `matrix_panes.rs`
 

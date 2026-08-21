@@ -763,7 +763,8 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > `compile_caches.rs` (101)**, and **the spy-plot + incidence arms of `central_panel_ui`'s
 > dispatch → `matrix_panes.rs` (451, 246 of them tests)**, and **the navigation branch of
 > `central_panel_ui` → `nav_view.rs` (388, 220 of them tests)**.
-> **app.rs 14,437 → 12,250** (11,857 after `report_sub_view`, plus the alias-defect guard below,
+> **app.rs 14,437 → 6,639** (12,250 after the last extraction; the test blocks then left for `app/tests.rs`
+> in one −5,613 step that refactored nothing — 11,857 after `report_sub_view`, plus the alias-defect guard below,
 > plus **+41 from the live-debug deduplication, +113 from the ack-path seam, +173 from the
 > cache-lifetime split and +51 from the ack-verdict test split, which are the finding rather than
 > a slip** — an accuracy or testability item is paid for *in* `app.rs`, so it cannot be scored on
@@ -828,42 +829,54 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > menu items are *not* independent are in
 > [`docs/app-split-plan.md`](docs/app-split-plan.md).
 >
-> ### ⟶ START HERE: MOVE `app.rs`'s TEST BLOCKS OUT — step 1 of two landed 2026-08-20
+> ### ✅ DONE 2026-08-20 — `app.rs`'s TEST BLOCKS LEFT: 12,250 → 6,639
 >
-> **`Continue the app.rs split` means this next**, then back to the routers. Full detail,
-> including the five block boundaries, is in
-> [`docs/app-split-plan.md`](docs/app-split-plan.md) under *"⟶ THE NEXT TWO STEPS"*. One unit of
-> work under the stopping rule.
+> **The step change the experiment wanted.** Every line from 6,638 to the end was test code and it
+> is now [`src/app/tests.rs`](src/app/tests.rs) (5,650). **Nothing was refactored and no behaviour
+> was touched** — a session reading the progress table later must not mistake this row for 5,613
+> lines of seam work. `worker.rs` is untouched and stays the control; it is now the largest module
+> again, at 10,594.
 >
-> **Move `app.rs`'s five `cfg(test)` blocks to `app/tests.rs` (new, under `src/`).** Everything
-> from line 6,638 to the end is test code — **5,613 of 12,250 lines** — and it is a clean tail,
-> verified. No `#[path]`, no `mod.rs`: Rust 2018 lets a file-module own a subdirectory, so
-> `src/app.rs` keeps `#[cfg(test)] mod tests;` and the body moves beneath it. `super` still means
-> `app`, and a child module keeps its parent's private access. **Move the five verbatim; do not
-> merge them** — a move plus a merge is two changes and only one is verified by the suite going
-> green unchanged. Afterwards re-run `cargo run -p hrw --example gen_architecture`, and fix
-> `module_sizes_are_scanned_and_ordered`'s *"`app.rs` is a five-figure file"* message, which the
-> move makes false.
+> **THE PLAN'S "MOVE THE FIVE BLOCKS VERBATIM" WOULD HAVE FALSIFIED FIFTEEN CITATIONS, and the
+> suite could not have told you.** This file *is* the module `app::tests`, so nesting the old
+> `mod tests { … }` inside it renames ~140 tests to `app::tests::tests::…` — and `DECISIONS.md`,
+> `docs/ideas.md`, `docs/tech-debt.md`, `arch_doc.rs`, `doc_citations.rs` and `ui_tests.rs` cite
+> fifteen of them as `app::tests::<name>`. **A test path is a citation that no citation checker
+> covers**: `doc_citations` resolves *paths*, and a green suite says nothing about what the tests
+> are *called*. So the bulk block was flattened into the file body and only the three small
+> `tests_*` modules stayed nested.
 >
-> **Step 1 is done and needs nothing further** *(`arch_doc`, 2026-08-20)*. `module_sizes()` now
-> recurses and keys rows by path relative to `src/`, so the new module appears in the generated
-> table as `` `app/tests.rs` `` rather than silently not existing. It had the failure mode its own
-> doc comment was written to prevent, and **`MIN_MODULES` could not have caught it** — a floor
-> only sees the count *fall*, and this makes it fail to *rise*.
+> **THE DURABLE PART IS THE CHECK, NOT THE DECISION.** `cargo test -p hrw --lib -- --list`,
+> diffed across the change, is the assertion the suite cannot make: 770 tests before and after,
+> every `app::tests::<name>` byte-identical, and exactly six lines moved — the three nested
+> modules, which nothing cites. **Run that diff for any move that relocates a `mod tests`.**
 >
-> **THE RULE AGAINST LINE-COUNT-ONLY EXTRACTIONS DOES NOT BAR THIS, and reading it as though it
-> did was a misreading of the rule's own second clause** — §2 admits *"the specific thing it stops
-> a session from having to hold"*, and 5,613 lines is that, stated. Doug ruled on it directly.
-> **The rule bars line count as a JUSTIFICATION, not as a MECHANISM.**
+> **Two expired claims fixed, both found by the move rather than by a checker:**
 >
-> **And it is the best-shaped probe the experiment has.** The outcome metric is noisy — the
-> Opus 4.6 → Opus 5 confound and Claude's verbosity both move it — and **a single −5,613 step is
-> readable through noise that would swallow twenty −150 extractions.** `worker.rs` stays the
-> control.
+> - `module_sizes_are_scanned_and_ordered` asserted `> 5_000` saying *"`app.rs` is a five-figure
+>   file"*. The **assertion** still passed at 6,639, so only the *message* went stale — silently.
+>   Now `> 1_000`, because a tight floor here would fire on the split doing its job rather than on
+>   the truncated read it guards.
+> - **`arch_doc.rs`'s own module header said `worker.rs` "is no longer the largest"** — true when
+>   written on 2026-08-09, and **flipped back by this very move**. That module exists to stop
+>   `architecture.md` transcribing counts, and its header had been transcribing a *rank*. **A rank
+>   expires exactly like a count, and neither leaves a gap.**
 >
-> **⟶ THEN back to the routers**: `central_panel_ui`'s sub-view row block (~125 lines, four
-> `*_ready` gates), the **default artifact pane** (the final `else` arm, ~152 lines, the largest
-> single block left), and `frame_ui`'s Specimen left panel (~113).
+> **Step 1 (`arch_doc` recursion) paid off as designed**: `` `app/tests.rs` `` appeared in the
+> generated table keyed by relative path the moment it existed, with no further work than
+> re-running `cargo run -p hrw --example gen_architecture`.
+>
+> ### ⟶ NEXT: BACK TO THE ROUTERS
+>
+> **The test move was the detour the plan scheduled; the remaining named work is `central_panel_ui`
+> and `frame_ui`.** In order: the **sub-view row block** (~125 lines, four `*_ready` gates), the
+> **default artifact pane** (the final `else` arm, ~152 lines of error-summary-beside-tree — the
+> largest single block left), and **`frame_ui`'s Specimen left panel** (~113), whose Purpose half
+> (~48 lines, zero `App` methods) is the twin of the already-extracted `specimen_source_ui` and
+> would sit beside it.
+>
+> **Ask "what is this a list of, and which member is shaped differently?" before looking for a
+> region** — and find the *outermost* list first, which is the rule `nav_view` bought.
 >
 > ### AND THE SIZE NUMBER IS NOT THE RETURN — Doug ruled on this 2026-08-20
 >
