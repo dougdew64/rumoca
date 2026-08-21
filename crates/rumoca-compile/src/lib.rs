@@ -67,7 +67,7 @@ pub mod source_roots {
     pub use crate::source_root_cache::{
         ParsedSourceRoot, SourceRootCacheStatus, SourceRootCacheTiming,
         parse_source_root_with_cache, parse_source_root_with_cache_in,
-        resolve_source_root_cache_dir, set_cache_root_override,
+        resolve_source_root_cache_dir, set_cache_root_override, source_root_input_cache_key,
     };
     pub use crate::source_root_discovery::{
         SourceRootDuplicateSkip, SourceRootLoadPlan, canonical_path_key,

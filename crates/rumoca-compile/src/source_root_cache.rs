@@ -406,6 +406,27 @@ fn load_source_root_documents_from_artifact_cache(
     ))
 }
 
+/// Fingerprint a source root's inputs without parsing or deserializing them.
+///
+/// Returns the same `cache_key` that [`ParsedSourceRoot`] carries, computed from
+/// the same inputs — the root's directory layout and every source file's bytes —
+/// but stopping before the parsed-artifact cache is consulted.
+///
+/// This exists so a caller holding an already-parsed source root can ask *"is what
+/// I hold still current?"* without paying to reload it. Comparing this key against
+/// the `cache_key` of a previously returned [`ParsedSourceRoot`] is exactly the
+/// freshness test the artifact cache performs internally, so a caller-side cache
+/// keyed on it cannot go stale where the artifact cache would not.
+///
+/// It is a pure query: nothing is read into the session and no cache is written.
+pub fn source_root_input_cache_key(path: &Path) -> Result<String> {
+    let files = collect_modelica_files(path)
+        .with_context(|| format!("collect .mo files under {}", path.display()))?;
+    Ok(hash_source_root_inputs(path, &files)
+        .with_context(|| format!("fingerprint {}", path.display()))?
+        .cache_key)
+}
+
 pub fn parse_source_root_with_cache_in(
     path: &Path,
     cache_dir: Option<&Path>,
