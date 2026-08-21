@@ -1814,9 +1814,54 @@ that reads a 5,650-line new file cannot see that; this sees it in one command.
 
 **⟶ NEXT: back to the routers** — ~~the sub-view row block (~125)~~ and ~~the default artifact
 pane (~152)~~ **both done 2026-08-21**, at 83 and 133 lines respectively; **`central_panel_ui` is
-finished**. What is left of the planned work is **`frame_ui`'s Specimen left panel** (~113),
-whose Purpose half (~48 lines, zero `App` methods) is the twin of the already-extracted
-`specimen_source_ui` and would sit beside it.
+finished**. Two items remain, and their order is fixed — see
+[**the two steps that close this plan**](#-the-two-steps-that-close-this-plan--doug-set-the-order-2026-08-21).
+
+---
+
+## ⟶ THE TWO STEPS THAT CLOSE THIS PLAN — Doug set the order 2026-08-21
+
+**Step 1 — `frame_ui`'s Specimen left panel.** Its Purpose half (~48 lines, zero `App` methods)
+is the twin of the already-extracted `specimen_source_ui` and would sit beside it. This is the
+last *extraction* the plan names.
+
+> **DO NOT RE-MEASURE THE ~113 FIRST — Doug ruled on this 2026-08-21**, when the previous session
+> queued exactly that: *"Let's not re-measure `frame_ui`'s ~113. This refactoring has been very,
+> very valuable, regardless of the number of lines of code which have been moved."*
+>
+> **The observation that produced the instruction was true and is kept; the instruction was
+> wrong.** Two consecutive estimates in this file *did* run high (~125 → 83, ~152 → 133), and
+> that is worth knowing when reading any figure here. But re-measuring first treats the line
+> count as the thing being planned, and [the size number is not the
+> return](#the-size-number-is-not-the-return-and-doug-has-ruled-on-that--2026-08-20) — a
+> measurement taken to price a decision the count does not decide is pure cost. **Read the body
+> to find the seam, which is the step that has actually mattered every time; let the number fall
+> out afterwards.**
+
+**Step 2 — THE DOC-COMMENT SWEEP, and it is the FINAL step of this plan.** Doug, 2026-08-21:
+*"Let's address the doc-comment sweep after the `frame_ui` refactor."*
+
+Run the two-summary detector (above, with its awk source) over every module and triage what it
+finds, reattaching each orphaned summary to the test or function it describes.
+
+- **Why it belongs to this plan at all:** every instance so far was found *by extracting* — the
+  merged blocks surfaced because a session read an item closely enough to decide whether to move
+  it. The sweep is the same work done deliberately instead of incidentally, and it is the one
+  finding from this arc that is known to be incomplete.
+- **Why it goes last:** it is a sweep, not an extraction, so it does not compete with the seam
+  work for the one-item-per-session budget — and running it after `frame_ui` means it covers the
+  final shape of `app.rs` rather than a shape about to change.
+- **What is known**, so the session does not re-derive it: `app/tests.rs` is **done** (8 fixed,
+  0 real hits left). Everything else is **unmeasured** — the detector reports 83 hits across
+  `src/*.rs`, which is a **hit count, not a defect count**, and the one `worker.rs` hit sampled
+  was a false positive. **Go in without an expectation; it may be largely noise.**
+- **The triage shortcut, measured:** list the file's *undocumented* items first and match by
+  name. Every orphan in `app/tests.rs` paired with an undocumented test that way. Reading merged
+  blocks top-down is far slower and is how only the first two were found.
+- **The finish line is a checker, if the noise floor allows one.** After triage, decide whether
+  the detector can become a ratcheted test in `doc_citations.rs`. If it cannot, **say so and why**
+  rather than leaving the question open — a detector nobody runs is the stale-artifact case this
+  repository already knows about.
 
 ---
 
@@ -1825,8 +1870,9 @@ whose Purpose half (~48 lines, zero `App` methods) is the twin of the already-ex
 **`app.rs` 6,587 → 6,521; `central_panel_ui` 430 → 322; `artifact_pane.rs` is 514 lines, 255 of
 them tests, 7 tests in 0.02 s.** The block was **133 lines, not the ~152 the plan carried** — the
 second estimate in two days to be high, and for the same reason: nobody re-measured after an
-earlier extraction moved the boundary. **Re-measure before planning against a figure this file
-quotes.**
+earlier extraction moved the boundary. **Treat any figure this file quotes as approximate, and do
+not spend a step re-measuring one** — Doug ruled that out the same day; see
+[the two steps that close this plan](#-the-two-steps-that-close-this-plan--doug-set-the-order-2026-08-21).
 
 **The column-read found the seam again, and this time the odd member is the one with no
 condition.** Every other arm of the dispatch chain asks whether its own sub-view is selected

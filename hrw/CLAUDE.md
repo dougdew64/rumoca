@@ -979,16 +979,22 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > on that file was **8 of 12**; across `src/*.rs` it reports **83**, which is *not* an orphan count
 > — the first `worker.rs` hit sampled was a false positive. **Do not quote 83 as a defect count.**
 >
-> ### ⟶ NEXT: `frame_ui`, THE LAST PLANNED SPLIT ITEM
+> ### ⟶ TWO STEPS CLOSE THE `app.rs` SPLIT, AND DOUG SET THEIR ORDER 2026-08-21
 >
-> **`central_panel_ui` is finished.** The one named item left is **`frame_ui`'s Specimen left
-> panel** (~113 lines), whose Purpose half (~48, zero `App` methods) is the twin of the
-> already-extracted `specimen_source_ui` and would sit beside it. **Re-measure the ~113 first** —
-> two consecutive estimates in this file have been high.
+> **`central_panel_ui` is finished.** What remains, in this order, is in
+> [`docs/app-split-plan.md`](docs/app-split-plan.md) under *"the two steps that close this plan"*:
 >
-> **A SWEEP IS ALSO OWED, and it is deliberately not part of that item:** run the two-summary
-> detector over the other modules and triage what it finds. It is a sweep, not an extraction, so
-> it is its own session under the stopping rule.
+> 1. **`frame_ui`'s Specimen left panel** (~113 lines) — the last extraction. Its Purpose half
+>    (~48, zero `App` methods) is the twin of the already-extracted `specimen_source_ui`.
+> 2. **The doc-comment sweep** — the two-summary detector over every module, triaged. *"Let's
+>    address the doc-comment sweep after the `frame_ui` refactor."*
+>
+> **DO NOT RE-MEASURE THE ~113 FIRST.** The previous session queued exactly that and Doug ruled it
+> out: *"Let's not re-measure `frame_ui`'s ~113. This refactoring has been very, very valuable,
+> regardless of the number of lines of code which have been moved."* Two estimates here really did
+> run high (~125 → 83, ~152 → 133) and that is worth knowing — but **re-measuring first prices a
+> decision the count does not decide**, which is the size-number ruling below applied to planning
+> rather than to reporting. **Read the body to find the seam; let the number fall out.**
 >
 > **Ask "what is this a list of, and which member is shaped differently?" before looking for a
 > region** — and find the *outermost* list first, which is the rule `nav_view` bought.
