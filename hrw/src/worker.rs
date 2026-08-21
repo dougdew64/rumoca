@@ -336,20 +336,6 @@ pub enum Outcome {
     Failed,
 }
 
-/// One pipeline stage's outcome for the selected model: the serialized IR node
-/// (if the stage produced one) plus an optional note (error or status).
-///
-/// This is the uniform envelope every stage tab in the UI receives. The UI
-/// doesn't know which pipeline stage it came from — it just renders:
-/// - `value`: the JSON IR tree (if the stage produced one), displayed in the
-///   generic tree inspector
-/// - `note`: an optional status/error message shown above the tree
-/// - `outcome`: [`Outcome`] — drives colour, and lets a census tell a *flagged*
-///   stage apart from a *failed* one
-///
-/// `#[derive(Clone, Default)]` — `Clone` because the progressive-streaming
-/// pattern sends clones mid-compile; `Default` gives "not yet computed"
-/// (`None`/`None`/`Ok`).
 /// **Where a pane's content came from** — the data half of Charter Decision 7.
 ///
 /// A stage tab is a claim: *this is what the compiler has for this phase*. Until
@@ -387,6 +373,20 @@ pub enum Provenance {
     Hrw,
 }
 
+/// One pipeline stage's outcome for the selected model: the serialized IR node
+/// (if the stage produced one) plus an optional note (error or status).
+///
+/// This is the uniform envelope every stage tab in the UI receives. The UI
+/// doesn't know which pipeline stage it came from — it just renders:
+/// - `value`: the JSON IR tree (if the stage produced one), displayed in the
+///   generic tree inspector
+/// - `note`: an optional status/error message shown above the tree
+/// - `outcome`: [`Outcome`] — drives colour, and lets a census tell a *flagged*
+///   stage apart from a *failed* one
+///
+/// `#[derive(Clone, Default)]` — `Clone` because the progressive-streaming
+/// pattern sends clones mid-compile; `Default` gives "not yet computed"
+/// (`None`/`None`/`Ok`).
 #[derive(Clone, Default)]
 pub struct Stage {
     pub value: Option<serde_json::Value>,
@@ -3003,28 +3003,6 @@ pub fn simulate_library_model(
     )
 }
 
-/// Structural analysis of the model's DAE: maximum matching, BLT blocks,
-/// and tearing, from `build_structural_report`, plus the raw incidence matrix
-/// (equation x unknown bipartite adjacency) from `build_incidence`. Only available
-/// on a full Success (the DAE must exist). The report types aren't `Serialize`,
-/// so we build JSON manually via `structural_to_json` / `incidence_to_json`.
-///
-/// # The `PhaseResult` matching pattern
-///
-/// Every stage-extraction function follows the same pattern: match on
-/// `Option<&PhaseResult>` to handle the four possible outcomes:
-/// - `Some(Success(cr))` — the pipeline succeeded; extract the stage from `cr`
-/// - `Some(Failed { phase, .. })` — an earlier phase failed; show which one
-/// - `Some(NeedsInner { .. })` — the model needs inner declarations (rare)
-/// - `None` — the pipeline produced no result at all
-///
-/// This pattern appears in every `*_stage()` function below. The match arms
-/// are exhaustive (Rust enforces this), so if Rumoca adds a new `PhaseResult`
-/// variant, every extraction function will get a compile error until updated.
-///
-/// Rumoca API: `build_structural_report(&dae)` runs maximum matching +
-/// BLT decomposition. `build_incidence(&dae)` builds the equation x unknown
-/// bipartite adjacency matrix (which equations reference which unknowns).
 /// If the pipeline result is a non-success variant (failed, needs inner, or
 /// absent), return the appropriate placeholder Stage. Returns `None` when
 /// the result is `Success` — the caller should handle that case.
@@ -3285,6 +3263,28 @@ pub struct StructuralFrames {
     pub tearing: Vec<Vec<rumoca_phase_structural::tearing::TearingFrame>>,
 }
 
+/// Structural analysis of the model's DAE: maximum matching, BLT blocks,
+/// and tearing, from `build_structural_report`, plus the raw incidence matrix
+/// (equation x unknown bipartite adjacency) from `build_incidence`. Only available
+/// on a full Success (the DAE must exist). The report types aren't `Serialize`,
+/// so we build JSON manually via `structural_to_json` / `incidence_to_json`.
+///
+/// # The `PhaseResult` matching pattern
+///
+/// Every stage-extraction function follows the same pattern: match on
+/// `Option<&PhaseResult>` to handle the four possible outcomes:
+/// - `Some(Success(cr))` — the pipeline succeeded; extract the stage from `cr`
+/// - `Some(Failed { phase, .. })` — an earlier phase failed; show which one
+/// - `Some(NeedsInner { .. })` — the model needs inner declarations (rare)
+/// - `None` — the pipeline produced no result at all
+///
+/// This pattern appears in every `*_stage()` function. The match arms
+/// are exhaustive (Rust enforces this), so if Rumoca adds a new `PhaseResult`
+/// variant, every extraction function will get a compile error until updated.
+///
+/// Rumoca API: `build_structural_report(&dae)` runs maximum matching +
+/// BLT decomposition. `build_incidence(&dae)` builds the equation x unknown
+/// bipartite adjacency matrix (which equations reference which unknowns).
 fn structural_stage(result: Option<&PhaseResult>, source: &str) -> (Stage, StructuralFrames) {
     let empty = || StructuralFrames {
         matching: Vec::new(),
@@ -3938,7 +3938,6 @@ fn partial_matching_to_json(
     serde_json::Value::Array(pairs)
 }
 
-/// Convert a `StructuralError` into structured JSON for UI rendering.
 /// Convert a `StructuralError` into structured JSON for the UI and for Claude.
 ///
 /// Takes the specimen `source` so unmatched unknowns can be reported with the line
@@ -4111,11 +4110,12 @@ fn block_to_json(b: &rumoca_phase_structural::BlockReport) -> serde_json::Value 
     }
 }
 
-/// Convert a tearing report to JSON. Tearing reduces a coupled block's
-/// iteration size: "tear variables" are guessed, the remaining equations
-/// are solved causally (one at a time), and the residual equations check
-/// convergence. The causal sequence is the order of the sequential solves.
 /// The tearing report, with an identity beside every equation it names.
+///
+/// Tearing reduces a coupled block's iteration size: "tear variables" are
+/// guessed, the remaining equations are solved causally (one at a time), and
+/// the residual equations check convergence. The causal sequence is the order
+/// of the sequential solves.
 ///
 /// **`TearingReport` keeps labels only**, like the rest of `StructuralReport`, so
 /// these ids are derived by [`crate::equation_id_from_label`] and checked against the
@@ -9746,6 +9746,21 @@ struct ReductionReport {
     n_differentiations: usize,
 }
 
+/// Index-reduce a DAE in place, discarding the report.
+///
+/// The Structural and Index Reduction tabs describe *different systems*: the
+/// raw DAE and the reduced one. A view that reconstructs compiler state from a
+/// DAE (the tearing replay) therefore needs the reduced DAE when it is showing
+/// the Index Reduction tab. Re-running the funnel is cheap and pure, which
+/// beats caching a second DAE that the two tabs would have to keep in sync.
+/// `pub` rather than `pub(crate)` so `examples/survey_msl.rs` runs the **same**
+/// funnel HRW does. A second copy in the survey would drift from this one, and
+/// the funnel's step ORDER mirrors rumoca-sim's internals — `docs/updating-rumoca.md`
+/// step 3 exists because a reordering upstream is invisible to the compiler.
+pub fn index_reduce_in_place(dae: &mut rumoca_ir_dae::Dae) {
+    let _ = index_reduce_for_structural_analysis(dae);
+}
+
 /// Apply Rumoca's index-reduction / dummy-derivative funnel to a DAE in place,
 /// returning a structured report of what each step did.
 ///
@@ -9787,21 +9802,6 @@ struct ReductionReport {
 /// All funnel steps come from `rumoca_phase_structural::dae_prepare` (aliased
 /// as `dp`). They mutate the DAE in place (`&mut Dae`) and return either
 /// `Result<usize, Error>` (count of states demoted) or `Result<(), Error>`.
-/// Index-reduce a DAE in place, discarding the report.
-///
-/// The Structural and Index Reduction tabs describe *different systems*: the
-/// raw DAE and the reduced one. A view that reconstructs compiler state from a
-/// DAE (the tearing replay) therefore needs the reduced DAE when it is showing
-/// the Index Reduction tab. Re-running the funnel is cheap and pure, which
-/// beats caching a second DAE that the two tabs would have to keep in sync.
-/// `pub` rather than `pub(crate)` so `examples/survey_msl.rs` runs the **same**
-/// funnel HRW does. A second copy in the survey would drift from this one, and
-/// the funnel's step ORDER mirrors rumoca-sim's internals — `docs/updating-rumoca.md`
-/// step 3 exists because a reordering upstream is invisible to the compiler.
-pub fn index_reduce_in_place(dae: &mut rumoca_ir_dae::Dae) {
-    let _ = index_reduce_for_structural_analysis(dae);
-}
-
 fn index_reduce_for_structural_analysis(
     dae: &mut rumoca_ir_dae::Dae,
 ) -> (
@@ -10286,14 +10286,6 @@ thread_local! {
     static TRACE_BUFFER: RefCell<Vec<(tracing::Level, String)>> = const { RefCell::new(Vec::new()) };
 }
 
-/// Drain all buffered tracing events and forward them as log entries.
-///
-/// Called after each Rumoca API call in `compile()` and `simulate()`.
-/// `TRACE_BUFFER.with(|buf| ...)` accesses this thread's buffer.
-/// `buf.borrow_mut().drain(..)` takes all elements out of the Vec (leaving
-/// it empty) and iterates over them. The `&dyn Fn(...)` parameter is a
-/// trait object — dynamic dispatch (vs `&impl Fn` which is static dispatch).
-/// Used here because `drain_traces` is called from multiple contexts.
 /// **Phases that cannot produce tracing output, and why.**
 ///
 /// Turning tracing on and watching a phase stay silent is ambiguous: it means
@@ -10498,6 +10490,14 @@ fn attribute_traces(traces: CapturedTraces, target: &str) -> (CapturedTraces, Ca
         .partition(|(_, msg)| msg.starts_with(&marker))
 }
 
+/// Drain all buffered tracing events and forward them as log entries.
+///
+/// Called after each Rumoca API call in `compile()` and `simulate()`.
+/// `TRACE_BUFFER.with(|buf| ...)` accesses this thread's buffer.
+/// `buf.borrow_mut().drain(..)` takes all elements out of the Vec (leaving
+/// it empty) and iterates over them. The `&dyn Fn(...)` parameter is a
+/// trait object — dynamic dispatch (vs `&impl Fn` which is static dispatch).
+/// Used here because `drain_traces` is called from multiple contexts.
 fn drain_traces(log_fn: &dyn Fn(LogLevel, String)) {
     TRACE_BUFFER.with(|buf| {
         for (level, msg) in buf.borrow_mut().drain(..) {

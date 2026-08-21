@@ -459,8 +459,6 @@ impl TourSource {
         }
     }
 
-    /// Label for the picker. The ad hoc tour is named by what it *is* rather than by
-    /// its filename, which is an implementation detail nobody should have to know.
     /// The specimens a tour points at, in first-appearance order.
     ///
     /// **Doug went looking for a "DimensionMismatch tour" and it is called
@@ -486,6 +484,8 @@ impl TourSource {
         seen
     }
 
+    /// Label for the picker. The ad hoc tour is named by what it *is* rather than by
+    /// its filename, which is an implementation detail nobody should have to know.
     pub(crate) fn label(&self) -> String {
         match self {
             // **`✨ Answer`, shortened 2026-08-19.** The sparkle identifies it — the only

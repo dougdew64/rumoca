@@ -447,15 +447,6 @@ impl Seg {
     }
 }
 
-/// Format a key-path as a human-readable dotted string.
-///
-/// Examples:
-/// - `[Key("components"), Key("inertia"), Key("def_id")]` -> `"components.inertia.def_id"`
-/// - `[Key("equations"), Index(0), Key("Connect")]` -> `"equations[0].Connect"`
-/// - `[]` -> `"(tree root)"`
-///
-/// Used in the UI status bar to show what was captured, and in the bridge
-/// focus file as a human-readable path alongside the machine-readable key array.
 /// Parse a path written by [`describe_path`] back into segments.
 ///
 /// **The documented inverse**, so `hrw://…/node/<path>` accepts exactly the string a
@@ -556,6 +547,15 @@ fn key_needs_quoting(k: &str) -> bool {
     k.is_empty() || k.contains(['.', '[', ']', '"', '\\'])
 }
 
+/// Format a key-path as a human-readable dotted string.
+///
+/// Examples:
+/// - `[Key("components"), Key("inertia"), Key("def_id")]` -> `"components.inertia.def_id"`
+/// - `[Key("equations"), Index(0), Key("Connect")]` -> `"equations[0].Connect"`
+/// - `[]` -> `"(tree root)"`
+///
+/// Used in the UI status bar to show what was captured, and in the bridge
+/// focus file as a human-readable path alongside the machine-readable key array.
 pub fn describe_path(path: &[Seg]) -> String {
     if path.is_empty() {
         return "(tree root)".to_owned();

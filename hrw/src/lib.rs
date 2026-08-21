@@ -129,21 +129,6 @@ pub fn byte_offset_to_line(source: &str, byte_offset: usize) -> u32 {
     source[..clamped].bytes().filter(|&b| b == b'\n').count() as u32 + 1
 }
 
-/// Where an animation view is in the live-debug lifecycle.
-///
-/// Replaces the `is_live` / `live_finished` boolean pair. Four states, not
-/// three: `Arming` is distinct from `Running` because the Debug button's
-/// breakpoint handshake takes several frames, during which the view is still
-/// showing the *recorded* animation — so neither boolean could express "a live
-/// session is starting" and the controls stayed live-looking until the
-/// algorithm thread actually spawned.
-///
-/// ## UI rule
-///
-/// **Controls are enabled and disabled, never shown and hidden.** A button that
-/// vanishes gives no clue that the action exists or why it is unavailable, and
-/// the row reflows under the pointer. Everything stays in place; only
-/// interactivity changes.
 /// How long [`LiveTrace::push`] sleeps between sending a frame and hitting the
 /// breakpoint anchor, when a human is stepping the session in a debugger.
 ///
@@ -189,6 +174,21 @@ pub fn live_frame_delay(breakpoint_armed: bool) -> std::time::Duration {
     }
 }
 
+/// Where an animation view is in the live-debug lifecycle.
+///
+/// Replaces the `is_live` / `live_finished` boolean pair. Four states, not
+/// three: `Arming` is distinct from `Running` because the Debug button's
+/// breakpoint handshake takes several frames, during which the view is still
+/// showing the *recorded* animation — so neither boolean could express "a live
+/// session is starting" and the controls stayed live-looking until the
+/// algorithm thread actually spawned.
+///
+/// ## UI rule
+///
+/// **Controls are enabled and disabled, never shown and hidden.** A button that
+/// vanishes gives no clue that the action exists or why it is unavailable, and
+/// the row reflows under the pointer. Everything stays in place; only
+/// interactivity changes.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum LiveState {
     /// No live session. Ordinary recorded playback.
@@ -496,10 +496,6 @@ pub fn draw_matrix_axis_labels(
     }
 }
 
-/// Extract a JSON array of strings into a `Vec<String>`.
-///
-/// Defensive — returns an empty vec if the value is missing or not an array.
-/// Used by multiple views to extract equation names, unknown names, etc.
 /// [`str_vec`], but says what it could not read.
 ///
 /// **The shared helper was the `filter_map` audit's blind spot** (2026-08-04). That
@@ -538,6 +534,10 @@ pub fn str_vec_checked(v: Option<&serde_json::Value>, what: &str) -> (Vec<String
     (out, problem)
 }
 
+/// Extract a JSON array of strings into a `Vec<String>`.
+///
+/// Defensive — returns an empty vec if the value is missing or not an array.
+/// Used by multiple views to extract equation names, unknown names, etc.
 pub fn str_vec(v: Option<&serde_json::Value>) -> Vec<String> {
     v.and_then(|v| v.as_array())
         .map(|a| {

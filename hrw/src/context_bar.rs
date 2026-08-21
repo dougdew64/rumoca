@@ -206,11 +206,28 @@ pub(crate) enum ContextBarPress {
     GoToClass(String),
 }
 
-/// The bar, once something is assembled.
+/// The bar, once something is assembled: what Claude can see right now.
 ///
 /// The caller guarantees that `context.pointed_at` or `tracked_identifier` is
 /// `Some` — the empty state is `App`'s branch, not this one — and that
 /// `refresh_jump_matches` has already run for the current stage and follow.
+///
+/// ## The rule this obeys
+///
+/// **It renders what will be emitted — nothing more, nothing less.** If it
+/// showed context Claude does not receive, or omitted context Claude does,
+/// questions would be calibrated against a fiction. Built as a view of the
+/// payload, it cannot drift, because there is nothing to drift from.
+///
+/// Hence three rows and no fourth: *pointing at* and *following* are the two
+/// shapes of assembled context, and *always* is the standing context —
+/// stage IRs, the DefId table, the libraries — that the old UI never
+/// mentioned at all, leaving the user to underestimate what a question had
+/// behind it.
+///
+/// Controls here are only those that **change** what is emitted. Navigation
+/// is not context, so the declaring class is a link rather than a button.
+/// See `docs/context-assembly.md`.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn context_bar_ui(
     ui: &mut egui::Ui,

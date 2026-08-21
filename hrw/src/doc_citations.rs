@@ -3397,3 +3397,204 @@ mod tests_tour_link_form {
         let _ = checked;
     }
 }
+
+#[cfg(test)]
+mod tests_orphaned_docs {
+    use std::path::PathBuf;
+
+    /// A `///` line that opens a **new summary in the middle of a doc block** — the
+    /// shape a merged doc block has, and the only automatable half of the
+    /// wrong-owner defect.
+    ///
+    /// Rust concatenates contiguous `///` lines, so an item inserted above another
+    /// item's doc comment silently adopts it and the original loses its own. See
+    /// `CLAUDE.md`, *"a doc comment can be adopted by the wrong function"*.
+    ///
+    /// The three conditions, all required, and the third is what keeps the rate
+    /// tolerable — without it every wrapped line reports:
+    ///
+    /// 1. a non-blank `///` line,
+    /// 2. whose previous line is a non-blank `///` that **ends a sentence**,
+    /// 3. and whose next line is a bare `///`, so this line is a one-line paragraph.
+    ///
+    /// **Condition 3 is also this detector's known blind spot**, measured
+    /// 2026-08-21: `lib.rs`'s `STEPPED_FRAME_DELAY` summary wraps onto a second
+    /// line, so the real orphan above it was invisible here and had to be found by
+    /// hand. Relaxing 3 to allow a two-line summary doubles the hit count
+    /// (87 → 169 on the tree as it stood), which is why it is not relaxed.
+    fn opens_a_second_summary(prev: &str, cur: &str, next: &str) -> bool {
+        fn is_doc(s: &str) -> bool {
+            s.trim_start()
+                .strip_prefix("///")
+                .is_some_and(|r| !r.trim().is_empty())
+        }
+        fn is_blank_doc(s: &str) -> bool {
+            s.trim_start()
+                .strip_prefix("///")
+                .is_some_and(|r| r.trim().is_empty())
+        }
+        fn ends_sentence(s: &str) -> bool {
+            let t = s.trim_end().trim_end_matches('"');
+            t.ends_with(['.', '!', '?', '*', '`', ')', ']', '"'])
+        }
+        is_doc(cur) && is_doc(prev) && ends_sentence(prev) && is_blank_doc(next)
+    }
+
+    fn hits(text: &str) -> Vec<usize> {
+        let lines: Vec<&str> = text.lines().collect();
+        (1..lines.len().saturating_sub(1))
+            .filter(|&i| opens_a_second_summary(lines[i - 1], lines[i], lines[i + 1]))
+            .map(|i| i + 1)
+            .collect()
+    }
+
+    /// **A doc block must not gain a second opening summary** — the merged-block
+    /// defect, ratcheted per file.
+    ///
+    /// # Why a ratchet rather than a zero
+    ///
+    /// The shape is **necessary but not sufficient**: ordinary prose produces it
+    /// whenever a wrapped continuation line happens to end a sentence. The
+    /// 2026-08-21 sweep triaged all 87 hits in the tree and found **25 real
+    /// orphans in 24 blocks** — a precision of about 29 %, far above the *"it may
+    /// be largely noise"* the plan had guessed from a single sample, and far below
+    /// anything that could be asserted to zero. The 65 that remain are all
+    /// continuation lines, each read individually.
+    ///
+    /// # Why per file rather than one total
+    ///
+    /// **Forty files are at zero**, so a merged block in any of them fails here by
+    /// name rather than nudging a global counter nobody can attribute. The
+    /// eighteen with a budget are the prose-heavy modules.
+    ///
+    /// # What this cannot claim
+    ///
+    /// **29 % is precision on the STOCK, not on the flow.** It says what fraction
+    /// of the hits standing on 2026-08-21 were defects; it says nothing about what
+    /// fraction of the *next* hit will be. So a failure here is *"go and look"*,
+    /// exactly like [`super::tests::app_does_not_regrow_its_field_count`] — and if
+    /// the new hit is ordinary prose, raise that file's number **in the same
+    /// commit as the reasoning**.
+    ///
+    /// The triage shortcut, measured on every one of the 25: list the file's
+    /// **undocumented** items and match the orphaned summary to one by name. Every
+    /// orphan but three paired that way, and reading the merged block top-down is
+    /// far slower. The three exceptions are the variants with no owner to match —
+    /// a doc left by a deleted field, one superseded by a rewrite, and one whose
+    /// owner moved to another module.
+    ///
+    /// **This test's own prose is part of the corpus it scans**, which is why
+    /// `doc_citations.rs` carries a budget at all; editing this comment can move
+    /// that number, and that is the same self-reference
+    /// `no_test_arms_a_breakpoint_on_the_watched_path` records one file over.
+    #[test]
+    fn no_doc_block_gains_a_second_summary() {
+        // Measured 2026-08-21, after the sweep reattached 25 orphans. Every file
+        // absent from this table must have zero.
+        const BUDGET: &[(&str, usize)] = &[
+            ("app.rs", 9),
+            ("app/tests.rs", 4),
+            ("bridge.rs", 9),
+            ("colors.rs", 1),
+            ("doc_citations.rs", 3),
+            ("equation_sheet.rs", 1),
+            ("lib.rs", 2),
+            ("matching_anim.rs", 2),
+            ("matching_ledger.rs", 1),
+            ("model_list.rs", 1),
+            ("source_view.rs", 1),
+            ("spyplot.rs", 2),
+            ("stage_view.rs", 1),
+            ("sub_view_rows.rs", 1),
+            ("tarjan_anim.rs", 2),
+            ("tour_panel.rs", 1),
+            ("ui_tests.rs", 5),
+            ("worker.rs", 19),
+        ];
+
+        let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut files: Vec<(String, Vec<usize>)> = Vec::new();
+        let mut walk = vec![src.clone()];
+        while let Some(dir) = walk.pop() {
+            for e in std::fs::read_dir(&dir)
+                .expect("src must be readable")
+                .flatten()
+            {
+                let p = e.path();
+                if p.is_dir() {
+                    walk.push(p);
+                } else if p.extension().and_then(|x| x.to_str()) == Some("rs") {
+                    let rel = p
+                        .strip_prefix(&src)
+                        .expect("under src")
+                        .to_string_lossy()
+                        .replace('\\', "/");
+                    let text = std::fs::read_to_string(&p).expect("readable");
+                    files.push((rel, hits(&text)));
+                }
+            }
+        }
+
+        // Non-vacuity: the scan reached the tree, not an empty directory.
+        assert!(
+            files.len() > 40,
+            "only {} source files scanned \u{2014} the walk is broken, not the tree",
+            files.len(),
+        );
+
+        let mut over: Vec<String> = Vec::new();
+        for (rel, found) in &files {
+            let allowed = BUDGET
+                .iter()
+                .find(|(f, _)| *f == rel)
+                .map_or(0, |(_, n)| *n);
+            if found.len() > allowed {
+                let lines: Vec<String> = found.iter().map(usize::to_string).collect();
+                over.push(format!(
+                    "{rel}: {} hits, budget {allowed} (lines {})",
+                    found.len(),
+                    lines.join(", "),
+                ));
+            }
+        }
+
+        assert!(
+            over.is_empty(),
+            "a doc block gained a second opening summary \u{2014} check whether an item was \
+             inserted above another item's doc comment, or a rewrite was written above the \
+             old doc instead of replacing it. Triage by listing the file's UNDOCUMENTED \
+             items and matching the orphaned summary to one by name. If it is ordinary \
+             prose, raise the budget in the same commit as the reasoning:\n  {}",
+            over.join("\n  "),
+        );
+    }
+
+    /// **The detector still fires** — the must-fire half, since every
+    /// assertion above is about an absence.
+    ///
+    /// Builds the exact shape the real defect has: one item's doc, ending a
+    /// sentence, immediately followed by a second item's one-line summary.
+    #[test]
+    fn a_merged_doc_block_is_detected() {
+        let merged = "/// The first item's summary.\n\
+                      ///\n\
+                      /// A body paragraph that ends a sentence.\n\
+                      /// The second item's summary.\n\
+                      ///\n\
+                      /// Its own body.\n\
+                      fn second() {}\n";
+        assert_eq!(hits(merged), vec![4], "the merged summary must be found");
+
+        let clean = "/// The only summary.\n\
+                     ///\n\
+                     /// A body paragraph that ends a sentence.\n\
+                     ///\n\
+                     /// Another body paragraph.\n\
+                     fn only() {}\n";
+        assert!(
+            hits(clean).is_empty(),
+            "a well-formed block must not report: {:?}",
+            hits(clean),
+        );
+    }
+}

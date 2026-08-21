@@ -29,7 +29,6 @@ use crate::incidence_view::IncidenceMatrix;
 use crate::playback::{Animated, Playback};
 use crate::truncate_label;
 
-/// Animation state for Tarjan SCC discovery — supports recorded and live modes.
 /// Where equation `i` sits in world space, for a graph of `n_nodes` equations.
 ///
 /// **The single source of truth for this view's layout.** Drawing and camera aiming both
@@ -49,6 +48,7 @@ fn grid_cols(n_nodes: usize) -> usize {
 /// Seconds between auto-advance frames.
 const FRAME_INTERVAL: f64 = 0.5;
 
+/// Animation state for Tarjan SCC discovery — supports recorded and live modes.
 pub struct TarjanAnimation {
     /// Cursor, timing and live-session state — see [`Playback`].
     playback: Playback<TarjanFrame>,
@@ -67,6 +67,13 @@ pub struct TarjanAnimation {
 
 /// Build the equation dependency graph from a matching result.
 /// Factored out so both `from_incidence` and `start_live` can use it.
+///
+/// The edge rule, which is what makes the graph Tarjan runs on meaningful:
+/// **equation A depends on equation B when A references a variable matched to
+/// B**. Tarjan's SCC search is then traced over that graph.
+/// *(Reattached here 2026-08-21 from a stale `from_incidence` summary that the
+/// capture scopes had superseded — it was the only statement of the edge rule
+/// in this file.)*
 fn build_dep_graph(
     mat: &IncidenceMatrix,
     match_eq: &[Option<usize>],
@@ -94,11 +101,6 @@ fn build_dep_graph(
 }
 
 impl TarjanAnimation {
-    /// Build the Tarjan trace from a parsed incidence matrix (recorded mode).
-    ///
-    /// First runs matching to build the dependency graph (equation A
-    /// depends on equation B if A references a variable matched to B),
-    /// then traces Tarjan's SCC algorithm on that graph.
     /// Build from **frames captured during the compile**.
     ///
     /// Both searches come from the run that produced the BLT blocks on screen:
@@ -246,18 +248,6 @@ impl TarjanAnimation {
         })
     }
 
-    /// Where playback stands: `(cursor, frame count)`.
-    ///
-    /// Exists for the crash log (`diagnostics.rs`). "Which animation, at which
-    /// frame" is one of the first things worth knowing about a crash in an
-    /// animated view, and both fields are otherwise private.
-    /// Aim this view's camera at equation `i`, if it exists.
-    ///
-    /// Out-of-range indices are ignored rather than clamped: a tour naming an equation
-    /// this model does not have is a **bug in the tour**, and silently aiming somewhere
-    /// plausible would hide it. Returns whether the aim was taken, so the caller can
-    /// tell "aimed" from "that equation is not here".
-    #[must_use]
     /// **The strongly connected components this animation ends on** — the
     /// blocks HRW re-derived, as opposed to the ones Rumoca reported.
     ///
@@ -272,6 +262,7 @@ impl TarjanAnimation {
     /// announces is precisely the one missing from its own snapshot. On a graph
     /// that is a single SCC — `ProportionalLoop` — reading the last frame
     /// therefore yields an empty partition, which is how this was found.
+    #[must_use]
     pub fn final_sccs(&self) -> Vec<Vec<usize>> {
         self.playback
             .frames()
@@ -283,6 +274,12 @@ impl TarjanAnimation {
             .collect()
     }
 
+    /// Aim this view's camera at equation `i`, if it exists.
+    ///
+    /// Out-of-range indices are ignored rather than clamped: a tour naming an equation
+    /// this model does not have is a **bug in the tour**, and silently aiming somewhere
+    /// plausible would hide it. Returns whether the aim was taken, so the caller can
+    /// tell "aimed" from "that equation is not here".
     pub fn aim_at_equation(&self, canvas: &mut Canvas, i: usize) -> bool {
         if i >= self.n_nodes {
             return false;
@@ -301,6 +298,11 @@ impl Animated for TarjanAnimation {
         "tarjan"
     }
 
+    /// Where playback stands: `(cursor, frame count)`.
+    ///
+    /// Exists for the crash log (`diagnostics.rs`). "Which animation, at which
+    /// frame" is one of the first things worth knowing about a crash in an
+    /// animated view, and both fields are otherwise private.
     fn position(&self) -> (usize, usize) {
         self.playback.position()
     }

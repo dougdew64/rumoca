@@ -110,17 +110,6 @@ pub struct Violation {
     pub detail: String,
 }
 
-/// Run every subject-based and view-based check on one compiled model.
-///
-/// `reduced` is `Option` and that is the point: **index reduction is capped by
-/// system size**, exactly as the survey caps it, because the cost is the same
-/// cost. Passing `None` omits the `IndexReduction` subjects and the checks skip
-/// them — which they already do for singular models — so a 10,175-equation model
-/// still contributes F2, F3, F5, F6 and F7 on its `Structural` subject rather
-/// than being excluded from the corpus entirely.
-///
-/// F8 (sizes) and F9 (failure faithfulness) are the runner's business, not this
-/// function's: they need the whole bundle rather than a subject.
 /// Milliseconds spent in each check, accumulated across models.
 ///
 /// **Built because the cause of a 16x slowdown was a guess.** `IMC_Transformer`
@@ -156,6 +145,17 @@ impl CheckTiming {
     }
 }
 
+/// Run every subject-based and view-based check on one compiled model.
+///
+/// `reduced` is `Option` and that is the point: **index reduction is capped by
+/// system size**, exactly as the survey caps it, because the cost is the same
+/// cost. Passing `None` omits the `IndexReduction` subjects and the checks skip
+/// them — which they already do for singular models — so a 10,175-equation model
+/// still contributes F2, F3, F5, F6 and F7 on its `Structural` subject rather
+/// than being excluded from the corpus entirely.
+///
+/// F8 (sizes) and F9 (failure faithfulness) are the runner's business, not this
+/// function's: they need the whole bundle rather than a subject.
 pub fn check_model(
     stages: &StageBundle,
     dae: &rumoca_ir_dae::Dae,

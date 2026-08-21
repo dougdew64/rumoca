@@ -3826,3 +3826,48 @@ than a coincidence.
   side — and it had never been asserted. It is now, by seeding the map with an answer the disk
   cannot produce. Must-fire verified by three perturbations (bypass the memo, misspell the
   notebook directory, drop the placeholder arm); each fails exactly one test by name.
+
+## 2026-08-21 — the doc-comment sweep, and the detector missed the instance that motivated it
+
+- **The two-summary detector became a per-file ratchet, not a zero.**
+  `doc_citations::tests_orphaned_docs::no_doc_block_gains_a_second_summary` carries a budget per
+  file, measured after triaging the whole tree: **87 hits, 79 distinct blocks, 25 real orphans in
+  24 blocks — precision ~29 %**, all reattached. **Forty files are at zero**, which is the whole
+  argument for per-file over one total: a merged block in any of them fails by name and line
+  instead of nudging a counter nobody can attribute. `worker.rs` (19), `bridge.rs` (9) and
+  `app.rs` (9) hold more than half the remaining budget.
+
+  **The precision figure is about the STOCK and is not a flow rate.** It says what fraction of the
+  hits standing that day were defects, and nothing about the next one — so a failure means *go and
+  look*, and raising a budget takes the reasoning in the same commit. Same contract as
+  `app_does_not_regrow_its_field_count`.
+
+- **The detector does not find the one orphan `app-split-plan.md` had already filed by name.**
+  `lib.rs:132` — `LiveState`'s rationale sitting above `STEPPED_FRAME_DELAY` — is invisible to it,
+  because the new summary wraps onto a **second line** and the detector requires a one-line
+  paragraph. It was fixed by hand from the plan's own pointer. **Relaxing that condition takes the
+  tree from 87 hits to 169** (229 at three lines), so recall costs roughly one false positive per
+  extra find; condition 3 stays and the blind spot is documented on the test. *A detector that
+  misses its own motivating example is worth measuring rather than assuming* — the same shape as
+  the scroll-area correction, where a measurement at one setting became a claim about the
+  mechanism.
+
+- **Three variants of the defect, and only one has an owner to match by name.** The plan's triage
+  shortcut (list a file's undocumented items, match the orphan to one) resolved **22 of 25**. The
+  other three have nothing to match: two were **superseded by a rewrite** — `structural_error_to_json`
+  and `tearing_to_json` each carried *two summaries for one function*, the newer written above the
+  older instead of replacing it — and one had an owner that **moved to another module**.
+
+- **The third variant is this arc's own product, and it earns a rule.** `app.rs` still held the
+  Context Bar's design rule (*"it renders what will be emitted, nothing more, nothing less"*,
+  *"three rows and no fourth"*, the `docs/context-assembly.md` pointer) after `context_bar_ui`
+  left for `context_bar.rs` on 2026-08-19; a grep confirmed it existed **nowhere else** before it
+  was moved. **After moving a pane, check whether its rationale moved with it** — the compiler
+  enforces that the code left and says nothing about the prose that explained it, and there are
+  eighteen extractions behind this file.
+
+- **Two smaller consequences, recorded as consequences.** `tarjan_anim.rs`'s `final_sccs` had a
+  `#[must_use]` stranded *between* two doc blocks by the same merge; it now sits below its own
+  doc. And the Tarjan **edge rule** — *equation A depends on B when A references a variable
+  matched to B* — survived only inside a stale `from_incidence` summary, so it moved to
+  `build_dep_graph`, which builds that graph and had never stated what an edge means.

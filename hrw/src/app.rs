@@ -111,15 +111,15 @@ const DEFAULT_ZOOM: f32 = 1.0;
 /// under human notice and keeps filesystem work out of the paint path.
 pub(crate) const TOUR_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(250);
 
-/// How often the scratch specimen directory is re-listed. Slower than the tour poll:
-/// a specimen appearing a second late is imperceptible, and a rescan re-reads every
-/// specimen's `// purpose:` line.
 /// How many paints a pending frame seek keeps trying for before giving up.
 ///
 /// Two would do — the target view needs one paint to build its animation — but a small
 /// margin costs nothing and covers a view that defers construction one frame further.
 const SEEK_ATTEMPTS: u8 = 5;
 
+/// How often the scratch specimen directory is re-listed. Slower than the tour poll:
+/// a specimen appearing a second late is imperceptible, and a rescan re-reads every
+/// specimen's `// purpose:` line.
 pub(crate) const SCRATCH_POLL_INTERVAL: std::time::Duration =
     std::time::Duration::from_millis(1000);
 
@@ -1994,10 +1994,6 @@ impl App {
         }
     }
 
-    /// Look up the `Stage` for the currently selected tab. Delegates to
-    /// `StageBundle::get()` for the ten real stages; Simulation returns the
-    /// always-empty placeholder (the Simulation view is the plot pane, rendered
-    /// specially — not the generic tree inspector).
     /// **The captured frames for the system the current tab is showing.**
     ///
     /// The matching, Tarjan and tearing views render under **two** stages, over two
@@ -2062,6 +2058,10 @@ impl App {
         }
     }
 
+    /// Look up the `Stage` for the currently selected tab. Delegates to
+    /// `StageBundle::get()` for the ten real stages; Simulation returns the
+    /// always-empty placeholder (the Simulation view is the plot pane, rendered
+    /// specially — not the generic tree inspector).
     fn current_stage(&self) -> &Stage {
         match self.stage {
             StageKind::Simulation => &self.simulation,
@@ -2872,19 +2872,6 @@ impl App {
         })
     }
 
-    /// The application state a crash file should carry.
-    ///
-    /// Built every frame and handed to [`crate::diagnostics::set_snapshot`], so
-    /// the panic hook — which cannot borrow `App` — still has it. Every field
-    /// here is one I had to reconstruct from Doug's description of what he
-    /// clicked while diagnosing the 2026-07-28 crash; the list is that session's
-    /// findings turned into code rather than a guess at what might be useful.
-    ///
-    /// Deliberately *not* an interpretation. It reports what the state is, not
-    /// what it means — the same rule the bridge follows (`DECISIONS.md`,
-    /// 2026-07-28). `stages` lists which IRs exist rather than judging the
-    /// compile good or bad, because "Flatten produced a note but no value" is a
-    /// fact and "compilation partly failed" is a conclusion.
     /// Publish the pane on screen to `.hrw-bridge/view.json`, when it changes.
     ///
     /// # What this closes
@@ -2957,6 +2944,19 @@ impl App {
         self.viewport.last_published_view = Some(key);
     }
 
+    /// The application state a crash file should carry.
+    ///
+    /// Built every frame and handed to [`crate::diagnostics::set_snapshot`], so
+    /// the panic hook — which cannot borrow `App` — still has it. Every field
+    /// here is one I had to reconstruct from Doug's description of what he
+    /// clicked while diagnosing the 2026-07-28 crash; the list is that session's
+    /// findings turned into code rather than a guess at what might be useful.
+    ///
+    /// Deliberately *not* an interpretation. It reports what the state is, not
+    /// what it means — the same rule the bridge follows (`DECISIONS.md`,
+    /// 2026-07-28). `stages` lists which IRs exist rather than judging the
+    /// compile good or bad, because "Flatten produced a note but no value" is a
+    /// fact and "compilation partly failed" is a conclusion.
     fn diagnostic_snapshot(&self) -> Value {
         let anim = self.animation_diagnostic();
         json!({
@@ -4787,24 +4787,6 @@ impl App {
         self.context.point_error = bridge::write(&ask).err().map(|e| e.to_string());
     }
 
-    /// The Context Bar: what Claude can see right now.
-    ///
-    /// ## The rule this obeys
-    ///
-    /// **It renders what will be emitted — nothing more, nothing less.** If it
-    /// showed context Claude does not receive, or omitted context Claude does,
-    /// questions would be calibrated against a fiction. Built as a view of the
-    /// payload, it cannot drift, because there is nothing to drift from.
-    ///
-    /// Hence three rows and no fourth: *pointing at* and *following* are the two
-    /// shapes of assembled context, and *always* is the standing context —
-    /// stage IRs, the DefId table, the libraries — that the old UI never
-    /// mentioned at all, leaving the user to underestimate what a question had
-    /// behind it.
-    ///
-    /// Controls here are only those that **change** what is emitted. Navigation
-    /// is not context, so the declaring class is a link rather than a button.
-    /// See `docs/context-assembly.md`.
     /// Drop a retained point if the recompiled IR no longer contains it.
     ///
     /// Runs once per compile, after the new stages land. Only `PointKind::Node`
@@ -6149,11 +6131,6 @@ enum HrwLink {
 }
 
 impl HrwLink {
-    /// One line naming what this link does, for the action trail.
-    ///
-    /// Reconstructs the canonical URL rather than `Debug`-printing the enum: the trail
-    /// is read by Claude alongside the tour markdown, and matching the tour's own text
-    /// is what makes "Doug clicked Stop 3" legible at a glance.
     /// Whether this link needs a specimen already loaded.
     ///
     /// Doug clicked a tour's *fourth* stop first, without the first three, and nothing
@@ -6196,6 +6173,11 @@ impl HrwLink {
         )
     }
 
+    /// One line naming what this link does, for the action trail.
+    ///
+    /// Reconstructs the canonical URL rather than `Debug`-printing the enum: the trail
+    /// is read by Claude alongside the tour markdown, and matching the tour's own text
+    /// is what makes "Doug clicked Stop 3" legible at a glance.
     fn describe(&self) -> String {
         match self {
             Self::OpenTour { tour, stop: None } => format!("tour/{tour}"),

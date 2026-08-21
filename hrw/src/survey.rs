@@ -317,6 +317,13 @@ impl Summary {
     }
 }
 
+/// A named column and the accessor that reads it from a row.
+///
+/// A `type` alias purely so the probe table below reads as a list of columns
+/// rather than as a type signature — clippy's `type_complexity` is right that
+/// the inline form is hard to take in at a glance.
+type ColumnProbe = (&'static str, fn(&SurveyRow) -> Option<usize>);
+
 /// Numeric columns that are **zero for every row that has a value** — a column
 /// measuring nothing.
 ///
@@ -333,13 +340,6 @@ impl Summary {
 ///
 /// Reported rather than asserted, because a legitimately all-zero column is
 /// possible on a small or filtered corpus. On the full MSL it is a defect.
-/// A named column and the accessor that reads it from a row.
-///
-/// A `type` alias purely so the probe table below reads as a list of columns
-/// rather than as a type signature — clippy's `type_complexity` is right that
-/// the inline form is hard to take in at a glance.
-type ColumnProbe = (&'static str, fn(&SurveyRow) -> Option<usize>);
-
 pub fn all_zero_columns(rows: &[SurveyRow]) -> Vec<&'static str> {
     let probes: [ColumnProbe; 10] = [
         ("n_equations", |r| r.n_equations),

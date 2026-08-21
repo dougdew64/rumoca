@@ -262,6 +262,14 @@ pub(crate) fn autoplay_controls_ui(
                     // side: **a child's minimum is a claim about the parent's width.**
                     // The clamp keeps it readable when there is room and lets it shrink
                     // when there is not.
+                    //
+                    // **Dropping `.width()` entirely fails too, and worse** (measured
+                    // 2026-08-19): a truncated label with no call produced a **62.6pt
+                    // gap where this code passes**, because the combo then sizes to its
+                    // text — which is widest exactly when there is least room. So both
+                    // alternatives are dead by measurement, a fixed width and no width;
+                    // this formula IS the responsive mechanism, not a workaround.
+                    // `docs/ui-findings.md` C16.
                     .width((bar_width * 0.45).clamp(60.0, 220.0))
                     .show_ui(ui, |ui| {
                         // **The overview sorts first, set apart** — the reasoning and the

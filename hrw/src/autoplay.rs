@@ -155,15 +155,6 @@ pub struct Beat {
     pub byte_offset: usize,
 }
 
-/// Split tour markdown into stops.
-///
-/// A `##` heading starts a stop; everything before the first one becomes the
-/// **preamble stop**, titled from the `#` heading. The preamble is a stop rather
-/// than being skipped because a video needs a beat of title card before it starts
-/// moving, and the tour already has the words for one.
-///
-/// Fenced code blocks are skipped when looking for headings, so a `##` comment
-/// inside a Modelica or shell block cannot invent a stop.
 /// The addressable name of a stop, derived from its heading.
 ///
 /// `## Stop 2 — The surprise` becomes `stop-2-the-surprise`. Lowercased, with every
@@ -197,6 +188,15 @@ pub fn stop_slug(heading: &str) -> String {
     out
 }
 
+/// Split tour markdown into stops.
+///
+/// A `##` heading starts a stop; everything before the first one becomes the
+/// **preamble stop**, titled from the `#` heading. The preamble is a stop rather
+/// than being skipped because a video needs a beat of title card before it starts
+/// moving, and the tour already has the words for one.
+///
+/// Fenced code blocks are skipped when looking for headings, so a `##` comment
+/// inside a Modelica or shell block cannot invent a stop.
 pub fn parse_stops(text: &str) -> Vec<TourStop> {
     let mut stops: Vec<TourStop> = Vec::new();
     let mut title = String::from("Tour");

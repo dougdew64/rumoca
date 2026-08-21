@@ -94,7 +94,6 @@ const fn tint(r: u8, g: u8, b: u8, alpha: u8) -> Color32 {
     )
 }
 
-/// Tracked-identifier background fill (subtle, alpha 0x30 ≈ 19%).
 /// Background wash on the row a `hrw://…/node/<path>` link pointed at.
 ///
 /// **Cyan, deliberately not gold.** Gold means *followed* — a thread through every
@@ -107,6 +106,7 @@ const fn tint(r: u8, g: u8, b: u8, alpha: u8) -> Color32 {
 /// Doug walked the tour and found the claim false (2026-07-30).
 pub const JUMP_FILL: Color32 = tint(0x42, 0xC5, 0xF5, 0x45);
 
+/// Tracked-identifier background fill (subtle, alpha 0x30 ≈ 19%).
 pub const TRACKED_FILL: Color32 = tint(0xFF, 0xD5, 0x4F, 0x30);
 
 /// Tracked-identifier background fill (medium, alpha 0x40 ≈ 25%).

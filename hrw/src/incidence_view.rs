@@ -332,11 +332,6 @@ impl IncidenceMatrix {
         })
     }
 
-    /// What the parser could not resolve — empty when the report read cleanly.
-    ///
-    /// **Rendered by the caller, above the matrix**, because every entry here means
-    /// the picture below is not the compiler's picture. See the field's docs for the
-    /// three ways that used to happen silently.
     /// The matrix as the bridge publishes it — **the painter's input, serialized.**
     ///
     /// # Why this one, second
@@ -407,6 +402,11 @@ impl IncidenceMatrix {
         })
     }
 
+    /// What the parser could not resolve — empty when the report read cleanly.
+    ///
+    /// **Rendered by the caller, above the matrix**, because every entry here means
+    /// the picture below is not the compiler's picture. See the field's docs for the
+    /// three ways that used to happen silently.
     pub fn problems(&self) -> &[String] {
         &self.problems
     }

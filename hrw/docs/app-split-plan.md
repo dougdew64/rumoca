@@ -1675,6 +1675,11 @@ while the guard, separately, was unable to refuse one that should not be. Each n
 establishes the content its link needs (`give_flatten_every_tab` and two siblings), which is
 the honest precondition and was invisible while the guard had no opinion.
 
+**The generalisation, which is the part worth carrying forward: a test that needs no
+precondition is sometimes telling you a guard is missing.** All three could only pass because
+nothing was checking — so "this test needs no setup" read as simplicity and was really the
+absence of the thing under test.
+
 #### THE TOUR CHECKER'S GAP IS NOW COUNTED RATHER THAN ASSUMED AWAY
 
 `every_tour_sub_view_link_is_available_for_its_specimen` cannot settle these from a committed
@@ -1820,6 +1825,15 @@ finished**. One item remains — see
 
 ---
 
+## ✅ THIS PLAN IS CLOSED — both steps landed 2026-08-21
+
+**Step 1 (`frame_ui`'s Specimen left panel) and Step 2 (the doc-comment sweep) are both done.**
+The sweep's account is [below](#the-sweep-ran-and-the-noise-floor-was-wrong-in-both-directions--2026-08-21);
+the original statement of both steps is kept underneath it, because the *estimates* in it are
+what the outcome should be read against.
+
+---
+
 ## ⟶ ONE STEP CLOSES THIS PLAN — Step 1 landed 2026-08-21
 
 **Step 1 — `frame_ui`'s Specimen left panel — is DONE.** See
@@ -1868,6 +1882,85 @@ finds, reattaching each orphaned summary to the test or function it describes.
   the detector can become a ratcheted test in `doc_citations.rs`. If it cannot, **say so and why**
   rather than leaving the question open — a detector nobody runs is the stale-artifact case this
   repository already knows about.
+
+---
+
+### THE SWEEP RAN, AND THE NOISE FLOOR WAS WRONG IN BOTH DIRECTIONS — 2026-08-21
+
+**87 hits across `src/**/*.rs`, 79 distinct blocks, and 25 real orphans in 24 blocks — a
+precision of about 29 %.** Every one is fixed. The checker shipped:
+`doc_citations::tests_orphaned_docs::no_doc_block_gains_a_second_summary`, a **per-file ratchet**,
+with `a_merged_doc_block_is_detected` as its must-fire partner.
+
+**The plan's two guesses about the rate were both wrong, in opposite directions**, and that pairing
+is the finding:
+
+- ***"It may be largely noise"* was too pessimistic**, as the plan already suspected. 29 % is not
+  noise; it is roughly one defect per three hits.
+- ***"83 hits across `src/*.rs`"* was too optimistic as a bound on the WORK**, because the count is
+  hits, not blocks. The detector fires **once per offending line**, so one `bridge.rs` block
+  reported three times. **79 blocks, not 87 items** — dedupe by block before estimating.
+
+#### THE DETECTOR MISSED THE ONE ORPHAN THIS PLAN ALREADY KNEW ABOUT
+
+**`lib.rs:132` — the instance filed here by name, deliberately left for this step — does not
+appear in the detector's output at all.** It was fixed by hand, from this document's own pointer.
+
+The cause is condition 3: the new summary must be a **one-line** paragraph followed by a bare
+`///`. `STEPPED_FRAME_DELAY`'s summary wraps onto a second line, so the shape does not match.
+**A detector that misses the example used to justify it is worth measuring rather than
+assuming**, and the measurement is unambiguous: relaxing condition 3 to allow a two-line summary
+takes the tree from **87 hits to 169**, and to 229 at three lines. **The recall is bought at
+roughly one extra false positive per extra hit found**, so condition 3 stays, and the blind spot
+is documented on the test instead of closed.
+
+**This is the same shape as the scroll-area correction and the `matrix_panes` narrowing: a
+measurement taken at one setting generalised into a property of the mechanism.** *"The detector
+finds merged blocks"* was true of the blocks it found and silently false of an entire class.
+
+#### THREE VARIANTS, AND ONLY ONE HAS AN OWNER TO MATCH
+
+The plan's triage shortcut — *list the file's undocumented items and match by name* — **resolved
+22 of the 25 immediately**, exactly as measured on `app/tests.rs`. The three exceptions are the
+cases where the shortcut has nothing to match against, and they are worth naming because each
+needs a different fix:
+
+| variant | instance | the fix |
+|---|---|---|
+| **owner exists, undocumented** (22 of 25) | `SCRATCH_POLL_INTERVAL`, `current_stage`, `diagnostic_snapshot`, `describe`, `parse_stops`, `describe_path`, `TRACKED_FILL`, `check_model`, `problems()`, `str_vec`, `LiveState`, `all_zero_columns`, `TarjanAnimation`, `aim_at_equation`, `position()`, `label()`, `trackable_name`, `Stage`, `structural_stage`, `index_reduce_for_structural_analysis`, `drain_traces` | move the summary down to it |
+| **owner was superseded by a rewrite** | `worker.rs`'s `structural_error_to_json` and `tearing_to_json` (two summaries for **one** function, the newer written above the older instead of replacing it); `tarjan_anim`'s stale *"(recorded mode)"* `from_incidence` summary | merge or delete — the useful half of the tearing one became a body paragraph, and the Tarjan edge rule moved to `build_dep_graph`, which had never stated it |
+| **owner moved to another MODULE** | `app.rs`'s *"The Context Bar: what Claude can see right now"* | **a cross-file move.** `context_bar_ui` left for `context_bar.rs` on 2026-08-19 and its design rule did not follow — *"it renders what will be emitted, nothing more, nothing less"*, *"three rows and no fourth"*, and the `docs/context-assembly.md` pointer existed **nowhere else**, checked by grep before moving it |
+
+**The third variant is new and is a direct product of this arc.** The plan named the deleted-field
+case (`cached_purpose_notes`) as the variant the name-matching shortcut cannot find; **an
+extraction produces the same orphan a different way**, and there are eighteen extractions behind
+this file. The rule it earns: **after moving a pane, check whether its rationale moved with it** —
+the compiler enforces that the *code* left and says nothing about the prose that explained it.
+
+#### THE CHECKER, AND WHAT IT DELIBERATELY DOES NOT CLAIM
+
+**Per file, not one total.** Forty files are at **zero**, so a merged block in any of them fails
+by name and line rather than nudging a global counter nobody can attribute. Eighteen files carry a
+budget; `worker.rs` (19), `bridge.rs` (9) and `app.rs` (9) hold more than half of it.
+
+**29 % is precision on the STOCK, not on the flow.** It says what fraction of the hits *standing
+on 2026-08-21* were defects. It says nothing about the next hit, and the honest position is that a
+failure here means *go and look* — the same contract as `app_does_not_regrow_its_field_count`,
+including that raising a budget requires the reasoning in the same commit.
+
+**Must-fire verified by perturbation, not only by the unit test.** Re-introducing a merged block in
+`tree.rs` (budget 0) fails `no_doc_block_gains_a_second_summary` with `tree.rs: 1 hits, budget 0
+(lines 710)`, while `a_merged_doc_block_is_detected` stays green — the discrimination that makes a
+perturbation informative.
+
+**The test's own prose is inside the corpus it scans**, which is why `doc_citations.rs` carries a
+budget of 3. That is the self-reference `no_test_arms_a_breakpoint_on_the_watched_path` records one
+file over, and it is survivable here only because the detector keys on a doc-comment *shape* rather
+than on a symbol it could spell in its own text.
+
+**The `awk` source above is retained and is now the secondary tool.** The Rust test is what runs;
+the script is what a session reaches for to triage a failure across the whole tree at once, or to
+re-measure the recall trade at a different `maxsum`.
 
 ---
 

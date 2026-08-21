@@ -704,17 +704,6 @@ fn row_menu(
     });
 }
 
-/// The identifier a leaf names, if it names one.
-///
-/// Offered as "Follow …" in the row menu. Deliberately conservative: the tree
-/// renders every string in the IR, most of which are not variable names, and a
-/// Track action on a description or a file path would be noise that tracks
-/// nothing.
-///
-/// Accepts a flat variable name — dot-separated identifier components, possibly
-/// wrapped in `der(…)` — and nothing else. Prose fields are excluded for the
-/// same reason they are excluded from tracked highlighting (see
-/// [`is_prose_field`]).
 /// The source line for a node, looked up by its path.
 ///
 /// **Returns `None` immediately when there is no map**, which is the cheap path and
@@ -729,6 +718,17 @@ fn path_line(path: &[Seg], opts: &TreeOptions<'_>) -> Option<u32> {
     map.get(&crate::bridge::describe_path(path)).copied()
 }
 
+/// The identifier a leaf names, if it names one.
+///
+/// Offered as "Follow …" in the row menu. Deliberately conservative: the tree
+/// renders every string in the IR, most of which are not variable names, and a
+/// Track action on a description or a file path would be noise that tracks
+/// nothing.
+///
+/// Accepts a flat variable name — dot-separated identifier components, possibly
+/// wrapped in `der(…)` — and nothing else. Prose fields are excluded for the
+/// same reason they are excluded from tracked highlighting (see
+/// [`is_prose_field`]).
 fn trackable_name(key: &str, value: &Value, opts: &TreeOptions<'_>) -> Option<String> {
     if crate::identifier_index::is_prose_field(key) {
         return None;
@@ -1213,9 +1213,6 @@ mod tests {
         }
     }
 
-    /// The Track action is offered on names, not on every string the tree
-    /// renders — a Track item on a description or a file path would track
-    /// nothing and be pure noise.
     /// Trackability is decided by the model, not by the shape of the string.
     ///
     /// The first implementation accepted anything that *looked* like a dotted
