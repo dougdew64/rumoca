@@ -44,6 +44,7 @@
 pub mod alias_anim;
 pub mod app;
 pub mod arch_doc;
+pub mod artifact_pane;
 pub mod autoplay;
 pub mod bridge;
 pub mod canvas;

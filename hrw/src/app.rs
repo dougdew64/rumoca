@@ -44,6 +44,7 @@ use crate::identifier_index;
 // incidence matrix). It tracks the transform and handles drag/scroll input.
 use crate::LiveState;
 use crate::alias_anim;
+use crate::artifact_pane;
 use crate::connection_anim;
 use crate::field_help;
 use crate::ic_plan_anim;
@@ -4351,135 +4352,34 @@ impl App {
                 } else if flatten_ready && self.viewport.flatten == FlattenView::Connections {
                     self.connection_anim_ui(ui);
                 } else {
-                    // Set when a `hrw://…/node/<path>` link names a path this stage does not
-                    // have. Collected while `stage` is borrowed and acted on after, the same
-                    // pattern as `FrameIntent`.
-                    let mut bad_jump: Option<String> = None;
+                    // **The arm with no gate** — every other member of this chain asks
+                    // whether its own sub-view is selected, and this one draws when none
+                    // of them claimed the frame. It is also the only pane most stages
+                    // ever show. See `artifact_pane` for the "beside, not instead of"
+                    // rule its error summary follows.
                     let stage = self.current_stage();
-                    // **The error summary sits BESIDE the artifact, not instead of it.**
-                    //
-                    // Doug, 2026-08-05, walking `failure-typecheck.md`: *"there is no tree
-                    // in the failing typecheck stage view."* There was one in the data —
-                    // `DimensionMismatch`'s Typecheck stage carries 7.4 KB of instantiated
-                    // overlay **plus** an `error` key, assembled by the worker on purpose,
-                    // whose comment reads *"the instantiated overlay is the last good state
-                    // to show **beside** them"*. This branch rendered the summary in an
-                    // `if` with the whole tree as the `else`, so **beside became instead
-                    // of** and the overlay was discarded at the last step, with nothing on
-                    // screen saying content was withheld.
-                    //
-                    // **The condition is not the outcome.** `note_is_error()` is true for
-                    // both abnormal outcomes, and they differ in what the value holds:
-                    //
-                    // - `Flagged` (`Stage::recovered`) — a real artifact plus an error.
-                    //   Both belong on screen.
-                    // - `Failed` (`Stage::err_with_details`) — **only** `{"error": …}`. A
-                    //   tree there would render the error payload as a tree, which is
-                    //   noise beside the summary it duplicates.
-                    //
-                    // So the test is whether the value carries anything **beyond** `error`.
-                    let error_data = stage
-                        .note_is_error()
-                        .then(|| stage.value.as_ref().and_then(|v| v.get("error")).cloned())
-                        .flatten();
-                    let has_other_content = stage
-                        .value
-                        .as_ref()
-                        .and_then(serde_json::Value::as_object)
-                        .is_some_and(|o| o.keys().any(|k| k != "error"));
-                    if let Some(error) = error_data.clone().filter(|_| !has_other_content) {
-                        // Nothing but the error: the summary fills the pane, as before.
-                        egui::ScrollArea::vertical()
-                            .id_salt("error_summary")
-                            .auto_shrink(false)
-                            .show(ui, |ui| {
-                                crate::error_summary::generic_error_summary(ui, &error, self.stage);
-                            });
-                    } else {
-                        // **Collapsible, and open by default.** The summary is the more
-                        // urgent of the two and goes first, but a reader who has read it
-                        // and wants the whole overlay can fold it away rather than scroll
-                        // past it on every visit.
-                        if let Some(error) = error_data {
-                            let stage_kind = self.stage;
-                            egui::CollapsingHeader::new("\u{26a0} What went wrong")
-                                .id_salt("error_summary_beside_tree")
-                                .default_open(true)
-                                .show(ui, |ui| {
-                                    crate::error_summary::generic_error_summary(
-                                        ui, &error, stage_kind,
-                                    );
-                                });
-                            ui.separator();
-                        }
-                        match &stage.value {
-                            Some(value) => {
-                                let label = self.model.as_deref().unwrap_or("model");
-                                let prev = self.previous_stage_value();
-                                // **The count, without the checkbox that used to sit
-                                // beside it.** "Reveal identifiers" was removed
-                                // 2026-08-04 (`DECISIONS.md`). The count is a plain
-                                // fact about the model and costs one line, so it
-                                // stays; finding a *particular* identifier is what
-                                // Follow does, and it scrolls to the match instead
-                                // of opening every path that might contain one.
-                                if let Some(n) = self.known_variables.as_ref().map(HashSet::len) {
-                                    ui.weak(format!(
-                                        "{n} identifier(s) in this model \u{2014} right-click an \
-                                     underlined value to follow one",
-                                    ));
-                                }
-                                // A node link that does not resolve must SAY so. The tree
-                                // otherwise expands as far as it can and stops, which looks
-                                // like "it opened something" rather than "that path is
-                                // wrong" — the silent partial failure the aim and seek verbs
-                                // deliberately avoid.
-                                let jump_to = match &self.context.jump_target {
-                                    Some(t) => match resolve_jump_target(value, t) {
-                                        Ok(()) => Some(t.clone()),
-                                        Err(msg) => {
-                                            bad_jump = Some(msg);
-                                            None
-                                        }
-                                    },
-                                    None => None,
-                                };
-                                // **The two node addresses are what this tree adds** to
-                                // what every tree is told about the specimen; see
-                                // `specimen_tree_options` for why the rest is shared.
-                                let opts = tree::TreeOptions {
-                                    jump_to: jump_to.as_deref(),
-                                    highlight: self.context.jump_highlight.as_deref(),
-                                    ..self.specimen_tree_options()
-                                };
-                                egui::ScrollArea::both()
-                                    .id_salt("tree")
-                                    .auto_shrink(false)
-                                    .show(ui, |ui| {
-                                        tree::tree_ui(
-                                            ui,
-                                            label,
-                                            value,
-                                            prev,
-                                            &mut intent.tree,
-                                            &self.def_index,
-                                            &self.field_help,
-                                            opts,
-                                        );
-                                    });
-                            }
-                            None if stage.note.is_none() => {
-                                ui.weak(if self.compiling {
-                                    "compiling…"
-                                } else {
-                                    "(no output for this stage)"
-                                });
-                            }
-                            None => {}
-                        }
-                    }
-                    // The stage borrow ends here, so the notices can finally be posted.
-                    if let Some(msg) = bad_jump {
+                    let notice = artifact_pane::artifact_pane_ui(
+                        ui,
+                        stage,
+                        self.stage,
+                        artifact_pane::ArtifactChrome {
+                            label: self.model.as_deref().unwrap_or("model"),
+                            prev: self.previous_stage_value(),
+                            identifier_count: self.known_variables.as_ref().map(HashSet::len),
+                            compiling: self.compiling,
+                        },
+                        artifact_pane::ArtifactTree {
+                            opts: self.specimen_tree_options(),
+                            def_index: &self.def_index,
+                            field_help: &self.field_help,
+                            jump_target: self.context.jump_target.as_deref(),
+                            jump_highlight: self.context.jump_highlight.as_deref(),
+                        },
+                        &mut intent.tree,
+                    );
+                    // The stage borrow ends with the call, so the notice can finally be
+                    // posted — the same deferred pattern as `FrameIntent`.
+                    if let Some(msg) = notice {
                         self.context.jump_target = None;
                         self.notify(msg);
                     }
@@ -6587,28 +6487,6 @@ fn open_with_os(path: &Path) -> std::io::Result<()> {
         .arg(path)
         .spawn()
         .map(|_| ())
-}
-
-/// Resolve a pending tree jump target against the stage's IR.
-///
-/// `Ok(target)` when it resolves; `Err(message)` naming the path when it does not.
-///
-/// A free function rather than a method because the caller holds an immutable borrow of
-/// the stage while rendering, so it cannot also take `&mut self`. The caller applies the
-/// message and clears the target.
-///
-/// **Why validate at all:** the tree otherwise expands as far as the path goes and stops,
-/// which reads as "it opened something" rather than "that path is wrong". The camera aim
-/// and the frame seek both refuse-and-report; this makes the third verb consistent. A
-/// link naming something that is not there is a bug in the tour, and must be visible.
-fn resolve_jump_target(stage_value: &Value, target: &[Seg]) -> Result<(), String> {
-    if target.is_empty() || bridge::navigate(stage_value, target).is_some() {
-        return Ok(());
-    }
-    Err(format!(
-        "no node at {} in this stage \u{2014} the link names a path that is not here",
-        bridge::describe_path(target),
-    ))
 }
 
 /// Cap markdown heading size to 1.15x body so rendered tour/narrative text stays compact.

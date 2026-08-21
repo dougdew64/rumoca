@@ -184,6 +184,7 @@ the loop has produced.
 | a **must-fire guard that could not fire**, cited by four documents | establishing what the gate actually asserts |
 | a **replay restarting because you passed through a report stage** — a rule nobody had designed | asking what one cache's lifetime was |
 | two **expired comments** that had been silently false, one for five days | the seams that expired them |
+| **eight doc comments attached to the wrong test**, the oldest three weeks | reading one test to decide whether to move it |
 
 **And the testing gaps, which are the half a line count cannot show at all.** Panes that could
 previously be reached only by building an `App`, giving it a worker and driving a specimen to a
@@ -226,6 +227,7 @@ purpose.
 | 2026-08-20 | *(accuracy, not a move)* the navigated tree stops being annotated from the specimen — *`nav_view_ui` loses its `TreeOptions` parameter; net **zero** lines on `app.rs`* | 12,250 | `nav_view.rs` (483, of which 285 are tests) |
 | 2026-08-20 | **the five `cfg(test)` blocks → `app/tests.rs`** — *the experiment's **STEP CHANGE**, not an extraction: nothing refactored, no behaviour touched* | **6,639** | `app/tests.rs` (5,650, all of them tests) |
 | 2026-08-21 | **the Flatten / Events / Initialization sub-view rows → `sub_view_rows.rs`** — *the second list inside the router; it found a reachable stranding and an unstated layout rule* | **6,587** | `sub_view_rows.rs` (525, of which 343 are tests) |
+| 2026-08-21 | **the default artifact pane → `artifact_pane.rs`** — *the router's last arm, the one with no gate; it found eight doc comments attached to the wrong test* | **6,521** | `artifact_pane.rs` (514, of which 255 are tests) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -1810,12 +1812,127 @@ that reads a 5,650-line new file cannot see that; this sees it in one command.
 - **The inner `#[cfg(test)]` attributes were kept** even though the module is already gated. They
   are redundant, not false, and keeping them is what makes the diff readable as a pure move.
 
-**⟶ NEXT: back to the routers** — ~~the sub-view row block (~125)~~ **done 2026-08-21, and it was
-83 lines rather than 125** (the figure still counted the report row, which had already left); the
-default artifact pane (~152, the largest single block left), and `frame_ui`'s Specimen left panel
-(~113).
+**⟶ NEXT: back to the routers** — ~~the sub-view row block (~125)~~ and ~~the default artifact
+pane (~152)~~ **both done 2026-08-21**, at 83 and 133 lines respectively; **`central_panel_ui` is
+finished**. What is left of the planned work is **`frame_ui`'s Specimen left panel** (~113),
+whose Purpose half (~48 lines, zero `App` methods) is the twin of the already-extracted
+`specimen_source_ui` and would sit beside it.
 
 ---
+
+### THE ROUTER'S LAST ARM IS THE ONE WITH NO GATE — 2026-08-21, `artifact_pane.rs`
+
+**`app.rs` 6,587 → 6,521; `central_panel_ui` 430 → 322; `artifact_pane.rs` is 514 lines, 255 of
+them tests, 7 tests in 0.02 s.** The block was **133 lines, not the ~152 the plan carried** — the
+second estimate in two days to be high, and for the same reason: nobody re-measured after an
+earlier extraction moved the boundary. **Re-measure before planning against a figure this file
+quotes.**
+
+**The column-read found the seam again, and this time the odd member is the one with no
+condition.** Every other arm of the dispatch chain asks whether its own sub-view is selected
+(`report_ready && … == SpyPlot`); the final `else` asks nothing. That is what makes it both the
+odd member *and* the most-drawn pane in HRW — the five tree-only stages have no sub-views at all,
+so this arm is their entire on-screen life. **"Which member is shaped differently?" answered
+"the one that is not a member of the same kind."**
+
+**It is the first arm to leave with `&mut App` reduced all the way to nothing.** The pane's only
+mutations were `context.jump_target = None` and `notify(msg)`, both already deferred to *after*
+the stage borrow ended — so they became a returned `Option<String>` and the function takes no
+`self` at all. `resolve_jump_target` moved with it, being its only production caller.
+
+**A `Vec<Seg>` clone per frame went with the move, and it was invisible before.** The old code
+held `Option<Vec<Seg>>` on `App` and did `Some(t.clone())` to hand the tree a validated path;
+with the address arriving as `Option<&[Seg]>` there is nothing to clone. **Not the reason for the
+move, and recorded as a consequence rather than claimed as a return.**
+
+**THE TESTS IT BOUGHT ARE ABOUT A DEFECT DOUG REPORTED ON 2026-08-05.** *"There is no tree in the
+failing typecheck stage view"* — the summary had been rendered in an `if` with the whole tree as
+the `else`, so **beside became instead of** and 7.4 KB of instantiated overlay was discarded with
+nothing on screen saying so. Fixed then; **nothing asserted it since**, because reaching this
+pane meant building an `App`, giving it a worker and driving a specimen to a *failing* stage.
+`a_flagged_stage_shows_its_error_beside_its_artifact` and its non-vacuity partner now run in
+hundredths of a second, and `has_content_beside_the_error` — the predicate that decides between
+them — is checkable without painting at all.
+
+**Must-fire verified by making that predicate's call site `false`**: exactly one test fails, by
+name, and the pure-predicate test stays green — the discrimination that makes a perturbation
+informative.
+
+### AND IT FOUND EIGHT DOC COMMENTS ATTACHED TO THE WRONG TEST — 2026-08-21
+
+**Found by reading one test to decide whether to move it**, and it is the fourth appearance of
+the class `CLAUDE.md` records under *"a doc comment can be adopted by the wrong function"*. This
+time the instance is the **original insertion cause**, at scale: `app/tests.rs` held **two merged
+stacks**, one of three summaries and one of four, above tests that owned only the last of each.
+
+**The eight orphans and their real owners** — every one matched by name, and every owner was
+sitting in the file with **zero** doc comment:
+
+| the orphaned summary | the test that owns it |
+|---|---|
+| *A link's frame number is the one on screen* | `a_frame_link_and_the_frame_counter_agree` |
+| *A link can point at a node* | `a_link_can_point_at_a_node` |
+| *A sub-view slug is resolved against its stage* | `sub_view_slugs_are_stage_scoped` |
+| *The camera-aiming verb parses* | `a_link_can_aim_at_an_equation` |
+| *The list offers the fixtures, ad hoc first* | `the_tour_list_offers_fixtures_with_ad_hoc_first` |
+| *The frame-seek verb parses everywhere* | `a_link_can_seek_to_a_frame` |
+| *A link's trail entry is the link* | `a_recorded_link_round_trips_to_the_same_link` |
+| *A link can set the follow* | `a_link_can_set_the_follow` |
+| *The notebook verb parses a real name* | `the_notebook_verb_needs_a_name` |
+| *Sub-view availability depends on the model* | `a_sub_view_is_available_only_when_its_tab_is` |
+
+*(Ten rows, eight moves — two of the summaries had already drifted onto a test that then donated
+its own doc onward, which is what a merged stack does.)*
+
+**THE CAUSE IS ONE COMMIT PATTERN, AND `17f01978` IS THE CLEAREST INSTANCE.** It appended a new
+test's doc comment onto the **end of the previous test's doc block** and put the new `#[test]`
+below it. Rust merges contiguous `///` lines, so the new test acquired both summaries and the old
+one silently lost its own. **Every orphan here is downstream of that shape**, repeated in the
+run of `hrw://` link tests.
+
+**The ZERO-doc detector this plan filed WOULD have caught these** — all eight victims had no doc
+comment at all — but it is too noisy to be a test: `app/tests.rs` still has **39** deliberately
+undocumented tests, mostly small unit checks. **So the detector that works is the other end of
+the pair: a doc block with two opening summaries in it.**
+
+**It lives here rather than in `scripts/`**, which is the run-driver inventory and would have
+gained an entry nothing invokes. Write it to a file and run it by path — the repository's rule for
+generator scripts — never through `awk -e`, where the shell eats the backslashes:
+
+```awk
+# find-orphaned-docs.awk -- doc blocks containing more than one opening summary.
+# usage: awk -f find-orphaned-docs.awk src/<module>.rs
+{ line[FNR] = $0 }
+END {
+    for (i = 2; i <= FNR; i++) {
+        cur = line[i]; prv = line[i-1]; nxt = line[i+1]
+        # a non-blank /// line ...
+        if (cur !~ /^[[:space:]]*\/\/\/[[:space:]]*[^[:space:]]/) continue
+        # ... inside a block, not starting one ...
+        if (prv !~ /^[[:space:]]*\/\/\/[[:space:]]*[^[:space:]]/) continue
+        # ... opening a new paragraph ...
+        if (nxt !~ /^[[:space:]]*\/\/\/[[:space:]]*$/) continue
+        # ... after the previous paragraph ENDED. This last test is what keeps the
+        # rate tolerable; without it every wrapped line reports.
+        if (prv !~ /[.!?*`)\]"]"?[[:space:]]*$/) continue
+        printf "%s:%d  %s\n", FILENAME, i, cur
+    }
+}
+```
+
+**Triage each hit by looking for the owner, not by reading the doc.** Every orphan here paired
+with an undocumented test *by name* in the same file, so the fast check is: list the file's
+undocumented items first, then match. Reading the merged block top-down is much slower and was
+how the first two were found.
+
+**Its measured precision on `app/tests.rs` was 8 of 12** — the four misses were wrapped
+continuation lines that happen to end a paragraph. **Across `src/*.rs` it reports 83**, and that
+number is *not* an orphan count: the first `worker.rs` hit sampled was a false positive, and the
+prose-heavy modules will skew that way. **Do not quote 83 as a defect count** — the honest
+statement is that the class is confirmed in one file, fixed there, and unmeasured elsewhere.
+
+**⟶ OWED, and deliberately not done in this session:** run the detector over the other modules
+and triage. It is a sweep, not an extraction, and the stopping rule governs.
 
 
 ### A ROUTER'S SEAM IS AN ASYMMETRY AMONG ITS ARMS — 2026-08-20, `matrix_panes.rs`

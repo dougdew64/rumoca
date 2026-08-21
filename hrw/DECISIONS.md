@@ -3762,3 +3762,40 @@ than a coincidence.
   **It carries an upstream note in the file itself.** The line is HRW-motivated, applies to
   `crates/rumoca-*` tests as well, and is **not** part of the instrumentation intended for a
   CogniPilot PR — so it is marked for dropping when a cherry-pick is prepared.
+- **2026-08-21 — the default artifact pane leaves `central_panel_ui` as `artifact_pane.rs`, and
+  returns its one complaint instead of posting it.** The router's final `else` — the arm with no
+  gate, and the only pane the five tree-only stages ever show. It is the first extraction to shed
+  `&mut App` entirely: its two mutations (`context.jump_target = None` and `notify`) were already
+  deferred until after the stage borrow ended, so they became an `Option<String>` return and the
+  caller performs both. `resolve_jump_target` moved with it, being its only production caller, and
+  the validated path now travels as `Option<&[Seg]>` rather than being cloned per frame.
+
+  **`has_content_beside_the_error` is a separate `pub(crate)` predicate rather than an inline
+  expression**, because it is the question the whole pane turns on — *beside* or *instead of* —
+  and splitting it out is what makes that decision assertable without painting. The rule it
+  encodes is that `Stage::note_is_error()` is true for **both** abnormal outcomes, so the test is
+  what the value holds, never what the outcome was: `recovered` carries a real IR *plus* an error
+  and both belong on screen; `err_with_details` carries only `{"error": …}` and a tree there would
+  render the error payload as an IR.
+
+  **This is the guard for a defect Doug reported on 2026-08-05** — *"there is no tree in the
+  failing typecheck stage view"* — which was fixed then and asserted by nothing since, because
+  reaching the pane required an `App`, a worker and a specimen driven to a failing stage. Must-fire
+  verified by forcing the predicate's call site to `false`: exactly one test fails by name, and the
+  pure-predicate test stays green.
+
+- **2026-08-21 — eight doc comments in `app/tests.rs` are reattached to the tests they describe.**
+  Two merged blocks, of three and four summaries, each sitting above a test that owned only the
+  last of them; every orphaned owner had no doc comment at all. The cause is one commit shape —
+  a new test's doc appended to the **end** of the previous test's block with the new `#[test]`
+  below it, so Rust merges the `///` runs and the older test silently loses its summary
+  (`17f01978` is the clearest instance). **This is the fourth appearance of the class `CLAUDE.md`
+  records, and the first at scale.**
+
+  **The detector is kept in `docs/app-split-plan.md` rather than `scripts/`**, which is the
+  run-driver inventory and would have gained an entry nothing invokes; the tool sits beside the
+  sweep it is owed for. **It is not a test yet, and the blocker is the noise floor rather than the
+  idea:** measured precision on `app/tests.rs` was 8 of 12, and across `src/*.rs` it reports 83
+  hits — a hit count, not a defect count, since the prose-heavy modules skew it. The
+  complementary zero-doc detector would have caught all eight victims but cannot be the check,
+  because that file keeps 39 deliberately undocumented tests.

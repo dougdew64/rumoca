@@ -3214,8 +3214,6 @@ fn a_link_can_address_a_sub_view() {
     );
 }
 
-/// A sub-view slug is resolved **against its stage**, so the same word means
-/// different things in different stages and a wrong pairing does not navigate.
 /// **The noun/verb parity audit, as a test.**
 ///
 /// #42's design principle is that `hrw://` must express any noun `focus.json` can
@@ -3359,7 +3357,6 @@ fn every_stage_round_trips_between_capture_and_link() {
     }
 }
 
-/// The camera-aiming verb parses, and only where it makes sense.
 /// Every link in every **fixture tour** resolves against the current parser.
 ///
 /// A fixture tour is kept and versioned — unlike an ad hoc tour, which is gitignored
@@ -3391,12 +3388,6 @@ fn tour_labels_name_what_the_tour_is() {
     );
 }
 
-/// The list offers the fixtures, ad hoc first when one exists.
-///
-/// Doug asked for in-app selection so a fixture tour no longer has to be copied over
-/// `.hrw-bridge/tour.md` before starting HRW. Ad hoc goes first because it answers
-/// the question just asked; burying it under the fixtures would make the common case
-/// the awkward one.
 /// Switching tours re-initialises the right-hand side; re-selecting does not.
 ///
 /// Doug: clicking a link in one tour and then choosing a second tour left the first
@@ -3439,6 +3430,12 @@ fn switching_tours_resets_the_stage_side() {
     assert_eq!(app.tour.selected, Some(b));
 }
 
+/// The list offers the fixtures, ad hoc first when one exists.
+///
+/// Doug asked for in-app selection so a fixture tour no longer has to be copied over
+/// `.hrw-bridge/tour.md` before starting HRW. Ad hoc goes first because it answers
+/// the question just asked; burying it under the fixtures would make the common case
+/// the awkward one.
 #[test]
 fn the_tour_list_offers_fixtures_with_ad_hoc_first() {
     let mut app = App::test_default();
@@ -3963,7 +3960,6 @@ fn every_tour_sub_view_link_is_available_for_its_specimen() {
     );
 }
 
-/// The frame-seek verb parses everywhere an animation lives.
 /// **Every link that names a sub-view defers it, rather than applying it.**
 ///
 /// This is the bug Doug found by clicking the fixture tour in order: Stop 5's
@@ -4047,69 +4043,6 @@ fn a_seek_that_never_lands_expires() {
     );
 }
 
-/// A link's frame number is the one on screen — the two must not be off by one.
-///
-/// Doug walked the fixture tour and found the link and the counter disagreeing.
-/// The fixture had even *documented* the discrepancy ("frames are 0-based in links,
-/// 1-based in the display"), which is writing a bug down instead of fixing it.
-///
-/// The rule this pins: **each verb matches how its own thing is displayed.** Frames
-/// read "Frame 3/11" from one, so frame links count from one; equations read
-/// `f_x[46]` from zero, so equation links count from zero. Uniformity between the
-/// two verbs would force one to disagree with the screen, which is the drift that
-/// actually costs something.
-/// A link can point at a node, using the capture's own spelling of the path.
-///
-/// This closes the last parity gap: `Focus::Node` is the capture's richest noun and
-/// no link could express it. The path grammar is not re-stated here — that is
-/// round-tripped in `bridge::tests` — this checks the link layer consumes it.
-/// A node path that does not exist is reported, not half-followed.
-///
-/// Without this the tree expands as far as the path goes and stops, which reads as
-/// "it opened something" rather than "that path is wrong". The camera aim and the
-/// frame seek both refuse-and-report; this is the third verb made consistent.
-#[test]
-fn an_unresolvable_node_path_is_reported() {
-    let stage = serde_json::json!({
-        "error": { "unmatched_unknowns": ["gnd.p.i"] },
-        "blocks": [{ "kind": "scalar" }],
-    });
-
-    // Paths that exist resolve silently.
-    for good in ["", "error", "error.unmatched_unknowns[0]", "blocks[0].kind"] {
-        let path = bridge::parse_path(good).expect("well-formed");
-        assert_eq!(
-            resolve_jump_target(&stage, &path),
-            Ok(()),
-            "{good:?} should resolve"
-        );
-    }
-
-    // Well-formed but absent: parses fine, navigates to nothing, must be reported.
-    let path = bridge::parse_path("error.matched_unknowns[0]").expect("well-formed");
-    let Err(msg) = resolve_jump_target(&stage, &path) else {
-        panic!("a path that is not in the stage must be reported");
-    };
-    assert!(
-        msg.contains("error.matched_unknowns[0]"),
-        "the message names the path: {msg}"
-    );
-
-    // Past the end of a real array counts as absent too.
-    let path = bridge::parse_path("blocks[9]").expect("well-formed");
-    assert!(resolve_jump_target(&stage, &path).is_err());
-}
-
-/// A link's trail entry is the link, so the trail can be read against the tour.
-///
-/// Doug asked whether Claude can see him click a tour link. It could not — the
-/// action trail showed the specimen load and nothing after, so a report of "several
-/// bugs in the node-pointing tour" had to be reconstructed by asking. Now every
-/// followed link is recorded, and recorded as its **canonical URL** rather than a
-/// `Debug` dump, so it lines up with the tour's own text at a glance.
-///
-/// Round-tripped rather than pinned to literals: `describe` and `parse_hrw_link`
-/// must agree, which is the same parity rule as everywhere else.
 /// The compile outcome names the first failing stage, or how far it got.
 ///
 /// Doug found the gap by reloading a tour and asking what the trail said an hour
@@ -4165,6 +4098,16 @@ fn the_compile_outcome_names_the_first_failure() {
     );
 }
 
+/// A link's trail entry is the link, so the trail can be read against the tour.
+///
+/// Doug asked whether Claude can see him click a tour link. It could not — the
+/// action trail showed the specimen load and nothing after, so a report of "several
+/// bugs in the node-pointing tour" had to be reconstructed by asking. Now every
+/// followed link is recorded, and recorded as its **canonical URL** rather than a
+/// `Debug` dump, so it lines up with the tour's own text at a glance.
+///
+/// Round-tripped rather than pinned to literals: `describe` and `parse_hrw_link`
+/// must agree, which is the same parity rule as everywhere else.
 #[test]
 fn a_recorded_link_round_trips_to_the_same_link() {
     for url in [
@@ -4275,6 +4218,11 @@ fn a_node_link_marks_the_row_until_doug_moves_on() {
     );
 }
 
+/// A link can point at a node, using the capture's own spelling of the path.
+///
+/// This closes the last parity gap: `Focus::Node` is the capture's richest noun and
+/// no link could express it. The path grammar is not re-stated here — that is
+/// round-tripped in `bridge::tests` — this checks the link layer consumes it.
 #[test]
 fn a_link_can_point_at_a_node() {
     let Some(HrwLink::PointAtNode(stage, sub, path)) =
@@ -4931,28 +4879,6 @@ fn a_node_link_reaches_every_stage_including_the_tree_only_ones() {
     );
 }
 
-/// A link can set the follow, independently of what is pointed at.
-///
-/// The two composition primitives are independent by design — point-only,
-/// follow-only and both are all normal states — so `follow` deliberately does not
-/// touch the stage.
-/// The notebook verb parses a real name and refuses an empty one.
-///
-/// `hrw://notebook/` alone names nothing. Accepting it meant a **prose mention** of
-/// the verb inside a code span parsed as a link to an unnamed file — which the
-/// fixture reference test duly reported as a missing notebook called "". Two small
-/// faults met there: the extractor did not stop at a backtick, and the grammar
-/// accepted an empty name.
-/// Sub-view availability depends on the model, not only the stage.
-///
-/// Doug found the cross-platform tour linking to `Structural/Summary` on
-/// `ProportionalLoop`. The slug is valid for the stage, so `SubView::from_slug`
-/// accepts it — but Summary only has a tab when a model is **singular**, and
-/// ProportionalLoop is not. The link selected a view with no tab and the panel
-/// rendered the singular summary for a non-singular model.
-///
-/// One predicate now answers this for both the tab bar and the link guard, so a
-/// tab that exists and a link that is honoured cannot disagree.
 /// A stop clicked out of order says so, instead of doing nothing.
 ///
 /// Doug clicked a tour's fourth stop first. Nothing happened: with no specimen the
@@ -5010,6 +4936,16 @@ fn a_stop_needing_a_specimen_refuses_without_one() {
     }
 }
 
+/// Sub-view availability depends on the model, not only the stage.
+///
+/// Doug found the cross-platform tour linking to `Structural/Summary` on
+/// `ProportionalLoop`. The slug is valid for the stage, so `SubView::from_slug`
+/// accepts it — but Summary only has a tab when a model is **singular**, and
+/// ProportionalLoop is not. The link selected a view with no tab and the panel
+/// rendered the singular summary for a non-singular model.
+///
+/// One predicate now answers this for both the tab bar and the link guard, so a
+/// tab that exists and a link that is honoured cannot disagree.
 #[test]
 fn a_sub_view_is_available_only_when_its_tab_is() {
     let clean = Stage::ok(serde_json::json!({}));
@@ -5156,6 +5092,13 @@ fn the_system_modeler_verb_stands_alone() {
     );
 }
 
+/// The notebook verb parses a real name and refuses an empty one.
+///
+/// `hrw://notebook/` alone names nothing. Accepting it meant a **prose mention** of
+/// the verb inside a code span parsed as a link to an unnamed file — which the
+/// fixture reference test duly reported as a missing notebook called "". Two small
+/// faults met there: the extractor did not stop at a backtick, and the grammar
+/// accepted an empty name.
 #[test]
 fn the_notebook_verb_needs_a_name() {
     assert_eq!(
@@ -5189,6 +5132,11 @@ fn a_code_span_mention_is_not_extracted_as_a_link() {
     assert!(parse_hrw_link("hrw://notebook/").is_none());
 }
 
+/// A link can set the follow, independently of what is pointed at.
+///
+/// The two composition primitives are independent by design — point-only,
+/// follow-only and both are all normal states — so `follow` deliberately does not
+/// touch the stage.
 #[test]
 fn a_link_can_set_the_follow() {
     assert_eq!(
@@ -5202,6 +5150,17 @@ fn a_link_can_set_the_follow() {
     assert_eq!(app.stage, StageKind::Events, "following does not navigate");
 }
 
+/// A link's frame number is the one on screen — the two must not be off by one.
+///
+/// Doug walked the fixture tour and found the link and the counter disagreeing.
+/// The fixture had even *documented* the discrepancy ("frames are 0-based in links,
+/// 1-based in the display"), which is writing a bug down instead of fixing it.
+///
+/// The rule this pins: **each verb matches how its own thing is displayed.** Frames
+/// read "Frame 3/11" from one, so frame links count from one; equations read
+/// `f_x[46]` from zero, so equation links count from zero. Uniformity between the
+/// two verbs would force one to disagree with the screen, which is the drift that
+/// actually costs something.
 #[test]
 fn a_frame_link_and_the_frame_counter_agree() {
     for shown in [1usize, 2, 7, 41] {
@@ -5218,6 +5177,7 @@ fn a_frame_link_and_the_frame_counter_agree() {
     }
 }
 
+/// The frame-seek verb parses everywhere an animation lives.
 #[test]
 fn a_link_can_seek_to_a_frame() {
     assert_eq!(
@@ -5256,6 +5216,7 @@ fn a_link_can_seek_to_a_frame() {
     assert!(parse_hrw_link("hrw://stage/Events/TarjanAnim/frame/1").is_none());
 }
 
+/// The camera-aiming verb parses, and only where it makes sense.
 #[test]
 fn a_link_can_aim_at_an_equation() {
     assert_eq!(
@@ -5287,6 +5248,8 @@ fn a_link_can_aim_at_an_equation() {
     ));
 }
 
+/// A sub-view slug is resolved **against its stage**, so the same word means
+/// different things in different stages and a wrong pairing does not navigate.
 #[test]
 fn sub_view_slugs_are_stage_scoped() {
     // `Tree` exists under four stages and means a different enum in each.

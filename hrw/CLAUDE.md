@@ -763,8 +763,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > `compile_caches.rs` (101)**, and **the spy-plot + incidence arms of `central_panel_ui`'s
 > dispatch → `matrix_panes.rs` (451, 246 of them tests)**, and **the navigation branch of
 > `central_panel_ui` → `nav_view.rs` (388, 220 of them tests)**, and **the Flatten / Events /
-> Initialization sub-view rows → `sub_view_rows.rs` (525, 343 of them tests)**.
-> **app.rs 14,437 → 6,587** (12,250 before the test blocks left for `app/tests.rs`
+> Initialization sub-view rows → `sub_view_rows.rs` (525, 343 of them tests)**, and **the
+> default artifact pane → `artifact_pane.rs` (514, 255 of them tests)**.
+> **app.rs 14,437 → 6,521** (12,250 before the test blocks left for `app/tests.rs`
 > in one −5,613 step that refactored nothing — 11,857 after `report_sub_view`, plus the alias-defect guard below,
 > plus **+41 from the live-debug deduplication, +113 from the ack-path seam, +173 from the
 > cache-lifetime split and +51 from the ack-verdict test split, which are the finding rather than
@@ -774,12 +775,14 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest.
 >
-> ### ⟶ NEXT: THE ROUTER IS UNDERWAY — `central_panel_ui` 640 → 552 → 484 → 430
+> ### ✅ THE ROUTER IS DONE — `central_panel_ui` 640 → 552 → 484 → 430 → 322
 >
 > **`matrix_panes.rs` landed 2026-08-20** (spy-plot + incidence arms, 6 tests in 0.02 s), then
 > **`nav_view.rs`** (the navigation branch, 8 tests in 0.08 s), then **`sub_view_rows.rs`**
-> 2026-08-21 (the three stage-owned rows, 9 tests in 0.03 s). The census and the follow-ups are
-> spent; the routers are all that is left. `central_panel_ui` is **430 lines**, `frame_ui` **300**.
+> 2026-08-21 (the three stage-owned rows, 9 tests in 0.03 s), then **`artifact_pane.rs`** the same
+> day (the final `else` arm, 7 tests in 0.02 s). The census and the follow-ups are spent.
+> `central_panel_ui` is **322 lines** and has no named work left; **`frame_ui` (300) is the last
+> planned item.**
 >
 > **AND `nav_view` FOUND THE RULE ONE LEVEL UP: the router's OUTERMOST list has two members, and
 > every census counted only one.** The `_ui` census, the coupling table and both "next" boxes
@@ -941,17 +944,51 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > all three unconditionally; nothing had ever stated that, and dropping the check from
 > `events_row_ui` now fails five tests by name.
 >
-> ### ⟶ NEXT: BACK TO THE ROUTERS
+> ### ✅ DONE 2026-08-21 — THE ROUTER IS FINISHED, AND EIGHT DOC COMMENTS WERE ON THE WRONG TEST
 >
-> **The test move was the detour the plan scheduled; the remaining named work is `central_panel_ui`
-> and `frame_ui`.** In order: ~~the **sub-view row block**~~ (done, box above), the
-> **default artifact pane** (the final `else` arm, ~152 lines of error-summary-beside-tree — the
-> largest single block left), and **`frame_ui`'s Specimen left panel** (~113), whose Purpose half
-> (~48 lines, zero `App` methods) is the twin of the already-extracted `specimen_source_ui` and
-> would sit beside it.
+> **`app.rs` 6,587 → 6,521; `central_panel_ui` 430 → 322; `artifact_pane.rs` is 514 lines, 255 of
+> them tests, 7 tests in 0.02 s.** The default artifact pane — the router's final `else`. It was
+> **133 lines, not the ~152 the plan carried**; that is the *second* estimate in two days to be
+> high, both because an earlier extraction moved the boundary and nobody re-counted. **Re-measure
+> any figure this file quotes before planning against it.**
 >
-> **Re-measure the ~152 before planning against it.** The sub-view block was quoted at ~125 and was
-> **83**, because the estimate predated `report_sub_view` leaving and nobody re-counted.
+> **The odd member was the arm with NO condition.** Every other arm asks whether its own sub-view
+> is selected; this one asks nothing, which is also why it draws for the five tree-only stages
+> whose whole on-screen life it is. It left with **no `&mut App` at all** — its two mutations were
+> already deferred past the stage borrow, so they became a returned `Option<String>`.
+>
+> **THE TESTS IT BOUGHT GUARD A DEFECT DOUG REPORTED ON 2026-08-05** and nothing had asserted
+> since: *"there is no tree in the failing typecheck stage view"*, where the summary was rendered
+> in an `if` with the tree as the `else` — **beside became instead of**. Reaching that pane needed
+> an `App`, a worker and a driven-to-failure specimen; it is now two tests and a pure predicate.
+>
+> **AND THE FINDING THAT OUTGREW THE EXTRACTION: `app/tests.rs` held TWO MERGED DOC STACKS**, of
+> three and four summaries, above tests that owned only the last of each. **Eight doc comments
+> were describing a test that does not do what they say**, the oldest three weeks old, and every
+> orphaned owner had **zero** doc comment. All eight are reattached; the table of pairings is in
+> the plan.
+>
+> **This is the fourth appearance of the class this file records below, and the first at scale.**
+> The cause is one commit shape — a new test's doc appended to the *end* of the previous test's
+> block, with the new `#[test]` below it, so Rust merges them and the old test silently loses its
+> own summary. **`17f01978` is the clearest instance.**
+>
+> **The ZERO-doc detector filed below would have caught all eight, and is still too noisy to be a
+> test** — `app/tests.rs` keeps **39** deliberately undocumented tests. **The detector that works
+> is the other end of the pair: a doc block containing two opening summaries.** Measured precision
+> on that file was **8 of 12**; across `src/*.rs` it reports **83**, which is *not* an orphan count
+> — the first `worker.rs` hit sampled was a false positive. **Do not quote 83 as a defect count.**
+>
+> ### ⟶ NEXT: `frame_ui`, THE LAST PLANNED SPLIT ITEM
+>
+> **`central_panel_ui` is finished.** The one named item left is **`frame_ui`'s Specimen left
+> panel** (~113 lines), whose Purpose half (~48, zero `App` methods) is the twin of the
+> already-extracted `specimen_source_ui` and would sit beside it. **Re-measure the ~113 first** —
+> two consecutive estimates in this file have been high.
+>
+> **A SWEEP IS ALSO OWED, and it is deliberately not part of that item:** run the two-summary
+> detector over the other modules and triage what it finds. It is a sweep, not an extraction, so
+> it is its own session under the stopping rule.
 >
 > **Ask "what is this a list of, and which member is shaped differently?" before looking for a
 > region** — and find the *outermost* list first, which is the rule `nav_view` bought.
@@ -992,14 +1029,13 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > rather than after a grep past two long bodies. **That uniformity, not the 83 lines, is what the
 > move rests on.**
 >
-> **⟶ THE NEXT ONE: apply the same reading to the OTHER lists.** ~~the sub-view row block (four
-> `*_ready` gates, ~125 lines)~~ **done 2026-08-21** — and the reading worked twice on it, once
-> finding a defect and once a rule. What is left of `central_panel_ui` is the **default artifact
-> pane** — the final `else` arm, ~152 lines of error-summary-beside-tree, the largest single block
-> left in `app.rs`. `frame_ui`'s is the Specimen left panel (~113), whose Purpose half (~48, zero
-> `App` methods) is the twin of the already-extracted `specimen_source_ui` and would sit beside
-> it. **Ask "what is this a list of, and which member is shaped differently?" before looking for
-> a region.**
+> **⟶ THE READING WORKED ON EVERY LIST IN THE ROUTER, AND IS NOW SPENT THERE.** ~~the sub-view row
+> block~~ and ~~the default artifact pane~~ **both done 2026-08-21** — the first found a defect
+> and a rule, the second found the answer *"the odd member is the one that is not a member of the
+> same kind"*: an arm with **no** gate among fourteen that all have one. `frame_ui`'s list is the
+> Specimen left panel (~113), whose Purpose half (~48, zero `App` methods) is the twin of the
+> already-extracted `specimen_source_ui` and would sit beside it. **Ask "what is this a list of,
+> and which member is shaped differently?" before looking for a region.**
 >
 > Details, the perturbation table and the four earlier verdicts are in the plan.
 >
@@ -1234,6 +1270,25 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > false. Two cheap partial checks that would have fired: a doc block with two `///` paragraphs
 > that each read as an opening summary, and a doc naming a return type the signature does not
 > have.
+>
+> **THE FIRST OF THOSE TWO WAS BUILT AND RUN ON 2026-08-21, AND IT WORKS.** The shape it looks
+> for: a non-blank `///` line whose **previous** line is a non-blank `///` ending a sentence and
+> whose **next** line is a bare `///` — a new summary opening in the middle of a block.
+> **Measured precision on `app/tests.rs`: 8 real orphans out of 12 hits**, the four misses being
+> wrapped continuation lines that happen to end a paragraph. All eight are fixed; the pairings are
+> in [`docs/app-split-plan.md`](docs/app-split-plan.md).
+>
+> **It is not yet a checker, and the reason is the noise floor, not the idea.** Across `src/*.rs`
+> it reports **83** — **that is a hit count, not a defect count**, and the prose-heavy modules
+> skew it (the first `worker.rs` hit sampled was a false positive). **Never cite 83 as the number
+> of orphaned doc comments.** The owed work is to run it per module and triage; only after that is
+> a green ratcheted test possible.
+>
+> **And the ZERO-doc detector is now measured too, which settles why it cannot be the check.**
+> All eight victims here had no doc comment at all — so it would have caught every one — but
+> `app/tests.rs` keeps **39** deliberately undocumented tests, mostly small unit checks.
+> **The two detectors are the two ends of one defect**, and only the two-summary end has a
+> tolerable false-positive rate.
 >
 > ### THE `App` METHOD MAY BE A QUESTION RATHER THAN A PRESS — and a question cannot be deferred
 > *(2026-08-19, `report_sub_view_row_ui`)*
