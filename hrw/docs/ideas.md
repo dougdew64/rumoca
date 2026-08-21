@@ -2019,7 +2019,156 @@ platforms.
 
 ## 48. Get the full gate under one minute — REOPENED AND RESCOPED 2026-08-20
 
-### ⟶ THE AGREED METHOD — Doug, 2026-08-21, and this is the live starting point
+### ⟶ MEASURED 2026-08-21 — THE ANSWER, AND IT IS NOT WHERE THE METHOD LOOKED
+
+**92 % of the gate is 72 compiles and 10 MSL loads. Every compile re-resolves the entire
+MSL — 38,855 defs — because the compile path invalidates the session's resolution cache on
+every call.** A two-equation specimen that references nothing from the MSL costs **3.5 s**;
+the same specimen in a session with no MSL loaded costs **0.03 s**. The model's own work is a
+rounding error.
+
+**Doug's ruling on this measurement, 2026-08-21:** *"The 60 second goal is an arbitrary number
+which I declared so that we could have a goal. The time reductions which you have identified
+are significant and would be much appreciated. We're going to attempt A, B and C."* **So the
+acceptance criterion below is a direction, not a contract** — the levers are authorised on
+their own merits and the arc is not a failure if it lands at 90 s.
+
+#### The confound that nearly became the finding — read this before trusting any timing here
+
+The first measurement of the day gave `all_healthy_specimens_simulate` at **112.66 s** at
+`t_end = 1.0` and **27.22 s** at `t_end = 0.1`, which reads as *integration dominates, 4×*. It
+is false. **That was the first MSL load since boot, so ~75 s of it was cold OS page cache.**
+
+**It was caught by a cross-check, not by suspicion:** the same test measures **31.3 s inside the
+full suite**, and a test cannot cost 31 s in company if integration alone costs 85 s. Re-run
+warm, the pair collapses (below).
+
+**So the standing rule for this item: never compare a first-of-session run with a later one, and
+sanity-check any isolated timing against the same test's in-suite figure.** The suite pays the
+MSL's disk cost once; an isolated run pays it too, and attributes it to whatever test is running.
+
+#### `t_end` IS DEAD — point 3 of the agreed method is spent
+
+| `all_healthy_specimens_simulate`, warm | time |
+|---|---:|
+| `t_end = 1.0` | 37.75 s |
+| `t_end = 0.1` | **37.33 s** |
+
+**Integration is free.** Cutting `t_end` buys 0.4 s on the suite's largest simulating test.
+Corroborated independently by the accounting: `simulate` averages **3.13 s** against
+`compile_target`'s **3.50 s**, so a simulate costs *less* than a compile and the integration
+inside it is invisible.
+
+**This is the fifth lever to die on contact with a clock**, and the first that Doug and Claude
+had *agreed on in advance*. The non-vacuity assertions point 3 asks for are therefore **not
+owed** — there is nothing to pay for. Keep the rule itself (name the phenomenon a simulation
+test needs) if `t_end` is ever cut for another reason; `BouncingBall`'s bounce is still the
+case that would break silently.
+
+#### Where the gate goes — instrumented counters, one full run
+
+Measured by wrapping four call sites in a scope that accumulates count and wall time per
+process. Run total **315.11 s**.
+
+| bucket | calls | total | mean |
+|---|---:|---:|---:|
+| `compile_target` | 55 | **192.7 s** | 3.50 s |
+| `simulate` (its own path — it does **not** call `compile_target`) | 17 | **53.2 s** | 3.13 s |
+| `load_libraries` (a full MSL load) | 10 | **43.8 s** | 4.38 s |
+| *of which* `strict_compile_resolved`, *inside `compile_target`* | 52 | *62.4 s* | *1.20 s* |
+
+**72 compiles + 10 MSL loads = 289.7 s of 315.11 s.** The rest of the suite is noise: the
+`--report-time` census puts **756 tests under 1 s sharing 14.3 s**, against **40 tests carrying
+323.5 s**.
+
+#### Why one compile of a two-equation model costs 3.5 s
+
+HRW's own log stream, compiling `SingleInertia` (2 equations, zero MSL references):
+
+| step | time |
+|---|---:|
+| Parse | 0.7 ms |
+| **Resolve** | **1,600.2 ms** |
+| **Rumoca compile — full pipeline** | **1,095.2 ms** |
+| Structural → Index reduction → Initialization → Events → Solve lowering | ~20 ms |
+| total | 2,736.6 ms |
+
+**And the control that settles it: the same file, in a `WorkerState` that never loaded the MSL,
+compiles in 0.03 s.** Both halves of the cost are proportional to the loaded library, not to
+the model.
+
+#### The mechanism, pinned by calling the resolver directly
+
+| call | time | session state |
+|---|---:|---|
+| resolve #1 | 1.24 s | cold |
+| resolve #2, #3 | **0.00 s** | nothing changed |
+| resolve #4 | 1.61 s | after adding one workspace document |
+| resolve #5 | **0.00 s** | unchanged again |
+| resolve #6 | **1.59 s** | after `remove_document` + `update_document` of **byte-identical** text |
+
+**Rumoca's resolution cache is correct and complete.** What costs the time is that **any**
+workspace-document change invalidates the whole resolved library — and `compile_target`
+deliberately performs `remove_document` + `update_document` on every compile, because
+`update_document` short-circuits on identical source and the registration code would never
+re-run. The comment at that site explains the *correctness* need honestly; nothing there was
+wrong. **The interaction is the defect, and neither half looks like one on its own.**
+
+**This is a candidate upstream question, not a defect claim** (`docs/upstream-issues.md`
+discipline): *should a change to a workspace document invalidate resolution of durable external
+source roots?* It reproduces in six lines and is exactly the shape `upstream-strategy.md` calls
+a zero-cost gift. **Adjudicate before filing.**
+
+#### The levers, with what each is measured to be worth
+
+| # | lever | worth | status |
+|---|---|---:|---|
+| **A** | Stop invalidating the resolved MSL on every compile | ~1.6 s × 72 ≈ **115 s** | **authorised 2026-08-21** |
+| **B** | Compile MSL-free specimens in a bare session | **49.5 s → 0.5 s** over 16 specimens | **authorised 2026-08-21** |
+| **C** | Reduce the 10 full MSL loads | up to **44 s** | **authorised 2026-08-21** |
+| **D** | Cut `t_end` | **0 s** | dead, see above |
+
+**B carries a caveat that must not be lost.** 16 of the 24 specimens reference nothing from the
+MSL. Compiling all 16 both ways and comparing every stage's JSON byte-for-byte: they **differ**,
+but the *only* difference is **DefId numbering** — `def_id: 89` against `def_id: 86`, at
+identical byte lengths (21,734 vs 21,734; 15,413 vs 15,413) — because an MSL-loaded session
+allocates more DefIds before reaching the specimen. Semantically the same compile. **DefIds are
+observable**, in the pane and in the committed notebook traces, so B is a trace-regenerating
+change and `--features notebook-check` is part of its gate.
+
+#### Run-to-run variance is large, so judge by counters and not by wall clock
+
+The same suite measured **315 s, 338 s and 412 s** on one machine in one afternoon, with no
+source change between two of them. **Any claimed improvement must clear ~15 % to mean anything.**
+Prefer the instrumented counts (compiles, resolutions, MSL loads) — they are exact, and a lever
+that removes 30 resolutions has demonstrably worked whatever the clock says.
+
+#### How these numbers were produced, so they can be reproduced
+
+Four temporary probes, none committed (`CLAUDE.md`: *a probe lives in the working tree until it
+earns permanence*):
+
+1. A scope guard accumulating `(count, nanos)` per bucket into a `BTreeMap`, rewriting a file on
+   every sample, dropped into `compile_target`, `simulate`, `load_libraries` and around
+   `strict_compile_resolved`.
+2. A test timing MSL load, repeat compiles of the same specimen, and a compile in a session with
+   **no** libraries loaded — the control that made the finding unambiguous.
+3. The same test calling `session.strict_compile_resolved()` directly, with and without document
+   churn between calls.
+4. A test compiling every MSL-free specimen in both session kinds and diffing the stage JSON.
+
+**`--report-time` needs `RUSTC_BOOTSTRAP=1`** on this stable toolchain — the harness gates it on
+nightly, and without that the run dies after the build with a bare `error:` line.
+
+**One caution for whoever adds a probe to `worker.rs`:** it changes the file's line count, so
+`doc_citations::architecture_regions_are_current` fails for the duration. That failure is the
+probe, not a defect — but do not let it mask a real one.
+
+### ⟶ THE AGREED METHOD — Doug, 2026-08-21, superseded in part by the measurement above
+
+**Points 1, 2 and 4 stand. POINT 3 IS DEAD** — see *`t_end` is dead* above. Kept unedited
+because point 1 is what produced the answer, and because the method being *right* while its
+named lever was *wrong* is the item's most transferable lesson.
 
 **The `app.rs` split is finished, so this is the arc in flight.** Gate measured **~285–354 s**
 on 2026-08-21. Doug's framing: *"that test time is subtracting from learning time."*
@@ -2185,7 +2334,13 @@ clean wall-clock is 253 s. Use the ratios, not the absolute sums.)*
 tests cost 0.4 seconds total.** The `app.rs` split is free at runtime. Nothing about this
 item argues against finishing it first.
 
-### Levers, each with the measurement that must precede it
+### Levers as they stood BEFORE the 2026-08-21 measurement — kept for the reasoning, not the ranking
+
+**Superseded by *The levers, with what each is measured to be worth* above.** Read this list
+for what it says about parallelism and memory, which is still true; do **not** pick work from
+it. Its ranking was written without knowing that a compile's cost is MSL re-resolution, and
+lever 2 (cache simulation results, "worth ~46 s") is now known to be worth **nothing** — the
+46 s it aimed at is compilation, not integration.
 
 **No lever gets chosen before its number exists.** This item was once justified by
 arithmetic over test names and the arithmetic was wrong; `CLAUDE.md` records the rule —
@@ -2229,12 +2384,33 @@ detecting.
 **The machine has limited memory**, which is why every lever above is paired with a
 memory question rather than only a time one.
 
-### First step for whoever picks this up
+### First step for whoever picks this up — ✅ DONE 2026-08-21, and this is what it left
 
-**Measure, do not implement.** In order: (1) resident memory of one MSL-loaded `Session`;
-(2) the build-versus-run split of a warm gate; (3) distinct compiles and distinct
-simulates, with cache hit counts. **Then** pick levers against a 60-second budget and
-write the plan. The three numbers are cheap and every lever's viability turns on them.
+**The measuring phase is complete.** The three numbers this section asked for are answered or
+retired: distinct compiles and MSL loads are counted above (72 and 10); the build-versus-run
+split is answered by the counters (289.7 s of 315 s is run, and a warm rebuild is ~19 s); and
+**resident memory of one MSL-loaded `Session` was never needed**, because parallelism is no
+longer the lead lever — work *reduction* is, and it does not turn on that number.
+
+**The order of work, Doug 2026-08-21: A, then B, then C.** Taken in that order because A is the
+largest, is the one that makes every other compile cheaper, and is the one whose blast radius
+must be understood before B changes which session a test uses.
+
+- **A — do not restructure the compile path to get it.** `CLAUDE.md`'s prohibition is on a
+  *redesign*; the change wanted here is narrow, and the honest form of it is *"do not invalidate
+  when nothing changed"*, not *"re-plumb how specimens are registered"*. If the narrow form
+  cannot be made correct — remember the site's comment names a real poisoned-cache failure — that
+  is a finding to bring back, not a licence to widen.
+- **B — its gate includes `--features notebook-check`**, because DefId renumbering is visible in
+  committed traces. Budget the 157 s and the `gen_trace --all` regeneration that follows.
+- **C — identify which of the 10 loads are deliberate.** At least two tests are anti-cache **by
+  design** (`a_broken_specimen_does_not_poison_the_next_compile`,
+  `compiling_a_specimen_twice_is_reproducible`) and must keep paying. The question for those is
+  *which gate they belong in*, never whether to cache them.
+
+**And the debt every one of these owes**, unchanged from *The caveats that survive*: a cache that
+makes a test cheaper also stops it detecting what it used to detect. **Keep one test that does
+the uncached thing and compares.**
 
 ---
 

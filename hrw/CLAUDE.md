@@ -591,11 +591,35 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > test runs than adding features or learning."* The gate is **~354 s** measured 2026-08-21, against
 > a 60 s target.
 >
-> **FOUR LEVERS ARE ALREADY DEAD BY MEASUREMENT — do not re-propose them.** Parallelism (~2 s; the
+> **FIVE LEVERS ARE DEAD BY MEASUREMENT — do not re-propose them.** Parallelism (~2 s; the
 > worker tests serialise on a global `Mutex<WorkerState>`), memoising simulations (~2 s; the key
 > must include `t_end` and the sites are distinct pairs), memoising specimen *compiles* (**already
-> built** — `compile_specimen_shared`, so 47 of 59 call sites are free), and feature-set thrashing
-> (1–2 s; cargo keeps both variants). The full reasoning is in *Running things* below.
+> built** — `compile_specimen_shared`, so 47 of 59 call sites are free), feature-set thrashing
+> (1–2 s; cargo keeps both variants), and **cutting `t_end` (0.4 s — integration is free)**. The
+> full reasoning is in *Running things* below.
+>
+> **⟶ THE ANSWER IS MEASURED, AND THE WORK IS AUTHORISED — 2026-08-21.** `docs/ideas.md` #48
+> carries the full record. **92 % of the gate is 72 compiles and 10 MSL loads, and every compile
+> re-resolves the entire MSL (38,855 defs)** because `compile_target` invalidates the session's
+> resolution cache on every call. A two-equation specimen referencing nothing from the MSL costs
+> **3.5 s**; in a session with no MSL loaded it costs **0.03 s**.
+>
+> **Doug authorised three levers, in this order — A, B, C:** **A** stop invalidating the resolved
+> MSL per compile (~115 s), **B** compile MSL-free specimens in a bare session (49.5 s → 0.5 s
+> over 16 specimens, but it **renumbers DefIds**, so its gate includes `notebook-check`), **C**
+> reduce the 10 full MSL loads (~44 s). He also retired the target as a contract: *"the 60 second
+> goal is an arbitrary number which I declared so that we could have a goal"* — the levers are
+> authorised on their own merits.
+>
+> **A IS NOT A LICENCE TO RESTRUCTURE THE COMPILE PATH.** The wanted change is *"do not invalidate
+> when nothing changed"*. The churn site names a real poisoned-cache failure it exists to prevent;
+> if the narrow form cannot be made correct, that is a finding to bring back.
+>
+> **AND TWO MEASUREMENT RULES THIS ARC BOUGHT.** *(1)* **Never compare a first-of-session run with
+> a later one** — the opening experiment read as *"integration dominates 4×"* and was ~75 s of cold
+> page cache; it was caught by cross-checking against the same test's in-suite figure, not by
+> suspicion. *(2)* **The suite varies 315–412 s with no source change**, so judge a lever by the
+> instrumented counts (compiles, resolutions, MSL loads), never by wall clock.
 >
 > **THE METHOD, AGREED WITH DOUG 2026-08-21 — `docs/ideas.md` #48 carries it in full.** Four
 > points, and the first is the one a session will be tempted to skip:
@@ -611,7 +635,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >   wrong negative** — the error this repository treats as the one nobody catches. The safe
 >   version of selection already exists (`slow-tests`, the FAST/FULL table); reach for more of it
 >   only where a test cannot be made cheap.
-> - **CUT `t_end`, AND PAY FOR IT WITH A NON-VACUITY ASSERTION PER TEST.** Doug: simulating 0.1 s
+> - **~~CUT `t_end`~~ — DEAD, measured 2026-08-21: 37.75 s → 37.33 s.** Integration is free, so the
+>   non-vacuity assertions this asked for are **not owed**. The rule below is kept only for the day
+>   `t_end` is cut for some other reason. Doug: simulating 0.1 s
 >   is as useful as more, *for our current purposes*. **The exception is a test asserting a
 >   PHENOMENON rather than that integration ran.** `BouncingBall` is the case — a bounce is an
 >   event, and `has_discontinuities`, `discontinuity_segments` and *"discontinuities render as
@@ -623,7 +649,10 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >   and initial conditions (charter §4.3). `t_end` is already a parameter to `simulate`, so this
 >   costs nothing.
 >
-> **AND A CANDIDATE COST NEITHER LEVER REACHES, offered as a thing to measure.** The suite is
+> **AND A CANDIDATE COST NEITHER LEVER REACHES — ✅ IT WAS THE RIGHT GUESS, confirmed 2026-08-21.**
+> The paragraph below predicted that the dominant cost was the MSL and invisible to both named
+> levers. It was, and the prediction is worth keeping: **the reasoning that found the answer was
+> "what do these tests SHARE?", not "which test names look slow?"** The suite is
 > forced to `--test-threads=1`, and the expensive tests serialise on a global
 > `Mutex<WorkerState>` — **they are serial precisely because they SHARE the expensive resource,
 > the loaded MSL, and sharing is what makes them cheap.** So the real cost may be MSL loading,
@@ -1411,7 +1440,14 @@ it, led by `all_healthy_specimens_simulate` (16 s), `every_stage_serializes_with
 is **8 s**; a no-op build is **1 s**. It was ~190 s until 2026-08-15; the gate grows as tests are
 added, which is another reason to filter while iterating rather than treat it as a fixed price.
 
-**FOUR levers already ruled out by measurement — do not re-propose them.** Parallelism buys about
+**WHERE IT REALLY GOES, measured 2026-08-21** (`docs/ideas.md` #48, which supersedes the
+per-test figures above): **72 compiles at ~3.4 s and 10 MSL loads at ~4.4 s are 92 % of the run.**
+Each compile re-resolves the whole MSL, so a two-equation specimen costs 3.5 s and the same file
+with no MSL loaded costs 0.03 s. **The per-test table above ranks symptoms; this ranks causes.**
+
+**FIVE levers already ruled out by measurement — do not re-propose them.** Cutting `t_end` is the
+fifth (**0.4 s** — integration is free; `simulate` averages *less* than `compile_target`).
+Parallelism buys about
 two seconds, because the worker tests serialise on a global `Mutex<WorkerState>` regardless
 (`docs/ideas.md` #48). **Memoising simulations buys about two seconds**: a simulation's key
 must include `t_end`, and the sites are almost all distinct pairs —
