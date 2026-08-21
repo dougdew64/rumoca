@@ -341,20 +341,26 @@ those functions, or will improve your ability to test those functions and keep t
 reasoning). They encode a human-comprehension heuristic, and enforcing it would reward splitting
 a function *to satisfy the lint* — extraction with no new seam and no new test.
 
-### Trigger 2 HAS FIRED for `app.rs` — 2026-08-19, and the framing matters
+### Trigger 2 FIRED for `app.rs` on 2026-08-19 — the split ran, and the FRAMING is what generalises
 
-**`app.rs` is 14,437 lines**, up from the 9,434 recorded on 2026-08-02. The case for splitting it
-is **not** that it is large — that is the heuristic this policy exists to refuse, and it would
-equally license splitting `worker.rs` (10,594 lines), which has caused none of the trouble below.
+**The arc is closed** (2026-08-21; the record is [`docs/app-split-plan.md`](docs/app-split-plan.md),
+the closure box is under *Current work*). What is kept here is **how the trigger was stated**,
+because that is what the next candidate will be judged by.
 
-**The case is that it exceeds what Claude can hold, and there are defects to show for it.** In one
+**The case was never that the file was large.** That is the heuristic this policy exists to refuse,
+and it would equally have licensed splitting `worker.rs` — which was larger for most of the arc,
+is larger again now, and **has caused none of the trouble below.** It was deliberately left alone
+as the control.
+
+**The case was that it exceeded what Claude could hold, with defects to show for it.** In one
 session: line-number arithmetic used to locate an edit (one of the three silent-corruption causes
-this file names), Rust generated through a shell three times with doc references silently
-swallowed twice, and repeated edits made against stale assumptions about surrounding code. Each
-was cheaper than reading the region first — which is the definition of a file too big to maintain.
+this file names), Rust generated through a shell three times with doc references silently swallowed
+twice, and repeated edits made against stale assumptions about surrounding code. Each was cheaper
+than reading the region first — which is the definition of a file too big to maintain.
 
-**So record the trigger as "exceeds what Claude can hold, with defects to show for it", never as
-"large".** The distinction is what stops the next session splitting files by line count.
+**So state the trigger as "exceeds what Claude can hold, with defects to show for it", never as
+"large".** That distinction is what stops the next session splitting files by line count — and it
+is the reason `worker.rs` is still one file.
 
 ### And a second observable signal: HANDOFF FREQUENCY
 
@@ -510,1035 +516,138 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > goes underneath it.** A ✅ box is history the moment its arc closes — move it to the plan or
 > to `DECISIONS.md` rather than letting it accumulate above the next reader's actual task.
 >
-> ### ⟶ NEXT: SPLIT `app.rs` — [`docs/app-split-plan.md`](docs/app-split-plan.md)
->
-> **Doug, 2026-08-19:** size the pieces to reduce context-maintenance frequency, and on *"an
-> absolute need of never, ever ruling out potential work simply because `app.rs` is too large for
-> you to even consider."* **That floor was already breached** — the same day's sweep filed
-> `app.rs` under "not looked at" because reading it did not fit.
->
-> **Target: no module over ~1,500 lines**, derived from the nine `hrw/src` modules already in the
-> 1,000–1,500 band that have never produced this week's failures. `app.rs` **started at 14,437**;
-> the current count is in the plan's progress table, and in `docs/architecture.md`.
->
-> **THE WORKING MODE IS A LOOP** (Doug): **maintenance → a bit of refactoring → record findings →
-> update the plan → repeat.** Maintenance comes *first* deliberately — a session that refactors
-> until its context runs out leaves a moved boundary and no account of why.
->
-> **STOPPING RULE: one extraction per session, then `/clear`.** Context maintenance is insurance,
-> not recovery — it COSTS context to make running out survivable and frees nothing. Running to
-> exhaustion on 2026-08-19 spent the last third of the session limping. **A "bit" is one item or
-> one small cluster**, built and tested before the next. Not a whole step
-> of the plan's §3; those proved too large to be atomic.
->
-> **Done so far:** the sub-view enums, `Viewport` and `sub_view_name_for` → `stage_view.rs` (266
-> lines), StageViewCaches to stage_caches.rs (99), and UiMode/SpecimenDetail/NavEntry to
-> ui_state.rs (73), **source_map_ui — the first RENDERING fn — to source_map.rs (281)**,
-> **specimen_source_ui + SourceViewState to specimen_source.rs (397)**,
-> **autoplay_controls_ui to tour_transport.rs (458)**, **`tour_panel_ui`'s inner scroll area
-> → `tour_panel.rs` (735, renamed from `tour_transport.rs`)**, and **the tabs of
-> `stage_tab_bar_ui` → `stage_tabs.rs` (493, 190 of them tests)**, and
-> **the assembled state of `context_bar_ui` + `background_ui` → `context_bar.rs` (520, 205 of
-> them tests)**, and **`generic_error_summary` + `structural_singular_summary` →
-> `error_summary.rs` (440, 140 of them tests)**, and **`ContextBarState` + `PointedAt` +
-> `PointKind` + `next_seq` → `context_bar.rs` (649)**, and **`equation_sheet_ui` →
-> `equation_sheet_view.rs` (446, 208 of them tests)**, and **`report_sub_view_row_ui` →
-> `report_sub_view.rs` (650, 428 of them tests)**, and **the four compile replays →
-> `compile_caches.rs` (101)**, and **the spy-plot + incidence arms of `central_panel_ui`'s
-> dispatch → `matrix_panes.rs` (451, 246 of them tests)**, and **the navigation branch of
-> `central_panel_ui` → `nav_view.rs` (388, 220 of them tests)**, and **the Flatten / Events /
-> Initialization sub-view rows → `sub_view_rows.rs` (525, 343 of them tests)**, and **the
-> default artifact pane → `artifact_pane.rs` (514, 255 of them tests)**, and **`frame_ui`'s
-> Specimen left panel — the Purpose half → `specimen_purpose.rs` (316, 168 of them tests), the
-> panel itself → `App::specimen_panel_ui`**.
-> **app.rs 14,437 → 6,494** (12,250 before the test blocks left for `app/tests.rs`
-> in one −5,613 step that refactored nothing — 11,857 after `report_sub_view`, plus the alias-defect guard below,
-> plus **+41 from the live-debug deduplication, +113 from the ack-path seam, +173 from the
-> cache-lifetime split and +51 from the ack-verdict test split, which are the finding rather than
-> a slip** — an accuracy or testability item is paid for *in* `app.rs`, so it cannot be scored on
-> `app.rs`'s line count; see the boxes below).
-> Progress
-> table in the plan, which also lists five mechanical traps and the measurement that §3 seam
-> order is WRONG for the rest.
->
-> ### ⟶ ONE STEP CLOSES THE `app.rs` SPLIT — THE DOC-COMMENT SWEEP
->
-> **Every planned EXTRACTION is done.** `central_panel_ui` finished 2026-08-21, and `frame_ui`'s
-> Specimen left panel — the last one the plan named — landed the same day. What remains is in
-> [`docs/app-split-plan.md`](docs/app-split-plan.md) under *"the step that closes this plan"*:
->
-> **The doc-comment sweep** — run the two-summary awk detector (its source is in the plan) over
-> every module and triage the hits, reattaching each orphaned summary to the item it describes.
-> Doug: *"Let's address the doc-comment sweep after the `frame_ui` refactor."* It is a sweep, not
-> an extraction, so it does not compete for the one-item budget.
->
-> **GO IN EXPECTING REAL HITS.** The earlier note — *"it may be largely noise"* — came from one
-> sampled false positive and the `specimen_purpose` move has since found **two genuine ones in
-> production code**, both recorded in the plan: `app.rs`'s `cached_purpose_notes` (**fixed**, and
-> it is a *variant the `app/tests.rs` pass never saw* — a doc left behind by a **deleted** field,
-> which the name-matching shortcut cannot find because there is no owner to match) and
-> **`lib.rs:132`, deliberately left for the sweep** (`LiveState`'s rationale sits above
-> `STEPPED_FRAME_DELAY`; the enum is sixty lines lower, undocumented).
->
-> **Ask "what is this a list of, and which member is shaped differently?" before looking for a
-> region** — and find the *outermost* list first, which is the rule `nav_view` bought. The
-> Specimen panel was found by it twice one level apart: at each level, one arm of a two-arm
-> choice had already been extracted and the other was still a body. **The shape of the sibling is
-> the cheapest seam-finder the arc produced.**
->
-> **THE ARC AFTER THIS ONE IS `#48`, AND DOUG SET THE ORDER ON 2026-08-20** *(`docs/ideas.md`)*:
-> **finish every planned `app.rs` split item first, then take `#48`** — get the full gate under
-> **60 seconds**, against ~291 s today. He called the current state a **failure mode**: *"I'm
-> spending more time awaiting the completion of test runs than adding features or learning."*
-> **The stopping rule still governs** — one item per session, then `/clear` — so the sweep is its
-> own session, and `#48` is the one after.
->
-> **This does not slow the split down, and that was checked rather than assumed:** the `app`
-> module's **140 tests cost 0.4 seconds** of the 253-second run. Use the fast run (~28 s) between
-> edits; the full gate is owed once per commit.
->
-> ### ✅ THE ROUTER IS DONE — `central_panel_ui` 640 → 552 → 484 → 430 → 322
->
-> **`matrix_panes.rs` landed 2026-08-20** (spy-plot + incidence arms, 6 tests in 0.02 s), then
-> **`nav_view.rs`** (the navigation branch, 8 tests in 0.08 s), then **`sub_view_rows.rs`**
-> 2026-08-21 (the three stage-owned rows, 9 tests in 0.03 s), then **`artifact_pane.rs`** the same
-> day (the final `else` arm, 7 tests in 0.02 s). The census and the follow-ups are spent.
-> `central_panel_ui` is **322 lines** and has no named work left; **`frame_ui`'s last named item
-> went the same day** (`specimen_purpose.rs`, 6 tests in 0.01 s), which closes the extractions.
->
-> **AND `nav_view` FOUND THE RULE ONE LEVEL UP: the router's OUTERMOST list has two members, and
-> every census counted only one.** The `_ui` census, the coupling table and both "next" boxes
-> enumerate what is inside `if self.nav.is_empty()`. **The `else` is a sibling of all of them and
-> was never a row anywhere** — 73 lines, zero `App` methods, its own IR. So: **find the outermost
-> list first, then descend.**
->
-> **−23 lines, the smallest yet, and the move does not rest on that.** It buys eight tests on a
-> pane that could previously be reached only by building an `App` with a worker and pushing a
-> `NavEntry` — the precondition that failed four times during the `CompileViewCaches` work. And
-> the jump suppression (*a navigated class is a different IR, so a stage's address means nothing
-> here*) is now **a property of the pane** applied over whatever the caller passes, not two `None`s
-> in a literal.
->
-> ### ✅ DONE 2026-08-20 — THE NAVIGATED TREE IS NO LONGER ANNOTATED FROM THE SPECIMEN
->
-> **The five fields turned out to be the WHOLE STRUCT, so `nav_view_ui` lost its `TreeOptions`
-> parameter** instead of gaining five `None`s. `TreeOptions` has seven fields; `jump_to` and
-> `highlight` were already blanked there, and five plus two is all of them — so the queued edit
-> was, unnoticed, *"ignore this parameter entirely"*. **The caller can no longer hand that pane
-> the specimen's annotations at all**, which the compiler enforces and no test has to.
->
-> **The argument that decided it is a future field, not tidiness.** The blanking literal ended in
-> `..opts`, so an eighth `TreeOptions` field would flow straight through and silently re-open the
-> defect. **A blanking literal fails open on tomorrow's field; a missing parameter fails closed** —
-> the same class as the `_ =>` arm inside the live-debug cluster.
->
-> **The durable half landed in
-> [`docs/identity-and-provenance.md`](docs/identity-and-provenance.md)**: exact equality decides
-> identity *within one model*, and **"Go to definition" was the first thing that ever put two
-> namespaces on screen at once.** All five complied with that page as written; what they stepped
-> outside was a precondition nobody had needed to state. It is stated now.
->
-> **`egui_kittest` CAN DRIVE A CONTEXT MENU, and nothing here had ever tried.** `click_secondary()`,
-> `run_steps(2)`, and the menu items are ordinary queryable labels. **Nine `.context_menu(` call
-> sites in this codebase and zero tests had opened one** — an assertion surface that had been
-> treated as unreachable. It is how the two new tests see the annotations at all: none of the five
-> changes a *label*, so Follow, the source-line item and "Go to" are invisible until a right-click.
->
-> **It cost a must-fire-verified test, and that is recorded rather than glossed.**
-> `a_jump_target_is_not_honoured_against_a_navigated_class` worked by passing a stage's jump target
-> in; with no parameter it cannot be written. **A property that moves from a test into the type
-> system takes its test with it** — leaving one that can only fail by re-adding a parameter would
-> be theatre.
->
-> **`app.rs` is unchanged at 12,250** — one argument out, one doc line in. **A net of zero is the
-> plan's own rule at its clearest**: an accuracy item is paid for *in* `app.rs` and cannot be
-> scored there. Details, the fixture's three hidden preconditions and the finding that the three
-> menu items are *not* independent are in
-> [`docs/app-split-plan.md`](docs/app-split-plan.md).
->
-> ### ✅ DONE 2026-08-20 — `app.rs`'s TEST BLOCKS LEFT: 12,250 → 6,639
->
-> **The step change the experiment wanted.** Every line from 6,638 to the end was test code and it
-> is now [`src/app/tests.rs`](src/app/tests.rs) (5,650). **Nothing was refactored and no behaviour
-> was touched** — a session reading the progress table later must not mistake this row for 5,613
-> lines of seam work. `worker.rs` is untouched and stays the control; it is now the largest module
-> again, at 10,594.
->
-> **THE PLAN'S "MOVE THE FIVE BLOCKS VERBATIM" WOULD HAVE FALSIFIED FIFTEEN CITATIONS, and the
-> suite could not have told you.** This file *is* the module `app::tests`, so nesting the old
-> `mod tests { … }` inside it renames ~140 tests to `app::tests::tests::…` — and `DECISIONS.md`,
-> `docs/ideas.md`, `docs/tech-debt.md`, `arch_doc.rs`, `doc_citations.rs` and `ui_tests.rs` cite
-> fifteen of them as `app::tests::<name>`. **A test path is a citation that no citation checker
-> covers**: `doc_citations` resolves *paths*, and a green suite says nothing about what the tests
-> are *called*. So the bulk block was flattened into the file body and only the three small
-> `tests_*` modules stayed nested.
->
-> **THE DURABLE PART IS THE CHECK, NOT THE DECISION.** `cargo test -p hrw --lib -- --list`,
-> diffed across the change, is the assertion the suite cannot make: 770 tests before and after,
-> every `app::tests::<name>` byte-identical, and exactly six lines moved — the three nested
-> modules, which nothing cites. **Run that diff for any move that relocates a `mod tests`.**
->
-> **Two expired claims fixed, both found by the move rather than by a checker:**
->
-> - `module_sizes_are_scanned_and_ordered` asserted `> 5_000` saying *"`app.rs` is a five-figure
->   file"*. The **assertion** still passed at 6,639, so only the *message* went stale — silently.
->   Now `> 1_000`, because a tight floor here would fire on the split doing its job rather than on
->   the truncated read it guards.
-> - **`arch_doc.rs`'s own module header said `worker.rs` "is no longer the largest"** — true when
->   written on 2026-08-09, and **flipped back by this very move**. That module exists to stop
->   `architecture.md` transcribing counts, and its header had been transcribing a *rank*. **A rank
->   expires exactly like a count, and neither leaves a gap.**
->
-> **Step 1 (`arch_doc` recursion) paid off as designed**: `` `app/tests.rs` `` appeared in the
-> generated table keyed by relative path the moment it existed, with no further work than
-> re-running `cargo run -p hrw --example gen_architecture`.
->
-> ### ✅ DONE 2026-08-21 — THE SUB-VIEW ROWS LEFT, AND FLATTEN CAN STRAND ITS OWN SELECTION
->
-> **`app.rs` 6,639 → 6,587; `central_panel_ui` 484 → 430; `sub_view_rows.rs` is 525 lines, 343 of
-> them tests, 9 tests in 0.03 s.** The Flatten, Events and Initialization rows; the report row had
-> already left on 2026-08-19, so the block was **83 lines, not the ~125 the plan carried** — the
-> figure had never been re-measured after `report_sub_view`.
->
-> **THE ASYMMETRY WAS A DEFECT, DOUG RULED THE SAME DAY, AND THE RULING FOUND TWO MORE.**
-> *"Accuracy is a requirement. And, consistency reduces my learning friction. So … we should make
-> changes to ensure accuracy and we should make changes to improve consistency."*
->
-> The defect: choose **Source Map** on a specimen that has one, open a specimen that does not — the
-> row drew `Equations | Tree` with **nothing highlighted**, over a pane reading `(no source mapping
-> available)`. Same shape as the `AliasAnim` defect, which is why the report stages have
-> `App::clamp_structural_sub_view` and Flatten had no equivalent.
->
-> **The row was the only place in the app that knew Source Map and Connections are conditional.**
-> Following that out of the row found the same false belief twice more:
->
-> - **`App::apply_pending_view_and_seek`'s link guard was `SubView::Structural(v) => …, _ => true`**
->   — so a tour link naming `Flatten/SourceMap` on a model without one was accepted, selected a tab
->   that is not drawn, and left the reader on the tree with the explanation in a pane nobody told
->   them to open. **That is Doug's 2026-08-12 `Structural/Summary` report verbatim**, still open in
->   the three arms that fix did not reach. Nine days.
-> - **`every_tour_sub_view_link_is_available_for_its_specimen` skipped exactly those links**, under
->   the comment *"Flatten/Events/Initialization sub-views are always present."*
->
-> **The shape now matches the report stages exactly** — `flatten_view_available`,
-> `events_view_available`, `init_view_available` in `sub_view_rows.rs`, each pure and each consulted
-> by three doors: the tab row, the link guard, and `flatten_row_ui`'s **silent** clamp. Silent
-> because it is the analogue of `default_sub_view_for`, which runs on the ordinary path — not of the
-> backstop that says *"please report it"*, which is right only where nothing should reach it.
->
-> **TWO DESIGN POINTS THAT WERE NEARLY GOT WRONG, and both generalise:**
->
-> - **`Tree` is available unconditionally**, matching `structural_view_available`. That makes
->   "available" mean *"selecting this shows what it names"* rather than *"a tab is drawn"* — the
->   narrow reading would refuse `Events/Tree` on a smooth model, a link to what is already on screen.
-> - **THE GUARD ASKS ITS QUESTION OF THE STAGE THE APP IS ON.** `LoadAndSwitch` sets
->   `pending_sub_view` while the compile is in flight and `self.stage` is still the *previous* stage,
->   so a guard matching on `sub` alone would have **refused
->   `hrw://load/RcCircuit/Flatten/Connections` on every walk** — a live link in
->   `connect-expansion.md` — with a notice naming a stage the reader was not on. Matching
->   `(sub, self.stage)` fixes it and closes the same latent hole in the structural arm, which reads
->   `self.stage` internally. **Found by reasoning about the ordering before writing the guard**, which
->   is the only reason it is not a regression this file would be recording instead.
->
-> **AND THREE EXISTING TESTS HAD TO GAIN FIXTURES — that is a measurement, not a chore.** All three
-> asserted a link *is applied*, against an `App` with no equation sheet, no connection frames and no
-> IC plan. They could only pass because the guard had no opinion. **A test that needs no
-> precondition is sometimes telling you a guard is missing.**
->
-> **⟶ ONE FOLLOW-UP LEFT OWED:** the tour-link checker still cannot settle these from a committed
-> trace — `manifest.json` carries no source-span flag and no connection-frame count — so they are
-> **skipped loudly and counted** (bound `<= 4`; one today, `RcCircuit/Flatten/Connections`). Four
-> booleans in the manifest would turn four skips into four checks and cost `gen_trace` four lines.
->
-> **AND A COLUMN-READ FOUND A RULE THIS TIME, NOT A DEFECT.** Flatten puts Tree **last**, Events and
-> Initialization put it **first** — which reads as two conventions until you check
-> `Viewport::default()`: **all three put the default sub-view leftmost**, and Tree's position is a
-> consequence. **The rule is invisible in any one row** and was written down nowhere;
-> `the_default_sub_view_is_the_leftmost_tab_of_its_row` now asserts it across all three, via the
-> accessibility tree's `toggled` flag and the widget rects. Every previous use of the column-read
-> check found something wrong; **an unrecorded rule is one refactor away from being broken
-> silently.**
->
-> **The gate is the return value**, which is what keeps tab and pane agreeing: the row that decided
-> *"nothing to offer here"* is the same answer the dispatch below uses to decide *"draw the tree
-> instead"* — `report_sub_view`'s single-predicate rule from the other side. The three gates are
-> **mutually exclusive** (each opens with `stage == <its own stage>`), which is why the caller draws
-> all three unconditionally; nothing had ever stated that, and dropping the check from
-> `events_row_ui` now fails five tests by name.
->
-> ### ✅ DONE 2026-08-21 — THE ROUTER IS FINISHED, AND EIGHT DOC COMMENTS WERE ON THE WRONG TEST
->
-> **`app.rs` 6,587 → 6,521; `central_panel_ui` 430 → 322; `artifact_pane.rs` is 514 lines, 255 of
-> them tests, 7 tests in 0.02 s.** The default artifact pane — the router's final `else`. It was
-> **133 lines, not the ~152 the plan carried**; that is the *second* estimate in two days to be
-> high, both because an earlier extraction moved the boundary and nobody re-counted. **Re-measure
-> any figure this file quotes before planning against it.**
->
-> **The odd member was the arm with NO condition.** Every other arm asks whether its own sub-view
-> is selected; this one asks nothing, which is also why it draws for the five tree-only stages
-> whose whole on-screen life it is. It left with **no `&mut App` at all** — its two mutations were
-> already deferred past the stage borrow, so they became a returned `Option<String>`.
->
-> **THE TESTS IT BOUGHT GUARD A DEFECT DOUG REPORTED ON 2026-08-05** and nothing had asserted
-> since: *"there is no tree in the failing typecheck stage view"*, where the summary was rendered
-> in an `if` with the tree as the `else` — **beside became instead of**. Reaching that pane needed
-> an `App`, a worker and a driven-to-failure specimen; it is now two tests and a pure predicate.
->
-> **AND THE FINDING THAT OUTGREW THE EXTRACTION: `app/tests.rs` held TWO MERGED DOC STACKS**, of
-> three and four summaries, above tests that owned only the last of each. **Eight doc comments
-> were describing a test that does not do what they say**, the oldest three weeks old, and every
-> orphaned owner had **zero** doc comment. All eight are reattached; the table of pairings is in
-> the plan.
->
-> **This is the fourth appearance of the class this file records below, and the first at scale.**
-> The cause is one commit shape — a new test's doc appended to the *end* of the previous test's
-> block, with the new `#[test]` below it, so Rust merges them and the old test silently loses its
-> own summary. **`17f01978` is the clearest instance.**
->
-> **The ZERO-doc detector filed below would have caught all eight, and is still too noisy to be a
-> test** — `app/tests.rs` keeps **39** deliberately undocumented tests. **The detector that works
-> is the other end of the pair: a doc block containing two opening summaries.** Measured precision
-> on that file was **8 of 12**; across `src/*.rs` it reports **83**, which is *not* an orphan count
-> — the first `worker.rs` hit sampled was a false positive. **Do not quote 83 as a defect count.**
->
-> ### AND THE SIZE NUMBER IS NOT THE RETURN — Doug ruled on this 2026-08-20
->
-> *"This `app.rs` refactoring effort has been beneficial, regardless of the reduction in size of
-> `app.rs`. You've identified and fixed bugs and you've identified and fixed testing gaps."*
->
-> **This governs how a session reports its own iteration: what it found and what it made checkable
-> first, the line count last.** Scored on size alone, four of the best iterations read as failures
-> — the live-debug gate **added** 41 lines, the cache-lifetime split added 173, the ack-path seam
-> added 113, and the wrong-model annotation fix was a **net zero**. The plan carries the countable
-> inventory (eight defects found *by extracting*, and the panes that went from unreachable to
-> hundredths of a second). **The size target is the experiment's proxy, not its purpose.**
->
-> **A ROUTER'S SEAM IS AN ASYMMETRY AMONG ITS ARMS, NOT A REGION — and this box previously said
-> the opposite.** It read *"the cut is inside, the way `tour_prose_ui` was cut"*, i.e. find a
-> contiguous span calling no `App` method. **That rule is right for a body and wrong for a
-> dispatch chain**, which has no interesting regions — only members. Eleven of thirteen arms were
-> one-line delegations; two carried their whole pane inline, and they were **not adjacent**, so no
-> region-shaped cut could have taken them without the delegations in between.
->
-> **The check that found it is one already written down here**: *read a dispatch chain's arms as a
-> column and look for the odd one* — the check that caught the stranded `Animate` arm, run for
-> extraction instead of for defects. **Every arm is now one line**, so that check works on sight
-> rather than after a grep past two long bodies. **That uniformity, not the 83 lines, is what the
-> move rests on.**
->
-> **⟶ THE READING WORKED ON EVERY LIST IN THE ROUTER, AND IS NOW SPENT THERE.** ~~the sub-view row
-> block~~ and ~~the default artifact pane~~ **both done 2026-08-21** — the first found a defect
-> and a rule, the second found the answer *"the odd member is the one that is not a member of the
-> same kind"*: an arm with **no** gate among fourteen that all have one. `frame_ui`'s list is the
-> Specimen left panel (~113), whose Purpose half (~48, zero `App` methods) is the twin of the
-> already-extracted `specimen_source_ui` and would sit beside it. **Ask "what is this a list of,
-> and which member is shaped differently?" before looking for a region.**
->
-> Details, the perturbation table and the four earlier verdicts are in the plan.
->
-> ### A TEST CAN BE NAMED FOR A FIELD IT CANNOT SEE
-> *(2026-08-20, the `live_debug_lifecycle` citations — five sites, not four)*
->
-> **Three corrections, in ascending order of value**, and only the third is about code:
->
-> - **FIVE stale sites, not the four the plan counted.** `playback.rs`'s test doc describes the
->   deleted safety net *without naming the function*, so the symbol grep that found the other four
->   walked past it. **A stale-mechanism sweep cannot be a symbol grep** — prose describing a thing
->   outlives prose naming it.
-> - **The question in front of the edit was already answered in the repository, twice.** The plan
->   priced this as research — *"establishing what, if anything, now releases a breakpoint left by a
->   session that never started"* — and `docs/ideas.md` #74 plus the comment on
->   `App::live_breakpoint_armed` both name the same three: a failed `start_live`, a specimen
->   change, app exit. Verified against the call sites (five, two and one respectively, plus the
->   manual `HRW: Clear Armed Breakpoints`). **None of them reads a `LiveState`**, and that is the
->   substance rather than the symbol: the deleted net asked the *animation* "is anything running?",
->   and every survivor asks the *app* "was I told a breakpoint exists?" — a guess about the world
->   replaced by a record of what the bridge said. **Grep for the answer before booking a session to
->   find it.**
-> - **THE MUST-FIRE GUARD TWO OF THOSE DOCS CITED COULD NOT FIRE.** Flipping `Playback::recorded`'s
->   `live_done` to `false` fails **exactly one** test in the fast suite, and it is neither of the
->   two written for the job: `matching_anim` and `tarjan_anim`'s
->   `recorded_animation_reports_no_live_session` both **stay green**, because `live_state` returns
->   `Idle` from `is_live()` being false and never consults the flag.
->   `playback::tests::a_recorded_animation_reports_no_running_session` is the one that fails.
->
-> **The shape, which is the transferable part: a test written at the view layer for a defect two
-> types down, with an abstraction between them that short-circuits.** Nothing about it reads as
-> wrong — it asserts a true thing and passes, for a reason unrelated to its name. **Ask which line
-> of the implementation the assertion actually exercises**, the same question the ack-path seam
-> raised in a different dress (the property belonged to the gate, not the poll). Both tests are
-> **kept with corrected docs**, because they hold a real property one layer up: a recorded view
-> must report `Idle` or `is_busy` disables its Debug button forever, and `connection_anim` carried
-> a hardcoded `Idle` stub *after* gaining a live path.
->
-> **And the counter-example is worth as much: `docs/architecture.md` needed no change.** Its
-> account of the live-debug path already says the session end does not release the breakpoint and
-> that the code which did is deleted — it was updated when the behaviour changed. **The five source
-> comments were not, because nothing links a doc comment to the field whose behaviour it
-> describes.**
->
-> ### THE LIFETIME QUESTION WAS ASKED ABOUT THE RIGHT FIELD AND HAD THE WRONG SUBJECT
-> *(2026-08-20, `CompileViewCaches`)*
->
-> **`pre_lowering_anim` already had the right lifetime; three of its siblings did not.**
-> `reduction_anim`, `connection_anim` and `ic_plan_anim` sat in `StageViewCaches`, whose own doc
-> promises *"views derived from a stage's report, all valid for exactly one stage"* — **false of
-> all three.** All four are shown on exactly one stage, so their inputs cannot vary with the stage.
-> They are now in `compile_caches.rs`, invalidated only when a compile lands, which is what
-> `pre_lowering_anim` had been doing alone by hand.
->
-> **`ic_plan_anim` was the one nobody had counted**, because the plan looked for *"views built
-> from `self.frames`"* and it is built from a report — just not the *current* stage's. **The
-> membership test is "does the input depend on `self.stage`?", never "where does the input come
-> from?"**; only the first is checkable by reading a build site.
->
-> **AND THE BEHAVIOUR WAS NEVER A DESIGN, WHICH IS WHAT MADE THE DECISION EASY.**
-> `reset_for` is called from **one place** — the report sub-view row — which draws only on
-> Structural and Index Reduction. So the rule in force was not *"a replay restarts when you come
-> back"* but ***"a replay restarts if you passed through a report stage in between"***: Events →
-> Flatten → Events dropped nothing, Flatten → Structural → Flatten dropped the connection replay.
-> Doug chose per-compile for all four in one exchange, because the question carried the single
-> call site and the asymmetry rather than just the two options. **Show that a behaviour is
-> unintended; do not present two options as equals when one of them is an accident.**
->
-> **THE FIRST TEST ASSERTED THE REFACTOR AND NOT THE BEHAVIOUR — and read as fine.** It set the
-> four fields, called `reset_for`, and asserted they survived, which **cannot fail** once they are
-> in a different struct. **The tell: a test whose setup and assertion both touch the struct the
-> change just separated.** The shipped one paints `frame_ui`, walks the IC plan to block 2,
-> round-trips through Structural and asserts `(2, 3)`; must-fire gives `(0, 3)`.
->
-> **A FAILING PRECONDITION IS A FINDING, NOT AN OBSTACLE.** That test's *"the replay is on
-> screen"* precondition failed four times — no `selected` specimen, then a pushed `NavEntry`
-> (`nav` is the **go-to-definition stack**, so non-empty means the pane shows a drilled-into class
-> and the guard reads backwards), and finally a real defect. The pull each time was to adjust the
-> fixture until it passed, and doing that would have hidden the box below.
->
-> ### A STRANDED SUB-VIEW WAS DRAWING THE WRONG PHASE'S ANIMATION — fixed 2026-08-20
->
-> **One arm of eight in `central_panel_ui`'s dispatch chain was missing `report_ready`** — the
-> `StructuralView::Animate` arm. `viewport.structural` deliberately survives a stage change (it is
-> a camera), and `clamp_structural_sub_view` deliberately returns early on every non-report stage,
-> so that guard was the only thing between a left-behind `Animate` and another stage's pane — and
-> the arm sits **above** the Events, Initialization and Flatten arms. **Choose Animate ▶ on Index
-> Reduction, click Events: the index-reduction replay is drawn under the Events tab**, with the
-> Events sub-view row above it.
->
-> **Third instance of the stranded-sub-view class, and a new failure mode.** The alias defect was
-> *absence filled*; this is **presence substituted** — a correct animation of the wrong phase
-> under another phase's tab, with nothing on screen admitting it. The two earlier fixes were about
-> *which sub-view is selected*; this is about **whether the dispatch honours a selection the
-> current stage does not offer**, which no clamping on report stages could reach.
->
-> **The check is one grep and had never been run: read a dispatch chain's arms as a column and
-> look for the odd one.** Seven carried `report_ready &&` and one did not. Same shape as the `_ =>`
-> wildcard inside the live-debug cluster — **nothing here compares a guarded cluster's members to
-> each other.**
->
-> ### A SEAM CAN BE MISSING FROM TWO FUNCTIONS AND ONLY ONE IS OBVIOUS
-> *(2026-08-20, the ack path — `live_debug_poll` + `live_debug_gate_at`)*
->
-> **+113 lines, 8 of them production.** `live_debug_poll` now takes `ack_path: &Path` instead of
-> calling the default-path wrapper, and `live_debug_gate` gained an `_at` sibling — the same
-> two-function shape `bridge::check_breakpoint_ack` / `check_breakpoint_ack_at` already uses one
-> layer down, so the six paint-path callers are untouched and nothing in the render path knows the
-> parameter exists.
->
-> **The previous session diagnosed half of it.** It saw that `check_breakpoint_ack_at` existed and
-> the poll threw it away. What it missed is that **the property under test belongs to the GATE**,
-> which composes `is_arming`, `has_live_debug_data` and the poll — so forwarding the parameter to
-> the poll alone would not have bought the test either. **Ask which function the ASSERTION is
-> about, not which one touches the resource**; here they were one apart, and the gap was invisible
-> until the test was written.
->
-> **`the_arming_badge_survives_the_frame_its_ack_lands` asserts `arming` and `spawn_live` true on
-> the SAME frame.** The poll consumes `pending_live_debug` on the frame the ack lands, so reading
-> `is_arming` after it reports `false` on exactly that frame — while the live animation does not
-> exist yet, because the caller builds it from `spawn_live`. One frame of a view mid-handshake
-> claiming nothing is happening, with **no other symptom**: the session still starts and the
-> animation still runs. Must-fire verified by swapping the two lines; a second, accidental
-> perturbation (both polls present) fails on `spawn_live` instead, so it catches double-polling too.
->
-> **AND IT EXPIRED A COMMENT THAT WAS A MEASUREMENT.**
-> `a_timed_out_arm_claims_nothing_and_says_so` tested four paths in one function because *"as
-> separate tests they would race for that file"* — **true until this change, and nothing would have
-> said so.** Same shape as the `equation_sheet_ui` finding: a comment explaining why a test cannot
-> be split is someone's coupling measurement, and **adding the seam it describes expires it
-> silently.** ✅ **Split 2026-08-20** — box below.
->
-> ### A MUST-FIRE PERTURBATION'S VALUE IS IN WHICH TESTS IT DOES *NOT* BREAK
-> *(2026-08-20, the four ack verdicts became four named tests — +51 lines, zero production)*
->
-> **One test per verdict of `bridge::check_breakpoint_ack_at`** (`Armed`, `NotArmed`,
-> `Unreportable`, `Pending`), each against its own `temp_dir()` ack file. Three perturbations were
-> run, and each lands on a *named* subset: reinstating `live_breakpoint_armed = true` fails three
-> and **leaves `Armed` green**; making the `Armed` arm `notify` fails only that one; blunting the
-> `Unreportable` notice fails only the stale one. **The single test could report only a line
-> number**, so the discrimination that makes a perturbation informative was the thing the split
-> bought — not the naming.
->
-> **AND A SECOND EXPIRED LINE CAME OUT WITH IT, WITH A DIFFERENT CAUSE.** The body carried
-> `app.prewarm = Prewarm::Done;` under *"it competes for the same ack file"* — a **no-op since
-> 2026-08-15**, when the fix for harnesses arming a real breakpoint pinned that same value in
-> `App::test_with_sender`. **The ack-file sentence expired because a seam was added HERE; the
-> pre-warm line expired because a default changed ELSEWHERE** — and the second kind is worse,
-> because nothing in the file changed on the day it stopped being true, so no review of that
-> commit could have caught it. `#[test]` bodies get no dead-store lint; both survived every
-> `cargo clippy --all-targets` since.
->
-> ### DEDUPLICATION IS NOT EXTRACTION, AND IT MADE `app.rs` BIGGER
-> *(2026-08-19, `App::live_debug_gate` — the six-copy live-debug prologue)*
->
-> **Six copies of an eighteen-line prologue (113 lines) became one thirty-line method, and the
-> file grew by 41.** Production code −62, tests +32, **comments +69**. The plan predicted
-> "~150–200 lines saved" and a new `live_debug` module; **both were wrong, and the reason is
-> structural.** The duplication cost nothing to explain — nobody documents a copy — while an
-> abstraction must be explained once, thoroughly, where it is introduced. And **the handshake
-> cannot leave `app.rs`**: the parameter-list rule keeps `is_arming`, `has_live_debug_data` and
-> `live_debug_poll` on `App` (four to six fields apiece), and a caller of three `App` methods is
-> an `App` method.
->
-> **So a deduplication cannot be scored on `app.rs`'s line count**, because the duplicate and its
-> replacement live in the same file — unlike every earlier iteration, which moved code *out*. The
-> justification held even though the estimate did not: the protocol has one implementation, and a
-> seventh view gets its three answers in the right order or does not compile.
->
-> **THE SIX WERE NOT IDENTICAL — the plan was right to demand that be checked first.** Four
-> differences, and per the rule below each one is judged rather than admired: the **prologue** is
-> identical (deduplicated); **`request_fit` in only two views** is principled (only those two have
-> a camera); **`connection_anim_ui` never releasing the breakpoint** is principled (its
-> `start_live` cannot fail — the worker owns the run); and **`pre_lowering_anim` cached outside
-> `StageViewCaches`** is a behavioural asymmetry that is *probably a defect* — three views built
-> from `self.frames` get two different lifetimes, so leaving a stage and returning restarts the
-> reduction animation but resumes `pre()` lowering. Recorded, not patched: which behaviour is
-> intended is a real question.
->
-> > **RESOLVED 2026-08-20, and both facts in that last sentence were wrong** — corrected here
-> > rather than deleted, because the corrections are the finding. **"Three views built from
-> > `self.frames`"**: it is **four**, and the fourth (`ic_plan_anim`) is built from a *report*, so
-> > the attribute that sorts them is *"does the input depend on `self.stage`?"*, not where the
-> > input comes from. **"Leaving a stage and returning restarts the reduction animation"**:
-> > leaving and returning restarts **nothing** — `reset_for` runs only on report stages, so the
-> > real rule was *"restarts if you passed through a report stage in between."* `pre_lowering_anim`
-> > was the one that had it right, and the other three joined it. Box above.
->
-> **AND A WILDCARD SURVIVED INSIDE THE CLUSTER A REGRESSION TEST ALREADY GUARDS.**
-> `has_live_debug_data` ended in `_ =>`, so a seventh variant would compile and silently be told to
-> look for an incidence matrix. That is the exact shape
-> `every_live_debug_variant_is_recognised_while_arming` was written for, one function away. **A
-> test that iterates `ALL` proves today's variants work; it cannot make tomorrow's loud if the code
-> has a wildcard.** Fixed by naming both variants. **Grep a guarded cluster for `_ =>` before
-> trusting its test.**
->
-> ### A DOC COMMENT CAN BE ADOPTED BY THE WRONG FUNCTION, AND NOTHING HERE CATCHES IT
-> *(found 2026-08-19, while extracting `report_sub_view_row_ui`; it was three days old)*
->
-> **`apply_pending_view_and_seek` was inserted between `report_sub_view_row_ui`'s doc comment
-> and its `fn` line** by `545b4aaa` on 2026-08-16. Rust merges contiguous `///` lines, so that
-> method carried nineteen lines describing a *different* function — including *"`&mut self` is
-> right here for the same reason as the tab row"*, about a method that takes no `ui` — and the
-> row itself had no documentation at all.
->
-> **The rule above names TESTS and the plan's trap 2 names `#[derive]`. Both are instances of
-> one trap, and it is broader than either:** an attribute, a `#[test]` and a doc comment all
-> bind *downward*, so **any item inserted above any of them steals it.** Read the rule as
-> *insert any item after a function's closing brace*, never as a rule about tests.
->
-> **`no_function_has_two_test_attributes` catches the `#[test]` case; nothing catches this
-> one**, because a merged doc block is well-formed Rust that rustdoc renders happily. **The
-> exact detector is that the orphaned item ends up with ZERO doc comment** — `app.rs` has 19
-> such methods today, mostly one-line `test_*` accessors, so the checker is about an hour of
-> one-line docs away. Filed in the plan, not built, under the one-extraction rule.
->
-> **CORRECTED 2026-08-19: there are two more causes, and the ZERO-doc detector catches neither.**
-> Both were found in the live-debug cluster, and in both the victim ended up with **too many** doc
-> lines rather than none:
->
-> - **SPLIT.** `has_live_debug_data` carried four lines describing `live_debug_lifecycle` —
->   *"Returns `SpawnLive` when the ack handshake completes"*, about a function returning `bool`.
->   Nothing was inserted: the original was **split into four methods** and its doc stayed above
->   whichever piece landed first.
-> - **REWRITE.** `connection_anim_ui` carried two doc paragraphs and **the first was false** —
->   *"there is no Debug button yet"* above a paragraph explaining how the Debug button works. The
->   new doc was written above the old instead of replacing it, and Rust merged them.
->
-> **So the trap is not about insertion, and the detector is not "zero doc comments" — it is a doc
-> block that contradicts its item's signature or itself.** Both of these are worse than an
-> undocumented function: an undocumented function teaches nothing, and these teach something
-> false. Two cheap partial checks that would have fired: a doc block with two `///` paragraphs
-> that each read as an opening summary, and a doc naming a return type the signature does not
-> have.
->
-> **THE FIRST OF THOSE TWO WAS BUILT AND RUN ON 2026-08-21, AND IT WORKS.** The shape it looks
-> for: a non-blank `///` line whose **previous** line is a non-blank `///` ending a sentence and
-> whose **next** line is a bare `///` — a new summary opening in the middle of a block.
-> **Measured precision on `app/tests.rs`: 8 real orphans out of 12 hits**, the four misses being
-> wrapped continuation lines that happen to end a paragraph. All eight are fixed; the pairings are
-> in [`docs/app-split-plan.md`](docs/app-split-plan.md).
->
-> **It is not yet a checker, and the reason is the noise floor, not the idea.** Across `src/*.rs`
-> it reports **83** — **that is a hit count, not a defect count**, and the prose-heavy modules
-> skew it (the first `worker.rs` hit sampled was a false positive). **Never cite 83 as the number
-> of orphaned doc comments.** The owed work is to run it per module and triage; only after that is
-> a green ratcheted test possible.
->
-> **And the ZERO-doc detector is now measured too, which settles why it cannot be the check.**
-> All eight victims here had no doc comment at all — so it would have caught every one — but
-> `app/tests.rs` keeps **39** deliberately undocumented tests, mostly small unit checks.
-> **The two detectors are the two ends of one defect**, and only the two-summary end has a
-> tolerable false-positive rate.
->
-> ### THE `App` METHOD MAY BE A QUESTION RATHER THAN A PRESS — and a question cannot be deferred
-> *(2026-08-19, `report_sub_view_row_ui`)*
->
-> **−151 lines, zero build errors, and the fifth distinct seam shape.** Four extractions
-> invented a *report* because the pane held a decision it could not make. This pane held a
-> **question**: `structural_view_available` decides whether a tab exists at all, four times,
-> mid-render. **A press can be deferred to the caller; an answer is needed before the widget is
-> drawn** — so the caller answers all four first and passes a `TabAvailability` struct.
->
-> **The parameter-list rule gains a clause: a helper also stays when DOCUMENTS name where it
-> lives.** The predicate's inputs were nearly all in the pane's signature, so the rule alone
-> would have allowed moving it — but `DECISIONS.md`, `fidelity-plan.md` and `worker.rs` cite it
-> by name as the one predicate the tab bar and the link guard share. Four booleans cost nothing;
-> the move would have cost four documents.
->
-> **And the state-group count over-counts: the unit is the NARROWEST BORROW.** The census rated
-> this pane 5 fields, but every `viewport` access is `self.viewport.structural`, so the
-> parameter is `&mut StructuralView`. Mirror image of the `autoplay_controls_ui` finding — a
-> whole struct can cost one parameter, and a struct can cost *less* than one.
->
-> ### THE EXTRACTION'S TEST FOUND A REAL DEFECT THE SAME DAY — and Doug's question found it
-> *(2026-08-19, the stranded alias view; fixed)*
->
-> **`AliasAnim` was missing from the stage-change redirect list.** Three structural sub-views
-> are Index-Reduction-only — Summary, Animate, AliasAnim — and only two were redirected,
-> because the Aliases tab was added after that condition was written. On `RcCircuit`,
-> `TwoLoops`, `ProportionalLoop` or `MixedLoop`: choose **Aliases ▶** on Index Reduction,
-> click **Structural**, and the selection survived onto a stage with no such tab — nothing
-> highlighted in the row, and the panel rendering the alias view against the *Structural*
-> report, which says *"(no alias eliminations in this report)"* about a model with several.
-> **Absence filled rather than stated**, and nothing here compares a pane's claim against a
-> different stage's report.
->
-> **Two fixes: the redirect (guarded as a SET, so a fourth such view fails by name) and
-> `App::clamp_structural_sub_view`, which checks the RESULT of all three doors that write
-> `viewport.structural`.** Each door had its own guard and nothing checked the outcome — which
-> is how a door added without its guard got through. The clamp falls back to Tree **and
-> notifies**, because after the first fix nothing should reach it and a silent correction would
-> hide the next regression.
->
-> **THE TRANSFERABLE LESSON IS ABOUT THE WRITE-UP, NOT THE CODE.** The asymmetry was recorded
-> in the plan as a *finding* — "only Summary and Animate are redirected" — in neutral,
-> admiring prose, and it sat there until Doug asked *"are you reporting a bug?"* **A behaviour
-> described neutrally has not thereby been judged**, and prose that explains a mechanism reads
-> as though someone had. When an extraction "exposes an asymmetry", the next sentence must say
-> whether it is *principled or a defect* — that question is the whole value of having exposed
-> it.
->
-> ### THE UNTESTABILITY COMMENT IS THE JUSTIFICATION, ALREADY WRITTEN DOWN
-> *(2026-08-19, `equation_sheet_ui`)*
->
-> **−186 lines, first attempt, and the cheapest kind of finding there is: a past session had
-> already measured this one and filed the result as a note instead of a test.** `ui_tests.rs`
-> carried twenty lines ending *"the sheet's real behaviour … needs a populated `EquationSheet`,
-> so it belongs with the tests that compile a specimen behind `slow-tests`."* **That sentence is
-> the extraction's whole justification**, and it stopped being true the instant the sheet became
-> an argument rather than a field — six tests now run in **0.04 s** against a hand-built sheet.
->
-> **So the next sweep is not another `awk` pass over `impl App`; it is a grep over the TEST files
-> for deferrals.** `error_summary` was found by asking *"what has zero coupling?"*. This one was
-> found already labelled. **A comment explaining why something cannot be tested from here is a
-> coupling measurement someone else already took** — and unlike the coupling table it comes with
-> the reason attached. The note was corrected in place rather than deleted, because the
-> correction is the finding.
->
-> **The trailing-block rule and the region rule agreed, and the collapse happened again.** 190
-> lines between the `ScrollArea` and the closing brace call no `App` method; the one method that
-> is called sits below the last `ui` call. Two accumulators became one `Option<SheetClick>` —
-> the second instance of that collapse, sound for the same reason as `ContextBarPress`. **Worth
-> noticing on its own: `clicked_row` was `Option<Option<usize>>`**, the outer layer meaning *was
-> there a press* and the inner *is it highlighted now*. The enum separates them, so
-> `Equation(None)` reads as un-highlight instead of as no-press.
->
-> **`has_incidence` stayed behind, and that is the parameter-list rule deciding a COMPUTATION.**
-> It reads two state groups the pane never otherwise touches to produce one `bool`; the `bool` is
-> one parameter and the computation would have been two groups. Five parameters total.
->
-> **THE CLIPPED-WIDGET TRAP HAS A SECOND CAUSE AND A SECOND FORM — BOTH READ AS "the pane did
-> not report the press."** Both click tests failed, and the fixes were independent:
-> **(1) size the harness like a pane** (`1200×900`). Probed by shrinking it to `200×120`: the
-> four query tests still passed and both click tests failed — `stage_tabs`'s trap reproduced by a
-> **`ScrollArea`** rather than by a missing `horizontal_wrapped`, so **the cause is any container
-> that clips, not the layout wrapper.** **(2) ACCUMULATE the returned press, never assign it** —
-> `*out = pane_ui(...)` each frame discards the press on the following frame, and `run_steps(2)`
-> guarantees there is one. `build_ui_state` + `if click.is_some() { … }`, as `stage_tabs` does.
->
-> ### ⟶ NEXT: THE EIGHT `*_anim_ui` PANES ARE NOT PANES — census in the plan
->
-> **Six of them call the same four `App` methods** (`is_arming`, `has_live_debug_data`,
-> `live_debug_poll`, `start_live_debug`). Their rendering already left: each ends in one
-> `anim.ui(...)` call into an existing `*_anim.rs`. What remains in `app.rs` is the **live-debug
-> handshake written out six times**, with the variant, the `stage_views` field and the
-> constructor swapped. **So the move is deduplication, not extraction** — justified not by line
-> count but by the fact that six copies of one protocol have nothing enforcing they agree. Verify
-> they really are identical first; a difference is either a bug or a reason.
->
-> **`report_sub_view_row_ui` was the cheapest single pane left and is DONE** (2026-08-19, box
-> above). It was *"the last one shaped like the seven already done"*, and it was — so **nothing
-> shaped like those eight remains**, which is what makes this deduplication the next move rather
-> than the next extraction.
->
-> ### SIX OF SEVEN `App` METHODS WERE FREE — LOOK FOR THE TRAILING BLOCK FIRST
-> *(2026-08-19, `context_bar_ui`)*
->
-> **It had the MOST `App` methods of anything left — seven — and was the cheapest rendering
-> extraction yet.** The deferral test from the previous iteration sorted them in one pass, and
-> the answer sharpens it: **five of the seven sat below the last `ui` call in the function**, in
-> a trailing block that acts on presses accumulated into locals. Deferring those to the caller
-> is not merely cheap, it is **provably identical** — the same statements in the same order, one
-> function boundary later, with nothing drawn in between. Only `refresh_jump_matches` was a real
-> barrier, because the Following row reads the match list it rebuilds. **A rendering function
-> that accumulates presses into locals and acts on them below the last widget is already shaped
-> for this cut; look for that block before counting anything.**
->
-> **AND THE PARAMETER LIST DECIDES WHICH `&self` HELPER MOVES** — the previous box said a `&self`
-> helper "can simply move with the pane", and that is too permissive. `background_ui` moved
-> because its three inputs were already in the pane's signature; **`empty_context_hint` stayed**,
-> because it reads `ui_mode`, `specimen_detail` and `viewing_log` — three groups the bar never
-> otherwise touches — purely to phrase one sentence, and three `App`-side tests call it directly.
-> **A helper moves if its inputs are already there and stays if it would widen the signature.**
-> That is also what kept the empty-state branch in `App`.
->
-> **The fourth callback enum, and the first that COLLAPSES accumulators instead of adding one.**
-> Five locals (`clear_point`, `clear_thread`, `jump_forward`, `jump_back`, `go_to_class`) became
-> one `Option<ContextBarPress>`. **Sound, not merely tidy:** each is set by a distinct
-> `small_button` or `link`, and egui delivers a press to a single widget, so two could never be
-> true in one frame. The old shape could express it; nothing could produce it.
->
-> **THE GREP CENSUS UNDERCOUNTS: it cannot see a multiline `self` access.**
-> `self.identifier_index` and `self.stages` both read **zero** under
-> `grep -o 'self\.[a-z_]*'` because `rustfmt` writes them as `self\n    .field`. Two real state
-> groups, invisible to the metric the plan's coupling table is built from — **every number in
-> that table may be low.** The multiline access was already on the obstacle checklist as an
-> *editing* hazard; it is a *measurement* hazard too.
->
-> **A NEW TEST TRAP: `get_all_by_label_contains` PANICS on no match, so it cannot assert
-> absence.** The must-fire test that a generated `pre` slot is *not* labelled "declared at line"
-> never reached its `.is_none()`; the query panicked first and dumped the whole accessibility
-> tree, which reads like the widget was missing for an unrelated reason. **Use
-> `query_by_label_contains` for any negative assertion** — it returns `Option`. And
-> `..Default::default()` needs **every** field visible, not just the ones being set, which is why
-> all ten `ContextBarState` fields are `pub(crate)` where the pane reads five.
->
-> ### CHECK FOR *ZERO* COUPLING BEFORE MEASURING COUPLING — and that class is now EMPTY
-> *(2026-08-19, `generic_error_summary`)*
->
-> **−227 lines, first attempt, and the first extraction that needed no design at all.** It plus
-> its Structural entry point `structural_singular_summary` sat in `impl App` and never mentioned
-> `self` across 228 lines. No signature to establish, no callback to invent, no press to defer —
-> three call sites changed from `Self::` to `crate::error_summary::` and that was the edit.
->
-> **THE SWEEP'S RESULT IS "DO NOT RUN IT AGAIN."** One `awk` pass over `impl App` for bodies with
-> no `self` found **five** candidates, and **228 of the 281 `self`-free lines were this one
-> function.** The other three — `build_declaring_classes` (30), `structural_view_available_from_stage`
-> (20), `note_says_singular` (3) — stay where a reader looks for them. The class held one item,
-> not a supply; do not re-run the pass expecting a second harvest.
->
-> **But the rule generalises past this file.** Five iterations each measured *coupling* and
-> sorted by it, which silently assumes coupling is non-zero. **Ask whether anything has zero
-> first** — one `awk` pass, and it found the cheapest 227 lines in `app.rs` after five iterations
-> of hunting seams in methods that have real coupling.
->
-> **AND THE TEST IT BOUGHT IS THE PART THE LINE COUNT HIDES.** As a private associated function,
-> the summary could only be exercised by building an `App`, giving it a worker, and driving a
-> specimen to a *failing* stage — so nothing had ever asserted what it renders. Five tests now
-> run in **0.02 s** against a `serde_json::Value`. One of them holds a property nobody had
-> written down: **the singularity grid is all-or-nothing**, because the four counts are read as a
-> tuple, and three of four on screen would invite the reader to infer the fourth — an inferred
-> rank deficiency being HRW's number, not the compiler's.
->
-> ### AN EXTRACTION MAY BUY NO TEST — CHECK BEFORE CLAIMING ONE
-> *(2026-08-19, `ContextBarState`)*
->
-> **−98 lines, first attempt, and the first move that produced ZERO build errors.** It is also
-> **the first since `source_map_ui` that buys no test at all**, and that is recorded plainly
-> because six consecutive iterations could claim one and the habit was forming.
->
-> **Both properties worth holding were already asserted** — the shared counter's recency
-> ordering, and the jump cursor's wrap-and-reset — and both already ran on `App::test_default()`
-> with no worker and no compile. `error_summary` bought five tests because that function was
-> reachable *only* through a failing compile; **grep for the property before writing "this could
-> not be tested before"**, since the claim is about the OLD code and is checkable in advance.
-> The plan admits a second justification and this move rests on it: what a session no longer has
-> to hold.
->
-> **THE PURCHASE WAS THE DEPENDENCY'S DIRECTION.** After the pane moved last iteration,
-> `context_bar.rs` imported its own state back out of `app.rs` — `app` → `context_bar` for the
-> rendering, `context_bar` → `app` for the two types it draws. **Rust permits that cycle and
-> says nothing about it**, so nothing would ever have failed; a reader asking *"where does the
-> Context Bar live?"* simply got two answers. **After a pane moves, check which way its imports
-> now point.**
->
-> **A TYPE DOES NOT TRAVEL ALONE — the plan estimated 35 lines and it was 98.** `PointedAt` is
-> the type of one field and `PointKind` the type of one of *its* fields, so the cluster is
-> three types. **Estimate a type move by its field types**, the same *"how many separate places
-> is this in?"* rule the plan applies to functions, pointed at data instead.
->
-> **Only `next_seq` moved with it, and the filter is the parameter-list rule again**: it touches
-> `context_seq` and nothing else, so it cost zero new arguments. `refresh_jump_matches`,
-> `jump_to_next_match` and the capture paths all stayed — each reads two or three pieces of
-> `App` this module never otherwise touches, so moving them would have widened the seam and
-> traded away a working test. **That rule now sorts three things: `&self` render helpers,
-> deferred presses, and methods over a moved struct.**
->
-> **Mechanically it is the cheapest shape there is**: a type move has none of the four obstacles
-> on the checklist — no `self` accesses, no multiline `self\n .field`, no mutated parameter, no
-> shadowing local. **Its whole risk is `#[derive]` orphaning**, so cut every type with its
-> attributes using Edit, never a line range.
->
-> **`equation_sheet_ui` was next and is DONE** — see the box above, and note that it *did* buy
-> tests, found by a route this box did not anticipate: a comment in `ui_tests.rs` had already
-> written down why it could not be tested.
->
-> ### THE `App`-METHOD COUNT IS NOT THE TEST — ASK WHETHER DEFERRING THE PRESS COSTS A FRAME
-> *(2026-08-19, `stage_tab_bar_ui`)*
->
-> **It had the fewest `App` methods of anything left — two — and still could not move whole.**
-> Both `open` and `start_simulation` set state that widgets *below them in the same function*
-> read on the same frame, so reporting the press instead of performing it would draw one stale
-> frame. **A press is cheap to defer only when nothing downstream of it reads what it wrote**,
-> and the two extractions that made the pattern look free both called their method as the last
-> thing they did. **Record the call's POSITION, not just its existence:** a method at the end of
-> a body is a callback; a method in the middle is a barrier, and a barrier forces the cut inside
-> the function.
->
-> **The region rule then did the rest** — the 163 lines after the ▶ button call no `App` method.
-> `App::stage_tab_bar_ui` is ~100 lines of chrome that genuinely needs the application: the
-> Debug-mode specimen switcher, the Log button, the ▶ button, two status spinners.
->
-> **The third callback enum finally arrived** — `Option<TabClick>`, `Stage` | `Simulation` — and
-> its shape is new: the variants ask `App` for a different *amount* of the same work, not for
-> different work. Both leave the log view; only `Stage` asks for a capture.
->
-> **AND A NEW TEST TRAP THAT IMPERSONATES THE CODE UNDER TEST: a clipped widget is queryable but
-> not clickable.** A harness built without the caller's `ui.horizontal_wrapped` stacked the tabs
-> vertically; `query_by_label_contains` still found the Simulation tab (a clipped widget stays in
-> the accessibility tree — the same property behind both scroll-area bugs), `.click()` silently
-> did nothing, and the failing assertion read as *"the row did not report the press"*. **A widget
-> harness must reproduce the caller's layout, not merely call the function.**
->
-> **`context_bar_ui` was next and is DONE** — see the box above for what its seven methods
-> actually cost.
->
-> ### THE FUNCTION IS NOT THE UNIT — CUT INSIDE IT *(2026-08-19, `tour_prose_ui`)*
->
-> **`tour_panel_ui` rated 7 fields and would have been expensive to move whole**: four `App`
-> methods, a compound return carrying three unrelated reports, and Back/Play/Stop deferred by a
-> frame. **Its inner 209 lines touched two state groups and called no `App` method at all** —
-> four parameters, `-> ()`, no behaviour change, −244 lines on the first attempt.
->
-> **So the rule that goes BEFORE the obstacle checklist is: ask which contiguous region of the
-> body calls no `App` method.** One grep answers it (`grep -o 'self\.[a-z_]*('`). `App` policy
-> clusters at a rendering function's *edges* — where the panel is opened and the presses are
-> answered — and the middle is usually pure rendering over one or two structs. What is left
-> after the cut is not a delegate; `App::tour_panel_ui` is 37 lines and every one is policy.
->
-> **The predicted third callback instance did not happen, and that is the point.** The two
-> earlier extractions invented a report because they contained a decision the pane could not
-> make; this one was chosen *because* it contained none.
->
-> **`stage_tab_bar_ui` was chosen next on this reasoning** (280 lines, 12 fields, **2 `App`
-> methods**), **before `context_bar_ui`** (255, 6 fields, **7 `App` methods**), inverting the
-> coupling table: six fields wrapped around seven methods is a pane made of policy; twelve
-> fields answered by two presses is a pane made of rendering. **The ordering was right and the
-> reason was wrong** — see the deferral test above. Two presses did not make it cheap to move
-> whole; it moved by the region rule, like the one before it.
->
-> **The module rename cost four references** (`lib.rs`, a `use`, a call, a doc link) plus
-> `git mv`, and was done in the same commit: a module named for a third of its contents teaches
-> a reader something false.
->
-> **THE CHEAP MOVES ARE EXHAUSTED, AND THE COUPLING TABLE IS MEASURED** (in the plan). Order the
-> rest by **fields touched**, not lines: `source_map_ui` was 4 fields, `central_panel_ui` is 43
-> and may never qualify — at 43 the only signatures are forty-three parameters or `&mut App`, and
-> the plan rejects the second as reducing nothing. Those two shrink as their callees leave.
->
-> **BUT THE FIELD COUNT IS THE WRONG UNIT — COUNT STATE GROUPS** *(2026-08-19,
-> `autoplay_controls_ui`)*. It rated **6 fields**, between `source_map_ui` (4) and
-> `specimen_source_ui` (7), and was **far cheaper than either**: **18 of its 20 `self` accesses
-> were `self.tour`**, one already-grouped struct, so the signature is four parameters and the
-> move was −355 lines on the first attempt with no revert. **A field already inside a struct
-> costs the same as one field.** So the 2026-08-02 UI pause that created `TourState` paid for
-> this extraction in advance — **grouping state IS the preparation for extracting the views that
-> read it**, and a pane that resists is a pane whose state wants grouping first. Re-count the
-> remaining functions by *groups* before trusting the coupling table's order.
->
-> **The callback pattern generalised to an ENUM, and that is the second instance.**
-> `specimen_source_ui` returns `Option<String>`; the transport bar returns
-> `Option<TransportRequest>` — Switch/Back/Play/Stopped — and `App` matches on it. **Render and
-> report, own no policy.** Expect the third.
->
-> **`section_style`/`SectionStyle` are now `pub(crate)`** — the first cross-module use of the
-> left-panel chrome helper, with `model_list.rs`'s `read_purpose` import as precedent. **Every
-> left-panel pane that leaves will need it; move the pair to its own module when the third one
-> does**, not before.
->
-> **A quoted heredoc (`<<'EOF'`) writes backticked prose safely** — the concrete answer to the
-> plan's trap 4. The corruptions came from `node -e` and *unquoted* shell strings, where the
-> shell expands the backtick before the file is written. And **do not dedent a moved body**: let
-> `cargo fmt` reindent, because a blanket `sed 's/^    //'` also strips four spaces from inside
-> multi-line string literals.
->
-> **AND THE REAL PREDICTOR IS: ENUMERATE THE OBSTACLES BEFORE EDITING.** `specimen_source_ui`
-> was **reverted** when rewritten first and diagnosed from the errors — a method callback,
-> multiline `self\n .field` accesses, a mutated parameter, a local `let source` **shadowing the
-> parameter**, each invisible until the previous was fixed. **Redone the same day by listing all
-> four first, it took one pass and was still 90% scripted** — three of the four were one-line
-> fixes. So the rule is *not* "hand-edit the hard ones"; it is **read the body and list every
-> obstacle, then script it.** The checklist: fields touched, multiline accesses, mutated
-> parameters, locals shadowing a parameter name.
->
-> **Two errors no enumeration catches, both from `&Option<T>` params replacing owned fields** —
-> a `!=` needing `*deref` on the left, and a bare `return;` needing `return None;`. **The first
-> build finds them**, which is why the loop builds after each item.
->
-> **The callback pattern is reusable and shipped:** return `Option<String>` — the clicked
-> identifier — and let `App` perform the follow, exactly as `model_list` already does. Keeping
-> the follow on `App` is what let the pane shed `&mut self`.
->
-> **A struct that crosses a module boundary loses `App`-privacy**, and that is the price rather
-> than a smell: `SourceViewState`'s nine fields are now `pub(crate)`, with the `Viewport`
-> precedent. **`too_many_arguments` is `allow` in `hrw/Cargo.toml`** (egui idiom), so eight
-> parameters is not a lint question — the plan's own test decides, and seven named pieces of
-> state teach a reader the pane's reach where `&mut App` would not.
->
-> **Regenerate `architecture.md` BEFORE the slow gate** — it carries module line counts, so every
-> move stales it and the gate fails on it 300 seconds in.
->
-> **The first attempt was reverted**, and its findings bind every later one: `app.rs`'s types are
-> **interleaved**, so items move **individually, each by its own marker, with a build after each**
-> — never as a span, and assert the located items do not overlap before cutting. The field-group
-> map describes where *state* is grouped, not where *code* is.
->
-> **Scale check: −139 against a ~12,800 gap. Leaf types will not get there** — the weight is in
-> the rendering blocks.
->
-> **`worker.rs` (10,594) is deliberately deferred**, which is what makes this an experiment: if
-> handoff frequency does not improve, splitting more files is not the answer.
->
-> ### ✅ THE TRANSPORT BAR IS FIXED AND THE BACK BUTTON SHIPPED — 2026-08-19
->
-> **Un-wrapped** (`ui.horizontal`), so its minimum width is now **monotonic** in its contents —
-> the property that made it editable again. Bought with three reductions: the tour count removed,
-> `30s — teaser` → `30s`, `✨ Claude's answer` → `✨ Answer`, plus the time combo's missing
-> `.width()` (it was taking egui's 100pt default). One-row minimum **580 → 351.8pt**.
->
-> **`◂ Back` ships**, in the slot the count vacated, with per-entry scroll offsets so it returns
-> to where you were. `MIN_LEFT_POINTS` **210 → 435**. Doug confirmed both work.
->
-> **The RHS Back/Forward reservation is untouched** — a tour's location is one value, the RHS's is
-> five (`ideas.md` #78).
->
-> **Both divider guards were re-aimed**, and they now catch *"something was added to the bar
-> without a matching reduction"* — which is the live risk once width is monotonic, and permanent,
-> since every point is one the RHS never gets back. The 640pt row's expectation is now per-mode.
->
-> **And Back immediately exposed 18 tour references that opened a browser** — `[`x.md`](x.md)` is
-> handed to the OS. Fixed corpus-wide with a checker on the form. They had been wrong since the
-> tours were written; nobody clicked them because coming back was too annoying to risk.
->
-> ### The record below is the investigation that got there — keep it
->
-> ### THE TOUR TRANSPORT BAR HAD A NON-MONOTONIC WIDTH BUG — how it was found
->
-> **Two requested changes are both blocked by it**, and neither is at fault:
->
-> - Remove the visible tour count (Doug: *"I have not used that label's information a single
->   time"*).
-> - Add a tour-history **Back** control (Doug: *"I cannot navigate back"* from a cross-tour link).
->
-> **THE BAR PASSES TODAY BY COINCIDENCE.** Five perturbations were measured against
-> `the_left_panel_content_never_detaches_from_the_divider`, in both directions — more items,
-> fewer items, wider, narrower — and **every one fails**:
->
-> | perturbation | gap | at pointer |
-> |---|---|---|
-> | *(today, untouched)* | **passes** | — |
-> | remove the count label | 136.8pt | x=448 |
-> | add `◂ Back` | 62.7pt | x=230 |
-> | swap label → bare `◂` | 136.8pt | x=448 |
-> | swap label → `◂ Back` | 67.3pt | x=128 |
-> | shorten `✨ Claude's answer` → `✨ Answer` | 106.1pt | x=448 |
->
-> **That last row is the one that settles the diagnosis.** Shortening a label makes the bar
-> *narrower* and the failure *worse* — impossible under a width-budget theory, and exactly what a
-> moving wrap point produces. **Budget was never the constraint.** The bar sits in a narrow
-> equilibrium that any change to any item's width knocks it out of.
->
-> **So "free up room for Back" cannot work**, and neither can trimming other labels. The fix is
-> to make the bar's intrinsic minimum a **monotonic** function of what it contains. After that,
-> removing the label, adding Back and renaming the button are three independent one-line changes
-> that need no measurement at all.
->
-> **Removing `horizontal_wrapped` was proposed, tested, and is WRONG — measured, not argued.**
-> Un-wrapped, the bar's one-row minimum is **580pt** as it stands and **641pt** with Back added.
-> On Doug's 1280pt window that is **50.1%**, against the **40%** he walks tours at: the divider
-> could never go below half, and the RHS would permanently lose a fifth of its width on the
-> screen with least to spare. His objection — *"that minimum LHS width would cause the LHS to
-> occupy more than 50% of my 13" screen"* — was exactly right. **Do not re-propose it.**
->
-> **The keyboard-shortcut fallback (`Alt+←`) is not a fix either.** It dodges the bug rather than
-> removing it, and the bug will bite whoever next touches this bar for any reason.
->
-> #### The picker's adaptive width is LOAD-BEARING — do not remove it *(measured 2026-08-19)*
->
-> `.width((bar_width * 0.45).clamp(60.0, 220.0))` looks like a bug: it asks for a fraction of the
-> available width while the available width is being determined by the content it belongs to.
-> That circularity was the second theory for the non-monotonicity, and **it is wrong**.
->
-> Replacing it with a truncated label and no `.width()` call produced a **62.6pt gap where the
-> current code passes** — the bar's minimum rose to 486.6pt against a drag wanting 424.
->
-> **The formula is the responsive mechanism**, not a defect: it lets the combo shrink to **60pt**
-> exactly when the panel is narrowest. Without it the combo always sizes to its text, which is
-> widest precisely when there is least room. A constant width fails too, and worse — that was the
-> 2026-08-16 attempt, and this formula was its fix.
->
-> **Two theories are now dead by measurement** — the wrap (Doug's screen budget) and the circular
-> width (this). Do not propose a third without instrumenting first; the score for reasoning about
-> this bar is 0 for 2.
->
-> #### Consequence: OPTION 3 is the live path
->
-> Un-wrapped width is **monotonic by construction**, so reductions compose predictably and each is
-> measurable alone — the property this bar has never had. Doug's four candidates, re-ranked after
-> the above:
->
-> 1. **Time combo** — `30s — teaser` … `3min — deep` become `30s` … `3min`. Best ratio, and a
->    strict improvement rather than a compromise: the durations already say everything.
-> 2. **Count label** — free, and wanted anyway.
-> 3. **`✨ Claude's answer` → `✨ Answer`** — biggest single saving, and the only one with a real
->    cost: Doug asked for it to be prominent and reported it as broken when it once vanished. Try
->    the word before going icon-only.
-> 4. **Picker** — **excluded**, per the measurement above.
->
-> Estimated: ~190pt off a 580pt baseline → ~390pt (~30% of 1280), or ~450pt (~35%) with Back.
-> **Estimate, not measurement** — and estimation is what has been wrong all evening.
->
-> **Instrument, do not tune.** Claude tuned four times here after saying he would not, repeating
-> the six-attempt divider episode `ui-findings.md` C15 records. The test already knows
-> `available`, `panel` and `content` at each sampled pointer position — **print the triple across
-> the sweep** and the question ("is the panel tracking the pointer while the content is not, or
-> the reverse?") is answered in one run.
->
-> **Fallback if the bar is genuinely full:** make Back a keyboard shortcut (`Alt+←`), which costs
-> no width and carries no layout risk. It does not help the label removal, which needs the bar
-> bug fixed regardless.
->
-> **STILL OWED:** the reduction passes expandable into their frames. Doug: *"my education is
-> more important than strict
-> adherence to the template"* — though the template constrains shape, not length, so a long
-> tour needs no exemption. `docs/tour-kinds-plan.md` §4 is the governing principle.
+> ### ⟶ NEXT IS `#48` — GET THE FULL GATE UNDER 60 SECONDS
+>
+> **Doug set this order on 2026-08-20** *(`docs/ideas.md` #48)*: finish every planned `app.rs`
+> split item first, then take `#48`. **Every item is now finished**, so this is the live arc. He
+> called the current state a **failure mode**: *"I'm spending more time awaiting the completion of
+> test runs than adding features or learning."* The gate is **~354 s** measured 2026-08-21, against
+> a 60 s target.
+>
+> **FOUR LEVERS ARE ALREADY DEAD BY MEASUREMENT — do not re-propose them.** Parallelism (~2 s; the
+> worker tests serialise on a global `Mutex<WorkerState>`), memoising simulations (~2 s; the key
+> must include `t_end` and the sites are distinct pairs), memoising specimen *compiles* (**already
+> built** — `compile_specimen_shared`, so 47 of 59 call sites are free), and feature-set thrashing
+> (1–2 s; cargo keeps both variants). The full reasoning is in *Running things* below.
+>
+> **The pattern that killed all four: a sum of slow-looking test names is not a measurement.**
+> Three were proposed from arithmetic over names and died on contact with a clock. **Measure
+> first.** `Running things` records where the ~354 s actually goes — about twenty tests carry ~129 s
+> of it, led by `all_healthy_specimens_simulate` (16 s).
+>
+> ### ✅ THE `app.rs` SPLIT IS CLOSED — 2026-08-19 to 2026-08-21
+>
+> **14,437 → 6,476 lines**, into **seventeen new modules**, plus the doc-comment sweep that closed
+> it. **Not seventeen iterations** — several of the best produced no module at all, being accuracy
+> or testability fixes paid for *inside* `app.rs`. **The single largest step was not an extraction
+> either**: moving the `cfg(test)` blocks to `app/tests.rs` was **−5,613** and refactored nothing.
+> **The full record — every iteration, its estimate, what it actually cost and what it found — is
+> [`docs/app-split-plan.md`](docs/app-split-plan.md), which is now a closed plan.**
+> Per-module sizes are in `docs/architecture.md`, which is **generated**; this file does not
+> transcribe them, because a count here expires exactly like the rank that `arch_doc.rs`'s own
+> header got wrong.
+>
+> **DOUG RULED ON HOW TO SCORE IT, AND THE RULING OUTLIVES THE ARC** *(2026-08-20)*: *"This
+> `app.rs` refactoring effort has been beneficial, regardless of the reduction in size of `app.rs`.
+> You've identified and fixed bugs and you've identified and fixed testing gaps."* **So a session
+> reports what it found and what it made checkable first, and the line count last.** Scored on size
+> alone, four of the best iterations read as failures — the live-debug gate **added** 41 lines, the
+> cache-lifetime split 173, the ack-path seam 113, and the wrong-model annotation fix was a **net
+> zero**. **An accuracy or testability item is paid for *in* `app.rs` and cannot be scored on
+> `app.rs`'s line count.**
+>
+> **What the arc actually bought**, and the reason it is worth reading the plan before the next
+> refactor of anything: **eight defects found by extracting**, several of them silent and one of
+> them nine days old and already reported by Doug in a narrower dress. Panes that could previously
+> be reached only by building an `App`, giving it a worker and driving a specimen to a *failing*
+> stage now have tests running in hundredths of a second.
+>
+> **THE SEAM-FINDING RULES ARE THE TRANSFERABLE PART, and they live in the plan.** Named here only
+> so a future refactor knows they exist and does not re-derive them:
+>
+> - **Ask what a body is a LIST of, and which member is shaped differently — and find the
+>   *outermost* list first.** A router has no interesting regions, only members; the `else` that is
+>   a sibling of every counted row was missed by three separate censuses.
+> - **The shape of the sibling is the cheapest seam-finder the arc produced** — anywhere one arm of
+>   a `match` or `if` chain has already been extracted, the arm that has not is the next seam.
+> - **For a body, ask which contiguous region calls no `App` method.** `App` policy clusters at a
+>   rendering function's *edges*; the middle is usually pure rendering.
+> - **Check for ZERO coupling before measuring coupling** — that class turned out to hold exactly
+>   one item (227 lines) and is now empty, so do not re-run the sweep expecting a second harvest.
+> - **Count state GROUPS, not fields**, and the unit is the **narrowest borrow**.
+> - **The `App`-method count is not the test — ask whether deferring the press costs a frame.** A
+>   method at the end of a body is a callback; a method in the middle is a barrier.
+> - **A helper moves if its inputs are already in the signature, and stays if it would widen it.**
+> - **An extraction may buy no test. Grep for the property before claiming it buys one**, since the
+>   claim is about the OLD code and is checkable in advance.
+>
+> **AND THE MEASUREMENT THE EXPERIMENT WAS FOR IS STILL OPEN.** `worker.rs` (10,594) was
+> deliberately **not** split, as the control: *if handoff frequency does not improve, splitting more
+> files is not the answer.* **Nothing has yet been measured against it**, and the confound named on
+> 2026-08-19 still stands — a model change and a file growing cannot be told apart by counting
+> handoffs, so the signal can only be read across a period where the model was stable.
+>
+> ### A DOC COMMENT CAN BE ADOPTED BY THE WRONG ITEM — and there is now a checker
+>
+> **Rust concatenates contiguous `///` lines, so any item inserted above another item's doc comment
+> silently adopts it and the original loses its own.** Well-formed Rust, rendered happily by
+> rustdoc, and **worse than an undocumented item because it teaches something false.** Four causes
+> are known — insertion, a split that left the doc above the first piece, a rewrite written above
+> the old doc instead of replacing it, and an **extraction that moved the code and left the prose**.
+>
+> **`doc_citations::tests_orphaned_docs::no_doc_block_gains_a_second_summary` is the check**, a
+> per-file ratchet measured over the whole tree on 2026-08-21: 87 hits, 79 blocks, **25 real
+> orphans, ~29 % precision**, all fixed. **Forty files are at zero**, so a merged block in any of
+> them fails by name and line.
+>
+> **Three things it does not claim, all of them measured rather than assumed:**
+>
+> - **29 % is precision on the STOCK, not the flow.** A failure means *go and look*; raising a
+>   budget takes the reasoning in the same commit, the `app_does_not_regrow_its_field_count`
+>   contract.
+> - **It has a known blind spot, and it is the instance that motivated it.** `lib.rs`'s
+>   `STEPPED_FRAME_DELAY` orphan is invisible to it because the new summary wraps onto a second
+>   line. Relaxing that takes 87 hits to **169**, so recall costs about one false positive per extra
+>   find; the blind spot is documented on the test rather than closed.
+> - **The companion ZERO-doc detector cannot be the check** — it would have caught every one of the
+>   eight `app/tests.rs` orphans, but that file keeps **39** deliberately undocumented tests. **The
+>   two are the ends of one defect and only this end has a tolerable rate.**
+>
+> **The triage shortcut, measured on all 25: list the file's UNDOCUMENTED items and match the
+> orphan to one by name.** It resolved 22 of 25 immediately. The three it cannot reach are the
+> variants with no owner to match — a deleted field's doc, a summary superseded by a rewrite, and
+> **an owner that moved to another module.** For that last one: **after moving a pane, check whether
+> its rationale moved with it**, because the compiler enforces that the code left and says nothing
+> about the prose that explained it.
+>
+> ### ✅ THE TOUR TRANSPORT BAR — fixed 2026-08-19, and the constraint it leaves is permanent
+>
+> **The record is [`docs/ui-findings.md`](docs/ui-findings.md) C16**; the reasoning that binds
+> today's code is in `tour_panel.rs` beside the code it binds. What is kept here is the standing
+> constraint and the one rule the episode produced.
+>
+> **The bar's minimum width was non-monotonic**: shortening a label made the divider failure
+> *worse*, which is impossible under a width-budget theory and is the signature of a moving wrap
+> point. It is `ui.horizontal` now, so the minimum is monotonic and reductions compose.
+>
+> **THE ORDER IS THE WHOLE LESSON, AND IT IS EASY TO MISREAD AS "UN-WRAPPING WAS THE FIX".**
+> Un-wrapping **alone** was proposed, measured and correctly rejected — at **580pt** it is 50.1 %
+> of Doug's 1280pt window against the **40 %** he walks tours at. What shipped is un-wrapping
+> **plus** the three reductions that paid for it (tour count, duration words, the time combo's
+> default width), landing at **351.8pt**. **Make the width monotonic, then spend it** — and
+> `◂ Back`'s ~60pt was affordable only out of that saving.
+>
+> **So the live constraint: `MIN_LEFT_POINTS` is 435 and every point is one the RHS never gets
+> back.** Anything added to this bar needs a matching reduction, which is exactly what the two
+> re-aimed divider guards now catch. **The picker's `.width((bar_width * 0.45).clamp(60.0, 220.0))`
+> is load-bearing** — both a fixed width and no width at all are dead by measurement; the code
+> comment carries both numbers.
+>
+> **INSTRUMENT, DO NOT TUNE.** Two theories died here by measurement after Claude tuned four times
+> having said he would not, repeating the six-attempt divider episode (`ui-findings.md` C15).
+> **The score for reasoning about this bar without instrumenting is 0 for 2.** The divider test
+> already knows `available`, `panel` and `content` at each sampled pointer position — print the
+> triple across the sweep and the question is answered in one run.
 >
 > ---
 >

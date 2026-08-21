@@ -5613,3 +5613,27 @@ pane against your own arithmetic. That is the whole reason to prefer it over `Dr
 - **Which order to work in.** Specimen first, then read `dae_prepare` to find out what
   `reduce_constrained_dummy_derivatives` actually does, then rewrite the tour. Writing prose first
   is what produced the error being corrected.
+
+---
+
+## 82. The reduction passes should be expandable into their frames
+
+**Owed since 2026-08-19, and filed here on 2026-08-21 because it had no home.** It had been
+sitting under a *"STILL OWED"* line inside `CLAUDE.md`'s tour-transport-bar investigation — a box
+about a completely unrelated layout bug — and would have been deleted with it. **An owed item
+inside a closed arc's record is an owed item nobody will find.**
+
+**The ask:** the reduction view lists the funnel's passes; each should expand into the frames that
+pass actually produced, so a reader can see *what a step did* rather than only that it ran. That
+is the same move `index-reduction.md` needed when it turned out `Drivetrain` differentiates six
+times while the survivor list is empty (`#81`, `DECISIONS.md` 2026-08-17) — **a count with no way
+to open it is exactly the shape that taught a tour the opposite of the truth.**
+
+**Doug, on the length this implies:** *"my education is more important than strict adherence to
+the template."* **Read that as permission, not as an exemption** — and the distinction matters,
+because [`docs/tour-kinds-plan.md`](tour-kinds-plan.md) §4 freezes the concept template. **The
+template constrains SHAPE, not LENGTH**, so a long tour needs no exemption in the first place;
+what §4 forbids is moving setup → Predict → ▶ Look → Expected → Falsified if → *What just
+happened*, and adding depth inside those beats does not touch it.
+
+**Not started.** <!-- unbuilt: reduction_view::pass_frames -->
