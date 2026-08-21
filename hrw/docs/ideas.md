@@ -2114,6 +2114,13 @@ deliberately performs `remove_document` + `update_document` on every compile, be
 re-run. The comment at that site explains the *correctness* need honestly; nothing there was
 wrong. **The interaction is the defect, and neither half looks like one on its own.**
 
+**Where the churn lives, so A starts with a jump rather than a search:** in `compile_target`'s
+Resolve step, guarded by `given_qualified.is_none()` — grep **`last_specimen_uri`** (the
+remove-then-re-add) and **`last_resolve_failed`** (the session rebuild that prevents a failed
+compile's errors poisoning the next one). **Grep the symbols, not a line number**; this file
+records both moving under `app.rs` and line arithmetic is one of the three silent-corruption
+causes `CLAUDE.md` names.
+
 **This is a candidate upstream question, not a defect claim** (`docs/upstream-issues.md`
 discipline): *should a change to a workspace document invalidate resolution of durable external
 source roots?* It reproduces in six lines and is exactly the shape `upstream-strategy.md` calls
