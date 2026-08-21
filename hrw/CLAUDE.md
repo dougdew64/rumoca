@@ -498,233 +498,17 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 
 > ### ⟶ OPEN THE NEXT SESSION WITH THIS
 >
-> ## THE CONVERSATION HAS CHANGED MODE
+> **The live work comes first here, and that ordering was a fix.** Until 2026-08-21 this section
+> opened with *"the conversation has changed mode — default to teaching, not to building"* and
+> a vacation note from 2026-08-09, and the work actually in flight was **230 lines below them**.
+> A session reading top-down was told to do one thing while doing another, and had to grep to
+> find out what was underway — in a file whose whole job is to be read first. **The standing
+> teaching-mode instruction is unchanged and still binds; it now sits with the rest of the walk
+> material, below.**
 >
-> **Doug, 2026-08-08:** *"I will finally begin a serious walk through the tours and try to shift
-> our conversation to be about my education rather than about HRW features."*
->
-> **That is a standing instruction, not a mood.** For three weeks this project built the
-> instrument; the instrument is now good enough. **Default to teaching, not to building.** When
-> Doug reports something during a walk, the first question is *"what does this teach, and is it
-> true?"* — not *"what should we build?"* A feature is warranted when it unblocks the learning,
-> and `docs/ideas.md` is where the rest goes.
->
-> **He said the reason plainly, and it should not need saying twice:** *"We've been working on
-> this project for three weeks, and I have not yet been rewarded with a learning experience."*
-> Treat an hour spent on HRW polish during the walk as a cost, not a contribution.
->
-> ## WHERE THE WALK ACTUALLY IS (2026-08-13) — read this before the older notes below
->
-> **`connect-expansion.md` is walked, rewritten, and validated.** Doug: *"That is the template
-> for all other tours."* The template and the five things that make it work are in
-> [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md) — **read that before writing or
-> converting a tour.** Its shape: short setup → **Predict** → ▶ Look → **Expected** →
-> **Falsified if** → *What just happened*, with the explanation only ever **after** the look.
->
-> **Convert ONE TOUR AT A TIME — the one he is about to walk**, never a campaign. Doug:
-> *"working through each conversion with you is educational for me"*, so the conversion is
-> itself teaching, not preparation for teaching. The other eight are unconverted.
->
-> ### The three agreements that govern every answer now
->
-> - **The RHS is a lab, not an illustration** (`docs/vision.md`). Prose runs only to the first
->   **prediction**, then he tests it on screen. **The threshold is a prediction, not
->   understanding** — a crude falsifiable guess beats a complete explanation.
-> - **Beginner depth: concepts now, details later** (`docs/working-with-doug.md`). Detail costs
->   Claude nothing and costs Doug attention, so the pressure always runs one way. Premature
->   detail goes to `docs/compiler-phases/`, not into the answer.
-> - **Neither the tours nor the UI are fundamental — the mathematics as Rumoca implements it
->   is.** So a mismatch may be fixed by changing the *pane*, and on 2026-08-13 one was. But
->   **labels must expose Rumoca's structure, not a pedagogically convenient one**; when prose
->   and pane disagree, **Rumoca is the arbiter**.
->
-> ### CLAUDE CAN NOW READ THE PANE — use it before asking Doug to describe anything
->
-> **`hrw/.hrw-bridge/view.json` holds the view on screen**, as the renderer's own input.
-> Published for **Flatten → EquationSheet** and **Structural → Incidence**; a view with no
-> publisher removes the file, so absence is honest. `diagnostics/session.json` names the current
-> `sub_view`. Every row carries `id` (`f_x[N]`) so *"this equation"* resolves across panes.
->
-> **Adding a view is: give its data type a `to_bridge_json`, then add one arm in
-> `App::publish_current_view`.** The unpublished pane that matters most is **Flatten →
-> Connections**, which is the only one that shows connection sets and therefore the only
-> unverifiable claim left in `connect-expansion.md` Act 1.
->
-> **A tour's group table is machine-checked** by
-> `doc_citations::tour_group_tables_match_the_real_equation_sheet` (slow-gated), against a real
-> compile. Mark the table `<!-- pane-groups -->`.
->
-> ### What a walk still cannot be replaced by
->
-> Claude verifies **content, never pixels**. Whether a layout is legible or an animation reads as
-> a search is Doug's report and nothing else. Four of the six mismatches he found on 2026-08-13
-> are now the kind a test catches; **the other two were conceptual** — a tour whose central idea
-> had no counterpart on screen — and no test closes that.
->
-> ## He is on VACATION, walking the tours (week of 2026-08-09)
->
-> **Entry point: [`docs/fixture-tours/the-concepts.md`](docs/fixture-tours/the-concepts.md)**
-> — the overview, whose rows are `hrw://tour/…` links that open each tour.
->
-> **Nine tours cover the pipeline, and SEVEN OF THEM HAVE NEVER BEEN WALKED.** Written in one
-> pass on 2026-08-08, at Doug's explicit direction to drop `#66`'s write-one-walk-one rule so a
-> week of vacation could start immediately.
->
-> | new 2026-08-08 | phase |
-> |---|---|
-> | `connect-expansion.md` | Flatten — 4 `connect`s become 3 sets become 7 equations |
-> | `blt-ordering.md` | Tarjan/BLT — an order, no order, a system that splits |
-> | `tearing.md` | 3×3 → 1×1, and the phase's only heuristic |
-> | `index-reduction.md` | nine states, three degrees of freedom |
-> | `initialization.md` | one state, two conditions |
-> | `solve-lowering.md` | names become indices |
-> | `events.md` | the equations that are not always true |
-> | `the-concepts.md` | the overview |
->
-> **Every COUNT in them is read from the specimens' generated notebook traces. Every RENDERING
-> claim is unverified.** Each tour's closing *"What this tour cannot check"* section names its own
-> two or three weakest claims — **read that section before defending anything in the tour.** If
-> Doug reports a count is wrong, that is the serious case: a trace changed or Claude misread one.
->
-> ## PER-MACHINE SETUP — do this before answering any debugger question
->
-> **The VS Code extension is not installed by `git pull`.** It brings `src/*.ts`; it runs no
-> `tsc` and creates no junction. This exact gap cost a day on 2026-08-08 (`docs/ideas.md` #72,
-> operating notes):
->
-> ```powershell
-> cd hrw\vscode-extension ; npm install ; npm run build ; npm test
-> New-Item -ItemType Junction -Path "$env:USERPROFILE\.vscode\extensions\dougdew64.hrw-debugger-bridge-0.1.0" -Target "$PWD"
-> ```
->
-> Then **reload the VS Code window**, and confirm with `code --list-extensions`. **Rebuild HRW
-> too** — the `hrw://breakpoint/` links and the two-tier frame delay are compiled in.
->
-> **Only `matching-live.md` needs any of this.** The other eight run from HRW alone.
->
-> **AND CHECK THE PERMISSION ALLOWLIST EXISTS — first thing, on any machine.** `.claude/` is
-> gitignored **by upstream Rumoca** (`e658c776`), so `.claude/settings.json` does not travel and a
-> fresh clone prompts Doug for approval on **every** Bash call. Doug reported that as real friction
-> on 2026-08-13; the contents and the reasoning are in
-> [`docs/setup-windows.md`](docs/setup-windows.md) §8.
->
-> ```powershell
-> Test-Path (Join-Path (git rev-parse --show-toplevel) ".claude/settings.json")
-> ```
->
-> **Anchored at the repo root on purpose, and the bare relative form is a trap.** The first version
-> of this line was `Test-Path .claude\settings.json`, which reported **False on a machine where the
-> file exists** because the shell happened to be in `hrw/` — so the check would have ordered a
-> future session to recreate a file it already had. Caught within a minute of writing it, by
-> running it. **A check that reports absence from the wrong directory is worse than no check**, and
-> this is the third time in one day that a stale working directory produced a confidently wrong
-> result (see `DECISIONS.md`, 2026-08-12).
->
-> **Claude must check this unprompted, because Claude cannot see permission prompts.** Doug feels
-> the cost and has no reason to suspect a file he has never read; Claude can read the file's
-> *existence* and cannot read the prompts. **Only one of us can detect this, and it is not the one
-> paying for it.**
->
-> ## WHERE INDEX REDUCTION STANDS (2026-08-18) — read before touching that tour or tab
->
-> **Doug walked the phase-1 tours and reported that `index-reduction.md` was "way, way too
-> short".** Following that took four steps down and found a defect at each:
->
-> 1. **The tour's headline claim was false.** It said `Drivetrain` performs *zero*
->    differentiations. It performs **six**. `differentiated_rows` counts rows *surviving in the
->    final DAE*, and `eliminate_trivial` removes them at the end. Corrected in place; the wrong
->    version is kept visible in the stop, because the mechanism is the lesson.
-> 2. **Nothing cross-checked a stage summary against the frames from the same run.** Every other
->    checker here compares a document to a trace, and the trace said zero.
->    `a_reduction_summary_never_claims_more_than_its_frames_recorded` now does, and its
->    *"some specimen must differentiate"* clause encodes the exact mistake.
-> 3. **The Index Reduction tab was a re-execution, not an observation**, with HRW maintaining
->    Rumoca's step order by hand — and it had **already drifted**, missing `scalarize_equations`.
->    Rumoca gained a funnel observer (`prepare_dae_for_structural_analysis_fully_observed`), HRW
->    switched onto it, and the mirror is deleted. `updating-rumoca.md` step 3 is now moot.
-> 4. **Rumoca does not reduce the canonical index-3 DAE.** `CartesianPendulum` compiles, every
->    funnel step reports zero, and it is left structurally singular — unmatched equation
->    `f_x[4]` (the constraint) against unmatched unknown `lambda` (its force). **Rumoca's index
->    reduction is pattern-based, not general Pantelides**, and every other constraint in the
->    corpus is an alias, which is why nobody noticed. Filed in `docs/upstream-issues.md` as a
->    question, not a defect claim; **not yet adjudicated against System Modeler**.
->
-> **The corpus now spans the phase** — `BouncingBall` (no reduction needed), `BenchActuator`
-> (1 differentiation, 48 equations), `Drivetrain` (6, at 97), `CartesianPendulum` (cannot be
-> reduced). Smallest-first is the tour's spine, and the pendulum is its ending.
->
-> **DONE 2026-08-18:** the pane now publishes `n_differentiations` beside the survivor list, so
-> it can no longer be silent about six differentiations because none survived — the defect that
-> started all of this. A funnel that did nothing also says so, which is `CartesianPendulum`'s
-> whole lesson.
->
-> **⟶ IF THIS SESSION IS ON THE MACHINE WITH SYSTEM MODELER**, the one owed experiment is
-> simulating `hrw/specimens/CartesianPendulum.mo`. The protocol, and what each of the three
-> possible outcomes establishes, are written down in `docs/upstream-issues.md` under the
-> index-reduction entry — decided in advance so the result is not read to taste. It turns
-> `index-reduction.md` Stop 5 from Claude's inference into an adjudicated fact.
->
-> **The tour is rewritten** (2026-08-18): five stops, smallest-first —
-> `BouncingBall` (nothing needed) → `BenchActuator` (**1** differentiation, 4→3 states, the
-> mechanism at a size you can hold) → `Drivetrain` (6, at 97 equations) → `CartesianPendulum`
-> (0, and cannot be reduced). It builds *why differentiating helps* from what an integrator can
-> be asked for, and defines **index as a distance** rather than a score. **Not yet walked.**
->
-> **THE TOUR IS BEING WALKED NOW, and three corrections have already come from it** — each a
-> prose failure, none a wrong number, and none findable by any checker here:
->
-> 1. *"Why a solver cannot simply be told about the constraint"* said **solver** and described
->    an **integrator**. A DAE solver handles constraints; that is its job. Wrong difficulty named.
-> 2. The replacement assumed Newton iteration, Jacobians and singularity. Rebuilt on **matching**,
->    which he has walked — the same fact found by counting rather than arithmetic.
-> 3. Backward references **retold** earlier results as prose, including a hand-written table that
->    duplicated the Incidence view. Doug: *"HRW is your platform. Use it."* Now
->    `hrw://tour/<name>/stop/<slug>` links and a pane link.
->
-> **The standing offer that came with it:** *"if ever HRW does not meet your needs but could meet
-> your needs with improvements, then let's pause and make those improvements."* Take it.
->
-> ### DEIXIS — Doug cannot point at a tour statement, and asked for it 2026-08-19
->
-> *"I'd like to enjoy the convenience of deixis when asking questions about statements which
-> you've made in tours. Currently, it seems that I have to copy / paste those tour statements."*
->
-> **HRW publishes `ui_mode: "Tour"` and nothing else about the tour** — not which one, not where
-> he is in it. So "this statement" cannot be resolved.
->
-> **Tell him he does not need to paste**, which is the immediate relief and cost nothing: the
-> tours are on disk, so *"the Newton paragraph in the intro"* or *"Stop 2's table"* is enough to
-> find the exact text. He had been pasting because nobody said so.
->
-> Two improvements, agreed as a plan and **not yet built**:
->
-> 1. **Publish which tour is selected** — ✅ **BUILT 2026-08-19.** `diagnostic_snapshot` now
->    carries `"tour"`, so a question about *"the Newton paragraph"* resolves: the name identifies
->    the document and the tours are on disk. **Read the capture before asking Doug which tour he
->    means.**
-> 2. **Publish which stop is on screen** — **RECOMMENDED AGAINST, 2026-08-19.** Doug asked
->    whether the recommendation was for or against; the honest answer is against, and one reason
->    originally given for it was wrong.
->
-> **Why against**, in the order that decides it:
->
-> - **It does not deliver the request.** Doug wants to point at *statements*; this publishes
->   *stops*, and a stop is often a page. He would still say "the Newton paragraph in this stop",
->   which is barely shorter than "the Newton paragraph in the intro" — already unambiguous under
->   #1.
-> - **It fails in the normal reading position.** With two or three stops visible, "this" is
->   ambiguous again. It works only when one stop fills the pane.
-> - **The side benefit claimed for it does not exist.** It was said to make `stop/<slug>` links
->   land precisely. **That shipped on 2026-08-17**: the pane splits at the byte offset and calls
->   `scroll_to_cursor`, so egui computes the position from a cursor it knows exactly. That was
->   the strongest argument for #2 and it is already done.
-> - **The cost is real and falls on a pane in constant use** — N markdown documents per frame,
->   where the code warns that two is "not free of consequence", and `connect-expansion` has
->   eleven headings.
->
-> **If statement-level deixis still matters after living with #1**, the answer is not #2 — it is
-> capturing *what was selected* rather than *where the pane is scrolled*. Different mechanism;
-> do not design it until #1 has been used and found wanting.
+> **So the rule this section is kept by: what is in flight goes at the top, and standing context
+> goes underneath it.** A ✅ box is history the moment its arc closes — move it to the plan or
+> to `DECISIONS.md` rather than letting it accumulate above the next reader's actual task.
 >
 > ### ⟶ NEXT: SPLIT `app.rs` — [`docs/app-split-plan.md`](docs/app-split-plan.md)
 >
@@ -774,6 +558,37 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > Progress
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest.
+>
+> ### ⟶ TWO STEPS CLOSE THE `app.rs` SPLIT, AND DOUG SET THEIR ORDER 2026-08-21
+>
+> **`central_panel_ui` is finished.** What remains, in this order, is in
+> [`docs/app-split-plan.md`](docs/app-split-plan.md) under *"the two steps that close this plan"*:
+>
+> 1. **`frame_ui`'s Specimen left panel** (~113 lines) — the last extraction. Its Purpose half
+>    (~48, zero `App` methods) is the twin of the already-extracted `specimen_source_ui`.
+> 2. **The doc-comment sweep** — the two-summary detector over every module, triaged. *"Let's
+>    address the doc-comment sweep after the `frame_ui` refactor."*
+>
+> **DO NOT RE-MEASURE THE ~113 FIRST.** The previous session queued exactly that and Doug ruled it
+> out: *"Let's not re-measure `frame_ui`'s ~113. This refactoring has been very, very valuable,
+> regardless of the number of lines of code which have been moved."* Two estimates here really did
+> run high (~125 → 83, ~152 → 133) and that is worth knowing — but **re-measuring first prices a
+> decision the count does not decide**, which is the size-number ruling below applied to planning
+> rather than to reporting. **Read the body to find the seam; let the number fall out.**
+>
+> **Ask "what is this a list of, and which member is shaped differently?" before looking for a
+> region** — and find the *outermost* list first, which is the rule `nav_view` bought.
+>
+> **THE ARC AFTER THIS ONE IS `#48`, AND DOUG SET THE ORDER ON 2026-08-20** *(`docs/ideas.md`)*:
+> **finish every planned `app.rs` split item first, then take `#48`** — get the full gate under
+> **60 seconds**, against ~277 s today. He called the current state a **failure mode**: *"I'm
+> spending more time awaiting the completion of test runs than adding features or learning."*
+> **The stopping rule still governs** — one item per session, then `/clear` — so the remaining
+> three are three sessions, not one.
+>
+> **This does not slow the split down, and that was checked rather than assumed:** the `app`
+> module's **140 tests cost 0.4 seconds** of the 253-second run. Use the fast run (24.9 s) between
+> edits; the full gate is owed once per commit.
 >
 > ### ✅ THE ROUTER IS DONE — `central_panel_ui` 640 → 552 → 484 → 430 → 322
 >
@@ -978,37 +793,6 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > is the other end of the pair: a doc block containing two opening summaries.** Measured precision
 > on that file was **8 of 12**; across `src/*.rs` it reports **83**, which is *not* an orphan count
 > — the first `worker.rs` hit sampled was a false positive. **Do not quote 83 as a defect count.**
->
-> ### ⟶ TWO STEPS CLOSE THE `app.rs` SPLIT, AND DOUG SET THEIR ORDER 2026-08-21
->
-> **`central_panel_ui` is finished.** What remains, in this order, is in
-> [`docs/app-split-plan.md`](docs/app-split-plan.md) under *"the two steps that close this plan"*:
->
-> 1. **`frame_ui`'s Specimen left panel** (~113 lines) — the last extraction. Its Purpose half
->    (~48, zero `App` methods) is the twin of the already-extracted `specimen_source_ui`.
-> 2. **The doc-comment sweep** — the two-summary detector over every module, triaged. *"Let's
->    address the doc-comment sweep after the `frame_ui` refactor."*
->
-> **DO NOT RE-MEASURE THE ~113 FIRST.** The previous session queued exactly that and Doug ruled it
-> out: *"Let's not re-measure `frame_ui`'s ~113. This refactoring has been very, very valuable,
-> regardless of the number of lines of code which have been moved."* Two estimates here really did
-> run high (~125 → 83, ~152 → 133) and that is worth knowing — but **re-measuring first prices a
-> decision the count does not decide**, which is the size-number ruling below applied to planning
-> rather than to reporting. **Read the body to find the seam; let the number fall out.**
->
-> **Ask "what is this a list of, and which member is shaped differently?" before looking for a
-> region** — and find the *outermost* list first, which is the rule `nav_view` bought.
->
-> **THE ARC AFTER THIS ONE IS `#48`, AND DOUG SET THE ORDER ON 2026-08-20** *(`docs/ideas.md`)*:
-> **finish every planned `app.rs` split item first, then take `#48`** — get the full gate under
-> **60 seconds**, against ~277 s today. He called the current state a **failure mode**: *"I'm
-> spending more time awaiting the completion of test runs than adding features or learning."*
-> **The stopping rule still governs** — one item per session, then `/clear` — so the remaining
-> three are three sessions, not one.
->
-> **This does not slow the split down, and that was checked rather than assumed:** the `app`
-> module's **140 tests cost 0.4 seconds** of the 253-second run. Use the fast run (24.9 s) between
-> edits; the full gate is owed once per commit.
 >
 > ### AND THE SIZE NUMBER IS NOT THE RETURN — Doug ruled on this 2026-08-20
 >
@@ -1748,6 +1532,252 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > more important than strict
 > adherence to the template"* — though the template constrains shape, not length, so a long
 > tour needs no exemption. `docs/tour-kinds-plan.md` §4 is the governing principle.
+>
+> ---
+>
+> # THE WALK — standing context, and it begins here
+>
+> **Everything from this line to the end of the section is about Doug's walk through the tours.**
+> It sat *above* the live work until 2026-08-21 and now sits below it; **nothing in it was
+> edited by that move**, so a date inside it describes when it was written, not today.
+>
+> **Two things to hold while reading it.** First, **the teaching-mode instruction below still
+> binds** — it is a standing instruction, not a spent one. Second, **the `app.rs` split is a
+> deliberate exception Doug directed**, not a lapse from it: he ordered the split on 2026-08-19
+> and re-affirmed its value on 2026-08-21 (*"this refactoring has been very, very valuable"*).
+> **When the split closes, the default returns to teaching without anyone needing to decide it.**
+>
+> **And the vacation note below is dated 2026-08-09** — it was the live framing then and is not
+> now. Left in place rather than rewritten, because what it records about *how* the walk works is
+> still true; only the week is stale.
+>
+> ## THE CONVERSATION HAS CHANGED MODE
+>
+> **Doug, 2026-08-08:** *"I will finally begin a serious walk through the tours and try to shift
+> our conversation to be about my education rather than about HRW features."*
+>
+> **That is a standing instruction, not a mood.** For three weeks this project built the
+> instrument; the instrument is now good enough. **Default to teaching, not to building.** When
+> Doug reports something during a walk, the first question is *"what does this teach, and is it
+> true?"* — not *"what should we build?"* A feature is warranted when it unblocks the learning,
+> and `docs/ideas.md` is where the rest goes.
+>
+> **He said the reason plainly, and it should not need saying twice:** *"We've been working on
+> this project for three weeks, and I have not yet been rewarded with a learning experience."*
+> Treat an hour spent on HRW polish during the walk as a cost, not a contribution.
+>
+> ## WHERE THE WALK ACTUALLY IS (2026-08-13) — read this before the older notes below
+>
+> **`connect-expansion.md` is walked, rewritten, and validated.** Doug: *"That is the template
+> for all other tours."* The template and the five things that make it work are in
+> [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md) — **read that before writing or
+> converting a tour.** Its shape: short setup → **Predict** → ▶ Look → **Expected** →
+> **Falsified if** → *What just happened*, with the explanation only ever **after** the look.
+>
+> **Convert ONE TOUR AT A TIME — the one he is about to walk**, never a campaign. Doug:
+> *"working through each conversion with you is educational for me"*, so the conversion is
+> itself teaching, not preparation for teaching. The other eight are unconverted.
+>
+> ### The three agreements that govern every answer now
+>
+> - **The RHS is a lab, not an illustration** (`docs/vision.md`). Prose runs only to the first
+>   **prediction**, then he tests it on screen. **The threshold is a prediction, not
+>   understanding** — a crude falsifiable guess beats a complete explanation.
+> - **Beginner depth: concepts now, details later** (`docs/working-with-doug.md`). Detail costs
+>   Claude nothing and costs Doug attention, so the pressure always runs one way. Premature
+>   detail goes to `docs/compiler-phases/`, not into the answer.
+> - **Neither the tours nor the UI are fundamental — the mathematics as Rumoca implements it
+>   is.** So a mismatch may be fixed by changing the *pane*, and on 2026-08-13 one was. But
+>   **labels must expose Rumoca's structure, not a pedagogically convenient one**; when prose
+>   and pane disagree, **Rumoca is the arbiter**.
+>
+> ### CLAUDE CAN NOW READ THE PANE — use it before asking Doug to describe anything
+>
+> **`hrw/.hrw-bridge/view.json` holds the view on screen**, as the renderer's own input.
+> Published for **Flatten → EquationSheet** and **Structural → Incidence**; a view with no
+> publisher removes the file, so absence is honest. `diagnostics/session.json` names the current
+> `sub_view`. Every row carries `id` (`f_x[N]`) so *"this equation"* resolves across panes.
+>
+> **Adding a view is: give its data type a `to_bridge_json`, then add one arm in
+> `App::publish_current_view`.** The unpublished pane that matters most is **Flatten →
+> Connections**, which is the only one that shows connection sets and therefore the only
+> unverifiable claim left in `connect-expansion.md` Act 1.
+>
+> **A tour's group table is machine-checked** by
+> `doc_citations::tour_group_tables_match_the_real_equation_sheet` (slow-gated), against a real
+> compile. Mark the table `<!-- pane-groups -->`.
+>
+> ### What a walk still cannot be replaced by
+>
+> Claude verifies **content, never pixels**. Whether a layout is legible or an animation reads as
+> a search is Doug's report and nothing else. Four of the six mismatches he found on 2026-08-13
+> are now the kind a test catches; **the other two were conceptual** — a tour whose central idea
+> had no counterpart on screen — and no test closes that.
+>
+> ## He is on VACATION, walking the tours (week of 2026-08-09)
+>
+> **Entry point: [`docs/fixture-tours/the-concepts.md`](docs/fixture-tours/the-concepts.md)**
+> — the overview, whose rows are `hrw://tour/…` links that open each tour.
+>
+> **Nine tours cover the pipeline, and SEVEN OF THEM HAVE NEVER BEEN WALKED.** Written in one
+> pass on 2026-08-08, at Doug's explicit direction to drop `#66`'s write-one-walk-one rule so a
+> week of vacation could start immediately.
+>
+> | new 2026-08-08 | phase |
+> |---|---|
+> | `connect-expansion.md` | Flatten — 4 `connect`s become 3 sets become 7 equations |
+> | `blt-ordering.md` | Tarjan/BLT — an order, no order, a system that splits |
+> | `tearing.md` | 3×3 → 1×1, and the phase's only heuristic |
+> | `index-reduction.md` | nine states, three degrees of freedom |
+> | `initialization.md` | one state, two conditions |
+> | `solve-lowering.md` | names become indices |
+> | `events.md` | the equations that are not always true |
+> | `the-concepts.md` | the overview |
+>
+> **Every COUNT in them is read from the specimens' generated notebook traces. Every RENDERING
+> claim is unverified.** Each tour's closing *"What this tour cannot check"* section names its own
+> two or three weakest claims — **read that section before defending anything in the tour.** If
+> Doug reports a count is wrong, that is the serious case: a trace changed or Claude misread one.
+>
+> ## PER-MACHINE SETUP — do this before answering any debugger question
+>
+> **The VS Code extension is not installed by `git pull`.** It brings `src/*.ts`; it runs no
+> `tsc` and creates no junction. This exact gap cost a day on 2026-08-08 (`docs/ideas.md` #72,
+> operating notes):
+>
+> ```powershell
+> cd hrw\vscode-extension ; npm install ; npm run build ; npm test
+> New-Item -ItemType Junction -Path "$env:USERPROFILE\.vscode\extensions\dougdew64.hrw-debugger-bridge-0.1.0" -Target "$PWD"
+> ```
+>
+> Then **reload the VS Code window**, and confirm with `code --list-extensions`. **Rebuild HRW
+> too** — the `hrw://breakpoint/` links and the two-tier frame delay are compiled in.
+>
+> **Only `matching-live.md` needs any of this.** The other eight run from HRW alone.
+>
+> **AND CHECK THE PERMISSION ALLOWLIST EXISTS — first thing, on any machine.** `.claude/` is
+> gitignored **by upstream Rumoca** (`e658c776`), so `.claude/settings.json` does not travel and a
+> fresh clone prompts Doug for approval on **every** Bash call. Doug reported that as real friction
+> on 2026-08-13; the contents and the reasoning are in
+> [`docs/setup-windows.md`](docs/setup-windows.md) §8.
+>
+> ```powershell
+> Test-Path (Join-Path (git rev-parse --show-toplevel) ".claude/settings.json")
+> ```
+>
+> **Anchored at the repo root on purpose, and the bare relative form is a trap.** The first version
+> of this line was `Test-Path .claude\settings.json`, which reported **False on a machine where the
+> file exists** because the shell happened to be in `hrw/` — so the check would have ordered a
+> future session to recreate a file it already had. Caught within a minute of writing it, by
+> running it. **A check that reports absence from the wrong directory is worse than no check**, and
+> this is the third time in one day that a stale working directory produced a confidently wrong
+> result (see `DECISIONS.md`, 2026-08-12).
+>
+> **Claude must check this unprompted, because Claude cannot see permission prompts.** Doug feels
+> the cost and has no reason to suspect a file he has never read; Claude can read the file's
+> *existence* and cannot read the prompts. **Only one of us can detect this, and it is not the one
+> paying for it.**
+>
+> ## WHERE INDEX REDUCTION STANDS (2026-08-18) — read before touching that tour or tab
+>
+> **Doug walked the phase-1 tours and reported that `index-reduction.md` was "way, way too
+> short".** Following that took four steps down and found a defect at each:
+>
+> 1. **The tour's headline claim was false.** It said `Drivetrain` performs *zero*
+>    differentiations. It performs **six**. `differentiated_rows` counts rows *surviving in the
+>    final DAE*, and `eliminate_trivial` removes them at the end. Corrected in place; the wrong
+>    version is kept visible in the stop, because the mechanism is the lesson.
+> 2. **Nothing cross-checked a stage summary against the frames from the same run.** Every other
+>    checker here compares a document to a trace, and the trace said zero.
+>    `a_reduction_summary_never_claims_more_than_its_frames_recorded` now does, and its
+>    *"some specimen must differentiate"* clause encodes the exact mistake.
+> 3. **The Index Reduction tab was a re-execution, not an observation**, with HRW maintaining
+>    Rumoca's step order by hand — and it had **already drifted**, missing `scalarize_equations`.
+>    Rumoca gained a funnel observer (`prepare_dae_for_structural_analysis_fully_observed`), HRW
+>    switched onto it, and the mirror is deleted. `updating-rumoca.md` step 3 is now moot.
+> 4. **Rumoca does not reduce the canonical index-3 DAE.** `CartesianPendulum` compiles, every
+>    funnel step reports zero, and it is left structurally singular — unmatched equation
+>    `f_x[4]` (the constraint) against unmatched unknown `lambda` (its force). **Rumoca's index
+>    reduction is pattern-based, not general Pantelides**, and every other constraint in the
+>    corpus is an alias, which is why nobody noticed. Filed in `docs/upstream-issues.md` as a
+>    question, not a defect claim; **not yet adjudicated against System Modeler**.
+>
+> **The corpus now spans the phase** — `BouncingBall` (no reduction needed), `BenchActuator`
+> (1 differentiation, 48 equations), `Drivetrain` (6, at 97), `CartesianPendulum` (cannot be
+> reduced). Smallest-first is the tour's spine, and the pendulum is its ending.
+>
+> **DONE 2026-08-18:** the pane now publishes `n_differentiations` beside the survivor list, so
+> it can no longer be silent about six differentiations because none survived — the defect that
+> started all of this. A funnel that did nothing also says so, which is `CartesianPendulum`'s
+> whole lesson.
+>
+> **⟶ IF THIS SESSION IS ON THE MACHINE WITH SYSTEM MODELER**, the one owed experiment is
+> simulating `hrw/specimens/CartesianPendulum.mo`. The protocol, and what each of the three
+> possible outcomes establishes, are written down in `docs/upstream-issues.md` under the
+> index-reduction entry — decided in advance so the result is not read to taste. It turns
+> `index-reduction.md` Stop 5 from Claude's inference into an adjudicated fact.
+>
+> **The tour is rewritten** (2026-08-18): five stops, smallest-first —
+> `BouncingBall` (nothing needed) → `BenchActuator` (**1** differentiation, 4→3 states, the
+> mechanism at a size you can hold) → `Drivetrain` (6, at 97 equations) → `CartesianPendulum`
+> (0, and cannot be reduced). It builds *why differentiating helps* from what an integrator can
+> be asked for, and defines **index as a distance** rather than a score. **Not yet walked.**
+>
+> **THE TOUR IS BEING WALKED NOW, and three corrections have already come from it** — each a
+> prose failure, none a wrong number, and none findable by any checker here:
+>
+> 1. *"Why a solver cannot simply be told about the constraint"* said **solver** and described
+>    an **integrator**. A DAE solver handles constraints; that is its job. Wrong difficulty named.
+> 2. The replacement assumed Newton iteration, Jacobians and singularity. Rebuilt on **matching**,
+>    which he has walked — the same fact found by counting rather than arithmetic.
+> 3. Backward references **retold** earlier results as prose, including a hand-written table that
+>    duplicated the Incidence view. Doug: *"HRW is your platform. Use it."* Now
+>    `hrw://tour/<name>/stop/<slug>` links and a pane link.
+>
+> **The standing offer that came with it:** *"if ever HRW does not meet your needs but could meet
+> your needs with improvements, then let's pause and make those improvements."* Take it.
+>
+> ### DEIXIS — Doug cannot point at a tour statement, and asked for it 2026-08-19
+>
+> *"I'd like to enjoy the convenience of deixis when asking questions about statements which
+> you've made in tours. Currently, it seems that I have to copy / paste those tour statements."*
+>
+> **HRW publishes `ui_mode: "Tour"` and nothing else about the tour** — not which one, not where
+> he is in it. So "this statement" cannot be resolved.
+>
+> **Tell him he does not need to paste**, which is the immediate relief and cost nothing: the
+> tours are on disk, so *"the Newton paragraph in the intro"* or *"Stop 2's table"* is enough to
+> find the exact text. He had been pasting because nobody said so.
+>
+> Two improvements, agreed as a plan and **not yet built**:
+>
+> 1. **Publish which tour is selected** — ✅ **BUILT 2026-08-19.** `diagnostic_snapshot` now
+>    carries `"tour"`, so a question about *"the Newton paragraph"* resolves: the name identifies
+>    the document and the tours are on disk. **Read the capture before asking Doug which tour he
+>    means.**
+> 2. **Publish which stop is on screen** — **RECOMMENDED AGAINST, 2026-08-19.** Doug asked
+>    whether the recommendation was for or against; the honest answer is against, and one reason
+>    originally given for it was wrong.
+>
+> **Why against**, in the order that decides it:
+>
+> - **It does not deliver the request.** Doug wants to point at *statements*; this publishes
+>   *stops*, and a stop is often a page. He would still say "the Newton paragraph in this stop",
+>   which is barely shorter than "the Newton paragraph in the intro" — already unambiguous under
+>   #1.
+> - **It fails in the normal reading position.** With two or three stops visible, "this" is
+>   ambiguous again. It works only when one stop fills the pane.
+> - **The side benefit claimed for it does not exist.** It was said to make `stop/<slug>` links
+>   land precisely. **That shipped on 2026-08-17**: the pane splits at the byte offset and calls
+>   `scroll_to_cursor`, so egui computes the position from a cursor it knows exactly. That was
+>   the strongest argument for #2 and it is already done.
+> - **The cost is real and falls on a pane in constant use** — N markdown documents per frame,
+>   where the code warns that two is "not free of consequence", and `connect-expansion` has
+>   eleven headings.
+>
+> **If statement-level deixis still matters after living with #1**, the answer is not #2 — it is
+> capturing *what was selected* rather than *where the pane is scrolled*. Different mechanism;
+> do not design it until #1 has been used and found wanting.
 >
 > ## Open questions a walk may hit
 >
