@@ -3950,6 +3950,39 @@ impl App {
             .is_some_and(|a| !a.is_empty())
     }
 
+    /// Whether the compile captured a `pre()`-lowering trace worth a tab.
+    ///
+    /// A method rather than the inline `!self.frames.pre_lowering.is_empty()` for the same
+    /// reason [`Self::flatten_content`] exists: **the sub-view row and the `hrw://` link
+    /// guard must ask the same question**, and two spellings of it are two places to
+    /// change.
+    fn has_pre_lowering_trace(&self) -> bool {
+        !self.frames.pre_lowering.is_empty()
+    }
+
+    /// What the Flatten compile produced, in the form its sub-view row and its link guard
+    /// both read.
+    ///
+    /// **One builder, two consumers**, which is the whole point: the row draws a tab iff
+    /// `sub_view_rows::flatten_view_available` approves it, and
+    /// [`Self::apply_pending_view_and_seek`] refuses a link the same predicate rejects.
+    /// Before 2026-08-21 the row built this literal inline and the link guard had no
+    /// opinion at all — a `_ => true` arm — so a link could select a tab that was not
+    /// drawn.
+    fn flatten_content(&self) -> sub_view_rows::FlattenContent {
+        sub_view_rows::FlattenContent {
+            equation_sheet: self.cached_equation_sheet.is_some(),
+            // **Spans, not the sheet.** A sheet is built from the DAE whether or not the
+            // specimen's text could be read, and a source map with no lines is an empty
+            // pane rather than a missing one.
+            source_map: self
+                .cached_equation_sheet
+                .as_ref()
+                .is_some_and(|s| !s.source_lines.is_empty()),
+            connections: !self.frames.connection.is_empty(),
+        }
+    }
+
     /// The `pre()`-lowering replay (idea #40), on the Events stage.
     ///
     /// Mirrors `reduction_anim_ui` beat for beat — the six-step live-debug
@@ -4166,20 +4199,13 @@ impl App {
                 let flatten_ready = sub_view_rows::flatten_row_ui(
                     ui,
                     self.stage,
-                    sub_view_rows::FlattenContent {
-                        equation_sheet: self.cached_equation_sheet.is_some(),
-                        source_map: self
-                            .cached_equation_sheet
-                            .as_ref()
-                            .is_some_and(|s| !s.source_lines.is_empty()),
-                        connections: !self.frames.connection.is_empty(),
-                    },
+                    self.flatten_content(),
                     &mut self.viewport.flatten,
                 );
                 let events_ready = sub_view_rows::events_row_ui(
                     ui,
                     self.stage,
-                    !self.frames.pre_lowering.is_empty(),
+                    self.has_pre_lowering_trace(),
                     &mut self.viewport.events,
                 );
                 let init_ready = sub_view_rows::init_row_ui(
@@ -5190,8 +5216,38 @@ impl App {
             // aiming at an equation that is not there. The link named a real
             // slug; whether it is *available* depends on what the compile
             // produced, which only this point knows.
-            let available = match sub {
-                SubView::Structural(v) => self.structural_view_available(v),
+            // **Every sub-view family answers now, and the question is asked of the stage
+            // the app is ON.** This was `SubView::Structural(v) => …, _ => true` until
+            // 2026-08-21, which said *"every non-report sub-view is always present"* —
+            // false of Source Map and Connections, both of which exist only for some
+            // models. Same wildcard shape `CLAUDE.md` records from the live-debug cluster.
+            //
+            // **The stage is matched here rather than left to `apply_sub_view`, and that
+            // is not tidiness.** `HrwLink::LoadAndSwitch` sets `pending_sub_view` while the
+            // compile is still in flight and `self.stage` is still the *previous* stage —
+            // so a question about "this model's Flatten tabs" asked then is answered from
+            // an empty compile, and a link to `Flatten/Connections` would be refused with a
+            // notice naming a stage the app is not showing. `apply_sub_view` drops a
+            // stage-mismatched request anyway, so passing it through is the honest answer:
+            // **availability is a property of the stage on screen, and there is nothing to
+            // report about the others.** The structural arm gained the same protection —
+            // `structural_view_available` reads `self.stage` internally, so before this it
+            // could refuse a Structural link while the app sat on Flatten.
+            let available = match (sub, self.stage) {
+                (SubView::Structural(v), StageKind::Structural | StageKind::IndexReduction) => {
+                    self.structural_view_available(v)
+                }
+                (SubView::Flatten(v), StageKind::Flatten) => {
+                    sub_view_rows::flatten_view_available(v, self.flatten_content())
+                }
+                (SubView::Events(v), StageKind::Events) => {
+                    sub_view_rows::events_view_available(v, self.has_pre_lowering_trace())
+                }
+                (SubView::Init(v), StageKind::Initialization) => {
+                    sub_view_rows::init_view_available(v, self.has_ic_plan())
+                }
+                // Stage mismatch — see above. `apply_sub_view` matches the same pairs and
+                // ignores it, so this changes nothing except which message is *not* shown.
                 _ => true,
             };
             if available {

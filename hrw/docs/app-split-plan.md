@@ -1585,7 +1585,19 @@ and the fourth (`report_sub_view`) is the one shaped differently: a banner, a st
 a nine-way selector and an availability struct. **What was left is the plain shape**, three times
 over: a gate, a `ui.horizontal` of `selectable_value`, a separator.
 
-#### The three-row asymmetry is a DEFECT, and it needs Doug's ruling
+> ### ✅ RULED AND FIXED, same day — Doug, 2026-08-21
+>
+> *"Accuracy is a requirement. And, consistency reduces my learning friction. So, my answer
+> is that we should make changes to ensure accuracy and we should make changes to improve
+> consistency."*
+>
+> **Following that turned one row's defect into three, all the same belief.** The section
+> below records the finding as it stood when the ruling was asked for; the box after it
+> records what the ruling bought. **The mechanism is now the report stages' shape exactly**
+> — one availability predicate per stage, consulted by the tab row, the `hrw://` link guard
+> and a result clamp.
+
+#### The three-row asymmetry is a DEFECT, and it needed Doug's ruling
 
 Per this plan's own rule (*when an extraction exposes an asymmetry, the next sentence must say
 whether it is principled or a defect*): **Events and Initialization gate the whole row; Flatten
@@ -1608,8 +1620,70 @@ it therefore does not carry the stop-and-fix authorisation. And the fix is a **p
 report stages notify with *"This is an HRW bug; please report it"*, which is right for a state
 nothing should reach and wrong for one two clicks of ordinary use produces. A silent reset to
 `Equations` is the other candidate. **Doug's call.**
-`sub_view_rows::tests::a_stranded_flatten_view_leaves_no_tab_selected` pins today's behaviour and
-says in its doc that it changes rather than disappears when the ruling lands.
+
+### ✅ THE RULING'S CONSEQUENCE — ONE BELIEF IN THREE PLACES, 2026-08-21
+
+**The row was the only place in the app that knew Source Map and Connections are
+conditional.** Following Doug's ruling out of the row found the other two:
+
+| place | what it said | what it is |
+|---|---|---|
+| `App::apply_pending_view_and_seek`'s link guard | `SubView::Structural(v) => …, _ => true` | **the same defect Doug reported on `Structural/Summary`**, in the one arm its fix did not reach |
+| `app::tests::every_tour_sub_view_link_is_available_for_its_specimen` | *"Flatten/Events/Initialization sub-views are always present."* | a `continue` that skipped exactly the links that can be wrong |
+| the row itself | two inline conditions | the stranding above |
+
+**So the link guard was accepting a link naming a tab that is not drawn** — a tour link to
+`Flatten/SourceMap` on a model whose source could not be read would change the stage, leave
+the sub-view where it was, and put the explanation in a pane the reader was not told to look
+at. That is Doug's 2026-08-12 report verbatim, and it had been open for nine days in the
+other three stages while `structural_view_available` closed it for the report stages.
+
+**The shape now matches the report stages exactly:** [`flatten_view_available`],
+`events_view_available` and `init_view_available` in `sub_view_rows.rs`, each pure and each
+consulted by three doors — the tab row, the link guard, and `flatten_row_ui`'s clamp.
+
+#### Two design points that are not obvious and were nearly got wrong
+
+**`Tree` is available unconditionally in all three**, matching
+`structural_view_available_from_stage`'s rule for `StructuralView::Tree`. That is what makes
+"available" mean *"selecting this shows what it names"* rather than *"a tab is drawn"*: with
+no row at all the stage falls back to the generic tree, which is exactly what `Tree` names.
+The narrower reading would refuse `Events/Tree` on a smooth model — a link to the thing
+already on screen.
+
+**THE GUARD ASKS ITS QUESTION OF THE STAGE THE APP IS ON, and the first draft did not.**
+`HrwLink::LoadAndSwitch` sets `pending_sub_view` and leaves the stage change to the compile
+landing, so for the whole compile window the request names Flatten while `self.stage` is
+still the previous stage and `flatten_content()` is empty. A guard matching on `sub` alone
+would have **refused `hrw://load/RcCircuit/Flatten/Connections` on every walk** — a live link
+in `connect-expansion.md` — with a notice naming a stage the reader was not on. Matching
+`(sub, self.stage)` fixes it, and **incidentally closes the same latent hole for the
+structural arm**, which reads `self.stage` internally and could refuse a Structural link
+while the app sat on Flatten. Found by reasoning about the ordering before writing the
+guard; `a_sub_view_link_for_another_stage_is_not_refused` holds it.
+
+#### THREE EXISTING TESTS HAD TO GAIN FIXTURES, AND THAT IS THE MEASUREMENT
+
+`a_link_into_a_non_report_stage_applies_its_sub_view`,
+`a_frame_link_into_flatten_connections_navigates` and
+`links_into_events_and_initialization_apply_their_sub_views` all passed against an `App` with
+**no equation sheet, no connection frames and no IC plan** — they asserted a link is applied
+while the guard, separately, was unable to refuse one that should not be. Each now
+establishes the content its link needs (`give_flatten_every_tab` and two siblings), which is
+the honest precondition and was invisible while the guard had no opinion.
+
+#### THE TOUR CHECKER'S GAP IS NOW COUNTED RATHER THAN ASSUMED AWAY
+
+`every_tour_sub_view_link_is_available_for_its_specimen` cannot settle these from a committed
+trace: the manifest carries `note`, `n_states`, `has_discontinuities` — **no source-span flag
+and no connection-frame count.** So the conditional non-report links are skipped *loudly*,
+the treatment `Animate` and `AliasAnim` already get, with a bound (`<= 4`, one today:
+`RcCircuit/Flatten/Connections`) so a sweep of new ones fails rather than passing silently.
+
+**⟶ THE FOLLOW-UP THIS LEAVES: a manifest field per conditional tab.** Four booleans in
+`trace/manifest.json` — source spans, connection frames, `pre()`-lowering frames, IC plan —
+would turn four skips into four checks and cost `gen_trace` four lines. Not done here; it is
+a third piece of work in a session whose unit was already spent twice.
 
 #### THE UNSTATED RULE THE THREE ROWS SHARE: THE DEFAULT SUB-VIEW IS THE LEFTMOST TAB
 

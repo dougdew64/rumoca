@@ -10,13 +10,40 @@
 //! banner, a stage-change default and a nine-way selector. What is left is the plain
 //! shape: a gate, a `ui.horizontal` of `selectable_value`, a separator.
 //!
-//! **The odd member of the three is Flatten, and the asymmetry is real rather than
-//! cosmetic.** Events and Initialization each show *both* their tabs whenever the row
-//! shows at all, so their selection can never name a tab that is not on screen. Flatten
-//! has **two conditional tabs** — Source Map exists only when the sheet carries source
-//! spans, Connections only when the model has `connect()` statements — and nothing
-//! clamps `FlattenView` when they vanish. See [`flatten_row_ui`] for the reachable
-//! stranding that follows, and the plan for the ruling it is waiting on.
+//! **The odd member of the three is Flatten, and the asymmetry was a defect.** Events and
+//! Initialization each show *both* their tabs whenever the row shows at all, so their
+//! selection can never name a tab that is not on screen. Flatten has **two conditional
+//! tabs** — Source Map exists only when the sheet carries source spans, Connections only
+//! when the model has `connect()` statements — and until 2026-08-21 nothing clamped
+//! `FlattenView` when they vanished. See [`flatten_row_ui`] for the stranding that
+//! followed and why the clamp is silent.
+//!
+//! # One predicate per stage, three consumers — the report stages' shape
+//!
+//! Doug, 2026-08-21, ruling on the asymmetry: *"Accuracy is a requirement. And,
+//! consistency reduces my learning friction. So … we should make changes to ensure
+//! accuracy and we should make changes to improve consistency."*
+//!
+//! So each stage here has an availability predicate — [`flatten_view_available`],
+//! [`events_view_available`], [`init_view_available`] — and it is consulted by **all
+//! three** doors, exactly as `App::structural_view_available` is:
+//!
+//! | consumer | what it decides |
+//! |---|---|
+//! | the row below | whether a tab is drawn |
+//! | `App::apply_pending_view_and_seek` | whether an `hrw://` link is honoured |
+//! | [`flatten_row_ui`]'s clamp | whether the surviving selection is drawable |
+//!
+//! **The link guard was a `_ => true` wildcard until this ruling**, so a tour link naming
+//! `Flatten/SourceMap` for a model without one was accepted, selected a tab that is not
+//! drawn, and landed the reader on the tree — the *exact* defect Doug reported on
+//! `Structural/Summary` on 2026-08-12, in the one arm the fix for it did not reach.
+//! `app::tests::every_tour_sub_view_link_is_available_for_its_specimen` carried the same
+//! belief in a comment: *"Flatten/Events/Initialization sub-views are always present."*
+//!
+//! **`Tree` is available unconditionally in all three**, matching
+//! `structural_view_available`'s rule: it is what the stage falls back to when no row is
+//! drawn, so a link naming it is never refused.
 //!
 //! # Each row returns its own gate, and the four gates are mutually exclusive
 //!
@@ -68,29 +95,75 @@ pub(crate) struct FlattenContent {
     pub(crate) connections: bool,
 }
 
+/// **Whether a Flatten sub-view will show what it names** — one predicate, consulted by
+/// the tab row below, by the `hrw://` link guard in `App::apply_pending_view_and_seek`,
+/// and by the row's own clamp.
+///
+/// The same contract as [`App::structural_view_available`](crate::app), down to the
+/// treatment of `Tree`: **the tree is what the stage falls back to, row or no row**, so it
+/// is available unconditionally and a link naming it is never refused. The other three
+/// name panes that only exist for some models, and selecting one the compile did not
+/// produce shows the tree while claiming otherwise.
+///
+/// Pure, and takes [`FlattenContent`] rather than `&App`, so a checker can reach it
+/// without a compile — the property that lets
+/// `App::structural_view_available_from_stage` be called from the tour-link test.
+pub(crate) fn flatten_view_available(v: FlattenView, have: FlattenContent) -> bool {
+    match v {
+        // Falls back to the generic tree, which every stage has.
+        FlattenView::Tree => true,
+        FlattenView::Equations => have.equation_sheet,
+        FlattenView::SourceMap => have.equation_sheet && have.source_map,
+        FlattenView::Connections => have.equation_sheet && have.connections,
+    }
+}
+
+/// Whether an Events sub-view will show what it names. See [`flatten_view_available`].
+pub(crate) fn events_view_available(v: EventsView, have_pre_lowering: bool) -> bool {
+    match v {
+        EventsView::Tree => true,
+        EventsView::PreLowering => have_pre_lowering,
+    }
+}
+
+/// Whether an Initialization sub-view will show what it names. See
+/// [`flatten_view_available`].
+pub(crate) fn init_view_available(v: InitView, have_ic_plan: bool) -> bool {
+    match v {
+        InitView::Tree => true,
+        InitView::IcPlan => have_ic_plan,
+    }
+}
+
 /// The Flatten stage's sub-view row: the equation sheet, the source map, the connection
 /// replay, the tree.
 ///
 /// Returns `flatten_ready` — whether this stage has a sheet to offer, which is also what
 /// the caller's pane dispatch gates on.
 ///
-/// # The two conditional tabs can strand the selection, and nothing clamps it
+/// # Why this row clamps and the other two do not
 ///
-/// `FlattenView` lives in the [`Viewport`](crate::stage_view::Viewport), which is a
-/// camera: it deliberately survives a specimen change, and `clear_specimen_state` does not
-/// touch it. So choosing **Source Map** on a specimen that has one and then opening a
-/// specimen that does not leaves `FlattenView::SourceMap` selected against a row that no
-/// longer draws that tab — **a row with no tab highlighted**, over a pane that reports
-/// `(no source mapping available)`. Connections behaves the same way.
+/// **Flatten is the only one of the three with conditional tabs.** Events and
+/// Initialization gate the whole row, so once it is drawn both of its tabs are drawn and
+/// the selection can never name a missing one. Flatten's Source Map and Connections come
+/// and go with the model, and `FlattenView` lives in the
+/// [`Viewport`](crate::stage_view::Viewport) — a camera, which `clear_specimen_state`
+/// deliberately does not reset.
 ///
-/// **This is the shape `report_sub_view`'s `AliasAnim` bug had**, and the report stages
-/// grew `App::clamp_structural_sub_view` to close it. The three rows here have no
-/// equivalent — correctly for Events and Initialization, which have no conditional tabs,
-/// and **not** correctly for Flatten.
+/// So before 2026-08-21: choose **Source Map** on a specimen that has one, open a specimen
+/// that does not, and the row drew `Equations | Tree` with **nothing highlighted**, over a
+/// pane reading `(no source mapping available)`. **The same shape as
+/// `report_sub_view`'s `AliasAnim` defect**, which is why the report stages have both a
+/// stage-change default and `App::clamp_structural_sub_view`.
 ///
-/// Recorded rather than fixed: the panes state their absence honestly, so nothing false
-/// reaches the screen, and choosing between a silent reset and the report stages'
-/// "please report it" notice is a policy question. See `docs/app-split-plan.md`.
+/// **The clamp here is the analogue of `default_sub_view_for`, not of the backstop, and
+/// that is why it is silent.** The report stages' clamp notifies because after its 2026-08-19
+/// fix nothing should reach it; this one runs on the ordinary path — a reader switching
+/// specimens — where a notice would report the app working. `Equations` is the landing
+/// view for the same reason `Viewport::default()` picks it.
+///
+/// The clamp runs **before** the caller's `apply_pending_view_and_seek`, so an `hrw://`
+/// link still wins over it — the ordering `report_sub_view` documents for the same reason.
 pub(crate) fn flatten_row_ui(
     ui: &mut egui::Ui,
     stage: StageKind,
@@ -101,22 +174,39 @@ pub(crate) fn flatten_row_ui(
     if stage != StageKind::Flatten || !have.equation_sheet {
         return false;
     }
+    // **The result check, not a fourth guard.** Both doors that write this field consult
+    // `flatten_view_available`; this asks whether what they left is drawable, which is
+    // what the report stages learned to do the hard way.
+    if !flatten_view_available(*view, have) {
+        *view = FlattenView::Equations;
+    }
     ui.horizontal(|ui| {
-        ui.selectable_value(view, FlattenView::Equations, "Equations");
-        if have.source_map {
-            ui.selectable_value(view, FlattenView::SourceMap, "Source Map");
-        }
-        // Connection expansion, only when the model has any --
-        // a hand-written model shows no empty tab.
-        if have.connections {
-            ui.selectable_value(view, FlattenView::Connections, "Connections \u{25b6}")
-                .on_hover_text(
+        // **Every tab is drawn iff the predicate approves it**, so a tab that exists and a
+        // link that is honoured cannot disagree. The conditions used to be written out
+        // here — `have.source_map`, `!frames.connection.is_empty()` — which is how this
+        // row became the only place in the app that knew they were conditional.
+        for (v, label, hover) in [
+            (FlattenView::Equations, "Equations", None),
+            (FlattenView::SourceMap, "Source Map", None),
+            (
+                FlattenView::Connections,
+                "Connections \u{25b6}",
+                Some(
                     "Watch connect() statements become equations. A potential set \
                      of n variables yields n-1 equalities; a flow set of the same \
                      n yields one sum-to-zero equation (Kirchhoff).",
-                );
+                ),
+            ),
+            (FlattenView::Tree, "Tree", None),
+        ] {
+            if !flatten_view_available(v, have) {
+                continue;
+            }
+            let r = ui.selectable_value(view, v, label);
+            if let Some(hover) = hover {
+                r.on_hover_text(hover);
+            }
         }
-        ui.selectable_value(view, FlattenView::Tree, "Tree");
     });
     ui.separator();
     true
@@ -487,39 +577,143 @@ mod tests {
         }
     }
 
-    /// **A stranded Flatten view leaves the row with nothing selected, and nothing
-    /// corrects it.** This pins today's behaviour, which is a defect awaiting a ruling.
+    /// **A Flatten view the model no longer offers is clamped back to the landing tab**,
+    /// so the row is never drawn with nothing selected.
     ///
-    /// `FlattenView` is viewport state and survives a specimen change, so a reader who
-    /// chooses Source Map on a specimen that has one and then opens a specimen that does
-    /// not keeps the selection against a row that no longer draws the tab. The report
-    /// stages grew `App::clamp_structural_sub_view` for exactly this; Flatten has no
-    /// equivalent.
+    /// Both conditional tabs, because they are two independent conditions and a clamp that
+    /// covered one would look identical from outside.
     ///
-    /// **When the ruling lands this test changes rather than disappears** — whatever is
-    /// decided (silent reset, or a notice like the report stages'), the property to assert
-    /// is still about what this row does with a selection it cannot draw.
+    /// # The path is ordinary use, not a broken link
+    ///
+    /// `FlattenView` is viewport state — a camera, which `clear_specimen_state`
+    /// deliberately does not reset — so choosing **Source Map** on a specimen that has one
+    /// and then opening a specimen that does not carries the selection across. Until
+    /// 2026-08-21 the row drew `Equations | Tree` with nothing highlighted, over a pane
+    /// reading `(no source mapping available)`. Doug ruled on it the day it was found:
+    /// *"Accuracy is a requirement. And, consistency reduces my learning friction."*
     #[test]
-    fn a_stranded_flatten_view_leaves_no_tab_selected() {
-        let mut rows = Rows::on(StageKind::Flatten);
-        rows.have.source_map = false;
-        rows.flatten = FlattenView::SourceMap;
-        let h = draw(rows);
+    fn a_flatten_view_the_model_no_longer_offers_is_clamped_to_the_landing_tab() {
+        for (missing, stranded) in [
+            (FlattenView::SourceMap, "Source Map"),
+            (FlattenView::Connections, "Connections \u{25b6}"),
+        ] {
+            let mut rows = Rows::on(StageKind::Flatten);
+            match missing {
+                FlattenView::SourceMap => rows.have.source_map = false,
+                _ => rows.have.connections = false,
+            }
+            rows.flatten = missing;
+            let h = draw(rows);
 
-        assert_eq!(
-            h.state().flatten,
-            FlattenView::SourceMap,
-            "nothing here clamps the view back onto a tab that exists",
-        );
-        for tab in ["Equations", "Connections \u{25b6}", "Tree"] {
-            let node = h
-                .query_by_label(tab)
-                .unwrap_or_else(|| panic!("{tab:?} is not on screen"));
+            assert!(
+                h.query_by_label(stranded).is_none(),
+                "precondition: {stranded:?} has no tab for this model",
+            );
+            assert_eq!(
+                h.state().flatten,
+                FlattenView::Equations,
+                "a selection with no tab must fall back to the landing view, not survive",
+            );
+            let node = h.get_by_label("Equations");
             assert_eq!(
                 node.accesskit_node().toggled(),
-                Some(Toggled::False),
-                "{tab:?} is highlighted, but the selection is a tab that is not drawn",
+                Some(Toggled::True),
+                "and the fallback must be highlighted \u{2014} the row is never drawn blank",
             );
         }
+    }
+
+    /// **A tab is drawn exactly when its predicate approves it**, across every combination
+    /// of what a Flatten compile can produce.
+    ///
+    /// This is the property the three doors share: the row draws what
+    /// [`flatten_view_available`] approves, `App::apply_pending_view_and_seek` honours a
+    /// link the same predicate approves, and the clamp above rejects what it does not. **A
+    /// row that answered the question its own way is how the link guard came to disagree
+    /// with the tabs for nine days.**
+    ///
+    /// `Tree` is available unconditionally and is therefore drawn in every row here; that
+    /// is deliberate and matches `structural_view_available`.
+    #[test]
+    fn a_flatten_tab_is_drawn_exactly_when_the_predicate_approves_it() {
+        for source_map in [false, true] {
+            for connections in [false, true] {
+                let have = FlattenContent {
+                    equation_sheet: true,
+                    source_map,
+                    connections,
+                };
+                let mut rows = Rows::on(StageKind::Flatten);
+                rows.have = have;
+                let h = draw(rows);
+
+                for (v, label) in [
+                    (FlattenView::Equations, "Equations"),
+                    (FlattenView::SourceMap, "Source Map"),
+                    (FlattenView::Connections, "Connections \u{25b6}"),
+                    (FlattenView::Tree, "Tree"),
+                ] {
+                    assert_eq!(
+                        h.query_by_label(label).is_some(),
+                        flatten_view_available(v, have),
+                        "{have:?}: {label:?} on screen disagrees with the predicate",
+                    );
+                }
+            }
+        }
+    }
+
+    /// **Events and Initialization need no clamp, and this is why** — both tabs are drawn
+    /// whenever the row is, so no selection can name a missing one.
+    ///
+    /// Stated as a test rather than a comment because it is the *reason* those two rows
+    /// differ from Flatten. If either ever grows a conditional tab this fails, which is
+    /// the moment it would need a clamp of its own.
+    #[test]
+    fn the_events_and_init_rows_have_no_conditional_tabs() {
+        for v in EventsView::ALL {
+            assert!(
+                events_view_available(*v, true),
+                "{v:?} must be offered whenever the Events row is drawn",
+            );
+        }
+        for v in InitView::ALL {
+            assert!(
+                init_view_available(*v, true),
+                "{v:?} must be offered whenever the Initialization row is drawn",
+            );
+        }
+        let h = draw(Rows::on(StageKind::Events));
+        for tab in EVENTS_TABS {
+            assert!(h.query_by_label(tab).is_some(), "{tab:?} must be drawn");
+        }
+        let h = draw(Rows::on(StageKind::Initialization));
+        for tab in INIT_TABS {
+            assert!(h.query_by_label(tab).is_some(), "{tab:?} must be drawn");
+        }
+    }
+
+    /// **The tree is available on all three stages whatever the compile produced**, so a
+    /// link naming it is never refused.
+    ///
+    /// The same rule `App::structural_view_available_from_stage` states for
+    /// `StructuralView::Tree`, and it is what makes "available" mean *"selecting this shows
+    /// what it names"* rather than *"a tab is drawn"*: with no row at all, the stage falls
+    /// back to the generic tree, which is exactly what `Tree` names.
+    #[test]
+    fn the_tree_is_available_whatever_the_compile_produced() {
+        assert!(flatten_view_available(
+            FlattenView::Tree,
+            FlattenContent::default()
+        ));
+        assert!(events_view_available(EventsView::Tree, false));
+        assert!(init_view_available(InitView::Tree, false));
+
+        assert!(!flatten_view_available(
+            FlattenView::Equations,
+            FlattenContent::default()
+        ));
+        assert!(!events_view_available(EventsView::PreLowering, false));
+        assert!(!init_view_available(InitView::IcPlan, false));
     }
 }

@@ -93,13 +93,13 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**57 modules, 63,401 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**57 modules, 63,848 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `worker.rs` | 10,594 |
-| `app.rs` | 6,587 |
-| `app/tests.rs` | 5,650 |
+| `app.rs` | 6,643 |
+| `app/tests.rs` | 5,847 |
 | `bridge.rs` | 3,772 |
 | `doc_citations.rs` | 3,399 |
 | `ui_tests.rs` | 2,554 |
@@ -118,6 +118,7 @@ showing 48 equations. They are derived now, and
 | `survey.rs` | 769 |
 | `arch_doc.rs` | 758 |
 | `tour_panel.rs` | 735 |
+| `sub_view_rows.rs` | 719 |
 | `tour.rs` | 718 |
 | `tearing_anim.rs` | 699 |
 | `canvas.rs` | 681 |
@@ -130,7 +131,6 @@ showing 48 equations. They are derived now, and
 | `spyplot.rs` | 594 |
 | `identifier_index.rs` | 592 |
 | `source_view.rs` | 576 |
-| `sub_view_rows.rs` | 525 |
 | `stage_tabs.rs` | 494 |
 | `nav_view.rs` | 483 |
 | `matrix_panes.rs` | 451 |
@@ -154,7 +154,7 @@ showing 48 equations. They are derived now, and
 | `ui_state.rs` | 73 |
 | `field_help.rs` | 67 |
 | `test_support.rs` | 60 |
-| **total** | **63,401** |
+| **total** | **63,848** |
 <!-- END GENERATED module-sizes -->
 
 

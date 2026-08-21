@@ -875,21 +875,55 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > already left on 2026-08-19, so the block was **83 lines, not the ~125 the plan carried** — the
 > figure had never been re-measured after `report_sub_view`.
 >
-> **⟶ DOUG HAS A RULING TO MAKE, and it is the only thing this iteration owes.** Per the
-> asymmetry rule, judged rather than admired: **Events and Initialization gate the whole row;
-> Flatten gates two individual tabs, and nothing clamps the selection when they vanish.** Choose
-> **Source Map** on a specimen that has one, open a specimen that does not: the row draws
-> `Equations | Tree` with **nothing highlighted**, over a pane reading `(no source mapping
-> available)`. Connections behaves the same way. **Same shape as the `AliasAnim` defect**, which is
-> why the report stages have `App::clamp_structural_sub_view` and Flatten has no equivalent.
+> **THE ASYMMETRY WAS A DEFECT, DOUG RULED THE SAME DAY, AND THE RULING FOUND TWO MORE.**
+> *"Accuracy is a requirement. And, consistency reduces my learning friction. So … we should make
+> changes to ensure accuracy and we should make changes to improve consistency."*
 >
-> **Recorded rather than fixed, and not because it is expensive.** Both panes state their absence
-> honestly, so nothing false reaches the screen — a friction defect, not an accuracy one, so it does
-> not carry the stop-and-fix authorisation. And the fix is a *policy* choice: the report stages
-> notify with *"This is an HRW bug; please report it"*, right for a state nothing should reach and
-> wrong for one that two clicks of ordinary use produce. A silent reset to `Equations` is the other
-> candidate. `sub_view_rows::tests::a_stranded_flatten_view_leaves_no_tab_selected` pins today's
-> behaviour and says in its doc that it **changes** rather than disappears when the ruling lands.
+> The defect: choose **Source Map** on a specimen that has one, open a specimen that does not — the
+> row drew `Equations | Tree` with **nothing highlighted**, over a pane reading `(no source mapping
+> available)`. Same shape as the `AliasAnim` defect, which is why the report stages have
+> `App::clamp_structural_sub_view` and Flatten had no equivalent.
+>
+> **The row was the only place in the app that knew Source Map and Connections are conditional.**
+> Following that out of the row found the same false belief twice more:
+>
+> - **`App::apply_pending_view_and_seek`'s link guard was `SubView::Structural(v) => …, _ => true`**
+>   — so a tour link naming `Flatten/SourceMap` on a model without one was accepted, selected a tab
+>   that is not drawn, and left the reader on the tree with the explanation in a pane nobody told
+>   them to open. **That is Doug's 2026-08-12 `Structural/Summary` report verbatim**, still open in
+>   the three arms that fix did not reach. Nine days.
+> - **`every_tour_sub_view_link_is_available_for_its_specimen` skipped exactly those links**, under
+>   the comment *"Flatten/Events/Initialization sub-views are always present."*
+>
+> **The shape now matches the report stages exactly** — `flatten_view_available`,
+> `events_view_available`, `init_view_available` in `sub_view_rows.rs`, each pure and each consulted
+> by three doors: the tab row, the link guard, and `flatten_row_ui`'s **silent** clamp. Silent
+> because it is the analogue of `default_sub_view_for`, which runs on the ordinary path — not of the
+> backstop that says *"please report it"*, which is right only where nothing should reach it.
+>
+> **TWO DESIGN POINTS THAT WERE NEARLY GOT WRONG, and both generalise:**
+>
+> - **`Tree` is available unconditionally**, matching `structural_view_available`. That makes
+>   "available" mean *"selecting this shows what it names"* rather than *"a tab is drawn"* — the
+>   narrow reading would refuse `Events/Tree` on a smooth model, a link to what is already on screen.
+> - **THE GUARD ASKS ITS QUESTION OF THE STAGE THE APP IS ON.** `LoadAndSwitch` sets
+>   `pending_sub_view` while the compile is in flight and `self.stage` is still the *previous* stage,
+>   so a guard matching on `sub` alone would have **refused
+>   `hrw://load/RcCircuit/Flatten/Connections` on every walk** — a live link in
+>   `connect-expansion.md` — with a notice naming a stage the reader was not on. Matching
+>   `(sub, self.stage)` fixes it and closes the same latent hole in the structural arm, which reads
+>   `self.stage` internally. **Found by reasoning about the ordering before writing the guard**, which
+>   is the only reason it is not a regression this file would be recording instead.
+>
+> **AND THREE EXISTING TESTS HAD TO GAIN FIXTURES — that is a measurement, not a chore.** All three
+> asserted a link *is applied*, against an `App` with no equation sheet, no connection frames and no
+> IC plan. They could only pass because the guard had no opinion. **A test that needs no
+> precondition is sometimes telling you a guard is missing.**
+>
+> **⟶ ONE FOLLOW-UP LEFT OWED:** the tour-link checker still cannot settle these from a committed
+> trace — `manifest.json` carries no source-span flag and no connection-frame count — so they are
+> **skipped loudly and counted** (bound `<= 4`; one today, `RcCircuit/Flatten/Connections`). Four
+> booleans in the manifest would turn four skips into four checks and cost `gen_trace` four lines.
 >
 > **AND A COLUMN-READ FOUND A RULE THIS TIME, NOT A DEFECT.** Flatten puts Tree **last**, Events and
 > Initialization put it **first** — which reads as two conventions until you check

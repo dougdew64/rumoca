@@ -3834,6 +3834,7 @@ fn every_tour_sub_view_link_is_available_for_its_specimen() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let mut checked = 0usize;
     let mut skipped_frame_dependent = 0usize;
+    let mut skipped_conditional_non_report = 0usize;
     let mut no_manifest: Vec<String> = Vec::new();
     let mut broken: Vec<String> = Vec::new();
 
@@ -3853,7 +3854,30 @@ fn every_tour_sub_view_link_is_available_for_its_specimen() {
                 continue;
             };
             let SubView::Structural(view) = sub else {
-                // Flatten/Events/Initialization sub-views are always present.
+                // **NOT "always present" — that is what this comment used to say, and it
+                // was false.** Source Map exists only when the equation sheet carries
+                // source spans, Connections only when the model has `connect()`
+                // statements, `pre() lowering` only when a trace was captured, IC plan
+                // only when initialization produced one. `sub_view_rows`' three
+                // predicates answer all four — but from *live compile state*, and the
+                // committed manifest carries none of it: no source-span flag, no
+                // connection-frame count. So these are **skipped loudly**, exactly as
+                // `Animate` and `AliasAnim` are, rather than assumed to pass.
+                //
+                // `Tree` and `EquationSheet` are the two that could be settled from the
+                // manifest today, and both are available on any model that compiles at
+                // all, so settling them would assert nothing. What would make this real is
+                // a manifest field for each conditional tab — filed as a follow-up in
+                // `docs/app-split-plan.md`, not built here.
+                if !matches!(
+                    sub,
+                    SubView::Flatten(FlattenView::Tree)
+                        | SubView::Flatten(FlattenView::Equations)
+                        | SubView::Events(EventsView::Tree)
+                        | SubView::Init(InitView::Tree)
+                ) {
+                    skipped_conditional_non_report += 1;
+                }
                 continue;
             };
 
@@ -3922,6 +3946,20 @@ fn every_tour_sub_view_link_is_available_for_its_specimen() {
         "{} tour link(s) name a sub-view the specimen does not offer:\n  {}",
         broken.len(),
         broken.join("\n  "),
+    );
+    // **The gap, counted rather than assumed away.** These are the Flatten/Events/Init
+    // links whose availability depends on live compile state a committed trace does not
+    // carry — the same treatment `Animate` and `AliasAnim` get above. It was an unchecked
+    // `continue` under a comment claiming they are "always present" until 2026-08-21.
+    //
+    // A bound rather than an equality: a new tour link of this shape should not fail a
+    // test about the checker, but a *sweep* of them means the blind spot has grown enough
+    // to be worth the manifest field. `RcCircuit/Flatten/Connections` is the one today.
+    assert!(
+        skipped_conditional_non_report <= 4,
+        "{skipped_conditional_non_report} tour links name a conditional non-report \
+         sub-view, and nothing checks any of them \u{2014} the manifest needs a field per \
+         conditional tab before this grows further (docs/app-split-plan.md)",
     );
 }
 
@@ -4329,6 +4367,14 @@ fn a_link_into_a_non_report_stage_applies_its_sub_view() {
         let (mut app, _tx) = App::test_with_sender();
         app.stage = stage;
         app.viewport.flatten = FlattenView::Equations;
+        // **The compile must have produced these tabs, and until 2026-08-21 it did not
+        // have to.** The link guard was `_ => true` for every non-report sub-view, so this
+        // test passed against an `App` with no sheet and no connection frames — asserting
+        // that a link is *applied* while the app was, separately, unable to refuse one that
+        // should not be. Both halves are now real: `give_flatten_every_tab` is what makes
+        // the link legitimate, and `a_link_to_a_flatten_sub_view_this_model_lacks_is_refused`
+        // is the other side of the same predicate.
+        give_flatten_every_tab(&mut app);
         app.pending_sub_view = Some(sub);
 
         app.apply_pending_view_and_seek();
@@ -4383,6 +4429,10 @@ fn a_frame_link_into_flatten_connections_navigates() {
     app.selected = Some(std::path::PathBuf::from("specimens/RcCircuit.mo"));
     app.stage = StageKind::Flatten;
     app.viewport.flatten = FlattenView::Equations;
+    // Since 2026-08-21 the link guard asks whether this model has a Connections tab, so
+    // the fixture must give it one. `RcCircuit` really does — four `connect()` statements
+    // — which is why this test names it.
+    give_flatten_every_tab(&mut app);
 
     app.dispatch_hrw_link(HrwLink::SeekFrame(
         StageKind::Flatten,
@@ -4412,11 +4462,17 @@ fn a_frame_link_into_flatten_connections_navigates() {
 
 /// The same defect for **Events** and **Initialization**, the other two stages
 /// whose sub-views were unreachable by link.
+///
+/// Each is given the thing its tab needs — a captured `pre()`-lowering trace, an
+/// initial-condition plan — because since 2026-08-21 the link guard asks. Without them the
+/// link is refused, which is the subject of
+/// `a_link_to_a_flatten_sub_view_this_model_lacks_is_refused`'s siblings below.
 #[test]
 fn links_into_events_and_initialization_apply_their_sub_views() {
     let (mut app, _tx) = App::test_with_sender();
     app.stage = StageKind::Events;
     app.viewport.events = EventsView::Tree;
+    give_pre_lowering_trace(&mut app);
     app.pending_sub_view = Some(SubView::Events(EventsView::PreLowering));
     app.apply_pending_view_and_seek();
     assert_eq!(app.viewport.events, EventsView::PreLowering);
@@ -4424,10 +4480,151 @@ fn links_into_events_and_initialization_apply_their_sub_views() {
     let (mut app, _tx) = App::test_with_sender();
     app.stage = StageKind::Initialization;
     app.viewport.init = InitView::Tree;
+    give_ic_plan(&mut app);
     app.pending_sub_view = Some(SubView::Init(InitView::IcPlan));
     app.apply_pending_view_and_seek();
     assert_eq!(app.viewport.init, InitView::IcPlan);
     assert!(parse_hrw_link("hrw://stage/Structural/MatchingAnim/frame/0").is_none());
+}
+
+/// Give `app` a Flatten compile that offers **every** tab: a sheet, source spans, and a
+/// connection frame.
+///
+/// One helper because three tests need the same precondition, and the interesting failure
+/// is a test that forgets one of the three and reads as though the guard is broken.
+fn give_flatten_every_tab(app: &mut App) {
+    app.cached_equation_sheet = Some(crate::equation_sheet::EquationSheet {
+        source_lines: vec![crate::equation_sheet::SourceLine {
+            line_number: 1,
+            text: "Real x;".to_owned(),
+            equation_indices: Vec::new(),
+            category: None,
+        }],
+        ..Default::default()
+    });
+    app.frames.connection = vec![rumoca_phase_flatten::connections::trace::ConnectionFrame {
+        step: rumoca_phase_flatten::connections::trace::ConnectionStep::Start {
+            connect_statements: 1,
+        },
+        sets_so_far: 0,
+        equations_so_far: 0,
+    }];
+}
+
+/// Give `app` a captured `pre()`-lowering trace, so the Events row has its tab.
+fn give_pre_lowering_trace(app: &mut App) {
+    app.frames.pre_lowering = vec![rumoca_phase_dae::PreLoweringFrame {
+        step: rumoca_phase_dae::PreLoweringStep::Start {
+            pass: 1,
+            equations: 1,
+        },
+        slots_so_far: Vec::new(),
+    }];
+}
+
+/// Give `app` an initial-condition plan, so the Initialization row has its tab.
+///
+/// Written as the JSON `App::has_ic_plan` reads rather than as a typed report, for the
+/// reason that method's doc gives: the pane's question is about what the *report* carries.
+fn give_ic_plan(app: &mut App) {
+    app.stages.initialization.value = Some(serde_json::json!({
+        "blocks": [{ "kind": "assignment", "unknowns": ["x"] }]
+    }));
+}
+
+/// **A link naming a Flatten sub-view this model does not have is refused, not applied.**
+///
+/// Doug, 2026-08-12, on the report stages: *"Act 2 … contains a link for RcCircuit →
+/// Structural → Summary, and that link actually navigates to RcCircuit → Structural →
+/// Incidence."* `App::structural_view_available` was built to close that, and the guard
+/// that consults it read `SubView::Structural(v) => …, _ => true` — so **the same defect
+/// stayed open for Flatten, Events and Initialization for nine days.** Source Map exists
+/// only when the sheet carries source spans; Connections only when the model has
+/// `connect()` statements.
+///
+/// The symptom is the one Doug described: the stage changes, the sub-view does not, and
+/// the explanation is in a pane he was not told to look at.
+///
+/// **`Tree` is not refused** and must not be — it is what the stage falls back to, so a
+/// link naming it always shows what it names. Same rule as `StructuralView::Tree`.
+#[test]
+fn a_link_to_a_flatten_sub_view_this_model_lacks_is_refused() {
+    for (missing, sub) in [
+        ("source map", SubView::Flatten(FlattenView::SourceMap)),
+        ("connections", SubView::Flatten(FlattenView::Connections)),
+    ] {
+        let (mut app, _tx) = App::test_with_sender();
+        app.stage = StageKind::Flatten;
+        // A sheet, so the row draws — but neither of the two conditional tabs.
+        app.cached_equation_sheet = Some(crate::equation_sheet::EquationSheet::default());
+        app.viewport.flatten = FlattenView::Equations;
+        app.pending_sub_view = Some(sub);
+
+        app.apply_pending_view_and_seek();
+
+        assert_eq!(
+            app.viewport.flatten,
+            FlattenView::Equations,
+            "a link naming a {missing} view this model has no tab for must be refused, \
+             not applied to a pane that will report its own absence",
+        );
+        assert!(
+            app.notice
+                .as_deref()
+                .is_some_and(|n| n.contains("not here")),
+            "and the refusal must be said out loud: {:?}",
+            app.notice,
+        );
+    }
+
+    // The tree is always reachable, so a link naming it is honoured on a model with
+    // nothing else — the clause that keeps the guard from being "refuse when empty".
+    let (mut app, _tx) = App::test_with_sender();
+    app.stage = StageKind::Flatten;
+    app.cached_equation_sheet = Some(crate::equation_sheet::EquationSheet::default());
+    app.viewport.flatten = FlattenView::Equations;
+    app.pending_sub_view = Some(SubView::Flatten(FlattenView::Tree));
+    app.apply_pending_view_and_seek();
+    assert_eq!(
+        app.viewport.flatten,
+        FlattenView::Tree,
+        "Tree is what the stage falls back to, so it is available on every model",
+    );
+}
+
+/// **A sub-view link that arrives while the app is on another stage is passed through, not
+/// refused** — because availability is a question about the stage on screen.
+///
+/// `HrwLink::LoadAndSwitch` sets `pending_sub_view` and leaves the stage change to the
+/// compile landing, so for the duration of the compile the request names Flatten while
+/// `self.stage` is still whatever the reader was looking at. Asking "does *this model's*
+/// Flatten offer Connections?" then is asking about an empty compile, and the honest answer
+/// is that there is nothing to report: `apply_sub_view` drops a stage-mismatched request
+/// anyway.
+///
+/// **Without this the guard would notice-and-drop a live tour link** —
+/// `hrw://load/RcCircuit/Flatten/Connections` in `connect-expansion.md` — on every walk,
+/// with a message naming a stage the reader was not on. Found by reasoning about the
+/// ordering before writing the guard, not by a walk.
+#[test]
+fn a_sub_view_link_for_another_stage_is_not_refused() {
+    let (mut app, _tx) = App::test_with_sender();
+    // The reader is still on Structural; the link names Flatten, as during a load.
+    app.stage = StageKind::Structural;
+    app.pending_sub_view = Some(SubView::Flatten(FlattenView::Connections));
+
+    app.apply_pending_view_and_seek();
+
+    assert!(
+        app.notice.is_none(),
+        "a link for a stage the app is not on must produce no complaint: {:?}",
+        app.notice,
+    );
+    assert_eq!(
+        app.viewport.flatten,
+        FlattenView::Equations,
+        "and it must not be applied either \u{2014} `apply_sub_view` matches the stage",
+    );
 }
 
 /// **A self-running walk puts the mode back when it ends.**
