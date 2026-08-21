@@ -878,6 +878,17 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > **Ask "what is this a list of, and which member is shaped differently?" before looking for a
 > region** — and find the *outermost* list first, which is the rule `nav_view` bought.
 >
+> **THE ARC AFTER THIS ONE IS `#48`, AND DOUG SET THE ORDER ON 2026-08-20** *(`docs/ideas.md`)*:
+> **finish every planned `app.rs` split item first, then take `#48`** — get the full gate under
+> **60 seconds**, against ~277 s today. He called the current state a **failure mode**: *"I'm
+> spending more time awaiting the completion of test runs than adding features or learning."*
+> **The stopping rule still governs** — one item per session, then `/clear` — so the remaining
+> three are three sessions, not one.
+>
+> **This does not slow the split down, and that was checked rather than assumed:** the `app`
+> module's **140 tests cost 0.4 seconds** of the 253-second run. Use the fast run (24.9 s) between
+> edits; the full gate is owed once per commit.
+>
 > ### AND THE SIZE NUMBER IS NOT THE RETURN — Doug ruled on this 2026-08-20
 >
 > *"This `app.rs` refactoring effort has been beneficial, regardless of the reduction in size of
