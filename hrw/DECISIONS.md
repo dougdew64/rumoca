@@ -3799,3 +3799,30 @@ than a coincidence.
   hits — a hit count, not a defect count, since the prose-heavy modules skew it. The
   complementary zero-doc detector would have caught all eight victims but cannot be the check,
   because that file keeps 39 deliberately undocumented tests.
+
+- **2026-08-21 — `frame_ui`'s Specimen left panel splits in two, at two levels of the same
+  question.** `App::specimen_panel_ui` keeps the panel (the `SplitState` frame, and the specimen
+  list's navigation, which calls `open` / `open_library_model` / `emit_focus` and is therefore the
+  caller's policy); the Purpose pane leaves for `specimen_purpose.rs` beside its twin
+  `specimen_source.rs`. **Both cuts were located the same way: at each level a two-member choice
+  had one member already extracted and one still inline.** Recorded because it is cheaper than the
+  field-count reading the arc started with, and it generalises — anywhere one arm of a `match` or
+  an `if` chain has already left, the arm that has not is the next seam.
+
+  **`App` resolves the note and drains the markdown link hooks; the pane renders.** The same split
+  `tour_panel_ui` uses for the tour's prose, so an `hrw://` link inside a purpose note is
+  dispatched by the one caller that already dispatches the tour's, and `purpose_ui` returns
+  nothing.
+
+  **Two consequences, recorded as consequences and not claimed as returns.** The memo
+  `cached_purpose_notes` was `HashMap<PathBuf, …>` keyed by a *model name*, and is now
+  `HashMap<String, …>` — the type had been asserting something false. And the old Purpose arm's
+  `if hrw_link_action.is_none()` guard was **unfalsifiable**: the tour and specimen panels are
+  arms of one `ui_mode` comparison and cannot both run, so a condition that reads as an
+  interaction between two panels described one that does not exist. Neither ever misbehaved.
+
+  **The memo caches misses as well as hits**, which is what keeps a filesystem call out of the
+  paint path for an unnoted model — the hazard `SourceViewState::load_error` closes on the source
+  side — and it had never been asserted. It is now, by seeding the map with an answer the disk
+  cannot produce. Must-fire verified by three perturbations (bypass the memo, misspell the
+  notebook directory, drop the placeholder arm); each fails exactly one test by name.

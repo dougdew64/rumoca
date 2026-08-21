@@ -3028,57 +3028,6 @@ fn a_scratch_specimen_cannot_shadow_a_curated_one() {
     let _ = std::fs::remove_file(&clash);
 }
 
-/// The Purpose tab's placeholder never says "narrative", and never tells Doug to
-/// select a specimen he has already selected.
-///
-/// Both were real bugs he hit by using the app (2026-07-29). The second is the
-/// interesting one: it was a **missing state**, not a typo. The note is keyed on
-/// the model name, which is unknown until compilation finishes, so selecting a
-/// second specimen briefly showed "Select a specimen to see its narrative" — advice
-/// to do the thing just done.
-#[test]
-fn the_purpose_placeholder_fits_the_actual_state() {
-    let path = std::path::Path::new("/x/CapacitorLoop.mo");
-
-    // Compiled, no note: says so, and says where one would go.
-    let compiled = purpose_placeholder(Some("CapacitorLoop"), Some(path));
-    assert!(
-        compiled[0].contains("No purpose note for CapacitorLoop"),
-        "{compiled:?}"
-    );
-    assert!(
-        compiled
-            .iter()
-            .any(|l| l.contains("docs/specimen-notebook/CapacitorLoop/purpose.md")),
-        "the absence must be actionable: {compiled:?}",
-    );
-
-    // Selected but still compiling: names the file, does NOT ask for a selection.
-    let compiling = purpose_placeholder(None, Some(path));
-    assert!(
-        compiling[0].contains("Compiling CapacitorLoop"),
-        "{compiling:?}"
-    );
-    assert!(
-        !compiling.iter().any(|l| l.contains("Select a specimen")),
-        "must not advise selecting a specimen that IS selected: {compiling:?}",
-    );
-
-    // Genuinely nothing selected: the advice is now correct.
-    let idle = purpose_placeholder(None, None);
-    assert!(idle[0].contains("Select a specimen"), "{idle:?}");
-
-    // No state mentions the retired term.
-    for lines in [compiled, compiling, idle] {
-        for l in lines {
-            assert!(
-                !l.to_lowercase().contains("narrative"),
-                "retired term leaked into user-visible text: {l}",
-            );
-        }
-    }
-}
-
 #[test]
 fn find_specimen_matches_by_filename() {
     let mut app = App::test_default();

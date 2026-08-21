@@ -621,6 +621,7 @@ use crate::compile_caches::CompileViewCaches;
 use crate::context_bar::{self, ContextBarPress, ContextBarState, PointKind, PointedAt};
 use crate::model_list::{ModelListNav, ModelListState};
 use crate::report_sub_view;
+use crate::specimen_purpose;
 use crate::specimen_source::{self, SourceViewState};
 use crate::stage_caches::StageViewCaches;
 use crate::stage_tabs;
@@ -838,14 +839,19 @@ pub struct App {
     /// reader wandered into an animated view, and then fire there — a link taking effect
     /// somewhere it was never pointed at.
     seek_frame: Option<(usize, u8)>,
-    /// When the scratch specimen directory was last polled, so a specimen Claude
-    /// writes mid-conversation appears without restarting HRW — the same reason
-    /// `tour.md` is polled.
+    /// Specimen purpose notes, memoised by **model name** — misses included, so an
+    /// unnoted model does not re-stat an absent file every frame. Read and rendered by
+    /// [`crate::specimen_purpose`].
     ///
-    /// Moved to [`ModelListState::polled_at`] on 2026-08-02.
-    // Specimen purpose notes, loaded on demand from
-    // docs/specimen-notebook/<Model>/purpose.md.
-    cached_purpose_notes: HashMap<PathBuf, Option<String>>,
+    /// **The doc block that used to sit here described a field that had already left.**
+    /// It read *"when the scratch specimen directory was last polled … moved to
+    /// `ModelListState::polled_at` on 2026-08-02"* — a `///` block whose own field was
+    /// deleted, adopted by the next one down, which then carried a plain `//` comment
+    /// nobody could see in rustdoc. Found 2026-08-21 while extracting this pane; it is
+    /// the class the doc-comment sweep exists for, and the destination
+    /// (`model_list.rs`) carries its own doc, so the orphan was residue rather than
+    /// information.
+    cached_purpose_notes: HashMap<String, Option<String>>,
     // Every variable name in the compiled model — ground truth for which tree
     // leaves name something trackable. Rebuilt per compile alongside the
     // equation sheet, which is where the full classification lives.
@@ -5229,6 +5235,121 @@ impl App {
         drain_hrw_hooks(&mut self.commonmark_cache, &tour_links)
     }
 
+    /// The **Specimen left panel** — the specimen list above, and beneath it either the
+    /// Modelica source or the purpose note.
+    ///
+    /// Lifted out of `frame_ui` on 2026-08-21, the twin of [`Self::tour_panel_ui`] and
+    /// the reason the seam was visible: the two mode panels are one two-member list, and
+    /// one member had been a method call since 2026-08-02 while the other was a hundred
+    /// and thirteen lines of body. See
+    /// [`docs/app-split-plan.md`](../docs/app-split-plan.md).
+    ///
+    /// Returns the `hrw://` link the reader clicked in a purpose note, if any —
+    /// returned rather than dispatched for [`Self::tour_panel_ui`]'s reason: a link can
+    /// load a specimen and move the camera, and `frame_ui` acts on it before the central
+    /// panel renders so the whole frame sees one consistent state.
+    ///
+    /// **The list's navigation stays here**, because only the caller knows what is
+    /// already selected — the list cannot tell a re-click from a switch.
+    fn specimen_panel_ui(&mut self, ui: &mut egui::Ui) -> Option<HrwLink> {
+        let avail = ui.available_width();
+        let ctx = ui.ctx().clone();
+        let mut link_action: Option<HrwLink> = None;
+        let shown = self
+            .split
+            .configure(&ctx, egui::Panel::left(LEFT_PANEL_ID), avail)
+            .show(ui, |ui| {
+                self.split.inner_width = Some(ui.available_width());
+                let panel_height = ui.available_height();
+                let list_height = panel_height * SPECIMEN_LIST_HEIGHT_FRACTION;
+
+                // -- Top third: specimen list --
+                ui.allocate_ui_with_layout(
+                    egui::vec2(ui.available_width(), list_height),
+                    egui::Layout::top_down(egui::Align::Min),
+                    |ui| {
+                        let sel = self.selected.clone();
+                        let out = self.model_list.ui(
+                            ui,
+                            sel.as_deref(),
+                            self.compiling,
+                            self.model.is_some(),
+                        );
+                        match out.nav {
+                            Some(ModelListNav::OpenLibrary(name)) => {
+                                self.open_library_model(&name);
+                            }
+                            Some(ModelListNav::Reload(path)) => self.open(path),
+                            // **A click on the specimen already loaded reveals it
+                            // rather than recompiling.** The list cannot know that;
+                            // only the caller knows what is selected.
+                            Some(ModelListNav::Select(path)) => {
+                                if self.selected.as_ref() == Some(&path) {
+                                    self.viewing_log = false;
+                                } else {
+                                    self.open(path);
+                                }
+                            }
+                            None => {}
+                        }
+                        if out.point_at_specimen {
+                            self.emit_focus(Focus::Specimen);
+                        }
+                    },
+                );
+
+                ui.add_space(10.0);
+                section_header_toggle(
+                    ui,
+                    &mut self.specimen_detail,
+                    &[
+                        (SpecimenDetail::Source, "Source"),
+                        (SpecimenDetail::Purpose, "Purpose"),
+                    ],
+                );
+                ui.add_space(4.0);
+
+                // -- Bottom two-thirds: source or purpose --
+                match self.specimen_detail {
+                    SpecimenDetail::Source => self.specimen_source_ui(ui),
+                    SpecimenDetail::Purpose => link_action = self.specimen_purpose_ui(ui),
+                }
+            });
+        if let Some(msg) = self.split.observe(shown.response.rect.width(), avail) {
+            self.log_split(msg);
+        }
+        link_action
+    }
+
+    /// The specimen's purpose note — see [`specimen_purpose::purpose_ui`], which holds
+    /// the body.
+    ///
+    /// **Resolving the note and draining the link hooks stay here**, the same split
+    /// [`Self::tour_panel_ui`] uses for the tour's prose: the pane renders a document
+    /// and the caller decides what a click on it means.
+    ///
+    /// **The guard this replaced was dead, and saying so is the point.** The old code
+    /// wrote `if hrw_link_action.is_none()`, defending against a tour link the same
+    /// frame — but the tour and specimen panels are arms of a `ui_mode` comparison and
+    /// cannot both run. A condition that can never be false reads as a real interaction
+    /// between two panels; there is none.
+    fn specimen_purpose_ui(&mut self, ui: &mut egui::Ui) -> Option<HrwLink> {
+        let model = self.model.as_deref();
+        let note = specimen_purpose::purpose_note(&mut self.cached_purpose_notes, model);
+        // Empty when there is no note, and both hook calls are then no-op loops — so the
+        // pane's two arms need no gate of their own here.
+        let links = note.map(extract_hrw_links).unwrap_or_default();
+        register_hrw_hooks(&mut self.commonmark_cache, &links);
+        specimen_purpose::purpose_ui(
+            ui,
+            &mut self.commonmark_cache,
+            note,
+            model,
+            self.selected.as_deref(),
+        );
+        drain_hrw_hooks(&mut self.commonmark_cache, &links)
+    }
+
     /// The tour transport bar — see [`tour_panel::autoplay_controls_ui`], which
     /// holds the body and the rationale.
     ///
@@ -5501,117 +5622,7 @@ impl App {
             hrw_link_action = self.tour_panel_ui(ui);
         }
         if self.ui_mode == UiMode::Specimen {
-            let avail = ui.available_width();
-            let ctx = ui.ctx().clone();
-            let shown = self
-                .split
-                .configure(&ctx, egui::Panel::left(LEFT_PANEL_ID), avail)
-                .show(ui, |ui| {
-                    self.split.inner_width = Some(ui.available_width());
-                    let panel_height = ui.available_height();
-                    let list_height = panel_height * SPECIMEN_LIST_HEIGHT_FRACTION;
-
-                    // -- Top third: specimen list --
-                    ui.allocate_ui_with_layout(
-                        egui::vec2(ui.available_width(), list_height),
-                        egui::Layout::top_down(egui::Align::Min),
-                        |ui| {
-                            let sel = self.selected.clone();
-                            let out = self.model_list.ui(
-                                ui,
-                                sel.as_deref(),
-                                self.compiling,
-                                self.model.is_some(),
-                            );
-                            match out.nav {
-                                Some(ModelListNav::OpenLibrary(name)) => {
-                                    self.open_library_model(&name);
-                                }
-                                Some(ModelListNav::Reload(path)) => self.open(path),
-                                // **A click on the specimen already loaded reveals it
-                                // rather than recompiling.** The list cannot know
-                                // that; only the caller knows what is selected.
-                                Some(ModelListNav::Select(path)) => {
-                                    if self.selected.as_ref() == Some(&path) {
-                                        self.viewing_log = false;
-                                    } else {
-                                        self.open(path);
-                                    }
-                                }
-                                None => {}
-                            }
-                            if out.point_at_specimen {
-                                self.emit_focus(Focus::Specimen);
-                            }
-                        },
-                    );
-
-                    ui.add_space(10.0);
-                    section_header_toggle(
-                        ui,
-                        &mut self.specimen_detail,
-                        &[
-                            (SpecimenDetail::Source, "Source"),
-                            (SpecimenDetail::Purpose, "Purpose"),
-                        ],
-                    );
-                    ui.add_space(4.0);
-
-                    // -- Bottom two-thirds: source or purpose --
-                    match self.specimen_detail {
-                        SpecimenDetail::Source => self.specimen_source_ui(ui),
-                        SpecimenDetail::Purpose => {
-                            let model_name = self.model.as_deref();
-                            let purpose = model_name.and_then(|name| {
-                                let key = PathBuf::from(name);
-                                let cached =
-                                    self.cached_purpose_notes.entry(key).or_insert_with(|| {
-                                        let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-                                        let path = manifest
-                                            .join("docs/specimen-notebook")
-                                            .join(name)
-                                            .join("purpose.md");
-                                        std::fs::read_to_string(path).ok()
-                                    });
-                                cached.as_deref()
-                            });
-
-                            match purpose {
-                                Some(text) => {
-                                    let purpose_links = extract_hrw_links(text);
-                                    register_hrw_hooks(&mut self.commonmark_cache, &purpose_links);
-                                    egui::ScrollArea::vertical().id_salt("purpose").show(
-                                        ui,
-                                        |ui| {
-                                            set_markdown_text_sizes(ui);
-                                            egui_commonmark::CommonMarkViewer::new().show(
-                                                ui,
-                                                &mut self.commonmark_cache,
-                                                text,
-                                            );
-                                        },
-                                    );
-                                    if hrw_link_action.is_none() {
-                                        hrw_link_action = drain_hrw_hooks(
-                                            &mut self.commonmark_cache,
-                                            &purpose_links,
-                                        );
-                                    }
-                                }
-                                None => {
-                                    for line in
-                                        purpose_placeholder(model_name, self.selected.as_deref())
-                                    {
-                                        ui.weak(line);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            if let Some(msg) = self.split.observe(shown.response.rect.width(), avail) {
-                self.log_split(msg);
-            }
+            hrw_link_action = self.specimen_panel_ui(ui);
         }
 
         // **The reset is consumed here, after both panels have had their chance
@@ -6422,44 +6433,6 @@ fn drain_hrw_hooks(
         }
     }
     None
-}
-
-/// What the Purpose tab shows when there is no note to render.
-///
-/// Extracted from the view so the wording is testable. Both messages it replaced were
-/// wrong, and Doug found both by using the app (2026-07-29):
-///
-/// 1. They said **"narrative"**, a term retired when the narratives were. A renamed
-///    concept leaves its old name in the strings nobody greps for.
-/// 2. Worse, selecting a *second* specimen showed **"Select a specimen"** — advising
-///    Doug to do the thing he had just done. The note is keyed on the *model* name,
-///    which stays `None` until compilation finishes, so a selected-but-compiling
-///    specimen fell through to the nothing-selected arm. That was a **missing state**,
-///    not merely bad wording, which is why this returns three cases and not two.
-fn purpose_placeholder(model: Option<&str>, selected: Option<&Path>) -> Vec<String> {
-    match (model, selected) {
-        // Compiled, and this model has no note. Saying *where* one would live makes
-        // the absence actionable instead of a dead end.
-        (Some(name), _) => vec![
-            format!("No purpose note for {name}."),
-            format!(
-                "One would live at docs/specimen-notebook/{name}/purpose.md \u{2014} why the \
-                 specimen exists, and which questions it has answered.",
-            ),
-        ],
-        // Selected, still compiling. Name the file so the wait is legible.
-        (None, Some(path)) => {
-            let stem = path
-                .file_stem()
-                .and_then(|s| s.to_str())
-                .unwrap_or("specimen");
-            vec![
-                format!("Compiling {stem}\u{2026}"),
-                "Its purpose note appears once the model name is known.".to_owned(),
-            ]
-        }
-        (None, None) => vec!["Select a specimen to see its purpose.".to_owned()],
-    }
 }
 
 /// Hand a file to the operating system's association for its type.

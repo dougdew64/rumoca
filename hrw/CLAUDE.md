@@ -548,8 +548,10 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > dispatch → `matrix_panes.rs` (451, 246 of them tests)**, and **the navigation branch of
 > `central_panel_ui` → `nav_view.rs` (388, 220 of them tests)**, and **the Flatten / Events /
 > Initialization sub-view rows → `sub_view_rows.rs` (525, 343 of them tests)**, and **the
-> default artifact pane → `artifact_pane.rs` (514, 255 of them tests)**.
-> **app.rs 14,437 → 6,521** (12,250 before the test blocks left for `app/tests.rs`
+> default artifact pane → `artifact_pane.rs` (514, 255 of them tests)**, and **`frame_ui`'s
+> Specimen left panel — the Purpose half → `specimen_purpose.rs` (316, 168 of them tests), the
+> panel itself → `App::specimen_panel_ui`**.
+> **app.rs 14,437 → 6,494** (12,250 before the test blocks left for `app/tests.rs`
 > in one −5,613 step that refactored nothing — 11,857 after `report_sub_view`, plus the alias-defect guard below,
 > plus **+41 from the live-debug deduplication, +113 from the ack-path seam, +173 from the
 > cache-lifetime split and +51 from the ack-verdict test split, which are the finding rather than
@@ -559,35 +561,40 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest.
 >
-> ### ⟶ TWO STEPS CLOSE THE `app.rs` SPLIT, AND DOUG SET THEIR ORDER 2026-08-21
+> ### ⟶ ONE STEP CLOSES THE `app.rs` SPLIT — THE DOC-COMMENT SWEEP
 >
-> **`central_panel_ui` is finished.** What remains, in this order, is in
-> [`docs/app-split-plan.md`](docs/app-split-plan.md) under *"the two steps that close this plan"*:
+> **Every planned EXTRACTION is done.** `central_panel_ui` finished 2026-08-21, and `frame_ui`'s
+> Specimen left panel — the last one the plan named — landed the same day. What remains is in
+> [`docs/app-split-plan.md`](docs/app-split-plan.md) under *"the step that closes this plan"*:
 >
-> 1. **`frame_ui`'s Specimen left panel** (~113 lines) — the last extraction. Its Purpose half
->    (~48, zero `App` methods) is the twin of the already-extracted `specimen_source_ui`.
-> 2. **The doc-comment sweep** — the two-summary detector over every module, triaged. *"Let's
->    address the doc-comment sweep after the `frame_ui` refactor."*
+> **The doc-comment sweep** — run the two-summary awk detector (its source is in the plan) over
+> every module and triage the hits, reattaching each orphaned summary to the item it describes.
+> Doug: *"Let's address the doc-comment sweep after the `frame_ui` refactor."* It is a sweep, not
+> an extraction, so it does not compete for the one-item budget.
 >
-> **DO NOT RE-MEASURE THE ~113 FIRST.** The previous session queued exactly that and Doug ruled it
-> out: *"Let's not re-measure `frame_ui`'s ~113. This refactoring has been very, very valuable,
-> regardless of the number of lines of code which have been moved."* Two estimates here really did
-> run high (~125 → 83, ~152 → 133) and that is worth knowing — but **re-measuring first prices a
-> decision the count does not decide**, which is the size-number ruling below applied to planning
-> rather than to reporting. **Read the body to find the seam; let the number fall out.**
+> **GO IN EXPECTING REAL HITS.** The earlier note — *"it may be largely noise"* — came from one
+> sampled false positive and the `specimen_purpose` move has since found **two genuine ones in
+> production code**, both recorded in the plan: `app.rs`'s `cached_purpose_notes` (**fixed**, and
+> it is a *variant the `app/tests.rs` pass never saw* — a doc left behind by a **deleted** field,
+> which the name-matching shortcut cannot find because there is no owner to match) and
+> **`lib.rs:132`, deliberately left for the sweep** (`LiveState`'s rationale sits above
+> `STEPPED_FRAME_DELAY`; the enum is sixty lines lower, undocumented).
 >
 > **Ask "what is this a list of, and which member is shaped differently?" before looking for a
-> region** — and find the *outermost* list first, which is the rule `nav_view` bought.
+> region** — and find the *outermost* list first, which is the rule `nav_view` bought. The
+> Specimen panel was found by it twice one level apart: at each level, one arm of a two-arm
+> choice had already been extracted and the other was still a body. **The shape of the sibling is
+> the cheapest seam-finder the arc produced.**
 >
 > **THE ARC AFTER THIS ONE IS `#48`, AND DOUG SET THE ORDER ON 2026-08-20** *(`docs/ideas.md`)*:
 > **finish every planned `app.rs` split item first, then take `#48`** — get the full gate under
-> **60 seconds**, against ~277 s today. He called the current state a **failure mode**: *"I'm
+> **60 seconds**, against ~291 s today. He called the current state a **failure mode**: *"I'm
 > spending more time awaiting the completion of test runs than adding features or learning."*
-> **The stopping rule still governs** — one item per session, then `/clear` — so the remaining
-> three are three sessions, not one.
+> **The stopping rule still governs** — one item per session, then `/clear` — so the sweep is its
+> own session, and `#48` is the one after.
 >
 > **This does not slow the split down, and that was checked rather than assumed:** the `app`
-> module's **140 tests cost 0.4 seconds** of the 253-second run. Use the fast run (24.9 s) between
+> module's **140 tests cost 0.4 seconds** of the 253-second run. Use the fast run (~28 s) between
 > edits; the full gate is owed once per commit.
 >
 > ### ✅ THE ROUTER IS DONE — `central_panel_ui` 640 → 552 → 484 → 430 → 322
@@ -596,8 +603,8 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > **`nav_view.rs`** (the navigation branch, 8 tests in 0.08 s), then **`sub_view_rows.rs`**
 > 2026-08-21 (the three stage-owned rows, 9 tests in 0.03 s), then **`artifact_pane.rs`** the same
 > day (the final `else` arm, 7 tests in 0.02 s). The census and the follow-ups are spent.
-> `central_panel_ui` is **322 lines** and has no named work left; **`frame_ui` (300) is the last
-> planned item.**
+> `central_panel_ui` is **322 lines** and has no named work left; **`frame_ui`'s last named item
+> went the same day** (`specimen_purpose.rs`, 6 tests in 0.01 s), which closes the extractions.
 >
 > **AND `nav_view` FOUND THE RULE ONE LEVEL UP: the router's OUTERMOST list has two members, and
 > every census counted only one.** The `_ui` census, the coupling table and both "next" boxes

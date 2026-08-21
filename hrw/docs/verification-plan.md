@@ -80,7 +80,7 @@ rather than "the checker found nothing", and only the checkers below carry the r
 | `doc_citations::documents_contain_no_stray_control_characters` | **`a_stray_control_character_is_reported` — added by this audit** |
 | `app::fixture_tour_links_all_resolve` | `parse_hrw_link_invalid_stage` proves the predicate rejects; the test carries its own non-vacuity guard |
 | F8's stage-IR ceiling | non-vacuity guard on row count — *"a model produced no row, so the loop exited early"* |
-| `app::purpose_placeholder` | `the_purpose_placeholder_fits_the_actual_state` |
+| `specimen_purpose::purpose_placeholder` | `the_purpose_placeholder_fits_the_actual_state` |
 | `bridge::check_breakpoint_ack` | `live_trace_breakpoint_arm_remove_and_ack` |
 | diagnostics digest + pruning | `a_digest_entry_is_one_line…`, `pruning_keeps_the_newest_crash_files` |
 

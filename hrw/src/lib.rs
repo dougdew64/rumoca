@@ -80,6 +80,7 @@ pub mod report;
 pub mod report_sub_view;
 pub mod source_map;
 pub mod source_view;
+pub mod specimen_purpose;
 pub mod specimen_source;
 pub mod spyplot;
 pub mod stage_caches;

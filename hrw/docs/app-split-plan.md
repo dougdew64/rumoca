@@ -228,6 +228,7 @@ purpose.
 | 2026-08-20 | **the five `cfg(test)` blocks → `app/tests.rs`** — *the experiment's **STEP CHANGE**, not an extraction: nothing refactored, no behaviour touched* | **6,639** | `app/tests.rs` (5,650, all of them tests) |
 | 2026-08-21 | **the Flatten / Events / Initialization sub-view rows → `sub_view_rows.rs`** — *the second list inside the router; it found a reachable stranding and an unstated layout rule* | **6,587** | `sub_view_rows.rs` (525, of which 343 are tests) |
 | 2026-08-21 | **the default artifact pane → `artifact_pane.rs`** — *the router's last arm, the one with no gate; it found eight doc comments attached to the wrong test* | **6,521** | `artifact_pane.rs` (514, of which 255 are tests) |
+| 2026-08-21 | **`frame_ui`'s Specimen left panel → `App::specimen_panel_ui`, and its Purpose half → `specimen_purpose.rs`** — *the last extraction the plan names; it found a dead guard and two orphaned doc blocks* | **6,494** | `specimen_purpose.rs` (316, of which 168 are tests) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -1814,29 +1815,19 @@ that reads a 5,650-line new file cannot see that; this sees it in one command.
 
 **⟶ NEXT: back to the routers** — ~~the sub-view row block (~125)~~ and ~~the default artifact
 pane (~152)~~ **both done 2026-08-21**, at 83 and 133 lines respectively; **`central_panel_ui` is
-finished**. Two items remain, and their order is fixed — see
-[**the two steps that close this plan**](#-the-two-steps-that-close-this-plan--doug-set-the-order-2026-08-21).
+finished**. One item remains — see
+[**the step that closes this plan**](#-one-step-closes-this-plan--step-1-landed-2026-08-21).
 
 ---
 
-## ⟶ THE TWO STEPS THAT CLOSE THIS PLAN — Doug set the order 2026-08-21
+## ⟶ ONE STEP CLOSES THIS PLAN — Step 1 landed 2026-08-21
 
-**Step 1 — `frame_ui`'s Specimen left panel.** Its Purpose half (~48 lines, zero `App` methods)
-is the twin of the already-extracted `specimen_source_ui` and would sit beside it. This is the
-last *extraction* the plan names.
-
-> **DO NOT RE-MEASURE THE ~113 FIRST — Doug ruled on this 2026-08-21**, when the previous session
-> queued exactly that: *"Let's not re-measure `frame_ui`'s ~113. This refactoring has been very,
-> very valuable, regardless of the number of lines of code which have been moved."*
->
-> **The observation that produced the instruction was true and is kept; the instruction was
-> wrong.** Two consecutive estimates in this file *did* run high (~125 → 83, ~152 → 133), and
-> that is worth knowing when reading any figure here. But re-measuring first treats the line
-> count as the thing being planned, and [the size number is not the
-> return](#the-size-number-is-not-the-return-and-doug-has-ruled-on-that--2026-08-20) — a
-> measurement taken to price a decision the count does not decide is pure cost. **Read the body
-> to find the seam, which is the step that has actually mattered every time; let the number fall
-> out afterwards.**
+**Step 1 — `frame_ui`'s Specimen left panel — is DONE.** See
+[the account below](#the-last-extraction-and-both-halves-of-the-seam-were-visible-the-same-way--2026-08-21-specimen_purposers).
+The estimate carried here was **113 lines, and it was exactly 113** — the first figure in this
+file not to run high, which is worth one line beside the two that did (~125 → 83, ~152 → 133).
+**It was still not re-measured first**, per Doug's ruling that day: the seam was found by reading
+the body, and the number fell out afterwards.
 
 **Step 2 — THE DOC-COMMENT SWEEP, and it is the FINAL step of this plan.** Doug, 2026-08-21:
 *"Let's address the doc-comment sweep after the `frame_ui` refactor."*
@@ -1854,7 +1845,22 @@ finds, reattaching each orphaned summary to the test or function it describes.
 - **What is known**, so the session does not re-derive it: `app/tests.rs` is **done** (8 fixed,
   0 real hits left). Everything else is **unmeasured** — the detector reports 83 hits across
   `src/*.rs`, which is a **hit count, not a defect count**, and the one `worker.rs` hit sampled
-  was a false positive. **Go in without an expectation; it may be largely noise.**
+  was a false positive.
+- **BUT THE NOISE FLOOR IS NO LONGER 100%, AND THE CLASS IS NOT CONFINED TO TESTS** *(found
+  2026-08-21 by the `specimen_purpose` extraction, which was reading two of these files closely)*:
+  - **`app.rs`'s `cached_purpose_notes` — fixed with that move.** A `///` block describing
+    `polled_at`, a field that had *left for `model_list.rs` on 2026-08-02*, was adopted by the
+    next field down — which then carried its own description as a plain `//` comment invisible to
+    rustdoc. **A deleted field's doc is a variant the `app/tests.rs` triage never saw**: there is
+    no owner to reattach it to, so the fix is deletion, and the shortcut below ("match the orphan
+    to an undocumented item by name") **cannot find it**.
+  - **`lib.rs:132` — NOT fixed, left for this step deliberately.** `LiveState`'s four-state
+    rationale sits above `STEPPED_FRAME_DELAY`; the enum itself is declared **sixty lines lower
+    at `lib.rs:193` with no doc at all**. This one *does* match the name shortcut, and it is
+    production code rather than tests.
+  - **So: go in expecting real hits, and expect at least one shape the `app/tests.rs` pass
+    could not have taught.** The earlier advice — *"it may be largely noise"* — was written from
+    a single sampled hit and is now known to be too pessimistic in kind, if not in rate.
 - **The triage shortcut, measured:** list the file's *undocumented* items first and match by
   name. Every orphan in `app/tests.rs` paired with an undocumented test that way. Reading merged
   blocks top-down is far slower and is how only the first two were found.
@@ -1865,6 +1871,78 @@ finds, reattaching each orphaned summary to the test or function it describes.
 
 ---
 
+### THE LAST EXTRACTION, AND BOTH HALVES OF THE SEAM WERE VISIBLE THE SAME WAY — 2026-08-21, `specimen_purpose.rs`
+
+**`app.rs` 6,521 → 6,494; `specimen_purpose.rs` is 316 lines, 168 of them tests, 6 tests in
+0.01 s.** The block was **113 lines, exactly the figure the plan carried** — the first estimate
+here not to run high, and worth one line only because the two before it did.
+
+**−27 lines, the smallest move of the arc, and that is the honest shape of it.** The panel
+*scaffolding* had to stay in `app.rs` — the specimen list navigates by calling `open`,
+`open_library_model` and `emit_focus`, which is policy the caller owns — so what left the file is
+the Purpose pane, and what arrived is two methods and their rationale. **The return is the six
+tests and two defects below, not the count**; see [the size number is not the
+return](#the-size-number-is-not-the-return-and-doug-has-ruled-on-that--2026-08-20).
+
+#### The same question answered twice, one level apart
+
+*"What is this a list of, and which member is shaped differently?"* — asked at the outermost
+level first, which is the rule `nav_view` bought.
+
+- **Outermost: the two mode panels.** `if ui_mode == Tour { self.tour_panel_ui(ui) }` and
+  `if ui_mode == Specimen { …113 lines… }`. One member had been a method since 2026-08-02 and the
+  other never was. So the first cut is `App::specimen_panel_ui`, and it is a **twin, not a new
+  idea** — same `SplitState` configure/observe frame, same "return the `hrw://` link rather than
+  dispatch it" contract.
+- **One level in: the detail match.** `SpecimenDetail::Source => self.specimen_source_ui(ui)`
+  against forty-eight lines of Purpose body. Again one arm was a call and one was a body, so the
+  second cut is [`crate::specimen_purpose`], sitting beside `specimen_source.rs` under a name
+  that says which half it is.
+
+**Both cuts were found by the shape of the sibling, not by counting fields** — which is the
+cheapest form the seam question has taken yet, and it is available anywhere an arm of a `match`
+or an `if` chain has already been extracted.
+
+#### The guard that could never be false
+
+The old Purpose arm wrote `if hrw_link_action.is_none() { hrw_link_action = drain_hrw_hooks(…) }`,
+which reads as *"the tour panel might have claimed a link this frame."* **It cannot.** The two
+panels are arms of one `ui_mode` comparison, so the local is provably `None` on every path that
+reaches the Purpose body. The guard is gone and the value is returned. *Not a bug* — it never
+misbehaved — **but it described an interaction between two panels that does not exist**, and a
+reader budgets for what a condition implies.
+
+#### The memo was typed as a path, and the pane now owns it
+
+`cached_purpose_notes: HashMap<PathBuf, Option<String>>`, keyed by `PathBuf::from(model_name)`. A
+model name is not a path; the type said it was. Now `HashMap<String, …>`, changed while writing
+[`crate::specimen_purpose::purpose_note`]'s signature. **A consequence of the move, not a return
+claimed for it.**
+
+The memo itself is the interesting half. It caches **misses as well as hits** — which is what
+keeps a filesystem call out of the paint path for a model with no note, the same hazard
+`SourceViewState::load_error` closes on the source side, and it had **never been asserted**.
+`a_missing_note_is_only_looked_for_once` now seeds the map with an answer the disk cannot produce
+and requires it back.
+
+#### Six tests on a pane that previously needed an `App`, a worker and a compile
+
+The three existing `ui_tests` drive the whole application to reach this pane. The new ones take
+`(note, model, selected)` and paint a 420×900 panel:
+
+| test | what it pins |
+|---|---|
+| `a_note_is_rendered_and_the_placeholder_is_not` | the two arms are exclusive — *beside* never becomes *instead of*, and the reverse never happens either |
+| `a_missing_note_renders_the_placeholder` | the absence is stated **with an address**, not left blank |
+| `a_real_specimens_note_is_found_where_the_pane_looks` | `note_path`'s three literals against the corpus on disk — nothing else in HRW would notice one drifting, because the notebook checks walk the directory themselves |
+| `a_missing_note_is_only_looked_for_once` | the memo, above |
+| `no_model_reads_nothing` | an absent model leaves no entry behind |
+| `the_purpose_placeholder_fits_the_actual_state` | *(moved from `app/tests.rs`, unchanged)* |
+
+**Must-fire verified by three separate perturbations** — bypassing the memo, misspelling the
+notebook directory, and dropping the placeholder arm. Each fails **exactly one test, by name**,
+and the other five stay green.
+
 ### THE ROUTER'S LAST ARM IS THE ONE WITH NO GATE — 2026-08-21, `artifact_pane.rs`
 
 **`app.rs` 6,587 → 6,521; `central_panel_ui` 430 → 322; `artifact_pane.rs` is 514 lines, 255 of
@@ -1872,7 +1950,7 @@ them tests, 7 tests in 0.02 s.** The block was **133 lines, not the ~152 the pla
 second estimate in two days to be high, and for the same reason: nobody re-measured after an
 earlier extraction moved the boundary. **Treat any figure this file quotes as approximate, and do
 not spend a step re-measuring one** — Doug ruled that out the same day; see
-[the two steps that close this plan](#-the-two-steps-that-close-this-plan--doug-set-the-order-2026-08-21).
+[the step that closes this plan](#-one-step-closes-this-plan--step-1-landed-2026-08-21).
 
 **The column-read found the seam again, and this time the odd member is the one with no
 condition.** Every other arm of the dispatch chain asks whether its own sub-view is selected
