@@ -2017,12 +2017,185 @@ platforms.
 
 ---
 
-## 48. Memoize compiled specimens across tests — DELIVERED 2026-08-01
+## 48. Get the full gate under one minute — REOPENED AND RESCOPED 2026-08-20
 
-Split out 2026-07-29, when Doug asked how to run the test suite in parallel and the
-measurement said parallelism was the wrong lever.
+**Status: LIVE, and it is the next arc after the `app.rs` split finishes.** Split out
+2026-07-29 as *"memoize compiled specimens"*; **that sketch shipped** (see *Already
+delivered* below), so this number now carries the goal rather than the mechanism. The
+history is kept at the foot of the item because two of its conclusions are still binding
+and one is now **wrong** — see *What the 2026-08-20 measurement overturns*.
 
-### What the measurement said
+### Doug's ruling, 2026-08-20 — this is a failure mode, not an optimisation
+
+> *"As we've added more tests, our test run time has increased. At this point, I'm
+> spending more time awaiting the completion of test runs than adding features or
+> learning. So, that means that this project is in failure mode right now."*
+
+**That is charter Decision 9 firing, and it outranks the item's old cost/benefit.** An
+accurate instrument that costs attention to operate *spends the attention meant for
+learning* — and Doug's education is the purpose the whole repository derives from. A gate
+that consumes the session it is protecting has stopped being a safety net.
+
+**THE 2026-07-29 RULING IS EXPLICITLY REVERSED.** This item used to read *"Doug ruled out
+the concurrency work on that basis… **Do not revisit it**: the cost is high, the machine
+has limited memory, and the return is two seconds."* He has reopened it in terms:
+*"I'm very ready to reconsider #48."* The old ruling was correct **on the evidence it
+had** — it priced concurrency against a two-second saving. It never priced a suite four
+times longer, and it never priced the multi-hour deadlock that the same process-global
+state caused on 2026-08-19 (twice) and 2026-08-20.
+
+**Two motives now point at the same work**, which is the strongest argument this item has
+ever had: **de-globalising `OutputCapture` and `focus.json` is simultaneously the
+parallelism enabler and the permanent fix for the hang** that `DECISIONS.md` (2026-08-20)
+currently papers over with `RUST_TEST_THREADS = "1"`. That setting is a seatbelt, not a
+repair.
+
+### The goal, stated as an acceptance criterion
+
+**A full pre-commit gate in under 60 seconds**, where "full gate" is what `CLAUDE.md`
+requires before a commit that touches `src/`:
+
+```text
+cargo test -p hrw --lib --features slow-tests
+cargo test -p hrw --test msl_resolve --features slow-tests
+cargo clippy -p hrw --all-targets
+```
+
+**Today that is about 277 seconds.** The target is a **4.6x cut**, and it is a number to
+be measured after each step rather than argued about.
+
+### Already delivered — do NOT re-implement these
+
+| shipped | what it did |
+|---|---|
+| the `slow-tests` feature gate (2026-08-01) | took the *between-edits* loop from 183 s to 7.3 s |
+| **specimen memoization** — `compile_specimen_shared` + `specimen_cache()` in `worker.rs` | this item's original sketch: compile each specimen once per test process, hand out clones |
+
+**The memoization is live**, so today's cost is **not** "the same specimen compiled over
+and over". Anyone reading the old sketch below and reaching for a `HashMap` is
+re-implementing something that is already there.
+
+### The measurement, 2026-08-20 (770 tests, single-threaded, this machine)
+
+| run | time | tests |
+|---|---|---|
+| `--lib` (no `slow-tests`) — the between-edits loop | **24.9 s** | 680 passed, 90 ignored |
+| `--lib --features slow-tests` | **253.5 s** | 769 passed, 1 ignored |
+| `--test msl_resolve --features slow-tests` | 7.5 s | 2 passed |
+| `cargo clippy -p hrw --all-targets` | 16.2 s | — |
+| **full gate** | **~277 s** | |
+
+**The concentration is extreme, and it is the most useful fact here:**
+
+| | tests | time |
+|---|---:|---:|
+| tests taking **>= 1 s** | **41** | **316.4 s** |
+| tests taking **< 1 s** | **728** | **12.9 s** |
+
+*(Per-test totals sum to 329 s under `--report-time`, which adds its own overhead; the
+clean wall-clock is 253 s. Use the ratios, not the absolute sums.)*
+
+**Where it sits, by module:**
+
+| module | time | tests |
+|---|---:|---:|
+| `worker` | **205.8 s** | 103 |
+| `fidelity` | **62.2 s** | **7** |
+| `equation_sheet` | 32.6 s | 16 |
+| `doc_citations` | 14.8 s | 33 |
+| `ui_tests` | 9.0 s | 53 |
+| `app` | **0.4 s** | **140** |
+
+**The five worst individual tests:**
+
+| test | s |
+|---|---:|
+| `worker::all_healthy_specimens_simulate` | 33.2 |
+| `fidelity::a_rumoca_failure_is_represented_faithfully` | 27.8 |
+| `worker::a_broken_specimen_does_not_poison_the_next_compile` | 24.4 |
+| `fidelity::f10s_absence_clause_is_exercised_by_a_partial_class` | 16.6 |
+| `fidelity::every_stage_serializes_without_panicking` | 14.5 |
+
+### What the 2026-08-20 measurement OVERTURNS
+
+1. **"#48 stays scoped to the existing 12-specimen suite" is now WRONG.** `fidelity` is
+   **seven tests holding 62 seconds** — 19% of the run — and this item explicitly scoped
+   *away* from it (*"Do NOT reach for this for the fidelity sample"*). That note was about
+   **memoization** being the wrong tool there, and it stands; but it was written when
+   fidelity was small, and it cannot be read as "fidelity is out of scope for making the
+   gate fast." **The harness shape that note recommends is exactly the lever those seven
+   tests need**, and it is now worth ~62 s rather than a rounding error.
+2. **The two worst offenders are not compiles at all.** `all_healthy_specimens_simulate`
+   (33.2 s) and `an_msl_library_model_simulates` (13.2 s) are **simulations**. Compile
+   memoization cannot touch them; nothing caches a simulate result today.
+3. **About 35 seconds is deliberately un-memoized**, and it is the two tests this item
+   itself named as opt-outs: `a_broken_specimen_does_not_poison_the_next_compile`
+   (24.4 s — its whole subject is cross-compile contamination) and
+   `compiling_a_specimen_twice_is_reproducible` (10.5 s — the mitigation the caveat below
+   asked for). **They are anti-cache by design and must not be "optimised" into
+   uselessness**; the question for them is *which gate they belong in*, not whether to
+   cache them.
+
+**And a fourth fact that is not a lever but sets expectations:** the `app` module's **140
+tests cost 0.4 seconds total.** The `app.rs` split is free at runtime. Nothing about this
+item argues against finishing it first.
+
+### Levers, each with the measurement that must precede it
+
+**No lever gets chosen before its number exists.** This item was once justified by
+arithmetic over test names and the arithmetic was wrong; `CLAUDE.md` records the rule —
+*a sum of slow-looking names is not a measurement.*
+
+1. **Parallelism — the reopened one.** Blocked on three globals: `OutputCapture`'s
+   process-wide fd 1/2 hijack, `focus.json`'s fixed path, and `shared_worker()`'s global
+   `Mutex<WorkerState>` (Rumoca's `Session` is not thread-safe). The first two are also
+   the hang. **Measure first: resident memory of one MSL-loaded `Session`.** That single
+   number decides whether N workers is possible on this machine, and it is the number the
+   2026-07-29 ruling leaned on without ever recording.
+2. **Cache simulation results, not just compiles.** Worth ~46 s on the two simulate tests
+   alone. **Measure first: how many distinct simulate calls the suite makes, and whether
+   their outputs are `Clone` the way the compile payloads were.**
+3. **Harness-shape the seven `fidelity` tests.** This item's own table already shows
+   one-harness (compile once, apply every invariant, drop) beating per-test compiles on
+   both time *and* memory. **Measure first: how many models those seven traverse and how
+   much overlap there is.**
+4. **A tier below `slow-tests`.** The deliberate opt-outs and the MSL-wide checks may not
+   belong in *every* pre-commit gate. **This trades safety for speed and is Doug's call,
+   not Claude's** — it is listed so it is considered, not assumed.
+5. **Build and link time, which none of the above touches.** 277 s is test *execution*;
+   the gate also pays compilation. **Measure first: a warm incremental gate's build share
+   versus its run share.**
+
+**A caution worth stating up front: parallelism alone probably cannot reach 60 s.** 316 s
+of concentrated work across 4 threads is ~79 s before any coordination overhead, and 8
+MSL-loaded sessions is exactly the memory the old ruling feared. **Expect to need work
+*reduction* as well as work *spreading*** — which means levers 2 and 3 are not optional
+extras behind lever 1.
+
+### The caveats that survive, unchanged
+
+**Memoizing weakens the suite.** The second test to ask for `Drivetrain` no longer
+verifies that compiling it is *reproducible*. The mitigation shipped —
+`compiling_a_specimen_twice_is_reproducible` — and **any new cache owes the same debt**:
+keep one test that does the uncached thing and compares. This is the silent-coverage-loss
+class that `project-tours-multiply-testing` warns about, a detector that quietly stops
+detecting.
+
+**The machine has limited memory**, which is why every lever above is paired with a
+memory question rather than only a time one.
+
+### First step for whoever picks this up
+
+**Measure, do not implement.** In order: (1) resident memory of one MSL-loaded `Session`;
+(2) the build-versus-run split of a warm gate; (3) distinct compiles and distinct
+simulates, with cache hit counts. **Then** pick levers against a 60-second budget and
+write the plan. The three numbers are cheap and every lever's viability turns on them.
+
+---
+
+### History — the 2026-07-29 framing, kept because two conclusions still bind
+
+**What the original measurement said** (402 tests, before the suite grew to 770):
 
 | | |
 |---|---|
@@ -2033,55 +2206,19 @@ measurement said parallelism was the wrong lever.
 Every worker test acquires `shared_worker()` — a global `Mutex<WorkerState>`, needed
 because Rumoca's `Session` is not thread-safe and because loading the MSL once is worth
 a great deal. **So they serialize regardless of `--test-threads`.** Going parallel would
-have taken 183s to roughly 181s.
+have taken 183s to roughly 181s. **That reasoning is still correct about the mechanism**
+— it is the *conclusion drawn from it* that 2026-08-20 reopened.
 
-**Doug ruled out the concurrency work on that basis** (per-test bridge directories,
-fixing the process-global stdout capture, per-thread workers each loading the MSL). Do
-not revisit it: the cost is high, the machine has limited memory, and the return is two
-seconds.
+**The original sketch, now shipped:** a `OnceLock<Mutex<HashMap<String, FromWorker>>>`
+beside the shared worker; compile each specimen once per test process, hand out clones.
+Tests needing a genuinely fresh compile opt out explicitly via the uncached path.
+Estimated 180s to 60-70s at the time.
 
-**Delivered instead:** the `slow-tests` feature gate (#1 of that discussion), which took
-the between-edits loop from 183s to **7.3s** across 353 tests. That solved the *inner
-loop*. This item is what shortens the *full* run.
-
-### The actual cost: the same specimens, compiled over and over
-
-**37 `compile_specimen_shared` call sites cover only 12 distinct specimens**, plus two
-"all healthy specimens" tests that compile ten each. `Drivetrain` is compiled from
-scratch five or six times per run. And each compile is deliberately **uncached**
-(`compile_model_strict_reachable_uncached_with_recovery`) because HRW is an observatory
-and the phases must actually run — right for the app, expensive for a test suite.
-
-### Sketch
-
-A `OnceLock<Mutex<HashMap<String, FromWorker>>>` beside the existing shared worker:
-compile each specimen once per test process, hand out clones. The payload types
-(`StageBundle`, `DefInfo`, `EquationSheet`, `IdentifierIndex`, `Dae`, flat `Model`) are
-all `Clone` — checked 2026-07-29.
-
-Tests that need a genuinely fresh compile **opt out explicitly** via the existing
-uncached path: `a_broken_specimen_does_not_poison_the_next_compile` (whose entire subject
-is cross-compile contamination), and anything arming a breakpoint.
-
-Estimated 180s → 60-70s.
-
-### The caveat worth building in
-
-Memoizing **weakens the suite**: the second test to ask for `Drivetrain` no longer
-verifies that compiling it is *reproducible*. Cheap mitigation — keep one test that
-compiles a specimen fresh and compares against the memoized result. That checks precisely
-the property memoization could hide, and it is the kind of silent coverage loss that
-`project-tours-multiply-testing` warns about (a detector that quietly stops detecting).
-
-### Do NOT reach for this for the fidelity sample (2026-07-31)
-
-Claude recommended #48 after F1 took 148s, then withdrew it the same hour. The 148s came
+**STILL BINDING — do NOT reach for memoization for the fidelity sample (2026-07-31).**
+Claude recommended it after F1 took 148s, then withdrew it the same hour. The 148s came
 from *structure*, not from missing memoization: three F1 checks each looped over the same
 ten specimens, so ten models cost thirty compiles. Memoization rescues that shape — but
 it is a shape not worth choosing.
-
-For the `docs/fidelity-plan.md` sample, memoization and a **harness** are substitutes,
-and the harness wins on the axis that matters here:
 
 | | 9 checks x 50 models | memory held |
 |---|---|---|
@@ -2089,16 +2226,14 @@ and the harness wins on the axis that matters here:
 | Separate tests + #48 | 50 compiles | **all 50 at once** |
 | One harness (compile once, apply every invariant, drop) | 50 compiles | one model |
 
-This item already notes the machine has limited memory, and the memoized payload is the
-*entire* compiled state — `Media.Examples.WaterIF97`'s flatten stage alone was 3.2 MB.
-Trading memory for time at 40-60 MSL models runs the trade backwards.
-
-**So #48 stays scoped to the existing 12-specimen suite**, where the payload is bounded
-and the 289s full run is the pre-commit gate. It is test-speed work, not fidelity work.
+The memoized payload is the *entire* compiled state — `Media.Examples.WaterIF97`'s
+flatten stage alone was 3.2 MB. Trading memory for time at 40-60 MSL models runs the
+trade backwards. **This is why lever 3 above says harness, not cache.**
 
 **Relates to:** the `slow-tests` gate in `Cargo.toml`, `README.md`'s two test commands,
-and `shared_worker()` in `worker.rs` — which already shares the *MSL load* via a
-`OnceLock`, but recompiles the specimen on every call.
+`shared_worker()` and `compile_specimen_shared()` in `worker.rs`, and the
+`RUST_TEST_THREADS` note in `.cargo/config.toml` — the seatbelt this item is meant to
+make unnecessary.
 
 ---
 
