@@ -84,6 +84,7 @@ pub mod spyplot;
 pub mod stage_caches;
 pub mod stage_tabs;
 pub mod stage_view;
+pub mod sub_view_rows;
 pub mod survey;
 pub mod tarjan_anim;
 pub mod tearing_anim;

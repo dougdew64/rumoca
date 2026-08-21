@@ -225,6 +225,7 @@ purpose.
 | 2026-08-20 | **the navigation branch of `central_panel_ui` → `nav_view.rs`** — *the router's OUTERMOST list, which no census row had ever counted* | **12,250** | `nav_view.rs` (388, of which 220 are tests) |
 | 2026-08-20 | *(accuracy, not a move)* the navigated tree stops being annotated from the specimen — *`nav_view_ui` loses its `TreeOptions` parameter; net **zero** lines on `app.rs`* | 12,250 | `nav_view.rs` (483, of which 285 are tests) |
 | 2026-08-20 | **the five `cfg(test)` blocks → `app/tests.rs`** — *the experiment's **STEP CHANGE**, not an extraction: nothing refactored, no behaviour touched* | **6,639** | `app/tests.rs` (5,650, all of them tests) |
+| 2026-08-21 | **the Flatten / Events / Initialization sub-view rows → `sub_view_rows.rs`** — *the second list inside the router; it found a reachable stranding and an unstated layout rule* | **6,587** | `sub_view_rows.rs` (525, of which 343 are tests) |
 
 **The first rendering function left, and the signature is the result.** Four parameters instead of
 `&mut self`: `ui`, three shared refs, and `&mut Viewport` because the view genuinely moves the
@@ -1570,6 +1571,88 @@ Specimen left panel (~113).
 
 ---
 
+### ✅ DONE 2026-08-21 — THE SUB-VIEW ROW BLOCK, AND THE ROW THAT CAN STRAND ITS OWN SELECTION
+
+**`app.rs` 6,639 → 6,587; `central_panel_ui` 484 → 430; `sub_view_rows.rs` is 525 lines, 343 of
+them tests, running in 0.03 s.** The unit of work was the **second list inside the router** — the
+four stage-owned sub-view rows — and the estimate of ~125 lines was high: the block is 83, because
+the report row had already left on 2026-08-19 and the plan's figure still counted it.
+
+**The outermost-list rule held, one level down.** `nav_view` established *find the outermost list
+first, then descend*; descending once gives the `if self.nav.is_empty()` body, which is a list of
+**three** things — the chrome, the sub-view rows, the pane dispatch. The rows are a list of four,
+and the fourth (`report_sub_view`) is the one shaped differently: a banner, a stage-change default,
+a nine-way selector and an availability struct. **What was left is the plain shape**, three times
+over: a gate, a `ui.horizontal` of `selectable_value`, a separator.
+
+#### The three-row asymmetry is a DEFECT, and it needs Doug's ruling
+
+Per this plan's own rule (*when an extraction exposes an asymmetry, the next sentence must say
+whether it is principled or a defect*): **Events and Initialization gate the whole row; Flatten
+gates two individual tabs.** So Flatten is the only one of the three whose selection can name a tab
+that is not on screen — and **nothing clamps it**.
+
+**It is reachable by ordinary use, not by a link.** `FlattenView` lives in the `Viewport`, which is
+a camera: `clear_specimen_state` resets thirty fields and deliberately not this one. Choose **Source
+Map** on a specimen that has one, open a specimen that does not, and the row draws
+`Equations | Tree` with **nothing highlighted**, over a pane reading `(no source mapping
+available)`. Connections behaves the same way.
+
+**Same shape as the `AliasAnim` defect, and the report stages already grew the answer** —
+`App::clamp_structural_sub_view`, which checks the *result* of every door that writes
+`viewport.structural`. There is no `clamp_flatten_sub_view`.
+
+**Recorded rather than fixed, and the reason is not cost.** Both stranded panes state their absence
+honestly, so nothing false reaches the screen — this is a friction defect, not an accuracy one, and
+it therefore does not carry the stop-and-fix authorisation. And the fix is a **policy choice**: the
+report stages notify with *"This is an HRW bug; please report it"*, which is right for a state
+nothing should reach and wrong for one two clicks of ordinary use produces. A silent reset to
+`Equations` is the other candidate. **Doug's call.**
+`sub_view_rows::tests::a_stranded_flatten_view_leaves_no_tab_selected` pins today's behaviour and
+says in its doc that it changes rather than disappears when the ruling lands.
+
+#### THE UNSTATED RULE THE THREE ROWS SHARE: THE DEFAULT SUB-VIEW IS THE LEFTMOST TAB
+
+Flatten reads `Equations | Source Map | Connections ▶ | Tree`; the other two read `Tree | …`.
+Reading the three as a column — the check `matrix_panes` bought — that looks like **two conventions
+for where the generic tree goes**, which is exactly the kind of difference this plan requires be
+judged. It is neither: `Viewport::default()` opens Flatten on `Equations` and the other two on
+`Tree`, so **all three put the default first** and Tree's position is a consequence.
+
+**The rule is invisible in any one row** — a reader of `flatten_row_ui` alone sees an order, not a
+principle — and it was written down nowhere. `the_default_sub_view_is_the_leftmost_tab_of_its_row`
+now asserts it across all three, through the accessibility tree's `toggled` flag and the widget
+rects, so it fails if either the order or the default moves. **Must-fire verified** by putting Tree
+first in the Flatten row: that one test fails and the other eight stay green.
+
+**The transferable part: a column-read across siblings can expose a rule as easily as a defect.**
+Every previous use of that check (the stranded `Animate` arm, the two inline dispatch arms, the
+`_ =>` in the live-debug cluster) found something wrong. This one found something *right* that
+nothing recorded — and an unrecorded rule is one refactor away from being broken silently.
+
+#### THE GATE IS THE RETURN VALUE, AND THAT IS WHAT KEEPS TAB AND PANE AGREEING
+
+Each row returns the `bool` the caller used to call `flatten_ready` / `events_ready` /
+`init_ready`, and the dispatch chain below re-tests it on every arm. **The row that decided "there
+is nothing to offer here" is the same answer the pane uses to decide "draw the tree instead"** —
+`report_sub_view`'s single-predicate rule arrived at from the other side. Recomputing the gate in
+the caller would have been the cheaper signature and the wrong one.
+
+**And the three gates are mutually exclusive, which is why the caller can draw all three
+unconditionally.** Each opens with `stage == <its own stage>` and the app shows one stage. Nothing
+had ever stated that; `each_row_appears_only_on_its_own_stage` does now, and dropping the stage
+check from `events_row_ui` fails **five** tests by name.
+
+#### `has_source_map`'s `flatten_ready &&` was redundant, and the extraction is what showed it
+
+The old local read `let has_source_map = flatten_ready && sheet.is_some_and(…)`. Inside the
+function the early return has already happened, so the conjunct cannot be false where the value is
+read. It is not a defect — the local was in scope beyond its one use, so the guard was defensive
+rather than wrong — but it is the kind of line a signature deletes for free: `FlattenContent`'s
+three fields are three independent questions, and the row's own gate answers the first.
+
+---
+
 ### ✅ DONE 2026-08-20 — THE VERBATIM MOVE WOULD HAVE FALSIFIED FIFTEEN CITATIONS
 
 **`app.rs` 12,250 → 6,639; `app/tests.rs` is 5,650.** The estimate of ~6,637 was three lines low
@@ -1653,8 +1736,10 @@ that reads a 5,650-line new file cannot see that; this sees it in one command.
 - **The inner `#[cfg(test)]` attributes were kept** even though the module is already gated. They
   are redundant, not false, and keeping them is what makes the diff readable as a pure move.
 
-**⟶ NEXT: back to the routers** — the sub-view row block (~125), the default artifact pane (~152,
-the largest single block left), and `frame_ui`'s Specimen left panel (~113).
+**⟶ NEXT: back to the routers** — ~~the sub-view row block (~125)~~ **done 2026-08-21, and it was
+83 lines rather than 125** (the figure still counted the report row, which had already left); the
+default artifact pane (~152, the largest single block left), and `frame_ui`'s Specimen left panel
+(~113).
 
 ---
 

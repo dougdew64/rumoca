@@ -762,8 +762,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > `report_sub_view.rs` (650, 428 of them tests)**, and **the four compile replays →
 > `compile_caches.rs` (101)**, and **the spy-plot + incidence arms of `central_panel_ui`'s
 > dispatch → `matrix_panes.rs` (451, 246 of them tests)**, and **the navigation branch of
-> `central_panel_ui` → `nav_view.rs` (388, 220 of them tests)**.
-> **app.rs 14,437 → 6,639** (12,250 after the last extraction; the test blocks then left for `app/tests.rs`
+> `central_panel_ui` → `nav_view.rs` (388, 220 of them tests)**, and **the Flatten / Events /
+> Initialization sub-view rows → `sub_view_rows.rs` (525, 343 of them tests)**.
+> **app.rs 14,437 → 6,587** (12,250 before the test blocks left for `app/tests.rs`
 > in one −5,613 step that refactored nothing — 11,857 after `report_sub_view`, plus the alias-defect guard below,
 > plus **+41 from the live-debug deduplication, +113 from the ack-path seam, +173 from the
 > cache-lifetime split and +51 from the ack-verdict test split, which are the finding rather than
@@ -773,11 +774,12 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > table in the plan, which also lists five mechanical traps and the measurement that §3 seam
 > order is WRONG for the rest.
 >
-> ### ⟶ NEXT: THE ROUTER IS UNDERWAY — `central_panel_ui` 640 → 552 → 484
+> ### ⟶ NEXT: THE ROUTER IS UNDERWAY — `central_panel_ui` 640 → 552 → 484 → 430
 >
 > **`matrix_panes.rs` landed 2026-08-20** (spy-plot + incidence arms, 6 tests in 0.02 s), then
-> **`nav_view.rs`** (the navigation branch, 8 tests in 0.08 s). The census and the follow-ups are
-> spent; the routers are all that is left. `central_panel_ui` is **484 lines**, `frame_ui` **300**.
+> **`nav_view.rs`** (the navigation branch, 8 tests in 0.08 s), then **`sub_view_rows.rs`**
+> 2026-08-21 (the three stage-owned rows, 9 tests in 0.03 s). The census and the follow-ups are
+> spent; the routers are all that is left. `central_panel_ui` is **430 lines**, `frame_ui` **300**.
 >
 > **AND `nav_view` FOUND THE RULE ONE LEVEL UP: the router's OUTERMOST list has two members, and
 > every census counted only one.** The `_ui` census, the coupling table and both "next" boxes
@@ -866,14 +868,56 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > generated table keyed by relative path the moment it existed, with no further work than
 > re-running `cargo run -p hrw --example gen_architecture`.
 >
+> ### ✅ DONE 2026-08-21 — THE SUB-VIEW ROWS LEFT, AND FLATTEN CAN STRAND ITS OWN SELECTION
+>
+> **`app.rs` 6,639 → 6,587; `central_panel_ui` 484 → 430; `sub_view_rows.rs` is 525 lines, 343 of
+> them tests, 9 tests in 0.03 s.** The Flatten, Events and Initialization rows; the report row had
+> already left on 2026-08-19, so the block was **83 lines, not the ~125 the plan carried** — the
+> figure had never been re-measured after `report_sub_view`.
+>
+> **⟶ DOUG HAS A RULING TO MAKE, and it is the only thing this iteration owes.** Per the
+> asymmetry rule, judged rather than admired: **Events and Initialization gate the whole row;
+> Flatten gates two individual tabs, and nothing clamps the selection when they vanish.** Choose
+> **Source Map** on a specimen that has one, open a specimen that does not: the row draws
+> `Equations | Tree` with **nothing highlighted**, over a pane reading `(no source mapping
+> available)`. Connections behaves the same way. **Same shape as the `AliasAnim` defect**, which is
+> why the report stages have `App::clamp_structural_sub_view` and Flatten has no equivalent.
+>
+> **Recorded rather than fixed, and not because it is expensive.** Both panes state their absence
+> honestly, so nothing false reaches the screen — a friction defect, not an accuracy one, so it does
+> not carry the stop-and-fix authorisation. And the fix is a *policy* choice: the report stages
+> notify with *"This is an HRW bug; please report it"*, right for a state nothing should reach and
+> wrong for one that two clicks of ordinary use produce. A silent reset to `Equations` is the other
+> candidate. `sub_view_rows::tests::a_stranded_flatten_view_leaves_no_tab_selected` pins today's
+> behaviour and says in its doc that it **changes** rather than disappears when the ruling lands.
+>
+> **AND A COLUMN-READ FOUND A RULE THIS TIME, NOT A DEFECT.** Flatten puts Tree **last**, Events and
+> Initialization put it **first** — which reads as two conventions until you check
+> `Viewport::default()`: **all three put the default sub-view leftmost**, and Tree's position is a
+> consequence. **The rule is invisible in any one row** and was written down nowhere;
+> `the_default_sub_view_is_the_leftmost_tab_of_its_row` now asserts it across all three, via the
+> accessibility tree's `toggled` flag and the widget rects. Every previous use of the column-read
+> check found something wrong; **an unrecorded rule is one refactor away from being broken
+> silently.**
+>
+> **The gate is the return value**, which is what keeps tab and pane agreeing: the row that decided
+> *"nothing to offer here"* is the same answer the dispatch below uses to decide *"draw the tree
+> instead"* — `report_sub_view`'s single-predicate rule from the other side. The three gates are
+> **mutually exclusive** (each opens with `stage == <its own stage>`), which is why the caller draws
+> all three unconditionally; nothing had ever stated that, and dropping the check from
+> `events_row_ui` now fails five tests by name.
+>
 > ### ⟶ NEXT: BACK TO THE ROUTERS
 >
 > **The test move was the detour the plan scheduled; the remaining named work is `central_panel_ui`
-> and `frame_ui`.** In order: the **sub-view row block** (~125 lines, four `*_ready` gates), the
+> and `frame_ui`.** In order: ~~the **sub-view row block**~~ (done, box above), the
 > **default artifact pane** (the final `else` arm, ~152 lines of error-summary-beside-tree — the
 > largest single block left), and **`frame_ui`'s Specimen left panel** (~113), whose Purpose half
 > (~48 lines, zero `App` methods) is the twin of the already-extracted `specimen_source_ui` and
 > would sit beside it.
+>
+> **Re-measure the ~152 before planning against it.** The sub-view block was quoted at ~125 and was
+> **83**, because the estimate predated `report_sub_view` leaving and nobody re-counted.
 >
 > **Ask "what is this a list of, and which member is shaped differently?" before looking for a
 > region** — and find the *outermost* list first, which is the rule `nav_view` bought.
@@ -914,8 +958,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > rather than after a grep past two long bodies. **That uniformity, not the 83 lines, is what the
 > move rests on.**
 >
-> **⟶ THE NEXT ONE: apply the same reading to the OTHER lists.** `central_panel_ui`'s remaining
-> mass is the sub-view row block (four `*_ready` gates, ~125 lines) and the **default artifact
+> **⟶ THE NEXT ONE: apply the same reading to the OTHER lists.** ~~the sub-view row block (four
+> `*_ready` gates, ~125 lines)~~ **done 2026-08-21** — and the reading worked twice on it, once
+> finding a defect and once a rule. What is left of `central_panel_ui` is the **default artifact
 > pane** — the final `else` arm, ~152 lines of error-summary-beside-tree, the largest single block
 > left in `app.rs`. `frame_ui`'s is the Specimen left panel (~113), whose Purpose half (~48, zero
 > `App` methods) is the twin of the already-extracted `specimen_source_ui` and would sit beside

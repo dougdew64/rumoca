@@ -56,6 +56,7 @@ use crate::playback::Animated;
 use crate::pre_lowering_anim;
 use crate::reduction_anim;
 use crate::reduction_view;
+use crate::sub_view_rows;
 use crate::tarjan_anim;
 use crate::tearing_anim;
 use crate::tree;
@@ -4157,89 +4158,36 @@ impl App {
                     }
                 }
 
-                // The Flatten stage offers an equation sheet alongside the tree.
-                let flatten_ready =
-                    self.stage == StageKind::Flatten && self.cached_equation_sheet.is_some();
-                let has_source_map = flatten_ready
-                    && self
-                        .cached_equation_sheet
-                        .as_ref()
-                        .is_some_and(|s| !s.source_lines.is_empty());
-                if flatten_ready {
-                    ui.horizontal(|ui| {
-                        ui.selectable_value(
-                            &mut self.viewport.flatten,
-                            FlattenView::Equations,
-                            "Equations",
-                        );
-                        if has_source_map {
-                            ui.selectable_value(
-                                &mut self.viewport.flatten,
-                                FlattenView::SourceMap,
-                                "Source Map",
-                            );
-                        }
-                        // Connection expansion, only when the model has any --
-                        // a hand-written model shows no empty tab.
-                        if !self.frames.connection.is_empty() {
-                            ui.selectable_value(
-                                &mut self.viewport.flatten,
-                                FlattenView::Connections,
-                                "Connections \u{25b6}",
-                            )
-                            .on_hover_text(
-                                "Watch connect() statements become equations. A potential set \
-                                 of n variables yields n-1 equalities; a flow set of the same \
-                                 n yields one sum-to-zero equation (Kirchhoff).",
-                            );
-                        }
-                        ui.selectable_value(&mut self.viewport.flatten, FlattenView::Tree, "Tree");
-                    });
-                    ui.separator();
-                }
-
-                // The Events stage offers a replay of `pre()` lowering beside the
-                // tree — only when there is a trace to replay, so smooth models
-                // never show an empty tab.
-                let events_ready =
-                    self.stage == StageKind::Events && !self.frames.pre_lowering.is_empty();
-                if events_ready {
-                    ui.horizontal(|ui| {
-                        ui.selectable_value(&mut self.viewport.events, EventsView::Tree, "Tree");
-                        ui.selectable_value(
-                            &mut self.viewport.events,
-                            EventsView::PreLowering,
-                            "pre() lowering \u{25b6}",
-                        )
-                        .on_hover_text(
-                            "Replay where the __pre__ parameter slots are manufactured. They \
-                         appear in no source file: a `when` equation needs a value to hold \
-                         when no branch fires, and a DAE cannot say \u{201c}unchanged\u{201d}.",
-                        );
-                    });
-                    ui.separator();
-                }
-
-                // The Initialization stage offers a walk of the initial-condition
-                // solve plan beside the tree -- only when there is a plan, so a
-                // model whose initialization failed never shows an empty tab.
-                let init_ready = self.stage == StageKind::Initialization && self.has_ic_plan();
-                if init_ready {
-                    ui.horizontal(|ui| {
-                        ui.selectable_value(&mut self.viewport.init, InitView::Tree, "Tree");
-                        ui.selectable_value(
-                            &mut self.viewport.init,
-                            InitView::IcPlan,
-                            "IC plan \u{25b6}",
-                        )
-                        .on_hover_text(
-                            "Walk the plan for computing a consistent state at t=0. Mostly \
-                             plain assignment; the few blocks that iterate are where \
-                             initialization fails when it fails.",
-                        );
-                    });
-                    ui.separator();
-                }
+                // **Three rows, drawn unconditionally, at most one of which appears** —
+                // each begins with `stage == <its own stage>` and the app shows one
+                // stage. Each returns its own gate, which the pane dispatch below
+                // re-tests, so a tab that exists and a pane that draws cannot disagree.
+                // See `sub_view_rows` for why Flatten is the odd member of the three.
+                let flatten_ready = sub_view_rows::flatten_row_ui(
+                    ui,
+                    self.stage,
+                    sub_view_rows::FlattenContent {
+                        equation_sheet: self.cached_equation_sheet.is_some(),
+                        source_map: self
+                            .cached_equation_sheet
+                            .as_ref()
+                            .is_some_and(|s| !s.source_lines.is_empty()),
+                        connections: !self.frames.connection.is_empty(),
+                    },
+                    &mut self.viewport.flatten,
+                );
+                let events_ready = sub_view_rows::events_row_ui(
+                    ui,
+                    self.stage,
+                    !self.frames.pre_lowering.is_empty(),
+                    &mut self.viewport.events,
+                );
+                let init_ready = sub_view_rows::init_row_ui(
+                    ui,
+                    self.stage,
+                    self.has_ic_plan(),
+                    &mut self.viewport.init,
+                );
 
                 // The report stages (Structural + Index reduction) offer a custom
                 // BLT spy-plot alongside the generic tree; every other stage is
