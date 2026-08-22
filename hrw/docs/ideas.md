@@ -400,7 +400,35 @@ question is `#45`'s diagnostic mode, which is deferred.
 **And it locates a real gap in the curriculum.** The nine tours run Parse → solve lowering and stop;
 this question lives *after* solve lowering, in the solver. `#66` already says *"compilation is a
 MEANS, and the end is simulation"* — **this is the concrete case for that claim**, and the reason
-the near-term curriculum should not treat solve lowering as the finish line.
+the near-term curriculum should not treat solve lowering as the finish line. Recorded there too.
+
+### ⚠ EVERYTHING ABOVE IS READ FROM SOURCE, NOT RUN — verify before building on it
+
+**Claude has not executed any of the four inspectors**, has not checked whether they work on this
+repository's specimens, and has not seen the JSON shape `--format json` emits. The claims above come
+from reading `cli.rs`, `jacobian.rs` and their doc comments.
+
+**That is a lead, not a fact** (`docs/provenance.md`), and it is exactly the footing this project
+has twice had to lift things off. **Before any of it becomes a tour or a pane: run it, compare
+against a real compile, and find out where it disagrees with what is written here.** The specific
+claims most worth distrusting are that the inspectors accept our specimens at all, and that the
+names in `JacobianReport` match the names HRW's other panes use — the second is an *identity* claim,
+and this repository does not settle those by reading.
+
+### The conceptual bridge this needs, and it sits exactly at Doug's basic-calculus bar
+
+**Note only — not a plan.** The hinge Doug's three questions turn on is the distinction the body of
+this item already names, and it is the one a reader must have before any of it can land:
+
+- **Incidence is STRUCTURAL** — does equation *i* mention unknown *j*? Doug has walked this.
+- **The Jacobian is NUMERICAL** — ∂fᵢ/∂xⱼ, an actual value at a point.
+- **A system can have full structural rank and still be numerically singular**, because the nonzeros
+  happen to cancel.
+
+**The specimen pair for it already exists and is named below**: `ProportionalLoop` against
+`NonlinearLoop` — same incidence, different conditioning. **Same picture, different content** is a
+teachable step from what he already knows, which is what makes it fit the bar rather than requiring
+new machinery.
 
 Captured 2026-07-21 (Claude, learning-driven). Show the **Jacobian matrix** — the
 actual partial-derivative matrix the solver uses — alongside the incidence matrix,
@@ -4481,6 +4509,21 @@ complement. A curriculum tour there pays into the coursework directly
 
 **Doug, 2026-08-05:** *"I'm learning the compilation stuff as a means to an end. That end is being
 able to troubleshoot and improve simulations."*
+
+#### ⟶ THE CURRICULUM BOUNDARY, MADE CONCRETE — 2026-08-22
+
+**Note only; not scheduled, and not discussed.** Doug sketched the questions he expects to ask
+later — *"Why is this partial derivative blowing up my simulation? Where did this partial derivative
+even come from?"* — and **every one of them is downstream of all nine tours.** The tours run Parse →
+solve lowering and stop there.
+
+**So solve lowering is the PENULTIMATE lesson, not the last one.** *"Names become indices"* hands
+the solver something; what the solver then *does* with it — and what it needs from the model to do
+it at all — is unwritten ground, and it is where the stated end actually lives. `#17` carries the
+audit of what Rumoca already provides for it.
+
+**This is a scope observation, not a proposal.** It does not change the ranking below, and nothing
+here says a solver tour comes next.
 
 **This does not change the ranking above, and that is the useful part.** Ranked by *mathematical
 content*, the order is structural analysis, index reduction, solve lowering, initialization.
