@@ -611,10 +611,25 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >   `tour_catalogue_is_current` fails. The order is `cargo fmt` → generators → checks, and getting
 >   it backwards has cost the whole gate four times.
 >
-> **Where the tour work stands** is in *THE WALK* below — `connect-expansion.md` is the validated
-> template (`docs/fixture-tours/README.md` carries its five rules), **seven of nine tours have never
-> been walked**, and `index-reduction.md` was rewritten 2026-08-18 and is mid-walk with three
-> corrections already taken from it. **Convert ONE TOUR AT A TIME — the one Doug is about to walk.**
+> **⟶ THE WALK RESTARTS FROM THE BEGINNING, AT THE CONNECTIONS TOUR — Doug, 2026-08-21.** *"I am
+> going to start completely over on walking tours, beginning with the connections tour."* So
+> `connect-expansion.md` is the live document — which is also the one tour carrying `pane-groups`
+> tables, so **editing those tables means the FULL gate.**
+>
+> **He also graded the last walk, and the grade is the useful part:** the opening of
+> `index-reduction.md` is *"good. Not yet very good, but nevertheless good. You are definitely
+> starting to figure this out."* **Good is not the target for that tour** — see below.
+>
+> **`index-reduction.md` CARRIES A HARDER BAR THAN EVERY OTHER TOUR**, and Doug has staked it in
+> public with a PhD Modelica friend: **an explanation of index reduction that anybody with only
+> basic calculus can understand.** He intends to prove it can be done. The full constraint, what it
+> forbids assuming, and the three corrections that are worked examples of it are in
+> [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md) — read that before touching that
+> tour. **The bar is PREDICTION, not comprehension: a correct tour can still fail it, and only the
+> walk can measure that.**
+>
+> **Convert and improve ONE TOUR AT A TIME — the one Doug is about to walk.** Seven of nine have
+> never been walked; `docs/fixture-tours/README.md` carries the template and its five rules.
 >
 > ### ✅ `#48` IS CLOSED — 2026-08-21. Gate ~315 s → ~220 s; `notebook-check` 157 s → 109 s
 >

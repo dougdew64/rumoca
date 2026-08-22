@@ -262,6 +262,37 @@ the stop that lands is the one you check yourself.
 
 ## Rules for writing one
 
+### `index-reduction.md` CARRIES A HARDER BAR THAN THE OTHERS — Doug, 2026-08-21
+
+**His words:** *"amongst all of the tours, my hope is for the index reduction tour to be the best.
+Incredible, actually. That tour will serve as the best demonstration of the value of this HRW
+project."* And the standard, which he has staked in public: *"I mentioned to a PhD Modelica friend
+of mine that I am working with you to create an explanation of index reduction that anybody with
+an understanding of only basic calculus can understand. I intend to prove to him that we can
+accomplish that."*
+
+**Treat "basic calculus only" as a CONSTRAINT, not an aspiration, because it is checkable.** It
+names precisely what the tour may assume — derivatives, the chain rule, what integrating means —
+and therefore what it may **not** assume without building it first:
+
+- **DAE index as a formal object.** It is *defined* in the tour, as a distance, from what an
+  integrator can be asked for.
+- **Jacobian singularity, Newton iteration, structural rank.** The 2026-08-18 walk rebuilt the
+  central argument on **matching**, which Doug had already walked — the same fact reached by
+  counting rather than by linear algebra.
+- **Pantelides by name**, or any algorithm invoked as an authority rather than shown.
+
+**The bar is PREDICTION, not comprehension, and this is where a correct tour can still fail.** A
+PhD reader will accept the current text as true. The test is harder: a reader who has never met a
+DAE must be able to predict what the next pane shows *and be right*. Accuracy does not imply that,
+and no checker in this repository can measure it — **only the walk can.**
+
+**The three corrections the last walk produced are this constraint firing**, and they are the
+worked examples of it: *solver* used where *integrator* was meant (wrong difficulty named); a
+replacement that assumed Newton and Jacobians (rebuilt on matching); and backward references that
+**retold** earlier results in prose, including a hand-written table duplicating the Incidence view.
+Doug: *"HRW is your platform. Use it."*
+
 ### The rule the others now serve: prose to the first PREDICTION, then the pane
 
 **Agreed with Doug 2026-08-12, and concept tours are to be written on this assumption.**
