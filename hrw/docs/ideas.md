@@ -2126,14 +2126,86 @@ discipline): *should a change to a workspace document invalidate resolution of d
 source roots?* It reproduces in six lines and is exactly the shape `upstream-strategy.md` calls
 a zero-cost gift. **Adjudicate before filing.**
 
-#### The levers, with what each is measured to be worth
+#### The levers — ESTIMATES SUPERSEDED BY MEASUREMENT, 2026-08-21 evening
 
-| # | lever | worth | status |
-|---|---|---:|---|
-| **A** | Stop invalidating the resolved MSL on every compile | ~1.6 s × 72 ≈ **115 s** | **authorised 2026-08-21** |
-| **B** | Compile MSL-free specimens in a bare session | **49.5 s → 0.5 s** over 16 specimens | **authorised 2026-08-21** |
-| **C** | Reduce the 10 full MSL loads | up to **44 s** | **authorised 2026-08-21** |
-| **D** | Cut `t_end` | **0 s** | dead, see above |
+**A WAS WRONG BY 20×, AND IT WAS THE TOP-RANKED LEVER.** The middle column is the arithmetic the
+levers were authorised on; the right-hand column is what an instrumented full gate then said.
+
+| # | lever | estimated | **measured** | status |
+|---|---|---:|---:|---|
+| **A** | Stop invalidating the resolved MSL on every compile | ~1.6 s × 72 ≈ 115 s | **~5 s** | **DEAD — Doug skipped it 2026-08-21** |
+| **B** | Compile MSL-free specimens in a bare session | 49.5 s → 0.5 s | not measured | authorised; **blocked on a fidelity ruling** |
+| **C** | Reduce the 10 full MSL loads | up to 44 s | **~48 s** | **BUILT 2026-08-21** |
+| **D** | Cut `t_end` | — | **0 s** | dead, see above |
+
+**WHY A DIED — the same mistake this item has now recorded six times.** `1.6 s × 72` assumes
+*every* compile could skip the invalidation. A probe at the churn site classified all 37 specimen
+compiles of one full gate:
+
+| compile shape | count |
+|---|---:|
+| a *different* specimen than the last | 29 |
+| different, after a failed resolve | 2 |
+| same content, tracker says different | 3 |
+| **same content, same specimen — the only shape the narrow guard can skip** | **3** |
+
+**Three of thirty-seven, so ~5 s.** The reason is structural and rules the lever out permanently in
+its authorised form: **Rumoca has no incremental resolve.** `ResolvedArtifactState::clear()` drops
+the entire resolved build cache on any workspace-document change, and the surviving per-source-set
+aggregate holds only `model_names` and `dependency_fingerprints`, not the tree. **The item's own
+resolve experiment already showed this** — resolve #4, *"after adding one workspace document"*,
+cost 1.61 s. Only same-document repeats were ever recoverable, and the suite compiles a different
+specimen nearly every time.
+
+**So A's 115 s is not available to HRW at all. It is available upstream**, and is now
+`docs/upstream-issues.md` **P1**.
+
+#### What C actually was, and the number the design turned on
+
+**Not "reduce the number of loads" — make each load cheaper.** The 10 loads are near-irreducible
+(one shared worker, one poison-guard test, four fresh-session helper tests, two resolve-failure
+rebuilds), but **87 % of a load is `parse_source_root_with_cache`**, which is a *disk* cache: every
+call re-walks the root, re-hashes 2,553 files and re-deserializes every AST.
+
+| phase of one MSL load | cost |
+|---|---:|
+| collect files | ~0.42 s |
+| hash inputs | ~0.81 s |
+| **deserialize** | **~2.18 s** |
+| validate layout | ~0.57 s |
+
+**`replace_parsed_source_set` consumes the documents by value, so a memo must hand out a copy** —
+and had the copy cost what the deserialize costs, there would have been nothing to win. Measured:
+**cloning all 2,553 documents is ~0.30 s.** A hit is collect + hash + clone ≈ 1.5 s against ~4.0 s.
+
+**Keyed on `source_root_input_cache_key`, the artifact cache's OWN fingerprint** (added upstream in
+`9432e982`). Paying ~1.2 s per load to verify is deliberate: keying on the path or on mtimes saves
+another ~1.2 s and is a *guess* that nothing changed.
+
+**MEASURE THIS LEVER ON THE NOTEBOOK CHECK, NOT THE GATE.** That test does 21 MSL loads:
+**157 s → 109 s**. Predicted from counters, 20 hits × 2.45 s ≈ 49 s; observed 48 s. The gate's own
+spread on the same day was **240 s, 287 s, 10,780 s and 196 s**, which hides 22 s completely -- the 10,780 s run was the machine going to sleep mid-run, which is a normal cause for a background gate and not something to investigate.
+
+**AND IT COSTS ~326 MB RETAINED, which is why `fidelity_msl` opts out.** Peak working set over four
+MSL loads: **522 MB without the memo against 848 MB with it** (a second run: 541 vs 799). Memory is
+the sweep's binding constraint — it rebuilds `WorkerState` to bound it, runs under a 3 GB free-RAM
+watchdog, and has already lost models to limits — and it loads the MSL *rarely*, so it would gain
+~2.5 s per rebuild for 326 MB held continuously. It calls `disable_parsed_source_root_memo()` once
+at startup.
+
+**CLEARING THE MEMO INSTEAD OF DISABLING IT DOES NOT WORK, and the wrong version looked obviously
+right.** Clearing *before* a load reclaims nothing, because the load re-fills the memo; clearing
+*after* is worse, because a memoised load briefly holds **two** copies. Only never storing bounds
+the process. `a_load_repopulates_the_memo_so_clearing_it_first_reclaims_nothing` encodes it.
+
+#### The ceiling, stated plainly so the next session does not re-derive it
+
+**A + B + C ≈ 70 s of a ~290 s gate without upstream work, ~185 s with it.** The 60 s target is not
+reachable through HRW-side levers, and it is not close. **92 % of the gate is 72 compiles and 10
+MSL loads, and the compiles cost what they cost because the tests load 38,855 MSL defs to compile
+two-equation models** — the same specimen costs 3.5 s with the MSL loaded and 0.03 s without.
+Every remaining lever is a different way of not paying that, and only the upstream one does it
+without changing what the tests verify.
 
 **B carries a caveat that must not be lost.** 16 of the 24 specimens reference nothing from the
 MSL. Compiling all 16 both ways and comparing every stage's JSON byte-for-byte: they **differ**,

@@ -195,6 +195,23 @@ fn main() {
         return;
     }
 
+    // **Memory is this run's binding constraint, so the parse memo is off.**
+    //
+    // `worker::parsed_source_root` keeps each library root's parsed documents for
+    // the process lifetime, which is ~326 MB of retained working set (measured
+    // 2026-08-21: peak 522 MB without it against 848 MB with it). That is the right
+    // trade for the test suite and the app, which load the MSL often and save ~48 s.
+    //
+    // **It is the wrong trade here.** This run rebuilds its `WorkerState` every N
+    // models precisely to reclaim memory, runs under a 3 GB free-RAM watchdog, and
+    // has already lost models to memory limits — so it would gain ~2.5 s per rebuild,
+    // which it does rarely, while paying 326 MB continuously.
+    //
+    // Disabling costs nothing in fidelity: the memo only ever served a parse of the
+    // exact bytes on disk. See `disable_parsed_source_root_memo` for why disabling
+    // is the mechanism rather than clearing between loads.
+    hrw::worker::disable_parsed_source_root_memo();
+
     eprintln!("loading MSL…");
     let t0 = Instant::now();
     let mut w = WorkerState::new();

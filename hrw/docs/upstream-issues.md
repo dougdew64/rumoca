@@ -560,6 +560,113 @@ tour for this gesture** and its stop 3 is the worked example of asking the other
 **And it settles charter §4.3 for this specimen**, which requires *"compiles and runs equivalently
 in both"* — a bar `CartesianPendulum` currently fails on the Rumoca side, deliberately.
 
+## PERFORMANCE QUESTIONS -- not defect claims
+
+**These two are different in kind from everything above, and the distinction is deliberate.**
+Nothing here produces a wrong answer. Both are cases where Rumoca does far more work than the
+input requires, and in both the current behaviour has an obvious correctness motivation -- so
+each is written as a **question to a maintainer**, not as a bug report. `upstream-strategy.md`
+calls this shape a zero-cost gift: a reproduction in a few lines, a measurement, and no demand.
+
+**Both were measured 2026-08-21 while working `docs/ideas.md` #48**, where 92 % of HRW's test
+gate turned out to be 72 compiles and 10 MSL loads.
+
+---
+
+## P1. A workspace-document change invalidates resolution of durable external source roots
+
+**The question:** should adding, changing or removing one workspace document discard the
+resolved tree of a `DurableExternal` source root that did not change?
+
+**Why it matters here:** it is the single largest cost in HRW's test suite. A two-equation
+specimen that references nothing from the MSL costs **3.5 s** to compile in a session with the
+MSL loaded, and **0.03 s** in a session with no libraries -- a factor of ~100, none of which is
+the model's own work.
+
+### Reproduction
+
+Six calls against one `Session` with the MSL loaded as a durable external source root:
+
+| call | time | session state |
+|---|---:|---|
+| `strict_compile_resolved()` #1 | 1.24 s | cold |
+| #2, #3 | **0.00 s** | nothing changed |
+| #4 | 1.61 s | after adding one workspace document |
+| #5 | **0.00 s** | unchanged again |
+| #6 | **1.59 s** | after `remove_document` + `update_document` of **byte-identical** text |
+
+### Expected
+
+A change to a workspace document invalidates that document, and whatever depends on it. The
+MSL's 38,855 defs do not depend on it.
+
+### Actual
+
+The whole resolved tree is rebuilt. `invalidate_resolved_state` calls
+`ResolvedArtifactState::clear()`, which clears `builds` and `dependency_fingerprints` outright
+(`crates/rumoca-compile/src/session.rs`). The per-source-set `source_set_aggregates` that
+*do* survive carry only `model_names` and `dependency_fingerprints` -- not the resolved tree --
+so `restore_resolved_inputs_from_source_root_aggregates` cannot avoid the rebuild.
+
+**Unverified:** whether a durable external root's resolved tree *can* be kept across a
+workspace mutation depends on whether workspace documents can shadow or extend library classes.
+If they can, the current behaviour may be the only correct one, and that is exactly what the
+question is asking.
+
+### Impact on consumers
+
+Any LSP-shaped consumer -- edit a file, re-resolve -- pays a full library resolution per
+keystroke-batch. HRW pays it 72 times per test run.
+
+---
+
+## P2. An artifact-cache miss costs ~21 s of pruning regardless of the input
+
+**The question:** should `maybe_prune_cache_after_write` run on every cache miss, synchronously,
+when its cost is a function of the whole cache rather than of what was just written?
+
+### Reproduction
+
+Parse a **five-line** source root that the artifact cache has not seen, three times, each with
+fresh content, and read `ParsedSourceRoot::timing`:
+
+| pass | `parse_source_root_with_cache` wall | of which the parse | cache status |
+|---|---:|---:|---|
+| 1 | **58,243 ms** | 6 ms | Miss |
+| 2 | **21,635 ms** | 2 ms | Miss |
+| 3 | **21,245 ms** | 2 ms | Miss |
+
+### Expected
+
+Parsing a five-line model costs about as long as parsing a five-line model.
+
+### Actual
+
+~21 s, about **3,500x** the work being cached. None of it appears in `SourceRootCacheTiming` --
+`collect_files_ms`, `hash_inputs_ms`, `cache_deserialize_ms`, `parse_files_ms`,
+`validate_layout_ms` and `cache_write_ms` together account for a handful of milliseconds. The
+only uninstrumented step on a miss is `maybe_prune_cache_after_write`, which walks and prunes
+the entire shared cache.
+
+**Unverified:** that the prune is the whole 21 s. It is the only uninstrumented step on the miss
+path, but the cost was measured by subtraction, not by timing the prune directly. **Time it
+before filing.**
+
+### Why this is surprising
+
+The cost is invisible in the timing struct the same call returns, so a consumer profiling with
+Rumoca's own instrumentation sees a 2 ms parse and a 21 s wall clock and has nothing to attribute
+it to. Adding a `prune_ms` field would make it self-describing whether or not the prune is
+changed.
+
+### Impact on consumers
+
+It makes **cache misses the dominant cost of a cold build**, and it falls hardest on the case a
+cache should serve best: many small roots. In HRW it made a single must-fire test cost 39 s, which
+is how it was found.
+
+---
+
 ## Adding to this file
 
 One entry per bug, and only for bugs **reproduced**, not suspected. Include the

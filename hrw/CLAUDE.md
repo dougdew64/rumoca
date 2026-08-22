@@ -604,16 +604,42 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > resolution cache on every call. A two-equation specimen referencing nothing from the MSL costs
 > **3.5 s**; in a session with no MSL loaded it costs **0.03 s**.
 >
-> **Doug authorised three levers, in this order — A, B, C:** **A** stop invalidating the resolved
-> MSL per compile (~115 s), **B** compile MSL-free specimens in a bare session (49.5 s → 0.5 s
-> over 16 specimens, but it **renumbers DefIds**, so its gate includes `notebook-check`), **C**
-> reduce the 10 full MSL loads (~44 s). He also retired the target as a contract: *"the 60 second
-> goal is an arbitrary number which I declared so that we could have a goal"* — the levers are
-> authorised on their own merits.
+> **Doug authorised three levers, A, B, C — AND THE RANKING INVERTED ON MEASUREMENT, 2026-08-21
+> evening.** He also retired the target as a contract: *"the 60 second goal is an arbitrary number
+> which I declared so that we could have a goal"* — the levers stand on their own merits.
 >
-> **A IS NOT A LICENCE TO RESTRUCTURE THE COMPILE PATH.** The wanted change is *"do not invalidate
-> when nothing changed"*. The churn site names a real poisoned-cache failure it exists to prevent;
-> if the narrow form cannot be made correct, that is a finding to bring back.
+> | lever | estimated | **measured** | status |
+> |---|---:|---:|---|
+> | **A** stop invalidating the resolved MSL per compile | ~115 s | **~5 s** | **DEAD — Doug skipped it** |
+> | **B** compile MSL-free specimens in a bare session | ~49 s | not measured | **blocked on a fidelity ruling** |
+> | **C** reduce the 10 full MSL loads | ~44 s | **~48 s** | **BUILT** |
+>
+> **A DIED BECAUSE `1.6 s × 72` WAS ARITHMETIC, NOT A MEASUREMENT** — the sixth time this item has
+> recorded that pattern. A probe at the churn site found the narrow guard could skip **3 of 37**
+> specimen compiles: the suite compiles a *different* specimen nearly every time, and **Rumoca has
+> no incremental resolve**, so a changed document set must re-resolve. A's 115 s is not available
+> to HRW at all — it is available **upstream**, now `docs/upstream-issues.md` **P1**.
+>
+> **THE CEILING, so nobody re-derives it: A + B + C ≈ 70 s of a ~290 s gate.** 92 % of the gate is
+> 72 compiles and 10 MSL loads, and a compile costs 3.5 s with the MSL loaded against **0.03 s**
+> without. Every lever is a way of not paying that, and **only the upstream change does it without
+> altering what the tests verify.**
+>
+> **MEASURE ANY MSL-LOAD LEVER ON `notebook-check`, NEVER ON THE GATE.** It does 21 loads, and went
+> **157 s → 109 s** — matching the counter prediction to within a second. The gate on the same day
+> ran **240 s, 287 s, 10,780 s and 196 s** with no source change between them.
+>
+> **AND THE 10,780 s ONE HAS AN ANSWER: THE MACHINE WENT TO SLEEP MID-RUN** *(Doug, 2026-08-21)*.
+> Worth writing down because Claude spent a round investigating it — checking the artifact cache,
+> current CPU load and free RAM, none of which showed anything, because by then the machine was
+> awake again. **A background gate spans wall-clock time Doug is not at the keyboard for, so sleep
+> is a normal cause of an absurd duration, not an anomaly to diagnose.** Sanity-check against a
+> single known-cost test (`all_healthy_specimens_simulate`, ~27–37 s) before investigating further.
+>
+> **B'S CAVEAT IS BIGGER THAN #48 RECORDS, and it is why B is blocked.** A bare session renumbers
+> DefIds, so the suite would verify a compile **that differs from the one the app performs** — the
+> app always has the MSL loaded — and regenerating the notebook to bare-session values makes the
+> committed traces disagree with the app too. That is a fidelity trade, not just a gate to run.
 >
 > **AND TWO MEASUREMENT RULES THIS ARC BOUGHT.** *(1)* **Never compare a first-of-session run with
 > a later one** — the opening experiment read as *"integration dominates 4×"* and was ~75 s of cold
@@ -1374,9 +1400,21 @@ cargo run -p hrw --example gen_trace -- --all      # 3m45s, the fix when it fail
 ```
 
 **Run it after touching a `*_to_json` writer and after rebasing on upstream** — the same two
-triggers the large fidelity sweep carries. It costs **157 s** and has its own feature because it
-must give each specimen a **fresh** `WorkerState`: against the shared worker it is
-*order-dependent*, passing alone and failing in company.
+triggers the large fidelity sweep carries. It costs **109 s** (was 157 s until the parsed-source-root
+memo landed 2026-08-21) and has its own feature because it must give each specimen a **fresh**
+`WorkerState`: against the shared worker it is *order-dependent*, passing alone and failing in
+company.
+
+**IT IS ALSO THE BENCHMARK FOR ANY MSL-LOADING CHANGE, and that is worth knowing before reaching
+for the gate.** It performs **21 MSL loads** by construction, so a per-load saving shows up 21
+times against very little else — the memo's 48 s was predicted from counters at 49 s and measured
+here at 48 s. The gate cannot do this: it ran **240 s, 287 s and 10,780 s** on 2026-08-21 with no
+source change between them.
+
+**AND IT IS A FIDELITY CHECK, not only a staleness check.** It compares every specimen's committed
+per-stage IR against a fresh compile, so it is the instrument for *"did this change what Rumoca
+produces?"* — the question a green gate cannot answer, since the gate was green before the change
+too. Run it for any change to the compile or library-loading path, not just to a `*_to_json` writer.
 
 **That order-dependence is a fact about the notebook, not about the test, and it belongs
 here rather than in a test comment.** A committed trace is one sample of a function whose

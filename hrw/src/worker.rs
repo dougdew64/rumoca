@@ -49,14 +49,17 @@
 //! knowing its Rust type.
 
 // --- Standard library imports ---
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 // `mpsc` = multi-producer, single-consumer channel. Here we use it as
 // single-producer (worker) / single-consumer (UI) in each direction.
 // `Sender` and `Receiver` are the two halves of a channel; `Sender` is
 // `Clone` (multi-producer) but we only have one of each.
 use std::sync::mpsc::{self, Receiver, Sender};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
+// `StoredDefinition` is one parsed Modelica file, as the source-root cache hands
+// it back -- see `parsed_source_root`.
+use rumoca_ir_ast::StoredDefinition;
 use std::thread;
 
 use eframe::egui;
@@ -73,9 +76,12 @@ use eframe::egui;
 // `SourceRootKind` tags a source set as durable-external (libraries) vs ephemeral.
 use rumoca_compile::compile::{CompilationResult, FailedPhase, PhaseResult, SourceRootKind};
 // Library-loading helpers: `parse_source_root_with_cache` parses a directory
-// of `.mo` files into a `ParsedSourceRoot`, and `source_root_source_set_key`
-// generates a stable key for caching.
-use rumoca_compile::source_roots::{parse_source_root_with_cache, source_root_source_set_key};
+// of `.mo` files into a `ParsedSourceRoot`, `source_root_input_cache_key`
+// fingerprints that directory *without* parsing it, and
+// `source_root_source_set_key` generates a stable key for caching.
+use rumoca_compile::source_roots::{
+    parse_source_root_with_cache, source_root_input_cache_key, source_root_source_set_key,
+};
 // `Session` is Rumoca's incremental compilation workspace (the same type the
 // LSP server uses). `SessionConfig` configures it (we use defaults).
 use rumoca_compile::{Session, SessionConfig};
@@ -1232,6 +1238,166 @@ pub struct WorkerState {
     tracing_guard: Option<tracing::subscriber::DefaultGuard>,
 }
 
+/// Every `.mo` file of one source root, parsed, as `(uri, ast)` pairs — the shape
+/// `parse_source_root_with_cache` returns and `replace_parsed_source_set` consumes.
+type ParsedDocuments = Vec<(String, StoredDefinition)>;
+
+/// The parsed documents of one library source root, reusing a previous parse of
+/// the **same bytes** rather than reloading it.
+///
+/// # The problem this solves
+///
+/// `parse_source_root_with_cache` is an *on-disk* cache. Every call re-walks the
+/// root, re-hashes every file's bytes, deserializes every parsed AST back out of
+/// the artifact cache and re-validates the package layout. For the MSL that is
+/// **2,553 files and ~4.0 s, and the test suite pays it ten times** — measured
+/// 2026-08-21, `docs/ideas.md` #48, where the ten loads are 36 s of the gate.
+///
+/// Nothing in those ten loads had changed on disk between them. The disk cache
+/// cannot know that: it is keyed on the inputs, so it correctly recomputes the key
+/// each time, and the key is the cheap part.
+///
+/// # What it costs, measured rather than assumed
+///
+/// | | cost |
+/// |---|---|
+/// | full load | ~4.0 s — collect 0.42, hash 0.81, deserialize 2.18, validate 0.57 |
+/// | memo hit | ~1.5 s — collect 0.42, hash 0.81, clone 0.30 |
+///
+/// So a hit saves ~2.5 s, and the **clone is affordable**: cloning all 2,553
+/// documents costs ~0.30 s, against the ~2.75 s of deserialize-plus-validate it
+/// avoids. That was the number the design turned on — `replace_parsed_source_set`
+/// consumes the documents by value, so a memo *must* hand out a copy, and had the
+/// copy cost what the deserialize costs there would have been nothing here to win.
+///
+/// # Why this cannot serve a stale parse
+///
+/// The memo is keyed on [`source_root_input_cache_key`] — **the same fingerprint
+/// the artifact cache itself uses**, over the root's layout and every file's bytes.
+/// A hit therefore means the disk cache would also have hit, on the same key, and
+/// returned the same documents. Editing any library file changes the key and the
+/// root is parsed again.
+///
+/// **Paying 1.2 s per load to verify that is the deliberate trade.** Keying on the
+/// path alone, or on file mtimes, would save a further ~1.2 s per load and would be
+/// a *guess* that nothing changed. Accuracy outranks performance here (`CLAUDE.md`),
+/// and the guess is worth about 10 s across the whole gate.
+///
+/// # What it does NOT change
+///
+/// **Only the parse is shared. Every caller still gets its own `Session`.**
+/// `load_libraries` builds a fresh `Session` on every call and always did; a test
+/// that wants a virgin session still gets one, holding no specimen document and no
+/// resolved state. That distinction is load-bearing — the notebook traces are
+/// *defined* as the virgin-session value (`CLAUDE.md`, *Running things*), and this
+/// memo leaves that untouched because parsing the same bytes twice yields the same
+/// AST both times.
+fn parsed_source_root(root: &Path) -> Result<ParsedDocuments, String> {
+    let parse = |root: &Path| {
+        parse_source_root_with_cache(root)
+            .map(|parsed| parsed.documents)
+            .map_err(|e| format!("{}: {e:#}", root.display()))
+    };
+    if !MEMO_ENABLED.load(std::sync::atomic::Ordering::Relaxed) {
+        return parse(root);
+    }
+    let fingerprint =
+        source_root_input_cache_key(root).map_err(|e| format!("{}: {e:#}", root.display()))?;
+    memoised_by_fingerprint(source_root_memo(), root, &fingerprint, parse)
+}
+
+fn source_root_memo() -> &'static Mutex<HashMap<PathBuf, (String, ParsedDocuments)>> {
+    static MEMO: OnceLock<Mutex<HashMap<PathBuf, (String, ParsedDocuments)>>> = OnceLock::new();
+    MEMO.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+static MEMO_ENABLED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+
+/// Turn [`parsed_source_root`]'s memo **off for this process** and drop whatever it
+/// is already holding, trading its speed back for the memory it retains.
+///
+/// # This is a memory bound, not a correctness escape
+///
+/// The memo is neither risky to keep nor risky to drop: it is keyed on the artifact
+/// cache's own content fingerprint, so it can only ever serve a parse of the exact
+/// bytes on disk. Disabling it changes nothing any caller sees — every load simply
+/// pays the full cost, exactly as it did before the memo existed.
+///
+/// What it costs is **~326 MB of retained working set for the process lifetime** —
+/// measured 2026-08-21 over four MSL loads: peak 522 MB without the memo against
+/// 848 MB with it, at per-load times of ~3.9 s and ~1.5 s.
+///
+/// # Why disabling, rather than clearing between loads
+///
+/// **Clearing does not work, and the reason is worth stating because it is not
+/// obvious.** Clearing *before* a load reclaims nothing, because the load
+/// immediately re-populates the memo. Clearing *after* one is worse: a memoised load
+/// briefly holds **two** copies of the documents — [`memoised_by_fingerprint`]
+/// stores a clone and hands back the original — so a caller that memoises and then
+/// clears pays the peak and keeps none of the benefit. Only never storing in the
+/// first place actually bounds the process.
+///
+/// # Who should call it
+///
+/// **One caller, and only for the whole run.** `examples/fidelity_msl` rebuilds its
+/// `WorkerState` every N models *specifically* to bound memory (`CLAUDE.md`,
+/// *Running things*: "only process exit is a memory bound"), runs under a 3 GB
+/// free-RAM watchdog, and has already lost models to memory limits. It loads the MSL
+/// **rarely**, so the memo would win it ~2.5 s per rebuild while costing 326 MB
+/// continuously — the opposite trade from the test suite and the app, which load
+/// often and win ~48 s.
+///
+/// Call it once at startup. It is deliberately not reversible: a run that has
+/// decided memory matters more than speed should not have that silently undone.
+pub fn disable_parsed_source_root_memo() {
+    MEMO_ENABLED.store(false, std::sync::atomic::Ordering::Relaxed);
+    source_root_memo()
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clear();
+}
+
+/// The memo's bookkeeping, with the parse passed in.
+///
+/// **Split out from [`parsed_source_root`] so it can be tested without parsing
+/// anything**, and that is not a stylistic preference — it was forced by a
+/// measurement. The obvious test ("edit a file, demand a different answer") writes
+/// bytes no artifact cache has seen, and **a cache miss costs ~21 s in
+/// `maybe_prune_cache_after_write` no matter how small the file is** — measured
+/// 2026-08-21 on a five-line model whose actual parse was 2 ms. A must-fire test
+/// for a cache must be able to *miss*, so testing this against the real parser
+/// would have put a 40 s test into a suite this whole item exists to shorten.
+///
+/// What is left here is the part HRW actually wrote: compare the fingerprint,
+/// serve the stored value only on an exact match, re-parse otherwise. The real
+/// wiring is covered separately by
+/// `a_memoised_source_root_parse_returns_the_same_documents`, which is a hit and
+/// costs 0.19 s.
+fn memoised_by_fingerprint<T: Clone>(
+    memo: &Mutex<HashMap<PathBuf, (String, T)>>,
+    root: &Path,
+    fingerprint: &str,
+    parse: impl FnOnce(&Path) -> Result<T, String>,
+) -> Result<T, String> {
+    // **The lock is not held across the parse.** A parse takes seconds, and holding
+    // this across one would serialise every caller behind the first. Two callers
+    // racing a cold root both parse and both insert the same value, which is wasted
+    // work and never a wrong answer.
+    if let Some((stored, value)) = memo
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .get(root)
+        && stored == fingerprint
+    {
+        return Ok(value.clone());
+    }
+    let value = parse(root)?;
+    memo.lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .insert(root.to_path_buf(), (fingerprint.to_owned(), value.clone()));
+    Ok(value)
+}
+
 /// Build a logging closure that wraps `emit` with elapsed-time tracking.
 /// Both `compile()` and `simulate()` use the same pattern: a local closure
 /// that attaches a timestamp to each log entry.
@@ -1655,17 +1821,20 @@ impl WorkerState {
     ///   session, returning the count of documents loaded.
     /// - `SourceRootKind::DurableExternal` — marks these as library sources
     ///   that outlive any single compile.
+    ///
+    /// **The parse is memoised per process — see [`parsed_source_root`].** A fresh
+    /// `Session` is still built here every time, so nothing about what this returns
+    /// changes; only the cost of getting the same documents twice does.
     pub fn load_libraries(&mut self, roots: Vec<PathBuf>) -> Result<usize, String> {
         let mut session = Session::new(SessionConfig::default());
         let mut total = 0usize;
         for root in &roots {
-            let parsed = parse_source_root_with_cache(root)
-                .map_err(|e| format!("{}: {e:#}", root.display()))?;
+            let documents = parsed_source_root(root)?;
             let key = source_root_source_set_key(&root.to_string_lossy());
             total += session.replace_parsed_source_set(
                 &key,
                 SourceRootKind::DurableExternal,
-                parsed.documents,
+                documents,
                 None,
             );
         }
@@ -5209,6 +5378,188 @@ mod tests {
             .load_libraries(roots)
             .expect("planar mechanics library should parse");
         assert!(loaded >= 1, "expected the planar mechanics library to load");
+    }
+
+    /// Asking [`parsed_source_root`] twice returns **the same documents** both times.
+    ///
+    /// This covers the real wiring — the fingerprint, the parser and the memo
+    /// composed as `load_libraries` calls them — on a small library rather than the
+    /// MSL, so it runs in the fast suite.
+    ///
+    /// **What it deliberately does NOT check, measured rather than assumed:** it
+    /// cannot tell a memo hit from a re-parse. Both perturbations used to verify
+    /// this file's memo (ignore the fingerprint; never store) leave this test
+    /// **green**, because either way the documents come back equal. The claim that
+    /// the memo actually memoises, and honours a changed fingerprint, belongs to
+    /// [`a_changed_fingerprint_defeats_the_memo`], which counts parses.
+    #[test]
+    fn a_memoised_source_root_parse_returns_the_same_documents() {
+        let root = PathBuf::from(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/lib/PlanarMechanics.mo"
+        ));
+        let first = parsed_source_root(&root).expect("first parse");
+        let second = parsed_source_root(&root).expect("memoised parse");
+
+        assert!(
+            !first.is_empty(),
+            "the library parsed to no documents at all"
+        );
+        assert_eq!(
+            first.len(),
+            second.len(),
+            "the memo returned a different number of documents",
+        );
+        let uris = |docs: &[(String, StoredDefinition)]| {
+            docs.iter().map(|(uri, _)| uri.clone()).collect::<Vec<_>>()
+        };
+        assert_eq!(uris(&first), uris(&second), "the memo returned other files");
+        // The documents themselves, not just their names: a memo that handed back
+        // an empty or truncated AST would pass every assertion above.
+        assert_eq!(
+            serde_json::to_string(&first).expect("serialize first parse"),
+            serde_json::to_string(&second).expect("serialize memoised parse"),
+            "the memo returned documents that differ from the parse",
+        );
+    }
+
+    /// **A changed fingerprint must defeat the memo — the must-fire half.**
+    ///
+    /// The memo's entire safety argument is that it serves a stored value *only*
+    /// when the fingerprint matches. A test that always asks for the same bytes
+    /// would pass with the comparison deleted, so this asks for a different
+    /// fingerprint and demands the parser run again.
+    ///
+    /// **Tests the bookkeeping against a counting fake parser, not the real one**,
+    /// because a real edit is an artifact-cache miss and a miss costs ~21 s of
+    /// cache pruning — see [`memoised_by_fingerprint`] for the measurement.
+    #[test]
+    fn a_changed_fingerprint_defeats_the_memo() {
+        let memo = Mutex::new(HashMap::new());
+        let root = Path::new("some/library/root");
+        // Counts parses, so "the memo served a stored value" is checked directly
+        // rather than inferred from the answer being equal.
+        let parses = std::cell::Cell::new(0);
+
+        let first = memoised_by_fingerprint(&memo, root, "fingerprint-A", |_| {
+            parses.set(parses.get() + 1);
+            Ok("documents-A".to_owned())
+        })
+        .expect("first parse");
+        assert_eq!(first, "documents-A");
+        assert_eq!(parses.get(), 1, "the first call must parse");
+
+        // Same fingerprint: the stored value, and the parser must NOT run. The fake
+        // returns something else, so a memo that re-parsed would be visible twice —
+        // in the count and in the answer.
+        let hit = memoised_by_fingerprint(&memo, root, "fingerprint-A", |_| {
+            parses.set(parses.get() + 1);
+            Ok("documents-B".to_owned())
+        })
+        .expect("memo hit");
+        assert_eq!(
+            hit, "documents-A",
+            "an unchanged root was re-parsed instead of served from the memo",
+        );
+        assert_eq!(parses.get(), 1, "a memo hit must not parse");
+
+        // Changed fingerprint: the parser must run and its answer must win.
+        let after = memoised_by_fingerprint(&memo, root, "fingerprint-B", |_| {
+            parses.set(parses.get() + 1);
+            Ok("documents-B".to_owned())
+        })
+        .expect("re-parse");
+        assert_eq!(
+            after, "documents-B",
+            "a changed root was served the stale value: an edited library would be invisible",
+        );
+        assert_eq!(parses.get(), 2, "a changed fingerprint must parse again");
+
+        // And the change must be STORED, not merely passed through — otherwise every
+        // later call re-parses and the memo silently stops working after one edit.
+        let restored = memoised_by_fingerprint(&memo, root, "fingerprint-B", |_| {
+            parses.set(parses.get() + 1);
+            Ok("documents-C".to_owned())
+        })
+        .expect("memo hit after re-parse");
+        assert_eq!(
+            restored, "documents-B",
+            "the re-parse was not stored, so every later call re-parses",
+        );
+        assert_eq!(parses.get(), 2, "the re-parsed value must be memoised too");
+    }
+
+    /// **Clearing the memo cannot bound memory — only disabling it can.**
+    ///
+    /// This encodes the reasoning error that
+    /// [`disable_parsed_source_root_memo`] exists to prevent, because the wrong
+    /// version looked obviously right: the fidelity sweep's rebuild point already
+    /// discards state to reclaim memory, so "clear the memo there too" reads as the
+    /// natural fix. It reclaims **nothing** — the reload immediately re-fills the
+    /// memo — and doing it the other way round is worse, since a memoised load
+    /// briefly holds two copies.
+    ///
+    /// So: with the memo live, a load re-populates it. That is the fact that makes
+    /// clear-then-reload useless, and it is checked here rather than left as prose.
+    #[test]
+    fn a_load_repopulates_the_memo_so_clearing_it_first_reclaims_nothing() {
+        let memo = Mutex::new(HashMap::new());
+        let root = Path::new("some/library/root");
+
+        memoised_by_fingerprint(&memo, root, "fingerprint-A", |_| {
+            Ok("documents-A".to_owned())
+        })
+        .expect("first parse");
+        assert_eq!(
+            memo.lock().expect("memo").len(),
+            1,
+            "a parse must populate the memo, or there is nothing to bound",
+        );
+
+        // The sweep's tempting move: clear, then load again.
+        memo.lock().expect("memo").clear();
+        memoised_by_fingerprint(&memo, root, "fingerprint-A", |_| {
+            Ok("documents-A".to_owned())
+        })
+        .expect("reload after clearing");
+        assert_eq!(
+            memo.lock().expect("memo").len(),
+            1,
+            "clearing before a load reclaims nothing: the load re-fills the memo, \
+             which is why the sweep disables the memo instead of clearing it",
+        );
+    }
+
+    /// The fingerprint the memo is keyed on **actually tracks file contents**.
+    ///
+    /// [`a_changed_fingerprint_defeats_the_memo`] proves the memo honours a changed
+    /// fingerprint; this proves an edit *produces* one. Neither is sufficient alone
+    /// — together they are the claim "an edited library is not served stale".
+    ///
+    /// Costs ~15 ms: computing the key never touches the artifact cache.
+    #[test]
+    fn editing_a_file_changes_its_source_root_fingerprint() {
+        let dir = std::env::temp_dir().join(format!("hrw-fingerprint-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("create temp source root");
+        let file = dir.join("FingerprintProbe.mo");
+        let key_of = |body: &str| {
+            std::fs::write(&file, body).expect("write temp library");
+            source_root_input_cache_key(&file).expect("fingerprint the temp root")
+        };
+
+        let before = key_of("model P\n  Real x;\nequation\n  x = 1;\nend P;\n");
+        let unchanged = key_of("model P\n  Real x;\nequation\n  x = 1;\nend P;\n");
+        let after = key_of("model P\n  Real y;\nequation\n  y = 2;\nend P;\n");
+        std::fs::remove_dir_all(&dir).ok();
+
+        assert_eq!(
+            before, unchanged,
+            "identical bytes produced different fingerprints, so the memo could never hit",
+        );
+        assert_ne!(
+            before, after,
+            "an edited file kept its fingerprint, so the memo would serve the old parse",
+        );
     }
 
     /// For the high-index Drivetrain, the raw `structural` stage is singular
