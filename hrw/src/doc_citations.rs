@@ -1330,6 +1330,219 @@ Some prose.
         out
     }
 
+    /// Every **walked** region of a document, as `(slug, date, body)`.
+    ///
+    /// # What a walked region is, and why it needs marking at all
+    ///
+    /// **Corrected tour prose is the artifact a phase-2 walk produces** (Doug,
+    /// 2026-08-22), and it is load-bearing twice: it is the only measurement of what he
+    /// has learned, and it is what a phase-3 walk treats as trustworthy. **Nothing in
+    /// the repository distinguished it from Claude's own first-draft prose**, so a
+    /// rewrite saw uniform text and treated it as uniformly Claude's to replace. That is
+    /// exactly what happened to `connect-expansion.md`'s lead paragraph: repaired
+    /// 2026-08-12 in `21f7cbb0`, silently reverted by the 2026-08-13 rewrite, and asked
+    /// about again ten days later.
+    ///
+    /// ```markdown
+    /// <!-- walked: connect-expansion-opening 2026-08-22 -->
+    /// …the prose that came out of the walk…
+    /// <!-- /walked -->
+    /// ```
+    ///
+    /// **The slug is the identity and the date is the acknowledgement.** They are
+    /// separate on purpose — see
+    /// [`walked_prose_never_changes_silently`] for what each one buys.
+    ///
+    /// # The region is BOUNDED by an explicit close
+    ///
+    /// Same lesson as [`marked_rows`], which used to scan forward unbounded and would
+    /// adopt the next table in the file. Here an unterminated marker would swallow the
+    /// rest of the document and make every later edit look like a walked change. So a
+    /// region runs to its `<!-- /walked -->` and no further, and an unterminated marker
+    /// is a **finding** reported by [`unterminated_walked`] rather than a region.
+    pub(super) fn walked_regions(text: &str) -> Vec<(String, String, String)> {
+        let mut out = Vec::new();
+        let mut open: Option<(String, String, Vec<&str>)> = None;
+        for line in text.lines() {
+            let trimmed = line.trim();
+            if trimmed == "<!-- /walked -->" {
+                if let Some((slug, date, body)) = open.take() {
+                    out.push((slug, date, body.join("\n")));
+                }
+                continue;
+            }
+            if let Some(rest) = trimmed.strip_prefix("<!-- walked:")
+                && let Some(inner) = rest.strip_suffix("-->")
+            {
+                // A second open before a close discards the first; `unterminated_walked`
+                // is what reports that, so this stays a parser and not a validator.
+                // `split_whitespace` already skips leading and trailing runs, so no
+                // `trim()` here: clippy's `trim_split_whitespace` denies the pair.
+                let mut parts = inner.split_whitespace();
+                let slug = parts.next().unwrap_or_default().to_owned();
+                let date = parts.next().unwrap_or_default().to_owned();
+                open = Some((slug, date, Vec::new()));
+                continue;
+            }
+            if let Some((_, _, body)) = open.as_mut() {
+                body.push(line);
+            }
+        }
+        out
+    }
+
+    /// Slugs of `<!-- walked: -->` markers that never reach a `<!-- /walked -->`.
+    ///
+    /// Reported as a finding rather than tolerated, because an unterminated marker is
+    /// indistinguishable from a region whose body happens to be the rest of the file —
+    /// and a marker that silently protects nothing is the **wrong negative** this
+    /// repository treats as the error nobody catches.
+    pub(super) fn unterminated_walked(text: &str) -> Vec<String> {
+        let mut out = Vec::new();
+        let mut open: Option<String> = None;
+        for line in text.lines() {
+            let trimmed = line.trim();
+            if trimmed == "<!-- /walked -->" {
+                open = None;
+                continue;
+            }
+            if let Some(rest) = trimmed.strip_prefix("<!-- walked:")
+                && let Some(inner) = rest.strip_suffix("-->")
+            {
+                if let Some(previous) = open.take() {
+                    out.push(previous);
+                }
+                // No `trim()` before `split_whitespace` — see `walked_regions`.
+                open = Some(
+                    inner
+                        .split_whitespace()
+                        .next()
+                        .unwrap_or_default()
+                        .to_owned(),
+                );
+            }
+        }
+        out.extend(open);
+        out
+    }
+
+    /// **Prose Doug corrected during a walk must not change without being acknowledged.**
+    ///
+    /// # What it forbids, and — as importantly — what it does not
+    ///
+    /// It does **not** freeze walked prose. Doug rewrites his own explanations
+    /// constantly and that must stay cheap; a checker that made improving a tour
+    /// expensive would cost more learning than the regression it prevents. **It forbids
+    /// changing walked prose *silently*** — the
+    /// `app_does_not_regrow_its_field_count` shape, where the change is fine and the
+    /// unremarked change is not.
+    ///
+    /// # Why the slug and the date are separate fields
+    ///
+    /// The slug is stable identity; the date is the acknowledgement, and **bumping it is
+    /// how an edit is acknowledged.** That gives three distinguishable outcomes from one
+    /// comparison against `HEAD`:
+    ///
+    /// | in `HEAD` | in the working tree | verdict |
+    /// |---|---|---|
+    /// | slug present | body changed, **same date** | **FAIL** — a silent rewrite |
+    /// | slug present | body changed, **date bumped** | pass — acknowledged in the same commit |
+    /// | slug present | **slug gone** | **FAIL** — a walked passage was deleted |
+    /// | absent | slug present | pass — newly marked |
+    ///
+    /// Keying on the slug alone would make a re-dated edit look like a delete-plus-add;
+    /// keying on the whole marker would make every acknowledgement look like a deletion.
+    /// **Deletion is the case that matters most** and it is the one the pair recovers.
+    ///
+    /// # Why it runs in BOTH gates
+    ///
+    /// Unlike [`editing_a_guarded_tour_table_needs_the_full_gate`], which is off under
+    /// `slow-tests` because the real checkers are running then, **this is the only check
+    /// of its claim.** There is no slower test that verifies walked prose, so there is no
+    /// gate it can defer to.
+    ///
+    /// # What it cannot claim
+    ///
+    /// **Silent outside a git checkout**, exactly like the guarded-table check: no
+    /// repository, no `HEAD`, or no `git` on `PATH` and it passes for want of a baseline.
+    /// The pure half is covered by [`tests_walked_regions`], which needs no git.
+    ///
+    /// **And it cannot tell whether a marked region deserves its marker.** Marking a
+    /// Claude draft as walked would quietly defeat the measurement purpose, so which
+    /// passages carry markers is Doug's ruling and no test can stand in for it.
+    #[test]
+    fn walked_prose_never_changes_silently() {
+        let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let dir = hrw.join("docs/fixture-tours");
+        let repo = hrw.parent().expect("hrw lives inside the workspace");
+
+        let mut findings: Vec<String> = Vec::new();
+        let mut compared = 0usize;
+
+        for entry in std::fs::read_dir(&dir).expect("fixture-tours must be readable") {
+            let path = entry.expect("readable dir entry").path();
+            if path.extension().and_then(|e| e.to_str()) != Some("md") {
+                continue;
+            }
+            let name = path
+                .file_name()
+                .expect("named file")
+                .to_string_lossy()
+                .into_owned();
+            let working = std::fs::read_to_string(&path).expect("readable tour");
+
+            for slug in unterminated_walked(&working) {
+                findings.push(format!(
+                    "{name}: `<!-- walked: {slug} -->` never closes. Add `<!-- /walked -->` \
+                     at the end of the passage \u{2014} an unterminated marker protects \
+                     nothing and hides that it protects nothing."
+                ));
+            }
+
+            let here = walked_regions(&working);
+            let Some(head) = file_at_head(repo, &format!("hrw/docs/fixture-tours/{name}")) else {
+                continue; // New file, or no git: no baseline to compare against.
+            };
+            let before = walked_regions(&head);
+            if before.is_empty() && here.is_empty() {
+                continue;
+            }
+            compared += 1;
+
+            for (slug, date, body) in &before {
+                match here.iter().find(|(s, _, _)| s == slug) {
+                    None => findings.push(format!(
+                        "{name}: walked region `{slug}` was DELETED. That prose is a record \
+                         of what Doug learned on {date}; removing it is the regression this \
+                         check exists for. Restore it, or agree with Doug that it is \
+                         superseded and say so in docs/question-ledger.md."
+                    )),
+                    Some((_, now, now_body)) if now_body != body && now == date => {
+                        findings.push(format!(
+                            "{name}: walked region `{slug}` changed, but its date is still \
+                             {date}. If the rewrite is intended, bump the marker's date in \
+                             THIS commit \u{2014} that is the acknowledgement. If it was not \
+                             intended, this is a phase-2 correction about to be lost."
+                        ));
+                    }
+                    Some(_) => {}
+                }
+            }
+        }
+
+        assert!(findings.is_empty(), "{}", findings.join("\n\n  "));
+
+        // Non-vacuity: passing must mean "compared and found equal", never "found
+        // nothing to compare". Zero is honest before any passage is marked, and once
+        // markers exist it means git could not answer -- see the doc comment.
+        if compared == 0 {
+            eprintln!(
+                "note: no walked region compared against HEAD \u{2014} either none is \
+                 marked yet, or this is not a git checkout"
+            );
+        }
+    }
+
     /// **Editing a guarded tour table must not be committed behind the FAST gate.**
     ///
     /// # The gap this closes, and why it was not a rule problem
@@ -3683,7 +3896,18 @@ mod tests_orphaned_docs {
             ("app/tests.rs", 4),
             ("bridge.rs", 9),
             ("colors.rs", 1),
-            ("doc_citations.rs", 3),
+            // 3 -> 5 on 2026-08-22, with the reasoning the ratchet requires. Both new
+            // hits are inside ONE doc block — `walked_prose_never_changes_silently` —
+            // which opens with its own summary and then uses `**bold**` to lead two
+            // later paragraphs ("Deletion is the case that matters most", "And it
+            // cannot tell whether a marked region deserves its marker"). That is this
+            // file's prevailing style and the reason it carried a budget already.
+            // Triaged by the documented shortcut: every item added in that commit —
+            // `walked_regions`, `unterminated_walked`, the test, its module and each of
+            // its tests — has its own summary, so there is no undocumented item for an
+            // orphan to belong to. False positives, at the ~29 % precision this check
+            // is documented to have.
+            ("doc_citations.rs", 5),
             ("equation_sheet.rs", 1),
             ("lib.rs", 2),
             ("matching_anim.rs", 2),
@@ -3884,5 +4108,146 @@ mod tests_guarded_regions {
         let rows = marked_rows(text, "pane-groups", "RcCircuit").expect("marker present");
         assert_eq!(rows.len(), 2, "both data rows must be read: {rows:?}");
         assert_eq!(rows[0], vec!["Component equations", "16"]);
+    }
+}
+
+/// **The walked-region parser, tested without git.**
+///
+/// [`tests::walked_prose_never_changes_silently`] needs a git checkout to say anything
+/// and is honestly inert without one. These do not. They are the **must-fire** half:
+/// a parser that ignored the body, or that let an unterminated marker run to the end of
+/// the file, would call every edit safe — and a check that cannot fail is
+/// indistinguishable from no check, which is the failure mode this whole mechanism
+/// exists to answer.
+#[cfg(test)]
+mod tests_walked_regions {
+    use super::tests::{unterminated_walked, walked_regions};
+
+    /// A tour with one walked region, and prose outside it on both sides.
+    fn tour(date: &str, walked: &str, outside: &str) -> String {
+        format!(
+            "# A tour\n\n{outside}\n\n<!-- walked: the-opening {date} -->\n\
+             {walked}\n<!-- /walked -->\n\nLater prose: {outside}.\n"
+        )
+    }
+
+    /// The body is what is protected, so it must be what the scan reports.
+    #[test]
+    fn a_walked_region_reports_its_slug_date_and_body() {
+        let text = tour("2026-08-22", "One edge per member.", "unrelated");
+        let regions = walked_regions(&text);
+        assert_eq!(regions.len(), 1, "expected exactly one region: {regions:?}");
+        assert_eq!(regions[0].0, "the-opening");
+        assert_eq!(regions[0].1, "2026-08-22");
+        assert_eq!(regions[0].2, "One edge per member.");
+    }
+
+    /// Editing prose **outside** a region must not read as a walked change, or every
+    /// ordinary tour edit would fail the check and the mechanism would be abandoned.
+    #[test]
+    fn editing_prose_outside_the_region_is_not_a_walked_change() {
+        let before = tour(
+            "2026-08-22",
+            "One edge per member.",
+            "the voltages are equal",
+        );
+        let after = tour(
+            "2026-08-22",
+            "One edge per member.",
+            "the potentials are equal",
+        );
+        assert_ne!(before, after, "the fixture must actually differ");
+        assert_eq!(
+            walked_regions(&before),
+            walked_regions(&after),
+            "an edit outside the marked passage was reported as a walked change",
+        );
+    }
+
+    /// The must-fire case: the regression that started all of this.
+    #[test]
+    fn rewriting_walked_prose_at_the_same_date_is_detectable() {
+        let before = tour("2026-08-22", "One edge per member.", "same");
+        let after = tour("2026-08-22", "One edge in a graph.", "same");
+        let (b, a) = (walked_regions(&before), walked_regions(&after));
+        assert_eq!(b[0].1, a[0].1, "the fixture keeps the date fixed");
+        assert_ne!(
+            b[0].2, a[0].2,
+            "a rewritten walked passage was reported as unchanged: this is exactly the \
+             2026-08-13 loss, and the check would be vacuous",
+        );
+    }
+
+    /// Bumping the date must be visible **independently** of the body, since that is
+    /// what separates an acknowledged rewrite from a silent one.
+    #[test]
+    fn bumping_the_date_is_visible_apart_from_the_body() {
+        let before = tour("2026-08-12", "Original wording.", "same");
+        let after = tour("2026-08-22", "Original wording.", "same");
+        let (b, a) = (walked_regions(&before), walked_regions(&after));
+        assert_eq!(b[0].0, a[0].0, "the slug is the stable identity");
+        assert_ne!(b[0].1, a[0].1, "the date must be readable on its own");
+        assert_eq!(b[0].2, a[0].2, "the body is untouched here");
+    }
+
+    /// Deleting the passage must remove the slug, which is what lets the checker say
+    /// **DELETED** rather than shrug.
+    #[test]
+    fn deleting_a_walked_region_removes_its_slug() {
+        let before = tour("2026-08-22", "One edge per member.", "same");
+        let after = "# A tour\n\nsame\n\nLater prose: same.\n";
+        assert!(
+            !walked_regions(&before).is_empty() && walked_regions(after).is_empty(),
+            "a deleted walked region must disappear from the scan",
+        );
+    }
+
+    /// An unterminated marker is a finding, not a region — the [`super::tests::marked_rows`]
+    /// lesson applied to prose.
+    #[test]
+    fn an_unterminated_marker_is_reported_and_yields_no_region() {
+        let text = "<!-- walked: the-opening 2026-08-22 -->\n\nProse with no closing marker.\n";
+        assert_eq!(
+            unterminated_walked(text),
+            vec!["the-opening".to_owned()],
+            "an unterminated marker must be reported",
+        );
+        assert!(
+            walked_regions(text).is_empty(),
+            "an unterminated marker must not produce a region that silently covers the \
+             rest of the document",
+        );
+    }
+
+    /// Two regions in one document stay apart, and a second marker opening before the
+    /// first closes is reported rather than silently absorbed.
+    #[test]
+    fn a_second_marker_before_the_close_is_reported() {
+        let text = "<!-- walked: first 2026-08-22 -->\nA.\n\
+                    <!-- walked: second 2026-08-22 -->\nB.\n<!-- /walked -->\n";
+        assert_eq!(
+            unterminated_walked(text),
+            vec!["first".to_owned()],
+            "the unclosed first marker must be reported",
+        );
+        let regions = walked_regions(text);
+        assert_eq!(
+            regions.len(),
+            1,
+            "only the closed region parses: {regions:?}"
+        );
+        assert_eq!(regions[0].0, "second");
+        assert_eq!(regions[0].2, "B.");
+    }
+
+    /// A well-formed document reports nothing — the other end of must-fire, so a green
+    /// result means "checked and clean" rather than "the parser reports everything".
+    #[test]
+    fn a_well_formed_document_reports_no_finding() {
+        let text = tour("2026-08-22", "One edge per member.", "same");
+        assert!(
+            unterminated_walked(&text).is_empty(),
+            "a closed marker must not be reported as unterminated",
+        );
     }
 }

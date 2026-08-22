@@ -4,10 +4,14 @@
 
 [▲ The chain overview](hrw://tour/the-concepts)
 
+<!-- walked: opening-what-connect-is 2026-08-22 -->
+
 `connect(src.p, R.p)` looks like wiring two things together. In the equations it is **neither an
 assignment nor an equality** — it is **an edge in each of several graphs, one per member of the
 connector** — and the equations do not exist until each graph's **connected components** have been
 computed.
+
+<!-- /walked -->
 
 **This tour counts.** `RcCircuit` has four `connect` statements and twenty-three equations, and every
 step from one number to the other is something you can predict before you look.

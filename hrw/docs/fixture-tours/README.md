@@ -143,6 +143,47 @@ is why the phases below are worth keeping distinct and why three consequences bi
   alone consumes the material his learning runs on.** Fixing a checker-caught number, a dead link or
   a stale citation is fine. **Rewriting an explanation unsupervised is not Claude's to do.**
 
+### ⟶ MARK WHAT PHASE 2 PRODUCES: `<!-- walked: -->` — added 2026-08-22, after one was lost
+
+**Doug, 2026-08-22:** *"During those phase 2 walks, my learnings are captured in the form of
+corrected prose in the tours. That corrected prose serves two purposes: 1. You are able to use that
+as a measurement of what I've learned and know. 2. I'm able to use the tour as a trusted reference
+during phase 3 walks. Losing the phase 2 prose is a seriously bad regression."*
+
+**It had already happened once.** `connect-expansion.md`'s lead sentence was repaired on 2026-08-12
+from Doug's question; the 2026-08-13 rewrite that made this tour *the template* silently reverted it,
+including the one word the repair had specifically removed; and he asked the same question again ten
+days later. **Nothing failed, because no checker reads prose for meaning** — and nothing marked that
+passage as his rather than Claude's, so a rewrite treated the whole document as a draft.
+
+```markdown
+<!-- walked: opening-what-connect-is 2026-08-22 -->
+
+…the prose that came out of the walk…
+
+<!-- /walked -->
+```
+
+**The slug is stable identity; the date is the acknowledgement.** `doc_citations::tests::
+walked_prose_never_changes_silently` compares every walked region against `HEAD` and fails by name
+when one changes at an unchanged date, or is deleted outright. HTML comments are stripped before the
+pane renders, so a reader never sees the markers.
+
+**What it does NOT forbid, because that half decides whether the mechanism survives:** it does not
+freeze walked prose. Doug rewrites his own explanations constantly and it must stay cheap —
+**bump the date in the same commit and the check passes.** What it forbids is changing walked prose
+*silently*, the `app_does_not_regrow_its_field_count` shape.
+
+**Two rules about which passages get marked, and the first is not Claude's to decide:**
+
+- **Marking is Doug's ruling.** Marking a Claude draft as walked would quietly defeat purpose 1 by
+  measuring Claude's own prose back to him — the exact failure this mechanism exists to prevent. No
+  test can substitute for that judgement.
+- **Mark during the walk, not retrospectively.** Wrapping a correction when it is made costs one
+  line at the moment its provenance is certain. Backfilling requires archaeology and, per the audit
+  in `docs/question-ledger.md`, cannot be done reliably — Claude could not tell draft from
+  correction for any tour predating this convention.
+
 ### Correctness is Claude's job. Effectiveness is Doug's, and Claude cannot do it at all
 
 **This corrects something Claude wrote on 2026-08-22** — that Doug is the instrument for whether
