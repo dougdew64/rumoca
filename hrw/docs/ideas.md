@@ -357,6 +357,51 @@ and after** the row/column permutation implied by maximum matching.
 
 ## 17. Jacobian sparsity and conditioning view
 
+### ⟶ RUMOCA ALREADY BUILDS AND NAMES THIS — found 2026-08-22, and it moves the item
+
+**The note below says the numerical Jacobian "comes from diffsol during simulation — may require
+instrumentation." That is out of date.** `rumoca sim --inspect` has **four** inspectors, all at the
+solver IR (`crates/rumoca/src/cli.rs`, `InspectKind`):
+
+| mode | what it answers |
+|---|---|
+| `structure` | matching, BLT blocks, coupled SCCs, tearing |
+| **`eval`** | evaluate solver values and state derivatives at a point, **naming the non-finite ones** |
+| **`jacobian`** | dense state Jacobian at `(state, t)`, **flagging singular columns and zero pivots** |
+| `objective-gradient` | `d(objective)/dp`, forward sensitivity or reverse adjoint |
+
+**`crates/rumoca-eval-solve/src/jacobian.rs` assembles `J = ∂(der(state))/∂(state)` by exact
+forward-mode AD** — one unit-seed JVP per column — **not symbolically and not by finite
+differences.** `JacobianReport` **names every row and column by its qualified model variable**:
+rows `der(name)`, columns `name`. It flags **structurally-singular columns** (no derivative depends
+on that state) and **zero pivots** (`∂der(x)/∂x = 0`), and `--format json` is supported here and
+for `objective-gradient` only.
+
+**So this item is mostly a SURFACING job, not a construction job**, which is the cheap half. What
+HRW would add is the view and the provenance link, not the mathematics.
+
+**AND THE NAMING IS THE PART THAT MATTERS FOR TEACHING.** A Jacobian entry already names two of the
+user's own variables, so the chain *entry → flat equation → `connect` or component equation →
+source line* is materialisable rather than hypothetical. That is the same identity discipline
+`an_equation_id_names_the_same_equation_in_every_pane` already enforces across panes, extended one
+stage further.
+
+### The question that prompted the audit — Doug, 2026-08-22
+
+Looking ahead past the ramp-up, he sketched the questions he expects to ask:
+
+> *"Why is this partial derivative blowing up my simulation? Where did this partial derivative even
+> come from? What can we do to solve this problem?"*
+
+**Those map onto the three inspectors above almost exactly** — `jacobian` for where it came from and
+whether the linearization is singular, `eval` for which value went non-finite, and the third
+question is `#45`'s diagnostic mode, which is deferred.
+
+**And it locates a real gap in the curriculum.** The nine tours run Parse → solve lowering and stop;
+this question lives *after* solve lowering, in the solver. `#66` already says *"compilation is a
+MEANS, and the end is simulation"* — **this is the concrete case for that claim**, and the reason
+the near-term curriculum should not treat solve lowering as the finish line.
+
 Captured 2026-07-21 (Claude, learning-driven). Show the **Jacobian matrix** — the
 actual partial-derivative matrix the solver uses — alongside the incidence matrix,
 and report its conditioning.
@@ -457,6 +502,19 @@ and mode functions (`f_m`).
   public fields; the process of *constructing* those fields is the target.
 
 ## 22. Exact event times and per-step Newton convergence from the solver
+
+### ⟶ THE DEFERRAL STANDS, BUT ITS PREMISE IS NOW PARTLY OUT OF DATE — 2026-08-22
+
+**The deferral below rests on the simulator being immature, and that judgement is Doug's to revise,
+not Claude's.** What has changed is only the *evidence*: `rumoca sim --inspect` ships **four**
+solver-IR inspectors, including one that names non-finite values at a point and one that assembles
+the state Jacobian by exact forward-mode AD and flags singular columns and zero pivots — see
+**`#17`**, which carries the audit. **That is a more mature diagnostic surface than "immature and
+not yet functional" implies**, and it is the surface this item would build on.
+
+**It does NOT establish that the integrator is trustworthy**, which is what Doug's deferral was
+actually about, and nothing here re-opens the item. Recorded so that when he does revisit it, the
+starting point is measured rather than remembered.
 
 **DEFERRED 2026-07-29 (Doug) — pending simulator maturity.** *"So far as I can
 tell, the simulator used by Rumoca is immature and not yet functional. So, I
@@ -1529,6 +1587,14 @@ literally the ramp-up goal — and that working together had changed his estimat
 and so intend to work with HRW and you to reduce my ignorance during the months ahead."*** So this
 is **not** active work and **not** a scope change. It is recorded here only so a later session
 neither forgets it nor mistakes it for a live direction.
+
+**AND IT IS LESS SPECULATIVE THAN IT LOOKS, found the same day — see `#17`.** `rumoca sim --inspect`
+already **names the non-finite values** at an evaluation point and **flags structurally-singular
+columns and zero pivots** in a state Jacobian whose rows and columns carry the user's own variable
+names. **Those are facts the compiler REPORTS, not inferences Claude would make** — which is exactly
+the line a diagnostic product has to hold, and the same line `absence is stated, never filled`
+already draws. The crux below is unchanged: distinguishing *"your model is wrong"* from *"Rumoca
+cannot handle it"* still needs the oracle, because no amount of naming settles that one.
 
 **Two things to carry if it is ever taken up.** *(1)* It would be a **charter amendment**, changing
 purpose and scope, because standing rules derive from the current one — `DO NOT optimise HRW to
