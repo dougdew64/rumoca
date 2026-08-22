@@ -116,6 +116,33 @@ the others cannot**, and confusing them wastes the scarcest thing here.
 | **2** | Doug walks it, iterating with Claude | **effectiveness** — does it land | **Doug, and only Doug** |
 | **3** | Doug explores panes and asks what the tour never asked | **coverage** — what Claude failed to write at all | **Doug's questions** |
 
+### ⟶ THE PHASE 2 ITERATION *IS* THE LEARNING — read this before anything else here
+
+**Doug, 2026-08-22:** *"Most of my conceptual learning happens when iterating with you during
+phase 2 walks to improve the correctness and effectiveness of tours. Making the tour prose correct
+and personally effective during those phase 2 walks is my primary learning exercise right now."*
+
+**So the tour is a byproduct, not the deliverable.** That is `working-with-doug.md`'s standing
+principle — *the conversation is the instrument; code changes are a byproduct of understanding* —
+applied to tours. **A finished tour is the residue of a learning session, not its purpose**, which
+is why the phases below are worth keeping distinct and why three consequences bind:
+
+- **PHASE 1 IS NOT TRYING TO BE UNIMPROVABLE.** A draft with nothing left to iterate on would
+  delete the exercise. **But the answer is not worse drafts** — it is drafts whose remaining
+  weaknesses are **conceptual rather than mechanical.** Arguing about a wrong count, a dead link or
+  a stop in the wrong order teaches Doug nothing about the phase; arguing about *whether
+  differentiating the constraint is the natural move* is the whole point. **Phase 1's job is to
+  spend the mechanical failure modes so phase 2's iterations are all conceptual.**
+- **IN PHASE 2, ENGAGE — DO NOT PATCH.** The efficient reflex is: Doug says the prose is off, Claude
+  rewrites it, both move on. **That reflex strips out the learning.** When he pushes back, say why
+  it was written that way, what the alternative costs, and where the concept actually sits — and let
+  him push again. **Slower on purpose**, because the dialogue is the instrument and the edit is the
+  residue.
+- **AND TOUR PROSE IS NOT WORKDAY WORK.** The two-mode split (`CLAUDE.md`) puts refactoring and bug
+  hunting in Doug's workdays. It now has a reason beyond scheduling: **improving an explanation
+  alone consumes the material his learning runs on.** Fixing a checker-caught number, a dead link or
+  a stale citation is fine. **Rewriting an explanation unsupervised is not Claude's to do.**
+
 ### Correctness is Claude's job. Effectiveness is Doug's, and Claude cannot do it at all
 
 **This corrects something Claude wrote on 2026-08-22** — that Doug is the instrument for whether
@@ -134,11 +161,11 @@ fact-check.** The reports only he can produce are *"I couldn't have guessed that
 this twice"*, *"this arrived before I needed it"*, *"I don't know why you're telling me this yet."*
 Those are unrecoverable if unsaid. Whether a number is right is Claude's problem and the checkers'.
 
-**FIRST ENCOUNTER IS NON-RENEWABLE, PER TOUR.** A tour can be walked many times; it can be *met*
-once. Walking a weak draft spends the sharpest measurement available on something Claude could have
-fixed alone — which is why phase 1 must not settle for "correct". **It also means Doug has already
-partly spent his first encounter with `index-reduction.md`**, the tour that has to be the best; for
-that one the freshest available reader may not be him.
+**First encounter is somewhat renewable, and Claude over-weighted it.** He argued a tour can be
+walked many times but *met* once, and that Doug had therefore partly spent his best measurement on
+`index-reduction.md`. **Doug, 2026-08-22:** *"I often re-read articles and books, and sometimes
+treat re-reads as first encounters. Let's not worry so much about that first encounter stuff."* So
+it is a mild reason to make drafts good, not a resource to ration a walk around.
 
 ### Why a textbook is correct and ineffective, and why that is not a failure of effort
 

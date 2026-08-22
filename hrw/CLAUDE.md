@@ -594,6 +594,13 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > | mornings / evenings | **walking tours** — teaching dialogue | ~6 s per iteration | conversational |
 > | workdays | **refactoring + bug hunting** — low supervision | ~0 | the FULL ~220 s gate |
 >
+> **TOUR PROSE IS NOT WORKDAY WORK, and the reason is not scheduling** *(Doug, 2026-08-22)*: *"most
+> of my conceptual learning happens when iterating with you during phase 2 walks… making the tour
+> prose correct and personally effective during those phase 2 walks is my primary learning exercise
+> right now."* **Improving an explanation alone consumes the material his learning runs on.** Fixing
+> a checker-caught number, a dead link or a stale citation is fine; **rewriting an explanation
+> unsupervised is not Claude's to do.** See [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md).
+>
 > **The gate lands on Claude in the workday mode, not on Doug — which is why `#48` closed.** The
 > friction Doug named was *his* waiting, and tour work does not pay it.
 >
