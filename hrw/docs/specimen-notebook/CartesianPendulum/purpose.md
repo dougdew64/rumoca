@@ -82,6 +82,17 @@ So the corpus now spans the full range:
 Counts read from `trace/index_reduction.json` and `trace/structural.json`, generated
 2026-08-18. The upstream question is filed in [`../../upstream-issues.md`](../../upstream-issues.md).
 
-**Not yet round-tripped through System Modeler** — which is the obvious next check, since an
-independent implementation reducing this model is what would turn "Rumoca implements a narrower
-strategy" from a reading into an adjudicated fact.
+**Round-tripped through System Modeler 2026-08-22, and the reading held.** Wolfram System Modeler
+**15.0** loads this file unmodified and simulates it 0 → 10 s cleanly — and reduces it to **two**
+states by dynamic state selection (`$dynState` sets over `{vy}` and `{y}`), against Rumoca's four.
+A planar pendulum has one degree of freedom, so two is the right answer.
+
+The oracle's `lambda` peaks at **29.4293** at the bottom of the swing, against a hand-computed rod
+tension *m*(*g* + *v*²/*L*) = **29.43** — so the comparison rests on a number that can be checked
+without either tool. The full record, the version string, and the three things this run does *not*
+establish are in [`../../upstream-issues.md`](../../upstream-issues.md).
+
+**So "Rumoca implements a narrower strategy" is now an adjudicated fact rather than a reading**,
+and the last alternative explanation — that the specimen itself is malformed — is closed.
+**Charter §4.3 still fails for this specimen, deliberately**: it runs in one toolchain and not the
+other, which is the disagreement it was authored to hold.

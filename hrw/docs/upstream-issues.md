@@ -530,8 +530,9 @@ scope. All three are reasonable answers and the diagnostics would differ for eac
 model that cannot be reduced could say so where it is diagnosed, rather than surfacing as a
 step-size failure four decimal places into the simulation.
 
-**Not yet adjudicated against System Modeler**, which is the obvious next step and would turn the
-reading into a fact.
+**ADJUDICATED AGAINST SYSTEM MODELER 2026-08-22 — outcome 1, the reading holds.** It simulates
+cleanly, and it reduces the system to **two** states by dynamic state selection. The reading above
+is no longer an inference; see *The adjudication* below.
 
 ### How to adjudicate it — for whichever machine has System Modeler
 
@@ -559,6 +560,76 @@ tour for this gesture** and its stop 3 is the worked example of asking the other
 
 **And it settles charter §4.3 for this specimen**, which requires *"compiles and runs equivalently
 in both"* — a bar `CartesianPendulum` currently fails on the Rumoca side, deliberately.
+
+### The adjudication — run 2026-08-22. OUTCOME 1: it simulates cleanly
+
+**Tool:** Wolfram System Modeler **15.0**, via `WSMLink` *"15.0.0 (build ID 7, installer build ID
+2) created on Wed 6 May 2026 07:49:21"*, driven from Wolfram Language 15.0.0 for Microsoft Windows
+(64-bit), 19 May 2026. Three System Modeler versions are installed on this machine (14.2, 14.3,
+15.0); **the build directory confirms 15.0 is the one that ran.**
+
+```wl
+Import["…/hrw/specimens/CartesianPendulum.mo", "MO"]
+SystemModelSimulate["CartesianPendulum", {0, 10}]
+```
+
+**It loaded as-is** — no edit, no MSL, no Wolfram extension — **and simulated the full interval.**
+`ExitCode` 0, `SimulationInterval` `{0., 10.}`, 2001 output points, no warning of any kind.
+
+**AND IT REDUCED THE SYSTEM TO TWO STATES, WHICH IS THE PART WORTH MORE THAN "IT RAN".** With
+`SystemModelSimulate::ddss` and `::dinit` enabled:
+
+```text
+At time 0. s: Dynamic state set no. 0 selection at start {vy}.
+At time 0. s: Dynamic state set no. 1 selection at start {y}.
+At time 0. s: Initialization of states:
+dollar_dynState.set0.x[1] = 0
+dollar_dynState.set1.x[1] = 0
+```
+
+**Two states, chosen at runtime, against Rumoca's four.** A planar pendulum on a rigid rod has one
+degree of freedom, so two states is the right answer and four is the unreduced count. The
+`$dynState` sets are the **dummy-derivative method with dynamic state selection** — the
+differentiated constraints are kept and, at each point, two of the four candidates are demoted to
+algebraic, the choice switching because no single pair stays non-singular through a full swing.
+
+**The physics checks out, so "it produced numbers" is not the whole claim:**
+
+| check | value |
+|---|---|
+| `lambda` peak | **29.4293** at *t* = 1.775 s, where (*x*, *y*) = (−0.0039, −0.99999) — the bottom |
+| analytic rod tension there, *m*(*g* + *v*²/*L*) | **29.43** |
+| constraint drift, max &#124;*x*² + *y*² − *L*²&#124; over 0–10 s | **1.23 × 10⁻⁴** at tolerance 1e-6 |
+
+The peak matches to four significant figures at the point the pendulum is lowest, which is where
+an independent hand calculation is available. The constraint drift is small and is the residual
+one expects from integrating a *differentiated* constraint rather than enforcing the original.
+
+### What this establishes, and what it does not
+
+**Establishes** — the outcome-1 row above, without qualification: an independent, mainstream
+implementation reduces this system, so **Rumoca's index reduction is narrower than a mainstream
+compiler's**, and the entry above is a well-evidenced gap rather than an open reading. The
+corroborating detail is stronger than the bare outcome asked for: the oracle does not merely
+succeed, it demotes exactly the two states the physics says are redundant.
+
+**Does not establish**, and these are the over-claims to avoid:
+
+- **Not that Rumoca *should* do this.** Whether general nonlinear-constraint reduction is intended
+  and missing, intended and deferred, or deliberately out of scope remains the maintainers'
+  question — which is the whole point of filing this as a question. The adjudication removes the
+  *"maybe the model is wrong"* branch, nothing more.
+- **Not that System Modeler runs Pantelides.** `$dynState` names the **dummy-derivative** method,
+  which is what consumes a differentiated system; the messages do **not** name the algorithm that
+  decided *what* to differentiate. Do not cite this run as evidence about Pantelides specifically.
+- **Nothing about Rumoca's private sim path or CasADi target**, which is `docs/ideas.md` #5's
+  separate un-park condition (b).
+- **The trace records two events, at 0 s and 10 s** — the interval endpoints. So the output does
+  **not** show a mid-run state-set switch, even though the selection mechanism is dynamic. Whether
+  switching is reported as an event was not determined.
+
+**Charter §4.3 is now settled for this specimen and still fails**: it runs in one toolchain and
+not the other, which is the disagreement the specimen was authored to hold.
 
 ## PERFORMANCE QUESTIONS -- not defect claims
 

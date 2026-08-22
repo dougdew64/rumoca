@@ -92,10 +92,16 @@ implementation task.
 > constraint, which is a high-index DAE** — so the four-bar is not one specimen among many, it is
 > the representative of the class his degree is about, with `CartesianPendulum` as its minimal case.
 >
-> **The owed System Modeler adjudication now gates BOTH items.** This entry already records that the
-> failure was *"verified on the barest Cartesian pendulum, not a library bug"* — one oracle run says
-> whether that is Rumoca's gap or the problem's difficulty, and `docs/upstream-issues.md` has the
-> three outcomes decided in advance.
+> **✅ THE SYSTEM MODELER ADJUDICATION IS DONE — 2026-08-22, and it answers BOTH items.** This entry
+> already recorded that the failure was *"verified on the barest Cartesian pendulum, not a library
+> bug"*; the oracle run says which side that belongs to. **System Modeler 15.0 simulates the
+> pendulum cleanly and reduces it to two states**, so the difficulty is **Rumoca's gap, not the
+> problem's**. Record in `docs/upstream-issues.md`.
+>
+> **Un-park condition (a) is unchanged and still unmet** — it asks for *Rumoca* to gain
+> nonlinear-constraint reduction, which no oracle run can supply. **What closed is the doubt about
+> whether that was a reasonable thing to ask for**, and the four-bar is therefore parked on a known
+> gap rather than on an open question.
 
 Captured 2026-07-20 (Doug + finding). The charter's Arc-4 specimen is a four-bar / parallelogram
 linkage (nonlinear loop-closure → index-3). It is **deferred**: Rumoca's Rust-path index reduction at
@@ -6295,10 +6301,18 @@ curiosity.** See [`working-with-doug.md`](working-with-doug.md) for why any of i
 
 ### Three prerequisites, in order — and the first can retire the whole item
 
-1. **THE ORACLE EXPERIMENT IS OWED.** Simulate `CartesianPendulum` in System Modeler before
-   concluding Rumoca *should* do this. `docs/upstream-issues.md` records all three outcomes decided
-   in advance so the result cannot be read to taste — **and one of them retires the premise.**
-   Standing practice is *oracle first, then Rumoca* (`#43`).
+1. ~~**THE ORACLE EXPERIMENT IS OWED.**~~ ✅ **DONE 2026-08-22 — outcome 1, and the premise
+   SURVIVES.** Wolfram System Modeler 15.0 simulates `CartesianPendulum` cleanly and reduces it to
+   **two** states by dynamic state selection, against Rumoca's four. The record is
+   `docs/upstream-issues.md`. **The outcome that would have stopped this item did not occur**, so
+   the gap is adjudicated rather than inferred and prerequisite 1 is discharged.
+
+   **One caveat that binds THIS item specifically:** the oracle's messages name the
+   **dummy-derivative** method (`$dynState`), which is what *consumes* a differentiated system —
+   they do **not** name the algorithm that decided what to differentiate. **So the run is not
+   evidence that System Modeler runs Pantelides**, and it must not be cited as such in support of
+   implementing it here. What it establishes is that the reduction is achievable, not which
+   algorithm achieves it.
 2. **FINISH WALKING INDEX REDUCTION.** Implementing before understanding inverts Doug's own
    principle, and `index-reduction.md` is mid-walk.
 3. **ASK UPSTREAM FIRST.** Pattern-based may be a deliberate choice, or already on someone's

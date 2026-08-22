@@ -1139,14 +1139,23 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > started all of this. A funnel that did nothing also says so, which is `CartesianPendulum`'s
 > whole lesson.
 >
-> **⟶ IF THIS SESSION IS ON THE MACHINE WITH SYSTEM MODELER, THIS IS THE LIVE TASK.** Doug switched
-> machines on 2026-08-22 specifically to run it. Simulate `hrw/specimens/CartesianPendulum.mo`,
-> 0 → 10 s, default solver. The protocol and **what each of the three outcomes establishes** are in
-> `docs/upstream-issues.md` under the index-reduction entry — **decided in advance so the result is
-> not read to taste.**
+> ### ✅ THE ORACLE RUN IS DONE — 2026-08-22, OUTCOME 1. Do not re-run it
 >
-> **IT NOW GATES FOUR THINGS, NOT ONE** *(the convergence noticed 2026-08-22)*, which is why it is
-> the cheapest high-value experiment on the board:
+> **Wolfram System Modeler 15.0 loads `CartesianPendulum.mo` unmodified and simulates it 0 → 10 s
+> cleanly — and reduces it to TWO states against Rumoca's four**, by dynamic state selection
+> (`$dynState` sets over `{vy}` and `{y}`). A planar pendulum has one degree of freedom, so two is
+> the right answer. `lambda` peaks at **29.4293** at the bottom of the swing against a hand-computed
+> *m*(*g* + *v*²/*L*) = **29.43**, so the comparison rests on a number checkable without either tool.
+>
+> **The full record — version string, commands, the physical checks, and the FOUR things this run
+> does not establish — is `docs/upstream-issues.md` under the index-reduction entry.** Read it there
+> rather than recalling it; in particular it does **not** license citing this run as evidence about
+> Pantelides specifically, which is the tempting over-claim.
+>
+> **The premise is NOT retired**, which was the outcome that would have stopped `#83`. Rumoca's
+> index reduction is narrower than a mainstream compiler's, as an adjudicated fact.
+>
+> **What the result gated** *(the convergence noticed 2026-08-22)*:
 >
 > | | what the result decides |
 > |---|---|
@@ -1155,11 +1164,21 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > | `docs/ideas.md` **#83** | whether general Pantelides is a real gap worth Doug implementing |
 > | `docs/ideas.md` **#5** | whether the four-bar linkage — the charter's Arc-4 specimen, and the representative of the class his robotics degree is about — can be un-parked |
 >
-> **One outcome retires the premise**, and that is the point of pre-committing them: if System
-> Modeler also declines the model, the reading was wrong or the model is, and `#83` should not be
-> started. **Record the result with the System Modeler version**, and update
-> `specimen-notebook/CartesianPendulum/purpose.md`, whose Provenance section still says the
-> round-trip has not been done.
+> **Three of the four are discharged in the repository**: `upstream-issues.md` carries the
+> adjudication, `specimen-notebook/CartesianPendulum/purpose.md`'s Provenance records the
+> round-trip, and `#83`'s first prerequisite is met — so `#83` is live, and `#5`'s doubt about
+> whether the four-bar's difficulty was Rumoca's or the problem's is closed.
+>
+> **⟶ THE FOURTH IS OWED AND IS DOUG'S TO DIRECT: `index-reduction.md` Stop 5.** The tour still
+> presents the narrowness as Claude's *reading* and its *"What this tour cannot check"* section
+> still says the adjudication *"has not been run"* — which is now false. **That is tour prose in the
+> document Doug is mid-walk on**, so it is not Claude's to rewrite unsupervised; raise it at the
+> next walk. `the-oracle.md` stop 3 also now has a real worked example available to it.
+>
+> **Pre-committing the outcomes worked and is worth repeating.** One of the three would have
+> retired the premise and stopped `#83`, so the result could not be read to taste — and the run
+> returned more than the outcome asked for, because the debug messages name the *state count*, not
+> merely success.
 >
 > **AND ON A DIFFERENT MACHINE, CHECK THE PERMISSION ALLOWLIST FIRST** — `.claude/` is gitignored by
 > upstream, so it does not travel; see *PER-MACHINE SETUP* below. That check is Claude's to run
