@@ -1247,22 +1247,209 @@ Some prose.
     /// Returns `None` when the marker is absent, which callers must treat as a
     /// **finding** rather than as "nothing to check": an unmarked table is exactly a
     /// table nobody verifies.
-    fn marked_rows(text: &str, marker: &str, specimen: &str) -> Option<Vec<Vec<String>>> {
+    ///
+    /// # The search is BOUNDED to the table immediately following the marker
+    ///
+    /// **It used to `skip_while(|l| !l.starts_with("| `"))` with no bound, and that is
+    /// worse than it looks** *(found 2026-08-22, by reading — not by a failure)*. Delete
+    /// a guarded table but leave its marker, and the scan would run on to the *next*
+    /// backticked table anywhere later in the file and compare against **that** —
+    /// `pane-groups: RcCircuit` silently binding to the `pane-origins` table. Deleting a
+    /// *marker* fails loudly; deleting the *table* under one did something quieter and
+    /// wrong. Inserting any backticked table between a marker and its own had the same
+    /// effect.
+    ///
+    /// So the walk now stops at the first line that is neither blank nor part of a
+    /// table: a marker's region is the table that follows it, and nothing else. An empty
+    /// result therefore means *"marker present, table missing"*, which callers report
+    /// rather than skip.
+    pub(super) fn marked_rows(
+        text: &str,
+        marker: &str,
+        specimen: &str,
+    ) -> Option<Vec<Vec<String>>> {
         let needle = format!("<!-- {marker}: {specimen} -->");
         let start = text.find(&needle)?;
-        Some(
-            text[start + needle.len()..]
-                .lines()
-                .skip_while(|l| !l.starts_with("| `"))
-                .take_while(|l| l.starts_with("| `"))
-                .map(|l| {
-                    l.trim_matches('|')
+        let mut rows = Vec::new();
+        let mut in_table = false;
+        for line in text[start + needle.len()..].lines() {
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                // Blank lines are allowed *before* the table (markdown wants one after
+                // an HTML comment) but end it once it has started.
+                if in_table {
+                    break;
+                }
+                continue;
+            }
+            if !trimmed.starts_with('|') {
+                break;
+            }
+            in_table = true;
+            // Header and `|---|` separator rows do not start with a backticked cell.
+            if trimmed.starts_with("| `") {
+                rows.push(
+                    trimmed
+                        .trim_matches('|')
                         .split('|')
                         .map(|c| c.trim().trim_matches('`').to_owned())
-                        .collect()
-                })
-                .collect(),
-        )
+                        .collect(),
+                );
+            }
+        }
+        Some(rows)
+    }
+
+    /// Every guarded region of a tour document, as `(marker, rows)` pairs.
+    ///
+    /// **This is the fingerprint that decides FAST versus FULL**, and it exists because
+    /// that decision was previously made by remembering. See
+    /// [`editing_a_guarded_tour_table_needs_the_full_gate`].
+    ///
+    /// Deliberately built from the same [`marked_rows`] the slow checkers use, so the
+    /// two can never disagree about what "guarded" means — a second parser would be a
+    /// second definition, and the one that drifted would be the one nobody ran.
+    pub(super) fn guarded_regions(text: &str) -> Vec<(String, Vec<Vec<String>>)> {
+        let mut out = Vec::new();
+        for line in text.lines() {
+            let trimmed = line.trim();
+            let Some(rest) = trimmed.strip_prefix("<!-- pane-") else {
+                continue;
+            };
+            let Some(inner) = rest.strip_suffix("-->") else {
+                continue;
+            };
+            // `groups: RcCircuit ` -> ("groups", "RcCircuit")
+            let Some((marker, specimen)) = inner.trim().split_once(':') else {
+                continue;
+            };
+            let (marker, specimen) = (marker.trim(), specimen.trim());
+            let rows = marked_rows(text, &format!("pane-{marker}"), specimen).unwrap_or_default();
+            out.push((format!("pane-{marker}: {specimen}"), rows));
+        }
+        out
+    }
+
+    /// **Editing a guarded tour table must not be committed behind the FAST gate.**
+    ///
+    /// # The gap this closes, and why it was not a rule problem
+    ///
+    /// `CLAUDE.md`'s gate procedure greps the staged **paths**: anything under `src/`,
+    /// `crates/`, `examples/` or `Cargo.toml` means FULL, and everything else means
+    /// FAST. A tour edit is docs-only, so it returns FAST — **correctly, for the prose
+    /// that is most of a walk's output.** But the five `<!-- pane-* -->` tables in
+    /// `connect-expansion.md` are verified by *slow* tests, so editing one and running
+    /// FAST means the verification does not happen: a green suite over an unchecked
+    /// claim. **That is the silent wrong negative this repository treats as the error
+    /// nobody catches**, because acting on it means *not looking*.
+    ///
+    /// The rule already said *"editing one of those tables means FULL, whatever the grep
+    /// says"*. **It was enforced by remembering** — Doug asked on 2026-08-22 whether any
+    /// edit to that tour triggers FULL, which is exactly the question a remembered rule
+    /// produces. This makes it fail by name instead.
+    ///
+    /// # Why it lives in the FAST suite, which is the whole point
+    ///
+    /// It is gated **off** under `slow-tests`: in a FULL run the real checkers are
+    /// executing, so there is nothing to warn about. It fires only in the cheap suite —
+    /// **the cheap gate reports that the cheap gate is insufficient.**
+    ///
+    /// # Why it compares CONTENT rather than diff line numbers
+    ///
+    /// Mapping hunk offsets onto marked regions would re-derive, badly, something git
+    /// already knows. Instead this extracts every guarded region from the working tree
+    /// and from `HEAD` and compares them, which states the property directly — *did a
+    /// guarded table change?* — and catches a marker being added or deleted for free.
+    ///
+    /// # What it cannot claim
+    ///
+    /// **It is silent outside a git checkout.** No repository, no `HEAD`, or no `git` on
+    /// `PATH` and it passes, because there is no baseline to compare against. That is a
+    /// wrong negative and it is stated rather than hidden; the alternative is a test that
+    /// fails on a source tarball. The pure half — [`guarded_regions`] — is covered by
+    /// [`tests_guarded_regions`], which needs no git at all.
+    #[test]
+    #[cfg_attr(
+        feature = "slow-tests",
+        ignore = "the FULL gate is running, so the guarded tables are being checked for real"
+    )]
+    fn editing_a_guarded_tour_table_needs_the_full_gate() {
+        let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let dir = hrw.join("docs/fixture-tours");
+        let repo = hrw.parent().expect("hrw lives inside the workspace");
+
+        let mut changed: Vec<String> = Vec::new();
+        let mut compared = 0usize;
+
+        for entry in std::fs::read_dir(&dir).expect("fixture-tours must be readable") {
+            let path = entry.expect("readable dir entry").path();
+            if path.extension().and_then(|e| e.to_str()) != Some("md") {
+                continue;
+            }
+            let working = std::fs::read_to_string(&path).expect("readable tour");
+            let here = guarded_regions(&working);
+            if here.is_empty() {
+                continue; // no guarded tables: prose edits are genuinely FAST
+            }
+
+            let name = path.file_name().expect("named file").to_string_lossy();
+            let rel = format!("hrw/docs/fixture-tours/{name}");
+            let Some(head) = file_at_head(repo, &rel) else {
+                // New file, or no git. Either way there is no baseline; say nothing.
+                continue;
+            };
+            compared += 1;
+            let before = guarded_regions(&head);
+            if before == here {
+                continue;
+            }
+            for (marker, rows) in &here {
+                let was = before.iter().find(|(m, _)| m == marker).map(|(_, r)| r);
+                if was != Some(rows) {
+                    changed.push(format!("{name}: `<!-- {marker} -->`"));
+                }
+            }
+            for (marker, _) in &before {
+                if !here.iter().any(|(m, _)| m == marker) {
+                    changed.push(format!("{name}: `<!-- {marker} -->` was REMOVED"));
+                }
+            }
+        }
+
+        assert!(
+            changed.is_empty(),
+            "a guarded tour table changed, and this is the FAST suite \u{2014} those tables \
+             are verified against a real compile by slow-gated tests, so committing now \
+             would land an unchecked claim behind a green suite.\n\n  {}\n\nRun the FULL \
+             gate before committing:\n  cargo test -p hrw --lib --test msl_resolve \
+             --features slow-tests -- --test-threads=1\n\n(If a table's numbers are \
+             genuinely new, the FULL gate is what confirms them against the pane.)",
+            changed.join("\n  "),
+        );
+
+        // Non-vacuity: this passing must mean "compared and found equal", never "found
+        // nothing to compare". Outside a git checkout `compared` is 0 and the check is
+        // honestly inert -- see the doc comment.
+        if compared == 0 {
+            eprintln!(
+                "note: no tour compared against HEAD (not a git checkout?) \u{2014} \
+                 the guarded-table gate check is inert in this environment"
+            );
+        }
+    }
+
+    /// One file's contents at `HEAD`, or `None` if git cannot answer.
+    fn file_at_head(repo: &std::path::Path, rel: &str) -> Option<String> {
+        let out = std::process::Command::new("git")
+            .arg("-C")
+            .arg(repo)
+            .arg("show")
+            .arg(format!("HEAD:{rel}"))
+            .output()
+            .ok()?;
+        out.status
+            .success()
+            .then(|| String::from_utf8_lossy(&out.stdout).into_owned())
     }
 
     /// **A tour's claims about the equation-sheet PANE match what the pane will show.**
@@ -3604,5 +3791,98 @@ mod tests_orphaned_docs {
             "a well-formed block must not report: {:?}",
             hits(clean),
         );
+    }
+}
+
+/// **The guarded-region parser, tested without git or a compile.**
+///
+/// [`tests::editing_a_guarded_tour_table_needs_the_full_gate`] needs a git checkout to
+/// say anything, and is honestly inert without one. These do not: they pin the two
+/// properties the whole FAST/FULL decision rests on — **a prose edit is not a guarded
+/// change, and a table edit is** — as pure functions of text.
+///
+/// They are also the must-fire half. A fingerprint that ignored the rows would call
+/// every edit safe, and nothing else here would notice.
+#[cfg(test)]
+mod tests_guarded_regions {
+    use super::tests::{guarded_regions, marked_rows};
+
+    /// A tour with one guarded table and prose on both sides of it.
+    fn tour(rows: &str, prose: &str) -> String {
+        format!(
+            "# A tour\n\n{prose}\n\n<!-- pane-groups: RcCircuit -->\n\n\
+             | group | rows |\n|---|---|\n{rows}\n\nMore prose about {prose}.\n"
+        )
+    }
+
+    #[test]
+    fn editing_prose_is_not_a_guarded_change() {
+        let before = tour("| `Component equations` | 16 |", "the voltages are equal");
+        let after = tour("| `Component equations` | 16 |", "the potentials are equal");
+        assert_ne!(before, after, "the fixture must actually differ");
+        assert_eq!(
+            guarded_regions(&before),
+            guarded_regions(&after),
+            "a prose edit was reported as a guarded change, which would send every walk \
+             edit to the 220s gate",
+        );
+    }
+
+    #[test]
+    fn editing_a_guarded_row_is_a_guarded_change() {
+        let before = tour("| `Component equations` | 16 |", "same prose");
+        let after = tour("| `Component equations` | 17 |", "same prose");
+        assert_ne!(
+            guarded_regions(&before),
+            guarded_regions(&after),
+            "a changed table row was reported as safe: this is the silent wrong negative \
+             the gate check exists to prevent",
+        );
+    }
+
+    #[test]
+    fn removing_a_marker_is_a_guarded_change() {
+        let before = tour("| `Component equations` | 16 |", "same prose");
+        let after = before.replace("<!-- pane-groups: RcCircuit -->", "");
+        assert!(
+            !guarded_regions(&before).is_empty() && guarded_regions(&after).is_empty(),
+            "removing a marker must change the fingerprint -- it removes a table from \
+             verification entirely",
+        );
+    }
+
+    /// **A marker whose table was deleted must not adopt the next table in the file.**
+    ///
+    /// The bounded walk added 2026-08-22. Unbounded, `pane-groups` here would skip past
+    /// the prose and return the `pane-origins` rows, comparing one claim against another
+    /// model's numbers and reporting confident nonsense.
+    #[test]
+    fn a_marker_whose_table_is_gone_does_not_adopt_a_later_one() {
+        let text = "<!-- pane-groups: RcCircuit -->\n\nThe table that belonged here is gone.\n\n\
+                    <!-- pane-origins: RcCircuit -->\n\n| origin | rows |\n|---|---|\n\
+                    | `connect(src.p, R.p)` | 2 |\n";
+        let groups = marked_rows(text, "pane-groups", "RcCircuit")
+            .expect("the marker is present, so this is Some");
+        assert!(
+            groups.is_empty(),
+            "a marker with no table adopted a later table's rows: {groups:?}",
+        );
+        let origins = marked_rows(text, "pane-origins", "RcCircuit").expect("marker present");
+        assert_eq!(
+            origins.len(),
+            1,
+            "the later table must still parse on its own"
+        );
+    }
+
+    /// Blank lines between the marker and its table are normal markdown and must not
+    /// end the region before it starts.
+    #[test]
+    fn a_blank_line_after_the_marker_does_not_end_the_region() {
+        let text = "<!-- pane-groups: RcCircuit -->\n\n| group | rows |\n|---|---|\n\
+                    | `Component equations` | 16 |\n| `Flow conservation` | 3 |\n";
+        let rows = marked_rows(text, "pane-groups", "RcCircuit").expect("marker present");
+        assert_eq!(rows.len(), 2, "both data rows must be read: {rows:?}");
+        assert_eq!(rows[0], vec!["Component equations", "16"]);
     }
 }

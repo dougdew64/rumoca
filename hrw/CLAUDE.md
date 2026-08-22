@@ -638,9 +638,20 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >
 > **TWO TRAPS, both of which have cost the full 220 s gate before:**
 >
-> - **`connect-expansion.md` is the one expensive tour.** It is the only one carrying
->   `<!-- pane-groups -->` tables, which slow-gated tests verify against a real compile. **Editing
->   one of those tables means FULL**, whatever the diff-grep says. No other tour has them.
+> - **`connect-expansion.md` is the one expensive tour — but only its five guarded tables are.**
+>   It is the only tour carrying `<!-- pane-groups -->` / `pane-origins` / `pane-frames` tables,
+>   which slow-gated tests verify against a real compile. **Editing one of those tables means
+>   FULL**, whatever the diff-grep says; **editing its prose does not, and never did.**
+>
+>   **YOU NO LONGER HAVE TO REMEMBER THAT** *(built 2026-08-22)*.
+>   `doc_citations::editing_a_guarded_tour_table_needs_the_full_gate` compares every guarded region
+>   against `HEAD` and **fails by name in the FAST suite** if one changed, naming the marker and
+>   printing the FULL command. It is gated *off* under `slow-tests` — in a FULL run the real
+>   checkers are executing, so **the cheap gate is the only place the warning is useful.**
+>
+>   **The gain is assurance, not permission.** Prose edits were always FAST; what was missing was
+>   any check that an edit believed to be prose actually was one. The filtered iteration line
+>   catches it, so a green `doc_citations tour` run now means FAST was genuinely the right gate.
 > - **Any `##` heading edit changes `CATALOGUE.md`.** Forget `gen_tour_catalogue` and
 >   `tour_catalogue_is_current` fails. The order is `cargo fmt` → generators → checks, and getting
 >   it backwards has cost the whole gate four times.
@@ -1010,6 +1021,12 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > **A tour's group table is machine-checked** by
 > `doc_citations::tour_group_tables_match_the_real_equation_sheet` (slow-gated), against a real
 > compile. Mark the table `<!-- pane-groups -->`.
+>
+> **A MARKER'S REGION IS THE TABLE THAT FOLLOWS IT, AND NOTHING ELSE** *(bounded 2026-08-22)*. The
+> scan used to run forward unbounded to the next backticked row, so **deleting a table while
+> leaving its marker made that marker silently adopt the next table in the file** — `pane-groups`
+> comparing against `pane-origins` rows. A missing *marker* always failed loudly; a missing *table*
+> did not. `a_marker_whose_table_is_gone_does_not_adopt_a_later_one` is the guard.
 >
 > ### What a walk still cannot be replaced by
 >
