@@ -87,7 +87,7 @@ the distinction is what makes each algorithm the obvious choice rather than an a
 
 | graph | tour | vertices | edges | question asked | algorithm |
 |---|---|---|---|---|---|
-| **connection** | connect-expansion | connector variables | the `connect` statements, **undirected** | connected components | union-find |
+| **connection** | connect-expansion | connector variables | **one edge per connector member**, per `connect`, **undirected** | connected components | union-find |
 | **incidence** | matching | equations ∪ unknowns, **bipartite** | "this equation mentions this unknown" | maximum matching | augmenting paths |
 | **dependency** | blt-ordering | equations | derived from the matching, **directed** | *strongly* connected components | Tarjan |
 

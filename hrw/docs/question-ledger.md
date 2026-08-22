@@ -431,3 +431,144 @@ have spent his attention before he had a reason to want it.
 **The transferable rule for tour authoring:** *a tour's job is to make the reader able to ask the
 next question, not to answer it.* That is the operational meaning of "not too little, not too
 much", and it gives the boundary a test rather than a feeling.
+
+---
+
+## 2026-08-22 — the SAME sentence as 2026-08-12, because the repair did not survive a rewrite
+
+**Doug, verbatim:** *"In the overview, there's an assertion that the connect statement is an edge in
+a graph. That seems wrong. Are the number of graphs which are involved determined by the number of
+the types of connector variables which are involved? In other words, for this example, isn't there a
+graph of voltage variables and a graph of current variables?"*
+
+**Traces back to:** `connect-expansion.md`'s lead paragraph — **the same sentence as the 2026-08-12
+entry above** — and to `the-concepts.md`'s three-graphs table, which carried the same flaw in its
+*edges* column. **Medium:** HRW tour, first question of the re-walk. **Repeat: second asking of one
+sentence, ten days apart.**
+
+### This is the repeat case, and the cause is NOT that the concept is hard
+
+`CLAUDE.md` says a repeat branches two ways — the concept is hard, or the thing is not visible.
+**Neither applies.** Doug did not merely detect the imprecision this time; he proposed the correct
+model himself and was essentially right. The concept landed. **The prose regressed.**
+
+**The regression is in the commit history, not inferred:**
+
+| commit | date | the lead paragraph |
+|---|---|---|
+| `bd84defb` | 08-08 | *"one edge in a graph, and the graph is **solved** before any equation exists"* |
+| `21f7cbb0` | 08-12 | **the repair** — a block quote naming the graph, its vertices *"one per member of every connector instance"*, its edges, and its undirectedness |
+| `2dfbb504` | **08-13** | **the repair is gone.** Back to *"one edge in a graph … until that graph has been **solved**"* |
+
+**The 2026-08-12 fix survived one day.** The rewrite that made this tour "the template for all other
+tours" reintroduced almost the original sentence, *including* the word "solved" that the fix had
+specifically removed. Nothing failed, because **no checker reads prose for meaning** — the link
+checker, the group-table checkers and the catalogue check were all green across that rewrite.
+
+**The rule this buys, and it generalises past tours:** *a repair with no checker is undone by the
+next rewrite of the file it lives in, and the loss is silent.* The repo already knows this shape for
+code (the must-fire rule) and for claims of absence (the `<!-- unbuilt: -->` tag). **Prose repairs
+have no such mechanism**, and this is the first measured instance of one being lost.
+
+### What the answer had to contain — and where Doug's model needed one adjustment
+
+**He was right that there is more than one graph, and right about which two, for this example.** The
+adjustment: the count is the number of connector **members**, not the number of **kinds**. Give a
+connector two potential members and a flow member and there are **three** graphs, two of them
+potential-kind. The kind never splits a graph — it decides *what equation the finished component
+generates*: *n* − 1 equalities for potential, exactly 1 sum for flow.
+
+`Pin` has two members, one of each kind, so **"members" and "kinds" coincide in `RcCircuit` and the
+example cannot discriminate them.** That is why the imprecise sentence survived two readings.
+
+### Verified against the source — and it SETTLES the inference flagged on 2026-08-12
+
+The 2026-08-12 entry closed with an explicit *"Inferred, not traced: that a Flow set shares its
+membership with the Potential set rather than having a union-find of its own."* **That inference was
+wrong, and it is now traced.** This file is append-only, so the correction is recorded here rather
+than in that entry.
+
+`crates/rumoca-phase-flatten/src/connections/mod.rs` builds **three** independent union-finds, one
+per kind, and the flow one is *not* derived from the potential one:
+
+- `potential_uf` — **global**, with the comment that merging or splitting scopes is equivalent
+  because *"N-1 for N variables either way"*.
+- `stream_uf` — global.
+- **flow** — `connect_primitive_vars` pushes flow pairs into a `flow_pairs` vector rather than
+  unioning them, and each **scope** then builds a fresh `scope_uf` from its own pairs. **Flow sets
+  get their own connected-components run, under a different scoping rule from potential.**
+
+And the reason no graph ever mixes members: `connect(a, b)` enumerates `a`'s sub-variables, takes
+each one's **suffix**, and pairs it with the variable in `b` having the matching suffix
+(`find_matching_var_b_indexed`). **No operation in the phase can produce a `.v — .i` edge.**
+
+### What was changed
+
+The lead paragraph now says *"an edge in each of several graphs, one per member of the connector"*
+and restores **connected components are computed** in place of "solved". `the-concepts.md`'s table
+row now says *"one edge per connector member, per `connect`"* — the vertices column was already
+right, and only the edges column undercounted.
+
+`connect-expansion.md` Act 1 has stated the correct version throughout, including on 2026-08-13
+while the intro contradicted it — **so the tour disagreed with itself for nine days and nothing
+could say so.**
+
+### Doug reclassified it, and the reclassification is the reason the rest of this entry exists
+
+**Doug, verbatim, 2026-08-22:** *"My biggest learning investment during the early stages of this
+project is my phase 2 walks of tours. During those phase 2 walks, my learnings are captured in the
+form of corrected prose in the tours. That corrected prose serves two purposes: 1. You are able to
+use that as a measurement of what I've learned and know. 2. I'm able to use the tour as a trusted
+reference during phase 3 walks. Losing the phase 2 prose is a seriously bad regression."*
+
+**Claude had filed this as imprecise wording — the cheapest of the four shapes.** It is not. Corrected
+tour prose **is the artifact the phase-2 walks produce**, and it is load-bearing twice over: it is the
+only measurement of what Doug knows, and it is what phase 3 treats as trustworthy. **A lost correction
+is lost learning, not a lost sentence.**
+
+### The audit that reclassification prompted — one confirmed loss, not a systemic one
+
+**The dangerous pattern is specific: a whole-document rewrite landing *after* a walk.** Found by
+listing every tour commit deleting ≥ 20 lines. Four tours had that exposure:
+
+| tour | rewrite | walked before it? | verdict |
+|---|---|---|---|
+| **connect-expansion** | `2dfbb504` **−213** (08-13) | corrected **08-12** | **LOST** — this entry |
+| index-reduction | `404779ee` −139, `3bb69db0` −131 | corrections landed **08-18, after** | safe |
+| dae-construction | `41f90923` **−286** (08-16) | walked 08-03 | substance survived |
+| matching | `117effa0` **−390** (08-17) | earlier walk | substance survived |
+
+**Both large conversions are clean.** `dae-construction` lost the *wording* of its states passage and
+kept the mechanism — *"a variable is a state exactly when some equation **differentiates** it"*.
+`matching` went **466 → 195** lines and still teaches both threads that looked dropped:
+equations-are-not-assignments in five places, and *"a rank deficiency of 1 means exactly one such
+pair"* — the answer to the 2026-07-29 rank question, intact. **The template conversions compressed;
+they did not delete.**
+
+### The audit's own weakness IS the finding
+
+Verdicts above were reached by grepping distinctive phrases and judging "substance survived" by eye.
+**Nothing in the repository marks which prose came out of a walk**, so Claude cannot reliably separate
+his own phase-1 draft from Doug's phase-2 correction — and a rewrite sees uniform prose and treats it
+as uniformly Claude's to replace. That is exactly what happened on 08-13.
+
+**Both of Doug's stated purposes rest on that missing mark:**
+
+- **Measurement** is not merely at risk, it has **never been available**. Reading the tours today
+  measures Claude's drafts back to himself.
+- **Trusted reference** needs the page to say which sentences Doug validated, and no page says.
+
+**So marking phase-2 prose is not only protection — it is the missing index of the learning**, and it
+is the prerequisite for purpose 1 rather than an improvement to it.
+
+### What was done about it
+
+**Doug authorised the checker the same day.** `<!-- walked: -->` regions, over the existing
+`tests_guarded_regions` machinery, which already diffs a marked region against `HEAD` and fails by
+name in the FAST suite. **It does not forbid changing walked prose** — Doug rewrites his own prose
+constantly and that must stay cheap. It forbids changing it *silently*, the
+`app_does_not_regrow_its_field_count` shape.
+
+**Which passages get marked is Doug's ruling, not Claude's.** Marking a draft as walked would defeat
+purpose 1 quietly, which is the failure this whole entry is about. Agreed approach: **mark during the
+walk, when a correction is made**, and backfill only the ledger-recorded ones.
