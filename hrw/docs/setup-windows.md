@@ -203,6 +203,30 @@ working arm shows `Armed: live_trace.rs:<line>`.
 > *Both the Node.js prerequisite and the broken install command were found the first time this
 > page was followed on a genuinely bare machine.*
 
+## 7a. Python — optional, and **`-X utf8` is not optional when it is used**
+
+Installed 2026-08-21 (3.14.7 as `python`/`python3`; the `py` launcher resolves to an older 3.9.13,
+so prefer `python`). `pip` 26.2.1. Nothing in HRW's build, test or run path needs it.
+
+**It defaults to cp1252 on this machine, and that breaks on this repository's own documents.** A
+bare `open()` on `docs/ideas.md` dies with `UnicodeDecodeError` at byte 223,322, and `print('⟶')`
+raises `UnicodeEncodeError` — every doc here carries em-dashes and arrows. **`python -X utf8`** (or
+`PYTHONUTF8=1`) fixes *both* stdout and file I/O and round-trips `— ⟶ × Σ` correctly. Verified
+2026-08-21.
+
+**What it is for, and what it is NOT for.** Use it for data work — summarising a 2,600-row fidelity
+or survey CSV, measurement arithmetic, ad-hoc analysis. **Do not use it, or any shell tool, to edit
+source files.** `CLAUDE.md` already forbids that ("do not generate source text through a shell"),
+and 2026-08-21 supplied three fresh demonstrations in one session: `perl` substitutions without a
+unique anchor silently hit the *first* match instead of the intended one, once corrupting an
+unrelated loop into non-compiling code and once perturbing a different test than the one being
+revert-checked — which made a must-fire check look like it had passed when it had never run.
+
+**The point is not that Python is worse than `perl`; it is that the Edit tool fails loudly.** It
+requires a unique match and errors when it does not find one, which is the property a silent
+wrong-occurrence edit lacks. Python was installed on the inference that Claude prefers it; the
+honest correction is that reaching for a scripting language to edit code was the mistake.
+
 ## 8. Claude Code's permission allowlist — per machine, and it does NOT travel
 
 **`.claude/` is gitignored by upstream Rumoca** (not by us), so a permission allowlist cannot be

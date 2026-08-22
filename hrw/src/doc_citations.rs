@@ -3509,7 +3509,15 @@ mod tests_orphaned_docs {
             ("tarjan_anim.rs", 2),
             ("tour_panel.rs", 1),
             ("ui_tests.rs", 5),
-            ("worker.rs", 19),
+            // 19 → 20 on 2026-08-21 (`docs/ideas.md` #48, lever C). Triaged, not
+            // waved through: the new hit is `worker.rs`'s
+            // `compile_specimen_headless_matches_worker` doc, where a wrapped line
+            // ends with a backtick and the next line is blank — the continuation-line
+            // shape that accounts for 65 of the tree's 87 hits. The block has one
+            // owner, that owner is documented, and the file has no undocumented item
+            // for an orphan to belong to, which is the triage shortcut this test's
+            // own doc prescribes.
+            ("worker.rs", 20),
         ];
 
         let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");

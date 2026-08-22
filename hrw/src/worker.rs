@@ -1802,6 +1802,26 @@ impl WorkerState {
         }
     }
 
+    /// The URIs of the `specimens/` documents **the session itself** currently holds.
+    ///
+    /// **Exists for `the_session_holds_at_most_one_specimen_document`**, which turns
+    /// a doc-comment claim that had gone stale into a checked one.
+    ///
+    /// **Asks `Session::document_uris`, deliberately — NOT `last_specimen_uri`.**
+    /// The first draft returned the tracker, which is circular: the tracker is
+    /// HRW's *belief* about what is registered, so a test reading it would pass
+    /// even if the session held every specimen ever compiled. The claim is about
+    /// the session, so the session has to be the one asked.
+    #[cfg(test)]
+    fn specimen_document_uris(&self) -> Vec<String> {
+        self.session
+            .document_uris()
+            .into_iter()
+            .filter(|uri| uri.replace('\\', "/").contains("/specimens/"))
+            .map(ToOwned::to_owned)
+            .collect()
+    }
+
     /// Rebuild the session from scratch and load each library root as a
     /// durable source set.
     ///
@@ -4603,9 +4623,18 @@ pub(crate) mod test_msl {
     ///
     /// `cargo test` runs test functions in parallel by default. Without the mutex,
     /// multiple tests would try to use the `Session` concurrently (which isn't
-    /// thread-safe). The mutex serializes access. The session accumulates each
-    /// specimen's document (distinct URIs), which is fine: `compile` qualifies the
-    /// requested model by its own URI.
+    /// thread-safe). The mutex serializes access.
+    ///
+    /// **The session holds at most ONE specimen document at a time**, not one per
+    /// specimen the suite has touched: `compile_target` removes the previous
+    /// specimen before registering the next (grep `last_specimen_uri`). This said
+    /// "accumulates each specimen's document (distinct URIs)" until 2026-08-21,
+    /// which stopped being true when that removal was added — checked now by
+    /// `the_session_holds_at_most_one_specimen_document` rather than asserted.
+    ///
+    /// **What a compile still inherits from the session's history is its resolved
+    /// state**, which is why compiling the same specimen at two points in one
+    /// session can differ — see `compiling_a_specimen_twice_is_reproducible`.
     /// `pub(super)`, deliberately not `pub(crate)`: it hands out `WorkerState`,
     /// which is private to `worker`, so a wider visibility would leak a private
     /// type. `worker::tests` needs it directly for the tests that drive the
@@ -5421,6 +5450,51 @@ mod tests {
             serde_json::to_string(&second).expect("serialize memoised parse"),
             "the memo returned documents that differ from the parse",
         );
+    }
+
+    /// **The session holds at most one specimen document, however many are compiled.**
+    ///
+    /// `compile_target` removes the previous specimen before registering the next
+    /// (`last_specimen_uri`), so the shared test session does not fill up with every
+    /// specimen the suite has touched. Two doc comments claimed the opposite until
+    /// 2026-08-21 — one of them explaining *why* a real test had to be restructured
+    /// — and nothing could notice, because the claim was prose.
+    ///
+    /// **Uses a bare `WorkerState` with no libraries loaded**, so it costs ~0.06 s:
+    /// the property is about document bookkeeping and needs no MSL. That is also the
+    /// control `docs/ideas.md` #48 measured a compile at 0.03 s in.
+    #[test]
+    fn the_session_holds_at_most_one_specimen_document() {
+        let mut w = WorkerState::new();
+        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/specimens");
+        // Three MSL-free specimens, so a bare session can resolve them.
+        let names = ["SingleInertia", "BouncingBall", "TwoLoops"];
+        let mut seen_uris = Vec::new();
+        for name in names {
+            let path = PathBuf::from(format!("{dir}/{name}.mo"));
+            let _ = w.compile(&path, &|_: FromWorker| {});
+            let held = w.specimen_document_uris();
+            assert_eq!(
+                held.len(),
+                1,
+                "after compiling {name} the session held {} specimen documents, not 1: {held:?}",
+                held.len(),
+            );
+            seen_uris.push(held[0].clone());
+        }
+        // Non-vacuity: each compile must actually have registered *its own* file,
+        // or "exactly one" would be satisfied by never replacing the first.
+        assert_eq!(
+            seen_uris.len(),
+            3,
+            "expected one registered URI per compile",
+        );
+        for (name, uri) in names.iter().zip(&seen_uris) {
+            assert!(
+                uri.contains(name),
+                "compiling {name} left {uri} registered instead",
+            );
+        }
     }
 
     /// **A changed fingerprint must defeat the memo — the must-fire half.**
@@ -7078,9 +7152,17 @@ mod tests {
     /// **Two back-to-back uncached compiles, not memo-versus-fresh.** The first
     /// version compared the memo against a fresh compile and failed on Resolve in
     /// the full suite while passing alone — because those two compiles happen at
-    /// *different points in the session's life*, and the shared session accumulates
-    /// every specimen the suite has touched. That difference is a property of the
+    /// *different points in the session's life*, and what a compile sees depends on
+    /// what the session has already done. That difference is a property of the
     /// session, not non-determinism, so the comparison could never have been stable.
+    ///
+    /// **This used to say the shared session "accumulates every specimen the suite
+    /// has touched", and that is not the mechanism** *(corrected 2026-08-21)*. The
+    /// session holds at most one specimen document — `compile_target` removes the
+    /// previous one — so the carried-over state is the session's *resolved* state,
+    /// not a pile of documents. **Which part of it produces the difference is not
+    /// established here**; the observation that it differs is what this test is
+    /// built on, and that is unchanged.
     /// Compiling twice in a row holds the session constant and isolates the property
     /// actually at issue. *(The session-dependence itself is logged in
     /// `docs/tech-debt.md`; it is adjacent to upstream issue 1.)*
@@ -7801,15 +7883,38 @@ mod tests {
         }
     }
 
-    /// The headless `compile_specimen` path (used by gen_trace) produces the
-    /// same result as compiling through the shared worker.
+    /// The headless `compile_specimen` path (used by `gen_trace`) produces the same
+    /// stages as compiling through the shared worker.
+    ///
+    /// **IT NEVER TOUCHED THE WORKER UNTIL 2026-08-21.** The name and the doc both
+    /// claimed a comparison; the body asserted four `is_some()`s on the headless
+    /// path alone, and paid a full MSL load to do it. It would have passed with the
+    /// two paths producing entirely different IR, and with `compile_specimen`
+    /// silently compiling the wrong model.
+    ///
+    /// **It does NOT catch `docs/ideas.md` #48 lever B, and an earlier draft of this
+    /// comment claimed it did.** B compiles MSL-free specimens in a bare session,
+    /// which renumbers DefIds while leaving every stage's roster identical — so the
+    /// roster comparison below is blind to it *by construction*. **The check that
+    /// catches B is `--features notebook-check`**, which compares emitted JSON.
+    ///
+    /// **Compares the stage rosters, not the JSON**, and that limit is deliberate
+    /// rather than timid: the two compiles happen in *different sessions* — one
+    /// virgin, one shared — and `CLAUDE.md` records that a stage's emitted JSON
+    /// depends on what the session already holds (`GearWithBrake`,
+    /// `MissingComponentClass`). Demanding byte-equality would encode a claim known
+    /// to be false and fail in company while passing alone, which is the exact trap
+    /// `compiling_a_specimen_twice_is_reproducible` was restructured to escape.
+    ///
+    /// So what is checked is what *is* session-independent: the same model name, and
+    /// every stage that produced IR on one path producing IR on the other.
     #[test]
     #[cfg_attr(
         not(feature = "slow-tests"),
         ignore = "compile-heavy; run with --features slow-tests"
     )]
     fn compile_specimen_headless_matches_worker() {
-        let result = compile_specimen(
+        let headless = compile_specimen(
             Path::new(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/specimens/SingleInertia.mo"
@@ -7817,14 +7922,51 @@ mod tests {
             msl_roots(),
         )
         .expect("compile_specimen");
-        let FromWorker::Compiled { model, stages, .. } = result else {
-            panic!("expected Compiled");
+        let FromWorker::Compiled {
+            model: headless_model,
+            stages: headless_stages,
+            ..
+        } = headless
+        else {
+            panic!("expected Compiled from the headless path");
         };
-        assert_eq!(model.as_deref(), Some("SingleInertia"));
-        assert!(stages.parse.value.is_some());
-        assert!(stages.resolve.value.is_some());
-        assert!(stages.flatten.value.is_some());
-        assert!(stages.solve_lowering.value.is_some());
+
+        let FromWorker::Compiled {
+            model: worker_model,
+            stages: worker_stages,
+            ..
+        } = compile_specimen_shared("SingleInertia")
+        else {
+            panic!("expected Compiled from the shared worker");
+        };
+
+        assert_eq!(headless_model.as_deref(), Some("SingleInertia"));
+        assert_eq!(
+            headless_model, worker_model,
+            "the two paths named different models",
+        );
+
+        // Non-vacuity first: if neither path produced IR, every comparison below is
+        // satisfied by two empty compiles.
+        assert!(
+            headless_stages.parse.value.is_some()
+                && headless_stages.resolve.value.is_some()
+                && headless_stages.flatten.value.is_some()
+                && headless_stages.solve_lowering.value.is_some(),
+            "the headless path did not reach solve lowering: resolve note {:?}",
+            headless_stages.resolve.note,
+        );
+
+        for &kind in StageKind::COMPILATION {
+            assert_eq!(
+                headless_stages.get(kind).value.is_some(),
+                worker_stages.get(kind).value.is_some(),
+                "{kind:?} produced IR on one path and not the other -- headless note \
+                 {:?}, worker note {:?}",
+                headless_stages.get(kind).note,
+                worker_stages.get(kind).note,
+            );
+        }
     }
 
     /// The headless `simulate_specimen` path (used by gen_trace) runs and
