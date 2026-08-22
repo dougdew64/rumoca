@@ -145,6 +145,39 @@ I fail to notice?*
 
 ## Standing rules
 
+### NO PRODUCT-COMPARISON CONTENT IN THIS REPOSITORY — Doug, 2026-08-22
+
+**The repository is public**, and `docs/upstream-strategy.md` stakes Doug's credibility with
+Rumoca's maintainers on what is in it. **A file weighing Rumoca against OpenModelica, System
+Modeler, ModelingToolkit or anything else reads badly however carefully it is written** — and it
+reads worst to exactly the people this project wants to work with.
+
+**His ruling**, after asking for and receiving such an assessment in conversation: *"I've
+internalized all of this. There's no need to record this. I don't want to push this sort of
+product-comparison information to the public git repo."*
+
+**So: give the comparison when he asks — it is useful and he asks for it — and keep it in the
+conversation.**
+
+**WHAT THIS DOES NOT FORBID, and the distinction is the whole point.** It bars *comparisons between
+tools*. It does **not** bar recording what Rumoca does and does not do:
+
+- **A finding about Rumoca, stated as a finding, belongs in the repository** — including a
+  limitation. `CartesianPendulum` is the model case: *"Rumoca's index reduction is pattern-based,
+  not general Pantelides; the canonical index-3 DAE compiles and is left structurally singular."*
+  That is recorded, and should be.
+- **An adjudication by System Modeler is evidence, not a comparison.** `docs/ideas.md` #43's
+  *oracle first, then Rumoca* practice, and every `upstream-issues.md` entry resting on it, are
+  unaffected. Naming the tool that settled a question is citing a source.
+- **The line is: "Rumoca does X, and here is the evidence" — never "tool A is better than tool B".**
+
+**And the reason this matters beyond taste:** the honest caution behind that conversation — that a
+learner can mistake an incomplete compiler's limitations for how the field works — is already
+captured in the permitted form, in `upstream-issues.md` and `CLAUDE.md`. **Nothing protective was
+lost by not recording the comparison**, which is why the rule costs nothing.
+
+### Everything ships together
+
 **Every change ships with tests, comments and documentation — without being asked.** All three
 are part of "done":
 
