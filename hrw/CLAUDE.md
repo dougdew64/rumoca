@@ -583,13 +583,39 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > goes underneath it.** A ✅ box is history the moment its arc closes — move it to the plan or
 > to `DECISIONS.md` rather than letting it accumulate above the next reader's actual task.
 >
-> ### ⟶ NEXT IS `#48` — GET THE FULL GATE UNDER 60 SECONDS
+> ### ⟶ `#48` — LEVER C IS SHIPPED; **B NEEDS A RULING FROM DOUG, AND THE REST IS UPSTREAM**
 >
-> **Doug set this order on 2026-08-20** *(`docs/ideas.md` #48)*: finish every planned `app.rs`
-> split item first, then take `#48`. **Every item is now finished**, so this is the live arc. He
-> called the current state a **failure mode**: *"I'm spending more time awaiting the completion of
-> test runs than adding features or learning."* The gate is **~354 s** measured 2026-08-21, against
-> a 60 s target.
+> **The 60 s target is not reachable HRW-side, and that is now measured rather than feared.** Doug
+> had already retired it as a contract (*"an arbitrary number which I declared so that we could have
+> a goal"*); the arc is scored on the levers' own merits. The failure mode he named still stands:
+> *"I'm spending more time awaiting the completion of test runs than adding features or learning."*
+>
+> **DONE 2026-08-21** — `9432e982` (Rumoca: `source_root_input_cache_key`) and `02af5212` (HRW: the
+> parsed-source-root memo). **`notebook-check` 157 s → 109 s**, counter-predicted 49 s, observed 48 s.
+> Fidelity confirmed by that same check; ~326 MB retained, so `fidelity_msl` opts out.
+>
+> **⟶ WHAT THE NEXT SESSION OWES, in order:**
+>
+> 1. **ASK DOUG ABOUT LEVER B — it is blocked on him, not on work.** Worth ~49 s. The blocker is in
+>    the box below: a bare session makes the suite verify a compile *the app never performs*, and
+>    regenerating the notebook to bare-session values makes the committed traces disagree with the
+>    app too. **Do not decide this in-session.**
+> 2. **`docs/upstream-issues.md` P1 is the only remaining large lever**, and it is a question to a
+>    maintainer, not work HRW can do: *should a change to a workspace document invalidate resolution
+>    of durable external source roots?* It reproduces in six lines and serves the maintainership goal
+>    whether or not it ever speeds up the gate.
+> 3. **P2 is written but its number is UNVERIFIED.** The ~21 s cache-miss prune was attributed by
+>    *subtraction* — it is the only uninstrumented step on the miss path, which is strong but is not
+>    a measurement. **Time the prune directly before filing.**
+>
+> **AND THE PROCESS FINDING THIS ARC COST THE MOST TIME TO RE-LEARN.** Three `perl` substitutions in
+> one session hit the **first** match rather than the intended one: one silently rewrote an unrelated
+> loop into non-compiling code, and one perturbed a *different test* than the one being
+> revert-checked — so a must-fire check appeared to pass when it had never run. `CLAUDE.md` already
+> forbids generating source text through a shell. **Use the Edit tool: it requires a unique match and
+> fails loudly.** Python was installed on 2026-08-21 partly on the inference that Claude prefers it;
+> it is fine for CSV and analysis work (`docs/setup-windows.md` §7a, and **`-X utf8` is required**),
+> but it is not the answer to this.
 >
 > **FIVE LEVERS ARE DEAD BY MEASUREMENT — do not re-propose them.** Parallelism (~2 s; the
 > worker tests serialise on a global `Mutex<WorkerState>`), memoising simulations (~2 s; the key
