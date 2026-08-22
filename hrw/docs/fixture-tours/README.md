@@ -24,6 +24,46 @@ described a 7×7 matrix on a tab showing 48 equations.
 link in this directory on every test run, so a vocabulary change breaks the build rather than
 breaking a document quietly. **A saved tour nobody runs is stored prose with extra steps.**
 
+### And what a tour *is*, which is a different question from what it looks like
+
+**A tour is a document that makes claims about what a program does — while the program is not
+running.** *(Written 2026-08-22, after Doug noticed that `connect-expansion.md` states node sizes
+of 2, 2 and 3 as static text, true or false whether or not HRW is open and whether or not
+`RcCircuit` has ever been compiled. He observed that this had never been said: the definition above
+is operational — what a tour looks like and what you do with it — and says nothing about this.)*
+
+**That makes every tour duplicated truth, and duplicated truth rots** — normally in silence,
+because nothing compiles a markdown file. Everything in this directory follows from managing that.
+
+**So tour content sits in one of three tiers, and a writer should know which one a sentence is in:**
+
+| tier | example in `connect-expansion.md` | kept true by |
+|---|---|---|
+| **checked against a real compile** | the five `<!-- pane-* -->` tables; the `2, 2, 3` set sizes | a slow test that compiles the specimen and compares |
+| **checked structurally** | every `hrw://` link, the stop catalogue | fast tests — links resolve, `CATALOGUE.md` is current |
+| **prose** | *which* connectors sit on node A; every explanation | **nothing. Only the walk.** |
+
+**THE COUNTS ARE THE CHEAP PART TO KEEP TRUE, AND THE ARGUMENT IS THE EXPENSIVE PART.** A number
+can be re-derived from a compile and compared. *"Nothing downstream ever groups connectors"* cannot
+be checked by anything here — **and it is the sentence that actually teaches.** So the checkers
+protect a tour's *facts* and leave its *reasoning* entirely to the walk, which is why Doug's
+*"I couldn't have guessed that"* is worth more than any test in this repository.
+
+**A MARKER IS NOT THE ONLY WAY A NUMBER IS CHECKED, so do not read an unmarked table as unchecked.**
+The node table at the top of `connect-expansion.md` carries no marker, yet its sizes *are* verified —
+`tour_node_sizes_match_the_connection_replay` asserts `potential == [2, 2, 3]` and
+`flow == [2, 2, 3]` against the real connection frames, hard-coded in the test with a failure
+message naming the stop. What that test does **not** check is the *mapping*: that node A is
+`src.p, R.p` rather than some other pair. **Before trusting or editing a number, find what checks
+it** — the marker, a named test, or nothing.
+
+**AND THE LIMIT OF ALL OF IT, which the fidelity work is what makes it safe:** these checkers verify
+that the **tour agrees with the pane**, never that the **pane agrees with the compiler**. If HRW
+ever misrepresented what Rumoca did, a tour written against it would faithfully record the
+misrepresentation and every checker here would go on passing. That is why accuracy in `worker.rs`
+outranks everything, and why `--features notebook-check` — pane against a fresh compile — is the
+instrument for the other half.
+
 ## Walking one
 
 1. Run HRW — `cargo run -p hrw` from the workspace root.
