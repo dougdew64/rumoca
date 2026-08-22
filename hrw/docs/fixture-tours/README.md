@@ -105,6 +105,126 @@ misrepresentation and every checker here would go on passing. That is why accura
 outranks everything, and why `--features notebook-check` — pane against a fresh compile — is the
 instrument for the other half.
 
+## How a tour gets made: three phases, three different instruments
+
+**Agreed with Doug 2026-08-22.** The phases are not stages of polish — **each measures something
+the others cannot**, and confusing them wastes the scarcest thing here.
+
+| phase | what happens | what it measures | instrument |
+|---|---|---|---|
+| **1** | Claude drafts the tour | correctness, and structural discipline | **Rumoca + HRW** — a real compile, the checkers |
+| **2** | Doug walks it, iterating with Claude | **effectiveness** — does it land | **Doug, and only Doug** |
+| **3** | Doug explores panes and asks what the tour never asked | **coverage** — what Claude failed to write at all | **Doug's questions** |
+
+### Correctness is Claude's job. Effectiveness is Doug's, and Claude cannot do it at all
+
+**This corrects something Claude wrote on 2026-08-22** — that Doug is the instrument for whether
+tour prose is *correct*. He is not, or not mainly. **Most prose claims are verifiable by reading
+source**: *"nothing downstream ever groups connectors"* is checkable against
+`rumoca-phase-flatten`, and a claim about phase order is checkable against the log. Slow for
+Claude, but possible.
+
+**What Claude is structurally unable to judge is whether prose works.** He knows what he meant and
+cannot un-know it. That is not a care problem — it is the same shape as this repository's standing
+finding that *Claude is a poor sensor for his own comprehension failures*. **Effectiveness is only
+measurable by someone meeting the idea for the first time.**
+
+**THE OPERATIONAL CONSEQUENCE, and it changes how a walk should be spent: Doug should not
+fact-check.** The reports only he can produce are *"I couldn't have guessed that"*, *"I had to read
+this twice"*, *"this arrived before I needed it"*, *"I don't know why you're telling me this yet."*
+Those are unrecoverable if unsaid. Whether a number is right is Claude's problem and the checkers'.
+
+**FIRST ENCOUNTER IS NON-RENEWABLE, PER TOUR.** A tour can be walked many times; it can be *met*
+once. Walking a weak draft spends the sharpest measurement available on something Claude could have
+fixed alone — which is why phase 1 must not settle for "correct". **It also means Doug has already
+partly spent his first encounter with `index-reduction.md`**, the tour that has to be the best; for
+that one the freshest available reader may not be him.
+
+### Why a textbook is correct and ineffective, and why that is not a failure of effort
+
+**Doug, 2026-08-22:** *"A textbook is typically correct, but also typically ineffective. Our
+opportunity is to be correct and effective. And not merely generally effective, but personally
+effective."*
+
+**A textbook must work for a distribution of readers, and that forces three things on it:**
+**completeness** (it cannot know what you already know, so it says everything), **fixed order** (it
+cannot reorder for you), and **no feedback** (it cannot tell whether anything landed). **All three
+constraints are lifted here.** The opportunity is not to try harder than a textbook — it is that we
+are not solving the same problem.
+
+**And there is a correctness axis a textbook cannot reach.** A textbook is right about *Modelica in
+general*; a tour is right about **this compiler, on this model, in this run**, checked against a
+real compile. That is what makes "correct *and* effective" a target rather than a boast.
+
+### Tune to Doug's DURABLE profile, never to his transient state
+
+**The danger in "personally effective", and it cuts against Doug's own goal for
+`index-reduction.md`** — that it be *"the best demonstration of the value of this HRW project"* and
+convince a PhD friend. Tune hard enough to one reader and nobody else can use the result.
+
+- **Tune to the durable profile, which generalises.** Decades of C/C++/Java, new to Rust idiom and
+  to Modelica compilers, basic calculus, top-down, problem before mechanism
+  ([`../working-with-doug.md`](../working-with-doug.md)). That is a real archetype, not an
+  idiosyncrasy, and a tour tuned to it works for a large class of engineers.
+- **Never tune to transient state** — what he asked yesterday, what is on his screen now. That is
+  genuinely personal and does not generalise.
+
+**And that split is the fixture/ad hoc split**, which is a good sign both are drawn in the right
+place: durable profile → fixture tour; transient state → ad hoc tour.
+
+### Phase 1 aims at "correct AND structurally disciplined", not at "correct"
+
+**Doug predicts phase-1 drafts will be mostly correct and mostly ineffective. Treat that as a
+prediction to fight, not a plan** — because first encounter is non-renewable, every avoidable
+weakness in a draft spends a measurement that cannot be got back.
+
+Claude cannot measure effectiveness, but three **structural proxies** are available without Doug:
+
+- **`Predict` → look → `Expected`** forces a falsifiable expectation rather than an assertion.
+- **Prose to the first prediction** bounds how much may be said before the reader tests something.
+- **The tier discipline** names which sentences nothing will ever check — so they get the care.
+
+### Phase 3 finds omissions, and its answers do NOT automatically become tour content
+
+**Phase 2 asks whether what is written lands. Phase 3 asks what was never written** — a question
+the tour did not prompt is a gap the tour did not cover. It is the only phase that finds omissions,
+which is why [`../question-ledger.md`](../question-ledger.md) says the real measure is *the nature
+of the questions Doug asks*, and why **no questions at all is ambiguous and must not be read as
+success.**
+
+**Doug, 2026-08-22: *"we might or might not choose to improve tour content as the result of phase 3
+questions."*** Defend that. A phase-3 answer routes one of three ways, and only one of them edits
+the tour:
+
+| the question is… | route |
+|---|---|
+| a gap at the tour's own depth | **into the tour** |
+| true but premature — past this tour's level | **into [`../compiler-phases/`](../compiler-phases/)**, which exists for exactly this |
+| answered and done | **nowhere.** Not every answer is tour content |
+
+**Doug drew that line himself:** *"That distinction is past the level of useful detail for this
+tour."* Routing everything into the tour is how a tour drifts to reference depth one good question
+at a time.
+
+### The dangerous quadrant is EFFECTIVE BUT FALSE
+
+Correctness and effectiveness come apart in both directions, and the two failures are not
+symmetric:
+
+- **True but ineffective** — the failure Doug has already corrected in Claude: accurate answers
+  carrying three-graph comparison tables. It wastes a walk.
+- **False but effective** — a clean analogy that lands beautifully and teaches something untrue.
+  **Doug has no way to detect it precisely because it landed**, and everything he builds on it
+  inherits the error.
+
+**That is why accuracy outranks effectiveness when they conflict** (`CLAUDE.md`, and charter
+Decision 7): an ineffective truth costs a walk; an effective falsehood corrupts what comes after.
+
+**One consequence for the PhD friend, since he is the stated audience for `index-reduction.md`:**
+he judges whether the claim is **credible**; he cannot measure whether it is **effective**. He reads
+*"understandable with only basic calculus"* through a mind that already has the machinery and cannot
+un-install it either. **He is the person to convince. He is not the instrument.**
+
 ## Walking one
 
 1. Run HRW — `cargo run -p hrw` from the workspace root.
