@@ -1139,11 +1139,31 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > started all of this. A funnel that did nothing also says so, which is `CartesianPendulum`'s
 > whole lesson.
 >
-> **⟶ IF THIS SESSION IS ON THE MACHINE WITH SYSTEM MODELER**, the one owed experiment is
-> simulating `hrw/specimens/CartesianPendulum.mo`. The protocol, and what each of the three
-> possible outcomes establishes, are written down in `docs/upstream-issues.md` under the
-> index-reduction entry — decided in advance so the result is not read to taste. It turns
-> `index-reduction.md` Stop 5 from Claude's inference into an adjudicated fact.
+> **⟶ IF THIS SESSION IS ON THE MACHINE WITH SYSTEM MODELER, THIS IS THE LIVE TASK.** Doug switched
+> machines on 2026-08-22 specifically to run it. Simulate `hrw/specimens/CartesianPendulum.mo`,
+> 0 → 10 s, default solver. The protocol and **what each of the three outcomes establishes** are in
+> `docs/upstream-issues.md` under the index-reduction entry — **decided in advance so the result is
+> not read to taste.**
+>
+> **IT NOW GATES FOUR THINGS, NOT ONE** *(the convergence noticed 2026-08-22)*, which is why it is
+> the cheapest high-value experiment on the board:
+>
+> | | what the result decides |
+> |---|---|
+> | `index-reduction.md` Stop 5 | Claude's inference becomes an adjudicated fact |
+> | `docs/upstream-issues.md` | a well-evidenced upstream entry, or a **retired** one |
+> | `docs/ideas.md` **#83** | whether general Pantelides is a real gap worth Doug implementing |
+> | `docs/ideas.md` **#5** | whether the four-bar linkage — the charter's Arc-4 specimen, and the representative of the class his robotics degree is about — can be un-parked |
+>
+> **One outcome retires the premise**, and that is the point of pre-committing them: if System
+> Modeler also declines the model, the reading was wrong or the model is, and `#83` should not be
+> started. **Record the result with the System Modeler version**, and update
+> `specimen-notebook/CartesianPendulum/purpose.md`, whose Provenance section still says the
+> round-trip has not been done.
+>
+> **AND ON A DIFFERENT MACHINE, CHECK THE PERMISSION ALLOWLIST FIRST** — `.claude/` is gitignored by
+> upstream, so it does not travel; see *PER-MACHINE SETUP* below. That check is Claude's to run
+> unprompted, because Doug cannot see the prompts Claude is about to trigger.
 >
 > **The tour is rewritten** (2026-08-18): five stops, smallest-first —
 > `BouncingBall` (nothing needed) → `BenchActuator` (**1** differentiation, 4→3 states, the
