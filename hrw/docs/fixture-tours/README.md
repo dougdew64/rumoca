@@ -26,14 +26,55 @@ breaking a document quietly. **A saved tour nobody runs is stored prose with ext
 
 ### And what a tour *is*, which is a different question from what it looks like
 
-**A tour is a document that makes claims about what a program does — while the program is not
-running.** *(Written 2026-08-22, after Doug noticed that `connect-expansion.md` states node sizes
-of 2, 2 and 3 as static text, true or false whether or not HRW is open and whether or not
-`RcCircuit` has ever been compiled. He observed that this had never been said: the definition above
-is operational — what a tour looks like and what you do with it — and says nothing about this.)*
+**A tour is a document that makes claims about what a program does.** A **fixture** tour makes them
+*durably*, so they must be kept true; an **ad hoc** tour makes them *about the moment*, so they need
+only be true when written.
 
-**That makes every tour duplicated truth, and duplicated truth rots** — normally in silence,
-because nothing compiles a markdown file. Everything in this directory follows from managing that.
+*(Written 2026-08-22, after Doug noticed that `connect-expansion.md` states node sizes of 2, 2 and 3
+as static text — true or false whether or not HRW is open and whether or not `RcCircuit` has ever
+been compiled. The definition above is operational, and says nothing about this.)*
+
+**THE SECOND HALF WAS FIRST WRITTEN AS *"while the program is not running"*, AND DOUG CORRECTED IT
+THE SAME DAY:** ad hoc tours are authored *while HRW runs*, to explain what it is doing —
+`tour::poll` picks up `.hrw-bridge/tour.md` within a second and auto-selects it. **He was right,
+and the correction is worth more than the fix**, because "is the program running" was a proxy for
+the thing that actually matters.
+
+**What actually differs is the gap between when a claim is WRITTEN and when it is READ.**
+
+| | fixture tour | ad hoc tour |
+|---|---|---|
+| written | once, against a compile | now, against what is on screen |
+| read | months later, repeatedly | seconds later, once |
+| relation to the program | a **copy** of what it did | an **observation** of what it is doing |
+| failure mode | **staleness** — true when written, false later | **misreading** — wrong on arrival |
+| defended by | checkers, markers, the gate | nothing, and nothing is needed |
+
+**Duplicated truth is what rots, and an ad hoc tour duplicates nothing.** Its lifetime is seconds:
+it is discarded before the world can move under it. That is why it is gitignored and unchecked —
+not laxness, but that there is no gap for staleness to live in.
+
+**And the two failure modes are genuinely different, which is the part to keep.** A fixture tour can
+be perfectly written and *later* false. An ad hoc tour can never go stale — but it can be **wrong
+on arrival**, if Claude misreads the bridge or invents what HRW did not say. No checker catches
+that either; the difference is that Doug finds out in the next sentence rather than in three months.
+
+**Everything in this directory manages the fixture side of that split**, which is where the rot is.
+
+### Which channel is live, and when the other one becomes live
+
+**Doug, 2026-08-22:** *"Right now while I'm beginner mode and just learning the basics, I'm entirely
+using fixture tours. Eventually, after I've learned all that the fixture tours have to offer, I'll
+begin using the ad hoc tours which you author to help answer my advanced questions."*
+
+**So fixture tours are the whole channel today, and ad hoc tours are a capability held in reserve.**
+Two consequences worth acting on:
+
+- **Do not push an ad hoc tour at a question the fixture tours already cover.** Answering in the
+  channel he is not yet using trades a durable, checked artifact for an ephemeral one.
+- **`docs/ideas.md` #42's investment case is not yet due.** The ad hoc channel is built and works;
+  it becomes the *primary* one only when the fixtures are spent. **The signal to watch is his
+  questions outrunning the tours**, which `docs/question-ledger.md` is where to notice.
 
 **So tour content sits in one of three tiers, and a writer should know which one a sentence is in:**
 
