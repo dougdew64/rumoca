@@ -6221,3 +6221,69 @@ what §4 forbids is moving setup → Predict → ▶ Look → Expected → Falsi
 happened*, and adding depth inside those beats does not touch it.
 
 **Not started.** <!-- unbuilt: reduction_view::pass_frames -->
+
+---
+
+## 83. Implement general Pantelides for Rumoca — Doug writes the algorithm he is studying
+
+**Doug, 2026-08-22, reframing Rumoca's incompleteness:** *"Regarding Rumoca's incompleteness, I
+view that as a learning opportunity. For example, the fact that Rumoca does not implement the
+Pantelides algorithm means that a learning opportunity exists for me. Perhaps I would enjoy
+attempting to implement that algorithm for Rumoca."*
+
+**Not scheduled. Not started.** <!-- unbuilt: rumoca_phase_structural::pantelides -->
+
+### The gap is narrower than "Rumoca lacks index reduction"
+
+Audited 2026-08-22 by reading the crates. **Most of the surrounding machinery exists**; what is
+missing is the general structural decision procedure.
+
+| piece | status |
+|---|---|
+| structural matching, BLT / Tarjan | **built** — and walked in `matching-live.md`, `blt-ordering.md` |
+| the DAE-preparation funnel — alias demotion, state-row reduction, dummy-state reduction | **built**, and *observed* since 2026-08-18 rather than mirrored |
+| dummy-derivative elimination | **built** — `rumoca-phase-solve/src/dummy_derivative.rs`, whose own header says it mirrors OpenModelica |
+| symbolic construction/rewriting of equations | **partly built** — `rumoca-phase-structural/src/dae_prepare/symbolic.rs` (`split_linear_der_target`, expression builders) |
+| **the general Pantelides loop — WHICH equations to differentiate, iterated to a fixed point** | **the gap** |
+
+**So state it accurately: Rumoca reduces the cases it can recognise BY PATTERN, and lacks the
+general algorithm that decides what to differentiate when no pattern matches.** `CartesianPendulum`
+is the case that falls through — every funnel step reports zero and the constraint row `f_x[4]` is
+left unmatched against `lambda`. **Every other constraint in the corpus is an alias, which is why
+nobody noticed.**
+
+### Why this is unusually well-suited as a learning project
+
+- **A ready-made binary acceptance test.** The canonical index-3 DAE fails today and would pass.
+  No judgement call about whether it worked.
+- **He would build the algorithm inside the instrument built to watch algorithms run** — watching
+  his own Pantelides iterate is this project's thesis turned back on itself, and `#82` (reduction
+  passes expandable into frames) is the pane it would land in.
+- **It forces exactly the understanding he says he wants**: the structural graph, the matching,
+  differentiation and the dummy-derivative choice all held at once. `#66`: *"I intend to fully
+  understand the math and algorithms of compilation."*
+- **It is genuinely upstreamable, and it is the kind of contribution that makes a maintainer** —
+  the stated aim in `docs/upstream-strategy.md`.
+
+### Three prerequisites, in order — and the first can retire the whole item
+
+1. **THE ORACLE EXPERIMENT IS OWED.** Simulate `CartesianPendulum` in System Modeler before
+   concluding Rumoca *should* do this. `docs/upstream-issues.md` records all three outcomes decided
+   in advance so the result cannot be read to taste — **and one of them retires the premise.**
+   Standing practice is *oracle first, then Rumoca* (`#43`).
+2. **FINISH WALKING INDEX REDUCTION.** Implementing before understanding inverts Doug's own
+   principle, and `index-reduction.md` is mid-walk.
+3. **ASK UPSTREAM FIRST.** Pattern-based may be a deliberate choice, or already on someone's
+   roadmap. **That question is itself a good first substantive contact with the maintainers**,
+   valuable whether or not the implementation ever happens.
+
+### What it is NOT
+
+**Not an HRW change, and not covered by the instrumentation discipline.** Every Rumoca change so far
+has been *additive and observation-only*; this one changes what the compiler computes. It is a
+semantics change to a phase, so it needs the maintainers' appetite rather than HRW's checklist —
+the same distinction `#48` drew when the parse memo stayed HRW-side while
+`source_root_input_cache_key` went upstream as a pure query.
+
+**And it is distinct from `#45`.** #45 is *diagnosing failures in the user's model*; this is
+*removing a limitation in the compiler*. They share `CartesianPendulum` as evidence and nothing else.
