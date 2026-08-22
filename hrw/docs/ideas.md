@@ -80,6 +80,23 @@ implementation task.
 
 ## 5. Four-bar linkage specimen + un-park the planar mechanics library (Arc 4 deferred)
 
+> ### ⟶ THIS IS THE SAME ITEM AS `#83`, AND IT IS NOW ROBOTICS-CRITICAL — 2026-08-22
+>
+> **Un-park condition (a) below — *"Rumoca gains nonlinear-constraint reduction"* — is exactly what
+> `#83` (implement general Pantelides) would deliver.** The two were captured a month apart and
+> nobody had connected them.
+>
+> **And it stopped being a pedagogical nicety.** Doug begins a robotics master's at Purdue the Monday
+> after 2026-08-22, and is learning Rumoca in support of it
+> ([`working-with-doug.md`](working-with-doug.md)). **A closed kinematic loop is a holonomic
+> constraint, which is a high-index DAE** — so the four-bar is not one specimen among many, it is
+> the representative of the class his degree is about, with `CartesianPendulum` as its minimal case.
+>
+> **The owed System Modeler adjudication now gates BOTH items.** This entry already records that the
+> failure was *"verified on the barest Cartesian pendulum, not a library bug"* — one oracle run says
+> whether that is Rumoca's gap or the problem's difficulty, and `docs/upstream-issues.md` has the
+> three outcomes decided in advance.
+
 Captured 2026-07-20 (Doug + finding). The charter's Arc-4 specimen is a four-bar / parallelogram
 linkage (nonlinear loop-closure → index-3). It is **deferred**: Rumoca's Rust-path index reduction at
 pin 8cdc7419 does not reduce nonlinear holonomic constraints (`x²+y²=L²`) — verified on the barest
@@ -6251,6 +6268,17 @@ general algorithm that decides what to differentiate when no pattern matches.** 
 is the case that falls through — every funnel step reports zero and the constraint row `f_x[4]` is
 left unmatched against `lambda`. **Every other constraint in the corpus is an alias, which is why
 nobody noticed.**
+
+### It is also the algorithm his DEGREE needs — noticed 2026-08-22
+
+**Doug begins a robotics master's at Purdue the Monday after 2026-08-22**, and learns Rumoca in
+support of it. **A closed kinematic loop is a holonomic constraint, which is a high-index DAE**, so
+the gap this item closes is precisely the class of failure robotics models exhibit.
+
+**It is therefore the same item as `#5`**, whose un-park condition (a) reads *"Rumoca gains
+nonlinear-constraint reduction"* — the four-bar linkage, the charter's own Arc-4 specimen, is
+deferred on exactly this. **`CartesianPendulum` is the minimal case of that class, not a textbook
+curiosity.** See [`working-with-doug.md`](working-with-doug.md) for why any of it is being learned.
 
 ### Why this is unusually well-suited as a learning project
 

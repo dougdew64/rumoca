@@ -17,6 +17,40 @@ so anything a fresh session must know belongs here. See [`../DECISIONS.md`](../D
 
 ## Who he is
 
+### WHY ANY OF THIS IS BEING LEARNED — robotics, and it starts now
+
+**Doug begins a robotics master's programme at Purdue on the Monday after 2026-08-22**, and stated
+that day: *"I am learning Rumoca in support of that robotics study program. When I say that I want
+someday to be the guy that engineers ask for help to fix their simulation failures, I specifically
+mean that I want to be the guy that **robotics** engineers ask for help."*
+
+**Nothing in this repository said why any of it was being learned until then.** It is the fact that
+makes the rest cohere, and it is not derivable from the code or the git history.
+
+**IT NARROWS "SIMULATION FAILURE" TO A SPECIFIC CLASS, and that is the useful part.** Robotics models
+fail on **constraints and stiffness** far more than on anything the other compiler phases decide. A
+closed kinematic loop **is** a holonomic constraint, which **is** a high-index DAE. So:
+
+- **`CartesianPendulum` is not an arbitrary textbook example for him** — it is the *minimal robotics
+  constraint problem*, a mass on a rigid link in the coordinates a multibody formulation naturally
+  produces.
+- **The four-bar linkage (`docs/ideas.md` #5) is the next one up**, and is the charter's own Arc-4
+  specimen.
+- **Every mechanism he models that is not an open chain lands in this class.**
+
+**AND THAT MAKES THREE ITEMS ONE ITEM** *(the convergence, noticed 2026-08-22)*: **#83** implement
+general Pantelides, **#5** four-bar linkage plus un-parking the planar mechanics library — which is
+deferred *precisely* because Rumoca does not reduce nonlinear holonomic constraints — and the
+degree itself. **The missing algorithm sits exactly where his study, his career goal and his
+learning project intersect.**
+
+**A charter tension to be AWARE of, not to resolve.** Charter §4.3 says **no MSL MultiBody**;
+mechanical components come from the hand-built planar library. That was right for a
+compilation-learning project, and robotics engineers use MultiBody. **Leave it. Doug will know when
+it binds, and changing it is a charter act, not a drift.**
+
+### The background he brings
+
 **Decades of C, C++ and Java. New to Rust, and had never written egui code.** He understands
 systems programming deeply — threads, memory, build systems — so the gap is never concepts,
 it is **idiom**.
