@@ -39,8 +39,8 @@ connect(src.p, R.p)   →   src.p.v — R.p.v      (the voltages)
 
 Two connectors form the same **node** if you can walk from one to the other along `connect`
 statements — so joining `a` to `b` and `b` to `c` puts all three on one node, even though no
-statement names `a` and `c` together. That is **transitivity**, and it is the only property you need
-here.
+`connect` statement names `a` and `c` together. That is **transitivity**, and it is the only
+property you need here.
 
 > **Predict.** How many nodes do these four statements make, and how many connectors are on the
 > largest one? Then a second number, and expect it to disagree with the first: **how many
