@@ -583,7 +583,41 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > goes underneath it.** A ✅ box is history the moment its arc closes — move it to the plan or
 > to `DECISIONS.md` rather than letting it accumulate above the next reader's actual task.
 >
-> ### ⟶ NEXT IS **TOURS**, NOT FEATURE CODE — Doug, 2026-08-21
+> ### ⟶ TWO MODES RUN IN PARALLEL, SPLIT BY DOUG'S AVAILABLE ATTENTION — 2026-08-21
+>
+> *"During my mornings and evenings I can focus on walking tours. But during my workdays I cannot
+> focus on this project as much. So, during my workdays, I will task you with performing refactoring
+> and fixing bugs."*
+>
+> | when | mode | cost to Doug | cost to Claude |
+> |---|---|---:|---:|
+> | mornings / evenings | **walking tours** — teaching dialogue | ~6 s per iteration | conversational |
+> | workdays | **refactoring + bug hunting** — low supervision | ~0 | the FULL ~220 s gate |
+>
+> **The gate lands on Claude in the workday mode, not on Doug — which is why `#48` closed.** The
+> friction Doug named was *his* waiting, and tour work does not pay it.
+>
+> **THE DECISION BOUNDARY, and it matters more when nobody is watching.** Claude decides seams,
+> extractions, tests, and bug fixes that arrive with a test failing by name. Claude **brings back**:
+> anything trading fidelity for anything else, `worker.rs`'s compile path, any step toward
+> `upstream-issues.md` P1, and anything that changes what a pane *claims*. **2026-08-21 is the worked
+> example** — lever B was Claude's to measure and Doug's to rule on, and Doug declined it on fidelity.
+>
+> **BIAS TO CHECKABLE OUTPUT, because the one reliable signal for Claude's comprehension failures is
+> *"defects only a human caught"* — and that signal weakens exactly when Doug is less available.**
+> Prefer work whose success is verifiable without him: a guard that fails by name, a prose claim
+> converted into a test. Both defects found on 2026-08-21 were that shape — a test that never tested
+> what it was named for, and a doc comment false since `last_specimen_uri` landed.
+>
+> **THE FAILURE MODE IS SPRAWL, NOT IDLENESS.** One item per session still binds; column-read audits
+> are the cheap parallel activity and consume none of that budget. Three finished things with tests
+> beat eight half-done ones, because Claude is bad at telling what already depends on a behaviour.
+>
+> **AND TASKING WORKS BEST AS A GOAL, NOT A FILE** — *"find bugs in the artifact pane"* beats
+> *"refactor `app.rs`"*, because the seam-selection heuristic changes with the goal and the
+> cheapness-driven seams are spent.
+>
+> ### ⟶ THE TOUR MODE: **TOURS**, NOT FEATURE CODE — Doug, 2026-08-21
 >
 > *"My hunch is that we are shifting project modes from changing HRW rust code to changing tours.
 > In other words, my hope going forward is to focus on improving tours, not feature code."*
