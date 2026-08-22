@@ -79,17 +79,27 @@ statements — so joining `a` to `b` and `b` to `c` puts all three on one node, 
 `connect` statement names `a` and `c` together. That is **transitivity**, and it is the only
 property you need here.
 
+**"Node" is borrowed from circuit theory, and it is yours — not the compiler's.** The word appears
+**nowhere in Rumoca and nowhere in HRW**: no pane shows one, no frame counts them, and no field is
+named for them. It is bookkeeping *you* do on paper in order to predict what the compiler will
+build. What the compiler actually builds is **connection sets**, and the whole of this stop is the
+gap between the two.
+
 > **Predict.** How many nodes do these four statements make, and how many connectors are on the
 > largest one? Then a second number, and expect it to disagree with the first: **how many
 > *connection sets* will the replay say it built?**
 
 [▶ Look — RcCircuit → Flatten → Connections](hrw://load/RcCircuit/Flatten/Connections)
 
-**Expected:** **three** nodes, of sizes **2, 2 and 3** connectors — and the replay's last frame
-declaring **6 connection sets** producing **7 equations**.
+**On your paper** — and only there, because the pane has no opinion about nodes and never will:
+**three** nodes, of sizes **2, 2 and 3** connectors.
 
-**Falsified if** you count four nodes, or if all three are the same size, or if any connector
-appears on two nodes — or if the set count is anything but **twice** the node count.
+**Expected:** the replay's last frame declaring **6 connection sets** producing **7 equations**.
+That is the whole of what the screen can settle for you.
+
+**Falsified if** that last frame says anything other than 6 and 7. Or, on your paper, if you
+counted four nodes, made all three the same size, or put one connector on two of them — and the
+two halves have to agree, so **the set count must come out twice the node count.**
 
 **Three and six are both right**, and the gap between them is the point of the rest of this stop.
 
@@ -103,6 +113,9 @@ Four statements, three nodes — because **`src.n` appears twice**. `connect(C.n
 | A | `src.p`, `R.p` | 2 |
 | B | `R.n`, `C.p` | 2 |
 | C | `C.n`, `src.n`, `gnd.p` | **3** |
+
+*That table is your paper written out — nothing in HRW draws it, and the names A, B and C are this
+tour's, not Rumoca's. Compare it against the pane and you will find no counterpart.*
 
 ### And this is where the counting has to get precise
 
