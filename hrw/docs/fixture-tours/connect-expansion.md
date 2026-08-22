@@ -4,12 +4,13 @@
 
 [▲ The chain overview](hrw://tour/the-concepts)
 
-<!-- walked: opening-what-connect-is 2026-08-22 -->
+<!-- walked: opening-what-connect-is 2026-08-22T17:45 -->
 
 `connect(src.p, R.p)` looks like wiring two things together. In the equations it is **neither an
 assignment nor an equality** — it is **an edge in each of several graphs, one per member of the
 connector** — and the equations do not exist until each graph's **connected components** have been
-computed.
+computed. It is also a **claim that the two sides are compatible**, which the language requires a
+compiler to check.
 
 <!-- /walked -->
 
@@ -19,6 +20,37 @@ step from one number to the other is something you can predict before you look.
 Each stop asks you to **commit to an answer**, then sends you to the pane that settles it. The
 answers are read from generated compiler traces, so if a count disagrees with your screen, the tour
 is wrong and I want to know.
+
+### The type claim, and where Rumoca and the language part company
+
+**MLS §9.3 requires connected connectors to be type-compatible, and Rumoca does check.** Four
+validators run on every pair of members it connects: flow against non-flow, primitive type, array
+dimensions, and the **`quantity`** attribute — which is what separates a voltage from a force when
+both are `Real`. Connect two ports whose members share names but carry different quantities and it
+is refused at Flatten, naming both sides:
+
+```text
+incompatible connector types in connection: e.v (quantity: ElectricPotential) and m.v (quantity: Force)
+```
+
+**But the check runs per matched member PAIR, and members are paired by name** — the same pairing
+Stop 1 is about. An unmatched member is skipped, and nothing compares the connector *types* or
+their member *sets*. So wire an electrical `Pin`, whose members are `{v, i}`, to a translational
+`Flange`, whose members are `{s, f}`: **nothing pairs, so nothing is checked.** Flatten succeeds,
+the `connect` contributes no equations at all, and the model surfaces three phases later as
+
+```text
+still singular after index reduction: empty system: no equations or unknowns
+```
+
+which says nothing about the one line of wiring that caused it. **Wolfram System Modeler 15.0
+rejects the same model** — *"Incompatible types … Interfaces.Flange_b"* — so this is Rumoca's gap
+rather than the problem's difficulty. It is filed in
+[`upstream-issues.md`](../upstream-issues.md).
+
+**The shape worth carrying: the check is strongest where you need it least** — two identical
+connectors, where every member pairs — **and absent where you need it most**, two unrelated ones,
+where none of them does.
 
 ---
 

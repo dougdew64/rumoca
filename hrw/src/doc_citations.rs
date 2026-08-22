@@ -4190,6 +4190,36 @@ mod tests_walked_regions {
         assert_eq!(b[0].2, a[0].2, "the body is untouched here");
     }
 
+    /// **The same-day case, and the first live use found it within the hour.**
+    ///
+    /// Doug marked a region on 2026-08-22 and improved it on 2026-08-22. A bare date
+    /// cannot acknowledge that edit — the token is unchanged, so the checker fires and
+    /// there is no honest way to satisfy it. **A phase-2 walk produces several
+    /// acknowledged edits in one day, so this is the common case, not the corner one**
+    /// (Doug: *"today's same-date scenario would be common during phase 2 walks. You
+    /// might need to add a time to the marker."*).
+    ///
+    /// **No parser change was needed** — the field is the second whitespace-delimited
+    /// token, so `2026-08-22T17:45` already works. This test is what stops a later
+    /// "tidy-up" from parsing the field as a bare date and silently removing the only
+    /// way to acknowledge a second edit on one day.
+    #[test]
+    fn a_timestamp_distinguishes_two_acknowledgements_on_one_day() {
+        let before = tour("2026-08-22", "First wording.", "same");
+        let after = tour("2026-08-22T17:45", "Second wording.", "same");
+        let (b, a) = (walked_regions(&before), walked_regions(&after));
+        assert_eq!(
+            b[0].0, a[0].0,
+            "the slug is unchanged, so it is the same region"
+        );
+        assert_ne!(
+            b[0].1, a[0].1,
+            "a timestamped token must differ from the bare date of the same day, or a \
+             second edit during one walk cannot be acknowledged at all",
+        );
+        assert_ne!(b[0].2, a[0].2, "the fixture must actually rewrite the body");
+    }
+
     /// Deleting the passage must remove the slug, which is what lets the checker say
     /// **DELETED** rather than shrug.
     #[test]

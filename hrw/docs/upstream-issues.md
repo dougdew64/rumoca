@@ -184,12 +184,36 @@ So the model is genuinely invalid and Rumoca is the outlier.
 reaches it when `strict_connection_validation` is on. So this is **not a missing
 validation** — it is one that did not trigger for this input.
 
-Suspects, unverified: `get_validation_var_info` returning `None` for one side (the
-validation is skipped rather than failed when info is missing), or `canonical_type_id`
-mapping both connector types to the same root via `type_roots`.
+### TRACED 2026-08-22 — and neither suspect was the cause
 
-`validate_expanded_connector_connection` (same file, ~line 735) may also be the intended
-home for a member-set comparison that is not happening.
+**The two suspects previously recorded here — `get_validation_var_info` returning `None`, or
+`canonical_type_id` collapsing both connector types to one root — are both wrong.** The cause is
+structural and is visible in `validate_expanded_connector_connection`:
+
+```rust
+for sub_a in subs_a {
+    let Some((suffix_a, ..)) = extract_suffix(sub_a.as_str(), ctx.path_a) else { continue };
+    let Some(var_b_match) = find_matching_var_b_indexed(&suffix_a, .., &sub_match_index) else { continue };
+    validate_flow_consistency(..)?;   // and type, dimension, quantity
+}
+```
+
+**Validation runs per matched member PAIR, members are paired by NAME, and an unmatched member is
+silently `continue`d.** Nothing anywhere compares the connector *types* themselves, and nothing
+compares the member *sets*. For `PinA{v, i}` against `PinB{v}`: `v` pairs and validates cleanly,
+`i` finds no partner and is skipped, so the connection is accepted.
+
+**The same hole has a worse instance, confirmed the same day.** Connect an MSL electrical
+`Pin{v, i}` to a translational `Flange{s, f}` — **no member name matches at all**, so nothing is
+validated *and no connection equations are generated*. Flatten reports success; the model surfaces
+three phases later as `still singular after index reduction: empty system: no equations or
+unknowns`, which names nothing about the wiring. **System Modeler 15.0 rejects it**:
+*"Incompatible types. 'g … Interfaces.Flange_b'."*
+
+So the report should be framed as **a missing connector-level check, not a validator that failed to
+fire**: the per-member validators work correctly and precisely — a same-named pair with mismatched
+quantities is refused at Flatten with both quantities named — but nothing establishes that the two
+connectors are the same type before their members are paired.
 
 ---
 

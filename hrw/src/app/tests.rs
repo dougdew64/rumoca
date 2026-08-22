@@ -2950,15 +2950,35 @@ fn a_scratch_specimen_is_listed_and_marked() {
         app.model_list.files.contains(&probe),
         "scratch specimens join the list"
     );
-    // Scratch sorts FIRST, matching the tour list: the just-written thing is the
-    // one most likely wanted next, and burying it under 18 curated specimens made
-    // the common case the awkward one.
-    assert_eq!(
-        app.model_list.files.first(),
-        Some(&probe),
-        "scratch specimens lead the list: {:?}",
-        app.model_list.files.iter().take(3).collect::<Vec<_>>(),
-    );
+    // Scratch sorts BEFORE the curated corpus, matching the tour list: the
+    // just-written thing is the one most likely wanted next, and burying it under
+    // 18 curated specimens made the common case the awkward one.
+    //
+    // **Stated as the property, not as "the probe is files[0]"** — that form was
+    // true only while `ScratchProbe.mo` was the ONLY scratch file, and it failed
+    // the moment a second one existed (2026-08-22: two probes written to answer a
+    // question about connector type checking, both sorting ahead of it).
+    // `.hrw-bridge/specimens/` is live state the suite does not control, the same
+    // class as `.hrw-bridge/tour.md`, and the fix is to assert what the feature
+    // promises rather than what one directory happened to contain.
+    let last_scratch = app
+        .model_list
+        .files
+        .iter()
+        .rposition(|p| app.model_list.scratch.contains(p))
+        .expect("the probe is itself scratch, so at least one exists");
+    if let Some(first_curated) = app
+        .model_list
+        .files
+        .iter()
+        .position(|p| !app.model_list.scratch.contains(p))
+    {
+        assert!(
+            last_scratch < first_curated,
+            "scratch specimens lead the list: {:?}",
+            app.model_list.files.iter().take(5).collect::<Vec<_>>(),
+        );
+    }
     assert!(
         app.model_list.scratch.contains(&probe),
         "and are marked as scratch"

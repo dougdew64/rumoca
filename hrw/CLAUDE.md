@@ -1776,6 +1776,48 @@ to act on** and its zero covers only the two near-tautological clauses. Absence 
 re-confirm the same narrow zero; #46 is what turns it into coverage. See
 [`docs/fidelity-plan.md`](docs/fidelity-plan.md), "F10's first corpus run".
 
+### A `crates/` CHANGE COSTS DOUG ONE FULL MSL RE-PARSE ON HIS NEXT LAUNCH — 2026-08-22
+
+**This is about the running app, not the test gate, and it is the answer to "HRW felt broken
+today".** Doug rebuilt HRW after a two-week gap on the other machine, and **his first in-app
+compile took minutes while every later one was quick.** Diagnosed, then confirmed by his restart:
+first compile fast again.
+
+**Three costs, three lifetimes — and the MSL is never *compiled*.** It is parsed and resolved;
+only the specimen goes through the phase pipeline. Conflating those three is what makes the
+behaviour look mysterious:
+
+| work | lifetime |
+|---|---|
+| **parse** MSL text → ASTs | **on disk, indefinitely** — `%LOCALAPPDATA%\Rumoca\source-roots\parsed-files` |
+| **load** ASTs into the `Session` | until the HRW process exits |
+| **resolve** names → DefIds (38,855) | until the next compile — `compile_target` invalidates it every call |
+
+**So HRW reloads the MSL every launch and re-resolves it every compile; what it does not do is
+re-parse it** — that result is cached on disk (218,558 files on Doug's machine, since 2026-07-29).
+The cost lands on the *first compile* rather than at launch because `App::new` sends
+`SetLibraries` and **the worker is one thread processing messages in order**, so an early compile
+queues behind the library load.
+
+**THE INVALIDATION RULE, which is the part worth remembering.** The artifact cache key is
+`blake3(schema ‖ compiler ‖ file_name ‖ source_hash)`, and `compiler_source_fingerprint()`
+(`rumoca-compile/src/source_root_cache.rs`) hashes **the entire `crates/` tree** plus the
+workspace `Cargo.toml`, `Cargo.lock` and `rust-toolchain.toml`. **Any change anywhere under
+`crates/` invalidates every cached parsed file at once.**
+
+- **A `crates/rumoca-*` edit therefore has a cost this file did not previously price**: beside
+  clippy, fmt and upstreamability, it buys Doug **one full MSL re-parse on his next launch.**
+  Still cheap against what instrumentation buys — but say so when proposing one, per
+  *ANNOUNCE THE COST BEFORE PAYING IT*, since he pays this one and cannot see it coming.
+- **`hrw/` edits are FREE.** `hrw/` is outside `crates/`, so ordinary HRW work never invalidates
+  it. **Adding a dependency does**, by moving `Cargo.lock`.
+- **The tell, when Doug reports a slow launch:** check the mtime of
+  `%LOCALAPPDATA%\Rumoca\source-roots\parsed-files`. Recent means it was being *written*, which
+  only happens on a miss. `semantic-summaries` is a separate layer with its own lifetime.
+
+**Do not run `du` or `ls -lt` on that directory** — 218k entries, and both timed out at two
+minutes while diagnosing this. `ls -ld` on the directory answers the question in milliseconds.
+
 ---
 
 ## Where things live

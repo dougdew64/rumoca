@@ -169,6 +169,13 @@ walked_prose_never_changes_silently` compares every walked region against `HEAD`
 when one changes at an unchanged date, or is deleted outright. HTML comments are stripped before the
 pane renders, so a reader never sees the markers.
 
+**ADD A TIME WHEN A REGION IS EDITED TWICE IN ONE DAY — `2026-08-22T17:45`.** A walk produces
+several acknowledged edits in a day, so this is the common case rather than the corner one, and a
+bare date cannot acknowledge the second one: the token is unchanged, the checker fires, and there
+is no honest way to satisfy it. **The field is any token that changes**, so no parser change was
+needed; `a_timestamp_distinguishes_two_acknowledgements_on_one_day` is what keeps it that way.
+*(Found by Doug within the hour of the mechanism's first live use.)*
+
 **What it does NOT forbid, because that half decides whether the mechanism survives:** it does not
 freeze walked prose. Doug rewrites his own explanations constantly and it must stay cheap —
 **bump the date in the same commit and the check passes.** What it forbids is changing walked prose
