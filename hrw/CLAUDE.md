@@ -583,39 +583,68 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > goes underneath it.** A ✅ box is history the moment its arc closes — move it to the plan or
 > to `DECISIONS.md` rather than letting it accumulate above the next reader's actual task.
 >
-> ### ⟶ `#48` — LEVER C IS SHIPPED; **B NEEDS A RULING FROM DOUG, AND THE REST IS UPSTREAM**
+> ### ⟶ NEXT IS **TOURS**, NOT FEATURE CODE — Doug, 2026-08-21
 >
-> **The 60 s target is not reachable HRW-side, and that is now measured rather than feared.** Doug
-> had already retired it as a contract (*"an arbitrary number which I declared so that we could have
-> a goal"*); the arc is scored on the levers' own merits. The failure mode he named still stands:
-> *"I'm spending more time awaiting the completion of test runs than adding features or learning."*
+> *"My hunch is that we are shifting project modes from changing HRW rust code to changing tours.
+> In other words, my hope going forward is to focus on improving tours, not feature code."*
 >
-> **DONE 2026-08-21** — `9432e982` (Rumoca: `source_root_input_cache_key`) and `02af5212` (HRW: the
-> parsed-source-root memo). **`notebook-check` 157 s → 109 s**, counter-predicted 49 s, observed 48 s.
-> Fidelity confirmed by that same check; ~326 MB retained, so `fidelity_msl` opts out.
+> **This is the mode, and it also closed `#48`.** The gate is keyed on `src/`, `crates/`,
+> `examples/` and `Cargo.toml`; **tour work touches none of them.** Measured 2026-08-21: editing
+> `index-reduction.md` costs **6.1 s** to check and **~36 s** to commit. So the test-time friction
+> Doug called a failure mode is ~6 s in the mode he is entering — which is why further optimisation
+> was declined rather than missed.
 >
-> **⟶ WHAT THE NEXT SESSION OWES, in order:**
+> **THE TOUR ITERATION LOOP, and it is not the gate:**
 >
-> 1. **ASK DOUG ABOUT LEVER B — it is blocked on him, not on work.** Worth ~49 s. The blocker is in
->    the box below: a bare session makes the suite verify a compile *the app never performs*, and
->    regenerating the notebook to bare-session values makes the committed traces disagree with the
->    app too. **Do not decide this in-session.**
-> 2. **`docs/upstream-issues.md` P1 is the only remaining large lever**, and it is a question to a
->    maintainer, not work HRW can do: *should a change to a workspace document invalidate resolution
->    of durable external source roots?* It reproduces in six lines and serves the maintainership goal
->    whether or not it ever speeds up the gate.
-> 3. **P2 is written but its number is UNVERIFIED.** The ~21 s cache-miss prune was attributed by
->    *subtraction* — it is the only uninstrumented step on the miss path, which is strong but is not
->    a measurement. **Time the prune directly before filing.**
+> ```text
+> cargo test -p hrw --lib -- --test-threads=1 doc_citations tour   # 6.1s -- while editing
+> cargo run -q -p hrw --example gen_tour_catalogue                 # 9.9s -- ONLY if a ## heading changed
+> cargo test -p hrw --lib -- --test-threads=1                      # 29.9s -- before the commit
+> ```
 >
-> **AND THE PROCESS FINDING THIS ARC COST THE MOST TIME TO RE-LEARN.** Three `perl` substitutions in
-> one session hit the **first** match rather than the intended one: one silently rewrote an unrelated
-> loop into non-compiling code, and one perturbed a *different test* than the one being
-> revert-checked — so a must-fire check appeared to pass when it had never run. `CLAUDE.md` already
-> forbids generating source text through a shell. **Use the Edit tool: it requires a unique match and
-> fails loudly.** Python was installed on 2026-08-21 partly on the inference that Claude prefers it;
-> it is fine for CSV and analysis work (`docs/setup-windows.md` §7a, and **`-X utf8` is required**),
-> but it is not the answer to this.
+> **TWO TRAPS, both of which have cost the full 220 s gate before:**
+>
+> - **`connect-expansion.md` is the one expensive tour.** It is the only one carrying
+>   `<!-- pane-groups -->` tables, which slow-gated tests verify against a real compile. **Editing
+>   one of those tables means FULL**, whatever the diff-grep says. No other tour has them.
+> - **Any `##` heading edit changes `CATALOGUE.md`.** Forget `gen_tour_catalogue` and
+>   `tour_catalogue_is_current` fails. The order is `cargo fmt` → generators → checks, and getting
+>   it backwards has cost the whole gate four times.
+>
+> **Where the tour work stands** is in *THE WALK* below — `connect-expansion.md` is the validated
+> template (`docs/fixture-tours/README.md` carries its five rules), **seven of nine tours have never
+> been walked**, and `index-reduction.md` was rewritten 2026-08-18 and is mid-walk with three
+> corrections already taken from it. **Convert ONE TOUR AT A TIME — the one Doug is about to walk.**
+>
+> ### ✅ `#48` IS CLOSED — 2026-08-21. Gate ~315 s → ~220 s; `notebook-check` 157 s → 109 s
+>
+> **Shipped:** `9432e982` (Rumoca: `source_root_input_cache_key`) and `02af5212` (HRW: the
+> parsed-source-root memo). **Only ~22 s of the gate is attributable** — identical code ran 196 s,
+> 219 s and 287 s in one afternoon, so the ~95 s drop must not be quoted as an achievement. The
+> clean number is `notebook-check`, **157 s → 109 s**, counter-predicted 49 s and observed 48 s.
+>
+> **THREE LEVERS WERE DECLINED, NOT MISSED, and the full ledger is `docs/ideas.md` #48.** **A** was
+> overestimated 20× (~5 s; 3 of 37 compiles). **B** was declined *by Doug on fidelity grounds* — a
+> bare session makes the suite verify a compile the app never performs. **Parallelism is dead in
+> both forms**: a worker pool is blocked by `OutputCapture`'s process-global `dup2` on fd 1/2, and
+> process sharding measured **worse than serial** (236 s vs 219 s) because it destroys
+> `compile_specimen_shared` — the suite is fast *because* 802 tests share those compiles.
+>
+> **WHAT REMAINS IS UPSTREAM AND IS DELIBERATELY UNSCHEDULED.** `docs/upstream-issues.md` **P1** is
+> worth up to ~115 s but is a **semantics-changing** patch — the first departure from this fork's
+> additive/observation-only discipline — and **whether it is even fidelity-preserving is the open
+> question inside it.** Doug agreed a protocol: **discussion → study → discussion → change.** None
+> of those steps has been taken. **P2's ~21 s figure is UNVERIFIED** — attributed by subtraction,
+> not timed. Time the prune before filing.
+>
+> **AND THE PROCESS FINDING THAT COST THE MOST TIME.** Three `perl` substitutions in one session hit
+> the **first** match rather than the intended one: one silently rewrote an unrelated loop into
+> non-compiling code, and one perturbed a *different test* than the one being revert-checked — so a
+> must-fire check appeared to pass when it had never run. `CLAUDE.md` already forbids generating
+> source text through a shell. **Use the Edit tool: it requires a unique match and fails loudly.**
+> Python was installed on 2026-08-21 partly on the inference that Claude prefers it; it is fine for
+> CSV and analysis work (`docs/setup-windows.md` §7a, **`-X utf8` required**), but it is not the
+> answer to this.
 >
 > **FIVE LEVERS ARE DEAD BY MEASUREMENT — do not re-propose them.** Parallelism (~2 s; the
 > worker tests serialise on a global `Mutex<WorkerState>`), memoising simulations (~2 s; the key

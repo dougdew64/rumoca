@@ -2017,7 +2017,85 @@ platforms.
 
 ---
 
-## 48. Get the full gate under one minute — REOPENED AND RESCOPED 2026-08-20
+## 48. Get the full gate under one minute — ✅ CLOSED 2026-08-21
+
+### ⟶ HOW IT CLOSED, AND WHY THE REMAINING LEVERS WERE DECLINED RATHER THAN MISSED
+
+**Delivered: the gate went ~315 s → ~220 s, and `notebook-check` 157 s → 109 s.** The only
+*attributable* part is lever C's memo — **~22 s of the gate and ~48 s of the notebook check**,
+counter-predicted at 49 s and measured at 48 s. The rest of the gate's drop is machine variance;
+identical code ran **196 s, 219 s and 287 s** on one afternoon, so nobody should quote the ~95 s as
+an achievement. Commits `9432e982` (Rumoca) and `02af5212` (HRW).
+
+**Doug closed it on first principles, 2026-08-21:** *"if the upstream changes will greatly reduce
+test execution time without sacrificing fidelity or accuracy, then let's make those changes. And,
+let's not attempt any of the other changes as they don't seem to yield sufficient reductions in
+test execution time to justify sacrificing fidelity."*
+
+**Then the ground moved, and that is what actually closed it.** He named the next project mode:
+*"my hope going forward is to focus on improving tours, not feature code."* **The 220 s gate is
+keyed on `src/`, `crates/`, `examples/` and `Cargo.toml` — tour work touches none of them.**
+Measured 2026-08-21: editing `index-reduction.md` costs **6.1 s** to check and **~36 s** to commit
+(9.9 s of that `gen_tour_catalogue`, needed only if a `##` heading changed). **The friction this
+item existed to remove is ~6 s in the mode Doug is entering**, so further optimisation buys
+sessions he was not going to spend anyway.
+
+**THE ONE TOUR THAT IS STILL EXPENSIVE IS `connect-expansion.md`**, the only one carrying
+`<!-- pane-groups -->` tables — verified against a real compile by slow-gated tests, so editing one
+of those tables is the FULL 220 s gate whatever the diff-grep says. Every other tour, including
+`index-reduction.md`, has none.
+
+#### The final ledger
+
+| # | lever | estimated | measured | outcome |
+|---|---|---:|---:|---|
+| **A** | Stop invalidating the resolved MSL per compile | ~115 s | **~5 s** | dead — 3 of 37 compiles |
+| **B** | Compile MSL-free specimens in a bare session | ~49 s | — | **declined: costs fidelity** |
+| **C** | Reduce the 10 full MSL loads | ~44 s | **~48 s** | **shipped** |
+| **D** | Cut `t_end` | — | **0 s** | dead |
+| **E** | Parallelism (pool or shards) | unpriced | **negative** | dead — see below |
+
+**WHAT REMAINS IS UPSTREAM, AND IT IS DELIBERATELY NOT SCHEDULED.** `docs/upstream-issues.md`
+**P1** (workspace-document changes invalidating durable-external resolution) is worth up to ~115 s
+and possibly more, but it is a **semantics-changing** patch — the first departure from this fork's
+additive/observation-only discipline — carried through every rebase, with uncertain acceptance, and
+**whether it is even fidelity-preserving is the open question inside it.** Doug agreed a three-step
+protocol before any of it: discussion → study → discussion → change. **None of those steps has been
+taken, and none should be taken without him.**
+
+### ⟶ PARALLELISM IS DEAD IN BOTH FORMS — measured 2026-08-21, do not re-propose
+
+**This item's earlier "parallelism ≈ 2 s" verdict was a claim about a scope**, measured on
+`--test-threads` with every test sharing one `Mutex<WorkerState>`. Two other designs existed and
+were priced properly. Both are dead, for *different* reasons, and neither cost a fidelity trade to
+find out.
+
+**A worker POOL is blocked by accuracy, not by memory.** `OutputCapture` does `dup2` on **fd 1 and
+fd 2 — process-global descriptors** — and `compile_target` starts one on *every* compile. So no two
+compiles can run concurrently in one process at all; this is what `.cargo/config.toml` documents as
+a deadlock. It exists because some Rumoca phases print diagnostics via `println!` instead of
+returning them, so weakening it either loses those lines or interleaves them and attributes them to
+the wrong compile — **a log line claiming something that did not happen.**
+
+**PROCESS SHARDING IS MEASURED WORSE THAN SERIAL, and the reason is the interesting part.**
+
+| shard | tests | time |
+|---|---:|---:|
+| `worker::` | 108 | **235.1 s** |
+| everything else | 693 | **120.3 s** |
+| **wall, run concurrently** | 802 | **236 s** |
+| single process | 802 | **219 s** |
+
+`worker::` **alone** costs more than the whole 802-test suite does in one process, and the shards
+total 355 s sequentially against a 219 s baseline — **136 s of duplicated work**, which is
+contention-independent. **Sharding destroys `compile_specimen_shared`:** in one process `app::` and
+`ui_tests::` warm the memo before `worker::` runs, and each shard re-compiles what it needs at
+~3.5 s a time. **The suite is fast BECAUSE 802 tests share those compiles**, so any partition
+multiplies the dominant cost.
+
+**That is this item's own principle in a new dress** — *they are serial precisely because they share
+the expensive resource, and sharing is what makes them cheap* — and Claude proposed the pool without
+noticing the memo had made sharing load-bearing rather than incidental.
 
 ### ⟶ MEASURED 2026-08-21 — THE ANSWER, AND IT IS NOT WHERE THE METHOD LOOKED
 
