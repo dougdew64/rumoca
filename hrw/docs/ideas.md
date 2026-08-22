@@ -814,6 +814,40 @@ buffer used by matching and Tarjan animations) so the solver's progress is visib
 
 ## 31. Revisit all simulator functionality when Rumoca's simulator matures
 
+### ⟶ WHAT THE SIMULATION ERA WILL PROBABLY LOOK LIKE — Doug, 2026-08-22, recorded not scheduled
+
+**Doug, sketching the arc past the ramp-up:** *"When we move on to simulation, we will probably
+repeat the same kind of feature work that we did for compilation. We will probably discover that
+simulation requires much more UI support than does compilation. And we will probably discover that
+we need to implement new kinds of support for specimens. For example, the ability to edit
+parameters."*
+
+**Three notes on that, none of them a plan.**
+
+**1. THE UI PREDICTION IS RIGHT, AND THE REASON IS A DIMENSION, NOT A QUANTITY.** Compilation is a
+sequence of **discrete artifacts** — one IR per phase, ~ten phases, each inspectable after the fact
+and static once produced. Simulation adds **time, and iteration within time**: step size, order,
+Newton iterations per step, event detection and location, Jacobian re-evaluation — thousands of
+steps each with internal state. **That is not "more views", it is a different kind of view**:
+scrubbing, filtering, aggregation, and above all *"take me to the step where it went wrong."* None
+of HRW's compilation panes has that shape.
+
+**2. EXPECT THE INVERSE BURDEN FROM COMPILATION, which is why "the same kind of feature work" may
+mislead.** For compilation, HRW had to **build the observation** — Rumoca exposed each phase's
+*result* and not its *process*, which is the reason the capture scopes exist and the reason HRW
+moved in-workspace at all. **For simulation, Rumoca already ships four solver-IR inspectors**
+(`#17`). So the likely shape is **less instrumentation work and more UI work** — the opposite
+allocation, and it matches Doug's own prediction for a reason.
+
+**3. PARAMETER EDITING HAS A CONSTRAINT ALREADY ON THE BOOKS, worth knowing before it is designed.**
+Specimens carry `experiment` annotations, and **charter §4.3 makes those part of the System Modeler
+differential-test contract** — identical solver tolerances and initial conditions, or the comparison
+means nothing. **So interactive parameter editing must not write back into those annotations.** The
+right shape already has a precedent: `#48` ruled that `t_end` changes **at the call site**, never in
+the annotation, precisely because the annotation is a protocol rather than a setting. Parameter
+editing wants the same separation — **a live overlay on top of the committed protocol, not an edit
+to it.**
+
 Captured 2026-07-24 (Doug). Rumoca's simulator (diffsol BDF + RK45) is not yet
 reliable enough for production use. The compiler pipeline is solid and productive
 for learning, but the simulator needs upstream improvement before HRW's
@@ -1926,6 +1960,23 @@ upstream issues.
 ---
 
 ## 46. A failure specimen + tour for every compiler phase
+
+> ### ⟶ AND IT IS NOW LOAD-BEARING FOR DOUG'S STATED GOAL — 2026-08-22
+>
+> **This item already had two justifications — F10's absence clause has nothing to act on, and a
+> phase that only ever succeeds cannot be diagnosed. It has a third now, and it is the strongest.**
+>
+> Doug stated his end goal on 2026-08-22: *"I intend to be the guy that those engineers call for
+> help"* with simulation problems they cannot troubleshoot (`#66`, *compilation is a MEANS*).
+>
+> **What makes someone that person is not only knowing the mechanism — it is having seen enough
+> failures to recognise shapes. That is a different skill, and only one of the two is currently
+> being trained.** Every specimen here is authored to work, the 2026-08-04 sweep produced **0 of
+> 2,614 rows carrying a failure message**, and the failure paths remain the least-exercised code in
+> HRW. **A curriculum built entirely on working models trains diagnosis of nothing.**
+>
+> So this stops being one idea among many. **It is the item that supplies the failure experience the
+> goal requires**, and it is a prerequisite for `#45` (diagnostic mode) for the same reason.
 
 > ### ⟶ DO THIS BEFORE THE NEXT LARGE FIDELITY RUN
 >
@@ -4509,6 +4560,32 @@ complement. A curriculum tour there pays into the coursework directly
 
 **Doug, 2026-08-05:** *"I'm learning the compilation stuff as a means to an end. That end is being
 able to troubleshoot and improve simulations."*
+
+#### ⟶ WHY THIS IS A SOUND PLAN AND NOT A DETOUR — Doug's goal, stated 2026-08-22
+
+> *"Most engineers know zero about compilation and instead just adjust parameters and look at
+> simulation plots. I intend to be much better than those engineers. I intend to fully understand
+> the math and algorithms of compilation so that I can truly troubleshoot simulation problems. Most
+> engineers cannot truly troubleshoot simulation problems and must ask for help. I intend to be the
+> guy that those engineers call for help."*
+
+**The plan rests on a causal claim, and the claim is true.** When a simulation will not converge,
+the **symptom** is numerical and appears at a time step — but the **cause** is very often structural
+and was fixed at compile time: a torn nonlinear block Newton cannot solve, a structurally singular
+Jacobian column because no derivative depends on that state, an index-3 constraint never reduced, an
+over-determined connection set. **All of it is decided before the solver takes its first step.**
+
+**So the information needed to diagnose the failure is upstream of where the failure appears**, and
+an engineer who can see only the plot is looking at the last link of a chain they cannot inspect.
+That is the whole differentiator Doug is buying, and it is why compilation-before-simulation is the
+right order rather than a delay.
+
+**AND IT PROMOTES `#46` FROM ONE IDEA TO A LOAD-BEARING ONE.** What makes someone *the person others
+call* is not only knowing the mechanism — it is having seen enough failures to **recognise shapes**.
+**That is a different skill, and only one of the two is currently being trained.** Every specimen
+here is authored to work; the 2026-08-04 sweep produced **0 of 2,614 rows carrying a failure
+message**; the failure paths are the least-exercised code in HRW. **`#46` — a failure specimen and
+tour per phase — is the item that closes that**, and on this framing it stops being optional.
 
 #### ⟶ THE CURRICULUM BOUNDARY, MADE CONCRETE — 2026-08-22
 
