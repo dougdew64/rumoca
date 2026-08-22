@@ -1518,6 +1518,26 @@ deferred differential test, now reframed), `user-wolfram-tools` and
 
 ## 45. Diagnostic mode — explaining why *Doug's own* model failed
 
+### ⟶ RE-RAISED AS A POSSIBLE LONG-TERM PURPOSE, AND DELIBERATELY DEFERRED — 2026-08-22
+
+**Doug, looking ahead before the connections re-walk:** *"after I've ramped up, then you and I might
+treat HRW as the starting point for a much more interesting project: using HRW to diagnose and
+correct simulation failures."* He noted the project had no long-term scope at all — the name is
+literally the ramp-up goal — and that working together had changed his estimate of what was possible.
+
+**His ruling the same day: *"I don't want to make charter changes now. For now, I am still ignorant
+and so intend to work with HRW and you to reduce my ignorance during the months ahead."*** So this
+is **not** active work and **not** a scope change. It is recorded here only so a later session
+neither forgets it nor mistakes it for a live direction.
+
+**Two things to carry if it is ever taken up.** *(1)* It would be a **charter amendment**, changing
+purpose and scope, because standing rules derive from the current one — `DO NOT optimise HRW to
+widen test scope` rests on *"HRW is an education project, not a production tool"*, and a diagnostic
+product would pull against it. *(2)* **The prerequisites are already named below and are not
+built**: the oracle (#43) is a *requirement*, not a nice-to-have, and the corpus contains almost no
+failures — the 2026-08-04 sweep produced **0 of 2,614 rows carrying a failure message**, so the
+failure paths a diagnostic product lives on are the least-exercised code here. **#46 comes first.**
+
 Raised 2026-07-29 (Doug), after the rank-deficiency tour:
 
 > Your ability to leverage HRW when answering my questions means that HRW could have
