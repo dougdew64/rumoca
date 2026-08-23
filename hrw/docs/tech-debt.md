@@ -427,6 +427,22 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   before. *Files:* `main.rs`, `worker.rs`, `bridge.rs`, `.vscode/launch.json`,
   `hrw/.vscode/launch.json`.
 
+## Test debt
+
+- [ ] **`app::tests::a_scratch_specimen_is_listed_and_marked` passes vacuously when no probe
+  exists.** It returns early unless `.hrw-bridge/specimens/ScratchProbe.mo` is present, so in a
+  clean checkout it checks nothing and says so to no one — the must-fire rule pointed at a test
+  rather than at production code.
+
+  **The fix is not simply to drop the early return.** Making it non-vacuous means the test writes
+  its own probe and removes it, in a directory Doug and Claude both use during a session. That is
+  exactly the shape of the three `.hrw-bridge/tour.md` defects (`CLAUDE.md`, *"a test that wrote
+  its own and **deleted Doug's** afterwards"*), so it wants the `ui_tests::AdHocTour` treatment —
+  restore what was there, including on a panic — rather than a naive create/delete.
+
+  *Found 2026-08-22, when two unrelated scratch specimens broke the test's other assertion. That
+  one is fixed; this one is the half that stayed.*
+
 ## UI defects — found by walking
 
 - [ ] **The "✨ Claude's answer" row vanishes when no ad hoc tour exists, and its absence is

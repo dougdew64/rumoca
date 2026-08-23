@@ -21,6 +21,8 @@ Each stop asks you to **commit to an answer**, then sends you to the pane that s
 answers are read from generated compiler traces, so if a count disagrees with your screen, the tour
 is wrong and I want to know.
 
+<!-- walked: the-type-claim 2026-08-22T19:09 -->
+
 ### The type claim, and where Rumoca and the language part company
 
 **MLS §9.3 requires connected connectors to be type-compatible, and Rumoca does check.** Four
@@ -52,6 +54,8 @@ rather than the problem's difficulty. It is filed in
 connectors, where every member pairs — **and absent where you need it most**, two unrelated ones,
 where none of them does.
 
+<!-- /walked -->
+
 ---
 
 ## Stop 1 — How many nodes?
@@ -79,11 +83,15 @@ statements — so joining `a` to `b` and `b` to `c` puts all three on one node, 
 `connect` statement names `a` and `c` together. That is **transitivity**, and it is the only
 property you need here.
 
+<!-- walked: node-is-the-readers-bookkeeping 2026-08-22T19:09 -->
+
 **"Node" is borrowed from circuit theory, and it is yours — not the compiler's.** The word appears
 **nowhere in Rumoca and nowhere in HRW**: no pane shows one, no frame counts them, and no field is
 named for them. It is bookkeeping *you* do on paper in order to predict what the compiler will
 build. What the compiler actually builds is **connection sets**, and the whole of this stop is the
 gap between the two.
+
+<!-- /walked -->
 
 > **Predict.** How many nodes do these four statements make, and how many connectors are on the
 > largest one? Then a second number, and expect it to disagree with the first: **how many

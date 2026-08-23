@@ -663,6 +663,14 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >   `tour_catalogue_is_current` fails. The order is `cargo fmt` → generators → checks, and getting
 >   it backwards has cost the whole gate four times.
 >
+>   **AND THAT IS NOT THE ONLY TRIGGER — the blurb is the tour's FIRST BOLDED LINE** *(found
+>   2026-08-22)*. `tour::catalogue` takes each tour's summary from the first line starting with
+>   `**`, so **inserting any bolded paragraph above the existing one silently replaces the
+>   catalogue's summary** — in this case with a mid-sentence fragment, *"MLS §9.3 requires connected
+>   connectors to be type-compatible, and Rumoca does check. Four"*. Nothing about headings was
+>   involved. **A new intro section goes BELOW the tour's opening bold line**, or the catalogue's
+>   description of that tour changes with it.
+>
 > **⟶ THE WALK RESTARTS FROM THE BEGINNING, AT THE CONNECTIONS TOUR — Doug, 2026-08-21.** *"I am
 > going to start completely over on walking tours, beginning with the connections tour."* So
 > `connect-expansion.md` is the live document — which is also the one tour carrying `pane-groups`
