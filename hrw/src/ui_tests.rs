@@ -233,16 +233,29 @@ fn the_tour_picker_shows_every_fixture_and_no_readme() {
     h.get_by_value("Pick a tour…").click();
     h.run_steps(2);
 
-    for tour in [
-        "node-pointing",
-        "frame-seeking",
-        "camera-aiming",
-        "structural-vs-numerical-rank",
-        "the-oracle",
-        "dae-construction",
-        "matching",
-        "matching-live",
-    ] {
+    // **Derived from the corpus, not restated.** This loop used to iterate a
+    // hand-written list of eight names while the test's own name claimed *every*
+    // fixture; a census on 2026-08-22 found **22 tours on disk and 9 named here**, so
+    // fourteen were never checked. Worse than the shortfall is the shape: a
+    // hand-written roster can only notice a tour that **disappears** from the picker,
+    // never one that is added and never wired — because a tour missing from the picker
+    // is also missing from the list, so nothing queries it and the test stays green.
+    //
+    // The same circular guarantee was found and fixed in `stage_tabs.rs` the same day.
+    // [`crate::bridge::fixture_tours`] is *"the single definition of is-a-tour-file"*,
+    // so deriving from it makes the name true.
+    let tours: Vec<String> = crate::bridge::fixture_tours()
+        .iter()
+        .filter_map(|p| p.file_stem().and_then(|s| s.to_str()).map(str::to_owned))
+        .collect();
+    // Non-vacuity: an empty or truncated corpus would make the loop below assert
+    // nothing at all, which is the failure this whole change is about.
+    assert!(
+        tours.len() >= 20,
+        "expected the full tour corpus, found {}: {tours:?}",
+        tours.len(),
+    );
+    for tour in &tours {
         // `contains`, not exact: since 2026-08-05 a row reads
         // "failure-typecheck  ·  DimensionMismatch" so the model can be searched for
         // as well as the phase. The tour name is still the row's identity.
