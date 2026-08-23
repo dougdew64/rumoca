@@ -115,13 +115,13 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**60 modules, 67,711 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**60 modules, 67,992 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `worker.rs` | 11,088 |
 | `app.rs` | 6,508 |
-| `app/tests.rs` | 5,919 |
+| `app/tests.rs` | 5,922 |
 | `doc_citations.rs` | 4,908 |
 | `bridge.rs` | 3,772 |
 | `ui_tests.rs` | 2,567 |
@@ -138,6 +138,7 @@ showing 48 equations. They are derived now, and
 | `tarjan_anim.rs` | 871 |
 | `matching_ledger.rs` | 822 |
 | `survey.rs` | 769 |
+| `ic_plan_anim.rs` | 768 |
 | `playback.rs` | 760 |
 | `arch_doc.rs` | 758 |
 | `tour_panel.rs` | 743 |
@@ -147,7 +148,6 @@ showing 48 equations. They are derived now, and
 | `canvas.rs` | 681 |
 | `context_bar.rs` | 666 |
 | `report_sub_view.rs` | 650 |
-| `ic_plan_anim.rs` | 628 |
 | `expr_format.rs` | 621 |
 | `model_list.rs` | 600 |
 | `modelica_lex.rs` | 595 |
@@ -158,6 +158,7 @@ showing 48 equations. They are derived now, and
 | `artifact_pane.rs` | 514 |
 | `pantelides_ladder.rs` | 499 |
 | `nav_view.rs` | 483 |
+| `alias_anim.rs` | 465 |
 | `matrix_panes.rs` | 451 |
 | `equation_sheet_view.rs` | 446 |
 | `reduction_anim.rs` | 442 |
@@ -165,7 +166,6 @@ showing 48 equations. They are derived now, and
 | `specimen_source.rs` | 397 |
 | `pre_lowering_anim.rs` | 379 |
 | `promote.rs` | 342 |
-| `alias_anim.rs` | 327 |
 | `specimen_purpose.rs` | 316 |
 | `source_map.rs` | 281 |
 | `stage_view.rs` | 266 |
@@ -179,7 +179,7 @@ showing 48 equations. They are derived now, and
 | `compile_caches.rs` | 101 |
 | `ui_state.rs` | 73 |
 | `field_help.rs` | 67 |
-| **total** | **67,711** |
+| **total** | **67,992** |
 <!-- END GENERATED module-sizes -->
 
 

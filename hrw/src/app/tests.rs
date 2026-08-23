@@ -2008,9 +2008,12 @@ fn a_replay_keeps_its_place_across_a_stage_switch() {
             .on_screen_animation()
             .expect("the replay must still be on screen")
             .position(),
-        (2, 3),
+        // 4, not 3: a three-block plan is four frames, because frame 0 is the
+        // opening state where nothing has been solved (2026-08-23). The cursor
+        // is unchanged — this test is about the cursor surviving the round trip.
+        (2, 4),
         "a replay built from the compile outlives a visit to another stage — \
-             nothing it was built from changed. Before 2026-08-20 this returned (0, 3): \
+             nothing it was built from changed. Before 2026-08-20 this returned cursor 0: \
              the report sub-view row cleared it on the way through, and a reader who had \
              walked to block 2 was silently put back at the start",
     );

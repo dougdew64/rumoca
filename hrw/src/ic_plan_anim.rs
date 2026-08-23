@@ -89,9 +89,28 @@ pub struct PlanContext {
     pub pinned_unknowns: Vec<String>,
 }
 
+/// One step of the walk: the opening state, or one block of the plan.
+///
+/// **`Start` is the opening frame — nothing solved, nothing attempted.** Added
+/// 2026-08-23 with `alias_anim`'s, after Doug reported both views opening "with
+/// progress already having been made". The four views fed by Rumoca capture
+/// scopes each carry a `Start` step; these two parse a report *list*, so the
+/// first frame was the first block already solved and no frame described the
+/// system at t=0 before the plan ran.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum IcStep {
+    /// Before the first block. What it needs to say — how many blocks, how many
+    /// iterate — the animation computes from the plan it holds.
+    Start,
+    /// One block of the plan, executed.
+    Block(IcBlock),
+}
+
 /// Reveal of the initial-condition solve plan.
 pub struct IcPlanAnimation {
-    playback: Playback<IcBlock>,
+    /// `[Start, Block(0), …, Block(n-1)]` — **one longer than the block count**,
+    /// so anything reporting a total must subtract the opening frame.
+    playback: Playback<IcStep>,
     context: PlanContext,
     /// Parts of the plan report this parser could not read. Rendered above the
     /// header, because the messages below it — *"the plan is empty"*, *"nothing has
@@ -142,11 +161,61 @@ impl IcPlanAnimation {
                 .unwrap_or_default(),
         };
 
+        // **No opening frame when there is no plan.** A lone `Start` would make
+        // `is_empty()` false for a model with nothing to solve at t=0, and the
+        // pane would offer a walk through nothing instead of saying so.
+        let frames: Vec<IcStep> = if blocks.is_empty() {
+            Vec::new()
+        } else {
+            std::iter::once(IcStep::Start)
+                .chain(blocks.into_iter().map(IcStep::Block))
+                .collect()
+        };
+
         Some(Self {
-            playback: Playback::recorded(blocks, FRAME_INTERVAL),
+            playback: Playback::recorded(frames, FRAME_INTERVAL),
             context,
             problems,
         })
+    }
+
+    /// Blocks in the plan, which is one fewer than the frame count.
+    fn n_blocks(&self) -> usize {
+        self.playback.position().1.saturating_sub(1)
+    }
+
+    /// The blocks walked so far — empty at the opening frame.
+    ///
+    /// `skip(1)` steps over `Start`, and the cursor doubles as the count for the
+    /// same reason it does in `alias_anim`: at frame 0 no block has run, and at
+    /// frame k exactly k have.
+    fn blocks_done(&self) -> impl Iterator<Item = &IcBlock> {
+        self.playback
+            .frames()
+            .iter()
+            .skip(1)
+            .take(self.playback.cursor())
+            .filter_map(|s| match s {
+                IcStep::Block(b) => Some(b),
+                IcStep::Start => None,
+            })
+    }
+
+    /// What the opening frame says: the plan as it stands before any of it runs.
+    fn start_summary(&self) -> String {
+        let iterating = self
+            .playback
+            .frames()
+            .iter()
+            .filter(|s| matches!(s, IcStep::Block(b) if !matches!(b, IcBlock::Direct { .. })))
+            .count();
+        format!(
+            "Starting point: {} block{} to solve at t=0, {} needing iteration \u{2014} nothing \
+             solved yet",
+            self.n_blocks(),
+            if self.n_blocks() == 1 { "" } else { "s" },
+            iterating,
+        )
     }
 
     pub fn is_empty(&self) -> bool {
@@ -231,14 +300,28 @@ impl IcPlanAnimation {
     }
 
     fn render_current(&self, ui: &mut egui::Ui) {
-        let Some(block) = self.playback.current() else {
+        let Some(step) = self.playback.current() else {
             return;
         };
-        let (icon, color, summary) = block_style(block);
+        // Clapper board and `ANIM_EXPLORE` on the opening frame, matching the
+        // four capture-driven views — `34c22d56`: a start icon, not a finish
+        // flag.
+        let (icon, color, summary) = match step {
+            IcStep::Start => (
+                "\u{1f3ac}",
+                crate::colors::ANIM_EXPLORE,
+                self.start_summary(),
+            ),
+            IcStep::Block(b) => block_style(b),
+        };
         ui.horizontal_wrapped(|ui| {
             ui.label(egui::RichText::new(icon).size(16.0));
             ui.label(egui::RichText::new(summary).color(color).strong());
         });
+
+        let IcStep::Block(block) = step else {
+            return;
+        };
 
         // A torn block's inner sequence is the interesting part — show it.
         if let IcBlock::Torn { causal_steps, .. } = block
@@ -270,20 +353,14 @@ impl IcPlanAnimation {
             .color(crate::colors::ANIM_EXPLORE),
         );
 
-        let (cursor, total) = self.playback.position();
-        let done = cursor + 1;
-        let solved: usize = self
-            .playback
-            .frames()
-            .iter()
-            .take(done)
-            .map(IcBlock::unknowns_solved)
-            .sum();
+        // **The cursor IS the count of blocks executed**, because frame 0 is the
+        // opening state. This used to read `cursor + 1`, which is what made the
+        // walk open claiming a block had already been solved.
+        let done = self.playback.cursor();
+        let total = self.n_blocks();
+        let solved: usize = self.blocks_done().map(IcBlock::unknowns_solved).sum();
         let iterating = self
-            .playback
-            .frames()
-            .iter()
-            .take(done)
+            .blocks_done()
             .filter(|b| !matches!(b, IcBlock::Direct { .. }))
             .count();
 
@@ -314,7 +391,7 @@ impl IcPlanAnimation {
             .spacing([10.0, 2.0])
             .striped(true)
             .show(ui, |ui| {
-                for (i, b) in self.playback.frames().iter().take(done).enumerate() {
+                for (i, b) in self.blocks_done().enumerate() {
                     ui.label(format!("{}.", i + 1));
                     ui.label(egui::RichText::new(block_kind_label(b)).monospace());
                     ui.label(egui::RichText::new(block_targets(b)).monospace());
@@ -339,18 +416,30 @@ impl Animated for IcPlanAnimation {
     }
 
     fn current_frame_context(&self) -> Option<serde_json::Value> {
-        let block = self.playback.current()?;
-        let (cursor, total) = self.playback.position();
-        Some(serde_json::json!({
-            "step": block_style(block).2,
-            "kind": block_kind_label(block),
-            "solves": block_targets(block),
-            "block": cursor + 1,
-            "blocks_total": total,
+        let step = self.playback.current()?;
+        // `blocks_total` counts plan blocks, so it excludes the opening frame.
+        let mut ctx = serde_json::json!({
+            "block": self.playback.cursor(),
+            "blocks_total": self.n_blocks(),
             "verdict": self.context.verdict,
             "dropped_equations": self.context.dropped_equations,
             "pinned_unknowns": self.context.pinned_unknowns,
-        }))
+        });
+        let obj = ctx.as_object_mut().expect("built as an object");
+        match step {
+            IcStep::Start => {
+                obj.insert("step".to_owned(), serde_json::json!(self.start_summary()));
+            }
+            IcStep::Block(block) => {
+                obj.insert("step".to_owned(), serde_json::json!(block_style(block).2));
+                obj.insert(
+                    "kind".to_owned(),
+                    serde_json::json!(block_kind_label(block)),
+                );
+                obj.insert("solves".to_owned(), serde_json::json!(block_targets(block)));
+            }
+        }
+        Some(ctx)
     }
 
     /// Seek is delegated to [`Playback`], so all eight views agree on what a frame
@@ -506,16 +595,29 @@ mod tests {
              "causal_steps": [{"var": "C.n.v", "equation": 6, "newton": false}]},
         ])))
         .expect("a report with blocks parses");
-        assert_eq!(anim.position(), (0, 3));
+        assert_eq!(
+            anim.position(),
+            (0, 4),
+            "three blocks plus the opening frame"
+        );
 
-        let frames = anim.playback.frames();
-        assert!(block_style(&frames[0]).2.contains("src.v"));
-        let newton = block_style(&frames[1]).2;
+        let blocks: Vec<&IcBlock> = anim
+            .playback
+            .frames()
+            .iter()
+            .filter_map(|s| match s {
+                IcStep::Block(b) => Some(b),
+                IcStep::Start => None,
+            })
+            .collect();
+        assert_eq!(blocks.len(), 3, "the opening frame is not a block");
+        assert!(block_style(blocks[0]).2.contains("src.v"));
+        let newton = block_style(blocks[1]).2;
         assert!(
             newton.contains("R.i") && newton.contains("Newton"),
             "{newton}"
         );
-        let torn = block_style(&frames[2]).2;
+        let torn = block_style(blocks[2]).2;
         assert!(
             torn.contains("C.p.v"),
             "the tear variable is the guess: {torn}"
@@ -548,10 +650,11 @@ mod tests {
     /// misbehaves.
     #[test]
     fn the_capture_carries_the_verdict_and_the_relaxation() {
-        let anim = IcPlanAnimation::from_report(&report(serde_json::json!([
+        let mut anim = IcPlanAnimation::from_report(&report(serde_json::json!([
             {"kind": "scalar_newton", "var": "R.i", "equation": 9},
         ])))
         .unwrap();
+        assert!(anim.seek(1), "step past the opening frame to the block");
         let ctx = anim
             .current_frame_context()
             .expect("a frame is under the cursor");
@@ -562,6 +665,38 @@ mod tests {
         assert_eq!(ctx["dropped_equations"], serde_json::json!([17]));
         assert_eq!(ctx["pinned_unknowns"], serde_json::json!(["gnd.p.i"]));
         assert_eq!(anim.which(), "ic_plan");
+    }
+
+    /// **The walk opens before any block has been solved.**
+    ///
+    /// The sibling of `alias_anim`'s guard, from the same report: Doug,
+    /// 2026-08-23, found both views opening *"with progress already having been
+    /// made"*. The pair of assertions is the point — the opening frame reports
+    /// **zero** blocks done, and the frame after it reports one.
+    #[test]
+    fn the_walk_opens_before_any_block_has_been_solved() {
+        let mut anim = IcPlanAnimation::from_report(&report(serde_json::json!([
+            {"kind": "scalar_direct", "var": "src.v", "solution": {"Literal": {"Real": 12.0}}},
+            {"kind": "scalar_newton", "var": "R.i", "equation": 9},
+        ])))
+        .unwrap();
+
+        assert_eq!(anim.playback.current(), Some(&IcStep::Start));
+        let opening = anim.current_frame_context().expect("an opening frame");
+        assert_eq!(opening["block"], 0, "no block has run at the opening frame");
+        assert_eq!(opening["blocks_total"], 2);
+        assert!(
+            opening["kind"].is_null() && opening["solves"].is_null(),
+            "the opening frame solves nothing, so it must claim no block"
+        );
+        assert!(
+            opening["step"].as_str().is_some_and(|s| s.contains("1")),
+            "the opening frame states how many blocks need iteration: {}",
+            opening["step"]
+        );
+
+        assert!(anim.seek(1), "the first block is frame 1");
+        assert_eq!(anim.current_frame_context().expect("a frame")["block"], 1);
     }
 
     /// A failed initialization carries an `error` and no `blocks`; there is no
@@ -582,8 +717,13 @@ mod tests {
         .unwrap();
         assert_eq!(
             anim.position(),
-            (0, 1),
-            "only the recognised block survives"
+            (0, 2),
+            "only the recognised block survives, plus the opening frame"
+        );
+        assert_eq!(
+            anim.n_blocks(),
+            1,
+            "one block, and the opening frame is not"
         );
     }
 

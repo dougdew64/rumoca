@@ -246,6 +246,7 @@ note; the rest quote the commit.
 | 08-23 | `alias_anim` and `ic_plan_anim` nested a scroll area and capped it, same defect Doug found on 08-16 | toolchain | night 2; generalising `connection_anim`'s per-file check caught both on its first run |
 | 08-23 | `symbol_is_defined` matched a **prefix** — a new `pantelides_ladder` module silently retired the `pantelides` claim of absence | toolchain | night 2; `claims_of_absence_are_still_true` fired the moment the module landed |
 | 08-23 | `architecture.md` cited `mem::take`, which resolved only via that loose match | toolchain | night 2; exposed by tightening the resolver — it names std, so it now reads `std::mem::take` |
+| 08-23 | `alias_anim` and `ic_plan_anim` opened on frame 1 with a step **already applied** — no opening frame, since birth | **Doug** | walking the two views night 2 had just touched; the same pair again, and the column read had missed it by reading the trait and not the frame semantics |
 
 **Seven days: Doug 8, Claude 13, toolchain 3.** Against the first two days' **Doug 10, toolchain 5,
 Claude 5**, the rate that matters moved: **Doug from ~5.0/day to ~1.1/day**, while Claude's own

@@ -4026,3 +4026,55 @@ belongs in Claude's memory store, not in `docs/`.**
 
 *(Held in memory as well, which is keyed to a filesystem path and does not travel — so it is
 written here for the machine that has never seen it.)*
+
+## 2026-08-23 — every replay opens on a frame where nothing has happened
+
+**Doug, walking the two views night 2 had just fixed:** *"Each of those views is opening to frame 1,
+with progress already having been made in their algorithms."* He was right, and it was **not** that
+night's change — the diff removed a scroll wrapper and left `take(done)` byte-identical. `let done =
+done + 1` had been there since the commit that created both views.
+
+**He also recalled the design, correctly:** *"we had implemented the concept of a frame 0. For frame
+0, no progress had been made or even attempted yet. And for frame 0, there was an opportunity to
+provide some sort of introductory status message."* That is `09634b15`, a month earlier, for index
+reduction — whose commit message describes the identical symptom: *"nothing in the trace described
+the system before reduction, which is the one thing a replay needs in order to show what reduction
+changed."*
+
+### The audit, which is the part worth keeping
+
+Eight animated views, three tiers:
+
+| tier | views | frame 0 |
+|---|---|---|
+| explicit `Start` step | `reduction`, `tearing`, `connection`, `pre_lowering` | nothing done, nothing attempted |
+| opens on an announced intention | `matching` (`TryEquation`), `tarjan` (`Visit`) | an attempt already in progress |
+| opened on a completed step | `alias`, `ic_plan` | **the defect** |
+
+**The split is not arbitrary — it follows where the frames come from.** The four compliant views are
+fed by Rumoca capture scopes, which emit a `Start` frame. The two broken ones parse a report *list*,
+where the list elements are the events and nothing represents "before". A structural cause, not an
+oversight in two files.
+
+### What was done
+
+`AliasStep` and `IcStep` wrap their payloads with a `Start` variant, so the frame list is
+`[Start, …]` and **the cursor now IS the count of work done** — 0 at the opening frame. Both carry
+the clapper board and `ANIM_EXPLORE` of the existing four (`34c22d56`: a start icon, not a finish
+flag). Neither builds an opening frame when there is nothing to open, so `is_empty()` still tells
+the truth about a model that eliminated nothing.
+
+**Tour-safe, and that was checked rather than assumed.** No tour links to `AliasAnim` or `IcPlan`
+frames, and no tour prose describes their numbering. The links that exist name `MatchingAnim`
+frames 5, 6 and 41.
+
+### ⟶ TIER 2 IS DOUG'S RULING, AND IT HAS A PRICE THE OTHERS DID NOT
+
+`matching` opens on `TryEquation(0)` and `tarjan` on `Visit(0)` — an attempt announced, nothing
+achieved. By Doug's own definition (*"no progress had been made or even attempted"*) both fall
+short; by a weaker one they are fine, since nothing is matched or closed yet.
+
+**Fixing them shifts every frame index in the matching tours**, which cite `frame/5`, `frame/6` and
+`frame/41`. That is a real cost against a subtler benefit, and it is a change to what a pane claims.
+**Recorded, not decided.**
+

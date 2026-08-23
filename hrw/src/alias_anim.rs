@@ -48,9 +48,35 @@ pub struct AliasFrame {
     pub replacement: String,
 }
 
+/// One step of the reveal: the opening state, or one elimination.
+///
+/// **`Start` is the opening frame — nothing eliminated, nothing attempted.**
+/// Added 2026-08-23 after Doug reported that this view "opens to frame 1 with
+/// progress already having been made". It did: the frame list was the
+/// eliminations themselves, so frame 1 showed one substitution *already
+/// applied*, and there was no state describing the system before the pass.
+///
+/// That is the same defect `09634b15` fixed for index reduction a month earlier
+/// — *"nothing in the trace described the system before reduction, which is the
+/// one thing a replay needs in order to show what reduction changed"* — and the
+/// four views built on Rumoca capture scopes all carry a `Start` step for it.
+/// This view and `ic_plan_anim` parse a report *list* rather than a capture, so
+/// they never got one.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AliasStep {
+    /// Before any substitution. Carries nothing: what it needs to say is the
+    /// unknown count, which the animation already holds.
+    Start,
+    /// One variable substituted away.
+    Eliminated(AliasFrame),
+}
+
 /// Reveal of the alias eliminations recorded for a model.
 pub struct AliasAnimation {
-    playback: Playback<AliasFrame>,
+    /// `[Start, Eliminated(0), …, Eliminated(n-1)]` — **one longer than the
+    /// elimination count**, so anything reporting a total must subtract the
+    /// opening frame.
+    playback: Playback<AliasStep>,
     /// Unknown count before any elimination, so the running state can say what
     /// the system has shrunk *from*. `None` when the report did not carry it.
     unknowns_before: Option<usize>,
@@ -81,7 +107,7 @@ impl AliasAnimation {
         // nothing to animate at all.
         red.get("eliminations")?.as_array()?;
         let mut problems = Vec::new();
-        let frames: Vec<AliasFrame> =
+        let eliminations: Vec<AliasFrame> =
             crate::json_read::parse_list(red, "eliminations", &mut problems, |e| {
                 Some(AliasFrame {
                     variable: e.get("variable")?.as_str()?.to_owned(),
@@ -96,13 +122,50 @@ impl AliasAnimation {
             .map(
                 // The report's count is the system *after* elimination, so the
                 // starting size is that plus the variables this pass removed.
-                |n| n as usize + frames.len(),
+                // **Counted from the eliminations, not from the frame list**,
+                // which is one longer now that it opens with `Start`.
+                |n| n as usize + eliminations.len(),
             );
+
+        // **No opening frame when there is nothing to open.** A lone `Start`
+        // would make `is_empty()` false for a model with no eliminations, and
+        // the pane would offer a replay of nothing instead of saying so.
+        let frames: Vec<AliasStep> = if eliminations.is_empty() {
+            Vec::new()
+        } else {
+            std::iter::once(AliasStep::Start)
+                .chain(eliminations.into_iter().map(AliasStep::Eliminated))
+                .collect()
+        };
+
         Some(Self {
             playback: Playback::recorded(frames, FRAME_INTERVAL),
             unknowns_before,
             problems,
         })
+    }
+
+    /// Eliminations recorded, which is one fewer than the frame count.
+    fn n_eliminations(&self) -> usize {
+        self.playback.position().1.saturating_sub(1)
+    }
+
+    /// What the opening frame says. The system as the pass finds it.
+    fn start_summary(&self) -> String {
+        match self.unknowns_before {
+            Some(before) => format!(
+                "Starting point: {before} unknowns, {} alias equation{} to substitute away \
+                 \u{2014} nothing eliminated yet",
+                self.n_eliminations(),
+                if self.n_eliminations() == 1 { "" } else { "s" },
+            ),
+            None => format!(
+                "Starting point: {} alias equation{} to substitute away \u{2014} nothing \
+                 eliminated yet",
+                self.n_eliminations(),
+                if self.n_eliminations() == 1 { "" } else { "s" },
+            ),
+        }
     }
 
     pub fn is_empty(&self) -> bool {
@@ -141,16 +204,27 @@ impl AliasAnimation {
     }
 
     fn render_current(&self, ui: &mut egui::Ui) {
-        let Some(frame) = self.playback.current() else {
+        let Some(step) = self.playback.current() else {
             return;
         };
+        // Clapper board and `ANIM_EXPLORE` on the opening frame, matching the
+        // four capture-driven views. `34c22d56`: a start icon, not a finish
+        // flag — nothing at the head of a replay may read as an ending.
+        let (icon, color, summary) = match step {
+            AliasStep::Start => (
+                "\u{1f3ac}",
+                crate::colors::ANIM_EXPLORE,
+                self.start_summary(),
+            ),
+            AliasStep::Eliminated(frame) => (
+                "\u{2702}",
+                crate::colors::ANIM_PATH_FOUND,
+                step_summary(frame),
+            ),
+        };
         ui.horizontal_wrapped(|ui| {
-            ui.label(egui::RichText::new("\u{2702}").size(16.0));
-            ui.label(
-                egui::RichText::new(step_summary(frame))
-                    .color(crate::colors::ANIM_PATH_FOUND)
-                    .strong(),
-            );
+            ui.label(egui::RichText::new(icon).size(16.0));
+            ui.label(egui::RichText::new(summary).color(color).strong());
         });
     }
 
@@ -166,8 +240,13 @@ impl AliasAnimation {
             .color(crate::colors::ANIM_EXPLORE),
         );
 
-        let (done, total) = self.playback.position();
-        let done = done + 1; // position() is 0-based; the cursor frame is done.
+        // **The cursor IS the count of eliminations applied**, because frame 0
+        // is the opening state: at the opening frame none have been applied, and
+        // at frame k exactly k have. This used to read `cursor + 1`, which is
+        // what made the view open claiming one substitution had already
+        // happened.
+        let done = self.playback.cursor();
+        let total = self.n_eliminations();
         ui.add_space(4.0);
         ui.label(match self.unknowns_before {
             Some(before) => format!(
@@ -198,7 +277,12 @@ impl AliasAnimation {
             .spacing([10.0, 2.0])
             .striped(true)
             .show(ui, |ui| {
-                for (i, f) in self.playback.frames().iter().take(done).enumerate() {
+                // `skip(1)` steps over the opening frame, which is a state
+                // rather than a substitution and has no row to contribute.
+                for (i, step) in self.playback.frames().iter().skip(1).take(done).enumerate() {
+                    let AliasStep::Eliminated(f) = step else {
+                        continue;
+                    };
                     ui.label(format!("{}.", i + 1));
                     ui.label(egui::RichText::new(&f.variable).monospace());
                     ui.label(
@@ -225,15 +309,25 @@ impl Animated for AliasAnimation {
     }
 
     fn current_frame_context(&self) -> Option<serde_json::Value> {
-        let frame = self.playback.current()?;
-        let (done, total) = self.playback.position();
-        Some(serde_json::json!({
-            "step": step_summary(frame),
-            "variable": frame.variable,
-            "replacement": frame.replacement,
-            "eliminated_so_far": done + 1,
-            "eliminations_total": total,
-        }))
+        let step = self.playback.current()?;
+        // `eliminations_total` counts substitutions, so it excludes the opening
+        // frame — a capture saying "77 of 78" would be describing a list that
+        // does not exist.
+        let total = self.n_eliminations();
+        Some(match step {
+            AliasStep::Start => serde_json::json!({
+                "step": self.start_summary(),
+                "eliminated_so_far": 0,
+                "eliminations_total": total,
+            }),
+            AliasStep::Eliminated(frame) => serde_json::json!({
+                "step": step_summary(frame),
+                "variable": frame.variable,
+                "replacement": frame.replacement,
+                "eliminated_so_far": self.playback.cursor(),
+                "eliminations_total": total,
+            }),
+        })
     }
 
     /// Seek is delegated to [`Playback`], so all eight views agree on what a frame
@@ -284,13 +378,57 @@ mod tests {
         let anim = AliasAnimation::from_report(&report(&[("a", "b"), ("c", "d"), ("e", "f")], 20))
             .expect("a report with eliminations parses");
         assert_eq!(anim.unknowns_before, Some(23), "20 left + 3 removed");
-        assert_eq!(anim.position(), (0, 3));
+        assert_eq!(
+            anim.position(),
+            (0, 4),
+            "three eliminations plus the opening frame"
+        );
+        assert_eq!(anim.n_eliminations(), 3, "the opening frame is not one");
+    }
+
+    /// **The replay opens before anything has happened.**
+    ///
+    /// Doug, 2026-08-23: this view *"is opening to frame 1, with progress
+    /// already having been made"*. It was: the frame list was the eliminations
+    /// themselves, so the first frame showed one substitution already applied
+    /// and nothing described the system beforehand.
+    ///
+    /// The regression guard is the pair — the opening frame reports **zero**
+    /// eliminated, and the one after it reports one. Asserting only the first
+    /// would pass on a view that never advanced.
+    #[test]
+    fn the_replay_opens_before_anything_has_been_eliminated() {
+        let mut anim = AliasAnimation::from_report(&report(&[("a", "b"), ("c", "d")], 8))
+            .expect("a report with eliminations parses");
+
+        assert_eq!(anim.playback.current(), Some(&AliasStep::Start));
+        let opening = anim.current_frame_context().expect("an opening frame");
+        assert_eq!(opening["eliminated_so_far"], 0);
+        assert_eq!(opening["eliminations_total"], 2);
+        assert!(
+            opening["step"].as_str().is_some_and(|s| s.contains("10")),
+            "the opening frame states the system it found: 8 left + 2 removed = 10, got {}",
+            opening["step"]
+        );
+        assert!(
+            opening["variable"].is_null(),
+            "the opening frame substitutes nothing, so it must claim no variable"
+        );
+
+        assert!(anim.seek(1), "the first substitution is frame 1");
+        let first = anim.current_frame_context().expect("a frame");
+        assert_eq!(first["eliminated_so_far"], 1);
+        assert_eq!(first["variable"], "a");
     }
 
     #[test]
     fn the_capture_carries_the_substitution_and_the_progress() {
-        let anim = AliasAnimation::from_report(&report(&[("r1.p.v", "src.n.v")], 5))
+        let mut anim = AliasAnimation::from_report(&report(&[("r1.p.v", "src.n.v")], 5))
             .expect("a report with eliminations parses");
+        assert!(
+            anim.seek(1),
+            "step past the opening frame to the elimination"
+        );
         let ctx = anim
             .current_frame_context()
             .expect("a frame is under the cursor");
