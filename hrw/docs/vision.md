@@ -169,6 +169,53 @@ gap.** A tour that could be fully machine-checked would teach less, not more.
   framing, which is corroboration rather than coincidence.
 - **A tour whose panes cannot falsify anything is a tour that should be prose in
   `compiler-phases/`** instead of a walk.
+
+### Which teaching job HRW should try to win — I-do / we-do / you-do
+
+*(Doug, 2026-08-23. The frame is his; the four-way split below is a refinement he asked for.)*
+
+**The project's origin is a comparison with textbooks.** Before Claude, textbooks were the only
+route to the mathematics of continuous-system modelling and simulation. With Claude, a project like
+this becomes feasible — and the question worth asking is not *"is HRW better than a book"* but
+**which part of teaching it should try to be better at.** Rumoca is the base because it is far
+better suited to this than the alternatives; OpenModelica would have made the same project much
+harder.
+
+Effective textbooks run **I-do → we-do → you-do**: the author works an example, then guides an
+attempt, then sets an independent project. Mapping HRW onto it is clarifying, and **the honest
+conclusion is that HRW should not contest all three.**
+
+| | who should own it | why |
+|---|---|---|
+| **I-do — general theory** | **the textbook** | Written by experts who have taught it for years and know **where learners fail**. That is precisely what Claude structurally lacks: he knows what he meant and cannot un-know it, so he cannot judge whether an explanation lands. Cellier's worked derivations are not something to compete with. |
+| **I-do — this implementation** | **HRW, uncontested** | No textbook covers what *Rumoca* does to *`Drivetrain`*. But this is a different I-do: it shows **what happened**, not how to reason. The traces are the only source there is. |
+| **we-do** | **HRW** | Predict → Look → Expected → Falsified is guided practice, with feedback a page cannot give. |
+| **you-do** | **HRW** | The continuations — with an acceptance test, which is what textbook projects lack. |
+
+**We-do is where the instrument changes the pedagogy rather than the medium.** A textbook must work
+an example *before* asking you to try, because it cannot respond. HRW can invert that — predict
+first, then look — and **the inversion is only affordable because feedback is immediate and cheap.**
+That is a capability of having an instrument, not of writing better prose.
+
+**You-do is where the gap is widest, in both directions.** A textbook's end-of-chapter project has
+**no feedback loop** — you build it and cannot tell whether you succeeded, which is why most go
+undone — and it is **contrived**, existing to exercise the chapter. A continuation here has an
+executable acceptance criterion and is real work with a real upstream audience.
+
+**But the textbook wins one thing, and it is worth borrowing: its projects are SCOPED AND GRADED.**
+A binary acceptance test says when you are *done*; it never says whether you are *on track*. That is
+why `#83`'s test is being written as a ladder of five rungs rather than one red test.
+
+### The operational filter this gives
+
+**When weighing a piece of work: is it trying to beat a textbook at exposition?** If so it is aimed
+at the one job HRW should concede. Build the thing a book cannot do — respond, falsify, and be
+finished by a test — and leave the canonical derivation to the people who have taught it for
+decades.
+
+**This is a working hypothesis, not a settled decision** — hence its home here rather than in
+[`CHARTER.md`](CHARTER.md), which holds what is amended deliberately and never drifted from.
+
 ## The opportunity
 
 Books like Cellier's *Continuous System Modeling* and *Continuous System Simulation*

@@ -84,6 +84,23 @@ Strongest assertions first, because they cannot be wrong: **state count 2**, **`
 *m*(*g* + *v*²/*L*) = 29.43 at the bottom**, **the constraint holds**. The 101 trajectory samples
 are the differential half, at a stated relative tolerance per charter §4.3.
 
+**⟶ WRITE IT AS A LADDER, NOT ONE RED TEST** *(Doug, 2026-08-23, from the textbook comparison)*.
+A textbook's end-of-chapter project is **scoped and graded** — each step completable in a sitting,
+each giving its own sense of progress. A single binary test says when you are *done*; it never says
+whether you are *on track*, and that is the one thing textbook projects do better than this one.
+
+So aim for roughly five tests, each able to turn green on its own:
+
+1. the system is **detected as high-index** at all
+2. **one constraint differentiates** correctly
+3. the iteration **reaches a fixed point**
+4. the pendulum **reduces to two states**
+5. its **trajectory matches the oracle** within tolerance
+
+Write whichever of them are expressible against today's API; where a rung needs an entry point
+that does not exist yet, say so in the test's `ignore` reason rather than inventing one. **Same
+destination, but the climber knows where they are.**
+
 **Precedence:** if items 1 or 2 surface a defect that needs fixing, that wins and this moves to the
 next run. The three-item cap is not a quota to fill.
 
