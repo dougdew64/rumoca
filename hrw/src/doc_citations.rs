@@ -1106,6 +1106,71 @@ Some prose.
             text.lines()
                 .filter(|l| !l.trim_start().starts_with("//"))
                 .any(|l| forms.iter().any(|f| l.contains(f.as_str())))
+        }) || is_enum_variant(symbol)
+    }
+
+    /// `A::B` where `B` is a variant of `enum A` — the one definition shape the
+    /// `forms` list above cannot express.
+    ///
+    /// # Why this is worth the parsing
+    ///
+    /// A variant is declared as bare `Stdout,` or `CompileProgress { .. }` inside an
+    /// enum body, matching none of `fn`/`struct`/`enum`/`const`/… — so before this,
+    /// **every enum variant read as undefined.** Adding a loose `"{leaf},"` form
+    /// instead would have matched the name followed by a comma *anywhere*, including
+    /// an argument list, making the resolver over-permissive; and over-permissive is
+    /// the dangerous direction for [`claims_of_absence_are_still_true`], whose whole
+    /// job is proving a symbol **absent**.
+    ///
+    /// So it uses the qualifier the citation already carries, which the leaf-only path
+    /// throws away: find `enum A`, walk to its matching brace, and look for the variant
+    /// at the start of a line inside. Precise in both directions.
+    ///
+    /// Found by extending the citation checker to `architecture.md`, where **five of
+    /// six failures were enum variants or external crates** rather than real drift.
+    fn is_enum_variant(symbol: &str) -> bool {
+        let mut segs: Vec<&str> = symbol.split("::").map(str::trim).collect();
+        let (Some(variant), Some(enum_name)) = (segs.pop(), segs.pop()) else {
+            return false;
+        };
+        if variant.is_empty() || enum_name.is_empty() {
+            return false;
+        }
+        let header = format!("enum {enum_name}");
+        rust_source_texts().iter().any(|(_, text)| {
+            let Some(at) = text.find(&header) else {
+                return false;
+            };
+            let rest = &text[at..];
+            let Some(open) = rest.find('{') else {
+                return false;
+            };
+            // Walk to the brace that closes the enum body.
+            let mut depth = 0usize;
+            let mut end = None;
+            for (i, c) in rest[open..].char_indices() {
+                match c {
+                    '{' => depth += 1,
+                    '}' => {
+                        depth -= 1;
+                        if depth == 0 {
+                            end = Some(open + i);
+                            break;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            let Some(end) = end else {
+                return false;
+            };
+            rest[open + 1..end].lines().any(|l| {
+                // A variant starts a line; what follows it says which kind it is —
+                // `Stdout,` unit, `Compiled {` struct-like, `Frame(` tuple-like.
+                matches!(l.trim().strip_prefix(variant),
+                    Some(after) if after.is_empty()
+                        || after.starts_with([',', '(', '{', ' ', '=']))
+            })
         })
     }
 
@@ -1913,21 +1978,55 @@ Some prose.
             "docs/CHARTER.md",
             "docs/README.md",
             "docs/fixture-tours/README.md",
+            // Added 2026-08-23. It is the project's insurance document — read by
+            // nobody, so its prose had no correction loop at all, and one paragraph
+            // had been describing a *deleted* re-run for weeks.
+            "docs/architecture.md",
         ];
 
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+
+        // **Citations into other people's crates are not ours to resolve.**
+        // `rust_source_texts()` walks `crates/`, `hrw/src` and `hrw/examples`, so a
+        // workspace symbol resolves and `egui_plot::Plot::link_axis` never can.
+        // Taken from `Cargo.toml` rather than a hand-written list so it cannot rot:
+        // a dependency added later is skipped without anyone remembering to.
+        let manifest = std::fs::read_to_string(hrw.join("Cargo.toml")).expect("hrw/Cargo.toml");
+        let mut external: Vec<String> = vec!["std".into(), "core".into(), "alloc".into()];
+        let mut in_deps = false;
+        for line in manifest.lines() {
+            let t = line.trim();
+            if t.starts_with('[') {
+                in_deps = t.contains("dependencies");
+                continue;
+            }
+            if in_deps && let Some((name, _)) = t.split_once('=') {
+                let name = name.trim().trim_matches('"');
+                if !name.is_empty() && !name.starts_with('#') {
+                    external.push(name.replace('-', "_"));
+                }
+            }
+        }
+
         let mut checked = 0usize;
+        let mut skipped = 0usize;
         let mut broken: Vec<String> = Vec::new();
         for rel in DOCS {
             let text =
                 std::fs::read_to_string(hrw.join(rel)).unwrap_or_else(|e| panic!("{rel}: {e}"));
             for cite in qualified_code_citations(&text) {
+                let root = cite.split("::").next().unwrap_or("");
+                if external.iter().any(|e| e == root) {
+                    skipped += 1;
+                    continue;
+                }
                 checked += 1;
                 if !symbol_is_defined(&cite) {
                     broken.push(format!("{rel}: `{cite}`"));
                 }
             }
         }
+        let _ = skipped;
 
         // Non-vacuity: an extractor that silently matched nothing would pass forever.
         assert!(

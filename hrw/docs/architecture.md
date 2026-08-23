@@ -93,14 +93,14 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**59 modules, 66,685 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**59 modules, 66,784 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `worker.rs` | 11,088 |
 | `app.rs` | 6,508 |
 | `app/tests.rs` | 5,919 |
-| `doc_citations.rs` | 4,685 |
+| `doc_citations.rs` | 4,784 |
 | `bridge.rs` | 3,772 |
 | `ui_tests.rs` | 2,567 |
 | `fidelity.rs` | 1,765 |
@@ -156,7 +156,7 @@ showing 48 equations. They are derived now, and
 | `compile_caches.rs` | 101 |
 | `ui_state.rs` | 73 |
 | `field_help.rs` | 67 |
-| **total** | **66,685** |
+| **total** | **66,784** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -889,7 +889,7 @@ Nothing ever *read* `LAST_FRAME_INDEX`. A write-only static is dead state, so at
 statement gone, the function becomes a bare `ret` — and the MSVC linker's
 identical COMDAT folding (`/OPT:ICF`, on by default) merges byte-identical
 functions, collapsing the anchor onto *every other empty function in the
-binary*, including eframe's `App::raw_input_hook`.
+binary*, including `eframe::App::raw_input_hook`.
 
 `#[inline(never)]` does not prevent this. It keeps the *function* from being
 inlined; it says nothing about whether the *body* survives.
@@ -1186,13 +1186,22 @@ recoverable from the finished flat model. The frames also show that connection
 sets are *transitive*: `connect(a, b)` plus `connect(b, c)` is one set of three,
 because Rumoca builds them with union-find.
 
-Frames come from `worker::record_connection_frames`, which **re-runs**
-instantiate + typecheck + flatten with an observer attached
-(`rumoca_phase_flatten::flatten_ref_with_options_traced`). The session's own
-compile has already flattened without one, and the frames exist only while the
-pass runs. The options must match `rumoca_compile`'s own
-(`flatten_options_for_tree`) or the recorded frames would describe a flatten
-that never happened — `strict_connection_validation: true` is the one that
+**Frames come from the real compile, via a capture scope** —
+`rumoca_phase_flatten::connections::trace::start_capture` before the session
+compiles and `take_capture` immediately after, so the frames are what *this*
+flatten did. `take_capture` closes the scope as it collects, which is why it is
+taken before anything else can run.
+
+> **This paragraph used to describe a re-run**, and said so: frames came from a
+> function that re-executed instantiate + typecheck + flatten with an observer
+> attached, while the session's own compile had already flattened without one.
+> **That mechanism was deleted on 2026-08-04** — it is the *"replay presented as
+> the compilation"* fiction `CLAUDE.md` forbids — and the capture scopes in
+> `rumoca-phase-flatten` and `-dae` are the Rumoca-side addition that replaced it.
+> The description outlived the code by weeks, in the one document nobody reads,
+> until `qualified_citations_resolve` was extended to cover this file on
+> 2026-08-23 and the dead name surfaced. **The old text is quoted here rather than
+> silently replaced, because a document that has been wrong once should say where.**
 matters, since it is what makes an incompatible-connector model fail rather than
 expand.
 
