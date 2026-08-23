@@ -932,20 +932,19 @@ generator"* rather than *"I ran the generators"*. The failures announce themselv
 `gen_field_help` (build-time doc comments, run by `build.rs`) and `gen_matching_reference`. If a
 gate ever fails on their output, they belong here too.
 
-**And the gate can fail while HRW is running** — `error: failed to remove file … hrw.exe,
-Access is denied`. Doug builds from the tree and keeps the app open, so this is the normal case,
-not an anomaly, and it is **not** always transient: once a preceding `clippy --all-targets` has
-invalidated the binary's fingerprint, the combined form retries forever.
-
-**Split it, and both halves run with the app open** *(measured 2026-08-16)*:
+**The gate fails while HRW is running** — `Access is denied` on `hrw.exe`. Doug builds from the
+tree and keeps the app open, so this is normal, and **not always transient**: once a preceding
+`clippy --all-targets` has invalidated the binary's fingerprint, it retries forever. **Split it and
+both halves run with the app open** — selecting one target at a time does not pull in the bin:
 
 ```text
 cargo test -p hrw --lib --features slow-tests -- --test-threads=1
 cargo test -p hrw --test msl_resolve --features slow-tests -- --test-threads=1
 ```
 
-Selecting one target at a time does not pull in the bin; selecting two does. Prefer the combined
-line, fall back to these two rather than asking Doug to close the app he is testing in.
+**With HRW closed the combined line works** (measured 2026-08-22: 823 + 2, 128 s), which is why an
+unattended run requires it closed — see [`docs/unattended-runs.md`](docs/unattended-runs.md), **read
+that before doing any work while Doug is asleep.**
 
 **`.hrw-bridge/tour.md` IS LIVE STATE, AND TESTS THAT PAINT MUST HOLD IT** *(2026-08-16, three
 defects in one hour)*. It is Claude's answer to Doug's last question, and `tour::poll`

@@ -431,6 +431,98 @@ Some prose.
         );
     }
 
+    /// Characters from writing systems this repository has no use for.
+    ///
+    /// **Deliberately narrow.** Em dashes, `§`, `✅`, `⟶`, `λ` and `µ` are all in
+    /// legitimate use here, so a blanket non-ASCII rule would be pure noise. These
+    /// four ranges are different: nothing in an English repository about a Modelica
+    /// compiler produces them, so any occurrence is a **generation slip**.
+    fn foreign_script_chars(text: &str) -> Vec<(usize, char)> {
+        let mut out = Vec::new();
+        for (i, line) in text.lines().enumerate() {
+            for c in line.chars() {
+                let o = c as u32;
+                let foreign = (0x2E80..=0xA4CF).contains(&o)      // CJK
+                    || (0xAC00..=0xD7AF).contains(&o)             // Hangul
+                    || (0x0400..=0x04FF).contains(&o)             // Cyrillic
+                    || (0x0600..=0x06FF).contains(&o); // Arabic
+                if foreign {
+                    out.push((i + 1, c));
+                }
+            }
+        }
+        out
+    }
+
+    /// **No document or comment carries a character from a foreign script.**
+    ///
+    /// # The failure this catches, which happened while writing the file below it
+    ///
+    /// On 2026-08-22 Claude wrote `docs/unattended-runs.md` with two CJK characters
+    /// spliced into the middle of the word *"verifies"* — the sentence still read as
+    /// English either side of them. It was caught by re-reading, which is exactly the
+    /// check that is **absent overnight**. (The characters are not reproduced here;
+    /// this test would flag them, which is the point.)
+    ///
+    /// **`documents_contain_no_stray_control_characters` does not cover it**: these are
+    /// printable, well-formed UTF-8, and survive every existing check. They are also
+    /// invisible in a diff unless you are looking, and they corrupt *meaning* rather
+    /// than encoding — the word simply becomes a different word.
+    ///
+    /// # Why it starts green with no exemption list
+    ///
+    /// Measured over every `.md` and `.rs` in `hrw/` before the check was written:
+    /// **zero occurrences.** A checker that needs an exemption list on day one is a
+    /// checker someone will switch off; this one does not.
+    #[test]
+    fn no_document_carries_a_foreign_script_character() {
+        let mut bad: Vec<String> = Vec::new();
+        let mut scanned = 0usize;
+
+        for path in doc_files() {
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                continue;
+            };
+            scanned += 1;
+            for (line, c) in foreign_script_chars(&text) {
+                bad.push(format!("{}:{line}: U+{:04X} {c}", path.display(), c as u32));
+            }
+        }
+        for (path, text) in rust_source_texts() {
+            scanned += 1;
+            for (line, c) in foreign_script_chars(text) {
+                bad.push(format!("{}:{line}: U+{:04X} {c}", path.display(), c as u32));
+            }
+        }
+
+        assert!(
+            scanned > 100,
+            "only {scanned} files scanned — the walk is broken"
+        );
+        assert!(
+            bad.is_empty(),
+            "a character from a foreign script reached the tree \u{2014} this is a \
+             generation slip, not something anyone typed, and it changes the word it \
+             lands in:\n  {}",
+            bad.join("\n  "),
+        );
+    }
+
+    /// The must-fire half: the detector reports, and does not report what is fine.
+    #[test]
+    fn a_foreign_script_character_is_reported() {
+        let hits = foreign_script_chars("fine line\nno test here\u{9A8C}\u{8BC1}s for meaning\n");
+        assert_eq!(hits.len(), 2, "both CJK characters on line 2: {hits:?}");
+        assert_eq!(hits[0].0, 2, "and the line number is reported");
+        assert!(
+            foreign_script_chars(
+                "em dash \u{2014}, section \u{A7}, tick \u{2705}, lambda \u{3BB}, micro \u{B5}\n"
+            )
+            .is_empty(),
+            "the punctuation and symbols this repository actually uses must not report",
+        );
+    }
+
     /// No function carries two `#[test]` attributes.
     ///
     /// **The signature of an insertion that landed between another test's
@@ -1589,7 +1681,13 @@ Some prose.
         /// lines on 2026-08-22 alone**, entirely outside tier 1's budget. Prose that
         /// cannot grow in `CLAUDE.md` will otherwise grow here instead, which is
         /// displacement rather than reduction.
-        const CONDITIONAL: &[&str] = &["docs/fixture-tours/README.md"];
+        const CONDITIONAL: &[&str] = &[
+            "docs/fixture-tours/README.md",
+            // Read before any work done while Doug is asleep, and the one document
+            // whose reader has nobody to ask — so it is budgeted from the day it
+            // lands rather than after it grows.
+            "docs/unattended-runs.md",
+        ];
         const CONDITIONAL_BUDGET: usize = 877;
 
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
