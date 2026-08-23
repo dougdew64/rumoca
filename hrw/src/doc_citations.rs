@@ -1748,8 +1748,15 @@ Some prose.
         // machine every Bash call prompts, and during an unattended run a prompt is
         // indistinguishable from a hang. Doug asked whether a session would discover
         // it automatically this evening. It would not have.
-        const MANDATORY_BUDGET: usize = 1928;
-        const CURRENT_WORK_BUDGET: usize = 263;
+        // 1928 → 1929 on 2026-08-23. A queued unattended run is now named in
+        // `Current work`, because the only pointer to it sat inside a paragraph
+        // about closing HRW — findable, but not discovery. **Second discoverability
+        // defect in one day, both found by Doug asking whether something would be
+        // found rather than by any checker.** Four of the five lines were paid for
+        // by compressing prune history the checker's own doc comment already holds.
+        const MANDATORY_BUDGET: usize = 1929;
+        // 263 → 264, same commit and same reason as MANDATORY_BUDGET above.
+        const CURRENT_WORK_BUDGET: usize = 264;
 
         /// **Tier 2 — conditionally mandatory**, and the hole tier 1 left open.
         ///

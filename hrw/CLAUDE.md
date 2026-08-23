@@ -571,6 +571,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 
 > ### ⟶ OPEN THE NEXT SESSION WITH THIS
 >
+> **⚠ A RUN IS QUEUED** — [`docs/unattended-runs.md`](docs/unattended-runs.md) → **THE QUEUED RUN**
+> holds its items, evidence, preconditions and the `/loop` command verbatim.
+>
 > **This section holds ONLY what is in flight. Everything closed lives in
 > [`DECISIONS.md`](DECISIONS.md)** — *"closed arcs move out of `CLAUDE.md`"*, 2026-08-22, which
 > names each arc and the file that holds its record. **Do not restate a closed arc here; link it.**
@@ -578,9 +581,8 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > **The rule, and it is now enforced rather than remembered:** what is in flight goes at the top,
 > standing context underneath, and **a ✅ box is history the moment its arc closes.**
 > `doc_citations::the_mandatory_reading_path_stays_small` fails by name if this section or the
-> reading path outgrows its budget — because this file was pruned twice (526→317, then 2,320→1,730)
-> and **regrew +229 lines in the day after the second prune.** A one-time cleanup is measurably
-> insufficient; the budget is what makes this different.
+> reading path outgrows its budget; **its doc comment carries why a budget rather than another
+> prune.**
 >
 > ### ⟶ TWO MODES RUN IN PARALLEL, SPLIT BY DOUG'S AVAILABLE ATTENTION — 2026-08-21
 >
