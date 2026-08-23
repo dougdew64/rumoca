@@ -1105,8 +1105,87 @@ Some prose.
             }
             text.lines()
                 .filter(|l| !l.trim_start().starts_with("//"))
-                .any(|l| forms.iter().any(|f| l.contains(f.as_str())))
+                .any(|l| forms.iter().any(|f| contains_whole_ident(l, f.as_str())))
         }) || is_enum_variant(symbol)
+    }
+
+    /// `line` contains `needle`, and what follows cannot continue a Rust
+    /// identifier.
+    ///
+    /// **Found 2026-08-23 by a false positive that had been reachable all along.**
+    /// Adding a module named `pantelides_ladder` made
+    /// `<!-- unbuilt: rumoca_phase_structural::pantelides -->` resolve, because
+    /// the form `mod pantelides` is a plain substring of `pub mod
+    /// pantelides_ladder;`. The claim of absence was retired by a module in a
+    /// different crate that merely *starts with* the same letters.
+    ///
+    /// That is the expensive direction, and [`symbol_is_defined`]'s own doc
+    /// comment already said so: a false positive fails the build, and worse, this
+    /// particular one **silently un-marks a claim of absence** — the wrong
+    /// negative `CLAUDE.md` calls the error nobody catches, because acting on it
+    /// means not looking. `identity-and-provenance.md`'s rule is the general form:
+    /// no substring search ever decides identity.
+    ///
+    /// Only the trailing side needs guarding. Every keyword form begins with
+    /// `fn `/`mod `/`struct `… so the leading boundary is already a space, and the
+    /// struct-field form ends in `:`, which no identifier can contain.
+    fn contains_whole_ident(line: &str, needle: &str) -> bool {
+        let mut from = 0;
+        while let Some(i) = line[from..].find(needle) {
+            let end = from + i + needle.len();
+            let next = line[end..].chars().next();
+            if !next.is_some_and(|c| c.is_ascii_alphanumeric() || c == '_') {
+                return true;
+            }
+            from = end;
+        }
+        false
+    }
+
+    /// **A longer identifier must not satisfy a shorter claim.**
+    ///
+    /// The regression guard for the false positive above, and it fails by name
+    /// against the real case rather than a synthetic one: `pantelides_ladder` is
+    /// a module in this crate, and `rumoca_phase_structural::pantelides` is a
+    /// module that does not exist in any crate.
+    ///
+    /// The second half matters as much as the first — a boundary check that also
+    /// rejected the *genuine* definition would turn every true positive into a
+    /// stale claim nobody could retire.
+    #[test]
+    fn a_longer_identifier_does_not_satisfy_a_shorter_claim() {
+        // **Assembled, never spelled.** This file is itself scanned, and a string
+        // literal is not a comment — so writing the definition form here would
+        // define the very symbol the last assertion proves absent. Fourth
+        // instance in this repository of a source check matching its own text,
+        // and the first where the trap was inside a test's fixtures.
+        let form = format!("{} pantelides", "mod");
+        let real = format!("pub {form};");
+        let prefixed = format!("pub {form}_ladder;");
+
+        assert!(
+            !contains_whole_ident(&prefixed, &form),
+            "a module whose name merely starts with the claimed one must not count"
+        );
+        assert!(
+            contains_whole_ident(&real, &form),
+            "the genuine definition must still count, or no claim could ever be retired"
+        );
+        assert!(contains_whole_ident(&format!("{form} {{"), &form));
+        assert!(!contains_whole_ident(
+            &format!("{} pantelides2()", "fn"),
+            &format!("{} pantelides", "fn")
+        ));
+        // The name occurring twice, the first as a prefix: the scan must keep
+        // looking rather than answering from the first hit.
+        assert!(contains_whole_ident(&format!("{prefixed} {real}"), &form));
+
+        // End to end, through the resolver the absence tags actually use.
+        assert!(
+            !symbol_is_defined("rumoca_phase_structural::pantelides"),
+            "general Pantelides is not implemented (docs/ideas.md #83); if this now \
+             resolves, either it landed or the resolver has gone permissive again"
+        );
     }
 
     /// `A::B` where `B` is a variant of `enum A` — the one definition shape the

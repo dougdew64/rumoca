@@ -115,14 +115,14 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**59 modules, 67,129 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**60 modules, 67,711 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `worker.rs` | 11,088 |
 | `app.rs` | 6,508 |
 | `app/tests.rs` | 5,919 |
-| `doc_citations.rs` | 4,829 |
+| `doc_citations.rs` | 4,908 |
 | `bridge.rs` | 3,772 |
 | `ui_tests.rs` | 2,567 |
 | `fidelity.rs` | 1,765 |
@@ -132,7 +132,7 @@ showing 48 equations. They are derived now, and
 | `reduction_view.rs` | 1,112 |
 | `connection_anim.rs` | 1,088 |
 | `autoplay.rs` | 1,078 |
-| `lib.rs` | 1,068 |
+| `lib.rs` | 1,072 |
 | `diagnostics.rs` | 986 |
 | `matching_anim.rs` | 975 |
 | `tarjan_anim.rs` | 871 |
@@ -156,6 +156,7 @@ showing 48 equations. They are derived now, and
 | `source_view.rs` | 576 |
 | `stage_tabs.rs` | 574 |
 | `artifact_pane.rs` | 514 |
+| `pantelides_ladder.rs` | 499 |
 | `nav_view.rs` | 483 |
 | `matrix_panes.rs` | 451 |
 | `equation_sheet_view.rs` | 446 |
@@ -178,7 +179,7 @@ showing 48 equations. They are derived now, and
 | `compile_caches.rs` | 101 |
 | `ui_state.rs` | 73 |
 | `field_help.rs` | 67 |
-| **total** | **67,129** |
+| **total** | **67,711** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -443,7 +444,7 @@ keeps the pipe buffer from ever filling, so `write()` never blocks, and
    `dup2()` the write ends onto fd 1/2, close the original write ends (only fd 1/2
    are writers now), spawn two reader threads.
 2. `drain()` — flush stdout/stderr (push any buffered `BufWriter` data into the pipe),
-   lock each `Mutex<Vec<u8>>`, `mem::take` the accumulated bytes, return as strings.
+   lock each `Mutex<Vec<u8>>`, `std::mem::take` the accumulated bytes, return as strings.
    Called after each Rumoca API call.
 3. `Drop` — flush, `dup2()` the saved originals back onto fd 1/2 (restoring normal
    output), close the saved fds. This closes the pipe write ends, so the reader

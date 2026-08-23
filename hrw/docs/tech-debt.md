@@ -244,6 +244,8 @@ note; the rest quote the commit.
 | 08-23 | `architecture.md` described a re-run **deleted 2026-08-04** — the replay fiction | Claude | extending the citation checker to a file it did not cover |
 | 08-23 | the symbol resolver could not see enum variants — 3 of 6 flags were false | Claude | same run; `egui_plot` was a 4th, external |
 | 08-23 | `alias_anim` and `ic_plan_anim` nested a scroll area and capped it, same defect Doug found on 08-16 | toolchain | night 2; generalising `connection_anim`'s per-file check caught both on its first run |
+| 08-23 | `symbol_is_defined` matched a **prefix** — a new `pantelides_ladder` module silently retired the `pantelides` claim of absence | toolchain | night 2; `claims_of_absence_are_still_true` fired the moment the module landed |
+| 08-23 | `architecture.md` cited `mem::take`, which resolved only via that loose match | toolchain | night 2; exposed by tightening the resolver — it names std, so it now reads `std::mem::take` |
 
 **Seven days: Doug 8, Claude 13, toolchain 3.** Against the first two days' **Doug 10, toolchain 5,
 Claude 5**, the rate that matters moved: **Doug from ~5.0/day to ~1.1/day**, while Claude's own

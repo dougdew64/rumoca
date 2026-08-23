@@ -71,6 +71,10 @@ pub mod matrix_panes;
 pub mod model_list;
 pub mod modelica_lex;
 pub mod nav_view;
+/// The acceptance ladder for `docs/ideas.md` #83 (general Pantelides), whose
+/// rungs are `#[ignore]`d until it lands. Test-only, but a normal module so the
+/// compiler keeps it building against today's API rather than letting it rot.
+pub mod pantelides_ladder;
 pub mod playback;
 pub mod pre_lowering_anim;
 pub mod promote;

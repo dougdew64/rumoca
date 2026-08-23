@@ -6256,6 +6256,14 @@ attempting to implement that algorithm for Rumoca."*
 
 **Not scheduled. Not started.** <!-- unbuilt: rumoca_phase_structural::pantelides -->
 
+**The acceptance criterion is written and waiting** — `pantelides_ladder`, added 2026-08-23. Five
+rungs, each able to turn green on its own: the deficiency is detected at the constraint (**green
+today** — Rumoca already names `f_x[4]` and `lambda`, so the diagnosis is right and only the action
+is missing), a constraint differentiates, the iteration reaches a non-singular fixed point, the
+pendulum reduces to two states, and its trajectory matches the committed System Modeler oracle.
+Four are `#[ignore]`d and **verified red**, against today's API, so this is a red test turning green
+rather than a project needing a plan.
+
 > ### ⟶ UNBLOCKED IS NOT NEXT — Doug deferred it the same day it was unblocked, 2026-08-22
 >
 > *"I won't be working on #83 for a while. I have so much other learning and work to do first."*
