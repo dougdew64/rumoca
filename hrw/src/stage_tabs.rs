@@ -455,13 +455,28 @@ mod tests {
         );
     }
 
-    /// Every stage in the bundle **gets a tab**, and the Log does not.
+    /// Every stage in this list **renders a tab**, and the Log does not.
     ///
-    /// The roster is written out by hand here rather than looped from `StageBundle`, so
-    /// adding a stage to the pipeline and forgetting its tab fails by name. The Log
-    /// button stayed behind in `App::stage_tab_bar_ui` with the rest of the chrome, and
-    /// this records that boundary: if it ever reappears here, the two rows would both
-    /// draw it.
+    /// # What it does and does not catch — corrected 2026-08-22
+    ///
+    /// This doc comment used to claim the hand-written roster meant *"adding a stage to
+    /// the pipeline and forgetting its tab fails by name."* **It does not, and the
+    /// reasoning was circular:** a stage added to `StageKind::COMPILATION` but not to the
+    /// tab array is also absent from the list below, so nothing queries it and this test
+    /// stays green. It catches a tab being **removed**, never one being **omitted**.
+    ///
+    /// A wrong negative is the error nobody catches, because acting on it means *not
+    /// looking* — and a doc comment promising a guarantee that is not there is worse than
+    /// no test, since it tells the next reader the case is covered.
+    ///
+    /// **The omission case is now held by
+    /// [`no_compilation_stage_is_missing_from_the_tab_roster`]**, which derives its
+    /// expectation from the enum instead of restating it. This test keeps the half it
+    /// genuinely owns: that the labels reach the screen.
+    ///
+    /// The Log button stayed behind in `App::stage_tab_bar_ui` with the rest of the
+    /// chrome, and this records that boundary: if it ever reappears here, the two rows
+    /// would both draw it.
     #[test]
     fn every_compilation_stage_has_a_tab_and_the_log_does_not() {
         let mut h = harness(Row::default());
@@ -489,6 +504,71 @@ mod tests {
         assert!(
             h.query_by_label_contains("Log").is_none(),
             "the Log button belongs to the surrounding row, not to the tabs",
+        );
+    }
+
+    /// **A stage added to the pipeline but not to the tab row fails by name.**
+    ///
+    /// # The gap this closes
+    ///
+    /// The tab row is a **hand-written array** — `let tabs: &[(StageKind, …)]` — and it
+    /// is not derived from `StageKind::COMPILATION`, not compiler-enforced, and was not
+    /// covered: the sibling test above restates the roster by hand, so it can only notice
+    /// a tab that *disappears*. A stage wired into the enum, the bundle, the notebook and
+    /// the bridge but missing here would simply have no tab, and **a pane that is absent
+    /// leaves no gap where it was** — the same shape as the stranded `Animate` arm and the
+    /// Flatten stranding that the `app.rs` arc found by reading siblings as a column.
+    ///
+    /// `CLAUDE.md` states the rule this enforces: *"New pipeline stages must be wired into
+    /// ALL per-stage systems."* Two of the three systems it names already have derived
+    /// guards — `stage_file_names_covers_all_pipeline_stages` and
+    /// `manifest_stage_rosters_match_the_pipeline`. **The tab row was the one without.**
+    ///
+    /// # Why it reads the source instead of the rendered row
+    ///
+    /// The labels are not the stage names — `Dae` renders as *"DAE"*, `IndexReduction` as
+    /// *"Index reduction"* — so a rendered check needs a name→label mapping, which would
+    /// be a third hand-written list restating the second. Reading the array literal needs
+    /// no mapping and states the property directly: **every variant appears in the row's
+    /// definition.** `doc_citations` already scans Rust source for invariants that live in
+    /// the text rather than the types.
+    #[test]
+    fn no_compilation_stage_is_missing_from_the_tab_roster() {
+        let src =
+            std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/stage_tabs.rs"))
+                .expect("stage_tabs.rs must be readable");
+        let after = src
+            .split_once("let tabs: &[(StageKind")
+            .expect("the tab row must still be built from a `tabs` array literal here")
+            .1;
+        let roster = after
+            .split_once("\n    ];")
+            .expect("the `tabs` array literal must terminate")
+            .0;
+
+        let missing: Vec<&str> = StageKind::COMPILATION
+            .iter()
+            .filter(|kind| !roster.contains(&format!("StageKind::{kind:?}")))
+            .map(|kind| kind.name())
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "these pipeline stages have no tab, so they are unreachable in the UI: {missing:?}\n\n\
+             Add a row to the `tabs` array in `stage_tabs.rs`. Every stage must be wired into \
+             ALL per-stage systems -- the tab row, stage-file publishing and the notebook trace.",
+        );
+
+        // Non-vacuity: passing must mean the roster was found and read, never that the
+        // split returned an empty slice that trivially contains nothing.
+        let found = StageKind::COMPILATION
+            .iter()
+            .filter(|kind| roster.contains(&format!("StageKind::{kind:?}")))
+            .count();
+        assert_eq!(
+            found,
+            StageKind::COMPILATION.len(),
+            "expected every stage to be found in the roster slice; the parse may have \
+             captured the wrong region",
         );
     }
 }
