@@ -1,0 +1,239 @@
+//! **Verify this machine is ready to work on HRW.** Run it after switching machines.
+//!
+//! ```text
+//! cargo run -p hrw --example check_machine
+//! ```
+//!
+//! # Why this is Rust and not a PowerShell script
+//!
+//! It was `hrw/scripts/check-machine.ps1` for about two hours. Doug switched
+//! machines, ran it, and got *"the script is not digitally signed"* — the other
+//! machine's execution policy is stricter than this one's. **The script written to
+//! catch per-machine differences was blocked by a per-machine difference**, on the
+//! first switch it was written for.
+//!
+//! `cargo run --example` has no execution policy, so the whole class is gone rather
+//! than the instance. It is also the move this repository already made once:
+//! `promote-run.ps1` became `examples/promote_run.rs`, and `docs/tech-debt.md`
+//! carries the standing *"move it where the toolchain can check it"* trigger.
+//!
+//! **The build cost is a feature.** On a machine that has just been switched to, this
+//! compiles `hrw` first — which proves the toolchain works, and *that* is one more
+//! thing a `git pull` does not bring.
+//!
+//! # What it checks, and why these
+//!
+//! Only things that do **not** travel with a `git pull`. Everything here has cost a
+//! real failure:
+//!
+//! - **The permission allowlist** — `.claude/` is gitignored *by upstream*, so
+//!   `settings.json` is per machine. Without it every Bash call prompts, and during
+//!   an unattended run with nobody awake that is indistinguishable from a hang.
+//! - **A locked `hrw.exe`** — the gate cannot relink while HRW runs, and after a
+//!   `clippy --all-targets` that failure is permanent rather than transient.
+//! - **The parsed-artifact cache** — per machine and keyed on a fingerprint of
+//!   `crates/`, so a first compile re-parses the whole MSL. Advisory: it predicts a
+//!   slow gate, which should not be diagnosed as a hang.
+//! - **The VS Code bridge extension** — built and junctioned per machine. Advisory:
+//!   only `matching-live.md` needs it.
+//!
+//! Blocking problems exit non-zero and name their fix. Advisory ones report and do
+//! not, because a check that fails for things that are merely worth knowing trains
+//! the reader to ignore it.
+
+use std::path::{Path, PathBuf};
+use std::process::Command;
+
+/// `hrw/`, from which the repository root is the parent.
+fn hrw_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+}
+
+fn repo_root() -> PathBuf {
+    hrw_dir()
+        .parent()
+        .expect("hrw/ lives inside the workspace")
+        .to_path_buf()
+}
+
+#[derive(PartialEq)]
+enum Verdict {
+    Pass,
+    Fail,
+    Warn,
+}
+
+struct Report {
+    blocking: usize,
+    advisory: usize,
+}
+
+impl Report {
+    fn line(&mut self, verdict: Verdict, name: &str, detail: &str, fix: &str) {
+        let tag = match verdict {
+            Verdict::Pass => "PASS",
+            Verdict::Fail => "FAIL",
+            Verdict::Warn => "WARN",
+        };
+        println!("  {tag:<5} {name}");
+        if !detail.is_empty() {
+            println!("        {detail}");
+        }
+        if verdict != Verdict::Pass && !fix.is_empty() {
+            println!("        fix: {fix}");
+        }
+        match verdict {
+            Verdict::Fail => self.blocking += 1,
+            Verdict::Warn => self.advisory += 1,
+            Verdict::Pass => {}
+        }
+    }
+}
+
+/// Is `hrw.exe` held open by a running HRW?
+///
+/// **Tests the actual failure rather than a proxy for it.** Asking whether a process
+/// named `hrw` exists would need `tasklist` parsing and would still not answer the
+/// question that matters, which is whether cargo can replace the binary. Opening it
+/// for write without truncating does answer that: Windows refuses while it is
+/// mapped. An absent binary is not a failure — there is nothing to lock.
+fn binary_is_locked(exe: &Path) -> bool {
+    if !exe.exists() {
+        return false;
+    }
+    std::fs::OpenOptions::new().write(true).open(exe).is_err()
+}
+
+fn main() {
+    let repo = repo_root();
+    let mut r = Report {
+        blocking: 0,
+        advisory: 0,
+    };
+
+    println!("\nHRW machine check  --  {}\n", repo.display());
+
+    // ------------------------------------------------------------- blocking --
+
+    let settings = repo.join(".claude").join("settings.json");
+    if settings.exists() {
+        r.line(
+            Verdict::Pass,
+            "permission allowlist",
+            &settings.display().to_string(),
+            "",
+        );
+    } else {
+        r.line(
+            Verdict::Fail,
+            "permission allowlist",
+            "every Bash call will prompt; during an unattended run that looks like a hang",
+            "hrw/docs/setup-windows.md section 8 has the file to create",
+        );
+    }
+
+    let exe = repo.join("target").join("debug").join("hrw.exe");
+    if binary_is_locked(&exe) {
+        r.line(
+            Verdict::Fail,
+            "hrw.exe not locked",
+            "HRW is running and holds the binary; the gate cannot relink it",
+            "close HRW, or run the two gate targets separately (CLAUDE.md, Running things)",
+        );
+    } else {
+        r.line(
+            Verdict::Pass,
+            "hrw.exe not locked",
+            "the full gate can build the binary",
+            "",
+        );
+    }
+
+    // ------------------------------------------------------------- advisory --
+
+    let cache = std::env::var("LOCALAPPDATA").map(|p| {
+        PathBuf::from(p)
+            .join("Rumoca")
+            .join("source-roots")
+            .join("parsed-files")
+    });
+    match cache {
+        Ok(p) if p.exists() => r.line(
+            Verdict::Pass,
+            "parsed-artifact cache",
+            "MSL parses are cached for this compiler fingerprint",
+            "",
+        ),
+        _ => r.line(
+            Verdict::Warn,
+            "parsed-artifact cache",
+            "absent, so the first compile re-parses the whole MSL",
+            "nothing to do -- expect a slow first gate, and do not diagnose it as a hang",
+        ),
+    }
+
+    let ext = std::env::var("USERPROFILE").map(|p| {
+        PathBuf::from(p)
+            .join(".vscode")
+            .join("extensions")
+            .join("dougdew64.hrw-debugger-bridge-0.1.0")
+    });
+    match ext {
+        Ok(p) if p.exists() => r.line(
+            Verdict::Pass,
+            "VS Code bridge extension",
+            "junction present",
+            "",
+        ),
+        _ => r.line(
+            Verdict::Warn,
+            "VS Code bridge extension",
+            "only matching-live.md needs it; the other tours run from HRW alone",
+            "hrw/docs/setup-windows.md section 6 -- npm install, npm run build, then the junction",
+        ),
+    }
+
+    let dirty = Command::new("git")
+        .args([
+            "-C",
+            &repo.to_string_lossy(),
+            "status",
+            "--porcelain",
+            "--untracked-files=all",
+        ])
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8_lossy(&o.stdout).lines().count());
+    match dirty {
+        Some(0) => r.line(Verdict::Pass, "working tree clean", "", ""),
+        Some(n) => r.line(
+            Verdict::Warn,
+            "working tree clean",
+            &format!("{n} uncommitted change(s)"),
+            "commit or stash before an unattended run",
+        ),
+        None => r.line(
+            Verdict::Warn,
+            "working tree clean",
+            "git could not answer -- not a checkout, or git is not on PATH",
+            "",
+        ),
+    }
+
+    // -------------------------------------------------------------- verdict --
+
+    println!();
+    if r.blocking > 0 {
+        println!(
+            "{} blocking problem(s). Fix before working, and before any unattended run.",
+            r.blocking
+        );
+        std::process::exit(1);
+    }
+    if r.advisory > 0 {
+        println!("Ready. {} advisory note(s) above.", r.advisory);
+    } else {
+        println!("Ready.");
+    }
+}

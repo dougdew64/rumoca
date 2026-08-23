@@ -10,7 +10,7 @@ procedure is [`../docs/long-runs.md`](../docs/long-runs.md); this page is only t
 
 | Script | Does |
 |---|---|
-| [`check-machine.ps1`](check-machine.ps1) | **Run after switching machines.** Verifies what a `git pull` does not bring: the permission allowlist, whether HRW holds `hrw.exe`, the parsed-artifact cache, the bridge extension. Blocking problems exit 1 and name their fix. |
+| ~~`check-machine.ps1`~~ | **Moved to Rust 2026-08-23** — `cargo run -p hrw --example check_machine`. It was refused by an execution policy on the second machine it ran on, which is the exact failure it existed to prevent. |
 | [`measure-fidelity.ps1`](measure-fidelity.ps1) | Runs F1-F9 **one model per process**, with a watchdog sampling free RAM and process size every 500 ms. Writes the fidelity report and a memory profile. |
 | ~~`promote-run.ps1`~~ | **Moved to Rust 2026-08-01** — `cargo run -p hrw --example promote_run`. See *The split* below. |
 
@@ -18,15 +18,17 @@ procedure is [`../docs/long-runs.md`](../docs/long-runs.md); this page is only t
 
 ```powershell
 cd C:\Users\dougd\source\repos\rumoca\hrw
-.\scripts\check-machine.ps1
 .\scripts\measure-fidelity.ps1 -ModelsFile C:\tmp\all-models.txt -Out ... -Profile ...
+cargo run -p hrw --example check_machine
 cargo run -p hrw --example promote_run -- --run-dir C:\Users\dougd\rumoca-runs\<run>
 ```
 
-**At a PowerShell prompt that is all you type** — a `powershell -File …` wrapper is what *Claude*
-needs, because his tools spawn a subprocess from outside PowerShell, and it does not belong in a
-human-facing instruction. **If a machine's execution policy blocks the script**, that is the one
-case for `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-machine.ps1`.
+**And why only one PowerShell script remains.** Execution policy is a **per-machine** setting, so a
+`.ps1` can run on one machine and be refused on another — which is what happened to
+`check-machine.ps1` on the very first switch it was written for, with *"the script is not digitally
+signed"*. `cargo run --example` has no execution policy. **Prefer Rust for anything that must work
+on both machines**; keep PowerShell only where being editable mid-run is the point, which is the
+recorded reason `measure-fidelity.ps1` stays as it is.
 
 Both resolve their own paths from `$PSScriptRoot`, so they work from any working directory —
 but the documented form is the one above.

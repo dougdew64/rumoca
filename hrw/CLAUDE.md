@@ -838,9 +838,8 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 unprompted: Doug switches machines twice a week, feels every cost, and cannot see any of these
 coming, while Claude can.
 
-```powershell
-# Claude's form (subprocess); Doug just types `.\scripts\check-machine.ps1`. NOT `pwsh` — 7 is absent.
-powershell -NoProfile -ExecutionPolicy Bypass -File hrw\scripts\check-machine.ps1
+```text
+cargo run -p hrw --example check_machine
 ```
 
 It verifies what does **not** travel with a `git pull`: the **permission allowlist** (gitignored by

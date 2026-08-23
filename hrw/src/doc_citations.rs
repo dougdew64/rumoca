@@ -1754,7 +1754,7 @@ Some prose.
         // only pointer to it sat inside a paragraph about closing HRW — findable,
         // but not discovery.
         //
-        // Down: `hrw/scripts/check-machine.ps1` replaced a hand-written
+        // Down: a one-command machine check replaced a hand-written
         // allowlist check with one command that verifies **everything** a `git pull`
         // does not bring. It covers more and costs fewer lines, so the budget is set
         // to the achieved value rather than left slack — slack gets used.

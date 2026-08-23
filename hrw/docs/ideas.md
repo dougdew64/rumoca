@@ -6356,7 +6356,7 @@ the same distinction `#48` drew when the parse memo stayed HRW-side while
 twice every week. It sure seems like we ought to be able to implement a solution which is guaranteed
 to work reliably."*
 
-**Why what shipped is not a guarantee.** `hrw/scripts/check-machine.ps1` collapses every
+**Why what shipped is not a guarantee.** `cargo run -p hrw --example check_machine` collapses every
 non-travelling precondition into one command, which is real progress — but **it still has to be
 run.** Everything protecting a machine switch is currently *documented*, and documentation is
 discovered probabilistically: on 2026-08-23 two operational facts were in the repository, correct,
