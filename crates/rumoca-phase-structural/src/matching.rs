@@ -7,6 +7,25 @@ use rumoca_core::FrameObserver;
 /// One step of the augmenting-path algorithm, recorded for animation replay.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MatchingStep {
+    /// **Before the search begins: nothing matched, and nothing tried yet.**
+    ///
+    /// A trace that opened on [`Self::TryEquation`] began with an intention
+    /// already announced, so a replay had no frame describing the problem as the
+    /// algorithm found it — the one thing a replay needs in order to show what
+    /// the algorithm *changed*. The same gap was closed for index-reduction
+    /// traces by [`crate::dae_prepare::emit_index_reduction_start`]; this is that
+    /// fix for matching.
+    ///
+    /// The dimensions are carried rather than left to the consumer to supply,
+    /// because a consumer that computes them from elsewhere is describing a
+    /// different run than the one it is drawing.
+    ///
+    /// The frame's `match_eq` is all-`None`, which is not padding: it is the
+    /// genuine state of the matching at this instant.
+    Start {
+        n_equations: usize,
+        n_unknowns: usize,
+    },
     /// Starting augmenting-path search from an unmatched equation.
     TryEquation(usize),
     /// Exploring edge (equation, variable) — is the variable free or matched?
@@ -109,6 +128,22 @@ pub fn maximum_matching_with_trace(
     let mut match_eq: Vec<Option<usize>> = vec![None; n_eq];
     let mut match_var: Vec<Option<usize>> = vec![None; n_var];
     let mut frames = Vec::new();
+
+    // The opening frame. Emitted here rather than by each caller because every
+    // traced path — the report's own run, a rebuild for playback, and a live
+    // debugger session — enters through this function, so this is the one place
+    // that cannot disagree with itself about where the search began.
+    emit_matching_frame(
+        &mut frames,
+        observer,
+        MatchingFrame {
+            step: MatchingStep::Start {
+                n_equations: n_eq,
+                n_unknowns: n_var,
+            },
+            match_eq: match_eq.clone(),
+        },
+    );
 
     for eq in 0..n_eq {
         emit_matching_frame(
@@ -372,14 +407,58 @@ mod tests {
         assert_eq!(match_eq, traced.match_eq);
     }
 
+    /// The trace opens on the problem, then announces the first attempt.
+    ///
+    /// Both halves matter. The opening frame must describe the system *before*
+    /// the search — carrying the real dimensions and an empty matching — and the
+    /// frame after it must be the first attempt, or the opening frame has
+    /// replaced information rather than added it.
     #[test]
-    fn trace_starts_with_try_equation() {
+    fn trace_starts_before_the_search_then_tries_the_first_equation() {
         let eq_vars = vec![HashSet::from([0])];
         let traced = maximum_matching_with_trace(1, 1, &eq_vars, None);
+
         assert!(matches!(
             traced.frames[0].step,
+            MatchingStep::Start {
+                n_equations: 1,
+                n_unknowns: 1
+            }
+        ));
+        assert!(
+            traced.frames[0].match_eq.iter().all(Option::is_none),
+            "nothing is matched before the search runs"
+        );
+        assert!(matches!(
+            traced.frames[1].step,
             MatchingStep::TryEquation(0)
         ));
+    }
+
+    /// The opening frame reaches a live observer, not just the returned buffer.
+    ///
+    /// A debugger-stepped session and a recorded replay must begin on the same
+    /// frame; emitting the opening one only into `frames` would give the live
+    /// path a different first step, which is the inconsistency this whole change
+    /// exists to remove.
+    #[test]
+    fn the_opening_frame_reaches_an_observer() {
+        let eq_vars = vec![HashSet::from([0])];
+        let seen = std::cell::RefCell::new(Vec::new());
+        let observe = |f: &MatchingFrame| seen.borrow_mut().push(f.step.clone());
+        let _ = maximum_matching_with_trace(1, 1, &eq_vars, Some(&observe));
+
+        assert!(
+            matches!(
+                seen.borrow().first(),
+                Some(MatchingStep::Start {
+                    n_equations: 1,
+                    n_unknowns: 1
+                })
+            ),
+            "observed: {:?}",
+            seen.borrow(),
+        );
     }
 
     #[test]

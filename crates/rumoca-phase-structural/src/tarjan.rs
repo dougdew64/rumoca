@@ -5,6 +5,16 @@ use rumoca_core::FrameObserver;
 /// One step of Tarjan's SCC algorithm, recorded for animation replay.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TarjanStep {
+    /// **Before the traversal begins: no node visited, no component closed.**
+    ///
+    /// The counterpart of [`crate::matching::MatchingStep::Start`], for the same
+    /// reason: a trace that opened on the first `Visit` announced an intention
+    /// rather than describing the graph the algorithm was handed, so a replay
+    /// had nothing to show as the *before*.
+    ///
+    /// The frame's `stack` and `sccs_so_far` are empty, which is the honest
+    /// state at this instant rather than a placeholder.
+    Start { n_nodes: usize },
     /// Visiting node `v` for the first time (assigned index/lowlink).
     Visit(usize),
     /// Exploring edge v → w.
@@ -87,6 +97,9 @@ pub fn tarjan_scc_with_trace(
     observer: Option<FrameObserver<'_, TarjanFrame>>,
 ) -> TarjanTraceResult {
     let mut state = TracedTarjanState::new(n, observer);
+    // The opening frame, before any node is visited. Every traced path enters
+    // here, so recorded playback and a live session cannot begin differently.
+    state.record(TarjanStep::Start { n_nodes: n });
     for v in 0..n {
         if state.index[v].is_none() {
             state.strongconnect(v, adj);
@@ -301,6 +314,38 @@ mod tests {
         let sccs = tarjan_scc(3, &adj);
         let traced = tarjan_scc_with_trace(3, &adj, None);
         assert_eq!(sccs, traced.sccs);
+    }
+
+    /// The trace opens on the graph, then visits the first node.
+    ///
+    /// Both halves, for the reason matching's twin gives: an opening frame that
+    /// displaced the first `Visit` would have removed information rather than
+    /// added it. The observer is checked too, because a live debugger session
+    /// and a recorded replay must begin on the same frame.
+    #[test]
+    fn trace_starts_before_the_traversal_then_visits() {
+        let adj = vec![vec![1], vec![], vec![]];
+        let seen = std::cell::RefCell::new(Vec::new());
+        let observe = |f: &TarjanFrame| seen.borrow_mut().push(f.step.clone());
+        let traced = tarjan_scc_with_trace(3, &adj, Some(&observe));
+
+        assert!(matches!(
+            traced.frames[0].step,
+            TarjanStep::Start { n_nodes: 3 }
+        ));
+        assert!(
+            traced.frames[0].stack.is_empty() && traced.frames[0].sccs_so_far.is_empty(),
+            "nothing is on the stack and no component is closed before the traversal"
+        );
+        assert!(matches!(traced.frames[1].step, TarjanStep::Visit(0)));
+        assert!(
+            matches!(
+                seen.borrow().first(),
+                Some(TarjanStep::Start { n_nodes: 3 })
+            ),
+            "observed: {:?}",
+            seen.borrow(),
+        );
     }
 
     #[test]
