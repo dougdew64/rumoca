@@ -2938,14 +2938,17 @@ fn stage_kind_from_slug_round_trips() {
 /// System-Modeler-round-trip properties a disposable probe would degrade.
 #[test]
 fn a_scratch_specimen_is_listed_and_marked() {
+    // **The test establishes its own precondition** rather than depending on a probe
+    // happening to be on disk. It used to return early when one was absent, so in a
+    // clean checkout it asserted nothing — and nothing said so. The guard restores
+    // whatever was there on drop, including on a panic; see `ScratchSpecimen`.
+    let probe_file = crate::test_support::ScratchSpecimen::probe();
+    let probe = probe_file.path().to_path_buf();
+
     let mut app = App::test_default();
     app.model_list.dir = DEFAULT_SPECIMEN_DIR.to_owned();
     app.model_list.rescan();
 
-    let probe = std::path::Path::new(crate::bridge::SCRATCH_SPECIMEN_DIR).join("ScratchProbe.mo");
-    if !probe.exists() {
-        return; // no probe written in this checkout
-    }
     assert!(
         app.model_list.files.contains(&probe),
         "scratch specimens join the list"
@@ -3007,20 +3010,15 @@ fn a_scratch_specimen_is_listed_and_marked() {
 /// one silently winning.
 #[test]
 fn a_scratch_specimen_cannot_shadow_a_curated_one() {
-    let dir = std::path::Path::new(crate::bridge::SCRATCH_SPECIMEN_DIR);
-    if std::fs::create_dir_all(dir).is_err() {
-        return;
-    }
-    let clash = dir.join("BouncingBall.mo");
-    if std::fs::write(
-        &clash,
-        "model BouncingBall end BouncingBall;
-",
-    )
-    .is_err()
-    {
-        return;
-    }
+    // **The sharp case for the guard**: a `BouncingBall.mo` left in the scratch
+    // directory shadows a curated specimen, which is the "makes Claude guess" failure
+    // this very test exists to prevent. The old form removed it on the last line, so a
+    // failing assertion left it behind; `Drop` runs while unwinding and does not.
+    let clash_file = crate::test_support::ScratchSpecimen::with(
+        "BouncingBall.mo",
+        "model BouncingBall end BouncingBall;\n",
+    );
+    let clash = clash_file.path().to_path_buf();
 
     let mut app = App::test_default();
     app.model_list.dir = DEFAULT_SPECIMEN_DIR.to_owned();
@@ -3044,8 +3042,6 @@ fn a_scratch_specimen_cannot_shadow_a_curated_one() {
         found.starts_with(DEFAULT_SPECIMEN_DIR),
         "curated wins: {found:?}"
     );
-
-    let _ = std::fs::remove_file(&clash);
 }
 
 #[test]

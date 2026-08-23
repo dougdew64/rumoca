@@ -6160,11 +6160,12 @@ mod tests {
         ignore = "compile-heavy; run with --features slow-tests"
     )]
     fn a_scratch_specimen_compiles_end_to_end() {
-        let path =
-            std::path::Path::new(crate::bridge::SCRATCH_SPECIMEN_DIR).join("ScratchProbe.mo");
-        if !path.exists() {
-            return; // no probe written in this checkout
-        }
+        // Establishes its own precondition — it used to skip when no probe happened to
+        // be on disk, so in a clean checkout it compiled nothing and reported success.
+        // The source is shared with the other two scratch tests because the `n_states`
+        // assertion below is a property of *that* model.
+        let probe_file = crate::test_support::ScratchSpecimen::probe();
+        let path = probe_file.path().to_path_buf();
         let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
         let FromWorker::Compiled { stages, model, .. } = w.compile(&path, &|_: FromWorker| {})
         else {

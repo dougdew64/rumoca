@@ -429,9 +429,27 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
 
 ## Test debt
 
-- [ ] **`app::tests::a_scratch_specimen_is_listed_and_marked` passes vacuously when no probe
-  exists.** It returns early unless `.hrw-bridge/specimens/ScratchProbe.mo` is present, so in a
-  clean checkout it checks nothing and says so to no one — the must-fire rule pointed at a test
+- [x] **CLOSED 2026-08-22 — and it was three tests, not one.** `worker::tests::
+  a_scratch_specimen_compiles_end_to_end` skipped on the same condition, and
+  `a_scratch_specimen_cannot_shadow_a_curated_one` had the other half of the defect: it removed
+  its `BouncingBall.mo` on the **last line**, so a failing assertion left a file behind that
+  shadows a curated specimen — the exact *"makes Claude guess"* failure that test exists to
+  prevent.
+
+  **`test_support::ScratchSpecimen` is the fix**, on the `ui_tests::AdHocTour` contract: save what
+  was there, write, and restore in `Drop` so unwinding cannot poison the directory. All three
+  tests now establish their own precondition, and the probe's source is a shared constant because
+  `worker`'s `n_states == 1` assertion is a property of *that* model.
+
+  **Verified by breaking it**, not by the tests passing: with the probe moved off disk all five
+  still passed (so they create their own), and with the guard's write removed **four of five
+  failed** — proving the assertions are reached rather than skipped. That break also exposed a
+  hole in the new panic test, which passed because *"unchanged before and after"* is equally true
+  of a guard that never wrote anything; it now records existence from **inside** the scope.
+
+- [ ] ~~**`app::tests::a_scratch_specimen_is_listed_and_marked` passes vacuously when no probe
+  exists.**~~ It returned early unless `.hrw-bridge/specimens/ScratchProbe.mo` was present, so in a
+  clean checkout it checked nothing and said so to no one — the must-fire rule pointed at a test
   rather than at production code.
 
   **The fix is not simply to drop the early return.** Making it non-vacuous means the test writes
