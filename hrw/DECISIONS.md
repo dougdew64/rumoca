@@ -4001,3 +4001,28 @@ pasting because nobody said so.
 **If statement-level deixis still matters after living with #1**, the answer is not #2 — it is
 capturing *what was selected* rather than *where the pane is scrolled*. Do not design it until #1
 has been used and found wanting.
+
+## 2026-08-23 — this repository is PUBLIC: the stranger test for what it records
+
+[`docs/upstream-strategy.md`](docs/upstream-strategy.md) stakes Doug's credibility with the Rumoca
+maintainers on what is in this repository, and this file already carries the same principle for
+commit noise — *a log showing six superseded commits for one bug reads as thrashing, whatever the
+messages say.* **It had never been applied to prose about Doug.**
+
+**The test is not "is it personal". It is: what does a stranger supply when the context is
+missing?** A reader arrives without the conversation that produced a sentence and fills the gap
+themselves — and some statements survive that while others invert.
+
+- ✅ ***"UI layout work was problematic, so it is minimised"*** carries its own context. The
+  audience — robotics engineers — supplies *"yes, UI is a tar pit"* and reads **engineering
+  judgement**. Naming where you deliberately did **not** invest is part of `upstream-strategy.md`'s
+  *"honestly bounded"*, so it **raises** credibility rather than costing it.
+- ❌ **A statement about interior state arrives stripped of its reason**, and the default a stranger
+  supplies is rarely the true one.
+
+**Record what Doug decided, ruled or predicted** — that is the record of who decided what, and a
+public engineering repository is the right home for it. **Anything that fails the stranger test
+belongs in Claude's memory store, not in `docs/`.**
+
+*(Held in memory as well, which is keyed to a filesystem path and does not travel — so it is
+written here for the machine that has never seen it.)*
