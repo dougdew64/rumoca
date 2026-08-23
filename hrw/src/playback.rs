@@ -579,3 +579,182 @@ mod tests_layout {
         );
     }
 }
+
+/// The [`Animated`] contract, held across every implementor at once.
+///
+/// From a column read of the eight implementations on 2026-08-23 — reading a
+/// list of siblings down a column and looking for the member shaped differently.
+/// **The column read found no stranded member**: both dispatchers in `app.rs`
+/// cover all eight, and the two views whose `live_state` diverges diverge
+/// *correctly*. What it found is that nothing held either fact in place.
+#[cfg(test)]
+mod tests_animated_contract {
+    use std::collections::BTreeSet;
+    use std::path::Path;
+
+    fn hrw() -> &'static Path {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+    }
+
+    /// Each `impl Animated for` in `src/`, as `(module name, impl body)`.
+    ///
+    /// Discovered rather than listed, for the reason `tests_layout` gives: a
+    /// ninth implementor must arrive already covered, not wait to be added to a
+    /// roster nobody remembers.
+    fn animated_impls() -> Vec<(String, String)> {
+        let mut out = Vec::new();
+        let dir = hrw().join("src");
+        for entry in std::fs::read_dir(&dir)
+            .expect("src/ must be readable")
+            .flatten()
+        {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("rs") {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).expect("a source file must be readable");
+            let Some(start) = text.find("\nimpl Animated for ") else {
+                continue;
+            };
+            // `impl` blocks are at column 0, so `\n}\n` closes this one.
+            let rest = &text[start + 1..];
+            let end = rest.find("\n}\n").map_or(rest.len(), |i| i + 2);
+            let module = path
+                .file_stem()
+                .expect("a .rs file has a stem")
+                .to_string_lossy()
+                .into_owned();
+            out.push((module, rest[..end].to_owned()));
+        }
+        out.sort();
+        out
+    }
+
+    /// The views `app.rs` gives a live-debug entry point, read from the call
+    /// sites that pair a `PendingLiveDebug` variant with the view's cache field.
+    ///
+    /// **Read from the pairing rather than from the variant names**, which do not
+    /// map cleanly onto module names — `Connections` drives `connection_anim` and
+    /// `PreLowering` drives `pre_lowering_anim`, so any name-derived mapping would
+    /// need a hand-written exception table, and a hand-written table is the thing
+    /// this file keeps refusing to write.
+    fn live_debug_gated_views() -> BTreeSet<String> {
+        let app =
+            std::fs::read_to_string(hrw().join("src/app.rs")).expect("app.rs must be readable");
+        let lines: Vec<&str> = app.lines().collect();
+        let needle = format!("live_debug_gate(ui.ctx(), {}::", "PendingLiveDebug");
+
+        let mut out = BTreeSet::new();
+        for (i, line) in lines.iter().enumerate() {
+            if !line.contains(needle.as_str()) {
+                continue;
+            }
+            // The closure body naming the cache field follows within a line or
+            // two, depending on how rustfmt wrapped the call.
+            let field = lines[i..(i + 4).min(lines.len())]
+                .iter()
+                .find_map(|l| l.trim().rsplit('.').next().filter(|t| t.ends_with("_anim")));
+            if let Some(field) = field {
+                out.insert(field.to_owned());
+            }
+        }
+        out
+    }
+
+    /// **A view reports a live session if and only if it can have one.**
+    ///
+    /// Six of the eight delegate `live_state` to [`super::Playback`]; `alias_anim`
+    /// and `ic_plan_anim` return `Idle` unconditionally and ignore `arming`. That
+    /// is **correct today** and is not a defect: those two phases have no search
+    /// to trace, no Debug button and no `PendingLiveDebug` variant, and a view
+    /// with no live path that delegated would report `Arming` whenever a session
+    /// was starting on some *other* stage, disabling controls for no reason.
+    ///
+    /// # Why it still needs a guard
+    ///
+    /// **`connection_anim` carried exactly this stub, and it became a real bug**
+    /// the day a live path was added: its comment records that the hardcoded
+    /// `Idle` "outlived the reason for it", so during a genuine session the
+    /// playback controls stayed enabled while the debugger owned the cursor, and
+    /// `Finished` never arrived to re-enable them afterwards.
+    ///
+    /// Nothing would have failed. The stub is *invisible* to the compiler, the
+    /// view still renders, and the trait is still implemented — which is why this
+    /// is the shape the run log calls a claim outrunning its evidence: a comment
+    /// saying "never runs live" with no mechanism holding it true.
+    ///
+    /// So the invariant is checked in **both** directions. Adding a live path to
+    /// `alias_anim` without changing its `live_state` fails here by name, and so
+    /// does removing one while leaving a view delegating.
+    #[test]
+    fn only_the_views_with_a_live_path_report_a_live_session() {
+        let impls = animated_impls();
+        let gated = live_debug_gated_views();
+
+        // Non-vacuity, both halves. An empty gated set would let the equality
+        // pass against an empty delegating set while proving nothing, and an
+        // implementor set that no longer contains a hardcoding view would mean
+        // the interesting branch had stopped being exercised.
+        assert!(
+            !gated.is_empty(),
+            "no live-debug gate call sites were found in app.rs, so this check is \
+             reading nothing"
+        );
+        assert!(
+            impls.len() > gated.len(),
+            "every Animated implementor has a live path, so the hardcoded-Idle \
+             branch this guards is no longer exercised: {} impls, {} gated",
+            impls.len(),
+            gated.len(),
+        );
+
+        let delegates = format!("self.playback.{}(", "live_state");
+        let delegating: BTreeSet<String> = impls
+            .iter()
+            .filter(|(_, body)| body.contains(delegates.as_str()))
+            .map(|(module, _)| module.clone())
+            .collect();
+
+        assert_eq!(
+            delegating, gated,
+            "\nthe views that report a live session and the views that can HAVE one \
+             have diverged.\n  delegating to Playback: {delegating:?}\n  given a live \
+             path by app.rs: {gated:?}\n\nA view with a live path must delegate, or it \
+             reports `no session` during a real one — connection_anim's own comment \
+             records that happening. A view without one must not, or it reports \
+             `Arming` whenever a session starts on another stage.",
+        );
+    }
+
+    /// **`which()` values are matched against, so a collision misroutes silently.**
+    ///
+    /// They reach the capture (`app.rs` builds `AnimationView { which }`) and the
+    /// crash log, where a duplicate would attribute one view's frame position to
+    /// another — wrong, plausible, and invisible.
+    #[test]
+    fn every_animation_identifies_itself_uniquely() {
+        let impls = animated_impls();
+        let marker = "fn which(&self) -> &'static str {";
+
+        let mut seen: Vec<(String, String)> = Vec::new();
+        for (module, body) in &impls {
+            let literal = body
+                .split_once(marker)
+                .and_then(|(_, rest)| rest.lines().nth(1))
+                .map(str::trim)
+                .and_then(|l| l.strip_prefix('"')?.strip_suffix('"'))
+                .unwrap_or_else(|| {
+                    panic!("{module} implements Animated but its `which` body was not readable")
+                });
+            seen.push((literal.to_owned(), module.clone()));
+        }
+
+        let unique: BTreeSet<&String> = seen.iter().map(|(w, _)| w).collect();
+        assert_eq!(
+            unique.len(),
+            seen.len(),
+            "two animations share a `which()` value, so one misroutes into the \
+             other's capture and crash-log rows: {seen:?}",
+        );
+    }
+}
