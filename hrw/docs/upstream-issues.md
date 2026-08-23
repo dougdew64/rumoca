@@ -210,6 +210,41 @@ three phases later as `still singular after index reduction: empty system: no eq
 unknowns`, which names nothing about the wiring. **System Modeler 15.0 rejects it**:
 *"Incompatible types. 'g … Interfaces.Flange_b'."*
 
+```modelica
+model ConnectAcrossDomains "no member name matches — accepted, and silently inert"
+  Modelica.Electrical.Analog.Basic.Ground gnd;
+  Modelica.Mechanics.Translational.Components.Fixed fixed;
+equation
+  connect(gnd.p, fixed.flange);
+end ConnectAcrossDomains;
+```
+
+**And the control that shows the validators themselves are sound.** Same member *names*, different
+quantities — every member pairs, so `validate_quantity_compatibility` fires and Flatten refuses it,
+naming both sides: `incompatible connector types in connection: e.v (quantity: ElectricPotential)
+and m.v (quantity: Force)`.
+
+```modelica
+model ConnectSameNamesDifferentQuantity "every member pairs — correctly refused"
+  connector ElectricalPort
+    Modelica.Units.SI.Voltage v;
+    flow Modelica.Units.SI.Current i;
+  end ElectricalPort;
+  connector MechanicalPort
+    Modelica.Units.SI.Force v;
+    flow Modelica.Units.SI.Velocity i;
+  end MechanicalPort;
+  ElectricalPort e;
+  MechanicalPort m;
+equation
+  connect(e, m);
+end ConnectSameNamesDifferentQuantity;
+```
+
+**Both were written as scratch specimens, which are gitignored and do not survive a machine
+change** — so the sources are inlined here. This file's own rule is that anything published must be
+reproducible, and a maintainer cannot run a model that exists only on one laptop.
+
 So the report should be framed as **a missing connector-level check, not a validator that failed to
 fire**: the per-member validators work correctly and precisely — a same-named pair with mismatched
 quantities is refused at Flatten with both quantities named — but nothing establishes that the two
