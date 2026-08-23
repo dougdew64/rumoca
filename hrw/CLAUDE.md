@@ -571,17 +571,16 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 
 > ### ⟶ OPEN THE NEXT SESSION WITH THIS
 >
-> **The live work comes first here, and that ordering was a fix.** Until 2026-08-21 this section
-> opened with *"the conversation has changed mode — default to teaching, not to building"* and
-> a vacation note from 2026-08-09, and the work actually in flight was **230 lines below them**.
-> A session reading top-down was told to do one thing while doing another, and had to grep to
-> find out what was underway — in a file whose whole job is to be read first. **The standing
-> teaching-mode instruction is unchanged and still binds; it now sits with the rest of the walk
-> material, below.**
+> **This section holds ONLY what is in flight. Everything closed lives in
+> [`DECISIONS.md`](DECISIONS.md)** — *"closed arcs move out of `CLAUDE.md`"*, 2026-08-22, which
+> names each arc and the file that holds its record. **Do not restate a closed arc here; link it.**
 >
-> **So the rule this section is kept by: what is in flight goes at the top, and standing context
-> goes underneath it.** A ✅ box is history the moment its arc closes — move it to the plan or
-> to `DECISIONS.md` rather than letting it accumulate above the next reader's actual task.
+> **The rule, and it is now enforced rather than remembered:** what is in flight goes at the top,
+> standing context underneath, and **a ✅ box is history the moment its arc closes.**
+> `doc_citations::the_mandatory_reading_path_stays_small` fails by name if this section or the
+> reading path outgrows its budget — because this file was pruned twice (526→317, then 2,320→1,730)
+> and **regrew +229 lines in the day after the second prune.** A one-time cleanup is measurably
+> insufficient; the budget is what makes this different.
 >
 > ### ⟶ TWO MODES RUN IN PARALLEL, SPLIT BY DOUG'S AVAILABLE ATTENTION — 2026-08-21
 >
@@ -703,136 +702,6 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > **Convert and improve ONE TOUR AT A TIME — the one Doug is about to walk.** Seven of nine have
 > never been walked; `docs/fixture-tours/README.md` carries the template and its five rules.
 >
-> ### ✅ `#48` IS CLOSED — 2026-08-21. Gate ~315 s → ~220 s; `notebook-check` 157 s → 109 s
->
-> **Shipped:** `9432e982` (Rumoca: `source_root_input_cache_key`) and `02af5212` (HRW: the
-> parsed-source-root memo). **Only ~22 s of the gate is attributable** — identical code ran 196 s,
-> 219 s and 287 s in one afternoon, so the ~95 s drop must not be quoted as an achievement. The
-> clean number is `notebook-check`, **157 s → 109 s**, counter-predicted 49 s and observed 48 s.
->
-> **THREE LEVERS WERE DECLINED, NOT MISSED, and the full ledger is `docs/ideas.md` #48.** **A** was
-> overestimated 20× (~5 s; 3 of 37 compiles). **B** was declined *by Doug on fidelity grounds* — a
-> bare session makes the suite verify a compile the app never performs. **Parallelism is dead in
-> both forms**: a worker pool is blocked by `OutputCapture`'s process-global `dup2` on fd 1/2, and
-> process sharding measured **worse than serial** (236 s vs 219 s) because it destroys
-> `compile_specimen_shared` — the suite is fast *because* 802 tests share those compiles.
->
-> **WHAT REMAINS IS UPSTREAM AND IS DELIBERATELY UNSCHEDULED.** `docs/upstream-issues.md` **P1** is
-> worth up to ~115 s but is a **semantics-changing** patch — the first departure from this fork's
-> additive/observation-only discipline — and **whether it is even fidelity-preserving is the open
-> question inside it.** Doug agreed a protocol: **discussion → study → discussion → change.** None
-> of those steps has been taken. **P2's ~21 s figure is UNVERIFIED** — attributed by subtraction,
-> not timed. Time the prune before filing.
->
-> **AND THE PROCESS FINDING THAT COST THE MOST TIME.** Three `perl` substitutions in one session hit
-> the **first** match rather than the intended one: one silently rewrote an unrelated loop into
-> non-compiling code, and one perturbed a *different test* than the one being revert-checked — so a
-> must-fire check appeared to pass when it had never run. `CLAUDE.md` already forbids generating
-> source text through a shell. **Use the Edit tool: it requires a unique match and fails loudly.**
-> Python was installed on 2026-08-21 partly on the inference that Claude prefers it; it is fine for
-> CSV and analysis work (`docs/setup-windows.md` §7a, **`-X utf8` required**), but it is not the
-> answer to this.
->
-> **FIVE LEVERS ARE DEAD BY MEASUREMENT — do not re-propose them.** Parallelism (~2 s; the
-> worker tests serialise on a global `Mutex<WorkerState>`), memoising simulations (~2 s; the key
-> must include `t_end` and the sites are distinct pairs), memoising specimen *compiles* (**already
-> built** — `compile_specimen_shared`, so 47 of 59 call sites are free), feature-set thrashing
-> (1–2 s; cargo keeps both variants), and **cutting `t_end` (0.4 s — integration is free)**. The
-> full reasoning is in *Running things* below.
->
-> **⟶ THE ANSWER IS MEASURED, AND THE WORK IS AUTHORISED — 2026-08-21.** `docs/ideas.md` #48
-> carries the full record. **92 % of the gate is 72 compiles and 10 MSL loads, and every compile
-> re-resolves the entire MSL (38,855 defs)** because `compile_target` invalidates the session's
-> resolution cache on every call. A two-equation specimen referencing nothing from the MSL costs
-> **3.5 s**; in a session with no MSL loaded it costs **0.03 s**.
->
-> **Doug authorised three levers, A, B, C — AND THE RANKING INVERTED ON MEASUREMENT, 2026-08-21
-> evening.** He also retired the target as a contract: *"the 60 second goal is an arbitrary number
-> which I declared so that we could have a goal"* — the levers stand on their own merits.
->
-> | lever | estimated | **measured** | status |
-> |---|---:|---:|---|
-> | **A** stop invalidating the resolved MSL per compile | ~115 s | **~5 s** | **DEAD — Doug skipped it** |
-> | **B** compile MSL-free specimens in a bare session | ~49 s | not measured | **blocked on a fidelity ruling** |
-> | **C** reduce the 10 full MSL loads | ~44 s | **~48 s** | **BUILT** |
->
-> **A DIED BECAUSE `1.6 s × 72` WAS ARITHMETIC, NOT A MEASUREMENT** — the sixth time this item has
-> recorded that pattern. A probe at the churn site found the narrow guard could skip **3 of 37**
-> specimen compiles: the suite compiles a *different* specimen nearly every time, and **Rumoca has
-> no incremental resolve**, so a changed document set must re-resolve. A's 115 s is not available
-> to HRW at all — it is available **upstream**, now `docs/upstream-issues.md` **P1**.
->
-> **THE CEILING, so nobody re-derives it: A + B + C ≈ 70 s of a ~290 s gate.** 92 % of the gate is
-> 72 compiles and 10 MSL loads, and a compile costs 3.5 s with the MSL loaded against **0.03 s**
-> without. Every lever is a way of not paying that, and **only the upstream change does it without
-> altering what the tests verify.**
->
-> **MEASURE ANY MSL-LOAD LEVER ON `notebook-check`, NEVER ON THE GATE.** It does 21 loads, and went
-> **157 s → 109 s** — matching the counter prediction to within a second. The gate on the same day
-> ran **240 s, 287 s, 10,780 s and 196 s** with no source change between them.
->
-> **AND THE 10,780 s ONE HAS AN ANSWER: THE MACHINE WENT TO SLEEP MID-RUN** *(Doug, 2026-08-21)*.
-> Worth writing down because Claude spent a round investigating it — checking the artifact cache,
-> current CPU load and free RAM, none of which showed anything, because by then the machine was
-> awake again. **A background gate spans wall-clock time Doug is not at the keyboard for, so sleep
-> is a normal cause of an absurd duration, not an anomaly to diagnose.** Sanity-check against a
-> single known-cost test (`all_healthy_specimens_simulate`, ~27–37 s) before investigating further.
->
-> **B'S CAVEAT IS BIGGER THAN #48 RECORDS, and it is why B is blocked.** A bare session renumbers
-> DefIds, so the suite would verify a compile **that differs from the one the app performs** — the
-> app always has the MSL loaded — and regenerating the notebook to bare-session values makes the
-> committed traces disagree with the app too. That is a fidelity trade, not just a gate to run.
->
-> **AND TWO MEASUREMENT RULES THIS ARC BOUGHT.** *(1)* **Never compare a first-of-session run with
-> a later one** — the opening experiment read as *"integration dominates 4×"* and was ~75 s of cold
-> page cache; it was caught by cross-checking against the same test's in-suite figure, not by
-> suspicion. *(2)* **The suite varies 315–412 s with no source change**, so judge a lever by the
-> instrumented counts (compiles, resolutions, MSL loads), never by wall clock.
->
-> **THE METHOD, AGREED WITH DOUG 2026-08-21 — `docs/ideas.md` #48 carries it in full.** Four
-> points, and the first is the one a session will be tempted to skip:
->
-> - **MEASURE BEFORE COMMITTING TO A LEVER.** The four dead levers above all died on contact with
->   a clock after being proposed from arithmetic over slow-looking test names. **The first
->   experiment is ten minutes**: cut `t_end` on one simulation test and time it, which settles
->   whether *integration* or *compilation* dominates. `all_healthy_specimens_simulate` (16 s)
->   compiles nine specimens before simulating any, and the next two slowest tests do not simulate
->   at all — so the answer is genuinely open.
-> - **COST REDUCTION RANKS ABOVE SELECTIVE EXECUTION**, because the failure modes differ: a test
->   made cheaper still runs, while a test skipped by a wrong selection heuristic is a **silent
->   wrong negative** — the error this repository treats as the one nobody catches. The safe
->   version of selection already exists (`slow-tests`, the FAST/FULL table); reach for more of it
->   only where a test cannot be made cheap.
-> - **~~CUT `t_end`~~ — DEAD, measured 2026-08-21: 37.75 s → 37.33 s.** Integration is free, so the
->   non-vacuity assertions this asked for are **not owed**. The rule below is kept only for the day
->   `t_end` is cut for some other reason. Doug: simulating 0.1 s
->   is as useful as more, *for our current purposes*. **The exception is a test asserting a
->   PHENOMENON rather than that integration ran.** `BouncingBall` is the case — a bounce is an
->   event, and `has_discontinuities`, `discontinuity_segments` and *"discontinuities render as
->   discontinuities"* all need one to occur inside `t_end`. Cut below the first bounce and they
->   pass while checking nothing. **So name the phenomenon each simulation test needs and assert
->   it**, which turns `t_end` from a number nobody dares touch into one anyone can tune safely.
-> - **CHANGE `t_end` AT THE CALL SITE, NEVER IN A SPECIMEN'S `experiment` ANNOTATION.** Those
->   annotations are part of the System Modeler differential-test contract — identical tolerances
->   and initial conditions (charter §4.3). `t_end` is already a parameter to `simulate`, so this
->   costs nothing.
->
-> **AND A CANDIDATE COST NEITHER LEVER REACHES — ✅ IT WAS THE RIGHT GUESS, confirmed 2026-08-21.**
-> The paragraph below predicted that the dominant cost was the MSL and invisible to both named
-> levers. It was, and the prediction is worth keeping: **the reasoning that found the answer was
-> "what do these tests SHARE?", not "which test names look slow?"** The suite is
-> forced to `--test-threads=1`, and the expensive tests serialise on a global
-> `Mutex<WorkerState>` — **they are serial precisely because they SHARE the expensive resource,
-> the loaded MSL, and sharing is what makes them cheap.** So the real cost may be MSL loading,
-> which is invisible to both `t_end` and selective execution. **Measuring it is free; acting on
-> it is not** — see the compile-path prohibition in *The rules*, which that work would run
-> straight into.
->
-> **The pattern that killed all four: a sum of slow-looking test names is not a measurement.**
-> Three were proposed from arithmetic over names and died on contact with a clock. **Measure
-> first.** `Running things` records where the ~354 s actually goes — about twenty tests carry ~129 s
-> of it, led by `all_healthy_specimens_simulate` (16 s).
->
 > ### ⟶ AFTER `#48`: RESUME REFACTORING, AND THE GOAL IS BUGS — Doug, 2026-08-21
 >
 > **The `app.rs` arc's real return was defects found, not lines moved, and the numbers separate
@@ -859,166 +728,23 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > one-item-per-session budget. Extraction was the forcing function that made someone look, not the
 > mechanism that found them — so schedule the looking directly.
 >
-> ### ✅ THE `app.rs` SPLIT IS CLOSED — 2026-08-19 to 2026-08-21
+> # THE WALK — standing context
 >
-> **14,437 → 6,476 lines**, into **seventeen new modules**, plus the doc-comment sweep that closed
-> it. **Not seventeen iterations** — several of the best produced no module at all, being accuracy
-> or testability fixes paid for *inside* `app.rs`. **The single largest step was not an extraction
-> either**: moving the `cfg(test)` blocks to `app/tests.rs` was **−5,613** and refactored nothing.
-> **The full record — every iteration, its estimate, what it actually cost and what it found — is
-> [`docs/app-split-plan.md`](docs/app-split-plan.md), which is now a closed plan.**
-> Per-module sizes are in `docs/architecture.md`, which is **generated**; this file does not
-> transcribe them, because a count here expires exactly like the rank that `arch_doc.rs`'s own
-> header got wrong.
+> ## DEFAULT TO TEACHING, NOT TO BUILDING — a standing instruction, not a mood
 >
-> **DOUG RULED ON HOW TO SCORE IT, AND THE RULING OUTLIVES THE ARC** *(2026-08-20)*: *"This
-> `app.rs` refactoring effort has been beneficial, regardless of the reduction in size of `app.rs`.
-> You've identified and fixed bugs and you've identified and fixed testing gaps."* **So a session
-> reports what it found and what it made checkable first, and the line count last.** Scored on size
-> alone, four of the best iterations read as failures — the live-debug gate **added** 41 lines, the
-> cache-lifetime split 173, the ack-path seam 113, and the wrong-model annotation fix was a **net
-> zero**. **An accuracy or testability item is paid for *in* `app.rs` and cannot be scored on
-> `app.rs`'s line count.**
+> **Doug, 2026-08-08:** *"I will finally begin a serious walk through the tours and try to shift our
+> conversation to be about my education rather than about HRW features."* And the reason, which
+> should not need saying twice: *"We've been working on this project for three weeks, and I have not
+> yet been rewarded with a learning experience."*
 >
-> **What the arc actually bought**, and the reason it is worth reading the plan before the next
-> refactor of anything: **eight defects found by extracting**, several of them silent and one of
-> them nine days old and already reported by Doug in a narrower dress. Panes that could previously
-> be reached only by building an `App`, giving it a worker and driving a specimen to a *failing*
-> stage now have tests running in hundredths of a second.
+> **When Doug reports something during a walk, the first question is *"what does this teach, and is
+> it true?"*** — not *"what should we build?"* A feature is warranted when it unblocks the learning;
+> `docs/ideas.md` is where the rest goes. **Treat an hour of HRW polish during a walk as a cost.**
 >
-> **THE SEAM-FINDING RULES ARE THE TRANSFERABLE PART, and they live in the plan.** Named here only
-> so a future refactor knows they exist and does not re-derive them:
->
-> - **Ask what a body is a LIST of, and which member is shaped differently — and find the
->   *outermost* list first.** A router has no interesting regions, only members; the `else` that is
->   a sibling of every counted row was missed by three separate censuses.
-> - **The shape of the sibling is the cheapest seam-finder the arc produced** — anywhere one arm of
->   a `match` or `if` chain has already been extracted, the arm that has not is the next seam.
-> - **For a body, ask which contiguous region calls no `App` method.** `App` policy clusters at a
->   rendering function's *edges*; the middle is usually pure rendering.
-> - **Check for ZERO coupling before measuring coupling** — that class turned out to hold exactly
->   one item (227 lines) and is now empty, so do not re-run the sweep expecting a second harvest.
-> - **Count state GROUPS, not fields**, and the unit is the **narrowest borrow**.
-> - **The `App`-method count is not the test — ask whether deferring the press costs a frame.** A
->   method at the end of a body is a callback; a method in the middle is a barrier.
-> - **A helper moves if its inputs are already in the signature, and stays if it would widen it.**
-> - **An extraction may buy no test. Grep for the property before claiming it buys one**, since the
->   claim is about the OLD code and is checkable in advance.
->
-> **THE `worker.rs` CONTROL EXPERIMENT IS ABANDONED — Doug, 2026-08-21.** It was never going to
-> yield a measurement, for two reasons that are worth keeping because they generalise. **The
-> outcome variable was confounded**: handoff frequency cannot separate a file growing from the
-> Opus 4.6 → 5 change, which this file already says. **And a control must differ in one variable**,
-> while `worker.rs` differs in many — a compile path edited rarely, against UI code edited
-> constantly through the whole arc. It was a control in name only, so keeping it unsplit bought
-> nothing. **`worker.rs` is refactored after `app.rs`**, under the campaign below.
->
-> ### A DOC COMMENT CAN BE ADOPTED BY THE WRONG ITEM — and there is now a checker
->
-> **Rust concatenates contiguous `///` lines, so any item inserted above another item's doc comment
-> silently adopts it and the original loses its own.** Well-formed Rust, rendered happily by
-> rustdoc, and **worse than an undocumented item because it teaches something false.** Four causes
-> are known — insertion, a split that left the doc above the first piece, a rewrite written above
-> the old doc instead of replacing it, and an **extraction that moved the code and left the prose**.
->
-> **`doc_citations::tests_orphaned_docs::no_doc_block_gains_a_second_summary` is the check**, a
-> per-file ratchet measured over the whole tree on 2026-08-21: 87 hits, 79 blocks, **25 real
-> orphans, ~29 % precision**, all fixed. **Forty files are at zero**, so a merged block in any of
-> them fails by name and line.
->
-> **Three things it does not claim, all of them measured rather than assumed:**
->
-> - **29 % is precision on the STOCK, not the flow.** A failure means *go and look*; raising a
->   budget takes the reasoning in the same commit, the `app_does_not_regrow_its_field_count`
->   contract.
-> - **It has a known blind spot, and it is the instance that motivated it.** `lib.rs`'s
->   `STEPPED_FRAME_DELAY` orphan is invisible to it because the new summary wraps onto a second
->   line. Relaxing that takes 87 hits to **169**, so recall costs about one false positive per extra
->   find; the blind spot is documented on the test rather than closed.
-> - **The companion ZERO-doc detector cannot be the check** — it would have caught every one of the
->   eight `app/tests.rs` orphans, but that file keeps **39** deliberately undocumented tests. **The
->   two are the ends of one defect and only this end has a tolerable rate.**
->
-> **The triage shortcut, measured on all 25: list the file's UNDOCUMENTED items and match the
-> orphan to one by name.** It resolved 22 of 25 immediately. The three it cannot reach are the
-> variants with no owner to match — a deleted field's doc, a summary superseded by a rewrite, and
-> **an owner that moved to another module.** For that last one: **after moving a pane, check whether
-> its rationale moved with it**, because the compiler enforces that the code left and says nothing
-> about the prose that explained it.
->
-> ### ✅ THE TOUR TRANSPORT BAR — fixed 2026-08-19, and the constraint it leaves is permanent
->
-> **The record is [`docs/ui-findings.md`](docs/ui-findings.md) C16**; the reasoning that binds
-> today's code is in `tour_panel.rs` beside the code it binds. What is kept here is the standing
-> constraint and the one rule the episode produced.
->
-> **The bar's minimum width was non-monotonic**: shortening a label made the divider failure
-> *worse*, which is impossible under a width-budget theory and is the signature of a moving wrap
-> point. It is `ui.horizontal` now, so the minimum is monotonic and reductions compose.
->
-> **THE ORDER IS THE WHOLE LESSON, AND IT IS EASY TO MISREAD AS "UN-WRAPPING WAS THE FIX".**
-> Un-wrapping **alone** was proposed, measured and correctly rejected — at **580pt** it is 50.1 %
-> of Doug's 1280pt window against the **40 %** he walks tours at. What shipped is un-wrapping
-> **plus** the three reductions that paid for it (tour count, duration words, the time combo's
-> default width), landing at **351.8pt**. **Make the width monotonic, then spend it** — and
-> `◂ Back`'s ~60pt was affordable only out of that saving.
->
-> **So the live constraint: `MIN_LEFT_POINTS` is 435 and every point is one the RHS never gets
-> back.** Anything added to this bar needs a matching reduction, which is exactly what the two
-> re-aimed divider guards now catch. **The picker's `.width((bar_width * 0.45).clamp(60.0, 220.0))`
-> is load-bearing** — both a fixed width and no width at all are dead by measurement; the code
-> comment carries both numbers.
->
-> **INSTRUMENT, DO NOT TUNE.** Two theories died here by measurement after Claude tuned four times
-> having said he would not, repeating the six-attempt divider episode (`ui-findings.md` C15).
-> **The score for reasoning about this bar without instrumenting is 0 for 2.** The divider test
-> already knows `available`, `panel` and `content` at each sampled pointer position — print the
-> triple across the sweep and the question is answered in one run.
->
-> ---
->
-> # THE WALK — standing context, and it begins here
->
-> **Everything from this line to the end of the section is about Doug's walk through the tours.**
-> It sat *above* the live work until 2026-08-21 and now sits below it; **nothing in it was
-> edited by that move**, so a date inside it describes when it was written, not today.
->
-> **Two things to hold while reading it.** First, **the teaching-mode instruction below still
-> binds** — it is a standing instruction, not a spent one. Second, **the `app.rs` split is a
-> deliberate exception Doug directed**, not a lapse from it: he ordered the split on 2026-08-19
-> and re-affirmed its value on 2026-08-21 (*"this refactoring has been very, very valuable"*).
-> **When the split closes, the default returns to teaching without anyone needing to decide it.**
->
-> **And the vacation note below is dated 2026-08-09** — it was the live framing then and is not
-> now. Left in place rather than rewritten, because what it records about *how* the walk works is
-> still true; only the week is stale.
->
-> ## THE CONVERSATION HAS CHANGED MODE
->
-> **Doug, 2026-08-08:** *"I will finally begin a serious walk through the tours and try to shift
-> our conversation to be about my education rather than about HRW features."*
->
-> **That is a standing instruction, not a mood.** For three weeks this project built the
-> instrument; the instrument is now good enough. **Default to teaching, not to building.** When
-> Doug reports something during a walk, the first question is *"what does this teach, and is it
-> true?"* — not *"what should we build?"* A feature is warranted when it unblocks the learning,
-> and `docs/ideas.md` is where the rest goes.
->
-> **He said the reason plainly, and it should not need saying twice:** *"We've been working on
-> this project for three weeks, and I have not yet been rewarded with a learning experience."*
-> Treat an hour spent on HRW polish during the walk as a cost, not a contribution.
->
-> ## WHERE THE WALK ACTUALLY IS (2026-08-13) — read this before the older notes below
->
-> **`connect-expansion.md` is walked, rewritten, and validated.** Doug: *"That is the template
-> for all other tours."* The template and the five things that make it work are in
-> [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md) — **read that before writing or
-> converting a tour.** Its shape: short setup → **Predict** → ▶ Look → **Expected** →
-> **Falsified if** → *What just happened*, with the explanation only ever **after** the look.
->
-> **Convert ONE TOUR AT A TIME — the one he is about to walk**, never a campaign. Doug:
-> *"working through each conversion with you is educational for me"*, so the conversion is
-> itself teaching, not preparation for teaching. The other eight are unconverted.
+> **The template, and the five things that make it work, are in
+> [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md)** — read it before writing or
+> converting a tour. **Improve ONE TOUR AT A TIME**, the one he is about to walk, never a campaign:
+> *"working through each conversion with you is educational for me."*
 >
 > ### The three agreements that govern every answer now
 >
@@ -1062,209 +788,20 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > are now the kind a test catches; **the other two were conceptual** — a tour whose central idea
 > had no counterpart on screen — and no test closes that.
 >
-> ## He is on VACATION, walking the tours (week of 2026-08-09)
->
-> **Entry point: [`docs/fixture-tours/the-concepts.md`](docs/fixture-tours/the-concepts.md)**
-> — the overview, whose rows are `hrw://tour/…` links that open each tour.
->
-> **Nine tours cover the pipeline, and SEVEN OF THEM HAVE NEVER BEEN WALKED.** Written in one
-> pass on 2026-08-08, at Doug's explicit direction to drop `#66`'s write-one-walk-one rule so a
-> week of vacation could start immediately.
->
-> | new 2026-08-08 | phase |
-> |---|---|
-> | `connect-expansion.md` | Flatten — 4 `connect`s become 3 sets become 7 equations |
-> | `blt-ordering.md` | Tarjan/BLT — an order, no order, a system that splits |
-> | `tearing.md` | 3×3 → 1×1, and the phase's only heuristic |
-> | `index-reduction.md` | nine states, three degrees of freedom |
-> | `initialization.md` | one state, two conditions |
-> | `solve-lowering.md` | names become indices |
-> | `events.md` | the equations that are not always true |
-> | `the-concepts.md` | the overview |
->
-> **Every COUNT in them is read from the specimens' generated notebook traces. Every RENDERING
-> claim is unverified.** Each tour's closing *"What this tour cannot check"* section names its own
-> two or three weakest claims — **read that section before defending anything in the tour.** If
-> Doug reports a count is wrong, that is the serious case: a trace changed or Claude misread one.
->
-> ## PER-MACHINE SETUP — do this before answering any debugger question
->
-> **The VS Code extension is not installed by `git pull`.** It brings `src/*.ts`; it runs no
-> `tsc` and creates no junction. This exact gap cost a day on 2026-08-08 (`docs/ideas.md` #72,
-> operating notes):
->
-> ```powershell
-> cd hrw\vscode-extension ; npm install ; npm run build ; npm test
-> New-Item -ItemType Junction -Path "$env:USERPROFILE\.vscode\extensions\dougdew64.hrw-debugger-bridge-0.1.0" -Target "$PWD"
-> ```
->
-> Then **reload the VS Code window**, and confirm with `code --list-extensions`. **Rebuild HRW
-> too** — the `hrw://breakpoint/` links and the two-tier frame delay are compiled in.
->
-> **Only `matching-live.md` needs any of this.** The other eight run from HRW alone.
->
-> **AND CHECK THE PERMISSION ALLOWLIST EXISTS — first thing, on any machine.** `.claude/` is
-> gitignored **by upstream Rumoca** (`e658c776`), so `.claude/settings.json` does not travel and a
-> fresh clone prompts Doug for approval on **every** Bash call. Doug reported that as real friction
-> on 2026-08-13; the contents and the reasoning are in
-> [`docs/setup-windows.md`](docs/setup-windows.md) §8.
->
-> ```powershell
-> Test-Path (Join-Path (git rev-parse --show-toplevel) ".claude/settings.json")
-> ```
->
-> **Anchored at the repo root on purpose, and the bare relative form is a trap.** The first version
-> of this line was `Test-Path .claude\settings.json`, which reported **False on a machine where the
-> file exists** because the shell happened to be in `hrw/` — so the check would have ordered a
-> future session to recreate a file it already had. Caught within a minute of writing it, by
-> running it. **A check that reports absence from the wrong directory is worse than no check**, and
-> this is the third time in one day that a stale working directory produced a confidently wrong
-> result (see `DECISIONS.md`, 2026-08-12).
->
-> **Claude must check this unprompted, because Claude cannot see permission prompts.** Doug feels
-> the cost and has no reason to suspect a file he has never read; Claude can read the file's
-> *existence* and cannot read the prompts. **Only one of us can detect this, and it is not the one
-> paying for it.**
->
 > ## WHERE INDEX REDUCTION STANDS (2026-08-18) — read before touching that tour or tab
 >
-> **Doug walked the phase-1 tours and reported that `index-reduction.md` was "way, way too
-> short".** Following that took four steps down and found a defect at each:
+> **Doug reported the tour was "way, way too short", and following that found a defect at each of
+> four levels — all now fixed.** A false headline claim (`Drivetrain` differentiates **six** times,
+> not zero); no cross-check of a stage summary against its own frames (now
+> `a_reduction_summary_never_claims_more_than_its_frames_recorded`); a tab that **re-executed rather
+> than observed**, since replaced by Rumoca's `prepare_dae_for_structural_analysis_fully_observed`;
+> and **Rumoca not reducing the canonical index-3 DAE — adjudicated 2026-08-22**
+> (`docs/upstream-issues.md`, `docs/ideas.md` #83).
 >
-> 1. **The tour's headline claim was false.** It said `Drivetrain` performs *zero*
->    differentiations. It performs **six**. `differentiated_rows` counts rows *surviving in the
->    final DAE*, and `eliminate_trivial` removes them at the end. Corrected in place; the wrong
->    version is kept visible in the stop, because the mechanism is the lesson.
-> 2. **Nothing cross-checked a stage summary against the frames from the same run.** Every other
->    checker here compares a document to a trace, and the trace said zero.
->    `a_reduction_summary_never_claims_more_than_its_frames_recorded` now does, and its
->    *"some specimen must differentiate"* clause encodes the exact mistake.
-> 3. **The Index Reduction tab was a re-execution, not an observation**, with HRW maintaining
->    Rumoca's step order by hand — and it had **already drifted**, missing `scalarize_equations`.
->    Rumoca gained a funnel observer (`prepare_dae_for_structural_analysis_fully_observed`), HRW
->    switched onto it, and the mirror is deleted. `updating-rumoca.md` step 3 is now moot.
-> 4. **Rumoca does not reduce the canonical index-3 DAE.** `CartesianPendulum` compiles, every
->    funnel step reports zero, and it is left structurally singular — unmatched equation
->    `f_x[4]` (the constraint) against unmatched unknown `lambda` (its force). **Rumoca's index
->    reduction is pattern-based, not general Pantelides**, and every other constraint in the
->    corpus is an alias, which is why nobody noticed. Filed in `docs/upstream-issues.md` as a
->    question, not a defect claim; **not yet adjudicated against System Modeler**.
->
-> **The corpus now spans the phase** — `BouncingBall` (no reduction needed), `BenchActuator`
-> (1 differentiation, 48 equations), `Drivetrain` (6, at 97), `CartesianPendulum` (cannot be
-> reduced). Smallest-first is the tour's spine, and the pendulum is its ending.
->
-> **DONE 2026-08-18:** the pane now publishes `n_differentiations` beside the survivor list, so
-> it can no longer be silent about six differentiations because none survived — the defect that
-> started all of this. A funnel that did nothing also says so, which is `CartesianPendulum`'s
-> whole lesson.
->
-> ### ✅ THE ORACLE RUN IS DONE — 2026-08-22, OUTCOME 1. Do not re-run it
->
-> **Wolfram System Modeler 15.0 loads `CartesianPendulum.mo` unmodified and simulates it 0 → 10 s
-> cleanly — and reduces it to TWO states against Rumoca's four**, by dynamic state selection
-> (`$dynState` sets over `{vy}` and `{y}`). A planar pendulum has one degree of freedom, so two is
-> the right answer. `lambda` peaks at **29.4293** at the bottom of the swing against a hand-computed
-> *m*(*g* + *v*²/*L*) = **29.43**, so the comparison rests on a number checkable without either tool.
->
-> **The full record — version string, commands, the physical checks, and the FOUR things this run
-> does not establish — is `docs/upstream-issues.md` under the index-reduction entry.** Read it there
-> rather than recalling it; in particular it does **not** license citing this run as evidence about
-> Pantelides specifically, which is the tempting over-claim.
->
-> **The premise is NOT retired**, which was the outcome that would have stopped `#83`. Rumoca's
-> index reduction is narrower than a mainstream compiler's, as an adjudicated fact.
->
-> **What the result gated** *(the convergence noticed 2026-08-22)*:
->
-> | | what the result decides |
-> |---|---|
-> | `index-reduction.md` Stop 5 | Claude's inference becomes an adjudicated fact |
-> | `docs/upstream-issues.md` | a well-evidenced upstream entry, or a **retired** one |
-> | `docs/ideas.md` **#83** | whether general Pantelides is a real gap worth Doug implementing |
-> | `docs/ideas.md` **#5** | whether the four-bar linkage — the charter's Arc-4 specimen, and the representative of the class his robotics degree is about — can be un-parked |
->
-> **Three of the four are discharged in the repository**: `upstream-issues.md` carries the
-> adjudication, `specimen-notebook/CartesianPendulum/purpose.md`'s Provenance records the
-> round-trip, and `#83`'s first prerequisite is met — so `#83` is live, and `#5`'s doubt about
-> whether the four-bar's difficulty was Rumoca's or the problem's is closed.
->
-> **⟶ THE FOURTH IS OWED AND IS DOUG'S TO DIRECT: `index-reduction.md` Stop 5.** The tour still
-> presents the narrowness as Claude's *reading* and its *"What this tour cannot check"* section
-> still says the adjudication *"has not been run"* — which is now false. **That is tour prose in the
-> document Doug is mid-walk on**, so it is not Claude's to rewrite unsupervised; raise it at the
-> next walk. `the-oracle.md` stop 3 also now has a real worked example available to it.
->
-> **Pre-committing the outcomes worked and is worth repeating.** One of the three would have
-> retired the premise and stopped `#83`, so the result could not be read to taste — and the run
-> returned more than the outcome asked for, because the debug messages name the *state count*, not
-> merely success.
->
-> **AND ON A DIFFERENT MACHINE, CHECK THE PERMISSION ALLOWLIST FIRST** — `.claude/` is gitignored by
-> upstream, so it does not travel; see *PER-MACHINE SETUP* below. That check is Claude's to run
-> unprompted, because Doug cannot see the prompts Claude is about to trigger.
->
-> **The tour is rewritten** (2026-08-18): five stops, smallest-first —
-> `BouncingBall` (nothing needed) → `BenchActuator` (**1** differentiation, 4→3 states, the
-> mechanism at a size you can hold) → `Drivetrain` (6, at 97 equations) → `CartesianPendulum`
-> (0, and cannot be reduced). It builds *why differentiating helps* from what an integrator can
-> be asked for, and defines **index as a distance** rather than a score. **Not yet walked.**
->
-> **THE TOUR IS BEING WALKED NOW, and three corrections have already come from it** — each a
-> prose failure, none a wrong number, and none findable by any checker here:
->
-> 1. *"Why a solver cannot simply be told about the constraint"* said **solver** and described
->    an **integrator**. A DAE solver handles constraints; that is its job. Wrong difficulty named.
-> 2. The replacement assumed Newton iteration, Jacobians and singularity. Rebuilt on **matching**,
->    which he has walked — the same fact found by counting rather than arithmetic.
-> 3. Backward references **retold** earlier results as prose, including a hand-written table that
->    duplicated the Incidence view. Doug: *"HRW is your platform. Use it."* Now
->    `hrw://tour/<name>/stop/<slug>` links and a pane link.
->
-> **The standing offer that came with it:** *"if ever HRW does not meet your needs but could meet
-> your needs with improvements, then let's pause and make those improvements."* Take it.
->
-> ### DEIXIS — Doug cannot point at a tour statement, and asked for it 2026-08-19
->
-> *"I'd like to enjoy the convenience of deixis when asking questions about statements which
-> you've made in tours. Currently, it seems that I have to copy / paste those tour statements."*
->
-> **HRW publishes `ui_mode: "Tour"` and nothing else about the tour** — not which one, not where
-> he is in it. So "this statement" cannot be resolved.
->
-> **Tell him he does not need to paste**, which is the immediate relief and cost nothing: the
-> tours are on disk, so *"the Newton paragraph in the intro"* or *"Stop 2's table"* is enough to
-> find the exact text. He had been pasting because nobody said so.
->
-> Two improvements, agreed as a plan and **not yet built**:
->
-> 1. **Publish which tour is selected** — ✅ **BUILT 2026-08-19.** `diagnostic_snapshot` now
->    carries `"tour"`, so a question about *"the Newton paragraph"* resolves: the name identifies
->    the document and the tours are on disk. **Read the capture before asking Doug which tour he
->    means.**
-> 2. **Publish which stop is on screen** — **RECOMMENDED AGAINST, 2026-08-19.** Doug asked
->    whether the recommendation was for or against; the honest answer is against, and one reason
->    originally given for it was wrong.
->
-> **Why against**, in the order that decides it:
->
-> - **It does not deliver the request.** Doug wants to point at *statements*; this publishes
->   *stops*, and a stop is often a page. He would still say "the Newton paragraph in this stop",
->   which is barely shorter than "the Newton paragraph in the intro" — already unambiguous under
->   #1.
-> - **It fails in the normal reading position.** With two or three stops visible, "this" is
->   ambiguous again. It works only when one stop fills the pane.
-> - **The side benefit claimed for it does not exist.** It was said to make `stop/<slug>` links
->   land precisely. **That shipped on 2026-08-17**: the pane splits at the byte offset and calls
->   `scroll_to_cursor`, so egui computes the position from a cursor it knows exactly. That was
->   the strongest argument for #2 and it is already done.
-> - **The cost is real and falls on a pane in constant use** — N markdown documents per frame,
->   where the code warns that two is "not free of consequence", and `connect-expansion` has
->   eleven headings.
->
-> **If statement-level deixis still matters after living with #1**, the answer is not #2 — it is
-> capturing *what was selected* rather than *where the pane is scrolled*. Different mechanism;
-> do not design it until #1 has been used and found wanting.
+> **The corpus spans the phase**: `BouncingBall` (nothing needed), `BenchActuator` (1
+> differentiation), `Drivetrain` (6, at 97 equations), `CartesianPendulum` (cannot be reduced).
+> Smallest-first is the tour's spine and the pendulum is its ending. The pane publishes
+> `n_differentiations`, so a funnel that did nothing now says so.
 >
 > ## Open questions a walk may hit
 >
@@ -1274,27 +811,12 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >   example rather than write around it. Needs a System Modeler adjudication (`#43`).
 > - **`RcCircuit` reports one `zero_crossing_condition`** with no `when` clause at all.
 >   `events.md` Act 1 quotes only the four counts that are explicable.
-> - **`#77`** — a live tour needs three panes and the layout has two. **Largely resolved
->   2026-08-12 and no longer blocking eight of the nine tours** (`docs/ideas.md` #77,
->   `DECISIONS.md`). Doug walked the tours on a 13" laptop with no external monitor and could not
->   fit the tour and the stage view at once; three defects were behind it, and **all three were one
->   number or one call:**
->   - **`DEFAULT_ZOOM` was 2.0**, which *multiplies* the display's own scaling, so a 13" screen gave
->     HRW ~640 layout points instead of ~1280. A pre-port WSLg compensation that had been
->     double-counting since 2026-07-27. Now 1.0.
->   - **The left panel's minimum was a fraction of the window**, which fell below the content's own
->     minimum on a small screen — the divider stopped while the content kept shrinking. Now
->     `MIN_LEFT_POINTS`, an absolute floor.
->   - **The tour pane was a vertical-only `ScrollArea`**, so it sized itself to the widest table in
->     the document: it opened at **70 % of the window while reporting a 40 % default**, and froze the
->     divider. Now `both()`, so wide content scrolls instead of pushing.
->
->   **Doug, 2026-08-12: *"Finally, HRW is usable on my 13" screen."*** Expect tours to be **taller**
->   now — prose wraps to 40 % rather than 70 % — which is the correct trade, not a regression. What
->   survives of #77 is only the genuine three-pane case: HRW at half width beside VS Code is back in
->   the ~640-point regime, so **`matching-live.md` alone may still want a layout change.** The stop
->   strip, drawer and alternating-mode options are recorded there; do not build one for the other
->   eight tours.
+> - **`#77`** — a live tour needs three panes and the layout has two. **Largely resolved 2026-08-12**
+>   (`docs/ideas.md` #77, `DECISIONS.md`): three defects, each one number or one call — `DEFAULT_ZOOM`
+>   2.0 → 1.0, an absolute `MIN_LEFT_POINTS` floor, and the tour pane's scroll axis. Doug: *"Finally,
+>   HRW is usable on my 13" screen."* Expect tours to be **taller** now, which is the correct trade.
+>   **What survives is only the genuine three-pane case** — HRW at half width beside VS Code — so
+>   `matching-live.md` alone may still want a layout change; do not build one for the other eight.
 >
 > ## The debugger facts that were expensive to learn
 >
@@ -1306,146 +828,6 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > - **To read a debugger stop, read `.hrw-bridge/debug-state.json`** — check `writtenAtMs` and
 >   `seq` first, and skip `[len]`, `[capacity]`, `[Raw View]`. (`#72`)
 >
-> ## THE MEMORY STORE DID NOT TRAVEL WITH THIS PULL
->
-> It lives outside the repo, keyed to the filesystem path, so a different machine or clone path
-> has none of it. **This box is the handoff.** If something here contradicts a recalled memory,
-> this box is newer.
->
-> **Standing:** Claude never needs permission for context maintenance, **and accuracy is never
-> traded for it.**
-
-**Pass two: re-implement Arcs 1-7 with internal Rumoca access, delivering richer stage views
-than the public API allowed.** Per arc: scout what state the phase holds (read the crate under
-`../crates/`), expose it additively, render it. Remaining per-arc opportunities are
-`docs/ideas.md` #19-#22. The log view is delivered. Pass-one closure record and the arc history
-are in [`DECISIONS.md`](DECISIONS.md).
-
-**The sequence — each step's output is the next step's input.** Restructured 2026-08-01: the
-oracle test is **no longer a step** (see below).
-
-1. **The MSL survey** ✅ — `examples/survey_msl.rs`. Rumoca's reach across all 2,626 MSL models,
-   plus the IR-shape metrics that stratify the sample.
-2. **Fidelity testing at scale** ✅ — F1-F9 over that corpus. **2,614 of 2,626 models green**
-   (2026-08-01); 12 exceeded this machine's memory or the time limit.
-3. **The verification pause** ✅ — [`docs/verification-plan.md`](docs/verification-plan.md), all
-   six items landed 2026-08-01: the must-fire convention and its audit, the stale-negative test,
-   clippy cleared and denied, the pre-commit suite memoised (375s → 113s), **headless UI testing
-   with `egui_kittest`**, and the run drivers resolved by splitting.
-4. **The UI pause** ✅ — [`docs/ui-pause-plan.md`](docs/ui-pause-plan.md), landed 2026-08-02.
-   Tests first, then refactoring, at Doug's direction. **`App` 105 → 57 fields**, `frame_ui`
-   727 → 419, `central_panel_ui` 771 → 430, 504 → 524 tests, and `model_list.rs` /
-   `tour.rs` split out of `app.rs`. Six state groupings now own what was scattered across
-   `App`. **The field-count ratchet** (`doc_citations::app_does_not_regrow_its_field_count`)
-   keeps it there: raising it requires the reasoning in the same commit.
-
-   **What the pause did *not* settle**, recorded so it is not assumed: `app.rs` still ends the
-   day at 9,434 lines, and the claim that its size causes editing defects is unproven either
-   way — the honest test is whether `ui-findings.md`'s R-series stops recurring, which only
-   the next substantial edit can show.
-
-5. **The corpus list** ✅ **CLOSED 2026-08-03** — `docs/ideas.md` **#52**. Three sources behind
-   one filter, built 2026-08-01. **The join it argued for was deleted rather than built**, on
-   the sweep's evidence: 2,614 rows, `outcome=ok`, `n_violations=0`, no failed checks. A
-   fidelity column would read `ok` on every row and a fidelity predicate would match everything
-   or nothing.
-
-   **The zero counts this time, and did not before.** Earlier sweeps ran those checks against
-   `{"classes":{},"within":null}` and found nothing because there was nothing there. The
-   2026-08-02 run walked a real Modelica AST — mean peak memory 1,228 → 1,353 MB, and F7 went
-   from sampling ~2 nodes of the Parse stage to its 400-path cap.
-
-   **What reopens it:** a report with a *non-constant* column. The oracle (#43) is the live
-   candidate, since findings vary per model by construction.
-
-6. **The draggable divider** ✅ — `docs/ideas.md` **#59**, built and confirmed working
-   2026-08-03. `SplitState`: both panels resizable, clamped to 15–75 %, opening at 40/60.
-
-   **The split is a fraction of the window, not a stored pixel width**, and that distinction
-   was the bug: the first frame reports a window size that does not exist (5000 px observed),
-   so 40 % of it was stored as an absolute 2000 px and clamped to the 75 % maximum on the real
-   window. **Five attempts; the sixth came from instrumenting rather than theorising** —
-   `ui-findings.md` C15, and the rule it produced is in the rules section above.
-
-7. **← LIVE: Doug's education, along the chain from DAE onward** *(Doug, 2026-08-03:
-   "we really haven't invested much time or effort into my education… now, I want to spend a
-   while investing in my education")*. The subject is
-   `docs/compiler-phases/the-chain-of-problems.md`, starting at its leftmost item, and the
-   instruments are **HRW, System Modeler and Wolfram Desktop together** — explicitly *not*
-   text answers in conversation.
-
-   **"Understand" is defined by trial and error**, and the completion signal is Doug's:
-   *"we'll know I've accomplished my goal when I stop requesting improvements."* So HRW is
-   changed — **even substantially** — whenever a change would teach better. Doug's standing
-   authorisation covers the Rumoca instrumentation too: *"if you determine that we need to
-   change how we instrument Rumoca in order to enable you to create effective, high-value
-   tours, then we will stop and change how we instrument Rumoca."*
-
-   **The delivery vehicle is a fixture tour, not a conversational plan** — Doug's own
-   instruction, because a plan scrolls out of the conversation and a versioned tour does not.
-   Tours here are **live documents, extensions of the conversation**: regenerate one *while*
-   Doug is walking it, and use it to motivate the questions he brings back.
-
-   **Doug is walking the tours now (2026-08-03), and that is the live signal.** His grading
-   criterion is recorded in `docs/question-ledger.md`: *"the real measure of whether the tours
-   are good enough will be the nature of the questions which I ask you while and after I work
-   through the tours."* Log each question **against the stop that prompted it**, and read that
-   section before answering — it records the four question shapes and the opposite responses
-   they call for. **No questions at all is ambiguous and must not be read as success.**
-
-   **Delivered so far:** `docs/fixture-tours/dae-construction.md`, the first *curriculum*
-   tour — `SingleInertia` (2 equations, 2 unknowns) against `UnbalancedShaft` (2 and 3,
-   balance −1), one line apart. Composing it exposed two gaps that were then fixed rather
-   than written around: **the DAE had no tab**, and **the five tree-only stages could not be
-   pointed into** (`DECISIONS.md`, 2026-08-03).
-
-   **Next in the chain:** index reduction, on `Drivetrain` — where a square system is no
-   longer enough because ideal gears make a state non-independent.
-
-   The standing menu below is **not** this work, and is picked from only when this is idle.
-
-   In rough order of value: #46 (a failure specimen and tour per compiler phase —
-   the largest item serving the learning mission, since phases that only ever succeed cannot
-   be diagnosed), #49 **re-scoped** (fixture tours were sized for "everything a test cannot
-   reach", which the pause measured at *two surfaces*, so that entry now drives work sized for
-   a world that no longer exists), and #43 as a track.
-
-**[`docs/reports.md`](docs/reports.md) held the design authority for the corpus list.** Its
-load-bearing claim — **survey → eligible, fidelity → trustworthy, oracle → findings**, joined
-on `name` — **is now half retired.** The list shipped; the join did not, because two of the
-three reports turned out to be constants (see step 5). The claim stands for the *oracle*, whose
-findings vary per model by construction, and that is the case which would reopen it.
-
-**The oracle (#43) is a TRACK, not a step** *(2026-08-01, Doug)*. It was step 4 and gated the
-work; it does not belong there.
-
-- **It never blocked the list**, and the list does not need it to be *tested* either: the survey
-  (2,626 rows) and the fidelity report (2,614) are two real sources with genuinely different
-  shapes — *browse* versus *exceptions* — which is what exercises a filter. A third report would
-  be **new columns, not a new shape**.
-- **Its value is elsewhere**: Doug's education (an independent adjudicator, which is why *oracle
-  first* is a standing practice — it corrects Claude's bias toward blaming its own specimen) and
-  **upstream**, where `upstream-strategy.md` calls differential testing the rarest thing Doug
-  brings.
-- **One constraint survives because it is free, and it is now the only live piece of the join:**
-  *if* an oracle report is ever produced, it must emit the same `name` join key. That binds the
-  **oracle's** design, and retrofitting it later would cost the join that #52 deleted for want
-  of a non-constant column.
-
-**A dependency the sequence used to hide, now met:**
-
-- ~~The list needs a compile-by-qualified-name path in the worker.~~ ✅
-  **`WorkerState::compile_model_by_name` exists** — built for step 2, since checking HRW's
-  representation of an MSL model means compiling it *through HRW's own path*, which is the thing
-  under test. Note **why it cannot just call `compile` with the library file**: a library file
-  may declare many classes — `Blocks/Continuous.mo` holds `CriticalDamping` among others — so
-  "the first class in the file" is the wrong model. The document is **located, not added**.
-
-**The signal that dropping the mode was wrong**, recorded so it stays recognisable rather than
-being rationalised away: a question that genuinely **cannot be expressed as a filter** over the
-list's rows. That would mean something Test-mode-shaped was right after all, and it should
-reopen `docs/ideas.md` #52 — which is now closed, so reopening it is a deliberate act rather
-than a drift.
 
 ---
 

@@ -1543,6 +1543,91 @@ Some prose.
         }
     }
 
+    /// **The mandatory reading path must stay small enough to read.**
+    ///
+    /// # The wall this exists to prevent
+    ///
+    /// Doug's stated worst case for this project is hitting a wall it cannot recover
+    /// from. Measured on 2026-08-22, it was forming in the **documents**, not the code:
+    /// `CLAUDE.md` went from **154 lines on 2026-07-26 to 2,320 on 2026-08-21**, and
+    /// 45 % of it was closed history restated from files that already held it.
+    ///
+    /// **It had already been pruned twice — 526→317, then 2,320→1,730 — and regrew
+    /// +229 lines in the single day after the second prune.** That is the whole reason
+    /// this test exists rather than another cleanup: **a one-time prune is measurably
+    /// insufficient**, and nothing else in this repository measures reading cost.
+    ///
+    /// # Why only these four files
+    ///
+    /// The **mandatory path** is what a session must read before its first action — not
+    /// total markdown, which is ~41,000 lines. `ideas.md` (6,349) and `DECISIONS.md`
+    /// (3,934) are *consulted*: they cost a grep, not context. Pruning them would not
+    /// move this number, so it is not attempted and they are deliberately uncounted.
+    ///
+    /// # Raising a budget is allowed; raising it SILENTLY is not
+    ///
+    /// The `app_does_not_regrow_its_field_count` contract. **Both budgets are set at the
+    /// achieved values**, so any growth fails by name and arrives with its reasoning in
+    /// the same commit. Doug's approved targets were 1,900 and 250; the last ~11 and ~13
+    /// lines were left rather than compress rationale, which is where real loss happens.
+    #[test]
+    fn the_mandatory_reading_path_stays_small() {
+        /// Every file a session must read before acting, relative to `hrw/`.
+        const MANDATORY: &[&str] = &[
+            "CLAUDE.md",
+            "docs/working-with-doug.md",
+            "docs/CHARTER.md",
+            "docs/README.md",
+        ];
+        const MANDATORY_BUDGET: usize = 1911;
+        const CURRENT_WORK_BUDGET: usize = 263;
+
+        let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let mut total = 0usize;
+        let mut rows: Vec<String> = Vec::new();
+        for rel in MANDATORY {
+            let text = std::fs::read_to_string(hrw.join(rel))
+                .unwrap_or_else(|e| panic!("{rel} is on the mandatory reading path: {e}"));
+            let n = text.lines().count();
+            // Non-vacuity: a path that resolved to something tiny would let the budget
+            // pass while measuring the wrong file.
+            assert!(n > 50, "{rel} has only {n} lines \u{2014} wrong file?");
+            rows.push(format!("{rel}: {n}"));
+            total += n;
+        }
+
+        let claude = std::fs::read_to_string(hrw.join("CLAUDE.md")).expect("CLAUDE.md");
+        let current_work = claude
+            .lines()
+            .skip_while(|l| !l.starts_with("## Current work"))
+            .skip(1)
+            .take_while(|l| !l.starts_with("## Running things"))
+            .count();
+        assert!(
+            current_work > 20,
+            "the `## Current work` section was not located \u{2014} its heading or the \
+             one after it was renamed, and this check is measuring nothing"
+        );
+
+        assert!(
+            current_work <= CURRENT_WORK_BUDGET,
+            "`## Current work` is {current_work} lines, budget {CURRENT_WORK_BUDGET}.\n\n\
+             That section holds what is IN FLIGHT. A closed arc belongs in DECISIONS.md \
+             with a link from here, never restated \u{2014} which is how it reached 882 \
+             lines and 45 % of the file. If this really is live work, raise the budget in \
+             THIS commit with the reasoning.",
+        );
+
+        assert!(
+            total <= MANDATORY_BUDGET,
+            "the mandatory reading path is {total} lines, budget {MANDATORY_BUDGET}:\n  {}\n\n\
+             Every session reads all of it before its first action, so this is the number \
+             that decides whether the documents become unreadable. Move closed history to \
+             DECISIONS.md, or raise the budget in THIS commit with the reasoning.",
+            rows.join("\n  "),
+        );
+    }
+
     /// **Editing a guarded tour table must not be committed behind the FAST gate.**
     ///
     /// # The gap this closes, and why it was not a rule problem

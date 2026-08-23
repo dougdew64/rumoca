@@ -3932,3 +3932,72 @@ the repository said the previous day**.
   `BouncingBall`'s bounce is an *event* and a short `t_end` would leave three assertions passing
   while checking nothing; and change `t_end` **at the call site**, never in a specimen's
   `experiment` annotation, which is part of the System Modeler differential-test contract.
+
+## 2026-08-22 — closed arcs move out of `CLAUDE.md`, because the mandatory path was the wall
+
+**Doug's stated worst case for this project is hitting a wall we cannot recover from.** Measurement
+on 2026-08-22 found it forming in the documents rather than the code.
+
+**The number that matters is not total markdown (41,190 lines) but the MANDATORY PATH — what a
+session must read before its first action:** `CLAUDE.md` + `working-with-doug.md` + `CHARTER.md` +
+`docs/README.md` = **2,529 lines**, of which `CLAUDE.md` was 78 %.
+
+**`CLAUDE.md`'s growth: 154 lines on 2026-07-26 → 2,320 on 2026-08-21.** It had been pruned twice
+already — 526→317 on 08-01 and 2,320→1,730 on 08-21 — **and regrew +229 in the single day after the
+second prune.** That is the load-bearing fact: *a one-time cleanup is measurably insufficient*, so
+this decision pairs the prune with a ratchet.
+
+### The defect was duplication, not growth — and the file's own rule already forbade it
+
+`## Current work` was **882 lines, 45 % of the file**, holding **15 ✅ closed markers.** Five boxes
+explicitly named their canonical home and then restated it anyway — *"the full ledger is
+`docs/ideas.md` #48"*, followed by 130 lines of the ledger. `CLAUDE.md` already said: **"A ✅ box is
+history the moment its arc closes — move it to the plan or to `DECISIONS.md`."** The rule existed
+and was unenforced.
+
+**Doug ruled that the pointers land here rather than staying in `CLAUDE.md`**, so that file keeps
+one line naming this record and nothing per-arc.
+
+### What moved, and where each record actually lives
+
+**Every deletion was verified against its target before removal** — the mitigation for the one real
+risk, which is Claude removing something load-bearing and not noticing.
+
+| closed arc | was | the record, verified |
+|---|---:|---|
+| `#48` — the gate under a minute | 130 lines | [`docs/ideas.md`](docs/ideas.md) **#48**, 598 lines |
+| the `app.rs` split | 54 | [`docs/app-split-plan.md`](docs/app-split-plan.md), 2,526 lines |
+| the tour transport bar | 31 | [`docs/ui-findings.md`](docs/ui-findings.md) **C16** |
+| the pendulum oracle run | 65 | [`docs/upstream-issues.md`](docs/upstream-issues.md), index-reduction entry |
+| orphaned doc comments | 33 | the checker's own doc comment — `doc_citations::tests_orphaned_docs` |
+| the arc sequence, steps 1–7 | 132 | this file's Arc records and `docs/ideas.md` #19–#22 |
+| stale: the 2026-08-09 vacation note, the 2026-08-08 memory-store handoff, per-machine setup | 72 | superseded; setup is [`docs/setup-windows.md`](docs/setup-windows.md) §6/§8 |
+
+**Result: `CLAUDE.md` 1,959 → 1,400; `Current work` 882 → 323.**
+
+### DEIXIS — the one item with no other home, preserved in full
+
+Doug, 2026-08-19: *"I'd like to enjoy the convenience of deixis when asking questions about
+statements which you've made in tours. Currently, it seems that I have to copy / paste those tour
+statements."*
+
+**He does not need to paste, and that is the immediate relief:** the tours are on disk, so *"the
+Newton paragraph in the intro"* or *"Stop 2's table"* is enough to find the exact text. He had been
+pasting because nobody said so.
+
+1. **Publish which tour is selected — ✅ BUILT 2026-08-19.** `diagnostic_snapshot` carries `"tour"`,
+   so the name identifies the document. **Read the capture before asking Doug which tour he means.**
+2. **Publish which stop is on screen — RECOMMENDED AGAINST, and do not re-propose it.** Four
+   reasons, in the order that decides it:
+   - **It does not deliver the request.** He wants to point at *statements*; this publishes *stops*,
+     and a stop is often a page.
+   - **It fails in the normal reading position.** With two or three stops visible, "this" is
+     ambiguous again.
+   - **Its claimed side benefit does not exist.** It was said to make `stop/<slug>` links land
+     precisely; that shipped 2026-08-17 via the byte offset and `scroll_to_cursor`.
+   - **The cost falls on a pane in constant use** — N markdown documents per frame, where the code
+     warns that two is *"not free of consequence"*.
+
+**If statement-level deixis still matters after living with #1**, the answer is not #2 — it is
+capturing *what was selected* rather than *where the pane is scrolled*. Do not design it until #1
+has been used and found wanting.
