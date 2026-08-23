@@ -24,94 +24,24 @@ planned the run does not survive to the machine that executes it. When a run fin
 goes to the run log below and this section is overwritten by the next plan — otherwise it becomes
 the accumulating history `CLAUDE.md`'s *Current work* had to be rescued from.
 
-### Queued 2026-08-23 for that night, on THIS machine — retargeted the same day
+### NOTHING IS QUEUED — the 2026-08-23 plan ran that night; its record is in the run log below
 
-**Doug ruled on 2026-08-23 that the run executes on the machine this plan was written on**, not
-on the other one it was originally queued for. **That removes the machine handoff, which carried
-the run's only silent-stall risk** — a missing permission allowlist prompts on the first Bash
-call, and asleep, a prompt is indistinguishable from a hang.
+**Queue the next run by replacing this heading and what follows it**, with the items, the evidence
+for each, and anything about the machine that will not travel. The slot is deliberately one deep:
+a second plan parked here becomes the accumulating history `CLAUDE.md`'s *Current work* had to be
+rescued from.
 
-**The machine check was run the same day and passed all five checks**, so the three things a
-handoff loses are all discharged: the allowlist is present, `hrw.exe` is unlocked, and **the
-parsed-artifact cache is warm — do NOT expect the slow first gate a fresh machine would pay.**
+**What night 2 suggests putting here next**, in the order it earned:
 
-**Run it once more before starting anyway.** It costs about a second, it is what the handoff
-table used to be, and the tree may have moved since:
-
-```text
-cargo run -p hrw --example check_machine
-```
-
-Plus the standing preconditions below: **HRW closed, sleep disabled, tree clean and pushed.**
-Doug disabled sleep on 2026-08-23.
-
-### The three items
-
-**1 — Generalise the no-nested-scroll rule, then fix the two defects it exposes.**
-
-The rule (`CLAUDE.md`, 2026-08-16) is *"never nest a vertical scroll area inside one; the parent
-owns the scrolling and the height, and a child view just renders."* It is enforced for **one** file
-by `connection_anim::tests_layout` and was never generalised. Verified 2026-08-23:
-
-| file | parent wrapper | the view itself |
-|---|---|---|
-| `alias_anim` | `app.rs:3940` `ScrollArea::vertical()` | **`alias_anim.rs:182`** `ScrollArea::vertical()` … `.max_height(320.0)` |
-| `ic_plan_anim` | `app.rs:3973` `ScrollArea::vertical()` | **`ic_plan_anim.rs:303`** `ScrollArea::vertical()` … `.max_height(300.0)` |
-
-**It manifests.** The 320pt cap holds ~16–18 grid rows; alias eliminations per specimen are
-**`Drivetrain` 77**, `MotorWithBrake` and `BenchActuator` 41, `GearWithBrake` 33, `RcCircuit` and
-`OverInitRc` 20. `Drivetrain` — the index-reduction tour's centrepiece — shows under a quarter of
-its list inside a small box while the pane around it has room. `ic_plan_anim`'s 300pt cap is
-overflowed by `RcCircuit` and `OverInitRc` at 21 blocks.
-
-**The fix is subtractive**: delete the inner `ScrollArea` and its `max_height`, exactly as
-`connection_anim` was fixed. **The must-fire proof is free** — write the checker first and it fails
-on two real defects; no synthetic break is needed.
-
-**2 — Column-read the `Animated` trait: 8 implementors × 5 methods.**
-
-`playback.rs:68`. Implementors: `alias`, `connection`, `ic_plan`, `matching`, `pre_lowering`,
-`reduction`, `tarjan`, `tearing`. Look for the member shaped differently — the lens that found the
-stranded stage tab and the Flatten sub-view stranding. **Worth one check regardless of what turns
-up: `which()` values must be unique**, since they are matched against and a collision misroutes
-silently.
-
-**3 — Write the Pantelides acceptance test against the committed oracle data.**
-
-**Needs no System Modeler** — the perishable half was captured 2026-08-23 on the machine that has
-it, and lives in
-[`specimen-notebook/CartesianPendulum/oracle/`](specimen-notebook/CartesianPendulum/oracle/).
-**Read that directory's README first**, particularly the tolerance trap: do not pin System
-Modeler's numerical choices as truth.
-
-Write it against **today's API** — compile `CartesianPendulum` through the existing path and assert
-what a correct reduction produces — so it compiles now and the compiler keeps it honest for months.
-It **fails today by design**: `#[ignore]` it with the reason naming `docs/ideas.md` #83, so the day
-Pantelides lands it is a red test turning green rather than a project needing a plan.
-
-Strongest assertions first, because they cannot be wrong: **state count 2**, **`lambda` peaks at
-*m*(*g* + *v*²/*L*) = 29.43 at the bottom**, **the constraint holds**. The 101 trajectory samples
-are the differential half, at a stated relative tolerance per charter §4.3.
-
-**⟶ WRITE IT AS A LADDER, NOT ONE RED TEST** *(Doug, 2026-08-23, from the textbook comparison)*.
-A textbook's end-of-chapter project is **scoped and graded** — each step completable in a sitting,
-each giving its own sense of progress. A single binary test says when you are *done*; it never says
-whether you are *on track*, and that is the one thing textbook projects do better than this one.
-
-So aim for roughly five tests, each able to turn green on its own:
-
-1. the system is **detected as high-index** at all
-2. **one constraint differentiates** correctly
-3. the iteration **reaches a fixed point**
-4. the pendulum **reduces to two states**
-5. its **trajectory matches the oracle** within tolerance
-
-Write whichever of them are expressible against today's API; where a rung needs an entry point
-that does not exist yet, say so in the test's `ignore` reason rather than inventing one. **Same
-destination, but the climber knows where they are.**
-
-**Precedence:** if items 1 or 2 surface a defect that needs fixing, that wins and this moves to the
-next run. The three-item cap is not a quota to fill.
+- **The `live_state` correspondence is now guarded but `current_frame_context` is not.** All eight
+  animations put a `"step"` key in the capture and nothing says they must. A consumer reading
+  `ctx["step"]` would get `null` from a ninth view and show nothing.
+- **`playback::tests_layout` derives its roster from `app.rs`; nothing derives the *parents*.** A
+  view drawn with no scroll parent at all is outside both the rule and the check, which is correct
+  today and unstated.
+- **Column-read the tab rosters** — the `app.rs` arc's best lens, and it found four of eight
+  defects there. `Animated` is now read; `SubView`, `StructuralView` and the stage tab arrays are
+  not.
 
 ### The command
 
@@ -226,6 +156,56 @@ compile path remain the boundary that matters, and they are on the no-go list wh
 **One near-miss worth recording.** Item 1 produced a synthetic companion test that was written,
 run green, and then **deleted** — its four cases were already covered by literals in an older test
 Claude had not known about. It would have shipped as a duplicate.
+
+### Night 2 — 2026-08-23. Three items, three commits, gate green on each, nothing pushed
+
+**On Doug's own machine, not the other one** — he retargeted it that evening and disabled sleep.
+The machine check passed all five before starting, so the handoff table the plan opened with was
+discharged rather than followed.
+
+| item | commit | what it found |
+|---|---|---|
+| 1 — generalise the no-nested-scroll rule | `972e2c08` | **two real defects.** `alias_anim` (320pt) and `ic_plan_anim` (300pt) each nested a scroll area inside the one `app.rs` already wraps them in. Must-fire came free: the new checker failed on its first run, 4 violations across 2 files, no synthetic break. |
+| 2 — column-read the `Animated` trait | `cabb4561` | **no defect, and that is the finding.** `which()` is unique, both dispatchers cover all eight, and the two views whose `live_state` diverges diverge *correctly*. Nothing held either fact; two guards now do. |
+| 3 — the Pantelides acceptance ladder | `d67d04c3` | **a defect in a checker.** Five rungs written, rung 1 green and rungs 2–5 verified red. Naming the module `pantelides_ladder` silently retired #83's own claim of absence, because `symbol_is_defined` matched substrings. |
+
+**Every claim was demonstrated by breaking it.** Making `alias_anim` delegate `live_state` fails
+naming it; giving `ic_plan_anim` `which() == "matching"` fails on the collision; the four red rungs
+were **run** rather than assumed red.
+
+#### The lens worked, and the yield is entirely toolchain-or-Claude
+
+Four ledger rows, **none of them Doug's** — the scroll pair, the prefix-matching resolver, and the
+`mem::take` citation that had only ever resolved through that loose match. Night 1 asked for the
+ratio to move toward the toolchain; on night 2 it is the toolchain the whole way.
+
+**The lens the run log named — *a claim that outruns its evidence* — found three of the four.**
+A per-file check whose rule was general, a resolver whose "definition-shaped occurrence" was a
+substring, and a citation that resolved for the wrong reason.
+
+#### A source check matched its own text FOUR times in one night
+
+`connection_anim`'s retired test documented this trap once. It recurred in the ladder's
+self-count, in the resolver's regression guard, and it is why both new checkers assemble their
+needles with `format!` instead of spelling them. **The new instance is the one worth carrying: a
+string literal in a *test fixture* is not a comment**, so writing `mod pantelides` as test data
+defined the symbol the same test proves absent. The scanner skips `//` lines and nothing else.
+
+#### Declined, and why
+
+- **Rewriting the eight `seek` doc comments** that say "all eight views agree" — a hardcoded count
+  in prose, true today. Eight files touched unattended to buy a reader nothing.
+- **Renaming `pantelides_ladder`** to dodge the resolver collision. It would have hidden a live
+  wrong-negative bug behind a module name, and the collision was the only reason anyone found it.
+
+#### Owed to Doug
+
+- **Both scroll fixes need his eyes.** Claude verifies content, never pixels, and neither
+  scroll-area bug in this project's history was visible to `egui_kittest` — a clipped child is
+  still in the accessibility tree. **Open Index Reduction → Alias on `Drivetrain`** (77
+  eliminations, so the old cap showed under a quarter) **and Initialization → IC Plan on
+  `RcCircuit`** (21 blocks against a 300pt cap), and say whether the lists now use the pane.
+- **Nothing is pushed.** Three commits sit on `hrw` ahead of `origin/hrw`.
 
 ### ⟶ THE HABIT IS ADOPTED — Doug, 2026-08-23, and the lens to lead with
 
