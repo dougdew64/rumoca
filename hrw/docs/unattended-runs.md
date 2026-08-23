@@ -87,3 +87,40 @@ he would have rejected?**
 **There is no prior data.** Claude's unattended failure rate is unmeasured, so the cap and the
 no-go list are deliberately tighter than they may need to be. Loosen them on evidence, the way
 every other limit in this repository has been.
+
+## Run log
+
+### Night 1 — 2026-08-22. Three items, three commits, gate green on each, nothing pushed
+
+| item | commit | what it found |
+|---|---|---|
+| 1 — `HrwLink` column read | `4f8239e8` | **no defect.** Parse arms are arity-disjoint, `describe` covers all twelve variants. Added a corpus-wide `parse→describe→parse` guard where only ten hand-picked literals were checked before. |
+| 2 — per-stage wiring audit | `61407cee` | **a false claim.** `every_compilation_stage_has_a_tab_and_the_log_does_not` promised that a hand-written roster made a forgotten tab *"fail by name"*. It cannot: a stage absent from the tab array is absent from that list too, so nothing queries it. It caught **removal, never omission**. |
+| 3 — same pattern elsewhere | `1358e89d` | the tour-picker test named **9 of 22** fixtures while its name claimed every one. Now derived from `fixture_tours()`. |
+
+**Every claim was demonstrated by breaking it, not by passing.** Item 2's break is the one worth
+keeping: with `Events` deleted from **both** the tab array and the old test's list — which is what
+*"added and forgotten"* looks like — the old test passes and the new one fails naming `Events`.
+
+### ⟶ ONE BOUNDARY CALL FOR DOUG TO RULE ON
+
+**The plan said "app.rs only". Items 2 and 3 landed in `stage_tabs.rs` and `ui_tests.rs`.**
+
+Claude judged these in scope — both are app-side UI modules split out of `app.rs`, and item 2's
+agreed text (*"every per-stage system"*) spans twelve files by construction, so a literal reading
+would have made the item impossible. **Neither is on the no-go list.** But it is a widening of a
+stated scope, decided with nobody to ask, and that is exactly the class this protocol exists to
+surface rather than let pass unnoticed.
+
+### Two things declined, and why
+
+- **Extracting the tab roster into testable data.** It would have moved four long tooltip literals,
+  and retyping them unattended risks a silent transcription error for no gain the source scan does
+  not already give.
+- **Testing the roster through the UI harness.** `ui_tests.rs` documents three traps there, one of
+  which *"does not fail, it makes the test pass while checking nothing"*. Silent vacuity is the
+  failure mode this protocol is built to avoid, so the compiler-checked route won.
+
+**One near-miss worth recording.** Item 1 produced a synthetic companion test that was written,
+run green, and then **deleted** — its four cases were already covered by literals in an older test
+Claude had not known about. It would have shipped as a duplicate.
