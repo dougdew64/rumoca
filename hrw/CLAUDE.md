@@ -839,7 +839,7 @@ unprompted: Doug switches machines twice a week, feels every cost, and cannot se
 coming, while Claude can.
 
 ```powershell
-# `powershell`, NOT `pwsh` (7 is not installed) — and keep both flags; the script says why
+# Claude's form (subprocess); Doug just types `.\scripts\check-machine.ps1`. NOT `pwsh` — 7 is absent.
 powershell -NoProfile -ExecutionPolicy Bypass -File hrw\scripts\check-machine.ps1
 ```
 

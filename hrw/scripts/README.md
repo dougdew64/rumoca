@@ -10,7 +10,7 @@ procedure is [`../docs/long-runs.md`](../docs/long-runs.md); this page is only t
 
 | Script | Does |
 |---|---|
-| [`check-machine.ps1`](check-machine.ps1) | **Run after switching machines.** Verifies what a `git pull` does not bring: the permission allowlist, whether HRW holds `hrw.exe`, the parsed-artifact cache, the bridge extension. Blocking problems exit 1 and name their fix. Invoke with `powershell -NoProfile -ExecutionPolicy Bypass -File …` — **`pwsh` is not installed.** |
+| [`check-machine.ps1`](check-machine.ps1) | **Run after switching machines.** Verifies what a `git pull` does not bring: the permission allowlist, whether HRW holds `hrw.exe`, the parsed-artifact cache, the bridge extension. Blocking problems exit 1 and name their fix. |
 | [`measure-fidelity.ps1`](measure-fidelity.ps1) | Runs F1-F9 **one model per process**, with a watchdog sampling free RAM and process size every 500 ms. Writes the fidelity report and a memory profile. |
 | ~~`promote-run.ps1`~~ | **Moved to Rust 2026-08-01** — `cargo run -p hrw --example promote_run`. See *The split* below. |
 
@@ -18,9 +18,15 @@ procedure is [`../docs/long-runs.md`](../docs/long-runs.md); this page is only t
 
 ```powershell
 cd C:\Users\dougd\source\repos\rumoca\hrw
+.\scripts\check-machine.ps1
 .\scripts\measure-fidelity.ps1 -ModelsFile C:\tmp\all-models.txt -Out ... -Profile ...
 cargo run -p hrw --example promote_run -- --run-dir C:\Users\dougd\rumoca-runs\<run>
 ```
+
+**At a PowerShell prompt that is all you type** — a `powershell -File …` wrapper is what *Claude*
+needs, because his tools spawn a subprocess from outside PowerShell, and it does not belong in a
+human-facing instruction. **If a machine's execution policy blocks the script**, that is the one
+case for `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-machine.ps1`.
 
 Both resolve their own paths from `$PSScriptRoot`, so they work from any working directory —
 but the documented form is the one above.

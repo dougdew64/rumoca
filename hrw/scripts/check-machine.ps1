@@ -21,14 +21,23 @@
   BLOCKING checks fail the script (exit 1). ADVISORY checks report and do not.
 
 .EXAMPLE
+  # At a PowerShell prompt, from hrw/ -- this is all Doug types:
+  .\scripts\check-machine.ps1
+
+.EXAMPLE
+  # From outside PowerShell (Claude's tools spawn a subprocess), or if a machine's
+  # execution policy blocks the script:
   powershell -NoProfile -ExecutionPolicy Bypass -File hrw\scripts\check-machine.ps1
 
 .NOTES
   `powershell`, NOT `pwsh` -- PowerShell 7 is not installed on either of Doug's
   machines, so `pwsh -File ...` fails with "not recognized" before the script runs.
-  `-ExecutionPolicy Bypass` because the policy is a per-machine setting and a script
-  blocked by it looks like a broken script. Both were found by testing the documented
-  invocation rather than assuming it, on 2026-08-23.
+  Found by testing the documented invocation rather than assuming it, 2026-08-23.
+
+  And the wrapper form was first written into a HUMAN-facing instruction, which is a
+  category error: it is what Claude needs, not what someone already at a PowerShell
+  prompt would type. Doug: *"I don't understand why I would run a `powershell` command
+  if I am already in PowerShell."* Two callers, two invocations -- say which is which.
 
   Written for Windows PowerShell 5.1: no ternaries, no null-coalescing, no `pwsh`-only
   cmdlets.
