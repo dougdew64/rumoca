@@ -111,6 +111,8 @@ two halves have to agree, so **the set count must come out twice the node count.
 
 **Three and six are both right**, and the gap between them is the point of the rest of this stop.
 
+<!-- walked: stop1-nodes-versus-sets 2026-08-22T19:09 -->
+
 ### What just happened
 
 Four statements, three nodes — because **`src.n` appears twice**. `connect(C.n, src.n)` and
@@ -160,9 +162,13 @@ sheet has no `Unconnected flow` group later — the category exists, and this mo
 no equation can be written until no node can still grow. `connect(src.n, gnd.p)` changes what
 the earlier `connect(C.n, src.n)` is worth.
 
+<!-- /walked -->
+
 ---
 
 ## Stop 2 — How many equations do three nodes make?
+
+<!-- walked: stop2-potential-versus-flow 2026-08-22T19:09 -->
 
 Stop 1 left you with two sets per node — the `.v` and the `.i`. They do **not** produce equations the
 same way, and `Pin`'s two members are why:
@@ -178,6 +184,8 @@ neither does any specimen in this tour.)*
 That asymmetry decides everything. Making *n* voltages equal takes **n − 1** equations — a chain is
 enough, and more would be redundant. Making *n* currents sum to zero takes exactly **1**, whatever
 *n* is. That is Kirchhoff's current law, and the same statement for heat, torque or mass flow.
+
+<!-- /walked -->
 
 **You can watch the asymmetry happen on one model in two frames.** Back in the replay, the
 three-connector node produces its two kinds of set at different times, and each set is followed
@@ -214,6 +222,8 @@ observation multiplied by three nodes.
 
 **Falsified if** the two connector sub-groups hold four and three of anything other than voltages
 and currents respectively, or if their total is not seven.
+
+<!-- walked: stop2-what-the-two-kinds-produce 2026-08-22T19:09 -->
 
 ### What just happened
 
@@ -257,6 +267,8 @@ row.
 redundant equations make a system structurally singular — the rank deficiency `matching.md` Stop 3
 diagnoses. The phase produces a **spanning tree** of each potential set, never its complete graph.
 
+<!-- /walked -->
+
 ---
 
 ## Stop 3 — Which rows belong to the same node?
@@ -291,6 +303,8 @@ same node, and it names all three members at once.
 **Falsified if** no two potential rows share a variable, or if the three-term flow row's members are
 not the union of the connectors in that chain.
 
+<!-- walked: stop3-the-same-asymmetry-other-side 2026-08-22T19:09 -->
+
 ### What just happened
 
 **A potential set of *n* arrives as *n* − 1 rows naming pairs; a flow set of *n* arrives as one row
@@ -298,6 +312,8 @@ naming all *n*.** So the flow row is the only place a node appears whole, and th
 *are* the spanning tree — drawn one edge at a time.
 
 That is the same asymmetry as Stop 2's arithmetic, seen from the other side.
+
+<!-- /walked -->
 
 ---
 
@@ -327,6 +343,8 @@ capacitor.
 
 ### What just happened
 
+<!-- walked: stop4-a-resistor-is-seven-equations 2026-08-22T19:09 -->
+
 **A resistor is seven equations.** Look at four of them:
 
 ```
@@ -344,12 +362,16 @@ modelling; MSL's `Resistor` has it, so the model has it.
 and unit: **1 state, 22 algebraic, 7 parameters**. One interesting quantity, twenty-nine bookkeeping
 ones.
 
+<!-- /walked -->
+
 > **Predict.** Of those 30 variables, how many will the **Why** column say anything about?
 
 **Expected:** exactly **one** — `C.v`, reading `der in f_x[14]`. Every other row is blank.
 
 **Falsified if:** two or more rows carry a `der in …`, or the one that does names a variable other
 than `C.v`.
+
+<!-- walked: stop4-the-why-column-is-the-definition 2026-08-22T19:09 -->
 
 *What just happened.* The Why column is not decoration; it is the definition. **A variable is a
 state exactly when some equation differentiates it**, so the column shows the equation that did it
@@ -365,6 +387,8 @@ energy-storing components and you have usually counted the states before the com
 **Flattening is mostly copying.** Sixteen of twenty-three equations are each component's own,
 instantiated with a prefix. Only seven are new. But those seven are the ones that could not have
 been written by hand at model scale, and they are what determines the system's structure.
+
+<!-- /walked -->
 
 ---
 
@@ -392,11 +416,15 @@ been written by hand at model scale, and they are what determines the system's s
 
 **Falsified if** a connector group appears, or if any equation's origin names a component.
 
+<!-- walked: stop5-no-connect-no-expansion 2026-08-22T19:09 -->
+
 ### What just happened
 
 With no `connect`, the connection graph is empty, and a phase that spends most of its effort on
 connection sets contributes nothing. `TwoLoops`' equation indices map straight onto what its source
 says, with no expansion in between — which is exactly why `blt-ordering.md` uses it.
+
+<!-- /walked -->
 
 ---
 
@@ -409,8 +437,11 @@ solves which unknown.
 
 ## What this tour cannot check
 
-- **That the `Connections` replay in Stop 1 shows nodes the way the prose implies.** The counts
-  come from a trace; how the replay presents them is unverified.
+- **How the `Connections` replay presents its sets.** The counts come from a trace and are checked;
+  whether the frames *read* as a phase building sets one at a time is your report and nothing
+  else's. *(This bullet used to say the replay might not show nodes "the way the prose implies" —
+  written when the prose still implied it would show nodes at all. It does not: nothing in HRW
+  represents a node.)*
 - **Whether a connection is legal.** Rumoca checks that *paired* variables agree — flow with flow,
   `Real` with `Real`, matching array shapes — but nothing checks that both connectors have the
   **same member set**, so joining a `{v, i}` connector to a `{v}` connector is accepted. That gap

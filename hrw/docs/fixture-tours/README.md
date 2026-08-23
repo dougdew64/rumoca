@@ -176,6 +176,27 @@ is no honest way to satisfy it. **The field is any token that changes**, so no p
 needed; `a_timestamp_distinguishes_two_acknowledgements_on_one_day` is what keeps it that way.
 *(Found by Doug within the hour of the mechanism's first live use.)*
 
+**WHAT TO MARK WHEN A PHASE 2 WALK COMPLETES — mark the EXPLANATION, not the test.** Doug,
+2026-08-22, on finishing the connections tour: *"I'd like to protect the prose. You can and should
+update the rest of the tour if the underlying facts change."* Those are two requirements, and one
+marking policy satisfies both:
+
+| leave OUTSIDE a walked region | why |
+|---|---|
+| `> **Predict.**`, `[▶ Look …]`, `**Expected:**`, `**Falsified if**` | this is where a fact update lands first, and Claude must be free to make it |
+| every `<!-- pane-* -->` guarded table | already machine-checked against a real compile; regenerating one is routine |
+
+**A walked region must never contain a guarded table.** It would fire the prose checker every time
+a table was legitimately regenerated, and **a check that fires on routine work decays into ritual**
+— the failure mode `CLAUDE.md` names for quality bars generally. `connect-expansion.md` has ten
+walked regions and none of them encloses one; the `awk` one-liner that verifies this is worth
+re-running after marking a tour.
+
+**Counts *inside* explanation prose are protected deliberately, and that is not an oversight.** If
+`RcCircuit`'s set count ever changed, *"that is where six comes from: three nodes × two kinds"*
+would be wrong as an explanation, not merely stale as a number. **The checker firing there is a
+true signal** — it means the walk needs redoing, which is exactly what it should say.
+
 **What it does NOT forbid, because that half decides whether the mechanism survives:** it does not
 freeze walked prose. Doug rewrites his own explanations constantly and it must stay cheap —
 **bump the date in the same commit and the check passes.** What it forbids is changing walked prose
