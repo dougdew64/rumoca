@@ -1750,6 +1750,109 @@ Some prose.
         }
     }
 
+    /// Days since 1970-01-01 for a proleptic-Gregorian date (Howard Hinnant's
+    /// `days_from_civil`). Dependency-free and exact across month and year ends —
+    /// which a `y*372 + m*31 + d` approximation is not, and a seven-day window
+    /// straddling a month boundary is precisely where that would go wrong.
+    fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
+        let y = if m <= 2 { y - 1 } else { y };
+        let era = (if y >= 0 { y } else { y - 399 }) / 400;
+        let yoe = y - era * 400;
+        let mp = (m + 9) % 12;
+        let doy = (153 * mp + 2) / 5 + d - 1;
+        let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+        era * 146097 + doe - 719468
+    }
+
+    /// `YYYY-MM-DD` → days since epoch, or `None` if it is not that shape.
+    fn parse_ymd(s: &str) -> Option<i64> {
+        let mut parts = s.trim().splitn(3, '-');
+        let y: i64 = parts.next()?.trim().parse().ok()?;
+        let m: i64 = parts.next()?.trim().parse().ok()?;
+        let d: i64 = parts.next()?.trim().parse().ok()?;
+        if !(1..=12).contains(&m) || !(1..=31).contains(&d) {
+            return None;
+        }
+        Some(days_from_civil(y, m, d))
+    }
+
+    /// **The "who caught it?" ledger must keep up with the work.**
+    ///
+    /// # What went wrong without this
+    ///
+    /// The ledger in `docs/tech-debt.md` was built 2026-08-16 to answer Doug's question
+    /// *"are we improving?"* with a number rather than an opinion. It got **seventeen
+    /// rows over two days and then nothing for a week** — through the transport-bar
+    /// arc, a full day of defect-fixing and a night of unattended work, none logged.
+    ///
+    /// **The instrument did not fail; the habit did.** A ledger nobody appends to is
+    /// indistinguishable from a stretch in which nothing was found — the wrong-negative
+    /// shape this repository treats as the error nobody catches, because acting on it
+    /// means *not looking*.
+    ///
+    /// # Why it compares against HEAD's commit date, not the wall clock
+    ///
+    /// A test keyed to `now` starts failing on any old checkout merely because it aged —
+    /// the trap [`editing_a_guarded_tour_table_needs_the_full_gate`] documents. Keyed to
+    /// HEAD both ends move together, so the result is **deterministic on any checkout**.
+    ///
+    /// # What it cannot claim
+    ///
+    /// **It checks the marker, not the rows.** Bumping `<!-- ledger-through: -->` without
+    /// appending would pass — the same trust model as every other tag here. What it
+    /// catches is *neglect*, which is what actually happened. **A genuinely quiet period
+    /// is recorded by saying so**, not by silence.
+    ///
+    /// **Silent outside a git checkout**, like the other history-aware checks.
+    #[test]
+    fn the_who_caught_it_ledger_keeps_up_with_the_work() {
+        // A week matches the tech-debt sweep cadence and survives a quiet stretch.
+        const MAX_LAG_DAYS: i64 = 7;
+
+        let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let text = std::fs::read_to_string(hrw.join("docs/tech-debt.md"))
+            .expect("tech-debt.md holds the who-caught-it ledger");
+
+        let marker = text
+            .lines()
+            .filter_map(|l| {
+                l.trim()
+                    .strip_prefix("<!-- ledger-through:")?
+                    .strip_suffix("-->")
+            })
+            .map(str::trim)
+            .next()
+            .expect(
+                "docs/tech-debt.md must carry `<!-- ledger-through: YYYY-MM-DD -->` beneath \
+                 the who-caught-it ledger \u{2014} without it nothing can tell a quiet week \
+                 from an unmaintained one",
+            );
+        let through = parse_ymd(marker)
+            .unwrap_or_else(|| panic!("`ledger-through: {marker}` is not YYYY-MM-DD"));
+
+        let Some(head) = std::process::Command::new("git")
+            .args(["-C", &hrw.to_string_lossy(), "log", "-1", "--format=%cs"])
+            .output()
+            .ok()
+            .filter(|o| o.status.success())
+            .and_then(|o| parse_ymd(String::from_utf8_lossy(&o.stdout).trim()))
+        else {
+            eprintln!("note: no git HEAD date \u{2014} the ledger-staleness check is inert here");
+            return;
+        };
+
+        let lag = head - through;
+        assert!(
+            lag <= MAX_LAG_DAYS,
+            "the who-caught-it ledger is {lag} days behind HEAD (through {marker}), budget \
+             {MAX_LAG_DAYS}.\n\nIt answers \"are we improving?\" with a ratio, and a gap in it \
+             is indistinguishable from a stretch in which nothing was found. Append the \
+             defects since {marker} to `docs/tech-debt.md` \u{2014} including a row saying \
+             none were found, if that is the truth \u{2014} and move the `ledger-through` \
+             marker.",
+        );
+    }
+
     /// Backticked `module::item` spans in `text` — the unambiguous code citations.
     pub(super) fn qualified_code_citations(text: &str) -> Vec<String> {
         let mut out = Vec::new();

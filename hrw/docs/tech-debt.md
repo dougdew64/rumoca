@@ -170,6 +170,85 @@ place. `CLAUDE.md` already records that `egui_kittest` cannot see layout, and ha
 confirm it. **The toolchain column is dominated by Claude's own fresh mistakes**, caught within
 minutes, which is the loop working as designed.
 
+<!-- ledger-through: 2026-08-23 -->
+
+### 08-17 → 08-22, backfilled 2026-08-23 — and the ledger had gone dark
+
+**Seventeen rows, all from two days, then nothing for a week** — through the transport-bar arc,
+two defects on 08-21, a full day on 08-22 and a night of unattended work. **The instrument did not
+fail; the habit did**, which is why appending is now checked by
+`doc_citations::the_who_caught_it_ledger_keeps_up_with_the_work` rather than remembered.
+
+Rows marked *(inferred)* were attributed from the commit body rather than from a contemporaneous
+note; the rest quote the commit.
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 08-17 | a new tour opened partway down, not at its top | **Doug** | *"When I click a subordinate tour link in the-concepts hub…"* |
+| 08-17 | a stop link did not land at its stop | **Doug** | same walk *(inferred)* |
+| 08-17 | tour `kind` markers were visible in the pane | **Doug** | *"is now visible in the…"* |
+| 08-17 | a stage summary claimed more than its frames recorded | Claude | following Doug's *"way, way too short"* |
+| 08-19 | eighteen tour references opened a browser | **Doug** | *"I found a broken link in blt-ordering"* |
+| 08-19 | the time selector took egui's default width | **Doug** | *"Why is the combobox so wide?"* |
+| 08-19 | the alias view stranded on a stage with no alias tab | Claude | found by a pure function an extraction had produced |
+| 08-20 | a replay restarted after passing through a report stage | Claude | cache-lifetime split *(inferred)* |
+| 08-20 | the navigated tree was annotated from the specimen | Claude | app.rs extraction *(inferred)* |
+| 08-20 | the module-size scan had the failure it was written to prevent | Claude | a floor only ever sees the row above it |
+| 08-21 | the Flatten sub-view row stranded | Claude | column read |
+| 08-21 | a test named `…matches_worker` never touched the worker | Claude | reading `worker.rs` for #48 |
+| 08-22 | Look links recompiled an already-loaded specimen | **Doug** | *"even if those specimens are already loaded"* |
+| 08-22 | the tour implied HRW represents a "node"; so did a doc comment | **Doug** | re-walking connections |
+| 08-22 | `connect` called one edge, is one edge **per member** | **Doug** | *"That seems wrong"* |
+| 08-22 | the 08-12 tour repair was lost to the 08-13 rewrite | Claude | investigating Doug's question |
+| 08-22 | the mandatory reading path was growing unchecked | Claude | answering Doug's question about the arrangement |
+| 08-22 | three scratch-specimen tests passed vacuously | Claude | while fixing an unrelated assertion |
+| 08-22 | a `##`-heading edit silently rewrote the catalogue blurb | toolchain | `tour_catalogue_is_current` |
+| 08-22 | an `**Expected:**` marker was removed | toolchain | `every_stop_of_every_tour_owes_an_expected` |
+| 08-22 | `describe`→`parse` had no round-trip guard | Claude | night 1, column read |
+| 08-22 | a stage with no tab failed nothing; a doc comment claimed otherwise | Claude | night 1 |
+| 08-22 | `…shows_every_fixture…` checked 9 of 22 | Claude | night 1 |
+
+**Seven days: Doug 8, Claude 13, toolchain 3.** Against the first two days' **Doug 10, toolchain 5,
+Claude 5**, the rate that matters moved: **Doug from ~5.0/day to ~1.1/day**, while Claude's own
+finding rate held at ~1.9/day. **The ratio moved toward the toolchain and Claude**, which is what
+the ledger was built to detect.
+
+### The standing prediction, checked — 3 of 4, and the fourth is the interesting one
+
+It said the mechanised classes *"should stop appearing in the Doug column"*, and that a **new**
+class appearing instead would mean point-fixes are not converging.
+
+| mechanised class | still in Doug's column? |
+|---|---|
+| equation identity | **no** — none since |
+| notebook currency | **no** |
+| gate coverage | **no** |
+| link resolution and dispatch | **yes, twice** — 08-17 and 08-19 |
+
+**The fourth did not recur in its mechanised form and did recur in adjacent ones.**
+`fixture_tour_links_all_resolve` checks that a link *resolves*; the 08-19 defect was eighteen links
+that resolved and **opened a browser**, and 08-17's was a link that resolved, dispatched, and
+scrolled to the wrong place. **The checker was true the whole time and the feature was broken** —
+which is this project's recurring shape, a claim narrower than the guarantee a reader takes from
+it.
+
+**So the honest reading: mechanisation works on the exact class it names and does not generalise to
+the surface around it.** The remedy is not more mechanisation of link *resolution*; it is that the
+tour-link surface has three failure modes and only one is checked.
+
+### And the surface Doug's column keeps landing on is UI LAYOUT
+
+Of his eight, three are layout or on-screen behaviour, and the whole 08-12 → 08-19 divider and
+transport-bar arc — eight commits, *"second theory dead"*, *"passes by coincidence"*, *"0 for 2"* —
+is the single largest cluster of rework in the project's history.
+
+**Doug, 2026-08-23:** *"that UI layout stuff was so problematic that I had made a mental note to
+minimize or even entirely avoid making any future UI layout changes."* That is a design
+preference rather than a rule, and it is recorded here rather than in `CLAUDE.md` because the
+mandatory reading path is budgeted and this is not a thing a session must know before acting.
+**The measurement supports him:** layout is the one surface where `egui_kittest` cannot help,
+so it is the one place a change is verified only by Doug looking at it.
+
 **The prediction worth checking next week:** the classes now mechanised — equation identity, link
 resolution and dispatch, notebook currency, gate coverage — should stop appearing in the Doug
 column. If a *new* class appears there instead, that is the pattern continuing and the honest
