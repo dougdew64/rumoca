@@ -3761,6 +3761,73 @@ fn fixture_tour_links_all_resolve() {
     );
 }
 
+/// **Every link form round-trips: `parse` → `describe` → `parse` yields the same link.**
+///
+/// # Why this is worth a test, and why it could not be written before
+///
+/// `HrwLink` is four hand-maintained lists over twelve variants — `parse_hrw_link`
+/// (17 arms), `describe` (17), `dispatch_hrw_link` (12) and `requires_specimen`. Nothing
+/// held them in correspondence. On 2026-08-22 a column read of that cluster found
+/// `LoadAndSwitch` and `LoadSpecimen` missing a guard their sibling in the left panel had
+/// carried all along, which is the shape this cluster fails in.
+///
+/// **The round-trip states the correspondence as a property rather than case by case.**
+/// It is what makes the two encodings each other's inverse instead of two functions that
+/// happen to agree today — and it catches an asymmetry in *either* direction, which no
+/// per-URL test can.
+///
+/// # What it adds over the test that already existed
+///
+/// [`a_recorded_link_round_trips_to_the_same_link`] makes the same parity claim over
+/// **ten hand-picked literals**, and it would catch the `SeekFrame` break below. **The
+/// difference is that its coverage is a fixed sample and this one's is the corpus.** A
+/// census on 2026-08-22 counted 70 `LoadAndSwitch`, 14 `PointAtNode`, 9 `SeekFrame` and
+/// 5 `AimAtEquation` across the tours — real payloads, including quoted node keys, that
+/// no literal list contains. **A tour introducing a new form is covered here the day it
+/// lands, and never by a literal list.**
+///
+/// A synthetic companion for the two forms tours do not use — `SwitchStage` with no
+/// sub-view, and `ShowSource` with a line — was written and then **deleted**: both are
+/// already in that test's literals, and a duplicate makes one defect fail two tests
+/// while saying the same thing twice.
+///
+/// Unparseable links are skipped deliberately — [`fixture_tour_links_all_resolve`] owns
+/// that claim, for the same reason.
+///
+/// **`SeekFrame` is the case it earns its keep on.** `describe` emits `n + 1` and the
+/// parser does `checked_sub(1)`, because links are 1-based to match "Frame 3/11" on
+/// screen while the value is 0-based. That off-by-one is invisible to every other check
+/// and would round-trip wrongly the moment either side changed alone.
+#[test]
+fn every_tour_link_round_trips_through_describe() {
+    let mut checked = 0usize;
+    for path in bridge::fixture_tours() {
+        let text = std::fs::read_to_string(&path).expect("readable tour");
+        for url in extract_hrw_links(&text) {
+            // Resolution is `fixture_tour_links_all_resolve`'s claim, not this one.
+            let Some(link) = parse_hrw_link(&url) else {
+                continue;
+            };
+            let described = format!("hrw://{}", link.describe());
+            let again = parse_hrw_link(&described);
+            assert_eq!(
+                again.as_ref(),
+                Some(&link),
+                "a link did not survive parse -> describe -> parse\n  tour:     {}\n  \
+                 original: {url}\n  describe: {described}\n  reparsed: {again:?}",
+                path.display(),
+            );
+            checked += 1;
+        }
+    }
+    // Non-vacuity: passing must mean the forms were exercised, never that the extractor
+    // returned nothing.
+    assert!(
+        checked > 20,
+        "only {checked} links round-tripped \u{2014} the corpus or the extractor is broken",
+    );
+}
+
 /// **Every sub-view a tour link names is AVAILABLE for the specimen it names.**
 ///
 /// Doug, 2026-08-12, walking `connect-expansion.md`: *"Act 2 … contains a link for
