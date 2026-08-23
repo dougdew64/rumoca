@@ -6347,3 +6347,44 @@ the same distinction `#48` drew when the parse memo stayed HRW-side while
 
 **And it is distinct from `#45`.** #45 is *diagnosing failures in the user's model*; this is
 *removing a limitation in the compiler*. They share `CartesianPendulum` as evidence and nothing else.
+
+## 84. Make the machine check GUARANTEED rather than remembered — parked 2026-08-23
+
+**Not scheduled.** <!-- unbuilt: SessionStart -->
+
+**The problem, in Doug's words 2026-08-23:** *"I will be switching between my two machines at least
+twice every week. It sure seems like we ought to be able to implement a solution which is guaranteed
+to work reliably."*
+
+**Why what shipped is not a guarantee.** `hrw/scripts/check-machine.ps1` collapses every
+non-travelling precondition into one command, which is real progress — but **it still has to be
+run.** Everything protecting a machine switch is currently *documented*, and documentation is
+discovered probabilistically: on 2026-08-23 two operational facts were in the repository, correct,
+and still missed. **Both were found by Doug asking whether something would be found, not by any
+checker.** A guarantee has to come from something that *runs*, not something that is *read*.
+
+### The two steps, in dependency order
+
+**(a) Make the allowlist travel.** Root `.gitignore` line 17 is `.claude/`, from upstream commit
+`cbaadda8`. A directory-pattern exclusion **cannot be negated from anywhere**, so no nested
+`.gitignore` recovers it — the only fix is changing that line to `.claude/*` plus
+`!.claude/settings.json`. Then the file is versioned and a fresh clone simply has it: **elimination
+rather than detection.**
+
+**The cost is why this is parked.** It is a permanent fork delta on an upstream file, so **every
+rebase conflicts on one line** — trivial to resolve, but a recurring tax against
+[`upstream-strategy.md`](upstream-strategy.md)'s aim of a clean fork. Arguably upstreamable, since
+`settings.json` is the *shared* settings file and is meant to be committed; ignoring it looks like
+an oversight rather than an intention. **Doug's call, not Claude's.**
+
+**(b) A `SessionStart` hook that runs the check automatically.** The harness executes hooks, so
+nothing depends on a session reading anything. **This is the actual guarantee — and it is blocked on
+(a)**, because hooks live in `settings.json`. **Verify the hook event exists in the installed
+version before promising it**; it has not been checked.
+
+### What reopens this
+
+**Doug's ruling, 2026-08-23: ship (1) alone and test it in use.** *"If 1 fails tonight or in the
+future, then we will revisit 2 and 3 via the ideas log."* So the trigger is a **machine switch that
+goes wrong despite the script existing** — most likely because nobody ran it, which is precisely the
+failure (b) removes.

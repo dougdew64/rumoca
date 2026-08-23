@@ -834,23 +834,18 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 
 ## Running things
 
-**FIRST THING ON A MACHINE YOU HAVE NOT RUN ON BEFORE — CHECK THE PERMISSION ALLOWLIST.**
-`.claude/` is gitignored **by upstream Rumoca** (`e658c776`), so `.claude/settings.json` does not
-travel: a fresh clone prompts Doug for approval on **every** Bash call.
+**FIRST THING ON A MACHINE YOU HAVE NOT RUN ON BEFORE — RUN THE MACHINE CHECK.** Claude runs it
+unprompted: Doug switches machines twice a week, feels every cost, and cannot see any of these
+coming, while Claude can.
 
 ```powershell
-Test-Path (Join-Path (git rev-parse --show-toplevel) ".claude/settings.json")
+pwsh -File hrw/scripts/check-machine.ps1
 ```
 
-False → [`docs/setup-windows.md`](docs/setup-windows.md) §8. **Anchored at the repo root on
-purpose** — the bare relative form reports False from `hrw/` and would order a session to recreate a
-file it already has.
-
-**Claude runs this unprompted, because only Claude can see the need:** Doug feels the cost and has
-no reason to suspect a file he has never read. **And it is fatal to an unattended run** — asleep, a
-permission prompt is indistinguishable from a hang, so the run produces nothing and no error to
-read. *(Deleted from this file by the 2026-08-22 prune and restored 2026-08-23, when Doug asked
-whether it was still discoverable. Two other lines here had been referring to it the whole time.)*
+It verifies what does **not** travel with a `git pull`: the **permission allowlist** (gitignored by
+upstream — and *fatal to an unattended run*, since a prompt with nobody awake is indistinguishable
+from a hang), whether HRW is holding `hrw.exe`, the parsed-artifact cache, and the bridge
+extension. Blocking problems exit non-zero and name their fix.
 
 **ITERATING AND GATING ARE DIFFERENT ACTS, AND CONFLATING THEM COST DOUG TWO HOURS**
 *(measured 2026-08-15, from the session transcript)*. Of 274 minutes of compute that day,
