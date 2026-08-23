@@ -17,6 +17,64 @@ So the governing principle is not "be careful." It is: **do only work whose succ
 without him**, and treat everything else as out of scope no matter how valuable it looks. The
 failure mode to engineer for is *"less got done"*, never *"something bad landed."*
 
+## THE QUEUED RUN — single slot, REPLACE it, never append
+
+**This section holds one run's plan and nothing else.** It exists because the conversation that
+planned the run does not survive to the machine that executes it. When a run finishes, its record
+goes to the run log below and this section is overwritten by the next plan — otherwise it becomes
+the accumulating history `CLAUDE.md`'s *Current work* had to be rescued from.
+
+### Queued 2026-08-23 for that night, to run on Doug's OTHER machine
+
+**⚠ THE HANDOFF LOSES THREE THINGS, and the first will stall the run silently.**
+
+| what does not travel | consequence | fix, before starting |
+|---|---|---|
+| **`.claude/settings.json`** — `.claude/` is gitignored by **upstream** (`e658c776`) | every Bash call prompts for approval. **Asleep, the run stalls on the first command and looks like a hang.** | `Test-Path (Join-Path (git rev-parse --show-toplevel) ".claude/settings.json")` — if False, see [`setup-windows.md`](setup-windows.md) §8 |
+| the memory store | keyed to the filesystem path; a different machine has none of it | nothing needed — this file is the handoff |
+| the parsed-artifact cache (`%LOCALAPPDATA%\Rumoca`) | per machine and keyed on a fingerprint of `crates/`, so the **first compile re-parses the whole MSL** | nothing needed. **Expect a much slower first gate; that is not a hang.** |
+
+Plus the standing preconditions below: **HRW closed, sleep disabled, tree clean and pushed.**
+
+### The three items
+
+**1 — Generalise the no-nested-scroll rule, then fix the two defects it exposes.**
+
+The rule (`CLAUDE.md`, 2026-08-16) is *"never nest a vertical scroll area inside one; the parent
+owns the scrolling and the height, and a child view just renders."* It is enforced for **one** file
+by `connection_anim::tests_layout` and was never generalised. Verified 2026-08-23:
+
+| file | parent wrapper | the view itself |
+|---|---|---|
+| `alias_anim` | `app.rs:3940` `ScrollArea::vertical()` | **`alias_anim.rs:182`** `ScrollArea::vertical()` … `.max_height(320.0)` |
+| `ic_plan_anim` | `app.rs:3973` `ScrollArea::vertical()` | **`ic_plan_anim.rs:303`** `ScrollArea::vertical()` … `.max_height(300.0)` |
+
+**It manifests.** The 320pt cap holds ~16–18 grid rows; alias eliminations per specimen are
+**`Drivetrain` 77**, `MotorWithBrake` and `BenchActuator` 41, `GearWithBrake` 33, `RcCircuit` and
+`OverInitRc` 20. `Drivetrain` — the index-reduction tour's centrepiece — shows under a quarter of
+its list inside a small box while the pane around it has room. `ic_plan_anim`'s 300pt cap is
+overflowed by `RcCircuit` and `OverInitRc` at 21 blocks.
+
+**The fix is subtractive**: delete the inner `ScrollArea` and its `max_height`, exactly as
+`connection_anim` was fixed. **The must-fire proof is free** — write the checker first and it fails
+on two real defects; no synthetic break is needed.
+
+**2 — Column-read the `Animated` trait: 8 implementors × 5 methods.**
+
+`playback.rs:68`. Implementors: `alias`, `connection`, `ic_plan`, `matching`, `pre_lowering`,
+`reduction`, `tarjan`, `tearing`. Look for the member shaped differently — the lens that found the
+stranded stage tab and the Flatten sub-view stranding. **Worth one check regardless of what turns
+up: `which()` values must be unique**, since they are matched against and a collision misroutes
+silently.
+
+**3 — Reserved** for what 1 and 2 find; otherwise stop at two.
+
+### The command
+
+```text
+/loop Unattended run under hrw/docs/unattended-runs.md — read it first, every iteration, including THE QUEUED RUN section which carries tonight's three items and their evidence. app-side only. Full gate green before every commit, commit but never push, never leave the tree dirty, revert-and-record on hitting a no-go, append who-caught-it ledger rows for anything found, then write the handoff and end the loop.
+```
+
 ## Preconditions — Doug's, before starting
 
 | | why |
