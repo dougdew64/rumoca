@@ -127,6 +127,40 @@ fine forever.
 
 ---
 
+## Rework rate is NOT measurable from this history — two attempts, 2026-08-23
+
+**Proposed as a code-wall instrument and abandoned on measurement.** Recorded so it is not
+re-proposed: the reasoning is appealing, and both classifiers fail for different reasons.
+
+**Attempt 1 — classify commits by message.** *"A fix-shaped commit touching a file changed in the
+previous 7 days."* It produced a clean-looking trend: **0 % rework before week 33, then 40 %.**
+
+**It was measuring the commit-message convention.** This project wrote `hrw: …` for 319 commits
+before adopting `fix(hrw): …`, so weeks 30–32 showed **144, 302 and 147 commits with zero fixes** —
+which is not plausible and is the tell. Presented without that check it would have read as a
+dramatic regression beginning in week 33.
+
+**Attempt 2 — read no messages at all.** *"A commit touching a file that ≥ 2 other commits touched
+in the preceding 7 days."* Convention-independent, and **it saturates: 94 % of all commits qualify**
+(88–96 % every single week).
+
+**The cause is tempo, not coupling.** 701 `hrw/` commits in five weeks — **288 in one week** — into
+about twenty files. Structural co-occurrence carries no information at that rate, and a column that
+reads the same on every row is the failure `docs/ideas.md` #52 already records.
+
+### The conclusion, and it redirects rather than just closing
+
+**The divider/transport-bar arc *is* real rework** — but it was identifiable only from what the
+messages *said*: *"second theory dead"*, *"passes by coincidence — five measurements"*, *"unfixed"*.
+**Rework in this repository is a semantic property, not a structural one**, so the only instrument
+that can see it is a curated one.
+
+**That instrument already exists: the "who caught it?" ledger below.** No new metric is needed, and
+the earlier recommendation to *"keep rework rate on the list"* was wrong — this is the evidence.
+
+**What would reopen it:** a sustained drop in commit tempo. At a few commits a day into a larger
+file set, attempt 2 would discriminate again.
+
 ## The "who caught it?" ledger
 
 **Doug, 2026-08-16, asked the question this exists to answer:** *"Are you confident that we will
