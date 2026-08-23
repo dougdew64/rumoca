@@ -24,17 +24,26 @@ planned the run does not survive to the machine that executes it. When a run fin
 goes to the run log below and this section is overwritten by the next plan — otherwise it becomes
 the accumulating history `CLAUDE.md`'s *Current work* had to be rescued from.
 
-### Queued 2026-08-23 for that night, to run on Doug's OTHER machine
+### Queued 2026-08-23 for that night, on THIS machine — retargeted the same day
 
-**⚠ THE HANDOFF LOSES THREE THINGS, and the first will stall the run silently.**
+**Doug ruled on 2026-08-23 that the run executes on the machine this plan was written on**, not
+on the other one it was originally queued for. **That removes the machine handoff, which carried
+the run's only silent-stall risk** — a missing permission allowlist prompts on the first Bash
+call, and asleep, a prompt is indistinguishable from a hang.
 
-| what does not travel | consequence | fix, before starting |
-|---|---|---|
-| **`.claude/settings.json`** — `.claude/` is gitignored by **upstream** (`e658c776`) | every Bash call prompts for approval. **Asleep, the run stalls on the first command and looks like a hang.** | `Test-Path (Join-Path (git rev-parse --show-toplevel) ".claude/settings.json")` — if False, see [`setup-windows.md`](setup-windows.md) §8 |
-| the memory store | keyed to the filesystem path; a different machine has none of it | nothing needed — this file is the handoff |
-| the parsed-artifact cache (`%LOCALAPPDATA%\Rumoca`) | per machine and keyed on a fingerprint of `crates/`, so the **first compile re-parses the whole MSL** | nothing needed. **Expect a much slower first gate; that is not a hang.** |
+**The machine check was run the same day and passed all five checks**, so the three things a
+handoff loses are all discharged: the allowlist is present, `hrw.exe` is unlocked, and **the
+parsed-artifact cache is warm — do NOT expect the slow first gate a fresh machine would pay.**
+
+**Run it once more before starting anyway.** It costs about a second, it is what the handoff
+table used to be, and the tree may have moved since:
+
+```text
+cargo run -p hrw --example check_machine
+```
 
 Plus the standing preconditions below: **HRW closed, sleep disabled, tree clean and pushed.**
+Doug disabled sleep on 2026-08-23.
 
 ### The three items
 
