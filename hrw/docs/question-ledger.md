@@ -521,9 +521,12 @@ form of corrected prose in the tours. That corrected prose serves two purposes: 
 use that as a measurement of what I've learned and know. 2. I'm able to use the tour as a trusted
 reference during phase 3 walks. Losing the phase 2 prose is a seriously bad regression."*
 
+*(Quoted verbatim. The phase numbering was retired 2026-08-23 for colliding with Rumoca's own
+compiler phases — "phase 2" here is **walking**, "phase 3" is **exploring**.)*
+
 **Claude had filed this as imprecise wording — the cheapest of the four shapes.** It is not. Corrected
-tour prose **is the artifact the phase-2 walks produce**, and it is load-bearing twice over: it is the
-only measurement of what Doug knows, and it is what phase 3 treats as trustworthy. **A lost correction
+tour prose **is the artifact a walk produces**, and it is load-bearing twice over: it is the
+only measurement of what Doug knows, and it is what exploring treats as trustworthy. **A lost correction
 is lost learning, not a lost sentence.**
 
 ### The audit that reclassification prompted — one confirmed loss, not a systemic one
@@ -549,7 +552,7 @@ they did not delete.**
 
 Verdicts above were reached by grepping distinctive phrases and judging "substance survived" by eye.
 **Nothing in the repository marks which prose came out of a walk**, so Claude cannot reliably separate
-his own phase-1 draft from Doug's phase-2 correction — and a rewrite sees uniform prose and treats it
+his own draft from Doug's correction on a walk — and a rewrite sees uniform prose and treats it
 as uniformly Claude's to replace. That is exactly what happened on 08-13.
 
 **Both of Doug's stated purposes rest on that missing mark:**
@@ -558,7 +561,7 @@ as uniformly Claude's to replace. That is exactly what happened on 08-13.
   measures Claude's drafts back to himself.
 - **Trusted reference** needs the page to say which sentences Doug validated, and no page says.
 
-**So marking phase-2 prose is not only protection — it is the missing index of the learning**, and it
+**So marking a walk's prose is not only protection — it is the missing index of the learning**, and it
 is the prerequisite for purpose 1 rather than an improvement to it.
 
 ### What was done about it

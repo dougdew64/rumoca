@@ -1491,7 +1491,7 @@ Some prose.
     ///
     /// # What a walked region is, and why it needs marking at all
     ///
-    /// **Corrected tour prose is the artifact a phase-2 walk produces** (Doug,
+    /// **Corrected tour prose is the artifact a tour walk produces** (Doug,
     /// 2026-08-22), and it is load-bearing twice: it is the only measurement of what he
     /// has learned, and it is what a phase-3 walk treats as trustworthy. **Nothing in
     /// the repository distinguished it from Claude's own first-draft prose**, so a
@@ -1679,7 +1679,7 @@ Some prose.
                             "{name}: walked region `{slug}` changed, but its date is still \
                              {date}. If the rewrite is intended, bump the marker's date in \
                              THIS commit \u{2014} that is the acknowledgement. If it was not \
-                             intended, this is a phase-2 correction about to be lost."
+                             intended, this is a walk's correction about to be lost."
                         ));
                     }
                     Some(_) => {}
@@ -1765,7 +1765,18 @@ Some prose.
             // lands rather than after it grows.
             "docs/unattended-runs.md",
         ];
-        const CONDITIONAL_BUDGET: usize = 877;
+        // 877 → 889 on 2026-08-23, retiring the tour "phase 1/2/3" numbering for
+        // **drafting / walking / exploring**. The rename itself was near-neutral; the
+        // growth is a short note saying *why not phases* — that "phase" already names
+        // Rumoca's eleven compiler phases, which the tours are *about*, and that the
+        // numbers implied a sequence which does not hold.
+        //
+        // It lives in that file rather than `DECISIONS.md` on the same reasoning as
+        // `architecture.md`'s scope note: **someone considering renumbering reads the
+        // tour README, not the decision log.** Two attempts to pay for it out of the
+        // existing text landed 12 lines short, and one of them found a genuine
+        // duplication — the budget catching a restatement of a rule 100 lines below it.
+        const CONDITIONAL_BUDGET: usize = 889;
 
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let mut total = 0usize;
@@ -4707,7 +4718,7 @@ mod tests_walked_regions {
     ///
     /// Doug marked a region on 2026-08-22 and improved it on 2026-08-22. A bare date
     /// cannot acknowledge that edit — the token is unchanged, so the checker fires and
-    /// there is no honest way to satisfy it. **A phase-2 walk produces several
+    /// there is no honest way to satisfy it. **A tour walk produces several
     /// acknowledged edits in one day, so this is the common case, not the corner one**
     /// (Doug: *"today's same-date scenario would be common during phase 2 walks. You
     /// might need to add a time to the marker."*).

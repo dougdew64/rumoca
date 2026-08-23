@@ -594,8 +594,8 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > | workdays | **refactoring + bug hunting** — low supervision | ~0 | the FULL ~220 s gate |
 >
 > **TOUR PROSE IS NOT WORKDAY WORK, and the reason is not scheduling** *(Doug, 2026-08-22)*: *"most
-> of my conceptual learning happens when iterating with you during phase 2 walks… making the tour
-> prose correct and personally effective during those phase 2 walks is my primary learning exercise
+> of my conceptual learning happens when iterating with you during [tour] walks… making the tour
+> prose correct and personally effective during those walks is my primary learning exercise
 > right now."* **Improving an explanation alone consumes the material his learning runs on.** Fixing
 > a checker-caught number, a dead link or a stale citation is fine; **rewriting an explanation
 > unsupervised is not Claude's to do.** See [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md).
@@ -672,8 +672,7 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >
 > **⟶ ✅ CONNECTIONS IS WALKED AND PROTECTED — 2026-08-22. THE NEXT TOUR IS `dae-construction`.**
 >
-> The restart Doug announced on 2026-08-21 is complete: `connect-expansion.md` finished its phase-2
-> walk, and its prose is held by **ten walked regions**. **Doug, 2026-08-22:** *"I will walk tours
+> The restart Doug announced on 2026-08-21 is complete: `connect-expansion.md` is walked, and its prose is held by **ten walked regions**. **Doug, 2026-08-22:** *"I will walk tours
 > in the same sequence as the compiler phases."* That sequence is `the-concepts.md`'s own numbering,
 > so the order is **dae-construction → matching (→ matching-live) → blt-ordering → tearing →
 > index-reduction → initialization → solve-lowering → events.**

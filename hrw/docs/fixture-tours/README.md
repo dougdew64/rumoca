@@ -105,35 +105,46 @@ misrepresentation and every checker here would go on passing. That is why accura
 outranks everything, and why `--features notebook-check` — pane against a fresh compile — is the
 instrument for the other half.
 
-## How a tour gets made: three phases, three different instruments
+## Claude is the tour guide: drafting, walking, exploring
 
-**Agreed with Doug 2026-08-22.** The phases are not stages of polish — **each measures something
-the others cannot**, and confusing them wastes the scarcest thing here.
+**Agreed with Doug 2026-08-23**, replacing an earlier numbering. **Claude writes the tours and
+guides Doug through them**; the three activities are not stages of polish — **each measures
+something the others cannot.**
 
-| phase | what happens | what it measures | instrument |
+| activity | what happens | what it measures | instrument |
 |---|---|---|---|
-| **1** | Claude drafts the tour | correctness, and structural discipline | **Rumoca + HRW** — a real compile, the checkers |
-| **2** | Doug walks it, iterating with Claude | **effectiveness** — does it land | **Doug, and only Doug** |
-| **3** | Doug explores panes and asks what the tour never asked | **coverage** — what Claude failed to write at all | **Doug's questions** |
+| **drafting** | the guide writes the tour | correctness, and structural discipline | **Rumoca + HRW** — a real compile, the checkers |
+| **walking** | Doug walks it, iterating with the guide | **effectiveness** — does it land | **Doug, and only Doug** |
+| **exploring** | Doug leaves the route and asks what the tour never asked | **coverage** — what the guide failed to write at all | **Doug's questions** |
 
-### ⟶ THE PHASE 2 ITERATION *IS* THE LEARNING — read this before anything else here
+> **Why not "phases".** They were numbered 1/2/3 until 2026-08-23. **"Phase" already means something
+> important here** — Rumoca has eleven compiler phases and the tours are *about* them — so "phase 2"
+> named two unrelated things in one sentence. The numbers also implied a sequence that does not
+> hold: a tour is walked and explored at the same time, and exploring produces prose that has to be
+> walked. **Drafting, walking and exploring say what they are and collide with nothing.**
+
+**The walk is the we-do of a textbook's I-do / we-do / you-do** — [`../vision.md`](../vision.md)
+works out which of those three HRW should try to win, and which to concede.
+
+### ⟶ THE WALK *IS* THE LEARNING — read this before anything else here
 
 **Doug, 2026-08-22:** *"Most of my conceptual learning happens when iterating with you during
-phase 2 walks to improve the correctness and effectiveness of tours. Making the tour prose correct
-and personally effective during those phase 2 walks is my primary learning exercise right now."*
+walks to improve the correctness and effectiveness of tours. Making the tour prose correct
+and personally effective during those walks is my primary learning exercise right now."*
 
 **So the tour is a byproduct, not the deliverable.** That is `working-with-doug.md`'s standing
 principle — *the conversation is the instrument; code changes are a byproduct of understanding* —
 applied to tours. **A finished tour is the residue of a learning session, not its purpose**, which
-is why the phases below are worth keeping distinct and why three consequences bind:
+is why the three activities are worth keeping distinct and why three consequences bind:
 
-- **PHASE 1 IS NOT TRYING TO BE UNIMPROVABLE.** A draft with nothing left to iterate on would
+- **A DRAFT IS NOT TRYING TO BE UNIMPROVABLE.** A draft with nothing left to iterate on would
   delete the exercise. **But the answer is not worse drafts** — it is drafts whose remaining
   weaknesses are **conceptual rather than mechanical.** Arguing about a wrong count, a dead link or
-  a stop in the wrong order teaches Doug nothing about the phase; arguing about *whether
-  differentiating the constraint is the natural move* is the whole point. **Phase 1's job is to
-  spend the mechanical failure modes so phase 2's iterations are all conceptual.**
-- **IN PHASE 2, ENGAGE — DO NOT PATCH.** The efficient reflex is: Doug says the prose is off, Claude
+  a stop in the wrong order teaches Doug nothing about the compiler; arguing about *whether
+  differentiating the constraint is the natural move* is the whole point. **Drafting's job is to
+  spend the mechanical failure modes so the walk's iterations are all conceptual** — see
+  *"Drafting aims at correct AND structurally disciplined"* below for the line that follows from it.
+- **WHILE WALKING, ENGAGE — DO NOT PATCH.** The efficient reflex is: Doug says the prose is off, Claude
   rewrites it, both move on. **That reflex strips out the learning.** When he pushes back, say why
   it was written that way, what the alternative costs, and where the concept actually sits — and let
   him push again. **Slower on purpose**, because the dialogue is the instrument and the edit is the
@@ -143,12 +154,12 @@ is why the phases below are worth keeping distinct and why three consequences bi
   alone consumes the material his learning runs on.** Fixing a checker-caught number, a dead link or
   a stale citation is fine. **Rewriting an explanation unsupervised is not Claude's to do.**
 
-### ⟶ MARK WHAT PHASE 2 PRODUCES: `<!-- walked: -->` — added 2026-08-22, after one was lost
+### ⟶ MARK WHAT THE WALK PRODUCES: `<!-- walked: -->` — added 2026-08-22, after one was lost
 
-**Doug, 2026-08-22:** *"During those phase 2 walks, my learnings are captured in the form of
+**Doug, 2026-08-22:** *"During those [walks], my learnings are captured in the form of
 corrected prose in the tours. That corrected prose serves two purposes: 1. You are able to use that
 as a measurement of what I've learned and know. 2. I'm able to use the tour as a trusted reference
-during phase 3 walks. Losing the phase 2 prose is a seriously bad regression."*
+[when exploring]. Losing the [walk's] prose is a seriously bad regression."*
 
 **It had already happened once.** `connect-expansion.md`'s lead sentence was repaired on 2026-08-12
 from Doug's question; the 2026-08-13 rewrite that made this tour *the template* silently reverted it,
@@ -176,7 +187,7 @@ is no honest way to satisfy it. **The field is any token that changes**, so no p
 needed; `a_timestamp_distinguishes_two_acknowledgements_on_one_day` is what keeps it that way.
 *(Found by Doug within the hour of the mechanism's first live use.)*
 
-**WHAT TO MARK WHEN A PHASE 2 WALK COMPLETES — mark the EXPLANATION, not the test.** Doug,
+**WHAT TO MARK WHEN A WALK COMPLETES — mark the EXPLANATION, not the test.** Doug,
 2026-08-22, on finishing the connections tour: *"I'd like to protect the prose. You can and should
 update the rest of the tour if the underlying facts change."* Those are two requirements, and one
 marking policy satisfies both:
@@ -268,9 +279,9 @@ convince a PhD friend. Tune hard enough to one reader and nobody else can use th
 **And that split is the fixture/ad hoc split**, which is a good sign both are drawn in the right
 place: durable profile → fixture tour; transient state → ad hoc tour.
 
-### Phase 1 aims at "correct AND structurally disciplined", not at "correct"
+### Drafting aims at "correct AND structurally disciplined", not at "correct"
 
-**Doug predicts phase-1 drafts will be mostly correct and mostly ineffective. Treat that as a
+**Doug predicts drafts will be mostly correct and mostly ineffective. Treat that as a
 prediction to fight, not a plan** — because first encounter is non-renewable, every avoidable
 weakness in a draft spends a measurement that cannot be got back.
 
@@ -293,17 +304,17 @@ draft would have prevented him from asking it. This file already says a tour tha
 pre-emptively **spends his attention before he has a reason to want it.** Check what is written;
 leave the gaps to be found.
 
-### Phase 3 finds omissions, and its answers do NOT automatically become tour content
+### Exploring finds omissions, and its answers do NOT automatically become tour content
 
-**Phase 2 asks whether what is written lands. Phase 3 asks what was never written** — a question
-the tour did not prompt is a gap the tour did not cover. It is the only phase that finds omissions,
-which is why [`../question-ledger.md`](../question-ledger.md) says the real measure is *the nature
-of the questions Doug asks*, and why **no questions at all is ambiguous and must not be read as
-success.**
+**Walking asks whether what is written lands. Exploring asks what was never written** — a question
+the tour did not prompt is a gap the tour did not cover. It is the only one of the three that finds
+omissions, which is why [`../question-ledger.md`](../question-ledger.md) says the real measure is
+*the nature of the questions Doug asks*, and why **no questions at all is ambiguous and must not be
+read as success.**
 
-**Doug, 2026-08-22: *"we might or might not choose to improve tour content as the result of phase 3
-questions."*** Defend that. A phase-3 answer routes one of three ways, and only one of them edits
-the tour:
+**Doug, 2026-08-22: *"we might or might not choose to improve tour content as the result of
+[exploring] questions."*** Defend that. Such an answer routes one of three ways, and only one of
+them edits the tour:
 
 | the question is… | route |
 |---|---|
@@ -315,19 +326,20 @@ the tour:
 tour."* Routing everything into the tour is how a tour drifts to reference depth one good question
 at a time.
 
-#### The phases INTERLEAVE — "phase" describes a question, not a stage a tour is in
+#### The three INTERLEAVE — they describe a question, not a stage a tour is in
 
-*(2026-08-22, from watching it happen.)* Doug's connector-type question arrived during what looked
-like a phase-2 walk, but it was **phase-3 shaped**: a detail the tour had never covered, asked by
-someone the tour had already worked on. Its answer routed *into the tour*, which then needed its own
-phase-2 ratification — given five exchanges later.
+*(2026-08-22, from watching it happen. It is also why the numbering was dropped a day later.)*
+Doug's connector-type question arrived during what looked like a walk, but it was **exploring**: a
+detail the tour had never covered, asked by someone the tour had already worked on. Its answer
+routed *into the tour*, which then needed ratifying on a walk — given five exchanges later.
 
-**So `connect-expansion.md` is phase-2 complete and phase-3 open at the same time**, and every other
-tour will be too. There is no sequence of stages a tour passes through and finishes.
+**So `connect-expansion.md` is walked and still open to exploring at the same time**, and every
+other tour will be too. There is no sequence of stages a tour passes through and finishes.
 
-**The rule that falls out, and it is what keeps the walked markers honest:** when a phase-3 answer
-routes *into the tour*, **the new prose enters UNMARKED, and becomes walked only when Doug ratifies
-it.** It is Claude's draft until he has read it, whatever else in the file is already protected.
+**The rule that falls out, and it is what keeps the walked markers honest:** when an answer found
+by exploring routes *into the tour*, **the new prose enters UNMARKED, and becomes walked only when
+Doug ratifies it.** It is Claude's draft until he has read it, whatever else in the file is already
+protected.
 That happened twice on 2026-08-22 — the type-claim section and the node clarification — and both
 were marked only after *"the tour content looks good"*.
 
@@ -497,38 +509,38 @@ questions from the panes:**
 | 2 | Doug walks it and iterates with Claude | **here** — the repair loop is the teaching (`vision.md`) |
 | 3 | Doug re-walks, reads the panes, asks detailed questions | **here** — and the tour deliberately does not answer these |
 
-**Phase 2 tests the prose. Phase 3 tests the instrument** *(observed 2026-08-16, when
-`connect-expansion.md` became the first tour to complete all three)*. In phase 2 he follows the
-tour, so the tour is what fails. In phase 3 he *explores* — clicking links out of order, reading
-panes the prose never mentions, hovering things — so the **panes and the navigation** are what
-fail. That day's phase 3 produced three teaching answers and, alongside them: a missing UI
+**Walking tests the prose. Exploring tests the instrument** *(observed 2026-08-16, when
+`connect-expansion.md` became the first tour to see all three)*. On a walk he follows the
+tour, so the tour is what fails. Exploring, he leaves the route — clicking links out of order,
+reading panes the prose never mentions, hovering things — so the **panes and the navigation** are
+what fail. That day's exploring produced three teaching answers and, alongside them: a missing UI
 explanation, a bridge that had stopped publishing what a pane drew, three dead scroll areas, tour
 links that worked once per session, link navigation broken for nine of eleven stages, and a
 divider that misremembered its width.
 
 **None of those are connection-specific.** They are shared surfaces, so the expectation for the
-*next* tour's phase 3 is that it finds far fewer — and if it does not, the finding is that phase 3
+*next* tour is that exploring finds far fewer — and if it does not, the finding is that exploring
 exercises something the tests still cannot reach, which is worth more than the individual bugs.
 
-#### Phase 2 cost nothing the second time — first evidence that the template transfers
+#### The walk cost nothing the second time — first evidence that the template transfers
 
 **`dae-construction.md`, walked 2026-08-17.** Doug: *"It works correctly. And, it is effective. It
 seems to follow the tour template very well. Just enough instruction and no more."* **Zero
 corrections.**
 
-That is a different result from `connect-expansion.md`, whose phase 2 took most of a day of
+That is a different result from `connect-expansion.md`, whose walk took most of a day of
 iteration — and the difference is not the subject matter. It is the first tour *written* under the
-template, by an author who had already been through phase 2 once and knew what the reader would
+template, by an author who had already walked one and knew what the reader would
 know. Which is the claim the template was making, now with one instance behind it.
 
 **But do not read the absence of questions as success**, which `question-ledger.md` states as a
 standing rule: *"No questions at all is ambiguous and must not be read as success."* What counts
 here is his **explicit** report that it was effective — an assessment, not a silence. The
-detailed questions belong to phase 3, which has not happened for this tour yet, and phase 3 is
+detailed questions come from exploring, which has not happened for this tour yet, and exploring is
 also where the panes get stressed rather than merely followed.
 
-**So the honest status is: phase 2 clean, phase 3 outstanding.** One tour has completed all three
-(`connect-expansion.md`); this one has completed one.
+**So the honest status is: walked clean, exploring outstanding.** One tour has seen all three
+(`connect-expansion.md`); this one has been walked only.
 
 **The test for "not too little, not too much" is therefore operational, not aesthetic:** *could
 this question have been asked before the tour?* One of the three that morning — *why must an
@@ -685,9 +697,9 @@ named exemplar before writing a new tour of that kind.
 
 ### Concept — `connect-expansion.md`
 
-**Doug, after walking it: *"That is the template for all other tours."*** — and after the phase-1
+**Doug, after walking it: *"That is the template for all other tours."*** — and after the drafting
 sweep: *"all of your phase 1 concept tours have been great. You have completely nailed that
-format."*
+format."* *(His words, 2026-08-17, before the numbering was retired; "phase 1" there is drafting.)*
 
 **This template is frozen.** It is validated by Doug's walks, which is the one signal Claude cannot
 generate, so it changes only on his report. The shape of every stop:
