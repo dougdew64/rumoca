@@ -6256,6 +6256,24 @@ attempting to implement that algorithm for Rumoca."*
 
 **Not scheduled. Not started.** <!-- unbuilt: rumoca_phase_structural::pantelides -->
 
+> ### ⟶ UNBLOCKED IS NOT NEXT — Doug deferred it the same day it was unblocked, 2026-08-22
+>
+> *"I won't be working on #83 for a while. I have so much other learning and work to do first."*
+>
+> **Read this before acting on anything below.** The oracle experiment settled that morning, which
+> retired prerequisite 1 and made every other sentence in this entry read as *go* — adjudicated
+> gap, robotics-critical, the same item as `#5`, a ready-made acceptance test. **All of that is
+> still true and none of it makes this the next thing.** An entry that argues hard for its own
+> value is exactly the one a later session mistakes for a plan.
+>
+> **What deferral does not undo:** the gap is still adjudicated rather than inferred, `#5` is still
+> parked on it, and **prerequisite 3 — asking the maintainers whether pattern-based is deliberate —
+> is independent of ever implementing it** and stays worth doing on its own.
+>
+> **Do not re-derive urgency from the robotics framing.** Doug's degree starting is why the item
+> matters, not evidence about when he wants to spend weeks writing a structural algorithm. He has
+> said which; that is his call and it is recorded here so it does not have to be made twice.
+
 ### The gap is narrower than "Rumoca lacks index reduction"
 
 Audited 2026-08-22 by reading the crates. **Most of the surrounding machinery exists**; what is
