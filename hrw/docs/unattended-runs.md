@@ -102,15 +102,15 @@ every other limit in this repository has been.
 keeping: with `Events` deleted from **both** the tab array and the old test's list — which is what
 *"added and forgotten"* looks like — the old test passes and the new one fails naming `Events`.
 
-### ⟶ ONE BOUNDARY CALL FOR DOUG TO RULE ON
+### ✅ THE BOUNDARY CALL WAS RATIFIED — Doug, 2026-08-23
 
-**The plan said "app.rs only". Items 2 and 3 landed in `stage_tabs.rs` and `ui_tests.rs`.**
+**The plan said "app.rs only"; items 2 and 3 landed in `stage_tabs.rs` and `ui_tests.rs`.** Claude
+judged them in scope — both are app-side modules split out of `app.rs`, and item 2's agreed text
+(*"every per-stage system"*) spans twelve files by construction, so a literal reading made the item
+impossible. Doug: **"Your scope call was correct."**
 
-Claude judged these in scope — both are app-side UI modules split out of `app.rs`, and item 2's
-agreed text (*"every per-stage system"*) spans twelve files by construction, so a literal reading
-would have made the item impossible. **Neither is on the no-go list.** But it is a widening of a
-stated scope, decided with nobody to ask, and that is exactly the class this protocol exists to
-surface rather than let pass unnoticed.
+**So the standing rule: "app.rs only" means the app side, not the file.** `worker.rs` and the
+compile path remain the boundary that matters, and they are on the no-go list where they belong.
 
 ### Two things declined, and why
 
@@ -124,3 +124,37 @@ surface rather than let pass unnoticed.
 **One near-miss worth recording.** Item 1 produced a synthetic companion test that was written,
 run green, and then **deleted** — its four cases were already covered by literals in an older test
 Claude had not known about. It would have shipped as a duplicate.
+
+### ⟶ THE HABIT IS ADOPTED — Doug, 2026-08-23, and the lens to lead with
+
+**"Tonight's test was a success… we should make a habit of this sort of thing."** Adopted on one
+night's evidence, which Claude noted is `n = 1`; the guard against that is not waiting, it is
+**measuring**, and Doug had already agreed the lens rotates if yield falls.
+
+**Two numbers decide whether a night was worth it**, and they cost nothing to record here:
+
+- **findings per night** — the obvious one, and the less informative one
+- **who caught it** — the repo's one reliable signal for Claude's comprehension failing
+
+**If nightly audits start finding things before Doug does, the habit is working. If he keeps
+finding things the nights walked past, the lens is aimed wrong** — change the lens, not the
+cadence.
+
+#### The lens to lead with: A CLAIM THAT OUTRUNS ITS EVIDENCE
+
+**2026-08-22 found the same defect three times in different clothes**, and none of them was a
+product bug:
+
+- `CLAUDE.md` restating, at length, records it *said in the same breath* lived in another file.
+- A doc comment promising that a hand-written roster made a forgotten tab *"fail by name"*, by
+  reasoning that was circular.
+- A test named `…shows_every_fixture…` that checked **9 of 22**.
+
+**The shape is one thing: prose asserting a guarantee the mechanism underneath does not provide.**
+It is invisible to the compiler, invisible to the suite, and *worse than silence* — it tells the
+next reader the case is covered, so acting on it means **not looking**. That is the wrong-negative
+asymmetry this repository already treats as the error nobody catches.
+
+**So the first lens is: find a claim, then check the mechanism actually delivers it.** Test names
+and doc comments that say *every*, *all*, *always*, *never*, or *fails by name* are the cheapest
+place to start looking.
