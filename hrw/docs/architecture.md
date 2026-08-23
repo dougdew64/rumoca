@@ -10,6 +10,28 @@ How the observatory works, for a reader who knows Rust and egui basics but hasn'
 read the HRW source. Written as onboarding material and as documentation for an
 upstream PR to the Rumoca repository.
 
+## Scope of maintenance — settled 2026-08-23, do not re-litigate
+
+**This file is maintained as LOOKUP INSURANCE**, against the unlikely case that HRW's plumbing has
+to be touched without Claude's help — and as documentation for the upstream audience above. It was
+*written* as onboarding material; it is *maintained* as a reference.
+
+**What is machine-checked:** the three generated regions (`architecture_regions_are_current`), the
+stage roster against `StageKind`, that every pipeline stage is named in the prose, every cited file
+path, and — since 2026-08-23 — **every cited code symbol** (`qualified_citations_resolve`). That
+last one exists because a paragraph here described a mechanism *deleted on 2026-08-04* and nothing
+could tell. **A description that drifts while its symbols survive would still slip through**; that
+gap is known and not currently closed.
+
+**What is deliberately NOT done: improving the prose for readability or completeness.** Doing so
+requires reading the document end to end, and that time is committed to this project's purpose —
+the mathematics and algorithms of continuous-system simulation — rather than to HRW's plumbing.
+
+**The residual risk is accepted knowingly.** In an emergency this reference may be harder to use
+than a document written for the occasion. Doug, 2026-08-23: *"That is how insurance works."*
+**It is a trade, not an oversight** — so a rewrite needs a reason that changes the trade, not merely
+the observation that the document could be friendlier.
+
 ---
 
 ## 1. What HRW is
