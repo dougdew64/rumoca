@@ -206,7 +206,15 @@ impl ConnectionAnimation {
     /// # Why this pane, and why it was the one left
     ///
     /// It is the **only view that shows connection sets**, which makes it the only
-    /// evidence for `connect-expansion.md` Stop 1 — *three nodes, of sizes 2, 2 and 3*.
+    /// evidence behind `connect-expansion.md` Stop 1.
+    ///
+    /// **What it shows is SETS, not nodes** — six of them for `RcCircuit`. The stop's
+    /// *three nodes, of sizes 2, 2 and 3* follows only by dividing by the two kinds,
+    /// and is the reader's own arithmetic. **"Node" appears nowhere in Rumoca and
+    /// nowhere in HRW**; this comment used to call the pane evidence *for* the node
+    /// count, which is the same conflation the tour itself made until Doug caught it
+    /// on 2026-08-22.
+    ///
     /// Every other claim in that tour became checkable when the equation sheet started
     /// publishing; this one stayed on Claude's word alone.
     ///
