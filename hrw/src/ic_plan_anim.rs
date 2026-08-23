@@ -300,22 +300,26 @@ impl IcPlanAnimation {
 
         ui.add_space(6.0);
         ui.label(egui::RichText::new("Solve order so far").strong());
-        egui::ScrollArea::vertical()
-            .auto_shrink([false, true])
-            .max_height(300.0)
+        // **No inner scroll area, and no height cap.** `App::ic_plan_anim_ui`
+        // already wraps this whole view in a vertical scroll area, so a second
+        // one nested inside it capped the solve order at 300pt and captured the
+        // mouse wheel. `RcCircuit` and `OverInitRc` plan 21 blocks each, which
+        // overflows that cap — the list scrolled inside a small box while the
+        // pane around it stayed empty.
+        //
+        // The parent scrolls; this view just renders. Held by
+        // `playback::tests_layout::a_view_inside_a_scrolling_pane_does_not_scroll_or_cap_itself`.
+        egui::Grid::new("ic_plan_grid")
+            .num_columns(3)
+            .spacing([10.0, 2.0])
+            .striped(true)
             .show(ui, |ui| {
-                egui::Grid::new("ic_plan_grid")
-                    .num_columns(3)
-                    .spacing([10.0, 2.0])
-                    .striped(true)
-                    .show(ui, |ui| {
-                        for (i, b) in self.playback.frames().iter().take(done).enumerate() {
-                            ui.label(format!("{}.", i + 1));
-                            ui.label(egui::RichText::new(block_kind_label(b)).monospace());
-                            ui.label(egui::RichText::new(block_targets(b)).monospace());
-                            ui.end_row();
-                        }
-                    });
+                for (i, b) in self.playback.frames().iter().take(done).enumerate() {
+                    ui.label(format!("{}.", i + 1));
+                    ui.label(egui::RichText::new(block_kind_label(b)).monospace());
+                    ui.label(egui::RichText::new(block_targets(b)).monospace());
+                    ui.end_row();
+                }
             });
     }
 }

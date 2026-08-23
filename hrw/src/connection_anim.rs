@@ -1075,51 +1075,14 @@ mod live_session_tests {
     }
 }
 
-#[cfg(test)]
-mod tests_layout {
-    /// **This view must not create a scroll area of its own.**
-    ///
-    /// Doug, 2026-08-16: *"the connection sets lists are not using all available
-    /// vertical space… showing only three connection sets per list."*
-    ///
-    /// `app::connection_anim_ui` already wraps the whole view in a vertical
-    /// `ScrollArea`. Three more were nested inside it, each capped with a magic
-    /// height — 240pt for the lanes, 200pt for the current frame's lists. A set
-    /// costs a header plus one line per variable plus one line per equation, so
-    /// 240pt is about three sets: the content overflowed a small box while the pane
-    /// around it stayed empty, and the wheel scrolled the box instead of the pane.
-    ///
-    /// **A vertical scroll area inside a vertical scroll area is the defect**, and
-    /// the height cap only decided how obvious it was. This is the second
-    /// scroll-area bug in the project; the first (a vertical scroll area reporting
-    /// its content width to its parent) hid for eight days and froze the divider.
-    ///
-    /// # What this checks, and what only Doug can
-    ///
-    /// It reads the source for a scroll-area construction or a fixed height. It
-    /// **cannot** tell whether the pane now looks right — `CLAUDE.md`: Claude
-    /// verifies content, never pixels. That half is his report.
-    ///
-    /// **This doc comment must not spell the type followed by a path separator**,
-    /// because the check reads this very file and the first draft matched its own
-    /// explanation — four lines below a paragraph warning about exactly that. Fourth
-    /// instance in one day of a source check finding its own prose.
-    #[test]
-    fn the_connections_view_does_not_nest_its_own_scroll_area() {
-        let src = include_str!("connection_anim.rs");
-        // Assembled so this file does not contain the strings being searched for.
-        let scroll = format!("{}::", "ScrollArea");
-        let cap = format!("{}(", "max_height");
-
-        assert!(
-            !src.contains(scroll.as_str()),
-            "this view constructs a scroll area; the parent already scrolls, so a \
-             nested one caps the lanes and eats the mouse wheel",
-        );
-        assert!(
-            !src.contains(cap.as_str()),
-            "this view sets a fixed height; the pane's height is the parent's to \
-             decide, and a magic cap is what limited each lane to three sets",
-        );
-    }
-}
+// **The layout check that used to live here now covers every view it applies
+// to**, in `playback::tests_layout`. It enforces the same two things for this
+// file and derives its roster from `app.rs` rather than naming one module, which
+// is what let the identical defect sit unnoticed in `alias_anim` and
+// `ic_plan_anim`. Its doc comment carries the history — Doug's report, the two
+// magic heights, and what only he can verify.
+//
+// **This file must still not spell the type followed by a path separator**, in a
+// comment or anywhere else: the check reads it, and the first draft of the
+// original matched its own explanation four lines below the paragraph warning
+// about exactly that.

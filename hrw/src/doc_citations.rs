@@ -2004,8 +2004,9 @@ Some prose.
     /// positives, and a checker that cries wolf gets switched off.**
     ///
     /// `module::item` is unambiguous. There were **14, and all 14 resolve** once
-    /// modules count as items — `connection_anim::tests_layout` is a `mod`, not a
-    /// `fn`, which is the single case that made the naive form look broken. **It
+    /// modules count as items — `playback::tests_layout` is a `mod`, not a
+    /// `fn`, which is the single case that made the naive form look broken (it was
+    /// `connection_anim`'s until that check was generalised). **It
     /// starts green with no exemption list**, which is the only shape of this check
     /// worth having.
     ///

@@ -179,25 +179,33 @@ impl AliasAnimation {
 
         ui.add_space(6.0);
         ui.label(egui::RichText::new("Substitutions so far").strong());
-        egui::ScrollArea::vertical()
-            .auto_shrink([false, true])
-            .max_height(320.0)
+        // **No inner scroll area, and no height cap.** `App::alias_anim_ui`
+        // already wraps this whole view in a vertical scroll area, so a second
+        // one nested inside it did two harmful things and no useful one: it
+        // capped the list at 320pt — about 16–18 rows — and it captured the
+        // mouse wheel, so scrolling over the list moved the list instead of the
+        // page.
+        //
+        // `Drivetrain` has **77** alias eliminations, so under a quarter of them
+        // were reachable, inside a small box while the pane around it stayed
+        // empty. That specimen is the index-reduction tour's centrepiece.
+        //
+        // The parent scrolls; this view just renders. A tall model makes a tall
+        // pane, which is the honest result. Held by
+        // `playback::tests_layout::a_view_inside_a_scrolling_pane_does_not_scroll_or_cap_itself`.
+        egui::Grid::new("alias_elim_grid")
+            .num_columns(3)
+            .spacing([10.0, 2.0])
+            .striped(true)
             .show(ui, |ui| {
-                egui::Grid::new("alias_elim_grid")
-                    .num_columns(3)
-                    .spacing([10.0, 2.0])
-                    .striped(true)
-                    .show(ui, |ui| {
-                        for (i, f) in self.playback.frames().iter().take(done).enumerate() {
-                            ui.label(format!("{}.", i + 1));
-                            ui.label(egui::RichText::new(&f.variable).monospace());
-                            ui.label(
-                                egui::RichText::new(format!("\u{2192} {}", f.replacement))
-                                    .monospace(),
-                            );
-                            ui.end_row();
-                        }
-                    });
+                for (i, f) in self.playback.frames().iter().take(done).enumerate() {
+                    ui.label(format!("{}.", i + 1));
+                    ui.label(egui::RichText::new(&f.variable).monospace());
+                    ui.label(
+                        egui::RichText::new(format!("\u{2192} {}", f.replacement)).monospace(),
+                    );
+                    ui.end_row();
+                }
             });
     }
 }

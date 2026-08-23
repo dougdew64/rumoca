@@ -433,3 +433,149 @@ mod tests {
         assert!(Playback::<usize>::recorded(vec![], 0.5).is_empty());
     }
 }
+
+/// The no-nested-scroll rule, enforced over every view it applies to.
+///
+/// This lives here rather than beside any one view because the rule is about a
+/// *family*: every member of the derived set today is a playback view, and this
+/// module already owns what they share. A future non-animation entry would still
+/// be checked — the set follows the wrapper, not the trait.
+#[cfg(test)]
+mod tests_layout {
+    use std::path::{Path, PathBuf};
+
+    /// The views `app.rs` draws inside a vertical scroll area of its own.
+    ///
+    /// **Derived from `app.rs`, never listed here**, and that is the point. A
+    /// hand-written roster is a claim that outruns its evidence: the next view
+    /// wrapped in a scroll area would simply be absent from it, and absence
+    /// leaves no gap where the missing check was. The 2026-08-22 audit found
+    /// that same shape three times in one day, one of them a test named
+    /// `…shows_every_fixture…` that checked nine of twenty-two.
+    ///
+    /// The pairing is by name — `App::alias_anim_ui` owns `src/alias_anim.rs` —
+    /// and a view whose file cannot be read **fails** rather than being skipped,
+    /// because a rename is exactly how a member would leave the set unnoticed.
+    ///
+    /// Reading `app.rs` line by line rather than with a parser is sound here for
+    /// one specific reason: `cargo fmt` runs before every gate, so a method of
+    /// `impl App` opens at four spaces and closes with `}` at four spaces.
+    fn scroll_wrapped_views() -> Vec<(String, PathBuf)> {
+        let hrw = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let app = std::fs::read_to_string(hrw.join("src/app.rs")).expect("app.rs must be readable");
+
+        // Assembled rather than written, so this file does not contain the
+        // strings it searches for. The first draft of the original check matched
+        // its own explanation, four lines below the paragraph warning about it.
+        let vertical = format!("{}::vertical()", "ScrollArea");
+
+        let mut out = Vec::new();
+        let mut current: Option<&str> = None;
+        let mut wraps = false;
+
+        for line in app.lines() {
+            let opener = line
+                .strip_prefix("    fn ")
+                .or_else(|| line.strip_prefix("    pub fn "))
+                .and_then(|rest| rest.split_once("_ui(").map(|(name, _)| name));
+
+            if let Some(name) = opener {
+                current = Some(name);
+                wraps = false;
+            } else if line == "    }" {
+                if let Some(name) = current.take()
+                    && wraps
+                {
+                    out.push((name.to_owned(), hrw.join(format!("src/{name}.rs"))));
+                }
+            } else if line.contains(vertical.as_str()) {
+                wraps = true;
+            }
+        }
+        out
+    }
+
+    /// **A view drawn inside a scrolling pane must not scroll or cap itself.**
+    ///
+    /// Doug, 2026-08-16: *"the connection sets lists are not using all available
+    /// vertical space… showing only three connection sets per list."*
+    ///
+    /// `App::connection_anim_ui` already wrapped that whole view in a vertical
+    /// scroll area, and three more were nested inside it, each with a magic
+    /// height — 240pt for the lanes, 200pt for the frame's lists. A connection
+    /// set costs a header plus a line per variable plus a line per equation, so
+    /// 240pt is about three sets: the content overflowed a small box while the
+    /// pane around it stayed empty, and the wheel scrolled the box instead of the
+    /// page.
+    ///
+    /// **The nesting is the defect; the height cap only set how obvious it was.**
+    /// The parent owns the scrolling and the height, and a child view just
+    /// renders. A tall model then makes a tall pane, which is the honest result.
+    ///
+    /// # Why this replaced a per-file check
+    ///
+    /// The rule was enforced for **one** file, by `connection_anim`'s own test,
+    /// and was never generalised — so the same defect sat in two other views for
+    /// a week. This test found both on its first run: `alias_anim` capped at
+    /// 320pt, holding ~16–18 rows against `Drivetrain`'s **77** alias
+    /// eliminations, and `ic_plan_anim` capped at 300pt against `RcCircuit`'s 21
+    /// blocks. `Drivetrain` is the index-reduction tour's centrepiece, so the
+    /// tour's own specimen was showing under a quarter of its list.
+    ///
+    /// # What this checks, and what only Doug can
+    ///
+    /// It reads the source. It **cannot** tell whether a pane now looks right —
+    /// `CLAUDE.md`: Claude verifies content, never pixels. Both scroll-area bugs
+    /// in this project were reported by Doug and neither is visible to
+    /// `egui_kittest`, since a clipped child is still in the accessibility tree.
+    /// That half is his report.
+    #[test]
+    fn a_view_inside_a_scrolling_pane_does_not_scroll_or_cap_itself() {
+        let views = scroll_wrapped_views();
+
+        // Non-vacuity, and it names a specific member for a reason: if the scan
+        // ever stops matching, an empty set would pass while checking nothing —
+        // the silent-vacuity failure this protocol exists to avoid. The
+        // connections view is the one the rule was born on.
+        assert!(
+            views.iter().any(|(name, _)| name == "connection_anim"),
+            "the scan found no wrapped view named `connection_anim`, so it has \
+             stopped reading app.rs correctly and is checking nothing. Found: {:?}",
+            views.iter().map(|(n, _)| n).collect::<Vec<_>>(),
+        );
+
+        let scroll = format!("{}::", "ScrollArea");
+        let cap = format!("{}(", "max_height");
+
+        let mut offenders = Vec::new();
+        for (name, path) in &views {
+            let src = std::fs::read_to_string(path).unwrap_or_else(|e| {
+                panic!(
+                    "app.rs wraps `{name}` but {} cannot be read: {e}",
+                    path.display()
+                )
+            });
+            if src.contains(scroll.as_str()) {
+                offenders.push(format!(
+                    "{name} constructs a scroll area; the parent already scrolls, so a \
+                     nested one caps the content and eats the mouse wheel"
+                ));
+            }
+            if src.contains(cap.as_str()) {
+                offenders.push(format!(
+                    "{name} sets a fixed height; the pane's height is the parent's to \
+                     decide, and a magic cap is what limited each lane to three sets"
+                ));
+            }
+        }
+
+        assert!(
+            offenders.is_empty(),
+            "{} of {} scroll-wrapped views nest their own scrolling. The fix is \
+             subtractive — delete the inner scroll area and its height cap:\n  {}",
+            offenders.len(),
+            views.len(),
+            offenders.join("\n  "),
+        );
+    }
+}

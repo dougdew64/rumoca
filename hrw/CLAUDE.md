@@ -236,18 +236,15 @@ on.
 
 **AND THE SECOND SCROLL-AREA BUG, 2026-08-16: NEVER NEST A VERTICAL SCROLL AREA INSIDE
 ONE.** Doug: *"the connection sets lists are not using all available vertical space…
-showing only three connection sets per list."* `connection_anim_ui` wraps the view in a
-vertical scroll area; the view then created **three more** inside it, each with a magic
-height — 240pt for the lanes, 200pt for the frame's lists. A connection set costs a header
-plus a line per variable plus a line per equation, so 240pt is about three sets: content
-overflowed a small box while the pane around it stayed empty, and the wheel scrolled the
-box instead of the page.
+showing only three connection sets per list."* The rule: **the parent owns the scrolling
+and the height, and a child view just renders.** A tall model then makes a tall pane,
+which is the honest result. **The nesting is the defect; the height cap only set how
+obvious it was** — the full account is on the test's own doc comment.
 
-**The nesting is the defect; the height cap only set how obvious it was.** The rule:
-**the parent owns the scrolling and the height, and a child view just renders.** A tall
-model then makes a tall pane, which is the honest result.
-`connection_anim::tests_layout` fails if that file constructs a scroll area or sets a
-fixed height at all.
+`playback::tests_layout` fails if a view `app.rs` wraps in a scroll area constructs one or
+caps its own height, and **derives that roster from `app.rs` instead of naming a file.**
+The per-file version guarded one view for a week while the identical defect sat in
+`alias_anim` and `ic_plan_anim`; generalising it on 2026-08-23 found both on its first run.
 
 **Both scroll-area bugs were reported by Doug, not by a test**, and neither is visible to
 `egui_kittest` — a clipped child is still in the accessibility tree. Layout remains the
