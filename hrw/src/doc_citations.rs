@@ -1736,7 +1736,19 @@ Some prose.
             "docs/CHARTER.md",
             "docs/README.md",
         ];
-        const MANDATORY_BUDGET: usize = 1911;
+        // 1911 → 1928 on 2026-08-23, and the reasoning is required to be here.
+        //
+        // **Restoring a check the 2026-08-22 prune deleted.** That prune removed
+        // `CLAUDE.md`'s permission-allowlist test along with a stale per-machine
+        // setup block — and left **two lines elsewhere in the file still referring
+        // to it**, so the file cited a rule it no longer contained.
+        //
+        // It is worth 17 lines because it is the one precondition whose absence is
+        // **silent and fatal**: `.claude/` is gitignored by upstream, so on a new
+        // machine every Bash call prompts, and during an unattended run a prompt is
+        // indistinguishable from a hang. Doug asked whether a session would discover
+        // it automatically this evening. It would not have.
+        const MANDATORY_BUDGET: usize = 1928;
         const CURRENT_WORK_BUDGET: usize = 263;
 
         /// **Tier 2 — conditionally mandatory**, and the hole tier 1 left open.

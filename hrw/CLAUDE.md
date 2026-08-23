@@ -833,6 +833,24 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 
 ## Running things
 
+**FIRST THING ON A MACHINE YOU HAVE NOT RUN ON BEFORE — CHECK THE PERMISSION ALLOWLIST.**
+`.claude/` is gitignored **by upstream Rumoca** (`e658c776`), so `.claude/settings.json` does not
+travel: a fresh clone prompts Doug for approval on **every** Bash call.
+
+```powershell
+Test-Path (Join-Path (git rev-parse --show-toplevel) ".claude/settings.json")
+```
+
+False → [`docs/setup-windows.md`](docs/setup-windows.md) §8. **Anchored at the repo root on
+purpose** — the bare relative form reports False from `hrw/` and would order a session to recreate a
+file it already has.
+
+**Claude runs this unprompted, because only Claude can see the need:** Doug feels the cost and has
+no reason to suspect a file he has never read. **And it is fatal to an unattended run** — asleep, a
+permission prompt is indistinguishable from a hang, so the run produces nothing and no error to
+read. *(Deleted from this file by the 2026-08-22 prune and restored 2026-08-23, when Doug asked
+whether it was still discoverable. Two other lines here had been referring to it the whole time.)*
+
 **ITERATING AND GATING ARE DIFFERENT ACTS, AND CONFLATING THEM COST DOUG TWO HOURS**
 *(measured 2026-08-15, from the session transcript)*. Of 274 minutes of compute that day,
 **172 went to `--features slow-tests` across 61 invocations** — 63 % of all waiting, for
