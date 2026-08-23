@@ -1582,6 +1582,16 @@ Some prose.
         const MANDATORY_BUDGET: usize = 1911;
         const CURRENT_WORK_BUDGET: usize = 263;
 
+        /// **Tier 2 — conditionally mandatory**, and the hole tier 1 left open.
+        ///
+        /// `CLAUDE.md` says to read `fixture-tours/README.md` before writing or
+        /// converting a tour, so it is mandatory *for tour work* — and it grew **101
+        /// lines on 2026-08-22 alone**, entirely outside tier 1's budget. Prose that
+        /// cannot grow in `CLAUDE.md` will otherwise grow here instead, which is
+        /// displacement rather than reduction.
+        const CONDITIONAL: &[&str] = &["docs/fixture-tours/README.md"];
+        const CONDITIONAL_BUDGET: usize = 877;
+
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let mut total = 0usize;
         let mut rows: Vec<String> = Vec::new();
@@ -1625,6 +1635,112 @@ Some prose.
              that decides whether the documents become unreadable. Move closed history to \
              DECISIONS.md, or raise the budget in THIS commit with the reasoning.",
             rows.join("\n  "),
+        );
+
+        for rel in CONDITIONAL {
+            let text = std::fs::read_to_string(hrw.join(rel))
+                .unwrap_or_else(|e| panic!("{rel} is conditionally mandatory: {e}"));
+            let n = text.lines().count();
+            assert!(n > 50, "{rel} has only {n} lines \u{2014} wrong file?");
+            assert!(
+                n <= CONDITIONAL_BUDGET,
+                "{rel} is {n} lines, budget {CONDITIONAL_BUDGET}.\n\n\
+                 It is read before any tour work, so it is mandatory when it matters. \
+                 Prose barred from CLAUDE.md must not simply reappear here \u{2014} that \
+                 is displacement, not reduction.",
+            );
+        }
+    }
+
+    /// Backticked `module::item` spans in `text` — the unambiguous code citations.
+    pub(super) fn qualified_code_citations(text: &str) -> Vec<String> {
+        let mut out = Vec::new();
+        let mut rest = text;
+        while let Some(open) = rest.find('`') {
+            let after = &rest[open + 1..];
+            let Some(close) = after.find('`') else { break };
+            let span = &after[..close];
+            rest = &after[close + 1..];
+            // A path, not prose: segments of identifier characters joined by `::`.
+            // Anything with whitespace, a slash or parentheses is a phrase or a file
+            // path, and a code fence's contents fail the same way.
+            if span.contains("::")
+                && span.split("::").all(|s| {
+                    !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+                })
+            {
+                out.push(span.to_owned());
+            }
+        }
+        out
+    }
+
+    /// **A pointer at a checker must resolve — that is what makes "shrink to a
+    /// pointer" safe.**
+    ///
+    /// Step 4 of the 2026-08-22 document-wall plan: when a rule becomes a test, the
+    /// prose in `CLAUDE.md` shrinks to a sentence and a pointer, and the reasoning
+    /// lives on the test's own doc comment. **That trade is only safe if the pointer
+    /// cannot rot** — a renamed test would leave the mandatory documents citing
+    /// something that does not exist, and a reader following it finds nothing.
+    ///
+    /// # Why module-qualified citations, and only those
+    ///
+    /// Measured before building this. The mandatory docs hold **27** backticked
+    /// snake_case identifiers, of which **9 are not code items at all**: JSON fields
+    /// (`differentiated_rows`, `n_differentiations`, `zero_crossing_condition`), a
+    /// crate (`egui_commonmark`), examples (`gen_tour_catalogue`), an event name
+    /// (`ide_opened_file`). **A checker over all of them would be a third false
+    /// positives, and a checker that cries wolf gets switched off.**
+    ///
+    /// `module::item` is unambiguous. There were **14, and all 14 resolve** once
+    /// modules count as items — `connection_anim::tests_layout` is a `mod`, not a
+    /// `fn`, which is the single case that made the naive form look broken. **It
+    /// starts green with no exemption list**, which is the only shape of this check
+    /// worth having.
+    ///
+    /// # What it does not claim
+    ///
+    /// Resolution is by **name**, via [`symbol_is_defined`] — the same resolver the
+    /// `unbuilt:` tags use. It proves the name exists somewhere in the workspace, not
+    /// that the citation points at the right thing. A rename is what this catches.
+    #[test]
+    fn qualified_citations_resolve() {
+        const DOCS: &[&str] = &[
+            "CLAUDE.md",
+            "docs/working-with-doug.md",
+            "docs/CHARTER.md",
+            "docs/README.md",
+            "docs/fixture-tours/README.md",
+        ];
+
+        let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let mut checked = 0usize;
+        let mut broken: Vec<String> = Vec::new();
+        for rel in DOCS {
+            let text =
+                std::fs::read_to_string(hrw.join(rel)).unwrap_or_else(|e| panic!("{rel}: {e}"));
+            for cite in qualified_code_citations(&text) {
+                checked += 1;
+                if !symbol_is_defined(&cite) {
+                    broken.push(format!("{rel}: `{cite}`"));
+                }
+            }
+        }
+
+        // Non-vacuity: an extractor that silently matched nothing would pass forever.
+        assert!(
+            checked >= 10,
+            "only {checked} qualified citations found \u{2014} the extractor is broken, \
+             not the documents"
+        );
+        assert!(
+            broken.is_empty(),
+            "a document cites code that does not exist:\n  {}\n\nThese are pointers a \
+             reader follows instead of prose that was deleted, so a dead one is worse \
+             than the paragraph it replaced. Fix the citation, or restore what it \
+             pointed at.",
+            broken.join("\n  "),
         );
     }
 

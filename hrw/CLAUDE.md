@@ -298,13 +298,20 @@ around **seams**, so an act that is not a seam had no row in it and stayed invis
 someone stepped outside the frame. **When a plan has produced no progress on something
 obvious, check whether its own structure has a place to put it.**
 
-**INSERT A TEST AFTER A FUNCTION'S CLOSING BRACE, never before its `fn` line.** A doc comment
-and its attributes sit *above* the item, so anything placed between them is adopted by the
-wrong one — the new test gets two `#[test]`s and **the old function silently stops being a
-test.** Nothing fails; the suite goes green. This has bitten three times: it broke Doug's
-debugger launch on 2026-07-31 and twice disabled
-`a_broken_specimen_does_not_poison_the_next_compile` on 2026-08-01.
-`doc_citations::no_function_has_two_test_attributes` now catches it.
+**INSERT A TEST AFTER A FUNCTION'S CLOSING BRACE, never before its `fn` line** — anything placed
+between a doc comment and its item is adopted by the wrong one, and the old function silently
+stops being a test. Bitten three times; the history and the mechanism are on
+`doc_citations::no_function_has_two_test_attributes`, which catches it.
+
+**A CHECKER RETIRES THE PROSE IT REPLACES** *(2026-08-22)*. When a rule becomes a test, the prose
+here shrinks to **one sentence and a pointer at the test** — the reasoning belongs on that test's
+doc comment, beside the code enforcing it, where it cannot drift. This paragraph paid for itself
+that way: `no_function_has_two_test_attributes` and `claims_of_absence_are_still_true` already
+carried their histories, so the copies here became pointers.
+
+**The budget is the forcing function, not goodwill**
+(`doc_citations::the_mandatory_reading_path_stays_small`), **and a pointer must resolve**
+(`doc_citations::qualified_citations_resolve`) — which is what makes this safe against a rename.
 
 **EDIT FILES WITH THE EDIT/WRITE TOOLS. Do not generate source text through a shell.** Three
 separate corruptions on 2026-08-01 share this one root, and they were *silent* — the tool
@@ -354,19 +361,12 @@ tag it so the claim is checkable:
 Sorting the corpus is not built. <!-- unbuilt: survey::sort_rows -->
 ```
 
-**Name the symbol as it will actually be spelled.** The example above used to read
-`survey_filter`, and `ideas.md` carried that tag for a day after the filter shipped as
-`matches_filter` — **the tag passed the whole time, because it resolved nothing.** A tag that
-resolves nothing is indistinguishable from a claim that is still true, so the checker was green
-on a claim that was false. The mechanism only fails when the target *does* resolve; a
-misspelled target is silently permanent.
-
-`doc_citations::claims_of_absence_are_still_true` fails if the target **does** resolve.
-**A wrong negative is the one error nobody catches**: acting on a wrong *positive* means
-going to use the thing and finding it missing, while acting on a wrong *negative* means **not
-looking**. Four stale ones were found on 2026-08-01, and `ideas.md` #42 was two days from
-having its link vocabulary re-implemented on top of itself. Coverage is expected to be low —
-tag when you write the claim, the way provenance tags work.
+**Name the symbol as it will actually be spelled**, because the mechanism only fires when the
+target *does* resolve — **a misspelled target is silently permanent**, and a tag that resolves
+nothing is indistinguishable from a claim that is still true. `doc_citations::claims_of_absence_are_still_true`
+fails if the target resolves; its doc comment carries the four stale cases and why a wrong
+*negative* is the error nobody catches. Coverage is expected to be low — tag when you write the
+claim, the way provenance tags do.
 
 **REFACTOR FOR CLAUDE'S COMPREHENSION, NOT FOR A HUMAN'S** *(Doug, 2026-08-05 — standing
 policy)*. His words: *"no human being has yet needed to comprehend or maintain any functions
