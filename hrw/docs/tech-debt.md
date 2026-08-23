@@ -241,6 +241,8 @@ note; the rest quote the commit.
 | 08-22 | `describe`→`parse` had no round-trip guard | Claude | night 1, column read |
 | 08-22 | a stage with no tab failed nothing; a doc comment claimed otherwise | Claude | night 1 |
 | 08-22 | `…shows_every_fixture…` checked 9 of 22 | Claude | night 1 |
+| 08-23 | `architecture.md` described a re-run **deleted 2026-08-04** — the replay fiction | Claude | extending the citation checker to a file it did not cover |
+| 08-23 | the symbol resolver could not see enum variants — 3 of 6 flags were false | Claude | same run; `egui_plot` was a 4th, external |
 
 **Seven days: Doug 8, Claude 13, toolchain 3.** Against the first two days' **Doug 10, toolchain 5,
 Claude 5**, the rate that matters moved: **Doug from ~5.0/day to ~1.1/day**, while Claude's own
