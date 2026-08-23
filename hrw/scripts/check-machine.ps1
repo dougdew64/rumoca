@@ -21,7 +21,17 @@
   BLOCKING checks fail the script (exit 1). ADVISORY checks report and do not.
 
 .EXAMPLE
-  pwsh -File hrw/scripts/check-machine.ps1
+  powershell -NoProfile -ExecutionPolicy Bypass -File hrw\scripts\check-machine.ps1
+
+.NOTES
+  `powershell`, NOT `pwsh` -- PowerShell 7 is not installed on either of Doug's
+  machines, so `pwsh -File ...` fails with "not recognized" before the script runs.
+  `-ExecutionPolicy Bypass` because the policy is a per-machine setting and a script
+  blocked by it looks like a broken script. Both were found by testing the documented
+  invocation rather than assuming it, on 2026-08-23.
+
+  Written for Windows PowerShell 5.1: no ternaries, no null-coalescing, no `pwsh`-only
+  cmdlets.
 #>
 
 [CmdletBinding()]

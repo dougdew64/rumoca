@@ -10,7 +10,7 @@ procedure is [`../docs/long-runs.md`](../docs/long-runs.md); this page is only t
 
 | Script | Does |
 |---|---|
-| [`check-machine.ps1`](check-machine.ps1) | **Run after switching machines.** Verifies what a `git pull` does not bring: the permission allowlist, whether HRW holds `hrw.exe`, the parsed-artifact cache, the bridge extension. Blocking problems exit 1 and name their fix. |
+| [`check-machine.ps1`](check-machine.ps1) | **Run after switching machines.** Verifies what a `git pull` does not bring: the permission allowlist, whether HRW holds `hrw.exe`, the parsed-artifact cache, the bridge extension. Blocking problems exit 1 and name their fix. Invoke with `powershell -NoProfile -ExecutionPolicy Bypass -File …` — **`pwsh` is not installed.** |
 | [`measure-fidelity.ps1`](measure-fidelity.ps1) | Runs F1-F9 **one model per process**, with a watchdog sampling free RAM and process size every 500 ms. Writes the fidelity report and a memory profile. |
 | ~~`promote-run.ps1`~~ | **Moved to Rust 2026-08-01** — `cargo run -p hrw --example promote_run`. See *The split* below. |
 

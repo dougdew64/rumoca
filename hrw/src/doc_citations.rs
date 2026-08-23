@@ -1763,7 +1763,12 @@ Some prose.
         // day, both surfaced by Doug asking whether something would be found rather
         // than by any checker.** Every check here verifies a claim is TRUE; none
         // verifies a true claim is REACHABLE.
-        const MANDATORY_BUDGET: usize = 1924;
+        // …then 1924 → 1925, an hour later, because the invocation this file
+        // documented was WRONG: `pwsh` is not installed on either machine, so the
+        // command would have failed with "not recognized" on the first machine switch
+        // it was written for. Found by testing it, not by reading it. The extra line
+        // names `powershell` and the flags; the script's own .NOTES carries why.
+        const MANDATORY_BUDGET: usize = 1925;
         // 263 → 264, same commit and same reason as MANDATORY_BUDGET above.
         const CURRENT_WORK_BUDGET: usize = 264;
 

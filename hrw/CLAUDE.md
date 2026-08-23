@@ -839,7 +839,8 @@ unprompted: Doug switches machines twice a week, feels every cost, and cannot se
 coming, while Claude can.
 
 ```powershell
-pwsh -File hrw/scripts/check-machine.ps1
+# `powershell`, NOT `pwsh` (7 is not installed) — and keep both flags; the script says why
+powershell -NoProfile -ExecutionPolicy Bypass -File hrw\scripts\check-machine.ps1
 ```
 
 It verifies what does **not** travel with a `git pull`: the **permission allowlist** (gitignored by
