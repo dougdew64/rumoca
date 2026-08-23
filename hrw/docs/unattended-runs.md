@@ -67,7 +67,25 @@ stranded stage tab and the Flatten sub-view stranding. **Worth one check regardl
 up: `which()` values must be unique**, since they are matched against and a collision misroutes
 silently.
 
-**3 — Reserved** for what 1 and 2 find; otherwise stop at two.
+**3 — Write the Pantelides acceptance test against the committed oracle data.**
+
+**Needs no System Modeler** — the perishable half was captured 2026-08-23 on the machine that has
+it, and lives in
+[`specimen-notebook/CartesianPendulum/oracle/`](specimen-notebook/CartesianPendulum/oracle/).
+**Read that directory's README first**, particularly the tolerance trap: do not pin System
+Modeler's numerical choices as truth.
+
+Write it against **today's API** — compile `CartesianPendulum` through the existing path and assert
+what a correct reduction produces — so it compiles now and the compiler keeps it honest for months.
+It **fails today by design**: `#[ignore]` it with the reason naming `docs/ideas.md` #83, so the day
+Pantelides lands it is a red test turning green rather than a project needing a plan.
+
+Strongest assertions first, because they cannot be wrong: **state count 2**, **`lambda` peaks at
+*m*(*g* + *v*²/*L*) = 29.43 at the bottom**, **the constraint holds**. The 101 trajectory samples
+are the differential half, at a stated relative tolerance per charter §4.3.
+
+**Precedence:** if items 1 or 2 surface a defect that needs fixing, that wins and this moves to the
+next run. The three-item cap is not a quota to fill.
 
 ### The command
 
