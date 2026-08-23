@@ -280,6 +280,19 @@ Claude cannot measure effectiveness, but three **structural proxies** are availa
 - **Prose to the first prediction** bounds how much may be said before the reader tests something.
 - **The tier discipline** names which sentences nothing will ever check — so they get the care.
 
+**VERIFY THE ASSERTIONS; DO NOT PRE-EMPT THE OMISSIONS** *(2026-08-22, from what the connections
+tour actually cost)*. The expensive part of that tour was never the iteration — it was **reading
+Rumoca to check a claim**, writing two specimens, and running System Modeler. Those are Claude's
+hours, not Doug's, which makes them the cheapest available lever on every remaining tour: **every
+claim a draft makes should be checked against the source before Doug ever sees it.**
+
+**The line, and it is easy to cross in the name of thoroughness:** verification targets *claims the
+tour makes*, never *questions the tour does not raise*. Doug's connector-type question — **can a
+voltage potential be connected to a mechanical one?** — was a real omission, and answering it in the
+draft would have prevented him from asking it. This file already says a tour that answers a question
+pre-emptively **spends his attention before he has a reason to want it.** Check what is written;
+leave the gaps to be found.
+
 ### Phase 3 finds omissions, and its answers do NOT automatically become tour content
 
 **Phase 2 asks whether what is written lands. Phase 3 asks what was never written** — a question
@@ -301,6 +314,25 @@ the tour:
 **Doug drew that line himself:** *"That distinction is past the level of useful detail for this
 tour."* Routing everything into the tour is how a tour drifts to reference depth one good question
 at a time.
+
+#### The phases INTERLEAVE — "phase" describes a question, not a stage a tour is in
+
+*(2026-08-22, from watching it happen.)* Doug's connector-type question arrived during what looked
+like a phase-2 walk, but it was **phase-3 shaped**: a detail the tour had never covered, asked by
+someone the tour had already worked on. Its answer routed *into the tour*, which then needed its own
+phase-2 ratification — given five exchanges later.
+
+**So `connect-expansion.md` is phase-2 complete and phase-3 open at the same time**, and every other
+tour will be too. There is no sequence of stages a tour passes through and finishes.
+
+**The rule that falls out, and it is what keeps the walked markers honest:** when a phase-3 answer
+routes *into the tour*, **the new prose enters UNMARKED, and becomes walked only when Doug ratifies
+it.** It is Claude's draft until he has read it, whatever else in the file is already protected.
+That happened twice on 2026-08-22 — the type-claim section and the node clarification — and both
+were marked only after *"the tour content looks good"*.
+
+**The failure it prevents is the one no checker can catch:** prose written by Claude, sitting inside
+a walked tour, carrying a provenance it never earned. See *Marking is Doug's ruling* above.
 
 ### The dangerous quadrant is EFFECTIVE BUT FALSE
 

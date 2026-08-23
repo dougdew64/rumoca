@@ -671,10 +671,22 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >   involved. **A new intro section goes BELOW the tour's opening bold line**, or the catalogue's
 >   description of that tour changes with it.
 >
-> **⟶ THE WALK RESTARTS FROM THE BEGINNING, AT THE CONNECTIONS TOUR — Doug, 2026-08-21.** *"I am
-> going to start completely over on walking tours, beginning with the connections tour."* So
-> `connect-expansion.md` is the live document — which is also the one tour carrying `pane-groups`
-> tables, so **editing those tables means the FULL gate.**
+> **⟶ ✅ CONNECTIONS IS WALKED AND PROTECTED — 2026-08-22. THE NEXT TOUR IS `dae-construction`.**
+>
+> The restart Doug announced on 2026-08-21 is complete: `connect-expansion.md` finished its phase-2
+> walk, and its prose is held by **ten walked regions**. **Doug, 2026-08-22:** *"I will walk tours
+> in the same sequence as the compiler phases."* That sequence is `the-concepts.md`'s own numbering,
+> so the order is **dae-construction → matching (→ matching-live) → blt-ordering → tearing →
+> index-reduction → initialization → solve-lowering → events.**
+>
+> **`index-reduction.md` is mid-walk and waits its turn at #6** — asked and ruled the same day.
+> Doug was shown that it sits five tours ahead of where the order reaches it and answered *"I will
+> walk the tours in compiler phase order."* **The sequence governs; there is no exception for the
+> tour already in progress.** Its harder bar — index reduction explained to someone with only basic
+> calculus — is unchanged and waiting, not abandoned.
+>
+> **`connect-expansion.md` is still the one tour carrying `pane-groups` tables**, so editing those
+> tables still means the FULL gate — that warning outlives the walk.
 >
 > **He also graded the last walk, and the grade is the useful part:** the opening of
 > `index-reduction.md` is *"good. Not yet very good, but nevertheless good. You are definitely
