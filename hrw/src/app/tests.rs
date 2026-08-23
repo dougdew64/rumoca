@@ -5777,3 +5777,80 @@ mod tests_tour_back {
         assert!(app.tour.history.is_empty());
     }
 }
+
+/// **A `▶ Look` link to the specimen already loaded must switch, not recompile.**
+///
+/// Doug, 2026-08-22: *"the Look links always seem to compile specimens, even if those
+/// specimens are already loaded and compiled."* Walking one tour paid a full compile
+/// per stop, because every stop's Look link names the same specimen.
+///
+/// The rule is not new — the left panel's `ModelListNav::Select` arm has always
+/// skipped the recompile, and `ModelListNav::Reload` exists for when you *want* one.
+/// `LoadAndSwitch` was simply the arm that never got the guard.
+#[cfg(test)]
+mod tests_look_link_reuses_the_loaded_compile {
+    use super::*;
+
+    #[test]
+    fn a_look_link_to_the_loaded_specimen_switches_without_recompiling() {
+        let mut app = App::test_default();
+        app.model_list.dir = DEFAULT_SPECIMEN_DIR.to_owned();
+        app.model_list.rescan();
+        let path = app
+            .find_specimen("RcCircuit")
+            .expect("RcCircuit is a curated specimen");
+        app.selected = Some(path);
+        app.compiling = false;
+        app.stage = StageKind::Parse;
+
+        app.dispatch_hrw_link(HrwLink::LoadAndSwitch(
+            "RcCircuit".to_owned(),
+            StageKind::Flatten,
+            None,
+        ));
+
+        assert!(
+            !app.compiling,
+            "a Look link to the specimen already loaded started a compile",
+        );
+        assert_eq!(
+            app.stage,
+            StageKind::Flatten,
+            "and it must still switch the stage, or the link does nothing",
+        );
+        assert!(
+            app.pending_stage.is_none(),
+            "no compile is coming, so a deferred stage would fire on the NEXT one",
+        );
+    }
+
+    /// The complement, and what keeps the test above from passing vacuously: a link to
+    /// a **different** specimen still compiles, and defers the stage until it lands.
+    #[test]
+    fn a_look_link_to_a_different_specimen_still_compiles() {
+        let mut app = App::test_default();
+        app.model_list.dir = DEFAULT_SPECIMEN_DIR.to_owned();
+        app.model_list.rescan();
+        let other = app
+            .find_specimen("BouncingBall")
+            .expect("BouncingBall is a curated specimen");
+        app.selected = Some(other);
+        app.compiling = false;
+
+        app.dispatch_hrw_link(HrwLink::LoadAndSwitch(
+            "RcCircuit".to_owned(),
+            StageKind::Flatten,
+            None,
+        ));
+
+        assert!(
+            app.compiling,
+            "a Look link to a different specimen must still compile it",
+        );
+        assert_eq!(
+            app.pending_stage,
+            Some(StageKind::Flatten),
+            "and the stage must wait for the compile rather than showing an empty one",
+        );
+    }
+}

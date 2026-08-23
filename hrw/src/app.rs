@@ -2640,7 +2640,14 @@ impl App {
                 // Files first: a curated specimen and a library model could in
                 // principle share a name, and the repo's own copy should win.
                 if let Some(path) = self.find_specimen(&name) {
-                    self.open(path);
+                    // Same rule as `LoadAndSwitch` above and as the left panel:
+                    // reselecting what is already loaded reveals it, and only
+                    // "Recompile" recompiles.
+                    if self.selected.as_ref() == Some(&path) {
+                        self.viewing_log = false;
+                    } else {
+                        self.open(path);
+                    }
                 } else if name.contains('.') {
                     // A qualified name — ask the library. The worker reports
                     // clearly if no such model is loaded, so nothing is guessed
@@ -2672,9 +2679,34 @@ impl App {
             }
             HrwLink::LoadAndSwitch(name, kind, sub) => {
                 if let Some(path) = self.find_specimen(&name) {
-                    self.open(path);
-                    self.pending_stage = Some(kind);
-                    self.pending_sub_view = sub;
+                    // **Already loaded means switch, not recompile** — the rule the
+                    // left panel's `ModelListNav::Select` arm has always followed, and
+                    // which this arm did not. Doug, 2026-08-22: every `▶ Look` link in
+                    // a stop recompiled the specimen the previous link had just
+                    // compiled, so walking one tour paid a full compile per stop.
+                    //
+                    // **Nothing is lost by skipping it.** The workflow `open`'s comment
+                    // protects — assemble context, arm a breakpoint, recompile to hit
+                    // it — belongs to `ModelListNav::Reload` ("Recompile" in the
+                    // context menu), which always compiles and is unaffected.
+                    //
+                    // **Deliberately no mtime check**, though an edited specimen would
+                    // now show its previous compile. The left panel has never checked
+                    // either, and a link path stricter than the panel would put the
+                    // same inconsistency in a new place. If staleness needs closing it
+                    // should close for both, in one change.
+                    if self.selected.as_ref() == Some(&path) {
+                        self.viewing_log = false;
+                        self.stage = kind;
+                        // No compile is coming, so nothing would ever apply a deferred
+                        // stage; clear it rather than leave one to fire on the next.
+                        self.pending_stage = None;
+                        self.pending_sub_view = sub;
+                    } else {
+                        self.open(path);
+                        self.pending_stage = Some(kind);
+                        self.pending_sub_view = sub;
+                    }
                 } else {
                     self.notify(format!("specimen not found: {name}"));
                 }
