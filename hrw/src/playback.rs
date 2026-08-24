@@ -460,7 +460,7 @@ mod tests_layout {
     /// Reading `app.rs` line by line rather than with a parser is sound here for
     /// one specific reason: `cargo fmt` runs before every gate, so a method of
     /// `impl App` opens at four spaces and closes with `}` at four spaces.
-    fn scroll_wrapped_views() -> Vec<(String, PathBuf)> {
+    pub(super) fn scroll_wrapped_views() -> Vec<(String, PathBuf)> {
         let hrw = Path::new(env!("CARGO_MANIFEST_DIR"));
         let app = std::fs::read_to_string(hrw.join("src/app.rs")).expect("app.rs must be readable");
 
@@ -815,6 +815,115 @@ mod tests_animated_contract {
              before the reader arrived. Add a `Start` step to its trace (see \
              `MatchingStep::Start`) or, for a view built from a report list, wrap \
              its payload the way `AliasStep` does.",
+        );
+    }
+
+    /// **Every animated view is accounted for by the scroll rule — wrapped, or a
+    /// canvas.**
+    ///
+    /// `tests_layout` derives the views `app.rs` wraps in a scroll area and checks
+    /// those. **What it never said is what the other views are.** A view drawn with
+    /// no scroll parent is outside the rule *and* outside the check, and today that
+    /// is correct — `matching_anim` and `tarjan_anim` paint onto a [`crate::canvas::Canvas`],
+    /// which pans and zooms rather than scrolling, so "the parent owns the
+    /// scrolling" does not apply to them.
+    ///
+    /// **Correct but unstated is the dangerous shape**, and this repository has the
+    /// scar: the no-nested-scroll rule was enforced for one file while two others
+    /// carried the same defect, because nothing said which files the rule covered.
+    /// A view that lost its scroll parent would drop out of `tests_layout`'s roster
+    /// **silently** — no failure, just one less thing checked.
+    ///
+    /// So both sides are derived and the partition must be exact: wrapped from
+    /// `app.rs`'s call sites, canvas from the view's own use of the type. Neither is
+    /// a list. If a view is ever in both or in neither, this fails naming it and the
+    /// question — is it a canvas view now, or did it lose its parent? — has to be
+    /// answered rather than assumed.
+    #[test]
+    fn every_animated_view_is_accounted_for_by_the_scroll_rule() {
+        let views = animated_views();
+        let animated: BTreeSet<&String> = views.iter().map(|v| &v.module).collect();
+        let wrapped: BTreeSet<String> = super::tests_layout::scroll_wrapped_views()
+            .into_iter()
+            .map(|(module, _)| module)
+            .collect();
+        let canvas: BTreeSet<&String> = views
+            .iter()
+            .filter(|v| v.source.contains("canvas::Canvas"))
+            .map(|v| &v.module)
+            .collect();
+
+        assert!(
+            !wrapped.is_empty() && !canvas.is_empty(),
+            "both sides must be found"
+        );
+
+        let unaccounted: Vec<&&String> = animated
+            .iter()
+            .filter(|m| !wrapped.contains(**m) && !canvas.contains(**m))
+            .collect();
+        assert!(
+            unaccounted.is_empty(),
+            "these animated views are neither wrapped in a scroll area by app.rs nor \
+             painted on a Canvas: {unaccounted:?}\n\n\
+             Such a view is outside the no-nested-scroll rule AND outside the check \
+             that enforces it — the silent gap that let alias_anim and ic_plan_anim \
+             carry the same defect for a week. Either give it a scroll parent, or say \
+             here why it needs neither.",
+        );
+
+        let both: Vec<&&String> = animated
+            .iter()
+            .filter(|m| wrapped.contains(**m) && canvas.contains(**m))
+            .collect();
+        assert!(
+            both.is_empty(),
+            "these views both pan/zoom on a Canvas and sit inside a scroll area: \
+             {both:?}. That nests two different ways of moving the same content, \
+             which is the wheel-capture bug in a new dress.",
+        );
+    }
+
+    /// **Every animation's capture names the step on screen.**
+    ///
+    /// [`Animated::current_frame_context`] exists so a question asked mid-animation
+    /// says *what* the reader was looking at, not just where the cursor was. The
+    /// capture renders it as `view.animation.showing`, and `bridge.rs` reads
+    /// `showing["step"]` — so a view that omits the key produces a capture that is
+    /// well-formed, present, and says nothing.
+    ///
+    /// That is the failure this repository treats as worst: not an error, but a
+    /// **silent absence** in the one artifact Claude uses to answer a question about
+    /// a frame he cannot see.
+    ///
+    /// # Scope, which is narrower than the name
+    ///
+    /// This reads the source: it proves each view's `impl` **writes** the key, not
+    /// that **every branch** does. Two views build their context in branches —
+    /// `alias_anim` and `ic_plan_anim`, whose opening frame carries no substitution
+    /// or block — and those are covered behaviourally where they live, by
+    /// `alias_anim::tests::every_frame_describes_itself` and its `ic_plan_anim`
+    /// twin. The other six build one expression, which has no branch to miss.
+    #[test]
+    fn every_animation_context_names_the_step_on_screen() {
+        let views = animated_views();
+        assert!(!views.is_empty(), "no Animated implementors found");
+
+        // Assembled, for the reason `tests_layout` gives.
+        let key = format!("\"{}\"", "step");
+
+        let missing: Vec<&String> = views
+            .iter()
+            .filter(|v| !v.impl_body.contains(key.as_str()))
+            .map(|v| &v.module)
+            .collect();
+
+        assert!(
+            missing.is_empty(),
+            "these animations build a frame context with no `step` key: {missing:?}\n\n\
+             `bridge.rs` reads `showing[\"step\"]` to say what the reader was looking \
+             at. Without it the capture is present and empty, which is worse than \
+             absent — it answers the question with nothing.",
         );
     }
 

@@ -115,14 +115,14 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**60 modules, 68,588 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**60 modules, 68,907 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `worker.rs` | 11,088 |
 | `app.rs` | 6,508 |
 | `app/tests.rs` | 5,922 |
-| `doc_citations.rs` | 5,167 |
+| `doc_citations.rs` | 5,321 |
 | `bridge.rs` | 3,772 |
 | `ui_tests.rs` | 2,567 |
 | `fidelity.rs` | 1,765 |
@@ -135,11 +135,11 @@ showing 48 equations. They are derived now, and
 | `lib.rs` | 1,072 |
 | `matching_anim.rs` | 1,068 |
 | `diagnostics.rs` | 986 |
+| `playback.rs` | 962 |
 | `tarjan_anim.rs` | 934 |
-| `playback.rs` | 853 |
 | `matching_ledger.rs` | 834 |
+| `ic_plan_anim.rs` | 793 |
 | `survey.rs` | 769 |
-| `ic_plan_anim.rs` | 768 |
 | `arch_doc.rs` | 758 |
 | `tour_panel.rs` | 743 |
 | `sub_view_rows.rs` | 719 |
@@ -155,7 +155,7 @@ showing 48 equations. They are derived now, and
 | `identifier_index.rs` | 592 |
 | `source_view.rs` | 576 |
 | `stage_tabs.rs` | 574 |
-| `alias_anim.rs` | 541 |
+| `alias_anim.rs` | 566 |
 | `artifact_pane.rs` | 514 |
 | `pantelides_ladder.rs` | 499 |
 | `nav_view.rs` | 483 |
@@ -168,7 +168,7 @@ showing 48 equations. They are derived now, and
 | `promote.rs` | 342 |
 | `specimen_purpose.rs` | 316 |
 | `source_map.rs` | 281 |
-| `stage_view.rs` | 266 |
+| `stage_view.rs` | 272 |
 | `report.rs` | 265 |
 | `log_view.rs` | 229 |
 | `test_support.rs` | 223 |
@@ -179,7 +179,7 @@ showing 48 equations. They are derived now, and
 | `compile_caches.rs` | 101 |
 | `ui_state.rs` | 73 |
 | `field_help.rs` | 67 |
-| **total** | **68,588** |
+| **total** | **68,907** |
 <!-- END GENERATED module-sizes -->
 
 

@@ -699,6 +699,31 @@ mod tests {
         assert_eq!(anim.current_frame_context().expect("a frame")["block"], 1);
     }
 
+    /// **Every frame describes itself, including the opening one.**
+    ///
+    /// The twin of `alias_anim`'s, and for the same reason: this view builds its
+    /// capture in two branches, and the source-level family check in
+    /// `playback::tests_animated_contract` cannot see a branch that forgot `step`.
+    #[test]
+    fn every_frame_describes_itself() {
+        let mut anim = IcPlanAnimation::from_report(&report(serde_json::json!([
+            {"kind": "scalar_direct", "var": "src.v", "solution": {"Literal": {"Real": 12.0}}},
+            {"kind": "scalar_newton", "var": "R.i", "equation": 9},
+        ])))
+        .unwrap();
+
+        for frame in 0..2 {
+            assert!(anim.seek(frame), "frame {frame} exists");
+            let ctx = anim
+                .current_frame_context()
+                .expect("a frame is under the cursor");
+            assert!(
+                ctx["step"].as_str().is_some_and(|s| !s.trim().is_empty()),
+                "frame {frame} put no readable `step` in the capture: {ctx}",
+            );
+        }
+    }
+
     /// A failed initialization carries an `error` and no `blocks`; there is no
     /// plan to walk, and the view must decline rather than render an empty one.
     #[test]

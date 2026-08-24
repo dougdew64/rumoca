@@ -515,6 +515,31 @@ mod tests {
         );
     }
 
+    /// **Every frame describes itself, including the opening one.**
+    ///
+    /// The behavioural half of
+    /// `playback::tests_animated_contract::every_animation_context_names_the_step_on_screen`,
+    /// which reads the source and so cannot see that this view builds its context in
+    /// **two branches**. The opening frame carries no substitution, so it takes the
+    /// other arm — and an arm that forgot `step` would put an empty answer in the
+    /// capture rather than a missing one.
+    #[test]
+    fn every_frame_describes_itself() {
+        let mut anim = AliasAnimation::from_report(&report(&[("a", "b"), ("c", "d")], 8))
+            .expect("a report with eliminations parses");
+
+        for frame in 0..2 {
+            assert!(anim.seek(frame), "frame {frame} exists");
+            let ctx = anim
+                .current_frame_context()
+                .expect("a frame is under the cursor");
+            assert!(
+                ctx["step"].as_str().is_some_and(|s| !s.trim().is_empty()),
+                "frame {frame} put no readable `step` in the capture: {ctx}",
+            );
+        }
+    }
+
     /// A model that eliminated nothing is a legitimate outcome, not an error.
     #[test]
     fn a_model_with_no_eliminations_is_empty() {

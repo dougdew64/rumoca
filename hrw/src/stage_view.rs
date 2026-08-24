@@ -50,7 +50,13 @@ pub(crate) enum StructuralView {
 
 impl StructuralView {
     /// Every variant, so the noun/verb parity test can iterate without naming them.
-    /// **Add new variants here** — that is what makes the omission loud instead of silent.
+    ///
+    /// **Add new variants here — and forgetting to is loud**, which was not true until
+    /// 2026-08-23. This sentence claimed it while nothing checked the roster against the
+    /// enum, so a forgotten variant compiled cleanly and was simply never tested:
+    /// `every_sub_view_slug_round_trips` iterates this list, so it would have reported
+    /// success over eight of nine. `doc_citations::an_all_roster_lists_every_variant_of_its_enum`
+    /// is what makes the claim true, and it covers every `ALL` roster in the crate.
     #[cfg(test)]
     pub(crate) const ALL: &'static [StructuralView] = &[
         StructuralView::Summary,

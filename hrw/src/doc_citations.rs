@@ -1815,6 +1815,151 @@ Some prose.
         }
     }
 
+    /// **An `ALL` roster must list every variant of its enum.**
+    ///
+    /// From the 2026-08-23 column read of the tab rosters. No roster was wrong — and
+    /// the finding is the sentence above them. `stage_view.rs` tells the next author:
+    /// *"**Add new variants here** — that is what makes the omission loud instead of
+    /// silent."*
+    ///
+    /// **It was not loud.** Nothing compared a roster against its enum, so adding a
+    /// variant and forgetting the list compiled cleanly and simply went untested:
+    /// `every_sub_view_slug_round_trips` iterates `ALL`, so a missing variant is a
+    /// variant the round-trip never sees. A doc comment promising a guarantee the
+    /// mechanism does not provide is this repository's most-repeated defect — night 1
+    /// found the identical shape in a tab roster, and a test named `…shows_every_fixture…`
+    /// that checked nine of twenty-two.
+    ///
+    /// Both sides are read from the source, so a seventh roster is covered the day it
+    /// is written.
+    ///
+    /// # Scope
+    ///
+    /// It checks rosters whose name **starts with `ALL`**, which is what makes
+    /// `StageKind::COMPILATION` correctly exempt: that one is a deliberate subset —
+    /// every stage except `Simulation` — and asserting it exhaustive would be wrong.
+    /// A future deliberate subset must therefore not be named `ALL…`.
+    #[test]
+    fn an_all_roster_lists_every_variant_of_its_enum() {
+        let sources = rust_source_texts();
+
+        // Every `enum Name { … }` in the crate, as name -> variants.
+        let mut variants: std::collections::BTreeMap<String, BTreeSet<String>> =
+            std::collections::BTreeMap::new();
+        for (path, text) in sources {
+            if !path
+                .to_string_lossy()
+                .replace('\\', "/")
+                .contains("hrw/src")
+            {
+                continue;
+            }
+            let mut open: Option<(String, usize)> = None;
+            for line in text.lines() {
+                if let Some((name, indent)) = open.as_ref() {
+                    if line.trim_end() == format!("{}}}", " ".repeat(*indent)) {
+                        open = None;
+                        continue;
+                    }
+                    let t = line.trim();
+                    if t.is_empty() || t.starts_with("//") || t.starts_with('#') {
+                        continue;
+                    }
+                    // A variant is an identifier ending in `,`, `{` or `(`.
+                    let ident: String = t
+                        .chars()
+                        .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                        .collect();
+                    if !ident.is_empty() && ident.starts_with(|c: char| c.is_ascii_uppercase()) {
+                        variants
+                            .entry(name.clone())
+                            .or_default()
+                            .insert(ident.clone());
+                    }
+                    continue;
+                }
+                if let Some(rest) = line.split_once("enum ").map(|(_, r)| r)
+                    && let Some(name) = rest.split_once(' ').map(|(n, _)| n)
+                    && rest.trim_end().ends_with('{')
+                    && !line.trim_start().starts_with("//")
+                {
+                    let indent = line.len() - line.trim_start().len();
+                    open = Some((name.to_owned(), indent));
+                }
+            }
+        }
+        assert!(
+            variants.len() > 10,
+            "the enum scan found only {} enums, so it has stopped reading the source",
+            variants.len(),
+        );
+
+        // Every `const ALL…: &[…Type] = &[ … ];` roster.
+        let mut checked = 0usize;
+        let mut findings = Vec::new();
+        for (path, text) in sources {
+            for (i, line) in text.lines().enumerate() {
+                let t = line.trim();
+                let Some(rest) = t.split_once("const ALL").map(|(_, r)| r) else {
+                    continue;
+                };
+                let Some((_, after)) = rest.split_once('[') else {
+                    continue;
+                };
+                let Some((ty, _)) = after.split_once(']') else {
+                    continue;
+                };
+                let ty = ty.trim();
+                let Some(expected) = variants.get(ty) else {
+                    continue; // Not an enum defined here — nothing to compare against.
+                };
+
+                // The roster body runs to the closing `];`, which may be on this
+                // same line for a short one. Written as a plain loop rather than an
+                // iterator chain: the terminator must be *included*, and every
+                // combinator spelling of "take until and including" reads worse than
+                // this does.
+                let mut body = String::new();
+                for l in text.lines().skip(i) {
+                    body.push_str(l);
+                    body.push('\n');
+                    if l.trim_end().ends_with("];") {
+                        break;
+                    }
+                }
+
+                let marker = format!("{ty}::");
+                let listed: BTreeSet<String> = body
+                    .match_indices(marker.as_str())
+                    .map(|(at, _)| {
+                        body[at + marker.len()..]
+                            .chars()
+                            .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                            .collect()
+                    })
+                    .collect();
+
+                checked += 1;
+                let missing: Vec<&String> = expected.difference(&listed).collect();
+                if !missing.is_empty() {
+                    findings.push(format!(
+                        "{}: `{ty}`'s ALL roster omits {missing:?}. Its own comment \
+                         promises that adding a variant here is what makes the omission \
+                         loud \u{2014} anything iterating the roster silently skips these.",
+                        path.display(),
+                    ));
+                }
+            }
+        }
+
+        assert!(
+            checked >= 6,
+            "only {checked} ALL rosters were compared; there were six on 2026-08-23, so \
+             the scan has stopped finding them",
+        );
+        assert!(findings.is_empty(), "{}", findings.join("\n\n  "));
+    }
+
     /// **Prose Doug authored himself must not be edited silently.**
     ///
     /// # The continuation this protects
@@ -4714,7 +4859,16 @@ mod tests_orphaned_docs {
             // its tests — has its own summary, so there is no undocumented item for an
             // orphan to belong to. False positives, at the ~29 % precision this check
             // is documented to have.
-            ("doc_citations.rs", 5),
+            //
+            // 5 -> 6 on 2026-08-23, same shape and triaged the same way. The one new
+            // hit is inside `an_all_roster_lists_every_variant_of_its_enum`'s doc
+            // block, which opens with its own summary and later leads a paragraph with
+            // **It was not loud.** Every item added in that commit — the roster check,
+            // `authored_regions`, `unterminated_authored`,
+            // `doug_authored_prose_is_never_edited_silently` and the new pure tests —
+            // carries its own summary, so there is no undocumented item an orphan could
+            // belong to.
+            ("doc_citations.rs", 6),
             ("equation_sheet.rs", 1),
             ("lib.rs", 2),
             ("matching_anim.rs", 2),
