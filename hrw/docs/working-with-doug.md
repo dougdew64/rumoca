@@ -131,6 +131,7 @@ is ambiguous and must never be read as success**. So:
 
 | how the tour came to be | what may be assumed |
 |---|---|
+| **authored by Doug** — the you-do step, marked `<!-- authored: -->` | he knows it, and **it is not Claude's to rewrite**: report a false claim, never fix it |
 | **co-developed** — he questioned it into shape | he knows its material |
 | **walked, no questions** | ambiguous. Ask before building on it |
 | **written, unwalked** | nothing |

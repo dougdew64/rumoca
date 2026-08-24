@@ -202,6 +202,43 @@ That is a capability of having an instrument, not of writing better prose.
 undone — and it is **contrived**, existing to exercise the chapter. A continuation here has an
 executable acceptance criterion and is real work with a real upstream audience.
 
+#### The continuations, and what protects each
+
+*(Named by Doug across 2026-08-22 and 2026-08-23. He asks that each be **protected and enabled
+before it is needed** — the acceptance criterion captured while it is cheap, not on the day it is
+wanted.)*
+
+| | the continuation | what protects it |
+|---|---|---|
+| 1 | **Implement Pantelides** — [`ideas.md`](ideas.md) #83 | `pantelides_ladder`: five rungs, rung 1 green and four verified red, against a committed System Modeler oracle |
+| 2 | **Author the visualizations himself** | [`../CLAUDE.md`](../CLAUDE.md)'s two-tier comprehension policy, and its standing rule to *move a computation out before adding one in* whenever one of the five view files is touched |
+| 3 | **Replace Claude's tour content with his own** | `<!-- authored: -->` regions, held by `doc_citations::doug_authored_prose_is_never_edited_silently` |
+
+**The third completes the frame rather than adding to it.** Doug, 2026-08-23: *"Right now, you are
+generating tour content to bootstrap my learning effort. That is kind of like the I-do step…
+Ultimately, I will want to replace your tour content with my manually-authored tour content. That
+will be kind of like the you-do step."*
+[`working-with-doug.md`](working-with-doug.md)'s table of what may be assumed from a tour was
+already I-do and we-do — drafted, walked, co-developed — with **no row for prose he wrote.** It has
+one now.
+
+**Three things threaten that step, and are worth knowing before it starts rather than during:**
+
+- **The tour checks were designed with Claude as the author.** A fixture tour is only justified
+  because something runs it, and several of those checks fail with a Rust test name, or assume the
+  author knows a `##` heading edit means re-running `gen_tour_catalogue`. As guardrails they are
+  right; as a human author's error messages they are uneven.
+- **Nothing recorded whose prose a tour was**, which is what the marker fixes. Without it, a later
+  session finding a stale number in his prose is *licensed by its own instruction* to correct it.
+- **Tours are a sequence now, not independent documents.** One may cite its predecessors instead of
+  re-explaining them, so replacing a tour carries obligations to its neighbours in
+  [`fixture-tours/the-concepts.md`](fixture-tours/the-concepts.md)'s route order.
+
+**And the standing answer to a false claim in his prose: report it with evidence, never quietly
+correct it** — the `upstream-issues.md` shape, one level up. Rewriting his explanation would spend
+the exercise the you-do step exists to give him, and would do it invisibly, because prose that
+reads well is indistinguishable from prose that is his.
+
 **But the textbook wins one thing, and it is worth borrowing: its projects are SCOPED AND GRADED.**
 A binary acceptance test says when you are *done*; it never says whether you are *on track*. That is
 why `#83`'s test is being written as a ladder of five rungs rather than one red test.

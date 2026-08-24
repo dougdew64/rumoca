@@ -1597,17 +1597,40 @@ Some prose.
     /// region runs to its `<!-- /walked -->` and no further, and an unterminated marker
     /// is a **finding** reported by [`unterminated_walked`] rather than a region.
     pub(super) fn walked_regions(text: &str) -> Vec<(String, String, String)> {
+        marked_regions(text, "walked")
+    }
+
+    /// Every **authored** region — prose Doug wrote himself, rather than prose he
+    /// corrected during a walk.
+    ///
+    /// Same shape as a walked region and deliberately so; see
+    /// [`doug_authored_prose_is_never_edited_silently`] for what the two protect
+    /// differently.
+    pub(super) fn authored_regions(text: &str) -> Vec<(String, String, String)> {
+        marked_regions(text, "authored")
+    }
+
+    /// The parser behind [`walked_regions`] and [`authored_regions`].
+    ///
+    /// **One parser, two keywords**, rather than a second copy. The bounding rule,
+    /// the slug/date split and the discard-on-reopen behaviour are the parts that
+    /// were reasoned about carefully after `marked_rows` scanned forward unbounded
+    /// and adopted the next table in the file — two copies of that reasoning would
+    /// be two places for it to drift apart.
+    fn marked_regions(text: &str, keyword: &str) -> Vec<(String, String, String)> {
+        let close = format!("<!-- /{keyword} -->");
+        let opener = format!("<!-- {keyword}:");
         let mut out = Vec::new();
         let mut open: Option<(String, String, Vec<&str>)> = None;
         for line in text.lines() {
             let trimmed = line.trim();
-            if trimmed == "<!-- /walked -->" {
+            if trimmed == close {
                 if let Some((slug, date, body)) = open.take() {
                     out.push((slug, date, body.join("\n")));
                 }
                 continue;
             }
-            if let Some(rest) = trimmed.strip_prefix("<!-- walked:")
+            if let Some(rest) = trimmed.strip_prefix(opener.as_str())
                 && let Some(inner) = rest.strip_suffix("-->")
             {
                 // A second open before a close discards the first; `unterminated_walked`
@@ -1634,15 +1657,28 @@ Some prose.
     /// and a marker that silently protects nothing is the **wrong negative** this
     /// repository treats as the error nobody catches.
     pub(super) fn unterminated_walked(text: &str) -> Vec<String> {
+        unterminated(text, "walked")
+    }
+
+    /// Slugs of `<!-- authored: -->` markers that never close. Same finding, and
+    /// the same reason, as [`unterminated_walked`].
+    pub(super) fn unterminated_authored(text: &str) -> Vec<String> {
+        unterminated(text, "authored")
+    }
+
+    /// The shared half of [`unterminated_walked`] and [`unterminated_authored`].
+    fn unterminated(text: &str, keyword: &str) -> Vec<String> {
+        let close = format!("<!-- /{keyword} -->");
+        let opener = format!("<!-- {keyword}:");
         let mut out = Vec::new();
         let mut open: Option<String> = None;
         for line in text.lines() {
             let trimmed = line.trim();
-            if trimmed == "<!-- /walked -->" {
+            if trimmed == close {
                 open = None;
                 continue;
             }
-            if let Some(rest) = trimmed.strip_prefix("<!-- walked:")
+            if let Some(rest) = trimmed.strip_prefix(opener.as_str())
                 && let Some(inner) = rest.strip_suffix("-->")
             {
                 if let Some(previous) = open.take() {
@@ -1779,6 +1815,135 @@ Some prose.
         }
     }
 
+    /// **Prose Doug authored himself must not be edited silently.**
+    ///
+    /// # The continuation this protects
+    ///
+    /// Doug, 2026-08-23, naming the third thing he wants to keep open: *"Eventually,
+    /// I will want to replace your fixture tour content with content which I manually
+    /// author. Right now, you are generating tour content to bootstrap my learning
+    /// effort. That is kind of like the I-do step of I-do / we-do / you-do."*
+    ///
+    /// [`docs/vision.md`](../docs/vision.md) already maps HRW onto that frame and puts
+    /// **you-do** in the continuations. `docs/working-with-doug.md`'s table said what
+    /// may be assumed from a tour that was *drafted*, *walked*, or *co-developed* —
+    /// three rows that are I-do and we-do, with no row for prose he wrote. This is the
+    /// mechanism for the fourth.
+    ///
+    /// ```markdown
+    /// <!-- authored: matching-why-augmenting-paths 2026-08-23 -->
+    /// …Doug's own explanation…
+    /// <!-- /authored -->
+    /// ```
+    ///
+    /// # Why a second marker rather than reusing `walked:`
+    ///
+    /// They protect different things and carry different instructions.
+    ///
+    /// **Walked prose is Claude's draft that Doug corrected**, and the correct response
+    /// to finding it wrong is to fix it and bump the date — the edit is legitimate, only
+    /// silence is not.
+    ///
+    /// **Authored prose is his.** The correct response to finding a false claim in it is
+    /// the [`super`] module's rule for `upstream-issues.md`, one level up: **report it
+    /// with evidence and never quietly correct it.** Rewriting his explanation would
+    /// spend the exercise the you-do step exists to give him, and would do it invisibly,
+    /// since prose that reads well is indistinguishable from prose that is his.
+    ///
+    /// # What it can and cannot claim — and the limit is the important half
+    ///
+    /// **It cannot tell who typed an edit.** No test can. What it catches is the same
+    /// thing [`walked_prose_never_changes_silently`] catches: a body that changed at an
+    /// unchanged date, or a region deleted outright. Doug editing his own prose bumps
+    /// the date and passes, exactly as intended — the mechanism is against *silence*,
+    /// not against change.
+    ///
+    /// So the rule that Claude must not rewrite it is **prose, not mechanism**, and this
+    /// check only makes the violation loud rather than impossible. Saying so is
+    /// deliberate: `CLAUDE.md` records that reading a rule wider than the mechanism
+    /// beneath it is this repository's most frequent failure.
+    ///
+    /// **And it cannot tell whether a marked region deserves its marker** — marking a
+    /// Claude draft as authored would defeat the measurement, so which passages carry
+    /// markers is Doug's ruling, exactly as it is for `walked:`.
+    #[test]
+    fn doug_authored_prose_is_never_edited_silently() {
+        let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let dir = hrw.join("docs/fixture-tours");
+        let repo = hrw.parent().expect("hrw lives inside the workspace");
+
+        let mut findings: Vec<String> = Vec::new();
+        let mut compared = 0usize;
+
+        for entry in std::fs::read_dir(&dir).expect("fixture-tours must be readable") {
+            let path = entry.expect("readable dir entry").path();
+            if path.extension().and_then(|e| e.to_str()) != Some("md") {
+                continue;
+            }
+            let name = path
+                .file_name()
+                .expect("named file")
+                .to_string_lossy()
+                .into_owned();
+            let working = std::fs::read_to_string(&path).expect("readable tour");
+
+            for slug in unterminated_authored(&working) {
+                findings.push(format!(
+                    "{name}: `<!-- authored: {slug} -->` never closes. Add \
+                     `<!-- /authored -->` at the end of the passage \u{2014} an \
+                     unterminated marker protects nothing and hides that it protects \
+                     nothing."
+                ));
+            }
+
+            let here = authored_regions(&working);
+            let Some(head) = file_at_head(repo, &format!("hrw/docs/fixture-tours/{name}")) else {
+                continue; // New file, or no git: no baseline to compare against.
+            };
+            let before = authored_regions(&head);
+            if before.is_empty() && here.is_empty() {
+                continue;
+            }
+            compared += 1;
+
+            for (slug, date, body) in &before {
+                match here.iter().find(|(s, _, _)| s == slug) {
+                    None => findings.push(format!(
+                        "{name}: authored region `{slug}` was DELETED. Doug wrote that \
+                         prose on {date}. If it is genuinely superseded, that is his call \
+                         and belongs in docs/question-ledger.md \u{2014} not a quiet \
+                         removal."
+                    )),
+                    Some((_, now, now_body)) if now_body != body && now == date => {
+                        findings.push(format!(
+                            "{name}: authored region `{slug}` changed, but its date is \
+                             still {date}.\n    If Doug edited it, bump the marker's date \
+                             in THIS commit \u{2014} that is the acknowledgement.\n    If \
+                             Claude is editing it: STOP. His prose is not Claude's to \
+                             rewrite. Report what is wrong with evidence and let him \
+                             decide, the way upstream-issues.md entries are reported and \
+                             never filed."
+                        ));
+                    }
+                    Some(_) => {}
+                }
+            }
+        }
+
+        assert!(findings.is_empty(), "{}", findings.join("\n\n  "));
+
+        // Non-vacuity, and zero is honest here in a way it will not always be:
+        // nothing is marked yet, because the you-do step has not started. Once a
+        // tour carries markers, zero means git could not answer.
+        if compared == 0 {
+            eprintln!(
+                "note: no authored region compared against HEAD \u{2014} either none is \
+                 marked yet (expected until Doug authors a tour), or this is not a git \
+                 checkout"
+            );
+        }
+    }
+
     /// **The mandatory reading path must stay small enough to read.**
     ///
     /// # The wall this exists to prevent
@@ -1876,7 +2041,24 @@ Some prose.
         // tour README, not the decision log.** Two attempts to pay for it out of the
         // existing text landed 12 lines short, and one of them found a genuine
         // duplication — the budget catching a restatement of a rule 100 lines below it.
-        const CONDITIONAL_BUDGET: usize = 889;
+        // 889 → 900 on 2026-08-23, for the `<!-- authored: -->` marker.
+        //
+        // **This is an addition, not displacement**, which is the distinction the budget
+        // exists to police: the eleven lines document a mechanism that did not exist
+        // before, in the one document written for the person who will use it — Doug,
+        // authoring tours himself. Nothing was pruned from `CLAUDE.md` into here.
+        //
+        // **And it is already the short version.** The reasoning, the limits and the
+        // difference from `walked:` live on
+        // [`doug_authored_prose_is_never_edited_silently`], per *a checker retires the
+        // prose it replaces*; what is here is a pointer plus the one distinction a
+        // human author must not get wrong — a walked region may be fixed and re-dated,
+        // an authored one may not be rewritten at all.
+        //
+        // Paying for it out of existing text was considered and refused: the candidates
+        // were all walk documentation, and trimming that to make room for this would
+        // trade something proven for something new.
+        const CONDITIONAL_BUDGET: usize = 900;
 
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let mut total = 0usize;
@@ -4746,7 +4928,9 @@ mod tests_guarded_regions {
 /// exists to answer.
 #[cfg(test)]
 mod tests_walked_regions {
-    use super::tests::{unterminated_walked, walked_regions};
+    use super::tests::{
+        authored_regions, unterminated_authored, unterminated_walked, walked_regions,
+    };
 
     /// A tour with one walked region, and prose outside it on both sides.
     fn tour(date: &str, walked: &str, outside: &str) -> String {
@@ -4786,6 +4970,81 @@ mod tests_walked_regions {
             walked_regions(&before),
             walked_regions(&after),
             "an edit outside the marked passage was reported as a walked change",
+        );
+    }
+
+    /// A document carrying both markers, for the collision tests below.
+    fn both(walked_body: &str, authored_body: &str) -> String {
+        format!(
+            "# A tour\n\n<!-- walked: the-opening 2026-08-22 -->\n\
+             {walked_body}\n<!-- /walked -->\n\n\
+             <!-- authored: doug-on-augmenting-paths 2026-08-23 -->\n\
+             {authored_body}\n<!-- /authored -->\n"
+        )
+    }
+
+    /// **The must-fire for the authored marker**, and the same shape as its walked
+    /// twin: a rewrite at an unchanged date must be visible in the parsed body.
+    ///
+    /// Pure, so it needs no git checkout — the half of
+    /// [`super::tests::doug_authored_prose_is_never_edited_silently`] that can be
+    /// tested without one, exactly as `rewriting_walked_prose_at_the_same_date_is_detectable`
+    /// covers its sibling.
+    #[test]
+    fn rewriting_authored_prose_at_the_same_date_is_detectable() {
+        let before = both("walked prose", "Doug's own explanation.");
+        let after = both(
+            "walked prose",
+            "Doug's own explanation, reworded by Claude.",
+        );
+        let (b, a) = (authored_regions(&before), authored_regions(&after));
+
+        assert_eq!(b.len(), 1, "the fixture carries one authored region");
+        assert_eq!(b[0].1, a[0].1, "the fixture keeps the date fixed");
+        assert_ne!(
+            b[0].2, a[0].2,
+            "a rewritten authored passage was reported as unchanged, which would make \
+             the check vacuous the moment Doug starts authoring",
+        );
+    }
+
+    /// **The two markers do not see each other.**
+    ///
+    /// The risk the shared parser introduces: one keyword's scan picking up the
+    /// other's region would make an authored edit look like a walked one, and the
+    /// two carry *opposite* instructions — fix-and-acknowledge versus report-and-
+    /// leave-alone. Getting that backwards is worse than either check failing.
+    #[test]
+    fn the_walked_and_authored_markers_do_not_capture_each_other() {
+        let doc = both("what the walk produced", "what Doug wrote");
+
+        let walked = walked_regions(&doc);
+        let authored = authored_regions(&doc);
+        assert_eq!(walked.len(), 1);
+        assert_eq!(authored.len(), 1);
+        assert_eq!(walked[0].0, "the-opening");
+        assert_eq!(authored[0].0, "doug-on-augmenting-paths");
+        assert_eq!(walked[0].2, "what the walk produced");
+        assert_eq!(authored[0].2, "what Doug wrote");
+
+        // And neither close terminates the other's region — the failure that would
+        // silently truncate one of them.
+        assert!(unterminated_walked(&doc).is_empty());
+        assert!(unterminated_authored(&doc).is_empty());
+    }
+
+    /// An unterminated authored marker is a finding, not a region running to EOF.
+    #[test]
+    fn an_unterminated_authored_marker_is_reported() {
+        let doc = "# A tour\n\n<!-- authored: doug-on-tearing 2026-08-23 -->\n\
+                   his prose, never closed\n\nmore of the document\n";
+        assert_eq!(
+            unterminated_authored(doc),
+            vec!["doug-on-tearing".to_owned()]
+        );
+        assert!(
+            authored_regions(doc).is_empty(),
+            "an unterminated marker must yield no region rather than swallowing the file"
         );
     }
 

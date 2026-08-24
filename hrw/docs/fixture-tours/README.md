@@ -187,6 +187,17 @@ is no honest way to satisfy it. **The field is any token that changes**, so no p
 needed; `a_timestamp_distinguishes_two_acknowledgements_on_one_day` is what keeps it that way.
 *(Found by Doug within the hour of the mechanism's first live use.)*
 
+### ⟶ AND MARK WHAT YOU AUTHOR: `<!-- authored: -->` — added 2026-08-23
+
+Same shape, same parser, for the **you-do** step — prose *you wrote*, not prose you corrected.
+**The difference is the instruction each gives Claude:** a walked region may be fixed and re-dated,
+because it is his draft with your corrections in it; **an authored region may not be rewritten at
+all.** A false claim inside one is reported with evidence and left for you to rule on, the way
+`upstream-issues.md` entries are written and never filed.
+`doc_citations::doug_authored_prose_is_never_edited_silently` carries the reasoning and the limits —
+including the one worth knowing, that no test can tell *who* typed an edit, so it catches silence
+rather than authorship.
+
 **WHAT TO MARK WHEN A WALK COMPLETES — mark the EXPLANATION, not the test.** Doug,
 2026-08-22, on finishing the connections tour: *"I'd like to protect the prose. You can and should
 update the rest of the tour if the underlying facts change."* Those are two requirements, and one
