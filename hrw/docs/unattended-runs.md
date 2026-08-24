@@ -24,24 +24,51 @@ planned the run does not survive to the machine that executes it. When a run fin
 goes to the run log below and this section is overwritten by the next plan — otherwise it becomes
 the accumulating history `CLAUDE.md`'s *Current work* had to be rescued from.
 
-### NOTHING IS QUEUED — the 2026-08-23 plan ran that night; its record is in the run log below
+### Queued 2026-08-23 for night 3 — `app.rs`, and the goal is BUGS
 
-**Queue the next run by replacing this heading and what follows it**, with the items, the evidence
-for each, and anything about the machine that will not travel. The slot is deliberately one deep:
-a second plan parked here becomes the accumulating history `CLAUDE.md`'s *Current work* had to be
-rescued from.
+**Same machine, same preconditions.** Run `cargo run -p hrw --example check_machine` first; it
+costs about a second and answers what a `git pull` does not bring.
 
-**What night 2 suggests putting here next**, in the order it earned:
+**Why these three.** [`app-split-plan.md`](app-split-plan.md) is **closed** — extraction landed
+2026-08-21 — so this is bug discovery, not refactoring, and `CLAUDE.md`'s rule picks seams **by
+where defects are likely**: code never closely read, code that cannot be tested, clusters of
+siblings where one member may differ.
 
-- **The `live_state` correspondence is now guarded but `current_frame_context` is not.** All eight
-  animations put a `"step"` key in the capture and nothing says they must. A consumer reading
-  `ctx["step"]` would get `null` from a ninth view and show nothing.
-- **`playback::tests_layout` derives its roster from `app.rs`; nothing derives the *parents*.** A
-  view drawn with no scroll parent at all is outside both the rule and the check, which is correct
-  today and unstated.
-- **Column-read the tab rosters** — the `app.rs` arc's best lens, and it found four of eight
-  defects there. `Animated` is now read; `SubView`, `StructuralView` and the stage tab arrays are
-  not.
+`app.rs` holds three **routers**, each a match over a variant set, each 200+ lines. **Neither of
+the big two has a wildcard arm**, so coverage is already compiler-enforced — *counting arms is not
+the exercise*. The exercise is the recorded one: **a router's seam is an asymmetry among its
+arms**, the lens that found four of the eight defects in the `app.rs` arc.
+
+**1 — Column-read `drain_worker`'s six arms.** `app.rs:1780`, 215 lines. Every worker message
+becomes UI state here: `Libraries`, `Log`, `CompileProgress`, `Compiled`, `DefTree`, `Simulated`.
+Per arm, ask what its siblings do that it does not — invalidate a cache, request a repaint, clear
+the `compiling` flag, feed the stage-diff highlight. **This class is live here**: the 2026-08-20
+cache-lifetime finding and the stranded sub-view both landed in this function's blast radius.
+
+**2 — Column-read `dispatch_hrw_link`'s twelve arms.** `app.rs:2568`, 244 lines. **Night 1 read
+`HrwLink`'s `parse` and `describe` and found them sound; `dispatch` is the third member of that
+family and has never been read.** Two questions, each with a precedent: does every arm guard its
+target's *availability* — a link once selected a view that had no tab, which
+`structural_view_available` exists to prevent — and does every arm clear pending state uniformly?
+The tour-link hooks were once never cleared, so the first click masked every later one.
+
+**3 — The `has_*` availability family.** Three predicates gating tabs, reading three different
+sources: `has_alias_eliminations` (`app.rs:3952`) reads **the current stage**, `has_ic_plan`
+(`app.rs:3983`) reads the **named** initialization stage, `has_pre_lowering_trace` (`app.rs:3998`)
+reads **frames**.
+
+**The obvious risk is already guarded, and that is what makes this worth reading rather than
+fixing:** `StructuralView::AliasAnim => is_index_reduction && self.has_alias_eliminations()`, so
+the predicate is only correct *because a caller adds the stage test*. `structural.json` carries no
+`reduction` key at all, so the predicate alone is false on the Structural stage. **The live
+question is whether every caller adds that test.** `app.rs:4349` compares
+`viewport.structural == AliasAnim` directly and is the candidate odd caller.
+
+**Free parallel read, consuming none of the item budget:** `central_panel_ui` — 321 lines from
+`app.rs:4127`, the largest router and never closely read.
+
+**Precedence:** a defect found in items 1 or 2 wins over starting the next item. Three is a cap,
+not a quota.
 
 ### The command
 
@@ -59,11 +86,15 @@ rescued from.
 
 ## Hard rules — Claude's, during
 
-1. **The full gate is green before every commit**, in one command (HRW is closed, so this works):
+1. **The gate is green before every commit**, in one command — **use the runner, not the
+   sequence** (added 2026-08-23, after the fmt → generate → lint → test order was got wrong for
+   the tenth time):
    ```text
-   cargo test -p hrw --lib --test msl_resolve --features slow-tests -- --test-threads=1
+   cargo run -p hrw --example gate
    ```
-   preceded by the usual `cargo fmt` → generators → `cargo clippy -p hrw --all-targets`.
+   It picks FAST or FULL from the working tree, runs all four generators, adds `fmt` **and**
+   `clippy` for any `crates/rumoca-*` package touched, stops at the first failure naming what that
+   step protects, and refuses to start while HRW holds `hrw.exe`.
 2. **Never leave the tree dirty.** Every item ends committed or reverted. Nothing half-done.
 3. **Commit, do not push.** Nothing outward-facing happens with nobody awake.
 4. **A hard cap of three items, then stop.** Sprawl is the named failure mode, not idleness —
@@ -197,6 +228,14 @@ defined the symbol the same test proves absent. The scanner skips `//` lines and
   in prose, true today. Eight files touched unattended to buy a reader nothing.
 - **Renaming `pantelides_ladder`** to dodge the resolver collision. It would have hidden a live
   wrong-negative bug behind a module name, and the collision was the only reason anyone found it.
+
+#### The three follow-ups this night queued were closed the same day, attended — `86e0b951`
+
+`current_frame_context` is guarded, every animated view is now accounted for by the scroll rule as
+either wrapped or a canvas, and the tab-roster column read found **a claim rather than a bug**:
+`stage_view.rs` promised that forgetting to add a variant to an `ALL` roster was loud, and it was
+not. Proven by dropping `AliasAnim` — `every_sub_view_slug_round_trips` **passed** while checking
+eight of nine.
 
 #### Owed to Doug
 
