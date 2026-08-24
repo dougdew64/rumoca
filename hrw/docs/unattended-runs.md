@@ -336,15 +336,29 @@ protective mechanism: would deleting its call site fail anything?
 
 #### Owed to Doug
 
-- **One finding recorded rather than fixed.** `drain_worker`'s `CompileProgress` arm replaces
-  `self.stages` with new partial reports and does **not** invalidate the view caches built
-  from the previous one, while the `Compiled` arm documents at length why that invalidation
-  is needed. `stage_views.reset_for` keys on the stage, which does not change mid-compile, so
-  a cached view survives — meaning a recompile shows the previous compile's pane until
-  `Compiled` lands. **That is a question about what a pane shows, and the no-go list puts
-  pane claims with Doug.** Fixing it also costs a rebuild per progress message, which is a
-  trade rather than a correction.
+- ✅ **The recorded finding was ruled and fixed, 2026-08-24.** `CompileProgress` replaced
+  `self.stages` and invalidated nothing, so a recompile drew the previous compile's matrix
+  over the current compile's report.
 - **Nothing is pushed.** Three commits sit on `hrw` ahead of `origin/hrw`.
+
+#### ⟶ AND THE RULING IS THE PART TO KEEP — Doug, 2026-08-24
+
+Claude presented it as a **trade**: hold the last complete result, or rebuild per progress
+message, with a cost column. Doug did not weigh the columns; he asked what the project's own
+principles said. *"This project is for my education, and accuracy is required for that
+education. Also, inconsistency causes learning friction."*
+
+**Under those, it is not a trade.** The pane drew real, correctly computed data **attributed to
+the wrong run** — the fiction class `CLAUDE.md` already names, and the same shape as the replays
+removed on 2026-08-04, which were also real output of a real algorithm presented as the
+compilation. And the tab colours advanced while the pane held still, so two things on screen
+described one instant differently, during the single gesture whose purpose is to see a change.
+
+**The lesson for a future session is about the framing, not the cache.** Offering a balanced
+cost table for a question the charter already answers **invites a ruling that contradicts the
+project's own rules** — and the cost side of that table was performance, which this file says
+repeatedly is not what HRW optimises for. *When a decision looks like a trade, check first
+whether one option is a documented fiction; if it is, there is no trade to present.*
 
 ### ⟶ THE HABIT IS ADOPTED — Doug, 2026-08-23, and the lens to lead with
 

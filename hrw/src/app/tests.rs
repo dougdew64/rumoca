@@ -2320,6 +2320,68 @@ fn drain_worker_compile_progress_ignored_for_stale_specimen() {
     assert!(app.stages.parse.value.is_none());
 }
 
+/// **A partial result drops the views built from the previous compile's reports.**
+///
+/// Found by the 2026-08-23 column read of `drain_worker`, ruled on 2026-08-24. The
+/// arm replaced `self.stages` with new partial reports and invalidated nothing, and
+/// `StageViewCaches::reset_for` keys on the *stage* — which does not change
+/// mid-compile — so a cached view survived until `Compiled` landed.
+///
+/// **The pane then drew the previous compile's matrix over the current compile's
+/// report.** Real data, correctly computed, attributed to the wrong run: the fiction
+/// class `CLAUDE.md` names when it requires everything on screen to be traceable to
+/// what Rumoca did on *this* run. And the tab colours advanced with the pipeline while
+/// the pane held still, so two things on screen described the same instant differently
+/// — during Recompile, whose entire purpose is to show what an edit changed.
+///
+/// # Why `compile_views` is deliberately NOT dropped here
+///
+/// The asymmetry is the point, and it is by source rather than by convenience.
+/// `stage_views` is built from stage reports, which a progress message delivers.
+/// `compile_views` holds replays built from frames, which arrive **only** with
+/// `Compiled` — dropping them here would blank every animation for the whole compile
+/// with nothing to rebuild from. The second assertion pins that, because a fix that
+/// invalidated both would pass a test checking only the first.
+#[test]
+fn drain_worker_compile_progress_drops_views_built_from_the_previous_report() {
+    let (mut app, tx) = App::test_with_sender();
+    let path = PathBuf::from("/test/specimen.mo");
+    app.selected = Some(path.clone());
+
+    // A view cached from the previous compile, keyed to the stage on screen.
+    app.stage = StageKind::Structural;
+    app.stage_views.built_for = Some(StageKind::Structural);
+    app.stage_views.incidence = Some(None);
+    // And a replay from that compile's frames, which this message carries none of.
+    app.compile_views.ic_plan_anim = Some(None);
+
+    tx.send(FromWorker::CompileProgress {
+        path,
+        stages: StageBundle {
+            structural: Stage::ok(serde_json::json!({"incidence": {"n_eq": 1, "n_var": 1}})),
+            ..Default::default()
+        },
+    })
+    .unwrap();
+    app.drain_worker();
+
+    assert!(
+        app.stage_views.incidence.is_none(),
+        "the view built from the previous compile's report survived a new report, so \
+         the pane draws one run's matrix over another run's data",
+    );
+    assert!(
+        app.stage_views.built_for.is_none(),
+        "the key must go too, or the next paint reuses the cache for this same stage",
+    );
+    assert!(
+        app.compile_views.ic_plan_anim.is_some(),
+        "the frame-built replays must survive: frames arrive only with `Compiled`, so \
+         dropping them here blanks every animation for the whole compile with nothing \
+         to rebuild from",
+    );
+}
+
 /// **A partial result must not claim the compile finished.**
 ///
 /// `CompileProgress` carries a documented contract in its own arm: *"Compilation is

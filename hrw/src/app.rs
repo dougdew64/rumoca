@@ -1804,6 +1804,31 @@ impl App {
                         continue; // stale (specimen switched)
                     }
                     self.stages = stages;
+                    // **Each cache tracks its own input, and this one's input just
+                    // changed.** `stage_views` holds views built from stage *reports*,
+                    // which is exactly what a progress message delivers; `compile_views`
+                    // holds replays built from *frames*, which arrive only with
+                    // `Compiled`. Dropping the latter here would blank the animations
+                    // for the whole compile with nothing to rebuild them from, so the
+                    // two are treated differently **because their sources differ**.
+                    //
+                    // Without this, a recompile drew the PREVIOUS compile's matrix over
+                    // the current compile's report: `reset_for` keys on the stage, which
+                    // does not change mid-compile, so the cached view survived until
+                    // `Compiled`. The data was real and correctly computed — and
+                    // attributed to the wrong run, which is the fiction class
+                    // `CLAUDE.md` names: *traceable to something Rumoca actually did on
+                    // THIS run*. Meanwhile the tab colours advanced with the pipeline, so
+                    // the pane and the tabs told different stories about the same instant
+                    // — during the one gesture, Recompile, whose whole purpose is to see
+                    // what an edit changed.
+                    //
+                    // No absence is manufactured by rebuilding early: `report_ready`
+                    // already refuses to draw a stage whose value has not arrived, so a
+                    // stage the pipeline has not reached renders nothing rather than
+                    // claiming it holds nothing. Doug ruled it 2026-08-24 on the
+                    // principles — accuracy first, and inconsistency costs learning.
+                    self.stage_views.invalidate_all();
                 }
                 FromWorker::Compiled {
                     path,
