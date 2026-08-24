@@ -8945,7 +8945,7 @@ mod tests {
     /// A *failing* compile is supposed to stop early — later phases log nothing because
     /// they did not run, which is the log telling the truth. `SingleInertia` reaches the
     /// end, so for it "every phase" is the honest expectation. A specimen that stops is
-    /// covered by [`crate::worker::tests::a_rumoca_failure_is_represented_faithfully`].
+    /// covered by [`crate::fidelity::tests::a_rumoca_failure_is_represented_faithfully`].
     #[test]
     #[cfg_attr(
         not(feature = "slow-tests"),
@@ -8990,6 +8990,109 @@ mod tests {
              notice this. A reader learns the pipeline by reading this log, so an order \
              it does not have, or a phase it skipped in silence, teaches the pipeline \
              wrong.",
+        );
+    }
+
+    /// **Every bracket reports a time, and no bracket costs less than what it contains.**
+    ///
+    /// The third verb, after *which phase ran* and *in what order*: **how long, and
+    /// charged to whom.** The log's timings are what the reader uses to say where a
+    /// compile spends itself, so they are claims like any other.
+    ///
+    /// # The two invariants, and why only these two
+    ///
+    /// 1. **Every close carries a parseable time.** A bracket that closes without one
+    ///    drops silently out of the timeline — present in the log, absent from the
+    ///    picture it is read for.
+    /// 2. **A bracket's direct children sum to no more than the bracket itself.** This
+    ///    is the *attribution* invariant: a child charged time it spent outside its
+    ///    parent, or counted twice, breaks it. `run_stage!` already takes care over
+    ///    this — captured output is replayed **before** the clock starts, because
+    ///    charging it to the extraction *"would be a second small fiction of the kind
+    ///    this bracket exists to end"* — and until now that care rested on a comment.
+    ///
+    /// **What is deliberately NOT asserted: that a phase takes nonzero time.** Measured
+    /// 2026-08-24 before writing this — `Initialization` and `Events` both report
+    /// **0.0ms** on `SingleInertia`, honestly, because they read fields the DAE already
+    /// carries. An invariant fitted to a guess would have failed on the truth.
+    ///
+    /// **Nor is any absolute duration.** How long a phase *should* take is performance,
+    /// which this project does not optimise for; whether the log describes what
+    /// happened is accuracy, which it ranks first.
+    ///
+    /// # The shape the measurement corrected
+    ///
+    /// `"Rumoca compile"` is **not** a parent of every phase — it wraps Instantiate,
+    /// Typecheck, Flatten and DAE construction, while Parse, Resolve and everything
+    /// from Structural analysis on are its siblings. A "sum of phases ≤ the whole
+    /// compile" check would have been simply wrong, and only reading a real log said so.
+    #[test]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
+    fn every_bracket_is_timed_and_none_costs_less_than_its_contents() {
+        /// `"Flatten (0.4ms)"` and `"Rumoca compile (1253.0ms; +8.0ms reading …)"` —
+        /// the first number before `ms`, which is the bracket's own span.
+        fn millis(msg: &str) -> Option<f64> {
+            let open = msg.rfind('(')?;
+            let rest = &msg[open + 1..];
+            let ms = rest.find("ms")?;
+            rest[..ms].trim().parse::<f64>().ok()
+        }
+
+        let logs = std::sync::Mutex::new(Vec::new());
+        {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            let path = PathBuf::from(format!(
+                "{}/specimens/SingleInertia.mo",
+                env!("CARGO_MANIFEST_DIR")
+            ));
+            w.compile(&path, &|msg: FromWorker| {
+                if let FromWorker::Log(entry) = msg {
+                    logs.lock().unwrap().push(entry);
+                }
+            });
+        }
+        let logs = logs.into_inner().unwrap();
+
+        // Each open frame accumulates the time of its direct children.
+        let mut stack: Vec<(String, f64)> = Vec::new();
+        let mut timed = 0usize;
+        for e in &logs {
+            match e.level {
+                LogLevel::StageStart => stack.push((e.message.clone(), 0.0)),
+                LogLevel::StageEnd => {
+                    let Some((name, children)) = stack.pop() else {
+                        panic!("{:?} closes a bracket that was never opened", e.message);
+                    };
+                    let Some(own) = millis(&e.message) else {
+                        panic!(
+                            "bracket {:?} closes without a time. It is in the log and \
+                             missing from the timeline the log is read for",
+                            e.message,
+                        );
+                    };
+                    timed += 1;
+                    assert!(
+                        children <= own + 0.05,
+                        "{name:?} reports {own}ms but the brackets inside it sum to \
+                         {children}ms. A phase charged time it did not spend inside its \
+                         parent, or counted twice \u{2014} either way the timeline \
+                         attributes work to the wrong phase.",
+                    );
+                    if let Some((_, parent_children)) = stack.last_mut() {
+                        *parent_children += own;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        assert!(stack.is_empty(), "left open at the end: {stack:?}");
+        assert!(
+            timed >= 11,
+            "only {timed} timed bracket(s) \u{2014} this cannot detect an untimed one",
         );
     }
 

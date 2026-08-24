@@ -1458,6 +1458,82 @@ mod tests {
         );
     }
 
+    /// **A stage claiming it never ran must not also show IR.**
+    ///
+    /// The *declined* verb — the third the fidelity programme does not reach. F1–F9 ask
+    /// whether a structure matches what Rumoca produced; this asks whether a stage's
+    /// claim about **not** having produced anything is consistent with what it shows.
+    /// *"Not reached (Flatten failed earlier)"* beside a populated tree is a
+    /// contradiction on screen, and the value is the half a reader believes.
+    ///
+    /// # The check I set out to write was wrong, and the data said so
+    ///
+    /// The intended claim was *"every stage after the first failure says it never
+    /// ran"*. It fails immediately, and instructively: **the pipeline continues past a
+    /// stage-level error.** `IncompatibleConnect` reports structurally singular at
+    /// Structural, and Index Reduction, Initialization, Events and Solve Lowering all
+    /// genuinely **run** and produce IR afterwards. *"First stage with an error note"*
+    /// is what `compile_outcome` reports, not where the pipeline stopped —
+    /// `not_reached_stage` fires on a failed `PhaseResult`, which is a different and
+    /// rarer condition.
+    ///
+    /// So the premise was a wrong model of the compiler, corrected by running it. What
+    /// survives is the half that does not depend on the premise: **wherever a stage
+    /// does say it never ran, it must show nothing** — recorded here rather than
+    /// quietly weakened, because a test fitted to its data until it passes has stopped
+    /// being evidence.
+    ///
+    /// Its sibling [`a_rumoca_failure_is_represented_faithfully`] checks that an
+    /// abnormal stage carries a *diagnosis* rather than a label; it says nothing about
+    /// whether the diagnosis and the payload agree.
+    #[test]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
+    fn a_stage_that_says_it_never_ran_shows_no_ir() {
+        let mut violations = Vec::new();
+        let mut not_reached = 0usize;
+
+        for name in FAILING_MODELS {
+            let crate::worker::FromWorker::Compiled { stages, .. } =
+                crate::worker::test_msl::compile_specimen_shared(name)
+            else {
+                panic!("expected Compiled for {name}");
+            };
+
+            for kind in crate::worker::StageKind::COMPILATION {
+                let stage = stages.get(*kind);
+                let Some(note) = stage.note.as_deref() else {
+                    continue;
+                };
+                // The two spellings `not_reached_stage` produces.
+                if !note.contains("not reached") && !note.contains("produced no result") {
+                    continue;
+                }
+                not_reached += 1;
+
+                if let Some(value) = stage.value.as_ref() {
+                    violations.push(format!(
+                        "{name} / {kind:?}: the note says it never ran \u{2014} {note:?} \
+                         \u{2014} and yet it carries IR: {}. Whatever is in that value \
+                         came from somewhere other than this phase on this run, which is \
+                         the one thing the pane must never show.",
+                        value.to_string().chars().take(80).collect::<String>(),
+                    ));
+                }
+            }
+        }
+
+        assert!(
+            not_reached >= 3,
+            "only {not_reached} stage(s) across {} failing specimens said they never ran \
+             \u{2014} either every pipeline now completes, or this is reading nothing",
+            FAILING_MODELS.len(),
+        );
+        assert!(violations.is_empty(), "{}", violations.join("\n  "));
+    }
+
     /// The checks can still fail.
     ///
     /// A harness reporting zero violations is exactly when to prove it is not
