@@ -8915,6 +8915,84 @@ mod tests {
         );
     }
 
+    /// **A healthy compile logs every phase, once each, in pipeline order.**
+    ///
+    /// # The gap this closes, and why it is the one that matters for `worker.rs`
+    ///
+    /// The fidelity programme (F1–F9) verifies **nouns**: is this structure what Rumoca
+    /// produced? `CLAUDE.md` states plainly that the **verbs** are outside it — *which
+    /// phase ran, in what order, nested inside what, what it declined to do* — and the
+    /// verbs are exactly what the compile path decides.
+    ///
+    /// [`every_log_bracket_names_a_real_phase_and_pairs_with_its_own_end`] covers two of
+    /// them: every bracket **names** something real, and the nesting **pairs**. Neither
+    /// says anything about **order** or **completeness**. A change that ran Flatten
+    /// before Typecheck, or silently skipped Events, produces a log whose every bracket
+    /// is real and whose every pair matches — and passes.
+    ///
+    /// That is the shape this repository keeps finding: a check whose claim is narrower
+    /// than the reader assumes. Here the assumption is dangerous, because a reader
+    /// learning the pipeline **reads the log as the pipeline**.
+    ///
+    /// # Why the expectation is derived and not written down
+    ///
+    /// It is `StageKind::COMPILATION` itself, so a phase added to the compiler is
+    /// required in the log the day it is added, with nobody remembering to update a
+    /// list. The same reasoning as the stage roster in `architecture.md`.
+    ///
+    /// # Why a healthy specimen
+    ///
+    /// A *failing* compile is supposed to stop early — later phases log nothing because
+    /// they did not run, which is the log telling the truth. `SingleInertia` reaches the
+    /// end, so for it "every phase" is the honest expectation. A specimen that stops is
+    /// covered by [`crate::worker::tests::a_rumoca_failure_is_represented_faithfully`].
+    #[test]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
+    fn a_healthy_compile_logs_every_phase_once_in_pipeline_order() {
+        let logs = std::sync::Mutex::new(Vec::new());
+        {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            let path = PathBuf::from(format!(
+                "{}/specimens/SingleInertia.mo",
+                env!("CARGO_MANIFEST_DIR")
+            ));
+            w.compile(&path, &|msg: FromWorker| {
+                if let FromWorker::Log(entry) = msg {
+                    logs.lock().unwrap().push(entry);
+                }
+            });
+        }
+        let logs = logs.into_inner().unwrap();
+
+        // Opening brackets only, and only those naming a phase — the outer
+        // "Rumoca compile" wrapper and its siblings are real brackets that are not
+        // phases, which is what `NON_PHASE_BRACKETS` exists to say.
+        let observed: Vec<&'static str> = logs
+            .iter()
+            .filter(|e| matches!(e.level, LogLevel::StageStart))
+            .filter_map(|e| bracket_phase_name(&e.message))
+            .filter(|name| !NON_PHASE_BRACKETS.contains(name))
+            .collect();
+
+        let expected: Vec<&'static str> = StageKind::COMPILATION
+            .iter()
+            .map(|k| k.log_name())
+            .collect();
+
+        assert_eq!(
+            observed, expected,
+            "\nthe log's phase sequence is not the pipeline.\n  logged:   {observed:?}\n  \
+             pipeline: {expected:?}\n\nEvery bracket may still name a real phase and \
+             every pair may still match — those are checked next door and would not \
+             notice this. A reader learns the pipeline by reading this log, so an order \
+             it does not have, or a phase it skipped in silence, teaches the pipeline \
+             wrong.",
+        );
+    }
+
     /// **The "no instrumentation" claim is still true.**
     ///
     /// `UNINSTRUMENTED_PHASES` tells the reader that silence from these phases means

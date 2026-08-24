@@ -36,6 +36,34 @@ pub fn needs_full_gate<'a>(changed: impl IntoIterator<Item = &'a str>) -> bool {
     })
 }
 
+/// Does a change touch the path that decides **what HRW reports Rumoca did**?
+///
+/// # Why this needs its own question
+///
+/// The gate answers *"did anything break"*. It cannot answer *"did this change what
+/// Rumoca produces"*, **because the gate was green before the change too** — and on
+/// 2026-08-04 a corpus-scale fidelity programme reported 2,614 models green with zero
+/// violations while the observatory's log and UI carried fictions.
+///
+/// `CLAUDE.md` already prescribes the notebook content check for any change to the
+/// compile or library-loading path: it compares every specimen's committed per-stage IR
+/// against a fresh compile, so drift is visible rather than merely possible. It costs
+/// about 109 s and, until 2026-08-24, **it was a rule to remember rather than a step
+/// that runs.**
+///
+/// # Why the answer is a whole file rather than a line range
+///
+/// `compile_target` is 1,085 lines and moves. A range would rot on the next edit and
+/// fail *open* — silently answering "not the compile path" for a change that is. The
+/// whole of `worker.rs` is the honest over-approximation: everything in it either is
+/// the compile path, feeds it, or reads what it produced, and the cost of a false
+/// positive is 109 s while the cost of a false negative is undetected drift.
+pub fn touches_the_compile_path<'a>(changed: impl IntoIterator<Item = &'a str>) -> bool {
+    changed
+        .into_iter()
+        .any(|p| p.starts_with("hrw/src/worker.rs") || p.starts_with("crates/"))
+}
+
 /// The `crates/<name>/…` packages a change touches, deduplicated.
 ///
 /// Each needs **both** `cargo fmt` and `cargo clippy` before it is committed. `fmt`
@@ -114,6 +142,36 @@ mod tests {
             !needs_full_gate(["Cargo.lock"]),
             "the lock file moves on any dependency change and builds nothing by itself"
         );
+    }
+
+    /// **The compile path is recognised, and the over-approximation is deliberate.**
+    ///
+    /// A `crates/rumoca-*` change alters what the compiler itself does, and a
+    /// `worker.rs` change alters what HRW reports it did — both are exactly the
+    /// question the notebook check answers and the gate cannot.
+    ///
+    /// The last two assertions are the point of the shape: `app.rs` renders what the
+    /// compile produced but cannot change it, and a tour is prose. Charging those 109 s
+    /// would make the step feel like a tax and get it switched off, which is how a
+    /// check that cries wolf dies.
+    #[test]
+    fn a_change_to_what_the_compiler_reports_asks_for_the_notebook_check() {
+        assert!(touches_the_compile_path(["hrw/src/worker.rs"]));
+        assert!(touches_the_compile_path([
+            "crates/rumoca-phase-structural/src/matching.rs"
+        ]));
+        assert!(
+            touches_the_compile_path(["hrw/docs/vision.md", "hrw/src/worker.rs"]),
+            "one compile-path file among documents is still the compile path",
+        );
+
+        assert!(
+            !touches_the_compile_path(["hrw/src/app.rs", "hrw/src/playback.rs"]),
+            "rendering what a compile produced cannot change what it produced",
+        );
+        assert!(!touches_the_compile_path([
+            "hrw/docs/fixture-tours/matching.md"
+        ]));
     }
 
     #[test]

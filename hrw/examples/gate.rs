@@ -194,6 +194,36 @@ fn main() {
         "--all-targets covers the bin, which `cargo test` never builds",
     ));
 
+    // **The notebook check, when the change can move what HRW reports.**
+    //
+    // Placed BEFORE the gate deliberately. It is the slower of the two (~109 s against
+    // ~250 s) and it answers a different question — *did this change what Rumoca
+    // produces* — which the gate cannot, because the gate was green before the change
+    // too. Running it first means a fidelity drift is reported in two minutes rather
+    // than six, and a drift makes the gate's verdict uninteresting anyway.
+    //
+    // It has its own feature because it must give each specimen a **fresh**
+    // `WorkerState`: against the shared worker it is order-dependent, passing alone and
+    // failing in company.
+    if hrw::gate_policy::touches_the_compile_path(refs.iter().copied()) {
+        steps.push(step(
+            "notebook (fidelity)",
+            &[
+                "test",
+                "-p",
+                "hrw",
+                "--lib",
+                "--features",
+                "notebook-check",
+                "--",
+                "--test-threads=1",
+                "the_committed_notebook",
+            ],
+            "the gate cannot tell you the compiler's OUTPUT changed \u{2014} it was \
+             green before the change too",
+        ));
+    }
+
     if full {
         steps.push(step(
             "gate (full)",
