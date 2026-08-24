@@ -365,6 +365,45 @@ mod tests {
         );
     }
 
+    /// **The other two absence branches, which had no test while their sibling did.**
+    ///
+    /// Found by the 2026-08-24 survey of what a pane says when it has nothing to show:
+    /// this file renders three absence messages and only
+    /// [`a_missing_before_half_is_reported_rather_than_substituted`] held one of them, and
+    /// three siblings with one guarded is the shape a column read exists to surface.
+    ///
+    /// Both matter for the same reason as the Before half. An unsplit pane with no matrix
+    /// and a split pane whose After half is missing are **empty states a reader meets by
+    /// ordinary navigation** — opening Incidence on a model whose structural analysis
+    /// failed, which is most failure specimens. A pane that rendered blank there would
+    /// train a reader to read blank as normal, and the one time it meant *"this failed"*
+    /// would look identical.
+    #[test]
+    fn both_remaining_absence_branches_say_what_is_missing() {
+        // Unsplit, and the report carries no incidence at all.
+        let h = draw_incidence(Panes::new(json!({}), false));
+        assert!(
+            h.query_by_label_contains("(no incidence data in this report)")
+                .is_some(),
+            "an unsplit pane with nothing to draw must say so rather than render blank",
+        );
+
+        // Split, with a raw DAE under `before` and no reduced matrix at the root.
+        let report = json!({ "before": matrix_report(2, 2)["incidence"].clone() });
+        let h = draw_incidence(Panes::new(report, true));
+        assert!(
+            h.query_by_label_contains("(no after incidence data)")
+                .is_some(),
+            "the After pane must say the report carried no reduced matrix",
+        );
+        assert_eq!(
+            built(&h.state().after_cache),
+            None,
+            "and it must not have borrowed the Before matrix to fill the gap \u{2014} the \
+             same substitution its sibling test rules out in the other direction",
+        );
+    }
+
     /// **Absence is stated, never filled** — the rule this repository treats as a defect
     /// class. A split report whose `"before"` half is missing must say the Before pane has
     /// nothing, not quietly render the After matrix twice.

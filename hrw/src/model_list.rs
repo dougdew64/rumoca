@@ -598,3 +598,64 @@ impl Default for ModelListState {
         }
     }
 }
+
+#[cfg(test)]
+mod tests_absence {
+    use super::*;
+
+    /// **An empty specimen list says so, and a scan ERROR outranks it.**
+    ///
+    /// From the 2026-08-24 survey. Two branches, and the order between them is the
+    /// finding this pane already carries: the guard *"report, but do not return"*
+    /// predates the corpus, and an empty `specimens/` once took the 2,626 MSL models
+    /// down with it — the whole corpus unreachable because a *different* source was
+    /// empty (2026-08-01).
+    ///
+    /// So the assertions are a pair. An empty scan says it found nothing; a **failed**
+    /// scan says why instead, because *"found none"* and *"could not look"* are
+    /// different facts and only one of them is about the models.
+    #[test]
+    fn an_empty_specimen_scan_says_so_and_an_error_says_why_instead() {
+        use egui_kittest::Harness;
+        use egui_kittest::kittest::Queryable;
+
+        let mut h = Harness::builder()
+            .with_size(egui::Vec2::new(400.0, 700.0))
+            .build_ui_state(
+                |ui, s: &mut ModelListState| {
+                    s.ui(ui, None, false, false);
+                },
+                ModelListState::default(),
+            );
+        h.run_steps(2);
+        assert!(
+            h.query_by_label_contains("(no .mo specimens found)")
+                .is_some(),
+            "an empty specimen scan rendered blank; the list is the app's front door",
+        );
+
+        let with_error = ModelListState {
+            scan_error: Some("specimens/ is not readable".to_owned()),
+            ..Default::default()
+        };
+        let mut h = Harness::builder()
+            .with_size(egui::Vec2::new(400.0, 700.0))
+            .build_ui_state(
+                |ui, s: &mut ModelListState| {
+                    s.ui(ui, None, false, false);
+                },
+                with_error,
+            );
+        h.run_steps(2);
+        assert!(
+            h.query_by_label_contains("is not readable").is_some(),
+            "a scan failure must say why it found nothing",
+        );
+        assert!(
+            h.query_by_label_contains("(no .mo specimens found)")
+                .is_none(),
+            "\u{201c}found none\u{201d} and \u{201c}could not look\u{201d} are different \
+             facts, and reporting both invites the reader to believe the first",
+        );
+    }
+}

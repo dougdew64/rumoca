@@ -741,3 +741,35 @@ pub(crate) fn no_tour_ui(ui: &mut egui::Ui) {
     ));
     ui.weak("It appears here within a moment, and a rewrite is picked up live.");
 }
+
+#[cfg(test)]
+mod tests_absence {
+    use super::*;
+
+    /// **The tour pane says when no tour is open.**
+    ///
+    /// From the 2026-08-24 survey of what a pane says when it has nothing to show. This
+    /// is the **first** thing a reader sees — HRW opens in Tour mode with nothing
+    /// selected — so a blank left panel here is not an edge case, it is the front door.
+    ///
+    /// It also has a specific history worth not undoing: the default used to be
+    /// `end_to_end_tour.md`, retired 2026-07-29 because it described a 7×7 incidence
+    /// matrix on a tab showing 48 equations. **Saying "no tour" is the correction**;
+    /// rendering nothing would look like the retirement broke the pane.
+    #[test]
+    fn the_tour_pane_says_when_no_tour_is_open() {
+        use egui_kittest::Harness;
+        use egui_kittest::kittest::Queryable;
+
+        let mut h = Harness::builder()
+            .with_size(egui::Vec2::new(600.0, 400.0))
+            .build_ui(no_tour_ui);
+        h.run_steps(2);
+
+        assert!(
+            h.query_by_label_contains("No tour right now").is_some(),
+            "the tour pane rendered nothing with no tour selected \u{2014} which is the \
+             state HRW starts in",
+        );
+    }
+}
