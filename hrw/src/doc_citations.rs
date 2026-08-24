@@ -1815,6 +1815,70 @@ Some prose.
         }
     }
 
+    /// **The stranded-sub-view clamp runs, and runs last.**
+    ///
+    /// From the 2026-08-23 column read of the `has_*` availability family, whose
+    /// hypothesis — that a caller might use the alias predicate without the stage test
+    /// it depends on — turned out to be **fully guarded**. `clamp_structural_sub_view`
+    /// was added on 2026-08-19 after exactly that defect: the Aliases tab shipped
+    /// without updating the stage-change default, so a selection stranded on
+    /// `AliasAnim` read the Structural report, found no eliminations, and said *"(no
+    /// alias eliminations in this report)"* about a model that has several. **Absence
+    /// filled rather than stated.**
+    ///
+    /// # What was missing, and it is the must-fire gap
+    ///
+    /// Three tests exercise the clamp, and **all three call it directly**. Delete its
+    /// one production call site and every one of them still passes — the guard would be
+    /// dead, the stranded-view class silently reopened, and nothing would say so. A
+    /// checker whose subject is never invoked is indistinguishable from no checker,
+    /// which is the shape this repository treats as the error nobody catches.
+    ///
+    /// # Why the ORDER is asserted and not just the presence
+    ///
+    /// Its own comment states the requirement: *"Last, so it sees every door."* Three
+    /// things set the structural sub-view — the report row, the stage-change default
+    /// inside it, and the `hrw://` link guard in `apply_pending_view_and_seek` — and
+    /// the clamp checks the result of all three rather than trusting each. Moved above
+    /// the link guard it would validate a selection the guard then replaces, which
+    /// restores the original defect while still looking present.
+    #[test]
+    fn the_stranded_sub_view_clamp_runs_last_in_the_paint_path() {
+        let app = std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("src/app.rs"))
+            .expect("app.rs must be readable");
+
+        let body = app
+            .split_once("fn central_panel_ui(")
+            .expect("central_panel_ui must be present")
+            .1
+            .split_once("\n    }\n")
+            .expect("its body is closed by a `}` at four spaces")
+            .0;
+
+        // Assembled so a rename cannot be satisfied by this file's own prose.
+        let clamp = format!("self.{}()", "clamp_structural_sub_view");
+        let link_guard = format!("self.{}()", "apply_pending_view_and_seek");
+
+        let at_clamp = body.find(clamp.as_str()).unwrap_or_else(|| {
+            panic!(
+                "central_panel_ui never calls the stranded-sub-view clamp. Its three \
+                 tests call it directly, so they would all still pass with the guard \
+                 dead \u{2014} which is how the 2026-08-19 defect would come back \
+                 unannounced."
+            )
+        });
+        let at_guard = body
+            .find(link_guard.as_str())
+            .unwrap_or_else(|| panic!("central_panel_ui never applies a pending sub-view request"));
+
+        assert!(
+            at_clamp > at_guard,
+            "the clamp runs BEFORE the link guard, so it validates a selection the \
+             guard then replaces. Its own comment is `Last, so it sees every door` \
+             \u{2014} there are three doors and this must see the result of all of them.",
+        );
+    }
+
     /// **A link that changes the stage must also leave the log.**
     ///
     /// From the 2026-08-23 column read of `dispatch_hrw_link`'s twelve arms. Five of
