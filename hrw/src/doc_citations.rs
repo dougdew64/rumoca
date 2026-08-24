@@ -1815,6 +1815,136 @@ Some prose.
         }
     }
 
+    /// **Every message a pane shows when it has nothing to show is named by a test.**
+    ///
+    /// The charter's first rule in its cheapest form: *absence is stated, never filled*.
+    /// A pane with nothing to show must say the compiler produced nothing — and **a
+    /// wrong absence message is invisible to everything else here**, because *"no X in
+    /// this report"* is well-formed whether or not it is true. That is how the
+    /// 2026-08-19 alias defect survived until Doug hit it: the pane said a model with
+    /// several eliminations had none.
+    ///
+    /// Built 2026-08-24 from a one-night survey, which is the move this repository keeps
+    /// making — an audit becomes a mechanism, or it is a number that was true once.
+    ///
+    /// # What counts as "rendered"
+    ///
+    /// A string literal opening with *no* / *nothing* / *none*, on or just below a line
+    /// that hands it to a widget. Literals in test modules are excluded, so a message
+    /// that exists only in a test's expectation is not mistaken for one a pane shows.
+    ///
+    /// # Why a ratchet, and what the number MEANS
+    ///
+    /// It is not an arbitrary budget. At the count below, the uncovered set is exactly
+    /// the messages this repository has decided not to test, each with a reason on
+    /// record in `docs/ui-findings.md`:
+    ///
+    /// - **Three are unreachable (C17)** — `connection_anim`, `reduction_anim` and
+    ///   `pre_lowering_anim` each guard construction on a non-empty frame vector, so
+    ///   their internal absence branch never runs and `app.rs` speaks instead. A test on
+    ///   those strings would pass forever regardless of what the pane does, which is
+    ///   C1's reasoning for accepting rather than testing.
+    /// - **Two are per-frame running states**, not empty-pane messages: *"No slots
+    ///   created yet"* and *"No iteration needed yet"* describe a cursor position inside
+    ///   a populated replay. Worth covering, not yet covered.
+    ///
+    /// **Lower it as those are covered; never raise it.** A new absence message with no
+    /// test raises the count and fails here, which is the whole point.
+    #[test]
+    fn every_absence_message_a_pane_shows_is_named_by_a_test() {
+        /// 6 on 2026-08-24, the day this was built: three unreachable (C17) and two
+        /// per-frame states, plus one probe artifact that the punctuation trim below
+        /// removed. Anything above this is a pane that can say something false with
+        /// nothing to catch it.
+        const UNCOVERED_BUDGET: usize = 5;
+
+        // Assembled, so this file's own prose cannot satisfy the scan.
+        let openers = [
+            format!("\"{}", "No "),
+            format!("\"{}", "Nothing "),
+            format!("\"({}", "no "),
+            format!("\"{}", "no "),
+        ];
+        let widgets = ["ui.label", "ui.weak", "ui.small", ".weak(", ".label("];
+
+        let mut rendered: std::collections::BTreeMap<String, String> =
+            std::collections::BTreeMap::new();
+        let mut test_text = String::new();
+
+        for (path, text) in rust_source_texts() {
+            let rel = path.to_string_lossy().replace('\\', "/");
+            let Some(idx) = rel.find("hrw/src/") else {
+                continue;
+            };
+            let rel = rel[idx + "hrw/src/".len()..].to_owned();
+
+            let lines: Vec<&str> = text.lines().collect();
+            let mut in_tests = false;
+            for (i, line) in lines.iter().enumerate() {
+                if line.trim() == "#[cfg(test)]" {
+                    in_tests = true;
+                }
+                if in_tests {
+                    test_text.push_str(line);
+                    test_text.push('\n');
+                    continue;
+                }
+                let Some(at) = openers.iter().find_map(|o| line.find(o.as_str())) else {
+                    continue;
+                };
+                // Rendered? This line or the two above must hand it to a widget.
+                let window = lines[i.saturating_sub(2)..=i].join("\n");
+                if !widgets.iter().any(|w| window.contains(w)) {
+                    continue;
+                }
+                let rest = &line[at + 1..];
+                let Some(end) = rest.find('"') else { continue };
+                let msg = rest[..end].to_owned();
+                if msg.len() >= 6 {
+                    rendered.entry(msg).or_insert(rel.clone());
+                }
+            }
+        }
+
+        assert!(
+            rendered.len() >= 12,
+            "only {} absence messages were found, so the scan has stopped reading the \
+             views",
+            rendered.len(),
+        );
+
+        // **Trailing punctuation is trimmed from the probe**, and that is a correction:
+        // the first run reported `tour_panel`'s message uncovered because its test
+        // asserts `"No tour right now"` while the source says `"No tour right now."` —
+        // the finding was the probe, not the pane.
+        let uncovered: Vec<(&String, &String)> = rendered
+            .iter()
+            .filter(|(msg, _)| {
+                let probe: String = msg
+                    .chars()
+                    .take(30)
+                    .collect::<String>()
+                    .trim_end_matches(['.', ',', ' ', '\\'])
+                    .to_owned();
+                !probe.is_empty() && !test_text.contains(probe.as_str())
+            })
+            .collect();
+
+        assert!(
+            uncovered.len() <= UNCOVERED_BUDGET,
+            "{} absence messages are named by no test, budget {UNCOVERED_BUDGET}:\n  {}\n\n\
+             A pane that says the wrong thing when it has nothing to show is well-formed \
+             and invisible to every other check here. Cover it, or record why it cannot \
+             be covered in docs/ui-findings.md the way C17 does.",
+            uncovered.len(),
+            uncovered
+                .iter()
+                .map(|(m, f)| format!("[{f}] {m}"))
+                .collect::<Vec<_>>()
+                .join("\n  "),
+        );
+    }
+
     /// **The stranded-sub-view clamp runs, and runs last.**
     ///
     /// From the 2026-08-23 column read of the `has_*` availability family, whose
