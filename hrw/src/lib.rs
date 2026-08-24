@@ -60,6 +60,9 @@ pub mod error_summary;
 pub mod expr_format;
 pub mod fidelity;
 pub mod field_help;
+/// Which pre-commit gate a change needs. Used by `examples/gate.rs`, and here
+/// rather than there so the decision is reachable by a test.
+pub mod gate_policy;
 pub mod ic_plan_anim;
 pub mod identifier_index;
 pub mod incidence_view;

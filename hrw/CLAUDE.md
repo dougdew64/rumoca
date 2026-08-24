@@ -922,26 +922,24 @@ Whenever that shape appears, the mechanism belongs on Claude's side.
 `docs/architecture.md` carries module **line counts** derived from the source, so:
 
 ```text
-cargo fmt -p hrw                                   # rewraps lines -> changes the counts
-cargo run -q -p hrw --example gen_architecture     # module sizes, App field groups
-cargo run -q -p hrw --example gen_tour_catalogue   # tour stops -- ANY heading edit changes these
-cargo clippy -p hrw --all-targets                  # lint the code in the shape it ships in
-cargo test -p hrw --lib --test msl_resolve --features slow-tests -- --test-threads=1
+cargo run -p hrw --example gate        # fmt -> generate -> lint -> test, in that order
 ```
 
-**Getting this wrong costs the whole 225 s, and it has now cost it four times.** Twice on
-2026-08-15 by regenerating *after* the gate; once on 2026-08-16 by regenerating *before*
-`cargo fmt`, which reflowed the source it measures; and once the same day by regenerating
-`architecture.md` while forgetting **`CATALOGUE.md` exists at all** — adding one `##` heading to
-a tour changes its stop list.
+**RUN THE TOOL, NOT THE SEQUENCE — added 2026-08-23, after this order was got wrong for the
+TENTH time.** It cost the whole gate four times before that session and **six times during it**,
+always the same way: `clippy` and the gate run straight after `cargo fmt`, so the rewrapped source
+no longer matches the line counts `architecture.md` carries, and `architecture_regions_are_current`
+fails at the end of a 230-second run. **Ten instances is not a memory problem**, and this
+repository's own answer to a rule that keeps being got wrong is to give it a mechanism.
 
-**There are two generated documents, not one**, and the pattern each time has been *"I ran the
-generator"* rather than *"I ran the generators"*. The failures announce themselves as
-`architecture_regions_are_current` and `tour_catalogue_is_current`.
+`gate` picks FAST or FULL from the working tree by the rule below, runs **all four** generators
+(the matching reference included, which the hand-written list omitted), adds `fmt` **and** `clippy`
+for any `crates/rumoca-*` package the change touches, stops at the first failure naming what that
+step protects, and refuses to start while HRW holds `hrw.exe`. `--fast` / `--full` override the
+verdict. The decision itself is `gate_policy`, in the library so it is reachable by a test —
+choosing FULL needlessly costs four minutes and is obvious, while choosing FAST wrongly is silent.
 
-**A third and fourth generator exist and are NOT in this list**, deliberately:
-`gen_field_help` (build-time doc comments, run by `build.rs`) and `gen_matching_reference`. If a
-gate ever fails on their output, they belong here too.
+`gen_field_help` is still outside it, deliberately: `build.rs` runs it.
 
 **The gate fails while HRW is running** — `Access is denied` on `hrw.exe`. Doug builds from the
 tree and keeps the app open, so this is normal, and **not always transient**: once a preceding
