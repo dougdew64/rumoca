@@ -1977,7 +1977,25 @@ impl App {
                     }
                 }
                 FromWorker::DefTree { name, result } => {
-                    self.nav_loading = None;
+                    // **Only the awaited request clears the indicator.** The three
+                    // arms above all refuse to act on a result that is no longer the
+                    // one in flight — `CompileProgress`, `Compiled` and `Simulated`
+                    // each compare the message's `path` against `selected` — and this
+                    // arm was the one that did not.
+                    //
+                    // Nothing gates navigation while a fetch is running, so clicking a
+                    // second class before the first returns is ordinary use. The worker
+                    // is FIFO, so the first result then arrived and cleared "opening
+                    // B…" while B was still in flight: the pane said nothing was
+                    // loading during a load. Found by the 2026-08-23 column read of
+                    // this router's six arms.
+                    //
+                    // The entry is still pushed. Both classes were genuinely asked for
+                    // and `nav` is a stack of what was opened, so dropping the earlier
+                    // one would lose a navigation the reader made.
+                    if self.nav_loading.as_deref() == Some(name.as_str()) {
+                        self.nav_loading = None;
+                    }
                     match result {
                         Ok((value, def_index)) => {
                             self.nav.push(NavEntry {

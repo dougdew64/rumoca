@@ -2320,6 +2320,106 @@ fn drain_worker_compile_progress_ignored_for_stale_specimen() {
     assert!(app.stages.parse.value.is_none());
 }
 
+/// **A partial result must not claim the compile finished.**
+///
+/// `CompileProgress` carries a documented contract in its own arm: *"Compilation is
+/// still running, so DON'T touch `compiling`, `stage`, `def_index`, or the bridge —
+/// the final `Compiled` owns those."* Nothing checked it, and every field it names is
+/// one the UI reads to decide whether work is still happening. Setting `compiling`
+/// here would stop the spinner and re-enable the buttons **mid-pipeline**, which looks
+/// exactly like a finished compile that produced half a model.
+///
+/// Written during the 2026-08-23 column read of this router, as the companion to the
+/// finding recorded in `docs/unattended-runs.md`: the same arm replaces `self.stages`
+/// without invalidating the view caches built from the previous report, which is a
+/// question about what a pane shows and therefore Doug's to rule on rather than
+/// Claude's to change.
+#[test]
+fn drain_worker_compile_progress_does_not_claim_the_compile_finished() {
+    let (mut app, tx) = App::test_with_sender();
+    let path = PathBuf::from("/test/specimen.mo");
+    app.selected = Some(path.clone());
+    app.compiling = true;
+    app.stage = StageKind::Flatten;
+
+    tx.send(FromWorker::CompileProgress {
+        path,
+        stages: StageBundle {
+            parse: Stage::ok(serde_json::json!({"parsed": true})),
+            ..Default::default()
+        },
+    })
+    .unwrap();
+    app.drain_worker();
+
+    assert!(
+        app.compiling,
+        "a partial result cleared `compiling`; the spinner stops and the buttons \
+         re-enable while the pipeline is still running",
+    );
+    assert_eq!(
+        app.stage,
+        StageKind::Flatten,
+        "a partial result moved the displayed stage out from under the reader",
+    );
+    assert!(
+        app.def_index.is_empty(),
+        "`def_index` is the final compile's to publish",
+    );
+    assert!(
+        app.stages.parse.value.is_some(),
+        "the stages it IS responsible for must still land, or this test would pass \
+         against an arm that ignored the message entirely",
+    );
+}
+
+/// **A superseded navigation result must not clear the indicator for the one still
+/// in flight.**
+///
+/// From the 2026-08-23 column read of `drain_worker`'s six arms. Three of them refuse
+/// to act on a result that is no longer awaited — `CompileProgress`, `Compiled` and
+/// `Simulated` each compare the message's `path` against `selected`, and `DefTree` was
+/// the arm that did not.
+///
+/// Nothing gates navigation while a fetch runs, so clicking a second class before
+/// the first returns is ordinary use, and the worker is FIFO: the first result
+/// arrives and used to clear `nav_loading` outright, so the pane stopped saying
+/// "opening B…" while B was still being fetched.
+///
+/// The pair of assertions is the point. Checking only that the stale arrival leaves
+/// the indicator alone would pass on an arm that never cleared it at all.
+#[test]
+fn drain_worker_def_tree_keeps_the_indicator_for_a_request_still_in_flight() {
+    let (mut app, tx) = App::test_with_sender();
+    app.nav_loading = Some("Modelica.Electrical.Analog.Basic.Resistor".to_owned());
+
+    // The earlier request lands after the reader has moved on to another class.
+    tx.send(FromWorker::DefTree {
+        name: "Modelica.Blocks.Sources.Constant".to_owned(),
+        result: Ok((serde_json::json!({"class": "Constant"}), BTreeMap::new())),
+    })
+    .unwrap();
+    app.drain_worker();
+
+    assert_eq!(
+        app.nav_loading.as_deref(),
+        Some("Modelica.Electrical.Analog.Basic.Resistor"),
+        "a superseded result cleared the indicator for the request still in flight, so \
+         the pane reported nothing loading during a load",
+    );
+    assert_eq!(app.nav.len(), 1, "the earlier class was still asked for");
+
+    // And the awaited one does clear it.
+    tx.send(FromWorker::DefTree {
+        name: "Modelica.Electrical.Analog.Basic.Resistor".to_owned(),
+        result: Ok((serde_json::json!({"class": "Resistor"}), BTreeMap::new())),
+    })
+    .unwrap();
+    app.drain_worker();
+    assert!(app.nav_loading.is_none(), "the awaited result clears it");
+    assert_eq!(app.nav.len(), 2);
+}
+
 #[test]
 fn drain_worker_compiled_clears_caches_and_updates_state() {
     let (mut app, tx) = App::test_with_sender();
