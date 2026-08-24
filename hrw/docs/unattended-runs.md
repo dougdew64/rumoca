@@ -81,7 +81,12 @@ Absolute, regardless of how safe it looks at 3 a.m.:
 
 - **`worker.rs`'s compile path.** Extract *around* it; never restructure it. `compile_target` is
   1,085 lines from line 2049 and is prohibited ground.
-- **How the MSL session is loaded, cached or shared** — Doug's ruling, on fidelity grounds.
+- **How the MSL session is loaded, cached or shared.** **The ruling was made and is standing**, not
+  pending: Doug declined lever B — compiling MSL-free specimens in a bare session — on 2026-08-21,
+  because the compiles are identical *except for DefId numbering*, and DefIds are observable in the
+  pane and in every committed trace. So ~49 s of a ~290 s gate would have been bought by changing
+  what HRW displays. Any **further** change in this class comes to him first; it is not an open
+  question awaiting an answer.
 - **Anything that changes what a pane *claims*.** Accuracy outranks everything, and a pane's claim
   is the one thing no checker here verifies for meaning.
 - **Anything trading fidelity for anything else.**

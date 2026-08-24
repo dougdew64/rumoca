@@ -2400,7 +2400,7 @@ levers were authorised on; the right-hand column is what an instrumented full ga
 | # | lever | estimated | **measured** | status |
 |---|---|---:|---:|---|
 | **A** | Stop invalidating the resolved MSL on every compile | ~1.6 s × 72 ≈ 115 s | **~5 s** | **DEAD — Doug skipped it 2026-08-21** |
-| **B** | Compile MSL-free specimens in a bare session | 49.5 s → 0.5 s | not measured | authorised; **blocked on a fidelity ruling** |
+| **B** | Compile MSL-free specimens in a bare session | 49.5 s → 0.5 s | not measured | **DECLINED — Doug ruled on fidelity, 2026-08-21.** This row said *"authorised; blocked on a fidelity ruling"* until 2026-08-24, describing the state the evening before the ruling and outliving it. The final ledger below had the outcome right the whole time, so the two tables disagreed — and a reader consulting this one concludes an open decision is waiting, which is what happened on 2026-08-24. |
 | **C** | Reduce the 10 full MSL loads | up to 44 s | **~48 s** | **BUILT 2026-08-21** |
 | **D** | Cut `t_end` | — | **0 s** | dead, see above |
 
