@@ -24,114 +24,20 @@ planned the run does not survive to the machine that executes it. When a run fin
 goes to the run log below and this section is overwritten by the next plan — otherwise it becomes
 the accumulating history `CLAUDE.md`'s *Current work* had to be rescued from.
 
-### Queued 2026-08-24 for night 4 — WHAT A PANE SAYS WHEN IT HAS NOTHING TO SHOW
+### NOTHING IS QUEUED — night 4 ran; its record is in the run log below
 
-**Same machine, same preconditions.** Run `cargo run -p hrw --example check_machine` first.
+**Queue the next run by replacing this heading and what follows it.** The slot is one deep.
 
-**Why the lens rotates, and the evidence is the ledger.** Three nights read routers, rosters and
-dispatch tables — the plumbing — and night 3 produced **four nulls out of seven threads**, each
-correct for a documented reason, because every one had been repaired already. Meanwhile **Doug's
-own findings are almost all about panes**: a list clipped by a nested scroll area, a replay opening
-mid-progress, a hover-only explanation, a divider learning the wrong fraction. **The nights and his
-eyes have been searching different halves of the codebase.** Aim where his reports land.
+**But read the run log's conclusion first.** Two nights of careful reading produced one minor
+defect between them, and night 4 produced none. The nights are buying insurance rather than
+fixes on app-side code. **Before queueing a fifth, the question for Doug is whether that is
+still worth the gate time** — and `CLAUDE.md`'s order says `worker.rs` is next, which *wants
+him awake*.
 
-**And this surface is the one the charter ranks first.** *Absence is stated, never filled* — a pane
-with nothing to show must say the compiler produced nothing, and why. **A wrong absence message is
-invisible to every test there is**: "no X in this report" is well-formed whether or not it is true,
-which is exactly how the 2026-08-19 alias defect survived until Doug hit it.
-
-**Measured 2026-08-24, so the run starts from a list rather than a search.** Sixteen absence
-messages are *rendered* into a pane; **five are named by a test and eleven are not.** Seven of the
-eleven are in the animation views. Coverage is a lower bound — a test may assert a shorter fragment
-than the probe used — so **each is a candidate to read, not a defect**.
-
-**1 — Cover the seven animation-view messages**, and read each against the condition that fires it:
-
-| file | message |
-|---|---|
-| `alias_anim.rs` | `No alias eliminations in this model.` |
-| `connection_anim.rs` | `No connections in this model.` |
-| `reduction_anim.rs` | `No index-reduction trace available.` |
-| `ic_plan_anim.rs` | `No iteration needed yet — pure assignment.` |
-| `ic_plan_anim.rs` | `Nothing has to be solved at t=0 — every unknown comes from a start attribute.` |
-| `pre_lowering_anim.rs` | `No pre() lowering trace available.` |
-| `pre_lowering_anim.rs` | `No slots created yet.` |
-
-The question per message is **not** whether it renders — it is whether it is **true when it shows**,
-and whether it distinguishes *the compiler produced none* from *HRW could not read any*. A test
-that fires each one is the deliverable.
-
-**2 — The remaining four**: `matrix_panes.rs` ×2 (`(no after incidence data)`,
-`(no incidence data in this report)`), `model_list.rs` (`(no .mo specimens found)`), `tour_panel.rs`
-(`No tour right now.`). **Check `matrix_panes` first** — `CLAUDE.md` records that it gained six
-tests including absence notices on 2026-08-20, so these two may be covered by a shorter fragment
-than the survey's probe, in which case the finding is the probe.
-
-**3 — Make it standing.** Turn the survey into a checker: every rendered absence message is named
-by some test, ratcheted at whatever count remains after items 1 and 2. That converts a one-night
-audit into a mechanism, which is the move that has paid off every time it was made here.
-
-**⟶ ONE FINDING IS ALREADY IN HAND, AND IT IS A PANE CLAIM — so record, do not reword.** The alias
-view has **two** absence messages of near-identical wording and different meaning: `app.rs:3962`
-says *"(no alias eliminations in this report)"* when the animation **could not be built**, and
-`alias_anim.rs:203` says *"No alias eliminations in this model."* when it **was built and has no
-frames**. Only the first is tested. *Report* versus *model* is the entire difference between "the
-compiler produced none" and "HRW could not read any". **Rewording is a pane claim and belongs to
-Doug**; testing both, and recording which condition each really fires under, does not.
-
-**Precedence:** a message found to be *false* wins over covering the rest. That is the defect this
-lens exists to find.
-
----
-
-*Below is night 3's plan, kept for one cycle because the run log's conclusions refer back to its
-evidence. Delete it when night 4's record lands.*
-
-### Ran 2026-08-23 — night 3: `app.rs`, and the goal was BUGS
-
-**Same machine, same preconditions.** Run `cargo run -p hrw --example check_machine` first; it
-costs about a second and answers what a `git pull` does not bring.
-
-**Why these three.** [`app-split-plan.md`](app-split-plan.md) is **closed** — extraction landed
-2026-08-21 — so this is bug discovery, not refactoring, and `CLAUDE.md`'s rule picks seams **by
-where defects are likely**: code never closely read, code that cannot be tested, clusters of
-siblings where one member may differ.
-
-`app.rs` holds three **routers**, each a match over a variant set, each 200+ lines. **Neither of
-the big two has a wildcard arm**, so coverage is already compiler-enforced — *counting arms is not
-the exercise*. The exercise is the recorded one: **a router's seam is an asymmetry among its
-arms**, the lens that found four of the eight defects in the `app.rs` arc.
-
-**1 — Column-read `drain_worker`'s six arms.** `app.rs:1780`, 215 lines. Every worker message
-becomes UI state here: `Libraries`, `Log`, `CompileProgress`, `Compiled`, `DefTree`, `Simulated`.
-Per arm, ask what its siblings do that it does not — invalidate a cache, request a repaint, clear
-the `compiling` flag, feed the stage-diff highlight. **This class is live here**: the 2026-08-20
-cache-lifetime finding and the stranded sub-view both landed in this function's blast radius.
-
-**2 — Column-read `dispatch_hrw_link`'s twelve arms.** `app.rs:2568`, 244 lines. **Night 1 read
-`HrwLink`'s `parse` and `describe` and found them sound; `dispatch` is the third member of that
-family and has never been read.** Two questions, each with a precedent: does every arm guard its
-target's *availability* — a link once selected a view that had no tab, which
-`structural_view_available` exists to prevent — and does every arm clear pending state uniformly?
-The tour-link hooks were once never cleared, so the first click masked every later one.
-
-**3 — The `has_*` availability family.** Three predicates gating tabs, reading three different
-sources: `has_alias_eliminations` (`app.rs:3952`) reads **the current stage**, `has_ic_plan`
-(`app.rs:3983`) reads the **named** initialization stage, `has_pre_lowering_trace` (`app.rs:3998`)
-reads **frames**.
-
-**The obvious risk is already guarded, and that is what makes this worth reading rather than
-fixing:** `StructuralView::AliasAnim => is_index_reduction && self.has_alias_eliminations()`, so
-the predicate is only correct *because a caller adds the stage test*. `structural.json` carries no
-`reduction` key at all, so the predicate alone is false on the Structural stage. **The live
-question is whether every caller adds that test.** `app.rs:4349` compares
-`viewport.structural == AliasAnim` directly and is the candidate odd caller.
-
-**Free parallel read, consuming none of the item budget:** `central_panel_ui` — 321 lines from
-`app.rs:4127`, the largest router and never closely read.
-
-**Precedence:** a defect found in items 1 or 2 wins over starting the next item. Three is a cap,
-not a quota.
+**If a night is queued anyway**, the two candidates night 4 leaves are small and honest: cover
+the two per-frame absence messages it did not (`No slots created yet`, `No iteration needed
+yet`), which drops the ratchet from 5 to 3; and read `spy_plot_pane_ui`'s absence branch, which
+the survey found already covered but which no one has read against its condition.
 
 ### The command
 
@@ -359,6 +265,47 @@ cost table for a question the charter already answers **invites a ruling that co
 project's own rules** — and the cost side of that table was performance, which this file says
 repeatedly is not what HRW optimises for. *When a decision looks like a trade, check first
 whether one option is a documented fiction; if it is, there is no trade to present.*
+
+### Night 4 — 2026-08-24. Three items, three commits, gate green on each, nothing pushed
+
+| item | commit | what it found |
+|---|---|---|
+| 1 — the seven animation-view messages | `3304f072` | **three findings, no live defect.** Each view has *two* absence states and only one of each pair was tested. C17–C19 recorded. |
+| 2 — the remaining four | `dfe350b2` | **a coverage gap and an ordering fact.** `matrix_panes` renders three absence messages and held one; `model_list`'s two branches are about *precedence*, not presence. |
+| 3 — make it standing | `6950065f` | the survey is a ratchet now: every rendered absence message must be named by a test. |
+
+**Six messages newly covered, and the uncovered count is now exactly the documented five** —
+three unreachable (C17) and two per-frame running states. Verified by setting the budget to
+zero and reading the list back, which is the difference between a budget and a number.
+
+#### NO LIVE DEFECT, AND THAT IS THE SECOND NIGHT RUNNING
+
+Night 3 found one minor defect and two missing guards; night 4 found none and three findings.
+**The nights are now buying insurance rather than fixes.** Three things follow, and the third
+is the one to act on:
+
+- **The rotation was still right.** It found things night 3's lens could not, and C19 is a real
+  accuracy question — a pane stating a *cause* it infers, beside a header carrying the cause
+  Rumoca reported.
+- **Two live-defect hypotheses died on inspection**, both written down: a suspected false
+  message during live sessions (`Playback::is_empty()` already excludes a live session with no
+  frames), and a suspected unreachable-message bug that is an accepted defensive branch. A null
+  that looks like a defect costs the next session the same reading twice.
+- **⟶ The app side may simply be in good shape.** Two nights of careful reading across
+  routers, rosters and panes have produced one minor defect. `CLAUDE.md`'s own order says
+  `worker.rs` comes after `app.rs` — and `worker.rs` *wants Doug awake*, because unattended work
+  there keeps arriving at boundaries only he can rule on. **That is the question for him, not a
+  fourth lens: are these nights still worth their gate time on app-side code?**
+
+#### Owed to Doug
+
+- **C19 is a pane claim awaiting a ruling.** `ic_plan_anim` says *"Nothing has to be solved at
+  t=0 — every unknown comes from a start attribute."* The report separately carries Rumoca's
+  `determinacy.verdict`, and the header renders it. The sentence is hardcoded, and true today
+  only because the two specimens that reach it (`BouncingBall`, `SingleInertia`) carry a verdict
+  it paraphrases. Reading the verdict instead, or dropping the cause, both change what the pane
+  says.
+- **Nothing is pushed.** Three commits sit on `hrw` ahead of `origin/hrw`.
 
 ### ⟶ THE HABIT IS ADOPTED — Doug, 2026-08-23, and the lens to lead with
 

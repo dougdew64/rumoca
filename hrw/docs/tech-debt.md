@@ -250,6 +250,8 @@ note; the rest quote the commit.
 | 08-23 | `drain_worker`'s `DefTree` arm cleared the loading indicator for a request **still in flight** — the one arm of six with no staleness guard | Claude | night 3, column read of the router's six arms |
 | 08-23 | `requires_specimen`'s doc said *"the three that do not need one"* while its list held **six** | Claude | night 3, column read of `dispatch_hrw_link`'s twelve arms |
 | 08-24 | a recompile drew the **previous** compile's matrix over the current compile's report — `CompileProgress` invalidated no view cache | Claude | night 3 found it; **Doug ruled it a fiction rather than a trade**, on the principles |
+| 08-24 | `ic_plan_anim`'s empty-plan message states a **cause** HRW infers — *"every unknown comes from a start attribute"* — beside a header showing Rumoca's own verdict | Claude | night 4; true today by agreement, not derivation. `ui-findings.md` C19, awaiting Doug |
+| 08-24 | 6 of 16 absence messages were named by no test, including 2 of 3 in one file where the third was tested | Claude | night 4; the survey that found them is now a standing checker |
 
 **Seven days: Doug 8, Claude 13, toolchain 3.** Against the first two days' **Doug 10, toolchain 5,
 Claude 5**, the rate that matters moved: **Doug from ~5.0/day to ~1.1/day**, while Claude's own
