@@ -512,6 +512,10 @@ impl MatchingAnimation {
 
         // Highlight based on current step.
         match &frame.step {
+            // The opening frame highlights nothing: the algorithm has not looked
+            // at a row yet, and drawing a band would claim it had. The matrix
+            // above is the whole content of this frame.
+            MatchingStep::Start { .. } => {}
             MatchingStep::TryEquation(eq) => {
                 // Highlight the entire row being attempted.
                 let band = egui::Rect::from_min_size(
@@ -666,6 +670,18 @@ fn step_description(
     let eq_name = |i: usize| eq_names.get(i).map(String::as_str).unwrap_or("?");
     let var_name = |i: usize| var_names.get(i).map(String::as_str).unwrap_or("?");
     match step {
+        // Clapper board, matching every other opening frame in the project —
+        // `34c22d56`: a start icon, not a finish flag.
+        MatchingStep::Start {
+            n_equations,
+            n_unknowns,
+        } => (
+            "\u{1f3ac}",
+            format!(
+                "Starting point: {n_equations} equations, {n_unknowns} unknowns, nothing \
+                 matched yet"
+            ),
+        ),
         MatchingStep::TryEquation(eq) => (
             "\u{1f50d}",
             format!(
@@ -957,19 +973,35 @@ mod tests {
 
         assert_eq!(
             steps.len(),
-            8,
-            "SingleInertia matches two equations with no displacement: try/explore/found/assign,              twice. A different count means the frame numbers in every tour have moved",
+            9,
+            "SingleInertia matches two equations with no displacement: an opening frame, \
+             then try/explore/found/assign twice. A different count means the frame numbers \
+             in every tour have moved",
         );
-        // Frame 3 is the one a tour would cite for "der(phi) gets matched".
+        // **The opening frame, added 2026-08-23**, is what shifted every index
+        // below by one. It describes the problem before the search — the state
+        // a replay needs in order to show what the search changed.
         assert!(
-            matches!(steps[3], MatchingStep::Assign { eq: 0, var: 0 }),
-            "frame 3 must be the assignment of the first unknown; found {:?}",
-            steps[3],
+            matches!(
+                steps[0],
+                MatchingStep::Start {
+                    n_equations: 2,
+                    n_unknowns: 2
+                }
+            ),
+            "frame 0 must be the starting point; found {:?}",
+            steps[0],
+        );
+        // Frame 4 is the one a tour would cite for "der(phi) gets matched".
+        assert!(
+            matches!(steps[4], MatchingStep::Assign { eq: 0, var: 0 }),
+            "frame 4 must be the assignment of the first unknown; found {:?}",
+            steps[4],
         );
         assert!(
-            matches!(steps[7], MatchingStep::Assign { eq: 1, var: 1 }),
-            "frame 7 must be the assignment of the second; found {:?}",
-            steps[7],
+            matches!(steps[8], MatchingStep::Assign { eq: 1, var: 1 }),
+            "frame 8 must be the assignment of the second; found {:?}",
+            steps[8],
         );
     }
 }

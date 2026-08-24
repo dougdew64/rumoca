@@ -583,6 +583,11 @@ impl TarjanAnimation {
 fn step_description(step: &TarjanStep, names: &[String]) -> (&'static str, String) {
     let name = |i: usize| names.get(i).map(String::as_str).unwrap_or("?");
     match step {
+        // Clapper board, as on every other opening frame — `34c22d56`.
+        TarjanStep::Start { n_nodes } => (
+            "\u{1f3ac}",
+            format!("Starting point: {n_nodes} nodes, nothing visited and no component closed yet"),
+        ),
         TarjanStep::Visit(v) => (
             "\u{1f50d}",
             format!("Visiting node {} ({}): assigned index/lowlink", v, name(*v)),

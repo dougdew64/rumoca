@@ -16,6 +16,12 @@ Pick it from the Tours list. Every link below is parsed on every test run by
 off-by-one in a parenthetical rather than treating it as the bug it was — Doug spotted
 that while walking the stops in order.
 
+*Every matching replay gained an opening frame on 2026-08-23, so each number below now
+lands one step earlier than it used to. The numbers were **left as they are**: this tour
+seeks 41 and 6 to prove that a jump forwards and a jump backwards work, not because
+either is a particular moment in the algorithm. A tour that cited a frame for **what it
+shows** would have had to be re-derived with `cargo run -p hrw --example frame_index`.*
+
 ---
 
 ## Stop 0 — A stop clicked out of order
@@ -43,7 +49,9 @@ a broken link, which is the one outcome a tour cannot survive.)*
 48 equations, structurally singular, so the search will fail — that is the interesting
 part, and the reason this view is reachable at all (`ideas.md` #44).
 
-**Expected:** frame 1 of many, paused, nothing yet matched.
+**Expected:** frame 1 of many, paused, and it is the **starting point** — a clapper-board
+icon, "48 equations, 48 unknowns, nothing matched yet", and an empty matrix. Frame 1 is
+the system before the search, not its first move.
 
 ## Stop 2 — Jump into the middle
 

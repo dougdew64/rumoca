@@ -399,6 +399,7 @@ fn ledger_rows(model: &str) -> Option<Vec<(usize, String, String, usize)>> {
 /// The variant's bare name, for looking up its emit site.
 fn variant_name(step: &MatchingStep) -> &'static str {
     match step {
+        MatchingStep::Start { .. } => "Start",
         MatchingStep::TryEquation(_) => "TryEquation",
         MatchingStep::Explore { .. } => "Explore",
         MatchingStep::FoundFree { .. } => "FoundFree",
@@ -414,6 +415,10 @@ fn variant_name(step: &MatchingStep) -> &'static str {
 /// shows, spelled out.
 fn describe(step: &MatchingStep) -> String {
     match step {
+        MatchingStep::Start {
+            n_equations,
+            n_unknowns,
+        } => format!("`Start {{ n_equations: {n_equations}, n_unknowns: {n_unknowns} }}`"),
         MatchingStep::TryEquation(eq) => format!("`TryEquation({eq})`"),
         MatchingStep::Explore { eq, var } => format!("`Explore {{ eq: {eq}, var: {var} }}`"),
         MatchingStep::FoundFree { eq, var } => format!("`FoundFree {{ eq: {eq}, var: {var} }}`"),
@@ -646,33 +651,40 @@ mod tests {
     /// **The generated ledger reproduces the walked run, step for step.**
     ///
     /// Non-vacuity for the whole generator: it re-runs the real algorithm over
-    /// `TwiceDefined`'s recorded incidence and must produce exactly the nine
-    /// frames Doug stepped through, in order. If the specimen, the algorithm or
-    /// the trace changes, this fails rather than silently describing a different
-    /// run.
+    /// `TwiceDefined`'s recorded incidence and must produce exactly the frames
+    /// Doug stepped through, in order. If the specimen, the algorithm or the
+    /// trace changes, this fails rather than silently describing a different run.
+    ///
+    /// **Ten frames since 2026-08-23, not nine** — the traced run now opens with
+    /// `Start`, describing the system before the search. Every index below moved
+    /// by one, which is the whole reason this test is spelled out step by step.
     #[test]
     fn the_generated_ledger_reproduces_the_twicedefined_walk() {
         let rows = ledger_rows("TwiceDefined").expect("TwiceDefined must have a structural trace");
         let steps: Vec<&str> = rows.iter().map(|(_, s, _, _)| s.as_str()).collect();
         assert_eq!(
             rows.len(),
-            9,
-            "the walk produced nine frames, got {steps:?}"
+            10,
+            "the walk produced ten frames, got {steps:?}"
         );
 
-        assert!(steps[0].contains("TryEquation(0)"));
         assert!(
-            steps[6].contains("TryDisplace"),
-            "frame 6 is the displacement"
+            steps[0].contains("Start"),
+            "frame 0 is the system before the search"
         );
-        assert!(steps[7].contains("DisplaceFail"), "frame 7 is the refusal");
+        assert!(steps[1].contains("TryEquation(0)"));
         assert!(
-            steps[8].contains("EquationFailed(1)"),
-            "frame 8 is the give-up"
+            steps[7].contains("TryDisplace"),
+            "frame 7 is the displacement"
+        );
+        assert!(steps[8].contains("DisplaceFail"), "frame 8 is the refusal");
+        assert!(
+            steps[9].contains("EquationFailed(1)"),
+            "frame 9 is the give-up"
         );
 
         let depths: Vec<usize> = rows.iter().map(|(_, _, _, d)| *d).collect();
-        assert_eq!(depths, vec![0, 1, 1, 1, 0, 1, 1, 1, 0]);
+        assert_eq!(depths, vec![0, 0, 1, 1, 1, 0, 1, 1, 1, 0]);
     }
 
     /// **Every anchor is found.** A `None` from the scan would silently drop a

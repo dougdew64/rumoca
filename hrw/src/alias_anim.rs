@@ -116,16 +116,34 @@ impl AliasAnimation {
                     ),
                 })
             });
+        // **Captured, not computed** — `before.n_unknowns` is the size of the
+        // system as the reduction stage actually found it, recorded during the
+        // run. HRW used to derive this as `n_unknowns + eliminations.len()`,
+        // reasoning that each alias elimination removes exactly one unknown.
+        //
+        // That reasoning was sound and the two agree on every specimen with a
+        // committed trace (2026-08-23: Drivetrain 97, MotorWithBrake and
+        // BenchActuator 48, GearWithBrake 44, RcCircuit and OverInitRc 23,
+        // SingleInertia 2) — but it was *arithmetic HRW did*, and it understated
+        // the starting size whenever an elimination failed to parse. The
+        // captured number cannot: it was measured before the pass ran.
+        // `the_starting_size_is_read_from_the_run_not_reconstructed` holds them
+        // to each other.
+        //
+        // The derivation survives only as a fallback for a report with no
+        // `before` block, and its old failure mode is still announced through
+        // `problems`.
         let unknowns_before = report
-            .get("n_unknowns")
+            .get("before")
+            .and_then(|b| b.get("n_unknowns"))
             .and_then(serde_json::Value::as_u64)
-            .map(
-                // The report's count is the system *after* elimination, so the
-                // starting size is that plus the variables this pass removed.
-                // **Counted from the eliminations, not from the frame list**,
-                // which is one longer now that it opens with `Start`.
-                |n| n as usize + eliminations.len(),
-            );
+            .map(|n| n as usize)
+            .or_else(|| {
+                report
+                    .get("n_unknowns")
+                    .and_then(serde_json::Value::as_u64)
+                    .map(|n| n as usize + eliminations.len())
+            });
 
         // **No opening frame when there is nothing to open.** A lone `Start`
         // would make `is_empty()` false for a model with no eliminations, and
@@ -370,9 +388,14 @@ mod tests {
         assert!(s.contains("r1.p.v") && s.contains("src.n.v"), "{s}");
     }
 
-    /// The report's unknown count is the system *after* elimination, so the
-    /// starting size has to be reconstructed. Getting this backwards would show
-    /// the system growing.
+    /// **The fallback path**, for a report carrying no `before` block: the
+    /// report's unknown count is the system *after* elimination, so the starting
+    /// size is reconstructed. Getting this backwards would show the system
+    /// growing.
+    ///
+    /// A real compile takes the captured path instead — see
+    /// [`tests::the_starting_size_is_read_from_the_run_not_reconstructed`], which
+    /// also proves the two agree.
     #[test]
     fn the_running_count_reconstructs_the_starting_size() {
         let anim = AliasAnimation::from_report(&report(&[("a", "b"), ("c", "d"), ("e", "f")], 20))
@@ -437,6 +460,59 @@ mod tests {
         assert_eq!(ctx["eliminated_so_far"], 1);
         assert_eq!(ctx["eliminations_total"], 1);
         assert_eq!(anim.which(), "alias_elimination");
+    }
+
+    /// **The starting size is read from the run, not reconstructed from it.**
+    ///
+    /// The opening frame states the system before the pass, and that number used
+    /// to be HRW's own arithmetic: the report's after-count plus the number of
+    /// eliminations parsed. Sound reasoning — each alias elimination removes one
+    /// unknown — but arithmetic that understated the starting size whenever an
+    /// elimination failed to parse, and the reader had no way to tell.
+    ///
+    /// The reduction stage records `before.n_unknowns` during the real run, so
+    /// the view reads that instead. This test is what keeps the two honest: it
+    /// checks the captured number against the derivation that used to stand in
+    /// for it, on a real compile. **A disagreement means one of them is lying**,
+    /// and this fails naming both.
+    #[test]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
+    fn the_starting_size_is_read_from_the_run_not_reconstructed() {
+        let crate::worker::FromWorker::Compiled { stages, .. } =
+            crate::worker::test_msl::compile_specimen_shared("Drivetrain")
+        else {
+            panic!("expected Compiled");
+        };
+        let report = stages
+            .index_reduction
+            .value
+            .as_ref()
+            .expect("Drivetrain reaches index reduction");
+
+        let anim = AliasAnimation::from_report(report).expect("Drivetrain has alias eliminations");
+        let captured = report["before"]["n_unknowns"]
+            .as_u64()
+            .expect("the reduction stage records the size it found")
+            as usize;
+        let after = report["n_unknowns"]
+            .as_u64()
+            .expect("and the size it produced") as usize;
+
+        assert_eq!(
+            anim.unknowns_before,
+            Some(captured),
+            "the view must show the captured starting size, not a reconstruction"
+        );
+        assert_eq!(
+            captured,
+            after + anim.n_eliminations(),
+            "the captured starting size and the old derivation must agree: {captured} \
+             captured, {after} after + {} eliminated",
+            anim.n_eliminations(),
+        );
     }
 
     /// A model that eliminated nothing is a legitimate outcome, not an error.

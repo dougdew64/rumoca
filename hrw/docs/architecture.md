@@ -115,7 +115,7 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**60 modules, 67,992 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**60 modules, 68,117 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
@@ -133,10 +133,10 @@ showing 48 equations. They are derived now, and
 | `connection_anim.rs` | 1,088 |
 | `autoplay.rs` | 1,078 |
 | `lib.rs` | 1,072 |
+| `matching_anim.rs` | 1,007 |
 | `diagnostics.rs` | 986 |
-| `matching_anim.rs` | 975 |
-| `tarjan_anim.rs` | 871 |
-| `matching_ledger.rs` | 822 |
+| `tarjan_anim.rs` | 876 |
+| `matching_ledger.rs` | 834 |
 | `survey.rs` | 769 |
 | `ic_plan_anim.rs` | 768 |
 | `playback.rs` | 760 |
@@ -155,10 +155,10 @@ showing 48 equations. They are derived now, and
 | `identifier_index.rs` | 592 |
 | `source_view.rs` | 576 |
 | `stage_tabs.rs` | 574 |
+| `alias_anim.rs` | 541 |
 | `artifact_pane.rs` | 514 |
 | `pantelides_ladder.rs` | 499 |
 | `nav_view.rs` | 483 |
-| `alias_anim.rs` | 465 |
 | `matrix_panes.rs` | 451 |
 | `equation_sheet_view.rs` | 446 |
 | `reduction_anim.rs` | 442 |
@@ -179,7 +179,7 @@ showing 48 equations. They are derived now, and
 | `compile_caches.rs` | 101 |
 | `ui_state.rs` | 73 |
 | `field_help.rs` | 67 |
-| **total** | **67,992** |
+| **total** | **68,117** |
 <!-- END GENERATED module-sizes -->
 
 

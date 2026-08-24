@@ -132,6 +132,15 @@ fn main() {
     for (n, step) in anim.steps().iter().enumerate() {
         // `var` is what a tour points at; `eq` is which equation was trying.
         let (var, line) = match step {
+            // The opening frame names no variable, because the search has not
+            // reached one — it is the system before any of this.
+            MatchingStep::Start {
+                n_equations,
+                n_unknowns,
+            } => (
+                None,
+                format!("start: {n_equations} equations, {n_unknowns} unknowns, nothing matched"),
+            ),
             MatchingStep::TryEquation(e) => (None, format!("try equation {}", name(eqs, *e))),
             MatchingStep::Explore { eq, var } => (
                 Some(*var),

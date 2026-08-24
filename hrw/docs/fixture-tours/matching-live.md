@@ -46,7 +46,7 @@ silently. That notice is the feature; a silent successful-looking run is what it
 > **Predict.** The link above names `decision`, not a file and a line. Why would a tour refuse to
 > name the line?
 
-**Expected:** a red dot appears at `matching.rs:189`, the `match match_var[var]` expression inside
+**Expected:** a red dot appears at `matching.rs:224`, the `match match_var[var]` expression inside
 `augment_traced`. HRW's status bar names the line it asked for.
 
 **Falsified if:** nothing arms, or the dot lands outside `augment_traced`.
@@ -79,8 +79,8 @@ rather than at the variables.
 > **Predict.** `augment` is recursive. What does the depth of the stack correspond to, in the
 > graph?
 
-**Expected:** the stack shows **two `augment_traced` frames** — the inner one at `matching.rs:181`,
-the outer at `matching.rs:210`, which is the recursive call site. Each frame's `eq` local is a
+**Expected:** the stack shows **two `augment_traced` frames** — the inner one at `matching.rs:216`,
+the outer at `matching.rs:245`, which is the recursive call site. Each frame's `eq` local is a
 different equation. **N nested frames is an N-edge alternating path.**
 
 **Falsified if:** the stack is flat at every break, or two frames report the same `eq`.
@@ -112,7 +112,7 @@ most local scope.
 > **Predict.** With two anchors armed and a system that cannot be matched, which one stops first,
 > and how many times does each fire?
 
-**Expected:** red dots at `matching.rs:189` and `matching.rs:243`, the latter on the bare `false`
+**Expected:** red dots at `matching.rs:224` and `matching.rs:278`, the latter on the bare `false`
 that ends `augment_traced`. The decision anchor fires while the search explores; `give_up` fires
 when it exhausts the alternatives for the unmatchable equation — reporting `f_x[1]` unmatched and
 `b` as the unmatched unknown.

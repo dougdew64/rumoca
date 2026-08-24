@@ -10,14 +10,15 @@ Where each `MatchingStep` is pushed. **This is the line a debugger reports for t
 
 | step | emitted at `matching.rs:` |
 |---|---|
-| `Assign` | 233 |
-| `DisplaceFail` | 213 |
-| `DisplaceOk` | 213 |
-| `EquationFailed` | 133 |
-| `Explore` | 181 |
-| `FoundFree` | 191 |
-| `TryDisplace` | 202 |
-| `TryEquation` | 114 |
+| `Assign` | 268 |
+| `DisplaceFail` | 248 |
+| `DisplaceOk` | 248 |
+| `EquationFailed` | 168 |
+| `Explore` | 216 |
+| `FoundFree` | 226 |
+| `Start` | 136 |
+| `TryDisplace` | 237 |
+| `TryEquation` | 149 |
 
 **`DisplaceOk` and `DisplaceFail` share one line**, because a single emit chooses between them with an `if`. The site identifies *where*, never *which* — only the frame itself distinguishes the outcome.
 
@@ -28,9 +29,9 @@ The lines a live tour sends you to. Each is located by what the line *says*, so 
 
 | name | line | what you are looking at |
 |---|---|---|
-| `decision` | `matching.rs:189` | the free-versus-displace branch — the whole decision, in one expression |
-| `recurse` | `matching.rs:210` | the recursive call — an outer frame sitting here is an equation asked to move |
-| `give_up` | `matching.rs:243` | the search giving up — reached only by falling out of the loop |
+| `decision` | `matching.rs:224` | the free-versus-displace branch — the whole decision, in one expression |
+| `recurse` | `matching.rs:245` | the recursive call — an outer frame sitting here is an equation asked to move |
+| `give_up` | `matching.rs:278` | the search giving up — reached only by falling out of the loop |
 | `gate` | `live_trace.rs:97` | the startup gate, called before any algorithm work |
 | `push` | `live_trace.rs:111` | the per-frame anchor call, after the frame is sent and the delay slept |
 | `anchor` | `live_trace.rs:173` | the breakpoint the Debug button arms — every live stop lands here |
@@ -39,36 +40,38 @@ The lines a live tour sends you to. Each is located by what the line *says*, so 
 
 | idx | step | emit line | depth |
 |---|---|---|---|
-| 0 | `TryEquation(0)` | 114 | 0 |
-| 1 | `Explore { eq: 0, var: 0 }` | 181 | 1 |
-| 2 | `FoundFree { eq: 0, var: 0 }` | 191 | 1 |
-| 3 | `Assign { eq: 0, var: 0 }` | 233 | 1 |
-| 4 | `TryEquation(1)` | 114 | 0 |
-| 5 | `Explore { eq: 1, var: 0 }` | 181 | 1 |
-| 6 | `TryDisplace { eq: 1, var: 0, holder: 0 }` | 202 | 1 |
-| 7 | `Explore { eq: 0, var: 2 }` | 181 | 2 |
-| 8 | `FoundFree { eq: 0, var: 2 }` | 191 | 2 |
-| 9 | `Assign { eq: 0, var: 2 }` | 233 | 2 |
-| 10 | `DisplaceOk { eq: 1, var: 0 }` | 213 | 1 |
-| 11 | `Assign { eq: 1, var: 0 }` | 233 | 1 |
-| 12 | `TryEquation(2)` | 114 | 0 |
-| 13 | `Explore { eq: 2, var: 1 }` | 181 | 1 |
-| 14 | `FoundFree { eq: 2, var: 1 }` | 191 | 1 |
-| 15 | `Assign { eq: 2, var: 1 }` | 233 | 1 |
+| 0 | `Start { n_equations: 3, n_unknowns: 3 }` | 136 | 0 |
+| 1 | `TryEquation(0)` | 149 | 0 |
+| 2 | `Explore { eq: 0, var: 0 }` | 216 | 1 |
+| 3 | `FoundFree { eq: 0, var: 0 }` | 226 | 1 |
+| 4 | `Assign { eq: 0, var: 0 }` | 268 | 1 |
+| 5 | `TryEquation(1)` | 149 | 0 |
+| 6 | `Explore { eq: 1, var: 0 }` | 216 | 1 |
+| 7 | `TryDisplace { eq: 1, var: 0, holder: 0 }` | 237 | 1 |
+| 8 | `Explore { eq: 0, var: 2 }` | 216 | 2 |
+| 9 | `FoundFree { eq: 0, var: 2 }` | 226 | 2 |
+| 10 | `Assign { eq: 0, var: 2 }` | 268 | 2 |
+| 11 | `DisplaceOk { eq: 1, var: 0 }` | 248 | 1 |
+| 12 | `Assign { eq: 1, var: 0 }` | 268 | 1 |
+| 13 | `TryEquation(2)` | 149 | 0 |
+| 14 | `Explore { eq: 2, var: 1 }` | 216 | 1 |
+| 15 | `FoundFree { eq: 2, var: 1 }` | 226 | 1 |
+| 16 | `Assign { eq: 2, var: 1 }` | 268 | 1 |
 
 ## Ledger — `TwiceDefined` (fails — the displacement has nowhere to go)
 
 | idx | step | emit line | depth |
 |---|---|---|---|
-| 0 | `TryEquation(0)` | 114 | 0 |
-| 1 | `Explore { eq: 0, var: 0 }` | 181 | 1 |
-| 2 | `FoundFree { eq: 0, var: 0 }` | 191 | 1 |
-| 3 | `Assign { eq: 0, var: 0 }` | 233 | 1 |
-| 4 | `TryEquation(1)` | 114 | 0 |
-| 5 | `Explore { eq: 1, var: 0 }` | 181 | 1 |
-| 6 | `TryDisplace { eq: 1, var: 0, holder: 0 }` | 202 | 1 |
-| 7 | `DisplaceFail { eq: 1, var: 0 }` | 213 | 1 |
-| 8 | `EquationFailed(1)` | 133 | 0 |
+| 0 | `Start { n_equations: 2, n_unknowns: 2 }` | 136 | 0 |
+| 1 | `TryEquation(0)` | 149 | 0 |
+| 2 | `Explore { eq: 0, var: 0 }` | 216 | 1 |
+| 3 | `FoundFree { eq: 0, var: 0 }` | 226 | 1 |
+| 4 | `Assign { eq: 0, var: 0 }` | 268 | 1 |
+| 5 | `TryEquation(1)` | 149 | 0 |
+| 6 | `Explore { eq: 1, var: 0 }` | 216 | 1 |
+| 7 | `TryDisplace { eq: 1, var: 0, holder: 0 }` | 237 | 1 |
+| 8 | `DisplaceFail { eq: 1, var: 0 }` | 248 | 1 |
+| 9 | `EquationFailed(1)` | 168 | 0 |
 
 **Depth is derived from the step sequence, not from a stack** — `TryDisplace` descends and `DisplaceOk`/`DisplaceFail` return. It is pinned against two real debugger walks by `matching_ledger`'s tests.
 
