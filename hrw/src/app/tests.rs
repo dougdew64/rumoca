@@ -2230,6 +2230,75 @@ fn every_animation_pane_reports_having_nothing_to_show() {
     }
 }
 
+/// **A pane whose animation EXISTS and holds nothing says so too.**
+///
+/// The sibling of [`every_animation_pane_reports_having_nothing_to_show`], which covers
+/// the other state — no report at all, so no animation is built and `app.rs` speaks.
+/// This one covers the state where the report is there, the animation was built, and it
+/// is empty, so the view speaks for itself.
+///
+/// # Why the two states need different messages, and therefore different tests
+///
+/// They mean different things, and the wording is the only thing carrying the
+/// difference. *"(no alias eliminations in this **report**)"* means HRW found nothing
+/// to read. *"No alias eliminations in this **model**."* means the compiler reported
+/// an empty list — a fact about the model. The first is about HRW's reach; the second
+/// is a claim about Rumoca's output.
+///
+/// **That distinction is the charter's absence rule in miniature**, and until
+/// 2026-08-24 only the first of each pair was tested. `BouncingBall` and
+/// `SingleInertia` both reach the second one for real: their initialization stage
+/// carries `blocks: []`.
+///
+/// # What this does not check
+///
+/// Whether the wording *should* distinguish them more clearly than *report* versus
+/// *model* does. That is a pane claim and Doug's to rule on; it is recorded in
+/// `docs/ui-findings.md` rather than changed here.
+#[test]
+fn an_animation_built_from_an_empty_report_says_the_model_has_none() {
+    use egui_kittest::Harness;
+    use egui_kittest::kittest::Queryable;
+
+    type Pane = fn(&mut App, &mut egui::Ui);
+    // (name, the stage to sit on, its report, the pane, what it must say)
+    let cases: [(&str, StageKind, serde_json::Value, Pane, &str); 2] = [
+        (
+            "alias",
+            StageKind::IndexReduction,
+            serde_json::json!({"reduction": {"eliminations": []}}),
+            |a, ui| a.alias_anim_ui(ui),
+            "No alias eliminations in this model",
+        ),
+        (
+            "ic_plan",
+            StageKind::Initialization,
+            serde_json::json!({"blocks": []}),
+            |a, ui| a.ic_plan_anim_ui(ui),
+            "Nothing has to be solved at t=0",
+        ),
+    ];
+
+    for (name, stage, report, render, expected) in cases {
+        let mut app = App::test_default();
+        app.selected = Some(PathBuf::from("/test/specimen.mo"));
+        app.stage = stage;
+        *app.stages.get_mut(stage) = Stage::ok(report);
+
+        let mut h = Harness::builder()
+            .with_size(egui::Vec2::new(900.0, 700.0))
+            .build_ui_state(move |ui, app: &mut App| render(app, ui), app);
+        h.run_steps(2);
+
+        assert!(
+            h.query_by_label_contains(expected).is_some(),
+            "the {name} pane built an animation from an empty list and then said \
+             nothing about it. An empty report and an unreadable one are different \
+             facts, and the message is the only thing that carries the difference",
+        );
+    }
+}
+
 /// The source map **says when the model has no source mapping**.
 ///
 /// Finding C12, and it is reachable by a route worth knowing: the SourceMap
