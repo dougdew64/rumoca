@@ -8,21 +8,21 @@ Rust/egui observatory for studying the Rumoca Modelica compiler.
 **[`docs/README.md`](docs/README.md) is the document index** — every file, its purpose, and
 whether it is live. Go there rather than guessing.
 
-**The hierarchy everything else derives from** (charter v1.4, Doug 2026-08-05): **his education is
-the purpose**; **accuracy is the first corollary** (Decision 7) because an inaccurate instrument
-teaches something false; **low friction is the second** (Decision 9) because an accurate
-instrument that costs attention to operate spends the attention meant for learning. **Accuracy
-outranks friction where they conflict**, and they rarely do.
+**The hierarchy everything else derives from** (charter v1.5): **Doug's education is the purpose**;
+**accuracy is the first corollary** (Decision 7), because an inaccurate instrument teaches something
+false; **low friction is the second** (Decision 9). Accuracy outranks friction where they conflict.
 
-Purpose, scope and binding decisions are in [`docs/CHARTER.md`](docs/CHARTER.md) (v1.4 —
-**Decision 7, Accuracy, ranks above everything else in this repository**; **Decision 8, the
-instrument assumes the reasoner**, governs what UI gets built at all: *the noun is assembled by
-mouse, the verb is an unbounded utterance*. **The test is whether the answer is known in
-advance** — fixed answers belong on screen because a tooltip beats a question for latency and
-focus; answers that depend on what is being asked belong to Claude) —
-consult it for any design question; **do not re-litigate settled decisions in-session.**
-Append any nontrivial implementation choice to [`DECISIONS.md`](DECISIONS.md) with a one-line
-rationale.
+**SINCE v1.5, ACCURACY SERVES A SECOND END — CLAUDE'S OWN REASONING.** Doug, 2026-08-24: *"basing
+decisions upon HRW accuracy and consistency benefits not only my learning experience, but also your
+ability to reason about this project."* **So consistency is a test Claude applies too: would this
+change improve or worsen my ability to reason about and maintain this code?** Uniformity of
+*meaning*, never symmetry of shape, and subordinate to what it serves. The hazard — Claude is a poor
+sensor for his own comprehension — and the worked examples are in `DECISIONS.md`, 2026-08-24.
+
+**[`docs/CHARTER.md`](docs/CHARTER.md) holds purpose, scope and the binding decisions** — including
+Decision 8, the instrument assumes the reasoner, which governs what UI gets built at all. **Consult
+it for any design question; do not re-litigate settled decisions in-session.** Append any nontrivial
+implementation choice to [`DECISIONS.md`](DECISIONS.md) with a one-line rationale.
 
 **[`docs/working-with-doug.md`](docs/working-with-doug.md) — read it too.** Who Doug is and
 how he learns, which nothing else in this repository carries. The short form:

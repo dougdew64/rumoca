@@ -4095,3 +4095,69 @@ accuracy is what found it**; a straight "make them match" would have shipped the
 
 **Ruled and done 2026-08-23** — `d5f9ef9a` (Rumoca), `eaa2f791` (HRW, tours, provenance).
 
+
+## 2026-08-24 — consistency is a test, and it runs in both directions
+
+**Charter v1.5 records the decision; this holds the application, the hazard and the worked
+examples.** Doug, after three weeks of watching sessions: *"basing decisions upon HRW accuracy and
+consistency benefits not only my learning experience, but also your ability to reason about this
+project… When you are making decisions, I want you to apply the same principles which I apply."*
+
+### Why it is a second justification and not a restatement
+
+Accuracy has been justified since v1.2 in Doug-facing terms: an inaccurate instrument teaches him
+something false. **That argument is strongest where he looks.** The new one binds everywhere,
+including code he will never read, because the project's continuity runs through Claude's
+comprehension — no human has yet needed to maintain HRW's code.
+
+**It is continuous with something already settled.** `CLAUDE.md` has said since 2026-08-05 that the
+trigger for refactoring is *Claude's* comprehension, maintenance and testability degrading, never a
+line count. This generalises that from one class of decision to all of them.
+
+### The decision procedure, and it is Doug's own from the other side
+
+His: *"whenever I'm uncertain about how to apply the consistency principle, I ask myself how my
+educational experience would be impacted… I would be opposed to a change which makes some aspect of
+the project more consistent at the expense of my educational experience."*
+
+Claude's: **would this change improve or worsen my ability to reason about and maintain this
+codebase?** Same shape, same refusal. Consistency is instrumental, so where the proxy and its
+purpose diverge, the purpose wins.
+
+### THE HAZARD, and it is why the test is phrased in consequences
+
+**Claude is a poor sensor for his own comprehension failures** — `CLAUDE.md` measures this twice,
+and both failures were caught by the compiler rather than by noticing confusion. A test that asks
+Claude to introspect therefore rests on the one instrument known to be unreliable.
+
+So the test is biased toward what can be checked rather than felt:
+
+- Would this let me **write a test I cannot write now**?
+- Would it let me **answer a question by reading one place instead of three**?
+- Would it make **a claim and its mechanism the same size**?
+
+*"Do I understand it better"* is the version that rots. These have answers.
+
+### Uniformity of MEANING, never symmetry of shape
+
+The distinction is load-bearing, because "value consistency" is one bad reading away from becoming a
+licence to churn — the human-comprehension heuristic the complexity lints were declined for.
+
+**The worked example is the same day's cache fix.** `compile_views` and `stage_views` are
+invalidated differently: stage views are built from reports, which `CompileProgress` delivers, while
+the replays are built from frames, which arrive only with `Compiled`. A shape-level urge would unify
+them and **make the code wrong** — dropping the replays mid-compile blanks every animation with
+nothing to rebuild from. The consistency win was *explaining* the asymmetry, not removing it.
+
+**The counter-example, from the same night:** the `has_*` predicates answer one question — *does this
+model have data for this tab* — from three different sources. Each is individually correct. Together
+they cost the most reading of anything in that column read, to establish there was no defect. That
+is the shape the principle targets: one question, three answers.
+
+### One phrasing changed for the public reader
+
+Doug's sentence was *"I am entirely dependent upon you to keep this project moving forward."* It is
+recorded above as a fact about the project's structure rather than about him — **the continuity runs
+through Claude's comprehension; no human has yet needed to maintain this code** — which is equally
+true, carries the same weight for a future session, and does not invert when read by a stranger.
+`DECISIONS.md`'s 2026-08-23 entry on this public repository is the rule being applied.
