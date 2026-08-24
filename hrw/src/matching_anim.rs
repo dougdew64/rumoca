@@ -455,6 +455,25 @@ impl MatchingAnimation {
         });
     }
 
+    /// The column showing `name`, if this matrix has one.
+    ///
+    /// **Moved out of [`Self::draw_matrix`] on 2026-08-23**, under the standing
+    /// rule for the five files Doug edits himself: *move a computation out
+    /// before adding one in*. An opening-frame arm was added to the paint path
+    /// that day, and this is what paid for it.
+    ///
+    /// It is worth this one rather than something else because it decides
+    /// **identity**. `docs/identity-and-provenance.md` forbids letting a
+    /// substring decide whether two names are the same variable, and
+    /// [`crate::identifier_index::same_variable`] is what honours that — but
+    /// while the call sat inside the painter, nothing could test that this view
+    /// used it. Now something can.
+    fn tracked_column(&self, name: &str) -> Option<usize> {
+        self.unknown_names
+            .iter()
+            .position(|u| crate::identifier_index::same_variable(u, name))
+    }
+
     fn draw_matrix(&self, ui: &mut egui::Ui, canvas: &mut Canvas, tracked: Option<&str>) {
         let label_headroom = 1.0_f32;
         let matrix_rect = egui::Rect::from_min_size(
@@ -602,22 +621,22 @@ impl MatchingAnimation {
             }
         }
 
-        if let Some(name) = tracked {
-            let tracked_col = self
-                .unknown_names
-                .iter()
-                .position(|u| crate::identifier_index::same_variable(u, name));
-            if let Some(col) = tracked_col {
-                let band = egui::Rect::from_min_size(
-                    egui::pos2(col as f32, 0.0),
-                    egui::vec2(1.0, self.n_eq as f32),
-                );
-                painter.rect_filled(
-                    view.to_screen_rect(band),
-                    egui::CornerRadius::ZERO,
-                    crate::colors::TRACKED_FILL,
-                );
-            }
+        // A let-chain: both conditions in one `if`, which is the shape rustc
+        // and clippy want here. Reads as "if something is tracked AND this
+        // matrix has a column for it" — the C/Java `if (a != null && ...)`,
+        // except each binding is usable in the body.
+        if let Some(name) = tracked
+            && let Some(col) = self.tracked_column(name)
+        {
+            let band = egui::Rect::from_min_size(
+                egui::pos2(col as f32, 0.0),
+                egui::vec2(1.0, self.n_eq as f32),
+            );
+            painter.rect_filled(
+                view.to_screen_rect(band),
+                egui::CornerRadius::ZERO,
+                crate::colors::TRACKED_FILL,
+            );
         }
 
         if view.zoom() >= crate::LABEL_ZOOM_THRESHOLD {
@@ -1003,5 +1022,47 @@ mod tests {
             "frame 8 must be the assignment of the second; found {:?}",
             steps[8],
         );
+    }
+
+    /// **The tracked column is decided by identity, never by substring.**
+    ///
+    /// Could not be written before `tracked_column` left `draw_matrix`: the
+    /// resolution sat inside the painter, so nothing could check which rule this
+    /// view used to decide that two names are the same variable.
+    ///
+    /// The case that matters is the third assertion. `docs/identity-and-provenance.md`
+    /// bars a substring from deciding identity, and `w` is a substring of every
+    /// other name here — a `contains` would light the wrong column, and on screen
+    /// a highlighted column looks equally deliberate whichever one it is.
+    #[test]
+    fn the_tracked_column_is_decided_by_identity_not_by_substring() {
+        let anim = MatchingAnimation::from_incidence(
+            &IncidenceMatrix::from_report(&serde_json::json!({
+                "incidence": {
+                    "n_eq": 2,
+                    "n_var": 2,
+                    "unknown_names": ["inertia.w", "w"],
+                    "rows": [[0], [1]],
+                },
+            }))
+            .expect("a two-by-two report parses"),
+        );
+
+        assert_eq!(anim.tracked_column("inertia.w"), Some(0));
+        assert_eq!(
+            anim.tracked_column("w"),
+            Some(1),
+            "the exact name, not the one containing it"
+        );
+        assert_eq!(
+            anim.tracked_column("nowhere.v"),
+            None,
+            "absent means absent, not column 0"
+        );
+
+        // `der(x)` and `x` are the same variable — the one equivalence
+        // `same_variable` deliberately allows, and the reason this is not a
+        // string comparison either.
+        assert_eq!(anim.tracked_column("der(w)"), Some(1));
     }
 }

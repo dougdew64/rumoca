@@ -45,6 +45,40 @@ fn grid_cols(n_nodes: usize) -> usize {
     (n_nodes as f32).sqrt().ceil().max(1.0) as usize
 }
 
+/// Which discovered component each node belongs to, `None` for a node no
+/// component has closed over yet.
+///
+/// **Moved out of `draw_graph` on 2026-08-23**, under the standing rule for the
+/// five files Doug edits himself: *move a computation out before adding one in*.
+/// An opening-frame arm was added to this view that day, and this is what paid
+/// for it. The map is what colours a node, so having it outside the painter
+/// means his edits land on a rendering step whose input he can read.
+///
+/// **It also removes a panic from the paint path.** The inline version indexed
+/// `map[node]` directly, so a component naming a node at or beyond `n_nodes`
+/// would panic *while painting* — the least debuggable place in the app, since
+/// it fires once per frame with no stack a user can act on. Such a node is
+/// skipped instead: a renderer draws what it can place and says nothing about
+/// what it cannot.
+///
+/// That case cannot arise from `tarjan_scc_with_trace`, whose components are
+/// built from the same node range — this is defence against a future caller,
+/// and `a_component_naming_an_unplaceable_node_is_skipped` is what makes the
+/// choice explicit rather than accidental.
+fn scc_membership(n_nodes: usize, sccs: &[Vec<usize>]) -> Vec<Option<usize>> {
+    let mut map = vec![None; n_nodes];
+    for (i, scc) in sccs.iter().enumerate() {
+        for &node in scc {
+            // `get_mut` rather than `map[node]`: out of range means unplaceable,
+            // not fatal.
+            if let Some(slot) = map.get_mut(node) {
+                *slot = Some(i);
+            }
+        }
+    }
+    map
+}
+
 /// Seconds between auto-advance frames.
 const FRAME_INTERVAL: f64 = 0.5;
 
@@ -481,15 +515,7 @@ impl TarjanAnimation {
         };
 
         let on_stack: HashSet<usize> = frame.stack.iter().copied().collect();
-        let in_scc: Vec<Option<usize>> = {
-            let mut map = vec![None; self.n_nodes];
-            for (i, scc) in frame.sccs_so_far.iter().enumerate() {
-                for &node in scc {
-                    map[node] = Some(i);
-                }
-            }
-            map
-        };
+        let in_scc = scc_membership(self.n_nodes, &frame.sccs_so_far);
 
         let scc_colors = crate::colors::SCC_PALETTE;
 
@@ -872,5 +898,37 @@ mod tests {
             adj[0].is_empty(),
             "unmatched variable should not create a dependency"
         );
+    }
+
+    /// **Each node is mapped to the component that closed over it.**
+    ///
+    /// Could not be written before `scc_membership` left `draw_graph`: the map
+    /// was built inside the painter, and `egui_kittest` cannot reach a canvas.
+    /// It decides what colour every node is drawn in, so a wrong map is a wrong
+    /// picture with nothing on screen admitting it.
+    #[test]
+    fn scc_membership_maps_each_node_to_the_component_that_closed_it() {
+        // Two components, and node 2 in neither yet — the state mid-traversal,
+        // which is the whole reason this view exists.
+        let map = scc_membership(4, &[vec![0], vec![1, 3]]);
+        assert_eq!(map, vec![Some(0), Some(1), None, Some(1)]);
+
+        // Before anything is closed, every node is unassigned. This is the
+        // opening frame, and it must not colour a single node.
+        assert_eq!(scc_membership(3, &[]), vec![None, None, None]);
+    }
+
+    /// **A component naming a node this graph cannot place is skipped, not fatal.**
+    ///
+    /// The inline version indexed `map[node]`, so this input panicked *while
+    /// painting*. It cannot arise from `tarjan_scc_with_trace`, whose components
+    /// come from the same node range — but a panic in the paint path fires once
+    /// per frame and gives a user nothing to act on, so the renderer skips what
+    /// it cannot place and draws the rest.
+    #[test]
+    fn a_component_naming_an_unplaceable_node_is_skipped() {
+        let map = scc_membership(2, &[vec![0, 7]]);
+        assert_eq!(map, vec![Some(0), None], "node 7 does not exist here");
+        assert_eq!(scc_membership(0, &[vec![3]]), Vec::<Option<usize>>::new());
     }
 }
