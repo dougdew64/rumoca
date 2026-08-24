@@ -4068,13 +4068,30 @@ the truth about a model that eliminated nothing.
 frames, and no tour prose describes their numbering. The links that exist name `MatchingAnim`
 frames 5, 6 and 41.
 
-### ⟶ TIER 2 IS DOUG'S RULING, AND IT HAS A PRICE THE OTHERS DID NOT
+### ⟶ TIER 2 WAS RULED ON THE SAME DAY: DO IT, AND THE REASONING IS THE KEEPER
 
-`matching` opens on `TryEquation(0)` and `tarjan` on `Visit(0)` — an attempt announced, nothing
-achieved. By Doug's own definition (*"no progress had been made or even attempted"*) both fall
-short; by a weaker one they are fine, since nothing is matched or closed yet.
+**Doug:** *"if some animation panes open with no attempt yet made to begin their algorithms, but
+two animation panes begin after progress has been made, then that is an inconsistency which causes
+learning friction. I am fine with paying the cost of eliminating learning friction. However,
+accuracy is even more important than consistency. **Would enforcing the consistency worsen the
+accuracy?**"*
 
-**Fixing them shifts every frame index in the matching tours**, which cite `frame/5`, `frame/6` and
-`frame/41`. That is a real cost against a subtler benefit, and it is a change to what a pane claims.
-**Recorded, not decided.**
+**The answer, and it is the generalisable part: no — if the opening frame comes from Rumoca; yes —
+if HRW synthesises one.** All four compliant views got theirs from a capture scope, recording a real
+state at the real entry point. So `matching` and `tarjan` were instrumented the same way
+(`d5f9ef9a`), which makes the before-state **captured where it was previously absent**. Accuracy
+improved rather than paying for consistency.
+
+**The risk was never in the panes — it was in the tours**, where a shifted frame index keeps
+resolving and silently teaches the wrong step. `fixture_tour_links_all_resolve` checks that a link
+parses, not that it lands on the moment the prose describes.
+
+**And the audit turned up one more thing, in the fix itself.** The alias opening frame was stating a
+number HRW *computed* (`n_unknowns + eliminations.len()`) where the other four state numbers Rumoca
+*recorded* — so enforcing consistency of the frame would have left an inconsistency of provenance.
+The reduction stage already carried `before.n_unknowns`; the view reads that now, and a test holds
+the captured number against the old derivation on a real compile. **Asking whether consistency costs
+accuracy is what found it**; a straight "make them match" would have shipped the weaker number.
+
+**Ruled and done 2026-08-23** — `d5f9ef9a` (Rumoca), `eaa2f791` (HRW, tours, provenance).
 
