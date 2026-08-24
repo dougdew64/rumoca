@@ -24,7 +24,25 @@ planned the run does not survive to the machine that executes it. When a run fin
 goes to the run log below and this section is overwritten by the next plan — otherwise it becomes
 the accumulating history `CLAUDE.md`'s *Current work* had to be rescued from.
 
-### Queued 2026-08-23 for night 3 — `app.rs`, and the goal is BUGS
+### NOTHING IS QUEUED — night 3 ran; its record is in the run log below
+
+**Queue the next run by replacing this heading and what follows it**, with the items and the
+evidence for each. The slot is one deep on purpose.
+
+**What night 3 says to put here next**, and it is a change of lens rather than of file: four of
+its threads were nulls because `app.rs`'s routers have each been repaired already, so the
+remaining defects are in the **checks**, not the code. Ask of each protective mechanism whether
+deleting its call site would fail anything. `clamp_structural_sub_view` was exactly that and is
+now guarded; the same question is unasked of `revalidate_point_against_new_ir`,
+`compute_problem_lines` and the `request_fit` calls in the `Compiled` arm — each invoked from
+one place, each with tests that call it directly.
+
+---
+
+*Below is night 3's plan, kept until the next one replaces it, because its evidence is what the
+run log's conclusions refer back to.*
+
+### Ran 2026-08-23 — night 3: `app.rs`, and the goal was BUGS
 
 **Same machine, same preconditions.** Run `cargo run -p hrw --example check_machine` first; it
 costs about a second and answers what a `git pull` does not bring.
@@ -244,6 +262,43 @@ eight of nine.
   still in the accessibility tree. **Open Index Reduction → Alias on `Drivetrain`** (77
   eliminations, so the old cap showed under a quarter) **and Initialization → IC Plan on
   `RcCircuit`** (21 blocks against a 300pt cap), and say whether the lists now use the pane.
+- **Nothing is pushed.** Three commits sit on `hrw` ahead of `origin/hrw`.
+
+### Night 3 — 2026-08-23. Three items, three commits, gate green on each, nothing pushed
+
+| item | commit | what it found |
+|---|---|---|
+| 1 — `drain_worker`'s six arms | `0b5a747f` | **a defect.** `DefTree` was the one arm with no staleness guard: it cleared the loading indicator for a request still in flight. Also pinned `CompileProgress`'s documented contract, which nothing checked. |
+| 2 — `dispatch_hrw_link`'s twelve arms | `3a18ef0b` | **a stale claim.** `requires_specimen`'s doc said *"the three that do not need one"* while its list held **six**. Three other asymmetries checked and found correct. |
+| 3 — the `has_*` availability family | `c71ba6e1` | **null on the hypothesis, and a missing must-fire.** The stranded-view clamp exists and is correct — but three tests all call it directly, so deleting its production call site left every one of them passing. |
+
+#### THE RESULT WORTH CARRYING: `app.rs`'s ROUTERS ARE SOUND, AND THEIR CHECKS ARE NOT
+
+**Four threads were chased and four were nulls**, each of which looked like a defect on
+first read: `ShowSource` being the only arm to set `ui_mode`; no arm guarding sub-view
+availability; `AimAtEquation` leaving a highlight set across stages; a caller using the alias
+predicate without its stage test. **Every one is correct, and correct for a documented
+reason** — because each was repaired once already, and the repair is commented in place.
+
+**So the defects left in this file are in the checks, not in the code.** All three items
+ended by guarding a mechanism that existed and was unverified, and item 3 is the sharpest
+case: the guard was written *because* of a real 2026-08-19 defect, and nothing ensured it
+still ran.
+
+**That is the lens for the next `app.rs` night** — not *"find the broken arm"*, which four
+nulls suggest is largely spent, but *"find the guard nothing invokes"*. Ask of each
+protective mechanism: would deleting its call site fail anything?
+
+#### Owed to Doug
+
+- **One finding recorded rather than fixed.** `drain_worker`'s `CompileProgress` arm replaces
+  `self.stages` with new partial reports and does **not** invalidate the view caches built
+  from the previous one, while the `Compiled` arm documents at length why that invalidation
+  is needed. `stage_views.reset_for` keys on the stage, which does not change mid-compile, so
+  a cached view survives — meaning a recompile shows the previous compile's pane until
+  `Compiled` lands. **That is a question about what a pane shows, and the no-go list puts
+  pane claims with Doug.** Fixing it also costs a rebuild per progress message, which is a
+  trade rather than a correction.
 - **Nothing is pushed.** Three commits sit on `hrw` ahead of `origin/hrw`.
 
 ### ⟶ THE HABIT IS ADOPTED — Doug, 2026-08-23, and the lens to lead with

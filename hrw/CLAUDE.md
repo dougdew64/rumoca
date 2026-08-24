@@ -568,8 +568,8 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 
 > ### ⟶ OPEN THE NEXT SESSION WITH THIS
 >
-> **⚠ A RUN IS QUEUED** — [`docs/unattended-runs.md`](docs/unattended-runs.md) → **THE QUEUED RUN**
-> holds night 3's three `app.rs` items, their evidence, the preconditions and the `/loop` command.
+> **NIGHT 3 RAN — 3 items, 3 commits, nothing pushed.** Its record, one finding owed to Doug,
+> and the lens it changes: [`docs/unattended-runs.md`](docs/unattended-runs.md). No run is queued.
 >
 > **This section holds ONLY what is in flight. Everything closed lives in
 > [`DECISIONS.md`](DECISIONS.md)** — *"closed arcs move out of `CLAUDE.md`"*, 2026-08-22, which
