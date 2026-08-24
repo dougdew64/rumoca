@@ -248,6 +248,7 @@ note; the rest quote the commit.
 | 08-23 | `architecture.md` cited `mem::take`, which resolved only via that loose match | toolchain | night 2; exposed by tightening the resolver — it names std, so it now reads `std::mem::take` |
 | 08-23 | `alias_anim` and `ic_plan_anim` opened on frame 1 with a step **already applied** — no opening frame, since birth | **Doug** | walking the two views night 2 had just touched; the same pair again, and the column read had missed it by reading the trait and not the frame semantics |
 | 08-23 | `drain_worker`'s `DefTree` arm cleared the loading indicator for a request **still in flight** — the one arm of six with no staleness guard | Claude | night 3, column read of the router's six arms |
+| 08-23 | `requires_specimen`'s doc said *"the three that do not need one"* while its list held **six** | Claude | night 3, column read of `dispatch_hrw_link`'s twelve arms |
 
 **Seven days: Doug 8, Claude 13, toolchain 3.** Against the first two days' **Doug 10, toolchain 5,
 Claude 5**, the rate that matters moved: **Doug from ~5.0/day to ~1.1/day**, while Claude's own

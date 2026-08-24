@@ -1815,6 +1815,101 @@ Some prose.
         }
     }
 
+    /// **A link that changes the stage must also leave the log.**
+    ///
+    /// From the 2026-08-23 column read of `dispatch_hrw_link`'s twelve arms. Five of
+    /// them navigate to a stage — `SwitchStage`, `LoadAndSwitch`, `AimAtEquation`,
+    /// `PointAtNode`, `SeekFrame` — and all five clear `viewing_log`. **The read found
+    /// them uniform; this keeps them so.**
+    ///
+    /// # What goes wrong without it
+    ///
+    /// `viewing_log` is a full-pane override: while it is set, the centre shows the
+    /// compilation log instead of the stage. An arm that changed `self.stage` and left
+    /// it set would move the reader's stage **behind** the log, so the click produces
+    /// no visible change — *"a link that does nothing is the worst outcome in a tour,
+    /// because nothing on screen says why"*, which this router's own `OpenTour` arm
+    /// says about a different silence.
+    ///
+    /// It is the exact failure `apply_pending_view_and_seek` was written for in
+    /// another guise: a link that appears to work because the common case hides it.
+    ///
+    /// # Scope
+    ///
+    /// Source-level, and it asks only about arms of **this** router. An arm that
+    /// navigates by calling a helper which sets the stage internally would not be
+    /// seen — `LoadSpecimen` is that shape, reaching the stage through `open`, and it
+    /// is correctly not counted here because it does not set `self.stage` itself.
+    #[test]
+    fn every_link_arm_that_changes_the_stage_leaves_the_log() {
+        let app = std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("src/app.rs"))
+            .expect("app.rs must be readable");
+
+        // Assembled, so this file does not contain the strings it searches for.
+        let sets_stage = format!("self.{} = ", "stage");
+        let leaves_log = format!("self.{} = false", "viewing_log");
+
+        let body = app
+            .split_once("fn dispatch_hrw_link(&mut self, action: HrwLink) {")
+            .expect("dispatch_hrw_link must be present")
+            .1
+            .split_once("\n    }\n")
+            .expect("its body is closed by a `}` at four spaces")
+            .0;
+
+        // Arms open at twelve spaces inside the `match`.
+        let opener = format!("            {}::", "HrwLink");
+        let mut arms: Vec<(String, String)> = Vec::new();
+        let mut current: Option<(String, String)> = None;
+        for line in body.lines() {
+            if let Some(rest) = line.strip_prefix(opener.as_str()) {
+                if let Some(done) = current.take() {
+                    arms.push(done);
+                }
+                let name: String = rest
+                    .chars()
+                    .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                    .collect();
+                current = Some((name, String::new()));
+            } else if let Some((_, text)) = current.as_mut() {
+                text.push_str(line);
+                text.push('\n');
+            }
+        }
+        arms.extend(current);
+
+        assert!(
+            arms.len() >= 12,
+            "only {} arms parsed out of this router; the scan has stopped reading it: {:?}",
+            arms.len(),
+            arms.iter().map(|(n, _)| n).collect::<Vec<_>>(),
+        );
+
+        let navigating: Vec<&(String, String)> = arms
+            .iter()
+            .filter(|(_, text)| text.contains(sets_stage.as_str()))
+            .collect();
+        assert!(
+            navigating.len() >= 4,
+            "only {} arms were found to change the stage, so this check is reading \
+             almost nothing",
+            navigating.len(),
+        );
+
+        let offenders: Vec<&String> = navigating
+            .iter()
+            .filter(|(_, text)| !text.contains(leaves_log.as_str()))
+            .map(|(name, _)| name)
+            .collect();
+        assert!(
+            offenders.is_empty(),
+            "these link arms change the stage without leaving the log: {offenders:?}\n\n\
+             While `viewing_log` is set the centre pane shows the log instead of the \
+             stage, so the reader's stage moves behind it and the click looks like it \
+             did nothing.",
+        );
+    }
+
     /// **An `ALL` roster must list every variant of its enum.**
     ///
     /// From the 2026-08-23 column read of the tab rosters. No roster was wrong — and

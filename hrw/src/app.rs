@@ -6188,8 +6188,13 @@ impl HrwLink {
     /// set state that nothing consumed — silently, which is the failure mode every other
     /// verb has been taught to avoid.
     ///
-    /// The three that do **not** need one are the three that make sense on their own: the
-    /// two load verbs, and opening a notebook.
+    /// The ones that do **not** need a specimen are the ones that make sense on their
+    /// own, and they are the list below rather than a count in this sentence. It said
+    /// *"the three"* until 2026-08-23, by which time the list held **six** — the two
+    /// load verbs and a notebook, plus System Modeler, opening a tour and arming a
+    /// breakpoint, each added with its own reason and none of them updating the number
+    /// here. A count in prose beside the list it counts is the cheapest thing in this
+    /// repository to leave stale.
     /// **A deny-list, and that is the hazard**: every *new* verb needs a specimen
     /// unless it is added here, so a form that does not need one is refused by
     /// default and shows a notice about loading a specimen that has nothing to do
