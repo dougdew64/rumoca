@@ -24,23 +24,68 @@ planned the run does not survive to the machine that executes it. When a run fin
 goes to the run log below and this section is overwritten by the next plan — otherwise it becomes
 the accumulating history `CLAUDE.md`'s *Current work* had to be rescued from.
 
-### NOTHING IS QUEUED — night 3 ran; its record is in the run log below
+### Queued 2026-08-24 for night 4 — WHAT A PANE SAYS WHEN IT HAS NOTHING TO SHOW
 
-**Queue the next run by replacing this heading and what follows it**, with the items and the
-evidence for each. The slot is one deep on purpose.
+**Same machine, same preconditions.** Run `cargo run -p hrw --example check_machine` first.
 
-**What night 3 says to put here next**, and it is a change of lens rather than of file: four of
-its threads were nulls because `app.rs`'s routers have each been repaired already, so the
-remaining defects are in the **checks**, not the code. Ask of each protective mechanism whether
-deleting its call site would fail anything. `clamp_structural_sub_view` was exactly that and is
-now guarded; the same question is unasked of `revalidate_point_against_new_ir`,
-`compute_problem_lines` and the `request_fit` calls in the `Compiled` arm — each invoked from
-one place, each with tests that call it directly.
+**Why the lens rotates, and the evidence is the ledger.** Three nights read routers, rosters and
+dispatch tables — the plumbing — and night 3 produced **four nulls out of seven threads**, each
+correct for a documented reason, because every one had been repaired already. Meanwhile **Doug's
+own findings are almost all about panes**: a list clipped by a nested scroll area, a replay opening
+mid-progress, a hover-only explanation, a divider learning the wrong fraction. **The nights and his
+eyes have been searching different halves of the codebase.** Aim where his reports land.
+
+**And this surface is the one the charter ranks first.** *Absence is stated, never filled* — a pane
+with nothing to show must say the compiler produced nothing, and why. **A wrong absence message is
+invisible to every test there is**: "no X in this report" is well-formed whether or not it is true,
+which is exactly how the 2026-08-19 alias defect survived until Doug hit it.
+
+**Measured 2026-08-24, so the run starts from a list rather than a search.** Sixteen absence
+messages are *rendered* into a pane; **five are named by a test and eleven are not.** Seven of the
+eleven are in the animation views. Coverage is a lower bound — a test may assert a shorter fragment
+than the probe used — so **each is a candidate to read, not a defect**.
+
+**1 — Cover the seven animation-view messages**, and read each against the condition that fires it:
+
+| file | message |
+|---|---|
+| `alias_anim.rs` | `No alias eliminations in this model.` |
+| `connection_anim.rs` | `No connections in this model.` |
+| `reduction_anim.rs` | `No index-reduction trace available.` |
+| `ic_plan_anim.rs` | `No iteration needed yet — pure assignment.` |
+| `ic_plan_anim.rs` | `Nothing has to be solved at t=0 — every unknown comes from a start attribute.` |
+| `pre_lowering_anim.rs` | `No pre() lowering trace available.` |
+| `pre_lowering_anim.rs` | `No slots created yet.` |
+
+The question per message is **not** whether it renders — it is whether it is **true when it shows**,
+and whether it distinguishes *the compiler produced none* from *HRW could not read any*. A test
+that fires each one is the deliverable.
+
+**2 — The remaining four**: `matrix_panes.rs` ×2 (`(no after incidence data)`,
+`(no incidence data in this report)`), `model_list.rs` (`(no .mo specimens found)`), `tour_panel.rs`
+(`No tour right now.`). **Check `matrix_panes` first** — `CLAUDE.md` records that it gained six
+tests including absence notices on 2026-08-20, so these two may be covered by a shorter fragment
+than the survey's probe, in which case the finding is the probe.
+
+**3 — Make it standing.** Turn the survey into a checker: every rendered absence message is named
+by some test, ratcheted at whatever count remains after items 1 and 2. That converts a one-night
+audit into a mechanism, which is the move that has paid off every time it was made here.
+
+**⟶ ONE FINDING IS ALREADY IN HAND, AND IT IS A PANE CLAIM — so record, do not reword.** The alias
+view has **two** absence messages of near-identical wording and different meaning: `app.rs:3962`
+says *"(no alias eliminations in this report)"* when the animation **could not be built**, and
+`alias_anim.rs:203` says *"No alias eliminations in this model."* when it **was built and has no
+frames**. Only the first is tested. *Report* versus *model* is the entire difference between "the
+compiler produced none" and "HRW could not read any". **Rewording is a pane claim and belongs to
+Doug**; testing both, and recording which condition each really fires under, does not.
+
+**Precedence:** a message found to be *false* wins over covering the rest. That is the defect this
+lens exists to find.
 
 ---
 
-*Below is night 3's plan, kept until the next one replaces it, because its evidence is what the
-run log's conclusions refer back to.*
+*Below is night 3's plan, kept for one cycle because the run log's conclusions refer back to its
+evidence. Delete it when night 4's record lands.*
 
 ### Ran 2026-08-23 — night 3: `app.rs`, and the goal was BUGS
 
