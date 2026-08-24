@@ -596,12 +596,26 @@ mod tests_animated_contract {
         Path::new(env!("CARGO_MANIFEST_DIR"))
     }
 
-    /// Each `impl Animated for` in `src/`, as `(module name, impl body)`.
+    /// One animated view, as the source describes it.
+    ///
+    /// A struct rather than a tuple because three strings positionally is
+    /// exactly the shape that gets transposed silently — the same reasoning as
+    /// [`super::PlaybackControls`].
+    struct AnimatedView {
+        /// Module name, which is also the file stem: `alias_anim`.
+        module: String,
+        /// The whole file, for questions about what the view renders.
+        source: String,
+        /// Just the `impl Animated for …` block, for questions about the trait.
+        impl_body: String,
+    }
+
+    /// Each `impl Animated for` in `src/`.
     ///
     /// Discovered rather than listed, for the reason `tests_layout` gives: a
     /// ninth implementor must arrive already covered, not wait to be added to a
     /// roster nobody remembers.
-    fn animated_impls() -> Vec<(String, String)> {
+    fn animated_views() -> Vec<AnimatedView> {
         let mut out = Vec::new();
         let dir = hrw().join("src");
         for entry in std::fs::read_dir(&dir)
@@ -624,9 +638,13 @@ mod tests_animated_contract {
                 .expect("a .rs file has a stem")
                 .to_string_lossy()
                 .into_owned();
-            out.push((module, rest[..end].to_owned()));
+            out.push(AnimatedView {
+                module,
+                impl_body: rest[..end].to_owned(),
+                source: text,
+            });
         }
-        out.sort();
+        out.sort_by(|a, b| a.module.cmp(&b.module));
         out
     }
 
@@ -688,7 +706,7 @@ mod tests_animated_contract {
     /// does removing one while leaving a view delegating.
     #[test]
     fn only_the_views_with_a_live_path_report_a_live_session() {
-        let impls = animated_impls();
+        let views = animated_views();
         let gated = live_debug_gated_views();
 
         // Non-vacuity, both halves. An empty gated set would let the equality
@@ -701,18 +719,18 @@ mod tests_animated_contract {
              reading nothing"
         );
         assert!(
-            impls.len() > gated.len(),
+            views.len() > gated.len(),
             "every Animated implementor has a live path, so the hardcoded-Idle \
-             branch this guards is no longer exercised: {} impls, {} gated",
-            impls.len(),
+             branch this guards is no longer exercised: {} views, {} gated",
+            views.len(),
             gated.len(),
         );
 
         let delegates = format!("self.playback.{}(", "live_state");
-        let delegating: BTreeSet<String> = impls
+        let delegating: BTreeSet<String> = views
             .iter()
-            .filter(|(_, body)| body.contains(delegates.as_str()))
-            .map(|(module, _)| module.clone())
+            .filter(|v| v.impl_body.contains(delegates.as_str()))
+            .map(|v| v.module.clone())
             .collect();
 
         assert_eq!(
@@ -726,6 +744,80 @@ mod tests_animated_contract {
         );
     }
 
+    /// **Every animated view renders an opening frame.**
+    ///
+    /// Doug, 2026-08-23, on finding two views that did not: *"if some animation
+    /// panes open with no attempt yet made to begin their algorithms, but two
+    /// animation panes begin after progress has been made, then that is an
+    /// inconsistency which causes learning friction."* The eight now agree —
+    /// frame 0 is the system as the algorithm was handed it.
+    ///
+    /// # Why this exists when eight per-view tests already pass
+    ///
+    /// **They are eight separate claims, and a ninth view makes none of them
+    /// false.** That is exactly how `alias_anim` and `ic_plan_anim` opened on a
+    /// completed step from the day they were written while `connection_anim`'s
+    /// own rule was enforced for one file — the same shape, twice in one night,
+    /// which is what made a family-level check worth building.
+    ///
+    /// Each view's step enum is read out of the view's own source rather than
+    /// listed here, so a view added tomorrow is checked tomorrow.
+    ///
+    /// # What this does NOT check, and it is the larger half
+    ///
+    /// It proves each view **renders** an opening frame, not that its trace
+    /// **emits** one first. Those are different claims and the second is the one
+    /// that matters on screen; it is held per view, where the frames are
+    /// produced — `matching.rs` and `tarjan.rs`'s
+    /// `trace_starts_before_the_…` tests in the Rumoca crate, and
+    /// `alias_anim`/`ic_plan_anim`'s `…opens_before_anything…` tests here.
+    ///
+    /// So this is the cheap net under those, catching the case none of them
+    /// can: a **new** view with no opening frame at all. Stating that limit is
+    /// the point — `CLAUDE.md`'s most frequent failure is a rule read wider
+    /// than the mechanism under it.
+    #[test]
+    fn every_animated_view_renders_an_opening_frame() {
+        let views = animated_views();
+        assert!(
+            views.len() >= 8,
+            "eight animated views existed on 2026-08-23; finding fewer means the \
+             scan broke rather than that views were deleted: {:?}",
+            views.iter().map(|v| &v.module).collect::<Vec<_>>(),
+        );
+
+        // Assembled, because this file is not scanned but the habit is what
+        // stops the fourth self-match — see `tests_layout`.
+        let opening = format!("::{}", "Start");
+
+        let mut missing = Vec::new();
+        for view in &views {
+            // The step enums a view names, e.g. `MatchingStep::` — a view may
+            // reference more than one (`tarjan_anim` also drives matching), so
+            // ONE of them carrying an opening frame is the honest bar.
+            assert!(
+                view.source.contains("Step::"),
+                "{} implements Animated but names no step enum, so this check \
+                 cannot see what it renders",
+                view.module,
+            );
+            if !view.source.contains(opening.as_str()) {
+                missing.push(view.module.clone());
+            }
+        }
+
+        assert!(
+            missing.is_empty(),
+            "these animated views render no opening frame: {missing:?}\n\n\
+             Every replay opens on the system as the algorithm was handed it — \
+             nothing done and nothing attempted. A view whose first frame is \
+             already a completed step teaches that the algorithm had started \
+             before the reader arrived. Add a `Start` step to its trace (see \
+             `MatchingStep::Start`) or, for a view built from a report list, wrap \
+             its payload the way `AliasStep` does.",
+        );
+    }
+
     /// **`which()` values are matched against, so a collision misroutes silently.**
     ///
     /// They reach the capture (`app.rs` builds `AnimationView { which }`) and the
@@ -733,11 +825,12 @@ mod tests_animated_contract {
     /// another — wrong, plausible, and invisible.
     #[test]
     fn every_animation_identifies_itself_uniquely() {
-        let impls = animated_impls();
+        let views = animated_views();
         let marker = "fn which(&self) -> &'static str {";
 
         let mut seen: Vec<(String, String)> = Vec::new();
-        for (module, body) in &impls {
+        for view in &views {
+            let (module, body) = (&view.module, &view.impl_body);
             let literal = body
                 .split_once(marker)
                 .and_then(|(_, rest)| rest.lines().nth(1))
