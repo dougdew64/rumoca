@@ -233,7 +233,9 @@ impl IcPlanAnimation {
         if self.playback.is_empty() {
             ui.add_space(6.0);
             ui.label("The initial-condition plan is empty.");
-            ui.weak("Nothing has to be solved at t=0 \u{2014} every unknown comes from a start attribute.");
+            if let Some(note) = empty_plan_note(self.context.verdict.as_deref()) {
+                ui.weak(note);
+            }
             return;
         }
 
@@ -573,6 +575,50 @@ fn block_style(b: &IcBlock) -> (&'static str, egui::Color32, String) {
     }
 }
 
+/// The one determinacy verdict the empty-plan gloss paraphrases.
+///
+/// Single-sourced so the gloss and the test that gates it cannot drift apart —
+/// the same defect the not-run wording had in `worker.rs`, where five hand-written
+/// copies agreed by coincidence.
+const START_ATTRIBUTE_VERDICT: &str =
+    "well-posed (remaining states initialize from their start attributes)";
+
+/// What the pane may add beneath *"The initial-condition plan is empty."*
+///
+/// # Why this is gated rather than always shown (finding C19)
+///
+/// The gloss states a **cause**: *every unknown comes from a start attribute.*
+/// HRW does not compute that — it is a literal, and the report separately carries
+/// Rumoca's own `determinacy.verdict`, which `render_header` paints directly above.
+/// Until 2026-08-25 the sentence was unconditional, so it was true only because the
+/// two specimens that reach an empty plan — `BouncingBall` and `SingleInertia` —
+/// both happen to return [`START_ATTRIBUTE_VERDICT`]. **True by agreement with the
+/// corpus, not by derivation**, and an empty plan under any other verdict would have
+/// had HRW assert one cause directly beneath Rumoca stating another.
+///
+/// **The middle arm returns `None` on purpose, and that is not an oversight to fill
+/// in later.** When Rumoca returned a verdict HRW cannot paraphrase, the header is
+/// already showing the compiler's own words — adding a sentence there would be
+/// inventing the explanation this fix exists to remove. *Absence is stated, never
+/// filled.*
+///
+/// The missing-verdict arm does speak, because a report with no verdict paints no
+/// header at all, and a pane saying only *"the plan is empty"* would leave the
+/// reader unable to tell a well-posed model from an unreported one.
+///
+/// Deliberately **not** reusing `render_header`'s `starts_with("well-posed")`: that
+/// predicate picks an icon, and any future well-posed verdict with a different cause
+/// would satisfy it while making the gloss false.
+fn empty_plan_note(verdict: Option<&str>) -> Option<&'static str> {
+    match verdict {
+        Some(v) if v.starts_with(START_ATTRIBUTE_VERDICT) => Some(
+            "Nothing has to be solved at t=0 \u{2014} every unknown comes from a start attribute.",
+        ),
+        Some(_) => None,
+        None => Some("Rumoca's report carried no determinacy verdict for this model."),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -583,6 +629,43 @@ mod tests {
             "determinacy": {"verdict": "well-posed (remaining states initialize from their start attributes)"},
             "relaxation_hint": {"dropped_equations": [17], "pinned_unknowns": ["gnd.p.i"]},
         })
+    }
+
+    /// The empty-plan gloss appears only for the verdict it paraphrases (C19).
+    ///
+    /// **The third case is the one with teeth.** `render_header` decides its icon with
+    /// `starts_with("well-posed")`, and reusing that predicate here would let the gloss
+    /// fire for *any* well-posed verdict — including one whose cause is something other
+    /// than start attributes, which is precisely the false claim this gate removes.
+    #[test]
+    fn the_empty_plan_gloss_is_shown_only_for_the_verdict_it_paraphrases() {
+        assert_eq!(
+            empty_plan_note(Some(START_ATTRIBUTE_VERDICT)),
+            Some(
+                "Nothing has to be solved at t=0 \u{2014} every unknown comes from a start attribute."
+            ),
+            "the verdict the gloss paraphrases must still produce it"
+        );
+
+        assert_eq!(
+            empty_plan_note(Some("over-determined (3 equations too many)")),
+            None,
+            "HRW must not explain a cause Rumoca did not state; the header carries its words"
+        );
+
+        assert_eq!(
+            empty_plan_note(Some(
+                "well-posed (all unknowns fixed by parameter bindings)"
+            )),
+            None,
+            "a DIFFERENT well-posed verdict must not borrow the start-attribute explanation"
+        );
+
+        assert_eq!(
+            empty_plan_note(None),
+            Some("Rumoca's report carried no determinacy verdict for this model."),
+            "with no verdict there is no header either, so the absence must be stated"
+        );
     }
 
     /// All three block kinds parse, and each says what it will actually do.

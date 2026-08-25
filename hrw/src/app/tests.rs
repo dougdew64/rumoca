@@ -2255,6 +2255,16 @@ fn every_animation_pane_reports_having_nothing_to_show() {
 /// Whether the wording *should* distinguish them more clearly than *report* versus
 /// *model* does. That is a pane claim and Doug's to rule on; it is recorded in
 /// `docs/ui-findings.md` rather than changed here.
+///
+/// # The ic_plan fixture gained a verdict on 2026-08-25 (finding C19)
+///
+/// It used to be a bare `blocks: []`, which reaches the pane's **no-verdict** arm —
+/// a state neither real specimen produces. `BouncingBall` and `SingleInertia` both
+/// carry `determinacy.verdict`, so the fixture now does too, and the bare form is a
+/// second case rather than the only one. Both arms that *speak* are covered here;
+/// the arm that deliberately stays silent — a verdict HRW cannot paraphrase — is
+/// pinned by `ic_plan_anim::tests::the_empty_plan_gloss_is_shown_only_for_the_verdict_it_paraphrases`,
+/// because it asserts an absence and this harness queries for presence.
 #[test]
 fn an_animation_built_from_an_empty_report_says_the_model_has_none() {
     use egui_kittest::Harness;
@@ -2262,7 +2272,7 @@ fn an_animation_built_from_an_empty_report_says_the_model_has_none() {
 
     type Pane = fn(&mut App, &mut egui::Ui);
     // (name, the stage to sit on, its report, the pane, what it must say)
-    let cases: [(&str, StageKind, serde_json::Value, Pane, &str); 2] = [
+    let cases: [(&str, StageKind, serde_json::Value, Pane, &str); 3] = [
         (
             "alias",
             StageKind::IndexReduction,
@@ -2271,11 +2281,25 @@ fn an_animation_built_from_an_empty_report_says_the_model_has_none() {
             "No alias eliminations in this model",
         ),
         (
-            "ic_plan",
+            // What `BouncingBall` and `SingleInertia` actually produce.
+            "ic_plan (start-attribute verdict)",
+            StageKind::Initialization,
+            serde_json::json!({
+                "blocks": [],
+                "determinacy": {
+                    "verdict": "well-posed (remaining states initialize from their start attributes)"
+                },
+            }),
+            |a, ui| a.ic_plan_anim_ui(ui),
+            "Nothing has to be solved at t=0",
+        ),
+        (
+            // No determinacy at all: no header either, so the body must say so.
+            "ic_plan (no verdict)",
             StageKind::Initialization,
             serde_json::json!({"blocks": []}),
             |a, ui| a.ic_plan_anim_ui(ui),
-            "Nothing has to be solved at t=0",
+            "no determinacy verdict",
         ),
     ];
 
