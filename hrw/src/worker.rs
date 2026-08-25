@@ -10403,6 +10403,422 @@ mod tests {
             );
         }
     }
+
+    /// Does this request oblige the worker to answer?
+    ///
+    /// **Exhaustive on purpose.** A new `ToWorker` variant must be classified here
+    /// before the crate compiles, which is stronger than a roster: a roster can only
+    /// fail at run time, and only if something exercises the new variant.
+    fn expects_a_response(msg: &ToWorker) -> bool {
+        match msg {
+            ToWorker::SetLibraries(_)
+            | ToWorker::Compile(_)
+            | ToWorker::CompileLibraryModel(_)
+            | ToWorker::OpenDef(_)
+            | ToWorker::Simulate { .. } => true,
+            ToWorker::SetTracing(_) | ToWorker::LiveDebugConnections { .. } => false,
+        }
+    }
+
+    /// Is this the *answer* to a request, rather than something streamed during one?
+    ///
+    /// Exhaustive for the same reason. `Log` and `CompileProgress` arrive on the same
+    /// channel while a request is still running, so a test that simply took the first
+    /// message would pass on a compile that never finished.
+    fn is_terminal(msg: &FromWorker) -> bool {
+        match msg {
+            FromWorker::Libraries(_)
+            | FromWorker::Compiled { .. }
+            | FromWorker::DefTree { .. }
+            | FromWorker::Simulated { .. } => true,
+            FromWorker::Log(_) | FromWorker::CompileProgress { .. } => false,
+        }
+    }
+
+    /// **Every request the worker answers produces exactly one response, of the right
+    /// kind** — the transport contract, which had no test at all until 2026-08-25.
+    ///
+    /// # Why this layer needed its own test
+    ///
+    /// Every other test in this file constructs a [`WorkerState`] and calls it
+    /// directly. [`Worker::spawn`] — the thread, its event loop, the `emit` closure
+    /// and the `Option<FromWorker>` contract [`WorkerState::handle`] returns — is
+    /// reached from exactly **one** place in the codebase, `App::new`, and from no
+    /// test. It is the layer every message crosses and it was the only one with zero
+    /// coverage.
+    ///
+    /// **The failure it prevents is silent.** A request-shaped variant that returns
+    /// `None` leaves the UI waiting forever, and a UI waiting forever is
+    /// indistinguishable from a slow compile — the same shape `CLAUDE.md` records for
+    /// the permission allowlist and for a sleeping machine. Nothing else in the suite
+    /// would notice, because nothing else sends a message.
+    ///
+    /// # Why the requests are all failures
+    ///
+    /// Each one names something that does not exist, so it fails fast and the whole
+    /// test costs no compile. **What is under test is that an answer ARRIVES**, not
+    /// what it says; the hundred tests above cover what it says.
+    ///
+    /// # What this does NOT cover
+    ///
+    /// `LiveDebugConnections` is *classified* but not *driven* — it needs a live
+    /// `LiveTrace` with a debugger stepping it, which is a harness this test has no
+    /// business building. Its contract, no response but `done` signalled, is stated
+    /// on the variant itself. Nor does this check ordering under load: the loop is
+    /// serial by construction, so there is no interleaving to catch today.
+    #[test]
+    fn every_request_the_worker_answers_produces_exactly_one_response() {
+        use std::time::Duration;
+
+        let missing = PathBuf::from(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/specimens/NoSuchSpecimen.mo"
+        ));
+        let requests: Vec<(&str, ToWorker)> = vec![
+            ("SetLibraries", ToWorker::SetLibraries(Vec::new())),
+            ("Compile", ToWorker::Compile(missing.clone())),
+            (
+                "CompileLibraryModel",
+                ToWorker::CompileLibraryModel("No.Such.Model".to_owned()),
+            ),
+            ("OpenDef", ToWorker::OpenDef("No.Such.Def".to_owned())),
+            (
+                "Simulate",
+                ToWorker::Simulate {
+                    path: missing.clone(),
+                    model: "NoSuchModel".to_owned(),
+                    t_end: 0.1,
+                    is_library: false,
+                },
+            ),
+            ("SetTracing", ToWorker::SetTracing(false)),
+        ];
+
+        // Non-vacuity: every answering variant is actually driven below. If a new one
+        // is added, `expects_a_response` forces the classification and this forces
+        // the exercise.
+        assert_eq!(
+            requests
+                .iter()
+                .filter(|(_, m)| expects_a_response(m))
+                .count(),
+            5,
+            "a ToWorker variant that owes a response is not being sent by this test",
+        );
+
+        let worker = Worker::spawn(egui::Context::default());
+        let next_terminal = || -> Option<FromWorker> {
+            loop {
+                // 30s is ~100x what any request here needs (all of them name
+                // something that does not exist and fail immediately). It is a
+                // ceiling on how long a FAILING run costs, not a real deadline:
+                // detecting a hang means waiting one out, and the must-fire check
+                // for this test paid the full timeout to prove it fires.
+                match worker.rx.recv_timeout(Duration::from_secs(30)) {
+                    Ok(m) if is_terminal(&m) => return Some(m),
+                    Ok(_) => continue,
+                    Err(_) => return None,
+                }
+            }
+        };
+
+        for (name, msg) in requests {
+            let owes_an_answer = expects_a_response(&msg);
+            worker
+                .tx
+                .send(msg)
+                .unwrap_or_else(|_| panic!("{name}: the worker thread died before it was asked"));
+
+            if owes_an_answer {
+                let got = next_terminal().unwrap_or_else(|| {
+                    panic!(
+                        "{name} produced no response. The UI waits on this channel, so a \
+                         request that is never answered presents as a hang, not as an error"
+                    )
+                });
+                let right_kind = matches!(
+                    (name, &got),
+                    ("SetLibraries", FromWorker::Libraries(_))
+                        | (
+                            "Compile" | "CompileLibraryModel",
+                            FromWorker::Compiled { .. }
+                        )
+                        | ("OpenDef", FromWorker::DefTree { .. })
+                        | ("Simulate", FromWorker::Simulated { .. })
+                );
+                assert!(
+                    right_kind,
+                    "{name} was answered with the wrong kind of response, so the UI would \
+                     file the result under the wrong request",
+                );
+            } else {
+                // Nothing should answer this one. A fence turns that absence into a
+                // positive observation: send a request that MUST be answered, and the
+                // next terminal has to be the fence's own. A stray answer then shows
+                // up as the wrong kind rather than as silence nobody can measure.
+                worker
+                    .tx
+                    .send(ToWorker::OpenDef("No.Such.Fence".to_owned()))
+                    .expect("the worker thread is alive");
+                let fenced = next_terminal()
+                    .unwrap_or_else(|| panic!("{name}: even the fence went unanswered"));
+                assert!(
+                    matches!(fenced, FromWorker::DefTree { .. }),
+                    "{name} is classified as fire-and-forget, but the worker answered it",
+                );
+            }
+        }
+    }
+
+    /// **A panicking worker thread is detected only on the NEXT send** — measured
+    /// 2026-08-25, and this test records what is true today rather than what should
+    /// be.
+    ///
+    /// # What was measured, and why it is worth knowing
+    ///
+    /// **There is no `catch_unwind` anywhere in this file.** So a panic inside any
+    /// Rumoca phase unwinds the worker thread, which drops its `Receiver<ToWorker>`;
+    /// the UI's next `send` then fails and sets `send_failed`. That is the entire
+    /// detection mechanism, and this test drives it with a real thread that really
+    /// panics — the causal chain, not a stand-in for it.
+    ///
+    /// **The gap it exposes is the interval.** Between the panic and the next send,
+    /// the UI is waiting on a channel nothing will ever write to, and a channel that
+    /// will never answer is indistinguishable from a slow compile. The request that
+    /// caused the panic is never answered at all: no error reaches the log, no stage
+    /// turns red, and `compiling` stays true. HRW instruments crates under active
+    /// change, so a panicking phase is not exotic.
+    ///
+    /// # What this deliberately does not do
+    ///
+    /// **It does not add `catch_unwind`.** Recovering from a panic instead of dying
+    /// would change what the compile path does when a phase fails, which is Doug's
+    /// call under `CLAUDE.md`'s decision boundary, not a seam Claude may take. This
+    /// test exists so that ruling can be made on a measurement rather than on
+    /// Claude's reading of the code — the distinction `CLAUDE.md` draws when it says
+    /// evidence goes *to* Doug and never authorises proceeding in-session.
+    ///
+    /// If `catch_unwind` is ever added, **this test should fail**, and its failure is
+    /// the signal to rewrite this comment rather than to restore the old behaviour.
+    #[test]
+    fn a_panicking_worker_thread_is_only_noticed_on_the_next_send() {
+        // Non-vacuity first: while the far end is alive, `send` must NOT report a
+        // failure. Without this, a `send` that always set the flag would pass.
+        let (tx_live, rx_live) = mpsc::channel::<ToWorker>();
+        let (_tx_res_live, rx_res_live) = mpsc::channel::<FromWorker>();
+        let mut alive = Worker {
+            tx: tx_live,
+            rx: rx_res_live,
+            send_failed: false,
+        };
+        alive.send(ToWorker::SetTracing(false));
+        assert!(
+            !alive.send_failed,
+            "a live worker must not be reported as dead",
+        );
+        assert!(rx_live.try_recv().is_ok(), "the message must have arrived");
+
+        // Now the real chain: a thread holding the worker's receiver panics.
+        let (tx, rx_req) = mpsc::channel::<ToWorker>();
+        let (tx_res, rx) = mpsc::channel::<FromWorker>();
+
+        // Silence the panic report: this panic is the fixture, not a failure, and an
+        // unexplained backtrace in the test log is how a green run gets read as a bad
+        // one. Safe under `--test-threads=1`, which this suite requires anyway.
+        let previous = std::panic::take_hook();
+        std::panic::set_hook(Box::new(|_| {}));
+        let panicked = thread::spawn(move || {
+            // Owned by the thread exactly as the real loop owns them, so unwinding
+            // drops both ends the same way.
+            let _rx_req = rx_req;
+            let _tx_res = tx_res;
+            panic!("a Rumoca phase panicked");
+        })
+        .join();
+        std::panic::set_hook(previous);
+        assert!(panicked.is_err(), "the fixture thread must actually panic");
+
+        let mut worker = Worker {
+            tx,
+            rx,
+            send_failed: false,
+        };
+        assert!(
+            !worker.send_failed,
+            "nothing has been sent yet, so nothing can have failed \u{2014} the flag \
+             reports a failed SEND, not a dead thread",
+        );
+
+        worker.send(ToWorker::Compile(PathBuf::from("/no/such/specimen.mo")));
+        assert!(
+            worker.send_failed,
+            "a send to a dead worker must set send_failed; it is the only way the UI \
+             ever learns the thread is gone",
+        );
+    }
+
+    /// One character describing what a stage did, for the corpus matrix.
+    ///
+    /// **Five states, and the two splits are the point.** [`Outcome`] has three
+    /// variants, and each of two of them covers facts a reader must not conflate.
+    ///
+    /// `Ok` covers both *"produced its IR"* and *"never ran, here is a note saying
+    /// so"* — [`Stage::info`] reaches `Ok` deliberately, since a skipped stage is not
+    /// a failure. `Failed` covers both *"this stage failed"* (an error payload) and
+    /// *"the reachable-closure pipeline produced no result at all"* (no payload) —
+    /// the same distinction `not_reached_note` and `no_result_note` were
+    /// single-sourced for on 2026-08-25.
+    ///
+    /// **Collapsing either split would hide the drift this matrix exists to catch.**
+    /// A change that stops running a phase would look identical to one that runs it
+    /// successfully; a change that swallowed an error payload would look identical to
+    /// one that reported it. Both were collapsed in this function's first draft, and
+    /// generating the matrix is what exposed it: `MissingComponentClass` read
+    /// `OF..X.XXXXX`, with a stage *failing* after one that was never reached, which
+    /// is not a thing the pipeline can do.
+    fn outcome_code(stage: &Stage) -> char {
+        match (stage.outcome, stage.value.is_some()) {
+            (Outcome::Failed, _) if stage.error_json().is_some() => 'X',
+            (Outcome::Failed, _) => '!',
+            (Outcome::Flagged, _) => 'F',
+            (Outcome::Ok, true) => 'O',
+            (Outcome::Ok, false) => '.',
+        }
+    }
+
+    /// **What every specimen does at every stage, pinned as one line each.**
+    ///
+    /// # The question this answers that no other test does
+    ///
+    /// The tests above assert particular facts about particular specimens —
+    /// `Drivetrain` reduces, `OverInitRc` is flagged, `CapacitorLoop` is singular.
+    /// Each is a point sample. **Nothing asserted the shape of the whole corpus**, so
+    /// a change in `worker.rs` that quietly turned a `Flagged` into an `Ok`, or
+    /// stopped a phase being reached, would be caught only where a test happened to
+    /// look. Twenty-four specimens across eleven stages is 264 cells; the point
+    /// samples cover a few dozen.
+    ///
+    /// This is the third of three checks added on 2026-08-25 after Doug asked which
+    /// categories of `worker.rs` failure went untested. The first two cover the
+    /// transport layer; this one covers **outcome drift across the corpus**.
+    ///
+    /// # How to read a row, and what a diff means
+    ///
+    /// `O` produced IR · `F` produced IR **and** Rumoca reported something ·
+    /// `X` failed, pipeline stopped · `.` reached `Ok` with no IR, which in practice
+    /// means *not reached*. Stage order is [`StageKind::COMPILATION`]: parse, resolve,
+    /// instantiate, typecheck, flatten, dae, structural, index-reduction,
+    /// initialization, events, solve-lowering.
+    ///
+    /// **A failure here is "go and look", not "the table is stale".** Every cell is a
+    /// claim about what the compiler did with a real model. If a row changes, either
+    /// Rumoca's behaviour changed — which is worth knowing and is what the notebook
+    /// check would also catch — or HRW's reporting of it did, which nothing else
+    /// would catch. Update the row **in the same commit as the reasoning**, exactly
+    /// as the doc-block ratchet requires.
+    #[test]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compiles the whole specimen corpus; run with --features slow-tests"
+    )]
+    fn the_corpus_outcome_matrix_is_unchanged() {
+        // Filled from this test's own failure output on 2026-08-25; see the doc
+        // comment for what a character means. Stage order:
+        //   par res ins typ fla dae str idx ini evt sol
+        const MATRIX: &[(&str, &str)] = &[
+            // Healthy: every phase produces IR.
+            ("BouncingBall", "OOOOOOOOOOO"),
+            ("LoopWithInertia", "OOOOOOOOOOO"),
+            ("MixedLoop", "OOOOOOOOOOO"),
+            ("NonlinearLoop", "OOOOOOOOOOO"),
+            ("ProportionalLoop", "OOOOOOOOOOO"),
+            ("RcCircuit", "OOOOOOOOOOO"),
+            ("SingleInertia", "OOOOOOOOOOO"),
+            ("TwoLoops", "OOOOOOOOOOO"),
+            // Initialization relaxed something and said so.
+            ("OverInitRc", "OOOOOOOOFOO"),
+            ("RotationalInertia", "OOOOOOOOFOO"),
+            // High-index: structural flags a singular system, reduction fixes it,
+            // initialization then reports its relaxation. Four models, one shape.
+            ("BenchActuator", "OOOOOOFOFOO"),
+            ("Drivetrain", "OOOOOOFOFOO"),
+            ("GearWithBrake", "OOOOOOFOFOO"),
+            ("MotorWithBrake", "OOOOOOFOFOO"),
+            // Singular and NOT repaired by reduction — index reduction flags too.
+            ("CapacitorLoop", "OOOOOOFFOOO"),
+            ("IncompatibleConnect", "OOOOOOFFOOO"),
+            ("TwiceDefined", "OOOOOOFFOOO"),
+            // The canonical index-3 DAE Rumoca does not reduce (`ideas.md` #83):
+            // initialization is flagged as well, which the three above are not.
+            ("CartesianPendulum", "OOOOOOFFFOO"),
+            // A flagged typecheck stops the pipeline; everything after is `.`.
+            ("DimensionMismatch", "OOOF......."),
+            // Flatten and DAE fail with a payload, then nothing is reached.
+            ("OverDeterminedShaft", "OOOOXX....."),
+            ("UnbalancedShaft", "OOOOXX....."),
+            // No pipeline result at all. **These three rows interleave `.` and `!`
+            // for one underlying condition** — recorded as `ui-findings.md` C20 and
+            // deliberately not changed here, because which of the two a tab shows is
+            // a pane claim and Doug's to rule on.
+            ("MissingComponentClass", "OF..!.!!!!!"),
+            ("UndefinedRef", "OF..!.!!!!!"),
+            ("UnclosedModel", "X!..!!!!!!!"),
+        ];
+
+        let dir = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens"));
+        let mut names: Vec<String> = std::fs::read_dir(&dir)
+            .expect("the specimen directory must be readable")
+            .flatten()
+            .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("mo"))
+            .filter_map(|e| {
+                e.path()
+                    .file_stem()
+                    .map(|s| s.to_string_lossy().into_owned())
+            })
+            .collect();
+        names.sort();
+
+        // Non-vacuity: a walk that found nothing must not pass as "no drift".
+        assert!(
+            names.len() >= 20,
+            "only {} specimens found \u{2014} the walk is broken, not the corpus",
+            names.len(),
+        );
+
+        let mut actual: Vec<(String, String)> = Vec::new();
+        for name in &names {
+            let FromWorker::Compiled { stages, .. } = compile_specimen_shared(name) else {
+                panic!("{name}: expected Compiled");
+            };
+            let row: String = StageKind::COMPILATION
+                .iter()
+                .map(|k| outcome_code(stages.get(*k)))
+                .collect();
+            actual.push((name.clone(), row));
+        }
+
+        let expected: std::collections::BTreeMap<&str, &str> = MATRIX.iter().copied().collect();
+        let mut drift: Vec<String> = Vec::new();
+        for (name, row) in &actual {
+            match expected.get(name.as_str()) {
+                Some(want) if want == row => {}
+                Some(want) => drift.push(format!("{name:<22} was {want}  now {row}")),
+                None => drift.push(format!("{name:<22} (no baseline)  now {row}")),
+            }
+        }
+        for name in expected.keys() {
+            if !actual.iter().any(|(n, _)| n == name) {
+                drift.push(format!("{name:<22} has a baseline but no specimen"));
+            }
+        }
+
+        assert!(
+            drift.is_empty(),
+            "the corpus outcome matrix moved. Stage order is COMPILATION; \
+             O=IR, F=IR+report, X=failed, .=not reached.\n  {}",
+            drift.join("\n  "),
+        );
+    }
 }
 
 /// One funnel step, with the system's shape on either side of it.

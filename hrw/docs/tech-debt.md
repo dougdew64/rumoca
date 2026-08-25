@@ -270,7 +270,9 @@ the ledger was built to detect.
 
 | 08-25 | the only pane-level test of an **empty** IC plan fed `{"blocks": []}` with no `determinacy` — a report **neither real specimen produces**. `BouncingBall` and `SingleInertia` both carry a verdict, so the one test covering that pane exercised an arm that never occurs in the corpus | toolchain | fell out of C19's fix: gating the gloss on the verdict made the arms distinguishable, and the fixture landed on the wrong one |
 
-**Five rows, and the pattern differs from every section above: two are defects in Claude's
+| 08-25 | **one pipeline condition renders as a FAILURE in six stage tabs and a NON-failure in three** — a pipeline that returns no result at all is `Stage::info` (`Ok`, neutral) in Instantiate/Typecheck/DAE and `Stage::err` (`Failed`, red) in the other six | Claude | `the_corpus_outcome_matrix_is_unchanged` on its FIRST run; a `.` interleaved with `!` in three rows is what made it visible. `ui-findings.md` C20, awaiting Doug |
+
+**Six rows, and the pattern differs from every section above: two are defects in Claude's
 REASONING, not in a file.** A wrong cause asserted for a timing anomaly, and a cost derived by
 arithmetic instead of measured — **no checker could have caught either, because neither lived
 anywhere a checker looks.** Doug caught the first; the second was caught only because he asked for
