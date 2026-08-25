@@ -2518,7 +2518,17 @@ Some prose.
         // is a pointer. Doug had concluded he needed to remember to disable sleep;
         // the standing answer to a thing got wrong repeatedly is a mechanism, and
         // the reminder would have failed a third time.
-        const MANDATORY_BUDGET: usize = 1931;
+        // …then 1931 → 1934 on 2026-08-25, for a new corollary of the absence rule:
+        // a stage's OUTCOME is a claim, and `Outcome::Failed` means "the pipeline
+        // stopped here", so at most one stage per compile may carry it.
+        //
+        // Three lines rather than five because the reasoning lives on `no_result_note`
+        // and the enforcement on `the_corpus_outcome_matrix_is_unchanged`. It earns a
+        // raise rather than a trim elsewhere because it is a **binding rule with a
+        // checker**, not commentary: four separate sites had each violated it, and
+        // none of the existing corollaries forbade it — they govern invented CONTENT,
+        // and this is an invented claim about control flow, carried by a field.
+        const MANDATORY_BUDGET: usize = 1934;
         // 263 → 264, same commit and same reason as MANDATORY_BUDGET above.
         const CURRENT_WORK_BUDGET: usize = 264;
 

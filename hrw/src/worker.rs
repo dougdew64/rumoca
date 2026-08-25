@@ -2382,7 +2382,9 @@ impl WorkerState {
         let mut typecheck = Stage::default();
         let mut connection_frames = Vec::new();
         let resolve = match &model {
-            None => Stage::err("parse produced no model to resolve"),
+            // `info`, not `err`: parse is where the pipeline stopped, and it already
+            // says so. See `no_result_note` for why the outcome class is a claim.
+            None => Stage::info(not_reached_note("parse produced no model to resolve")),
             Some(simple_name) => {
                 // A library model was named in full by the caller. Qualifying its
                 // simple name against the library file's URI would re-derive it,
@@ -2609,15 +2611,22 @@ impl WorkerState {
             reduced_frames,
         ) = match &model {
             None => {
-                let e = "parse produced no model to compile";
+                // **Seven `Stage::err`s until 2026-08-25, which is seven claims that
+                // the pipeline stopped at seven different phases.** It stopped once,
+                // at parse, and the parse tab already carries that error with its
+                // payload. These seven never ran; `not_reached_note` is the wording
+                // every other skipped stage uses, and routing through it also brings
+                // them under `a_stage_that_says_it_never_ran_shows_no_ir`, which
+                // matches on "not reached" and could not see them before.
+                let e = not_reached_note("parse produced no model to compile");
                 (
-                    Stage::err(e),
-                    Stage::err(e),
-                    Stage::err(e),
-                    Stage::err(e),
-                    Stage::err(e),
-                    Stage::err(e),
-                    Stage::err(e),
+                    Stage::info(e.clone()),
+                    Stage::info(e.clone()),
+                    Stage::info(e.clone()),
+                    Stage::info(e.clone()),
+                    Stage::info(e.clone()),
+                    Stage::info(e.clone()),
+                    Stage::info(e),
                     None,
                     None,
                     Vec::new(),
@@ -3204,7 +3213,9 @@ fn not_reached_stage(result: Option<&PhaseResult>) -> Option<Stage> {
         Some(PhaseResult::NeedsInner { .. }) => Some(Stage::info(not_reached_note(
             "model needs inner declarations",
         ))),
-        None => Some(Stage::err(no_result_note())),
+        // `info`, not `err`: see `no_result_note` for why the outcome class here is
+        // a claim this stage is not entitled to make.
+        None => Some(Stage::info(no_result_note())),
     }
 }
 
@@ -3242,6 +3253,28 @@ fn not_reached_note(because: &str) -> String {
 /// something earlier stopped, this one says the reachable-closure pipeline produced no
 /// result to skip *from*. `a_stage_that_says_it_never_ran_shows_no_ir` matches on
 /// `"produced no result"`, so this string is load-bearing too.
+///
+/// # Why its callers use `Stage::info` and not `Stage::err` (finding C20)
+///
+/// **[`Outcome`] is a claim about control flow, not a severity.** Its own
+/// documentation says `Failed` means *"the pipeline stopped here"* and `Flagged`
+/// means *"the pipeline continued"*. Until 2026-08-25 both callers used
+/// [`Stage::err`], so a model whose report carries no result for the requested
+/// model — `MissingComponentClass`, `UndefinedRef`, `UnclosedModel` — painted
+/// **six** stage tabs `Failed`. The pipeline stops once. At most one of those six
+/// could be true, and none was: the neutral notes on Instantiate and Typecheck
+/// locate the stop *before instantiate*.
+///
+/// **Only the outcome class changed; the wording did not.** That is the ordering of
+/// the charter's principles doing real work. Consistency, applied first, would have
+/// unified these two messages into one — destroying a true distinction while leaving
+/// all six false control-flow claims in place. Accuracy points at the class and
+/// leaves the words alone.
+///
+/// **The `None` is Rumoca's, not HRW's** — it comes from
+/// `report.requested_result`, so "produced no result for this model" is a fact about
+/// the compiler's output. There is no argument that red is warranted to flag an
+/// HRW-side malfunction, which is the reading that would have justified `err`.
 fn no_result_note() -> &'static str {
     "the reachable-closure pipeline produced no result for this model"
 }
@@ -4421,21 +4454,40 @@ fn flatten_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
                     )
                 }
                 FailedPhase::ToDae => {
-                    // Until 2026-07-29 this arm discarded everything and returned a
-                    // bare `Stage::info("...DAE construction failed (later arc)")` —
-                    // while `error`, `error_code` and `diagnostics` sat in scope,
-                    // unused. That made the **most common Modelica authoring error**
-                    // (declare a variable, forget its equation) the *least* informative
-                    // failure in the pipeline: Rumoca says "unbalanced model: 2
-                    // equations, 3 unknowns (balance = -1)" and HRW said nothing.
+                    // **Flatten stops adopting DAE construction's failure — 2026-08-25.**
                     //
-                    // Promoted from `info` to a real error too. It *is* one, and
-                    // `last_successful_stage` keys on `note_is_error`, so flatten no
-                    // longer looks like the furthest good stage when DAE construction
-                    // has failed.
-                    Stage::err_with_details(
-                        dae_construction_error_to_json(error, error_code, diagnostics, source),
-                        msg,
+                    // The history, because it explains why this arm existed at all.
+                    // Until 2026-07-29 it discarded everything and returned a bare
+                    // `Stage::info("...DAE construction failed (later arc)")` while
+                    // `error`, `error_code` and `diagnostics` sat in scope, unused —
+                    // which made the **most common Modelica authoring error** (declare
+                    // a variable, forget its equation) the *least* informative failure
+                    // in the pipeline. So it was promoted to a real error carrying the
+                    // payload, and at the time that was right: **DAE construction had
+                    // no tab of its own**, Flatten was the last tab before Structural,
+                    // and somebody had to report it.
+                    //
+                    // `dae_absent_stage` gave DAE its own tab on 2026-08-03 and now
+                    // reports this exact error itself — but this arm was never removed,
+                    // so **both stages rendered the same payload** and
+                    // `OverDeterminedShaft`/`UnbalancedShaft` read `OOOOXX.....`: two
+                    // stages each claiming, per `Outcome::Failed`'s own definition,
+                    // that *the pipeline stopped here*. It stops once, and it stopped
+                    // at DAE construction. Found by the corpus outcome matrix.
+                    //
+                    // **Flatten is not failing here — it succeeded.** Reaching ToDae
+                    // requires it. What is true is that `PhaseResult::Failed` carries
+                    // no flat model, so there is nothing to show; that is a different
+                    // fact from failing, and a different one again from not running.
+                    //
+                    // `last_successful_stage` is unaffected: its `ok` predicate is
+                    // `value.is_some() && !note_is_error()`, and `info` carries no
+                    // value, so Flatten does not become the furthest good stage. The
+                    // 2026-07-29 comment named only the `note_is_error` half.
+                    Stage::info(
+                        "flatten completed \u{2014} the compile failed at DAE \
+                         construction, whose result carries no flat model. The DAE \
+                         tab has the error.",
                     )
                 }
                 other => Stage::info(not_reached_note(&format!("{other} failed earlier"))),
@@ -4445,7 +4497,8 @@ fn flatten_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
             "needs inner declaration(s) for: {}",
             missing_inners.join(", ")
         )),
-        None => Stage::err(no_result_note()),
+        // `info`, not `err` — same reason as `not_reached_stage`'s None arm.
+        None => Stage::info(no_result_note()),
     }
 }
 
@@ -7284,12 +7337,19 @@ mod tests {
             panic!("expected Compiled");
         };
 
-        let flatten = &stages.flatten;
+        // **`dae`, not `flatten` — corrected 2026-08-25.** This test was written on
+        // 2026-07-29, when `flatten_stage` adopted the `FailedPhase::ToDae` error
+        // because DAE construction had no tab of its own. It has had one since
+        // 2026-08-03, and *both* stages rendered the payload until the C20 fix removed
+        // the adoption. Everything this test is for is unchanged — the balance counts
+        // survive, and the message-format parse keeps its tripwire — it was simply
+        // reading them off the stage next door.
+        let dae = &stages.dae;
         assert!(
-            flatten.note_is_error(),
+            dae.note_is_error(),
             "a failed DAE construction is an error, not an info note"
         );
-        let err = flatten
+        let err = dae
             .value
             .as_ref()
             .and_then(|v| v.get("error"))
@@ -7315,6 +7375,18 @@ mod tests {
                 .is_some_and(|r| r.contains("nothing to determine it")),
             "the direction of the imbalance is the actionable half: {}",
             err["reading"],
+        );
+
+        // **And the stage before it must no longer claim the failure.** One pipeline
+        // stop, one stage reporting it — the invariant
+        // `the_corpus_outcome_matrix_is_unchanged` now holds for every specimen.
+        assert!(
+            !stages.flatten.note_is_error(),
+            "flatten did not fail \u{2014} reaching ToDae requires it to have succeeded",
+        );
+        assert!(
+            stages.flatten.value.is_none(),
+            "flatten must not carry a second copy of DAE construction's payload",
         );
     }
 
@@ -10705,10 +10777,16 @@ mod tests {
     /// # How to read a row, and what a diff means
     ///
     /// `O` produced IR · `F` produced IR **and** Rumoca reported something ·
-    /// `X` failed, pipeline stopped · `.` reached `Ok` with no IR, which in practice
-    /// means *not reached*. Stage order is [`StageKind::COMPILATION`]: parse, resolve,
-    /// instantiate, typecheck, flatten, dae, structural, index-reduction,
-    /// initialization, events, solve-lowering.
+    /// `X` failed **with** an error payload · `!` failed with none ·
+    /// `.` no IR and not a failure — usually *not reached*, but also Flatten's
+    /// "completed, no flat model retained" when DAE construction failed.
+    /// Stage order is [`StageKind::COMPILATION`]: parse, resolve, instantiate,
+    /// typecheck, flatten, dae, structural, index-reduction, initialization, events,
+    /// solve-lowering.
+    ///
+    /// **Every row now carries at most one `X` or `!`, at the stage that actually
+    /// stopped the pipeline.** That is the invariant the C20 fix established, and a
+    /// row with two is the defect it removed — see `no_result_note`.
     ///
     /// **A failure here is "go and look", not "the table is stale".** Every cell is a
     /// claim about what the compiler did with a real model. If a row changes, either
@@ -10754,15 +10832,15 @@ mod tests {
             // A flagged typecheck stops the pipeline; everything after is `.`.
             ("DimensionMismatch", "OOOF......."),
             // Flatten and DAE fail with a payload, then nothing is reached.
-            ("OverDeterminedShaft", "OOOOXX....."),
-            ("UnbalancedShaft", "OOOOXX....."),
+            ("OverDeterminedShaft", "OOOO.X....."),
+            ("UnbalancedShaft", "OOOO.X....."),
             // No pipeline result at all. **These three rows interleave `.` and `!`
             // for one underlying condition** — recorded as `ui-findings.md` C20 and
             // deliberately not changed here, because which of the two a tab shows is
             // a pane claim and Doug's to rule on.
-            ("MissingComponentClass", "OF..!.!!!!!"),
-            ("UndefinedRef", "OF..!.!!!!!"),
-            ("UnclosedModel", "X!..!!!!!!!"),
+            ("MissingComponentClass", "OF........."),
+            ("UndefinedRef", "OF........."),
+            ("UnclosedModel", "X.........."),
         ];
 
         let dir = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens"));

@@ -2,7 +2,7 @@
   "model": "UnbalancedShaft",
   "specimen": "specimens/UnbalancedShaft.mo",
   "specimen_fnv1a": "c1283a6cc791ba0e",
-  "rumoca_rev": "86fc2b08",
+  "rumoca_rev": "c612ad8e",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {
@@ -22,8 +22,8 @@
       "note": null
     },
     "flatten": {
-      "has_ir": true,
-      "note": "unbalanced model: 2 equations, 3 unknowns (balance = -1)"
+      "has_ir": false,
+      "note": "flatten completed — the compile failed at DAE construction, whose result carries no flat model. The DAE tab has the error."
     },
     "dae": {
       "has_ir": true,

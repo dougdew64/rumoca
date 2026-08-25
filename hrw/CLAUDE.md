@@ -96,6 +96,9 @@ each bought with a fiction removed on 2026-08-04:
   nothing and why. It does not derive a plausible substitute. The BLT tabs of a structurally
   singular model rendered blocks HRW had computed itself, and a learner reading them would have
   concluded the compiler decomposed a system it had refused to touch.
+- **A STAGE'S OUTCOME IS A CLAIM TOO: `Outcome::Failed` is defined as *"the pipeline stopped
+  here"*, so at most ONE stage per compile may carry it** *(2026-08-25)*. Four sites painted whole
+  runs of stages `Failed` for a single stop; `the_corpus_outcome_matrix_is_unchanged` now pins it.
 - **A derived view declares that it is derived.** Re-running a phase to observe it is
   sometimes the only way to see inside it, and that is **legitimate when labelled**. What is
   forbidden is presenting the re-run as the compilation. Every replay in HRW is now gone,

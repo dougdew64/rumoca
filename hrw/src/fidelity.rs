@@ -1441,8 +1441,19 @@ mod tests {
         // real drop is loud while ordinary variation is not. Every assertion above
         // skips what it does not apply to, and a corpus that quietly stopped failing
         // would otherwise read as a clean bill of health.
+        // 10 → 6 on 2026-08-25, and the drop is the population being corrected rather
+        // than coverage being lost. The C20 fix stopped eight stages claiming
+        // `Outcome::Failed` — which its own definition reads as *"the pipeline stopped
+        // here"* — for a pipeline that had stopped once somewhere else. Those stages
+        // were counted here as abnormal, so the measured 14 included samples that were
+        // abnormal by mistake, and it is now 8.
+        //
+        // **What did NOT change is the assertion below**: `with_payload` is still over
+        // its floor, because every stage removed carried a bare formatted string and
+        // no structured error. They were the samples F9 learns least from — the shape
+        // its own doc calls "a stage that failed with nothing but a formatted string".
         assert!(
-            abnormal_stages >= 10,
+            abnormal_stages >= 6,
             "only {abnormal_stages} abnormal stages; F9 barely ran"
         );
         assert!(
