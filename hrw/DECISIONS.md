@@ -4161,3 +4161,37 @@ recorded above as a fact about the project's structure rather than about him —
 through Claude's comprehension; no human has yet needed to maintain this code** — which is equally
 true, carries the same weight for a future session, and does not invert when read by a stranger.
 `DECISIONS.md`'s 2026-08-23 entry on this public repository is the rule being applied.
+
+## 2026-08-25 — the compile path survives a panicking phase, and throws its session away
+
+**Doug ruled it on the principles, and the ruling is also the first worked example of the
+`worker.rs` prohibition being revised the way its own text says it may be.** `CLAUDE.md` records
+that the prohibition is *"revisable on evidence"* and that evidence goes **to Doug** — a session
+may measure, never conclude in-session that the measurement authorises proceeding. That is exactly
+what happened: a test measured what a panic does today, the finding went to Doug, and he ruled.
+
+**What was measured.** There was no `catch_unwind` anywhere in `worker.rs`. A panic in any Rumoca
+phase unwound the worker thread, so the request that caused it was **never answered**; the UI kept
+polling a channel nothing would write to, and learned only when it next *sent* something. If Doug
+clicked nothing, nothing told him — a dead compiler and a slow one were indistinguishable.
+
+**Why the obvious fix was not the fix.** Bare `catch_unwind` keeps a `Session` that a panic left
+half-mutated, and carrying it into the next compile risks IR that is **subtly wrong rather than
+absent**. This project ranks that below a hang: a hang is visibly broken, and wrong IR teaches
+something false that Doug cannot distinguish from truth. Rust names the hazard directly — the
+`UnwindSafe` bound exists to force the question, and `AssertUnwindSafe` here is honest **only
+because the caller discards the state**.
+
+**So: catch, report, rebuild.** The panic becomes an answer, the panic text reaches the log, and
+`WorkerState` is replaced rather than reused. The cost is one MSL reload on the next compile.
+
+**No stage is marked `Failed`, and that follows from the same day's C20 ruling.** HRW does not know
+which phase panicked, and `Outcome::Failed` means *"the pipeline stopped here"* — so attributing it
+to any stage would invent the control-flow claim C20 had just removed from four sites. Putting it on
+Parse would be the worst available choice: Parse is the one stage that demonstrably did run. Every
+stage states its own absence instead, and the unattributable fact lives in the log.
+
+**One defect found while building it, not predicted by the proposal.** `LiveDebugConnections` owes
+no response but owns a `done` flag that `handle` sets *after* the call, so a panic skipped it and
+left the live `Playback` waiting on a session that had already ended — the same hang, in the one arm
+that answers nothing. It is signalled on the panic path now.

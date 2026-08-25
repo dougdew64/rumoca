@@ -801,7 +801,12 @@ impl StageBundle {
     /// purpose. Without this the check could only be exercised through a real compile,
     /// and a check about honesty that cannot be made to fail is the exact shape of the
     /// problem it was written for.
-    #[cfg(test)]
+    ///
+    /// **Un-gated from `#[cfg(test)]` on 2026-08-25** for `panicked_compile`, which
+    /// must put the same note on every stage. The alternative — a struct literal with
+    /// `..Default::default()` — would leave a newly added stage silently blank on a
+    /// panic, and `CLAUDE.md` requires new stages to be wired into every per-stage
+    /// system. Driving the roster keeps that automatic.
     pub fn get_mut(&mut self, kind: StageKind) -> &mut Stage {
         match kind {
             StageKind::Parse => &mut self.parse,
@@ -1087,6 +1092,123 @@ pub enum FromWorker {
     },
 }
 
+/// What a request must be answered with if handling it panics.
+///
+/// **Decided from `&ToWorker` before `handle` consumes it**, which is the whole
+/// reason this type exists: after the panic the message is gone, and an unanswered
+/// request is a hang.
+///
+/// Exhaustive in [`panic_reply`], so a new `ToWorker` variant cannot be added without
+/// deciding how a panic in it reaches the user — the same compile-time discipline
+/// `expects_a_response` uses for the transport contract.
+enum PanicReply {
+    Compiled(PathBuf),
+    Libraries,
+    DefTree(String),
+    Simulated(PathBuf),
+    /// Fire-and-forget. The flag, when present, still has to be signalled: a
+    /// `LiveDebugConnections` that panics without setting `done` leaves the live
+    /// `Playback` waiting for a session that already ended.
+    Silent(Option<Arc<std::sync::atomic::AtomicBool>>),
+}
+
+/// How to answer `msg` if handling it panics.
+fn panic_reply(msg: &ToWorker) -> PanicReply {
+    match msg {
+        ToWorker::SetLibraries(_) => PanicReply::Libraries,
+        ToWorker::Compile(p) => PanicReply::Compiled(p.clone()),
+        ToWorker::CompileLibraryModel(name) => PanicReply::Compiled(PathBuf::from(name)),
+        ToWorker::OpenDef(name) => PanicReply::DefTree(name.clone()),
+        ToWorker::Simulate { path, .. } => PanicReply::Simulated(path.clone()),
+        ToWorker::SetTracing(_) => PanicReply::Silent(None),
+        ToWorker::LiveDebugConnections { done, .. } => PanicReply::Silent(Some(Arc::clone(done))),
+    }
+}
+
+/// Run `f`, turning a panic into its message.
+///
+/// **`AssertUnwindSafe` is load-bearing and is only sound because of what the caller
+/// does next.** Rust demands [`std::panic::UnwindSafe`] here precisely to make you
+/// consider state a panic may have left half-mutated, and `&mut WorkerState` is not
+/// unwind-safe: its `Session` could be mid-mutation. The assertion is honest only
+/// because the caller **discards that state instead of reusing it** — see the loop in
+/// [`Worker::spawn`]. Reusing a panicked session would risk IR that is subtly wrong
+/// rather than absent, which this project ranks as worse than a hang.
+fn guard<R>(f: impl FnOnce() -> R) -> Result<R, String> {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).map_err(|payload| {
+        // A panic payload is `Box<dyn Any>`; `panic!("literal")` boxes a `&str` and
+        // `panic!("{x}")` boxes a `String`. Anything else is a payload we cannot read.
+        if let Some(s) = payload.downcast_ref::<&str>() {
+            (*s).to_owned()
+        } else if let Some(s) = payload.downcast_ref::<String>() {
+            s.clone()
+        } else {
+            "panicked with a payload HRW cannot read".to_owned()
+        }
+    })
+}
+
+/// The compile response for a compile that panicked.
+///
+/// # Why every stage carries the same note, and none is `Failed`
+///
+/// **HRW does not know which phase panicked.** `Outcome::Failed` is defined as *"the
+/// pipeline stopped here"*, so attributing it to any particular stage would invent
+/// exactly the control-flow claim finding C20 removed from four other sites — and
+/// putting it on Parse, the obvious shortcut, is the most wrong of all, since Parse is
+/// the one stage that demonstrably did run.
+///
+/// So every stage states its own absence with [`Stage::info`], which asserts nothing
+/// about where the pipeline stopped. The panic text itself reaches the log through the
+/// default panic hook and `OutputCapture`, which is where an unattributable fact
+/// belongs — `CLAUDE.md`'s *"a log line describes what happened"*.
+fn panicked_compile(path: PathBuf, note: &str) -> FromWorker {
+    let mut stages = StageBundle::default();
+    for kind in StageKind::COMPILATION {
+        *stages.get_mut(*kind) = Stage::info(note.to_owned());
+    }
+    FromWorker::Compiled {
+        path,
+        model: None,
+        stages,
+        def_index: BTreeMap::new(),
+        equation_sheet: None,
+        identifier_index: None,
+        index_reduction_frames: Vec::new(),
+        matching_frames: Vec::new(),
+        tarjan_frames: Vec::new(),
+        tearing_frames: Vec::new(),
+        reduced_frames: StructuralFrames::default(),
+        pre_lowering_frames: Vec::new(),
+        connection_frames: Vec::new(),
+        flat: None,
+        dae: None,
+        library_source: None,
+    }
+}
+
+/// Turn a caught panic into the answer its request is owed.
+fn panic_response(reply: PanicReply, note: &str) -> Option<FromWorker> {
+    match reply {
+        PanicReply::Compiled(path) => Some(panicked_compile(path, note)),
+        PanicReply::Libraries => Some(FromWorker::Libraries(Err(note.to_owned()))),
+        PanicReply::DefTree(name) => Some(FromWorker::DefTree {
+            name,
+            result: Err(note.to_owned()),
+        }),
+        PanicReply::Simulated(path) => Some(FromWorker::Simulated {
+            path,
+            result: Err(note.to_owned()),
+        }),
+        PanicReply::Silent(done) => {
+            if let Some(flag) = done {
+                flag.store(true, std::sync::atomic::Ordering::SeqCst);
+            }
+            None
+        }
+    }
+}
+
 /// Handle held by the UI thread for talking to the worker.
 ///
 /// This is the UI's half of the bidirectional channel pair:
@@ -1149,9 +1271,41 @@ impl Worker {
                         let _ = tx_res.send(m);
                         ctx.request_repaint();
                     };
-                    // `handle()` returns `Some(response)` for request/response
-                    // messages, `None` for fire-and-forget (like SetTracing).
-                    if let Some(response) = state.handle(msg, &emit) {
+                    // **A panicking phase must not take the worker with it — 2026-08-25.**
+                    //
+                    // Until then there was no `catch_unwind` anywhere in this file, so
+                    // a panic in any Rumoca phase unwound this thread and killed it.
+                    // The request that caused it was never answered, the UI kept
+                    // polling a channel nothing would ever write to, and the only
+                    // signal was `send_failed` on the *next* send — so if Doug clicked
+                    // nothing, nothing told him. A dead compiler and a slow one looked
+                    // identical.
+                    //
+                    // **The state is REBUILT, not reused, and that is the point of the
+                    // design rather than a detail.** Catching a panic leaves `Session`
+                    // in whatever half-mutated condition the unwind produced; carrying
+                    // it into the next compile risks IR that is subtly wrong rather
+                    // than absent, which this project ranks as worse than a hang. So
+                    // the panic is reported and the session is thrown away. The cost
+                    // is one MSL reload on the next compile; the alternative is a
+                    // fiction.
+                    let reply = panic_reply(&msg);
+                    let handled = guard(|| state.handle(msg, &emit));
+                    let response = match handled {
+                        Ok(r) => r,
+                        Err(note) => {
+                            let note = format!("the compiler panicked: {note}");
+                            emit(FromWorker::Log(LogEntry {
+                                elapsed_secs: 0.0,
+                                level: LogLevel::Error,
+                                message: note.clone(),
+                                depth: 0,
+                            }));
+                            state = WorkerState::new();
+                            panic_response(reply, &note)
+                        }
+                    };
+                    if let Some(response) = response {
                         if tx_res.send(response).is_err() {
                             break; // UI is gone (channel dropped), shut down
                         }
@@ -10642,38 +10796,34 @@ mod tests {
         }
     }
 
-    /// **A panicking worker thread is detected only on the NEXT send** — measured
-    /// 2026-08-25, and this test records what is true today rather than what should
-    /// be.
+    /// **A dead worker thread is detected only on the NEXT send.**
     ///
-    /// # What was measured, and why it is worth knowing
+    /// # What this measured, and what the measurement bought
     ///
-    /// **There is no `catch_unwind` anywhere in this file.** So a panic inside any
-    /// Rumoca phase unwinds the worker thread, which drops its `Receiver<ToWorker>`;
-    /// the UI's next `send` then fails and sets `send_failed`. That is the entire
-    /// detection mechanism, and this test drives it with a real thread that really
-    /// panics — the causal chain, not a stand-in for it.
+    /// Written when there was no `catch_unwind` anywhere in this file: a panic in any
+    /// Rumoca phase unwound the worker thread, the request that caused it was never
+    /// answered, and the UI learned only when it next sent something. Doug ruled on
+    /// that measurement the same day, and the loop in [`Worker::spawn`] now catches
+    /// the panic, answers the request and rebuilds the session — so the interval this
+    /// test was written to expose is closed.
     ///
-    /// **The gap it exposes is the interval.** Between the panic and the next send,
-    /// the UI is waiting on a channel nothing will ever write to, and a channel that
-    /// will never answer is indistinguishable from a slow compile. The request that
-    /// caused the panic is never answered at all: no error reaches the log, no stage
-    /// turns red, and `compiling` stays true. HRW instruments crates under active
-    /// change, so a panicking phase is not exotic.
+    /// # The prediction attached to it was WRONG, and that is the part worth keeping
     ///
-    /// # What this deliberately does not do
+    /// This comment used to end *"if `catch_unwind` is ever added, **this test should
+    /// fail**"*. It did not fail. The test drives a **synthetic** panicking thread
+    /// rather than the real loop, so it never touched the code that changed — and a
+    /// test that cannot observe the thing it claims to guard says nothing when that
+    /// thing moves. **The tripwire was written into prose instead of into the test**,
+    /// which is the same shape as a claim of absence whose target never resolves.
     ///
-    /// **It does not add `catch_unwind`.** Recovering from a panic instead of dying
-    /// would change what the compile path does when a phase fails, which is Doug's
-    /// call under `CLAUDE.md`'s decision boundary, not a seam Claude may take. This
-    /// test exists so that ruling can be made on a measurement rather than on
-    /// Claude's reading of the code — the distinction `CLAUDE.md` draws when it says
-    /// evidence goes *to* Doug and never authorises proceeding in-session.
+    /// # What it still holds, which is why it is kept rather than deleted
     ///
-    /// If `catch_unwind` is ever added, **this test should fail**, and its failure is
-    /// the signal to rewrite this comment rather than to restore the old behaviour.
+    /// `send_failed` remains the only way the UI ever learns the thread is gone, and
+    /// the thread can still die: a panic in the `emit` closure, a panic while
+    /// rebuilding the state, an abort, a dropped channel. `guard` narrowed the causes;
+    /// it did not remove them.
     #[test]
-    fn a_panicking_worker_thread_is_only_noticed_on_the_next_send() {
+    fn a_dead_worker_thread_is_detected_on_the_next_send() {
         // Non-vacuity first: while the far end is alive, `send` must NOT report a
         // failure. Without this, a `send` that always set the flag would pass.
         let (tx_live, rx_live) = mpsc::channel::<ToWorker>();
@@ -10896,6 +11046,85 @@ mod tests {
              O=IR, F=IR+report, X=failed, .=not reached.\n  {}",
             drift.join("\n  "),
         );
+    }
+
+    /// **A panic becomes an answer, and the answer blames no phase.**
+    ///
+    /// The three properties the catch-report-rebuild design rests on, each of which
+    /// would be silent if it broke:
+    ///
+    /// 1. [`guard`] recovers the message from both payload shapes `panic!` produces.
+    /// 2. [`panicked_compile`] states absence on **every** stage — a blank tab would
+    ///    leave the reader with no account at all.
+    /// 3. **No stage is `Failed`.** HRW does not know which phase panicked, so
+    ///    claiming one stopped the pipeline is the invented control-flow claim C20
+    ///    removed from four sites. Putting it on Parse would be the worst choice
+    ///    available: Parse is the one stage that demonstrably did run.
+    #[test]
+    fn a_panic_is_answered_without_blaming_a_phase() {
+        assert_eq!(
+            guard(|| 7).ok(),
+            Some(7),
+            "the non-panicking path must pass through"
+        );
+        assert_eq!(
+            guard(|| panic!("literal payload")).unwrap_err(),
+            "literal payload",
+            "`panic!(\"...\")` boxes a &str",
+        );
+        let n = 3;
+        assert_eq!(
+            guard(|| panic!("formatted {n}")).unwrap_err(),
+            "formatted 3",
+            "`panic!(\"{{}}\")` boxes a String \u{2014} a different downcast",
+        );
+
+        let note = "the compiler panicked: index out of bounds";
+        let FromWorker::Compiled { stages, model, .. } =
+            panicked_compile(PathBuf::from("/x/Model.mo"), note)
+        else {
+            panic!("a panicked compile still answers with Compiled");
+        };
+        assert!(model.is_none(), "no model was identified");
+        for kind in StageKind::COMPILATION {
+            let stage = stages.get(*kind);
+            assert_eq!(
+                stage.note.as_deref(),
+                Some(note),
+                "{kind:?} must state its own absence; a blank tab explains nothing",
+            );
+            assert_ne!(
+                stage.outcome,
+                Outcome::Failed,
+                "{kind:?} claims the pipeline stopped there, and HRW does not know that",
+            );
+            assert!(stage.value.is_none(), "{kind:?} must show no IR");
+        }
+    }
+
+    /// **A fire-and-forget request that panics still releases whatever waits on it.**
+    ///
+    /// `LiveDebugConnections` owes no response, but it does own a `done` flag that
+    /// `handle` sets after the call — so a panic skips it, and the live `Playback`
+    /// waits for a session that already ended. That is the same hang this whole
+    /// change removes, reappearing in the one arm that answers nothing.
+    #[test]
+    fn a_panic_in_a_fire_and_forget_request_still_signals_its_done_flag() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+
+        let done = Arc::new(AtomicBool::new(false));
+        let reply = PanicReply::Silent(Some(Arc::clone(&done)));
+        assert!(
+            panic_response(reply, "boom").is_none(),
+            "a fire-and-forget request must not grow a response",
+        );
+        assert!(
+            done.load(Ordering::SeqCst),
+            "the waiter was never released, so its controls spin forever",
+        );
+
+        // And the arm with nothing to release must not invent something to do.
+        assert!(panic_response(PanicReply::Silent(None), "boom").is_none());
     }
 }
 
