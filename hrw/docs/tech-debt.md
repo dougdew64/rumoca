@@ -204,7 +204,7 @@ place. `CLAUDE.md` already records that `egui_kittest` cannot see layout, and ha
 confirm it. **The toolchain column is dominated by Claude's own fresh mistakes**, caught within
 minutes, which is the loop working as designed.
 
-<!-- ledger-through: 2026-08-23 -->
+<!-- ledger-through: 2026-08-25 -->
 
 ### 08-17 → 08-22, backfilled 2026-08-23 — and the ledger had gone dark
 
@@ -258,6 +258,34 @@ note; the rest quote the commit.
 Claude 5**, the rate that matters moved: **Doug from ~5.0/day to ~1.1/day**, while Claude's own
 finding rate held at ~1.9/day. **The ratio moved toward the toolchain and Claude**, which is what
 the ledger was built to detect.
+
+### 08-25 — and half of these are not in the code at all
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 08-25 | the not-run wording had **five** authors, three of them rebuilt by hand — and `a_stage_that_says_it_never_ran_shows_no_ir` finds a never-ran stage by matching that text | Claude | proposing a `worker.rs` improvement; a guard whose premise is hand-maintained in five places has a slow leak |
+| 08-25 | a helper's doc comment adopted `not_reached_stage`'s summary — the doc-insertion bug, **4th time**, an hour after writing the rule against it | toolchain | `no_doc_block_gains_a_second_summary` — **but only because `worker.rs` sat at 20/20.** One under budget and it is silent; the ratchet counts, it does not detect |
+| 08-25 | a 27,668 s gate step was confidently diagnosed as build contention. **The machine had slept.** | **Doug** | *"I think that my machine went to sleep"* — `CLAUDE.md`'s hung-vs-slow test is two-way and complete-looking, the same shape as `fmt` missing from a two-gate rule |
+| 08-25 | the notebook step's cost was inferred at ~256 s by subtracting two gate runs that had **different source changes**; measured, it is 101 s and the documented 109 s was right all along | Claude | flagged as unpinned before it was written down; Doug then asked for a real number |
+
+**Four rows, and the pattern differs from every section above: two are defects in Claude's
+REASONING, not in a file.** A wrong cause asserted for a timing anomaly, and a cost derived by
+arithmetic instead of measured — **no checker could have caught either, because neither lived
+anywhere a checker looks.** Doug caught the first; the second was caught only because he asked for
+a real number, which is the same intervention twice.
+
+**That is the ledger reporting on its own blind spot.** Every mechanism in this repository verifies
+a claim written in a file. **A claim made only in conversation is unguarded**, and both of these
+were one step from being written down as fact — the 256 s figure would have replaced a correct
+number in `CLAUDE.md`, and the contention diagnosis would have left the real cause unfixed for a
+third occurrence. The countermeasure that worked both times was **saying the number was not pinned
+down before using it**, which costs one sentence.
+
+**One row also argues for a real checker.** The doc-insertion bug has now happened four times, and
+the thing that caught it is a *budget*, not a detector: it noticed a count crossing a threshold, not
+a doc comment losing its item. `no_function_has_two_test_attributes` detects the `#[test]` case
+properly. The general case — **an item whose doc comment now belongs to the item below it** — is
+detectable the same way and is not yet built. <!-- unbuilt: doc_citations::no_item_loses_its_doc_comment -->
 
 ### The standing prediction, checked — 3 of 4, and the fourth is the interesting one
 
