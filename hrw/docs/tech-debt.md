@@ -268,7 +268,9 @@ the ledger was built to detect.
 | 08-25 | a 27,668 s gate step was confidently diagnosed as build contention. **The machine had slept.** | **Doug** | *"I think that my machine went to sleep"* — `CLAUDE.md`'s hung-vs-slow test is two-way and complete-looking, the same shape as `fmt` missing from a two-gate rule |
 | 08-25 | the notebook step's cost was inferred at ~256 s by subtracting two gate runs that had **different source changes**; measured, it is 101 s and the documented 109 s was right all along | Claude | flagged as unpinned before it was written down; Doug then asked for a real number |
 
-**Four rows, and the pattern differs from every section above: two are defects in Claude's
+| 08-25 | the only pane-level test of an **empty** IC plan fed `{"blocks": []}` with no `determinacy` — a report **neither real specimen produces**. `BouncingBall` and `SingleInertia` both carry a verdict, so the one test covering that pane exercised an arm that never occurs in the corpus | toolchain | fell out of C19's fix: gating the gloss on the verdict made the arms distinguishable, and the fixture landed on the wrong one |
+
+**Five rows, and the pattern differs from every section above: two are defects in Claude's
 REASONING, not in a file.** A wrong cause asserted for a timing anomaly, and a cost derived by
 arithmetic instead of measured — **no checker could have caught either, because neither lived
 anywhere a checker looks.** Doug caught the first; the second was caught only because he asked for
@@ -281,11 +283,22 @@ number in `CLAUDE.md`, and the contention diagnosis would have left the real cau
 third occurrence. The countermeasure that worked both times was **saying the number was not pinned
 down before using it**, which costs one sentence.
 
-**One row also argues for a real checker.** The doc-insertion bug has now happened four times, and
-the thing that caught it is a *budget*, not a detector: it noticed a count crossing a threshold, not
-a doc comment losing its item. `no_function_has_two_test_attributes` detects the `#[test]` case
-properly. The general case — **an item whose doc comment now belongs to the item below it** — is
-detectable the same way and is not yet built. <!-- unbuilt: doc_citations::no_item_loses_its_doc_comment -->
+**One row also argued for a real checker, and it was built the same day.** The doc-insertion bug
+has now happened four times, and the thing that caught it is a *budget*, not a detector: it noticed
+a count crossing a threshold, not a doc comment losing its item.
+`doc_citations::no_item_loses_its_doc_comment` now watches the other symptom — **an item that was
+documented at `HEAD` and no longer is.**
+
+**The design turned on measuring the obvious alternative first.** Asserting that every item is
+documented would need a ratchet over **264 undocumented column-0 items across 56 files**, which has
+precisely the blind spot being fixed. But losing a doc comment is a **transition**, and git holds
+the before-state — so the check needs no heuristic, no allowance and no triage, and its budget is
+zero by construction.
+
+**The two checks now split stock from flow**, which is worth stating because neither covers both:
+the budgeted `no_doc_block_gains_a_second_summary` watches the standing population loosely at ~29 %
+precision, and the new one watches everything that changed since `HEAD` exactly. **A defect
+committed and never touched again is invisible to the second** — that is what the first is for.
 
 ### The standing prediction, checked — 3 of 4, and the fourth is the interesting one
 

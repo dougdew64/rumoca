@@ -28,11 +28,26 @@ the accumulating history `CLAUDE.md`'s *Current work* had to be rescued from.
 
 **Queue the next run by replacing this heading and what follows it.** The slot is one deep.
 
-**But read the run log's conclusion first.** Two nights of careful reading produced one minor
-defect between them, and night 4 produced none. The nights are buying insurance rather than
-fixes on app-side code. **Before queueing a fifth, the question for Doug is whether that is
-still worth the gate time** — and `CLAUDE.md`'s order says `worker.rs` is next, which *wants
-him awake*.
+### ⟶ RULED, 2026-08-25 — THE NIGHTS CONTINUE, AND ROTATION IS THE CONDITION
+
+**Doug:** *"The unattended runs are very much worth their keep, so long as we remain willing to
+rotate the lens."*
+
+**That answers the question this slot had been holding open**, and it answers it against the
+arithmetic. Two nights of careful reading produced one minor defect between them and night 4
+produced none, so the case *"they are buying insurance rather than fixes"* was correct as far as
+it went — **and the ruling is that insurance is worth its price.** A night that finds nothing has
+established that a region is clean, which is a result; the failure mode is not a quiet night but
+**a night pointed at a region already established as clean.**
+
+**So the condition is operative, not decorative: a lens that has come up empty twice is spent, and
+the next night must aim somewhere else.** Nights 3 and 4 already demonstrate the rotation working
+— `app.rs`'s routers came back with four nulls out of seven threads, which is what moved the lens
+to the panes. **Do not queue a fifth night on a lens that has already returned nothing**, and say
+in the queued plan which lens is being retired and why.
+
+**`CLAUDE.md`'s order still says `worker.rs` is next, and that wants Doug awake** — so a night is
+the right vehicle for app-side reading, not for the compile path.
 
 **If a night is queued anyway**, the two candidates night 4 leaves are small and honest: cover
 the two per-frame absence messages it did not (`No slots created yet`, `No iteration needed

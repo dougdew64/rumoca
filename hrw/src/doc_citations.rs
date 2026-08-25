@@ -5338,6 +5338,246 @@ mod tests_orphaned_docs {
             hits(clean),
         );
     }
+
+    /// The name an item line declares, ignoring visibility and modifiers.
+    ///
+    /// Returns `None` for anything that is not an item declaration, which is most
+    /// lines — the first meaningful token has to be a kind keyword, so `impl`, `let`,
+    /// `use`, `//` and a closing brace all fall out immediately.
+    ///
+    /// `mod` is deliberately absent from the kinds: `pub mod x;` is never documented
+    /// in this tree, so including it would add sixty-odd permanently-undocumented
+    /// names to every comparison without ever changing an answer.
+    fn item_name(line: &str) -> Option<String> {
+        const KINDS: &[&str] = &[
+            "fn", "struct", "enum", "trait", "const", "static", "type", "union",
+        ];
+        const MODIFIERS: &[&str] = &["async", "unsafe", "extern", "default"];
+
+        let mut it = line.split_whitespace().peekable();
+        let kind = loop {
+            let tok = it.next()?;
+            // `pub`, `pub(crate)`, `pub(super)`, `pub(in path)` — all start the same.
+            if tok.starts_with("pub") || MODIFIERS.contains(&tok) {
+                continue;
+            }
+            if KINDS.contains(&tok) {
+                // `const fn` is a fn; the name is one token further along.
+                if tok == "const" && it.peek() == Some(&"fn") {
+                    it.next();
+                }
+                break tok;
+            }
+            return None;
+        };
+        let _ = kind;
+
+        let name: String = it
+            .next()?
+            .chars()
+            .take_while(|c| c.is_alphanumeric() || *c == '_')
+            .collect();
+        (!name.is_empty()).then_some(name)
+    }
+
+    /// Does the item on line `i` carry a doc comment, looking past its attributes?
+    fn is_documented(lines: &[&str], i: usize) -> bool {
+        let mut j = i;
+        while j > 0 {
+            let prev = lines[j - 1].trim();
+            if prev.starts_with("#[") || prev.starts_with("#!") {
+                j -= 1;
+                continue;
+            }
+            return prev.starts_with("///");
+        }
+        false
+    }
+
+    /// Per item name: how many of its definitions are documented, and how many exist.
+    ///
+    /// Counted rather than flagged because a name can legitimately appear more than
+    /// once in a file — `fn build` in two modules, a test helper repeated per module.
+    /// Comparing counts keeps those cases from reading as a loss.
+    fn doc_counts(text: &str) -> std::collections::HashMap<String, (usize, usize)> {
+        let lines: Vec<&str> = text.lines().collect();
+        let mut counts: std::collections::HashMap<String, (usize, usize)> =
+            std::collections::HashMap::new();
+        for (i, line) in lines.iter().enumerate() {
+            if let Some(name) = item_name(line) {
+                let entry = counts.entry(name).or_insert((0, 0));
+                entry.1 += 1;
+                if is_documented(&lines, i) {
+                    entry.0 += 1;
+                }
+            }
+        }
+        counts
+    }
+
+    /// Items documented in `before` that are still present in `after` but no longer
+    /// documented.
+    ///
+    /// **The `after_total >= before_documented` clause is what keeps this quiet.**
+    /// Without it, deleting a documented item or renaming one would fire — and both
+    /// are ordinary work. The check is about a doc comment coming *off* an item that
+    /// is still there, which is the only shape the insertion defect produces.
+    fn items_that_lost_their_doc(before: &str, after: &str) -> Vec<String> {
+        let (b, a) = (doc_counts(before), doc_counts(after));
+        let mut lost: Vec<String> = b
+            .iter()
+            .filter(|(name, (before_doc, _))| {
+                let (after_doc, after_total) = a.get(*name).copied().unwrap_or((0, 0));
+                after_doc < *before_doc && after_total >= *before_doc
+            })
+            .map(|(name, _)| name.clone())
+            .collect();
+        lost.sort();
+        lost
+    }
+
+    /// **No item may lose the doc comment it had at `HEAD`** — the insertion defect,
+    /// caught by its other half.
+    ///
+    /// # Why this exists beside [`no_doc_block_gains_a_second_summary`]
+    ///
+    /// That check watches the **merged block**; this one watches the **stranded
+    /// item**. One event, two symptoms, and the reason to have both is that the first
+    /// is a *budget*: its shape is only ~29 % precise, so prose-heavy files carry an
+    /// allowance, and a new orphan in a file under its ceiling is invisible. That is
+    /// not hypothetical — on 2026-08-25 the defect happened a **fourth** time and was
+    /// caught only because `worker.rs` sat at exactly 20 of 20. One under and
+    /// `not_reached_stage` would have silently kept the helper's documentation.
+    ///
+    /// **A ratchet counts; it does not detect.**
+    ///
+    /// # Why a diff against `HEAD` rather than a population ratchet
+    ///
+    /// The obvious alternative — assert every item is documented — was measured
+    /// first: **264 undocumented column-0 items across 56 files.** A budget over that
+    /// has precisely the blind spot being fixed. But an item losing its doc is a
+    /// **transition**, and a transition is exact: `git` holds the before-state, so
+    /// there is no heuristic, no allowance, and nothing to triage.
+    ///
+    /// # What this does NOT cover
+    ///
+    /// **Only what changed since `HEAD`.** A defect that was committed and never
+    /// touched again is invisible here — that stock is what the budgeted check covers.
+    /// Together: one watches the flow exactly, the other watches the stock loosely.
+    /// **On a clean tree this test is inert**, exactly like
+    /// [`super::tests::editing_a_guarded_tour_table_needs_the_full_gate`], which is
+    /// why its must-fire half is [`the_stranded_item_is_detected`] over literals
+    /// rather than anything requiring a checkout.
+    ///
+    /// **Removing a doc comment on purpose fails here, and that is intended.** It is
+    /// rare enough to be worth answering for, and there is no budget to hide it in.
+    #[test]
+    fn no_item_loses_its_doc_comment() {
+        let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let git = |args: &[&str]| {
+            std::process::Command::new("git")
+                .arg("-C")
+                .arg(&hrw)
+                .args(args)
+                .output()
+                .ok()
+                .filter(|o| o.status.success())
+                .map(|o| String::from_utf8_lossy(&o.stdout).into_owned())
+        };
+
+        let Some(changed) = git(&["diff", "--name-only", "HEAD", "--", "src"]) else {
+            eprintln!("note: no git HEAD \u{2014} the lost-doc check is inert here");
+            return;
+        };
+
+        let mut lost: Vec<String> = Vec::new();
+        for rel in changed
+            .lines()
+            .map(str::trim)
+            .filter(|l| l.ends_with(".rs"))
+        {
+            // `git diff` reports repo-relative paths; the blob spelling needs the same.
+            let Some(before) = git(&[
+                "show",
+                &format!("HEAD:./{}", rel.trim_start_matches("hrw/")),
+            ]) else {
+                continue; // Added since HEAD: it had no doc comments to lose.
+            };
+            let path = hrw.join(rel.trim_start_matches("hrw/"));
+            let Ok(after) = std::fs::read_to_string(&path) else {
+                continue; // Deleted in the working tree.
+            };
+            for name in items_that_lost_their_doc(&before, &after) {
+                lost.push(format!("{rel}: `{name}`"));
+            }
+        }
+
+        assert!(
+            lost.is_empty(),
+            "an item that was documented at HEAD no longer is. The usual cause is an \
+             item inserted ABOVE another item's doc comment, which makes the new item \
+             adopt it and strands the old one \u{2014} anchor the edit on a CLOSING \
+             BRACE, never on a `fn` line or a doc line. If you removed the doc \
+             deliberately, say so in the commit:\n  {}",
+            lost.join("\n  "),
+        );
+    }
+
+    /// **The must-fire half**, over literals, because the test above is inert on a
+    /// clean tree.
+    ///
+    /// The first case is the real 2026-08-25 defect in miniature: a helper inserted
+    /// above `not_reached_stage` adopts its doc comment and strands it.
+    #[test]
+    fn the_stranded_item_is_detected() {
+        let before = "/// Placeholder for a stage that did not run.\n\
+                      fn not_reached_stage() {}\n";
+        let after = "/// Placeholder for a stage that did not run.\n\
+                     /// The one place the not-run sentence is worded.\n\
+                     fn not_reached_note() {}\n\
+                     fn not_reached_stage() {}\n";
+        assert_eq!(
+            items_that_lost_their_doc(before, after),
+            vec!["not_reached_stage".to_string()],
+            "the stranded item must be named"
+        );
+
+        // Adding a documented helper without disturbing anything is ordinary work.
+        let clean = "/// Placeholder for a stage that did not run.\n\
+                     fn not_reached_stage() {}\n\
+                     /// The one place the not-run sentence is worded.\n\
+                     fn not_reached_note() {}\n";
+        assert!(
+            items_that_lost_their_doc(before, clean).is_empty(),
+            "a helper added below the closing brace is not a loss"
+        );
+
+        // Deleting or renaming a documented item must stay quiet.
+        assert!(
+            items_that_lost_their_doc(before, "fn something_else() {}\n").is_empty(),
+            "a rename is not a lost doc comment"
+        );
+        assert!(
+            items_that_lost_their_doc(before, "").is_empty(),
+            "a deletion is not a lost doc comment"
+        );
+
+        // An attribute between the doc and its item is still documented.
+        let attributed = "/// A test.\n#[test]\nfn a_test() {}\n";
+        assert!(
+            items_that_lost_their_doc(attributed, attributed).is_empty(),
+            "attributes must not hide a doc comment"
+        );
+
+        // Non-vacuity: the parser finds items at all, and reads visibility forms.
+        let counts = doc_counts(
+            "/// A.\npub fn a() {}\n/// B.\npub(crate) const B: u8 = 1;\nfn c() {}\nimpl D {}\n",
+        );
+        assert_eq!(counts.get("a"), Some(&(1, 1)));
+        assert_eq!(counts.get("B"), Some(&(1, 1)));
+        assert_eq!(counts.get("c"), Some(&(0, 1)), "undocumented, but counted");
+        assert_eq!(counts.get("D"), None, "`impl` is not an item declaration");
+    }
 }
 
 /// **The guarded-region parser, tested without git or a compile.**
