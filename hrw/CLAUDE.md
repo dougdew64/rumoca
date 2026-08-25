@@ -407,8 +407,8 @@ twice, and repeated edits made against stale assumptions about surrounding code.
 than reading the region first — which is the definition of a file too big to maintain.
 
 **So state the trigger as "exceeds what Claude can hold, with defects to show for it", never as
-"large".** That distinction is what stops the next session splitting files by line count — and it
-is the reason `worker.rs` is still one file.
+"large".** That stops splitting by line count — and is why **`worker.rs`'s PRODUCTION code is still
+one file**; its `#[cfg(test)]` modules moved out 2026-08-25, which refactors nothing.
 
 ### And a second observable signal: HANDOFF FREQUENCY
 

@@ -5260,7 +5260,15 @@ mod tests_orphaned_docs {
             // owner, that owner is documented, and the file has no undocumented item
             // for an orphan to belong to, which is the triage shortcut this test's
             // own doc prescribes.
-            ("worker.rs", 20),
+            //
+            // 20 → 15 + 5 on 2026-08-25, when the two `#[cfg(test)]` modules moved to
+            // `worker/tests.rs` and `worker/test_msl.rs`. **The two halves sum to the
+            // old total exactly**, which is the useful part: the move relocated the
+            // orphan population without creating or hiding one. Both numbers are set
+            // to the achieved value rather than rounded up, per this table's rule that
+            // slack gets used.
+            ("worker.rs", 15),
+            ("worker/tests.rs", 5),
         ];
 
         let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");
