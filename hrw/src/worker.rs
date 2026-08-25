@@ -2532,8 +2532,16 @@ impl WorkerState {
             self.last_specimen_uri = Some(uri.clone());
         }
         let mut def_index = BTreeMap::new();
-        let mut instantiate = Stage::default();
-        let mut typecheck = Stage::default();
+        // **Seeded with the not-reached note rather than left blank — 2026-08-25.**
+        // These two are filled during typecheck when there is a model. When parse
+        // produced none, nothing ever wrote to them and both rendered a **wholly blank
+        // tab** — every other stage in that compile said why it was empty and these
+        // two said nothing at all. Third instance of the same defect found the same
+        // day, after `dae_absent_stage`'s `None` arm and Flatten's adopted DAE error.
+        // Starting from the honest note means a stage can only *improve* on it.
+        let unreached = Stage::info(not_reached_note("parse produced no model to compile"));
+        let mut instantiate = unreached.clone();
+        let mut typecheck = unreached;
         let mut connection_frames = Vec::new();
         let resolve = match &model {
             // `info`, not `err`: parse is where the pipeline stopped, and it already
@@ -4701,10 +4709,17 @@ fn dae_absent_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
             "needs inner declaration(s) for: {}",
             missing_inners.join(", ")
         )),
-        // Success with no DAE cannot happen (the DAE is how success is defined), and
-        // `None` is the no-result case Flatten already reports. Neither is worth a
-        // second claim from this stage.
-        _ => Stage::default(),
+        // **`None` says what every other stage says — corrected 2026-08-25.** This
+        // fell through to `Stage::default()`, a wholly blank tab, on the reasoning
+        // that *"`None` is the no-result case Flatten already reports"*. That is the
+        // adoption argument this function's own doc comment above was written to
+        // reject, in the same file, about the same two stages: **absence is stated,
+        // never filled, and a NEIGHBOURING tab stating it does not satisfy that.** Six
+        // sibling stages carry this note for this exact condition and DAE was the only
+        // silent one — found while checking whether the not-reached tail was contiguous.
+        None => Stage::info(no_result_note()),
+        // Success with no DAE cannot happen — the DAE is how success is defined.
+        Some(PhaseResult::Success(_)) => Stage::default(),
     }
 }
 

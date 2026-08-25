@@ -6123,3 +6123,122 @@ fn a_panic_in_a_fire_and_forget_request_still_signals_its_done_flag() {
     // And the arm with nothing to release must not invent something to do.
     assert!(panic_response(PanicReply::Silent(None), "boom").is_none());
 }
+
+/// Does this note say the stage did not run?
+///
+/// **Two wordings, both meaning "did not run", and they are not synonyms.**
+/// `not reached (…)` names a stage that was skipped because something earlier
+/// stopped; the no-result note names a pipeline that produced nothing to skip *from*.
+/// A check about *running* has to accept both, and one about *cause* must not conflate
+/// them — which is why the two properties below are separate.
+fn did_not_run(note: Option<&str>) -> bool {
+    note.is_some_and(|n| n.starts_with("not reached (") || n == no_result_note())
+}
+
+/// The phase blamed by a `not reached (X failed earlier)` note, if it is that shape.
+fn blamed_phase(note: Option<&str>) -> Option<String> {
+    let inner = note?.strip_prefix("not reached (")?.strip_suffix(')')?;
+    inner.strip_suffix(" failed earlier").map(str::to_owned)
+}
+
+/// **The not-reached tail is contiguous, and its notes agree on one cause.**
+///
+/// # Why these two, and why they are not the matrix
+///
+/// `the_corpus_outcome_matrix_is_unchanged` pins the outcome *classes*, so it catches
+/// a row that CHANGES. It cannot catch a row that was wrong all along, and it says
+/// nothing about the notes — which is where the reason a stage gives for its own
+/// emptiness actually lives. These check the notes, over the same compiles, at no
+/// extra cost.
+///
+/// **Contiguity:** once a stage says it did not run, every later stage must say so
+/// too. A stage that ran *after* one claiming it was never reached is impossible in a
+/// linear pipeline, so observing it means one of the two notes is false.
+///
+/// **Agreement:** every `not reached (X failed earlier)` note in one compile must name
+/// the same `X`. Two stages blaming different predecessors cannot both be right, and
+/// detecting it needs no map from `FailedPhase` to `StageKind`.
+///
+/// # The formulation that was tried first and is WRONG
+///
+/// *"Once a cell is `.` in the matrix, every later cell is `.`"* — false, and
+/// legitimately so. `OverDeterminedShaft` reads `OOOO.X.....`: Flatten is `.` *before*
+/// DAE's `X`, because Flatten's `.` means **ran, no flat model retained**, not *not
+/// reached*. The class is ambiguous where the note is not, which is the whole reason
+/// these assert on notes.
+///
+/// # What building it found
+///
+/// The DAE stage rendered a **wholly blank tab** for a compile with no pipeline result
+/// — `MissingComponentClass` and `UndefinedRef` — while its six siblings all carried
+/// the no-result note. It was deliberate, on the reasoning that Flatten already
+/// reported it; see `dae_absent_stage`, where that arm is now fixed.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compiles the whole specimen corpus; run with --features slow-tests"
+)]
+fn the_not_reached_tail_is_contiguous_and_agrees_on_its_cause() {
+    let dir = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens"));
+    let mut names: Vec<String> = std::fs::read_dir(&dir)
+        .expect("the specimen directory must be readable")
+        .flatten()
+        .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("mo"))
+        .filter_map(|e| {
+            e.path()
+                .file_stem()
+                .map(|s| s.to_string_lossy().into_owned())
+        })
+        .collect();
+    names.sort();
+    assert!(names.len() >= 20, "only {} specimens found", names.len());
+
+    let mut violations: Vec<String> = Vec::new();
+    let mut tails_seen = 0usize;
+
+    for name in &names {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared(name) else {
+            panic!("{name}: expected Compiled");
+        };
+
+        let mut tail_began: Option<StageKind> = None;
+        let mut blamed: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+
+        for kind in StageKind::COMPILATION {
+            let note = stages.get(*kind).note.as_deref();
+            if let Some(phase) = blamed_phase(note) {
+                blamed.insert(phase);
+            }
+            match (did_not_run(note), tail_began) {
+                (true, None) => tail_began = Some(*kind),
+                (false, Some(first)) => violations.push(format!(
+                    "{name}: {kind:?} reports work after {first:?} said it did not run \u{2014} \
+                     note {note:?}"
+                )),
+                _ => {}
+            }
+        }
+
+        if tail_began.is_some() {
+            tails_seen += 1;
+        }
+        if blamed.len() > 1 {
+            let list: Vec<&str> = blamed.iter().map(String::as_str).collect();
+            violations.push(format!(
+                "{name}: stages blame different predecessors {list:?}; at most one can be right"
+            ));
+        }
+    }
+
+    // Non-vacuity: a corpus where nothing ever fails proves neither property.
+    assert!(
+        tails_seen >= 5,
+        "only {tails_seen} specimens have a not-reached tail; these checks barely ran",
+    );
+    assert!(
+        violations.is_empty(),
+        "{} not-reached violation(s):\n  {}",
+        violations.len(),
+        violations.join("\n  "),
+    );
+}
