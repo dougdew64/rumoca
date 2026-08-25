@@ -5517,6 +5517,7 @@ fn the_committed_notebook_matches_what_the_pipeline_produces_now() {
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/specimen-notebook");
     let mut stale: Vec<String> = Vec::new();
     let mut compared = 0usize;
+    let mut notes_compared = 0usize;
     let mut specimens = 0usize;
 
     for entry in std::fs::read_dir(&notebook)
@@ -5590,6 +5591,50 @@ fn the_committed_notebook_matches_what_the_pipeline_produces_now() {
                     }
                 }
             }
+
+            // **The manifest's own record is compared too — added 2026-08-25.**
+            //
+            // Until then this loop read `<key>.json` and nothing else, so a stage's
+            // **note** could drift in the committed manifest indefinitely. Proven, not
+            // supposed: `UnclosedModel`'s resolve note stayed at its pre-C20 wording
+            // through a green 109.9 s run of this very test, and surfaced only when an
+            // unrelated fix forced a regeneration.
+            //
+            // **A note is a claim about the model** — *"not reached (ToDae failed
+            // earlier)"* says which phase stopped the compile — so an unchecked note is
+            // an unchecked claim, which is exactly what the file comparison above
+            // exists to prevent for IR.
+            let recorded = &manifest["stages"][key.as_str()];
+            if recorded.is_null() {
+                stale.push(format!(
+                    "{specimen}: the manifest has no entry for stage `{key}`"
+                ));
+                continue;
+            }
+            notes_compared += 1;
+            let recorded_note = recorded["note"].as_str();
+            let produced_note = stages.get(*kind).note.as_deref();
+            if recorded_note != produced_note {
+                stale.push(format!(
+                    "{specimen}/{key}: the manifest's note is {recorded_note:?} but the \
+                     pipeline now says {produced_note:?}"
+                ));
+            }
+            // `has_ir` is the manifest's own summary of what the file check above
+            // measured. They can only disagree if the two halves were written at
+            // different times, which is a staleness this test is for.
+            if recorded["has_ir"].as_bool() != Some(produced.is_some()) {
+                stale.push(format!(
+                    "{specimen}/{key}: the manifest says has_ir={} but the pipeline \
+                     {} IR",
+                    recorded["has_ir"],
+                    if produced.is_some() {
+                        "produces"
+                    } else {
+                        "does not produce"
+                    },
+                ));
+            }
         }
     }
 
@@ -5597,6 +5642,14 @@ fn the_committed_notebook_matches_what_the_pipeline_produces_now() {
         specimens >= 20 && compared >= 100,
         "only {specimens} specimens and {compared} stage files were compared; the \
          notebook has 21 specimens, so this is not exercising what it claims",
+    );
+    // Non-vacuity for the note comparison, and separate from the one above: a loop
+    // that silently stopped reading manifests would leave `compared` healthy and
+    // still check no notes at all.
+    assert!(
+        notes_compared >= 150,
+        "only {notes_compared} stage notes were compared; 21 specimens at 11 stages \
+         is 231, so this is not reading the manifests",
     );
     assert!(
         stale.is_empty(),

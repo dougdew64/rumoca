@@ -2118,3 +2118,50 @@ The same three affordances as variables, wording adjusted: a variable is *declar
 is *written*, so the menu item drops the name it does not have.
 
 **Doug's sequencing:** variables first, test, then equations.
+
+## The `worker.rs` Stage-construction sweep — 2026-08-25, and its two NULLS
+
+**Method: a column read of all 58 `Stage` construction sites**, audited against the two rules
+established that day — *absence is stated, never filled*, and *`Outcome::Failed` means "the pipeline
+stopped here", so at most one stage per compile may carry it*.
+
+| constructor | sites | | constructor | sites |
+|---|---:|---|---|---:|
+| `Stage::info` | 23 | | `Stage::err_with_details` | 6 |
+| `Stage::recovered` | 9 | | `Stage::err` | 5 |
+| `Stage::default` | 7 | | `Stage::ok_with_note` | 3 |
+| `Stage::ok` | 6 | | | |
+
+**Three live defects were found and fixed** (the blank DAE tab, the blank Instantiate/Typecheck
+tabs, and the dead `Stage::default()` reset). **Two candidates died on measurement, and that is
+what this section is for** — both looked compelling, and re-deriving them would cost a session.
+
+**NULL 1 — "HRW's serialize failure is reported as the compiler's" is near-dead code.** Three sites
+(`Stage::from_ser`, `flatten_stage`, `solve_lowering`) return `Stage::err` when
+`serde_json::to_value` fails on a *successful* compile, which does assert the pipeline stopped at a
+stage that completed. **But the plausible trigger cannot fire.** `to_value`'s `serialize_f64` is
+`Ok(Value::from(float))` — it does not error on non-finite input. Reaching these arms needs a
+`Serialize` impl that itself errors, which the IR types do not have. Left as written.
+
+**NULL 2 — non-finite floats silently becoming `null` is unreachable.** `From<f64> for Value` maps
+infinities and NaN to `Value::Null`, so such a value would vanish from a pane with no error at all —
+a fidelity defect of the omission kind, and invisible to every checker, since `null` is well-formed
+JSON that round-trips. **No model in reach produces one.** The specimen corpus contains no `inf` or
+`nan`, and the MSL's own infinity is finite by design:
+
+```text
+ModelicaServices 4.1.0/package.mo:184
+    final constant Real inf = 1.7976931348623157E+308
+      "Maximum representable finite floating-point number";
+```
+
+It would take a literal overflow (`1e400`) or constant folding of `1/0`. **The prediction that
+started this was wrong in both directions** — the reachable-looking defect was dead, and the fatal
+one was unreachable.
+
+**What the sweep did NOT cover, stated so the null is not read too widely:** only `Stage`
+construction. The log and bracket machinery, the source-root memo, `OutputCapture` and the simulate
+path were not audited. **Simulation trajectories are the live version of NULL 2's question** — they
+carry computed `f64`s that genuinely can go non-finite when an integration diverges — but they
+travel through `SimData`, not `Stage` JSON, so they are a question for the plot path and were not
+examined here.

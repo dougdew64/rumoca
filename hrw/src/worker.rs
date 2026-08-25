@@ -2629,14 +2629,19 @@ impl WorkerState {
                         // Their artifacts now come from the compile, through
                         // `rumoca_compile::observe`, and are turned into stages
                         // alongside Flatten and DAE construction.
-                        let (i, t) = (Stage::default(), Stage::default());
+                        // **The reset that used to sit here is gone — 2026-08-25.** It
+                        // assigned `Stage::default()` to both, a leftover from when HRW
+                        // ran them itself. The compile below writes them on every path
+                        // it reaches, so the assignment was **dead** — except on a path
+                        // that never reaches it, where its only effect was to replace
+                        // the honest "not reached" seed at their declaration with a
+                        // blank tab. It could only ever destroy information.
+                        //
                         // **The connection replay is gone** (2026-08-04). Connection
                         // frames now arrive from the compile below, through
                         // `rumoca-phase-flatten`'s capture scope. Nothing happens
                         // here at all, which is the accurate amount of work for a
                         // step the chain does not have.
-                        instantiate = i;
-                        typecheck = t;
                         stage
                     }
                     Err(e) => {
