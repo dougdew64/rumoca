@@ -41,6 +41,7 @@
 //! not, because a check that fails for things that are merely worth knowing trains
 //! the reader to ignore it.
 
+use hrw::machine_policy::{SleepRuling, fix_for, rule};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -104,6 +105,23 @@ fn binary_is_locked(exe: &Path) -> bool {
     std::fs::OpenOptions::new().write(true).open(exe).is_err()
 }
 
+/// Ask `powercfg` whether this machine will suspend, and rule on the answer.
+///
+/// **The full path is deliberate.** Under MSYS a bare `powercfg /q …` had `/q`
+/// rewritten into a Windows path and came back `Invalid Parameters`; invoking the
+/// executable directly from Rust avoids that shell entirely. A failure to run at
+/// all lands on the same `Unreadable` arm as unrecognised output, because both mean
+/// the same thing here: this machine's settings are unknown, not confirmed safe.
+fn sleep_ruling() -> SleepRuling {
+    let out = Command::new("powercfg")
+        .args(["/q", "SCHEME_CURRENT", "SUB_SLEEP"])
+        .output();
+    match out {
+        Ok(o) => rule(&String::from_utf8_lossy(&o.stdout)),
+        Err(_) => SleepRuling::Unreadable,
+    }
+}
+
 fn main() {
     let repo = repo_root();
     let mut r = Report {
@@ -147,6 +165,38 @@ fn main() {
             "the full gate can build the binary",
             "",
         );
+    }
+
+    match sleep_ruling() {
+        SleepRuling::Never => r.line(
+            Verdict::Pass,
+            "stays awake",
+            "neither sleep nor hibernate will suspend this machine",
+            "",
+        ),
+        ruling @ SleepRuling::SuspendsOnAc { what, after_secs } => r.line(
+            Verdict::Fail,
+            "stays awake",
+            &format!(
+                "{what} after {}s while plugged in; a long run suspends mid-step and every \
+                 timing it reports is wall-clock, so it will read as a hang",
+                after_secs
+            ),
+            &fix_for(ruling).unwrap_or_default(),
+        ),
+        ruling @ SleepRuling::SuspendsOnBatteryOnly { after_secs } => r.line(
+            Verdict::Warn,
+            "stays awake",
+            &format!("safe plugged in; on battery it sleeps after {after_secs}s"),
+            &fix_for(ruling).unwrap_or_default(),
+        ),
+        SleepRuling::Unreadable => r.line(
+            Verdict::Warn,
+            "stays awake",
+            "powercfg did not answer, so this machine's sleep settings are UNKNOWN -- \
+             not confirmed safe",
+            "run: powercfg /q SCHEME_CURRENT SUB_SLEEP",
+        ),
     }
 
     // ------------------------------------------------------------- advisory --

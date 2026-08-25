@@ -1092,6 +1092,13 @@ flushed, not the culprit, and it will accuse an innocent one. Check the process 
 **frozen CPU time with every thread in `Wait`** is hung; accumulating CPU is merely slow. It was
 misread as slow for ninety minutes on 2026-08-20.
 
+**AND A THIRD CASE THAT TWO-WAY TEST DOES NOT COVER — THE MACHINE SLEPT.** A gate step timed at
+**27,668 s** on 2026-08-23 was diagnosed as build contention and was not; Doug supplied the cause,
+and the **10,780 s** run above is almost certainly the same thing. **Sleep corrupts the clock, never
+the verdict** — a suite that passes across a suspend still passed, so what is lost is every timing,
+silently. `check_machine` now rules on it and `machine_policy` carries the reasoning; **do not ask
+Doug to remember this**, which is the mistake that produced it twice.
+
 **`cargo test` does not build the binary, and that gap is not theoretical.** On 2026-07-31 a
 `#[cfg(test)]` was placed above the first of three lifted helpers — **the attribute applies to
 one item** — so two compiled into `--bin hrw` referencing test-only imports. Every test passed;

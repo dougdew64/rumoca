@@ -2507,7 +2507,18 @@ Some prose.
         // command would have failed with "not recognized" on the first machine switch
         // it was written for. Found by testing it, not by reading it. The extra line
         // names `powershell` and the flags; the script's own .NOTES carries why.
-        const MANDATORY_BUDGET: usize = 1925;
+        // …then 1925 → 1931 on 2026-08-25, for a THIRD case in the hung-vs-slow
+        // test: the machine slept. That test was two-way and complete-looking, and
+        // it produced a confidently wrong diagnosis of a 27,668 s gate step — the
+        // same shape as `fmt` missing from a two-gate rule, which this file names as
+        // the repository's most frequent failure.
+        //
+        // Six lines rather than a paragraph because `machine_policy` and
+        // `check_machine` now carry the reasoning and the ruling, so the prose here
+        // is a pointer. Doug had concluded he needed to remember to disable sleep;
+        // the standing answer to a thing got wrong repeatedly is a mechanism, and
+        // the reminder would have failed a third time.
+        const MANDATORY_BUDGET: usize = 1931;
         // 263 → 264, same commit and same reason as MANDATORY_BUDGET above.
         const CURRENT_WORK_BUDGET: usize = 264;
 

@@ -68,6 +68,7 @@ pub mod identifier_index;
 pub mod incidence_view;
 pub mod json_read;
 pub mod log_view;
+pub mod machine_policy;
 pub mod matching_anim;
 pub mod matching_ledger;
 pub mod matrix_panes;
