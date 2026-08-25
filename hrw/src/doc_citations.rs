@@ -1945,6 +1945,67 @@ Some prose.
         );
     }
 
+    /// **"Not reached" is worded in one place, because a checker depends on the words.**
+    ///
+    /// `fidelity::tests::a_stage_that_says_it_never_ran_shows_no_ir` finds a stage that
+    /// never ran by matching the substrings **`"not reached"`** and **`"produced no
+    /// result"`**. Its coverage is therefore only as wide as the agreement between every
+    /// site that writes those notes — and on 2026-08-24 there were **five**, three of them
+    /// rebuilding the same format string by hand.
+    ///
+    /// They agreed by coincidence. Reword the helper and the copies keep the old text;
+    /// reword a copy and the checker silently stops seeing that stage. **A guard whose
+    /// premise is maintained by hand in five places is a guard with a slow leak**, and the
+    /// leak is invisible: the checker still passes, over less.
+    ///
+    /// This closes it from the other side. `not_reached_note` and `no_result_note` own the
+    /// wording; anywhere else spelling it is a second source, and the next reword splits
+    /// them apart again.
+    ///
+    /// # Scope
+    ///
+    /// Prose is exempt — a comment *describing* the note is not a second source of it, and
+    /// `worker.rs` carries one such comment deliberately. Only code that builds the string
+    /// counts, which is why the scan skips `//` lines.
+    #[test]
+    fn the_not_reached_note_has_exactly_one_author() {
+        let worker =
+            std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("src/worker.rs"))
+                .expect("worker.rs must be readable");
+
+        // Assembled, so this file's own prose is not a second source either.
+        let needles = [
+            format!("\"{} (", "not reached"),
+            format!("\"{}", "the reachable-closure pipeline produced no result"),
+        ];
+
+        let authors: Vec<String> = worker
+            .lines()
+            .enumerate()
+            .filter(|(_, line)| !line.trim_start().starts_with("//"))
+            .filter(|(_, line)| needles.iter().any(|n| line.contains(n.as_str())))
+            .map(|(i, line)| {
+                format!(
+                    "worker.rs:{}  {}",
+                    i + 1,
+                    line.trim_start().chars().take(72).collect::<String>()
+                )
+            })
+            .collect();
+
+        assert_eq!(
+            authors.len(),
+            2,
+            "the not-run wording is written in {} place(s), not the two helpers that own \
+             it:\n  {}\n\n`a_stage_that_says_it_never_ran_shows_no_ir` matches on these \
+             words. A second author does not break it — it narrows it, silently, the next \
+             time the two are reworded apart. Route the site through `not_reached_note` \
+             or `no_result_note`.",
+            authors.len(),
+            authors.join("\n  "),
+        );
+    }
+
     /// **The stranded-sub-view clamp runs, and runs last.**
     ///
     /// From the 2026-08-23 column read of the `has_*` availability family, whose

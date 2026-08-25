@@ -2804,7 +2804,7 @@ impl WorkerState {
                 replay(instantiate_traces);
                 instantiate = match &typed.instantiated {
                     Some(o) => Stage::from_ser(o),
-                    None => Stage::info("not reached (the compile stopped before instantiate)"),
+                    None => Stage::info(not_reached_note("the compile stopped before instantiate")),
                 };
                 log(
                     LogLevel::StageEnd,
@@ -2840,7 +2840,7 @@ impl WorkerState {
                         Stage::recovered(json, format!("typecheck: {n} diagnostic(s)"))
                     }
                     (None, true) => {
-                        Stage::info("not reached (the compile stopped before typecheck)")
+                        Stage::info(not_reached_note("the compile stopped before typecheck"))
                     }
                 };
                 log(
@@ -3198,16 +3198,52 @@ pub fn simulate_library_model(
 fn not_reached_stage(result: Option<&PhaseResult>) -> Option<Stage> {
     match result {
         Some(PhaseResult::Success(_)) => None,
-        Some(PhaseResult::Failed { phase, .. }) => {
-            Some(Stage::info(format!("not reached ({phase} failed earlier)")))
-        }
-        Some(PhaseResult::NeedsInner { .. }) => {
-            Some(Stage::info("not reached (model needs inner declarations)"))
-        }
-        None => Some(Stage::err(
-            "the reachable-closure pipeline produced no result for this model",
-        )),
+        Some(PhaseResult::Failed { phase, .. }) => Some(Stage::info(not_reached_note(&format!(
+            "{phase} failed earlier"
+        )))),
+        Some(PhaseResult::NeedsInner { .. }) => Some(Stage::info(not_reached_note(
+            "model needs inner declarations",
+        ))),
+        None => Some(Stage::err(no_result_note())),
     }
+}
+
+/// **"This stage never ran, and here is why"** — the one place that sentence is worded.
+///
+/// # Why it is a function and not five string literals
+///
+/// It was five, and three of them rebuilt this exact text by hand:
+/// [`not_reached_stage`], `flatten_stage` and `dae_absent_stage`, plus two inline
+/// variants naming a different stopping point. They agreed **by coincidence**, and one
+/// thing already depended on them agreeing:
+/// `fidelity::tests::a_stage_that_says_it_never_ran_shows_no_ir` finds a stage that
+/// never ran by matching **`"not reached"`**. Reword the helper and three copies keep
+/// the old text; reword a copy and the checker silently stops seeing that stage. A
+/// guard whose premise is maintained by hand in five places is a guard with a slow leak.
+///
+/// # Why the distinction it carries is worth single-sourcing
+///
+/// *Never ran* and *ran and found none* are different facts, and the note is the only
+/// thing that separates them. *"Index reduction: nothing to reduce"* is a claim about
+/// the model; *"Index reduction: not reached"* is a claim about the pipeline, and a
+/// reader given the first when the second is true learns something false about their
+/// own model. Five spellings of one claim is how that distinction erodes.
+///
+/// **The `because` is free text on purpose.** The stopping point differs — a failed
+/// phase, a compile that stopped before instantiate — and those are genuinely different
+/// facts. What must not differ is the words that say *it did not run*.
+fn not_reached_note(because: &str) -> String {
+    format!("not reached ({because})")
+}
+
+/// **The pipeline returned nothing at all** — worded once, for the same reason.
+///
+/// Distinct from [`not_reached_note`]: that one says a phase was skipped because
+/// something earlier stopped, this one says the reachable-closure pipeline produced no
+/// result to skip *from*. `a_stage_that_says_it_never_ran_shows_no_ir` matches on
+/// `"produced no result"`, so this string is load-bearing too.
+fn no_result_note() -> &'static str {
+    "the reachable-closure pipeline produced no result for this model"
 }
 
 fn unwrap_success(result: Option<&PhaseResult>) -> &CompilationResult {
@@ -4402,14 +4438,14 @@ fn flatten_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
                         msg,
                     )
                 }
-                other => Stage::info(format!("not reached ({other} failed earlier)")),
+                other => Stage::info(not_reached_note(&format!("{other} failed earlier"))),
             }
         }
         Some(PhaseResult::NeedsInner { missing_inners, .. }) => Stage::info(format!(
             "needs inner declaration(s) for: {}",
             missing_inners.join(", ")
         )),
-        None => Stage::err("the reachable-closure pipeline produced no result for this model"),
+        None => Stage::err(no_result_note()),
     }
 }
 
@@ -4452,7 +4488,7 @@ fn dae_absent_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
             )
         }
         Some(PhaseResult::Failed { phase, .. }) => {
-            Stage::info(format!("not reached ({phase} failed earlier)"))
+            Stage::info(not_reached_note(&format!("{phase} failed earlier")))
         }
         Some(PhaseResult::NeedsInner { missing_inners, .. }) => Stage::info(format!(
             "needs inner declaration(s) for: {}",
