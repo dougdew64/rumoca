@@ -6614,3 +6614,69 @@ fn two_compiles_of_one_specimen_log_the_same_structure() {
          of them now inspects one run rather than its own.",
     );
 }
+
+/// **What `upstream-issues.md` #1 costs, in seconds.**
+///
+/// # Why the issue needed this
+///
+/// #1 records that `Session::remove_document` leaves a stale resolve failure in
+/// Rumoca's resolved-state cache: compile a good model, compile a broken one, compile
+/// the good one again, and the third compile reports the **second one's error,
+/// byte-identical**. The only mechanism measured to clear it is rebuilding the
+/// session, which reloads every library root.
+///
+/// The write-up had a reproduction and no cost. **A maintainer ranks work by cost**,
+/// and `upstream-strategy.md` says to order deliverables by their cost to *accept* —
+/// so a bug report carrying a measured price is a different proposition from one
+/// carrying an adjective.
+///
+/// # What this measures, and what it does not
+///
+/// It drives the exact sequence the workaround fires on — healthy, then a specimen
+/// that fails to resolve, then a *different* healthy one — and reports the rebuild's
+/// wall time. **It does not measure how often the workaround fires across a whole
+/// suite run**, which depends on test order and is a separate question.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn the_stale_cache_workaround_reports_what_it_costs() {
+    let before = stale_cache_rebuild_stats();
+
+    // The workaround fires when the PREVIOUS compile failed to resolve and the next
+    // specimen is a different file — so all three compiles are needed, in this order.
+    let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+    for name in ["SingleInertia", "UndefinedRef", "RcCircuit"] {
+        let path = PathBuf::from(format!(
+            "{}/specimens/{name}.mo",
+            env!("CARGO_MANIFEST_DIR")
+        ));
+        w.compile(&path, &|_: FromWorker| {});
+    }
+    drop(w);
+
+    let after = stale_cache_rebuild_stats();
+    let fired = after.0 - before.0;
+    let cost = after.1 - before.1;
+
+    assert!(
+        fired >= 1,
+        "the workaround did not fire, so this measured nothing. It triggers only when \
+         the previous compile failed to RESOLVE and the next specimen is a different \
+         file \u{2014} check that UndefinedRef still fails at resolve",
+    );
+    println!(
+        "upstream-issues #1: {fired} session rebuild(s), {:.2}s total, {:.2}s each",
+        cost.as_secs_f64(),
+        cost.as_secs_f64() / fired as f64,
+    );
+    // A rebuild reloads every MSL root, so it cannot be free. A near-zero reading
+    // means the counter is being incremented somewhere that does no work.
+    assert!(
+        cost.as_secs_f64() > 0.05,
+        "a rebuild reloads the whole MSL and cannot cost {:.4}s; the counter is not \
+         wrapping the work it claims to",
+        cost.as_secs_f64(),
+    );
+}

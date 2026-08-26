@@ -1131,6 +1131,41 @@ pub enum FromWorker {
     },
 }
 
+/// How often the stale-resolved-state workaround has rebuilt the session, and how
+/// long those rebuilds cost.
+///
+/// # Why this is counted rather than estimated
+///
+/// `upstream-issues.md` #1 records that `Session::remove_document` leaves a stale
+/// resolve failure in Rumoca's resolved-state cache, so a good model compiled after a
+/// broken one reports the **broken one's error, byte-identical**. The only mechanism
+/// measured to clear it is rebuilding the session — which reloads every library root.
+///
+/// The issue is written up with a reproduction but **no cost**, and a maintainer
+/// ranks work by cost. Counting here turns *"it also costs us some reloads"* into a
+/// number. Added 2026-08-26, after the seven log tests were found to cost **13.7 s in
+/// isolation and 79.3 s in the full suite** — a compile is several times more
+/// expensive when other tests have run before it, and this workaround is the leading
+/// candidate for why.
+///
+/// **Relaxed ordering is right here**: these are counters read once at the end of a
+/// test, never used to synchronise anything.
+static STALE_CACHE_REBUILDS: std::sync::atomic::AtomicUsize =
+    std::sync::atomic::AtomicUsize::new(0);
+/// Nanoseconds spent in the rebuilds counted by [`STALE_CACHE_REBUILDS`].
+static STALE_CACHE_REBUILD_NANOS: std::sync::atomic::AtomicU64 =
+    std::sync::atomic::AtomicU64::new(0);
+
+/// How many session rebuilds the stale-cache workaround has performed, and their
+/// total cost. See [`STALE_CACHE_REBUILDS`].
+pub fn stale_cache_rebuild_stats() -> (usize, std::time::Duration) {
+    use std::sync::atomic::Ordering;
+    (
+        STALE_CACHE_REBUILDS.load(Ordering::Relaxed),
+        std::time::Duration::from_nanos(STALE_CACHE_REBUILD_NANOS.load(Ordering::Relaxed)),
+    )
+}
+
 /// What a request must be answered with if handling it panics.
 ///
 /// **Decided from `&ToWorker` before `handle` consumes it**, which is the whole
@@ -1428,7 +1463,10 @@ pub struct WorkerState {
     /// `apply_document_removal_at_revision` calls
     /// `invalidate_resolved_state(CacheInvalidationCause::DocumentRemoval)`. Rebuilding
     /// the session does. The root cause is inside Rumoca's resolved-state cache and is
-    /// logged as an upstream issue rather than guessed at; see `docs/ideas.md` #45.
+    /// logged as an upstream issue rather than guessed at; see `docs/upstream-issues.md`
+    /// **#1**, which also carries the measured cost. *(This said `ideas.md` #45 until
+    /// 2026-08-26 — a citation that resolves to a real section about something else
+    /// entirely, which is why `qualified_citations_resolve` could not catch it.)*
     ///
     /// So the mitigation is the mechanism that was *measured* to work: rebuild the
     /// session, and only after a compile that actually failed to resolve. A clean
@@ -2624,7 +2662,21 @@ impl WorkerState {
                     LogLevel::Info,
                     "rebuilding session (previous specimen failed to resolve)".to_owned(),
                 );
-                if let Err(e) = self.load_libraries(roots) {
+                // Counted and timed: see `STALE_CACHE_REBUILDS`. This is the cost
+                // `upstream-issues.md` #1 imposes on every compile that follows a
+                // resolve failure, and the issue needs a number rather than an
+                // adjective.
+                let rebuild_started = std::time::Instant::now();
+                let rebuild_result = self.load_libraries(roots);
+                {
+                    use std::sync::atomic::Ordering;
+                    STALE_CACHE_REBUILDS.fetch_add(1, Ordering::Relaxed);
+                    STALE_CACHE_REBUILD_NANOS.fetch_add(
+                        rebuild_started.elapsed().as_nanos() as u64,
+                        Ordering::Relaxed,
+                    );
+                }
+                if let Err(e) = rebuild_result {
                     log(LogLevel::Warn, format!("session rebuild failed: {e}"));
                 }
             }

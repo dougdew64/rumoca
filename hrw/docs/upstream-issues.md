@@ -115,6 +115,28 @@ compiler, HRW — will attribute one file's resolve error to another. There is n
 consumer to tell, because the returned error looks exactly like a genuine failure of the
 model it asked about.
 
+### What the workaround costs — measured 2026-08-26
+
+**1.95 s per occurrence.** The rebuild reloads every library root into a fresh `Session`;
+it is cheaper than a cold start only because the *parse* is memoised per process, so the
+cost is re-loading ASTs and re-resolving, not re-reading `.mo` files.
+
+Measured by `worker::tests::the_stale_cache_workaround_reports_what_it_costs`, which drives
+the exact sequence the workaround fires on — healthy model, a model that fails to resolve,
+then a *different* healthy model — and reads a counter wrapped around the rebuild.
+
+**How often it fires is order-dependent and is NOT claimed here.** It triggers whenever a
+compile follows a resolve failure of a different file, so a consumer that interleaves broken
+and working models pays it repeatedly, and one that does not may never pay it at all. For a
+test suite carrying a handful of deliberately-broken specimens the total is single-digit
+seconds; for an IDE with a file open that does not resolve, it would be every compile.
+
+**A hypothesis this measurement killed, recorded so it is not re-proposed:** HRW's log tests
+cost 13.7 s in isolation and 79.3 s inside the full suite, and this workaround was the
+leading explanation for that gap. At 1.95 s per occurrence it cannot be — the arithmetic is
+an order of magnitude short. The in-suite cost of a compile is dominated by something else,
+still unidentified.
+
 ### Workaround in HRW
 
 Rebuild the session when the previous compile failed to resolve. Guarded so the library
