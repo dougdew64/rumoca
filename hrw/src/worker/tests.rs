@@ -6345,3 +6345,151 @@ fn a_simulation_that_succeeded_still_reports_its_non_finite_values() {
         "every affected series is listed, in the order the model declares them",
     );
 }
+
+/// **No `OutputCapture` is ever started while another is live.**
+///
+/// # Why this is a source scan and not a runtime probe
+///
+/// The obvious test — start one, start a second inside it, observe what happens — would
+/// manipulate **fd 1 and fd 2 under the test harness**. `CLAUDE.md` records that this
+/// exact ownership is why a hung run stops printing which test it is on, and a test
+/// that corrupts the harness's own output is a poor trade for a fact that can be
+/// established by reading. So this checks the structure that makes nesting impossible,
+/// and leaves the file descriptors alone.
+///
+/// # The invariant, and why it holds today
+///
+/// `OutputCapture::start()` has exactly **two** call sites: `compile_target`, which
+/// holds one for a whole compile, and `simulate`, which starts one only for the
+/// `nan_trace` retry. They cannot overlap because **`simulate` does not call
+/// `compile_target`** — it locates the specimen through the same helper and then runs
+/// its own pipeline — and because the worker loop handles one message at a time.
+///
+/// # What breaks it, which is what this fails on
+///
+/// A third call site, or `simulate` gaining a call to `compile_target`. Either would
+/// make nesting reachable. **Nesting is not obviously catastrophic** — `start` saves
+/// the *current* fd 1/2 with `dup`, so a strict LIFO drop restores correctly — but an
+/// outer capture that drains while an inner one owns the descriptors reads **nothing**,
+/// and a non-LIFO drop crosses them. Neither failure announces itself.
+///
+/// Added 2026-08-25 for a question Claude created the same day and did not answer: the
+/// `nan_trace` retry was written on the assumption that the two never overlap, and an
+/// assumption made while writing code is not a measured fact.
+#[test]
+fn no_output_capture_is_started_while_another_is_live() {
+    let src = std::fs::read_to_string(
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/worker.rs"),
+    )
+    .expect("worker.rs is readable");
+
+    // Which function encloses each call site: the nearest preceding `fn` at column 4
+    // (an inherent method) or column 0 (a free function).
+    let sites = capture_sites(&src);
+
+    let owners: Vec<&str> = sites.iter().map(|(_, o)| o.as_str()).collect();
+    assert_eq!(
+        owners,
+        vec!["simulate", "compile_target"],
+        "the OutputCapture call sites moved. Two captures live at once cannot be \
+         reasoned about: an outer one draining while an inner owns fd 1/2 reads \
+         nothing, and a non-LIFO drop crosses the descriptors. Found at {sites:?}",
+    );
+
+    // The reachability half: `simulate` must not call `compile_target`, or the two
+    // captures could nest even though the call sites are unchanged.
+    let start = src.find("    fn simulate(").expect("simulate exists");
+    let end = src[start..]
+        .find("\n    fn ")
+        .map(|o| start + o)
+        .unwrap_or(src.len());
+    let body = &src[start..end];
+    assert!(
+        !body.contains("compile_target("),
+        "`simulate` now calls `compile_target`, which holds an OutputCapture for the \
+         whole compile \u{2014} so simulate's nan_trace retry would start a second one \
+         inside it",
+    );
+}
+
+/// Every `OutputCapture::start()` call site in `text`, as `(line, enclosing fn)`.
+///
+/// **Comment lines are skipped**, because prose mentioning the call is not a call —
+/// and this file's own doc comments name it repeatedly, which is exactly how a source
+/// scan acquires a false positive it cannot explain.
+fn capture_sites(text: &str) -> Vec<(usize, String)> {
+    let lines: Vec<&str> = text.lines().collect();
+    let mut sites = Vec::new();
+    for (i, line) in lines.iter().enumerate() {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with("//") || !line.contains("OutputCapture::start()") {
+            continue;
+        }
+        let owner = lines[..i]
+            .iter()
+            .rev()
+            .find_map(|l| {
+                let is_item = l.starts_with("    fn ")
+                    || l.starts_with("fn ")
+                    || l.starts_with("    pub fn ")
+                    || l.starts_with("pub fn ")
+                    || l.starts_with("    pub(crate) fn ");
+                is_item.then(|| {
+                    l.trim_start()
+                        .split("fn ")
+                        .nth(1)
+                        .unwrap_or("")
+                        .split(['(', '<'])
+                        .next()
+                        .unwrap_or("")
+                        .to_owned()
+                })
+            })
+            .unwrap_or_default();
+        sites.push((i + 1, owner));
+    }
+    sites
+}
+
+/// **The must-fire half for [`no_output_capture_is_started_while_another_is_live`]**,
+/// over literals rather than the real file.
+///
+/// The alternative — perturbing an actual call site — would mean editing code that
+/// owns fd 1 and 2 to prove a scanner works. Testing the scanner directly costs
+/// nothing and risks nothing, which is the trade an unattended run should always take.
+#[test]
+fn the_capture_site_scanner_finds_what_it_claims() {
+    let two = "    fn simulate(&mut self) {\n\
+               \x20       let c = OutputCapture::start();\n\
+               \x20   }\n\
+               \x20   fn compile_target(&mut self) {\n\
+               \x20       let c = OutputCapture::start();\n\
+               \x20   }\n";
+    assert_eq!(
+        capture_sites(two)
+            .iter()
+            .map(|(_, o)| o.as_str())
+            .collect::<Vec<_>>(),
+        vec!["simulate", "compile_target"],
+        "the two real sites must be attributed to their own functions",
+    );
+
+    // A third site is the defect this guards against, and it must be seen.
+    let three = format!(
+        "{two}    fn somewhere_new(&mut self) {{\n        let c = OutputCapture::start();\n    }}\n"
+    );
+    assert_eq!(
+        capture_sites(&three).len(),
+        3,
+        "a new call site must be found, or nesting becomes reachable in silence",
+    );
+
+    // Prose naming the call is not a call.
+    let commented = "    fn simulate(&mut self) {\n\
+                     \x20       // OutputCapture::start() is deliberately not used here\n\
+                     \x20   }\n";
+    assert!(
+        capture_sites(commented).is_empty(),
+        "a comment mentioning the call must not be counted as one",
+    );
+}
