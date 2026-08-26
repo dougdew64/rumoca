@@ -24,7 +24,7 @@ planned the run does not survive to the machine that executes it. When a run fin
 goes to the run log below and this section is overwritten by the next plan — otherwise it becomes
 the accumulating history `CLAUDE.md`'s *Current work* had to be rescued from.
 
-### QUEUED — night 5: `worker.rs`. Three items, queued and approved 2026-08-25.
+### QUEUED — night 5: `worker.rs`. Four items, queued and approved 2026-08-25.
 
 **THE LENS BEING RETIRED IS `Stage` CONSTRUCTION.** It was swept on 2026-08-25 — all 58 sites,
 column-read — yielding three live defects and two nulls; `tech-debt.md` carries the record. The
@@ -70,6 +70,32 @@ comes from. Some of the new checkers carry non-vacuity guards; not all do.
 **Deliverable:** for each, a perturbation proving it fires — or a fix where it does not. This
 cannot break anything and needs nobody awake.
 
+**This item was queued as hygiene and the day rewrote its justification.** On 2026-08-25 Claude made
+four confident claims that measurement destroyed — the corpus tests are expensive, suite variance is
+wide, the build matrix is the gate's lever, cargo's feature fingerprinting is the mechanism. The
+common thread was **trusting a number without checking it applied to the case at hand.** A guard
+that has never been made to fail is the same error wearing a test's clothes.
+
+#### Item 4 — the 17 test compiles that bypass the shared cache
+
+**Added 2026-08-25 after the gate was measured properly.** 71 call sites use
+`compile_specimen_shared` and are free after the first; **17 call `w.compile(` directly** and pay
+~3.4 s each, because every specimen compile re-resolves the whole MSL.
+
+**Some must stay unshared and identifying them is the work, not an obstacle.**
+`compiling_a_specimen_twice_is_reproducible` and `a_broken_specimen_does_not_poison_the_next_compile`
+are *about* fresh state; sharing them would make them vacuous — which is Item 3's failure mode
+arriving through the front door. Read each of the 17, convert only what is genuinely incidental, and
+**record the ones that must not convert, with why**, so the next session does not re-litigate them.
+
+**This is not "optimise HRW to widen test scope"**, which stands. Nothing here widens scope or
+touches the compile path; it removes duplicated work in tests. Upper bound ~58 s and realistically
+less — **so if a conversion is even slightly doubtful, do not make it.** The suite's time is worth
+less than any check it contains.
+
+**Do NOT touch the five levers `#48` has ruled out by measurement**, and do not change how the MSL
+session is loaded, cached or shared — that is Doug's, explicitly.
+
 #### Boundaries, and one sharpened by the day's work
 
 All the no-gos below still bind. **Added for this night:** a defect found in the compile path may
@@ -78,8 +104,15 @@ be **recorded but not fixed** when the fix would change what the pipeline *does*
 Doug's. **Two rulings on 2026-08-25 are the worked examples** — C20 and the panic policy both went
 to Doug as measurements and came back as decisions.
 
-**Cost, stated because it has grown.** The full gate is now **~630 s**, up from ~220 s, because two
-corpus-wide tests compile all 24 specimens. Three commits is roughly half an hour of pure gating.
+**Cost, measured 2026-08-25 — and this paragraph previously stated it wrongly.** It claimed ~630 s
+"because two corpus-wide tests compile all 24 specimens". Both halves were false: those tests cost
+**26 s**, and 630 s came from a single anomalous run. **The gate's test step is 268 s** (245 s of
+tests, 23 s of build) plus **~110 s** when a compile-path change triggers the notebook check. Four
+commits is roughly 20–25 minutes of gating.
+
+**Where that 245 s goes is `#48`, measured 2026-08-21 and true all along:** *"72 compiles at ~3.4 s
+and 10 MSL loads at ~4.4 s are 92 % of the run."* Every specimen compile re-resolves the whole MSL.
+**Do not go looking for gate time in the build** — all four cargo variants together rebuild in 52 s.
 
 ### ⟶ RULED, 2026-08-25 — THE NIGHTS CONTINUE, AND ROTATION IS THE CONDITION
 
