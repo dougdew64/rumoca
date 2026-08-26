@@ -24,9 +24,62 @@ planned the run does not survive to the machine that executes it. When a run fin
 goes to the run log below and this section is overwritten by the next plan — otherwise it becomes
 the accumulating history `CLAUDE.md`'s *Current work* had to be rescued from.
 
-### NOTHING IS QUEUED — night 4 ran; its record is in the run log below
+### QUEUED — night 5: `worker.rs`. Three items, queued and approved 2026-08-25.
 
-**Queue the next run by replacing this heading and what follows it.** The slot is one deep.
+**THE LENS BEING RETIRED IS `Stage` CONSTRUCTION.** It was swept on 2026-08-25 — all 58 sites,
+column-read — yielding three live defects and two nulls; `tech-debt.md` carries the record. The
+cheap seams are spent. **Everything below aims at a region that sweep explicitly did not cover.**
+
+**`worker.rs` is in scope for the first time.** Its production code is 5,735 lines since the test
+modules moved out, and it now carries a transport contract, a corpus outcome matrix, a not-reached
+contiguity check and a panic policy — so a night has instruments to build on rather than starting
+cold.
+
+#### Item 1 — the log and bracket machinery: verb claims nothing checks
+
+**Why here.** `CLAUDE.md`'s noun/verb split is the argument: F1–F9 verify **nouns** (is this
+structure what Rumoca produced?), and the log is pure **verbs** — which phase ran, in what order,
+nested inside what, how long. Every fiction removed on 2026-08-04 was a verb, and **not one of
+F1–F9 could have caught any of them.** This exact machinery has produced two recorded defects: the
+*"DAE pipeline"* bracket that named a phase which does not exist, and Resolve's bracket closing
+after three other things had run inside it, so **their traces drained under Resolve's name**.
+
+**Already covered** (both added 2026-08-25): phase order, and that no bracket costs less than its
+contents. **Not covered:** nesting depth, whether a bracket's description matches what actually
+ran, and whether `drain_traces` attributes traces to the bracket that produced them.
+
+**Deliverable:** a checker that fails by name, or a recorded null if the region is clean.
+
+#### Item 2 — can two `OutputCapture`s ever be live at once?
+
+**The strongest item, because the question is one Claude created and did not answer.** On
+2026-08-25 the simulate path gained a `nan_trace` retry that starts its own `OutputCapture`, while
+`compile_target` already holds one for the whole compile. The worker loop is serial, so they
+*should* never overlap — **but that was an assumption made while writing the code, not a measured
+fact**, and `OutputCapture` owns fd 1 and 2 at the file-descriptor level. `CLAUDE.md` already
+records that this ownership is why a hung run stops printing which test it is on.
+
+**Deliverable:** a test pinning that captures never nest, or the finding that they can.
+
+#### Item 3 — adversarially re-read the checkers added 2026-08-25
+
+**Why here.** Roughly ten guards landed in a single day, quickly. This repository's recorded
+failure is *"a test that never tested what it was named for"* (2026-08-21), and speed is where that
+comes from. Some of the new checkers carry non-vacuity guards; not all do.
+
+**Deliverable:** for each, a perturbation proving it fires — or a fix where it does not. This
+cannot break anything and needs nobody awake.
+
+#### Boundaries, and one sharpened by the day's work
+
+All the no-gos below still bind. **Added for this night:** a defect found in the compile path may
+be **recorded but not fixed** when the fix would change what the pipeline *does* or what a pane
+*claims*. Tests, observation-only changes, and single-sourcing a wording are Claude's; behaviour is
+Doug's. **Two rulings on 2026-08-25 are the worked examples** — C20 and the panic policy both went
+to Doug as measurements and came back as decisions.
+
+**Cost, stated because it has grown.** The full gate is now **~630 s**, up from ~220 s, because two
+corpus-wide tests compile all 24 specimens. Three commits is roughly half an hour of pure gating.
 
 ### ⟶ RULED, 2026-08-25 — THE NIGHTS CONTINUE, AND ROTATION IS THE CONDITION
 
