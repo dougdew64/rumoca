@@ -3506,20 +3506,7 @@ fn discontinuity_segments_edge_cases() {
     ignore = "compile-heavy; run with --features slow-tests"
 )]
 fn compilation_emits_log_entries() {
-    let logs = std::sync::Mutex::new(Vec::new());
-    {
-        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
-        let path = PathBuf::from(format!(
-            "{}/specimens/SingleInertia.mo",
-            env!("CARGO_MANIFEST_DIR")
-        ));
-        w.compile(&path, &|msg: FromWorker| {
-            if let FromWorker::Log(entry) = msg {
-                logs.lock().unwrap().push(entry);
-            }
-        });
-    }
-    let logs = logs.into_inner().unwrap();
+    let logs = compile_specimen_logs_shared("SingleInertia");
     let stage_starts: Vec<&str> = logs
         .iter()
         .filter(|e| matches!(e.level, LogLevel::StageStart))
@@ -3718,20 +3705,7 @@ fn a_compile_never_reports_another_runs_traces() {
     ignore = "compile-heavy; run with --features slow-tests"
 )]
 fn no_hrw_replay_is_logged_as_a_phase() {
-    let logs = std::sync::Mutex::new(Vec::new());
-    {
-        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
-        let path = PathBuf::from(format!(
-            "{}/specimens/SingleInertia.mo",
-            env!("CARGO_MANIFEST_DIR")
-        ));
-        w.compile(&path, &|msg: FromWorker| {
-            if let FromWorker::Log(entry) = msg {
-                logs.lock().unwrap().push(entry);
-            }
-        });
-    }
-    let logs = logs.into_inner().unwrap();
+    let logs = compile_specimen_logs_shared("SingleInertia");
 
     // 1. No bracket names a replay. Checked on the *word*, so a future replay
     //    called "re-run" or "replay" anything is caught without being listed.
@@ -4116,20 +4090,7 @@ fn the_bracket_check_rejects_an_invented_phase() {
     ignore = "compile-heavy; run with --features slow-tests"
 )]
 fn every_log_bracket_names_a_real_phase_and_pairs_with_its_own_end() {
-    let logs = std::sync::Mutex::new(Vec::new());
-    {
-        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
-        let path = PathBuf::from(format!(
-            "{}/specimens/SingleInertia.mo",
-            env!("CARGO_MANIFEST_DIR")
-        ));
-        w.compile(&path, &|msg: FromWorker| {
-            if let FromWorker::Log(entry) = msg {
-                logs.lock().unwrap().push(entry);
-            }
-        });
-    }
-    let logs = logs.into_inner().unwrap();
+    let logs = compile_specimen_logs_shared("SingleInertia");
 
     let brackets: Vec<_> = logs
         .iter()
@@ -4211,20 +4172,7 @@ fn every_log_bracket_names_a_real_phase_and_pairs_with_its_own_end() {
     ignore = "compile-heavy; run with --features slow-tests"
 )]
 fn a_healthy_compile_logs_every_phase_once_in_pipeline_order() {
-    let logs = std::sync::Mutex::new(Vec::new());
-    {
-        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
-        let path = PathBuf::from(format!(
-            "{}/specimens/SingleInertia.mo",
-            env!("CARGO_MANIFEST_DIR")
-        ));
-        w.compile(&path, &|msg: FromWorker| {
-            if let FromWorker::Log(entry) = msg {
-                logs.lock().unwrap().push(entry);
-            }
-        });
-    }
-    let logs = logs.into_inner().unwrap();
+    let logs = compile_specimen_logs_shared("SingleInertia");
 
     // Opening brackets only, and only those naming a phase — the outer
     // "Rumoca compile" wrapper and its siblings are real brackets that are not
@@ -4300,20 +4248,7 @@ fn every_bracket_is_timed_and_none_costs_less_than_its_contents() {
         rest[..ms].trim().parse::<f64>().ok()
     }
 
-    let logs = std::sync::Mutex::new(Vec::new());
-    {
-        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
-        let path = PathBuf::from(format!(
-            "{}/specimens/SingleInertia.mo",
-            env!("CARGO_MANIFEST_DIR")
-        ));
-        w.compile(&path, &|msg: FromWorker| {
-            if let FromWorker::Log(entry) = msg {
-                logs.lock().unwrap().push(entry);
-            }
-        });
-    }
-    let logs = logs.into_inner().unwrap();
+    let logs = compile_specimen_logs_shared("SingleInertia");
 
     // Each open frame accumulates the time of its direct children.
     let mut stack: Vec<(String, f64)> = Vec::new();
@@ -6520,20 +6455,7 @@ fn the_capture_site_scanner_finds_what_it_claims() {
     ignore = "compile-heavy; run with --features slow-tests"
 )]
 fn every_log_entry_is_nested_as_deeply_as_the_brackets_above_it() {
-    let logs = std::sync::Mutex::new(Vec::new());
-    {
-        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
-        let path = PathBuf::from(format!(
-            "{}/specimens/SingleInertia.mo",
-            env!("CARGO_MANIFEST_DIR")
-        ));
-        w.compile(&path, &|msg: FromWorker| {
-            if let FromWorker::Log(entry) = msg {
-                logs.lock().unwrap().push(entry);
-            }
-        });
-    }
-    let logs = logs.into_inner().unwrap();
+    let logs = compile_specimen_logs_shared("SingleInertia");
     assert!(logs.len() > 20, "only {} log entries", logs.len());
 
     // Depth derived from the message stream alone, independently of the counter the
@@ -6629,5 +6551,66 @@ fn no_hand_built_log_entry_hardcodes_its_elapsed_time() {
     assert!(
         seen >= 2,
         "only {seen} elapsed_secs site(s) found; the scan is not reading the file",
+    );
+}
+
+/// **Two compiles of one specimen log the same structure.**
+///
+/// # Why this exists: it replaces a guarantee that was only ever a coincidence
+///
+/// Until 2026-08-26, six tests each ran their own compile of `SingleInertia` purely to
+/// inspect the log. That gave six independent samples — so a log that varied run to run
+/// had six chances to be noticed. **Nothing claimed to check that.** It happened by
+/// repetition, and the repetition cost 75.5 s of a 245 s suite.
+///
+/// Sharing one capture ([`compile_specimen_logs_shared`]) brings those six to ~13 s and
+/// removes the coincidence. **This states the property instead**, which is strictly
+/// better: an invariant that fails by name beats a guarantee nobody wrote down. It is
+/// the same move `compile_specimen_uncached` records for the result cache — memoising
+/// removed an accidental determinism check, so one test was written to keep it.
+///
+/// # What "the same structure" means, and what it deliberately excludes
+///
+/// The **bracket sequence and its nesting**: for every `StageStart`/`StageEnd`, the
+/// canonical phase name and the depth. **Timings are excluded on purpose** — they
+/// differ every run, and `every_bracket_is_timed_and_none_costs_less_than_its_contents`
+/// is the test that checks them. Trace and stdout lines are excluded too: their
+/// presence depends on what the compiler chose to say, which is not a structural claim.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn two_compiles_of_one_specimen_log_the_same_structure() {
+    // Uncached on both sides: a memoised second capture would compare a value with
+    // itself and pass while checking nothing.
+    let shape = |logs: &[LogEntry]| -> Vec<(String, &'static str, u8)> {
+        logs.iter()
+            .filter(|e| matches!(e.level, LogLevel::StageStart | LogLevel::StageEnd))
+            .map(|e| {
+                let level = format!("{:?}", e.level);
+                let name = bracket_phase_name(&e.message).unwrap_or("<unnamed>");
+                (level, name, e.depth)
+            })
+            .collect()
+    };
+
+    let first = capture_compile_logs("SingleInertia");
+    let second = capture_compile_logs("SingleInertia");
+
+    // Non-vacuity: two empty logs are trivially equal.
+    let shape_first = shape(&first);
+    assert!(
+        shape_first.len() >= 20,
+        "only {} bracket entries; the capture is not exercising a real compile",
+        shape_first.len(),
+    );
+
+    assert_eq!(
+        shape_first,
+        shape(&second),
+        "two compiles of the same specimen produced different log structures. The six \
+         tests that read a SHARED capture are only sound while this holds \u{2014} each \
+         of them now inspects one run rather than its own.",
     );
 }

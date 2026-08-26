@@ -150,3 +150,77 @@ pub(crate) fn compile_specimen_uncached(name: &str) -> FromWorker {
     let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
     w.compile(&path, &|_: FromWorker| {})
 }
+
+/// The **log stream** a healthy compile emits, captured once per specimen.
+///
+/// # Why the result cache could not serve this
+///
+/// [`compile_specimen_shared`] memoises `FromWorker::Compiled` — the *result*. The
+/// log is not in it: entries are streamed through `emit` as the compile runs and are
+/// gone once it returns. So every test that inspects the log had to run its own
+/// compile, and on 2026-08-26 nine of them did, all on `SingleInertia`.
+///
+/// # What sharing costs, and what was put back
+///
+/// Six of those nine inspect a **single healthy compile's** log — bracket names,
+/// pipeline order, pairing, nesting depth, timing containment. Measured together they
+/// cost **75.5 s**; sharing one capture brings them to ~13 s.
+///
+/// **What is lost is incidental redundancy.** Six independent compiles gave six
+/// chances to notice a log that varied run to run. Nothing *claimed* to check that —
+/// it happened by coincidence — so
+/// [`super::tests::two_compiles_of_one_specimen_log_the_same_structure`] now states it
+/// as an invariant instead. **An explicit check beats accidental repetition**, which
+/// is the same reasoning `compile_specimen_uncached` records for the result cache:
+/// memoising removed a coincidental guarantee, so one test was written to keep it.
+///
+/// # What must NOT use this
+///
+/// Anything whose subject is the *act* of compiling rather than the log of one healthy
+/// compile: `a_compile_never_reports_another_runs_traces` and
+/// `a_compile_with_tracing_on_leaves_nothing_behind` are about state carried between
+/// compiles, and `compile_emits_progress_messages` needs a fresh `WorkerState`. A
+/// cached stream would make all three pass while touching nothing.
+pub(crate) fn compile_specimen_logs_shared(name: &str) -> Vec<super::LogEntry> {
+    if let Some(hit) = log_cache()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(name)
+    {
+        return hit.clone();
+    }
+    let fresh = capture_compile_logs(name);
+    log_cache()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(name.to_owned(), fresh.clone());
+    fresh
+}
+
+/// Compile `name` on the shared worker and keep every `Log` entry it emits.
+///
+/// Deliberately **not** cached: the determinism test needs two real captures, and a
+/// memoised second one would compare a value with itself and pass vacuously.
+pub(crate) fn capture_compile_logs(name: &str) -> Vec<super::LogEntry> {
+    let path = PathBuf::from(format!(
+        "{}/specimens/{name}.mo",
+        env!("CARGO_MANIFEST_DIR")
+    ));
+    let logs = Mutex::new(Vec::new());
+    {
+        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+        w.compile(&path, &|msg: FromWorker| {
+            if let FromWorker::Log(entry) = msg {
+                logs.lock().unwrap_or_else(|e| e.into_inner()).push(entry);
+            }
+        });
+    }
+    logs.into_inner().unwrap_or_else(|e| e.into_inner())
+}
+
+/// One captured log per specimen per test process. See [`compile_specimen_logs_shared`].
+fn log_cache() -> &'static Mutex<std::collections::HashMap<String, Vec<super::LogEntry>>> {
+    static CACHE: OnceLock<Mutex<std::collections::HashMap<String, Vec<super::LogEntry>>>> =
+        OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new(std::collections::HashMap::new()))
+}
