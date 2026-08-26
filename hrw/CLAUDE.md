@@ -571,8 +571,8 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 
 > ### ⟶ OPEN THE NEXT SESSION WITH THIS
 >
-> **THE NIGHTS CONTINUE — ruled 2026-08-25:** *"worth their keep, so long as we remain willing to
-> rotate the lens."* A lens twice empty is spent; the slot is empty and awaits one: [`docs/unattended-runs.md`](docs/unattended-runs.md).
+> **NIGHT 5 RAN — three NULLS, one recorded finding, and a fourth item left unstarted because hard
+> rule 4 caps a night at three.** Record, finding and carried item: [`docs/unattended-runs.md`](docs/unattended-runs.md).
 >
 > **This section holds ONLY what is in flight. Everything closed lives in
 > [`DECISIONS.md`](DECISIONS.md)** — *"closed arcs move out of `CLAUDE.md`"*, 2026-08-22, which

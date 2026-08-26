@@ -4264,3 +4264,27 @@ feature fingerprinting is the mechanism — and measurement killed all four. Eac
 real facts and each rested on a number never checked against the case at hand. **The answer was in
 the mandatory reading path the entire time.** Read the instrument before explaining it, and check
 whether the question already has a recorded answer before deriving one.
+
+## 2026-08-25 (night 5) — a perturbation that trips a DIFFERENT guard proves nothing
+
+**Found while doing the adversarial re-read that item 3 asked for.** Three of the day's checkers
+had never been made to fail: `a_healthy_compile_logs_every_phase_once_in_pipeline_order`,
+`every_bracket_is_timed_and_none_costs_less_than_its_contents`, and
+`a_panic_in_a_fire_and_forget_request_still_signals_its_done_flag`. All three fire correctly. The
+finding is in *how the first attempt failed to establish that.*
+
+**The attempt:** make `bracket_phase_name` refuse to recognise `"Flatten"`, so the observed phase
+list would lose an entry and the order check would fire. Both bracket tests did fail — **on a
+runtime assert inside `worker.rs` that rejects a bracket naming no known phase.** The perturbation
+never reached the assertion under test. Read carelessly, two red tests look like proof; they were
+proof of a *third* guard, sitting upstream of both.
+
+**So a must-fire perturbation has to be chosen against the guard it is aimed at, and the failure
+message read to confirm which assertion actually fired.** The working perturbations were ones that
+kept every upstream invariant satisfied: renaming Flatten's bracket to `"Typecheck"` — a *valid*
+phase name, so the name guard stays quiet while the order becomes wrong — and stripping the `ms`
+from `run_stage!`'s close, which leaves the name intact and only the timing missing.
+
+**This is the must-fire rule's own blind spot.** The rule says silence must be a failure, never a
+pass. It does not say *whose* failure — and in a codebase with layered guards, the outermost one
+answers first and looks like the answer.

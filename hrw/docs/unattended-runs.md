@@ -24,95 +24,28 @@ planned the run does not survive to the machine that executes it. When a run fin
 goes to the run log below and this section is overwritten by the next plan — otherwise it becomes
 the accumulating history `CLAUDE.md`'s *Current work* had to be rescued from.
 
-### QUEUED — night 5: `worker.rs`. Four items, queued and approved 2026-08-25.
+### QUEUED — night 6: one item, carried over from night 5
 
-**THE LENS BEING RETIRED IS `Stage` CONSTRUCTION.** It was swept on 2026-08-25 — all 58 sites,
-column-read — yielding three live defects and two nulls; `tech-debt.md` carries the record. The
-cheap seams are spent. **Everything below aims at a region that sweep explicitly did not cover.**
+**Item — the 17 test compiles that bypass the shared cache.** Queued and approved by Doug on
+2026-08-25 and **deliberately not started that night**: hard rule 4 caps a night at **three items**,
+the plan had four, and Claude had added the fourth without noticing the cap. Doug approved the
+*item*, not a lifted cap, and rule 6 is explicit that deciding a boundary does not really apply is
+the decision that needs him. It waits rather than being squeezed in.
 
-**`worker.rs` is in scope for the first time.** Its production code is 5,735 lines since the test
-modules moved out, and it now carries a transport contract, a corpus outcome matrix, a not-reached
-contiguity check and a panic policy — so a night has instruments to build on rather than starting
-cold.
-
-#### Item 1 — the log and bracket machinery: verb claims nothing checks
-
-**Why here.** `CLAUDE.md`'s noun/verb split is the argument: F1–F9 verify **nouns** (is this
-structure what Rumoca produced?), and the log is pure **verbs** — which phase ran, in what order,
-nested inside what, how long. Every fiction removed on 2026-08-04 was a verb, and **not one of
-F1–F9 could have caught any of them.** This exact machinery has produced two recorded defects: the
-*"DAE pipeline"* bracket that named a phase which does not exist, and Resolve's bracket closing
-after three other things had run inside it, so **their traces drained under Resolve's name**.
-
-**Already covered** (both added 2026-08-25): phase order, and that no bracket costs less than its
-contents. **Not covered:** nesting depth, whether a bracket's description matches what actually
-ran, and whether `drain_traces` attributes traces to the bracket that produced them.
-
-**Deliverable:** a checker that fails by name, or a recorded null if the region is clean.
-
-#### Item 2 — can two `OutputCapture`s ever be live at once?
-
-**The strongest item, because the question is one Claude created and did not answer.** On
-2026-08-25 the simulate path gained a `nan_trace` retry that starts its own `OutputCapture`, while
-`compile_target` already holds one for the whole compile. The worker loop is serial, so they
-*should* never overlap — **but that was an assumption made while writing the code, not a measured
-fact**, and `OutputCapture` owns fd 1 and 2 at the file-descriptor level. `CLAUDE.md` already
-records that this ownership is why a hung run stops printing which test it is on.
-
-**Deliverable:** a test pinning that captures never nest, or the finding that they can.
-
-#### Item 3 — adversarially re-read the checkers added 2026-08-25
-
-**Why here.** Roughly ten guards landed in a single day, quickly. This repository's recorded
-failure is *"a test that never tested what it was named for"* (2026-08-21), and speed is where that
-comes from. Some of the new checkers carry non-vacuity guards; not all do.
-
-**Deliverable:** for each, a perturbation proving it fires — or a fix where it does not. This
-cannot break anything and needs nobody awake.
-
-**This item was queued as hygiene and the day rewrote its justification.** On 2026-08-25 Claude made
-four confident claims that measurement destroyed — the corpus tests are expensive, suite variance is
-wide, the build matrix is the gate's lever, cargo's feature fingerprinting is the mechanism. The
-common thread was **trusting a number without checking it applied to the case at hand.** A guard
-that has never been made to fail is the same error wearing a test's clothes.
-
-#### Item 4 — the 17 test compiles that bypass the shared cache
-
-**Added 2026-08-25 after the gate was measured properly.** 71 call sites use
-`compile_specimen_shared` and are free after the first; **17 call `w.compile(` directly** and pay
-~3.4 s each, because every specimen compile re-resolves the whole MSL.
+71 call sites use `compile_specimen_shared` and are free after the first; **17 call `w.compile(`
+directly** and pay ~3.4 s each, because every specimen compile re-resolves the whole MSL.
 
 **Some must stay unshared and identifying them is the work, not an obstacle.**
 `compiling_a_specimen_twice_is_reproducible` and `a_broken_specimen_does_not_poison_the_next_compile`
-are *about* fresh state; sharing them would make them vacuous — which is Item 3's failure mode
-arriving through the front door. Read each of the 17, convert only what is genuinely incidental, and
-**record the ones that must not convert, with why**, so the next session does not re-litigate them.
+are *about* fresh state; sharing them would make them vacuous. Read each of the 17, convert only what
+is genuinely incidental, and **record the ones that must not convert, with why.**
 
-**This is not "optimise HRW to widen test scope"**, which stands. Nothing here widens scope or
-touches the compile path; it removes duplicated work in tests. Upper bound ~58 s and realistically
-less — **so if a conversion is even slightly doubtful, do not make it.** The suite's time is worth
-less than any check it contains.
+**Upper bound ~58 s and realistically less — so if a conversion is even slightly doubtful, do not
+make it.** The suite's time is worth less than any check it contains. **Do NOT touch the five levers
+`#48` has ruled out**, and do not change how the MSL session is loaded, cached or shared.
 
-**Do NOT touch the five levers `#48` has ruled out by measurement**, and do not change how the MSL
-session is loaded, cached or shared — that is Doug's, explicitly.
-
-#### Boundaries, and one sharpened by the day's work
-
-All the no-gos below still bind. **Added for this night:** a defect found in the compile path may
-be **recorded but not fixed** when the fix would change what the pipeline *does* or what a pane
-*claims*. Tests, observation-only changes, and single-sourcing a wording are Claude's; behaviour is
-Doug's. **Two rulings on 2026-08-25 are the worked examples** — C20 and the panic policy both went
-to Doug as measurements and came back as decisions.
-
-**Cost, measured 2026-08-25 — and this paragraph previously stated it wrongly.** It claimed ~630 s
-"because two corpus-wide tests compile all 24 specimens". Both halves were false: those tests cost
-**26 s**, and 630 s came from a single anomalous run. **The gate's test step is 268 s** (245 s of
-tests, 23 s of build) plus **~110 s** when a compile-path change triggers the notebook check. Four
-commits is roughly 20–25 minutes of gating.
-
-**Where that 245 s goes is `#48`, measured 2026-08-21 and true all along:** *"72 compiles at ~3.4 s
-and 10 MSL loads at ~4.4 s are 92 % of the run."* Every specimen compile re-resolves the whole MSL.
-**Do not go looking for gate time in the build** — all four cargo variants together rebuild in 52 s.
+**Gate cost, measured 2026-08-25:** the test step is **268 s** (245 s tests, 23 s build), plus
+**~110 s** when a compile-path change triggers the notebook check.
 
 ### ⟶ RULED, 2026-08-25 — THE NIGHTS CONTINUE, AND ROTATION IS THE CONDITION
 
@@ -135,15 +68,11 @@ in the queued plan which lens is being retired and why.
 **`CLAUDE.md`'s order still says `worker.rs` is next, and that wants Doug awake** — so a night is
 the right vehicle for app-side reading, not for the compile path.
 
-**If a night is queued anyway**, the two candidates night 4 leaves are small and honest: cover
-the two per-frame absence messages it did not (`No slots created yet`, `No iteration needed
-yet`), which drops the ratchet from 5 to 3; and read `spy_plot_pane_ui`'s absence branch, which
-the survey found already covered but which no one has read against its condition.
 
 ### The command
 
 ```text
-/loop Unattended run under hrw/docs/unattended-runs.md — read it first, every iteration, including THE QUEUED RUN section which carries tonight's three items and their evidence. app-side only. Full gate green before every commit, commit but never push, never leave the tree dirty, revert-and-record on hitting a no-go, append who-caught-it ledger rows for anything found, then write the handoff and end the loop.
+/loop Unattended run under hrw/docs/unattended-runs.md — read it first, every iteration, including THE QUEUED RUN section which carries tonight's items and their evidence. Full gate green before every commit, commit but never push, never leave the tree dirty, revert-and-record on hitting a no-go, append who-caught-it ledger rows for anything found, then write the handoff and end the loop.
 ```
 
 ## Preconditions — Doug's, before starting
@@ -371,6 +300,38 @@ cost table for a question the charter already answers **invites a ruling that co
 project's own rules** — and the cost side of that table was performance, which this file says
 repeatedly is not what HRW optimises for. *When a decision looks like a trade, check first
 whether one option is a documented fiction; if it is, there is no trade to present.*
+
+### Night 5 — 2026-08-25. `worker.rs`. Three items of four, three commits, gate green on each
+
+**Three nulls and one recorded finding — and the nulls are the result, not the absence of one.**
+The rotation ruling says a night that finds nothing has established that a region is clean; both
+regions this night aimed at now have guards that would notice if that changed.
+
+| item | outcome |
+|---|---|
+| 2 — can two `OutputCapture`s nest? | **NULL.** Exactly two call sites, `simulate` never calls `compile_target`, worker loop serial. Guarded structurally |
+| 1 — the log and bracket machinery | **NULL** on depth correctness, **plus one finding** (below) |
+| 3 — adversarial re-read of the day's checkers | **NULL.** All three previously-unproven guards fire |
+| 4 — the 17 bypassed compiles | **NOT STARTED**, deliberately — see below |
+
+**The finding:** the panic path builds a `LogEntry` **by hand**, bypassing `make_log`, and hardcodes
+`elapsed_secs: 0.0` — so a panic forty seconds into a compile is logged as having happened at t=0.
+A fabricated timestamp, in code committed that same morning. **Recorded, not fixed:** a log line's
+time is a claim, and hard rule 6 forbids improvising on one unattended.
+
+**Item 4 was queued and deliberately left.** Hard rule 4 caps a night at three items; the plan had
+four, because Claude added the fourth without noticing the cap. Doug approved the *item*, not a
+lifted cap. **This is rule 6 applied to the rules themselves** — the temptation was to decide a cap
+of three does not really apply when the fourth item is small and safe, and that decision is exactly
+the kind that needs Doug. It is carried to night 6 rather than squeezed in.
+
+**Two things about method came out of item 3 and are worth more than the null.** First, a
+perturbation that trips a *different* guard proves nothing about the test it was aimed at — the
+first attempt made two bracket tests go red on a third assertion upstream of both, and read
+carelessly that looks like proof (`DECISIONS.md`, night 5). Second, item 3's own justification had
+changed since it was queued: it went in as hygiene, and by the time it ran, the day had produced four
+confident claims that measurement destroyed. **A guard never made to fail is that same error wearing
+a test's clothes.**
 
 ### Night 4 — 2026-08-24. Three items, three commits, gate green on each, nothing pushed
 
