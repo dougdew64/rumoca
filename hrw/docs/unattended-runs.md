@@ -27,10 +27,11 @@ the accumulating history `CLAUDE.md`'s *Current work* had to be rescued from.
 ### QUEUED — night 6: one item, carried over from night 5
 
 **Item — the 17 test compiles that bypass the shared cache.** Queued and approved by Doug on
-2026-08-25 and **deliberately not started that night**: hard rule 4 caps a night at **three items**,
-the plan had four, and Claude had added the fourth without noticing the cap. Doug approved the
-*item*, not a lifted cap, and rule 6 is explicit that deciding a boundary does not really apply is
-the decision that needs him. It waits rather than being squeezed in.
+2026-08-25 and **deliberately not started that night**: hard rule 4 then capped a night at **three
+items**, the plan had four, and Claude had added the fourth without noticing the cap. Doug approved
+the *item*, not a lifted cap, and rule 6 is explicit that deciding a boundary does not really apply
+is the decision that needs him. **Doug raised the cap to four on 2026-08-26** — so this item is
+carried because the night ended, not because anything still forbids it.
 
 71 call sites use `compile_specimen_shared` and are free after the first; **17 call `w.compile(`
 directly** and pay ~3.4 s each, because every specimen compile re-resolves the whole MSL.
@@ -96,9 +97,17 @@ the right vehicle for app-side reading, not for the compile path.
    step protects, and refuses to start while HRW holds `hrw.exe`.
 2. **Never leave the tree dirty.** Every item ends committed or reverted. Nothing half-done.
 3. **Commit, do not push.** Nothing outward-facing happens with nobody awake.
-4. **A hard cap of three items, then stop.** Sprawl is the named failure mode, not idleness —
-   *"three finished things with tests beat eight half-done ones, because Claude is bad at telling
-   what already depends on a behaviour."*
+4. **A hard cap of FOUR items, then stop** — raised from three by Doug on 2026-08-26. Sprawl is
+   still the named failure mode, not idleness: *"three finished things with tests beat eight
+   half-done ones, because Claude is bad at telling what already depends on a behaviour."* **The
+   quoted sentence is about FINISHED versus HALF-DONE, not about the number three**, so raising the
+   cap does not contradict it — and nothing here licenses a fifth item, a half-done fourth, or
+   skipping a gate to fit one in. **If four will not fit, stop at three.**
+
+   **What prompted it:** night 5 was queued with four items and ran three, leaving the fourth
+   unstarted because the cap bound. That was the right call under the rule as written — Doug had
+   approved the item, not a lifted cap — and he lifted the cap rather than have items carried
+   forward. **The precedent worth keeping is the refusal, not the raise.**
 5. **Every item ends in a test that fails by name.** If an item cannot, **it is not unattended
    work** — record it and move on.
 6. **On hitting a no-go mid-item: revert and record. Do not improvise.** The temptation is to
@@ -319,7 +328,7 @@ regions this night aimed at now have guards that would notice if that changed.
 A fabricated timestamp, in code committed that same morning. **Recorded, not fixed:** a log line's
 time is a claim, and hard rule 6 forbids improvising on one unattended.
 
-**Item 4 was queued and deliberately left.** Hard rule 4 caps a night at three items; the plan had
+**Item 4 was queued and deliberately left.** Hard rule 4 then capped a night at three items; the plan had
 four, because Claude added the fourth without noticing the cap. Doug approved the *item*, not a
 lifted cap. **This is rule 6 applied to the rules themselves** — the temptation was to decide a cap
 of three does not really apply when the fourth item is small and safe, and that decision is exactly

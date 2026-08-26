@@ -1329,13 +1329,29 @@ impl Worker {
                     // is one MSL reload on the next compile; the alternative is a
                     // fiction.
                     let reply = panic_reply(&msg);
+                    // **Started here so a panic can be timed — 2026-08-26.** This entry
+                    // used to hardcode `elapsed_secs: 0.0`, reporting a panic forty
+                    // seconds into a compile as having happened at t=0. Every other log
+                    // line's elapsed time is real, measured from the compile's own start
+                    // inside `compile_target`; this one is emitted *outside* that scope,
+                    // where no such clock exists, so it invented one. Found by night 5's
+                    // sweep of the log machinery and left for Doug, because a log line's
+                    // time is a claim.
+                    //
+                    // Dispatch is a few microseconds, so time since the message was
+                    // dequeued is the compile's elapsed time for every purpose a reader
+                    // has. **`depth: 0` stays**, and is not the same kind of guess: this
+                    // is a worker-level event emitted outside every bracket, so top
+                    // level is where it belongs. The brackets the panicking compile left
+                    // open stay open, which is what actually happened.
+                    let dequeued = std::time::Instant::now();
                     let handled = guard(|| state.handle(msg, &emit));
                     let response = match handled {
                         Ok(r) => r,
                         Err(note) => {
                             let note = format!("the compiler panicked: {note}");
                             emit(FromWorker::Log(LogEntry {
-                                elapsed_secs: 0.0,
+                                elapsed_secs: dequeued.elapsed().as_secs_f64(),
                                 level: LogLevel::Error,
                                 message: note.clone(),
                                 depth: 0,

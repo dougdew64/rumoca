@@ -6564,3 +6564,70 @@ fn every_log_entry_is_nested_as_deeply_as_the_brackets_above_it() {
          this session renders inside a phase that had finished",
     );
 }
+
+/// **No hand-built `LogEntry` invents its own elapsed time.**
+///
+/// # The defect this was written for
+///
+/// Almost every log line goes through `make_log`, which stamps the real elapsed time
+/// from the compile's own clock. The worker's panic path cannot: it runs *outside*
+/// `compile_target`, where that clock does not exist. So it built a `LogEntry` by hand
+/// and wrote `elapsed_secs: 0.0` — reporting a panic forty seconds into a compile as
+/// having happened at t=0.
+///
+/// **A timestamp is a claim.** `CLAUDE.md`: *"A log line describes what happened, not
+/// what reads well."* A fabricated one is small, which is exactly why it survived
+/// review on the day it was written and was found only by a later sweep.
+///
+/// # Why a source scan rather than a behavioural test
+///
+/// Reaching the panic path means panicking a real worker thread mid-compile, and the
+/// value here is preventing the *next* hand-built entry from guessing — which is a
+/// property of the source, not of a run.
+#[test]
+fn no_hand_built_log_entry_hardcodes_its_elapsed_time() {
+    let src = std::fs::read_to_string(
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/worker.rs"),
+    )
+    .expect("worker.rs is readable");
+
+    let offenders: Vec<(usize, String)> = src
+        .lines()
+        .enumerate()
+        .filter(|(_, l)| {
+            let t = l.trim();
+            !t.starts_with("//")
+                && t.starts_with("elapsed_secs:")
+                // A literal is a guess; anything computed is a measurement.
+                && t.trim_end_matches(',')
+                    .trim_start_matches("elapsed_secs:")
+                    .trim()
+                    .parse::<f64>()
+                    .is_ok()
+        })
+        .map(|(i, l)| (i + 1, l.trim().to_owned()))
+        .collect();
+
+    assert!(
+        offenders.is_empty(),
+        "a LogEntry states its elapsed time as a literal, which fabricates when the \
+         event happened. Measure it \u{2014} take an `Instant` at the nearest enclosing \
+         scope and use `elapsed()`:\n  {}",
+        offenders
+            .iter()
+            .map(|(n, l)| format!("worker.rs:{n}: {l}"))
+            .collect::<Vec<_>>()
+            .join("\n  "),
+    );
+
+    // Non-vacuity: the scan reaches real `elapsed_secs` sites, so an empty result
+    // means "none are literals", not "none were looked at".
+    let seen = src
+        .lines()
+        .filter(|l| l.trim().starts_with("elapsed_secs:"))
+        .count();
+    assert!(
+        seen >= 2,
+        "only {seen} elapsed_secs site(s) found; the scan is not reading the file",
+    );
+}
