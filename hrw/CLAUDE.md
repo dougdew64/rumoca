@@ -988,8 +988,8 @@ company.
 **IT IS ALSO THE BENCHMARK FOR ANY MSL-LOADING CHANGE, and that is worth knowing before reaching
 for the gate.** It performs **21 MSL loads** by construction, so a per-load saving shows up 21
 times against very little else — the memo's 48 s was predicted from counters at 49 s and measured
-here at 48 s. The gate cannot do this: it ran **240 s, 287 s and 10,780 s** on 2026-08-21 with no
-source change between them.
+here at 48 s. **The gate cannot do this** — not from variance (**0.7 %**, measured 2026-08-25) but
+because its test step is mostly COMPILATION. `DECISIONS.md` has the numbers and the sleep correction.
 
 **AND IT IS A FIDELITY CHECK, not only a staleness check.** It compares every specimen's committed
 per-stage IR against a fresh compile, so it is the instrument for *"did this change what Rumoca

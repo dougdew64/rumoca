@@ -4195,3 +4195,45 @@ stage states its own absence instead, and the unattributable fact lives in the l
 no response but owns a `done` flag that `handle` sets *after* the call, so a panic skipped it and
 left the live `Playback` waiting on a session that had already ended — the same hang, in the one arm
 that answers nothing. It is signalled on the panic path now.
+
+## 2026-08-25 — what the gate actually costs, measured rather than inferred
+
+**Doug asked why two expensive tests were needed. The premise was wrong, and it was Claude's
+premise.** Three back-to-back runs of the full slow suite on one tree, with one build up front so
+compilation could not confound:
+
+| run | | seconds |
+|---|---|---:|
+| 1 | full suite | 244.98 |
+| 2 | the two corpus tests skipped | 219.51 |
+| 3 | full again | 246.72 |
+
+**The two corpus tests cost ~26 s** — about 10 % of the suite, for six defects found on their first
+runs. The two full runs bracket to within **1.7 s**, so run-to-run variance is **0.7 %**.
+
+**Two of Claude's claims died here.**
+
+- *"The gate tripled because of these tests."* Wrong by an order of magnitude. It came from
+  comparing gate totals across runs with **different diffs and different rebuild amounts** — the
+  third instance that day of quoting a number measured in one context as if it applied in another
+  (the others: the notebook step's cost by subtraction, and an isolated 68 s run passed off as a
+  marginal cost).
+- *"Suite variance is wide."* It was justified by `CLAUDE.md`'s **240 s, 287 s and 10,780 s**
+  line — and **Claude had corrected that same line hours earlier**, recording the 10,780 s as a
+  sleeping machine, then cited the pre-correction version anyway.
+
+**The derived estimate was the reliable one.** *8 specimens compiled only by these tests × 3.4 s per
+compile ≈ 27 s* landed within a second of the measurement, while the directly-observed 68 s figure
+misled — because it was the cost of running one test **alone in a cold process**, where nothing else
+had populated the shared specimen cache.
+
+### Where the gate's time actually goes: rebuilds, not tests
+
+The suite runs in **245 s** when already built. The gate's test step reported **442.7 s** — so
+**~198 s of it is compilation.** The gate builds this crate three times with three different flag
+sets: `clippy --all-targets`, then `cargo test`, then again under `--features notebook-check` for a
+compile-path change. Different fingerprints, three builds.
+
+**So the lever on gate time is the build matrix, not the test list** — and no optimisation should be
+proposed against the test list until that is addressed. Recorded because the obvious move, deleting
+or thinning tests, targets ~26 s and would cost the checks that found six defects in a day.
