@@ -281,7 +281,9 @@ the ledger was built to detect.
 | 08-25 | **HRW plotted a non-finite trajectory in silence.** A simulation can return `Ok` with an infinity in it, and `hrw/src/` contained no finiteness check of any kind — so the pane drew it, `egui_plot`'s bounds did whatever they do, and nothing said why the picture looked wrong | Claude | three probes: the first two died on the solver's projection guard at init, and the third — a singularity independent of any state — got through. **The guard is not "the solver rejects non-finite values"**; it does, in the paths it watches, and an algebraic output is not one |
 | 08-25 | **HRW called the plain simulate entry point while the CLI called the NaN-tracing one**, so on a diverging model the CLI named the offending variable and the learning instrument reported "step size too small" | Claude | reading `rumoca-sim`'s facade while measuring the above. The wrapper's own doc says it is *"intended for scheduled single-model use"* — which is what pressing Run is |
 
-**Thirteen rows, and the pattern differs from every section above: two are defects in Claude's
+| 08-25 | **the panic path's log entry claims `elapsed_secs: 0.0`** — a fabricated timestamp. It is built by hand rather than through `make_log`, because `Worker::spawn` holds no compile clock, so it reports the panic as having happened at t=0 of a compile that had been running | Claude | night 5, item 1, while sweeping the log machinery. **Recorded, not fixed**: a log line's time is a claim, and changing one unattended is what hard rule 6 forbids improvising |
+
+**Fourteen rows, and the pattern differs from every section above: two are defects in Claude's
 REASONING, not in a file.** A wrong cause asserted for a timing anomaly, and a cost derived by
 arithmetic instead of measured — **no checker could have caught either, because neither lived
 anywhere a checker looks.** Doug caught the first; the second was caught only because he asked for

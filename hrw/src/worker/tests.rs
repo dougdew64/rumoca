@@ -6493,3 +6493,74 @@ fn the_capture_site_scanner_finds_what_it_claims() {
         "a comment mentioning the call must not be counted as one",
     );
 }
+
+/// **Every entry's `depth` equals the number of brackets open above it.**
+///
+/// # Why this, when three bracket tests already exist
+///
+/// They check that brackets **name a real phase**, **pair with their own end**, run in
+/// **pipeline order**, and are **timed**. Depth is checked only as `> 0`, for four
+/// phases — so a bug that pinned every entry to depth 1, or let depth drift upward
+/// across a compile, would pass all of them while the log rendered nesting that never
+/// happened.
+///
+/// **Nesting is a claim.** `CLAUDE.md`: *"A log line describes what happened, not what
+/// reads well… Ordering, nesting and attribution are claims, and a claim that reads
+/// nicely is still a claim."* The "DAE pipeline" bracket that named a phase which does
+/// not exist was exactly this failure, invented to give five phases a tidy parent.
+///
+/// # What it would catch that nothing else does
+///
+/// A `LogEntry` built by hand rather than through `make_log` — which is not
+/// hypothetical, since the worker's panic path constructs one directly. Any such site
+/// picks its own `depth`, and picking it wrong is invisible to every other check.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn every_log_entry_is_nested_as_deeply_as_the_brackets_above_it() {
+    let logs = std::sync::Mutex::new(Vec::new());
+    {
+        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+        let path = PathBuf::from(format!(
+            "{}/specimens/SingleInertia.mo",
+            env!("CARGO_MANIFEST_DIR")
+        ));
+        w.compile(&path, &|msg: FromWorker| {
+            if let FromWorker::Log(entry) = msg {
+                logs.lock().unwrap().push(entry);
+            }
+        });
+    }
+    let logs = logs.into_inner().unwrap();
+    assert!(logs.len() > 20, "only {} log entries", logs.len());
+
+    // Depth derived from the message stream alone, independently of the counter the
+    // worker threads through the compile.
+    let mut open = 0usize;
+    for (i, entry) in logs.iter().enumerate() {
+        if matches!(entry.level, LogLevel::StageEnd) {
+            open = open.checked_sub(1).unwrap_or_else(|| {
+                panic!(
+                    "entry {i} closes a bracket that was never opened: {:?}",
+                    entry.message
+                )
+            });
+        }
+        assert_eq!(
+            entry.depth as usize, open,
+            "entry {i} ({:?}, {:?}) reports depth {} but {} bracket(s) are open above \
+             it. The log renders nesting that did not happen.",
+            entry.level, entry.message, entry.depth, open,
+        );
+        if matches!(entry.level, LogLevel::StageStart) {
+            open += 1;
+        }
+    }
+    assert_eq!(
+        open, 0,
+        "the compile ended with {open} bracket(s) still open, so every later entry in \
+         this session renders inside a phase that had finished",
+    );
+}
