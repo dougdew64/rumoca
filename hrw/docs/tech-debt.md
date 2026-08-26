@@ -278,7 +278,10 @@ the ledger was built to detect.
 | 08-25 | **Instantiate and Typecheck rendered blank tabs** when parse produced no model — `let mut instantiate = Stage::default()` was never written to on that path, so two stages said nothing while every other stage in the compile explained itself | toolchain | `the_not_reached_tail_is_contiguous_and_agrees_on_its_cause` on its first run, naming `UnclosedModel` |
 | 08-25 | **the notebook check does not compare manifest NOTES** — only stage IR files and the roster. `UnclosedModel`'s committed resolve note stayed pre-C20 through a green 109.9 s notebook run, and surfaced only when an unrelated fix forced a regeneration | Claude | reading a regeneration diff. A stage's note is a claim about the model; nothing checks that the committed one still matches |
 
-**Eleven rows, and the pattern differs from every section above: two are defects in Claude's
+| 08-25 | **HRW plotted a non-finite trajectory in silence.** A simulation can return `Ok` with an infinity in it, and `hrw/src/` contained no finiteness check of any kind — so the pane drew it, `egui_plot`'s bounds did whatever they do, and nothing said why the picture looked wrong | Claude | three probes: the first two died on the solver's projection guard at init, and the third — a singularity independent of any state — got through. **The guard is not "the solver rejects non-finite values"**; it does, in the paths it watches, and an algebraic output is not one |
+| 08-25 | **HRW called the plain simulate entry point while the CLI called the NaN-tracing one**, so on a diverging model the CLI named the offending variable and the learning instrument reported "step size too small" | Claude | reading `rumoca-sim`'s facade while measuring the above. The wrapper's own doc says it is *"intended for scheduled single-model use"* — which is what pressing Run is |
+
+**Thirteen rows, and the pattern differs from every section above: two are defects in Claude's
 REASONING, not in a file.** A wrong cause asserted for a timing anomaly, and a cost derived by
 arithmetic instead of measured — **no checker could have caught either, because neither lived
 anywhere a checker looks.** Doug caught the first; the second was caught only because he asked for
@@ -2161,7 +2164,8 @@ one was unreachable.
 
 **What the sweep did NOT cover, stated so the null is not read too widely:** only `Stage`
 construction. The log and bracket machinery, the source-root memo, `OutputCapture` and the simulate
-path were not audited. **Simulation trajectories are the live version of NULL 2's question** — they
-carry computed `f64`s that genuinely can go non-finite when an integration diverges — but they
-travel through `SimData`, not `Stage` JSON, so they are a question for the plot path and were not
-examined here.
+path were not audited. **Simulation trajectories were the live version of NULL 2's question, and the answer
+came back positive on 2026-08-25.** They carry computed `f64`s, they travel through `SimData`
+rather than `Stage` JSON, and a three-equation model proved a successful run can carry an infinity.
+`SimData::non_finite_series` and the pane warning above the plot are the result — so unlike NULL 2,
+this one was reachable and is now reported.

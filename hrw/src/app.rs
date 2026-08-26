@@ -3267,6 +3267,27 @@ impl App {
         ui.separator();
         match &self.sim_data {
             Some(data) => {
+                // **A trajectory HRW cannot faithfully draw is reported, not quietly
+                // rendered** (2026-08-25). A simulation can succeed and still contain
+                // an infinity: the solver's finiteness guards watch states and the
+                // projection path, and an algebraic output that goes singular mid-run
+                // is neither. Measured with a three-equation model, and until this
+                // line existed the pane drew it in silence.
+                let non_finite = data.non_finite_series();
+                if !non_finite.is_empty() {
+                    let listed: Vec<String> = non_finite
+                        .iter()
+                        .map(|(name, n)| format!("{name} ({n})"))
+                        .collect();
+                    ui.colored_label(
+                        ui.visuals().error_fg_color,
+                        format!(
+                            "\u{26a0} non-finite values in: {} \u{2014} the solver returned \
+                             these, so the curve below is not the whole trajectory",
+                            listed.join(", "),
+                        ),
+                    );
+                }
                 let has_diagnostics = !data.solver_steps.is_empty();
                 let link_group = ui.id().with("sim_time_axis");
 

@@ -199,6 +199,45 @@ pub struct SimData {
     pub solver_steps: Vec<rumoca_solver::SolverStepRecord>,
 }
 
+impl SimData {
+    /// Variables carrying a non-finite value, with how many samples are affected.
+    ///
+    /// # Why this exists: a successful simulation can contain an infinity
+    ///
+    /// **Measured 2026-08-25, after two probes that failed to reproduce it.** The
+    /// solver's finiteness guards live in `rumoca-solver`'s *projection* path, so
+    /// they catch a non-finite value at initialization and in constrained systems —
+    /// both earlier probes died there. But an ordinary algebraic **output** that goes
+    /// singular mid-run is not watched by anything: the integrator's error control
+    /// follows states, and an output is not a state. A three-equation model whose
+    /// output divides by zero at `t = 0.5` returned **`Ok`** with one infinity in its
+    /// series.
+    ///
+    /// **Until this existed, HRW plotted that silently.** `hrw/src/` contained no
+    /// finiteness check of any kind, so the pane drew an infinity, `egui_plot`'s
+    /// auto-bounds did whatever they do with one, and nothing said why the picture
+    /// looked wrong. That is the absence rule pointed at the plot: a trajectory HRW
+    /// cannot faithfully draw must be *reported*, not quietly rendered.
+    ///
+    /// # Why it is data rather than a check inside the painter
+    ///
+    /// `CLAUDE.md` requires computation to move **out** of the paint path into
+    /// checkable data when these files are touched — the painter is one of the two
+    /// surfaces `egui_kittest` cannot reach, and Doug edits it. A `Vec` a test can
+    /// read is the difference between a guard that is verified and one that is hoped
+    /// for.
+    pub fn non_finite_series(&self) -> Vec<(String, usize)> {
+        self.names
+            .iter()
+            .zip(self.data.iter())
+            .filter_map(|(name, series)| {
+                let n = series.iter().filter(|v| !v.is_finite()).count();
+                (n > 0).then(|| (name.clone(), n))
+            })
+            .collect()
+    }
+}
+
 /// Split a plotted trajectory into contiguous segments, breaking it where the
 /// value **jumps discontinuously** — a state reinitialized at an event (the ball's
 /// velocity flips at a bounce). Returns half-open index ranges into `values`;
@@ -1887,11 +1926,65 @@ impl WorkerState {
             t_end,
             ..Default::default()
         };
-        let res = rumoca_sim::simulate_solve_model(&sm, &opts).map_err(|e| {
-            drain_traces(&log);
-            log(LogLevel::Error, format!("simulation failed: {e}"));
-            format!("simulation failed: {e}")
-        })?;
+        // **On a failure that smells non-finite, name the variable — 2026-08-25.**
+        //
+        // `rumoca`'s CLI calls `simulate_with_diagnostics_auto_nan_trace`, which
+        // re-runs with NaN tracing so the offending model variable is reported,
+        // *"turning an opaque 'step size too small' into an actionable diagnostic"*.
+        // HRW called the plain entry point and got the opaque half — so the learning
+        // instrument had the worse diagnostic of the two. This is that pattern, not
+        // that function: the diagnostics wrappers take a `&Dae` and HRW simulates a
+        // lowered `SolveModel`, but `nan_trace` is publicly re-exported and the retry
+        // is four lines.
+        //
+        // **The capture is what makes it useful.** `nan_trace` reports through
+        // `eprintln!`, and unlike `compile_target` this function holds no
+        // `OutputCapture` — so without one the trace lands in a terminal Doug is not
+        // watching. It is started only for the retry, which happens only on a failure
+        // already headed for the error path.
+        let res = match rumoca_sim::simulate_solve_model(&sm, &opts) {
+            Ok(res) => res,
+            Err(e) => {
+                let msg = format!("{e}");
+                if !rumoca_sim::nan_trace::nan_trace_enabled()
+                    && rumoca_sim::nan_trace::error_suggests_nonfinite(&msg)
+                {
+                    log(
+                        LogLevel::Info,
+                        "the error suggests a non-finite value \u{2014} re-running with \
+                         NaN tracing to name the variable"
+                            .to_owned(),
+                    );
+                    let mut capture = OutputCapture::start();
+                    rumoca_sim::nan_trace::set_nan_trace(true);
+                    let _ = rumoca_sim::simulate_solve_model(&sm, &opts);
+                    rumoca_sim::nan_trace::set_nan_trace(false);
+                    match capture.as_mut() {
+                        Some(cap) => {
+                            let (out, err) = cap.drain();
+                            for line in out.lines().chain(err.lines()) {
+                                if !line.is_empty() {
+                                    log(LogLevel::Stderr, line.to_owned());
+                                }
+                            }
+                        }
+                        // Stating the absence rather than losing the trace quietly:
+                        // without a capture the report went somewhere Doug cannot see,
+                        // and a silent nothing here reads as "the trace found nothing".
+                        None => log(
+                            LogLevel::Info,
+                            "stderr could not be captured, so the NaN trace went to the \
+                             terminal rather than this log"
+                                .to_owned(),
+                        ),
+                    }
+                    drop(capture);
+                }
+                drain_traces(&log);
+                log(LogLevel::Error, format!("simulation failed: {msg}"));
+                return Err(format!("simulation failed: {msg}"));
+            }
+        };
         drain_traces(&log);
         log(
             LogLevel::StageEnd,

@@ -6295,3 +6295,53 @@ fn the_not_reached_tail_is_contiguous_and_agrees_on_its_cause() {
         violations.join("\n  "),
     );
 }
+
+/// **A successful simulation can contain an infinity, and it must be reported.**
+///
+/// # The measurement behind this test
+///
+/// Two probes failed to reproduce it before the third succeeded, and the failures
+/// say where the solver's guards actually live. A model infinite at `t = 0` is
+/// caught by `rumoca-solver`'s projection guard at initialization; a state crossing
+/// zero mid-run also died at init, on an unrelated tolerance stall. What got through
+/// was a singularity **independent of any state** — `y = 1 / (time - 0.5)` — because
+/// the integrator's error control follows states, and an algebraic output is not
+/// one. That returned `Ok` with exactly one non-finite sample.
+///
+/// So the guard cannot be *"the solver rejects non-finite values"*. It does, in the
+/// paths it watches, and this is the path it does not.
+#[test]
+fn a_simulation_that_succeeded_still_reports_its_non_finite_values() {
+    let finite = SimData {
+        times: vec![0.0, 0.5, 1.0],
+        names: vec!["x".into(), "y".into()],
+        data: vec![vec![1.0, 0.5, 0.0], vec![-2.0, -4.0, 2.0]],
+        n_states: 1,
+        has_discontinuities: false,
+        solver_steps: Vec::new(),
+    };
+    assert!(
+        finite.non_finite_series().is_empty(),
+        "a healthy run must not be accused of anything",
+    );
+
+    // The shape the probe actually produced: one output, one bad sample.
+    let mut probed = finite.clone();
+    probed.data[1][1] = f64::INFINITY;
+    assert_eq!(
+        probed.non_finite_series(),
+        vec![("y".to_owned(), 1)],
+        "the offending series must be named, with how many samples are affected",
+    );
+
+    // NaN counts too, and a state is no more exempt than an output.
+    let mut both = finite.clone();
+    both.data[0][2] = f64::NAN;
+    both.data[1][0] = f64::NEG_INFINITY;
+    both.data[1][2] = f64::NAN;
+    assert_eq!(
+        both.non_finite_series(),
+        vec![("x".to_owned(), 1), ("y".to_owned(), 2)],
+        "every affected series is listed, in the order the model declares them",
+    );
+}
