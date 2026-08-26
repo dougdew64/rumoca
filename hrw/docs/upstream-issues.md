@@ -131,11 +131,21 @@ and working models pays it repeatedly, and one that does not may never pay it at
 test suite carrying a handful of deliberately-broken specimens the total is single-digit
 seconds; for an IDE with a file open that does not resolve, it would be every compile.
 
-**A hypothesis this measurement killed, recorded so it is not re-proposed:** HRW's log tests
-cost 13.7 s in isolation and 79.3 s inside the full suite, and this workaround was the
-leading explanation for that gap. At 1.95 s per occurrence it cannot be — the arithmetic is
-an order of magnitude short. The in-suite cost of a compile is dominated by something else,
-still unidentified.
+**A hypothesis this measurement killed — and then the hypothesis' PREMISE died too.** The
+workaround was proposed as the explanation for HRW's log tests appearing to cost 13.7 s in
+isolation and 79.3 s inside the full suite. At 1.95 s per occurrence it could not be: the
+arithmetic was an order of magnitude short.
+
+**Then the 79.3 s turned out not to be real.** It was `299.49 − 220.18`, and the 299.49 s
+was a single anomalous suite run; repeated runs give 250.84 s and 253.32 s against a
+245 s baseline. A controlled probe settled the underlying question directly — the *same*
+compile, run first and last in one process, costs **2.63 s and 2.65 s**. **Compiles do not
+degrade as a session ages**, which retires the whole family of "the session accumulates
+something" theories.
+
+**None of that touches the 1.95 s**, which was measured with a counter around the work
+itself rather than inferred from a difference of totals. It is recorded here because the
+distinction is the point: the number that survived is the one that was measured directly.
 
 ### Workaround in HRW
 
