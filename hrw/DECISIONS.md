@@ -4227,13 +4227,40 @@ compile ≈ 27 s* landed within a second of the measurement, while the directly-
 misled — because it was the cost of running one test **alone in a cold process**, where nothing else
 had populated the shared specimen cache.
 
-### Where the gate's time actually goes: rebuilds, not tests
+### Where the gate's time actually goes: specimen compiles, and it was already written down
 
-The suite runs in **245 s** when already built. The gate's test step reported **442.7 s** — so
-**~198 s of it is compilation.** The gate builds this crate three times with three different flag
-sets: `clippy --all-targets`, then `cargo test`, then again under `--features notebook-check` for a
-compile-path change. Different fingerprints, three builds.
+**This section replaces a wrong answer, and the wrongness is the useful part.** Claude first claimed
+~198 s of the gate's test step was COMPILATION and that "the lever is the build matrix, not the test
+list", with a tidy mechanism attached: cargo fingerprints per feature set, so HRW is built four
+separate times. The mechanism is real. **The cost is not.** Measured after one genuine edit:
 
-**So the lever on gate time is the build matrix, not the test list** — and no optimisation should be
-proposed against the test list until that is addressed. Recorded because the obvious move, deleting
-or thinning tests, targets ~26 s and would cost the checks that found six defects in a day.
+| variant | rebuild |
+|---|---:|
+| default features (the generators) | 9.0 s |
+| `clippy --all-targets` | 13.6 s |
+| test harness, `slow-tests` | 15.0 s |
+| test harness, `notebook-check` | 14.4 s |
+| the gate's actual build command | **23.7 s** |
+
+**Nothing in the gate is dominated by building HRW.** The gate's test step, run verbatim after a
+real invalidation, is **268 s** — 245 s of harness time and ~23 s of build.
+
+**The 442.7 s that started the whole investigation was a single anomalous sample**, and three
+successive explanations were constructed on top of it before anyone re-ran it.
+
+**And the answer was already in `CLAUDE.md`.** `docs/ideas.md` #48, measured 2026-08-21: *"72
+compiles at ~3.4 s and 10 MSL loads at ~4.4 s are 92 % of the run."* 72 x 3.4 = 245 s, which is the
+suite time to within a second. **The gate costs what it costs because every specimen compile
+re-resolves the whole MSL** — a two-equation specimen costs 3.4 s and the same file with no MSL
+loaded costs 0.03 s.
+
+**So there is no new lever here, and #48 already names the real one.** The five levers it rules out
+by measurement stay ruled out. What this episode adds is only a correction: **do not go looking for
+gate time in the build.**
+
+**The transferable lesson is about method, not cargo.** Four confident explanations were offered in
+one exchange — the tests are expensive, the variance is wide, the build matrix is the lever, the
+feature fingerprinting is the mechanism — and measurement killed all four. Each was reasoned from
+real facts and each rested on a number never checked against the case at hand. **The answer was in
+the mandatory reading path the entire time.** Read the instrument before explaining it, and check
+whether the question already has a recorded answer before deriving one.
