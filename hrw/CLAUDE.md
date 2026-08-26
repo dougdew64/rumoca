@@ -892,11 +892,11 @@ present. **Switching feature sets is not why**: measured at 1–2 s, cargo keeps
 
 **ANNOUNCE THE COST BEFORE PAYING IT.** Before any command expected to exceed ~60 s, say what
 it is and roughly what it costs, so Doug can redirect *before* the wait rather than discover it.
-**This is the only item here that addresses cause rather than symptom**, because nothing else in
-Claude's loop has a clock: correctness in this repository has must-fire, non-vacuity guards,
-ratchets and a dozen checkers, and elapsed time has no mechanism whatever. Doug feels the cost
-and cannot see what is about to run; Claude can see it and does not feel it — the same asymmetry
-this file already records for the permission allowlist.
+**Elapsed time had no mechanism until 2026-08-26**, when five timing claims died in one day —
+each a lone sample quoted as fact, or one total subtracted from another taken under different
+conditions. **`cargo run -p hrw --example measure -- <cargo args>`** repeats a command and prints
+a figure carrying its provenance; `--versus` interleaves two commands so drift cannot pass for a
+difference. **Do not quote a timing it did not produce, and never subtract two that it did.**
 
 **AND THE LAST STEP BEFORE PUSHING IS THE HANDOFF — Claude does this unprompted** *(added
 2026-08-19, after Doug had to ask three times)*.

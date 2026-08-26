@@ -100,6 +100,7 @@ pub mod tarjan_anim;
 pub mod tearing_anim;
 #[cfg(test)]
 pub mod test_support;
+pub mod timing;
 pub mod tour;
 pub mod tour_panel;
 pub mod tree;
