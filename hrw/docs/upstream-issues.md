@@ -51,10 +51,57 @@ scrolling, deterministic start, nothing needing a second read.
 
 ---
 
-## 1. `Session::remove_document` leaves a stale resolve failure in the resolved-state cache
+## 1. WITHDRAWN — not a Rumoca defect. It was HRW leaving documents in the session
 
-**Severity:** high for any multi-document consumer. A model that resolves cleanly can be
-reported as failing, **with a different file's error**.
+**Status: withdrawn 2026-08-26, before filing.** Everything below is kept because the
+reasoning is worth more than the conclusion was, and because a future recurrence should be
+recognisable. **Do not file this.**
+
+### What it actually was
+
+**HRW was not removing the previous specimen's document.** Until 2026-08-21 it registered
+each specimen and left it in the session, so by the third compile of the reproduction below
+`UndefinedRef.mo` was **still there**. A `Session` resolves every document it holds, not
+only the one the caller asked about — so it found the unresolved reference, and reported it.
+**Rumoca was right.** The error did not survive a removal; the removal never happened.
+
+The real fix landed on 2026-08-21 for unrelated reasons, recorded as *"the session holds at
+most one specimen document"*. Nobody noticed it was a fix, because
+`a_broken_specimen_does_not_poison_the_next_compile` passed on both sides of it: before, via
+the workaround; after, because the defect was gone. **A mitigation and a fix produce
+identical green**, which is how the workaround outlived its reason for five days.
+
+### The evidence, from `examples/repro_stale_resolve`
+
+| consumer shape | step 3 |
+|---|---|
+| removes the previous document (HRW today) | **clean** — in all four entry-point x scale combinations |
+| leaves it in (HRW before 2026-08-21) | **fails with the other file's error** |
+
+The four combinations are `resolved()` and `strict_compile_resolved()`, each with two tiny
+models in a bare session and with the whole MSL plus the specimens this issue named. **The
+sequence documented below does not reproduce today**, which is why it must not be filed:
+a maintainer following it would find nothing, and `upstream-strategy.md` stakes Doug's
+credibility on reports that are reproducible.
+
+### What is inferred rather than proven
+
+**That the 2026-07-29 observation had this cause.** History cannot be re-run. What is
+established is that the documented sequence does not reproduce today, that the one shape
+which does is fully explained without any Rumoca defect, and that HRW's code changed in
+exactly the relevant way in between. Strong circumstantial agreement, not a proof.
+
+**Two innocent suspects were named below** — the `query_state.resolved.builds` cache read
+and `restore_detached_source_root_document`. Both were marked unverified, which is the
+convention that stopped this from becoming a wrong accusation in public. It is the clearest
+worked example this repository has of why that convention exists.
+
+---
+
+### The original write-up, preserved
+
+**Severity as originally assessed:** high for any multi-document consumer. A model that
+resolves cleanly can be reported as failing, **with a different file's error**.
 
 **Found:** 2026-07-29, auditing HRW's front-end failure payloads.
 

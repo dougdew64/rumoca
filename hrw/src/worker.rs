@@ -1131,41 +1131,6 @@ pub enum FromWorker {
     },
 }
 
-/// How often the stale-resolved-state workaround has rebuilt the session, and how
-/// long those rebuilds cost.
-///
-/// # Why this is counted rather than estimated
-///
-/// `upstream-issues.md` #1 records that `Session::remove_document` leaves a stale
-/// resolve failure in Rumoca's resolved-state cache, so a good model compiled after a
-/// broken one reports the **broken one's error, byte-identical**. The only mechanism
-/// measured to clear it is rebuilding the session — which reloads every library root.
-///
-/// The issue is written up with a reproduction but **no cost**, and a maintainer
-/// ranks work by cost. Counting here turns *"it also costs us some reloads"* into a
-/// number. Added 2026-08-26, after the seven log tests were found to cost **13.7 s in
-/// isolation and 79.3 s in the full suite** — a compile is several times more
-/// expensive when other tests have run before it, and this workaround is the leading
-/// candidate for why.
-///
-/// **Relaxed ordering is right here**: these are counters read once at the end of a
-/// test, never used to synchronise anything.
-static STALE_CACHE_REBUILDS: std::sync::atomic::AtomicUsize =
-    std::sync::atomic::AtomicUsize::new(0);
-/// Nanoseconds spent in the rebuilds counted by [`STALE_CACHE_REBUILDS`].
-static STALE_CACHE_REBUILD_NANOS: std::sync::atomic::AtomicU64 =
-    std::sync::atomic::AtomicU64::new(0);
-
-/// How many session rebuilds the stale-cache workaround has performed, and their
-/// total cost. See [`STALE_CACHE_REBUILDS`].
-pub fn stale_cache_rebuild_stats() -> (usize, std::time::Duration) {
-    use std::sync::atomic::Ordering;
-    (
-        STALE_CACHE_REBUILDS.load(Ordering::Relaxed),
-        std::time::Duration::from_nanos(STALE_CACHE_REBUILD_NANOS.load(Ordering::Relaxed)),
-    )
-}
-
 /// What a request must be answered with if handling it panics.
 ///
 /// **Decided from `&ToWorker` before `handle` consumes it**, which is the whole
@@ -1446,35 +1411,33 @@ pub struct WorkerState {
     /// specimen. Each `compile()` call updates the specimen's document in the
     /// session and re-resolves incrementally.
     session: Session,
-    /// URI of the specimen document added by the previous compile, and whether that
-    /// compile failed to resolve.
+    /// URI of the specimen document added by the previous compile, so it can be dropped
+    /// before the next one is registered.
     ///
-    /// **Guards against one broken specimen poisoning every later compile.** Name
-    /// resolution runs over the *whole session*, not just the requested model, so a
-    /// previously-loaded specimen with an unresolved reference makes a perfectly good
-    /// model report that other file's error.
+    /// **This is the whole fix for one broken specimen poisoning every later compile**,
+    /// and it is one line. Name resolution runs over the *whole session*, not just the
+    /// requested model, so a specimen left behind with an unresolved reference makes a
+    /// perfectly good model report that other file's error.
     ///
-    /// Verified 2026-07-29 with a fresh session and the MSL loaded: `CapacitorLoop`
-    /// resolved clean; then `UndefinedRef`; then `CapacitorLoop` again — and the third
-    /// compile reported `unresolved component reference: 'missingGain'`, a name that
-    /// appears **only** in `UndefinedRef.mo`. Byte-identical error to the second run.
+    /// Observed 2026-07-29 with the MSL loaded: `CapacitorLoop` clean, then
+    /// `UndefinedRef`, then `CapacitorLoop` again — and the third compile reported
+    /// `unresolved component reference: 'missingGain'`, a name appearing **only** in
+    /// `UndefinedRef.mo`.
     ///
-    /// **`remove_document` does not clear it**, even though
-    /// `apply_document_removal_at_revision` calls
-    /// `invalidate_resolved_state(CacheInvalidationCause::DocumentRemoval)`. Rebuilding
-    /// the session does. The root cause is inside Rumoca's resolved-state cache and is
-    /// logged as an upstream issue rather than guessed at; see `docs/upstream-issues.md`
-    /// **#1**, which also carries the measured cost. *(This said `ideas.md` #45 until
-    /// 2026-08-26 — a citation that resolves to a real section about something else
-    /// entirely, which is why `qualified_citations_resolve` could not catch it.)*
+    /// # It was read as a Rumoca cache bug for three weeks, and was not
     ///
-    /// So the mitigation is the mechanism that was *measured* to work: rebuild the
-    /// session, and only after a compile that actually failed to resolve. A clean
-    /// specimen cannot poison anything, so the reparse cost is paid exactly when it
-    /// buys something.
+    /// The diagnosis was that a stale failure survived `remove_document`, logged as
+    /// `docs/upstream-issues.md` #1, and mitigated by rebuilding the entire session —
+    /// reloading every MSL root, at 1.95 s a time. **Both were wrong.** HRW was not
+    /// removing the previous document at all, so the broken one was still in the
+    /// session and Rumoca was reporting it correctly.
+    ///
+    /// The removal below landed 2026-08-21 for unrelated reasons and silently fixed it.
+    /// The rebuild ran for five more days clearing state nothing created, because
+    /// `a_broken_specimen_does_not_poison_the_next_compile` passed either way: **a
+    /// mitigation and a fix produce identical green.** Withdrawn and removed 2026-08-26;
+    /// `examples/repro_stale_resolve` is the evidence and would catch a recurrence.
     last_specimen_uri: Option<String>,
-    /// Whether the previous compile failed at resolve — see `last_specimen_uri`.
-    last_resolve_failed: bool,
     /// Library roots currently loaded, so a specimen compile knows they're ready.
     libraries: Vec<PathBuf>,
     /// Guard for the thread-local tracing subscriber. This is an RAII guard —
@@ -1708,7 +1671,6 @@ impl WorkerState {
         WorkerState {
             session: Session::new(SessionConfig::default()),
             last_specimen_uri: None,
-            last_resolve_failed: false,
             libraries: Vec::new(),
             tracing_guard: None,
         }
@@ -2160,10 +2122,8 @@ impl WorkerState {
             );
         }
         self.session = session;
-        // A fresh session holds no specimen document and no stale resolved state, so
-        // both trackers reset with it.
+        // A fresh session holds no specimen document, so the tracker resets with it.
         self.last_specimen_uri = None;
-        self.last_resolve_failed = false;
         self.libraries = roots;
         Ok(total)
     }
@@ -2643,43 +2603,30 @@ impl WorkerState {
         // definitions in the class tree.
         log(LogLevel::StageStart, "Resolve".to_owned());
         let t_stage = Instant::now();
-        // A previous compile that failed to resolve leaves errors in the session's
-        // resolved-state cache that `remove_document` does not clear, so a good model
-        // compiled next reports the *broken* one's error. Rebuilding the session is the
-        // only mechanism measured to clear it. See `last_specimen_uri` for the
-        // reproduction and the upstream note.
+        // **The session rebuild that used to sit here is gone — 2026-08-26.**
         //
-        // Guarded on the previous compile having actually failed: a clean specimen
-        // poisons nothing, so the MSL reparse is paid only when it buys correctness.
+        // It rebuilt the whole `Session` and reloaded every MSL root whenever the
+        // previous compile had failed to resolve, on the belief that a stale failure
+        // survived `remove_document` — `upstream-issues.md` #1, now withdrawn.
+        //
+        // **There was no stale failure.** HRW was not removing the previous specimen's
+        // document at all, so the broken one was still in the session; a `Session`
+        // resolves every document it holds, found the unresolved reference, and
+        // reported it correctly. The fix is the removal immediately below, added
+        // 2026-08-21 for unrelated reasons. `examples/repro_stale_resolve` shows both
+        // shapes: with the removal it is clean in four configurations, without it the
+        // symptom appears at once.
+        //
+        // **Nothing noticed for five days**, because `a_broken_specimen_does_not_poison
+        // _the_next_compile` passed on both sides of that change — via the workaround
+        // before, and because the defect was gone after. A mitigation and a fix produce
+        // identical green.
+        //
         // **Only a specimen is registered.** A library model's document is
         // already in a durable source root; adding it as a workspace document
         // would have the session hold the same file twice, and removing it later
         // would evict part of the library.
         if given_qualified.is_none() {
-            if self.last_resolve_failed && self.last_specimen_uri.as_deref() != Some(uri.as_str()) {
-                let roots = self.libraries.clone();
-                log(
-                    LogLevel::Info,
-                    "rebuilding session (previous specimen failed to resolve)".to_owned(),
-                );
-                // Counted and timed: see `STALE_CACHE_REBUILDS`. This is the cost
-                // `upstream-issues.md` #1 imposes on every compile that follows a
-                // resolve failure, and the issue needs a number rather than an
-                // adjective.
-                let rebuild_started = std::time::Instant::now();
-                let rebuild_result = self.load_libraries(roots);
-                {
-                    use std::sync::atomic::Ordering;
-                    STALE_CACHE_REBUILDS.fetch_add(1, Ordering::Relaxed);
-                    STALE_CACHE_REBUILD_NANOS.fetch_add(
-                        rebuild_started.elapsed().as_nanos() as u64,
-                        Ordering::Relaxed,
-                    );
-                }
-                if let Err(e) = rebuild_result {
-                    log(LogLevel::Warn, format!("session rebuild failed: {e}"));
-                }
-            }
             if let Some(prev) = self.last_specimen_uri.take()
                 && prev != uri
             {
@@ -2894,12 +2841,6 @@ impl WorkerState {
                 ..Default::default()
             },
         });
-
-        // Remember a resolve failure so the *next* compile rebuilds the session before
-        // trusting it — see `last_resolve_failed`. Set here rather than inside the match
-        // above so a recovered-from-cache resolve still counts as failed: the session's
-        // resolved state is poisoned either way.
-        self.last_resolve_failed = resolve.note_is_error();
 
         // =====================================================================
         // Stages 5-11: Flatten → DAE construction → Solve lowering
