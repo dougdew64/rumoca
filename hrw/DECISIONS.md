@@ -4333,3 +4333,43 @@ difference.
 present tree, and the single 198 s / 200.5 s gate steps recorded after its removal, were all
 sequential single or few samples across differing conditions. None supports a claim about what the
 workaround cost.
+
+## 2026-08-26 — a deliberate session reset makes compiles SLOWER. Do not re-propose it
+
+**Measured, then removed.** Item 3 had left open whether the withdrawn stale-resolve
+workaround was accidentally buying performance by shedding accumulated resolved state — the
+suite had appeared *faster* with it than without, which cannot be true as stated. Doug asked
+for a deliberate reset if it would help. It does not.
+
+| arm | per compile | spread |
+|---|---:|---|
+| no reset | **1.8 s** | 3.2 % |
+| reset every 2 compiles | **2.2 s** | 2.3 % |
+
+**−0.40 s per compile against a 0.07 s noise band** — roughly six times the noise, both arms
+stable. Rebuilding costs more than the state it sheds is worth. **The earlier "removal made
+the suite slower" was drift**, as suspected, so removing the workaround cost nothing.
+
+### The technique, which is the transferable part
+
+**Two code states cannot be compared by measuring them ten minutes apart**, and
+`examples/measure --versus` interleaves two *commands*, not two code states. The way through
+was to put both behaviours in **one binary** behind a runtime knob, then alternate them
+batch by batch **inside a single process** — A B A B A B. Drift then hits both arms equally,
+and what survives is the effect.
+
+Every clean comparison this day produced used that shape; every confused one compared runs
+taken at different times. **When an A/B is between code states, make them one binary first.**
+
+### Why the knob is not in the tree
+
+It answered its question and `CLAUDE.md` is explicit: *a probe lives in the working tree
+until it earns permanence.* Shipping a dormant knob would leave a reader wondering whether
+to turn it on. The answer is no, and it belongs here rather than in dead code.
+
+**A fidelity check was run before any of this, because it could have vetoed the idea
+outright.** Doug declined `ideas.md` lever B on the ground that DefIds are observable in the
+pane and in every committed trace. Compiling `Drivetrain`, rebuilding the session, and
+compiling again yields **byte-identical DefId keys and names** — lever B renumbered because
+it compiled in a *bare* session, and reloading the same MSL is deterministic. **That ruling
+does not reach session rebuilds**, which is worth knowing independently of this result.
