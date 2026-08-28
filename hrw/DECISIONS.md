@@ -4288,3 +4288,48 @@ from `run_stage!`'s close, which leaves the name intact and only the timing miss
 **This is the must-fire rule's own blind spot.** The rule says silence must be a failure, never a
 pass. It does not say *whose* failure — and in a codebase with layered guards, the outermost one
 answers first and looks like the answer.
+
+## 2026-08-26 — what removing the stale-resolve workaround cost: INCONCLUSIVE, and why
+
+**The measurement came back backwards, which is more useful than a number would have been.**
+
+| state | median of 3 | spread |
+|---|---:|---|
+| workaround **removed** | 200.8 s | 10.6 % |
+| workaround **restored** | **164.7 s** | 7.5 % |
+
+The suite is **faster with the workaround than without it.** Removing work cannot make a suite
+slower, so one of two things is true and this measurement cannot say which.
+
+**Drift.** The two states were measured *sequentially*, ten minutes apart. `examples/measure`
+interleaves with `--versus` precisely to stop that — but `--versus` compares two **commands**, and
+these are two **code states**, which it cannot alternate. So the fallback was the exact method the
+tool was built to replace, used within hours of building it.
+
+**Or a real effect.** The workaround rebuilt the `Session` after a resolve failure, giving a *fresh*
+one with no accumulated resolved state. That could genuinely make later compiles cheaper — meaning
+the rebuild was buying performance while its stated purpose was correctness, and removing it left a
+heavier session behind.
+
+**Neither is asserted.** Distinguishing them needs runs that alternate code states, which nothing
+here can do today.
+
+### What this does not change
+
+**The removal was correct on its own terms** — the workaround cleared state that nothing creates.
+If the performance effect turns out to be real, the answer is a **deliberate** session reset with a
+stated reason and a measured benefit, not the reinstatement of a mitigation for a bug that does not
+exist. *(`upstream-issues.md` #1, withdrawn.)*
+
+### The tool's limitation, recorded where it will be found
+
+`measure --versus` controls for **when**, between two commands. It has **no way to compare two code
+states**, and doing so sequentially reproduces the confound it exists to remove. A future version
+could take two git revisions and alternate them; until it does, **a code-state A/B is not something
+this tool can make trustworthy**, and any such comparison should say so rather than quote a
+difference.
+
+**Earlier readings that this retires:** the ~250 s suite times recorded against the workaround-
+present tree, and the single 198 s / 200.5 s gate steps recorded after its removal, were all
+sequential single or few samples across differing conditions. None supports a claim about what the
+workaround cost.
