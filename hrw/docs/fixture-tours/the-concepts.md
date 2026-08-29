@@ -17,23 +17,33 @@ with a named algorithm and a textbook behind it.
 
 ## The route
 
-**Each row opens the tour in HRW.** The file links are for reading outside it.
+**Each entry opens the tour in HRW.** The file links are for reading outside it.
 
-| # | tour | the question | specimens |
-|---|---|---|---|
-| 1 | [▶ connect-expansion](hrw://tour/connect-expansion) · [file](connect-expansion.md) | What does `connect` mean? | `RcCircuit`, `TwoLoops` |
-| 2 | [▶ dae-construction](hrw://tour/dae-construction) · [file](dae-construction.md) | What is a well-posed system? | `SingleInertia`, `UnbalancedShaft` |
-| 3 | [▶ matching](hrw://tour/matching) · [file](matching.md) | Which equation solves which unknown? | `BouncingBall`, `ProportionalLoop`, `CapacitorLoop` |
-| 3a | [▶ matching-live](hrw://tour/matching-live) · [file](matching-live.md) | *(debugger)* what does the search look like from inside? | `ProportionalLoop`, `TwiceDefined` |
-| 4 | [▶ blt-ordering](hrw://tour/blt-ordering) · [file](blt-ordering.md) | In what order can they be solved? | `RcCircuit`, `ProportionalLoop`, `TwoLoops` |
-| 5 | [▶ tearing](hrw://tour/tearing) · [file](tearing.md) | How do you solve a block that has no order? | `ProportionalLoop`, `TwoLoops`, `MixedLoop` |
-| 6 | [▶ index-reduction](hrw://tour/index-reduction) · [file](index-reduction.md) | Which states are actually independent? | `BouncingBall`, `BenchActuator`, `Drivetrain` |
-| 7 | [▶ initialization](hrw://tour/initialization) · [file](initialization.md) | Where does it start? | `RcCircuit`, `OverInitRc` |
-| 8 | [▶ solve-lowering](hrw://tour/solve-lowering) · [file](solve-lowering.md) | How does a name become a number? | `BouncingBall`, `ProportionalLoop`, `RcCircuit` |
-| 9 | [▶ events](hrw://tour/events) · [file](events.md) | What happens at an instant? | `BouncingBall`, `MotorWithBrake` |
+1. **[▶ connect-expansion](hrw://tour/connect-expansion)** — what does `connect` mean?
+   [file](connect-expansion.md) · `RcCircuit`, `TwoLoops`
+2. **[▶ dae-construction](hrw://tour/dae-construction)** — what is a well-posed system?
+   [file](dae-construction.md) · `SingleInertia`, `UnbalancedShaft`
+3. **[▶ matching](hrw://tour/matching)** — which equation solves which unknown?
+   [file](matching.md) · `BouncingBall`, `ProportionalLoop`, `CapacitorLoop`
+   - **3a · [▶ matching-live](hrw://tour/matching-live)** — *(debugger)* what does the
+     search look like from inside?
+     [file](matching-live.md) · `ProportionalLoop`, `TwiceDefined`
+4. **[▶ blt-ordering](hrw://tour/blt-ordering)** — in what order can they be solved?
+   [file](blt-ordering.md) · `RcCircuit`, `ProportionalLoop`, `TwoLoops`
+5. **[▶ tearing](hrw://tour/tearing)** — how do you solve a block that has no order?
+   [file](tearing.md) · `ProportionalLoop`, `TwoLoops`, `MixedLoop`
+6. **[▶ index-reduction](hrw://tour/index-reduction)** — which states are actually
+   independent?
+   [file](index-reduction.md) · `BouncingBall`, `BenchActuator`, `Drivetrain`
+7. **[▶ initialization](hrw://tour/initialization)** — where does it start?
+   [file](initialization.md) · `RcCircuit`, `OverInitRc`
+8. **[▶ solve-lowering](hrw://tour/solve-lowering)** — how does a name become a number?
+   [file](solve-lowering.md) · `BouncingBall`, `ProportionalLoop`, `RcCircuit`
+9. **[▶ events](hrw://tour/events)** — what happens at an instant?
+   [file](events.md) · `BouncingBall`, `MotorWithBrake`
 
-**Two orderings, and they differ.** The table is *pipeline* order. If you would rather follow the
-mathematics than the machinery, walk **3 → 4 → 5** first: matching, BLT and tearing are one
+**Two orderings, and they differ.** The list above is *pipeline* order. If you would rather follow
+the mathematics than the machinery, walk **3 → 4 → 5** first: matching, BLT and tearing are one
 continuous argument on the same three-equation model, and they are the densest linear algebra in
 the set.
 
@@ -85,16 +95,29 @@ than in any one tour because it spans four of them.)*
 The word "graph" appears in three tours meaning three different things. They are easy to conflate and
 the distinction is what makes each algorithm the obvious choice rather than an arbitrary one:
 
-| graph | tour | vertices | edges | question asked | algorithm |
-|---|---|---|---|---|---|
-| **connection** | connect-expansion | connector variables | **one edge per connector member**, per `connect`, **undirected** | connected components | union-find |
-| **incidence** | matching | equations ∪ unknowns, **bipartite** | "this equation mentions this unknown" | maximum matching | augmenting paths |
-| **dependency** | blt-ordering | equations | derived from the matching, **directed** | *strongly* connected components | Tarjan |
+**1 · the connection graph** — `connect-expansion`
 
-**The contrast worth carrying: rows 1 and 3 ask the same question on different graphs.** Both are
-*"find the components"* — and the only difference is **undirected versus directed**. That is exactly
-why one is union-find and the other is Tarjan: union-find merges symmetric relations and cannot
-express a dependency that runs one way, which is the whole content of an evaluation order.
+- **vertices:** connector variables
+- **edges:** one edge per connector member, per `connect` — **undirected**
+- **asks:** connected components · **union-find**
+
+**2 · the incidence graph** — `matching`
+
+- **vertices:** equations ∪ unknowns, **bipartite**
+- **edges:** "this equation mentions this unknown"
+- **asks:** maximum matching · **augmenting paths**
+
+**3 · the dependency graph** — `blt-ordering`
+
+- **vertices:** equations
+- **edges:** derived from the matching — **directed**
+- **asks:** *strongly* connected components · **Tarjan**
+
+**The contrast worth carrying: the first and third ask the same question on different graphs.**
+Both are *"find the components"* — and the only difference is **undirected versus directed**.
+That is exactly why one is union-find and the other is Tarjan: union-find merges symmetric
+relations and cannot express a dependency that runs one way, which is the whole content of an
+evaluation order.
 
 So when Tarjan arrives in `blt-ordering.md` it is not a new idea. It is this idea, on a digraph,
 where "same node" has become "each needs the other".

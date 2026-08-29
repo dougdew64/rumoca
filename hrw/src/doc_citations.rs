@@ -1293,7 +1293,7 @@ Some prose.
     /// The fixture tours are the right corpus: a link form nothing exercises is
     /// not really built.
     fn link_form_is_exercised(pattern: &str) -> bool {
-        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
         let Ok(entries) = std::fs::read_dir(&dir) else {
             return false;
         };
@@ -5937,4 +5937,109 @@ mod tests_walked_regions {
             "a closed marker must not be reported as unterminated",
         );
     }
+}
+
+/// **No tour table is wide enough to break the wrapping of the prose beneath it.**
+///
+/// # The defect this bounds
+///
+/// `tour_panel` renders into `ScrollArea::both()`, and inside a scroll area with the
+/// horizontal axis enabled **a child that allocates beyond the `Ui`'s `max_rect`
+/// expands it for every later sibling**. So a table wider than the panel silently
+/// becomes the wrap width for every paragraph after it. Doug walked into it on
+/// 2026-08-28: *"prose does get wrapped, but only according to the width of the table
+/// which precedes it."*
+///
+/// **The code defect is open and deliberately unfixed** — `ui-findings.md` C21, with
+/// two measured-ineffective attempts. Doug ruled that the horizontal scrollbar makes
+/// everything reachable, so the cost is cosmetic and the fix is not worth the risk to
+/// the rendering path. **This bounds the content instead.**
+///
+/// # Where 90 comes from
+///
+/// Measured, not guessed, with a harness that renders a table of a given width and
+/// reads back the width of the paragraph after it. At the 40 % default panel on a
+/// 1600pt window — 590pt of prose:
+///
+/// ```text
+/// 84, 88, 90 chars   paragraph after = 591pt   correct
+/// 92 chars           paragraph after = 623pt   inheriting
+/// 178 chars          paragraph after = 1180pt  the-concepts before conversion
+/// ```
+///
+/// **The bound is panel-dependent and this is the reference panel.** A reader who drags
+/// the divider narrower breaks sooner; one on a wide monitor never sees it at all. 90 is
+/// the widest that is safe at the default, which is where a tour is first read.
+///
+/// # The exceptions, and why they are listed rather than fixed
+///
+/// **Tour prose is Doug's**, and converting a table changes how a tour teaches — so
+/// the two below are recorded, not rewritten. `the-concepts` was converted on
+/// 2026-08-28 *because he asked for it*, and its route table became a numbered list
+/// and its three-graph matrix three labelled blocks.
+#[test]
+fn no_tour_table_is_wider_than_the_panel() {
+    /// Widest table row that still lets the next paragraph wrap correctly.
+    const MAX_TABLE_ROW: usize = 90;
+    /// Tours whose tables are over and have not been converted. **Converting one is
+    /// a change to how it teaches, so it needs Doug.** Removing a name from this list
+    /// is the goal; adding one needs his say-so.
+    const NOT_YET_CONVERTED: &[&str] = &[
+        // 147 — and it is the NEXT tour in the walking order, so it will show the
+        // symptom on `the-concepts`' heels.
+        "dae-construction.md",
+        // 116.
+        "structural-vs-numerical-rank.md",
+        // 266, and not a tour: the directory's own README, never rendered in the
+        // panel. Listed so the scan does not have to special-case a filename.
+        "README.md",
+    ];
+
+    let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+    let mut over: Vec<String> = Vec::new();
+    let mut scanned = 0usize;
+    for entry in std::fs::read_dir(&dir)
+        .expect("fixture tours are readable")
+        .flatten()
+    {
+        let path = entry.path();
+        if path.extension().and_then(|x| x.to_str()) != Some("md") {
+            continue;
+        }
+        let name = path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .into_owned();
+        if NOT_YET_CONVERTED.contains(&name.as_str()) {
+            continue;
+        }
+        scanned += 1;
+        let text = std::fs::read_to_string(&path).expect("readable");
+        if let Some(widest) = text
+            .lines()
+            .filter(|l| l.trim_start().starts_with('|'))
+            .map(str::chars)
+            .map(Iterator::count)
+            .max()
+            .filter(|w| *w > MAX_TABLE_ROW)
+        {
+            over.push(format!("{name}: widest table row {widest} chars"));
+        }
+    }
+
+    // Non-vacuity: a scan that found no tours would pass while checking nothing.
+    assert!(
+        scanned >= 10,
+        "only {scanned} tours scanned; the walk is broken"
+    );
+
+    assert!(
+        over.is_empty(),
+        "a tour table is wider than {MAX_TABLE_ROW} characters, which makes every \
+             paragraph beneath it wrap to the TABLE's width instead of the panel's \
+             (`ui-findings.md` C21). Narrow the table, or convert it to a list as \
+             `the-concepts` was:\n  {}",
+        over.join("\n  "),
+    );
 }

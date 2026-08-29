@@ -2565,3 +2565,85 @@ fn a_tour_renders_none_of_its_html_markers() {
          Doug reads, and the cached string is only where it comes from",
     );
 }
+
+/// **Prose after a wide table wraps to the TABLE's width, not the panel's.**
+///
+/// Doug, 2026-08-28, after narrowing his own first report: *"prose does get wrapped, but
+/// only according to the width of the table which precedes it, or to the width of the LHS
+/// if no table precedes the prose. In the connections tour, all content seems to wrap to
+/// the width of the LHS."*
+///
+/// # The mechanism
+///
+/// `tour_panel` renders into `ScrollArea::both()`, and inside a scroll area with the
+/// horizontal axis enabled **a child that allocates beyond the `Ui`'s `max_rect` expands
+/// it** — for every later sibling. So a paragraph before the first table wraps to the
+/// panel, and the identical paragraph after it wraps to the table. `the-concepts` has two
+/// wide tables and shows it; `connect-expansion` has none and does not.
+///
+/// Measured here: 590pt / 3 lines before, **839pt / 2 lines after**, in a panel ~590pt wide.
+///
+/// # Why it is `#[ignore]`d rather than absent
+///
+/// **No fix is known yet**, and two were tried and measured as ineffective: bounding the
+/// shared `Ui` with `set_max_width` *or* `set_width` before rendering, both undone by the
+/// table expanding it again. `egui_commonmark` 0.24 offers no wrap-width control
+/// (`default_width` bounds images only), and its `show_scrollable` is `#[doc(hidden)]` and
+/// documented as buggy.
+///
+/// The remaining candidate is to **split the document into table and non-table runs** and
+/// re-apply the bound per prose run — which means rendering one document as several viewer
+/// calls, and this file already warns that doing so *"is not free of consequence"* — a
+/// change to Doug's primary learning surface, so it is his call.
+///
+/// Same shape as `pantelides_ladder`'s rungs: the acceptance test exists and is ignored
+/// until the thing it accepts is built. **Un-ignore it when a fix lands.**
+#[test]
+#[ignore = "no fix known: prose after a wide table inherits the table's wrap width"]
+fn tour_prose_after_a_table_wraps_to_the_panel_not_the_table() {
+    let real = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/fixture-tours/the-concepts.md"
+    ))
+    .expect("the-concepts.md is the document that exhibits this");
+    // Up to the end of the hub table -- the real one, because a synthetic table narrow
+    // enough to fit the panel does not reproduce it, and three earlier drafts passed
+    // vacuously for exactly that reason.
+    let cut = real
+        .match_indices('\n')
+        .map(|(i, _)| i)
+        .find(|i| *i > real.find("| 4 |").unwrap_or(0))
+        .unwrap_or(real.len());
+
+    // Identical paragraphs either side, so the assertion needs no magic number: correctly
+    // wrapped they occupy the same height.
+    const PARA: &str = "the quick brown fox jumps over the lazy dog and keeps going \
+                        well past the width of any reasonable panel, which is the \
+                        entire point of this fixture, and so it continues for some \
+                        time yet before finally coming to a stop.";
+    let _tour_state = AdHocTour::with(&format!(
+        "ZZbefore {PARA}\n\n{}\n\nZZafter {PARA}\n",
+        &real[..cut]
+    ));
+
+    let mut h = harness(App::test_default());
+    h.run_steps(3);
+
+    let rect = |m: &str| {
+        h.query_by_label_contains(m)
+            .unwrap_or_else(|| panic!("{m} should render"))
+            .rect()
+    };
+    let (before, after) = (rect("ZZbefore"), rect("ZZafter"));
+
+    assert!(
+        (before.height() - after.height()).abs() < 1.0,
+        "the same paragraph is {:.0}pt tall and {:.0}pt wide before the table, but \
+         {:.0}pt tall and {:.0}pt wide after it \u{2014} so the one after inherited the \
+         TABLE's width to wrap at rather than the panel's.",
+        before.height(),
+        before.width(),
+        after.height(),
+        after.width(),
+    );
+}
