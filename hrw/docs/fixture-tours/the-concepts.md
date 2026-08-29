@@ -2,16 +2,14 @@
 
 <!-- kind: hub -->
 
-**Start here.** This tour walks nothing itself; it is the map for the nine that do, in the order
-the compiler runs them, with what each is *for* and which specimens make the point.
+**Start here.** This is the map for the tours of the compiler phases, in the order
+the compiler runs them.
 
 **The thesis, in one line:** a Modelica model is a pile of equations with no order, no causality
 and no idea which quantities are independent — and compiling it is six mathematical problems, each
 with a named algorithm and a textbook behind it.
 
-> Every tour below draws its numbers from the specimens' generated notebook traces. **None of
-> them has been walked yet** — they were written in one pass so a week of walking could start
-> immediately. Expect the *rendering* claims to be the wrong ones; the counts are read from data.
+> Every tour below draws its numbers from the specimens' generated notebook traces.
 
 ---
 
@@ -20,27 +18,17 @@ with a named algorithm and a textbook behind it.
 **Each entry opens the tour in HRW.** The file links are for reading outside it.
 
 1. **[▶ connect-expansion](hrw://tour/connect-expansion)** — what does `connect` mean?
-   [file](connect-expansion.md) · `RcCircuit`, `TwoLoops`
 2. **[▶ dae-construction](hrw://tour/dae-construction)** — what is a well-posed system?
-   [file](dae-construction.md) · `SingleInertia`, `UnbalancedShaft`
 3. **[▶ matching](hrw://tour/matching)** — which equation solves which unknown?
-   [file](matching.md) · `BouncingBall`, `ProportionalLoop`, `CapacitorLoop`
    - **3a · [▶ matching-live](hrw://tour/matching-live)** — *(debugger)* what does the
      search look like from inside?
-     [file](matching-live.md) · `ProportionalLoop`, `TwiceDefined`
 4. **[▶ blt-ordering](hrw://tour/blt-ordering)** — in what order can they be solved?
-   [file](blt-ordering.md) · `RcCircuit`, `ProportionalLoop`, `TwoLoops`
 5. **[▶ tearing](hrw://tour/tearing)** — how do you solve a block that has no order?
-   [file](tearing.md) · `ProportionalLoop`, `TwoLoops`, `MixedLoop`
 6. **[▶ index-reduction](hrw://tour/index-reduction)** — which states are actually
    independent?
-   [file](index-reduction.md) · `BouncingBall`, `BenchActuator`, `Drivetrain`
 7. **[▶ initialization](hrw://tour/initialization)** — where does it start?
-   [file](initialization.md) · `RcCircuit`, `OverInitRc`
 8. **[▶ solve-lowering](hrw://tour/solve-lowering)** — how does a name become a number?
-   [file](solve-lowering.md) · `BouncingBall`, `ProportionalLoop`, `RcCircuit`
 9. **[▶ events](hrw://tour/events)** — what happens at an instant?
-   [file](events.md) · `BouncingBall`, `MotorWithBrake`
 
 **Two orderings, and they differ.** The list above is *pipeline* order. If you would rather follow
 the mathematics than the machinery, walk **3 → 4 → 5** first: matching, BLT and tearing are one

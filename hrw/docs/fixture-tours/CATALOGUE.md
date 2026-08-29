@@ -364,7 +364,7 @@ A concept tour. Walk [▶ blt-ordering](hrw://tour/blt-ordering) first — it pr
 
 **The concepts — a week's walk through the pipeline**
 
-Start here. This tour walks nothing itself; it is the map for the nine that do, in the order
+Start here. This is the map for the tours of the compiler phases, in the order
 
 - **Stops:**
   - `the-concepts-a-week-s-walk-through-the-pipeline` — The concepts — a week's walk through the pipeline
