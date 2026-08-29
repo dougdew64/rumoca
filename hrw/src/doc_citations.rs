@@ -5985,9 +5985,6 @@ fn no_tour_table_is_wider_than_the_panel() {
     /// a change to how it teaches, so it needs Doug.** Removing a name from this list
     /// is the goal; adding one needs his say-so.
     const NOT_YET_CONVERTED: &[&str] = &[
-        // 147 — and it is the NEXT tour in the walking order, so it will show the
-        // symptom on `the-concepts`' heels.
-        "dae-construction.md",
         // 116.
         "structural-vs-numerical-rank.md",
         // 266, and not a tour: the directory's own README, never rendered in the

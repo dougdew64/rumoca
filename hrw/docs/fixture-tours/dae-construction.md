@@ -229,10 +229,11 @@ not this phase's job and might not even be decidable symbolically.
 
 So the sign is now a diagnosis you can act on:
 
-| balance | meaning | what to look for |
-|---|---|---|
-| **−1** or lower | too few equations | a declared variable with nothing determining it |
-| **+1** or higher | too many | something determined twice — a duplicated equation, or a component that already constrains what you constrained |
+**−1 or lower — too few equations.** Look for a declared variable with nothing determining
+it.
+
+**+1 or higher — too many.** Look for something determined twice: a duplicated equation, or
+a component that already constrains what you constrained.
 
 **And the positive case is the one that catches a subtler mistake.** Forgetting an equation is
 usually obvious once named. Adding one that a *component already provides* — fixing a flange that
