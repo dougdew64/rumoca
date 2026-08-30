@@ -5552,13 +5552,15 @@ impl App {
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new("Context").strong())
                     .on_hover_text(format!("{EMPTY_CONTEXT_RULE}\n\nRight now: {hint}"));
-                context_bar::background_ui(
-                    ui,
-                    self.model.as_deref(),
-                    self.selected.is_some().then_some(self.stage),
-                    tour.as_deref(),
-                );
             });
+            context_bar::always_ui(
+                ui,
+                self.model.as_deref(),
+                self.selected.is_some().then_some(self.stage),
+                tour.as_deref(),
+                context_bar::stage_ir_count(&self.stages),
+                self.def_index.len(),
+            );
             ui.separator();
             return;
         }

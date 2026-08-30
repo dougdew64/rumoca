@@ -179,6 +179,24 @@ pub(crate) fn harness(app: App) -> Harness<'static, App> {
     h
 }
 
+/// A name as the Context Bar's **Always** row writes it: followed by the separator.
+///
+/// **The row is the only place a name is followed by `·`.** A stage tab is the bare
+/// word `Flatten`; the row is `… · Flatten · 4 stage IRs · …`, and the counts always
+/// follow, so nothing in the row is ever last. That makes the trailing separator a
+/// reliable anchor without reading node text, which `egui_kittest` 0.35 does not
+/// expose.
+///
+/// Anchoring matters here rather than searching the whole tree: `contains("RcCircuit")`
+/// is satisfied by any source line, list row or notice mentioning the specimen, which
+/// is how one of these assertions came to mean *"exactly one thing on screen mentions
+/// it"* and broke when the source pane started rendering. Before 2026-08-30 the anchor
+/// was a *leading* `· `, punctuation that separated the background from the bar's
+/// title and vanished when it moved into a labelled row of its own.
+fn in_always_row(name: &str) -> String {
+    format!("{name} \u{00b7}")
+}
+
 /// The harness renders HRW at all, and the accessibility tree is populated.
 ///
 /// **The non-vacuity test for every test below it.** A harness that rendered
@@ -269,6 +287,17 @@ fn the_context_bar_is_present_in_every_state() {
             "the Context Bar is missing with {what} \u{2014} a bar that comes and goes \
              cannot be assumed, and assuming it is the point",
         );
+        // **A row labelled "Always" that is not always there is a false label**, which
+        // is what Doug found on 2026-08-30: the session facts rendered only once
+        // something was pointed at or followed, so `Always` meant "whenever you have
+        // assembled something". It is checked here, in the same four states, because
+        // the claim it makes is the same claim the bar itself makes.
+        assert!(
+            h.query_by_label_contains("Always").is_some(),
+            "the Always row is missing with {what} \u{2014} it names the context Claude \
+             has without you clicking anything, so it is exactly the row that may not \
+             be conditional",
+        );
     }
 }
 
@@ -320,10 +349,10 @@ fn the_bar_shows_context_not_advice() {
 /// reading the bar at a glance quietly stops being true.
 #[test]
 fn the_three_context_categories_have_distinct_colours() {
-    use crate::colors::{CONTEXT_BACKGROUND, CONTEXT_POINT, TRACKED_GOLD};
+    use crate::colors::{CONTEXT_ALWAYS, CONTEXT_POINT, TRACKED_GOLD};
 
     let named = [
-        ("background", CONTEXT_BACKGROUND),
+        ("background", CONTEXT_ALWAYS),
         ("point", CONTEXT_POINT),
         ("follow", TRACKED_GOLD),
     ];
@@ -338,35 +367,19 @@ fn the_three_context_categories_have_distinct_colours() {
     }
 }
 
-/// **An always-present bar must not fill the silence**, which is the risk that comes
-/// with never hiding.
+/// **The bar names the open tour**, which is what makes it context rather than
+/// something Claude has to be told.
 ///
-/// `App::stage` always holds *some* `StageKind`, so the obvious way to render the
-/// background on a fresh launch prints `· Parse` — naming a phase that has not run,
-/// about a specimen that does not exist. **Making a pane unconditional is exactly when
-/// it starts inventing**, because it now has frames to fill that it never had before,
-/// and this repository's first rule is that absence is stated rather than filled.
-///
-/// The second half is the other side of the same coin: with a tour open there *is*
-/// something true to say, and the bar says it. `session.json` has carried the open
-/// tour's name since 2026-08-19, so the bar was under-reporting context Claude already
-/// had — the gap Doug's question opened.
+/// `session.json` has carried the open tour's name since 2026-08-19, so the bar was
+/// under-reporting context Claude already had — the gap Doug's question opened. This
+/// is the *rendered* half, proving `App` actually passes the tour through; what the
+/// row says in each state is `context_bar::tests::always_summary_states_only_what_is_true`.
 #[test]
-fn the_bar_names_what_is_loaded_and_invents_nothing() {
-    // **`.hrw-bridge/tour.md` is live state and `tour::poll` auto-selects it**, so with
-    // one on disk there *is* an open tour and the bar rightly names it. Without this
-    // guard the first assertion measures whether Doug has used the Answer feature
-    // recently — the trap `AdHocTour` exists for, and the one that caught this test on
-    // its first run.
+fn the_bar_names_the_open_tour() {
+    // **`.hrw-bridge/tour.md` is live state and `tour::poll` auto-selects it**, so an
+    // ad hoc tour on disk would be the one named, and this would pass whichever tour
+    // the wiring actually carried. `AdHocTour` exists for exactly that.
     let _no_ad_hoc = AdHocTour::absent();
-
-    let h = harness(App::test_default());
-    assert!(
-        h.query_by_label_contains("\u{00b7} ").is_none(),
-        "with nothing loaded the bar rendered a background line \u{2014} there is no \
-         specimen, no model and no tour, so naming a stage would be a claim that a \
-         phase ran",
-    );
 
     let mut app = App::test_default();
     assert!(
@@ -1046,7 +1059,8 @@ fn the_background_names_the_stage_before_a_model_exists() {
     h.run_steps(2);
 
     assert!(
-        h.query_by_label_contains("\u{00b7} Flatten").is_some(),
+        h.query_by_label_contains(&in_always_row("Flatten"))
+            .is_some(),
         "with a specimen selected but no model compiled, the stage is still context \
          and must still be shown",
     );
@@ -2372,7 +2386,11 @@ fn clicking_a_stage_tab_reaches_the_context_bar() {
         // "exactly one thing on screen mentions it", and it broke on 2026-08-04 when
         // the source pane legitimately started rendering. See the sweep note in
         // `docs/tech-debt.md`.
-        h.query_by_label_contains("\u{00b7} RcCircuit \u{00b7}")
+        // **Anchored on the Always row since 2026-08-30**, not on a leading `· `. The
+        // background moved into that row and lost the dot that used to separate it from
+        // the title; "stage IRs" appears nowhere else, so it identifies the row exactly
+        // and the specimen is checked inside it rather than anywhere on screen.
+        h.query_by_label_contains(&in_always_row("RcCircuit"))
             .is_some(),
         "precondition: the Context Bar names the specimen even with nothing pointed at",
     );

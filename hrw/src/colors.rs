@@ -72,17 +72,23 @@ pub const ANIM_FAIL: Color32 = Color32::from_rgb(0xEF, 0x53, 0x50);
 /// Tracked-identifier highlight — opaque gold for text/strokes.
 pub const TRACKED_GOLD: Color32 = Color32::from_rgb(0xFF, 0xD5, 0x4F);
 
-/// The Context Bar's **background** row — specimen, stage and open tour.
+/// The Context Bar's **Always** row — specimen, stage, open tour, stage IRs, DefIds.
 ///
 /// One of three colours, one per category of context (Doug, 2026-08-30: *"make the
 /// context bar contents easier to read by using different text colors for each of the
 /// three categories"*). The other two are [`CONTEXT_POINT`] and [`TRACKED_GOLD`].
 ///
-/// **Quiet on purpose, and the quietest of the three.** The background is what is true
-/// whatever you have clicked; the other two are what *you* assembled, and should win
-/// the eye. It replaced `ui.weak`, which was theme-adaptive — a deliberate trade for
-/// being distinguishable from the two categories beside it, which is what was asked.
-pub const CONTEXT_BACKGROUND: Color32 = Color32::from_rgb(0x8A, 0x9E, 0xA8);
+/// **Named for the word on screen, not for the word in the design docs.**
+/// `context-assembly.md` calls this the *background*; the bar has always labelled the
+/// row `Always`, and a reader matching a colour to a category reads the label. It was
+/// `CONTEXT_BACKGROUND` for one commit, before the two halves of this category were
+/// found to be rendering under different names.
+///
+/// **Quiet on purpose, and the quietest of the three.** This is what is true whatever
+/// you have clicked; the other two are what *you* assembled, and should win the eye. It
+/// replaced `ui.weak`, which was theme-adaptive — a deliberate trade for being
+/// distinguishable from the two categories beside it, which is what was asked.
+pub const CONTEXT_ALWAYS: Color32 = Color32::from_rgb(0x8A, 0x9E, 0xA8);
 
 /// The Context Bar's **point** — the one node you are pointing at.
 ///

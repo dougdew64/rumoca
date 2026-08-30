@@ -245,8 +245,6 @@ pub(crate) fn context_bar_ui(
 
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new("Context").strong());
-        // A point or a thread implies a loaded specimen, so the stage is real here.
-        background_ui(ui, model, Some(stage), tour);
         if let Some(point) = &context.pointed_at {
             // Worth saying only when it **differs** from the background
             // stage; otherwise it repeats the line above as if it were a
@@ -269,6 +267,16 @@ pub(crate) fn context_bar_ui(
             );
         }
     });
+
+    // A point or a thread implies a loaded specimen, so the stage is real here.
+    always_ui(
+        ui,
+        model,
+        Some(stage),
+        tour,
+        stage_ir_count(stages),
+        def_index.len(),
+    );
 
     if let Some(point) = &context.pointed_at {
         let request = point.request.as_str();
@@ -425,28 +433,17 @@ pub(crate) fn context_bar_ui(
         });
     }
 
-    // Standing context — true for the whole session, and never previously
-    // stated anywhere. Without it the user underestimates what Claude can
-    // already see without doing anything.
-    ui.horizontal(|ui| {
-        ui.weak("   Always       ");
-        let stage_count = stages
-            .as_stage_pairs()
-            .iter()
-            .filter(|(_, v)| v.is_some())
-            .count();
-        ui.weak(format!(
-            "{stage_count} stage IRs \u{00b7} {} DefIds",
-            def_index.len(),
-        ))
-        .on_hover_text(
-            "Every pipeline stage's full IR is on disk under .hrw-bridge/stages/, \
-                 and the DefId table resolves numeric ids to names. Claude reads these \
-                 without you pointing at anything.",
-        );
-    });
     ui.separator();
     press
+}
+
+/// How many stages have produced an IR — the count the Always row reports.
+pub(crate) fn stage_ir_count(stages: &StageBundle) -> usize {
+    stages
+        .as_stage_pairs()
+        .iter()
+        .filter(|(_, v)| v.is_some())
+        .count()
 }
 
 /// The **background**: specimen and stage, always context, always shown.
@@ -470,17 +467,24 @@ pub(crate) fn context_bar_ui(
 /// since 2026-08-19 for deixis, so Claude already had it while the bar did not say so —
 /// the under-reporting that prompted this. What is *not* here is the current stop,
 /// declined 2026-08-19 with four reasons; do not add it.
-pub(crate) fn background_ui(
-    ui: &mut egui::Ui,
+/// What the **Always** row says, as a string, so the wording is testable without a
+/// frame.
+///
+/// Split out of the painter on 2026-08-30 for the reason `working-with-doug.md` gives
+/// for the animation views: **move a computation out before adding one in.** Every
+/// claim this row makes — that a stage ran, that a tour is open — is now checkable
+/// directly, and the painter is a label.
+pub(crate) fn always_summary(
     model: Option<&str>,
     stage: Option<StageKind>,
     tour: Option<&str>,
-) {
+    stage_ir_count: usize,
+    def_count: usize,
+) -> String {
     let mut parts: Vec<String> = Vec::new();
     match (model, stage) {
         (Some(model), Some(stage)) => parts.push(format!("{model} \u{00b7} {}", stage.name())),
-        // Mid-compile, or a compile that yielded no model name: still name the
-        // stage rather than showing a bare "Context".
+        // Mid-compile, or a compile that yielded no model name: still name the stage.
         (None, Some(stage)) => parts.push(stage.name().to_owned()),
         // No specimen. A stage name here would be a claim that a phase ran.
         (Some(model), None) => parts.push(model.to_owned()),
@@ -489,17 +493,106 @@ pub(crate) fn background_ui(
     if let Some(tour) = tour {
         parts.push(format!("tour: {tour}"));
     }
-    if !parts.is_empty() {
+    // **Always present, including as zeroes.** They are the standing context Claude
+    // reads without being pointed at anything, and a row that omitted them when empty
+    // would be reporting nothing rather than reporting none.
+    parts.push(format!("{stage_ir_count} stage IRs"));
+    parts.push(format!("{def_count} DefIds"));
+    parts.join(" \u{00b7} ")
+}
+
+/// The **Always** row: everything Claude has without you clicking anything.
+///
+/// # It was two things in two places until 2026-08-30, and Doug found both halves
+///
+/// > *"the 'Always' category only seems to appear when I follow an identifier. So, the
+/// > 'Always' category seems to be part of 'Follow' instead of always-available
+/// > context."*
+///
+/// > *"the specimen, stage and tour are listed, but no category is specified for
+/// > them."*
+///
+/// **Those are one defect seen from two sides.** The session facts sat in a row labelled
+/// `Always` that only rendered in the *assembled* branch — so a row asserting "always"
+/// appeared only once something was pointed at or followed. Meanwhile specimen, stage
+/// and tour rendered unlabelled beside the title, in the same category and looking like
+/// a different one. A label claiming more than the mechanism delivers is the lens
+/// `unattended-runs.md` leads with; this is that, in the UI.
+///
+/// **Now one row, one label, in every state**, carrying both halves. It is drawn
+/// *first*, directly under the title, because that is the only position it can hold in
+/// both branches — and a category that moves is one more thing to look for.
+pub(crate) fn always_ui(
+    ui: &mut egui::Ui,
+    model: Option<&str>,
+    stage: Option<StageKind>,
+    tour: Option<&str>,
+    stage_ir_count: usize,
+    def_count: usize,
+) {
+    ui.horizontal(|ui| {
+        ui.colored_label(crate::colors::CONTEXT_ALWAYS, "   Always       ");
         ui.colored_label(
-            crate::colors::CONTEXT_BACKGROUND,
-            format!("\u{00b7} {}", parts.join(" \u{00b7} ")),
+            crate::colors::CONTEXT_ALWAYS,
+            always_summary(model, stage, tour, stage_ir_count, def_count),
+        )
+        .on_hover_text(
+            "True for the whole session, whatever you have clicked. Every pipeline \
+             stage's full IR is on disk under .hrw-bridge/stages/, and the DefId table \
+             resolves numeric ids to names. Claude reads these \u{2014} and the specimen, \
+             stage and open tour \u{2014} without you pointing at anything.",
         );
-    }
+    });
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// **The Always row states only what is true, and states the standing facts even
+    /// when they are zero.**
+    ///
+    /// `App::stage` always holds *some* `StageKind`, so the obvious rendering prints
+    /// `Parse` on a fresh launch — naming a phase that has not run, about a specimen
+    /// that does not exist. **Making a pane unconditional is exactly when it starts
+    /// inventing**, because it suddenly has frames to fill that it never had before.
+    ///
+    /// The counts go the other way: they are reported *as zeroes* rather than omitted,
+    /// because the row's claim is "this is what Claude has without you clicking", and
+    /// a row that fell silent when the answer was none would be reporting nothing
+    /// instead of reporting none.
+    #[test]
+    fn always_summary_states_only_what_is_true() {
+        let nothing = always_summary(None, None, None, 0, 0);
+        assert!(
+            !nothing.contains("Parse"),
+            "no specimen is loaded, so naming a stage claims a phase ran: {nothing:?}",
+        );
+        assert!(
+            nothing.contains("0 stage IRs") && nothing.contains("0 DefIds"),
+            "the standing counts are the row's whole point and must be stated at zero, \
+             not omitted: {nothing:?}",
+        );
+
+        let loaded = always_summary(Some("RcCircuit"), Some(StageKind::Parse), None, 4, 38855);
+        assert!(
+            loaded.contains("RcCircuit \u{00b7} Parse"),
+            "a loaded specimen names its model and stage: {loaded:?}",
+        );
+
+        // Mid-compile: a stage is selected but no model name has arrived yet.
+        let compiling = always_summary(None, Some(StageKind::Flatten), None, 1, 12);
+        assert!(
+            compiling.contains("Flatten"),
+            "the stage is real even before the model name lands: {compiling:?}",
+        );
+
+        let toured = always_summary(None, None, Some("connect-expansion"), 0, 0);
+        assert!(
+            toured.contains("tour: connect-expansion"),
+            "an open tour is standing context and is named: {toured:?}",
+        );
+    }
     use crate::identifier_index::IndexedVariable;
     use egui_kittest::Harness;
     use egui_kittest::kittest::Queryable;
