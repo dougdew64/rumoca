@@ -653,6 +653,11 @@ mod tests_absence {
     /// What it does mean is that **a `false` from this API is not on its own evidence
     /// that a glyph will not render** — do not use it to reject a candidate marker
     /// without confirming on screen, which is how ▶ would have been wrongly condemned.
+    ///
+    /// **U+2731 WAS SO CONFIRMED, 2026-08-30**: Doug reported the scratch rows
+    /// rendering correctly after the swap. So the marker rests on two independent
+    /// legs — this check, and the screen — which is the standard a glyph choice should
+    /// meet here given the false negatives above.
     #[test]
     fn the_scratch_marker_glyph_actually_renders() {
         use egui_kittest::Harness;

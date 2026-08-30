@@ -2886,6 +2886,13 @@ Some prose.
     /// *inside list items* and reads blue. One difference tracked the symptom and the
     /// other did not.
     ///
+    /// **CONFIRMED ON SCREEN 2026-08-30**, and the upgrade matters because the rule
+    /// below rests on it. Unwrapping the bold was reasoning from a correlation — colour
+    /// cannot be queried headlessly, so the fix shipped explicitly unverified — and Doug
+    /// then reported the route links rendering correctly. Bold suppressing the hyperlink
+    /// colour is now an observation, not an inference, and a later session need not
+    /// re-derive it.
+    ///
     /// # What this forbids, and what it does not
     ///
     /// It forbids a **triangle inside link text** and **bold wrapped around a whole
