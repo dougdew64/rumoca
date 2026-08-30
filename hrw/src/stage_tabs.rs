@@ -257,24 +257,6 @@ pub(crate) fn stage_tabs_ui(
     // Simulation is a run/plot action, not an IR capture — hence its own
     // variant, which `App` answers without asking for a stage capture.
     ui.separator();
-    // **▶ sits between the divider and the label** (Doug, 2026-08-29). It used to live
-    // in `App`'s chrome row beside the Log button, where it read as general chrome; here
-    // it reads as belonging to the tab it acts on. `can_sim` and `sim_running` arrive as
-    // plain bools for the reason this signature's other `sim_*` flags do — the row only
-    // asks whether a run may start and whether one is going, and passing the `Option`s
-    // they come from would overstate its reach.
-    //
-    // `add_enabled` is like `add` (it places a widget) but greys it out when the bool
-    // is false — so the button is visible whenever the tab row is, and merely inert
-    // until a specimen has compiled far enough to simulate.
-    if ui
-        .add_enabled(can_sim, egui::Button::new("▶"))
-        .on_hover_text("Run simulation (stays on the current view)")
-        .on_disabled_hover_text("Compile a specimen first")
-        .clicked()
-    {
-        click = Some(TabClick::RunSimulation);
-    }
     let sim_label = {
         let text = egui::RichText::new("Simulation");
         if sim_errored {
@@ -300,11 +282,34 @@ pub(crate) fn stage_tabs_ui(
         *selected_stage = StageKind::Simulation;
         click = Some(TabClick::Simulation);
     }
-    // **The spinner goes AFTER the label, because it appears and disappears** (Doug,
-    // 2026-08-30). It used to sit between ▶ and "Simulation", so starting a run
-    // inserted a widget to the LEFT of the label: the label jumped right for the
-    // duration of the run and back when it finished. Simulation is the last thing in
-    // this row, so a spinner after it pushes nothing.
+    // **The order here is label, then ▶, then spinner, and each position was asked
+    // for.** ▶ came into this row on 2026-08-29 sitting between the divider and the
+    // label; Doug moved it to the label's right on 2026-08-30, so the Simulation tab
+    // now reads left to right as *what it is*, *the thing that starts it*, *whether it
+    // is going*. `the_run_button_sits_to_the_right_of_the_simulation_label` pins it.
+    //
+    // **▶ may sit mid-row because it never comes and goes.** `add_enabled` is like
+    // `add` — it places a widget — but greys it out when the bool is false rather than
+    // omitting it, so the button occupies the same width whether or not a run is
+    // possible and nothing downstream shifts. That is exactly what the spinner below
+    // cannot promise, which is why only one of the two may sit before the label.
+    //
+    // `can_sim` and `sim_running` arrive as plain bools for the reason this signature's
+    // other `sim_*` flags do — the row only asks whether a run may start and whether
+    // one is going, and passing the `Option`s they come from would overstate its reach.
+    if ui
+        .add_enabled(can_sim, egui::Button::new("▶"))
+        .on_hover_text("Run simulation (stays on the current view)")
+        .on_disabled_hover_text("Compile a specimen first")
+        .clicked()
+    {
+        click = Some(TabClick::RunSimulation);
+    }
+    // **The spinner goes LAST, because it appears and disappears** (Doug, 2026-08-30).
+    // It used to sit between ▶ and "Simulation", so starting a run inserted a widget to
+    // the LEFT of the label: the label jumped 26pt right for the duration of the run
+    // and back when it finished. Simulation is the last thing in this row, so a spinner
+    // after it pushes nothing.
     //
     // **A widget that comes and goes belongs at the end of a row, not in the middle**
     // — the general form, and the reason this is worth a comment rather than a swap.
@@ -510,6 +515,48 @@ mod tests {
             "the Simulation label sits at x={idle} when idle and x={running} during a \
              run, so starting one shifts it \u{2014} a widget that appears and \
              disappears belongs at the END of the row, after the label, never before it",
+        );
+    }
+
+    /// **▶ sits to the right of the "Simulation" label.**
+    ///
+    /// Doug, 2026-08-30: *"move the simulation Run button to the right, so that it is
+    /// between the Simulation tab label and the simulation spinner."* It had come into
+    /// this row the day before on the label's *left*, between the divider and the tab.
+    /// The tab now reads left to right as *what it is*, *the thing that starts it*,
+    /// *whether it is going*.
+    ///
+    /// # The name says "right of the label", not "between the label and the spinner"
+    ///
+    /// Because that is what can be checked. The spinner carries no accessibility label,
+    /// so **no test can assert anything sits before it** — asserting the full ordering
+    /// would be a claim the mechanism underneath does not deliver, which this repository
+    /// treats as worse than silence. The two halves that *are* checkable are here; the
+    /// third is held by [`stage_tabs_ui`]'s comment and by
+    /// [`the_simulation_label_does_not_move_while_a_run_is_going`], which fails if
+    /// anything that comes and goes gets placed ahead of the label again.
+    #[test]
+    fn the_run_button_sits_to_the_right_of_the_simulation_label() {
+        let mut h = harness(Row::default());
+        h.run_steps(2);
+
+        let label_x = h
+            .query_by_label("Simulation")
+            .expect("the Simulation tab is always drawn")
+            .rect()
+            .min
+            .x;
+        let run_x = h
+            .query_by_label("\u{25b6}")
+            .expect("the run button is always drawn, greyed when a run is impossible")
+            .rect()
+            .min
+            .x;
+
+        assert!(
+            run_x > label_x,
+            "\u{25b6} is at x={run_x} and the Simulation label at x={label_x}, so the \
+             button is still on the label's LEFT \u{2014} the order Doug replaced",
         );
     }
 
