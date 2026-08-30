@@ -638,6 +638,21 @@ mod tests_absence {
     /// the check can still tell the two apart. That is what made this measurable at
     /// all: the probe predicted the defect Doug had already seen, which is why its
     /// verdict on the replacement can be trusted.
+    ///
+    /// # `has_glyphs` HAS FALSE NEGATIVES, and one was caught the same day
+    ///
+    /// The survey that chose U+2731 also reported **U+25B6 absent** — and U+25B6 is the
+    /// ▶ on the run button, which plainly renders, and was until that afternoon the
+    /// prefix on 101 tour hyperlinks Doug described as *triangles*. So this API, asked
+    /// this way, says "missing" about glyphs that draw.
+    ///
+    /// **That does not weaken either assertion here, and the asymmetry is the reason
+    /// to write it down rather than distrust the test.** A check prone to false
+    /// *negatives* cannot manufacture a false *positive*: `true` for U+2731 is
+    /// therefore reliable, and `false` for U+270E is corroborated by Doug seeing a box.
+    /// What it does mean is that **a `false` from this API is not on its own evidence
+    /// that a glyph will not render** — do not use it to reject a candidate marker
+    /// without confirming on screen, which is how ▶ would have been wrongly condemned.
     #[test]
     fn the_scratch_marker_glyph_actually_renders() {
         use egui_kittest::Harness;
