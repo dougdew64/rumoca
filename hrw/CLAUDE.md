@@ -571,8 +571,17 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 
 > ### ⟶ OPEN THE NEXT SESSION WITH THIS
 >
-> **NIGHT 5 RAN — three NULLS, one recorded finding, and a fourth item left unstarted because hard
-> rule 4 caps a night at three.** Record, finding and carried item: [`docs/unattended-runs.md`](docs/unattended-runs.md).
+> **`the-concepts` WAS WALKED 2026-08-28, AND ITS FINDING IS THE ONE OPEN CODE DEFECT.** Prose after
+> a wide table wraps to the **table's** width, not the panel's — **Doug's diagnosis, not Claude's**,
+> and he ruled the code fix not worth the risk to the rendering path since the scrollbar reaches
+> everything. The *content* is bounded instead: `no_tour_table_is_wider_than_the_panel` at 90 chars,
+> with `structural-vs-numerical-rank` (116) the one name left in its NOT_YET_CONVERTED list, which
+> is meant to shrink. [`docs/ui-findings.md`](docs/ui-findings.md) **C21** carries the measurement
+> and an `#[ignore]`d acceptance test to un-ignore if a fix ever lands.
+>
+> **NIGHT 6 IS QUEUED AND UNRUN** — the 17 test compiles that bypass the shared cache, carried from
+> night 5 because that night ended, not because anything forbids it. Plan and gate cost:
+> [`docs/unattended-runs.md`](docs/unattended-runs.md).
 >
 > **This section holds ONLY what is in flight. Everything closed lives in
 > [`DECISIONS.md`](DECISIONS.md)** — *"closed arcs move out of `CLAUDE.md`"*, 2026-08-22, which
@@ -672,49 +681,39 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >   involved. **A new intro section goes BELOW the tour's opening bold line**, or the catalogue's
 >   description of that tour changes with it.
 >
-> **⟶ ✅ CONNECTIONS IS WALKED AND PROTECTED — 2026-08-22. THE NEXT TOUR IS `dae-construction`.**
+> **⟶ WHERE THE WALK IS — `dae-construction` IS NEXT**
 >
-> The restart Doug announced on 2026-08-21 is complete: `connect-expansion.md` is walked, and its prose is held by **ten walked regions**. **Doug, 2026-08-22:** *"I will walk tours
-> in the same sequence as the compiler phases."* That sequence is `the-concepts.md`'s own numbering,
-> so the order is **dae-construction → matching (→ matching-live) → blt-ordering → tearing →
-> index-reduction → initialization → solve-lowering → events.**
+> **Doug, 2026-08-22:** *"I will walk tours in the same sequence as the compiler phases."* That
+> sequence is `the-concepts.md`'s own numbering: **dae-construction → matching (→ matching-live) →
+> blt-ordering → tearing → index-reduction → initialization → solve-lowering → events.**
 >
-> **`index-reduction.md` is mid-walk and waits its turn at #6** — asked and ruled the same day.
-> Doug was shown that it sits five tours ahead of where the order reaches it and answered *"I will
-> walk the tours in compiler phase order."* **The sequence governs; there is no exception for the
-> tour already in progress.** Its harder bar — index reduction explained to someone with only basic
-> calculus — is unchanged and waiting, not abandoned.
+> **Walked: `connect-expansion` (2026-08-22), `the-concepts` (2026-08-28).** Only the first carries
+> `<!-- walked -->` regions — **ten**; the-concepts has none, and its edits are Doug's own, made
+> through the tour-editing path. Nothing later in the order has been walked at all.
+>
+> **`index-reduction.md` is mid-walk and waits its turn at #6.** Shown that it sits five tours
+> ahead of where the order reaches it, Doug answered *"I will walk the tours in compiler phase
+> order."* **The sequence governs; there is no exception for the tour already in progress.**
+>
+> **AND IT CARRIES A HARDER BAR THAN EVERY OTHER TOUR**, staked in public with a PhD Modelica
+> friend: **index reduction explained to anybody with only basic calculus.** He graded its opening
+> *"good. Not yet very good"* — **good is not the target.** The constraint and the three worked
+> corrections are in [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md); read it before
+> touching that tour. **The bar is PREDICTION, not comprehension: a correct tour can still fail it,
+> and only the walk can measure that.**
 >
 > **`connect-expansion.md` is still the one tour carrying `pane-groups` tables**, so editing those
-> tables still means the FULL gate — that warning outlives the walk.
->
-> **He also graded the last walk, and the grade is the useful part:** the opening of
-> `index-reduction.md` is *"good. Not yet very good, but nevertheless good. You are definitely
-> starting to figure this out."* **Good is not the target for that tour** — see below.
->
-> **`index-reduction.md` CARRIES A HARDER BAR THAN EVERY OTHER TOUR**, and Doug has staked it in
-> public with a PhD Modelica friend: **an explanation of index reduction that anybody with only
-> basic calculus can understand.** He intends to prove it can be done. The full constraint, what it
-> forbids assuming, and the three corrections that are worked examples of it are in
-> [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md) — read that before touching that
-> tour. **The bar is PREDICTION, not comprehension: a correct tour can still fail it, and only the
-> walk can measure that.**
->
-> **Convert and improve ONE TOUR AT A TIME — the one Doug is about to walk.** Seven of nine have
-> never been walked; `docs/fixture-tours/README.md` carries the template and its five rules.
+> tables still means the FULL gate — that warning outlives the walk. **Convert and improve ONE TOUR
+> AT A TIME — the one Doug is about to walk.**
 >
 > ### ⟶ AFTER `#48`: RESUME REFACTORING, AND THE GOAL IS BUGS — Doug, 2026-08-21
 >
-> **The `app.rs` arc's real return was defects found, not lines moved, and the numbers separate
-> cleanly.** `app.rs` shed **7,961 lines — and 5,613 of them, 71 %, came from one move that
-> refactored nothing** (the `cfg(test)` blocks). Extraction accounted for ~2,348. Meanwhile the
-> defect yield held steady across the whole arc: **eight found by extracting**, with the last three
-> iterations each still turning something up. **Two diverging curves, and the bugs are the one
-> worth buying.**
+> **The `app.rs` arc's real return was defects found, not lines moved** — **eight** found by
+> extracting, while 71 % of the lines it shed came from one move that refactored nothing. **Two
+> diverging curves, and the bugs are the one worth buying** ([`docs/app-split-plan.md`](docs/app-split-plan.md)).
 >
-> **So: resume `app.rs` with bug discovery as the stated goal, then `worker.rs`.** The order is
-> Doug's. This is trigger 3 (testability), not a line-count target — which the policy above
-> refuses, and which the 71 % figure shows was never the thing delivering value anyway.
+> **So: resume `app.rs` with bug discovery as the stated goal, then `worker.rs`** — the order is
+> Doug's. This is trigger 3 (testability), not a line-count target, which the policy above refuses.
 >
 > **THE SEAM-SELECTION HEURISTIC CHANGES WITH THE GOAL, and this is the part a session will
 > otherwise get wrong.** Most of the arc chose seams by **cheapness** — the coupling table, the
@@ -796,11 +795,14 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > not zero); no cross-check of a stage summary against its own frames (now
 > `a_reduction_summary_never_claims_more_than_its_frames_recorded`); a tab that **re-executed rather
 > than observed**, since replaced by Rumoca's `prepare_dae_for_structural_analysis_fully_observed`;
-> and **Rumoca not reducing the canonical index-3 DAE — adjudicated 2026-08-22**
-> (`docs/upstream-issues.md`, `docs/ideas.md` #83).
+> and **Rumoca not reducing the canonical index-3 DAE — adjudicated 2026-08-22, OUTCOME 1:** System
+> Modeler 15.0 loads it as-is, simulates 0→10 s cleanly, and **reduces it to two states by dynamic
+> state selection.** The gap is evidenced rather than inferred, and what it gated is unblocked —
+> Stop 5, the upstream entry, and `docs/ideas.md` **#83** (general Pantelides) and **#5** (the
+> four-bar linkage). `docs/upstream-issues.md` carries the run and the pre-committed outcomes.
 >
 > **The corpus spans the phase**: `BouncingBall` (nothing needed), `BenchActuator` (1
-> differentiation), `Drivetrain` (6, at 97 equations), `CartesianPendulum` (cannot be reduced).
+> differentiation), `Drivetrain` (6, at 97 equations), `CartesianPendulum` (not reduced by Rumoca).
 > Smallest-first is the tour's spine and the pendulum is its ending. The pane publishes
 > `n_differentiations`, so a funnel that did nothing now says so.
 >
@@ -813,9 +815,7 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > - **`RcCircuit` reports one `zero_crossing_condition`** with no `when` clause at all.
 >   `events.md` Act 1 quotes only the four counts that are explicable.
 > - **`#77`** — a live tour needs three panes and the layout has two. **Largely resolved 2026-08-12**
->   (`docs/ideas.md` #77, `DECISIONS.md`): three defects, each one number or one call — `DEFAULT_ZOOM`
->   2.0 → 1.0, an absolute `MIN_LEFT_POINTS` floor, and the tour pane's scroll axis. Doug: *"Finally,
->   HRW is usable on my 13" screen."* Expect tours to be **taller** now, which is the correct trade.
+>   (`docs/ideas.md` #77, `DECISIONS.md`); tours are **taller** now, which is the correct trade.
 >   **What survives is only the genuine three-pane case** — HRW at half width beside VS Code — so
 >   `matching-live.md` alone may still want a layout change; do not build one for the other eight.
 >
