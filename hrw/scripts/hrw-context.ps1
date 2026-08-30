@@ -64,23 +64,44 @@ try {
 $app = $session.app
 $ctx = $app.context
 
-# **Age comes from focus.json, which is written when a capture happens.**
-# session.json refreshes on HRW's own cadence, so its mtime says how live the app
-# is, not how old the point is -- and reporting the wrong one would make a stale
-# capture look current, which is the whole failure this exists to prevent.
-$age = 'never captured'
-if (Test-Path $focusPath) {
-    $seconds = [int]((Get-Date) - (Get-Item $focusPath).LastWriteTime).TotalSeconds
-    $age = if ($seconds -lt 90) { "${seconds}s ago" }
-           elseif ($seconds -lt 5400) { "$([int]($seconds / 60))m ago" }
-           else { "$([int]($seconds / 3600))h ago" }
+function Format-Age([int]$seconds) {
+    if ($seconds -lt 90) { return "${seconds}s ago" }
+    if ($seconds -lt 5400) { return "$([int]($seconds / 60))m ago" }
+    return "$([int]($seconds / 3600))h ago"
 }
+
+# **BOTH freshnesses, because they are different and the first version conflated
+# them.** It took the age from focus.json (written on capture) and the CONTENT from
+# session.json -- and session.json is written only when HRW records an *action*, so
+# after a launch with no clicking it still describes the app at startup. The line
+# read "captured 8m ago" over state that was minutes stale, which is precisely the
+# stale-capture-looking-current failure this was built to prevent, wearing the
+# disguise of the fix. Found 2026-08-30 while diagnosing why the 🎯 button did
+# nothing: session.json's mtime never moved, which was the evidence.
+$sessionAge = Format-Age ([int]((Get-Date) - (Get-Item $sessionPath).LastWriteTime).TotalSeconds)
+Write-Output "$tag state as of $sessionAge - session.json is rewritten only when HRW records an action"
 
 $where = @("mode: $($app.ui_mode)")
 if ($app.tour) { $where += "tour: $($app.tour)" }
 if ($app.model) { $where += "model: $($app.model)" }
 if ($app.stage_tab) { $where += "stage: $($app.stage_tab)" }
-Write-Output "$tag captured $age - context #$($ctx.seq) - $($where -join ' - ')"
+Write-Output "$tag context #$($ctx.seq) - $($where -join ' - ')"
+
+# **A capture older than the session is not this session's.** `seq` restarts at 0 on
+# launch, so a leftover focus.json from a previous run would otherwise read as a
+# recent capture. The session's own start is the first thing in the action trail.
+$started = ($session.actions | Where-Object { $_.kind -eq 'session' } | Select-Object -First 1).at
+if (Test-Path $focusPath) {
+    $focusTime = (Get-Item $focusPath).LastWriteTime
+    $focusAge = Format-Age ([int]((Get-Date) - $focusTime).TotalSeconds)
+    if ($started -and $focusTime.ToUniversalTime() -lt [datetime]::Parse($started.Replace(' UTC', ''))) {
+        Write-Output "$tag focus.json ($focusAge) PREDATES this HRW session - nothing has been captured since launch"
+    } else {
+        Write-Output "$tag focus.json written $focusAge"
+    }
+} else {
+    Write-Output "$tag no focus.json - nothing has ever been captured in this clone"
+}
 
 if ($ctx.pointing_at) {
     $p = $ctx.pointing_at

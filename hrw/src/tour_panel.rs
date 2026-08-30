@@ -461,8 +461,8 @@ pub(crate) fn autoplay_controls_ui(
                 // plain glyph — and a plain glyph takes the text colour it is given.
                 // `CONTEXT_POINT` is the one to give it: this button makes a *point*,
                 // and cyan is what the Context Bar and the panes already say that in.
-                if has_selection
-                    && ui
+                if has_selection {
+                    let resp = ui
                         .button(
                             egui::RichText::new("\u{1f3af}")
                                 .color(crate::colors::CONTEXT_POINT),
@@ -470,10 +470,30 @@ pub(crate) fn autoplay_controls_ui(
                         .on_hover_text(
                             "Point at the selected text \u{2014} then ask about it in \
                              the chat. Ctrl+C still just copies.",
-                        )
-                        .clicked()
-                {
-                    request = Some(TransportRequest::PointAtSelection);
+                        );
+                    // **The PRESS, not the click, and this button cannot use `clicked()`
+                    // at all.** Doug, 2026-08-30: *"when I click the button, it
+                    // disappears and the selection disappears… it seems incorrect that
+                    // the selection is disappearing."* He had the cause exactly right,
+                    // and it is worse than cosmetic:
+                    //
+                    // egui clears a label selection on any pointer press outside a
+                    // hovered label — so pressing this button destroys the very thing it
+                    // acts on, at mouse-DOWN. `clicked()` fires at mouse-UP, by which
+                    // time `has_selection` is false, the button is no longer drawn, and
+                    // **the click is never observed.** Nothing happened, and nothing
+                    // said so.
+                    //
+                    // On the press frame the selection is still live, and the copy this
+                    // schedules is accumulated while the prose paints — after this bar,
+                    // before egui's end-of-pass clear. So the press is not a workaround
+                    // for the ordering; it is the only moment the text exists.
+                    //
+                    // `primary_pressed` is edge-triggered, so holding the button does
+                    // not re-arm on every frame.
+                    if resp.hovered() && ui.input(|i| i.pointer.primary_pressed()) {
+                        request = Some(TransportRequest::PointAtSelection);
+                    }
                 }
             });
 

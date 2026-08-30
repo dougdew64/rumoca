@@ -5055,6 +5055,13 @@ impl App {
     /// **Ctrl+C deliberately does not do this**, on Doug's ruling: a copy made to paste
     /// somewhere else must not silently change what Claude has.
     fn arm_tour_passage_capture(&mut self, ctx: &egui::Context, tour: String) {
+        // **Recorded at the PRESS, not only at the capture**, so the action trail
+        // distinguishes the two failures. Without it, "nothing happened" was
+        // indistinguishable from "the click never arrived" — and it was the latter for
+        // a whole evening, because `session.json` is written only when an action is
+        // recorded, so a press that reached nothing left the file untouched and every
+        // reading of it described HRW's state at startup.
+        diagnostics::record_action("point-at-selection", format!("in {tour}"));
         ctx.input_mut(|i| i.events.push(egui::Event::Copy));
         self.pending_passage = Some(PendingPassage {
             tour,
