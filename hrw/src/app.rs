@@ -5511,6 +5511,9 @@ impl App {
     /// four presses all sat *below* the last `ui` call, so performing them here
     /// costs no frame at all.
     fn context_bar_ui(&mut self, ui: &mut egui::Ui) {
+        // The top half of the bar's margin. The bottom half is added by whichever
+        // branch below finishes, immediately before that branch's separator.
+        ui.add_space(context_bar::BAR_MARGIN);
         let has_point = self.context.pointed_at.is_some();
         let has_thread = self.tracked_identifier.is_some();
         if !has_point && !has_thread {
@@ -5561,6 +5564,7 @@ impl App {
                 context_bar::stage_ir_count(&self.stages),
                 self.def_index.len(),
             );
+            ui.add_space(context_bar::BAR_MARGIN);
             ui.separator();
             return;
         }

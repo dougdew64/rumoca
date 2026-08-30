@@ -433,9 +433,22 @@ pub(crate) fn context_bar_ui(
         });
     }
 
+    ui.add_space(BAR_MARGIN);
     ui.separator();
     press
 }
+
+/// Breathing room above and below the Context Bar (Doug, 2026-08-30: *"add some margin
+/// above and below the context bar"*).
+///
+/// **Applied inside the bar rather than at its three call sites**, so a fourth place
+/// that draws it cannot forget — the bar reached the navigation branch by being added
+/// there separately, and that is exactly the kind of omission a per-call-site
+/// convention produces.
+///
+/// The bar sits between two `separator()`s; this is the gap between its rows and those
+/// rules, not a replacement for them.
+pub(crate) const BAR_MARGIN: f32 = 6.0;
 
 /// How many stages have produced an IR — the count the Always row reports.
 pub(crate) fn stage_ir_count(stages: &StageBundle) -> usize {
