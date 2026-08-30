@@ -14,7 +14,21 @@ dist/
 *.egg-info/
 _native.cpython*
 *.so
-.claude/
+# **`.claude/*`, NOT `.claude/` — the trailing form cannot be re-included from.**
+# git does not descend into an excluded DIRECTORY, so a `!` rule underneath one never
+# fires. Excluding the contents instead lets the negation below work. Checked with
+# `git check-ignore -v`, which reported the first spelling still ignoring the file.
+.claude/*
+# **The shared project settings TRAVEL; everything else in .claude/ does not.**
+#
+# Upstream ignores `.claude/` wholesale, which made the permission allowlist and the
+# UserPromptSubmit hook per-machine — and Doug switches machines twice a week. A hook
+# that is simply absent on the other machine fails SILENTLY: he captures, asks "what is
+# this?", and gets a confident answer about the wrong subject.
+#
+# `settings.local.json` stays ignored, which is the split that file exists for: anything
+# genuinely machine-specific belongs there, not here.
+!.claude/settings.json
 .vscode/
 dev/
 gh-pages/

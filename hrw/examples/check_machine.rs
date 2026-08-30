@@ -26,9 +26,13 @@
 //! Only things that do **not** travel with a `git pull`. Everything here has cost a
 //! real failure:
 //!
-//! - **The permission allowlist** — `.claude/` is gitignored *by upstream*, so
-//!   `settings.json` is per machine. Without it every Bash call prompts, and during
-//!   an unattended run with nobody awake that is indistinguishable from a hang.
+//! - **The project settings and the context hook** — `.claude/settings.json` carries
+//!   the permission allowlist *and* the `UserPromptSubmit` hook that reports HRW's
+//!   assembled context on every prompt. **It used to be the archetype of this file's
+//!   purpose**: `.claude/` is gitignored by upstream, so it was per machine, and
+//!   without it every Bash call prompts — indistinguishable from a hang during an
+//!   unattended run. Since 2026-08-30 `.gitignore` re-includes it, so it travels, and
+//!   what is checked here is that its *contents* are intact rather than that it exists.
 //! - **A locked `hrw.exe`** — the gate cannot relink while HRW runs, and after a
 //!   `clippy --all-targets` that failure is permanent rather than transient.
 //! - **The parsed-artifact cache** — per machine and keyed on a fingerprint of
@@ -133,20 +137,51 @@ fn main() {
 
     // ------------------------------------------------------------- blocking --
 
+    // **This checked a file that no longer travels per machine** — `.gitignore` now
+    // re-includes `.claude/settings.json` (2026-08-30), so a `git pull` brings the
+    // permission allowlist AND the UserPromptSubmit hook with it. What was the most
+    // frequent blocking failure here is now a `git checkout` away from impossible.
+    //
+    // **It is kept, and it checks CONTENT rather than existence.** A present file that
+    // has lost its hook is the case that matters now, and it is exactly the silent one:
+    // the hook reports HRW's assembled context on every prompt, so without it Claude
+    // answers "what is this?" about whatever he last read instead of what Doug just
+    // captured — confidently, and with nothing on screen to say the channel is dead.
     let settings = repo.join(".claude").join("settings.json");
-    if settings.exists() {
-        r.line(
+    match std::fs::read_to_string(&settings) {
+        Err(_) => r.line(
+            Verdict::Fail,
+            "project settings",
+            "missing, so every Bash call prompts and the context hook cannot run",
+            "it is checked in now: `git checkout .claude/settings.json`",
+        ),
+        Ok(text) if !text.contains("hrw-context.ps1") => r.line(
+            Verdict::Fail,
+            "project settings",
+            "present, but the UserPromptSubmit context hook is gone",
+            "restore it: `git checkout .claude/settings.json` (hrw/docs/setup-windows.md \u{00a7}8)",
+        ),
+        Ok(_) => r.line(
             Verdict::Pass,
-            "permission allowlist",
-            &settings.display().to_string(),
+            "project settings",
+            "allowlist and context hook both present",
             "",
-        );
+        ),
+    }
+
+    // The hook's own script, which the settings file points at. Checked separately
+    // because the two rot independently: a rename here leaves the settings pointing at
+    // nothing, and PowerShell's failure would arrive as an empty prompt rather than an
+    // error Doug sees.
+    let hook = repo.join("hrw").join("scripts").join("hrw-context.ps1");
+    if hook.exists() {
+        r.line(Verdict::Pass, "context hook script", "present", "");
     } else {
         r.line(
             Verdict::Fail,
-            "permission allowlist",
-            "every Bash call will prompt; during an unattended run that looks like a hang",
-            "hrw/docs/setup-windows.md section 8 has the file to create",
+            "context hook script",
+            "hrw/scripts/hrw-context.ps1 is missing; every prompt loses HRW's context",
+            "`git checkout hrw/scripts/hrw-context.ps1`",
         );
     }
 

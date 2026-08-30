@@ -227,15 +227,32 @@ requires a unique match and errors when it does not find one, which is the prope
 wrong-occurrence edit lacks. Python was installed on the inference that Claude prefers it; the
 honest correction is that reaching for a scripting language to edit code was the mistake.
 
-## 8. Claude Code's permission allowlist — per machine, and it does NOT travel
+## 8. Claude Code's project settings — these TRAVEL now, and nothing needs creating
 
-**`.claude/` is gitignored by upstream Rumoca** (not by us), so a permission allowlist cannot be
-committed. On a fresh clone every Bash call prompts for approval, and Doug reported that as real
-friction while walking tours: *"the high latency of your answers… seems to be caused by you asking
-for my approval to perform tasks."* **This section is the durable record, since the file itself
-cannot be** — the same reason `working-with-doug.md` exists.
+**Nothing to do on a new machine. `git pull` brings the file.** `.claude/settings.json` holds two
+things a session needs — the **permission allowlist** and the **`UserPromptSubmit` context hook** —
+and since 2026-08-30 `.gitignore` re-includes it, so both arrive with a checkout.
 
-Create `.claude/settings.json` at the **repository root**:
+**It did not always, and the reason it changed is worth keeping.** Upstream Rumoca ignores
+`.claude/` wholesale, so this file was per machine and this section used to be a recipe for
+recreating it by hand. Doug reported the allowlist's absence as real friction while walking tours:
+*"the high latency of your answers… seems to be caused by you asking for my approval to perform
+tasks."* Then the context hook landed, and a per-machine hook fails **silently** — he captures a
+tour passage on the other machine, asks *"what is this?"*, and Claude answers confidently about the
+wrong subject with nothing on screen to say the channel is dead. That decided it.
+
+**The one gotcha, if this ever needs re-doing:** the ignore rule must be `.claude/*`, not
+`.claude/`. git does not descend into an excluded *directory*, so `!.claude/settings.json`
+underneath the trailing-slash form never fires. `git check-ignore -v .claude/settings.json` is how
+to tell the two apart.
+
+**`settings.local.json` stays ignored**, which is the split it exists for: anything genuinely
+machine-specific goes there.
+
+`cargo run -p hrw --example check_machine` verifies both the allowlist and the hook, and fails if
+the file is present but the hook has been removed.
+
+The committed file, for reference — at the **repository root**:
 
 ```json
 {
