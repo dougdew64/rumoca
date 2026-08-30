@@ -272,6 +272,72 @@ fn the_context_bar_is_present_in_every_state() {
     }
 }
 
+/// **The bar shows context, not advice.**
+///
+/// Doug, 2026-08-30: *"this message is appended to the content in the context bar:
+/// '— open a stage tab to inspect its IR'. Please remove that message."* The row is a
+/// report of what Claude has; a gesture hint is instruction, and mixing the two is what
+/// made it hard to read at a glance.
+///
+/// **The hint still exists, on hover** — it was itself a fix, for a first version that
+/// named a right-click the source view does not have, and
+/// `app::tests::the_empty_context_hint_names_only_gestures_that_work` still guards that.
+/// This asserts only that it is not a *visible label*, which is the half Doug objected
+/// to and the half a harness can see.
+#[test]
+fn the_bar_shows_context_not_advice() {
+    let _no_ad_hoc = AdHocTour::absent();
+
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+    app.test_view_log();
+    let h = harness(app);
+
+    for advice in [
+        "open a stage tab to inspect its IR",
+        "left-click a node to point at it",
+    ] {
+        assert!(
+            h.query_by_label_contains(advice).is_none(),
+            "the bar renders {advice:?} as a label \u{2014} it belongs on the hover, \
+             where it costs nothing until wanted",
+        );
+    }
+}
+
+/// **The three categories of context are three distinct colours.**
+///
+/// Background, point and follow (Doug, 2026-08-30). This is the half of that request a
+/// test can hold: **colour is not in the accessibility tree**, so nothing here can
+/// check that the right label got the right colour, that any of them is legible, or
+/// anything else about how it looks — Doug's eye is the only instrument for that.
+///
+/// What it *can* prevent is the failure this palette has already had once — the scratch
+/// marker borrowed `ANIM_EXPLORE`, and `TRACKED_GOLD`, `ANIM_EXPLORE` and
+/// `SCRATCH_SPECIMEN` are still byte-identical under three names. If two of these three
+/// ever converge the categories stop being distinguishable, and every claim above about
+/// reading the bar at a glance quietly stops being true.
+#[test]
+fn the_three_context_categories_have_distinct_colours() {
+    use crate::colors::{CONTEXT_BACKGROUND, CONTEXT_POINT, TRACKED_GOLD};
+
+    let named = [
+        ("background", CONTEXT_BACKGROUND),
+        ("point", CONTEXT_POINT),
+        ("follow", TRACKED_GOLD),
+    ];
+    for (i, (a_name, a)) in named.iter().enumerate() {
+        for (b_name, b) in &named[i + 1..] {
+            assert_ne!(
+                a, b,
+                "the {a_name} and {b_name} categories share a colour, so the bar can no \
+                 longer be read by category",
+            );
+        }
+    }
+}
+
 /// **An always-present bar must not fill the silence**, which is the risk that comes
 /// with never hiding.
 ///

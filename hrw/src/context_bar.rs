@@ -252,7 +252,10 @@ pub(crate) fn context_bar_ui(
             // stage; otherwise it repeats the line above as if it were a
             // second, independent fact.
             if point.stage != stage {
-                ui.weak(format!("\u{00b7} pointed at in {}", point.stage.name()));
+                ui.colored_label(
+                    crate::colors::CONTEXT_POINT,
+                    format!("\u{00b7} pointed at in {}", point.stage.name()),
+                );
             }
         }
         // An emission failure must be stated here, not swallowed. Otherwise
@@ -271,8 +274,16 @@ pub(crate) fn context_bar_ui(
         let request = point.request.as_str();
         let target = point.target.clone();
         ui.horizontal(|ui| {
-            ui.weak("   Pointing at  ");
-            ui.label(egui::RichText::new(&target).monospace());
+            // **The category label carries the category's colour, not just its value.**
+            // Doug is learning to read this bar at a glance, and a coloured value under
+            // a grey label makes the eye find the value before it knows what kind of
+            // thing it is.
+            ui.colored_label(crate::colors::CONTEXT_POINT, "   Pointing at  ");
+            ui.label(
+                egui::RichText::new(&target)
+                    .monospace()
+                    .color(crate::colors::CONTEXT_POINT),
+            );
             ui.weak(format!("({request})"));
             // Symmetric with Following. Without it the point could only be
             // *replaced*, never removed — so "explain only what I am
@@ -293,7 +304,7 @@ pub(crate) fn context_bar_ui(
 
     if let Some(name) = tracked_identifier.clone() {
         ui.horizontal(|ui| {
-            ui.weak("   Following    ");
+            ui.colored_label(crate::colors::TRACKED_GOLD, "   Following    ");
             ui.label(
                 egui::RichText::new(&name)
                     .monospace()
@@ -479,7 +490,10 @@ pub(crate) fn background_ui(
         parts.push(format!("tour: {tour}"));
     }
     if !parts.is_empty() {
-        ui.weak(format!("\u{00b7} {}", parts.join(" \u{00b7} ")));
+        ui.colored_label(
+            crate::colors::CONTEXT_BACKGROUND,
+            format!("\u{00b7} {}", parts.join(" \u{00b7} ")),
+        );
     }
 }
 

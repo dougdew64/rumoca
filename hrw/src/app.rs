@@ -5063,7 +5063,11 @@ impl App {
         // always emitted, so that wording made the bar contradict `focus.json`
         // for every reader who had not yet clicked anything -- the majority
         // state. What is missing is a *selection*, which is what this now says.
-        format!("\u{2014} {}", ways.join(", or "))
+        //
+        // **No leading em dash since 2026-08-30.** It was punctuation for sitting
+        // beside the background line; the hint is hover text now, introduced by
+        // "Right now:", and a dash after a colon reads as a stutter.
+        ways.join(", or ")
     }
 
     /// The **stage tab row**: one tab per compilation phase, plus Simulation and
@@ -5528,17 +5532,32 @@ impl App {
             // passing it unconditionally would print "· Parse" on a fresh launch —
             // naming a phase that has not run, about a specimen that does not exist.
             // Absence is stated, never filled.
+            // **The gesture hint moved into the hover on 2026-08-30.** Doug, seeing it
+            // beside the background: *"this message is appended to the content in the
+            // context bar: '— open a stage tab to inspect its IR'. Please remove that
+            // message."* It is advice, and the bar's line is a report of what Claude
+            // has; mixing the two is what made the row hard to read.
+            //
+            // **Moved rather than deleted, because it was itself a fix.** The first
+            // version was generic and named a right-click the source view does not
+            // have — advice the reader could not take, which is the bug
+            // `the_empty_context_hint_names_only_gestures_that_work` still guards. It
+            // is now on hover, where it costs nothing until wanted.
+            //
+            // **And what it disambiguated is no longer at risk.** Half its job was
+            // making "nothing is assembled" distinguishable from "the bar is not
+            // rendering" — which the bar being unconditional now settles by itself.
             let hint = self.empty_context_hint();
             let tour = self.tour.selected.as_ref().map(TourSource::label);
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("Context").strong());
+                ui.label(egui::RichText::new("Context").strong())
+                    .on_hover_text(format!("{EMPTY_CONTEXT_RULE}\n\nRight now: {hint}"));
                 context_bar::background_ui(
                     ui,
                     self.model.as_deref(),
                     self.selected.is_some().then_some(self.stage),
                     tour.as_deref(),
                 );
-                ui.weak(hint).on_hover_text(EMPTY_CONTEXT_RULE);
             });
             ui.separator();
             return;

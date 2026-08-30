@@ -72,6 +72,28 @@ pub const ANIM_FAIL: Color32 = Color32::from_rgb(0xEF, 0x53, 0x50);
 /// Tracked-identifier highlight — opaque gold for text/strokes.
 pub const TRACKED_GOLD: Color32 = Color32::from_rgb(0xFF, 0xD5, 0x4F);
 
+/// The Context Bar's **background** row — specimen, stage and open tour.
+///
+/// One of three colours, one per category of context (Doug, 2026-08-30: *"make the
+/// context bar contents easier to read by using different text colors for each of the
+/// three categories"*). The other two are [`CONTEXT_POINT`] and [`TRACKED_GOLD`].
+///
+/// **Quiet on purpose, and the quietest of the three.** The background is what is true
+/// whatever you have clicked; the other two are what *you* assembled, and should win
+/// the eye. It replaced `ui.weak`, which was theme-adaptive — a deliberate trade for
+/// being distinguishable from the two categories beside it, which is what was asked.
+pub const CONTEXT_BACKGROUND: Color32 = Color32::from_rgb(0x8A, 0x9E, 0xA8);
+
+/// The Context Bar's **point** — the one node you are pointing at.
+///
+/// **The opaque twin of [`JUMP_FILL`]**, exactly as [`TRACKED_GOLD`] is the opaque twin
+/// of [`TRACKED_FILL`]. That pairing is the whole reason this value and not another:
+/// `JUMP_FILL`'s own note already fixes the vocabulary — *"Cyan, deliberately not gold.
+/// Gold means followed — a thread through every stage — and a jump target is a
+/// different thing: one row, one link, this moment."* A point is that second thing, so
+/// the bar says it in the colour the panes already say it in.
+pub const CONTEXT_POINT: Color32 = Color32::from_rgb(0x42, 0xC5, 0xF5);
+
 /// A **scratch specimen** in the model list — a probe Claude wrote to answer one
 /// question, living in the gitignored bridge directory rather than the curated corpus.
 ///
