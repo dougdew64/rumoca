@@ -72,6 +72,20 @@ pub const ANIM_FAIL: Color32 = Color32::from_rgb(0xEF, 0x53, 0x50);
 /// Tracked-identifier highlight — opaque gold for text/strokes.
 pub const TRACKED_GOLD: Color32 = Color32::from_rgb(0xFF, 0xD5, 0x4F);
 
+/// A **scratch specimen** in the model list — a probe Claude wrote to answer one
+/// question, living in the gitignored bridge directory rather than the curated corpus.
+///
+/// **Its own constant since 2026-08-30, on Doug's instruction.** The row had borrowed
+/// [`ANIM_EXPLORE`], whose documented meaning is *"currently-explored edge in the
+/// augmenting-path animation"* — a scratch file is not an explored edge, and a palette
+/// entry read by two unrelated features cannot be retuned for either.
+///
+/// **The value deliberately matches what was on screen before**, so this is a naming
+/// change and not a visual one. That it coincides with [`ANIM_EXPLORE`] and
+/// [`TRACKED_GOLD`] is now a coincidence the three are free to break independently,
+/// which is the whole point of separating them.
+pub const SCRATCH_SPECIMEN: Color32 = Color32::from_rgb(0xFF, 0xD5, 0x4F);
+
 /// A translucent tint: a normal RGB colour at `alpha`, premultiplied correctly.
 ///
 /// `Color32::from_rgba_premultiplied` requires every channel to be **less than

@@ -25,6 +25,19 @@ use crate::app::{DEFAULT_SPECIMEN_DIR, SCRATCH_POLL_INTERVAL};
 use crate::app::{read_purpose, section_header};
 use crate::{bridge, survey};
 
+/// The glyph prefixing a **scratch specimen** in the list.
+///
+/// **U+2731 HEAVY ASTERISK, and the choice was measured rather than picked.** This was
+/// U+270E (LOWER RIGHT PENCIL) until 2026-08-30, when Doug reported the three
+/// scratch rows as *"boxes"* — a pencil is in none of egui's four bundled fonts, so it
+/// rendered as tofu and said nothing at all. `App::hrw_font_definitions` already
+/// widens every font into both families, and that cannot help for a codepoint no
+/// bundled font contains.
+///
+/// [`tests_absence::the_scratch_marker_glyph_actually_renders`] asks those exact fonts
+/// whether this glyph exists, so the next marker cannot regress to a box unnoticed.
+const SCRATCH_MARKER: char = '\u{2731}';
+
 /// What the model list wants the app to do next.
 ///
 /// The pane renders a list; **loading a specimen resets stages, the log, the
@@ -319,8 +332,8 @@ impl ModelListState {
                             // different weight, and the list is where that shows.
                             let is_scratch = self.scratch.contains(path);
                             let label = if is_scratch {
-                                egui::RichText::new(format!("\u{270e} {name}"))
-                                    .color(crate::colors::ANIM_EXPLORE)
+                                egui::RichText::new(format!("{SCRATCH_MARKER} {name}"))
+                                    .color(crate::colors::SCRATCH_SPECIMEN)
                             } else {
                                 egui::RichText::new(name)
                             };
@@ -602,6 +615,57 @@ impl Default for ModelListState {
 #[cfg(test)]
 mod tests_absence {
     use super::*;
+
+    /// **The scratch marker is a glyph HRW's fonts actually have.**
+    ///
+    /// Doug, 2026-08-30: *"three specimen items are shown in yellow, preceded by
+    /// boxes."* The marker was U+270E (LOWER RIGHT PENCIL), which is in none of
+    /// egui's four bundled fonts — Hack, Ubuntu-Light, NotoEmoji-Regular,
+    /// emoji-icon-font — so every scratch row was prefixed by tofu.
+    ///
+    /// **Widening the fallbacks could never have fixed it**, and that is the trap worth
+    /// recording: `App::hrw_font_definitions` already makes every bundled font a
+    /// fallback for both families, added when arrows were boxes in proportional text.
+    /// It decides *which loaded font may supply* a glyph, so it does nothing for a
+    /// codepoint none of them contains. A marker is a claim the reader can see, and a
+    /// box makes it a claim about nothing.
+    ///
+    /// # The second assertion is the non-vacuity guard, and it is not decoration
+    ///
+    /// `has_glyphs` returning `true` for everything — a stub, a changed default, a
+    /// harness that installs its own font — would let the first assertion pass while
+    /// measuring nothing. Asking the *replaced* pencil and requiring **false** proves
+    /// the check can still tell the two apart. That is what made this measurable at
+    /// all: the probe predicted the defect Doug had already seen, which is why its
+    /// verdict on the replacement can be trusted.
+    #[test]
+    fn the_scratch_marker_glyph_actually_renders() {
+        use egui_kittest::Harness;
+
+        let mut h = Harness::new_ui(|_ui| {});
+        h.ctx.set_fonts(crate::app::hrw_font_definitions());
+        h.run_steps(2);
+        let id = egui::FontId::proportional(14.0);
+        let has = |c: char| {
+            h.ctx
+                .fonts_mut(|f| f.has_glyphs(&id, c.encode_utf8(&mut [0u8; 4])))
+        };
+
+        assert!(
+            has(SCRATCH_MARKER),
+            "the scratch marker U+{:04X} is in none of HRW's bundled fonts, so every \
+             scratch row would be prefixed by a tofu box \u{2014} pick a glyph these \
+             fonts have, not one that merely looks right in the editor",
+            SCRATCH_MARKER as u32,
+        );
+        assert!(
+            !has('\u{270e}'),
+            "non-vacuity: U+270E is the pencil this replaced and Doug saw it render as \
+             a box, so it must still report as ABSENT \u{2014} if it does not, this \
+             check has stopped distinguishing present from missing and the assertion \
+             above proves nothing",
+        );
+    }
 
     /// **An empty specimen list says so, and a scan ERROR outranks it.**
     ///

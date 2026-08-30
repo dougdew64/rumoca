@@ -584,6 +584,33 @@ follows them. Where the view shows IR nodes \u{2014} trees, stage tabs, incidenc
 left-click points at them, and right-click offers Follow for names the model knows. Hover \
 anything clickable and it will say which.";
 
+/// The fonts HRW installs: egui's bundled set, with **every** font made a fallback for
+/// **both** families.
+///
+/// A glyph that lives in only one family otherwise shows as a tofu box in the other —
+/// the → and ← arrows are in Hack (monospace) but not Ubuntu-Light (proportional), so
+/// before this they were boxes in every ordinary label.
+///
+/// **What it cannot do is conjure a codepoint no bundled font has**, and that limit was
+/// paid for on 2026-08-30: the scratch-specimen marker was U+270E (LOWER RIGHT
+/// PENCIL), which is in none of them, so widening the fallbacks could never have helped
+/// and Doug saw a box for it. Extracted from `App::new` that day so a test can ask this
+/// exact font set whether a glyph exists — see
+/// [`crate::model_list::tests_absence::the_scratch_marker_glyph_actually_renders`].
+pub(crate) fn hrw_font_definitions() -> egui::FontDefinitions {
+    let mut fonts = egui::FontDefinitions::default();
+    let all: Vec<String> = fonts.font_data.keys().cloned().collect();
+    for family in [egui::FontFamily::Proportional, egui::FontFamily::Monospace] {
+        let list = fonts.families.entry(family).or_default();
+        for name in &all {
+            if !list.contains(name) {
+                list.push(name.clone());
+            }
+        }
+    }
+    fonts
+}
+
 /// The algorithm **frame sets** one compile produced, grouped because they are one
 /// thing.
 ///
@@ -1449,21 +1476,7 @@ impl App {
         // reader last left it. See `clear_persisted_split`.
         clear_persisted_split(&cc.egui_ctx);
 
-        // Make every bundled font a fallback for BOTH families, so a glyph that
-        // lives in only one (e.g. the → and ← arrows are in Hack/monospace but
-        // not Ubuntu-Light/proportional) still renders in any label — otherwise
-        // arrows show as tofu squares in proportional text.
-        let mut fonts = egui::FontDefinitions::default();
-        let all: Vec<String> = fonts.font_data.keys().cloned().collect();
-        for family in [egui::FontFamily::Proportional, egui::FontFamily::Monospace] {
-            let list = fonts.families.entry(family).or_default();
-            for name in &all {
-                if !list.contains(name) {
-                    list.push(name.clone());
-                }
-            }
-        }
-        cc.egui_ctx.set_fonts(fonts);
+        cc.egui_ctx.set_fonts(hrw_font_definitions());
 
         // Scale the whole UI (fonts + spacing) via egui's zoom, not by mutating
         // individual text styles — so the Settings slider and Ctrl +/− both work.
