@@ -584,6 +584,35 @@ follows them. Where the view shows IR nodes \u{2014} trees, stage tabs, incidenc
 left-click points at them, and right-click offers Follow for names the model knows. Hover \
 anything clickable and it will say which.";
 
+/// A 🎯 press waiting for egui to hand back the text the reader selected.
+///
+/// # Why this needs a state machine at all
+///
+/// **egui does not expose a label selection's text to the application.** `has_selection()`
+/// is public; the text is not. What *is* reachable is the copy: when egui performs one it
+/// pushes [`egui::OutputCommand::CopyText`] into `ctx.output()`, which anyone can read.
+///
+/// So the button does not read the selection — it *asks egui to copy*, by pushing an
+/// [`egui::Event::Copy`] into the input queue, and then collects the text egui emits in
+/// response. That round trip costs frames, hence this: press on frame N, egui's
+/// selection plugin acts on N+1, the text is in `output` when frame N+2 begins.
+///
+/// # Why it gives up rather than waiting
+///
+/// The button is only enabled while something is selected, but a selection can vanish
+/// between press and collection — and then no `CopyText` ever arrives. Without a bound
+/// this would sit armed for the rest of the session and fire on the reader's *next*
+/// unrelated Ctrl+C, capturing something they never pointed at. **A capture that
+/// attaches itself to the wrong gesture is worse than one that does not happen**, so it
+/// expires and says so.
+struct PendingPassage {
+    /// The tour open when 🎯 was pressed, not when the text arrives — they cannot
+    /// differ today, and recording the former is what keeps that true if they ever can.
+    tour: String,
+    /// Frames left before giving up. Three is two more than the round trip needs.
+    frames_left: u8,
+}
+
 /// The fonts HRW installs: egui's bundled set, with **every** font made a fallback for
 /// **both** families.
 ///
@@ -731,6 +760,8 @@ pub struct App {
     nav: Vec<NavEntry>,
     nav_loading: Option<String>,
     nav_error: Option<String>,
+    /// A 🎯 press awaiting the text egui will copy for it. See [`PendingPassage`].
+    pending_passage: Option<PendingPassage>,
 
     /// A transient one-line notice for the status bar.
     ///
@@ -1508,6 +1539,7 @@ impl App {
             show_help: false,
             show_about: false,
             field_help: field_help::load(),
+            pending_passage: None,
             viewport: Viewport::default(),
             log_entries: Vec::new(),
             viewing_log: false,
@@ -2346,6 +2378,10 @@ impl App {
             // Excluded by the guard above. `return` rather than a panic keeps
             // that safe even if a future caller forgets.
             Focus::Nothing => return,
+            // **Tour passages do not come through here.** They are captured by
+            // `capture_tour_passage`, which has the tour name and the selected text
+            // and needs none of the stage machinery this function is built on.
+            Focus::TourPassage { .. } => return,
         };
         let stage_values = self.stages.as_stage_pairs();
         let kind = match &focus {
@@ -2353,6 +2389,7 @@ impl App {
             Focus::Stage => PointKind::Stage,
             Focus::Specimen => PointKind::Specimen,
             Focus::Nothing => return,
+            Focus::TourPassage { .. } => return,
         };
         let ask = self.base_ask(seq, bridge::AskRequest::Explain, focus, &stage_values);
         let result = bridge::write(&ask);
@@ -2360,7 +2397,7 @@ impl App {
             seq,
             target: target.clone(),
             kind,
-            stage: self.stage,
+            stage: Some(self.stage),
             request: bridge::AskRequest::Explain,
         });
         self.context.point_error = result.as_ref().err().map(std::string::ToString::to_string);
@@ -3091,8 +3128,13 @@ impl App {
                         PointKind::Node(path) => format!("node {}", bridge::describe_path(path)),
                         PointKind::Stage => "stage".to_owned(),
                         PointKind::Specimen => "specimen".to_owned(),
+                        // Named with its tour, because "tour passage" alone would
+                        // leave the hook reporting a quotation with no document.
+                        PointKind::TourPassage { tour } => format!("tour passage in {tour}"),
                     },
-                    "stage": p.stage.name(),
+                    // Null for a tour passage, which is not in a stage. Stated rather
+                    // than filled with whichever tab happened to be selected.
+                    "stage": p.stage.map(StageKind::name),
                     "request": format!("{:?}", p.request),
                 })),
                 "following": self.tracked_identifier.as_ref().map(|name| json!({
@@ -3208,7 +3250,7 @@ impl App {
                         seq,
                         target: target.clone(),
                         kind: PointKind::Node(key_path),
-                        stage: self.stage,
+                        stage: Some(self.stage),
                         request,
                     });
                     self.context.point_error =
@@ -4886,7 +4928,42 @@ impl App {
         // Rebuild whichever shape was captured. Handling only `Node` here would
         // silently drop stage and specimen captures on the next follow-change,
         // reintroducing the disagreement between bar and file.
-        let stage_value = self.stages.get(point.stage).value.clone();
+        // **A tour passage is emitted before the stage lookup, because it has no
+        // stage.** Everything below rebuilds a capture out of some stage's IR; a
+        // passage of prose is the first point that is not in a compile at all.
+        if let PointKind::TourPassage { tour } = &point.kind {
+            let ask = Ask {
+                seq: point.seq,
+                request: point.request,
+                specimen: self.selected.as_deref(),
+                model: self.model.as_deref(),
+                // Genuinely none. The reader was looking at prose, not at a phase.
+                stage: None,
+                libraries: self.library_strings(),
+                def_index: &self.def_index,
+                parse_value: self.stages.parse.value.as_ref(),
+                resolve_value: self.stages.resolve.value.as_ref(),
+                focus: Focus::TourPassage {
+                    tour,
+                    text: &point.target,
+                },
+                tracking,
+                view: self.view_context(),
+                failure: self.failure_context(),
+            };
+            self.context.point_error = bridge::write(&ask).err().map(|e| e.to_string());
+            return;
+        }
+
+        // Every remaining shape is a location in a stage's IR, so a stage is required
+        // and its absence is a bug rather than a state — the three IR capture sites all
+        // record one.
+        let Some(point_stage) = point.stage else {
+            self.context.point_error =
+                Some("capture recorded no stage, so it cannot be re-emitted".to_owned());
+            return;
+        };
+        let stage_value = self.stages.get(point_stage).value.clone();
         let focus = match (&point.kind, &stage_value) {
             (PointKind::Node(key_path), Some(value)) => Focus::Node {
                 key_path: key_path.clone(),
@@ -4902,6 +4979,8 @@ impl App {
             (PointKind::Node(_), None) => return,
             (PointKind::Stage, _) => Focus::Stage,
             (PointKind::Specimen, _) => Focus::Specimen,
+            // Returned above, before the stage lookup this match sits inside.
+            (PointKind::TourPassage { .. }, _) => return,
         };
         let ask = Ask {
             seq: point.seq,
@@ -4911,7 +4990,7 @@ impl App {
             // The stage the capture was MADE in, not the one now on screen.
             // A bar reading "Structural" for a point captured in Flatten would
             // be describing context Claude does not have.
-            stage: Some(point.stage),
+            stage: point.stage,
             libraries: self.library_strings(),
             def_index: &self.def_index,
             parse_value: self.stages.parse.value.as_ref(),
@@ -4922,6 +5001,89 @@ impl App {
             failure: self.failure_context(),
         };
         self.context.point_error = bridge::write(&ask).err().map(|e| e.to_string());
+    }
+
+    /// Arm a tour-passage capture: ask egui to copy the selection, and wait for it.
+    ///
+    /// Pushing [`egui::Event::Copy`] is the only way to get at a label selection's
+    /// text — see [`PendingPassage`] for why the application cannot simply read it.
+    /// **Ctrl+C deliberately does not do this**, on Doug's ruling: a copy made to paste
+    /// somewhere else must not silently change what Claude has.
+    fn arm_tour_passage_capture(&mut self, ctx: &egui::Context, tour: String) {
+        ctx.input_mut(|i| i.events.push(egui::Event::Copy));
+        self.pending_passage = Some(PendingPassage {
+            tour,
+            frames_left: 3,
+        });
+    }
+
+    /// Collect the copied text, if egui has produced it yet.
+    ///
+    /// **Reads `output` without draining it**, so an ordinary Ctrl+C still reaches the
+    /// clipboard: the command stays in the queue for the backend to act on. This only
+    /// looks.
+    fn collect_pending_passage(&mut self, ctx: &egui::Context) {
+        let Some(pending) = &mut self.pending_passage else {
+            return;
+        };
+        let copied = ctx.output(|o| {
+            o.commands.iter().find_map(|c| match c {
+                egui::OutputCommand::CopyText(t) if !t.trim().is_empty() => Some(t.clone()),
+                _ => None,
+            })
+        });
+        match copied {
+            Some(text) => {
+                let tour = pending.tour.clone();
+                self.pending_passage = None;
+                self.capture_tour_passage(tour, text);
+            }
+            None => {
+                pending.frames_left = pending.frames_left.saturating_sub(1);
+                if pending.frames_left == 0 {
+                    self.pending_passage = None;
+                    // **Said out loud, because the bar will show the PREVIOUS point.**
+                    // Silence here would read as "the capture worked", and the reader
+                    // would ask about a passage Claude never received.
+                    self.notify(
+                        "\u{26a0} nothing captured \u{2014} the selection was gone by the \
+                         time egui copied it. Select the passage again, then press \u{1f3af}.",
+                    );
+                }
+            }
+        }
+    }
+
+    /// Make a selected tour passage the point, and emit it.
+    fn capture_tour_passage(&mut self, tour: String, text: String) {
+        // **Collapsed to one line for the bar and the log.** The passage itself goes to
+        // `focus.json` in full; a paragraph rendered into a one-row bar would push the
+        // × button off the edge, and the bar's job is to say WHAT is held, not hold it.
+        let flat = text.split_whitespace().collect::<Vec<_>>().join(" ");
+        let shown: String = if flat.chars().count() > 60 {
+            format!("{}\u{2026}", flat.chars().take(60).collect::<String>())
+        } else {
+            flat
+        };
+        let target = format!("\u{201c}{shown}\u{201d}");
+
+        diagnostics::record_action("point-at-tour-passage", format!("in {tour}"));
+        self.context.jump_highlight = None;
+        let seq = self.context.next_seq();
+        self.context.pointed_at = Some(PointedAt {
+            seq,
+            // The bar shows the abbreviation; `emit_context` sends `target` as the
+            // passage text, so this MUST be the full prose, not the elision.
+            target: text,
+            kind: PointKind::TourPassage { tour },
+            // No stage. A passage of prose is not in one.
+            stage: None,
+            request: bridge::AskRequest::Explain,
+        });
+        self.emit_context();
+        self.notify(format!(
+            "\u{1f3af} pointing at {target} \u{2014} now ask about it"
+        ));
     }
 
     /// Drop a retained point if the recompiled IR no longer contains it.
@@ -4941,13 +5103,19 @@ impl App {
     fn revalidate_point_against_new_ir(&mut self) {
         let dangling = match &self.context.pointed_at {
             Some(point) => match &point.kind {
-                PointKind::Node(key_path) => !self
-                    .stages
-                    .get(point.stage)
-                    .value
-                    .as_ref()
-                    .is_some_and(|value| bridge::node_exists(value, key_path)),
-                PointKind::Stage | PointKind::Specimen => false,
+                PointKind::Node(key_path) => point.stage.is_none_or(|s| {
+                    !self
+                        .stages
+                        .get(s)
+                        .value
+                        .as_ref()
+                        .is_some_and(|value| bridge::node_exists(value, key_path))
+                }),
+                // **A tour passage cannot dangle on a recompile**, which is the whole
+                // reason it is listed beside the two that name something existing by
+                // construction: it points at prose in a document, and compiling a
+                // specimen does not touch the tours.
+                PointKind::Stage | PointKind::Specimen | PointKind::TourPassage { .. } => false,
             },
             None => false,
         };
@@ -5493,6 +5661,17 @@ impl App {
             TransportRequest::Back => self.tour_back(),
             TransportRequest::Play => self.start_autoplay(),
             TransportRequest::Stopped => self.restore_mode_after_autoplay(),
+            TransportRequest::PointAtSelection => {
+                // The tour's own label, so the capture names the document the passage
+                // can be found in. `None` cannot happen while the panel is drawing a
+                // tour, and is reported rather than assumed away.
+                match self.tour.selected.as_ref().map(TourSource::label) {
+                    Some(tour) => self.arm_tour_passage_capture(ui.ctx(), tour),
+                    None => {
+                        self.notify("\u{26a0} no tour is open, so there is no passage to point at")
+                    }
+                }
+            }
         }
         None
     }
@@ -5715,6 +5894,10 @@ impl App {
     /// Everything below is unchanged and runs in the same order. See
     /// `docs/verification-plan.md` item 2.
     pub(crate) fn frame_ui(&mut self, ui: &mut egui::Ui) {
+        // Before anything draws: collect a tour-passage copy that egui produced for us
+        // on a previous frame. See `PendingPassage`.
+        self.collect_pending_passage(ui.ctx());
+
         // First thing every frame: check for results from the worker thread.
         self.drain_worker();
 

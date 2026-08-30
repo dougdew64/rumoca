@@ -403,6 +403,7 @@ impl App {
         let (tx, _) = std::sync::mpsc::channel();
         let (from_tx, rx) = std::sync::mpsc::channel();
         let app = App {
+            pending_passage: None,
             worker: Worker {
                 tx,
                 rx,
@@ -633,7 +634,7 @@ fn reselecting_the_same_specimen_keeps_the_context_but_switching_clears_it() {
         seq: 1,
         target: "components.src.V".to_owned(),
         kind: PointKind::Stage,
-        stage: StageKind::Flatten,
+        stage: Some(StageKind::Flatten),
         request: bridge::AskRequest::Explain,
     });
     app.tracked_identifier = Some("emf.w".to_owned());
@@ -680,7 +681,7 @@ fn a_retained_point_that_no_longer_resolves_is_dropped_out_loud() {
         seq: 1,
         target: "variables.gone".to_owned(),
         kind: PointKind::Node(vec![Seg::Key("variables".into()), Seg::Key("gone".into())]),
-        stage: StageKind::Flatten,
+        stage: Some(StageKind::Flatten),
         request: bridge::AskRequest::Explain,
     });
     app.revalidate_point_against_new_ir();
@@ -704,7 +705,7 @@ fn a_retained_point_that_no_longer_resolves_is_dropped_out_loud() {
         seq: 2,
         target: "variables.emf.w".to_owned(),
         kind: PointKind::Node(vec![Seg::Key("variables".into()), Seg::Key("emf.w".into())]),
-        stage: StageKind::Flatten,
+        stage: Some(StageKind::Flatten),
         request: bridge::AskRequest::Explain,
     });
     app.revalidate_point_against_new_ir();
@@ -719,7 +720,7 @@ fn a_retained_point_that_no_longer_resolves_is_dropped_out_loud() {
         seq: 3,
         target: "stage".to_owned(),
         kind: PointKind::Stage,
-        stage: StageKind::Parse,
+        stage: Some(StageKind::Parse),
         request: bridge::AskRequest::Explain,
     });
     app.revalidate_point_against_new_ir();
@@ -885,7 +886,7 @@ fn every_point_and_follow_combination_emits_honestly() {
             seq: 1,
             target: "components.src.V".to_owned(),
             kind: PointKind::Stage,
-            stage: StageKind::Flatten,
+            stage: Some(StageKind::Flatten),
             request: bridge::AskRequest::Explain,
         }
     }
@@ -967,7 +968,7 @@ fn following_re_emits_without_losing_the_point() {
         seq: 3,
         target: "components.src.V".to_owned(),
         kind: PointKind::Node(vec![Seg::Key("components".into())]),
-        stage: StageKind::Flatten,
+        stage: Some(StageKind::Flatten),
         request: bridge::AskRequest::Explain,
     });
 
@@ -1052,14 +1053,14 @@ fn the_point_remembers_its_own_stage() {
         seq: 1,
         target: "x".to_owned(),
         kind: PointKind::Stage,
-        stage: StageKind::Flatten,
+        stage: Some(StageKind::Flatten),
         request: bridge::AskRequest::Explain,
     });
 
     app.stage = StageKind::Structural;
     assert_eq!(
         app.context.pointed_at.as_ref().unwrap().stage,
-        StageKind::Flatten,
+        Some(StageKind::Flatten),
         "the captured stage is a property of the capture, not of the view"
     );
 }

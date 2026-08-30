@@ -626,6 +626,22 @@ pub enum Focus<'a> {
     ///   empty — the thread is the whole subject". Same reasoning as
     ///   `mentions: 0` in the tracking section.
     Nothing,
+    /// **A passage of tour prose**, selected in the tour panel and captured with 🎯.
+    ///
+    /// The first focus that is not part of a compile: there is no stage, no IR and no
+    /// key path, which is why [`Ask::stage`] is `None` for one of these and why
+    /// [`crate::context_bar::PointedAt::stage`] became an `Option` the same day.
+    ///
+    /// **`text` is what the pane RENDERED**, markdown stripped — that is what egui can
+    /// hand back, and Doug ruled it sufficient. It is enough to answer *"what does this
+    /// mean?"*; for *"improve this paragraph"* Claude locates the source itself, which
+    /// is where `docs/fixture-tours/README.md`'s `walked:` and `authored:` rules bind.
+    TourPassage {
+        /// The tour it was read in, as the picker labels it.
+        tour: &'a str,
+        /// The selected prose, verbatim as rendered.
+        text: &'a str,
+    },
 }
 
 /// What the user wants Claude to do with the captured focus.
@@ -1544,6 +1560,7 @@ fn build(ask: &Ask) -> Value {
         Focus::Stage => "stage",
         Focus::Specimen => "specimen",
         Focus::Nothing => "none",
+        Focus::TourPassage { .. } => "tour_passage",
     };
     // **The slug, not the display name.** This used to emit `StageKind::name`, which
     // reads "Index reduction" with a space — so the capture named a stage that
@@ -1601,6 +1618,24 @@ fn build(ask: &Ask) -> Value {
     {
         doc["node"] = build_node(key_path, stage_value, ask.specimen);
         doc["cross_stage"] = build_cross_stage(ask, key_path);
+    }
+    // **A tour passage carries its own section**, because none of the IR machinery
+    // above applies: there is no stage IR to navigate, no key path, and no cross-stage
+    // diff to build. The note says what the text IS, so a reader does not go looking
+    // for the passage byte-for-byte in the markdown and conclude the capture is wrong.
+    if let Focus::TourPassage { tour, text } = &ask.focus {
+        doc["tour_passage"] = json!({
+            "note": "prose the reader selected in HRW's tour panel and captured. This is \
+                     the RENDERED text, so markdown markup is stripped and it will not \
+                     match the source byte-for-byte -- locate it in the file named below. \
+                     Before editing it, check whether it sits inside a `walked:` region \
+                     (may be fixed, and the marker re-dated in the same commit) or an \
+                     `authored:` region (Doug's own prose -- report a false claim, never \
+                     rewrite it).",
+            "tour": tour,
+            "file": format!("hrw/docs/fixture-tours/{tour}.md"),
+            "text": text,
+        });
     }
     // The ambient half. A sibling section rather than nested, so the point and
     // the thread are structurally separate and neither can be mistaken for the
@@ -2140,6 +2175,70 @@ fn shape(v: &Value) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// **A tour-passage capture emits its tour, its text, and NO stage.**
+    ///
+    /// The file is what Claude actually reads, so this is the half that matters for
+    /// accuracy. Three claims, each of which the obvious implementation gets wrong:
+    ///
+    /// - `stage` is the *"(navigated definition)"* sentinel rather than a phase name.
+    ///   `Ask::stage` is already `Option` for navigated definitions, which is why the
+    ///   passage needed no new spelling — but it must not name a phase, because prose
+    ///   is not in one and a reader acting on "Parse" would go to the wrong place.
+    /// - `kind` is `tour_passage`, distinguishable from the three IR shapes.
+    /// - the passage section names the **file**, because the emitted text is what the
+    ///   pane rendered and will not match the markdown byte-for-byte.
+    #[test]
+    fn a_tour_passage_emits_its_tour_and_no_stage() {
+        let defs = BTreeMap::new();
+        let ask = Ask {
+            seq: 12,
+            request: AskRequest::Explain,
+            specimen: None,
+            model: None,
+            stage: None,
+            libraries: Vec::new(),
+            def_index: &defs,
+            parse_value: None,
+            resolve_value: None,
+            focus: Focus::TourPassage {
+                tour: "dae-construction",
+                text: "A DAE is well posed when the counts agree.",
+            },
+            tracking: None,
+            view: View {
+                ui_mode: "Tour",
+                stage_view: None,
+                specimen_detail: None,
+                viewing_log: false,
+                animation: None,
+            },
+            failure: None,
+        };
+
+        let doc = build(&ask);
+        assert_eq!(doc["kind"], "tour_passage");
+        assert_eq!(
+            doc["stage"], "(navigated definition)",
+            "prose is not in a phase; naming one would send Claude to the wrong place",
+        );
+        assert_eq!(doc["tour_passage"]["tour"], "dae-construction");
+        assert_eq!(
+            doc["tour_passage"]["file"], "hrw/docs/fixture-tours/dae-construction.md",
+            "the file is named because the rendered text will not match the source",
+        );
+        assert_eq!(
+            doc["tour_passage"]["text"],
+            "A DAE is well posed when the counts agree.",
+        );
+        assert!(
+            doc["tour_passage"]["note"]
+                .as_str()
+                .is_some_and(|n| n.contains("authored:") && n.contains("walked:")),
+            "the note must carry the editing rules, since this capture is what a \
+             \"improve this paragraph\" request arrives with",
+        );
+    }
 
     /// `hrw://notebook/<name>` resolves only to a notebook in a known directory.
     ///

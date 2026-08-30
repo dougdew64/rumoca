@@ -31,6 +31,14 @@
 #>
 
 $ErrorActionPreference = 'Stop'
+
+# **UTF-8 out, or the tour name lies.** Windows PowerShell defaults its output encoding
+# to the ANSI code page, so the ad hoc tour's label came through as "tour: ? Answer" on
+# the hook's first live firing -- the sparkle replaced by a question mark. A channel
+# built to carry the exact subject of a question may not mangle the subject's name.
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
 $tag = '[hrw-context]'
 
 # $CLAUDE_PROJECT_DIR is set by the harness; fall back to this script's grandparent

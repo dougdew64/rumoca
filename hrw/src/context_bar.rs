@@ -170,7 +170,16 @@ pub(crate) struct PointedAt {
     /// previous node. The bar and the file disagreed, which is precisely the
     /// drift its governing rule forbids.
     pub(crate) kind: PointKind,
-    pub(crate) stage: StageKind,
+    /// The stage the capture was made in — **`None` for a capture that is not in a
+    /// stage at all.**
+    ///
+    /// It was a bare `StageKind` until 2026-08-30, when tour passages became
+    /// capturable and there was no honest value to put here. **The shortcut was to
+    /// store whichever stage happened to be selected**, and it would have put a false
+    /// claim into `focus.json` and `session.json` — *"pointed at in Parse"* about a
+    /// sentence of prose. Doug, on being shown the choice: *"Accuracy is a requirement.
+    /// No shortcuts. Add types as necessary to ensure accuracy."*
+    pub(crate) stage: Option<StageKind>,
     pub(crate) request: bridge::AskRequest,
 }
 
@@ -184,6 +193,21 @@ pub(crate) enum PointKind {
     Stage,
     /// The specimen as a whole.
     Specimen,
+    /// **A passage of tour prose**, selected in the tour panel and captured with 🎯.
+    ///
+    /// The first capture shape that is not part of a compile, which is why
+    /// [`PointedAt::stage`] became an `Option` when this landed. Doug asked for it
+    /// after four frictions in asking about tour text: switching to VS Code, finding
+    /// the `.md`, locating the passage in source, and — the one that decided it — a
+    /// bare *"What is this?"* having no referent unless he prefaced it.
+    ///
+    /// **The text is the rendered prose, not the markdown source**, on his ruling:
+    /// egui hands back what the pane displays. Locating it in the source is Claude's
+    /// job, and is where the `walked:` / `authored:` rules apply.
+    TourPassage {
+        /// Which tour it was read in — the document the passage can be found in.
+        tour: String,
+    },
 }
 
 /// What the Context Bar was asked to do, for `App` to perform.
@@ -249,10 +273,14 @@ pub(crate) fn context_bar_ui(
             // Worth saying only when it **differs** from the background
             // stage; otherwise it repeats the line above as if it were a
             // second, independent fact.
-            if point.stage != stage {
+            // **`Some(other)` only.** A tour passage has no stage, so there is no
+            // divergence to report and saying "pointed at in Parse" would invent one.
+            if let Some(point_stage) = point.stage
+                && point_stage != stage
+            {
                 ui.colored_label(
                     crate::colors::CONTEXT_POINT,
-                    format!("\u{00b7} pointed at in {}", point.stage.name()),
+                    format!("\u{00b7} pointed at in {}", point_stage.name()),
                 );
             }
         }
@@ -562,6 +590,39 @@ pub(crate) fn always_ui(
 mod tests {
     use super::*;
 
+    /// **A tour passage records no stage, and the bar claims none.**
+    ///
+    /// [`PointedAt::stage`] became an `Option` for this capture shape, and the whole
+    /// point was refusing the shortcut: storing whichever stage happened to be selected
+    /// would have put *"pointed at in Parse"* into `focus.json` and `session.json`
+    /// about a sentence of prose — which Doug ruled out in advance with *"Accuracy is a
+    /// requirement. No shortcuts. Add types as necessary to ensure accuracy."*
+    ///
+    /// This pins the type-level half — that a passage can be constructed with no stage,
+    /// and that `PointKind` carries the tour so the quotation is never orphaned from
+    /// its document. What the *file* says is
+    /// [`crate::bridge::tests::a_tour_passage_emits_its_tour_and_no_stage`].
+    #[test]
+    fn a_tour_passage_point_has_no_stage() {
+        let point = PointedAt {
+            seq: 7,
+            target: "Tearing splits each block and takes a Schur complement.".to_owned(),
+            kind: PointKind::TourPassage {
+                tour: "the-concepts".to_owned(),
+            },
+            stage: None,
+            request: crate::bridge::AskRequest::Explain,
+        };
+        assert!(
+            point.stage.is_none(),
+            "prose is not in a compile phase, so naming one would invent a fact",
+        );
+        match &point.kind {
+            PointKind::TourPassage { tour } => assert_eq!(tour, "the-concepts"),
+            _ => panic!("expected a tour passage"),
+        }
+    }
+
     /// **The Always row states only what is true, and states the standing facts even
     /// when they are zero.**
     ///
@@ -676,7 +737,7 @@ mod tests {
             seq: 1,
             target: "equations[0]".to_owned(),
             kind: PointKind::Stage,
-            stage: StageKind::Flatten,
+            stage: Some(StageKind::Flatten),
             request: bridge::AskRequest::Explain,
         }
     }
