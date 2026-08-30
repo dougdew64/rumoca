@@ -5088,29 +5088,23 @@ impl App {
         if ui.selectable_label(self.viewing_log, "Log").clicked() {
             self.viewing_log = true;
         }
-        ui.separator();
-        // ---- Play button (inline simulation trigger) ----
+        // **The ▶ button and its spinner moved into the tab row on 2026-08-29**
+        // (`stage_tabs.rs`), to sit between the last divider and the Simulation label
+        // rather than here beside the Log button. What stays behind is `can_sim`: it
+        // reads four `App` fields the row has no business holding and travels as one
+        // bool — not compiling, not already simulating, a model was parsed, and solve
+        // lowering succeeded, since the simulator needs the `SolveModel` IR.
         //
-        // This button starts a simulation WITHOUT switching to the
-        // Simulation tab. The user can be viewing the Structural
-        // spy-plot or the Log and press play — the sim runs in the
-        // background and the UI stays on the current view. This is
-        // useful for watching log messages during simulation or
-        // studying the IR while a run completes.
-        //
-        // `add_enabled` is like `add` (places a widget) but
-        // greys it out when the bool is false. The button is only
-        // active when: not compiling, not already simulating, a
-        // model was parsed, and solve_lowering succeeded (the
-        // simulator needs the SolveModel IR).
+        // **AND THE SEPARATOR THAT USED TO SIT HERE WENT WITH IT.** It had divided Log
+        // from ▶; once ▶ left it fell against `stage_tabs_ui`'s own leading divider and
+        // drew a SECOND rule between "Log" and "Parse". Doug reported it 2026-08-30.
+        // **Nothing could have caught it** — a separator carries no accessibility
+        // label, so a headless harness cannot see one, let alone count two. This is
+        // the layout class where his report is the verification.
         let can_sim = !self.compiling
             && !self.sim_running
             && self.model.is_some()
             && self.stages.solve_lowering.value.is_some();
-        // **The ▶ button and its spinner moved into the tab row on 2026-08-29**, to sit
-        // between the last divider and the Simulation label rather than here beside the
-        // Log button. `can_sim` is still computed here — it reads four `App` fields the
-        // row has no business holding — and travels as one bool.
         // ---- The tabs themselves ----
         //
         // Everything from here down left for `stage_tabs.rs` on 2026-08-19: it is the

@@ -263,6 +263,10 @@ pub(crate) fn stage_tabs_ui(
     // plain bools for the reason this signature's other `sim_*` flags do — the row only
     // asks whether a run may start and whether one is going, and passing the `Option`s
     // they come from would overstate its reach.
+    //
+    // `add_enabled` is like `add` (it places a widget) but greys it out when the bool
+    // is false — so the button is visible whenever the tab row is, and merely inert
+    // until a specimen has compiled far enough to simulate.
     if ui
         .add_enabled(can_sim, egui::Button::new("▶"))
         .on_hover_text("Run simulation (stays on the current view)")
