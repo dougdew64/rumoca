@@ -3225,25 +3225,23 @@ impl App {
         }
     }
 
-    /// The Simulation view — a Run control + an `egui_plot` pane of the
-    /// state trajectories. Running the model is on-demand (not a compile stage):
-    /// Run dispatches `ToWorker::Simulate` to the worker thread, and the plot
-    /// appears when `FromWorker::Simulated` lands (see `drain_worker`).
+    /// The Simulation view — a stop-time slider and an `egui_plot` pane of the state
+    /// trajectories. **It starts nothing.** Running the model is on-demand rather than
+    /// a compile stage, and the one control that starts it is the tab row's ▶
+    /// (`stage_tabs.rs`), which dispatches `ToWorker::Simulate` through
+    /// `App::start_simulation`; the plot appears when `FromWorker::Simulated` lands
+    /// (see `drain_worker`).
     fn simulation_pane(&mut self, ui: &mut egui::Ui) {
         use egui_plot::{Corner, Legend, Line, Plot, PlotPoints};
 
-        let mut run = false;
+        // **This pane had its own ▶ Run until 2026-08-30, and now has none.** Doug:
+        // *"We only need one Run button for simulations."* Two were on screen together
+        // whenever this tab was open — this one and the tab row's ▶ — and they did not
+        // even agree on when a run was possible: the row's uses `can_sim` (not
+        // compiling, not running, a model parsed, solve lowering done), while this one
+        // had decayed to `!sim_running` alone, so it stayed live on a specimen that
+        // could not be simulated. One button, one answer.
         ui.horizontal(|ui| {
-            run = ui
-                .add_enabled(
-                    // `central_panel_ui` returns before this pane when no specimen
-                    // is selected, so a run already in progress is the only thing
-                    // left that can disable the button.
-                    !self.sim_running,
-                    egui::Button::new("▶ Run"),
-                )
-                .on_hover_text("Compile → lower → integrate, then plot the trajectories.")
-                .clicked();
             ui.add(
                 egui::Slider::new(&mut self.sim_t_end, 0.1..=20.0)
                     .step_by(0.1)
@@ -3263,9 +3261,6 @@ impl App {
                         egui::RichText::new(e).monospace(),
                     );
                 });
-        }
-        if run {
-            self.start_simulation();
         }
         ui.separator();
         match &self.sim_data {
@@ -3360,7 +3355,10 @@ impl App {
                 }
             }
             None if !self.sim_running => {
-                ui.weak("Press ▶ Run to simulate this specimen and plot its state trajectories.");
+                ui.weak(
+                    "Press ▶ beside the Simulation tab to simulate this specimen and \
+                     plot its state trajectories.",
+                );
             }
             None => {}
         }

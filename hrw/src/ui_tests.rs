@@ -254,6 +254,51 @@ fn the_context_bar_appears_only_once_a_specimen_is_selected() {
     );
 }
 
+/// **Exactly one control starts a simulation, and the pane points at it.**
+///
+/// Doug, 2026-08-30: *"We only need one Run button for simulations."* Until then the
+/// Simulation view carried its own `▶ Run` beside the stop-time slider, so opening
+/// that tab put **two** on screen — and they disagreed about when a run was possible.
+/// The tab row's uses `can_sim` (not compiling, not running, a model parsed, solve
+/// lowering done); the pane's had decayed to `!sim_running`, leaving it live on a
+/// specimen that could not be simulated.
+///
+/// # Why this one is testable when the divider next to it was not
+///
+/// Buttons and labels carry accessibility labels; separators do not. The extra rule
+/// between "Log" and "Parse", removed the same day, could only ever be caught by Doug
+/// looking at it. **The difference is worth knowing before reaching for a test** —
+/// here one is cheap and pins both halves of his instruction: the button is gone, and
+/// the empty-plot label names what replaced it rather than what it used to say.
+#[test]
+fn only_the_tab_row_starts_a_simulation_and_the_pane_says_so() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_walked_state(
+        "RcCircuit.mo",
+        "RcCircuit",
+        crate::worker::StageKind::Simulation,
+    );
+    let h = harness(app);
+
+    assert!(
+        h.query_by_label("\u{25b6} Run").is_none(),
+        "the Simulation pane must not carry its own Run button \u{2014} two controls \
+         that start the same thing, disagreeing about when it is possible",
+    );
+    assert!(
+        h.query_by_label("\u{25b6}").is_some(),
+        "the tab row's \u{25b6} is the one that remains, so removing the pane's must \
+         not have taken the last way to start a run",
+    );
+    assert!(
+        h.query_by_label_contains("beside the Simulation tab")
+            .is_some(),
+        "with no data yet the pane must point at the control that does exist; it used \
+         to say \u{201c}Press \u{25b6} Run\u{201d}, naming the button just deleted",
+    );
+}
+
 /// The tour picker offers exactly the fixture tours — **rendered**, not merely
 /// listed.
 ///
