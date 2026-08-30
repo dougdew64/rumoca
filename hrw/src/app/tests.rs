@@ -2114,7 +2114,7 @@ fn the_model_list_renders_and_reports_without_an_app() {
             PathBuf::from("MotorWithBrake.mo"),
         ],
         // Park the scratch poll, or frame one rescans an empty `dir` and
-        // wipes the list — finding C9, the trap that made two UI tests pass
+        // wipes the list — finding R2, the trap that made two UI tests pass
         // while checking nothing.
         polled_at: Some(std::time::Instant::now()),
         filter: "rc".to_owned(),

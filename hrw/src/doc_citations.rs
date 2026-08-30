@@ -2866,6 +2866,122 @@ Some prose.
         );
     }
 
+    /// **A `finding <ID>` citation must name a row that exists in the findings log.**
+    ///
+    /// # The renumbering this catches
+    ///
+    /// `45e8569e` split [`docs/ui-findings.md`] into two tables and renumbered as it
+    /// went: C8-C11 became R1-R4, and the old C7 became C12. One comment was left
+    /// citing **C9**, an ID that has not existed since 2026-08-02. Found on 2026-08-30
+    /// by a session that followed it, found nothing, and declined to repeat it in a new
+    /// comment; Doug supplied the answer, which is that it should have become **R2**.
+    ///
+    /// # Why only the explicit `finding <ID>` form
+    ///
+    /// Measured before building this. `src/` cites these IDs **bare** more often than
+    /// not — `C6`, `C12`, `C20` — and a bare two-character token cannot be told apart
+    /// from an identifier, a hex byte or a Modelica component without reading around
+    /// it. The explicit form is unambiguous, it is what the prose citations use, and
+    /// **it would have caught C9**, which is the case that motivated this. A checker
+    /// that cries wolf gets switched off.
+    ///
+    /// # What it does not claim
+    ///
+    /// **It proves the ID resolves, never that it resolves to the RIGHT row** — and
+    /// that gap is real here rather than theoretical, because the same commit that
+    /// stranded C9 moved old C7's content to C12. A stale citation to a **reused**
+    /// number points confidently at the wrong finding and passes this check. Only
+    /// reading the entry catches that.
+    #[test]
+    fn a_cited_finding_id_exists_in_the_findings_log() {
+        let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+
+        /// `C12` / `R2` and nothing else — the shape of a findings-log row label.
+        fn is_finding_id(tok: &str) -> bool {
+            let mut cs = tok.chars();
+            matches!(cs.next(), Some('C' | 'R')) && tok.len() > 1 && cs.all(|c| c.is_ascii_digit())
+        }
+
+        // The log's own table rows define which IDs exist: `| R2 | ... | ... |`.
+        let log = hrw.join("docs/ui-findings.md");
+        let log_text = std::fs::read_to_string(&log).expect("docs/ui-findings.md must be readable");
+        let defined: Vec<&str> = log_text
+            .lines()
+            .filter_map(|l| l.strip_prefix('|'))
+            .filter_map(|rest| rest.split('|').next())
+            .map(str::trim)
+            .filter(|t| is_finding_id(t))
+            .collect();
+        assert!(
+            defined.len() > 10,
+            "only {} finding rows parsed from ui-findings.md \u{2014} the table format \
+             changed and this check is measuring nothing, not the log shrinking",
+            defined.len(),
+        );
+
+        // Every `finding <ID>` in the sources, with where it was written.
+        let src = hrw.join("src");
+        let mut cited: Vec<(String, String)> = Vec::new();
+        let mut walk = vec![src.clone()];
+        while let Some(dir) = walk.pop() {
+            for e in std::fs::read_dir(&dir)
+                .expect("src must be readable")
+                .flatten()
+            {
+                let p = e.path();
+                if p.is_dir() {
+                    walk.push(p);
+                    continue;
+                }
+                if p.extension().and_then(|x| x.to_str()) != Some("rs") {
+                    continue;
+                }
+                let rel = p
+                    .strip_prefix(&src)
+                    .expect("under src")
+                    .to_string_lossy()
+                    .replace('\\', "/");
+                let text = std::fs::read_to_string(&p).expect("readable");
+                for (n, line) in text.lines().enumerate() {
+                    for after in line.split("finding ").skip(1) {
+                        // Trailing prose punctuation is not part of the ID.
+                        let tok = after
+                            .split_whitespace()
+                            .next()
+                            .unwrap_or("")
+                            .trim_end_matches([',', '.', ';', ':', ')', '`', '*']);
+                        if is_finding_id(tok) {
+                            cited.push((format!("{rel}:{}", n + 1), tok.to_owned()));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Non-vacuity: an extractor that matched nothing would pass forever, which is
+        // the wrong-negative this repository treats as the error nobody catches.
+        assert!(
+            cited.len() >= 4,
+            "only {} `finding <ID>` citations found \u{2014} the extractor is broken, \
+             not the sources",
+            cited.len(),
+        );
+
+        let dangling: Vec<String> = cited
+            .iter()
+            .filter(|(_, id)| !defined.iter().any(|d| d == id))
+            .map(|(where_, id)| format!("{where_}: finding {id}"))
+            .collect();
+        assert!(
+            dangling.is_empty(),
+            "a comment cites a findings-log entry that does not exist:\n  {}\n\nIDs are \
+             renumbered when the log is reorganised \u{2014} C8-C11 became R1-R4 on \
+             2026-08-02 \u{2014} so check `docs/ui-findings.md` for the entry's current \
+             label rather than deleting the citation.",
+            dangling.join("\n  "),
+        );
+    }
+
     /// **Editing a guarded tour table must not be committed behind the FAST gate.**
     ///
     /// # The gap this closes, and why it was not a rule problem

@@ -627,7 +627,8 @@ mod tests_absence {
     /// **So this test was green when it landed and turned red the day a scratch
     /// specimen was left on disk**, having never been about the environment at all.
     /// Reproduced both ways on 2026-08-30: emptying that directory made it pass, and
-    /// restoring one file made it fail again. The older instance of the same trap is
+    /// restoring one file made it fail again. This trap has a findings entry of its
+    /// own, `docs/ui-findings.md` R2, and the older instance is
     /// `the_model_list_renders_and_reports_without_an_app`, which parks the poll too.
     ///
     /// **Nothing was wrong in production.** `App::new` calls `rescan` before the first
