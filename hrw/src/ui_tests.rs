@@ -204,6 +204,56 @@ fn the_harness_renders_hrw_and_sees_widgets() {
     assert!(h.query_by_label("Help").is_some(), "expected the Help menu");
 }
 
+/// **The Context Bar appears only once a specimen is selected** — the precondition
+/// three collapsed gates now rely on.
+///
+/// # Why this needed a test rather than a comment
+///
+/// `central_panel_ui` returns early while `selected` is `None`, so everything below
+/// that point runs with a specimen in hand: the Context Bar, the simulation pane,
+/// the stage views. Three places re-tested `selected` anyway and **not one of them
+/// could ever take the false branch** — collapsed 2026-08-30, on Doug's instruction
+/// after he asked why the bar is invisible before a specimen is open.
+///
+/// Removing a redundant check is only safe while the thing making it redundant
+/// holds, and nothing was checking that. If a later change routes past the early
+/// return — a new caller, or the return moving below the bar — this fails by name
+/// and the collapsed gates are what it is warning about.
+///
+/// # Why a pair
+///
+/// Absence alone would pass if the bar stopped rendering for *any* reason, so the
+/// second half proves the query finds it when it should. Same shape as
+/// `model_list::tests_absence`: "found none" and "could not look" are different
+/// facts, and only one of them is about the bar.
+#[test]
+fn the_context_bar_appears_only_once_a_specimen_is_selected() {
+    // **Specimen mode in BOTH halves, so the selection is the only difference.**
+    // Without it the first half passes for the wrong reason: `test_default` does not
+    // start in a mode whose central panel draws a body at all, so the bar would be
+    // absent whatever `selected` held, and the assertion would measure the mode.
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    let h = harness(app);
+    assert!(
+        h.query_by_label("Context").is_none(),
+        "with no specimen selected, central_panel_ui must return before the Context \
+         Bar \u{2014} the central panel says \u{201c}Select a specimen to compile.\u{201d} \
+         instead, which is advice the reader can act on",
+    );
+
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+    let h = harness(app);
+    assert!(
+        h.query_by_label("Context").is_some(),
+        "with a specimen selected the bar must render even before anything is pointed \
+         at \u{2014} hiding it would make \u{201c}nothing is assembled\u{201d} \
+         indistinguishable from \u{201c}the bar is not rendering\u{201d}",
+    );
+}
+
 /// The tour picker offers exactly the fixture tours — **rendered**, not merely
 /// listed.
 ///

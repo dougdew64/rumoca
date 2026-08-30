@@ -3236,7 +3236,10 @@ impl App {
         ui.horizontal(|ui| {
             run = ui
                 .add_enabled(
-                    self.selected.is_some() && !self.sim_running,
+                    // `central_panel_ui` returns before this pane when no specimen
+                    // is selected, so a run already in progress is the only thing
+                    // left that can disable the button.
+                    !self.sim_running,
                     egui::Button::new("▶ Run"),
                 )
                 .on_hover_text("Compile → lower → integrate, then plot the trajectories.")
@@ -4219,8 +4222,7 @@ impl App {
                 // when nothing is selected — it is how a specimen gets chosen.
                 // `stage_tab_bar_ui` disables the tabs itself, after the switcher.
                 ui.horizontal_wrapped(|ui| self.stage_tab_bar_ui(ui, intent));
-            }
-            if self.selected.is_none() {
+
                 if self.ui_mode == UiMode::Debug {
                     // **Nothing here.** Debug mode's switcher lives in the tab
                     // row above and is drawn unconditionally now, so a second
@@ -5484,23 +5486,25 @@ impl App {
             // state a user is in just before asking a question that quietly has
             // nothing behind it.
             //
-            // Only once a specimen is loaded: before that there is genuinely
-            // nothing to say, and the status bar already carries the opening
-            // hint.
-            if self.selected.is_some() {
-                let hint = self.empty_context_hint();
-                ui.horizontal(|ui| {
-                    ui.label(egui::RichText::new("Context").strong());
-                    context_bar::background_ui(
-                        ui,
-                        self.model.as_deref(),
-                        self.selected.is_some(),
-                        self.stage,
-                    );
-                    ui.weak(hint).on_hover_text(EMPTY_CONTEXT_RULE);
-                });
-                ui.separator();
-            }
+            // **A specimen is always selected by the time this runs.**
+            // `central_panel_ui` returns before this call when it is not, so the
+            // no-specimen case never reaches the bar — the central panel says
+            // "Select a specimen to compile." instead, which is advice that can
+            // actually be taken. This branch used to re-test `selected` and could
+            // never take the `else`; the precondition it relied on is pinned by
+            // `ui_tests::the_context_bar_appears_only_once_a_specimen_is_selected`.
+            let hint = self.empty_context_hint();
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new("Context").strong());
+                context_bar::background_ui(
+                    ui,
+                    self.model.as_deref(),
+                    self.selected.is_some(),
+                    self.stage,
+                );
+                ui.weak(hint).on_hover_text(EMPTY_CONTEXT_RULE);
+            });
+            ui.separator();
             return;
         }
 
