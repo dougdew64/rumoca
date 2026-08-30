@@ -4373,3 +4373,74 @@ pane and in every committed trace. Compiling `Drivetrain`, rebuilding the sessio
 compiling again yields **byte-identical DefId keys and names** — lever B renumbered because
 it compiled in a *bare* session, and reloading the same MSL is deterministic. **That ruling
 does not reach session rebuilds**, which is worth knowing independently of this result.
+
+## 2026-08-30 — the Context Bar arc, and what a day of UI reports says about the blind spot
+
+**Fourteen commits, and Doug reported every defect but one.** That ratio is the finding,
+not the bar.
+
+### What changed, in one place because the commits are the detail
+
+- **Always on screen** (`ef500a88`), on an argument that beat mine. I priced the change as
+  *"modest — it makes the bar stop lying"*. Doug: *"A context bar is novel for me. I need to
+  learn to assume its presence and to make frequent use of it, just like I needed decades ago
+  to learn to assume the presence of GUI menu bars."* **An affordance you have to check for
+  is not one**, and that is the argument the stage tab row had already won on 2026-08-02 —
+  *"report the empty state, never vanish"* — applied to the tabs and not to the bar beneath
+  them.
+- **Three categories, named and coloured** (`0bd238fe`, `fd1b7d65`): `Always`, `Pointing at`,
+  `Following`. Two colours were fixed by the palette rather than chosen — `JUMP_FILL`'s own
+  note already says *"Cyan, deliberately not gold. Gold means followed."*
+- **The tour is Always-context**, not a fourth primitive. The frozen primitives are one
+  point-at and one follow; a tour is ambient, like specimen and stage. `session.json` had
+  carried it since 2026-08-19, so the bar was under-reporting what Claude already had. The
+  **stop** stays declined.
+- **Advice left the row** for the hover, and the gate collapses / `has_specimen` removal are
+  in `87cc3780` and `f87d58fc`.
+
+### THE PART WORTH KEEPING: every defect today was a claim its mechanism did not deliver
+
+Not one was a crash or a wrong number. Each was **something asserting more than it did**:
+
+| the claim | what was true |
+|---|---|
+| a row labelled `Always` | rendered only once something was pointed at or followed |
+| a separator between Log and Parse | orphaned when the ▶ it divided moved away, three commits earlier |
+| a `has_specimen` flag | always `true`; its third arm unreachable |
+| a pencil glyph marking scratch specimens | in no bundled font, so a box marking nothing |
+| two ▶ controls | disagreeing about when a run was possible |
+| a test named `…shows_every_fixture…` | (2026-08-22, same shape, already on record) |
+
+**This is the lens `docs/unattended-runs.md` already leads with**, and a day of it says the
+lens is aimed correctly and should stay.
+
+### AND THE BLIND SPOT IS SHARPER THAN "LAYOUT"
+
+`CLAUDE.md` records *"defects only a human caught"* as the one reliable signal for Claude's
+comprehension failing. Today produced eight, and they cluster:
+
+**Claude can verify content and cannot verify presentation.** A separator, a spinner, a glyph
+and a colour put **no node in the accessibility tree**, so no headless test reaches any of
+them. Three of today's fixes shipped with that stated plainly instead of a guard that could
+not fail.
+
+**But the boundary is narrower than it looks, and two of today's tests prove it** — the same
+correction this repository has already made once about `matrix_panes`:
+
+- The spinner is invisible; **what it displaces is not.** `the_simulation_label_does_not_move_while_a_run_is_going`
+  measures the label's `x` across `sim_running`, and caught a 26pt jump.
+- A colour is invisible; **whether two colour constants are equal is not.**
+  `the_three_context_categories_have_distinct_colours` guards the convergence that would end
+  reading-by-category — not theoretical, since `TRACKED_GOLD`, `ANIM_EXPLORE` and
+  `SCRATCH_SPECIMEN` are byte-identical under three names.
+
+**So the rule is: when a painted thing is untestable, look for what its presence MOVES, or
+what its identity DEPENDS ON.** That would have caught the extra divider too — Parse's `x`
+shifts when a rule is added before it.
+
+### A method note, because it cost the most time today
+
+**`has_glyphs` has false negatives** — it reported U+25B6 absent while ▶ was rendering on the
+run button and prefixing 101 tour hyperlinks. It is trustworthy for a `true` and not for a
+`false`, and the note lives on the test that uses it. I acted on one of its false negatives
+in conversation before checking, and told Doug that ⚠ and 🔍 were probably boxes. They are not.
