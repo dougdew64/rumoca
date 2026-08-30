@@ -2,9 +2,9 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-concepts)
+[The chain overview](hrw://tour/the-concepts)
 
-**A concept tour, pass two.** [▶ matching](hrw://tour/matching) taught the idea; this one is about
+**A concept tour, pass two.** [matching](hrw://tour/matching) taught the idea; this one is about
 **Rumoca's code**, stepped in a debugger while it runs. Walk the pass-one tour first — the stops
 below assume you know what a matching is and what a rank deficiency means.
 
@@ -39,7 +39,7 @@ silently. That notice is the feature; a silent successful-looking run is what it
 
 ## Stop 1 — Arm an anchor, and learn what an anchor is named
 
-[▶ Look — ProportionalLoop → Structural → Matching animation](hrw://load/ProportionalLoop/Structural/MatchingAnim)
+[Look — ProportionalLoop → Structural → Matching animation](hrw://load/ProportionalLoop/Structural/MatchingAnim)
 
 [⬤ Break at the free-versus-displace decision](hrw://breakpoint/decision)
 
@@ -104,7 +104,7 @@ most local scope.
 
 `TwiceDefined` is two equations in two unknowns, and `matching.md` established that only one pairs.
 
-[▶ Look — TwiceDefined → Structural → Matching animation](hrw://load/TwiceDefined/Structural/MatchingAnim)
+[Look — TwiceDefined → Structural → Matching animation](hrw://load/TwiceDefined/Structural/MatchingAnim)
 
 [⬤ Break at the free-versus-displace decision](hrw://breakpoint/decision)
 [⬤ Break where the search gives up](hrw://breakpoint/give_up)
@@ -176,4 +176,4 @@ says.
 This is the first pass-two tour. The rest of the pipeline has pass-one tours only, and the same
 treatment — read the phase's code while it runs — is available for every one of them.
 
-Or go back up: [▲ The chain overview](hrw://tour/the-concepts)
+Or go back up: [The chain overview](hrw://tour/the-concepts)

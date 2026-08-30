@@ -26,7 +26,7 @@ That shape is the entire input to structural analysis. No coefficient appears in
 
 ## 📐 Stop 2 — What HRW concludes from it
 
-[Structural → Tearing ▶](hrw://stage/Structural/TearingAnim)
+[Structural → Tearing](hrw://stage/Structural/TearingAnim)
 
 **Expected:** the replay tears **`command`**, then makes `f_x[1]` and `f_x[2]` causal in
 turn, finishing with 1 tear and 1 residual equation.

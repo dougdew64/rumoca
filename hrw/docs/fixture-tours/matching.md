@@ -2,7 +2,7 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-concepts)
+[The chain overview](hrw://tour/the-concepts)
 
 **A concept tour.** It teaches a step of the chain and uses HRW as the instrument. It is still
 a test: every **Expected** line is violable.
@@ -42,7 +42,7 @@ f_x[1]   0 = der(v) - -g
 
 > **Predict.** Which unknown does each equation get?
 
-[▶ Look — BouncingBall → Structural → Tree](hrw://load/BouncingBall/Structural/Tree)
+[Look — BouncingBall → Structural → Tree](hrw://load/BouncingBall/Structural/Tree)
 
 [Point at `matching`](hrw://stage/Structural/Tree/node/matching)
 
@@ -76,7 +76,7 @@ Each one *looks* like it is "for" the variable written first: `f_x[0]` for `erro
 > **Predict.** Will the matching agree with that reading? Write down your three pairs before
 > looking.
 
-[▶ Look — ProportionalLoop → Structural → Tree](hrw://load/ProportionalLoop/Structural/Tree)
+[Look — ProportionalLoop → Structural → Tree](hrw://load/ProportionalLoop/Structural/Tree)
 
 [Point at `matching`](hrw://stage/Structural/Tree/node/matching)
 
@@ -110,7 +110,7 @@ that can be solved step by step and one that cannot. Which is the next tour.
 
 > **Predict.** Will every equation get an unknown?
 
-[▶ Look — CapacitorLoop → Structural](hrw://load/CapacitorLoop/Structural)
+[Look — CapacitorLoop → Structural](hrw://load/CapacitorLoop/Structural)
 
 **Expected:** **no.** The stage reports a failure:
 
@@ -148,7 +148,7 @@ The thing you have been looking at has a standard name, and knowing it opens the
 > **Predict.** The incidence matrix marks which unknowns appear in which equations. In those
 > terms, what is a matching?
 
-[▶ Look — CapacitorLoop → Structural → Incidence](hrw://load/CapacitorLoop/Structural/Incidence)
+[Look — CapacitorLoop → Structural → Incidence](hrw://load/CapacitorLoop/Structural/Incidence)
 
 **Expected:** a matrix of filled cells, with 13 of the 14 rows carrying a marked pairing.
 
@@ -162,11 +162,11 @@ So "structurally singular" means **no perfect matching exists**, and `rank_defic
 gap. That is a graph-theory result, not a numerical one — it depends only on *which* variables
 appear, never on their values. A model can be structurally fine and still numerically singular,
 which is a different failure and a different tour
-([▶ structural-vs-numerical-rank](hrw://tour/structural-vs-numerical-rank)).
+([structural-vs-numerical-rank](hrw://tour/structural-vs-numerical-rank)).
 
 The algorithm is **augmenting paths** — take an unmatched equation, walk alternately along
 unmatched and matched edges, and if you reach an unmatched unknown, flip the path to gain one
-pair. [▶ matching-live](hrw://tour/matching-live) steps that search in the debugger, where the call
+pair. [matching-live](hrw://tour/matching-live) steps that search in the debugger, where the call
 stack *is* the path.
 
 ---
@@ -190,6 +190,6 @@ is true and it is unsettling; the tour states it and does not explore it.
 
 Each equation now has a job. It still is not known **what order to do them in** — and in
 `ProportionalLoop` no order exists at all, which is the discovery
-[▶ blt-ordering](hrw://tour/blt-ordering) is built on.
+[blt-ordering](hrw://tour/blt-ordering) is built on.
 
-Or go back up: [▲ The chain overview](hrw://tour/the-concepts)
+Or go back up: [The chain overview](hrw://tour/the-concepts)

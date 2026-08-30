@@ -17,18 +17,18 @@ with a named algorithm and a textbook behind it.
 
 **Each entry opens the tour in HRW.** The file links are for reading outside it.
 
-1. **[▶ connect-expansion](hrw://tour/connect-expansion)** — what does `connect` mean?
-2. **[▶ dae-construction](hrw://tour/dae-construction)** — what is a well-posed system?
-3. **[▶ matching](hrw://tour/matching)** — which equation solves which unknown?
-   - **3a · [▶ matching-live](hrw://tour/matching-live)** — *(debugger)* what does the
+1. [connect-expansion](hrw://tour/connect-expansion) — what does `connect` mean?
+2. [dae-construction](hrw://tour/dae-construction) — what is a well-posed system?
+3. [matching](hrw://tour/matching) — which equation solves which unknown?
+   - **3a ·** [matching-live](hrw://tour/matching-live) — *(debugger)* what does the
      search look like from inside?
-4. **[▶ blt-ordering](hrw://tour/blt-ordering)** — in what order can they be solved?
-5. **[▶ tearing](hrw://tour/tearing)** — how do you solve a block that has no order?
-6. **[▶ index-reduction](hrw://tour/index-reduction)** — which states are actually
+4. [blt-ordering](hrw://tour/blt-ordering) — in what order can they be solved?
+5. [tearing](hrw://tour/tearing) — how do you solve a block that has no order?
+6. [index-reduction](hrw://tour/index-reduction) — which states are actually
    independent?
-7. **[▶ initialization](hrw://tour/initialization)** — where does it start?
-8. **[▶ solve-lowering](hrw://tour/solve-lowering)** — how does a name become a number?
-9. **[▶ events](hrw://tour/events)** — what happens at an instant?
+7. [initialization](hrw://tour/initialization) — where does it start?
+8. [solve-lowering](hrw://tour/solve-lowering) — how does a name become a number?
+9. [events](hrw://tour/events) — what happens at an instant?
 
 **Two orderings, and they differ.** The list above is *pipeline* order. If you would rather follow
 the mathematics than the machinery, walk **3 → 4 → 5** first: matching, BLT and tearing are one

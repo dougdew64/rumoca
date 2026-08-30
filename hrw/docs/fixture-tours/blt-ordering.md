@@ -2,9 +2,9 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-concepts)
+[The chain overview](hrw://tour/the-concepts)
 
-**A concept tour.** Walk [▶ matching](hrw://tour/matching) first — it answers *which* equation
+**A concept tour.** Walk [matching](hrw://tour/matching) first — it answers *which* equation
 solves *which* unknown, and this tour asks *in what order*.
 
 Every count below was read from the committed traces, never remembered.
@@ -34,7 +34,7 @@ does not order at all, and one that splits into independent pieces.
 
 > **Predict.** How many groups will the compiler need to solve simultaneously?
 
-[▶ Look — RcCircuit → Structural → Spy plot](hrw://load/RcCircuit/Structural/SpyPlot)
+[Look — RcCircuit → Structural → Spy plot](hrw://load/RcCircuit/Structural/SpyPlot)
 
 **Expected:** **23 blocks, every one of size 1**, and `coupled_block_count` is **0**.
 
@@ -59,7 +59,7 @@ perfect matching exists.
 
 > **Predict.** Given that every equation has an unknown assigned, how many blocks?
 
-[▶ Look — ProportionalLoop → Structural → Spy plot](hrw://load/ProportionalLoop/Structural/SpyPlot)
+[Look — ProportionalLoop → Structural → Spy plot](hrw://load/ProportionalLoop/Structural/SpyPlot)
 
 **Expected:** **one** block, **coupled**, of size **3** — containing all three equations and all
 three unknowns.
@@ -86,7 +86,7 @@ comparing later: the loop survives, and it is re-solved at every time step.
 
 > **Predict.** One coupled block of 4, or something else?
 
-[▶ Look — TwoLoops → Structural → Spy plot](hrw://load/TwoLoops/Structural/SpyPlot)
+[Look — TwoLoops → Structural → Spy plot](hrw://load/TwoLoops/Structural/SpyPlot)
 
 **Expected:** **two** coupled blocks, each of size **2** — `{f_x[1], f_x[0]}` on
 `{errorA, commandA}`, and `{f_x[3], f_x[2]}` on `{errorB, commandB}`.
@@ -113,7 +113,7 @@ The three shapes you have seen have one name between them.
 > **Predict.** Look again at `RcCircuit`'s spy plot and `TwoLoops`'s. What do both have in common
 > that a single 4×4 block would not?
 
-[▶ Look — TwoLoops → Structural → Spy plot](hrw://load/TwoLoops/Structural/SpyPlot)
+[Look — TwoLoops → Structural → Spy plot](hrw://load/TwoLoops/Structural/SpyPlot)
 
 **Expected:** in both, every marked cell lies **on or below the diagonal** — as blocks for
 `TwoLoops`, as single cells for `RcCircuit`.
@@ -158,6 +158,6 @@ stops wondering.
 A coupled block of 3 is not the end of the story: the compiler will try to make it smaller before
 handing it to a numerical solver, by guessing one variable and computing the rest.
 
-That is [▶ tearing](hrw://tour/tearing).
+That is [tearing](hrw://tour/tearing).
 
-Or go back up: [▲ The chain overview](hrw://tour/the-concepts)
+Or go back up: [The chain overview](hrw://tour/the-concepts)

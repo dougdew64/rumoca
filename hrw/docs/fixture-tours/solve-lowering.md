@@ -2,9 +2,9 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-concepts)
+[The chain overview](hrw://tour/the-concepts)
 
-**A concept tour.** The last phase before simulation. Walk [▶ events](hrw://tour/events) first.
+**A concept tour.** The last phase before simulation. Walk [events](hrw://tour/events) first.
 
 Every count below was read from the committed traces, never remembered.
 
@@ -34,7 +34,7 @@ scale.
 
 > **Predict.** What will `h` and `v` have become?
 
-[▶ Look — BouncingBall → Solve lowering](hrw://load/BouncingBall/SolveLowering)
+[Look — BouncingBall → Solve lowering](hrw://load/BouncingBall/SolveLowering)
 
 [Point at `problem.layout.bindings`](hrw://stage/SolveLowering/node/problem.layout.bindings)
 
@@ -64,7 +64,7 @@ array**: it is a distinguished binding, because the solver supplies it rather th
 
 > **Predict.** How many slots will the parameter vector `P` have?
 
-[▶ Look — BouncingBall → Solve lowering](hrw://load/BouncingBall/SolveLowering)
+[Look — BouncingBall → Solve lowering](hrw://load/BouncingBall/SolveLowering)
 
 [Point at `parameters`](hrw://stage/SolveLowering/node/parameters)
 
@@ -102,7 +102,7 @@ declared.
 
 > **Predict.** How large will `Y` be — 1, for the single state, or something else?
 
-[▶ Look — RcCircuit → Solve lowering](hrw://load/RcCircuit/SolveLowering)
+[Look — RcCircuit → Solve lowering](hrw://load/RcCircuit/SolveLowering)
 
 **Expected:** `initial_y` has **23** entries and `parameters` has **8**. `visible_names` is also
 **23**.
@@ -169,4 +169,4 @@ whole tour.
 Nothing — this is the last compiler phase. What follows is **Simulation**: the solver stepping the
 vector through time, which is the Plot tab rather than a stage.
 
-Or go back up: [▲ The chain overview](hrw://tour/the-concepts)
+Or go back up: [The chain overview](hrw://tour/the-concepts)

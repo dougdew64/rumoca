@@ -205,7 +205,7 @@ marking policy satisfies both:
 
 | leave OUTSIDE a walked region | why |
 |---|---|
-| `> **Predict.**`, `[▶ Look …]`, `**Expected:**`, `**Falsified if**` | this is where a fact update lands first, and Claude must be free to make it |
+| `> **Predict.**`, `[Look …]`, `**Expected:**`, `**Falsified if**` | this is where a fact update lands first, and Claude must be free to make it |
 | every `<!-- pane-* -->` guarded table | already machine-checked against a real compile; regenerating one is routine |
 
 **A walked region must never contain a guarded table.** It would fire the prose checker every time
@@ -415,7 +415,7 @@ naming them.
 
 | kind | tours | the activity at a stop | goal |
 |---|---|---|---|
-| **concept** | 10 | prose → **Predict** → ▶ Look → confirm or reject | teach one step of the chain |
+| **concept** | 10 | prose → **Predict** → Look → confirm or reject | teach one step of the chain |
 | **feature** | 3 | **do** the action → check what happened | verify one HRW capability |
 | **failure** | 6 | **read** the diagnosis → check what it says | show what a broken model looks like |
 | **adjudication** | 2 | **ask another implementation** | settle what HRW cannot settle |
@@ -722,7 +722,7 @@ generate, so it changes only on his report. The shape of every stop:
 
 > **Predict.** <a question with a committed answer>
 
-[▶ Look — <Specimen> → <Stage> → <SubView>](hrw://load/…)
+[Look — <Specimen> → <Stage> → <SubView>](hrw://load/…)
 
 **Expected:** <the answer, exact>
 
@@ -848,11 +848,11 @@ position 21 of 23.
 ```markdown
 # Fixture tour — <phase>: <the idea>
 
-[▲ The chain overview](hrw://tour/the-concepts)
+[The chain overview](hrw://tour/the-concepts)
 ```
 
 - **After the H1** — for *"wrong tour, take me back"*, before any reading has happened.
-- **In the closing section** — `Or go back up: [▲ The chain overview](hrw://tour/the-concepts)`
+- **In the closing section** — `Or go back up: [The chain overview](hrw://tour/the-concepts)`
   — for the reader who finished and wants the next phase.
 
 **It must be the `hrw://` form.** A plain `[the-concepts.md](the-concepts.md)` is handed to

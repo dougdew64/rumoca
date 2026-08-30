@@ -2866,6 +2866,92 @@ Some prose.
         );
     }
 
+    /// **Every tour hyperlink looks the same: no glyph in the text, no bold around it.**
+    ///
+    /// Doug, 2026-08-30: *"In the tours, hyperlinks are given inconsistent visual
+    /// treatment… Implement consistent visual treatment for all hyperlinks. There
+    /// should not be triangles preceding the hyperlinks. The text of hyperlinks should
+    /// be blue. And hyperlinks should be underlined when hovered."*
+    ///
+    /// # Why bold is the rule that matters, and how it was isolated
+    ///
+    /// Blue text and the hover underline are `egui_commonmark`'s defaults, so nothing
+    /// had to be styled — **something was suppressing them**. `the-concepts` wrapped its
+    /// route links as `**[text](url)**` and rendered them in the body colour; every
+    /// other tour's links are plain and rendered blue.
+    ///
+    /// The two tours also differed in list context, so that was not yet a conclusion.
+    /// It became one by counting: **bolded links existed only in `the-concepts`** — the
+    /// one tour Doug reported as not blue — while `connect-expansion` has plain links
+    /// *inside list items* and reads blue. One difference tracked the symptom and the
+    /// other did not.
+    ///
+    /// # What this forbids, and what it does not
+    ///
+    /// It forbids a **triangle inside link text** and **bold wrapped around a whole
+    /// link**. It does not forbid bold near a link: `**3a ·** [matching-live](…)` is
+    /// fine and is how that entry keeps its numbering emphasis while the link stays
+    /// blue. Nor does it police colour directly — colour is not in the accessibility
+    /// tree, so the markup that suppresses it is the checkable proxy.
+    #[test]
+    fn tour_hyperlinks_are_styled_consistently() {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+
+        let mut findings: Vec<String> = Vec::new();
+        let mut scanned = 0usize;
+        for entry in std::fs::read_dir(&dir).expect("fixture-tours must be readable") {
+            let path = entry.expect("readable dir entry").path();
+            if path.extension().and_then(|e| e.to_str()) != Some("md") {
+                continue;
+            }
+            let name = path
+                .file_name()
+                .expect("named")
+                .to_string_lossy()
+                .into_owned();
+            // Generated from the tours themselves, so it carries whatever they do.
+            if name == "CATALOGUE.md" {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).expect("readable tour");
+            scanned += 1;
+
+            for (n, line) in text.lines().enumerate() {
+                let n = n + 1;
+                if let Some(at) = line.find("](hrw://").or_else(|| line.find("](http")) {
+                    let before = &line[..at];
+                    if let Some(open) = before.rfind('[') {
+                        let link_text = &before[open + 1..];
+                        if link_text.contains('\u{25b6}') || link_text.contains('\u{25b2}') {
+                            findings.push(format!(
+                                "{name}:{n}: link text carries a triangle \u{2014} the \
+                                 glyph is not part of the link and the tours dropped it"
+                            ));
+                        }
+                        if before[..open].ends_with("**") && line[at..].contains(")**") {
+                            findings.push(format!(
+                                "{name}:{n}: link is wrapped in bold, which renders it in \
+                                 the BODY colour instead of blue. Put the bold beside the \
+                                 link (`**label** [text](url)`), not around it"
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Non-vacuity: a scan that reached no tour would pass for ever.
+        assert!(
+            scanned >= 10,
+            "only {scanned} tours scanned \u{2014} the walk is broken, not the tours"
+        );
+        assert!(
+            findings.is_empty(),
+            "tour hyperlinks are styled inconsistently:\n  {}",
+            findings.join("\n  "),
+        );
+    }
+
     /// **A `finding <ID>` citation must name a row that exists in the findings log.**
     ///
     /// # The renumbering this catches

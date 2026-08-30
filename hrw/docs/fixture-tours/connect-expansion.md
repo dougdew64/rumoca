@@ -2,7 +2,7 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-concepts)
+[The chain overview](hrw://tour/the-concepts)
 
 <!-- walked: opening-what-connect-is 2026-08-22T17:45 -->
 
@@ -97,7 +97,7 @@ gap between the two.
 > largest one? Then a second number, and expect it to disagree with the first: **how many
 > *connection sets* will the replay say it built?**
 
-[▶ Look — RcCircuit → Flatten → Connections](hrw://load/RcCircuit/Flatten/Connections)
+[Look — RcCircuit → Flatten → Connections](hrw://load/RcCircuit/Flatten/Connections)
 
 **On your paper** — and only there, because the pane has no opinion about nodes and never will:
 **three** nodes, of sizes **2, 2 and 3** connectors.
@@ -191,8 +191,8 @@ enough, and more would be redundant. Making *n* currents sum to zero takes exact
 three-connector node produces its two kinds of set at different times, and each set is followed
 immediately by the equations it generated:
 
-- [▶ frame 7](hrw://stage/Flatten/Connections/frame/7) — the **flow** set of size 3 → **1** equation
-- [▶ frame 13](hrw://stage/Flatten/Connections/frame/13) — the **potential** set of size 3 → **2**
+- [frame 7](hrw://stage/Flatten/Connections/frame/7) — the **flow** set of size 3 → **1** equation
+- [frame 13](hrw://stage/Flatten/Connections/frame/13) — the **potential** set of size 3 → **2**
 
 <!-- pane-frames: RcCircuit -->
 
@@ -207,7 +207,7 @@ observation multiplied by three nodes.
 > **Predict.** Nodes of 2, 2 and 3 connectors — so potential sets of 2, 2 and 3 `.v`, and flow sets
 > of 2, 2 and 3 `.i`. How many equations in total, and how do they split between the two kinds?
 
-[▶ Look — RcCircuit → Flatten → Equations](hrw://load/RcCircuit/Flatten/EquationSheet)
+[Look — RcCircuit → Flatten → Equations](hrw://load/RcCircuit/Flatten/EquationSheet)
 
 **Expected:** **7** — four potential and three flow. `Component equations` stands alone, and a
 `Connector equations` heading covers two sub-groups:
@@ -279,7 +279,7 @@ screen — but they are still recoverable, and the two kinds give them up differ
 > **Predict.** Of the four `Potential equality` rows, which **two** belong to the same node —
 > and which single `Flow conservation` row is that same node seen whole?
 
-[▶ Look — RcCircuit → Flatten → Equations](hrw://load/RcCircuit/Flatten/EquationSheet)
+[Look — RcCircuit → Flatten → Equations](hrw://load/RcCircuit/Flatten/EquationSheet)
 
 **Expected:**
 
@@ -325,7 +325,7 @@ from the connect graph.
 > **Predict.** How many equations does the whole model have — and of the rest, how many belong to
 > the resistor alone?
 
-[▶ Look — RcCircuit → Flatten → Equations](hrw://load/RcCircuit/Flatten/EquationSheet)
+[Look — RcCircuit → Flatten → Equations](hrw://load/RcCircuit/Flatten/EquationSheet)
 
 **Expected:** **23 equations**, of which **16** are `Component equations`, split by origin:
 
@@ -398,7 +398,7 @@ been written by hand at model scale, and they are what determines the system's s
 
 > **Predict.** How many groups will the equation sheet show?
 
-[▶ Look — TwoLoops → Flatten → Equations](hrw://load/TwoLoops/Flatten/EquationSheet)
+[Look — TwoLoops → Flatten → Equations](hrw://load/TwoLoops/Flatten/EquationSheet)
 
 **Expected:** one group only — **no** `Connector equations` heading at all:
 
@@ -432,7 +432,7 @@ says, with no expansion in between — which is exactly why `blt-ordering.md` us
 
 The flat model is a pile of equations with no order and no classification. **DAE construction**
 partitions it — which variables are states, which are algebraic, which equations are which kind —
-and that is [▶ dae-construction](hrw://tour/dae-construction). After that, `matching.md` asks which equation
+and that is [dae-construction](hrw://tour/dae-construction). After that, `matching.md` asks which equation
 solves which unknown.
 
 ## What this tour cannot check
@@ -445,7 +445,7 @@ solves which unknown.
 - **Whether a connection is legal.** Rumoca checks that *paired* variables agree — flow with flow,
   `Real` with `Real`, matching array shapes — but nothing checks that both connectors have the
   **same member set**, so joining a `{v, i}` connector to a `{v}` connector is accepted. That gap
-  has its own tour: [▶ the-oracle](hrw://tour/the-oracle).
+  has its own tour: [the-oracle](hrw://tour/the-oracle).
 - **Stream connectors.** Named in Stop 2 and exercised by no specimen here.
 
-Or go back up: [▲ The chain overview](hrw://tour/the-concepts)
+Or go back up: [The chain overview](hrw://tour/the-concepts)

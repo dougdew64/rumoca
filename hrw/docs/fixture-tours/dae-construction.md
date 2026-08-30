@@ -2,7 +2,7 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-concepts)
+[The chain overview](hrw://tour/the-concepts)
 
 **A concept tour.** It teaches a step of the chain
 (`docs/compiler-phases/the-chain-of-problems.md`) and uses HRW as the instrument rather than the
@@ -52,7 +52,7 @@ Appendix B: **`x`** for states, **`y`** for algebraics, **`p`** for parameters.
 
 > **Predict.** How many of those four end up in `x`, and which?
 
-[▶ Look — SingleInertia → DAE](hrw://load/SingleInertia/Dae)
+[Look — SingleInertia → DAE](hrw://load/SingleInertia/Dae)
 
 [Point at `x`](hrw://stage/Dae/node/x)
 
@@ -81,7 +81,7 @@ You met the rule this morning in another pane: a variable is a state exactly whe
 > **Predict.** `SingleInertia` has two equations. Which one makes `phi` a state, and which makes
 > `w` one?
 
-[▶ Look — SingleInertia → Flatten → Equations](hrw://load/SingleInertia/Flatten/EquationSheet)
+[Look — SingleInertia → Flatten → Equations](hrw://load/SingleInertia/Flatten/EquationSheet)
 
 **Expected:** exactly two rows in the Why column are non-blank —
 
@@ -110,7 +110,7 @@ Here is the part that usually surprises people. Structural analysis lists the sy
 
 > **Predict.** Name the unknowns you expect to see listed. Write them down before looking.
 
-[▶ Look — SingleInertia → Structural → Tree](hrw://load/SingleInertia/Structural/Tree)
+[Look — SingleInertia → Structural → Tree](hrw://load/SingleInertia/Structural/Tree)
 
 [Point at `incidence.unknown_names`](hrw://stage/Structural/Tree/node/incidence.unknown_names)
 
@@ -139,7 +139,7 @@ Every downstream phase assumes one thing about this system.
 
 > **Predict.** How many equations and how many unknowns will Structural report?
 
-[▶ Look — SingleInertia → Structural → Tree](hrw://load/SingleInertia/Structural/Tree)
+[Look — SingleInertia → Structural → Tree](hrw://load/SingleInertia/Structural/Tree)
 
 [Point at `n_unknowns`](hrw://stage/Structural/Tree/node/n_unknowns)
 
@@ -172,7 +172,7 @@ declare a variable, forget its equation.
 > **Predict.** The DAE tab is about to open on a model that cannot be built. What will it show —
 > a partition with something missing, or something else?
 
-[▶ Look — UnbalancedShaft → DAE](hrw://load/UnbalancedShaft/Dae)
+[Look — UnbalancedShaft → DAE](hrw://load/UnbalancedShaft/Dae)
 
 **Expected:** **no partition at all.** The stage holds an error, reading:
 
@@ -210,7 +210,7 @@ anything** — the model is merely repetitive.
 > **Predict.** Stop 5's model was short one equation and reported `balance = -1`. This one is long
 > one equation and says nothing new. Will the compiler accept it?
 
-[▶ Look — OverDeterminedShaft → DAE](hrw://load/OverDeterminedShaft/Dae)
+[Look — OverDeterminedShaft → DAE](hrw://load/OverDeterminedShaft/Dae)
 
 **Expected:** rejected, with the sign flipped:
 
@@ -247,7 +247,7 @@ as a surplus.
 > **Predict.** Structural analysis is the phase that finds singular systems. Will it report this
 > one?
 
-[▶ Look — UnbalancedShaft → Structural](hrw://load/UnbalancedShaft/Structural)
+[Look — UnbalancedShaft → Structural](hrw://load/UnbalancedShaft/Structural)
 
 **Expected:** Structural, Index reduction, Initialization, Events and Solve lowering all read
 **`not reached (ToDae failed earlier)`**.
@@ -289,7 +289,7 @@ question no test reaches.
 
 **Whether Stop 6's contrast with `CapacitorLoop` is worth a stop of its own.** It is asserted in
 prose here and demonstrated nowhere in this tour. *(It is demonstrated in
-[▶ matching](hrw://tour/matching) Stop 3, which walks that model's 13-of-14 matching — so the claim is
+[matching](hrw://tour/matching) Stop 3, which walks that model's 13-of-14 matching — so the claim is
 checkable, just not here.)*
 
 **Whether Stop 6 needed its own specimen or could have been prose.** It could not: until
@@ -305,7 +305,7 @@ The system is square, and the solver has been told which quantities carry the pa
 not know **which equation to use for which unknown**, or **what order to solve them in** — a
 square system does not come with an assignment.
 
-That is matching and BLT ordering: [▶ matching](hrw://tour/matching), then
-[▶ blt-ordering](hrw://tour/blt-ordering).
+That is matching and BLT ordering: [matching](hrw://tour/matching), then
+[blt-ordering](hrw://tour/blt-ordering).
 
-Or go back up: [▲ The chain overview](hrw://tour/the-concepts)
+Or go back up: [The chain overview](hrw://tour/the-concepts)

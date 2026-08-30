@@ -2,9 +2,9 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-concepts)
+[The chain overview](hrw://tour/the-concepts)
 
-**A concept tour.** Walk [▶ blt-ordering](hrw://tour/blt-ordering) first — it produces the coupled
+**A concept tour.** Walk [blt-ordering](hrw://tour/blt-ordering) first — it produces the coupled
 blocks this tour tries to shrink.
 
 Every count below was read from the committed traces, never remembered.
@@ -43,7 +43,7 @@ f_x[2]   0 = measurement - plantGain * command
 
 > **Predict.** Of the three unknowns, how many must the solver iterate on?
 
-[▶ Look — ProportionalLoop → Structural → Tearing](hrw://load/ProportionalLoop/Structural/TearingAnim)
+[Look — ProportionalLoop → Structural → Tearing](hrw://load/ProportionalLoop/Structural/TearingAnim)
 
 **Expected:** **one** — the tear variable is `command`, and the residual equation is `f_x[0]`.
 
@@ -68,7 +68,7 @@ The tear variable was not arbitrary. Step the animation rather than reading its 
 
 > **Predict.** What would make one variable a better guess than another?
 
-[▶ Look — ProportionalLoop → Structural → Tearing](hrw://load/ProportionalLoop/Structural/TearingAnim)
+[Look — ProportionalLoop → Structural → Tearing](hrw://load/ProportionalLoop/Structural/TearingAnim)
 
 **Expected:** the frames carry, per candidate, how many equations it **appears** in and which
 other variables it **competes** with — and `command` is chosen on those numbers.
@@ -91,7 +91,7 @@ optimality. Stop 5 is about what that costs.
 
 > **Predict.** How many tear variables in total?
 
-[▶ Look — TwoLoops → Structural → Spy plot](hrw://load/TwoLoops/Structural/SpyPlot)
+[Look — TwoLoops → Structural → Spy plot](hrw://load/TwoLoops/Structural/SpyPlot)
 
 **Expected:** **two, one per block** — `errorA` with residual `f_x[0]`, and `errorB` with residual
 `f_x[2]`.
@@ -113,7 +113,7 @@ The run-time shape is now: iterate one number, then iterate one number. Compare 
 
 > **Predict.** How many blocks, and of what kinds?
 
-[▶ Look — MixedLoop → Structural → Spy plot](hrw://load/MixedLoop/Structural/SpyPlot)
+[Look — MixedLoop → Structural → Spy plot](hrw://load/MixedLoop/Structural/SpyPlot)
 
 **Expected:** **three** blocks — a scalar one, then a coupled block of **3** torn on `command`
 with residual `f_x[1]`, then another scalar one.
@@ -140,7 +140,7 @@ finished. That is a simplification, and it hides what the phase is really decidi
 > **Predict.** The block is torn on one variable, as in Stop 1. How many times will that torn block
 > be solved over a simulation?
 
-[▶ Look — LoopWithInertia → Structural → Spy plot](hrw://load/LoopWithInertia/Structural/SpyPlot)
+[Look — LoopWithInertia → Structural → Spy plot](hrw://load/LoopWithInertia/Structural/SpyPlot)
 
 **Expected:** **two** blocks — a coupled block of **3** torn on `error` with residual `f_x[1]`,
 and a **scalar** block holding `f_x[0]`, which is the equation containing `der(w)`.
@@ -183,6 +183,6 @@ once ordered. That is not guaranteed. Connect two rotating bodies with an ideal 
 compiler will find *more states than degrees of freedom*, which no amount of ordering or tearing
 can fix.
 
-That is [▶ index-reduction](hrw://tour/index-reduction).
+That is [index-reduction](hrw://tour/index-reduction).
 
-Or go back up: [▲ The chain overview](hrw://tour/the-concepts)
+Or go back up: [The chain overview](hrw://tour/the-concepts)

@@ -2,10 +2,10 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-concepts)
+[The chain overview](hrw://tour/the-concepts)
 
-**A concept tour.** Walk [▶ blt-ordering](hrw://tour/blt-ordering) and
-[▶ tearing](hrw://tour/tearing) first. Every model in those was solvable once ordered; this tour
+**A concept tour.** Walk [blt-ordering](hrw://tour/blt-ordering) and
+[tearing](hrw://tour/tearing) first. Every model in those was solvable once ordered; this tour
 is about models that are not, and it ends with one that Rumoca cannot rescue at all.
 
 **Every backward reference in this tour is a link, not a retelling.** A result restated in prose
@@ -60,7 +60,7 @@ An equation can only help determine a quantity **it actually mentions**, and pai
 with the one unknown it determines is the **matching** you have already walked. The Incidence view
 draws exactly that: one row per equation, marking which unknowns it touches.
 
-[▶ Look — CartesianPendulum → Structural → Incidence](hrw://load/CartesianPendulum/Structural/Incidence)
+[Look — CartesianPendulum → Structural → Incidence](hrw://load/CartesianPendulum/Structural/Incidence)
 
 **Read the rows and the argument makes itself.** Four of them touch something on our list. The
 fifth touches nothing at all — and rather than describe it, here it is:
@@ -141,7 +141,7 @@ reaches for, and a model it cannot reduce.
 
 > **Predict.** Height and velocity. Is either one determined by the other?
 
-[▶ Look — BouncingBall → Index reduction](hrw://load/BouncingBall/IndexReduction)
+[Look — BouncingBall → Index reduction](hrw://load/BouncingBall/IndexReduction)
 
 **Expected:** **2 states before, 2 after.** Nothing demoted, and the pane reports **no
 differentiation**.
@@ -164,7 +164,7 @@ discovery rather than as routine.
 > **Predict.** Four states. If the compiler removes one, how many equations do you think it has
 > to differentiate to do it — none, one, or several?
 
-[▶ Look — BenchActuator → Index reduction](hrw://load/BenchActuator/IndexReduction)
+[Look — BenchActuator → Index reduction](hrw://load/BenchActuator/IndexReduction)
 
 **Expected:** **4 states before, 3 after**, the demoted state is **`emf.phi`**, and the pane
 reports **1 differentiation performed**.
@@ -189,7 +189,7 @@ that **none of the manufactured equations survive to the end**. Hold that; Stop 
 
 > **Predict.** Nine states. How many independent freedoms does that machine really have?
 
-[▶ Look — Drivetrain → Index reduction](hrw://load/Drivetrain/IndexReduction)
+[Look — Drivetrain → Index reduction](hrw://load/Drivetrain/IndexReduction)
 
 **Expected:** **9 states before, 3 after**, and **6 differentiations performed**. The survivors
 are `L.i`, `shaft.w` and `mount.s_rel`; the system goes from **97 equations to 20**.
@@ -216,7 +216,7 @@ Here is the stop this tour exists for, and it is about a number that used to be 
 > **Predict.** `Drivetrain` differentiated 6 times. How many of those manufactured equations do
 > you expect to find in the final system?
 
-[▶ Look — Drivetrain → Index reduction](hrw://load/Drivetrain/IndexReduction)
+[Look — Drivetrain → Index reduction](hrw://load/Drivetrain/IndexReduction)
 
 [Point at `reduction`](hrw://stage/IndexReduction/node/reduction)
 
@@ -272,7 +272,7 @@ makes this the textbook case, and the first real test of the phase.
 > **Predict.** This is the canonical example every treatment of index reduction opens with. How
 > many differentiations will Rumoca perform?
 
-[▶ Look — CartesianPendulum → Index reduction](hrw://load/CartesianPendulum/IndexReduction)
+[Look — CartesianPendulum → Index reduction](hrw://load/CartesianPendulum/IndexReduction)
 
 **Expected:** **zero.** States **4 before, 4 after**, nothing demoted, and every step reports 0.
 The pane says the funnel **did not act on the system**.
@@ -282,7 +282,7 @@ The pane says the funnel **did not act on the system**.
 *What just happened.* **Rumoca does not reduce this model**, and the diagnosis names the physics
 exactly. Look at the Structural tab:
 
-[▶ Look — CartesianPendulum → Structural](hrw://load/CartesianPendulum/Structural)
+[Look — CartesianPendulum → Structural](hrw://load/CartesianPendulum/Structural)
 
 **Expected:** `structurally singular system: 4 matched out of 5 equations and 5 unknowns;
 unmatched equations: f_x[4]; unmatched unknowns: lambda`.
@@ -334,6 +334,6 @@ The system is now index-1, square and ordered — or it is not, and you have see
 like. What remains is starting it: the integrator needs consistent values at *t* = 0, and the
 states' `start` attributes are not automatically consistent with the algebraic equations.
 
-That is [▶ initialization](hrw://tour/initialization).
+That is [initialization](hrw://tour/initialization).
 
-Or go back up: [▲ The chain overview](hrw://tour/the-concepts)
+Or go back up: [The chain overview](hrw://tour/the-concepts)

@@ -2,9 +2,9 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-concepts)
+[The chain overview](hrw://tour/the-concepts)
 
-**A concept tour.** Walk [▶ index-reduction](hrw://tour/index-reduction) first — this phase runs on
+**A concept tour.** Walk [index-reduction](hrw://tour/index-reduction) first — this phase runs on
 the reduced, index-1 system.
 
 Every count below was read from the committed traces, never remembered.
@@ -38,7 +38,7 @@ initialization system, and the case that specifies too much.
 
 > **Predict.** How large is its initialization problem?
 
-[▶ Look — BouncingBall → Initialization](hrw://load/BouncingBall/Initialization)
+[Look — BouncingBall → Initialization](hrw://load/BouncingBall/Initialization)
 
 **Expected:** `n_states` is **2**, `n_equations` is **2**, and `block_count` is **0**. The note
 reads *"no algebraic initialization subsystem (equations ≤ states)."*
@@ -61,7 +61,7 @@ would have to interpret.
 > **Predict.** One state, 23 equations. How many of those equations does initialization have to
 > solve, and for what?
 
-[▶ Look — RcCircuit → Initialization](hrw://load/RcCircuit/Initialization)
+[Look — RcCircuit → Initialization](hrw://load/RcCircuit/Initialization)
 
 **Expected:** `n_states` **1**, `n_equations` **23**, and `block_count` **21**. The determinacy
 verdict reads *"well-posed (remaining states initialize from their start attributes)"*, with
@@ -90,7 +90,7 @@ the verdict says so.
 
 > **Predict.** The model has one state. What happens if two initial equations both constrain it?
 
-[▶ Look — OverInitRc → Initialization](hrw://load/OverInitRc/Initialization)
+[Look — OverInitRc → Initialization](hrw://load/OverInitRc/Initialization)
 
 **Expected:** the stage reports
 
@@ -124,7 +124,7 @@ two sources separately is what makes the fix obvious.
 > **Predict.** Its continuous system is 12 equations, 12 unknowns, fully matched. Will its
 > initialization succeed?
 
-[▶ Look — RotationalInertia → Initialization](hrw://load/RotationalInertia/Initialization)
+[Look — RotationalInertia → Initialization](hrw://load/RotationalInertia/Initialization)
 
 **Expected:** it **fails**:
 
@@ -171,6 +171,6 @@ is untested — `OverInitRc` is small enough that it does not matter.
 Everything is now decided: which variables are states, what order to solve in, what to guess, and
 what the values are at *t* = 0. What remains is turning names into memory.
 
-That is [▶ solve-lowering](hrw://tour/solve-lowering).
+That is [solve-lowering](hrw://tour/solve-lowering).
 
-Or go back up: [▲ The chain overview](hrw://tour/the-concepts)
+Or go back up: [The chain overview](hrw://tour/the-concepts)

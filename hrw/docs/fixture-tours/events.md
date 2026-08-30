@@ -2,9 +2,9 @@
 
 <!-- kind: concept -->
 
-[▲ The chain overview](hrw://tour/the-concepts)
+[The chain overview](hrw://tour/the-concepts)
 
-**A concept tour.** Walk [▶ initialization](hrw://tour/initialization) first. Everything so far has
+**A concept tour.** Walk [initialization](hrw://tour/initialization) first. Everything so far has
 assumed one fixed set of equations; this tour is about models where the equations change.
 
 Every count below was read from the committed traces, never remembered.
@@ -38,7 +38,7 @@ event, a model with none, and a model with several.
 > **Predict.** What does the compiler have to extract from that `when` clause for a solver to
 > handle it?
 
-[▶ Look — BouncingBall → Events](hrw://load/BouncingBall/Events)
+[Look — BouncingBall → Events](hrw://load/BouncingBall/Events)
 
 **Expected:** the summary reads `condition_equations: 1`, `relations: 1`,
 `discrete_real_updates: 1`, and `zero_crossing_conditions: 0`.
@@ -64,7 +64,7 @@ lets the integrator search for the crossing time without applying anything.
 
 > **Predict.** What will the Events stage show for a purely continuous model?
 
-[▶ Look — RcCircuit → Events](hrw://load/RcCircuit/Events)
+[Look — RcCircuit → Events](hrw://load/RcCircuit/Events)
 
 **Expected:** `condition_equations: 0`, `relations: 0`, and both update counts **0**. The note
 reads *"no events — this model is a smooth (continuous) system."*
@@ -97,7 +97,7 @@ see** — and this one is a genuine Rumoca question, not an HRW defect.
 
 > **Predict.** More conditions than `BouncingBall`, or the same shape scaled up?
 
-[▶ Look — GearWithBrake → Events](hrw://load/GearWithBrake/Events)
+[Look — GearWithBrake → Events](hrw://load/GearWithBrake/Events)
 
 **Expected:** `condition_equations: 4`, `relations: 4`, `discrete_valued_updates: 1`, and
 `discrete_real_updates: 0`.
@@ -139,6 +139,6 @@ demonstrated nowhere, because nothing in HRW shows the solver's step-by-step sea
 The compiler now knows everything: states, order, tears, initial values, and what can change
 mid-run. All of it is still expressed in *your names*.
 
-Turning those into memory addresses is [▶ solve-lowering](hrw://tour/solve-lowering).
+Turning those into memory addresses is [solve-lowering](hrw://tour/solve-lowering).
 
-Or go back up: [▲ The chain overview](hrw://tour/the-concepts)
+Or go back up: [The chain overview](hrw://tour/the-concepts)
