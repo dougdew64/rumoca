@@ -614,18 +614,41 @@ mod tests_absence {
     /// So the assertions are a pair. An empty scan says it found nothing; a **failed**
     /// scan says why instead, because *"found none"* and *"could not look"* are
     /// different facts and only one of them is about the models.
+    ///
+    /// # Both harnesses park the scratch poll, and without it neither branch survives
+    ///
+    /// [`ModelListState::ui`] draws this pair of branches and *then* calls
+    /// [`ModelListState::poll_scratch_specimens`], which is due immediately while
+    /// `polled_at` is `None`. If `.hrw-bridge/specimens/` holds any `.mo` file, that
+    /// poll sees an arrival and calls [`ModelListState::rescan`] — which fills `files`
+    /// from the 24 curated specimens **and clears `scan_error`** — so frame two renders
+    /// neither message and `run_steps(2)` reads frame two.
+    ///
+    /// **So this test was green when it landed and turned red the day a scratch
+    /// specimen was left on disk**, having never been about the environment at all.
+    /// Reproduced both ways on 2026-08-30: emptying that directory made it pass, and
+    /// restoring one file made it fail again. The older instance of the same trap is
+    /// `the_model_list_renders_and_reports_without_an_app`, which parks the poll too.
+    ///
+    /// **Nothing was wrong in production.** `App::new` calls `rescan` before the first
+    /// frame, so the absence message never flashes ahead of a real list; the pair of
+    /// branches is what this test isolates, and parking the poll is what isolates it.
     #[test]
     fn an_empty_specimen_scan_says_so_and_an_error_says_why_instead() {
         use egui_kittest::Harness;
         use egui_kittest::kittest::Queryable;
 
+        let empty = ModelListState {
+            polled_at: Some(std::time::Instant::now()),
+            ..Default::default()
+        };
         let mut h = Harness::builder()
             .with_size(egui::Vec2::new(400.0, 700.0))
             .build_ui_state(
                 |ui, s: &mut ModelListState| {
                     s.ui(ui, None, false, false);
                 },
-                ModelListState::default(),
+                empty,
             );
         h.run_steps(2);
         assert!(
@@ -636,6 +659,7 @@ mod tests_absence {
 
         let with_error = ModelListState {
             scan_error: Some("specimens/ is not readable".to_owned()),
+            polled_at: Some(std::time::Instant::now()),
             ..Default::default()
         };
         let mut h = Harness::builder()

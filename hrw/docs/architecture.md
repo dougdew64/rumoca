@@ -115,7 +115,7 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**65 modules, 72,751 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**65 modules, 72,775 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
@@ -146,10 +146,10 @@ showing 48 equations. They are derived now, and
 | `sub_view_rows.rs` | 719 |
 | `tour.rs` | 718 |
 | `tearing_anim.rs` | 699 |
+| `model_list.rs` | 685 |
 | `canvas.rs` | 681 |
 | `context_bar.rs` | 666 |
 | `stage_tabs.rs` | 662 |
-| `model_list.rs` | 661 |
 | `report_sub_view.rs` | 650 |
 | `expr_format.rs` | 621 |
 | `modelica_lex.rs` | 595 |
@@ -184,7 +184,7 @@ showing 48 equations. They are derived now, and
 | `compile_caches.rs` | 101 |
 | `ui_state.rs` | 73 |
 | `field_help.rs` | 67 |
-| **total** | **72,751** |
+| **total** | **72,775** |
 <!-- END GENERATED module-sizes -->
 
 
