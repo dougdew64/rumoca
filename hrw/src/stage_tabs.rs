@@ -20,8 +20,21 @@
 //! So the region rule applied instead (`app-split-plan.md`): **which contiguous span of the
 //! body calls no `App` method?** Everything after the ▶ button — the tab row proper — and
 //! that span is 163 of the 280 lines. What stays behind in `App::stage_tab_bar_ui` is the
-//! chrome that genuinely needs the application: the specimen switcher, the Log button, the
-//! ▶ button, and the two status spinners.
+//! chrome that genuinely needs the application: the specimen switcher, the Log button, and
+//! the compile/nav spinners.
+//!
+//! # The ▶ button moved in on 2026-08-29, and the second bullet above is why it cost a frame
+//!
+//! Doug asked for it beside the Simulation tab rather than beside the Log button, where it
+//! read as general chrome rather than as belonging to simulation. It now reports
+//! [`TabClick::RunSimulation`] and `App` performs the run — the same render-and-report shape
+//! as the tab clicks.
+//!
+//! **The consequence the bullet predicted is real and is accepted.** `sim_running` now
+//! arrives as a parameter computed *before* the row draws, so on the click frame it is still
+//! false and the spinner does not appear until the next frame — which egui paints
+//! immediately after an interaction. This is exactly [`crate::tour_panel`]'s *"Play is
+//! deferred by exactly one frame"*, and the alternative was handing this row `&mut App`.
 //!
 //! # Why `selectable_label` and not `selectable_value`
 //!
@@ -64,11 +77,11 @@ use crate::worker::{Stage, StageBundle, StageKind};
 
 /// What the tab row did, for `App` to finish.
 ///
-/// The **third instance** of the render-and-report pattern
-/// (`specimen_source` returned `Option<String>`, `tour_panel` an
-/// `Option<TransportRequest>`), and the first where the two variants differ only in their
-/// *consequence*: both leave the log view, only [`Stage`](TabClick::Stage) asks for a
-/// capture.
+/// The **third instance** of the render-and-report pattern (`specimen_source` returned
+/// `Option<String>`, `tour_panel` an `Option<TransportRequest>`), and the first where
+/// variants differ only in their *consequence*: the two tab clicks both leave the log
+/// view and only [`Stage`](TabClick::Stage) asks for a capture, while
+/// [`RunSimulation`](TabClick::RunSimulation) does neither.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum TabClick {
     /// An IR stage tab was clicked. The new stage is already written through
@@ -77,6 +90,17 @@ pub(crate) enum TabClick {
     /// The Simulation tab was clicked. Leave the log view — but do not capture, because a
     /// run/plot action is not an IR capture.
     Simulation,
+    /// **The ▶ button was pressed** — start a run and *stay where you are*.
+    ///
+    /// The only variant that does **not** leave the log view, and that is the whole
+    /// point of the button: its hover has always read *"stays on the current view"*, so
+    /// a run can be watched in the log or studied against the IR while it completes —
+    /// sweeping it in with the other two would silently change what pressing ▶ does.
+    ///
+    /// Moved here from `App`'s chrome row on 2026-08-29 at Doug's request — beside the
+    /// Simulation tab rather than beside the Log button, where it read as general chrome
+    /// rather than as belonging to simulation.
+    RunSimulation,
 }
 
 /// Draw the stage tabs and the Simulation tab, reporting what was clicked.
@@ -97,6 +121,8 @@ pub(crate) fn stage_tabs_ui(
     viewing_log: bool,
     sim_errored: bool,
     sim_has_data: bool,
+    can_sim: bool,
+    sim_running: bool,
 ) -> Option<TabClick> {
     ui.separator();
     let err = ui.visuals().error_fg_color;
@@ -231,6 +257,23 @@ pub(crate) fn stage_tabs_ui(
     // Simulation is a run/plot action, not an IR capture — hence its own
     // variant, which `App` answers without asking for a stage capture.
     ui.separator();
+    // **▶ sits between the divider and the label** (Doug, 2026-08-29). It used to live
+    // in `App`'s chrome row beside the Log button, where it read as general chrome; here
+    // it reads as belonging to the tab it acts on. `can_sim` and `sim_running` arrive as
+    // plain bools for the reason this signature's other `sim_*` flags do — the row only
+    // asks whether a run may start and whether one is going, and passing the `Option`s
+    // they come from would overstate its reach.
+    if ui
+        .add_enabled(can_sim, egui::Button::new("▶"))
+        .on_hover_text("Run simulation (stays on the current view)")
+        .on_disabled_hover_text("Compile a specimen first")
+        .clicked()
+    {
+        click = Some(TabClick::RunSimulation);
+    }
+    if sim_running {
+        ui.spinner();
+    }
     let sim_label = {
         let text = egui::RichText::new("Simulation");
         if sim_errored {
@@ -317,6 +360,8 @@ mod tests {
         viewing_log: bool,
         sim_errored: bool,
         sim_has_data: bool,
+        can_sim: bool,
+        sim_running: bool,
         /// The last non-`None` report. Kept separately from the per-frame return so a
         /// click observed on frame one is not erased by frame two's quiet redraw.
         reported: Option<TabClick>,
@@ -334,6 +379,12 @@ mod tests {
                 viewing_log: false,
                 sim_errored: false,
                 sim_has_data: false,
+                // **Enabled by default, unlike the other flags.** A disabled ▶ is not
+                // clickable, so a default of `false` would make every test that presses
+                // it silently observe nothing — the shape `CLAUDE.md` records as a
+                // synthetic click landing on nothing.
+                can_sim: true,
+                sim_running: false,
                 reported: None,
             }
         }
@@ -358,6 +409,8 @@ mod tests {
                             r.viewing_log,
                             r.sim_errored,
                             r.sim_has_data,
+                            r.can_sim,
+                            r.sim_running,
                         );
                         if click.is_some() {
                             r.reported = click;
@@ -366,6 +419,41 @@ mod tests {
                 },
                 row,
             )
+    }
+
+    /// The ▶ button **reports a run, and does not touch the selection**.
+    ///
+    /// It moved into this row on 2026-08-29, and the risk was never the drawing. The row
+    /// already reports two variants that both mean *leave the log view*, and ▶ means the
+    /// opposite — its hover has always promised it "stays on the current view". So the
+    /// variant is pinned here, and `App` keeps it out of the branch that clears
+    /// `viewing_log`.
+    #[test]
+    fn the_run_button_reports_a_run_and_selects_nothing() {
+        let mut h = harness(Row {
+            stage: StageKind::Flatten,
+            ..Row::default()
+        });
+        h.run_steps(2);
+
+        h.get_all_by_label_contains("▶")
+            .next()
+            .expect("a run button")
+            .click();
+        h.run_steps(2);
+
+        assert_eq!(
+            h.state().reported,
+            Some(TabClick::RunSimulation),
+            "pressing run must report RunSimulation \u{2014} the one variant `App` answers \
+             WITHOUT clearing the log view",
+        );
+        assert_eq!(
+            h.state().stage,
+            StageKind::Flatten,
+            "and it must not move the selection: running a model is not viewing a stage, \
+             which is why the button sits beside the Simulation tab rather than being it",
+        );
     }
 
     /// A stage tab **selects the stage and reports a stage click**.

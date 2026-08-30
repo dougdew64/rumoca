@@ -5105,17 +5105,10 @@ impl App {
             && !self.sim_running
             && self.model.is_some()
             && self.stages.solve_lowering.value.is_some();
-        if ui
-            .add_enabled(can_sim, egui::Button::new("▶"))
-            .on_hover_text("Run simulation (stays on the current view)")
-            .on_disabled_hover_text("Compile a specimen first")
-            .clicked()
-        {
-            self.start_simulation();
-        }
-        if self.sim_running {
-            ui.spinner();
-        }
+        // **The ▶ button and its spinner moved into the tab row on 2026-08-29**, to sit
+        // between the last divider and the Simulation label rather than here beside the
+        // Log button. `can_sim` is still computed here — it reads four `App` fields the
+        // row has no business holding — and travels as one bool.
         // ---- The tabs themselves ----
         //
         // Everything from here down left for `stage_tabs.rs` on 2026-08-19: it is the
@@ -5135,14 +5128,25 @@ impl App {
             self.viewing_log,
             self.sim_error.is_some(),
             self.sim_data.is_some(),
+            can_sim,
+            self.sim_running,
         );
-        if let Some(click) = click {
-            self.viewing_log = false;
-            // Guarded on a specimen because the capture describes *this run's* stage;
-            // with nothing loaded there is no stage to describe.
-            if click == stage_tabs::TabClick::Stage && self.selected.is_some() {
-                intent.want_stage_ask = true;
+        match click {
+            // **▶ does not leave the log view, and that is deliberate.** Its hover has
+            // always promised it "stays on the current view", so a run can be watched in
+            // the log or read against the IR while it completes. Folding it in with the
+            // tab clicks below would have changed what the button does while only moving
+            // where it sits.
+            Some(stage_tabs::TabClick::RunSimulation) => self.start_simulation(),
+            Some(click) => {
+                self.viewing_log = false;
+                // Guarded on a specimen because the capture describes *this run's* stage;
+                // with nothing loaded there is no stage to describe.
+                if click == stage_tabs::TabClick::Stage && self.selected.is_some() {
+                    intent.want_stage_ask = true;
+                }
             }
+            None => {}
         }
         // The compiled-model name is deliberately NOT shown here — the
         // stage tab row is short on horizontal space, and the same
