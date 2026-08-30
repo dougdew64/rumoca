@@ -275,9 +275,6 @@ pub(crate) fn stage_tabs_ui(
     {
         click = Some(TabClick::RunSimulation);
     }
-    if sim_running {
-        ui.spinner();
-    }
     let sim_label = {
         let text = egui::RichText::new("Simulation");
         if sim_errored {
@@ -302,6 +299,19 @@ pub(crate) fn stage_tabs_ui(
     {
         *selected_stage = StageKind::Simulation;
         click = Some(TabClick::Simulation);
+    }
+    // **The spinner goes AFTER the label, because it appears and disappears** (Doug,
+    // 2026-08-30). It used to sit between ▶ and "Simulation", so starting a run
+    // inserted a widget to the LEFT of the label: the label jumped right for the
+    // duration of the run and back when it finished. Simulation is the last thing in
+    // this row, so a spinner after it pushes nothing.
+    //
+    // **A widget that comes and goes belongs at the end of a row, not in the middle**
+    // — the general form, and the reason this is worth a comment rather than a swap.
+    // `the_simulation_label_does_not_move_while_a_run_is_going` pins it by comparing
+    // the label's x across both states, which is the observable Doug reported.
+    if sim_running {
+        ui.spinner();
     }
     click
 }
@@ -457,6 +467,49 @@ mod tests {
             StageKind::Flatten,
             "and it must not move the selection: running a model is not viewing a stage, \
              which is why the button sits beside the Simulation tab rather than being it",
+        );
+    }
+
+    /// **The "Simulation" label does not move when a run starts.**
+    ///
+    /// Doug, 2026-08-30: *"Move the spinner to the right of the Simulation tab label so
+    /// that the tab label doesn't shift to the right and then back to the left during
+    /// simulation."* The spinner sat between ▶ and the label, so `sim_running` inserted
+    /// a widget to its **left** and the label jumped right for the length of every run.
+    ///
+    /// # Why this is checkable when the spinner itself is not
+    ///
+    /// `ui.spinner()` paints and carries no accessibility label, so nothing can query
+    /// it and no test can assert where it sits — the same blind spot that left the
+    /// extra Log/Parse divider and the duplicate spinner to Doug's eye alone.
+    ///
+    /// **But the observable he reported is not the spinner, it is the LABEL** — and a
+    /// label has a rect. Comparing its `x` across `sim_running` false and true tests
+    /// exactly what he saw, without needing to see the spinner at all. Worth
+    /// generalising: when a painted widget is untestable, look for what its presence
+    /// *moves*.
+    #[test]
+    fn the_simulation_label_does_not_move_while_a_run_is_going() {
+        fn label_x(sim_running: bool) -> f32 {
+            let mut h = harness(Row {
+                sim_running,
+                ..Row::default()
+            });
+            h.run_steps(2);
+            h.query_by_label("Simulation")
+                .expect("the Simulation tab is drawn in both states")
+                .rect()
+                .min
+                .x
+        }
+
+        let idle = label_x(false);
+        let running = label_x(true);
+        assert!(
+            (idle - running).abs() < 0.5,
+            "the Simulation label sits at x={idle} when idle and x={running} during a \
+             run, so starting one shifts it \u{2014} a widget that appears and \
+             disappears belongs at the END of the row, after the label, never before it",
         );
     }
 
