@@ -239,12 +239,14 @@ pub(crate) fn context_bar_ui(
     declaring_classes: &HashMap<String, String>,
     def_index: &BTreeMap<u64, DefInfo>,
     model: Option<&str>,
+    tour: Option<&str>,
 ) -> Option<ContextBarPress> {
     let mut press: Option<ContextBarPress> = None;
 
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new("Context").strong());
-        background_ui(ui, model, stage);
+        // A point or a thread implies a loaded specimen, so the stage is real here.
+        background_ui(ui, model, Some(stage), tour);
         if let Some(point) = &context.pointed_at {
             // Worth saying only when it **differs** from the background
             // stage; otherwise it repeats the line above as if it were a
@@ -442,25 +444,42 @@ pub(crate) fn context_bar_ui(
 /// always shown."* One renderer for both branches of the bar — see the module doc
 /// for what happened when there were two.
 ///
-/// **It took a `has_specimen: bool` until 2026-08-30, and that arm was unreachable.**
-/// The third case was *"nothing is selected, so draw nothing"* — but both call paths
-/// begin in `App::context_bar_ui`, which `central_panel_ui` returns before whenever
-/// `selected` is `None`. So the flag was always `true`, no test named the arm, and it
-/// guarded against a caller that does not exist. Removed with the three gates of the
-/// same shape, on Doug's ruling; the precondition that made it dead is pinned by
-/// [`crate::ui_tests::the_context_bar_appears_only_once_a_specimen_is_selected`], which
-/// is why no new test was added here. **What survives is the distinction that is real:**
-/// a specimen is selected, and the model name either has arrived or has not.
-pub(crate) fn background_ui(ui: &mut egui::Ui, model: Option<&str>, stage: StageKind) {
-    match model {
-        Some(model) => {
-            ui.weak(format!("\u{00b7} {model} \u{00b7} {}", stage.name()));
-        }
+/// **`stage` is an `Option` because the bar is now always on screen** (Doug,
+/// 2026-08-30), so "no specimen is loaded" became a state this has to render rather
+/// than one its caller had already excluded.
+///
+/// It carried a `has_specimen: bool` for exactly this until earlier the same day, when
+/// it was removed as unreachable — correctly, on the evidence then: the bar was hidden
+/// without a specimen, so the arm could not be reached. **Making the bar unconditional
+/// is what brought the state back**, and `Option<StageKind>` says it in the type rather
+/// than in a parallel flag, matching `bridge::Ask::stage`, which is already `None` for
+/// a navigated definition.
+///
+/// **The tour is background too.** `session.json` has carried the open tour's name
+/// since 2026-08-19 for deixis, so Claude already had it while the bar did not say so —
+/// the under-reporting that prompted this. What is *not* here is the current stop,
+/// declined 2026-08-19 with four reasons; do not add it.
+pub(crate) fn background_ui(
+    ui: &mut egui::Ui,
+    model: Option<&str>,
+    stage: Option<StageKind>,
+    tour: Option<&str>,
+) {
+    let mut parts: Vec<String> = Vec::new();
+    match (model, stage) {
+        (Some(model), Some(stage)) => parts.push(format!("{model} \u{00b7} {}", stage.name())),
         // Mid-compile, or a compile that yielded no model name: still name the
         // stage rather than showing a bare "Context".
-        None => {
-            ui.weak(format!("\u{00b7} {}", stage.name()));
-        }
+        (None, Some(stage)) => parts.push(stage.name().to_owned()),
+        // No specimen. A stage name here would be a claim that a phase ran.
+        (Some(model), None) => parts.push(model.to_owned()),
+        (None, None) => {}
+    }
+    if let Some(tour) = tour {
+        parts.push(format!("tour: {tour}"));
+    }
+    if !parts.is_empty() {
+        ui.weak(format!("\u{00b7} {}", parts.join(" \u{00b7} ")));
     }
 }
 
@@ -522,6 +541,7 @@ mod tests {
                         &b.declaring,
                         &b.defs,
                         Some("MotorWithBrake"),
+                        None,
                     );
                     if press.is_some() {
                         b.reported = press;

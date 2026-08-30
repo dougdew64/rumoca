@@ -4242,6 +4242,21 @@ impl App {
                 // `stage_tab_bar_ui` disables the tabs itself, after the switcher.
                 ui.horizontal_wrapped(|ui| self.stage_tab_bar_ui(ui, intent));
 
+                // **The Context Bar is on screen even with nothing loaded** (Doug,
+                // 2026-08-30), and the reason is not that it has much to say here —
+                // it is that a bar which comes and goes cannot become a habit:
+                //
+                // > *"A context bar is novel for me. I need to learn to assume its
+                // > presence and to make frequent use of it, just like I needed decades
+                // > ago to learn to assume the presence of GUI menu bars."*
+                //
+                // Same argument the tab row won on 2026-08-02, three comment-paragraphs
+                // above: *"report the empty state, never vanish."* That rule was applied
+                // to the tabs and not to the bar below them, which is the inconsistency
+                // this closes.
+                ui.separator();
+                self.context_bar_ui(ui);
+
                 if self.ui_mode == UiMode::Debug {
                     // **Nothing here.** Debug mode's switcher lives in the tab
                     // row above and is drawn unconditionally now, so a second
@@ -4514,6 +4529,11 @@ impl App {
             // above but the tree widget. The two buttons cannot touch `self.nav` from
             // inside a panel closure, so they report — the `FrameIntent` pattern, one
             // pane's worth.
+            //
+            // **The bar comes first here too**, because "always" has to mean always or
+            // it is back to being something to check for. There is no tab row in this
+            // branch, so it sits at the top rather than under one.
+            self.context_bar_ui(ui);
             match nav_view::nav_view_ui(
                 ui,
                 &self.nav,
@@ -5499,17 +5519,25 @@ impl App {
             // state a user is in just before asking a question that quietly has
             // nothing behind it.
             //
-            // **A specimen is always selected by the time this runs.**
-            // `central_panel_ui` returns before this call when it is not, so the
-            // no-specimen case never reaches the bar — the central panel says
-            // "Select a specimen to compile." instead, which is advice that can
-            // actually be taken. This branch used to re-test `selected` and could
-            // never take the `else`; the precondition it relied on is pinned by
-            // `ui_tests::the_context_bar_appears_only_once_a_specimen_is_selected`.
+            // **This branch now runs with no specimen too** (Doug, 2026-08-30), which
+            // it never did before: `central_panel_ui` used to return ahead of the bar
+            // whenever `selected` was `None`.
+            //
+            // **The stage is therefore conditional, and that is an accuracy point
+            // rather than a tidy one.** `self.stage` always holds *some* variant, so
+            // passing it unconditionally would print "· Parse" on a fresh launch —
+            // naming a phase that has not run, about a specimen that does not exist.
+            // Absence is stated, never filled.
             let hint = self.empty_context_hint();
+            let tour = self.tour.selected.as_ref().map(TourSource::label);
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new("Context").strong());
-                context_bar::background_ui(ui, self.model.as_deref(), self.stage);
+                context_bar::background_ui(
+                    ui,
+                    self.model.as_deref(),
+                    self.selected.is_some().then_some(self.stage),
+                    tour.as_deref(),
+                );
                 ui.weak(hint).on_hover_text(EMPTY_CONTEXT_RULE);
             });
             ui.separator();
@@ -5519,6 +5547,7 @@ impl App {
         // The match list has to be current before the row that reports it.
         self.refresh_jump_matches();
 
+        let tour = self.tour.selected.as_ref().map(TourSource::label);
         let press = context_bar::context_bar_ui(
             ui,
             &self.context,
@@ -5529,6 +5558,7 @@ impl App {
             &self.declaring_classes,
             &self.def_index,
             self.model.as_deref(),
+            tour.as_deref(),
         );
 
         match press {

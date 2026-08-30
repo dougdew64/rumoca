@@ -204,53 +204,116 @@ fn the_harness_renders_hrw_and_sees_widgets() {
     assert!(h.query_by_label("Help").is_some(), "expected the Help menu");
 }
 
-/// **The Context Bar appears only once a specimen is selected** — the precondition
-/// three collapsed gates now rely on.
+/// **The Context Bar is on screen in every state**, which is the whole of what it is
+/// for.
 ///
-/// # Why this needed a test rather than a comment
+/// # This test asserted the opposite until 2026-08-30, and the reversal is the record
 ///
-/// `central_panel_ui` returns early while `selected` is `None`, so everything below
-/// that point runs with a specimen in hand: the Context Bar, the simulation pane,
-/// the stage views. Three places re-tested `selected` anyway and **not one of them
-/// could ever take the false branch** — collapsed 2026-08-30, on Doug's instruction
-/// after he asked why the bar is invisible before a specimen is open.
+/// It was written that morning as *"the bar appears only once a specimen is
+/// selected"*, pinning the precondition that three collapsed gates relied on. Doug
+/// then supplied the argument that overturned it:
 ///
-/// Removing a redundant check is only safe while the thing making it redundant
-/// holds, and nothing was checking that. If a later change routes past the early
-/// return — a new caller, or the return moving below the bar — this fails by name
-/// and the collapsed gates are what it is warning about.
+/// > *"A context bar is novel for me. I need to learn to assume its presence and to
+/// > make frequent use of it, just like I needed decades ago to learn to assume the
+/// > presence of GUI menu bars."*
 ///
-/// # Why a pair
+/// **That is a claim about habit, not about information**, and it is the same one the
+/// stage tab row won on 2026-08-02 — *"report the empty state, never vanish."* The
+/// rule had been applied to the tabs and not to the bar directly beneath them.
 ///
-/// Absence alone would pass if the bar stopped rendering for *any* reason, so the
-/// second half proves the query finds it when it should. Same shape as
-/// `model_list::tests_absence`: "found none" and "could not look" are different
-/// facts, and only one of them is about the bar.
+/// **A test reversing is not a test failing.** This one did its job twice: it held the
+/// old invariant while that was the design, and it failed by name the moment the
+/// design changed, which is how the change announced everywhere it reached.
+///
+/// # Why four states rather than two
+///
+/// *Always* is a claim about every state, and a two-case test would leave the modes
+/// Doug actually walks in unchecked. Tour mode before a stop loads anything is the
+/// case that started the conversation; the navigation view is the one branch of
+/// `central_panel_ui` that draws no tab row, so the bar had to be added there
+/// separately and could regress on its own.
 #[test]
-fn the_context_bar_appears_only_once_a_specimen_is_selected() {
-    // **Specimen mode in BOTH halves, so the selection is the only difference.**
-    // Without it the first half passes for the wrong reason: `test_default` does not
-    // start in a mode whose central panel draws a body at all, so the bar would be
-    // absent whatever `selected` held, and the assertion would measure the mode.
-    let mut app = App::test_default();
-    app.test_set_ui_mode_specimen();
-    let h = harness(app);
+fn the_context_bar_is_present_in_every_state() {
+    /// A named state and the app that puts HRW in it. Built lazily, because each
+    /// `App` spawns a worker and only one is needed at a time.
+    type Case = (&'static str, fn() -> App);
+
+    let cases: [Case; 4] = [
+        ("nothing loaded", || {
+            let mut app = App::test_default();
+            app.test_set_ui_mode_specimen();
+            app
+        }),
+        ("a specimen loaded", || {
+            let mut app = App::test_default();
+            app.test_set_ui_mode_specimen();
+            app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+            app
+        }),
+        // `UiMode` defaults to Tour, which is why this one sets no mode: it is the
+        // state HRW actually launches in, and the one Doug walks tours in.
+        ("tour mode, nothing loaded", App::test_default),
+        ("the navigation view", || {
+            let mut app = App::test_default();
+            app.test_set_ui_mode_specimen();
+            app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+            app.test_push_nav("Modelica.Blocks.Interfaces.RealInput");
+            app
+        }),
+    ];
+
+    for (what, build) in cases {
+        let h = harness(build());
+        assert!(
+            h.query_by_label("Context").is_some(),
+            "the Context Bar is missing with {what} \u{2014} a bar that comes and goes \
+             cannot be assumed, and assuming it is the point",
+        );
+    }
+}
+
+/// **An always-present bar must not fill the silence**, which is the risk that comes
+/// with never hiding.
+///
+/// `App::stage` always holds *some* `StageKind`, so the obvious way to render the
+/// background on a fresh launch prints `· Parse` — naming a phase that has not run,
+/// about a specimen that does not exist. **Making a pane unconditional is exactly when
+/// it starts inventing**, because it now has frames to fill that it never had before,
+/// and this repository's first rule is that absence is stated rather than filled.
+///
+/// The second half is the other side of the same coin: with a tour open there *is*
+/// something true to say, and the bar says it. `session.json` has carried the open
+/// tour's name since 2026-08-19, so the bar was under-reporting context Claude already
+/// had — the gap Doug's question opened.
+#[test]
+fn the_bar_names_what_is_loaded_and_invents_nothing() {
+    // **`.hrw-bridge/tour.md` is live state and `tour::poll` auto-selects it**, so with
+    // one on disk there *is* an open tour and the bar rightly names it. Without this
+    // guard the first assertion measures whether Doug has used the Answer feature
+    // recently — the trap `AdHocTour` exists for, and the one that caught this test on
+    // its first run.
+    let _no_ad_hoc = AdHocTour::absent();
+
+    let h = harness(App::test_default());
     assert!(
-        h.query_by_label("Context").is_none(),
-        "with no specimen selected, central_panel_ui must return before the Context \
-         Bar \u{2014} the central panel says \u{201c}Select a specimen to compile.\u{201d} \
-         instead, which is advice the reader can act on",
+        h.query_by_label_contains("\u{00b7} ").is_none(),
+        "with nothing loaded the bar rendered a background line \u{2014} there is no \
+         specimen, no model and no tour, so naming a stage would be a claim that a \
+         phase ran",
     );
 
     let mut app = App::test_default();
-    app.test_set_ui_mode_specimen();
-    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+    assert!(
+        app.test_select_fixture_tour("connect-expansion"),
+        "precondition: connect-expansion is a checked-in fixture tour",
+    );
     let h = harness(app);
     assert!(
-        h.query_by_label("Context").is_some(),
-        "with a specimen selected the bar must render even before anything is pointed \
-         at \u{2014} hiding it would make \u{201c}nothing is assembled\u{201d} \
-         indistinguishable from \u{201c}the bar is not rendering\u{201d}",
+        h.query_by_label_contains("tour: connect-expansion")
+            .is_some(),
+        "with a tour open the bar must name it \u{2014} it is context by the same rule \
+         specimen and stage are, and Claude has had it in session.json since \
+         2026-08-19 while the bar stayed silent",
     );
 }
 
@@ -2393,10 +2456,21 @@ A fixture for the picker test.
 
     let mut h = harness(App::test_default());
 
+    // **Counted by EXACT label since 2026-08-30, not by substring.** This asked for
+    // nodes whose label *contains* "✨ Answer" and required exactly one — which quietly
+    // also meant "nothing else on screen may NAME the open tour". The Context Bar then
+    // began doing exactly that, correctly, and turned this red.
+    //
+    // The control's label *is* the tour's label; anything that merely mentions the tour
+    // says more than that — the bar's background line reads "· tour: ✨ Answer". So an
+    // exact match counts controls and ignores mentions, which is what the test's own
+    // name claims it is about.
+    let controls = |h: &Harness<'static, App>| h.get_all_by_label(&label).count();
+
     // Present as its own control while the picker is closed — the whole point of
     // promoting it, and the state Doug reported as a broken feature when it vanished.
     assert_eq!(
-        h.get_all_by_label_contains(&label).count(),
+        controls(&h),
         1,
         "the ad hoc tour must have exactly one control, visible without opening the \
          picker",
@@ -2406,7 +2480,7 @@ A fixture for the picker test.
     h.run_steps(2);
 
     assert_eq!(
-        h.get_all_by_label_contains(&label).count(),
+        controls(&h),
         1,
         "opening the picker must not add a second {label:?} \u{2014} it lives beside \
          the picker, not inside it, and two controls for one tour makes one of them \

@@ -332,6 +332,19 @@ impl App {
         self.ui_mode = UiMode::Specimen;
     }
 
+    /// Push a navigation entry, as "Go to definition" would.
+    ///
+    /// **The navigation view is the branch of `central_panel_ui` that draws no tab
+    /// row**, so anything added to the stage side above can miss it silently — which
+    /// is exactly what the Context Bar did until it was made unconditional.
+    pub(crate) fn test_push_nav(&mut self, name: &str) {
+        self.nav.push(NavEntry {
+            name: name.to_owned(),
+            value: serde_json::json!({}),
+            def_index: BTreeMap::new(),
+        });
+    }
+
     /// Drive a link the way a tour click would, without a rendered hyperlink.
     pub(crate) fn follow_link_for_test(&mut self, url: &str) {
         if let Some(link) = parse_hrw_link(url) {
