@@ -239,13 +239,12 @@ pub(crate) fn context_bar_ui(
     declaring_classes: &HashMap<String, String>,
     def_index: &BTreeMap<u64, DefInfo>,
     model: Option<&str>,
-    has_specimen: bool,
 ) -> Option<ContextBarPress> {
     let mut press: Option<ContextBarPress> = None;
 
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new("Context").strong());
-        background_ui(ui, model, has_specimen, stage);
+        background_ui(ui, model, stage);
         if let Some(point) = &context.pointed_at {
             // Worth saying only when it **differs** from the background
             // stage; otherwise it repeats the line above as if it were a
@@ -442,22 +441,26 @@ pub(crate) fn context_bar_ui(
 /// `docs/context-assembly.md`: *"Specimen and stage are always context, so they are
 /// always shown."* One renderer for both branches of the bar — see the module doc
 /// for what happened when there were two.
-pub(crate) fn background_ui(
-    ui: &mut egui::Ui,
-    model: Option<&str>,
-    has_specimen: bool,
-    stage: StageKind,
-) {
-    match (model, has_specimen) {
-        (Some(model), _) => {
+///
+/// **It took a `has_specimen: bool` until 2026-08-30, and that arm was unreachable.**
+/// The third case was *"nothing is selected, so draw nothing"* — but both call paths
+/// begin in `App::context_bar_ui`, which `central_panel_ui` returns before whenever
+/// `selected` is `None`. So the flag was always `true`, no test named the arm, and it
+/// guarded against a caller that does not exist. Removed with the three gates of the
+/// same shape, on Doug's ruling; the precondition that made it dead is pinned by
+/// [`crate::ui_tests::the_context_bar_appears_only_once_a_specimen_is_selected`], which
+/// is why no new test was added here. **What survives is the distinction that is real:**
+/// a specimen is selected, and the model name either has arrived or has not.
+pub(crate) fn background_ui(ui: &mut egui::Ui, model: Option<&str>, stage: StageKind) {
+    match model {
+        Some(model) => {
             ui.weak(format!("\u{00b7} {model} \u{00b7} {}", stage.name()));
         }
         // Mid-compile, or a compile that yielded no model name: still name the
         // stage rather than showing a bare "Context".
-        (None, true) => {
+        None => {
             ui.weak(format!("\u{00b7} {}", stage.name()));
         }
-        (None, false) => {}
     }
 }
 
@@ -519,7 +522,6 @@ mod tests {
                         &b.declaring,
                         &b.defs,
                         Some("MotorWithBrake"),
-                        true,
                     );
                     if press.is_some() {
                         b.reported = press;

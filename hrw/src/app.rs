@@ -5509,12 +5509,7 @@ impl App {
             let hint = self.empty_context_hint();
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new("Context").strong());
-                context_bar::background_ui(
-                    ui,
-                    self.model.as_deref(),
-                    self.selected.is_some(),
-                    self.stage,
-                );
+                context_bar::background_ui(ui, self.model.as_deref(), self.stage);
                 ui.weak(hint).on_hover_text(EMPTY_CONTEXT_RULE);
             });
             ui.separator();
@@ -5534,7 +5529,6 @@ impl App {
             &self.declaring_classes,
             &self.def_index,
             self.model.as_deref(),
-            self.selected.is_some(),
         );
 
         match press {
