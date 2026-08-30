@@ -455,9 +455,18 @@ pub(crate) fn autoplay_controls_ui(
                     .plugin::<egui::text_selection::LabelSelectionState>()
                     .lock()
                     .has_selection();
+                // **Tinted, because egui's bundled emoji font is MONOCHROME.** Doug:
+                // "the button has the icon which you've shown here, but the icon is not
+                // coloured." NotoEmoji-Regular has no colour layers, so 🎯 arrives as a
+                // plain glyph — and a plain glyph takes the text colour it is given.
+                // `CONTEXT_POINT` is the one to give it: this button makes a *point*,
+                // and cyan is what the Context Bar and the panes already say that in.
                 if has_selection
                     && ui
-                        .button("\u{1f3af}")
+                        .button(
+                            egui::RichText::new("\u{1f3af}")
+                                .color(crate::colors::CONTEXT_POINT),
+                        )
                         .on_hover_text(
                             "Point at the selected text \u{2014} then ask about it in \
                              the chat. Ctrl+C still just copies.",

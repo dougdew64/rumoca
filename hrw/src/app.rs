@@ -584,6 +584,21 @@ follows them. Where the view shows IR nodes \u{2014} trees, stage tabs, incidenc
 left-click points at them, and right-click offers Follow for names the model knows. Hover \
 anything clickable and it will say which.";
 
+/// Where the text egui copies is caught, before egui throws it away.
+///
+/// # Why a plugin callback and not `ctx.output()` next frame
+///
+/// **That was the first attempt and it could never have worked.** `Context::end_pass`
+/// does `std::mem::take(&mut viewport.output)`, so the `CopyText` command is gone
+/// before the next frame begins. Reading it there found nothing, every time, and the
+/// only visible symptom was a capture that silently did not happen — Doug reported the
+/// two *cosmetic* faults beside it and this one had no symptom of its own at all.
+///
+/// `Context::on_end_pass` runs **in registration order**, after egui's own
+/// `LabelSelectionState` has pushed the command and before the take. So the callback
+/// sees it, stashes it here, and `App` collects it on the next frame.
+type CopySink = std::sync::Arc<std::sync::Mutex<Option<String>>>;
+
 /// A 🎯 press waiting for egui to hand back the text the reader selected.
 ///
 /// # Why this needs a state machine at all
@@ -762,6 +777,8 @@ pub struct App {
     nav_error: Option<String>,
     /// A 🎯 press awaiting the text egui will copy for it. See [`PendingPassage`].
     pending_passage: Option<PendingPassage>,
+    /// Text caught from egui's copy, by the callback registered in `App::new`.
+    copy_sink: CopySink,
 
     /// A transient one-line notice for the status bar.
     ///
@@ -1509,6 +1526,32 @@ impl App {
 
         cc.egui_ctx.set_fonts(hrw_font_definitions());
 
+        // **Catch the copy before egui discards it.** Registered here, after egui has
+        // added its own `LabelSelectionState`, because plugins run in registration
+        // order — so by the time this fires the selection plugin has already pushed
+        // `CopyText`, and `end_pass` has not yet taken the output. See [`CopySink`].
+        //
+        // It observes without consuming: an ordinary Ctrl+C still reaches the
+        // clipboard, because the command stays in the queue for the backend.
+        let sink: CopySink = CopySink::default();
+        let sink_for_cb = std::sync::Arc::clone(&sink);
+        cc.egui_ctx.on_end_pass(
+            "hrw_catch_copy",
+            std::sync::Arc::new(move |ui: &mut egui::Ui| {
+                let copied = ui.ctx().output(|o| {
+                    o.commands.iter().rev().find_map(|c| match c {
+                        egui::OutputCommand::CopyText(t) if !t.trim().is_empty() => Some(t.clone()),
+                        _ => None,
+                    })
+                });
+                if let Some(text) = copied
+                    && let Ok(mut slot) = sink_for_cb.lock()
+                {
+                    *slot = Some(text);
+                }
+            }),
+        );
+
         // Scale the whole UI (fonts + spacing) via egui's zoom, not by mutating
         // individual text styles — so the Settings slider and Ctrl +/− both work.
         cc.egui_ctx.set_zoom_factor(DEFAULT_ZOOM);
@@ -1540,6 +1583,8 @@ impl App {
             show_about: false,
             field_help: field_help::load(),
             pending_passage: None,
+            // The same handle the end-of-pass callback writes into.
+            copy_sink: sink,
             viewport: Viewport::default(),
             log_entries: Vec::new(),
             viewing_log: false,
@@ -5022,16 +5067,16 @@ impl App {
     /// **Reads `output` without draining it**, so an ordinary Ctrl+C still reaches the
     /// clipboard: the command stays in the queue for the backend to act on. This only
     /// looks.
-    fn collect_pending_passage(&mut self, ctx: &egui::Context) {
+    fn collect_pending_passage(&mut self) {
+        // **Drained unconditionally, even with nothing pending.** Otherwise an ordinary
+        // Ctrl+C would leave text sitting in the sink, and the next 🎯 press would
+        // collect *that* instead of the passage just selected — a capture attaching
+        // itself to an older gesture, which is the failure `PendingPassage`'s expiry
+        // exists to prevent and would reintroduce by the back door.
+        let copied = self.copy_sink.lock().ok().and_then(|mut s| s.take());
         let Some(pending) = &mut self.pending_passage else {
             return;
         };
-        let copied = ctx.output(|o| {
-            o.commands.iter().find_map(|c| match c {
-                egui::OutputCommand::CopyText(t) if !t.trim().is_empty() => Some(t.clone()),
-                _ => None,
-            })
-        });
         match copied {
             Some(text) => {
                 let tour = pending.tour.clone();
@@ -5045,9 +5090,15 @@ impl App {
                     // **Said out loud, because the bar will show the PREVIOUS point.**
                     // Silence here would read as "the capture worked", and the reader
                     // would ask about a passage Claude never received.
+                    //
+                    // **The likeliest cause is a caret rather than a selection**, and
+                    // the message leads with it: egui's `has_selection` is
+                    // `selection.is_some()`, and a click that only places a cursor
+                    // makes it `Some`. Nothing public distinguishes the two, so the
+                    // button appears for both and this is where the difference shows.
                     self.notify(
-                        "\u{26a0} nothing captured \u{2014} the selection was gone by the \
-                         time egui copied it. Select the passage again, then press \u{1f3af}.",
+                        "\u{26a0} nothing captured \u{2014} a cursor position is not a \
+                         selection. Drag across the text you mean, then press \u{1f3af}.",
                     );
                 }
             }
@@ -5896,7 +5947,7 @@ impl App {
     pub(crate) fn frame_ui(&mut self, ui: &mut egui::Ui) {
         // Before anything draws: collect a tour-passage copy that egui produced for us
         // on a previous frame. See `PendingPassage`.
-        self.collect_pending_passage(ui.ctx());
+        self.collect_pending_passage();
 
         // First thing every frame: check for results from the worker thread.
         self.drain_worker();

@@ -404,6 +404,8 @@ impl App {
         let (from_tx, rx) = std::sync::mpsc::channel();
         let app = App {
             pending_passage: None,
+            // No end-of-pass callback in a bare test App, so nothing ever fills it.
+            copy_sink: Default::default(),
             worker: Worker {
                 tx,
                 rx,
@@ -2820,6 +2822,104 @@ fn drain_worker_simulated_ok_stores_data() {
     assert!(!app.sim_running);
     assert!(app.sim_data.is_some());
     assert!(app.sim_error.is_none());
+}
+
+/// **A stray copy is drained rather than banked, and a 🎯 press collects only its own.**
+///
+/// # The bug this pins never had a symptom of its own
+///
+/// The first version read `ctx.output()` on the frame *after* the press. `end_pass`
+/// does `std::mem::take(&mut viewport.output)`, so the `CopyText` was already gone and
+/// the capture silently never happened. Doug reported the two cosmetic faults beside it
+/// — the button appearing on a caret, and vanishing when clicked — and **this one he
+/// could not have reported**, because a capture that does not happen looks exactly like
+/// one he did not make.
+///
+/// # Why draining unconditionally is the load-bearing half
+///
+/// An ordinary Ctrl+C also produces `CopyText`, and the callback catches every one. If
+/// the sink were only emptied while a press was pending, a copy made an hour earlier
+/// would still be sitting there and the next 🎯 would capture *it* — a point attaching
+/// itself to an older gesture, which is exactly what `PendingPassage`'s expiry exists to
+/// prevent, arriving by the back door.
+#[test]
+fn a_stray_copy_never_becomes_the_next_capture() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+
+    // A copy made with nothing pending — Ctrl+C on any label.
+    *app.copy_sink.lock().expect("sink") = Some("something else entirely".to_owned());
+    app.collect_pending_passage();
+    assert!(
+        app.copy_sink.lock().expect("sink").is_none(),
+        "a copy with no capture pending must be drained, not banked for the next press",
+    );
+    assert!(
+        app.context.pointed_at.is_none(),
+        "and it must not become a point on its own \u{2014} Doug ruled that only the \
+         button captures",
+    );
+
+    // Now a real press, whose own copy arrives next frame.
+    app.pending_passage = Some(PendingPassage {
+        tour: "connect-expansion".to_owned(),
+        frames_left: 3,
+    });
+    *app.copy_sink.lock().expect("sink") = Some("two separate graphs".to_owned());
+    app.collect_pending_passage();
+
+    let point = app
+        .context
+        .pointed_at
+        .as_ref()
+        .expect("the press must have captured");
+    assert_eq!(point.target, "two separate graphs");
+    assert!(
+        point.stage.is_none(),
+        "prose is not in a phase, and the whole type change was to be able to say so",
+    );
+    match &point.kind {
+        PointKind::TourPassage { tour } => assert_eq!(tour, "connect-expansion"),
+        _ => panic!("expected a tour passage"),
+    }
+}
+
+/// **A 🎯 press that collects nothing expires, and says why.**
+///
+/// egui's `has_selection()` is `selection.is_some()`, and a click that merely places a
+/// caret makes it `Some` — nothing public distinguishes a caret from a selection, so
+/// the button appears for both. Pressing it on a caret produces no copy, and this is
+/// the path that must not end in silence: the Context Bar would go on showing the
+/// PREVIOUS point, and Doug would ask about a passage Claude never received.
+#[test]
+fn a_press_with_nothing_selected_expires_and_says_so() {
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.pending_passage = Some(PendingPassage {
+        tour: "connect-expansion".to_owned(),
+        frames_left: 2,
+    });
+
+    app.collect_pending_passage();
+    assert!(
+        app.pending_passage.is_some(),
+        "one quiet frame is the round trip, not a failure",
+    );
+
+    app.collect_pending_passage();
+    assert!(
+        app.pending_passage.is_none(),
+        "but it must give up rather than stay armed for the next unrelated copy",
+    );
+    let notice = app.notice.clone().unwrap_or_default();
+    assert!(
+        notice.contains("cursor position is not a selection"),
+        "the notice must name the likeliest cause, not just report failure: {notice:?}",
+    );
+    assert!(
+        app.context.pointed_at.is_none(),
+        "and nothing may be captured",
+    );
 }
 
 /// **A run in progress is announced once, in words, by the Simulation pane.**
