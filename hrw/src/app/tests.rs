@@ -2808,6 +2808,38 @@ fn drain_worker_simulated_ok_stores_data() {
     assert!(app.sim_error.is_none());
 }
 
+/// **A run in progress is announced once, in words, by the Simulation pane.**
+///
+/// Doug removed the pane's spinner on 2026-08-30 — the same ruling as the two Run
+/// buttons an hour earlier, and the same division of labour: **the tab row carries
+/// the spinner, the pane says what is happening.** He kept the wording, so the two
+/// no longer duplicate each other.
+///
+/// # What this can and cannot see, which is why it asserts a sentence
+///
+/// `ui.spinner()` paints and carries no accessibility label, so **neither the spinner
+/// that went nor the one that stayed is queryable** — the same blind spot as the
+/// extra divider removed the same day. This pins the half that is visible: that a
+/// running simulation still says so here. It is not a check that the spinner is gone,
+/// and no headless test can be.
+#[test]
+fn a_running_simulation_is_announced_in_the_pane() {
+    use egui_kittest::kittest::Queryable;
+
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", StageKind::Simulation);
+    app.sim_running = true;
+
+    let h = crate::ui_tests::harness(app);
+    assert!(
+        h.query_by_label_contains("simulating").is_some(),
+        "a run in progress must still be announced in the pane \u{2014} the tab row's \
+         spinner is a bare painted widget with no words, so dropping this sentence \
+         would leave the Simulation view silent about what it is doing",
+    );
+}
+
 #[test]
 fn drain_worker_simulated_err_stores_error() {
     let (mut app, tx) = App::test_with_sender();

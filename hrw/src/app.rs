@@ -3247,8 +3247,16 @@ impl App {
                     .step_by(0.1)
                     .text("stop time"),
             );
+            // **The spinner is the tab row's; the words are this pane's** (Doug,
+            // 2026-08-30, the same ruling as the two Run buttons). Both drew on
+            // `sim_running`, so a run put two spinners on screen whenever this tab was
+            // open — verified before removing it, since `ui.spinner()` carries no
+            // accessibility label and the claim had been a code read.
+            //
+            // The sentence stays: the tab row's spinner is a bare painted widget with
+            // no words, so dropping this too would leave the view silent about what it
+            // is doing. `a_running_simulation_is_announced_in_the_pane` pins it.
             if self.sim_running {
-                ui.spinner();
                 ui.weak("simulating…");
             }
         });
