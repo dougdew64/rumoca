@@ -1221,13 +1221,10 @@ impl App {
             stop.links.retain(|l| parse_hrw_link(&l.url).is_some());
         }
         let beats = crate::autoplay::schedule(&stops, self.tour.autoplay_total, |l| {
-            // An external hop leaves HRW, so it needs longer on screen: the viewer
-            // has to reorient to a different window, which prestarting the app
-            // removes the launch cost of but not the cost of.
-            matches!(
-                parse_hrw_link(l),
-                Some(HrwLink::OpenNotebook(_) | HrwLink::OpenInSystemModeler(_))
-            )
+            // An external hop needs longer on screen. The ruling is per verb and lives
+            // on the verb — see `HrwLink::leaves_hrw`, which is exhaustive so a new
+            // form cannot default into the wrong beat length unnoticed.
+            parse_hrw_link(l).is_some_and(|link| link.leaves_hrw())
         });
         if beats.is_empty() {
             self.notify("this tour has no stops to play");
@@ -6608,37 +6605,99 @@ impl HrwLink {
     /// breakpoint, each added with its own reason and none of them updating the number
     /// here. A count in prose beside the list it counts is the cheapest thing in this
     /// repository to leave stale.
-    /// **A deny-list, and that is the hazard**: every *new* verb needs a specimen
-    /// unless it is added here, so a form that does not need one is refused by
-    /// default and shows a notice about loading a specimen that has nothing to do
-    /// with what was clicked.
     ///
-    /// `OpenTour` was exactly that, 2026-08-05. The link parsed, the handler was
-    /// correct, and clicking it produced *"no specimen loaded — this stop needs
-    /// one"* — because **opening a tour plainly does not need a specimen**, and
-    /// nothing said so. Doug: *"The links in the 'Claude's answer' tour do not
-    /// work."*
+    /// # An exhaustive match, because both list shapes failed the same way twice
     ///
-    /// Left as a deny-list rather than inverted, deliberately: an allow-list would
-    /// fail the other way, letting a verb that *does* need a specimen through to
-    /// half-apply itself, which is the worse failure. **The fix is that adding a
-    /// variant means visiting this function**, which `link_verbs_declare_whether_they_need_a_specimen`
-    /// now enforces rather than leaving to memory.
+    /// This was a **deny-list** — `!matches!(self, …exemptions…)` — and its hazard is
+    /// that a *new* verb needs a specimen unless someone remembers to add it, so a form
+    /// needing none is refused by default with a notice about loading a specimen that has
+    /// nothing to do with what was clicked. It has now produced that bug twice, and
+    /// **Doug reported it both times, in nearly the same words:**
+    ///
+    /// - **2026-08-05, `OpenTour`** — *"The links in the 'Claude's answer' tour do not
+    ///   work."*
+    /// - **2026-08-31, `OpenDoc`** — the new `hrw://doc/` verb shipped with a green gate,
+    ///   907 tests, and clicking the link Doug had just asked for showed *"no specimen
+    ///   loaded — this stop needs one."*
+    ///
+    /// **An allow-list is not the fix and was correctly refused** the first time: it fails
+    /// the other way, letting a verb that *does* need a specimen through to half-apply
+    /// itself, which is the worse direction. The error was treating those two as the only
+    /// options. **An exhaustive match with no wildcard defaults neither way** — it refuses
+    /// to compile until the new variant is ruled on, which is the only shape where
+    /// forgetting is not a possible outcome.
+    ///
+    /// **What was there instead was a test that named a guarantee it did not deliver.**
+    /// `link_verbs_declare_whether_they_need_a_specimen` hand-lists four verbs, so it can
+    /// only ever check the ones someone already thought about; the sentence claiming it
+    /// *"enforces rather than leaving to memory"* was false the day it was written, and it
+    /// is why the second occurrence was not caught. **A test over a hand-written list of
+    /// siblings cannot see a new sibling** — that is the column-read audit's whole subject,
+    /// and here the compiler does it for free.
+    ///
+    /// **Do not add a `_ =>` arm.** It would restore the exact defect, silently, and
+    /// nothing downstream would fail.
     fn requires_specimen(&self) -> bool {
-        !matches!(
-            self,
-            Self::LoadSpecimen(_)
-                | Self::LoadAndSwitch(..)
-                | Self::OpenNotebook(_)
-                | Self::OpenInSystemModeler(_)
-                // Opening a tour is navigation between documents; no model involved.
-                | Self::OpenTour { .. }
-                // Arming a breakpoint targets Rumoca's source, not the model —
-                // and a reader may well want the breakpoints in place *before*
-                // loading a specimen, which is exactly what `matching-live.md`
-                // warns them not to do the other way round.
-                | Self::ArmBreakpoint(_)
-        )
+        match self {
+            // Loading IS the act; requiring a load first would be circular.
+            Self::LoadSpecimen(_) | Self::LoadAndSwitch(..) => false,
+            // Opening a document — a tour, a doc, a notebook, a System Modeler model —
+            // is navigation between FILES. No model need be loaded to read one, and
+            // `OpenDoc` sitting in this group is the fix for 2026-08-31.
+            Self::OpenTour { .. }
+            | Self::OpenNotebook(_)
+            | Self::OpenDoc(_)
+            | Self::OpenInSystemModeler(_) => false,
+            // Arming a breakpoint targets Rumoca's source, not the model — and a reader
+            // may well want the breakpoints in place *before* loading a specimen, which
+            // is exactly what `matching-live.md` warns them not to do the other way
+            // round.
+            Self::ArmBreakpoint(_) => false,
+            // Everything below acts ON a loaded model: it selects a stage's view, aims at
+            // one of its equations, seeks a frame of its captured run, points at a node of
+            // its IR, or follows one of its identifiers. With nothing loaded there is no
+            // referent, and half-applying would leave a pending state that fires later —
+            // sending the reader somewhere no link pointed.
+            Self::SwitchStage(..)
+            | Self::ShowSource(_)
+            | Self::AimAtEquation(..)
+            | Self::SeekFrame(..)
+            | Self::PointAtNode(..)
+            | Self::Follow(_) => true,
+        }
+    }
+
+    /// Whether following this link puts a **different application** in front of the
+    /// reader.
+    ///
+    /// Autoplay gives such a beat longer on screen: the viewer has to reorient to
+    /// another window, which prestarting the app removes the launch cost of but not the
+    /// cost of.
+    ///
+    /// **Extracted from a `matches!` inside `start_autoplay` on 2026-08-31, in the audit
+    /// that the `requires_specimen` bug called for** — and it was the second silent
+    /// per-variant list in this one type. It was an *allow*-list, so its default is the
+    /// gentler failure — a beat too short rather than a dead link — but silent in exactly
+    /// the same way, and `OpenDoc` was missing from it for exactly the same reason.
+    /// Exhaustive here too, so the question is asked of every future verb whether or not
+    /// anyone thinks of autoplay.
+    fn leaves_hrw(&self) -> bool {
+        match self {
+            // `OpenDoc` spawns `code` and `OpenNotebook` hands the file to Wolfram, so
+            // both put another window in front of the reader. `OpenTour` does not: a
+            // tour opens in HRW's own panel.
+            Self::OpenNotebook(_) | Self::OpenDoc(_) | Self::OpenInSystemModeler(_) => true,
+            Self::OpenTour { .. }
+            | Self::LoadSpecimen(_)
+            | Self::LoadAndSwitch(..)
+            | Self::ArmBreakpoint(_)
+            | Self::SwitchStage(..)
+            | Self::ShowSource(_)
+            | Self::AimAtEquation(..)
+            | Self::SeekFrame(..)
+            | Self::PointAtNode(..)
+            | Self::Follow(_) => false,
+        }
     }
 
     /// One line naming what this link does, for the action trail.

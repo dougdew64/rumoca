@@ -3057,21 +3057,27 @@ fn drain_worker_log_appends_entry() {
     assert!(app.log_entries[0].message.contains("test log"));
 }
 
-/// **Every link verb states whether it needs a specimen, and opening a tour does not.**
+/// **Every link verb states whether it needs a specimen, and opening a document does not.**
 ///
-/// `requires_specimen` is a **deny-list**: a verb needs a specimen unless it is
-/// named as an exception. So a new verb that needs none is refused *by default*,
-/// with a notice about loading a specimen that has nothing to do with what was
-/// clicked — which is what happened to `OpenTour` on the day it shipped. The link
-/// parsed and the handler was correct; the guard in front of both said no.
+/// # This test is NOT what stops a new verb being forgotten — read `requires_specimen`
 ///
-/// **This test is the thing that was missing**, not the exemption. Adding a verb
-/// and forgetting the deny-list is silent, and neither the parser tests nor the
-/// citation checker can see it — they stop at the grammar and the target.
+/// It used to claim it was, and the claim was false in the way that matters: a test over a
+/// **hand-written list of siblings cannot see a new sibling.** It listed three exempt verbs
+/// and one requiring one, passed for 26 days, and was green the day `OpenDoc` shipped
+/// defaulting to the wrong answer — the second time Doug reported *"the link does nothing"*
+/// from this one function. **The enforcement is now the exhaustive `match` in
+/// `requires_specimen`, which does not compile until a new variant is ruled on.**
+///
+/// **So what this test is still for** is the part a compiler cannot check: that the
+/// rulings are the *right* ones. An exhaustive match forces an answer; it cannot tell a
+/// correct answer from a confident wrong one, and `OpenDoc` returning `true` would have
+/// compiled perfectly. The cases below are the ones whose answer was got wrong in
+/// practice, plus a contrast so the whole thing cannot pass vacuously.
 #[test]
 fn link_verbs_declare_whether_they_need_a_specimen() {
-    // Navigation between documents: no model is involved, so a reader with
-    // nothing loaded must still be able to follow a citation.
+    // Navigation between FILES: no model is involved, so a reader with nothing loaded
+    // must still be able to follow a citation. Both historical failures are in this
+    // list — `OpenTour` (2026-08-05) and `OpenDoc` (2026-08-31).
     for link in [
         HrwLink::OpenTour {
             tour: "failure-parse".to_owned(),
@@ -3081,6 +3087,9 @@ fn link_verbs_declare_whether_they_need_a_specimen() {
             tour: "failure-parse".to_owned(),
             stop: Some("stop-1-the-failure-itself".to_owned()),
         },
+        HrwLink::OpenDoc("upstream-issues.md".to_owned()),
+        HrwLink::OpenNotebook("structural-vs-numerical-rank.nb".to_owned()),
+        HrwLink::ArmBreakpoint("augment-entry".to_owned()),
         HrwLink::LoadSpecimen("RcCircuit".to_owned()),
     ] {
         assert!(
@@ -3095,6 +3104,42 @@ fn link_verbs_declare_whether_they_need_a_specimen() {
         HrwLink::SwitchStage(StageKind::Structural, None).requires_specimen(),
         "switching stages without a specimen would half-apply",
     );
+    assert!(
+        HrwLink::Follow("resistor.R".to_owned()).requires_specimen(),
+        "following an identifier with no model has no referent",
+    );
+}
+
+/// **A verb that opens another application gets autoplay's longer beat.**
+///
+/// Same shape as the test above and the same reason for existing: the exhaustive match in
+/// `leaves_hrw` guarantees an *answer* per verb, never a *correct* one. The two cases that
+/// separate a right answer from a plausible one are here — `OpenDoc` spawns `code` and so
+/// hops out, while `OpenTour` opens in HRW's own panel and does not, which is the pair a
+/// reader skimming "the Open* verbs" would get wrong.
+#[test]
+fn a_verb_that_opens_another_application_gets_a_longer_beat() {
+    for link in [
+        HrwLink::OpenDoc("upstream-issues.md".to_owned()),
+        HrwLink::OpenNotebook("structural-vs-numerical-rank.nb".to_owned()),
+        HrwLink::OpenInSystemModeler("RcCircuit".to_owned()),
+    ] {
+        assert!(
+            link.leaves_hrw(),
+            "{} puts another window in front of the reader",
+            link.describe(),
+        );
+    }
+    for link in [
+        HrwLink::OpenTour {
+            tour: "the-concepts".to_owned(),
+            stop: None,
+        },
+        HrwLink::LoadSpecimen("RcCircuit".to_owned()),
+        HrwLink::SwitchStage(StageKind::Structural, None),
+    ] {
+        assert!(!link.leaves_hrw(), "{} happens inside HRW", link.describe(),);
+    }
 }
 
 /// **The tour-citation forms parse.** Missing when the form shipped, which is
