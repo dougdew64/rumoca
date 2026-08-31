@@ -2923,9 +2923,11 @@ impl App {
                     // Chrome. See `HrwLink::OpenDoc`. Failure is reported rather than
                     // falling back to the browser: a silent fallback would reproduce
                     // exactly the behaviour he asked to be rid of.
-                    if let Err(e) = std::process::Command::new("code").arg(&path).spawn() {
+                    if let Err(e) = open_in_vscode(&path) {
                         self.notify(format!(
-                            "could not open {name} in VS Code ({e}) \u{2014} is `code` on PATH?",
+                            "could not open {name} in VS Code ({e}) \u{2014} run \
+                             `cargo run -p hrw --example check_machine`, which rules on \
+                             whether the CLI this spawns is reachable here",
                         ));
                     }
                 }
@@ -6966,6 +6968,50 @@ fn open_with_os(path: &Path) -> std::io::Result<()> {
         .args(["/C", "start", "", &path.display().to_string()])
         .spawn()
         .map(|_| ())
+}
+
+/// The VS Code CLI, as a name `CreateProcess` can actually find.
+///
+/// # `Command::new("code")` cannot find VS Code on Windows
+///
+/// What VS Code puts on `PATH` is **`code.cmd`** — there is no `code.exe` beside it.
+/// Rust resolves a bare program name by trying the literal name and appending `.exe`;
+/// it **never consults `PATHEXT`**. So `Command::new("code")` fails with *"program not
+/// found"* on a machine where typing `code` in any shell works perfectly, which is what
+/// Doug hit on 2026-08-31.
+///
+/// **And the check that "verified" it was asking a different question.** `code --version`
+/// was run in git-bash and reported 1.135.0 — which establishes that VS Code is installed
+/// and says nothing about what `CreateProcess` can find, because **a shell resolving a
+/// name is not the runtime resolving it**: cmd applies `PATHEXT`, bash has its own lookup
+/// including extensionless scripts, and the Win32 API does neither. A verification has to
+/// run through the same resolver the code does, or it is evidence about the shell.
+///
+/// `check_machine` now rules on this, since it is exactly what does not travel with a
+/// `git pull` — a different machine may have VS Code somewhere else or not at all.
+#[cfg(target_os = "windows")]
+pub const VSCODE_CLI: &str = "code.cmd";
+
+/// On other platforms `code` is an ordinary executable script and resolves normally.
+#[cfg(not(target_os = "windows"))]
+pub const VSCODE_CLI: &str = "code";
+
+/// Open a file in VS Code, rather than in whatever the OS associates with its type.
+///
+/// Deliberately **not** [`open_with_os`]: `.md` is associated with Chrome on Doug's
+/// machine, which is the bug this whole verb exists to fix, so falling back to the
+/// association on failure would silently reproduce it. A failure is reported instead.
+fn open_in_vscode(path: &Path) -> std::io::Result<()> {
+    let mut cmd = std::process::Command::new(VSCODE_CLI);
+    cmd.arg(path);
+    // Spawning a `.cmd` runs it through `cmd.exe`, which would otherwise flash a console
+    // window over the tour on every doc link. `CREATE_NO_WINDOW`.
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000);
+    }
+    cmd.spawn().map(|_| ())
 }
 
 /// Non-Windows fallback. HRW is Windows-only in practice (charter Decision 5 rules out

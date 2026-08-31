@@ -306,6 +306,39 @@ fn main() {
         ),
     }
 
+    // **The VS Code CLI, resolved the way HRW resolves it — not the way a shell does.**
+    //
+    // `hrw://doc/<name>` spawns `hrw::app::VSCODE_CLI` to put a document in front of
+    // Doug. On 2026-08-31 that spawn failed with "program not found" on a machine where
+    // typing `code` in any shell worked, because Rust's `Command` does not consult
+    // `PATHEXT` and the CLI on `PATH` is `code.cmd`. The check that had "verified" it ran
+    // `code --version` in git-bash, which answers a question about the *shell*.
+    //
+    // So this walks `PATH` for the exact file name spawned, which is the only test that
+    // predicts what `CreateProcess` will do. **Advisory, not blocking** — a machine with
+    // no VS Code can still run every gate; only doc links stop working, and the notice
+    // HRW shows points back here.
+    let cli = hrw::app::VSCODE_CLI;
+    let found = std::env::var_os("PATH").and_then(|p| {
+        std::env::split_paths(&p)
+            .map(|dir| dir.join(cli))
+            .find(|c| c.is_file())
+    });
+    match found {
+        Some(path) => r.line(
+            Verdict::Pass,
+            "VS Code CLI on PATH",
+            &format!("{cli} -> {}", path.display()),
+            "",
+        ),
+        None => r.line(
+            Verdict::Warn,
+            "VS Code CLI on PATH",
+            &format!("no {cli} on PATH -- hrw://doc/ links will report that they failed"),
+            "install VS Code, or re-run its \"install 'code' command in PATH\" action",
+        ),
+    }
+
     // -------------------------------------------------------------- verdict --
 
     println!();
