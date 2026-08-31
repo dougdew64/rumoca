@@ -2157,7 +2157,11 @@ Some prose.
         // …and stayed at 1945 through 2026-08-31's removal of the walked:/authored:
         // machinery: what those lines cost in CLAUDE.md and working-with-doug.md came
         // back out, and the note recording that they are gone cost about the same.
-        const MANDATORY_BUDGET: usize = 1945;
+        // …then 1945 → 1956 on 2026-08-31, carrying `CURRENT_WORK_BUDGET`'s +9 for the
+        // in-flight walk state and the owed markdown checker, plus the two lines the
+        // `hrw://src` link form costs. The per-section reasoning is on that constant;
+        // this aggregate moves with it rather than being argued twice.
+        const MANDATORY_BUDGET: usize = 1956;
         // 263 → 264, same commit and same reason as MANDATORY_BUDGET above.
         // …then 264 → 275 on 2026-08-30, for a CAPABILITY rather than a record: Doug
         // can select tour prose, press 🎯, and have it become the point, with a
@@ -2175,7 +2179,17 @@ Some prose.
         //
         // Three of the eleven were paid back by retiring the marker-region paragraph
         // to its checker, per "a checker retires the prose it replaces".
-        const CURRENT_WORK_BUDGET: usize = 275;
+        // 275 → 284 on 2026-08-31, and both additions are strictly in-flight, which is
+        // the only thing this budget accepts. One records that `connect-expansion`'s
+        // opening was rewritten code-grounded while **Stops 1 and 2 have not been
+        // re-walked against it** — a seam a fresh session would otherwise discover by
+        // confusing Doug. The other is OWED WORK: a checker for two markdown traps that
+        // cost him five interruptions in one session, offered and not yet built.
+        //
+        // **Owed work is the case this section exists for.** A `git log` reconstructs
+        // what was done; nothing reconstructs what was promised, and an unbuilt promise
+        // that no document carries is indistinguishable from one never made.
+        const CURRENT_WORK_BUDGET: usize = 284;
 
         /// **Tier 2 — conditionally mandatory**, and the hole tier 1 left open.
         ///

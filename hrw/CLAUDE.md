@@ -583,6 +583,14 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > night 5 because that night ended, not because anything forbids it. Plan and gate cost:
 > [`docs/unattended-runs.md`](docs/unattended-runs.md).
 >
+> **OWED: A CHECKER FOR TWO SELF-INFLICTED MARKDOWN TRAPS** — offered and not built, so owed.
+> Both bit **five times on 2026-08-31**: a bolded paragraph inserted above a tour's opening bold
+> line silently becomes the catalogue's blurb, and a metavariable (`hrw://src/<workspace path>`,
+> a bare `hrw://src/` in prose) extracts as a real link. **The first is invisible without
+> regenerating**, which is why the reflex became regenerating every turn — ~10 s per prose edit,
+> in the mode where Doug feels every second. Pin each tour's blurb to its first bolded line;
+> teach the extractor to skip placeholders containing `<`.
+>
 > **This section holds ONLY what is in flight. Everything closed lives in
 > [`DECISIONS.md`](DECISIONS.md)** — *"closed arcs move out of `CLAUDE.md`"*, 2026-08-22, which
 > names each arc and the file that holds its record. **Do not restate a closed arc here; link it.**
@@ -688,7 +696,10 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > → tearing → index-reduction → initialization → solve-lowering → events.**
 >
 > **`connect-expansion` IS BEING RE-WALKED FIRST**, ahead of `dae-construction`, rewritten
-> 2026-08-30 under the provoke-questions rules. **NOTHING TRACKS WHICH TOURS HAVE BEEN WALKED**
+> 2026-08-30 under the provoke-questions rules and **again 2026-08-31 under code-grounding** —
+> its opening walks `connections/mod.rs` and every code name is an `hrw://src` link. **Stops 1
+> and 2 have not been re-walked against that opening**; expect the seams to show there first.
+> **NOTHING TRACKS WHICH TOURS HAVE BEEN WALKED**
 > since 2026-08-31 — *"that bookkeeping doesn't yield enough value."* The `walked:` and
 > `authored:` markers and both checkers are gone, with the you-do goal the second served. **Do not
 > reintroduce either**; judge from the conversation, per `working-with-doug.md`'s table.
