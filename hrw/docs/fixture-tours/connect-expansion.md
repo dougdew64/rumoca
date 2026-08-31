@@ -11,10 +11,11 @@ sides share, and no equation exists until every merge is done.
 Which sets? A `connect` names **connectors, not variables** — `src.p` is a `Pin`. Expansion derives
 the members and pairs them by name first
 ([`expand_connector_connection`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#expand_connector_connection)),
-and a variable enters a set **of its own** only when a matched pair first merges it. `union(a, b)`
-joins whichever sets hold `a` and `b` *at that moment*. That is why the order the statements arrive
-in cannot change which variables end up together, and why a `connect` whose two ends are already in
-one set does nothing at all.
+and a pair is merged by `union(a, b)`, which joins **whichever sets currently hold `a` and `b`**.
+A variable nothing has merged yet is **a set by itself**, so an early pair joins two of those while
+a later one may join a pair to a triple. That is why the order the statements arrive in cannot
+change which variables end up together, and why a `connect` whose two ends are already in one set
+does nothing at all.
 
 The textbook picture is a graph: variables as vertices, an edge per `connect`, and the answer is
 each graph's **connected components**. Rumoca computes those components and **never builds the
