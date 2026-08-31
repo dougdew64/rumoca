@@ -154,6 +154,39 @@ is why the three activities are worth keeping distinct and why three consequence
   alone consumes the material his learning runs on.** Fixing a checker-caught number, a dead link or
   a stale citation is fine. **Rewriting an explanation unsupervised is not Claude's to do.**
 
+### ⟶ WRITE TO PROVOKE QUESTIONS, NOT TO PRE-EMPT THEM — 2026-08-30
+
+**Doug can select any sentence in the tour panel and ask about it** (the 🎯 capture). That changes
+what exposition is for. His words: *"you can be more terse in your tour prose as I can always ask
+you questions about your prose. The tours can focus more on being tours and less on being like
+textbooks."* The pedagogical argument — that this **strengthens** we-do and you-do rather than
+merely shortening the page — is in [`../vision.md`](../vision.md). The rules it produces:
+
+1. **State the claim; do not argue it.** The argument is one question away. A paragraph that
+   defends a claim nobody has yet doubted is spent attention.
+2. **Naming a term is enough.** *"Rumoca computes them with union-find"* needs no paragraph on
+   union-find. A term he does not know is a question he can now ask against the sentence that
+   used it — which is a better teaching moment than a definition he did not ask for.
+3. **Exposition serves the PREDICTION, not the concept.** Include what he needs to predict, and
+   stop. Anything further front-loads the answer and weakens the step it precedes.
+4. **Never terse in `**Expected:**`.** Those are the walk's test and must stay violable — rule 3
+   of the three below. Terseness there destroys the falsifiability that makes a walk a walk.
+5. **Fewer claims, never looser ones.** *"The system is singular"* is terse and checkable;
+   *"things go wrong"* is neither. Vagueness is not brevity, and an unfalsifiable sentence fails
+   the same rule an unfalsifiable expectation does.
+6. **Depth goes to [`../compiler-phases/`](../compiler-phases/)**, which already exists for
+   *"detail that is true but premature"* and only now becomes practical, because he can pull it
+   on demand instead of meeting it uninvited.
+
+**AND THE SAFETY ARGUMENT, which is why this is not a style preference.** An omitted explanation
+costs one question; an over-reaching one costs a false belief he cannot detect. **Prose written to
+pre-empt questions is prose written past what was verified.** Less exposition is less surface for
+the failure this repository exists to prevent.
+
+**Applied one tour at a time, as he walks it** — never as a campaign, for the reason the
+conversion rule below already gives. `connect-expansion` is first, at his request: it is the tour
+he has been using to get the format right.
+
 ### ⟶ MARK WHAT THE WALK PRODUCES: `<!-- walked: -->` — added 2026-08-22, after one was lost
 
 **Doug, 2026-08-22:** *"During those [walks], my learnings are captured in the form of

@@ -2594,7 +2594,21 @@ Some prose.
         // Paying for it out of existing text was considered and refused: the candidates
         // were all walk documentation, and trimming that to make room for this would
         // trade something proven for something new.
-        const CONDITIONAL_BUDGET: usize = 900;
+        // 900 → 933 on 2026-08-30, for the rules that follow tour prose becoming
+        // POINTABLE: written to provoke questions rather than pre-empt them.
+        //
+        // **An addition, not displacement**, which is the distinction this budget
+        // polices and which the `<!-- authored: -->` raise already had to make. Nothing
+        // was pruned from `CLAUDE.md` into here — CLAUDE.md gained lines the same day
+        // for the capture itself. These 33 are new doctrine with no prior home, in the
+        // one document where tour-writing rules bind.
+        //
+        // **And they are the half that cannot be left implicit.** "Be terse" invites
+        // exactly the wrong reading: terser *expectations* would destroy the
+        // falsifiability a walk runs on, and vagueness is not brevity. Rules 4 and 5
+        // exist to forbid those two readings, and a rule that states what it does not
+        // license is this repository's most-repeated correction.
+        const CONDITIONAL_BUDGET: usize = 933;
 
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let mut total = 0usize;

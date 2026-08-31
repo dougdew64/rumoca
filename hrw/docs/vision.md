@@ -202,6 +202,42 @@ That is a capability of having an instrument, not of writing better prose.
 undone — and it is **contrived**, existing to exercise the chapter. A continuation here has an
 executable acceptance criterion and is real work with a real upstream audience.
 
+#### ⟶ TERSE EXPOSITION IS A PEDAGOGICAL CHOICE, NOT AN ECONOMY — 2026-08-30
+
+*(Doug, on the day tour prose became pointable: he is the tourist, Claude is the guide.)*
+
+**Tours may now be written to PROVOKE questions rather than to pre-empt them**, because he can
+select any sentence in the tour panel and ask about it (`CLAUDE.md`, the 🎯 capture). His words:
+*"you can be more terse in your tour prose as I can always ask you questions about your prose.
+The tours can focus more on being tours and less on being like textbooks."*
+
+**Why the prose was long is the whole argument.** A tour could not be asked questions, so every
+confusion it might provoke had to be answered inline — which is *the textbook's constraint*, the
+same one the we-do row above says an instrument removes. The tours inherited it for **prose** long
+after HRW had removed it for **panes**. Exposition was doing two jobs: being the walk, and
+pre-empting every question. The second is now unnecessary.
+
+**It strengthens we-do rather than merely shortening it.** A prediction is only worth making about
+something not yet explained, so **long exposition front-loads the answer and weakens the very step
+it precedes.** Terser prose leaves more genuinely unknown at the moment of predicting, which is the
+thing this row exists to measure.
+
+**And it strengthens you-do**, in two ways. A dense paragraph is a wall to replace; a claim plus a
+pointer is something Doug can rewrite in his own words — the third continuation below. And the
+questions he asks *are* the raw material: what he had to ask about is exactly what his own version
+should say.
+
+**The asymmetry that makes it safe**, and it is the charter's first rule in a new dress: an omitted
+explanation costs one question; an over-reaching one costs a false belief he cannot detect. **Prose
+written to pre-empt questions is prose written past what was verified** — which is where
+`differentiated_rows` and the fabricated BLT blocks came from. Less exposition is less surface for
+that, and the capture makes the trade cheap.
+
+**The boundary: fewer claims, never looser ones.** Terseness applies to *exposition*. It must not
+touch a `**Expected:**` line, which is the walk's test and must stay violable — and it must not
+become vagueness. *"The system is singular"* is terse and checkable; *"things go wrong"* is neither.
+The writing rules are in [`fixture-tours/README.md`](fixture-tours/README.md).
+
 #### The continuations, and what protects each
 
 *(Named by Doug across 2026-08-22 and 2026-08-23. He asks that each be **protected and enabled

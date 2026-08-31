@@ -4512,3 +4512,56 @@ predates the session.
 test for the property being got wrong.** `the_copy_catcher_runs_after_plugins_registered_before_it`
 stands an emitter in for `LabelSelectionState` and fails by name if the ordering regresses. It
 should have been the second act, not the fourth.
+
+## 2026-08-30 — tour prose becomes pointable, so it is written to PROVOKE questions
+
+**Doug, on the day the 🎯 capture worked:** *"You are the HRW tour guide. I am the tourist.
+Before this feature, I could only point at items in the HRW RHS… Now, I can point at items in
+the tour… This means that you can be more terse in your tour prose as I can always ask you
+questions about your prose. The tours can focus more on being tours and less on being like
+textbooks."*
+
+### Why the prose was long, which is the whole argument
+
+**A tour could not be asked questions**, so every confusion it might provoke had to be answered
+inline. That is *the textbook's constraint* — [`docs/vision.md`](docs/vision.md) already names
+it in the we-do row: *"a textbook must work an example before asking you to try, because it
+cannot respond."* **The tours inherited it for PROSE long after HRW had removed it for PANES.**
+
+Exposition was doing two jobs: being the walk, and pre-empting every question. The second is
+now unnecessary, and it was never the one the project decided to compete on — `vision.md`
+concedes *"I-do — general theory"* to the textbook outright.
+
+### IT STRENGTHENS THE PEDAGOGY, WHICH IS DOUG'S FRAMING AND IS BETTER THAN "SHORTER"
+
+- **we-do**: a prediction is only worth making about something not yet explained. **Long
+  exposition front-loads the answer and weakens the step it precedes.** Terser prose leaves more
+  genuinely unknown at the moment of predicting.
+- **you-do**: a dense paragraph is a wall to replace; a claim plus a pointer is something he can
+  rewrite in his own words. And **the questions he asks are the raw material** — what he had to
+  ask about is what his own version should say.
+
+### The safety argument, which makes this more than a style preference
+
+**An omitted explanation costs one question; an over-reaching one costs a false belief he cannot
+detect.** Prose written to pre-empt questions is prose written *past what was verified* — which
+is where `differentiated_rows` and the fabricated BLT blocks came from. Less exposition is less
+surface for the failure this repository exists to prevent, and the capture makes the trade cheap.
+
+### The boundary, recorded because terseness is the easy half to overdo
+
+**Fewer claims, never looser ones.** It applies to *exposition* only:
+`**Expected:**` lines stay exact and violable, and vagueness is not brevity — *"the system is
+singular"* is terse and checkable, *"things go wrong"* is neither. Depth moves to
+`docs/compiler-phases/`, which already exists for *"detail that is true but premature"* and only
+now becomes practical, because he can pull it on demand instead of meeting it uninvited.
+
+### Where it is written down, and how it is applied
+
+Rules in [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md); pedagogy in
+[`docs/vision.md`](docs/vision.md), under the I-do / we-do / you-do frame it modifies.
+
+**One tour at a time, as he walks it** — the existing conversion rule, unchanged. **`connect-expansion`
+is first, at his request**, because it is the tour he has been using to get the format right.
+Its ten `walked:` regions mean any prose edit inside one **re-dates that marker in the same
+commit**, which is the acknowledgement `walked_prose_never_changes_silently` demands.
