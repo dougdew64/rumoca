@@ -5,14 +5,20 @@
 [The chain overview](hrw://tour/the-concepts)
 
 `connect(src.p, R.p)` looks like wiring two things together. In Rumoca it is neither an assignment
-nor an equation — it is an instruction to **merge two sets**, and no equation exists until every
-merge is done.
+nor an equation — it is an instruction to **merge sets of variables**, one merge per member the two
+sides share, and no equation exists until every merge is done.
+
+Which sets? Every variable starts **alone in its own**, created the moment a `connect` first names
+it, and `union(a, b)` joins whichever sets hold `a` and `b` *at that moment*. That is why the order
+the statements arrive in cannot change which variables end up together, and why a `connect` whose
+two ends are already in one set does nothing at all.
 
 The textbook picture is a graph: variables as vertices, an edge per `connect`, and the answer is
 each graph's **connected components**. Rumoca computes those components and **never builds the
-graph.** `connections/mod.rs` uses **union-find** — one parent index per variable, no edges stored
-anywhere, answering only *"same set?"*. Draw the graph anyway, to predict with; just hold it the
-way you are about to hold *nodes* in Stop 1, as your bookkeeping rather than the compiler's.
+graph.** `connections/mod.rs` uses **union-find** — one parent index per variable it has touched,
+no edges stored anywhere, answering only *"same set?"*. Draw the graph anyway, to predict with;
+just hold it the way you are about to hold *nodes* in Stop 1, as your bookkeeping rather than the
+compiler's.
 
 `connect_primitive_vars` is where a statement becomes merges. It pairs the two connectors'
 members **by name**, then routes each pair by that member's prefix:
