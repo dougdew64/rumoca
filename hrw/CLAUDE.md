@@ -759,6 +759,19 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >   **labels must expose Rumoca's structure, not a pedagogically convenient one**; when prose
 >   and pane disagree, **Rumoca is the arbiter**.
 >
+> ### ⟶ DOUG CAN POINT AT TOUR PROSE, AND A HOOK PUTS IT IN FRONT OF YOU — 2026-08-30
+>
+> **Select prose in the tour panel, press 🎯, ask.** The passage becomes the *point*, so a
+> bare *"what is this?"* resolves without a preface — the friction he named four ways.
+> **A `UserPromptSubmit` hook reports the capture on every prompt**, so you are told rather
+> than having to remember to read `focus.json`. Its absence is visible: every line is tagged
+> `[hrw-context]`, and it says outright when `focus.json` predates the session.
+>
+> **Two obligations when a passage arrives.** The emitted text is what the pane *rendered*,
+> so it will not match the markdown byte-for-byte — locate it in the file the capture names.
+> And before improving it, check which region it sits in: `walked:` may be fixed **and
+> re-dated in the same commit**; `authored:` is Doug's and is **reported, never rewritten**.
+>
 > ### CLAUDE CAN NOW READ THE PANE — use it before asking Doug to describe anything
 >
 > **`hrw/.hrw-bridge/view.json` holds the view on screen**, as the renderer's own input.
@@ -775,11 +788,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > `doc_citations::tour_group_tables_match_the_real_equation_sheet` (slow-gated), against a real
 > compile. Mark the table `<!-- pane-groups -->`.
 >
-> **A MARKER'S REGION IS THE TABLE THAT FOLLOWS IT, AND NOTHING ELSE** *(bounded 2026-08-22)*. The
-> scan used to run forward unbounded to the next backticked row, so **deleting a table while
-> leaving its marker made that marker silently adopt the next table in the file** — `pane-groups`
-> comparing against `pane-origins` rows. A missing *marker* always failed loudly; a missing *table*
-> did not. `a_marker_whose_table_is_gone_does_not_adopt_a_later_one` is the guard.
+> **A marker's region is the table that follows it and nothing else** — a deleted table once let
+> its marker adopt the next one. `a_marker_whose_table_is_gone_does_not_adopt_a_later_one` carries
+> the account.
 >
 > ### What a walk still cannot be replaced by
 >

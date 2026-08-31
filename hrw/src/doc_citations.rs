@@ -2528,9 +2528,29 @@ Some prose.
         // checker**, not commentary: four separate sites had each violated it, and
         // none of the existing corollaries forbade it — they govern invented CONTENT,
         // and this is an invented claim about control flow, carried by a field.
-        const MANDATORY_BUDGET: usize = 1934;
+        // …then 1934 → 1945 on 2026-08-30, the same eleven lines as
+        // `CURRENT_WORK_BUDGET` below and for the same reason: the tour-passage
+        // capture changes how every question is answered, and the two obligations it
+        // carries cannot be left to be rediscovered. Nothing else grew.
+        const MANDATORY_BUDGET: usize = 1945;
         // 263 → 264, same commit and same reason as MANDATORY_BUDGET above.
-        const CURRENT_WORK_BUDGET: usize = 264;
+        // …then 264 → 275 on 2026-08-30, for a CAPABILITY rather than a record: Doug
+        // can select tour prose, press 🎯, and have it become the point, with a
+        // `UserPromptSubmit` hook reporting it on every prompt.
+        //
+        // **It earns lines because it changes how every question is answered**, which
+        // is the test this budget is really applying. A session that does not know a
+        // bare "what is this?" now arrives with a referent will either ask Doug to
+        // repeat himself or answer the wrong subject — and the second is the failure
+        // this repository spends most of its rules on. The two obligations that come
+        // with a passage capture (the text is RENDERED, so locate it in the source;
+        // and check `walked:` / `authored:` before improving it) are the half that
+        // cannot be left to be rediscovered, because getting them wrong rewrites
+        // Doug's own prose silently.
+        //
+        // Three of the eleven were paid back by retiring the marker-region paragraph
+        // to its checker, per "a checker retires the prose it replaces".
+        const CURRENT_WORK_BUDGET: usize = 275;
 
         /// **Tier 2 — conditionally mandatory**, and the hole tier 1 left open.
         ///

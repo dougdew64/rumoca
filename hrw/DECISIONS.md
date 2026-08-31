@@ -4444,3 +4444,71 @@ shifts when a rule is added before it.
 run button and prefixing 101 tour hyperlinks. It is trustworthy for a `true` and not for a
 `false`, and the note lives on the test that uses it. I acted on one of its false negatives
 in conversation before checking, and told Doug that ⚠ and 🔍 were probably boxes. They are not.
+
+## 2026-08-30 (evening) — pointing at tour prose, and three silent failures of one mechanism
+
+**Doug named four frictions in asking about tour text**, and the fourth is the one that
+decided the design: switching to VS Code, finding the `.md`, locating the passage in source,
+and — *"HRW deixis really doesn't work in the middle of our conversation"* — a bare
+*"What is this?"* having no referent unless he prefaced it.
+
+### What was built
+
+- **Select prose → 🎯 → ask.** The passage becomes the *point*, so the Context Bar shows it
+  and `focus.json` carries it. His two rulings, implemented as given: **only the button
+  captures** (an ordinary Ctrl+C must not silently change what Claude has), and the text is
+  the **rendered** prose, not the markdown source.
+- **A `UserPromptSubmit` hook** reports the capture on every prompt, converting *"Claude must
+  remember to read the bridge"* into *"Claude is always told"*.
+- **`.claude/settings.json` now travels.** He asked the right question — *"will your proposal
+  work if I switch machines?"* — and it would not have. A hook absent on the other machine
+  fails **silently**.
+
+### THE TYPES CHANGED, AND THAT WAS THE POINT
+
+`PointedAt.stage` became `Option<StageKind>`; `PointKind` and `Focus` each gained a
+`TourPassage`. The shortcut was concrete: store whichever stage happened to be selected. It
+would have written *"pointed at in Parse"* about a sentence of prose, into the one file Claude
+reads to know its subject. Doug, shown the choice: *"Accuracy is a requirement. No shortcuts.
+Add types as necessary to ensure accuracy."*
+
+### THE PART WORTH KEEPING: ONE MECHANISM, THREE ORDERINGS, THREE SILENT FAILURES
+
+Getting the selected text out of egui needs a copy round trip — `has_selection()` is public,
+the text never is. **Three attempts, and only the third works:**
+
+| attempt | why it found nothing |
+|---|---|
+| read `ctx.output()` next frame | `end_pass` does `std::mem::take(&mut viewport.output)` |
+| `Context::on_end_pass` | registers into `CallbackPlugin`, added at `context.rs:733` — **four lines before** `LabelSelectionState` at `737`, and plugins run in registration order |
+| our own `Plugin` | added in `App::new`, after all four built-ins |
+
+**And a fourth failure beside them:** the button used `clicked()`, which fires at mouse-**up** —
+but egui clears the selection at mouse-**down**, so the button was no longer drawn and the
+click was never observed at all.
+
+**Not one of these had a symptom of its own.** The button did nothing, four times, and Doug
+could only report what he could see — that it appeared on a caret, that it vanished when
+pressed, that the icon was uncoloured. **Two of those three cosmetic reports were the clue that
+located a functional bug**, and his diagnosis of the third was better than mine: *"the button is
+probably disappearing because the selection is disappearing. However, it seems incorrect to me
+that the selection is disappearing when I click the button."* That was the fix.
+
+### WHAT ACTUALLY BROKE THE DEADLOCK WAS A FILE'S MTIME
+
+`session.json` is written **only when HRW records an action**. `capture_tour_passage` records
+one — so the file never moving *proved* the capture had never run, which two rounds of reading
+the code had not settled. **A fact about when a diagnostic is written was worth more than the
+diagnostic's contents.**
+
+That same fact was a defect in the hook, wearing the disguise of the fix: it took the *age* from
+`focus.json` and the *content* from `session.json`, printing *"captured 8m ago"* over state that
+was minutes stale. It now reports both freshnesses and says outright when the capture file
+predates the session.
+
+### THE TRANSFERABLE RULE
+
+**When a mechanism has failed twice in ways that produce no symptom, stop reading and write a
+test for the property being got wrong.** `the_copy_catcher_runs_after_plugins_registered_before_it`
+stands an emitter in for `LabelSelectionState` and fails by name if the ordering regresses. It
+should have been the second act, not the fourth.
