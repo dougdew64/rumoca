@@ -51,12 +51,12 @@ This tour counts. `RcCircuit` has four `connect` statements and twenty-three equ
 - **Stages:** `Flatten`
 - **Stops:**
   - `flatten-what-connect-actually-means` — Flatten — what `connect` actually means
-  - `stop-1-how-many-nodes` — Stop 1 — How many nodes?
-  - `stop-2-how-many-equations-do-three-nodes-make` — Stop 2 — How many equations do three nodes make?
-  - `stop-3-which-rows-belong-to-the-same-node` — Stop 3 — Which rows belong to the same node?
+  - `stop-1-how-many-connection-sets` — Stop 1 — How many connection sets?
+  - `stop-2-how-many-equations-does-a-set-make` — Stop 2 — How many equations does a set make?
+  - `stop-3-which-rows-belong-to-the-same-set` — Stop 3 — Which rows belong to the same set?
   - `stop-4-how-big-is-a-four-component-circuit` — Stop 4 — How big is a four-component circuit?
   - `stop-5-what-if-there-are-no-connectors-at-all` — Stop 5 — What if there are no connectors at all?
-  - `stop-6-does-twice-the-node-count-survive-a-second-level` — Stop 6 — Does "twice the node count" survive a second level?
+  - `stop-6-do-the-sets-still-come-out-matched` — Stop 6 — Do the sets still come out matched?
   - `what-comes-next-in-the-chain` — What comes next in the chain
   - `what-this-tour-cannot-check` — What this tour cannot check
 

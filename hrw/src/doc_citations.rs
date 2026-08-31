@@ -2975,26 +2975,29 @@ Some prose.
         );
     }
 
-    /// **`connect-expansion.md` Stop 1's node sizes match the connection replay.**
+    /// **`connect-expansion.md` Stop 1's set sizes match the connection replay.**
     ///
     /// # The last claim in that tour nobody could check
     ///
-    /// Stop 1 predicts *three nodes, of sizes 2, 2 and 3*, and sends the reader to
-    /// **Flatten → Connections** — the only pane that shows connection sets. Every other
-    /// claim in the tour became checkable when the equation sheet started publishing;
-    /// this one rested on Claude having read a trace correctly and never on anything a
-    /// test could see.
+    /// Stop 1 predicts *sets of 2, 2 and 3*, and sends the reader to **Flatten →
+    /// Connections** — the only pane that shows connection sets. Every other claim in the
+    /// tour became checkable when the equation sheet started publishing; this one rested
+    /// on Claude having read a trace correctly and never on anything a test could see.
     ///
     /// # What it checks, and the distinction it is careful about
     ///
-    /// Stop 1 counts **nodes**, which are sets of *connectors*. The compiler never groups
-    /// connectors — it groups **variables**, in two independent graphs, one per kind. So
-    /// a node of size 3 shows up as a **potential set of three `.v`** *and* a **flow set
-    /// of three `.i`**, and the tour's `2, 2, 3` must appear as the set sizes of **each
-    /// kind separately**, not as some total across both.
+    /// **Per kind, never in aggregate.** `2, 2, 3` must appear as the sizes of the
+    /// **potential** sets *and* independently as the sizes of the **flow** sets, because
+    /// pairing by name means no merge ever crosses between members — so the two kinds
+    /// come out with the same membership and are still six separate sets, not three.
     ///
-    /// Getting that wrong is the mistake the tour itself made twice before Doug pinned
-    /// the vocabulary down, so the check asserts it per kind rather than in aggregate.
+    /// **Renamed from `tour_node_sizes_…` on 2026-08-31**, when Doug ruled the node
+    /// abstraction out of the tour entirely: *"It is not helpful to me to draw textbook
+    /// graphs or nodes for this."* The tour now predicts connection sets directly, which
+    /// is the compiler's own noun — and the rename matters because a test named for a
+    /// vocabulary its subject no longer uses is how a checker stops being read. **The
+    /// assertions did not change**; they were always about sets, and only the words
+    /// around them were about nodes.
     ///
     /// # What it does not check
     ///
@@ -3005,7 +3008,7 @@ Some prose.
         ignore = "compile-heavy; run with --features slow-tests"
     )]
     #[test]
-    fn tour_node_sizes_match_the_connection_replay() {
+    fn tour_set_sizes_match_the_connection_replay() {
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         // Memoised, for the reason above: `RcCircuit` is compiled by several tests in
         // this process and a fresh compile here bought nothing but 4.3 seconds.
@@ -3044,20 +3047,19 @@ Some prose.
         assert_eq!(
             potential,
             vec![2, 2, 3],
-            "Stop 1 predicts nodes of 2, 2 and 3 connectors, so the POTENTIAL sets must be \
-             three sets of 2, 2 and 3 `.v` variables"
+            "Stop 1 predicts sets of 2, 2 and 3, so the POTENTIAL sets must be three \
+             sets of 2, 2 and 3 `.v` variables"
         );
         assert_eq!(
             flow,
             vec![2, 2, 3],
-            "...and the FLOW sets must independently be 2, 2 and 3 `.i` variables. A node \
-             is a set of connectors; the compiler groups variables, one graph per kind"
+            "...and the FLOW sets must independently be 2, 2 and 3 `.i` variables. \
+             Pairing by name is what keeps the two kinds from ever mixing"
         );
 
-        // **The set count the pane declares**, which is not the node count and was the
-        // first thing reading the live pane turned up: the replay's last frame says
-        // 6 sets, while Stop 1 predicts 3 nodes. Both are right — one node yields one
-        // set per kind — and the tour now states both numbers, so both are pinned.
+        // **The set count the pane declares.** Six, not three — the sizes above are per
+        // kind, and `RcCircuit`'s two kinds come out with matching membership. Stop 6
+        // exists because that matching is not a law.
         let complete = frames
             .iter()
             .find(|f| f["step"] == "Complete")
@@ -3070,7 +3072,7 @@ Some prose.
         assert_eq!(
             complete["equations_added"].as_u64(),
             Some(7),
-            "three nodes over two kinds produce 4 potential + 3 flow equations"
+            "six sets produce 4 potential + 3 flow equations"
         );
 
         // The tour's own words, so a reworded prediction cannot drift from this check.
@@ -3141,7 +3143,7 @@ Some prose.
             "Stop 2's two frame citations must both be pinned"
         );
         for claim in [
-            "**three** nodes, of sizes **2, 2 and 3**",
+            "of sizes 2, 2 and 3",
             "**6 connection sets** producing **7 equations**",
         ] {
             assert!(
@@ -4136,8 +4138,9 @@ Some prose.
 
         // **What this does NOT reach, said out loud rather than left as a green result.**
         // A citation whose tour is named on an *earlier* line of the same doc comment —
-        // "/// **`connect-expansion.md` Stop 1's node sizes…**" followed later by "Stop 1
-        // counts **nodes**" — is invisible here, because the pairing is per-line. Roughly
+        // "/// **`connect-expansion.md` Stop 1's set sizes…**" followed later by "Stop 1
+        // predicts *sets of 2, 2 and 3*" — is invisible here, because the pairing is
+        // per-line. Roughly
         // half the references in `doc_citations.rs` are that shape. Widening to whole doc
         // comments is possible and was not done; this checker covers the single-line form
         // and says so.

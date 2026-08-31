@@ -11,7 +11,9 @@ sides share, and no equation exists until every merge is done.
 Which sets? A `connect` names **connectors, not variables** — `src.p` is a `Pin`. Expansion derives
 the members and pairs them by name first
 ([`expand_connector_connection`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#expand_connector_connection)),
-and each pair goes to `union(a, b)`, which joins **whichever sets currently hold `a` and `b`**.
+and each pair goes to
+[`union(a, b)`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#UnionFind), which
+joins **whichever sets currently hold `a` and `b`**.
 Nothing else ever puts a variable into the structure, so a pair it has not seen before creates both
 and merges them in the same call: **every set starts at two and only grows.** A variable no
 `connect` touches is not a set of one — it is **absent**, which is why an unconnected flow variable
@@ -19,13 +21,6 @@ needs a pass of its own
 ([`generate_unconnected_flow_equations`](hrw://src/crates/rumoca-phase-flatten/src/connections/equation_generation.rs#generate_unconnected_flow_equations)).
 Order cannot change which variables end up together, and a `connect` whose two ends are already in
 one set does nothing at all — `union` compares roots before it merges.
-
-The textbook picture is a graph: variables as vertices, an edge per `connect`, and the answer is
-each graph's **connected components**. Rumoca computes those components and **never builds the
-graph.** It computes them with
-[union-find](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#UnionFind) instead. Draw
-the graph anyway, to predict with; just hold it the way you are about to hold *nodes* in Stop 1, as
-your bookkeeping rather than the compiler's.
 
 [`connect_primitive_vars`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#connect_primitive_vars) is where a statement becomes merges. It pairs the two connectors'
 members **by name**, then routes each pair by that member's prefix:
@@ -66,7 +61,7 @@ below trips it. Ask me, or read [`upstream-issues.md`](hrw://doc/upstream-issues
 
 ---
 
-## Stop 1 — How many nodes?
+## Stop 1 — How many connection sets?
 
 Here is every `connect` in `RcCircuit`:
 
@@ -77,72 +72,52 @@ connect(C.n, src.n);
 connect(src.n, gnd.p);
 ```
 
-Two connectors are on the same **node** if you can walk from one to the other along `connect`
-statements — so joining `a` to `b` and `b` to `c` puts all three on one node. That is
-**transitivity**.
+A `Pin` has two members, so each statement pairs by name into **two merges** — one joining `.v` to
+`.v`, one joining `.i` to `.i`. Four statements, eight merges.
 
-**"Node" is yours, not the compiler's.** The word appears nowhere in Rumoca and nowhere in HRW. It
-is bookkeeping *you* do on paper to predict what the compiler will build. What it actually builds
-is **connection sets**, and this stop is the gap between the two.
+Eight merges do not mean eight sets. Watch `src.n`: it is named by `connect(C.n, src.n)` **and** by
+`connect(src.n, gnd.p)`, so by the time the second one runs, `src.n.v` is already in a set — and
+`union` joins that whole set to the one holding `gnd.p.v`, rather than making a new one.
 
-> **Predict.** How many nodes do these four statements make, and how many connectors are on the
-> largest one? Then a second number, and expect it to disagree with the first: **how many
-> *connection sets* will the replay say it built?**
+> **Predict.** How many connection sets come out of those eight merges, and how many equations do
+> they produce?
 
 [Look — RcCircuit → Flatten → Connections](hrw://load/RcCircuit/Flatten/Connections)
 
-**On your paper** — and only there, because the pane has no opinion about nodes and never will:
-**three** nodes, of sizes **2, 2 and 3** connectors.
-
 **Expected:** the replay's last frame declaring **6 connection sets** producing **7 equations**.
-That is the whole of what the screen can settle for you.
 
-**Falsified if** that last frame says anything other than 6 and 7. Or, on your paper, if you
-counted four nodes, made all three the same size, or put one connector on two of them — and the
-two halves have to agree, so **the set count must come out twice the node count.**
+**Falsified if** that last frame says anything other than 6 and 7.
 
 ### What just happened
 
-Four statements, three nodes — because **`src.n` appears twice**, so `connect(C.n, src.n)` and
-`connect(src.n, gnd.p)` are one node with three connectors on it.
+**Eight merges, six sets**, because two of them landed in sets that already existed. `src.n` is
+named twice, so `C.n.v`, `src.n.v` and `gnd.p.v` finish in **one set of three** — and their `.i`
+counterparts in another. The other two statements make sets of two.
 
-| node | connectors | size |
-|---|---|---|
-| A | `src.p`, `R.p` | 2 |
-| B | `R.n`, `C.p` | 2 |
-| C | `C.n`, `src.n`, `gnd.p` | **3** |
+So: three sets over the `.v` members, of sizes 2, 2 and 3, and three over the `.i` with exactly the
+same membership. Six.
 
-*That table is your paper written out. Nothing in HRW draws it.*
+**Pairing by name is why the two kinds never mix.** No merge joins a `.v` to an `.i`, because no
+statement ever pairs them — which is why the sets come out **matched**, one `.v` set for each `.i`
+set. Stop 6 is where that stops being true.
 
-**Nothing downstream ever groups connectors.** Pairing by name means a merge never crosses from one
-member to another, so what you drew comes out as one graph per member:
-
-| graph | vertices | edges from `connect(src.p, R.p)` |
-|---|---|---|
-| **potential** | every `.v` | `src.p.v — R.p.v` |
-| **flow** | every `.i` | `src.p.i — R.p.i` |
-
-Each graph yields three **connected components**, of sizes 2, 2 and 3. Modelica calls one component
-a **connection set** (MLS §9.2), which is the `ConnectionSet` the opening named.
-
-**So six is three nodes × two kinds.** The replay never counts nodes, because the compiler never
-forms them. Step through and they arrive in two runs of three — **the flow sets first, then the
-potential sets** — which is why flow equations end up with *lower* indices than potential ones.
+**They arrive in two runs of three** — the flow sets first, then the potential ones — which is why
+flow equations end up with *lower* indices than potential ones.
 
 **One frame does nothing.** An `unconnected flow` step reports **0 equations added**: MLS §9.2
-requires a flow variable in no connection set to get `f = 0`, and `RcCircuit` has none.
+gives a flow variable in no connection set `f = 0`, and every one of `RcCircuit`'s is in a set.
 
-**The order is forced, not tidy.** No equation can be written until no node can still grow —
+**The order is forced, not tidy.** No equation can be written until no set can still grow —
 `connect(src.n, gnd.p)` changes what the earlier `connect(C.n, src.n)` is worth.
 
 ---
 
-## Stop 2 — How many equations do three nodes make?
+## Stop 2 — How many equations does a set make?
 
-Stop 1 left two sets per node — the `.v` and the `.i`. They do **not** produce equations the same
+Stop 1 left six sets — three of `.v`, three of `.i`. They do **not** produce equations the same
 way:
 
-| variable | kind | what it means on a node |
+| variable | kind | what it means across a set |
 |---|---|---|
 | `v` — voltage | **potential** | measured *across*; all of them are **equal** |
 | `i` — current | **flow** | measured *through*; they **sum to zero** |
@@ -153,8 +128,8 @@ mass flow.
 
 *(Modelica has a third kind, `stream`, for fluid connectors. `Pin` has none.)*
 
-**You can watch the asymmetry on one node in two frames**, each set followed immediately by the
-equations it generated:
+**You can watch the asymmetry on the two size-3 sets in two frames**, each set followed immediately
+by the equations it generated:
 
 - [frame 7](hrw://stage/Flatten/Connections/frame/7) — the **flow** set of size 3 → **1** equation
 - [frame 13](hrw://stage/Flatten/Connections/frame/13) — the **potential** set of size 3 → **2**
@@ -166,10 +141,10 @@ equations it generated:
 | `7` | `EquationsGenerated` | `flow` | `3` | `1` |
 | `13` | `EquationsGenerated` | `potential` | `3` | `2` |
 
-Same three connectors, different arithmetic. Everything below is that multiplied by three nodes.
+Same three members, different arithmetic. Everything below is that, once per set.
 
-> **Predict.** Nodes of 2, 2 and 3 connectors — so potential sets of 2, 2 and 3 `.v`, and flow sets
-> of 2, 2 and 3 `.i`. How many equations in total, and how do they split between the two kinds?
+> **Predict.** Potential sets of 2, 2 and 3 `.v`, and flow sets of 2, 2 and 3 `.i`. How many
+> equations in total, and how do they split between the two kinds?
 
 [Look — RcCircuit → Flatten → Equations](hrw://load/RcCircuit/Flatten/EquationSheet)
 
@@ -189,12 +164,12 @@ and currents respectively, or if their total is not seven.
 
 ### What just happened
 
-| node | connectors | potential set | → rows | flow set | → rows |
-|---|---|---|---|---|---|
-| A | 2 | 2 × `.v` | 1 | 2 × `.i` | 1 |
-| B | 2 | 2 × `.v` | 1 | 2 × `.i` | 1 |
-| C | 3 | 3 × `.v` | **2** | 3 × `.i` | 1 |
-| | | | **4** | | **3** |
+| set size | potential → rows | flow → rows |
+|---|---|---|
+| 2 | 1 | 1 |
+| 2 | 1 | 1 |
+| 3 | **2** | 1 |
+| | **4** | **3** |
 
 **The last two columns behave completely differently.** A flow set of size *n* becomes **one row
 naming all *n* variables**, so the sizes are there to be counted:
@@ -211,18 +186,18 @@ never printed anywhere**. You have to reassemble the sets yourself — that is S
 **The equations are residuals**: `src.p.v = R.p.v` is stored as `0 = src.p.v - R.p.v`. The readable
 form is in each row's **origin** column.
 
-**Why *n* − 1 and not every pair:** redundant equations make a system structurally singular. The
-phase produces a **spanning tree** of each potential set, never its complete graph.
+**Why *n* − 1 and not every pair:** every pair would be redundant, and redundant equations make a
+system structurally singular. *n* − 1 is the fewest that still forces all *n* equal.
 
 ---
 
-## Stop 3 — Which rows belong to the same node?
+## Stop 3 — Which rows belong to the same set?
 
-The sheet groups equations by *kind*, not by node. Nodes A, B and C are nowhere on screen — but
-they are recoverable, and the two kinds give them up differently.
+The sheet groups equations by *kind*, not by set. The six sets are nowhere on screen — but they are
+recoverable, and the two kinds give them up differently.
 
-> **Predict.** Of the four `Potential equality` rows, which **two** belong to the same node —
-> and which single `Flow conservation` row is that same node seen whole?
+> **Predict.** Of the four `Potential equality` rows, which **two** came from the same set — and
+> which single `Flow conservation` row is that same set's `.i` twin, seen whole?
 
 [Look — RcCircuit → Flatten → Equations](hrw://load/RcCircuit/Flatten/EquationSheet)
 
@@ -242,23 +217,23 @@ Connector equations
   0 = C.n.i + src.n.i + gnd.p.i
 ```
 
-Rows three and four are node C: they **chain** through `src.n.v`. The third flow row is that
-same node, and it names all three members at once.
+Rows three and four are the set of three: they **chain** through `src.n.v`. The third flow row is
+that set's `.i` twin, and it names all three members at once.
 
 **Falsified if** no two potential rows share a variable, or if the three-term flow row's members are
-not the union of the connectors in that chain.
+not the `.i` counterparts of the variables in that chain.
 
 ### What just happened
 
-**The flow row is the only place a node appears whole; the potential rows *are* the spanning tree,
+**The flow row is the only place a set appears whole; the potential rows *are* the spanning tree,
 drawn one edge at a time.** Stop 2's asymmetry, seen from the other side.
 
 ---
 
 ## Stop 4 — How big is a four-component circuit?
 
-`RcCircuit` is a voltage source, a resistor, a capacitor and a ground. Seven of its equations come
-from the connect graph.
+`RcCircuit` is a voltage source, a resistor, a capacitor and a ground. Seven of its equations came
+from the six connection sets.
 
 > **Predict.** How many equations does the whole model have — and of the rest, how many belong to
 > the resistor alone?
@@ -337,15 +312,17 @@ instantiated with a prefix. Only seven are new — and those seven determine the
 
 ### What just happened
 
-With no `connect`, the connection graph is empty and this phase contributes nothing. `TwoLoops`'
+With no `connect`, nothing merges, no set exists and this phase contributes nothing. `TwoLoops`'
 equation indices map straight onto its source, which is why `blt-ordering.md` uses it.
 
 ---
 
-## Stop 6 — Does "twice the node count" survive a second level?
+## Stop 6 — Do the sets still come out matched?
 
-Stop 1 left you a rule: **the set count comes out twice the node count.** It held for `RcCircuit`,
-and `RcCircuit` cannot test it, because **all four of its connects sit at root scope.**
+Stop 1's sets came out **matched**: three of `.v` and three of `.i`, same membership, because
+pairing by name never lets a merge cross between members. That pairing is real. **What is not a law
+is the matching**, and `RcCircuit` cannot show you why, because all four of its connects sit at
+root scope.
 
 `ScopedConnect` puts a resistor behind two pins inside a `Segment`, wires it **there**, and wires
 the segments to each other and to a source at the **top level**:
@@ -426,7 +403,7 @@ solves which unknown.
 
 - **How the `Connections` replay presents its sets.** The counts come from a trace and are checked;
   whether the frames *read* as a phase building sets one at a time is your report and nothing
-  else's. Nothing in HRW represents a node.
+  else's.
 - **Whether a connection is legal.** Rumoca checks that *paired* variables agree, but nothing
   checks that both connectors have the **same member set**. That gap has its own tour:
   [the-oracle](hrw://tour/the-oracle).

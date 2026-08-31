@@ -30,7 +30,7 @@ breaking a document quietly. **A saved tour nobody runs is stored prose with ext
 *durably*, so they must be kept true; an **ad hoc** tour makes them *about the moment*, so they need
 only be true when written.
 
-*(Written 2026-08-22, after Doug noticed that `connect-expansion.md` states node sizes of 2, 2 and 3
+*(Written 2026-08-22, after Doug noticed that `connect-expansion.md` states set sizes of 2, 2 and 3
 as static text — true or false whether or not HRW is open and whether or not `RcCircuit` has ever
 been compiled. The definition above is operational, and says nothing about this.)*
 
@@ -82,7 +82,7 @@ Two consequences worth acting on:
 |---|---|---|
 | **checked against a real compile** | the five `<!-- pane-* -->` tables; the `2, 2, 3` set sizes | a slow test that compiles the specimen and compares |
 | **checked structurally** | every `hrw://` link, the stop catalogue | fast tests — links resolve, `CATALOGUE.md` is current |
-| **prose** | *which* connectors sit on node A; every explanation | **nothing. Only the walk.** |
+| **prose** | *which* members are in which set; every explanation | **nothing. Only the walk.** |
 
 **THE COUNTS ARE THE CHEAP PART TO KEEP TRUE, AND THE ARGUMENT IS THE EXPENSIVE PART.** A number
 can be re-derived from a compile and compared. *"Nothing downstream ever groups connectors"* cannot
@@ -91,11 +91,11 @@ protect a tour's *facts* and leave its *reasoning* entirely to the walk, which i
 *"I couldn't have guessed that"* is worth more than any test in this repository.
 
 **A MARKER IS NOT THE ONLY WAY A NUMBER IS CHECKED, so do not read an unmarked table as unchecked.**
-The node table at the top of `connect-expansion.md` carries no marker, yet its sizes *are* verified —
-`tour_node_sizes_match_the_connection_replay` asserts `potential == [2, 2, 3]` and
+Stop 1's set sizes in `connect-expansion.md` carry no marker, yet they *are* verified —
+`tour_set_sizes_match_the_connection_replay` asserts `potential == [2, 2, 3]` and
 `flow == [2, 2, 3]` against the real connection frames, hard-coded in the test with a failure
-message naming the stop. What that test does **not** check is the *mapping*: that node A is
-`src.p, R.p` rather than some other pair. **Before trusting or editing a number, find what checks
+message naming the stop. What that test does **not** check is the *mapping*: that the first set is
+`src.p.v, R.p.v` rather than some other pair. **Before trusting or editing a number, find what checks
 it** — the marker, a named test, or nothing.
 
 **AND THE LIMIT OF ALL OF IT, which the fidelity work is what makes it safe:** these checkers verify
@@ -217,18 +217,29 @@ one sentence spent four passes proving it.** Doug, after the fourth: *"textbook-
 which cannot be mapped to Rumoca code probably don't belong in HRW tours. After all, I can always
 get those textbook-style abstractions from textbooks."*
 
-**The test is not "is it labelled" — it is "what does it let him predict?"**
+**Two tests, and the first version of this rule only had the second.** Doug, later the same day:
+*"It is not helpful to me to draw textbook graphs or nodes for this."*
 
-| abstraction | earns its place? |
+1. **Does the code already have a noun for it?** If so, **use the code's noun.** An abstraction is
+   only ever a stand-in for something unnamed.
+2. **Does it predict something?** An abstraction predicting nothing is dead weight however well
+   labelled.
+
+| abstraction | verdict |
 |---|---|
-| **node** | **Yes.** Rumoca has none, and node count × 2 predicts the connection-set count. |
-| **the graph** | **Yes.** Its connected components *are* the sets; drawing it predicts sizes. |
-| **the singleton set** | **No.** Union-find "starts with singletons"; Rumoca's never has one. |
+| **the singleton set** | Out — predicts nothing. Rumoca's union-find never has one. |
+| **node** | Out — duplicates `ConnectionSet`, *and* its prediction is false at two scopes. |
+| **the graph** | Out — duplicates what union-find already computes; predict from merges. |
 
-The singleton is why this rule got sharpened. It predicted nothing, corresponded to no state any
-code can observe, and survived four rewrites because it *sounded* like knowledge — Doug killed it
-by asking under what circumstances it could occur, which is the question an implementer asks and a
-textbook never answers.
+**All three failed, and the first version of this table passed two of them.** The claim was that
+`node` earned its place because *node count × 2* predicts the set count — but `ScopedConnect` gives
+**3 and 7**, so the tour had to spend a whole stop demolishing a rule it taught two stops earlier.
+**An abstraction needing a correction stop is costing more than it pays.** Removing it made Stop 6
+a clean demonstration of scope instead of a gotcha, and shortened Stops 1–3.
+
+**The singleton is what started the sharpening.** It predicted nothing and survived four rewrites
+because it *sounded* like knowledge — Doug killed it by asking under what circumstances it could
+occur, which is the question an implementer asks and a textbook never answers.
 
 **So the labelling rule stands and is no longer sufficient.** Label the reader's models, *and* drop
 the ones doing no predictive work. Labelling a useless abstraction only makes it honestly useless.

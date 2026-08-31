@@ -292,4 +292,17 @@ current_work = 287
 # that a clause needs a conversation to land.** That is not a gap to fill with more prose;
 # it is prose that should have been a name. Without that sentence the natural correction
 # is to EXPAND the clause, which is the opposite of what was wanted.
-conditional = 979
+# …then 979 → 990 on 2026-08-31, for the SECOND test in the earn-its-place rule. Doug:
+# "It is not helpful to me to draw textbook graphs or nodes for this."
+#
+# The rule as written that morning had one test — does the abstraction predict? — and its
+# own worked table passed `node` and `the graph` on it. Both were wrong. `node` predicted
+# something FALSE at two scopes, which is why the tour had to spend a whole stop demolishing
+# a rule it taught two stops earlier; `the graph` predicted correctly but only restated what
+# union-find already computes.
+#
+# So the first test now comes before it: **does the code already have a noun for this?** If
+# so, use the code's noun. An abstraction is only ever a stand-in for something unnamed, and
+# both of these stood in for `ConnectionSet`. Eleven lines, and they retire an abstraction
+# that ran through four stops of connect-expansion.
+conditional = 990
