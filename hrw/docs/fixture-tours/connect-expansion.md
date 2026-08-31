@@ -11,11 +11,14 @@ sides share, and no equation exists until every merge is done.
 Which sets? A `connect` names **connectors, not variables** — `src.p` is a `Pin`. Expansion derives
 the members and pairs them by name first
 ([`expand_connector_connection`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#expand_connector_connection)),
-and a pair is merged by `union(a, b)`, which joins **whichever sets currently hold `a` and `b`**.
-A variable nothing has merged yet is **a set by itself**, so an early pair joins two of those while
-a later one may join a pair to a triple. That is why the order the statements arrive in cannot
-change which variables end up together, and why a `connect` whose two ends are already in one set
-does nothing at all.
+and each pair goes to `union(a, b)`, which joins **whichever sets currently hold `a` and `b`**.
+Nothing else ever puts a variable into the structure, so a pair it has not seen before creates both
+and merges them in the same call: **every set starts at two and only grows.** A variable no
+`connect` touches is not a set of one — it is **absent**, which is why an unconnected flow variable
+needs a pass of its own
+([`generate_unconnected_flow_equations`](hrw://src/crates/rumoca-phase-flatten/src/connections/equation_generation.rs#generate_unconnected_flow_equations)).
+Order cannot change which variables end up together, and a `connect` whose two ends are already in
+one set does nothing at all — `union` compares roots before it merges.
 
 The textbook picture is a graph: variables as vertices, an edge per `connect`, and the answer is
 each graph's **connected components**. Rumoca computes those components and **never builds the
