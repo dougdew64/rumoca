@@ -681,30 +681,30 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >   involved. **A new intro section goes BELOW the tour's opening bold line**, or the catalogue's
 >   description of that tour changes with it.
 >
-> **⟶ WHERE THE WALK IS — `dae-construction` IS NEXT**
+> **⟶ WHERE THE WALK IS — `connect-expansion`, RE-WALKED, THEN `dae-construction`**
 >
-> **Doug, 2026-08-22:** *"I will walk tours in the same sequence as the compiler phases."* That
-> sequence is `the-concepts.md`'s own numbering: **dae-construction → matching (→ matching-live) →
-> blt-ordering → tearing → index-reduction → initialization → solve-lowering → events.**
+> **Doug, 2026-08-22:** *"I will walk tours in the same sequence as the compiler phases"* —
+> `the-concepts.md`'s own numbering: **dae-construction → matching (→ matching-live) → blt-ordering
+> → tearing → index-reduction → initialization → solve-lowering → events.**
 >
-> **Walked: `connect-expansion` (2026-08-22), `the-concepts` (2026-08-28).** Only the first carries
-> `<!-- walked -->` regions — **ten**; the-concepts has none, and its edits are Doug's own, made
-> through the tour-editing path. Nothing later in the order has been walked at all.
+> **`connect-expansion` IS BEING RE-WALKED FIRST, and its walked status was retired.** Doug asked
+> for it ahead of `dae-construction`: *"I've been focused on that tour, trying to get this tour
+> format right."* It was rewritten 2026-08-30 under the provoke-questions rules, and its **ten
+> `walked:` regions were deleted with his agreement**, recorded in
+> [`docs/question-ledger.md`](docs/question-ledger.md) — which
+> `walked_prose_never_changes_silently` now requires by name. **No tour carries a walked region
+> today**; `the-concepts` was walked 2026-08-28 and never had one.
 >
-> **`index-reduction.md` is mid-walk and waits its turn at #6.** Shown that it sits five tours
-> ahead of where the order reaches it, Doug answered *"I will walk the tours in compiler phase
-> order."* **The sequence governs; there is no exception for the tour already in progress.**
+> **`index-reduction.md` is mid-walk and waits its turn at #6** — asked and ruled: *"I will walk
+> the tours in compiler phase order."* **No exception for the tour already in progress.**
 >
-> **AND IT CARRIES A HARDER BAR THAN EVERY OTHER TOUR**, staked in public with a PhD Modelica
-> friend: **index reduction explained to anybody with only basic calculus.** He graded its opening
-> *"good. Not yet very good"* — **good is not the target.** The constraint and the three worked
-> corrections are in [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md); read it before
-> touching that tour. **The bar is PREDICTION, not comprehension: a correct tour can still fail it,
-> and only the walk can measure that.**
+> **AND IT CARRIES A HARDER BAR**, staked in public: **index reduction explained to anybody with
+> only basic calculus** — the bar is PREDICTION, not comprehension. That constraint, the
+> provoke-questions rules and the one-tour-at-a-time rule are all in
+> [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md); read it before touching a tour.
 >
 > **`connect-expansion.md` is still the one tour carrying `pane-groups` tables**, so editing those
-> tables still means the FULL gate — that warning outlives the walk. **Convert and improve ONE TOUR
-> AT A TIME — the one Doug is about to walk.**
+> tables still means the FULL gate.
 >
 > ### ⟶ AFTER `#48`: RESUME REFACTORING, AND THE GOAL IS BUGS — Doug, 2026-08-21
 >
