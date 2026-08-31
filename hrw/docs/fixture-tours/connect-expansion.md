@@ -22,10 +22,10 @@ one set does nothing at all — `union` compares roots before it merges.
 
 The textbook picture is a graph: variables as vertices, an edge per `connect`, and the answer is
 each graph's **connected components**. Rumoca computes those components and **never builds the
-graph.** [`connections/mod.rs`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs) uses **[union-find](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#UnionFind)** — one parent index per variable it has touched,
-no edges stored anywhere, answering only *"same set?"*. Draw the graph anyway, to predict with;
-just hold it the way you are about to hold *nodes* in Stop 1, as your bookkeeping rather than the
-compiler's.
+graph.** It computes them with
+[union-find](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#UnionFind) instead. Draw
+the graph anyway, to predict with; just hold it the way you are about to hold *nodes* in Stop 1, as
+your bookkeeping rather than the compiler's.
 
 [`connect_primitive_vars`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#connect_primitive_vars) is where a statement becomes merges. It pairs the two connectors'
 members **by name**, then routes each pair by that member's prefix:

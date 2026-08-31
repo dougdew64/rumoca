@@ -279,4 +279,17 @@ current_work = 287
 # A worked audit is included deliberately: this repository's rules go wrong by being
 # stated abstractly and read narrowly, and the audit is what makes the test operable
 # rather than agreeable.
-conditional = 965
+# …then 965 → 979 on 2026-08-31, for the split between a LABEL and a COMPARISON. Doug:
+# "It is much better to perform those comparisons here, only on an as-needed basis rather
+# than always performing those comparisons in the tours."
+#
+# Fourteen lines to draw a line the grounding rules had left blurred, and the evidence
+# that it was blurred is in the same file: rule 2 says naming union-find is enough, and
+# the tour carried a paragraph on union-find anyway — using rule 2's own example. A rule
+# violated by the document that states it is not a rule anyone can apply.
+#
+# The operational half is the reason it earns lines rather than a sentence: **the tell is
+# that a clause needs a conversation to land.** That is not a gap to fill with more prose;
+# it is prose that should have been a name. Without that sentence the natural correction
+# is to EXPAND the clause, which is the opposite of what was wanted.
+conditional = 979

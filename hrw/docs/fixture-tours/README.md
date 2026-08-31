@@ -233,6 +233,20 @@ textbook never answers.
 **So the labelling rule stands and is no longer sufficient.** Label the reader's models, *and* drop
 the ones doing no predictive work. Labelling a useless abstraction only makes it honestly useless.
 
+**But the LABEL goes in the tour and the COMPARISON goes in the conversation** *(Doug,
+2026-08-31)*: *"It is much better to perform those comparisons here, only on an as-needed basis
+rather than always performing those comparisons in the tours."* A few words stop an abstraction
+impersonating the compiler — *"the textbook picture"*, *"Rumoca never builds it"*, *"yours, not the
+compiler's"*. Everything past that — what the code stores **instead**, what the textbook version
+keeps that is never used, what that costs — is a comparison, and it only pays when he **pulls** it.
+
+**This is rule 2 above, and the tour had already overrun it using rule 2's own example.** The
+intro carried *"union-find — one parent index per variable it has touched, no edges stored
+anywhere, answering only 'same set?'"*, which is a paragraph on union-find beside a rule saying
+naming it is enough. Doug asked what it meant; the answer was worth having and belonged in the
+conversation, not the page. **The tell is that a clause needs a conversation to land** — that is
+not a gap to fill with more prose, it is prose that should have been a name.
+
 #### The introduction builds the model; the stops reinforce or break it — 2026-08-31
 
 **Doug**, after a morning spent entirely on one introduction: *"Reading that introduction helps me
