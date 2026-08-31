@@ -575,3 +575,61 @@ constantly and that must stay cheap. It forbids changing it *silently*, the
 **Which passages get marked is Doug's ruling, not Claude's.** Marking a draft as walked would defeat
 purpose 1 quietly, which is the failure this whole entry is about. Agreed approach: **mark during the
 walk, when a correction is made**, and backfill only the ledger-recorded ones.
+
+## 2026-08-30 — the ten walked regions of `connect-expansion` are superseded, on Doug's instruction
+
+**Recorded here because `walked_prose_never_changes_silently` requires it.** That check treats a
+deleted `walked:` region as a regression — *"that prose is a record of what Doug learned"* — and
+allows exactly one alternative: **agree with Doug that it is superseded, and say so here.**
+
+**His instruction, the day tour prose became pointable:** *"I want you to disregard the edits that
+I made to the connections tour and re-write the tour using our new pedagogical agreement. The edits
+which I made no longer make sense."*
+
+### Why they no longer make sense, which is the part worth keeping
+
+The 2026-08-22 walk produced corrections to prose written under the **old** constraint: a tour
+could not be asked questions, so exposition had to pre-empt them. **Most of those corrections were
+improvements to explanation** — a clearer account of nodes versus connection sets, a fuller
+statement of the type-compatibility gap, the residual form spelled out. Under
+[`../DECISIONS.md`](../DECISIONS.md), 2026-08-30, that whole category of prose is now written to
+**provoke** questions instead. Corrections that made an explanation *more complete* are corrections
+to a thing the tour no longer tries to be.
+
+### What was NOT superseded, and was preserved verbatim
+
+- every `**Predict.**`, `**Expected:**` and `**Falsified if**` — the walk's tests;
+- all five guarded tables (`pane-frames`, two `pane-groups`, two `pane-origins`), which are
+  machine-checked against a real compile;
+- the factual corrections his walk produced, as opposed to the expository ones — notably that
+  **"node" is the reader's bookkeeping and appears nowhere in Rumoca or HRW**, which the old prose
+  originally got wrong and which survives in the rewrite as three sentences rather than a section.
+
+### The ten regions retired, named individually because that is what licenses each one
+
+`walked_prose_never_changes_silently` accepts a deletion only when the slug appears here — **the
+slug, not the tour**. A blanket *"I rewrote this tour"* must not license removing regions nobody
+noticed were there, so naming each forces the author to look at what is being retired. That
+mechanism was added the same day, having been promised by the check's own message and never built.
+
+- `opening-what-connect-is`
+- `the-type-claim`
+- `node-is-the-readers-bookkeeping`
+- `stop1-nodes-versus-sets`
+- `stop2-potential-versus-flow`
+- `stop2-what-the-two-kinds-produce`
+- `stop3-the-same-asymmetry-other-side`
+- `stop4-a-resistor-is-seven-equations`
+- `stop4-the-why-column-is-the-definition`
+- `stop5-no-connect-no-expansion`
+
+### The markers came off rather than being re-dated
+
+**Re-dating would have asserted he had walked prose he has never seen.** A `walked:` marker means
+*this passage was walked and corrected*; the rewrite has been neither. New markers get added when
+he walks it. That is the honest reading of the mechanism, and the alternative — a marker carrying
+today's date on text written today by Claude — is precisely the false claim the marker exists to
+prevent.
+
+**451 lines to 341.** The tour is first because he asked for it first: *"I've been focused on that
+tour, trying to get this tour format right."*

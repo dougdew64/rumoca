@@ -1748,6 +1748,11 @@ Some prose.
         let dir = hrw.join("docs/fixture-tours");
         let repo = hrw.parent().expect("hrw lives inside the workspace");
 
+        // Doug's agreement that a walked region is superseded, which is the one thing
+        // that licenses deleting it. Read once; a missing ledger licenses nothing.
+        let ledger =
+            std::fs::read_to_string(hrw.join("docs/question-ledger.md")).unwrap_or_default();
+
         let mut findings: Vec<String> = Vec::new();
         let mut compared = 0usize;
 
@@ -1783,11 +1788,25 @@ Some prose.
 
             for (slug, date, body) in &before {
                 match here.iter().find(|(s, _, _)| s == slug) {
+                    // **A deletion is licensed only by NAMING the slug in the ledger.**
+                    //
+                    // The message below has always offered two ways out — restore it,
+                    // or agree with Doug and record it — and the second had no
+                    // mechanism, so a sanctioned supersession could not pass the gate
+                    // at all. Found 2026-08-30, the first time Doug actually invoked
+                    // it: *"disregard the edits that I made to the connections tour."*
+                    //
+                    // **The slug, not the tour**, and that is the whole strictness of
+                    // it: a blanket "I rewrote this tour" must not license removing
+                    // regions nobody noticed were there. Naming each one forces the
+                    // author to look at what is being retired, which is the act the
+                    // check exists to compel.
+                    None if ledger.contains(slug.as_str()) => {}
                     None => findings.push(format!(
                         "{name}: walked region `{slug}` was DELETED. That prose is a record \
                          of what Doug learned on {date}; removing it is the regression this \
                          check exists for. Restore it, or agree with Doug that it is \
-                         superseded and say so in docs/question-ledger.md."
+                         superseded and name `{slug}` in docs/question-ledger.md."
                     )),
                     Some((_, now, now_body)) if now_body != body && now == date => {
                         findings.push(format!(
