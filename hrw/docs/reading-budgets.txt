@@ -122,7 +122,11 @@
 # should have: the number moves in the same commit as the line it buys, and the reason
 # sits directly above it.
 # …then 1957 → 1960 on 2026-08-31, carrying current_work's +3 and nothing else.
-mandatory = 1960
+# …then 1960 → 1961 on 2026-08-31, for the line indexing `pinned-claims.txt` in
+# docs/README.md — the same one-line cost, for the same reason, as indexing THIS file.
+# Two data files now sit under docs/ holding what used to be constants in `src/`, and an
+# unindexed one is a file nobody finds.
+mandatory = 1961
 
 
 # ===========================================================================

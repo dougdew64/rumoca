@@ -3142,16 +3142,11 @@ Some prose.
             tour.contains("/frame/") && cited.len() >= 2,
             "Stop 2's two frame citations must both be pinned"
         );
-        for claim in [
-            "of sizes 2, 2 and 3",
-            "**6 connection sets** producing **7 equations**",
-        ] {
-            assert!(
-                tour.contains(claim),
-                "Stop 1 no longer states {claim:?}; this check pins that wording and must be \
-                 updated with it, or it silently stops matching the tour it guards"
-            );
-        }
+        // **Stop 1's wording is pinned in `docs/fixture-tours/pinned-claims.txt`**, not
+        // here. The numbers above are proved against a real compile and guard nothing if
+        // the tour has quietly stopped predicting them — but that half needs no compile,
+        // so it moved to `every_pinned_tour_claim_holds` in the FAST suite, where a
+        // reword fails in seconds instead of at the next FULL run.
     }
 
     /// **`f_x[N]` names the same equation in the equation sheet and in the incidence
@@ -3907,6 +3902,102 @@ Some prose.
         println!("stops checked against their kind: {concept_stops} concept, {other_stops} other");
     }
 
+    /// **Every pinned tour claim still holds.**
+    ///
+    /// # What a pin is, and why it is not a test of the prose
+    ///
+    /// A pin does not check that a sentence is *true*. It checks that a sentence **some
+    /// other guard depends on** is still there. `tour_set_sizes_match_the_connection_replay`
+    /// proves against a real compile that `RcCircuit` forms sets of 2, 2 and 3 — and that
+    /// proof guards nothing if Stop 1 has quietly stopped predicting 2, 2 and 3. The pin is
+    /// what makes such a reword loud instead of silent.
+    ///
+    /// # Why the strings are in `docs/` and this test is FAST — 2026-08-31
+    ///
+    /// Doug: *"Why did we have to run the full gate for a tour change?"* Because the tour
+    /// change forced a **checker** change: these strings were hard-coded here, so rewording
+    /// a pinned sentence was a `src/` edit and cost the ~170 s FULL gate — during a phase
+    /// whose whole activity is rewording tours. Same finding as `reading-budgets.txt`, one
+    /// file later: **data about documents was living in code.**
+    ///
+    /// **And it made the guard stronger, not merely cheaper.** `text.contains(…)` reads a
+    /// file and needs no compile; these assertions were slow-gated only because they shared
+    /// a function with ones that DO compile a specimen. Split out, a reword that forgets its
+    /// pin now fails in the fast suite rather than at the next FULL run.
+    ///
+    /// **What still needs FULL, correctly:** a tour's *numbers*. A `<!-- pane-groups -->`
+    /// table or a frame ordinal is checked against a real compile, and no data file changes
+    /// that.
+    #[test]
+    fn every_pinned_tour_claim_holds() {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+        let path = dir.join("pinned-claims.txt");
+        let spec = std::fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("{} must be readable: {e}", path.display()));
+
+        let mut checked = 0usize;
+        let mut bad: Vec<String> = Vec::new();
+        for (i, line) in spec.lines().enumerate() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            // Two separators, so the claim itself may contain `|` without escaping.
+            let mut parts = line.splitn(3, '|');
+            let (Some(tour), Some(kind), Some(claim)) = (parts.next(), parts.next(), parts.next())
+            else {
+                panic!(
+                    "{}:{} is not `<tour> | require|forbid | <text>`: {line}",
+                    path.display(),
+                    i + 1,
+                );
+            };
+            let (tour, kind, claim) = (tour.trim(), kind.trim(), claim.trim());
+
+            // **A pin naming a missing tour fails rather than skipping.** A pin pointing
+            // at nothing is indistinguishable from one that passes, which is the
+            // claims-of-absence trap in a new place.
+            let text = std::fs::read_to_string(dir.join(tour)).unwrap_or_else(|e| {
+                panic!(
+                    "{}:{} pins {tour}, which is not readable: {e}",
+                    path.display(),
+                    i + 1
+                )
+            });
+
+            let present = text.contains(claim);
+            match kind {
+                "require" if !present => bad.push(format!("{tour} no longer says {claim:?}")),
+                "forbid" if present => {
+                    bad.push(format!("{tour} says {claim:?}, which is forbidden"))
+                }
+                "require" | "forbid" => {}
+                other => panic!(
+                    "{}:{} has kind {other:?}; only `require` and `forbid` exist",
+                    path.display(),
+                    i + 1,
+                ),
+            }
+            checked += 1;
+        }
+
+        // Non-vacuity: an empty or unparsed file must not read as "all pins hold".
+        assert!(
+            checked >= 6,
+            "only {checked} pins were read from {} — the file or the parse is broken, \
+             which is worse than a failing pin because it looks like success",
+            path.display(),
+        );
+        assert!(
+            bad.is_empty(),
+            "{} pinned claim(s) no longer hold. A pin marks a sentence another guard \
+             depends on; if the reword is intended, update `pinned-claims.txt` in the \
+             same commit — that file says what each pin is protecting:\n  {}",
+            bad.len(),
+            bad.join("\n  "),
+        );
+    }
+
     /// **No tour calls its units "acts" again.**
     ///
     /// A ratchet, in the shape `app_does_not_regrow_its_field_count` established. The
@@ -4040,20 +4131,16 @@ Some prose.
             PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours/matching-live.md");
         let text = std::fs::read_to_string(&path).expect("matching-live.md must be readable");
 
+        // **The note and the three wrong phrasings are pinned in
+        // `docs/fixture-tours/pinned-claims.txt`**, moved there 2026-08-31 so that
+        // rewording them is a docs change rather than a `src/` one. What stays here is
+        // the part a data file cannot express: the *reason* this tour is special, which
+        // is that `stop`, `break` and `anchor` are all live in it at once and the
+        // Act→Stop rename CREATED that collision rather than exposing one.
         assert!(
-            text.contains("A **break** is where the *debugger* halts execution."),
-            "matching-live.md must open with the note distinguishing stop, break and \
-             anchor. It is the only tour where all three are live, and the note is the \
-             whole mitigation for a collision the Act→Stop rename created.",
+            !text.is_empty(),
+            "matching-live.md is empty; its vocabulary pins would then pass vacuously",
         );
-        for phrase in ["debugger stop", "at every stop", "about a stop"] {
-            assert!(
-                !text.contains(phrase),
-                "matching-live.md says {phrase:?}, which reads as a tour stop in a document \
-                 whose units are stops. Say `break` — the tour already writes `⬤ Break at \
-                 the free-versus-displace decision` and the scheme is `hrw://breakpoint/`.",
-            );
-        }
     }
 
     /// **A `<tour>.md Stop N` reference in the source resolves to a real heading.**
