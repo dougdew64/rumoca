@@ -1,0 +1,245 @@
+# Reading-path budgets
+#
+# The line counts `doc_citations::the_mandatory_reading_path_stays_small` enforces, and
+# the reasoning for every raise each one has taken.
+#
+# ===========================================================================
+# WHY THIS IS A DATA FILE AND NOT A `const` -- 2026-08-31
+# ===========================================================================
+#
+# Doug: "It seems that we trigger a lot of full test runs because of that one file."
+# He was right, and it was measurable. `gate_policy` sends any diff touching `src/` to
+# the FULL gate, and these budgets lived in `src/doc_citations.rs` -- so a PURE PROSE
+# commit that pushed a document over its budget became a `src/` change, and paid ~170 s
+# instead of ~6 s. Two of the twenty commits pushed on 2026-08-31 were exactly that:
+# a tour rewrite and a handoff note, each costing him about three minutes of waiting
+# for a suite that could not observe the change.
+#
+# A budget is DATA ABOUT DOCUMENTS. It moves when a document moves, so it belongs on
+# the docs side of the FAST/FULL line by nature and not merely for convenience. Moving
+# it here makes the gate verdict correct rather than exempting anything: a prose commit
+# that raises a budget is still a prose commit.
+#
+# **What was NOT done, and why.** The first idea was to exempt `doc_citations.rs` from
+# the FULL gate outright, on the premise that all its tests are fast. Four of its 64 are
+# slow-gated -- `tour_group_tables_match_the_real_equation_sheet` and three siblings
+# compile a real specimen -- so that exemption would have skipped exactly the checks
+# guarding `connect-expansion`'s tables. The premise was checked and was false. Editing
+# a CHECKER in that file still means FULL, correctly; only the numbers moved.
+#
+# ---------------------------------------------------------------------------
+# RULES
+# ---------------------------------------------------------------------------
+#
+# Each entry is `name = lines`, and a name with no entry is a hard failure rather than a
+# default -- an absent budget must never read as "no limit".
+#
+# **Raising a budget is allowed; raising it SILENTLY is not.** Every value here is set at
+# the ACHIEVED line count, never with slack, because slack gets used. A raise lands in the
+# same commit as the lines it buys, with the reasoning appended to that budget's block
+# below. That history is the point of this file: it is the record of what each document
+# was allowed to grow for.
+
+
+# ===========================================================================
+# TIER 1 -- the mandatory reading path
+#
+# Every file a session must read before acting: CLAUDE.md, docs/working-with-doug.md,
+# docs/CHARTER.md, docs/README.md. Every session reads all of it before its first
+# action, so this is the number that decides whether the documents become unreadable.
+#
+# --- history --------------------------------------------------
+#
+# 1911 → 1928 on 2026-08-23, and the reasoning is required to be here.
+#
+# **Restoring a check the 2026-08-22 prune deleted.** That prune removed
+# `CLAUDE.md`'s permission-allowlist test along with a stale per-machine
+# setup block — and left **two lines elsewhere in the file still referring
+# to it**, so the file cited a rule it no longer contained.
+#
+# It is worth 17 lines because it is the one precondition whose absence is
+# **silent and fatal**: `.claude/` is gitignored by upstream, so on a new
+# machine every Bash call prompts, and during an unattended run a prompt is
+# indistinguishable from a hang. Doug asked whether a session would discover
+# it automatically this evening. It would not have.
+# 1928 → 1929 → **1924** across 2026-08-23, and the last move was down.
+#
+# Up: a queued unattended run is now named in `Current work`, because the
+# only pointer to it sat inside a paragraph about closing HRW — findable,
+# but not discovery.
+#
+# Down: a one-command machine check replaced a hand-written
+# allowlist check with one command that verifies **everything** a `git pull`
+# does not bring. It covers more and costs fewer lines, so the budget is set
+# to the achieved value rather than left slack — slack gets used.
+#
+# Both moves came from the same finding: **two discoverability defects in one
+# day, both surfaced by Doug asking whether something would be found rather
+# than by any checker.** Every check here verifies a claim is TRUE; none
+# verifies a true claim is REACHABLE.
+# …then 1924 → 1925, an hour later, because the invocation this file
+# documented was WRONG: `pwsh` is not installed on either machine, so the
+# command would have failed with "not recognized" on the first machine switch
+# it was written for. Found by testing it, not by reading it. The extra line
+# names `powershell` and the flags; the script's own .NOTES carries why.
+# …then 1925 → 1931 on 2026-08-25, for a THIRD case in the hung-vs-slow
+# test: the machine slept. That test was two-way and complete-looking, and
+# it produced a confidently wrong diagnosis of a 27,668 s gate step — the
+# same shape as `fmt` missing from a two-gate rule, which this file names as
+# the repository's most frequent failure.
+#
+# Six lines rather than a paragraph because `machine_policy` and
+# `check_machine` now carry the reasoning and the ruling, so the prose here
+# is a pointer. Doug had concluded he needed to remember to disable sleep;
+# the standing answer to a thing got wrong repeatedly is a mechanism, and
+# the reminder would have failed a third time.
+# …then 1931 → 1934 on 2026-08-25, for a new corollary of the absence rule:
+# a stage's OUTCOME is a claim, and `Outcome::Failed` means "the pipeline
+# stopped here", so at most one stage per compile may carry it.
+#
+# Three lines rather than five because the reasoning lives on `no_result_note`
+# and the enforcement on `the_corpus_outcome_matrix_is_unchanged`. It earns a
+# raise rather than a trim elsewhere because it is a **binding rule with a
+# checker**, not commentary: four separate sites had each violated it, and
+# none of the existing corollaries forbade it — they govern invented CONTENT,
+# and this is an invented claim about control flow, carried by a field.
+# …then 1934 → 1945 on 2026-08-30, the same eleven lines as
+# `CURRENT_WORK_BUDGET` below and for the same reason: the tour-passage
+# capture changes how every question is answered, and the two obligations it
+# carries cannot be left to be rediscovered. Nothing else grew.
+# …and stayed at 1945 through 2026-08-31's removal of the walked:/authored:
+# machinery: what those lines cost in CLAUDE.md and working-with-doug.md came
+# back out, and the note recording that they are gone cost about the same.
+# …then 1945 → 1956 on 2026-08-31, carrying `CURRENT_WORK_BUDGET`'s +9 for the
+# in-flight walk state and the owed markdown checker, plus the two lines the
+# `hrw://src` link form costs. The per-section reasoning is on that constant;
+# this aggregate moves with it rather than being argued twice.
+
+# …then 1956 → 1957 on 2026-08-31, for the single line indexing THIS file in
+# docs/README.md. The index is how a document is found at all, and an unindexed one is
+# a document nobody reads — so the row is not optional. Recorded here because this is
+# the first raise made under the new arrangement, and it is the shape every later one
+# should have: the number moves in the same commit as the line it buys, and the reason
+# sits directly above it.
+mandatory = 1957
+
+
+# ===========================================================================
+# CLAUDE.md's `## Current work` section
+#
+# Holds what is IN FLIGHT. A closed arc belongs in DECISIONS.md with a link from here,
+# never restated -- which is how it once reached 882 lines and 45 % of the file.
+#
+# --- history --------------------------------------------------
+#
+# 263 → 264, same commit and same reason as MANDATORY_BUDGET above.
+# …then 264 → 275 on 2026-08-30, for a CAPABILITY rather than a record: Doug
+# can select tour prose, press 🎯, and have it become the point, with a
+# `UserPromptSubmit` hook reporting it on every prompt.
+#
+# **It earns lines because it changes how every question is answered**, which
+# is the test this budget is really applying. A session that does not know a
+# bare "what is this?" now arrives with a referent will either ask Doug to
+# repeat himself or answer the wrong subject — and the second is the failure
+# this repository spends most of its rules on. The two obligations that come
+# with a passage capture (the text is RENDERED, so locate it in the source;
+# and check `walked:` / `authored:` before improving it) are the half that
+# cannot be left to be rediscovered, because getting them wrong rewrites
+# Doug's own prose silently.
+#
+# Three of the eleven were paid back by retiring the marker-region paragraph
+# to its checker, per "a checker retires the prose it replaces".
+# 275 → 284 on 2026-08-31, and both additions are strictly in-flight, which is
+# the only thing this budget accepts. One records that `connect-expansion`'s
+# opening was rewritten code-grounded while **Stops 1 and 2 have not been
+# re-walked against it** — a seam a fresh session would otherwise discover by
+# confusing Doug. The other is OWED WORK: a checker for two markdown traps that
+# cost him five interruptions in one session, offered and not yet built.
+#
+# **Owed work is the case this section exists for.** A `git log` reconstructs
+# what was done; nothing reconstructs what was promised, and an unbuilt promise
+# that no document carries is indistinguishable from one never made.
+
+current_work = 284
+
+
+# ===========================================================================
+# TIER 2 -- conditionally mandatory: docs/fixture-tours/README.md
+#
+# Read before any tour work, so mandatory when it matters. Prose barred from CLAUDE.md
+# must not simply reappear here -- that is displacement, not reduction.
+#
+# --- history --------------------------------------------------
+#
+# 877 → 889 on 2026-08-23, retiring the tour "phase 1/2/3" numbering for
+# **drafting / walking / exploring**. The rename itself was near-neutral; the
+# growth is a short note saying *why not phases* — that "phase" already names
+# Rumoca's eleven compiler phases, which the tours are *about*, and that the
+# numbers implied a sequence which does not hold.
+#
+# It lives in that file rather than `DECISIONS.md` on the same reasoning as
+# `architecture.md`'s scope note: **someone considering renumbering reads the
+# tour README, not the decision log.** Two attempts to pay for it out of the
+# existing text landed 12 lines short, and one of them found a genuine
+# duplication — the budget catching a restatement of a rule 100 lines below it.
+# 889 → 900 on 2026-08-23 for the `<!-- authored: -->` marker, and **both that
+# raise and the marker are gone as of 2026-08-31** — Doug withdrew the goal
+# they served. The lines came back out with them, which is the budget doing
+# exactly what it is for: a mechanism that stops being needed stops being paid
+# for.
+#
+# Paying for it out of existing text was considered and refused: the candidates
+# were all walk documentation, and trimming that to make room for this would
+# trade something proven for something new.
+# 900 → 933 on 2026-08-30, for the rules that follow tour prose becoming
+# POINTABLE: written to provoke questions rather than pre-empt them.
+#
+# **An addition, not displacement**, which is the distinction this budget
+# polices and which the `<!-- authored: -->` raise already had to make. Nothing
+# was pruned from `CLAUDE.md` into here — CLAUDE.md gained lines the same day
+# for the capture itself. These 33 are new doctrine with no prior home, in the
+# one document where tour-writing rules bind.
+#
+# **And they are the half that cannot be left implicit.** "Be terse" invites
+# exactly the wrong reading: terser *expectations* would destroy the
+# falsifiability a walk runs on, and vagueness is not brevity. Rules 4 and 5
+# exist to forbid those two readings, and a rule that states what it does not
+# license is this repository's most-repeated correction.
+# 933 → 854 on 2026-08-31, set to the achieved value after both marker sections
+# were deleted — 80 lines. **Lowered rather than left slack**, which is this
+# table's own rule: slack gets used. A retired mechanism must give its budget
+# back, or the next addition is paid for by a ghost.
+# 854 → 862 on 2026-08-31, for the link-form table — and it is worth naming why
+# this one is cheap. The rule it states was already in this file, written three
+# times about three file types and evaded three times by the next one: notebooks
+# in July, sibling tours in August, `../upstream-issues.md` opening Chrome the day
+# this budget was set. **The +8 buys a table where prose kept being read
+# narrowly**, and the prose it replaces was deleted rather than kept beside it —
+# so the true addition is smaller than the delta. The history did not come here at
+# all; it is on `no_tour_links_to_a_bare_file_path`, which is where a checker's
+# reasoning goes.
+# 862 → 902 on 2026-08-31, for the code-grounding agreement — the largest single
+# raise this budget has taken, and the one with the clearest return. Doug asked
+# for tour explanations grounded in Rumoca's code rather than abstractly
+# mathematical, on the ground that Claude could then CHECK them. The section
+# carries the evidence: all three prose errors he caught that hour were the
+# abstract kind, and each would have been stopped by grounding — including a
+# sentence denying "equality" about a branch that calls
+# `generate_equality_equations`.
+#
+# **This budget exists to stop displacement, and this is the opposite.** It is
+# new doctrine with no prior home, in the one document tour-writing rules bind
+# from, and it governs every tour written after it. The two halves that cannot be
+# left implicit are the ones this repository gets wrong by habit: what the rule
+# does NOT forbid (an abstract model is fine when LABELLED as the reader's — the
+# `node` case), and its failure mode (true, checkable and useless). A rule
+# stating only its positive half is the most-repeated correction in `CLAUDE.md`.
+# 902 → 913 on 2026-08-31, for the `hrw://src` row and the rule beside it. This
+# is the code-grounding agreement's second half arriving: the first made prose
+# NAME code, and Doug immediately asked that those names be reachable — *"much
+# more helpful as links to the code files in VS Code."* Eleven lines, and they
+# buy the property that makes grounding worth its own rule: every code name a
+# tour states is now resolved by `fixture_tours_reference_files_that_exist` in
+# the FAST suite, so a renamed symbol fails a test instead of a walk.
+
+conditional = 913

@@ -116,6 +116,33 @@ mod tests {
         assert!(!needs_full_gate([]), "nothing changed, nothing to gate");
     }
 
+    /// **Raising a reading-path budget is a prose commit, and gates like one.**
+    ///
+    /// This is the whole return on moving those numbers out of `doc_citations.rs` on
+    /// 2026-08-31, so it is pinned rather than assumed. Doug: *"It seems that we trigger a
+    /// lot of full test runs because of that one file."* While the budgets were `const`s in
+    /// `src/`, a prose commit that pushed a document over its limit had to raise one — and
+    /// that single edited number turned a ~6 s gate into a ~170 s one. Two commits pushed
+    /// that day were exactly this shape.
+    ///
+    /// **It changes no verdict that was ever right.** The budgets are data about documents;
+    /// they move when documents move. Editing a *checker* in `doc_citations.rs` still
+    /// means FULL, as the case below requires — which is not a nicety, since four tests in
+    /// that file are slow-gated and guard `connect-expansion`'s tables against a real
+    /// compile.
+    #[test]
+    fn a_budget_bump_beside_prose_stays_fast_but_a_checker_edit_does_not() {
+        assert!(!needs_full_gate([
+            "hrw/docs/reading-budgets.txt",
+            "hrw/docs/fixture-tours/connect-expansion.md",
+            "hrw/CLAUDE.md",
+        ]));
+        assert!(
+            needs_full_gate(["hrw/docs/reading-budgets.txt", "hrw/src/doc_citations.rs"]),
+            "editing the checker itself is still a src/ change",
+        );
+    }
+
     /// **One `src/` file among twenty documents still means FULL.**
     ///
     /// The mixed commit is the case that matters: a session that edits ten tours and
