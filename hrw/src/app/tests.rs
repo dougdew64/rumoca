@@ -2824,6 +2824,55 @@ fn drain_worker_simulated_ok_stores_data() {
     assert!(app.sim_error.is_none());
 }
 
+/// **`CopyCatcher` sees a copy issued by a plugin registered BEFORE it.**
+///
+/// # The property, and why it is the one to pin
+///
+/// egui's `LabelSelectionState` pushes `CopyText` from its own `on_end_pass`, and it is
+/// registered at `context.rs:737`. Anything that hopes to observe that copy must run
+/// **later in the plugin order** — and I got that wrong twice in one evening, in two
+/// different ways, both silent:
+///
+/// 1. reading `ctx.output()` on the next frame — `end_pass` has already taken it;
+/// 2. `Context::on_end_pass`, which registers into egui's `CallbackPlugin` — added at
+///    `context.rs:733`, **four lines before** the selection plugin, so it runs first
+///    and finds nothing.
+///
+/// Neither failure had a symptom of its own: the button simply did nothing, and Doug
+/// could only report the cosmetics around it. **So the ordering gets a test rather than
+/// a third careful reading.**
+///
+/// The emitter stands in for `LabelSelectionState`: registered first, copying from its
+/// own `on_end_pass`. If `CopyCatcher` ever runs before it again, the sink is empty and
+/// this fails by name.
+#[test]
+fn the_copy_catcher_runs_after_plugins_registered_before_it() {
+    struct Emitter;
+    impl egui::Plugin for Emitter {
+        fn debug_name(&self) -> &'static str {
+            "test_emitter"
+        }
+        fn on_end_pass(&mut self, ui: &mut egui::Ui) {
+            ui.copy_text("selected prose".to_owned());
+        }
+    }
+
+    let sink: CopySink = CopySink::default();
+    let mut h = egui_kittest::Harness::new_ui(|_ui| {});
+    // Registered in the same relative order egui uses: the copier first.
+    h.ctx.add_plugin(Emitter);
+    h.ctx.add_plugin(CopyCatcher(std::sync::Arc::clone(&sink)));
+    h.run_steps(2);
+
+    assert_eq!(
+        sink.lock().expect("sink").take().as_deref(),
+        Some("selected prose"),
+        "a copy pushed by an earlier plugin's on_end_pass must be visible to ours \u{2014} \
+         if it is not, the catcher is running too early and the capture silently does \
+         nothing, which is exactly how this shipped twice",
+    );
+}
+
 /// **A stray copy is drained rather than banked, and a 🎯 press collects only its own.**
 ///
 /// # The bug this pins never had a symptom of its own

@@ -599,6 +599,46 @@ anything clickable and it will say which.";
 /// sees it, stashes it here, and `App` collects it on the next frame.
 type CopySink = std::sync::Arc<std::sync::Mutex<Option<String>>>;
 
+/// Catches [`egui::OutputCommand::CopyText`] at the end of a pass, into a [`CopySink`].
+///
+/// # Why a plugin of our own, and not `Context::on_end_pass`
+///
+/// **That convenience wrapper runs too early, and the reason is one line of egui.**
+/// `Context::on_end_pass` registers into egui's `CallbackPlugin` — which `Context::new`
+/// adds *first*, at `context.rs:733`, **before** `LabelSelectionState` at `737`. Plugins
+/// run in registration order, so a callback registered that way fires before the
+/// selection plugin has pushed the copy, and finds nothing. Every time.
+///
+/// A plugin of a distinct type is added when `App::new` calls `add_plugin`, which is
+/// after all four built-ins — so this runs last, sees the command, and still leaves it
+/// in the queue for the backend to put on the clipboard.
+///
+/// **Three attempts, three orderings, and only this one is right.** Reading
+/// `ctx.output()` on the next frame missed it because `end_pass` takes the output;
+/// `on_end_pass` missed it because of the line above. Both failed silently, which is
+/// what made the button look like a click problem for an evening.
+struct CopyCatcher(CopySink);
+
+impl egui::Plugin for CopyCatcher {
+    fn debug_name(&self) -> &'static str {
+        "hrw_copy_catcher"
+    }
+
+    fn on_end_pass(&mut self, ui: &mut egui::Ui) {
+        let copied = ui.ctx().output(|o| {
+            o.commands.iter().rev().find_map(|c| match c {
+                egui::OutputCommand::CopyText(t) if !t.trim().is_empty() => Some(t.clone()),
+                _ => None,
+            })
+        });
+        if let Some(text) = copied
+            && let Ok(mut slot) = self.0.lock()
+        {
+            *slot = Some(text);
+        }
+    }
+}
+
 /// A 🎯 press waiting for egui to hand back the text the reader selected.
 ///
 /// # Why this needs a state machine at all
@@ -1526,31 +1566,16 @@ impl App {
 
         cc.egui_ctx.set_fonts(hrw_font_definitions());
 
-        // **Catch the copy before egui discards it.** Registered here, after egui has
-        // added its own `LabelSelectionState`, because plugins run in registration
-        // order — so by the time this fires the selection plugin has already pushed
-        // `CopyText`, and `end_pass` has not yet taken the output. See [`CopySink`].
+        // **Catch the copy before egui discards it**, with a plugin of our own so it
+        // runs AFTER egui's `LabelSelectionState` rather than before it. See
+        // [`CopyCatcher`] for why the obvious `Context::on_end_pass` wrapper cannot
+        // work — it registers into a plugin egui adds four lines earlier.
         //
         // It observes without consuming: an ordinary Ctrl+C still reaches the
         // clipboard, because the command stays in the queue for the backend.
         let sink: CopySink = CopySink::default();
-        let sink_for_cb = std::sync::Arc::clone(&sink);
-        cc.egui_ctx.on_end_pass(
-            "hrw_catch_copy",
-            std::sync::Arc::new(move |ui: &mut egui::Ui| {
-                let copied = ui.ctx().output(|o| {
-                    o.commands.iter().rev().find_map(|c| match c {
-                        egui::OutputCommand::CopyText(t) if !t.trim().is_empty() => Some(t.clone()),
-                        _ => None,
-                    })
-                });
-                if let Some(text) = copied
-                    && let Ok(mut slot) = sink_for_cb.lock()
-                {
-                    *slot = Some(text);
-                }
-            }),
-        );
+        cc.egui_ctx
+            .add_plugin(CopyCatcher(std::sync::Arc::clone(&sink)));
 
         // Scale the whole UI (fonts + spacing) via egui's zoom, not by mutating
         // individual text styles — so the Settings slider and Ctrl +/− both work.
