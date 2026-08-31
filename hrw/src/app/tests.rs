@@ -352,6 +352,26 @@ impl App {
         }
     }
 
+    /// Seed a captured tour passage, as pressing 🎯 would leave it.
+    ///
+    /// **Sets the point directly rather than driving the button**, deliberately: the
+    /// capture needs a real label selection, which a headless harness cannot make, and
+    /// the copy round trip is already pinned by
+    /// [`the_copy_catcher_runs_after_plugins_registered_before_it`]. What is untested
+    /// without this is the last hop — whether the bar *renders* what was captured.
+    pub(crate) fn test_point_at_tour_passage(&mut self, tour: &str, text: &str) {
+        let seq = self.context.next_seq();
+        self.context.pointed_at = Some(PointedAt {
+            seq,
+            target: text.to_owned(),
+            kind: PointKind::TourPassage {
+                tour: tour.to_owned(),
+            },
+            stage: None,
+            request: bridge::AskRequest::Explain,
+        });
+    }
+
     /// Put the right-hand side into the state a walked-into tour would leave.
     pub(crate) fn test_set_walked_state(&mut self, specimen: &str, model: &str, stage: StageKind) {
         self.selected = Some(PathBuf::from(specimen));

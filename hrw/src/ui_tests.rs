@@ -367,6 +367,45 @@ fn the_three_context_categories_have_distinct_colours() {
     }
 }
 
+/// **A captured tour passage reaches the SCREEN, quoted and claiming no stage.**
+///
+/// # The gap this closes, and why it is exactly the shape that hid all evening
+///
+/// The 🎯 capture landed 2026-08-30 with four tests: the emitted JSON, the summary
+/// wording, the collector's draining, and the plugin ordering. **Not one of them
+/// rendered anything.** Every failure that day was invisible for the same reason — the
+/// pieces were right and nothing checked that they met on screen.
+///
+/// So this asserts the two claims the bar makes about a passage, both of which the
+/// obvious implementation gets wrong:
+///
+/// - **the quotation is shown**, not the `PointKind` name — a row reading *"tour
+///   passage"* would tell Doug nothing about which sentence Claude holds;
+/// - **no stage is named.** `PointedAt::stage` is `None` here, and the row that reports
+///   a point captured elsewhere must stay silent rather than print the tab that happens
+///   to be selected. That shortcut is the one the `Option` was introduced to refuse.
+#[test]
+fn a_captured_tour_passage_is_shown_quoted_and_claims_no_stage() {
+    let _no_ad_hoc = AdHocTour::absent();
+
+    let mut app = App::test_default();
+    app.test_set_ui_mode_specimen();
+    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+    app.test_point_at_tour_passage("connect-expansion", "two separate graphs");
+    let h = harness(app);
+
+    assert!(
+        h.query_by_label_contains("two separate graphs").is_some(),
+        "the bar must quote the passage \u{2014} the reader has to see WHICH sentence \
+         Claude is holding, not merely that a passage was captured",
+    );
+    assert!(
+        h.query_by_label_contains("pointed at in").is_none(),
+        "a passage is not in a phase, so the bar must not name one. `stage` is None \
+         here, and printing the selected tab instead is the shortcut the Option refuses",
+    );
+}
+
 /// **The bar names the open tour**, which is what makes it context rather than
 /// something Claude has to be told.
 ///
