@@ -131,10 +131,14 @@ is ambiguous and must never be read as success**. So:
 
 | how the tour came to be | what may be assumed |
 |---|---|
-| **authored by Doug** — the you-do step, marked `<!-- authored: -->` | he knows it, and **it is not Claude's to rewrite**: report a false claim, never fix it |
 | **co-developed** — he questioned it into shape | he knows its material |
 | **walked, no questions** | ambiguous. Ask before building on it |
 | **written, unwalked** | nothing |
+
+**NOTHING RECORDS WHICH ROW A TOUR IS IN, deliberately since 2026-08-31** — *"that bookkeeping
+doesn't yield enough value."* A fourth row, for prose he authored himself, went with the goal it
+served ([`vision.md`](vision.md), you-do 3, withdrawn the same day). **Judge from the conversation
+and [`question-ledger.md`](question-ledger.md)**, defaulting to *"ask before building on it."*
 
 **One exception to the ceiling: what he brings from outside.** Decades of C/C++/Java, the
 robotics goal in [`vision.md`](vision.md), and any reading he does on his own — he mentioned

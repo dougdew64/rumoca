@@ -687,13 +687,11 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > `the-concepts.md`'s own numbering: **dae-construction → matching (→ matching-live) → blt-ordering
 > → tearing → index-reduction → initialization → solve-lowering → events.**
 >
-> **`connect-expansion` IS BEING RE-WALKED FIRST, and its walked status was retired.** Doug asked
-> for it ahead of `dae-construction`: *"I've been focused on that tour, trying to get this tour
-> format right."* It was rewritten 2026-08-30 under the provoke-questions rules, and its **ten
-> `walked:` regions were deleted with his agreement**, recorded in
-> [`docs/question-ledger.md`](docs/question-ledger.md) — which
-> `walked_prose_never_changes_silently` now requires by name. **No tour carries a walked region
-> today**; `the-concepts` was walked 2026-08-28 and never had one.
+> **`connect-expansion` IS BEING RE-WALKED FIRST**, ahead of `dae-construction`, rewritten
+> 2026-08-30 under the provoke-questions rules. **NOTHING TRACKS WHICH TOURS HAVE BEEN WALKED**
+> since 2026-08-31 — *"that bookkeeping doesn't yield enough value."* The `walked:` and
+> `authored:` markers and both checkers are gone, with the you-do goal the second served. **Do not
+> reintroduce either**; judge from the conversation, per `working-with-doug.md`'s table.
 >
 > **`index-reduction.md` is mid-walk and waits its turn at #6** — asked and ruled: *"I will walk
 > the tours in compiler phase order."* **No exception for the tour already in progress.**
@@ -1283,15 +1281,13 @@ minutes while diagnosing this. `ls -ld` on the directory answers the question in
 - **[`docs/fixture-tours/`](docs/fixture-tours/) — tours that are *tests*, not explanations.**
   Versioned, unlike an ad hoc tour (`.hrw-bridge/tour.md`, gitignored). **Only justified because
   something runs them:** `fixture_tour_links_all_resolve` parses every link on every test run.
-  Three rules, each bought with a defect:
-  - **One tour per capability, narrow.** The scarce resource is **Doug's attention per
-    expectation**, not his walks; a wide tour consumes the surplus that produced the off-stop
-    findings (`docs/ideas.md` #49).
-  - **An expectation must say WHERE to look.** Doug reported "nothing happened" at a stop that
-    was correctly refused with the reason on screen — the tour never said notices live in the
-    status bar.
-  - **Every `**Expected:**` line must be violable.** "Mostly collapsed" where the truth is
-    *fully* collapsed tests nothing, and hedged expectations teach Doug to read them loosely.
+  Three rules, each bought with a defect, and the README carries what each cost:
+  - **One tour per capability, narrow** — the scarce resource is Doug's attention per
+    expectation, not his walks (`docs/ideas.md` #49).
+  - **An expectation must say WHERE to look** — he reported "nothing happened" at a stop
+    correctly refused with the reason on screen, in the status bar the tour never named.
+  - **Every `**Expected:**` line must be violable.** Hedged expectations teach him to read
+    them loosely, and terser prose does not license looser claims.
 - **[`docs/specimen-notebook/`](docs/specimen-notebook/)** — per specimen: `trace/` (durable
   per-stage IR + manifest, from `cargo run --example gen_trace -- <Model>`, **generated and
   therefore correct by construction — any number about a specimen is read from here**) and

@@ -248,32 +248,27 @@ wanted.)*
 |---|---|---|
 | 1 | **Implement Pantelides** — [`ideas.md`](ideas.md) #83 | `pantelides_ladder`: five rungs, rung 1 green and four verified red, against a committed System Modeler oracle |
 | 2 | **Author the visualizations himself** | [`../CLAUDE.md`](../CLAUDE.md)'s two-tier comprehension policy, and its standing rule to *move a computation out before adding one in* whenever one of the five view files is touched |
-| 3 | **Replace Claude's tour content with his own** | `<!-- authored: -->` regions, held by `doc_citations::doug_authored_prose_is_never_edited_silently` |
 
-**The third completes the frame rather than adding to it.** Doug, 2026-08-23: *"Right now, you are
-generating tour content to bootstrap my learning effort. That is kind of like the I-do step…
-Ultimately, I will want to replace your tour content with my manually-authored tour content. That
-will be kind of like the you-do step."*
-[`working-with-doug.md`](working-with-doug.md)'s table of what may be assumed from a tour was
-already I-do and we-do — drafted, walked, co-developed — with **no row for prose he wrote.** It has
-one now.
+**⟶ THE THIRD WAS WITHDRAWN, 2026-08-31.** It read *"replace Claude's tour content with his
+own"*, and Doug retired it outright: *"I have concluded that my goal of replacing Claude's tour
+content with my own is a bad idea. I am completely withdrawing that goal."*
 
-**Three things threaten that step, and are worth knowing before it starts rather than during:**
+**What replaced it is a better instrument for the same end.** Tour prose became *pointable* the
+day before — select a passage, press the target button, ask — so the loop is now *"I will ask you
+questions and then you can make edits to the tour files."* Authoring the prose was a way to test
+whether he understood it; **asking the question that exposes a gap tests the same thing and costs
+a sentence instead of a rewrite.**
 
-- **The tour checks were designed with Claude as the author.** A fixture tour is only justified
-  because something runs it, and several of those checks fail with a Rust test name, or assume the
-  author knows a `##` heading edit means re-running `gen_tour_catalogue`. As guardrails they are
-  right; as a human author's error messages they are uneven.
-- **Nothing recorded whose prose a tour was**, which is what the marker fixes. Without it, a later
-  session finding a stale number in his prose is *licensed by its own instruction* to correct it.
-- **Tours are a sequence now, not independent documents.** One may cite its predecessors instead of
-  re-explaining them, so replacing a tour carries obligations to its neighbours in
-  [`fixture-tours/the-concepts.md`](fixture-tours/the-concepts.md)'s route order.
+**Its whole apparatus went with it**, and that is the point rather than a side effect: the
+`<!-- authored: -->` marker, `<!-- walked: -->` (also withdrawn — *"keeping track of what tours I
+have walked doesn't yield enough value to justify the bookkeeping"*), both checkers, and the
+supersession ceremony built for them. **Doug's own verdict on the request that produced them:**
+*"we have been spending a lot of time running checkers and such because I requested a way for me
+to edit tour files. I think that my request now seems like a bad idea."*
 
-**And the standing answer to a false claim in his prose: report it with evidence, never quietly
-correct it** — the `upstream-issues.md` shape, one level up. Rewriting his explanation would spend
-the exercise the you-do step exists to give him, and would do it invisibly, because prose that
-reads well is indistinguishable from prose that is his.
+**So you-do now rests on the two heavier continuations**, #1 and #2 — which were always the
+substantial ones. That is a real change to the balance of this frame, made deliberately and not
+by drift.
 
 **But the textbook wins one thing, and it is worth borrowing: its projects are SCOPED AND GRADED.**
 A binary acceptance test says when you are *done*; it never says whether you are *on track*. That is
