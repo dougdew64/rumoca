@@ -121,7 +121,8 @@
 # the first raise made under the new arrangement, and it is the shape every later one
 # should have: the number moves in the same commit as the line it buys, and the reason
 # sits directly above it.
-mandatory = 1957
+# …then 1957 → 1960 on 2026-08-31, carrying current_work's +3 and nothing else.
+mandatory = 1960
 
 
 # ===========================================================================
@@ -160,7 +161,12 @@ mandatory = 1957
 # what was done; nothing reconstructs what was promised, and an unbuilt promise
 # that no document carries is indistinguishable from one never made.
 
-current_work = 284
+# …then 284 → 287 on 2026-08-31, for three lines saying that Stop 6 and ScopedConnect have
+# never been walked. Machine-checked numbers and unread prose are different states, and the
+# gate cannot tell them apart — only a reader can. Worth saying explicitly because it is the
+# opposite of the usual risk here: the counts in that stop are verified against a real
+# compile, so the thing left to fail is the explaining, which nothing checks.
+current_work = 287
 
 
 # ===========================================================================

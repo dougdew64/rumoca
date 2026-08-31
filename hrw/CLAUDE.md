@@ -699,6 +699,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > 2026-08-30 under the provoke-questions rules and **again 2026-08-31 under code-grounding** —
 > its opening walks `connections/mod.rs` and every code name is an `hrw://src` link. **Stops 1
 > and 2 have not been re-walked against that opening**; expect the seams to show there first.
+> **Stop 6 and `ScopedConnect` are BRAND NEW and have never been walked** — the specimen was
+> authored 2026-08-31 to falsify Stop 1's "twice the node count" rule, and its numbers are
+> machine-checked but its *prose* has had no reader.
 > **NOTHING TRACKS WHICH TOURS HAVE BEEN WALKED**
 > since 2026-08-31 — *"that bookkeeping doesn't yield enough value."* The `walked:` and
 > `authored:` markers and both checkers are gone, with the you-do goal the second served. **Do not
