@@ -85,7 +85,7 @@ So the count names something the event partition does not contain. The suspect i
 inside `Resistor.mo`, which holds the component's only relation; that part is a **hypothesis**, not
 a finding.
 
-The whole investigation is in [`upstream-issues.md`](../upstream-issues.md), written to be filed.
+The whole investigation is in [`upstream-issues.md`](hrw://doc/upstream-issues.md), written to be filed.
 **A tour that smoothed this over would be teaching you something false about a number you can
 see** — and this one is a genuine Rumoca question, not an HRW defect.
 

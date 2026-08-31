@@ -41,7 +41,7 @@ Incompatible types. 'a' ...  'b' has type 'PinB'.
 **That settles it.** The specimen is genuinely invalid, so Rumoca is the outlier: it has
 a validation that did not fire (`validate_type_compatibility` in
 `rumoca-phase-flatten/src/connections/mod.rs`). Recorded as
-[`docs/upstream-issues.md`](../upstream-issues.md) #2.
+[`docs/upstream-issues.md`](hrw://doc/upstream-issues.md) #2.
 
 ## 📐 Stop 4 — Why this could not be settled inside HRW
 

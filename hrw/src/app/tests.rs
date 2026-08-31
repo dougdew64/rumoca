@@ -3201,6 +3201,27 @@ fn parse_hrw_link_not_hrw_scheme() {
     assert!(parse_hrw_link("https://example.com").is_none());
 }
 
+/// `hrw://doc/` keeps the whole tail, because documents nest.
+///
+/// The one thing this form does that no other link form does: it **rejoins** the
+/// remaining segments instead of matching a fixed count. `splitn(5, '/')` was already
+/// raised from 4 once, when `stage/…/node/<n>` silently glommed into one segment and the
+/// link did nothing on click — the worst outcome in a tour, since the screen says
+/// nothing. A subdirectory path is the same hazard in a new place, so it is pinned here.
+#[test]
+fn parse_hrw_link_doc_keeps_a_nested_path() {
+    assert!(
+        matches!(parse_hrw_link("hrw://doc/upstream-issues.md"), Some(HrwLink::OpenDoc(ref n)) if n == "upstream-issues.md")
+    );
+    assert!(
+        matches!(parse_hrw_link("hrw://doc/compiler-phases/the-chain-of-problems.md"), Some(HrwLink::OpenDoc(ref n)) if n == "compiler-phases/the-chain-of-problems.md")
+    );
+    // A verb with no object is not a link. Resolution is `bridge::resolve_doc`'s job
+    // at click time, matching `hrw://notebook/`; only emptiness is refused here.
+    assert!(parse_hrw_link("hrw://doc/").is_none());
+    assert!(parse_hrw_link("hrw://doc").is_none());
+}
+
 /// **A width the panel had no choice about must not become a remembered fraction.**
 ///
 /// Doug, 2026-08-16: the divider jumps to ~75 % when the window is maximized after
@@ -4183,6 +4204,23 @@ fn fixture_tours_reference_files_that_exist() {
             assert!(
                 bridge::resolve_notebook(name).is_some(),
                 "{} opens notebook {name}, which does not resolve",
+                path.display(),
+            );
+            checked += 1;
+        }
+
+        // And `hrw://doc/<name>` targets, for the same reason one file type later.
+        // The relative-link clause above cannot cover these: a doc link no longer IS a
+        // relative link, so converting one moves it out of that clause's reach — the
+        // exact way the notebook conversion did in 2026-07-30, which is what the
+        // non-vacuity guard below was added for.
+        for link in extract_hrw_links(&text) {
+            let Some(name) = link.strip_prefix("hrw://doc/") else {
+                continue;
+            };
+            assert!(
+                bridge::resolve_doc(name).is_some(),
+                "{} opens document {name}, which does not resolve under hrw/docs/",
                 path.display(),
             );
             checked += 1;

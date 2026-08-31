@@ -2229,7 +2229,16 @@ Some prose.
         // were deleted — 80 lines. **Lowered rather than left slack**, which is this
         // table's own rule: slack gets used. A retired mechanism must give its budget
         // back, or the next addition is paid for by a ghost.
-        const CONDITIONAL_BUDGET: usize = 854;
+        // 854 → 862 on 2026-08-31, for the link-form table — and it is worth naming why
+        // this one is cheap. The rule it states was already in this file, written three
+        // times about three file types and evaded three times by the next one: notebooks
+        // in July, sibling tours in August, `../upstream-issues.md` opening Chrome the day
+        // this budget was set. **The +8 buys a table where prose kept being read
+        // narrowly**, and the prose it replaces was deleted rather than kept beside it —
+        // so the true addition is smaller than the delta. The history did not come here at
+        // all; it is on `no_tour_links_to_a_bare_file_path`, which is where a checker's
+        // reasoning goes.
+        const CONDITIONAL_BUDGET: usize = 862;
 
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let mut total = 0usize;
@@ -3989,6 +3998,93 @@ Some prose.
             bad.len(),
             bad.join("\n  "),
         );
+    }
+
+    /// **A tour never links to a bare file path.**
+    ///
+    /// # The same defect twice, eleven months apart in file type only
+    ///
+    /// A tour is rendered *inside HRW*, and a link egui does not recognise is handed to
+    /// **`open_url`** — the OS browser. So a relative path that reads perfectly in an
+    /// editor becomes, on click, Chrome being asked to fetch `../upstream-issues.md`.
+    ///
+    /// - **2026-07-30** — eighteen links to `.nb` notebooks opened the browser, which does
+    ///   nothing useful with a Wolfram notebook. Fixed by adding the `hrw://notebook/`
+    ///   verb and rewriting them.
+    /// - **2026-08-31** — five tours linked `[upstream-issues.md](../upstream-issues.md)`.
+    ///   Doug: *"causes an attempt to open the file in Chrome instead of attempting to
+    ///   open the file in VS Code."* Fixed by adding `hrw://doc/`.
+    ///
+    /// **The July fix did not generalise because it was a VERB, not a RULE.** Adding
+    /// `hrw://notebook/` fixed the eighteen links that existed and did nothing whatever
+    /// about the nineteenth, or about the first `.md` one — nothing in the repository said
+    /// *"a tour link goes through HRW"*, so the next author wrote the natural markdown and
+    /// no gate disagreed. **This test is the half that generalises**, and it is why the
+    /// `.md` recurrence should be the last of its family: a link to a `.pdf`, a `.csv` or
+    /// a source file now fails here on the day it is written, before it is ever clicked.
+    ///
+    /// # What it does NOT forbid
+    ///
+    /// **`http://` and `https://` are fine, and are not an oversight.** The browser is the
+    /// *correct* destination for a web page — a link to the Modelica specification or to a
+    /// Wolfram documentation page should open exactly where it opens. The defect is never
+    /// "the browser was used"; it is "the browser was used for a **local file**", which it
+    /// cannot resolve at all. Both halves of that are stated so a later session does not
+    /// read this as a ban on leaving HRW.
+    ///
+    /// **It also says nothing about `README.md` or `CATALOGUE.md`**, which
+    /// [`tours_with_kinds`] already excludes: those are read in an editor, where a
+    /// relative path is the right form and `hrw://` would be the broken one. **Same text,
+    /// opposite correct answer, decided by where it is rendered** — which is why the rule
+    /// is scoped to tours rather than to markdown.
+    #[test]
+    fn no_tour_links_to_a_bare_file_path() {
+        let mut bad: Vec<String> = Vec::new();
+        for (name, _kind, text) in tours_with_kinds() {
+            for (i, line) in text.lines().enumerate() {
+                for target in markdown_link_targets(line) {
+                    let ok = target.starts_with("hrw://")
+                        || target.starts_with("https://")
+                        || target.starts_with("http://");
+                    if !ok {
+                        bad.push(format!("{name}.md:{}  ({target})", i + 1));
+                    }
+                }
+            }
+        }
+        assert!(
+            bad.is_empty(),
+            "{} tour link(s) name a path rather than a verb. A tour is rendered inside \
+             HRW, so a link egui does not recognise is handed to the OS BROWSER — which \
+             cannot open a local file and will not try. Use `hrw://doc/<name>.md` for a \
+             document under `hrw/docs/`, `hrw://notebook/<name>.nb` for a Wolfram \
+             notebook, or `hrw://tour/<name>` for another tour. `http(s)://` is fine: the \
+             browser is the right place for a web page.\n  {}",
+            bad.len(),
+            bad.join("\n  "),
+        );
+    }
+
+    /// Every `[text](target)` on one line, as the targets alone.
+    ///
+    /// Deliberately not a markdown parse: a tour's links are authored one per pair of
+    /// brackets and this is the whole grammar in play. It does mean an inline-code span
+    /// containing the sequence would be read as a link — which has not happened, and would
+    /// fail loudly rather than silently if it did.
+    fn markdown_link_targets(line: &str) -> Vec<&str> {
+        let mut out = Vec::new();
+        let mut rest = line;
+        while let Some(open) = rest.find("](") {
+            let after = &rest[open + 2..];
+            match after.find(')') {
+                Some(close) => {
+                    out.push(&after[..close]);
+                    rest = &after[close + 1..];
+                }
+                None => break,
+            }
+        }
+        out
     }
 
     /// **`matching-live.md` keeps its three words apart.**

@@ -2920,6 +2920,22 @@ impl App {
                     "no notebook {name} \u{2014} the link names one that is not here",
                 )),
             },
+            HrwLink::OpenDoc(name) => match bridge::resolve_doc(&name) {
+                Some(path) => {
+                    // **`code`, not the OS association**, which on Doug's machine is
+                    // Chrome. See `HrwLink::OpenDoc`. Failure is reported rather than
+                    // falling back to the browser: a silent fallback would reproduce
+                    // exactly the behaviour he asked to be rid of.
+                    if let Err(e) = std::process::Command::new("code").arg(&path).spawn() {
+                        self.notify(format!(
+                            "could not open {name} in VS Code ({e}) \u{2014} is `code` on PATH?",
+                        ));
+                    }
+                }
+                None => self.notify(format!(
+                    "no document {name} \u{2014} the link names one that is not under hrw/docs/",
+                )),
+            },
             HrwLink::OpenInSystemModeler(name) => match self.find_specimen(&name) {
                 Some(path) => {
                     if let Err(e) = open_with_os(&path) {
@@ -6551,6 +6567,19 @@ enum HrwLink {
     /// The name is resolved by `bridge::resolve_notebook`, which restricts it to a file
     /// name in one of two known directories.
     OpenNotebook(String),
+    /// `hrw://doc/<name.md>` — open a repository document **in VS Code**.
+    ///
+    /// Doug, 2026-08-31: *"the link for upstream-issues.md causes an attempt to open the
+    /// file in Chrome instead of attempting to open the file in VS Code."* Five tours
+    /// carried `[upstream-issues.md](../upstream-issues.md)`, and a relative markdown
+    /// link is handed to the OS as a URL.
+    ///
+    /// **`open_with_os` would not have fixed it**, which is why this verb does not reuse
+    /// it: the OS association for `.md` is whatever the machine says, and on this one it
+    /// is Chrome. A prose document opened in a browser is not wrong so much as useless —
+    /// it renders raw markdown and cannot be edited, and editing is what he is there for.
+    /// So this spawns `code` explicitly.
+    OpenDoc(String),
     /// `hrw://systemmodeler/<Specimen>` — open a specimen in Wolfram System Modeler.
     ///
     /// **The adjudicator verb.** System Modeler is an independent Modelica
@@ -6653,6 +6682,7 @@ impl HrwLink {
             ),
             Self::Follow(name) => format!("follow/{name}"),
             Self::OpenNotebook(name) => format!("notebook/{name}"),
+            Self::OpenDoc(name) => format!("doc/{name}"),
             Self::OpenInSystemModeler(name) => format!("systemmodeler/{name}"),
             Self::ArmBreakpoint(name) => format!("breakpoint/{name}"),
         }
@@ -6716,6 +6746,13 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
             Some(HrwLink::OpenInSystemModeler((*name).to_owned()))
         }
         ["notebook", name] if !name.is_empty() => Some(HrwLink::OpenNotebook((*name).to_owned())),
+        // **Rest-joined, because docs nest.** A notebook is a bare file name; a document
+        // may be `compiler-phases/the-chain-of-problems.md`, so the tail is rejoined
+        // rather than matched as one segment. `bridge::resolve_doc` refuses `..`.
+        ["doc", rest @ ..] if !rest.is_empty() => {
+            let name = rest.join("/");
+            (!name.is_empty()).then_some(HrwLink::OpenDoc(name))
+        }
         ["stage", stage, view, "node", path] => {
             let kind = StageKind::from_slug(stage)?;
             Some(HrwLink::PointAtNode(

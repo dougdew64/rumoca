@@ -164,6 +164,9 @@ pub const FIXTURE_NOTEBOOKS_DIR: &str =
 pub const SCRATCH_NOTEBOOKS_DIR: &str =
     concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/notebooks");
 
+/// The repository documents a tour may link to with `hrw://doc/<name>`.
+pub const DOCS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/docs");
+
 /// Resolve a `hrw://notebook/<name>` target to a file on disk.
 ///
 /// Looks in the fixture directory first, then the scratch one, so a fixture tour keeps
@@ -186,6 +189,39 @@ pub fn resolve_notebook(name: &str) -> Option<PathBuf> {
         .into_iter()
         .map(|dir| Path::new(dir).join(name))
         .find(|p| p.is_file())
+}
+
+/// Resolve `hrw://doc/<name>` to a document under `hrw/docs/`.
+///
+/// # The same defect as [`resolve_notebook`]'s, one file type later
+///
+/// That verb exists because a plain markdown link to a `.nb` is handed to the **browser**,
+/// which does nothing useful with it — Doug hit it on 2026-07-30. **It recurred on
+/// 2026-08-31 with `.md`**: five tours linked `[upstream-issues.md](../upstream-issues.md)`,
+/// and clicking one opened Chrome — *"instead of attempting to open the file in VS Code."*
+/// **The July fix did not generalise because it was a verb, not a rule**: nothing stopped
+/// the next relative link from being written, and
+/// `doc_citations::no_tour_links_to_a_bare_file_path` is the half that does.
+///
+/// # What it refuses, and why a subdirectory is allowed here
+///
+/// A notebook is a bare file name in one of two flat directories. Docs nest —
+/// `compiler-phases/the-chain-of-problems.md` is a legitimate target — so a `/` cannot
+/// simply be banned. **`..` still is**, and the resolved path is checked to be inside
+/// `docs/` afterwards, so a traversal that survives the textual check cannot escape.
+pub fn resolve_doc(name: &str) -> Option<PathBuf> {
+    if name.is_empty() || name.contains('\\') || name.contains("..") || !name.ends_with(".md") {
+        return None;
+    }
+    let root = Path::new(DOCS_DIR);
+    let path = root.join(name);
+    // Belt and braces: refuse anything that does not land under `docs/` once resolved,
+    // whatever the textual check let through.
+    let (real_root, real_path) = (root.canonicalize().ok()?, path.canonicalize().ok()?);
+    if !real_path.starts_with(&real_root) || !real_path.is_file() {
+        return None;
+    }
+    Some(path)
 }
 
 /// List the fixture tours, sorted by file name.
@@ -2292,6 +2328,79 @@ mod tests {
 
         // A name that is well-formed but absent still resolves to nothing.
         assert!(resolve_notebook("no-such-notebook.nb").is_none());
+    }
+
+    /// `hrw://doc/<name>` resolves only to a markdown file under `hrw/docs/`.
+    ///
+    /// **The interesting difference from [`resolve_notebook`] is that a `/` must be
+    /// ALLOWED here** — docs nest, and `compiler-phases/the-chain-of-problems.md` is a
+    /// legitimate target — so the separator cannot carry the refusal the way it does for a
+    /// notebook. `..` still can, and the containment check afterwards is what makes that
+    /// safe rather than merely careful: whatever the textual test lets through, a path
+    /// that does not land inside `docs/` once resolved is refused.
+    ///
+    /// The two are tested the same shape on purpose. A future third verb should be able
+    /// to copy either one and get the refusals right by imitation.
+    ///
+    /// # Each half is proven separately, because must-fire found neither was
+    ///
+    /// The first version of this test listed eight escapes and **passed with either guard
+    /// deleted** — every case was caught twice, so the test proved only that *something*
+    /// refused them. Two cases were added to separate them, and each is here to make one
+    /// specific deletion fail:
+    ///
+    /// - **an absolute path spelled with forward slashes** contains no `\` and no `..`, so
+    ///   the textual check waves it through; `Path::join` then *discards the base* and
+    ///   only the containment check refuses it. This is not a contrived spelling — it is
+    ///   what a path pasted from a URL or a git-bash prompt looks like.
+    /// - **`compiler-phases/../upstream-issues.md`** canonicalises to a real file *inside*
+    ///   `docs/`, so containment is satisfied and only the textual check refuses it. It is
+    ///   refused deliberately rather than tolerated: the link checkers resolve a doc link
+    ///   by its literal name, so a second spelling for the same file is a name they cannot
+    ///   follow.
+    #[test]
+    fn a_doc_name_cannot_escape_the_docs_directory() {
+        // An absolute path into this very checkout, in the spelling the textual guard
+        // does not see. Built rather than hard-coded, so it names a file that exists on
+        // whichever machine is running.
+        let absolute_outside_docs = format!(
+            "{}/CLAUDE.md",
+            env!("CARGO_MANIFEST_DIR").replace('\\', "/")
+        );
+
+        for bad in [
+            "",
+            "..",
+            "../../Cargo.toml",
+            "../CLAUDE.md",                 // one level up is still outside `docs/`
+            r"..\CLAUDE.md",                // the Windows spelling of the same escape
+            r"C:\Windows\System32\eula.md", // absolute, and `join` would honour it
+            "upstream-issues",              // the extension is part of the name
+            "specimens/RcCircuit.mo",       // a real file, but not a document
+            &absolute_outside_docs,         // only the containment check refuses this
+            "compiler-phases/../upstream-issues.md", // only the textual check refuses this
+        ] {
+            assert!(resolve_doc(bad).is_none(), "{bad:?} must be refused");
+        }
+
+        // The document the tours actually link to, and one in a subdirectory — the case
+        // `resolve_notebook`'s rule would have rejected outright.
+        for good in [
+            "upstream-issues.md",
+            "compiler-phases/the-chain-of-problems.md",
+        ] {
+            let found = resolve_doc(good).unwrap_or_else(|| panic!("{good} should resolve"));
+            assert!(found.is_file());
+            assert!(
+                found.starts_with(DOCS_DIR),
+                "{good} must resolve inside docs/, got {}",
+                found.display(),
+            );
+        }
+
+        // Well-formed and absent is still nothing — the same clause as the notebook's,
+        // because a link to a deleted document must fail rather than open something else.
+        assert!(resolve_doc("no-such-document.md").is_none());
     }
 
     /// `parse_path` is exactly `describe_path`'s inverse.

@@ -155,7 +155,7 @@ counted here.
 
 **It is not diagnosed and there are innocent readings** — a dummy-derivative scheme keeps demoted
 states around as algebraic variables, so a *scalar* count of them may be correct and merely named
-confusingly. The investigation is in [`upstream-issues.md`](../upstream-issues.md).
+confusingly. The investigation is in [`upstream-issues.md`](hrw://doc/upstream-issues.md).
 
 **This tour deliberately used `BouncingBall` and `RcCircuit` for its stops**, both of which demote
 nothing, so every number in Stops 1–3 is unaffected. That was a choice to keep the stops clean, and

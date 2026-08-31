@@ -808,9 +808,18 @@ position 21 of 23.
 - **In the closing section** — `Or go back up: [The chain overview](hrw://tour/the-concepts)`
   — for the reader who finished and wants the next phase.
 
-**It must be the `hrw://` form.** A plain `[the-concepts.md](the-concepts.md)` is handed to
-the *operating system* by the commonmark renderer: it opens a text editor, or nothing. Two tours
-carried exactly that and read as done in the source while doing nothing when clicked.
+**AND THAT GOVERNS EVERY LINK IN A TOUR, NOT ONLY LINKS TO TOURS** — a rule stated three times
+about whichever file type was in front of us, and evaded three times by the next one:
+
+| to reach | write |
+|---|---|
+| another tour | `hrw://tour/the-concepts` |
+| a doc under `hrw/docs/` | `hrw://doc/upstream-issues.md` — nesting allowed |
+| a Wolfram notebook | `hrw://notebook/structural-vs-numerical-rank.nb` |
+| a web page | an ordinary `https://` link — **the browser is right here** |
+
+`doc_citations::no_tour_links_to_a_bare_file_path` fails on anything else, in the fast suite, on
+the day it is written; **the three defects and the reasoning live on that test**, not here.
 
 `doc_citations::every_tour_the_overview_links_to_links_back` derives the list from the overview's
 own links and reports the two failures separately, because *no way back* and *a way back that

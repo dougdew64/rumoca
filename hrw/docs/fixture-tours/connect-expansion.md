@@ -28,7 +28,7 @@ dimensions, and **`quantity`** — which separates a voltage from a force when b
 Flatten succeeds, the `connect` contributes no equations, and the model dies three phases later as
 `empty system: no equations or unknowns` — saying nothing about the one line of wiring that caused
 it. System Modeler 15.0 rejects the same model, so this is Rumoca's gap rather than the problem's
-difficulty; it is filed in [`upstream-issues.md`](../upstream-issues.md).
+difficulty; it is filed in [`upstream-issues.md`](hrw://doc/upstream-issues.md).
 
 **The shape worth carrying: the check is strongest where you need it least, and absent where you
 need it most.**

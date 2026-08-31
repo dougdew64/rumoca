@@ -305,7 +305,7 @@ at time = 0.0000477"* — with no mention of index anywhere.
 
 **This is not a defect claim.** Whether general reduction is missing, deferred, or deliberately
 out of scope is a question for Rumoca's maintainers, and it is filed in
-[`upstream-issues.md`](../upstream-issues.md) as a question. What the stop establishes is the
+[`upstream-issues.md`](hrw://doc/upstream-issues.md) as a question. What the stop establishes is the
 **boundary**: you now know what this compiler does, and what it does not.
 
 ---
