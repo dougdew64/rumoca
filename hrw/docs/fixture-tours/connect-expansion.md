@@ -17,21 +17,9 @@ Each stop asks you to **commit to an answer**, then sends you to the pane that s
 answers are read from generated compiler traces, so if a count disagrees with your screen, the tour
 is wrong and I want to know.
 
-### The type claim, and where Rumoca and the language part company
-
-**MLS §9.3 requires connected connectors to be type-compatible, and Rumoca does check.** Four
-validators run on every pair of members it connects: flow against non-flow, primitive type, array
-dimensions, and **`quantity`** — which separates a voltage from a force when both are `Real`.
-
-**But the check runs per matched member PAIR, and members are paired by name.** Wire an electrical
-`Pin` `{v, i}` to a translational `Flange` `{s, f}` and **nothing pairs, so nothing is checked.**
-Flatten succeeds, the `connect` contributes no equations, and the model dies three phases later as
-`empty system: no equations or unknowns` — saying nothing about the one line of wiring that caused
-it. System Modeler 15.0 rejects the same model, so this is Rumoca's gap rather than the problem's
-difficulty; it is filed in [`upstream-issues.md`](hrw://doc/upstream-issues.md).
-
-**The shape worth carrying: the check is strongest where you need it least, and absent where you
-need it most.**
+Rumoca does check that claim — and the check is **strongest where you need it least, absent where
+you need it most.** `RcCircuit` cannot show you why: every `connect` here pairs cleanly, so nothing
+below trips it. Ask me, or read [`upstream-issues.md`](hrw://doc/upstream-issues.md).
 
 ---
 
