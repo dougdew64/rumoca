@@ -12,6 +12,13 @@ There is **one graph per member, and its vertices are variables — never connec
 members `v` and `i`, so there are two graphs: the vertices of one are every `.v` in the model, the
 vertices of the other every `.i`. **They share no vertices**, and neither ever holds a `Pin`.
 
+Those graphs are **yours, like the nodes below — Rumoca builds no such thing.** It uses **union-find**,
+which stores no edges at all and answers only *"same set?"*. It keeps **one global** structure for
+every potential variable in the model, and flow it does not pre-build: flow endpoints pile into a
+plain list and become a union-find **per scope**, afterwards. The per-member split you are about to
+count is **emergent** — nothing ever unions a `.v` with an `.i`, because members are paired by name
+— rather than something the compiler represents.
+
 An edge joins the two sides' **corresponding members, matched by name.** So `connect(src.p, R.p)`
 contributes one edge to each graph — `src.p.v — R.p.v` to the first, `src.p.i — R.p.i` to the
 second — and a member with no counterpart on the other side contributes **no edge at all**. It is
