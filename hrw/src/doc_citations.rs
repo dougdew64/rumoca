@@ -2238,7 +2238,23 @@ Some prose.
         // so the true addition is smaller than the delta. The history did not come here at
         // all; it is on `no_tour_links_to_a_bare_file_path`, which is where a checker's
         // reasoning goes.
-        const CONDITIONAL_BUDGET: usize = 862;
+        // 862 → 902 on 2026-08-31, for the code-grounding agreement — the largest single
+        // raise this budget has taken, and the one with the clearest return. Doug asked
+        // for tour explanations grounded in Rumoca's code rather than abstractly
+        // mathematical, on the ground that Claude could then CHECK them. The section
+        // carries the evidence: all three prose errors he caught that hour were the
+        // abstract kind, and each would have been stopped by grounding — including a
+        // sentence denying "equality" about a branch that calls
+        // `generate_equality_equations`.
+        //
+        // **This budget exists to stop displacement, and this is the opposite.** It is
+        // new doctrine with no prior home, in the one document tour-writing rules bind
+        // from, and it governs every tour written after it. The two halves that cannot be
+        // left implicit are the ones this repository gets wrong by habit: what the rule
+        // does NOT forbid (an abstract model is fine when LABELLED as the reader's — the
+        // `node` case), and its failure mode (true, checkable and useless). A rule
+        // stating only its positive half is the most-repeated correction in `CLAUDE.md`.
+        const CONDITIONAL_BUDGET: usize = 902;
 
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let mut total = 0usize;

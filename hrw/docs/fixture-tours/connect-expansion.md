@@ -4,26 +4,40 @@
 
 [The chain overview](hrw://tour/the-concepts)
 
-`connect(src.p, R.p)` looks like wiring two things together. It is **not an assignment, and not an
-equation between those two connectors** — it is a set of **graph edges**, and no equation exists
-until their **connected components** have been computed.
+`connect(src.p, R.p)` looks like wiring two things together. In Rumoca it is neither an assignment
+nor an equation — it is an instruction to **merge two sets**, and no equation exists until every
+merge is done.
 
-There is **one graph per member, and its vertices are variables — never connectors.** A `Pin` has
-members `v` and `i`, so there are two graphs: the vertices of one are every `.v` in the model, the
-vertices of the other every `.i`. **They share no vertices**, and neither ever holds a `Pin`.
+The textbook picture is a graph: variables as vertices, an edge per `connect`, and the answer is
+each graph's **connected components**. Rumoca computes those components and **never builds the
+graph.** `connections/mod.rs` uses **union-find** — one parent index per variable, no edges stored
+anywhere, answering only *"same set?"*. Draw the graph anyway, to predict with; just hold it the
+way you are about to hold *nodes* in Stop 1, as your bookkeeping rather than the compiler's.
 
-Those graphs are **yours, like the nodes below — Rumoca builds no such thing.** It uses **union-find**,
-which stores no edges at all and answers only *"same set?"*. It keeps **one global** structure for
-every potential variable in the model, and flow it does not pre-build: flow endpoints pile into a
-plain list and become a union-find **per scope**, afterwards. The per-member split you are about to
-count is **emergent** — nothing ever unions a `.v` with an `.i`, because members are paired by name
-— rather than something the compiler represents.
+`connect_primitive_vars` is where a statement becomes merges. It pairs the two connectors'
+members **by name**, then routes each pair by that member's prefix:
 
-An edge joins the two sides' **corresponding members, matched by name.** So `connect(src.p, R.p)`
-contributes one edge to each graph — `src.p.v — R.p.v` to the first, `src.p.i — R.p.i` to the
-second — and a member with no counterpart on the other side contributes **no edge at all**. It is
-therefore also a **claim that the two sides are compatible**, which the language requires a
-compiler to check.
+| the member is | the pair goes to |
+|---|---|
+| `flow` | `flow_pairs` — a plain `Vec`, not merged yet |
+| `stream` | `stream_uf` |
+| neither, so potential | `potential_uf` |
+
+A member with **no counterpart on the other side is routed nowhere at all.** Wire a `Pin` `{v, i}`
+to a `Flange` `{s, f}` and every pairing fails, so nothing merges and nothing is checked — which is
+why `connect` is also a **compatibility claim**, and why the language requires a compiler to test it.
+
+Notice what is not symmetric there. `potential_uf` and `stream_uf` exist, empty, before the first
+statement is read; flow is a **list that becomes a union-find per scope, afterwards.** That is a
+rule about equations wearing a data structure's clothes: potential merging can be global, because
+n − 1 equalities come out the same whether sets are split or merged, while a flow sum must be
+scoped or it conserves the wrong thing.
+
+What comes out is a `Vec<ConnectionSet>`, each carrying `variables`, `kind` and `scope` — so a
+connection set is **a set of variables of one kind**, never a set of connectors. `kind` picks the
+generator: `Potential` calls `generate_equality_equations`, `Flow` calls `generate_flow_equation`.
+The replay you are about to step through is that pair of acts, once per set — `SetFormed`, then
+`EquationsGenerated`.
 
 **This tour counts.** `RcCircuit` has four `connect` statements and twenty-three equations, and every
 step from one number to the other is something you can predict before you look.
@@ -86,17 +100,16 @@ Four statements, three nodes — because **`src.n` appears twice**, so `connect(
 
 *That table is your paper written out. Nothing in HRW draws it.*
 
-**Nothing downstream ever groups connectors** — the two graphs from the opening, filled in:
+**Nothing downstream ever groups connectors.** Pairing by name means a merge never crosses from one
+member to another, so what you drew comes out as one graph per member:
 
 | graph | vertices | edges from `connect(src.p, R.p)` |
 |---|---|---|
 | **potential** | every `.v` | `src.p.v — R.p.v` |
 | **flow** | every `.i` | `src.p.i — R.p.i` |
 
-Each graph is asked for its **connected components**, and each yields three of sizes 2, 2 and 3.
-Modelica calls one component a **connection set** (MLS §9.2) — a set of variables *of one kind*,
-never a set of connectors. Rumoca computes them with **union-find**, in
-`crates/rumoca-phase-flatten/src/connections/mod.rs`.
+Each graph yields three **connected components**, of sizes 2, 2 and 3. Modelica calls one component
+a **connection set** (MLS §9.2), which is the `ConnectionSet` the opening named.
 
 **So six is three nodes × two kinds.** The replay never counts nodes, because the compiler never
 forms them. Step through and they arrive in two runs of three — **the flow sets first, then the

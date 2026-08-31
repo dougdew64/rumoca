@@ -4605,3 +4605,31 @@ prose, ceremony and a sunk cost that argues for the goal.
 Nothing now makes a silently lost tour correction **loud**. The mitigations are that Doug re-walks
 tours and that the prose is short enough to read whole. That is weaker than a checker, and it is
 the trade he chose knowingly.
+
+## 2026-08-31 — tour prose is grounded in Rumoca's code; the textbook supplies the question
+
+**Doug:** *"rather than provide tour explanations which seem abstractly mathematical in the same
+way that textbook explanations are, perhaps it would be better to use that textbook math as
+inspiration for providing explanations which are grounded in Rumoca code reality."* His stated
+reason is the one that makes this more than taste: *"it would be easier for you to provide tour
+explanations which you could check for correctness."*
+
+**He was right, and the evidence was one hour old.** He had just caught three prose errors in
+`connect-expansion`, all abstract, and every one would have been stopped by grounding:
+`generate_equality_equations` refutes "nor an equality"; `UnionFind` storing no edges refutes "an
+edge in each of several graphs"; one global `potential_uf` refutes "one graph per member".
+
+**The asymmetry that makes it a rule.** An abstract claim has nothing to be wrong against — no
+reading refutes it, no checker can, and it surfaces only when it collides with something months
+later. A grounded claim is refutable in minutes, **and Doug can refute it himself by opening the
+file**, which shifts verification to the one participant who cannot currently do any.
+
+**Two boundaries recorded with it, because a rule stating only its positive half is this
+repository's most-repeated correction.** Where there is no code counterpart the gap is often the
+lesson — `node` exists precisely because Rumoca has none — so abstract models stay legal and must
+be **labelled as the reader's**. And the failure mode is *true, checkable and useless*: naming a
+type teaches nothing, while the contrast and the rationale are what land.
+
+**Recorded in [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md)** and applied first to
+`connect-expansion`'s opening, at his request. The mandatory-reading budget rose 862 → 902 to hold
+it, with the reasoning on the constant.

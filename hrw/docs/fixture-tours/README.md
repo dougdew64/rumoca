@@ -187,6 +187,46 @@ the failure this repository exists to prevent.
 conversion rule below already gives. `connect-expansion` is first, at his request: it is the tour
 he has been using to get the format right.
 
+### ⟶ GROUND EVERY CLAIM IN RUMOCA'S CODE, WITH THE TEXTBOOK AS THE QUESTION — 2026-08-31
+
+**Doug:** *"rather than provide tour explanations which seem abstractly mathematical in the same
+way that textbook explanations are, perhaps it would be better to use that textbook math as
+inspiration for providing explanations which are grounded in Rumoca code reality."* And the reason
+he offered, which is the strong one: *"it would be easier for you to provide tour explanations
+which you could check for correctness."*
+
+**The evidence is that all three errors he caught in one hour were the abstract kind, and every
+one would have been stopped by grounding:**
+
+| the claim | what grounding forces you to look at |
+|---|---|
+| "neither an assignment nor an equality" | `Potential` dispatches to `generate_equality_equations` |
+| "an edge in each of several graphs" | `UnionFind` — no vertices, no edges, only `union`/`find` |
+| "one graph per member" | one global `potential_uf`; flow not pre-built at all |
+
+The first is the sharpest: the sentence denied equality about a branch that calls a function with
+*equality in its name*. **An abstract claim has nothing to be wrong against**, so no reading and no
+checker can refute it — only a collision months later, which is the failure this repository exists
+to prevent. A grounded claim can be refuted in three minutes, and Doug can refute it himself by
+opening the file, which an abstract one never lets him do.
+
+**Do not read this as "only say what is in the code."** Where there is no code counterpart, that
+gap is frequently the lesson — `node` is the standing example, invented by the reader precisely
+because Rumoca has none, and the mismatch is the whole of `connect-expansion` Stop 1. **The rule is
+that every claim states which side it is on**, so an abstract model is labelled as the reader's
+bookkeeping rather than impersonating a description of the compiler.
+
+**And the failure mode to avoid: true, checkable and useless.** *"`potential_uf` is an `IndexMap`
+plus two `Vec`s"* passes every test here and teaches nothing. What lands is the **contrast and the
+rationale** — what union-find refuses to store, why potential is global while flow is scoped. Stay
+conceptual; be conceptual **about the artifact that exists**, with the textbook supplying the
+question rather than the answer.
+
+**The mechanical payoff, which is why this outranks style.** `doc_citations` already checks that
+cited paths exist and symbols resolve, so a claim naming `generate_equality_equations` can be
+wired into the gate. A claim about "graphs" can never be. This is
+[`../../CLAUDE.md`](../../CLAUDE.md)'s *bias to checkable output*, applied to prose.
+
 ### Correctness is Claude's job. Effectiveness is Doug's, and Claude cannot do it at all
 
 **This corrects something Claude wrote on 2026-08-22** — that Doug is the instrument for whether
