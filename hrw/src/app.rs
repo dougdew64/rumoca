@@ -5173,7 +5173,9 @@ impl App {
     ///
     /// Runs once per compile, after the new stages land. Only `PointKind::Node`
     /// can dangle — a stage or specimen point names something that exists by
-    /// construction.
+    /// construction, and **a tour passage is not in the compile at all**, so
+    /// recompiling a specimen cannot invalidate it. The arm below says so; this
+    /// sentence said "a stage or specimen point" until the variant existed.
     ///
     /// The **follow is deliberately not validated**: it is a name, not an
     /// address, and a name matching nothing is already reported honestly as

@@ -1567,8 +1567,22 @@ fn build(ask: &Ask) -> Value {
     // `hrw://stage/<X>` could not parse, for two of the eleven stages. The capture is
     // read by Claude in order to *act*, so the actionable form wins; `stage_display`
     // carries the prose label alongside it.
-    let stage_str = ask.stage.map_or("(navigated definition)", StageKind::slug);
-    let stage_display = ask.stage.map_or("(navigated definition)", StageKind::name);
+    // **`None` needs a REASON, not one spelling, since 2026-08-31.** There had been a
+    // single sentinel — *"(navigated definition)"* — because that was the only way a
+    // capture could lack a stage. A tour passage is now the second, and it emitted the
+    // first one's text: `kind: "tour_passage"` beside `stage: "(navigated definition)"`,
+    // two contradictory claims about one capture. Found by a column read of the arms
+    // added the day before, which is the tool's own advertised yield: a list of siblings
+    // where one member is wrong.
+    //
+    // Absence stated, and stated *accurately* — the same rule that made the field an
+    // `Option` rather than letting it borrow whichever stage was selected.
+    let no_stage = match ask.focus {
+        Focus::TourPassage { .. } => "(tour prose, not a compile phase)",
+        _ => "(navigated definition)",
+    };
+    let stage_str = ask.stage.map_or(no_stage, StageKind::slug);
+    let stage_display = ask.stage.map_or(no_stage, StageKind::name);
     let mut doc = json!({
         "instructions": INSTRUCTIONS,
         "seq": ask.seq,
@@ -2181,10 +2195,10 @@ mod tests {
     /// The file is what Claude actually reads, so this is the half that matters for
     /// accuracy. Three claims, each of which the obvious implementation gets wrong:
     ///
-    /// - `stage` is the *"(navigated definition)"* sentinel rather than a phase name.
-    ///   `Ask::stage` is already `Option` for navigated definitions, which is why the
-    ///   passage needed no new spelling — but it must not name a phase, because prose
-    ///   is not in one and a reader acting on "Parse" would go to the wrong place.
+    /// - `stage` names **why** there is no stage, not merely that there is none. It
+    ///   first emitted *"(navigated definition)"* — the only sentinel that existed —
+    ///   which was a false claim standing beside `kind: "tour_passage"`. A column read
+    ///   found it the next day: absence must be stated *accurately*, not just stated.
     /// - `kind` is `tour_passage`, distinguishable from the three IR shapes.
     /// - the passage section names the **file**, because the emitted text is what the
     ///   pane rendered and will not match the markdown byte-for-byte.
@@ -2219,8 +2233,10 @@ mod tests {
         let doc = build(&ask);
         assert_eq!(doc["kind"], "tour_passage");
         assert_eq!(
-            doc["stage"], "(navigated definition)",
-            "prose is not in a phase; naming one would send Claude to the wrong place",
+            doc["stage"], "(tour prose, not a compile phase)",
+            "the sentinel must say WHY there is no stage \u{2014} \u{201c}(navigated \
+             definition)\u{201d} was a false claim about this capture, and naming a \
+             phase would send Claude to the wrong place entirely",
         );
         assert_eq!(doc["tour_passage"]["tour"], "dae-construction");
         assert_eq!(
