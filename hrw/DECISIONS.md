@@ -4565,3 +4565,43 @@ Rules in [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md); pedagog
 is first, at his request**, because it is the tour he has been using to get the format right.
 Its ten `walked:` regions mean any prose edit inside one **re-dates that marker in the same
 commit**, which is the acknowledgement `walked_prose_never_changes_silently` demands.
+
+## 2026-08-31 — the walked:/authored: machinery is retired, and "protect it before it is needed" has a failure mode
+
+**Doug withdrew both goals it served**: replacing Claude's tour prose with his own (`vision.md`
+you-do continuation 3), and tracking which tours he has walked. 731 lines removed, 54 added.
+
+### The signal I built and did not read
+
+**`authored:` was used exactly zero times in the seven days it existed.** `walked:` had ten uses,
+all deleted the day before. Both protected *Doug editing tour files*, and the 🎯 capture replaced
+editing with asking — so **the premise failed, not the mechanism.**
+
+**And his diagnosis was better than the obvious one.** He said *"we have been spending a lot of
+time running checkers"*; the checkers cost **6 seconds**. What cost time was the **ceremony** —
+and the day before, I had to build a *second* mechanism purely to let a sanctioned deletion pass
+the gate.
+
+**⟶ A MECHANISM THAT NEEDS ANOTHER MECHANISM TO PERMIT ITS INTENDED USE IS THE SIGNAL.** That one
+was two hours old when it was deleted, and I wrote it without noticing what it was telling me.
+
+### The tension with a principle this repository still holds, and should
+
+[`docs/vision.md`](docs/vision.md) says each you-do continuation should be *"protected and enabled
+**before** it is needed — the acceptance criterion captured while it is cheap, not on the day it is
+wanted."* That principle produced `authored:`, which was never used at all.
+
+**The principle is not wrong, and #1 is the proof**: `pantelides_ladder` was built ahead of need
+and is genuinely load-bearing. **What distinguishes them is whether the GOAL was settled.** #1 is a
+goal Doug has restated repeatedly and staked a degree on. #3 was a plausible-sounding step named
+once in passing, and building its apparatus made it feel more committed than it was.
+
+**So the refinement: protect a continuation ahead of need when the GOAL is settled, not when the
+step merely sounds plausible.** Cheap insurance on an unsettled goal is not cheap — it accrues
+prose, ceremony and a sunk cost that argues for the goal.
+
+### What is lost, stated rather than glossed
+
+Nothing now makes a silently lost tour correction **loud**. The mitigations are that Doug re-walks
+tours and that the prose is short enough to read whole. That is weaker than a checker, and it is
+the trade he chose knowingly.
