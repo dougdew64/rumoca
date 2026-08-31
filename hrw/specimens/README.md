@@ -35,6 +35,7 @@ file wins.
 | `TwoLoops` | Two algebraic loops in series → two coupled blocks, sequenced |
 | `MixedLoop` | Loop bracketed by scalar solves — BLT ordering made visible |
 | `RcCircuit` | Initialization / IC planning — a well-posed RC |
+| `ScopedConnect` | `connect` at two hierarchy levels — potential sets span scopes, flow sets do not |
 | `CapacitorLoop` | RC initialization blow-up — a capacitor across an ideal source |
 | `OverInitRc` | Conflicting initial equations over-determine the capacitor state |
 | `BouncingBall` | Events / hybrid structure — a state event with `reinit` |

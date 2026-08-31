@@ -1,0 +1,301 @@
+{
+  "summary": {
+    "condition_equations": 0,
+    "relations": 0,
+    "discrete_real_updates": 0,
+    "discrete_valued_updates": 0,
+    "zero_crossing_conditions": 2,
+    "scheduled_time_events": 0
+  },
+  "conditions": {
+    "equations_f_c": [],
+    "relations": []
+  },
+  "discrete_updates": {
+    "real_updates_f_z": [],
+    "valued_updates_f_m": []
+  },
+  "events": {
+    "zero_crossing_conditions": [
+      {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "Binary": {
+              "op": "Add",
+              "lhs": {
+                "Literal": {
+                  "value": {
+                    "Real": 1.0
+                  },
+                  "span": {
+                    "source": 17631980999968599698,
+                    "start": 619,
+                    "end": 620
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "Literal": {
+                      "value": {
+                        "Real": 0.0
+                      },
+                      "span": {
+                        "source": 17631980999968599698,
+                        "start": 623,
+                        "end": 628
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "Binary": {
+                      "op": "Sub",
+                      "lhs": {
+                        "VarRef": {
+                          "name": {
+                            "name": "seg1.R.T_heatPort",
+                            "component_ref": {
+                              "local": false,
+                              "span": {
+                                "source": 18355245647093129072,
+                                "start": 819,
+                                "end": 844
+                              },
+                              "parts": [
+                                {
+                                  "ident": "seg1",
+                                  "span": {
+                                    "source": 18355245647093129072,
+                                    "start": 819,
+                                    "end": 844
+                                  },
+                                  "subs": []
+                                },
+                                {
+                                  "ident": "R",
+                                  "span": {
+                                    "source": 18355245647093129072,
+                                    "start": 819,
+                                    "end": 844
+                                  },
+                                  "subs": []
+                                },
+                                {
+                                  "ident": "T_heatPort",
+                                  "span": {
+                                    "source": 18355245647093129072,
+                                    "start": 819,
+                                    "end": 844
+                                  },
+                                  "subs": []
+                                }
+                              ],
+                              "def_id": 39503
+                            }
+                          },
+                          "subscripts": [],
+                          "span": {
+                            "source": 17631980999968599698,
+                            "start": 630,
+                            "end": 640
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "Literal": {
+                          "value": {
+                            "Real": 300.15
+                          },
+                          "span": {
+                            "source": 17631980999968599698,
+                            "start": 643,
+                            "end": 648
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 17631980999968599698,
+                        "start": 630,
+                        "end": 648
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 17631980999968599698,
+                    "start": 623,
+                    "end": 648
+                  }
+                }
+              },
+              "span": {
+                "source": 17631980999968599698,
+                "start": 619,
+                "end": 648
+              }
+            }
+          },
+          "rhs": {
+            "Literal": {
+              "value": {
+                "Real": 2.220446049250313e-16
+              },
+              "span": {
+                "source": 17631980999968599698,
+                "start": 654,
+                "end": 676
+              }
+            }
+          },
+          "span": {
+            "source": 17631980999968599698,
+            "start": 619,
+            "end": 676
+          }
+        }
+      },
+      {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "Binary": {
+              "op": "Add",
+              "lhs": {
+                "Literal": {
+                  "value": {
+                    "Real": 1.0
+                  },
+                  "span": {
+                    "source": 17631980999968599698,
+                    "start": 619,
+                    "end": 620
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "Literal": {
+                      "value": {
+                        "Real": 0.0
+                      },
+                      "span": {
+                        "source": 17631980999968599698,
+                        "start": 623,
+                        "end": 628
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "Binary": {
+                      "op": "Sub",
+                      "lhs": {
+                        "VarRef": {
+                          "name": {
+                            "name": "seg2.R.T_heatPort",
+                            "component_ref": {
+                              "local": false,
+                              "span": {
+                                "source": 18355245647093129072,
+                                "start": 819,
+                                "end": 844
+                              },
+                              "parts": [
+                                {
+                                  "ident": "seg2",
+                                  "span": {
+                                    "source": 18355245647093129072,
+                                    "start": 819,
+                                    "end": 844
+                                  },
+                                  "subs": []
+                                },
+                                {
+                                  "ident": "R",
+                                  "span": {
+                                    "source": 18355245647093129072,
+                                    "start": 819,
+                                    "end": 844
+                                  },
+                                  "subs": []
+                                },
+                                {
+                                  "ident": "T_heatPort",
+                                  "span": {
+                                    "source": 18355245647093129072,
+                                    "start": 819,
+                                    "end": 844
+                                  },
+                                  "subs": []
+                                }
+                              ],
+                              "def_id": 39533
+                            }
+                          },
+                          "subscripts": [],
+                          "span": {
+                            "source": 17631980999968599698,
+                            "start": 630,
+                            "end": 640
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "Literal": {
+                          "value": {
+                            "Real": 300.15
+                          },
+                          "span": {
+                            "source": 17631980999968599698,
+                            "start": 643,
+                            "end": 648
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 17631980999968599698,
+                        "start": 630,
+                        "end": 648
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 17631980999968599698,
+                    "start": 623,
+                    "end": 648
+                  }
+                }
+              },
+              "span": {
+                "source": 17631980999968599698,
+                "start": 619,
+                "end": 648
+              }
+            }
+          },
+          "rhs": {
+            "Literal": {
+              "value": {
+                "Real": 2.220446049250313e-16
+              },
+              "span": {
+                "source": 17631980999968599698,
+                "start": 654,
+                "end": 676
+              }
+            }
+          },
+          "span": {
+            "source": 17631980999968599698,
+            "start": 619,
+            "end": 676
+          }
+        }
+      }
+    ],
+    "scheduled_time_events": []
+  }
+}

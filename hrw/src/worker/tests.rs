@@ -5946,6 +5946,10 @@ fn the_corpus_outcome_matrix_is_unchanged() {
         ("NonlinearLoop", "OOOOOOOOOOO"),
         ("ProportionalLoop", "OOOOOOOOOOO"),
         ("RcCircuit", "OOOOOOOOOOO"),
+        // `connect`s at two hierarchy levels, and clean all the way through —
+        // deliberately, since the point it makes is about how sets are BUILT and a
+        // failure anywhere would give the reader something else to look at.
+        ("ScopedConnect", "OOOOOOOOOOO"),
         ("SingleInertia", "OOOOOOOOOOO"),
         ("TwoLoops", "OOOOOOOOOOO"),
         // Initialization relaxed something and said so.

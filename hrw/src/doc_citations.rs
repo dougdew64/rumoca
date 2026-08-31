@@ -2840,6 +2840,10 @@ Some prose.
         const PANES: &[(&str, &str)] = &[
             ("connect-expansion.md", "RcCircuit"),
             ("connect-expansion.md", "TwoLoops"),
+            // Stop 6's specimen, added 2026-08-31. Its whole point is a pair of counts
+            // that DISAGREE — 8 potential rows against 7 flow — so a hand-count is
+            // exactly the thing not to trust here.
+            ("connect-expansion.md", "ScopedConnect"),
         ];
 
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));

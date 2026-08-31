@@ -342,6 +342,79 @@ equation indices map straight onto its source, which is why `blt-ordering.md` us
 
 ---
 
+## Stop 6 — Does "twice the node count" survive a second level?
+
+Stop 1 left you a rule: **the set count comes out twice the node count.** It held for `RcCircuit`,
+and `RcCircuit` cannot test it, because **all four of its connects sit at root scope.**
+
+`ScopedConnect` puts a resistor behind two pins inside a `Segment`, wires it **there**, and wires
+the segments to each other and to a source at the **top level**:
+
+```modelica
+model Segment
+  Pin p; Pin n; Resistor R(R = 50);
+equation
+  connect(p, R.p);        // declared at scope `seg1` / `seg2`
+  connect(R.n, n);
+end Segment;
+// ...and at root: src.p—seg1.p, seg1.n—seg2.p, seg2.n—src.n, src.n—gnd.p
+```
+
+Three junctions, the same as `RcCircuit`. Eight `connect` statements instead of four.
+
+> **Predict.** How many **potential** sets and how many **flow** sets? The rule from Stop 1 says
+> the two counts are equal. Commit to that, or to a reason it breaks.
+
+[Look — ScopedConnect → Flatten → Equations](hrw://load/ScopedConnect/Flatten/EquationSheet)
+
+**Expected:** they are **not** equal — **8** potential equality rows and **7** flow conservation
+rows:
+
+<!-- pane-groups: ScopedConnect -->
+
+| group | rows |
+|---|---|
+| `Component equations` | 19 |
+| `Potential equality` | 8 |
+| `Flow conservation` | 7 |
+
+**Falsified if** the two connector groups hold the same number of rows, or if the potential rows
+are not 8 — which is *n* − 1 over sets of 3, 4 and 4.
+
+### What just happened
+
+**Three junctions produced three potential sets and seven flow sets.** The rule broke, and the
+introduction said why before you got here: potential merges in **one global** union-find, flow in
+**one per scope**.
+
+Follow a single junction — `src.p`, `seg1.p`, `seg1.R.p` — through both:
+
+**As potential — one set of three, spanning both scopes:**
+
+```text
+seg1.p.v = seg1.R.p.v          (wired inside Segment)
+seg1.R.p.v = src.p.v           (wired at root)
+```
+
+**As flow — two sums, one per scope:**
+
+```text
+-seg1.p.i + seg1.R.p.i = 0     (scope seg1)
+src.p.i + seg1.p.i = 0         (root)
+```
+
+**So `seg1.p.i` is in two connection sets at once, and that is correct.** The inner sum is the
+segment's own current balance; the outer is the balance where the segment meets the circuit. A
+single sum across both would say that current entering `seg1` through its pin vanishes — which is
+the thing Kirchhoff's law exists to forbid. A single potential *equality* across both is exactly
+right, because a junction is at one voltage no matter which file wired it.
+
+**And that is the intro's asymmetry made visible:** merging potential across scopes changes
+nothing, since *n* − 1 equalities come out the same whether the sets are split or merged. Merging
+*flow* across scopes changes the physics.
+
+---
+
 ## What comes next in the chain
 
 The flat model is a pile of equations with no order and no classification. **DAE construction**

@@ -47,7 +47,7 @@ This is a test, not an explanation. It exists so Doug can verify the half of cam
 
 This tour counts. `RcCircuit` has four `connect` statements and twenty-three equations, and every
 
-- **Specimens:** `RcCircuit`, `TwoLoops`
+- **Specimens:** `RcCircuit`, `TwoLoops`, `ScopedConnect`
 - **Stages:** `Flatten`
 - **Stops:**
   - `flatten-what-connect-actually-means` — Flatten — what `connect` actually means
@@ -56,6 +56,7 @@ This tour counts. `RcCircuit` has four `connect` statements and twenty-three equ
   - `stop-3-which-rows-belong-to-the-same-node` — Stop 3 — Which rows belong to the same node?
   - `stop-4-how-big-is-a-four-component-circuit` — Stop 4 — How big is a four-component circuit?
   - `stop-5-what-if-there-are-no-connectors-at-all` — Stop 5 — What if there are no connectors at all?
+  - `stop-6-does-twice-the-node-count-survive-a-second-level` — Stop 6 — Does "twice the node count" survive a second level?
   - `what-comes-next-in-the-chain` — What comes next in the chain
   - `what-this-tour-cannot-check` — What this tour cannot check
 
