@@ -166,6 +166,47 @@ every other limit in this repository has been.
 
 ## Run log
 
+### Night 6 — 2026-08-31. Item 1: the queued conversion is NOT WORTH DOING, and the plan's premise was wrong
+
+**Zero conversions, deliberately.** The queued item said *"71 call sites use
+`compile_specimen_shared` and are free after the first; **17 call `w.compile(` directly** and pay
+~3.4 s each, because every specimen compile re-resolves the whole MSL."*
+
+**That last clause is false for most of them.** Fourteen direct sites survive (twelve in
+`worker/tests.rs`, two in `worker/test_msl.rs`, one of which *is* the helper's own body). **Seven
+build a bare `WorkerState::new()`** — no libraries set, so there is no MSL to re-resolve and the
+compile is nearly free. Measured, three runs each:
+
+| | measured |
+|---|---|
+| two bare-session compiles, together | **555 / 571 / 548 ms** — mostly cargo's own start-up |
+| one MSL-loaded compile | **3476 / 3498 / 3408 ms** |
+
+**Converting those seven would make the suite SLOWER**, because `compile_specimen_shared` compiles
+against the MSL. The saving the item was queued to collect does not exist there.
+
+**And every site that DOES pay the 3.4 s cannot convert**, each for its own reason — which is the
+work the item actually asked for:
+
+| site | why it stays |
+|---|---|
+| `tests.rs:65` | the compile is **setup**: it registers the specimen document on `w` so the following `open_def` resolves. The helper returns a cached value and mutates no `WorkerState`. |
+| `tests.rs:1420` | a **scratch** specimen in `.hrw-bridge/specimens/`; the helper takes a curated specimen *name* and cannot reach it. |
+| `tests.rs:1653` | a **sequencing** test — a library compile must happen first *in the same session*. A cached result has no session. |
+| `tests.rs:3653`, `3793` | assert on **messages observed through a sink**. The helper replays nothing. |
+| `tests.rs:2357` | `a_broken_specimen_does_not_poison_the_next_compile` — **about** fresh state, as the queued item already predicted. |
+
+**No code changed, and hard rule 5 is why that is the right ending:** *"if an item cannot end in a
+test that fails by name, it is not unattended work — record it and move on."* There is no test for
+a conversion that should not happen.
+
+### THE TRANSFERABLE PART: the estimate was built from a COUNT, not a measurement
+
+*"17 sites × 3.4 s"* is arithmetic over names — the same shape `docs/ideas.md` #48 already records
+**three times**, each proposal dying on contact with a clock. It survived here because the count
+was true and only the per-item cost was assumed. **A number that is right about the numerator is
+still not a measurement.**
+
 ### Night 1 — 2026-08-22. Three items, three commits, gate green on each, nothing pushed
 
 | item | commit | what it found |
