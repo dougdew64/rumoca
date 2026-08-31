@@ -5,9 +5,17 @@
 [The chain overview](hrw://tour/the-concepts)
 
 `connect(src.p, R.p)` looks like wiring two things together. It is **not an assignment, and not an
-equation between those two connectors** — it is **an edge in each of several graphs, one per member
-of the connector** — and no equation exists until each graph's **connected components** have been
-computed. It is also a **claim that the two sides are compatible**, which the language requires a
+equation between those two connectors** — it is a set of **graph edges**, and no equation exists
+until their **connected components** have been computed.
+
+There is **one graph per member, and its vertices are variables — never connectors.** A `Pin` has
+members `v` and `i`, so there are two graphs: the vertices of one are every `.v` in the model, the
+vertices of the other every `.i`. **They share no vertices**, and neither ever holds a `Pin`.
+
+An edge joins the two sides' **corresponding members, matched by name.** So `connect(src.p, R.p)`
+contributes one edge to each graph — `src.p.v — R.p.v` to the first, `src.p.i — R.p.i` to the
+second — and a member with no counterpart on the other side contributes **no edge at all**. It is
+therefore also a **claim that the two sides are compatible**, which the language requires a
 compiler to check.
 
 **This tour counts.** `RcCircuit` has four `connect` statements and twenty-three equations, and every
@@ -32,14 +40,6 @@ connect(src.p, R.p);
 connect(R.n, C.p);
 connect(C.n, src.n);
 connect(src.n, gnd.p);
-```
-
-**A connector is not a value — it is a bundle of variables.** `src.p` is a `Pin`, holding a voltage
-`v` and a current `i`, so `connect` relates their **members, pairwise**:
-
-```text
-connect(src.p, R.p)   →   src.p.v — R.p.v      (the voltages)
-                          src.p.i — R.p.i      (the currents)
 ```
 
 Two connectors are on the same **node** if you can walk from one to the other along `connect`
@@ -79,8 +79,7 @@ Four statements, three nodes — because **`src.n` appears twice**, so `connect(
 
 *That table is your paper written out. Nothing in HRW draws it.*
 
-**Nothing downstream ever groups connectors.** What gets grouped are **variables**, in **two
-separate graphs that share no vertices**:
+**Nothing downstream ever groups connectors** — the two graphs from the opening, filled in:
 
 | graph | vertices | edges from `connect(src.p, R.p)` |
 |---|---|---|
