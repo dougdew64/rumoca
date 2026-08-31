@@ -210,17 +210,34 @@ checker can refute it — only a collision months later, which is the failure th
 to prevent. A grounded claim can be refuted in three minutes, and Doug can refute it himself by
 opening the file, which an abstract one never lets him do.
 
-**Do not read this as "only say what is in the code."** Where there is no code counterpart, that
-gap is frequently the lesson — `node` is the standing example, invented by the reader precisely
-because Rumoca has none, and the mismatch is the whole of `connect-expansion` Stop 1. **The rule is
-that every claim states which side it is on**, so an abstract model is labelled as the reader's
-bookkeeping rather than impersonating a description of the compiler.
+#### An abstraction earns its place by PREDICTING something the code does — 2026-08-31, sharpened
 
-**And the failure mode to avoid: true, checkable and useless.** *"`potential_uf` is an `IndexMap`
-plus two `Vec`s"* passes every test here and teaches nothing. What lands is the **contrast and the
-rationale** — what union-find refuses to store, why potential is global while flow is scoped. Stay
-conceptual; be conceptual **about the artifact that exists**, with the textbook supplying the
-question rather than the answer.
+This began as *"an abstract model is fine when labelled as the reader's."* **That was too weak, and
+one sentence spent four passes proving it.** Doug, after the fourth: *"textbook-style abstractions
+which cannot be mapped to Rumoca code probably don't belong in HRW tours. After all, I can always
+get those textbook-style abstractions from textbooks."*
+
+**The test is not "is it labelled" — it is "what does it let him predict?"**
+
+| abstraction | earns its place? |
+|---|---|
+| **node** | **Yes.** Rumoca has none, and node count × 2 predicts the connection-set count. |
+| **the graph** | **Yes.** Its connected components *are* the sets; drawing it predicts sizes. |
+| **the singleton set** | **No.** Union-find "starts with singletons"; Rumoca's never has one. |
+
+The singleton is why this rule got sharpened. It predicted nothing, corresponded to no state any
+code can observe, and survived four rewrites because it *sounded* like knowledge — Doug killed it
+by asking under what circumstances it could occur, which is the question an implementer asks and a
+textbook never answers.
+
+**So the labelling rule stands and is no longer sufficient.** Label the reader's models, *and* drop
+the ones doing no predictive work. Labelling a useless abstraction only makes it honestly useless.
+
+**And the failure mode this exposes, beyond "true, checkable and useless":** *the textbook model of
+a data structure is not that structure's behaviour in a given program.* Recognising the algorithm
+is not reading it. Union-find's presentation starts every element alone; Rumoca's inserts lazily,
+always already paired with a merge — so the abstraction's first sentence is false here. **Read the
+callers, not the algorithm's reputation.**
 
 **The mechanical payoff, which is why this outranks style.** `doc_citations` already checks that
 cited paths exist and symbols resolve, so a claim naming `generate_equality_equations` can be

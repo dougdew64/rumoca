@@ -4633,3 +4633,34 @@ type teaches nothing, while the contrast and the rationale are what land.
 **Recorded in [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md)** and applied first to
 `connect-expansion`'s opening, at his request. The mandatory-reading budget rose 862 → 902 to hold
 it, with the reasoning on the constant.
+
+## 2026-08-31 — the grounding rule sharpens: an abstraction must PREDICT, not merely be labelled
+
+**Recorded eight hours after the agreement it corrects**, which is the point. The morning's rule
+said an abstract model is legal when **labelled** as the reader's. One sentence then took **four
+passes** to fix — each stating a textbook abstraction that was correctly labelled and still
+worthless: union-find *"starts with singletons"*, which Rumoca's never does, because
+`get_or_insert_idx` is reachable only from `union` and therefore always arrives paired with a merge.
+
+**Doug:** *"Textbooks are typically frustratingly useless because they make claims which cannot be
+verified against code such as Rumoca's. Moreover, the claims made by textbooks very often just don't
+make sense to a reader who is attempting to think through a possible implementation… Going forward,
+textbook-style abstractions which cannot be mapped to Rumoca code probably don't belong in HRW
+tours. After all, I can always get those textbook-style abstractions from textbooks."*
+
+**The new test: an abstraction earns its place by predicting something the code does.** `node` earns
+it (node count × 2 predicts the set count) though Rumoca has none; `the graph` earns it (its
+components *are* the sets); `the singleton` earns nothing and is gone. **Labelling stands and is no
+longer sufficient** — labelling a useless abstraction only makes it honestly useless.
+
+**And the failure mode it names:** *the textbook model of a data structure is not that structure's
+behaviour in a given program.* Recognising the algorithm is not reading it. **Read the callers, not
+the algorithm's reputation.**
+
+**Why this is a positioning claim and not a style rule.** A textbook's claims are unfalsifiable *in
+principle* for its reader — there is no artifact to check them against, so a wrong claim reads
+exactly like a right one. Here there is Rumoca, and both participants can check. Doug's four
+objections were each an **implementer's** question, the kind a textbook never answers. Recorded in
+[`docs/vision.md`](docs/vision.md) as HRW being a **complement** to textbooks; the operational test
+and its worked cases are in
+[`docs/fixture-tours/README.md`](docs/fixture-tours/README.md). Budget 913 → 930.

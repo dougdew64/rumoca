@@ -242,4 +242,19 @@ current_work = 284
 # tour states is now resolved by `fixture_tours_reference_files_that_exist` in
 # the FAST suite, so a renamed symbol fails a test instead of a walk.
 
-conditional = 913
+# …then 913 → 930 on 2026-08-31, to SHARPEN the code-grounding rule recorded eight hours
+# earlier in the same file. The original boundary said an abstract model is fine when
+# labelled as the reader's. Too weak: one sentence then spent FOUR passes on an
+# abstraction that was correctly labelled and still worthless — union-find "starts with
+# singletons", which Rumoca's never does.
+#
+# Doug: "textbook-style abstractions which cannot be mapped to Rumoca code probably don't
+# belong in HRW tours. After all, I can always get those textbook-style abstractions from
+# textbooks."
+#
+# The replacement is a TEST rather than a caveat — an abstraction earns its place by
+# predicting something the code does — with the three worked cases that separate `node`
+# and `the graph` (both earn it) from `the singleton` (does not). Seventeen lines, and
+# they are the difference between a rule that stopped three errors and one that stopped
+# the fourth as well.
+conditional = 930

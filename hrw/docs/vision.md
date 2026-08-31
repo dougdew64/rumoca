@@ -82,6 +82,36 @@ into the repository — the tour, [`compiler-phases/`](compiler-phases/),
 for future-Doug, which is why the routing discipline in
 [`working-with-doug.md`](working-with-doug.md) is load-bearing rather than tidy.
 
+### A COMPLEMENT to textbooks, doing the thing textbooks structurally cannot — 2026-08-31
+
+**Doug, after four failed passes on one sentence:**
+
+> *"Textbooks are typically frustratingly useless because they make claims which cannot be verified
+> against code such as Rumoca's. Moreover, the claims made by textbooks very often just don't make
+> sense to a reader who is attempting to think through a possible implementation of the abstractions
+> described in textbooks. … This HRW project is a complement to textbooks and accomplishes what
+> textbooks cannot."*
+
+**This narrows the section above rather than repeating it.** *"The tours are books; the difference
+is the repair loop"* was about **who can fix the prose**. This is about **what the prose is allowed
+to claim** — and it is the stronger statement, because it says the tours should not be books at all
+in their content, only in their form.
+
+**The mechanism, and it is not a preference.** A textbook's claims are unfalsifiable *in principle*
+for its reader: there is no artifact to check them against, so a claim that is vague, over-general
+or simply wrong reads exactly like one that is right. Here there is Rumoca. **Claude can check tour
+prose against it, and so can Doug** — and the four-pass sentence is the demonstration in both
+directions. Every pass stated a textbook abstraction (union-find "starts with singletons"); every
+objection Doug raised was an *implementer's* question (*"under what circumstances can that happen?"*);
+and the resolution came from reading the callers of `get_or_insert_idx`. **No textbook could have
+been wrong in a way that was detectable, and none could have been corrected.**
+
+**The consequence for content:** a textbook-style abstraction that cannot be mapped to Rumoca's code
+does not belong in a tour — Doug can get it from a textbook, where it is cheaper and no worse. What
+HRW owes him is the part a textbook cannot supply. The operational test — *an abstraction earns its
+place by predicting something the code does* — is in
+[`fixture-tours/README.md`](fixture-tours/README.md), with the worked cases.
+
 ### The three surfaces have distinct jobs, and the RHS is a lab
 
 Doug's model, in his words:
