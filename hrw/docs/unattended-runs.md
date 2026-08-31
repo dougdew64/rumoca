@@ -24,29 +24,18 @@ planned the run does not survive to the machine that executes it. When a run fin
 goes to the run log below and this section is overwritten by the next plan — otherwise it becomes
 the accumulating history `CLAUDE.md`'s *Current work* had to be rescued from.
 
-### QUEUED — night 6: one item, carried over from night 5
+### QUEUED — nothing. The slot is empty.
 
-**Item — the 17 test compiles that bypass the shared cache.** Queued and approved by Doug on
-2026-08-25 and **deliberately not started that night**: hard rule 4 then capped a night at **three
-items**, the plan had four, and Claude had added the fourth without noticing the cap. Doug approved
-the *item*, not a lifted cap, and rule 6 is explicit that deciding a boundary does not really apply
-is the decision that needs him. **Doug raised the cap to four on 2026-08-26** — so this item is
-carried because the night ended, not because anything still forbids it.
+**Night 6 ran on 2026-08-31 and its item closed as "not worth doing"** — see the run log. There is
+no queued plan, and that is the honest state rather than an oversight.
 
-71 call sites use `compile_specimen_shared` and are free after the first; **17 call `w.compile(`
-directly** and pay ~3.4 s each, because every specimen compile re-resolves the whole MSL.
+**What a next plan should NOT be:** another pass at test-suite timing. `docs/ideas.md` #48 has now
+killed six levers by measurement and night 6 killed the seventh. **That lens is spent** — the rule
+above says a lens returning nothing twice must be retired, and this one has returned nothing far
+more often than that.
 
-**Some must stay unshared and identifying them is the work, not an obstacle.**
-`compiling_a_specimen_twice_is_reproducible` and `a_broken_specimen_does_not_poison_the_next_compile`
-are *about* fresh state; sharing them would make them vacuous. Read each of the 17, convert only what
-is genuinely incidental, and **record the ones that must not convert, with why.**
-
-**Upper bound ~58 s and realistically less — so if a conversion is even slightly doubtful, do not
-make it.** The suite's time is worth less than any check it contains. **Do NOT touch the five levers
-`#48` has ruled out**, and do not change how the MSL session is loaded, cached or shared.
-
-**Gate cost, measured 2026-08-25:** the test step is **268 s** (245 s tests, 23 s build), plus
-**~110 s** when a compile-path change triggers the notebook check.
+**The obvious candidate, which needs Doug awake:** `connect-expansion` is rewritten and unwalked,
+so the next real work is his walk of it, not Claude's night.
 
 ### ⟶ RULED, 2026-08-25 — THE NIGHTS CONTINUE, AND ROTATION IS THE CONDITION
 
@@ -382,6 +371,32 @@ carelessly that looks like proof (`DECISIONS.md`, night 5). Second, item 3's own
 changed since it was queued: it went in as hygiene, and by the time it ran, the day had produced four
 confident claims that measurement destroyed. **A guard never made to fail is that same error wearing
 a test's clothes.**
+
+### Night 6, items 2 and 3 — the capture path, and what the column read found
+
+| item | commit | outcome |
+|---|---|---|
+| 2 — a rendered test for the 🎯 capture | `70bf1d07` | **a real gap, no defect.** The capture shipped with four tests and **none of them rendered anything** — the exact shape of every failure it had. Two claims now pinned: the passage is *quoted*, and no stage is named. |
+| 3 — column read of the new arms | `d0aff449` | **one defect, mine from the day before.** |
+
+**Item 3 is the column read doing what it is advertised to do**: a list of siblings where one
+member is wrong. `Ask::stage` had a single spelling for `None` — *"(navigated definition)"* — and a
+tour passage inherited it, so `focus.json` emitted `kind: "tour_passage"` beside
+`stage: "(navigated definition)"`. **Nothing was missing; the field was filled with the wrong
+reason**, which no check here looks for.
+
+**It had a test and a doc comment defending it.** I wrote *"`Ask::stage` is already `Option` for
+navigated definitions, which is why the passage needed no new spelling"* — true about the type,
+false about the string. **Absence must be stated ACCURATELY, not merely stated**, which is the same
+rule that made the field an `Option` rather than letting it borrow whichever stage was selected.
+
+### THE NIGHT'S SHAPE: two of three items were about yesterday's own work
+
+Not planned that way, and worth noticing. Items 2 and 3 both audited code committed hours earlier,
+and both found something — a missing rendering test and a false claim in the emitted file.
+**Fresh code was the highest-yield lens available**, which is the opposite of the usual assumption
+that recent work is the best understood.
+
 
 ### Night 4 — 2026-08-24. Three items, three commits, gate green on each, nothing pushed
 
