@@ -4,9 +4,9 @@
 
 [The chain overview](hrw://tour/the-concepts)
 
-`connect(src.p, R.p)` looks like wiring two things together. In the equations it is **neither an
-assignment nor an equality** — it is **an edge in each of several graphs, one per member of the
-connector** — and the equations do not exist until each graph's **connected components** have been
+`connect(src.p, R.p)` looks like wiring two things together. It is **not an assignment, and not an
+equation between those two connectors** — it is **an edge in each of several graphs, one per member
+of the connector** — and no equation exists until each graph's **connected components** have been
 computed. It is also a **claim that the two sides are compatible**, which the language requires a
 compiler to check.
 
