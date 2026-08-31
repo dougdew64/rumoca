@@ -4664,3 +4664,34 @@ objections were each an **implementer's** question, the kind a textbook never an
 [`docs/vision.md`](docs/vision.md) as HRW being a **complement** to textbooks; the operational test
 and its worked cases are in
 [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md). Budget 913 → 930.
+
+## 2026-08-31 — the introduction builds the model, the stops reinforce or break it
+
+**Doug**, after a morning spent entirely on one introduction: *"Reading that introduction helps me
+to form the mental model which I use during the tour stops. The tour stops help to reinforce the
+mental model which I've formed or to determine that I've formed an incorrect mental model. …
+Please select stops which will help me to reinforce my mental model and which will challenge my
+mental model."*
+
+**Two things follow, and the second is the useful one.**
+
+**The introduction is load-bearing, not preamble** — a stop can only reinforce or break a model the
+reader actually holds, so intro work is stop work done in advance. That is the retrospective
+justification for the morning: four passes on one sentence looked expensive and was not.
+
+**And composed with *an abstraction earns its place by predicting*, it becomes a completeness test.**
+If abstractions earn their place only by predicting, the intro's abstractions and the stops'
+predictions are **the same list seen twice**. So: an abstraction with no stop is untested confidence;
+a stop tracing back to no abstraction is trivia. Selection is also for **both jobs** — only-reinforce
+manufactures false confidence, only-challenge never consolidates.
+
+**Its first application found holes in `connect-expansion`:** nine intro claims, five stops, three
+claims no stop touches. Two are untestable in `RcCircuit` (pairing by name needs a mismatched pair;
+potential-global vs flow-per-scope needs two scopes) and so earn their place weakly in this tour.
+The third is testable and merely told — the replay emits **all three flow sets before any potential
+set**, because `build_connection_sets` pushes flow inside the per-scope loop and potential after it.
+That is a missing *challenging* stop, since the model predicts a `connect` yields its flow and
+potential equations together.
+
+Recorded in [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md) with the audit.
+Budget 930 → 965.

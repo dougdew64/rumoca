@@ -233,6 +233,41 @@ textbook never answers.
 **So the labelling rule stands and is no longer sufficient.** Label the reader's models, *and* drop
 the ones doing no predictive work. Labelling a useless abstraction only makes it honestly useless.
 
+#### The introduction builds the model; the stops reinforce or break it — 2026-08-31
+
+**Doug**, after a morning spent entirely on one introduction: *"Reading that introduction helps me
+to form the mental model which I use during the tour stops. The tour stops help to reinforce the
+mental model which I've formed or to determine that I've formed an incorrect mental model. …
+Please select stops which will help me to reinforce my mental model and which will challenge my
+mental model."*
+
+**This makes the introduction load-bearing rather than preamble**, and it explains why a morning
+there was well spent: a stop can only reinforce or break a model the reader actually holds.
+
+**Composed with the rule above, it gives a test for whether a tour is complete.** If an abstraction
+earns its place only by predicting something the code does, then the intro's abstractions and the
+stops' predictions are **the same list seen twice**. Two failure conditions follow:
+
+- **An abstraction with no stop** — a model handed over with nothing to consolidate or falsify it.
+  Untested confidence, which is the worst thing to leave a reader holding.
+- **A stop tracing back to no abstraction** — trivia. It tests something he was never told to
+  expect, so neither outcome changes what he believes.
+
+**Select for BOTH jobs, and check the mix.** A tour of only-reinforcing stops manufactures false
+confidence; a tour of only-challenging stops never consolidates. `connect-expansion` currently runs
+*challenge, reinforce, reinforce, reinforce, challenge* — Stop 1 sets up a deliberate disagreement,
+Stop 5 probes the boundary, and the middle is all consolidation.
+
+**Auditing a tour this way finds real holes.** `connect-expansion`, 2026-08-31: nine claims in the
+intro, five stops, and **three claims no stop touches.** Two are untestable in `RcCircuit` (members
+pairing by name, and potential-global vs flow-per-scope — the specimen has no mismatch and one
+scope), which means they earn their place weakly *in this tour* and want either a second specimen or
+a shrink to a pointer. The third — flow routing to a plain `Vec` while potential goes to a
+union-find — **is** testable and is currently only told: the replay emits all three flow sets before
+any potential set, because `build_connection_sets` pushes flow inside the per-scope loop and
+potential after it. A missing *challenging* stop, since the model predicts each `connect` yields its
+flow and potential equations together, and it does not.
+
 **And the failure mode this exposes, beyond "true, checkable and useless":** *the textbook model of
 a data structure is not that structure's behaviour in a given program.* Recognising the algorithm
 is not reading it. Union-find's presentation starts every element alone; Rumoca's inserts lazily,

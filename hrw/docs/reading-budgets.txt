@@ -257,4 +257,20 @@ current_work = 284
 # and `the graph` (both earn it) from `the singleton` (does not). Seventeen lines, and
 # they are the difference between a rule that stopped three errors and one that stopped
 # the fourth as well.
-conditional = 930
+# …then 930 → 965 on 2026-08-31, for the rule that says what STOPS are for, which is the
+# half the grounding rules had not covered. Doug: "Reading that introduction helps me to
+# form the mental model which I use during the tour stops. The tour stops help to
+# reinforce the mental model which I've formed or to determine that I've formed an
+# incorrect mental model."
+#
+# It earns 35 lines because it COMPOSES with the rule above it into a completeness test
+# rather than adding advice. If an abstraction earns its place only by predicting
+# something, the intro's abstractions and the stops' predictions are the same list seen
+# twice — so an abstraction with no stop is untested confidence, and a stop tracing to no
+# abstraction is trivia. Its first application found three claims in connect-expansion
+# that no stop touches, one of them a missing challenging stop that is testable today.
+#
+# A worked audit is included deliberately: this repository's rules go wrong by being
+# stated abstractly and read narrowly, and the audit is what makes the test operable
+# rather than agreeable.
+conditional = 965
