@@ -2254,7 +2254,14 @@ Some prose.
         // does NOT forbid (an abstract model is fine when LABELLED as the reader's — the
         // `node` case), and its failure mode (true, checkable and useless). A rule
         // stating only its positive half is the most-repeated correction in `CLAUDE.md`.
-        const CONDITIONAL_BUDGET: usize = 902;
+        // 902 → 913 on 2026-08-31, for the `hrw://src` row and the rule beside it. This
+        // is the code-grounding agreement's second half arriving: the first made prose
+        // NAME code, and Doug immediately asked that those names be reachable — *"much
+        // more helpful as links to the code files in VS Code."* Eleven lines, and they
+        // buy the property that makes grounding worth its own rule: every code name a
+        // tour states is now resolved by `fixture_tours_reference_files_that_exist` in
+        // the FAST suite, so a renamed symbol fails a test instead of a walk.
+        const CONDITIONAL_BUDGET: usize = 913;
 
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let mut total = 0usize;

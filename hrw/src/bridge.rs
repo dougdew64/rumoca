@@ -167,6 +167,115 @@ pub const SCRATCH_NOTEBOOKS_DIR: &str =
 /// The repository documents a tour may link to with `hrw://doc/<name>`.
 pub const DOCS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/docs");
 
+/// The workspace root — the tree `hrw://src/<path>` resolves against.
+///
+/// One level above this crate, so it covers both `crates/rumoca-*` and `hrw/` itself.
+/// A tour grounded in Rumoca's code cites both.
+#[must_use]
+pub fn workspace_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")))
+        .to_path_buf()
+}
+
+/// Where a `hrw://src/<path>[#<symbol>]` link lands: a file, and a 1-based line.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceTarget {
+    /// The resolved file, always inside [`workspace_root`].
+    pub path: PathBuf,
+    /// The line the symbol was found on. `None` when the link named no symbol.
+    pub line: Option<usize>,
+}
+
+/// Resolve `hrw://src/<path>[#<symbol>]` to a file and, if named, the symbol's line.
+///
+/// # Why a symbol rather than a line number
+///
+/// This is [`crate::matching_ledger::anchor_by_name`]'s decision applied to tour prose,
+/// and `HrwLink::OpenTour`'s before it: **a number in prose rots silently when code
+/// moves, while a name fails loudly.** The line is computed from the file at click time,
+/// so a link that resolves is right by construction, and a symbol that has been renamed
+/// away fails in `doc_citations::tour_source_links_resolve` rather than in front of Doug.
+///
+/// # What counts as finding a symbol
+///
+/// The first line whose code — comments stripped, so a doc comment mentioning the name
+/// cannot win — contains one of `fn NAME`, `struct NAME`, `enum NAME`, `const NAME`,
+/// `static NAME`, `trait NAME`, `type NAME`, `mod NAME`, or `NAME:` for a struct field.
+/// Deliberately shallow: this locates a *definition a reader wants to look at*, and is
+/// not a resolver — `identity-and-provenance.md` forbids substring matching deciding
+/// **identity**, and nothing here decides identity. A miss is a finding, never a
+/// fallback to line 1, because scrolling a reader to the top of a 1,745-line file while
+/// claiming to show them `union` is exactly the quiet wrongness this repository bans.
+#[must_use]
+pub fn resolve_source(target: &str) -> Option<SourceTarget> {
+    let (rel, symbol) = match target.split_once('#') {
+        Some((p, s)) if !s.is_empty() => (p, Some(s)),
+        Some((p, _)) => (p, None),
+        None => (target, None),
+    };
+    if rel.is_empty() || rel.contains('\\') || rel.contains("..") {
+        return None;
+    }
+    let root = workspace_root();
+    let path = root.join(rel);
+    let (real_root, real_path) = (root.canonicalize().ok()?, path.canonicalize().ok()?);
+    if !real_path.starts_with(&real_root) || !real_path.is_file() {
+        return None;
+    }
+    let Some(symbol) = symbol else {
+        return Some(SourceTarget { path, line: None });
+    };
+    let text = fs::read_to_string(&path).ok()?;
+    let line = line_defining(&text, symbol)?;
+    Some(SourceTarget {
+        path,
+        line: Some(line),
+    })
+}
+
+/// 1-based line where `symbol` appears to be defined, or `None`.
+///
+/// **Two shapes, because the first version only had one and the checker caught it
+/// immediately.** Keyword-prefixed items (`fn union`, `struct UnionFind`) were covered;
+/// **enum variants were not**, and `hrw://src/…/trace.rs#SetFormed` failed on the first
+/// run of `fixture_tours_reference_files_that_exist` — which is the whole argument for
+/// the checker, since the alternative was Doug clicking it.
+fn line_defining(source: &str, symbol: &str) -> Option<usize> {
+    let keywords = [
+        "fn ", "struct ", "enum ", "const ", "static ", "trait ", "type ", "mod ",
+    ];
+    source
+        .lines()
+        .enumerate()
+        .find(|(_, raw)| {
+            // Comments stripped first: a doc comment naming the symbol must not win
+            // over the definition it documents, and in this repository doc comments
+            // routinely name the item several lines above it.
+            let code = raw.split("//").next().unwrap_or("");
+            if keywords
+                .iter()
+                .any(|kw| code.contains(&format!("{kw}{symbol}")))
+            {
+                return true;
+            }
+            // An enum variant or a struct field: the name opens the line, followed by
+            // its payload, a comma, or a type. A *use* site cannot match, because there
+            // the name is qualified (`ConnectionStep::SetFormed`) and so does not start
+            // the line's code.
+            code.trim_start().strip_prefix(symbol).is_some_and(|rest| {
+                // `SetFormed {` leaves a SPACE before the brace, so the remainder is
+                // trimmed before it is judged. Trimming here also keeps a longer name
+                // from matching a shorter query — `SetFormed` against `Set` leaves
+                // `Formed {`, which is neither empty nor punctuation.
+                let rest = rest.trim_start();
+                rest.is_empty() || rest.starts_with(['{', '(', ',', ':'])
+            })
+        })
+        .map(|(i, _)| i + 1)
+}
+
 /// Resolve a `hrw://notebook/<name>` target to a file on disk.
 ///
 /// Looks in the fixture directory first, then the scratch one, so a fixture tour keeps
@@ -2401,6 +2510,96 @@ mod tests {
         // Well-formed and absent is still nothing — the same clause as the notebook's,
         // because a link to a deleted document must fail rather than open something else.
         assert!(resolve_doc("no-such-document.md").is_none());
+    }
+
+    /// `hrw://src/<path>#<symbol>` finds the definition, and refuses everything else.
+    ///
+    /// **The symbol half is the point, so it is what the assertions are about.** A path
+    /// alone is `resolve_doc` with a different root; what is new here is resolving a NAME
+    /// to a line at click time, so a tour citing `union` keeps working when the function
+    /// moves and fails loudly when it is renamed away.
+    ///
+    /// Two properties are pinned that a naive `contains` would get wrong, both of which
+    /// this repository would actually hit:
+    ///
+    /// - **A doc comment naming the symbol must not win.** These crates document items
+    ///   heavily, and `/// ... union ...` sits above `fn union` constantly — landing the
+    ///   reader on prose *about* the function instead of the function is a quiet wrong
+    ///   answer, which is worse than none.
+    /// - **A miss is `None`, never line 1.** Scrolling someone to the top of a
+    ///   1,745-line file while claiming to show them a symbol is exactly the invented
+    ///   answer `CLAUDE.md` forbids.
+    #[test]
+    fn a_source_link_finds_a_symbol_and_refuses_an_escape() {
+        let rel = "crates/rumoca-phase-flatten/src/connections/mod.rs";
+        let full = workspace_root().join(rel);
+        assert!(
+            full.is_file(),
+            "{rel} must exist for this test to mean anything"
+        );
+        let text = fs::read_to_string(&full).expect("readable");
+
+        // A path with no symbol resolves to the file and no line.
+        let plain = resolve_source(rel).expect("the path alone must resolve");
+        assert_eq!(plain.line, None);
+        assert!(plain.path.ends_with("mod.rs"));
+
+        // Each symbol lands on its own definition, located in the CURRENT source rather
+        // than from a number stored here — so this test cannot rot into a false pass.
+        for (symbol, keyword) in [
+            ("union", "fn union"),
+            ("UnionFind", "struct UnionFind"),
+            // A struct FIELD, which no keyword introduces.
+            ("parent", "parent:"),
+        ] {
+            let found =
+                resolve_source(&format!("{rel}#{symbol}")).unwrap_or_else(|| panic!("{symbol}"));
+            let n = found.line.expect("a named symbol resolves to a line");
+            let line = text.lines().nth(n - 1).expect("in range");
+            assert!(
+                line.contains(keyword),
+                "line {n} for `{symbol}` should define it, got: {line}",
+            );
+            assert!(
+                !line.trim_start().starts_with("///"),
+                "line {n} for `{symbol}` is a doc comment, not the definition",
+            );
+        }
+
+        // A symbol that is not defined here is a finding, not line 1.
+        assert!(resolve_source(&format!("{rel}#no_such_symbol_anywhere")).is_none());
+
+        // **An enum VARIANT resolves, and a use site does not steal it.** The first
+        // version of this resolver knew only keyword-introduced items, so the tour's
+        // `#SetFormed` link failed on the checker's first run. `mod.rs` mentions
+        // `ConnectionStep::SetFormed` at its emit site; the definition is in `trace.rs`,
+        // and the qualified use must not match there or anywhere.
+        let trace = "crates/rumoca-phase-flatten/src/connections/trace.rs";
+        let variant = resolve_source(&format!("{trace}#SetFormed")).expect("a variant resolves");
+        let vtext = fs::read_to_string(workspace_root().join(trace)).expect("readable");
+        let vline = vtext
+            .lines()
+            .nth(variant.line.expect("a line") - 1)
+            .expect("in range");
+        assert!(
+            vline.trim_start().starts_with("SetFormed"),
+            "should land on the variant's own line, got: {vline}",
+        );
+        assert!(
+            resolve_source(&format!("{rel}#SetFormed")).is_none(),
+            "mod.rs only USES ConnectionStep::SetFormed; a qualified use is not a definition",
+        );
+
+        for bad in [
+            "",
+            "..",
+            "../secrets.rs",
+            r"crates\rumoca-core\src\lib.rs", // the Windows spelling
+            "crates/../../outside.rs",
+            "crates/rumoca-phase-flatten/src/connections/nope.rs", // absent
+        ] {
+            assert!(resolve_source(bad).is_none(), "{bad:?} must be refused");
+        }
     }
 
     /// `parse_path` is exactly `describe_path`'s inverse.

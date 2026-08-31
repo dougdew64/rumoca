@@ -3088,6 +3088,7 @@ fn link_verbs_declare_whether_they_need_a_specimen() {
             stop: Some("stop-1-the-failure-itself".to_owned()),
         },
         HrwLink::OpenDoc("upstream-issues.md".to_owned()),
+        HrwLink::OpenSource("crates/rumoca-core/src/lib.rs#VarName".to_owned()),
         HrwLink::OpenNotebook("structural-vs-numerical-rank.nb".to_owned()),
         HrwLink::ArmBreakpoint("augment-entry".to_owned()),
         HrwLink::LoadSpecimen("RcCircuit".to_owned()),
@@ -3121,6 +3122,7 @@ fn link_verbs_declare_whether_they_need_a_specimen() {
 fn a_verb_that_opens_another_application_gets_a_longer_beat() {
     for link in [
         HrwLink::OpenDoc("upstream-issues.md".to_owned()),
+        HrwLink::OpenSource("crates/rumoca-core/src/lib.rs#VarName".to_owned()),
         HrwLink::OpenNotebook("structural-vs-numerical-rank.nb".to_owned()),
         HrwLink::OpenInSystemModeler("RcCircuit".to_owned()),
     ] {
@@ -3265,6 +3267,27 @@ fn parse_hrw_link_doc_keeps_a_nested_path() {
     // at click time, matching `hrw://notebook/`; only emptiness is refused here.
     assert!(parse_hrw_link("hrw://doc/").is_none());
     assert!(parse_hrw_link("hrw://doc").is_none());
+}
+
+/// `hrw://src/` keeps a deep path AND the `#symbol` riding on its tail.
+///
+/// The tail is where this could quietly break: `splitn(5, '/')` has already been raised
+/// from 4 once, when `stage/…/node/<n>` glommed into one segment and the link did nothing
+/// on click. A source path is the deepest form in the grammar — six segments before the
+/// `#` — so it is the one most likely to hit that cap next.
+#[test]
+fn parse_hrw_link_src_keeps_a_deep_path_and_its_symbol() {
+    let deep = "crates/rumoca-phase-flatten/src/connections/mod.rs";
+    assert!(
+        matches!(parse_hrw_link(&format!("hrw://src/{deep}")), Some(HrwLink::OpenSource(ref t)) if t == deep)
+    );
+    assert!(
+        matches!(parse_hrw_link(&format!("hrw://src/{deep}#union")), Some(HrwLink::OpenSource(ref t)) if *t == format!("{deep}#union"))
+    );
+    // Resolution is `bridge::resolve_source`'s job at click time, matching every other
+    // Open* verb; only emptiness is refused by the grammar.
+    assert!(parse_hrw_link("hrw://src/").is_none());
+    assert!(parse_hrw_link("hrw://src").is_none());
 }
 
 /// **A width the panel had no choice about must not become a remembered fraction.**
@@ -4249,6 +4272,23 @@ fn fixture_tours_reference_files_that_exist() {
             assert!(
                 bridge::resolve_notebook(name).is_some(),
                 "{} opens notebook {name}, which does not resolve",
+                path.display(),
+            );
+            checked += 1;
+        }
+
+        // And `hrw://src/<path>#<symbol>` targets — **the check that makes the
+        // code-grounding agreement pay.** A tour claim naming `generate_equality_equations`
+        // is worth more than one about "graphs" precisely because this can refute it, so a
+        // symbol renamed out of the source breaks the suite instead of Doug's click.
+        for link in extract_hrw_links(&text) {
+            let Some(target) = link.strip_prefix("hrw://src/") else {
+                continue;
+            };
+            assert!(
+                bridge::resolve_source(target).is_some(),
+                "{} cites {target}, which does not resolve — either the path is not a \
+                 file under the workspace, or the `#symbol` is no longer defined in it",
                 path.display(),
             );
             checked += 1;

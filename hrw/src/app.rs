@@ -2923,7 +2923,7 @@ impl App {
                     // Chrome. See `HrwLink::OpenDoc`. Failure is reported rather than
                     // falling back to the browser: a silent fallback would reproduce
                     // exactly the behaviour he asked to be rid of.
-                    if let Err(e) = open_in_vscode(&path) {
+                    if let Err(e) = open_in_vscode(&path, None) {
                         self.notify(format!(
                             "could not open {name} in VS Code ({e}) \u{2014} run \
                              `cargo run -p hrw --example check_machine`, which rules on \
@@ -2933,6 +2933,24 @@ impl App {
                 }
                 None => self.notify(format!(
                     "no document {name} \u{2014} the link names one that is not under hrw/docs/",
+                )),
+            },
+            HrwLink::OpenSource(target) => match bridge::resolve_source(&target) {
+                Some(found) => {
+                    if let Err(e) = open_in_vscode(&found.path, found.line) {
+                        self.notify(format!(
+                            "could not open {target} in VS Code ({e}) \u{2014} run \
+                             `cargo run -p hrw --example check_machine`, which rules on \
+                             whether the CLI this spawns is reachable here",
+                        ));
+                    }
+                }
+                // **Two failures, one message, and it says which.** A path outside the
+                // workspace and a symbol that no longer exists are different findings,
+                // and the second is the one that will actually happen — code moves.
+                None => self.notify(format!(
+                    "cannot resolve {target} \u{2014} either the path is not a file under \
+                     the workspace, or the `#symbol` after it is not defined in that file",
                 )),
             },
             HrwLink::OpenInSystemModeler(name) => match self.find_specimen(&name) {
@@ -6579,6 +6597,31 @@ enum HrwLink {
     /// it renders raw markdown and cannot be edited, and editing is what he is there for.
     /// So this spawns `code` explicitly.
     OpenDoc(String),
+    /// `hrw://src/<path>[#<symbol>]` — open a workspace source file **in VS Code**, at
+    /// the symbol's line when one is named.
+    ///
+    /// # The verb the code-grounding agreement needs
+    ///
+    /// Doug, 2026-08-31, pointing at *"`connections/mod.rs` uses union-find"*: *"This
+    /// reference and others like it would be much more helpful as links to the code files
+    /// in VS Code."* The day's earlier agreement was that tour claims are **grounded in
+    /// Rumoca's code** rather than abstractly mathematical — and the moment prose started
+    /// naming `connect_primitive_vars` and `generate_equality_equations`, every one of
+    /// those names became somewhere he wants to go. A name he cannot reach is a
+    /// citation; a name he can click is the source.
+    ///
+    /// **The link carries a symbol, never a line.** `bridge::resolve_source` computes the
+    /// line from the file at click time, so the link cannot rot the way
+    /// `docs/tech-debt.md`'s `worker.rs:3434` citation did *inside a day*. Same decision
+    /// as `ArmBreakpoint` and `OpenTour`'s slugs, for the same reason.
+    ///
+    /// **And it is checked**, which is the half that makes grounding pay: a symbol
+    /// renamed out of the source fails `doc_citations::tour_source_links_resolve` in the
+    /// FAST suite, so the tour breaks in a test rather than under Doug's cursor. That is
+    /// the mechanical return promised when the agreement was recorded — a claim naming
+    /// `generate_equality_equations` can be wired into the gate, while a claim about
+    /// "graphs" never could.
+    OpenSource(String),
     /// `hrw://systemmodeler/<Specimen>` — open a specimen in Wolfram System Modeler.
     ///
     /// **The adjudicator verb.** System Modeler is an independent Modelica
@@ -6649,6 +6692,7 @@ impl HrwLink {
             Self::OpenTour { .. }
             | Self::OpenNotebook(_)
             | Self::OpenDoc(_)
+            | Self::OpenSource(_)
             | Self::OpenInSystemModeler(_) => false,
             // Arming a breakpoint targets Rumoca's source, not the model — and a reader
             // may well want the breakpoints in place *before* loading a specimen, which
@@ -6688,7 +6732,10 @@ impl HrwLink {
             // `OpenDoc` spawns `code` and `OpenNotebook` hands the file to Wolfram, so
             // both put another window in front of the reader. `OpenTour` does not: a
             // tour opens in HRW's own panel.
-            Self::OpenNotebook(_) | Self::OpenDoc(_) | Self::OpenInSystemModeler(_) => true,
+            Self::OpenNotebook(_)
+            | Self::OpenDoc(_)
+            | Self::OpenSource(_)
+            | Self::OpenInSystemModeler(_) => true,
             Self::OpenTour { .. }
             | Self::LoadSpecimen(_)
             | Self::LoadAndSwitch(..)
@@ -6744,6 +6791,7 @@ impl HrwLink {
             Self::Follow(name) => format!("follow/{name}"),
             Self::OpenNotebook(name) => format!("notebook/{name}"),
             Self::OpenDoc(name) => format!("doc/{name}"),
+            Self::OpenSource(target) => format!("src/{target}"),
             Self::OpenInSystemModeler(name) => format!("systemmodeler/{name}"),
             Self::ArmBreakpoint(name) => format!("breakpoint/{name}"),
         }
@@ -6813,6 +6861,13 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
         ["doc", rest @ ..] if !rest.is_empty() => {
             let name = rest.join("/");
             (!name.is_empty()).then_some(HrwLink::OpenDoc(name))
+        }
+        // Rest-joined for the same reason as `doc`, and more so — a source path is
+        // always several segments deep. The `#<symbol>` tail rides along inside the
+        // final segment untouched; `bridge::resolve_source` splits it.
+        ["src", rest @ ..] if !rest.is_empty() => {
+            let target = rest.join("/");
+            (!target.is_empty()).then_some(HrwLink::OpenSource(target))
         }
         ["stage", stage, view, "node", path] => {
             let kind = StageKind::from_slug(stage)?;
@@ -7001,9 +7056,21 @@ pub const VSCODE_CLI: &str = "code";
 /// Deliberately **not** [`open_with_os`]: `.md` is associated with Chrome on Doug's
 /// machine, which is the bug this whole verb exists to fix, so falling back to the
 /// association on failure would silently reproduce it. A failure is reported instead.
-fn open_in_vscode(path: &Path) -> std::io::Result<()> {
+fn open_in_vscode(path: &Path, line: Option<usize>) -> std::io::Result<()> {
     let mut cmd = std::process::Command::new(VSCODE_CLI);
-    cmd.arg(path);
+    // `-g file:line` is VS Code's own "goto" form. Without `-g` the `:line` suffix is
+    // read as part of the FILE NAME, and VS Code helpfully offers to create it — so the
+    // flag is not decoration, it is the difference between arriving at the symbol and
+    // being asked whether to make a new file called `mod.rs:412`.
+    match line {
+        Some(n) => {
+            cmd.arg("-g");
+            cmd.arg(format!("{}:{n}", path.display()));
+        }
+        None => {
+            cmd.arg(path);
+        }
+    }
     // Spawning a `.cmd` runs it through `cmd.exe`, which would otherwise flash a console
     // window over the tour on every doc link. `CREATE_NO_WINDOW`.
     #[cfg(target_os = "windows")]

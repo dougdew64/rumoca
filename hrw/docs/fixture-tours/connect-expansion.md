@@ -15,12 +15,12 @@ two ends are already in one set does nothing at all.
 
 The textbook picture is a graph: variables as vertices, an edge per `connect`, and the answer is
 each graph's **connected components**. Rumoca computes those components and **never builds the
-graph.** `connections/mod.rs` uses **union-find** — one parent index per variable it has touched,
+graph.** [`connections/mod.rs`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs) uses **[union-find](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#UnionFind)** — one parent index per variable it has touched,
 no edges stored anywhere, answering only *"same set?"*. Draw the graph anyway, to predict with;
 just hold it the way you are about to hold *nodes* in Stop 1, as your bookkeeping rather than the
 compiler's.
 
-`connect_primitive_vars` is where a statement becomes merges. It pairs the two connectors'
+[`connect_primitive_vars`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#connect_primitive_vars) is where a statement becomes merges. It pairs the two connectors'
 members **by name**, then routes each pair by that member's prefix:
 
 | the member is | the pair goes to |
@@ -39,11 +39,12 @@ rule about equations wearing a data structure's clothes: potential merging can b
 n − 1 equalities come out the same whether sets are split or merged, while a flow sum must be
 scoped or it conserves the wrong thing.
 
-What comes out is a `Vec<ConnectionSet>`, each carrying `variables`, `kind` and `scope` — so a
+What comes out is a `Vec<`[`ConnectionSet`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#ConnectionSet)`>`, each carrying `variables`, `kind` and `scope` — so a
 connection set is **a set of variables of one kind**, never a set of connectors. `kind` picks the
-generator: `Potential` calls `generate_equality_equations`, `Flow` calls `generate_flow_equation`.
-The replay you are about to step through is that pair of acts, once per set — `SetFormed`, then
-`EquationsGenerated`.
+generator: `Potential` calls [`generate_equality_equations`](hrw://src/crates/rumoca-phase-flatten/src/connections/equation_generation.rs#generate_equality_equations),
+`Flow` calls [`generate_flow_equation`](hrw://src/crates/rumoca-phase-flatten/src/connections/equation_generation.rs#generate_flow_equation).
+The replay you are about to step through is that pair of acts, once per set — [`SetFormed`](hrw://src/crates/rumoca-phase-flatten/src/connections/trace.rs#SetFormed), then
+[`EquationsGenerated`](hrw://src/crates/rumoca-phase-flatten/src/connections/trace.rs#EquationsGenerated).
 
 **This tour counts.** `RcCircuit` has four `connect` statements and twenty-three equations, and every
 step from one number to the other is something you can predict before you look.

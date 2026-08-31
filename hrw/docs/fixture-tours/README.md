@@ -855,8 +855,19 @@ about whichever file type was in front of us, and evaded three times by the next
 |---|---|
 | another tour | `hrw://tour/the-concepts` |
 | a doc under `hrw/docs/` | `hrw://doc/upstream-issues.md` — nesting allowed |
+| **a source file, at a symbol** | `hrw://src/hrw/src/bridge.rs#resolve_source` |
 | a Wolfram notebook | `hrw://notebook/structural-vs-numerical-rank.nb` |
 | a web page | an ordinary `https://` link — **the browser is right here** |
+
+**Every code name a grounded tour states should be an `hrw://src` link** *(2026-08-31)* — Doug,
+pointing at *"`connections/mod.rs` uses union-find"*: *"This reference and others like it would be
+much more helpful as links to the code files in VS Code."* A name he cannot reach is a citation;
+one he can click is the source. **Name the symbol, never a line** — the line is computed at click
+time, so a link that resolves is right by construction, while `tech-debt.md`'s `worker.rs:3434`
+rotted inside a day. Functions, types, enum variants and struct fields all resolve.
+
+**This is the half that pays for grounding:** `fixture_tours_reference_files_that_exist` resolves
+every one in the FAST suite, so a renamed symbol fails a test rather than a walk.
 
 `doc_citations::no_tour_links_to_a_bare_file_path` fails on anything else, in the fast suite, on
 the day it is written; **the three defects and the reasoning live on that test**, not here.
