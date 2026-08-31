@@ -105,14 +105,24 @@ if (Test-Path $focusPath) {
 
 if ($ctx.pointing_at) {
     $p = $ctx.pointing_at
-    Write-Output "$tag pointing at: $($p.target)   ($($p.kind), $($p.stage), $($p.request))"
+    # **A null field is SAID, not left blank.** A tour passage has no stage, and the
+    # first version interpolated the null straight into the line -- "(tour passage in
+    # connect-expansion, , Explain)". Two commas with nothing between them read as a
+    # value that failed to render, not as a deliberate absence, which is the one
+    # distinction this whole channel exists to keep. Same rule as `kind: "none"` in
+    # focus.json and `variables: null` in debug-state.json.
+    $stage = if ($null -eq $p.stage) { 'no stage - prose, not a phase' } else { $p.stage }
+    Write-Output "$tag pointing at: $($p.target)   ($($p.kind), $stage, $($p.request))"
 } else {
     Write-Output "$tag pointing at: nothing"
 }
 
 if ($ctx.following) {
     $f = $ctx.following
-    Write-Output "$tag following: $($f.identifier)   ($($f.mentions) mentions)"
+    # Same shape, and it would have bitten identically: `mentions` is null until the
+    # tracking summary has been computed, which would have printed "( mentions)".
+    $mentions = if ($null -eq $f.mentions) { 'not yet counted' } else { "$($f.mentions) mentions" }
+    Write-Output "$tag following: $($f.identifier)   ($mentions)"
 } else {
     Write-Output "$tag following: nothing"
 }
