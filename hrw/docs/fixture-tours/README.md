@@ -1080,8 +1080,27 @@ file and made it read as a maintenance log.
 
 That history is not lost, it is **filed where it belongs**: the decision and its reasoning in
 [`../../DECISIONS.md`](../../DECISIONS.md), the question that prompted it in
-[`../question-ledger.md`](../question-ledger.md), and the mechanism in a code comment or
-[`../compiler-phases/`](../compiler-phases/). A tour states what is true now.
+[`../question-ledger.md`](../question-ledger.md), and the mechanism in **a code comment or on the
+test that enforces it**. A lab states what is true now.
+
+*(That last route said `../compiler-phases/` until 2026-09-01 — the sixth site sending HRW material
+into what turned out to be **Rumoca reference documentation**. An HRW mechanism belongs beside the
+HRW code that implements it.)*
+
+**THE SCOPE IS A LAB, AND RULES FILES DELIBERATELY DO THE OPPOSITE — including this one.** A lab is
+read to **learn**, so history sits between the reader and the idea. A rules file is read to
+**decide**, and the failure it must prevent is a session re-deriving a rule that was retired.
+
+**That is not hypothetical here.** On 2026-09-01 alone, retired rules came back five separate ways:
+walking discipline returned as a queued `last_walked` feature, `compiler-phases/` was described as
+a deferral store in six places, and the `Predict` counts outlived the checker that superseded them.
+**Each would have been prevented by one dated line saying what changed.** So this file carries its
+corrections and the labs carry none — the same test decides both: *if this note were gone, would
+the rule become easier to get wrong?*
+
+**A dated note earns its place by preventing a re-derivation, and stops earning it when nobody is
+tempting.** Those added during this sweep are load-bearing now and will not be forever; the
+discriminator for removing one is whether anyone has tried to re-derive that rule since.
 
 ## Running a tour edit — the loop, and the two gate traps
 
