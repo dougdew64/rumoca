@@ -600,6 +600,23 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > is meant to shrink. [`docs/ui-findings.md`](docs/ui-findings.md) **C21** carries the measurement
 > and an `#[ignore]`d acceptance test to un-ignore if a fix ever lands.
 >
+> ### ⟶ A COMPLETE DOCUMENT REVIEW STARTS 2026-09-01, WITH **THIS FILE** FIRST
+>
+> **Doug will question every paragraph**, beginning with whether it is still needed: *"it seems to
+> be as much a historical log as a policy statement. And some of that history no longer seems
+> necessary."* **He is right** — 104 dated incident references across 1,411 lines, and `The rules` /
+> `Current work` / `Running things` are 88 % of the file.
+>
+> **The test is NOT "is this old".** That history exists because rules kept being got wrong, and
+> some of it is load-bearing — the `fmt` account is *why* `fmt` is in the two-gate rule, and cutting
+> it invites the next shortening to drop `fmt` again. **Ask instead: if this paragraph were gone,
+> would the rule become easier to get wrong?** The discriminator is *one home per fact* at paragraph
+> scale — **does this account already live on a checker or in `DECISIONS.md`?** If yes, it shrinks to
+> a pointer; if no, it is the only copy.
+>
+> **Claude is the wrong judge of what to cut** and should supply evidence, not verdicts: this
+> history is the record of his own failures.
+>
 > **NIGHT 7 RAN AND CLOSED — four contradictions found and resolved, one ruling owed.** The
 > document lens worked on its first run. The record and the four commits are in
 > [`docs/unattended-runs.md`](docs/unattended-runs.md).
