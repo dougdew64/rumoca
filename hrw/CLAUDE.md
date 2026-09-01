@@ -314,9 +314,10 @@ doc comment, beside the code enforcing it, where it cannot drift. This paragraph
 that way: `no_function_has_two_test_attributes` and `claims_of_absence_are_still_true` already
 carried their histories, so the copies here became pointers.
 
-**The budget is the forcing function, not goodwill**
-(`doc_citations::the_mandatory_reading_path_stays_small`), **and a pointer must resolve**
-(`doc_citations::qualified_citations_resolve`) — which is what makes this safe against a rename.
+**A derived ceiling plus a nightly sweep is the forcing function, not goodwill**
+(`doc_citations::the_mandatory_reading_path_stays_small` and `examples/doc_report`), **and a
+pointer must resolve** (`doc_citations::qualified_citations_resolve`) — which is what makes this
+safe against a rename.
 
 **EDIT FILES WITH THE EDIT/WRITE TOOLS. Do not generate source text through a shell.** Three
 separate corruptions on 2026-08-01 share this one root, and they were *silent* — the tool
@@ -600,8 +601,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > **The rule, and it is now enforced rather than remembered:** what is in flight goes at the top,
 > standing context underneath, and **a ✅ box is history the moment its arc closes.**
 > `doc_citations::the_mandatory_reading_path_stays_small` fails by name if this section or the
-> reading path outgrows its budget; **its doc comment carries why a budget rather than another
-> prune.**
+> reading path exceeds its **ceiling**; **its doc comment carries why ceilings replaced the
+> per-commit ratchet on 2026-08-31**, and growth is watched nightly by `examples/doc_report`
+> rather than tolled per commit.
 >
 > ### ⟶ TWO MODES RUN IN PARALLEL, SPLIT BY DOUG'S AVAILABLE ATTENTION — 2026-08-21
 >

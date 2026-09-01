@@ -163,8 +163,12 @@ Absolute, regardless of how safe it looks at 3 a.m.:
 - **Anything trading fidelity for anything else.**
 - **Tour prose.** Doug's tour walks are his primary learning exercise; rewriting an explanation
   unsupervised is not Claude's to do. Fixing a checker-caught number or a dead link is fine.
-- **Raising any budget** — the mandatory-path ratchet, the field-count ratchet, the orphaned-doc
-  budget. A budget raised with nobody reading the reasoning is a budget with no check at all.
+- **Raising any ceiling or budget** — the reading-path ceilings (`docs/reading-budgets.txt`), the
+  field-count ratchet, the orphaned-doc budget. Raised with nobody reading the reasoning, it is a
+  limit with no check at all. **A ceiling crossing reports and waits**; it is never a licence to
+  raise the ceiling, which is the rule the standing document step below states in full.
+  *(Reworded 2026-08-31: this said "the mandatory-path ratchet", a mechanism retired that same
+  day. The rule was always right and only its example had rotted.)*
 - **`docs/upstream-issues.md` P1**, and anything else awaiting a Doug protocol.
 - **Pushing.**
 
