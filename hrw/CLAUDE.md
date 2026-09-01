@@ -275,6 +275,31 @@ claim, the way provenance tags do.
 maintain, or testability, and **never a line count.** The three complexity lints are declined
 for that reason (`hrw/Cargo.toml` carries it).
 
+### DEFAULT TO TEACHING, NOT TO BUILDING — a standing instruction, not a mood
+
+**Doug, 2026-08-08:** *"I will finally begin a serious walk through the tours and try to shift our
+conversation to be about my education rather than about HRW features."* And the reason, which
+should not need saying twice: *"We've been working on this project for three weeks, and I have not
+yet been rewarded with a learning experience."*
+
+**When Doug reports something during a walk, the first question is *"what does this teach, and is
+it true?"*** — not *"what should we build?"* A feature is warranted when it unblocks the learning;
+[`docs/ideas.md`](docs/ideas.md) is where the rest goes. **Treat an hour of HRW polish during a
+walk as a cost.**
+
+**Neither the tours nor the UI are fundamental — the mathematics as Rumoca implements it is.** So
+a mismatch may be fixed by changing the *pane*, and on 2026-08-13 one was. But **labels must
+expose Rumoca's structure, not a pedagogically convenient one**; when prose and pane disagree,
+**Rumoca is the arbiter.**
+
+**When a 🎯 capture arrives, locate the passage in the file the capture names.** The emitted text
+is what the pane *rendered*, so it will not match the markdown byte-for-byte.
+
+**The rest is owned elsewhere and must not be restated here** — prose runs only to the first
+prediction, and one tour at a time ([`docs/fixture-tours/README.md`](docs/fixture-tours/README.md));
+concepts now, details later, and the two things Claude cannot judge
+([`docs/working-with-doug.md`](docs/working-with-doug.md)).
+
 ### Two signals that a file has outgrown what Claude can hold
 
 **State the trigger as "exceeds what Claude can hold, WITH DEFECTS TO SHOW FOR IT", never as
@@ -351,41 +376,26 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 
 ## Current work
 
-> ### ⟶ A COMPLETE DOCUMENT REVIEW STARTS 2026-09-01, WITH **THIS FILE** FIRST
+> ### ⟶ THE DOCUMENT REVIEW IS RUNNING — began 2026-09-01, **this file** first
 >
-> **Doug will question every paragraph**, beginning with whether it is still needed: *"it seems to
-> be as much a historical log as a policy statement. And some of that history no longer seems
-> necessary."* **He is right** — 104 dated incident references across 1,411 lines, and `The rules` /
-> `Current work` / `Running things` are 88 % of the file.
+> **Doug is questioning every paragraph**, beginning with whether it is still needed: *"it seems to
+> be as much a historical log as a policy statement."* **He was right** — this file was 1,420 lines,
+> of which `The rules` / `Current work` / `Running things` were 88 %.
 >
-> **The test is NOT "is this old".** That history exists because rules kept being got wrong, and
-> some of it is load-bearing — the `fmt` account is *why* `fmt` is in the two-gate rule, and cutting
-> it invites the next shortening to drop `fmt` again. **Ask instead: if this paragraph were gone,
-> would the rule become easier to get wrong?** The discriminator is *one home per fact* at paragraph
-> scale — **does this account already live on a checker or in `DECISIONS.md`?** If yes, it shrinks to
-> a pointer; if no, it is the only copy.
+> **The test is charter Decision 10's**, not *"is this old"*: does this paragraph **bind**, or is it
+> a conclusion drawn from one case? A conclusion is *evidence for* a decision, never itself a rule.
+> Decision 11 then routes whatever survives. **The finding that has recurred at every step: almost
+> nothing was wrong or old — it was filed in the wrong place**, and *one home per fact* is violated
+> *within* a single file as often as between two.
 >
 > **Claude is the wrong judge of what to cut** and should supply evidence, not verdicts: this
 > history is the record of his own failures.
 >
-> **NIGHT 7 RAN AND CLOSED — four contradictions found and resolved, one ruling owed.** The
-> document lens worked on its first run. The record and the four commits are in
-> [`docs/unattended-runs.md`](docs/unattended-runs.md).
->
-> **RULED 2026-08-31: hard rule 5 does not apply to document maintenance.** *"Every item ends in a
-> test that fails by name"* now reads *every CODE item*. Document work is **not thereby
-> unverified** — its instrument is **restore, never choose**, where a source of truth plays the
-> part a failing test plays for code. Both answer the same question: is success verifiable without
-> Doug? That boundary now lives in the standing document step of
-> [`docs/unattended-runs.md`](docs/unattended-runs.md), **not in a night's plan** — it was written
-> into night 7's queued plan and would have been cleared away with it.
->
-> **The pattern is worth more than the four fixes.** Every contradiction was **same-day** — a
-> mechanism changed that afternoon and its description did not. Nothing had rotted over weeks. **So
-> the risk window is hours, not months**, and a day of heavy mechanism change should end with this
-> sweep rather than wait for a night. Two of the four actively instructed a session to do the thing
-> Doug had ruled a bug that same afternoon: pay FULL for a tour edit. **A mechanism does not take
-> effect when it is built — it takes effect when the documents stop contradicting it.**
+> **NEXT: tour rules that create friction**, then `docs/fixture-tours/README.md`. Nights 1-7 and
+> what each found are in [`docs/unattended-run-log.md`](docs/unattended-run-log.md); the nightly
+> document step is in [`docs/unattended-runs.md`](docs/unattended-runs.md), which owns both the
+> *restore, never choose* boundary and the finding that document drift is **same-day** — so the
+> risk window is hours, and a day of heavy mechanism change should end with a sweep.
 >
 > **OWED, and both wait for the next `src/` errand rather than buying a gate of their own** —
 > [`docs/tech-debt.md`](docs/tech-debt.md), *"Owed sweeps"*. Doug ruled that on 2026-08-31.
@@ -441,92 +451,22 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > goal changes it, and the column-read audit are in
 > [`docs/app-split-plan.md`](docs/app-split-plan.md) §3b.
 >
-> # THE WALK — standing context
+> **THE ONE UNVERIFIABLE CLAIM LEFT IN `connect-expansion.md` Act 1** is there because **Flatten →
+> Connections has no `view.json` publisher**, and it is the only pane that shows connection sets.
+> Publishing it is: give its data type a `to_bridge_json`, then one arm in
+> `App::publish_current_view`.
 >
-> ## DEFAULT TO TEACHING, NOT TO BUILDING — a standing instruction, not a mood
->
-> **Doug, 2026-08-08:** *"I will finally begin a serious walk through the tours and try to shift our
-> conversation to be about my education rather than about HRW features."* And the reason, which
-> should not need saying twice: *"We've been working on this project for three weeks, and I have not
-> yet been rewarded with a learning experience."*
->
-> **When Doug reports something during a walk, the first question is *"what does this teach, and is
-> it true?"*** — not *"what should we build?"* A feature is warranted when it unblocks the learning;
-> `docs/ideas.md` is where the rest goes. **Treat an hour of HRW polish during a walk as a cost.**
->
-> **The template, and the five things that make it work, are in
-> [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md)** — read it before writing or
-> converting a tour. **Improve ONE TOUR AT A TIME**, the one he is about to walk, never a campaign:
-> *"working through each conversion with you is educational for me."*
->
-> ### The three agreements that govern every answer now
->
-> - **The RHS is a lab, not an illustration** (`docs/vision.md`). Prose runs only to the first
->   **prediction**, then he tests it on screen. **The threshold is a prediction, not
->   understanding** — a crude falsifiable guess beats a complete explanation.
-> - **Beginner depth: concepts now, details later** (`docs/working-with-doug.md`). Detail costs
->   Claude nothing and costs Doug attention, so the pressure always runs one way. Premature
->   detail goes to `docs/compiler-phases/`, not into the answer.
-> - **Neither the tours nor the UI are fundamental — the mathematics as Rumoca implements it
->   is.** So a mismatch may be fixed by changing the *pane*, and on 2026-08-13 one was. But
->   **labels must expose Rumoca's structure, not a pedagogically convenient one**; when prose
->   and pane disagree, **Rumoca is the arbiter**.
->
-> ### ⟶ DOUG CAN POINT AT TOUR PROSE, AND A HOOK PUTS IT IN FRONT OF YOU — 2026-08-30
->
-> **Select prose in the tour panel, press 🎯, ask.** The passage becomes the *point*, so a
-> bare *"what is this?"* resolves without a preface — the friction he named four ways.
-> **A `UserPromptSubmit` hook reports the capture on every prompt**, so you are told rather
-> than having to remember to read `focus.json`. Its absence is visible: every line is tagged
-> `[hrw-context]`, and it says outright when `focus.json` predates the session.
->
-> **One obligation when a passage arrives.** The emitted text is what the pane *rendered*, so it
-> will not match the markdown byte-for-byte — locate it in the file the capture names.
->
-> ### CLAUDE CAN NOW READ THE PANE — use it before asking Doug to describe anything
->
-> **`hrw/.hrw-bridge/view.json` holds the view on screen**, as the renderer's own input.
-> Published for **Flatten → EquationSheet** and **Structural → Incidence**; a view with no
-> publisher removes the file, so absence is honest. `diagnostics/session.json` names the current
-> `sub_view`. Every row carries `id` (`f_x[N]`) so *"this equation"* resolves across panes.
->
-> **Adding a view is: give its data type a `to_bridge_json`, then add one arm in
-> `App::publish_current_view`.** The unpublished pane that matters most is **Flatten →
-> Connections**, which is the only one that shows connection sets and therefore the only
-> unverifiable claim left in `connect-expansion.md` Act 1.
->
-> **A tour's group table is machine-checked** by
-> `doc_citations::tour_group_tables_match_the_real_equation_sheet` (slow-gated), against a real
-> compile. Mark the table `<!-- pane-groups -->`.
->
-> **A marker's region is the table that follows it and nothing else** — a deleted table once let
-> its marker adopt the next one. `a_marker_whose_table_is_gone_does_not_adopt_a_later_one` carries
-> the account.
->
-> ### What a walk still cannot be replaced by
->
-> Claude verifies **content, never pixels**. Whether a layout is legible or an animation reads as
-> a search is Doug's report and nothing else. Four of the six mismatches he found on 2026-08-13
-> are now the kind a test catches; **the other two were conceptual** — a tour whose central idea
-> had no counterpart on screen — and no test closes that.
->
-> ## WHERE INDEX REDUCTION STANDS (2026-08-18) — read before touching that tour or tab
->
-> **Doug reported the tour was "way, way too short", and following that found a defect at each of
-> four levels — all now fixed.** A false headline claim (`Drivetrain` differentiates **six** times,
-> not zero); no cross-check of a stage summary against its own frames (now
-> `a_reduction_summary_never_claims_more_than_its_frames_recorded`); a tab that **re-executed rather
-> than observed**, since replaced by Rumoca's `prepare_dae_for_structural_analysis_fully_observed`;
-> and **Rumoca not reducing the canonical index-3 DAE — adjudicated 2026-08-22, OUTCOME 1:** System
-> Modeler 15.0 loads it as-is, simulates 0→10 s cleanly, and **reduces it to two states by dynamic
-> state selection.** The gap is evidenced rather than inferred, and what it gated is unblocked —
-> Stop 5, the upstream entry, and `docs/ideas.md` **#83** (general Pantelides) and **#5** (the
-> four-bar linkage). `docs/upstream-issues.md` carries the run and the pre-committed outcomes.
+> ## WHERE INDEX REDUCTION STANDS — read before touching that tour or tab
 >
 > **The corpus spans the phase**: `BouncingBall` (nothing needed), `BenchActuator` (1
 > differentiation), `Drivetrain` (6, at 97 equations), `CartesianPendulum` (not reduced by Rumoca).
 > Smallest-first is the tour's spine and the pendulum is its ending. The pane publishes
-> `n_differentiations`, so a funnel that did nothing now says so.
+> `n_differentiations`, so a funnel that did nothing now says so. **Rumoca not reducing the
+> canonical index-3 DAE was adjudicated 2026-08-22** — System Modeler reduces it to two states by
+> dynamic state selection, so the gap is evidenced rather than inferred, and Stop 5 and the
+> upstream entry are unblocked. The run and the pre-committed outcomes are in
+> [`docs/upstream-issues.md`](docs/upstream-issues.md); the follow-on work is `docs/ideas.md`
+> **#83** (general Pantelides) and **#5** (the four-bar linkage).
 >
 > ## Open questions a walk may hit
 >
@@ -540,17 +480,7 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >   (`docs/ideas.md` #77, `DECISIONS.md`); tours are **taller** now, which is the correct trade.
 >   **What survives is only the genuine three-pane case** — HRW at half width beside VS Code — so
 >   `matching-live.md` alone may still want a layout change; do not build one for the other eight.
->
-> ## The debugger facts that were expensive to learn
->
-> - **`cppvsdbg` will not re-bind a breakpoint at a location whose breakpoint left the adapter's
->   active set during a session** — by removal *or* by being disabled. Only a new debug session
->   recovers it. (`#74`)
-> - **VS Code exposes no `verified` field to extensions**, so `breakpointPresent` means *"an
->   enabled breakpoint exists"* and can never mean *"execution will stop"*. (`#75`)
-> - **To read a debugger stop, read `.hrw-bridge/debug-state.json`** — check `writtenAtMs` and
->   `seq` first, and skip `[len]`, `[capacity]`, `[Raw View]`. (`#72`)
->
+
 
 ---
 

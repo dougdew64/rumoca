@@ -364,3 +364,12 @@ its most local scope.
 to arm, which at the live-trace anchor coincides with where Doug is stopped — so answering from it
 looks like working debugger vision until the day he stops somewhere else. #70 records this trap in
 full; **right often enough to be trusted is the failure mode.**
+
+**Two adapter facts that were expensive to learn, and that no layer can detect for you:**
+
+- **`cppvsdbg` will not re-bind a breakpoint at a location whose breakpoint left the adapter's
+  active set during a session** — by removal *or* by being disabled. Only a **new debug session**
+  recovers it. So a second Debug press can silently fail to stop. (`docs/ideas.md` #74)
+- **VS Code exposes no `verified` field to extensions**, so `breakpointPresent` can only ever mean
+  *"an enabled breakpoint exists"* — never *"execution will stop there"*. Do not report the first
+  as the second. (`docs/ideas.md` #75)
