@@ -95,9 +95,12 @@ buy simplicity rather than density.**
 The operational rule:
 
 - **Answer the question asked, at the depth asked, and stop.**
-- **Detail that is true but premature is not discarded — it is written to
-  [`compiler-phases/`](compiler-phases/)**, which exists for exactly this and is raw by
-  design. It will be there when he digs.
+- **Detail that is true but premature is simply not said yet — and it does not need storing.**
+  Charter Decision 14 makes the conversation part of the walk: Doug selects the sentence, presses
+  🎯 and asks, so the detail arrives *at the moment he wants it*. **A question he can now ask is
+  better than a paragraph he did not.** *(Until 2026-09-01 this bullet sent such detail to
+  `compiler-phases/`. That directory is Rumoca reference documentation, not a deferral store, and
+  the capture removed the need for one.)*
 - **Mention the deeper thing only when it changes whether the simple answer is correct.**
   Otherwise record it silently; an offer per answer is itself noise.
 - **This also filters what goes into a tour.** The routing agreement (answers improve the

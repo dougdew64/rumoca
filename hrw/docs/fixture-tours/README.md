@@ -433,8 +433,16 @@ them edits the tour:
 | the question is… | route |
 |---|---|
 | a gap at the tour's own depth | **into the tour** |
-| true but premature — past this tour's level | **into [`../compiler-phases/`](../compiler-phases/)**, which exists for exactly this |
-| answered and done | **nowhere.** Not every answer is tour content |
+| anything else — premature, or simply answered | **nowhere.** Not every answer is tour content |
+| *and separately:* it revealed something about **how Doug learns** | the **question** to [`../question-ledger.md`](../question-ledger.md) — never the answer |
+
+**THE MIDDLE ROW USED TO SAY `../compiler-phases/`, AND THAT HOME NO LONGER ACCEPTS THE DELIVERY**
+*(corrected 2026-09-01)*. That directory was described as a store for detail deferred from a tour;
+it is not. **It is the closest thing that exists to Rumoca documentation** — written before HRW
+existed and refreshed at the version bump — and posting lab overflow into it would corrupt the one
+job it does. **Decision 14 removed the need for the deferral store anyway:** premature detail
+arrives on demand when Doug asks, so it does not have to be written down first. Three routes became
+two, and the ledger takes the *question*, not the explanation.
 
 **Doug drew that line himself:** *"That distinction is past the level of useful detail for this
 tour."* Routing everything into the tour is how a tour drifts to reference depth one good question
@@ -657,13 +665,16 @@ explanation after.* Predict what a function returns, which branch runs, what the
 at this step — then step, and check. **A tour that merely narrates source is prose competing with
 the reader's own editor.**
 
-**AND ONE PROBLEM THE TWO-PASS MODEL WAS SOLVING IS NOW UNSOLVED, which is worth saying rather
-than losing.** The depth rule sends premature detail to
-[`../compiler-phases/`](../compiler-phases/), which is raw, unsummarised and **read by nobody** — a
-graveyard dressed as a database. Two passes made that material the *source* for a later tour, so
-exiling it was deferral rather than disposal. Without passes it is disposal again. **What becomes
-of `compiler-phases/` is an open question for Doug**, not something to answer by quietly
-reintroducing a stage.
+**THAT OPEN QUESTION WAS CLOSED 2026-09-01, AND BOTH HALVES OF IT DISSOLVED.** It read: the depth
+rule exiles premature detail to `../compiler-phases/`, two passes made that material the source for
+a later tour, and without passes the exile is disposal — so what becomes of the directory is an open
+question for Doug.
+
+**Neither premise survived.** Doug ruled that `compiler-phases/` is **Rumoca reference
+documentation** — written before HRW existed, refreshed at the version bump, and kept — so it was
+never the deferral store this paragraph assumed. And **Decision 14 removed the need for one**:
+premature detail is not exiled, it is simply not said yet, and Doug pulls it by asking. **Nothing
+is disposed of, because nothing is stored.**
 
 
 Cross-platform tours may route through Wolfram Desktop or System Modeler when the point cannot
