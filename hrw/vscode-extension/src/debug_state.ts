@@ -47,7 +47,7 @@ export const DEFAULT_VARIABLE_LIMIT = 60;
  *
  * Sized for the systems under study rather than for MSL: `Drivetrain` has 48
  * equations, and a 64-element window shows a whole `match_eq` for anything a
- * tour uses. A bigger model truncates, and says so via `childrenTruncated`.
+ * lab uses. A bigger model truncates, and says so via `childrenTruncated`.
  */
 export const CHILD_LIMIT = 64;
 
