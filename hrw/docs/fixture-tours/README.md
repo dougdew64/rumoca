@@ -5,6 +5,22 @@
 **Read when:** about to walk a tour, or about to write one. **These are tests, not
 explanations** — that distinction governs everything below.
 
+> ### ⚠ THIS FILE IS MID-REVISION UNDER CHARTER DECISION 14 — read that first
+>
+> **A walk is a lab session, not a reading.** Doug's 🎯 capture made the conversational loop part
+> of the walk, and Decision 14 (September 1, 2026) **retires the model most of this file was
+> written for** — that a tour's prose must stand alone, explain every term before use, and
+> pre-empt every question.
+>
+> **The tour now supplies the route, the checkpoints and the machine-checked claims; Claude
+> supplies the explanation on demand.** Claude holds two distinct roles: **tour guide** before the
+> walk, **lab instructor** during it.
+>
+> **Fifteen sections below carry rulings older than 2026-08-30 and assume the retired model.**
+> Until this file is revised, **read any rule requiring self-sufficient prose as superseded** —
+> do not attempt to reconcile it with Decision 14. Everything about *accuracy* still binds without
+> exception; Decision 14 loosens what prose must carry, never what it may claim.
+
 ## What a fixture tour is
 
 **A short sequence of clickable stops through HRW's own views, each with an expectation that
