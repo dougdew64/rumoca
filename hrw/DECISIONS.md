@@ -4824,3 +4824,34 @@ with a scheduled deletion.
 
 **The escalation cost one sentence to settle**, which is the argument for escalating rather than
 deciding at 3 a.m. — not against it.
+
+## 2026-08-31 — Doug does not read the unattended-run rules, and no-push is the safety model
+
+**Two corrections in one message, an hour after `unattended-runs.md` gained a section addressed to
+him.**
+
+**He never read it.** *"I hadn't even known that I was supposed to be reading a document before
+unattended runs were begun. Instead, I had been depending upon our conversation here."* So the
+document's audience is **Claude, entirely** — which is what `CLAUDE.md`'s audience rule already
+said, and Claude had drifted from by inventing a reader. **The fix is not a better page: it is that
+Claude SAYS the terms when proposing a night.** A document he does not read cannot inform consent,
+and pointing at one is not telling him. The section stays, reframed as **Claude's script**.
+
+**And the safety model is his, not this file's:** *"For me, the primary safety mechanism for
+unattended runs is that you don't push unattended."*
+
+**That reorders the rules.** Most of them are about **quality** — is the work good, finished,
+verifiable. Only a few are about **safety**, and safety means one thing: **nothing overnight is
+irreversible.** Commit-never-push delivers almost all of it, since an unpushed commit can be undone
+with one command and has reached nobody. **So "do not push" is load-bearing and must never bend**,
+and the same weight extends to anything else that leaves the machine or cannot be undone.
+
+**The hole, found by taking his model seriously: gitignored state is not covered.** `.hrw-bridge/`
+— `tour.md`, `focus.json`, scratch specimens — sits outside git, so commit-never-push makes no
+overnight change to it reversible. `tour.md` is Claude's answer to Doug's last question and no
+`git reset` restores it. **`.hrw-bridge/` is read-only overnight**, except where a test already
+restores what it touched.
+
+**The general lesson: a safety model stated by the person bearing the risk is worth auditing
+against, because it is shorter than the rules and it says what the rules were FOR.** These rules
+had grown to 643 lines without anyone noticing that one of them carried nearly all the safety.

@@ -9,14 +9,42 @@ Doug, 2026-08-22: *"could you do that work while I am asleep?"* Yes — under th
 
 ---
 
-## 👤 WHAT DOUG IS AUTHORISING — read only this section
+## THE CONTRACT — what Claude must SAY when proposing a night
 
-*(Added 2026-08-31: **"The rules for unattended runs are becoming so complex that I don't believe
-that I understand them anymore."** He authorises the nights and rules on what they escalate, so a
-document he cannot read is a document that has failed at its first job. Everything below this
-section is Claude's operating detail; **none of it is needed to authorise a night.**)*
+**Doug does not read this file, and was never meant to.** *(Corrected 2026-08-31, an hour after a
+section was added inviting him to: **"I hadn't even known that I was supposed to be reading a
+document before unattended runs were begun. Instead, I had been depending upon our conversation
+here."**)*
 
-**When you say "run tonight", this is what you are agreeing to.**
+**So this section is not a page for him — it is Claude's script.** When a night is proposed, say
+this in the conversation. A document he does not read cannot inform consent, and pointing at one
+is not the same as telling him.
+
+### DOUG'S SAFETY MODEL, IN HIS WORDS — and it is simpler than this file
+
+> *"For me, the primary safety mechanism for unattended runs is that you don't push unattended."*
+
+**That reorders everything below.** The rules in this file are mostly about **quality** — is the
+work good, is it finished, is it verifiable. Only a few are about **safety**, and safety here means
+one thing: **nothing that happens overnight is irreversible.** Commit-never-push delivers that
+almost entirely, because anything committed and unpushed can be undone with one command and has
+reached nobody.
+
+**So the load-bearing rule is "do not push", and it must never bend for any reason.** A bad commit
+is a bad morning; a push is a fact about the world. **And the same weight applies to anything else
+that leaves the machine or cannot be undone** — filing an issue, posting anywhere, deleting
+something git does not hold.
+
+**THE ONE HOLE IN THAT MODEL, named the day it was stated: GITIGNORED STATE IS NOT PROTECTED.**
+`.hrw-bridge/` — `tour.md`, `focus.json`, `view.json`, scratch specimens and notebooks — is
+outside git, so commit-never-push does **not** make an overnight change to it reversible.
+`tour.md` in particular is Claude's answer to Doug's last question, and deleting it would destroy
+something no `git reset` restores. **Treat `.hrw-bridge/` as read-only overnight**, except where a
+test already restores what it touched (`ui_tests::AdHocTour`).
+
+### What Claude will and will not do
+
+**When Doug says "run tonight", this is what he is agreeing to.**
 
 **Claude will:**
 
@@ -45,8 +73,13 @@ cargo run -p hrw --example check_machine
 
 HRW closed, sleep disabled, tree clean and pushed. It exits non-zero and names the fix.
 
-**If you want to change what a night may do, change THIS section** — the detail below derives from
-it, and a rule that contradicts it is a bug in the detail.
+**This section is the authority; the detail below derives from it.** A rule further down that
+contradicts it is a bug in the detail, not a competing rule.
+
+**And the obligation it creates is on Claude, not on Doug: SAY IT, do not link it.** He consents in
+the conversation, so the conversation is where the terms have to appear. If a night would do
+something this section does not cover, that is not a gap to fill by editing the file — **it is
+something to say out loud before he agrees.**
 
 ---
 
