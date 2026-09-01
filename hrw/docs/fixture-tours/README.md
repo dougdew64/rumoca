@@ -953,9 +953,16 @@ as a to-do a later session may pick up in good faith.)*
 
 ## The templates — one per kind
 
-**Every kind's template ends the same way: a claim that can fail.** What differs is how the stop
-earns it. Each template below is **derived from tours that already work**, not designed — read the
-named exemplar before writing a new tour of that kind.
+**Every kind's template ends the same way: a claim that can fail.** What differs is how the station
+earns it. Each template below is **derived from labs that already work**, not designed — read the
+named exemplar before writing a new lab of that kind.
+
+> **THE SKELETONS BELOW STILL SAY `Stop N`, AND THAT IS DELIBERATE UNTIL THE ATOMIC RENAME.** Rule
+> 16 settled the vocabulary — the unit is a **station** — but these skeletons are *copied* when a
+> new lab is written. Updating them now would produce new labs saying `Station` while all 23
+> existing labs say `Stop`, which charter Decision 15 calls **worse than no rename**: two words for
+> one thing, and no way to tell which is current. **Do not "fix" them individually.** They change
+> in the one atomic pass, with every lab and every `hrw://tour/<name>` link.
 
 ### Concept — `connect-expansion.md`
 
@@ -1043,9 +1050,9 @@ that breaks it, because the interest is in what the compiler *says* and how far 
 **Close with `## What to bring back`** — open questions for Doug, since a failure tour's real
 output is a design opinion about whether the diagnosis is actionable.
 
-### Adjudication — `the-oracle.md`
+### Calibration *(was: adjudication)* — `the-oracle.md`
 
-**The stop's activity is asking a different implementation**, so every heading carries the
+**The station's activity is asking a reference implementation**, so every heading carries the
 instrument as an emoji: 📐 HRW, ⚙ System Modeler, 🧮 Wolfram.
 
 ```markdown
