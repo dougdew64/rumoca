@@ -4800,3 +4800,27 @@ in one place only is invisible to it. Recorded as unsolved rather than papered o
 not.** Claude wrote them and built the ceremony that policed them; Doug found in a day what Claude
 had been paying without noticing for weeks — including that three *downward* budget adjustments were
 each bringing the next toll closer.
+
+## 2026-08-31 — hard rule 5 governs code items; document maintenance verifies differently
+
+**Doug:** *"Rule 5 does not apply to document maintenance."*
+
+Night 7 surfaced the conflict and escalated it rather than deciding: the rule says *every
+unattended item ends in a test that fails by name; if it cannot, it is not unattended work*, and a
+prose contradiction fix cannot. He had authorised the item explicitly, so the night proceeded and
+reported the conflict in the morning.
+
+**The ruling does not exempt document work from verification — it changes the instrument.** For
+code, a failing test is what makes success checkable without Doug. For documents, a **source of
+truth** is: restore, never choose. Both answer the same underlying question, which is the whole
+point of the unattended rules.
+
+**And it exposed a filing error worth more than the ruling.** The restore-never-choose boundary had
+been written into night 7's *queued plan* — and that slot's own rule is *"single slot, REPLACE it,
+never append"*, so completing the night cleared the plan and would have taken the boundary with it.
+**Document maintenance is a standing step, not a night's item**, so its boundary and its four
+passes now live in the standing section. A rule filed in a slot designed to be emptied is a rule
+with a scheduled deletion.
+
+**The escalation cost one sentence to settle**, which is the argument for escalating rather than
+deciding at 3 a.m. — not against it.

@@ -99,8 +99,15 @@ the right vehicle for app-side reading, not for the compile path.
    unstarted because the cap bound. That was the right call under the rule as written — Doug had
    approved the item, not a lifted cap — and he lifted the cap rather than have items carried
    forward. **The precedent worth keeping is the refusal, not the raise.**
-5. **Every item ends in a test that fails by name.** If an item cannot, **it is not unattended
-   work** — record it and move on.
+5. **Every CODE item ends in a test that fails by name.** If a code item cannot, **it is not
+   unattended work** — record it and move on.
+
+   **Doug ruled 2026-08-31 that this does not govern document maintenance**, after night 7 hit the
+   conflict: a prose contradiction fix cannot end in a failing test, and the queued item required
+   exactly that work. **Document maintenance is not exempt from verification, only from this
+   instrument** — its standard is the restore-never-choose boundary in the standing document step
+   below, where a *source of truth* plays the part a failing test plays here. Both answer rule 0:
+   **do only work whose success is verifiable without Doug.**
 6. **On hitting a no-go mid-item: revert and record. Do not improvise.** The temptation is to
    decide the boundary does not really apply here. That decision is exactly what needs Doug.
 7. **Write the handoff before stopping** — what landed, what was found, what was declined and why.
@@ -207,6 +214,32 @@ trimming one is his call.**
 **`doc_report` never edits**, deliberately. A sweep that both decides and acts, unwatched, on
 documents whose value is judgement is exactly what Doug reserved to himself. It reports; the night
 acts within the left column; a ceiling crossing goes in the run log and waits.
+
+### RESTORE, NEVER CHOOSE — this is document maintenance's answer to hard rule 5
+
+**Hard rule 5 does not govern this work** (Doug, 2026-08-31), because a prose fix cannot end in a
+failing test. **It is not thereby unverified** — the instrument is different. **One question
+decides every fix: is there a source of truth to restore to, or must I pick?**
+
+| resolve it alone | bring it to Doug |
+|---|---|
+| a digest broadened or narrowed its source — **restore the source's scope** | two deliberate statements that genuinely differ |
+| Doug's verbatim words are recorded and a gloss overreaches them | resolving it needs a ruling on what he meant |
+| a document claims another says X; that one no longer does | the fix changes what a rule *permits* |
+| a citation names a renamed or deleted symbol, file or test | anything requiring an explanation to be trimmed |
+
+**Restoring a scope from Doug's own quoted sentence is a correction, not a judgement.** Choosing
+between two things he said is a judgement and is his, **however obvious the answer looks at 3 a.m.**
+
+**This lived in night 7's queued plan and was nearly lost with it** — the plan was cleared from the
+single slot on completion, as that slot's rule requires, which would have taken the boundary with
+it. Document maintenance is a **standing** step, so its boundary belongs here rather than in any
+one night's plan.
+
+**The four passes, likewise standing:** digest audit (a reading-path document against the source it
+summarises — `CLAUDE.md` digests three others throughout, and both of the first two findings came
+from this), quote provenance, cross-reference claims (*"X says Y"* — check that X says Y), then
+rule pairs grouped by subject.
 
 **A ceiling crossing is not a licence to raise the ceiling.** That was the ratchet, and it charged
 fifteen tolls in one day while rejecting nothing.
@@ -591,7 +624,7 @@ take effect when it is built — it takes effect when the documents stop contrad
 **Standing step:** `doc_report` ran first and was green — 76 % of ceiling, no cross-document
 duplication.
 
-#### Left for Doug — one, and it is about tonight's own plan
+#### Left for Doug — one, and RULED the next morning
 
 **HARD RULE 5 says every unattended item ends in a test that fails by name; a prose contradiction
 fix cannot.** Doug authorised this item explicitly, so the night proceeded, and the
@@ -602,3 +635,9 @@ plan required, and that is a genuine conflict between two things in this file.**
 **Not resolved unattended, deliberately.** Resolving it means choosing whether rule 5 is scoped to
 code items or whether document work needs a different warrant — a ruling on what the rule is *for*,
 which is exactly the class the boundary reserves to Doug.
+
+**RULED 2026-08-31, the next morning:** *"Rule 5 does not apply to document maintenance."* Hard
+rule 5 now reads *every CODE item*, and the restore-never-choose boundary moved out of that night's
+plan into the **standing** document step, where it is the verification instrument for this class of
+work. **The escalation was correct and cost one sentence to settle** — which is the argument for
+escalating rather than deciding at 3 a.m., not against it.

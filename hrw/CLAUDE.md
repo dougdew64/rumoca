@@ -589,13 +589,13 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > document lens worked on its first run. The record and the four commits are in
 > [`docs/unattended-runs.md`](docs/unattended-runs.md).
 >
-> **⟶ DOUG OWES ONE RULING: hard rule 5 against document work.** That rule says *every unattended
-> item ends in a test that fails by name; if it cannot, it is not unattended work*. **A prose
-> contradiction fix cannot.** He authorised the item explicitly so the night proceeded, with the
-> restore-never-choose boundary as the verification substitute — a *source document* rather than a
-> test. **The conflict is real and unresolved**: is rule 5 scoped to code items, or does document
-> work need a different warrant? Resolving it means ruling on what the rule is *for*, which the
-> boundary reserves to him.
+> **RULED 2026-08-31: hard rule 5 does not apply to document maintenance.** *"Every item ends in a
+> test that fails by name"* now reads *every CODE item*. Document work is **not thereby
+> unverified** — its instrument is **restore, never choose**, where a source of truth plays the
+> part a failing test plays for code. Both answer the same question: is success verifiable without
+> Doug? That boundary now lives in the standing document step of
+> [`docs/unattended-runs.md`](docs/unattended-runs.md), **not in a night's plan** — it was written
+> into night 7's queued plan and would have been cleared away with it.
 >
 > **The pattern is worth more than the four fixes.** Every contradiction was **same-day** — a
 > mechanism changed that afternoon and its description did not. Nothing had rotted over weeks. **So
