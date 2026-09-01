@@ -6403,3 +6403,28 @@ version before promising it**; it has not been checked.
 future, then we will revisit 2 and 3 via the ideas log."* So the trigger is a **machine switch that
 goes wrong despite the script existing** — most likely because nobody ran it, which is precisely the
 failure (b) removes.
+
+## 85. A charter clean-up
+
+Raised by Doug, 2026-09-01: *"perhaps we will perform a charter clean-up in the future."* **A
+candidate, not a commitment.**
+
+**Why it may be due.** `CHARTER.md` grew from ~32,000 characters to **54,454 in one day** — six
+decisions (11 through 16) adopted on 2026-09-01 — and it is now the **largest file in the mandatory
+reading path**, having overtaken `CLAUDE.md`. It has no ceiling of its own, only its share of the
+200,000-character total, which sits around 67 %.
+
+**The uncomfortable shape, stated because it is the reason to look:** six charter decisions were
+adopted on the day Decision 10 was adopted *against* promoting conclusions into rules. Each is
+defensible — they are Doug's, and most absorbed craft that already existed elsewhere — but growth
+at that rate, in a document meant to be amended deliberately, is the signal rather than the content.
+
+**What a clean-up would need that the `CLAUDE.md` passes had.** Those worked because the test came
+from outside the document: Decision 16's three questions, applied one item at a time with Doug
+ruling on each. **The charter has no such test above it** — it *is* the authority — so the
+instrument has to be different, and is probably *does this decision still describe how the project
+actually works?* Decision 2 was falsified within seven weeks and no checker noticed.
+
+**And Claude is the wrong judge here, more than for `CLAUDE.md`.** The charter is the one document
+only Doug may amend. Claude's part is the measurement — sizes, growth, which decisions nothing
+cites — and no verdicts.
