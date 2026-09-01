@@ -242,6 +242,13 @@ bounded*. A log showing six superseded commits for one bug reads as thrashing, w
 messages say. The failure was applying a work-product ritual — green suite, commit, push — to a
 probe, using *"is this verified?"* as the test instead of *"should the repository keep this?"*
 
+**THE QUESTION APPLIES TO SCRIPTS AND ONE-OFF TOOLING TOO, and it went unasked on 2026-09-01.**
+Five generator scripts were written for the tour → lab rename and all five committed without the
+test ever being applied. **They probably do earn permanence** — a rename of that shape recurs, and
+they are the record of exactly what was substituted and what was deliberately protected. **The
+defect is that the question was never asked**, which is the rule firing and Claude not hearing it.
+**Ask it out loud for anything single-use before committing it.**
+
 **TAG A CLAIM OF ABSENCE, or it rots unnoticed.** The must-fire rule pointed at silence; this
 is the same principle pointed at **absence**. When a document says something is not built,
 tag it so the claim is checkable:
@@ -257,6 +264,12 @@ fails if the target resolves; its doc comment carries the four stale cases and w
 *negative* is the error nobody catches. Coverage is expected to be low — tag when you write the
 claim, the way provenance tags do.
 
+**AND A TAG ON WORK THAT MUST NOT BE DONE IS DELETED, NOT KEPT** *(2026-09-01)*. `unbuilt:` exists
+to **invite** a later session to build the thing, so an absence tag on something ruled out is a
+recruitment notice. `last_walked` marked the absence of walk-tracking derived from the action
+trail — work Doug had by then retired twice — and it went with the paragraph carrying it.
+**When a claim of absence becomes a claim of prohibition, the tag is the wrong instrument.**
+
 **WHEN TO REFACTOR is charter Decision 12(b)** — Claude's comprehension, his ability to
 maintain, or testability, and **never a line count.** The three complexity lints are declined
 for that reason (`hrw/Cargo.toml` carries it).
@@ -268,10 +281,11 @@ conversation to be about my education rather than about HRW features."* And the 
 should not need saying twice: *"We've been working on this project for three weeks, and I have not
 yet been rewarded with a learning experience."*
 
-**When Doug reports something during a walk, the first question is *"what does this teach, and is
-it true?"*** — not *"what should we build?"* A feature is warranted when it unblocks the learning;
-[`docs/ideas.md`](docs/ideas.md) is where the rest goes. **Treat an hour of HRW polish during a
-walk as a cost.**
+**When Doug reports something during a lab session, the first question is *"what does this teach,
+and is it true?"*** — not *"what should we build?"* A feature is warranted when it unblocks the
+learning; [`docs/ideas.md`](docs/ideas.md) is where the rest goes. **Treat an hour of HRW polish
+during a session as a cost** — and charter Decision 14 raised that cost rather than lowering it,
+because the hour now competes with an exchange that teaches directly.
 
 **Neither the labs nor the UI are fundamental — the mathematics as Rumoca implements it is.** So
 a mismatch may be fixed by changing the *pane*, and on 2026-08-13 one was. But **labels must
@@ -280,6 +294,12 @@ expose Rumoca's structure, not a pedagogically convenient one**; when prose and 
 
 **When a 🎯 capture arrives, locate the passage in the file the capture names.** The emitted text
 is what the pane *rendered*, so it will not match the markdown byte-for-byte.
+
+**AND WHEN NO CAPTURE ARRIVES, SAY SO RATHER THAN GUESSING WHICH PASSAGE WAS MEANT** *(2026-09-01)*.
+The hook reports the state on every prompt, including *"`focus.json` predates this HRW session"* —
+**that line is information, not noise.** Asked to explain "this statement" with nothing captured,
+reporting the absence and naming the likely candidates costs one exchange; guessing wrong costs an
+explanation of the wrong sentence, which Doug has no reason to suspect.
 
 **The rest is owned elsewhere and must not be restated here** — prose runs only to the first
 prediction, and one lab at a time ([`docs/fixture-labs/README.md`](docs/fixture-labs/README.md));
