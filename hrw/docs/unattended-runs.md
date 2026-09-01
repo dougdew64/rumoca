@@ -24,18 +24,61 @@ planned the run does not survive to the machine that executes it. When a run fin
 goes to the run log below and this section is overwritten by the next plan — otherwise it becomes
 the accumulating history `CLAUDE.md`'s *Current work* had to be rescued from.
 
-### QUEUED — nothing. The slot is empty.
+### QUEUED — night 7: eliminate contradictions between the governing documents
 
-**Night 6 ran on 2026-08-31 and its item closed as "not worth doing"** — see the run log. There is
-no queued plan, and that is the honest state rather than an oversight.
+**Doug, 2026-08-31:** *"I want you to thoroughly check the documents for inconsistencies and do
+your best to eliminate inconsistencies. If you are unable to resolve inconsistencies, then bring
+those to my attention in the morning."*
 
-**What a next plan should NOT be:** another pass at test-suite timing. `docs/ideas.md` #48 has now
-killed six levers by measurement and night 6 killed the seventh. **That lens is spent** — the rule
-above says a lens returning nothing twice must be retired, and this one has returned nothing far
-more often than that.
+**A NEW LENS, and the old one is formally retired.** Every previous night read *code*. This reads
+*documents* — the wall the ceilings cannot see, named the same day: two documents stating one rule
+differently, so a session cannot tell which binds and silently picks. Test-suite timing is spent
+(`ideas.md` #48 killed six levers, night 6 the seventh) and is not to be queued again.
 
-**The obvious candidate, which needs Doug awake:** `connect-expansion` is rewritten and unwalked,
-so the next real work is his walk of it, not Claude's night.
+**It is not speculative.** The lens found one before it was queued: *"token cost is not a
+constraint — never trade richness for economy"* in `CLAUDE.md`, against *"answer the question
+asked, at the depth asked, and stop"* in `working-with-doug.md` and *"thoroughness had been treated
+as free and is not"* **400 lines away in `CLAUDE.md` itself.** All three on the mandatory reading
+path. Doug's own words were correctly scoped to *context captures*; two rounds of summarising
+dropped the scope.
+
+#### THE BOUNDARY — restore, never choose
+
+**This is the whole safety of the night, and it is one question: is there a source of truth to
+restore to, or must I pick?**
+
+| resolve it alone | bring it to Doug |
+|---|---|
+| a digest broadened or narrowed its source — **restore the source's scope** | two deliberate statements that genuinely differ |
+| Doug's verbatim words are recorded and a gloss overreaches them | resolving it needs a ruling on what he meant |
+| a document claims another says X; that one no longer does | the fix changes what a rule *permits* |
+| a citation names a renamed or deleted symbol, file or test | anything requiring an explanation to be trimmed |
+
+**Restoring a scope from Doug's own quoted sentence is a correction, not a judgement** — that is
+what made the token-cost fix safe to make unattended. **Choosing between two things he said is a
+judgement and is his**, however obvious the answer looks at 3 a.m.
+
+#### METHOD — four passes, highest yield first
+
+1. **Digest audit.** Every place a reading-path document summarises another, compared against the
+   source. This is where the known instance came from, and `CLAUDE.md` is a digest of
+   `working-with-doug.md`, `CHARTER.md` and `docs/README.md` throughout.
+2. **Quote provenance.** Every quoted Doug sentence: does the gloss around it extend the claim?
+   Does the same quote appear elsewhere with a different gloss?
+3. **Cross-reference claims.** Every *"X says Y"* — check that X says Y. Cheap and mechanical.
+4. **Rule pairs by subject.** Group the bolded imperatives by topic and compare within each group.
+   Slowest, and the one most likely to surface a genuine conflict for Doug.
+
+**Scope: the documents that GOVERN behaviour** — `CLAUDE.md`, `docs/working-with-doug.md`,
+`docs/CHARTER.md`, `docs/README.md`, `docs/fixture-tours/README.md`, `docs/vision.md`,
+`docs/unattended-runs.md`, `DECISIONS.md`. **Not `ideas.md`** (6,349 lines of speculation) and
+**not `compiler-phases/`**: a stale idea misleads nobody the way a contradictory rule does.
+
+**Output.** One commit per resolved contradiction, each naming both sides and which source settled
+it. Everything unresolved goes in the run log below **and** the handoff, stated as a pair rather
+than a recommendation — the morning is for Doug to rule, not to ratify.
+
+**Run `cargo run -p hrw --example doc_report` first**, as every night now does.
 
 ### ⟶ RULED, 2026-08-25 — THE NIGHTS CONTINUE, AND ROTATION IS THE CONDITION
 
