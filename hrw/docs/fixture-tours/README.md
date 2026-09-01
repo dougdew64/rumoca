@@ -869,9 +869,15 @@ position 21 of 23.
 **AND THAT GOVERNS EVERY LINK IN A TOUR, NOT ONLY LINKS TO TOURS** — a rule stated three times
 about whichever file type was in front of us, and evaded three times by the next one:
 
+**This table defines the `hrw://` verbs, so it is where the rename lands.** `hrw://tour/<name>`
+becomes `hrw://lab/<name>` in the atomic pass — **every occurrence rewritten, no alias** (Doug,
+2026-09-01: *"we are replacing the concept of tours with the concept of labs"*).
+`fixture_tour_links_all_resolve` makes that safe: a missed link fails by name rather than rotting.
+The other four verbs are unaffected.
+
 | to reach | write |
 |---|---|
-| another tour | `hrw://tour/the-concepts` |
+| another lab | `hrw://tour/the-concepts` → **`hrw://lab/the-concepts`** at the rename |
 | a doc under `hrw/docs/` | `hrw://doc/upstream-issues.md` — nesting allowed |
 | **a source file, at a symbol** | `hrw://src/hrw/src/bridge.rs#resolve_source` |
 | a Wolfram notebook | `hrw://notebook/structural-vs-numerical-rank.nb` |
@@ -886,6 +892,20 @@ rotted inside a day. Functions, types, enum variants and struct fields all resol
 
 **This is the half that pays for grounding:** `fixture_tours_reference_files_that_exist` resolves
 every one in the FAST suite, so a renamed symbol fails a test rather than a walk.
+
+**AND IT IS WHAT MAKES THE CONVERSATION SAFE, NOT ONLY THE PROSE** *(2026-09-01)*. Rule 9 records
+that grounding is the only defence that transfers to the bench, because no checker can see what
+Claude says there. **An `hrw://src` link is that defence made operational:** Doug can open the file
+and refute the answer while it is being given. A cited symbol he cannot reach is a claim he must
+take on trust.
+
+**SYMBOL-NOT-LINE IS THE BEST DESIGN IN THIS DOCUMENT, and it is worth copying rather than merely
+obeying.** Charter Decision 13 says perishable specifics do not belong in durable text. This rule
+does something stronger: **it makes the perishable specific unrepresentable.** There is no way to
+write a rotting line number into an `hrw://src` link, because the line is computed at click time
+and a checker resolves the symbol. `tech-debt.md`'s hand-written `worker.rs:3434` rotted inside a
+day; this cannot. **When building the loop target from the tier table, aim here — the best loop
+does not catch the error, it removes the way to make it.**
 
 `doc_citations::no_tour_links_to_a_bare_file_path` fails on anything else, in the fast suite, on
 the day it is written; **the three defects and the reasoning live on that test**, not here.
