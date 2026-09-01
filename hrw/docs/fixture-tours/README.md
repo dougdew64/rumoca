@@ -48,7 +48,7 @@ the thing that actually matters.
 | read | months later, repeatedly | seconds later, once |
 | relation to the program | a **copy** of what it did | an **observation** of what it is doing |
 | failure mode | **staleness** — true when written, false later | **misreading** — wrong on arrival |
-| defended by | checkers, markers, the gate | nothing, and nothing is needed |
+| defended by | checkers and the gate | nothing, and nothing is needed |
 
 **Duplicated truth is what rots, and an ad hoc tour duplicates nothing.** Its lifetime is seconds:
 it is discarded before the world can move under it. That is why it is gitignored and unchecked —
@@ -558,43 +558,33 @@ the verb is an unbounded utterance.*
 The full account, including what made each of the three questions click, is in
 [`question-ledger.md`](../question-ledger.md), 2026-08-16.
 
-#### Two passes over every subject: the idea, then the code
+#### `matching-live.md` is a DEBUGGER tour, and that is an instrument, not a stage
 
-**Agreed with Doug 2026-08-15**, generalising a split that had already happened by accident
-between [`matching.md`](matching.md) and [`matching-live.md`](matching-live.md):
+*(This replaced a two-pass model on 2026-09-01. Doug had agreed on 2026-08-15 to walk each subject
+twice — concepts first, Rumoca's code second — and then ruled the split away: **"Let us eliminate
+entirely the notion of passes through the tours. What matters most for tours is that their content
+is math-inspired, code grounded."** Code-grounding applies from the first sentence of every tour,
+so there is no first pass to defer code out of, and no second pass to defer it into.)*
 
-> *"The connections tour which we just completed is about the concepts, math and algorithms, but
-> not about the rumoca code… We're going to make two walking passes through the tour subjects.
-> During the first pass, we will focus on concepts, math and algorithms… During the second pass,
-> we will focus on the rumoca code."*
+**Stepping is the sharpest instrument for reading an algorithm's *behaviour*, and useless for
+everything else** — why a phase is organised as it is, why a type sits at one IR boundary and not
+another, why an origin is a `String` on one side of DAE construction and an enum on the other.
+Those are read, not stepped. **So `-live` in a filename names the instrument**; leave
+`matching-live.md` alone rather than break its links, and do not read the suffix as a stage.
 
-| pass | subject | lab | example |
-|---|---|---|---|
-| **1** | concepts, mathematics, the algorithm as an idea | the HRW pane | `connect-expansion.md` |
-| **2** | how Rumoca implements it | the source and the debugger | `matching-live.md` |
-
-**Pass 2 is not defined by the debugger**, even though `matching-live.md` is a debugger tour.
-Stepping is the sharpest instrument for reading an algorithm's *behaviour*; it is useless for
-why a phase is organised as it is, why a type sits at one IR boundary and not another, or why an
-origin is a `String` on one side of DAE construction and an enum on the other. Those are read,
-not stepped. **So `-live` in a filename names the instrument, not the pass** — prefer a suffix
-that names the pass for new ones, and leave `matching-live.md` alone rather than break its links.
-
-**The template still applies, with the lab swapped.** *Predict → look → falsified if →
+**The template is unchanged when the lab is the debugger.** *Predict → look → falsified if →
 explanation after.* Predict what a function returns, which branch runs, what the union-find holds
-at this step — then step, and check. A pass-2 tour that merely narrates source is prose competing
-with the reader's own editor.
+at this step — then step, and check. **A tour that merely narrates source is prose competing with
+the reader's own editor.**
 
-**What this fixes, and it is the reason to adopt it rather than a nicety.** The depth rule sends
-premature detail to [`../compiler-phases/`](../compiler-phases/), which is raw, unsummarised, and
-**read by nobody** — a graveyard dressed as a database. Under two passes that same material is
-the *source* for a pass-2 tour, so exiling it is deferral rather than disposal. It also lets a
-pass-1 tour be **ruthless** about excluding implementation detail, because there is somewhere
-specific for it to go.
+**AND ONE PROBLEM THE TWO-PASS MODEL WAS SOLVING IS NOW UNSOLVED, which is worth saying rather
+than losing.** The depth rule sends premature detail to
+[`../compiler-phases/`](../compiler-phases/), which is raw, unsummarised and **read by nobody** — a
+graveyard dressed as a database. Two passes made that material the *source* for a later tour, so
+exiling it was deferral rather than disposal. Without passes it is disposal again. **What becomes
+of `compiler-phases/` is an open question for Doug**, not something to answer by quietly
+reintroducing a stage.
 
-**Write pass 2 when he starts pass 2**, not alongside pass 1. The rule to write while you still
-know what should happen is satisfied by capturing the material in `compiler-phases/` as it comes
-up; composing it into a walk before it is wanted is building what nobody has asked to read.
 
 Cross-platform tours may route through Wolfram Desktop or System Modeler when the point cannot
 be made in HRW. Their notebooks are versioned in [`notebooks/`](notebooks/) — a *fixture*
