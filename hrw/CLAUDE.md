@@ -398,21 +398,29 @@ the next phase touches — is procedure and lives there.
 > be as much a historical log as a policy statement."* **He was right** — this file was 1,420 lines,
 > of which `The rules` / `Current work` / `Running things` were 88 %.
 >
-> **The test is charter Decision 10's**, not *"is this old"*: does this paragraph **bind**, or is it
-> a conclusion drawn from one case? A conclusion is *evidence for* a decision, never itself a rule.
-> Decision 11 then routes whatever survives. **The finding that has recurred at every step: almost
-> nothing was wrong or old — it was filed in the wrong place**, and *one home per fact* is violated
-> *within* a single file as often as between two.
+> **THE TEST IS CHARTER DECISION 16'S THREE QUESTIONS, IN ORDER** — not Decision 10 alone, which is
+> what this box said until the pass reached it. **(1)** Can it fail by name? → build the mechanism,
+> delete the prose. **(2)** Is it a conclusion about a situation? → it rots; ask Doug for a ruling.
+> **(3)** Is it about how Claude works, with a silent failure mode and an instance on record? →
+> keep it, and say that is why. **Decision 13** adds the second axis — a rule that binds can still
+> name something perishable — and **Decision 11** routes whatever survives.
 >
 > **Claude is the wrong judge of what to cut** and should supply evidence, not verdicts: this
-> history is the record of his own failures.
+> history is the record of his own failures. **Vindicated twice today** — he proposed deleting
+> 8,650 lines of Rumoca documentation on a premise only Doug could correct, and created two
+> duplicates while conducting the sweep that hunts duplicates.
 >
-> **THE LAB-RULE SWEEP IS DONE — 25 items, 2026-09-01.** Every rule in
-> [`docs/fixture-labs/README.md`](docs/fixture-labs/README.md) was decided one at a time with Doug
-> ruling on each: 19 kept (most with a correction), 2 cut, 1 named the standing loop target, the
-> vocabulary settled, 2 renamed. **The dominant defect, found six times: a mechanism exists, prose
-> beside it does the same job by hand, and the hand copy rots.** The mechanism was never the wrong
-> one.
+> **TWO PASSES ARE COMPLETE.** The lab rules — 25 items, Doug ruling on each: 19 kept, 2 cut, 1
+> named the standing loop target, the vocabulary settled, 2 renamed. Then `The rules` here under
+> Decision 16 — 8 mechanisms, 8 category 3, 23 judgements: **2 cut, 2 routed to procedure, 1
+> duplicate removed, 18 kept.**
+>
+> **AND THE RESULT CONTRADICTS WHAT BOTH OF US EXPECTED, so do not read it as failure next time:
+> Decision 16 is a CLASSIFICATION test, not a deletion test.** `The rules` grew from 622 to 640
+> lines. Most rules were category 3 doing real work **with pieces missing**, and the pieces got
+> added because today is the day those rules fired. **The dominant defect was still the one the lab
+> sweep found six times** — a mechanism exists, prose beside it does the same job by hand, and the
+> hand copy rots. The mechanism was never the wrong one.
 >
 > **⟶ THE RENAME IS DONE — charter Decision 15 executed 2026-09-01 in one atomic pass.**
 >
@@ -463,21 +471,25 @@ the next phase touches — is procedure and lives there.
 > when he cannot — and the decision boundary that comes with them are in
 > [`docs/working-with-doug.md`](docs/working-with-doug.md), under *Standing rules*.**
 >
-> ### ⟶ THE WALK IS THE MODE — Doug, 2026-08-21
+> ### ⟶ THE LABS — order, standing constraints, and nothing about progress
 >
-> *"my hope going forward is to focus on improving labs, not feature code."* **The iteration
-> loop, the two gate traps and the one-lab-at-a-time rule are in
+> **Doug runs labs in compiler-phase order** *(2026-08-22)*: **dae-construction → matching (→
+> matching-live) → blt-ordering → tearing → index-reduction → initialization → solve-lowering →
+> events**, which is `the-concepts.md`'s own numbering. **That is a rule about sequence, not a
+> report on position.**
+>
+> **The iteration loop, the gate traps and the one-lab-at-a-time rule are in
 > [`docs/fixture-labs/README.md`](docs/fixture-labs/README.md)** — read before touching a lab.
->
-> **⟶ WHERE THE WALK IS — `connect-expansion`, RE-WALKED, THEN `dae-construction`**
->
-> **Doug, 2026-08-22:** *"I will walk labs in the same sequence as the compiler phases"* —
-> `the-concepts.md`'s own numbering: **dae-construction → matching (→ matching-live) → blt-ordering
-> → tearing → index-reduction → initialization → solve-lowering → events.**
 >
 > **`connect-expansion` was rewritten 2026-08-30 under the provoke-questions rules and again
 > 2026-08-31 under code-grounding** — its opening walks `connections/mod.rs` and every code name is
-> an `hrw://src` link.
+> an `hrw://src` link. *(A fact about the artifact. Whether anyone has read it is not recorded, by
+> the rule below.)*
+>
+> *(Retitled 2026-09-01. It read "THE WALK IS THE MODE", asserting a mode from 2026-08-21 that this
+> session was not in — a rename, a charter and two sweeps — and it carried a "WHERE THE WALK IS"
+> pointer naming the current and next lab. **That was walk-tracking in prose, which the rule below
+> forbids in exactly those words.**)*
 >
 > **NOTHING TRACKS OR REPORTS WHAT HAS BEEN RUN, IN A MARKER OR IN PROSE** *(Doug, 2026-09-01)*:
 > *"that discipline was turning education into a chore, including frequent pesters from you about
