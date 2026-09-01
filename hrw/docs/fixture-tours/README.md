@@ -830,6 +830,59 @@ That history is not lost, it is **filed where it belongs**: the decision and its
 [`../question-ledger.md`](../question-ledger.md), and the mechanism in a code comment or
 [`../compiler-phases/`](../compiler-phases/). A tour states what is true now.
 
+## Running a tour edit — the loop, and the two gate traps
+
+*(Moved here from `CLAUDE.md`'s Current work on 2026-09-01. These are needed **while editing a
+tour**, which is exactly when this file is read; they were filed under "what is in flight", which
+they never were.)*
+
+**THE TOUR ITERATION LOOP, and it is not the gate:**
+
+```text
+cargo test -p hrw --lib -- --test-threads=1 doc_citations tour   # 6.1s -- while editing
+cargo run -q -p hrw --example gen_tour_catalogue                 # 9.9s -- see the trigger below
+cargo run -p hrw --example gate                                  # before the commit
+```
+
+**The third line is the RUNNER, not the plain fast suite** *(corrected 2026-08-31)*. It said
+`cargo test -p hrw --lib` — which for a tour edit is the one gate that **cannot see the
+change**, because the tests verifying guarded tables against a real compile are slow-gated off.
+The runner picks TOUR for a tour edit (11.1 s) and FAST otherwise.
+
+**And the generator's trigger is not only a `##` heading** — that comment said `ONLY`, which the
+blurb trap twenty lines below has contradicted since 2026-08-22. Regenerate if a `##` heading
+**or the tour's first bolded line** moved; when in doubt run the checkers first and let
+`tour_catalogue_is_current` tell you.
+
+**TWO GATE TRAPS, both of which have cost the full gate before:**
+
+- **`connect-expansion.md` is the one expensive tour — but only its five guarded tables are.**
+  It is the only tour carrying `<!-- pane-groups -->` / `pane-origins` / `pane-frames` tables,
+  which slow-gated tests verify against a real compile. **Editing one of those tables means the
+  TOUR gate** — 11.1 s, not FULL's ~101 — whatever the diff-grep says; **editing its prose does
+  not, and never did.**
+
+  **YOU NO LONGER HAVE TO REMEMBER THAT** *(built 2026-08-22)*.
+  `doc_citations::editing_a_guarded_tour_table_needs_the_full_gate` compares every guarded region
+  against `HEAD` and **fails by name in the FAST suite** if one changed, naming the marker and
+  printing the FULL command. It is gated *off* under `slow-tests` — in a FULL run the real
+  checkers are executing, so **the cheap gate is the only place the warning is useful.**
+
+  **The gain is assurance, not permission.** Prose edits were always FAST; what was missing was
+  any check that an edit believed to be prose actually was one. The filtered iteration line
+  catches it, so a green `doc_citations tour` run now means FAST was genuinely the right gate.
+- **Any `##` heading edit changes `CATALOGUE.md`.** Forget `gen_tour_catalogue` and
+  `tour_catalogue_is_current` fails. The order is `cargo fmt` → generators → checks, and getting
+  it backwards has cost the whole gate four times.
+
+  **AND THAT IS NOT THE ONLY TRIGGER — the blurb is the tour's FIRST BOLDED LINE** *(found
+  2026-08-22)*. `tour::catalogue` takes each tour's summary from the first line starting with
+  `**`, so **inserting any bolded paragraph above the existing one silently replaces the
+  catalogue's summary** — in this case with a mid-sentence fragment, *"MLS §9.3 requires connected
+  connectors to be type-compatible, and Rumoca does check. Four"*. Nothing about headings was
+  involved. **A new intro section goes BELOW the tour's opening bold line**, or the catalogue's
+  description of that tour changes with it.
+
 ### A tour the overview links into must link back — with `hrw://`, twice
 
 **Doug, 2026-08-17:** *"There's a top-level tour which links to subordinate tours. I really want
