@@ -613,8 +613,19 @@ only, no WASM — is Decisions 4, 5 and 6. **Read them there.** What follows is 
   Compilation and simulation run on a worker thread, results returned over a channel.
 - **One generic serde-value tree inspector** pointed at every stage's IR — not per-stage bespoke
   tree widgets.
-- **A new pipeline stage must be wired into ALL per-stage systems** — stage-diff highlight,
-  stage-file publishing, and the notebook trace. Miss one and the stage is silently half-present.
+- **A new pipeline stage must be wired into ALL per-stage systems, and the roster is
+  `StageKind::ALL` rather than any list written here.** Miss one and the stage is **silently
+  half-present**. *(This named three systems until 2026-09-01 — stage-diff highlight, stage-file
+  publishing, the notebook trace — and there were more. That is the exhaustive-list-written-when-
+  there-were-fewer-things failure, in the one rule whose own text says the failure is silent.)*
+
+  **Four are now checked, and each fails by name**: `arch_doc::the_stage_roster_matches_stagekind`
+  (`architecture.md`'s pipeline table — written after `Dae` joined `StageKind::ALL` on 2026-08-03
+  and the document went on describing a ten-stage pipeline), `bridge::focus_json_stage_files_match_constant`,
+  `stage_tabs::no_compilation_stage_is_missing_from_the_tab_roster`, and
+  `worker::manifest_stage_rosters_match_the_pipeline` for the notebook trace. **Add a stage, run the
+  gate, and let the failures enumerate the work** — that is more reliable than any list in this
+  file, including this one.
 
 
 ## Debugging conventions
