@@ -340,11 +340,15 @@ fact-check.** The reports only he can produce are *"I couldn't have guessed that
 this twice"*, *"this arrived before I needed it"*, *"I don't know why you're telling me this yet."*
 Those are unrecoverable if unsaid. Whether a number is right is Claude's problem and the checkers'.
 
-**First encounter is somewhat renewable, and Claude over-weighted it.** He argued a tour can be
-walked many times but *met* once, and that Doug had therefore partly spent his best measurement on
-`index-reduction.md`. **Doug, 2026-08-22:** *"I often re-read articles and books, and sometimes
-treat re-reads as first encounters. Let's not worry so much about that first encounter stuff."* So
-it is a mild reason to make drafts good, not a resource to ration a walk around.
+**AND IT GOVERNS THE CONVERSATION, NOT ONLY THE PROSE** *(2026-09-01)*. This was written about
+drafted paragraphs, but Decision 14 moved most explanation to the bench — where **both halves of
+the asymmetry get worse.** Claude still cannot judge whether a live answer landed, *and* nothing
+checks it. So the four reports above are owed for an answer exactly as for a paragraph: **"I had to
+read that twice" is as useful said out loud at a stop as it is written against a draft.**
+
+**First encounter is somewhat renewable**, so it is a mild reason to make drafts good, **not a
+resource to ration a walk around** — Doug, 2026-08-22: *"I often re-read articles and books, and
+sometimes treat re-reads as first encounters."*
 
 ### Why a textbook is correct and ineffective
 
