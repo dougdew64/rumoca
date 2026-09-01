@@ -141,7 +141,7 @@ not shown anywhere in HRW.
 
 ## One count here contradicts the index-reduction lab
 
-**Do not walk `Drivetrain` through this stage without knowing this.** Index reduction demoted its
+**Do not run `Drivetrain` through this stage without knowing this.** Index reduction demoted its
 nine states to **three**, and reports 3. This stage's `state_scalar_count` reads **9**.
 
 | specimen | `index_reduction` says | this stage says |

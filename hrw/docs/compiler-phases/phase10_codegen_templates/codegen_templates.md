@@ -34,7 +34,7 @@ template = "casadi_sx.py.jinja"
 ```
 
 The `ir` field selects which IR the template receives: traditional `dae` /
-`flat` / `ast` for templates that walk the DAE expression trees, or `solve`
+`flat` / `ast` for templates that run the DAE expression trees, or `solve`
 for the new tensor-IR backends that consume the `SolveProblem` directly.
 
 ---
@@ -51,9 +51,9 @@ for the new tensor-IR backends that consume the `SolveProblem` directly.
   │  • Serialise IR to JSON             │
   │  • minijinja environment with       │
   │    custom filters/functions         │
-  │  • render_expr walks expression     │
+  │  • render_expr runs expression     │
   │    trees (DAE path); render_solve   │
-  │    walks ComputeNodes (solve path)  │
+  │    runs ComputeNodes (solve path)  │
   │  • ExprConfig parameterises per-    │
   │    target syntax                    │
   │  • Multi-file outputs via target.toml│
@@ -169,7 +169,7 @@ is parameterized by an `ExprConfig` dictionary passed to `render_expr()`:
 
 ### How Expressions Are Rendered (`codegen/render_expr.rs`)
 
-`render_expr()` walks the JSON expression tree recursively:
+`render_expr()` runs the JSON expression tree recursively:
 
 ```
 Binary { op, lhs, rhs }  → "(" + render(lhs) + op_string(op, cfg) + render(rhs) + ")"
@@ -200,7 +200,7 @@ one directory per target. Targets are registered via the static
 
 ### Targets that consume the DAE IR
 
-These templates walk the symbolic DAE expression trees via `render_expr`
+These templates run the symbolic DAE expression trees via `render_expr`
 and produce target-language source. Most users encounter this set.
 
 | Target | Files | Description |
@@ -225,7 +225,7 @@ and produce target-language source. Most users encounter this set.
 
 ### Targets that consume the SolveProblem IR (new in v0.9.x)
 
-These templates walk the [SolveProblem from phase 8](../phase8_solve_lowering/solve_lowering.md)
+These templates run the [SolveProblem from phase 8](../phase8_solve_lowering/solve_lowering.md)
 — a tensor compute graph — rather than the DAE's symbolic expressions.
 They're well-suited to execution-oriented targets (JIT, GPU, MLIR
 pipelines) where the high-level `ComputeNode` structure (`MatMul`,

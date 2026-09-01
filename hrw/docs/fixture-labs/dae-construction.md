@@ -289,7 +289,7 @@ question no test reaches.
 
 **Whether Station 6's contrast with `CapacitorLoop` is worth a stop of its own.** It is asserted in
 prose here and demonstrated nowhere in this lab. *(It is demonstrated in
-[matching](hrw://lab/matching) Station 3, which walks that model's 13-of-14 matching — so the claim is
+[matching](hrw://lab/matching) Station 3, which runs that model's 13-of-14 matching — so the claim is
 checkable, just not here.)*
 
 **Whether Station 6 needed its own specimen or could have been prose.** It could not: until

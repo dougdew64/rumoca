@@ -7,7 +7,7 @@ These two phases — instantiation (this document) and
 world of Modelica and the flat equation-based world needed for analysis and
 simulation. Instantiation comes first: it applies modifications and resolves
 the class hierarchy for one specific model, producing an `InstancedTree`.
-Flattening then walks that tree and emits a globally-qualified flat model.
+Flattening then runs that tree and emits a globally-qualified flat model.
 
 **Pipeline position:** Instantiation runs *before* type checking in the Rumoca
 pipeline (despite the doc directory numbering). This is intentional — typecheck
@@ -187,7 +187,7 @@ end Body;
 **Resolution**:
 1. When encountering an `inner` declaration, register it in `inner_scopes` with
    its path and DefId (`register_inner()`).
-2. When encountering an `outer` reference, walk `inner_scopes` from innermost
+2. When encountering an `outer` reference, run `inner_scopes` from innermost
    to outermost looking for a matching name (`find_inner()`).
 3. If no matching `inner` is found and the spec requires one: **synthetic inner
    synthesis** — the root instantiation is re-run after pre-registering a
@@ -202,7 +202,7 @@ end Body;
 - Class override maps (redeclare results) are recorded
 - The overlay carries per-instance data without duplicating the class structure
 
-The next phase, [flattening](../phase5_flatten/flatten.md), walks this tree and
+The next phase, [flattening](../phase5_flatten/flatten.md), runs this tree and
 produces the flat `Model` IR consumed by DAE construction.
 
 ---

@@ -41,7 +41,7 @@ one tells you the other. **Four states, two freedoms.**
 constraints included, and index-1 systems are full of them. So "the solver cannot cope with a
 constraint" is not the difficulty, and any explanation that says so is hiding the real one.
 
-Here is the real one, and it needs nothing but the matching you already walked.
+Here is the real one, and it needs nothing but the matching you already run.
 
 **Step 1 — what is actually unknown at an instant.**
 
@@ -57,7 +57,7 @@ nothing carries it forward. **Five unknowns, and the model has five equations.**
 **Step 2 — counting is not enough, and HRW will show you why.**
 
 An equation can only help determine a quantity **it actually mentions**, and pairing each equation
-with the one unknown it determines is the **matching** you have already walked. The Incidence view
+with the one unknown it determines is the **matching** you have already run. The Incidence view
 draws exactly that: one row per equation, marking which unknowns it touches.
 
 [Look — CartesianPendulum → Structural → Incidence](hrw://load/CartesianPendulum/Structural/Incidence)
@@ -129,7 +129,7 @@ unmatched equations: f_x[4]; unmatched unknowns: lambda
 `f_x[4]` **is** the constraint, and `lambda` **is** the unknown it stranded. **The compiler found
 by algorithm what you found by reading the table above.**
 
-**Index reduction is the phase that walks that distance.** Five stops: a model needing nothing,
+**Index reduction is the phase that runs that distance.** Five stops: a model needing nothing,
 the smallest model that needs something, the same idea at scale, what the compiler actually
 reaches for, and a model it cannot reduce.
 

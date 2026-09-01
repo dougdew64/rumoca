@@ -237,7 +237,7 @@ rust-analyzer), then:
 .\scripts\measure-fidelity.ps1 -ModelsFile "C:\tmp\all-models.txt" -Out "C:\tmp\fid-full.csv" -Profile "C:\tmp\fid-full-memory.csv" -RetryVerdicts 'aborted:free-ram','aborted:timeout'
 ```
 
-**Read the first two lines before walking away.** They are printed within seconds of each
+**Read the first two lines before running away.** They are printed within seconds of each
 other and they answer different questions:
 
 ```text

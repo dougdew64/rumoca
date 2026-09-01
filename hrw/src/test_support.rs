@@ -2,7 +2,7 @@
 //!
 //! Most HRW tests are better off with hand-built frames: they are fast, they
 //! pin exact wording, and they can construct situations no specimen produces.
-//! But a view that reconstructs compiler state from a DAE — tearing walks the
+//! But a view that reconstructs compiler state from a DAE — tearing runs the
 //! BLT blocks, the IC-plan view reads the initialization plan — has a failure
 //! mode hand-built frames cannot catch: the *reconstruction* can be wired up
 //! wrongly (wrong index space, wrong matching direction) and every unit test

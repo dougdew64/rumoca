@@ -172,7 +172,7 @@ mod tests {
     }
 
     /// Docs, labs and notebooks are the fast case — the one the rule exists to make
-    /// cheap, since most commits in a walking session are exactly this.
+    /// cheap, since most commits in a running session are exactly this.
     #[test]
     fn documents_and_labs_do_not_need_the_full_gate() {
         assert!(!needs_full_gate(["hrw/docs/fixture-labs/matching.md"]));

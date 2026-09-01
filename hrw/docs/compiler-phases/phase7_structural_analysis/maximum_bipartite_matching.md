@@ -64,7 +64,7 @@ is *structurally singular*.
 
 ## Why Greedy Doesn't Work
 
-The first instinct is greedy: walk equations in order, and for each equation
+The first instinct is greedy: run equations in order, and for each equation
 pick any unknown that is still free. This often produces a matching, but not
 always a *maximum* one. Here is a small example that defeats greedy assignment:
 
@@ -73,7 +73,7 @@ eq0  references  {v0, v1}
 eq1  references  {v0}
 ```
 
-A greedy walk in order:
+A greedy run in order:
 1. eq0 sees v0 free, claims v0.
 2. eq1 sees v0 taken (its only option) — fails.
 
@@ -144,7 +144,7 @@ will end up in the unmatched-equations diagnostic if the matching turns out to
 be imperfect).
 
 The clever part of Kuhn's algorithm is that it does **not** explicitly build or
-walk the augmenting path. Instead, the path is encoded implicitly in the call
+run the augmenting path. Instead, the path is encoded implicitly in the call
 stack of a recursive function: each level of recursion represents one "step"
 along the path, and when the recursion reaches a free unknown, the assignment
 cascade on the way back up performs the toggling.
@@ -453,7 +453,7 @@ each other forever.
 
 Rows 9 and 11 of the observed run are both `Assign`, at depths 2 and 1, with `DisplaceOk` between
 them. The inner frame commits `eq0 → v2` and returns `true`; the outer frame then commits
-`eq1 → v0`. **Nothing walks a stored path** — confirming the claim above from a live stack rather
+`eq1 → v0`. **Nothing runs a stored path** — confirming the claim above from a live stack rather
 than from reading.
 
 There is a moment mid-unwind when the two arrays genuinely disagree: after the inner `Assign`,
@@ -464,7 +464,7 @@ from lines 231-232, not observed — an anchor stop exposes only `frame_index`.)
 ### The failure path, and two steps that emit nothing at all
 
 *Measured 2026-08-08 stepping `TwiceDefined` — two equations that both mention only `a`, so `b` is
-reachable from nothing. Nine frames; the whole run fits in one walk.*
+reachable from nothing. Nine frames; the whole run fits in one run.*
 
 **Two real algorithm steps never reach the frame stream.** Both are `augment_traced` returning
 `false` from line 243 — the bare `false` after the `for` loop:

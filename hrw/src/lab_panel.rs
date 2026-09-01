@@ -26,7 +26,7 @@
 //! The bar touched **six** fields, and eighteen of its twenty `self` accesses were
 //! `self.lab`. So the whole bar reduces to one `&mut LabState` — the state that
 //! already lives in [`crate::lab`] — plus `compiling`, which the readout names
-//! because a walk holds its clock while a specimen builds. **That is the cheapest
+//! because a run holds its clock while a specimen builds. **That is the cheapest
 //! signature any extraction here has produced**, and it is cheap for a reason worth
 //! recording: the state had already been grouped. The 2026-08-02 UI pause that
 //! created `LabState` is what made this move a four-parameter one instead of a
@@ -103,7 +103,7 @@ pub(crate) enum TransportRequest {
 
 /// **The Play button** — transport for a self-running lab.
 ///
-/// Built 2026-08-03 for recording a walk as video, after a LinkedIn screenshot
+/// Built 2026-08-03 for recording a run as video, after a LinkedIn screenshot
 /// drew interest and explaining *what a lab is* to people who have never seen
 /// HRW proved harder in prose than in motion.
 ///
@@ -116,7 +116,7 @@ pub(crate) enum TransportRequest {
 /// a window, which for a *timing* feature is the difference between a checkable
 /// claim and a stopwatch.
 ///
-/// The lab transport bar: **which lab**, then **the walk**.
+/// The lab transport bar: **which lab**, then **the run**.
 ///
 /// Returns the press that `App` must carry out, if there was one — see
 /// [`TransportRequest`]. `lab_text` is the showing lab’s markdown, which the bar
@@ -347,7 +347,7 @@ pub(crate) fn autoplay_controls_ui(
                 match phase {
                     Phase::Playing | Phase::Paused => {
                         let (label, hover) = if phase == Phase::Playing {
-                            ("\u{23f8} Pause", "Hold the walk here.")
+                            ("\u{23f8} Pause", "Hold the run here.")
                         } else {
                             ("\u{25b6} Resume", "Continue from this beat.")
                         };
@@ -417,7 +417,7 @@ pub(crate) fn autoplay_controls_ui(
                         })
                         .response
                         .on_hover_text(
-                            "Total length of the walk. Conventional social-video lengths \
+                            "Total length of the run. Conventional social-video lengths \
                              \u{2014} pick to fit where it is going.",
                         );
                 });
@@ -554,7 +554,7 @@ pub(crate) fn autoplay_controls_ui(
 /// Re-parsed rather than stored with the schedule: the lab file is re-read
 /// whenever it changes on disk, and a caption cached at Play time would keep
 /// naming a stop that had since been rewritten. Doug regenerates labs *while*
-/// walking them, which makes that the normal case rather than an edge one.
+/// running them, which makes that the normal case rather than an edge one.
 ///
 /// **It never used `self`**, which is why it left `App` as a free function rather
 /// than acquiring a parameter.
@@ -590,7 +590,7 @@ pub(crate) fn lab_prose_ui(
     cache: &mut egui_commonmark::CommonMarkCache,
     lab_text: &Option<String>,
 ) {
-    // **The prose scrolls with the walk.**
+    // **The prose scrolls with the run.**
     //
     // Without this the stage side moves while the lab text sits at the
     // top, and a viewer of the recording cannot tell which stop they are
@@ -712,7 +712,7 @@ pub(crate) fn lab_prose_ui(
         set_markdown_text_sizes(ui);
         match lab_text {
             Some(text) => {
-                // **Only split while a walk is running.**
+                // **Only split while a run is running.**
                 //
                 // The split exists to measure one beat's link position.
                 // Idle, it buys nothing — and it does not go away by
@@ -738,7 +738,7 @@ pub(crate) fn lab_prose_ui(
                 // re-read whenever its mtime changes, so an offset recorded
                 // against the previous text can land mid-character after an
                 // edit — and slicing a `str` off a char boundary panics.
-                // These documents are edited *while* Doug walks them, so
+                // These documents are edited *while* Doug runs them, so
                 // that is the expected case rather than a corner one.
                 let station_split = lab
                     .scroll_to_offset
@@ -761,7 +761,7 @@ pub(crate) fn lab_prose_ui(
                 //
                 // A run in progress owns the scroll, so a stop request is
                 // still *consumed* but not acted on — otherwise it would
-                // fight the interpolation for the rest of the walk.
+                // fight the interpolation for the rest of the run.
                 if lab.scroll_to_offset.take().is_some()
                     && station_split.is_some()
                     && !lab.autoplay.is_running()

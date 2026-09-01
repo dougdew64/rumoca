@@ -241,7 +241,7 @@ pub(crate) fn events_row_ui(
     true
 }
 
-/// The Initialization stage's sub-view row: the tree, or a walk of the IC solve plan.
+/// The Initialization stage's sub-view row: the tree, or a run of the IC solve plan.
 ///
 /// Returns `init_ready`. `have_ic_plan` is whether the stage produced a plan — a model
 /// whose initialization failed has none, and shows no row rather than an empty tab.
@@ -251,7 +251,7 @@ pub(crate) fn init_row_ui(
     have_ic_plan: bool,
     view: &mut InitView,
 ) -> bool {
-    // The Initialization stage offers a walk of the initial-condition
+    // The Initialization stage offers a run of the initial-condition
     // solve plan beside the tree -- only when there is a plan, so a
     // model whose initialization failed never shows an empty tab.
     if stage != StageKind::Initialization || !have_ic_plan {

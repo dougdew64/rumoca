@@ -14,7 +14,7 @@ Pick it from the Labs list. Every link below is parsed on every test run by
 **Frame numbers in links match the counter on screen.** `frame/41` puts the view on
 "Frame 41". They were 0-based until 2026-07-29, and this file *documented* the
 off-by-one in a parenthetical rather than treating it as the bug it was — Doug spotted
-that while walking the stops in order.
+that while running the stops in order.
 
 *Every matching replay gained an opening frame on 2026-08-23, so each number below now
 lands one step earlier than it used to. The numbers were **left as they are**: this lab
@@ -27,7 +27,7 @@ shows** would have had to be re-derived with `cargo run -p hrw --example frame_i
 ## Station 0 — A stop clicked out of order
 
 **Do this before Station 1**, with no specimen loaded. (Arriving here from another lab
-clears the previous one, so that is already true. If you have walked a stop since, switch
+clears the previous one, so that is already true. If you have run a stop since, switch
 to a different lab and back.)
 
 [Seek frame 5 — with nothing loaded](hrw://stage/Structural/MatchingAnim/frame/5)

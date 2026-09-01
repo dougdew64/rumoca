@@ -6,7 +6,7 @@ Flattening is the second half of the bridge from Modelica's hierarchical
 class-based world to the flat equation-based world. The first half,
 [instantiation](../phase4_instantiate/instantiate.md), produced an
 `InstancedTree` with all modifications resolved and the class hierarchy intact.
-Flattening walks that tree and emits a `flat::Model` — a globally-qualified
+Flattening runs that tree and emits a `flat::Model` — a globally-qualified
 flat structure with no remaining class hierarchy.
 
 - Implementation: `crates/rumoca-phase-flatten/`

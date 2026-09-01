@@ -1,20 +1,20 @@
-# Fixture labs — tests you walk
+# Fixture labs — tests you run
 
-**Purpose:** what a fixture lab is, how to walk one, and the rules for writing another.
+**Purpose:** what a fixture lab is, how to run one, and the rules for writing another.
 **Status:** 👤 reference, written for a human.
-**Read when:** about to walk a lab, or about to write one. **These are tests, not
+**Read when:** about to run a lab, or about to write one. **These are tests, not
 explanations** — that distinction governs everything below.
 
 > ### ⚠ THIS FILE IS MID-REVISION UNDER CHARTER DECISION 14 — read that first
 >
 > **A walk is a lab session, not a reading.** Doug's 🎯 capture made the conversational loop part
-> of the walk, and Decision 14 (September 1, 2026) **retires the model most of this file was
+> of the run, and Decision 14 (September 1, 2026) **retires the model most of this file was
 > written for** — that a lab's prose must stand alone, explain every term before use, and
 > pre-empt every question.
 >
 > **The lab now supplies the route, the checkpoints and the machine-checked claims; Claude
 > supplies the explanation on demand.** Claude holds two distinct roles: **lab guide** before the
-> walk, **lab instructor** during it.
+> run, **lab instructor** during it.
 >
 > **Fifteen sections below carry rulings older than 2026-08-30 and assume the retired model.**
 > Until this file is revised, **read any rule requiring self-sufficient prose as superseded** —
@@ -36,11 +36,11 @@ fixture lab has **pass/fail criteria** and an ad hoc lab has prose, and prose ro
 project retired 1,632 lines of explanation for that reason, and deleted a 1,071-line lab that
 described a 7×7 matrix on a tab showing 48 equations.
 
-**Only justified because something checks them and someone walks them — and those are different
+**Only justified because something checks them and someone runs them — and those are different
 halves.** `fixture_lab_links_all_resolve` parses every link in this directory on every test run,
 so a vocabulary change breaks the build rather than breaking a document quietly. **That guards the
-plumbing, not the claims.** The expectations are executed by **Doug walking the lab**, which is
-the half of verification only a human can do. **A saved lab that is neither checked nor walked is
+plumbing, not the claims.** The expectations are executed by **Doug running the lab**, which is
+the half of verification only a human can do. **A saved lab that is neither checked nor run is
 stored prose with extra steps.**
 
 ### And what a lab *is*, which is a different question from what it looks like
@@ -92,7 +92,7 @@ The consequence worth acting on:
 - **Do not AUTHOR a second document where a fixture lab already covers the ground.** Writing a
   whole ad hoc lab over material a fixture lab already carries trades a durable, checked artifact
   for an ephemeral one. **The waste is the duplicate document, never the answer** — answering
-  Doug's question mid-walk *is* the walk (charter Decision 14), and produces no artifact to
+  Doug's question mid-run *is* the run (charter Decision 14), and produces no artifact to
   duplicate.
 **So lab content sits in one of three tiers, and a writer should know which one a sentence is in:**
 
@@ -100,7 +100,7 @@ The consequence worth acting on:
 |---|---|---|
 | **checked against a real compile** | the five `<!-- pane-* -->` tables; the `2, 2, 3` set sizes | a slow test that compiles the specimen and compares |
 | **checked structurally** | every `hrw://` link, the stop catalogue | fast tests — links resolve, `CATALOGUE.md` is current |
-| **prose** | *which* members are in which set; every explanation | **nothing. Only the walk.** |
+| **prose** | *which* members are in which set; every explanation | **nothing. Only the run.** |
 | **the conversation** | whatever Claude says when Doug presses 🎯 | **nothing. Only Doug, in the moment.** |
 
 **THE FOURTH ROW IS NEW, AND IT IS WHERE THE EXPOSURE MOVED** *(added 2026-09-01 with charter
@@ -121,7 +121,7 @@ then check the names. Grounding is the mechanism, not the manners.
 **THE COUNTS ARE THE CHEAP PART TO KEEP TRUE, AND THE ARGUMENT IS THE EXPENSIVE PART.** A number
 can be re-derived from a compile and compared. *"Nothing downstream ever groups connectors"* cannot
 be checked by anything here — **and it is the sentence that actually teaches.** So the checkers
-protect a lab's *facts* and leave its *reasoning* entirely to the walk, which is why Doug's
+protect a lab's *facts* and leave its *reasoning* entirely to the run, which is why Doug's
 *"I couldn't have guessed that"* is worth more than any test in this repository.
 
 **A MARKER IS NOT THE ONLY WAY A NUMBER IS CHECKED, so do not read an unmarked table as unchecked.**
@@ -172,17 +172,17 @@ atomic pass. That mixture is deliberate and bounded, not drift.
 > **Why not "phases".** They were numbered 1/2/3 until 2026-08-23. **"Phase" already means something
 > important here** — Rumoca has eleven compiler phases and the labs are *about* them — so "phase 2"
 > named two unrelated things in one sentence. The numbers also implied a sequence that does not
-> hold: a lab is walked and explored at the same time, and exploring produces prose that has to be
-> walked. **Drafting, walking and exploring say what they are and collide with nothing.**
+> hold: a lab is run and explored at the same time, and exploring produces prose that has to be
+> run. **Drafting, running and exploring say what they are and collide with nothing.**
 
-**The walk is the we-do of a textbook's I-do / we-do / you-do** — [`../vision.md`](../vision.md)
+**The run is the we-do of a textbook's I-do / we-do / you-do** — [`../vision.md`](../vision.md)
 works out which of those three HRW should try to win, and which to concede.
 
-### ⟶ THE WALK *IS* THE LEARNING — read this before anything else here
+### ⟶ RUNNING A LAB *IS* THE LEARNING — read this before anything else here
 
 **Doug, 2026-08-22:** *"Most of my conceptual learning happens when iterating with you during
-walks to improve the correctness and effectiveness of labs. Making the lab prose correct
-and personally effective during those walks is my primary learning exercise right now."*
+runs to improve the correctness and effectiveness of labs. Making the lab prose correct
+and personally effective during those runs is my primary learning exercise right now."*
 
 **So the lab is a byproduct, not the deliverable.** That is `working-with-doug.md`'s standing
 principle — *the conversation is the instrument; code changes are a byproduct of understanding* —
@@ -198,7 +198,7 @@ is why the three activities are worth keeping distinct and why three consequence
   the natural move* is the whole point. **Drafting's job is to spend the mechanical failure modes so
   the live iterations are all conceptual** — see *"Drafting aims at correct AND structurally
   disciplined"* below for the line that follows from it.
-- **WHILE WALKING, ENGAGE — DO NOT PATCH.** The efficient reflex is: Doug says the prose is off, Claude
+- **WHILE RUNNING ONE, ENGAGE — DO NOT PATCH.** The efficient reflex is: Doug says the prose is off, Claude
   rewrites it, both move on. **That reflex strips out the learning.** When he pushes back, say why
   it was written that way, what the alternative costs, and where the concept actually sits — and let
   him push again. **Slower on purpose**, because the dialogue is the instrument and the edit is the
@@ -263,7 +263,7 @@ costs one question; an over-reaching one costs a false belief he cannot detect. 
 pre-empt questions is prose written past what was verified.** Less exposition is less surface for
 the failure this repository exists to prevent.
 
-**Applied one lab at a time, as he walks it** — never as a campaign, for the reason the
+**Applied one lab at a time, as he runs it** — never as a campaign, for the reason the
 conversion rule below already gives.
 
 ### ⟶ MATH-INSPIRED, CODE-GROUNDED — the rules for what a lab may claim
@@ -341,7 +341,7 @@ couldn't have guessed that"*, *"I had to read this twice"*, *"this arrived befor
 *"I don't know why you're telling me this yet."*
 
 *(This read "those are unrecoverable if unsaid", which made a duty roster of it. Reworded
-2026-09-01 with the walking discipline Doug removed: **it is a description of what is useful, not a
+2026-09-01 with the running discipline Doug removed: **it is a description of what is useful, not a
 list of reports he owes.** Nobody learns well while filing observations.)*
 
 **AND IT GOVERNS THE CONVERSATION, NOT ONLY THE PROSE** *(2026-09-01)*. This was written about
@@ -351,7 +351,7 @@ checks it. So the four reports above are owed for an answer exactly as for a par
 read that twice" is as useful said out loud at a stop as it is written against a draft.**
 
 **First encounter is somewhat renewable**, so it is a mild reason to make drafts good, **not a
-resource to ration a walk around** — Doug, 2026-08-22: *"I often re-read articles and books, and
+resource to ration a run around** — Doug, 2026-08-22: *"I often re-read articles and books, and
 sometimes treat re-reads as first encounters."*
 
 ### Tune to Doug's DURABLE profile, never to his transient state
@@ -389,8 +389,8 @@ included — who no longer has that screen.
 ### Drafting aims at "correct AND structurally disciplined", not at "correct"
 
 **Doug predicts drafts will be mostly correct and mostly ineffective. Treat that as a
-prediction to fight, not a plan** — because an avoidable weakness spends a walk on something a
-checker could have caught, and the walk is the scarce resource.
+prediction to fight, not a plan** — because an avoidable weakness spends a run on something a
+checker could have caught, and the run is the scarce resource.
 
 *(This said "first encounter is non-renewable", which Doug overturned the same day and which the
 section above now records correctly: he often treats re-reads as first encounters. Corrected
@@ -422,7 +422,7 @@ leave the gaps to be found.
 
 ### Exploring finds omissions, and its answers do NOT automatically become lab content
 
-**Walking asks whether what is written lands. Exploring asks what was never written** — a question
+**Running a lab asks whether what is written lands. Exploring asks what was never written** — a question
 the lab did not prompt is a gap the lab did not cover. It is the only one of the three that finds
 omissions, which is why [`../question-ledger.md`](../question-ledger.md) says the real measure is
 *the nature of the questions Doug asks*, and why **no questions at all is ambiguous and must not be
@@ -453,20 +453,20 @@ at a time.
 #### The three INTERLEAVE — they describe a question, not a stage a lab is in
 
 *(2026-08-22, from watching it happen. It is also why the numbering was dropped a day later.)*
-Doug's connector-type question arrived during what looked like a walk, but it was **exploring**: a
+Doug's connector-type question arrived during what looked like a run, but it was **exploring**: a
 detail the lab had never covered, asked by someone the lab had already worked on. Its answer
-routed *into the lab*, which then needed ratifying on a walk — given five exchanges later.
+routed *into the lab*, which then needed ratifying on a run — given five exchanges later.
 
-**So `connect-expansion.md` is walked and still open to exploring at the same time**, and every
+**So `connect-expansion.md` is run and still open to exploring at the same time**, and every
 other lab will be too. There is no sequence of stages a lab passes through and finishes.
 
 **The rule that falls out:** when an answer found by exploring routes *into the lab*, **it is
-Claude's draft until Doug has read it** — whatever else in the file he has already walked. Nothing
-records that distinction since the `walked:` markers were retired on 2026-08-31, so **judge it from
+Claude's draft until Doug has read it** — whatever else in the file he has already run. Nothing
+records that distinction since the `run:` markers were retired on 2026-08-31, so **judge it from
 the conversation.**
 
 **The failure it guards against is one no checker can catch:** prose written by Claude, sitting
-inside a lab Doug has walked, carrying a standing it never earned.
+inside a lab Doug has run, carrying a standing it never earned.
 
 ### The dangerous quadrant is EFFECTIVE BUT FALSE
 
@@ -474,13 +474,13 @@ Correctness and effectiveness come apart in both directions, and the two failure
 symmetric:
 
 - **True but ineffective** — the failure Doug has already corrected in Claude: accurate answers
-  carrying three-graph comparison tables. It wastes a walk.
+  carrying three-graph comparison tables. It wastes a run.
 - **False but effective** — a clean analogy that lands beautifully and teaches something untrue.
   **Doug has no way to detect it precisely because it landed**, and everything he builds on it
   inherits the error.
 
 **That is why accuracy outranks effectiveness when they conflict** (`CLAUDE.md`, and charter
-Decision 7): an ineffective truth costs a walk; an effective falsehood corrupts what comes after.
+Decision 7): an ineffective truth costs a run; an effective falsehood corrupts what comes after.
 **Decision 7 states the ranking; this states why it holds** — the two failures differ in
 *detectability*, not just in cost. An ineffective truth announces itself, because Doug notices he
 is lost or bored. An effective falsehood is silent by construction.
@@ -518,7 +518,7 @@ the bottom of the window. A reader who does not know where the readout is cannot
 defect this suite has already produced. **That is the lab instructor's job, not a rule for Doug:
 point at the readout before asking anyone to read it.**
 
-**And nothing tracks or reports what has been run.** The `walked:` markers were retired
+**And nothing tracks or reports what has been run.** The `run:` markers were retired
 2026-08-31 because *"that bookkeeping doesn't yield enough value"*, and the practice survived in
 prose anyway — hand-maintained backlogs of which stops had no reader yet. **Do not reintroduce it in
 either form**; judge from the conversation.
@@ -541,18 +541,18 @@ choice, and the four name collisions it uncovered, are in
 [`../lab-kinds-plan.md`](../lab-kinds-plan.md).
 
 **THE VERB IS `run`, AND THE SESSION IS A `session`** *(Doug's ruling, 2026-09-01, completing the
-table above)*. **`walk` was a tour word and the first rename missed it** — Decision 15 settled the
+table above)*. **`run` was a tour word and the first rename missed it** — Decision 15 settled the
 nouns and never touched the verb, leaving ~350 occurrences in `docs/` and ~230 in `src/`. Charter
 Decision 14 had already named the replacement: *"a walk is a **lab session**, not a reading."*
 
 | was | is |
 |---|---|
-| *walk a tour* | **run a lab** |
-| *a walk* | **a lab session** |
-| `a_finished_walk_returns_to_the_mode_it_started_in` | `a_finished_session_…` |
+| *run a tour* | **run a lab** |
+| *a run* | **a lab session** |
+| `a_finished_session_returns_to_the_mode_it_started_in` | `a_finished_session_…` |
 
-**AND `walk` COLLIDES EXACTLY AS `stop` DID, so the rename is surgical, never blind.** Two senses
-live in `src/`: the **lab session** (`test_set_walked_state`, *"a self-running walk, as the Play
+**AND `run` COLLIDES EXACTLY AS `stop` DID, so the rename is surgical, never blind.** Two senses
+live in `src/`: the **lab session** (`test_set_session_state`, *"a self-running run, as the Play
 button does"*) and **traversal**, which must survive untouched — `walk_modules()`, `fn walk(dir:
 &Path)`, *"it walks the alias equations"*, *"walking into library class IR"*.
 
@@ -687,7 +687,7 @@ gets.** Length is bought with explanation, never with hedging.
 
 #### A lab's job is to make the reader able to ask the next question, not to answer it
 
-**Doug, 2026-08-16**, re-walking `connect-expansion.md` and then asking three detailed questions
+**Doug, 2026-08-16**, re-running `connect-expansion.md` and then asking three detailed questions
 from the panes: *"Now, I'm going back through the lab, am using HRW's panes to think of more
 detailed (not-so-basic) questions."*
 
@@ -700,7 +700,7 @@ it pre-emptively would have spent his attention before he had a reason to want i
 **So write to the point where the reader can generate the question, and stop.** The answer belongs
 in the conversation, where it can be shaped by what he actually noticed.
 
-**WALKING AND EXPLORING STRESS DIFFERENT SURFACES.** On a walk he follows the route, so **the
+**RUNNING AND EXPLORING STRESS DIFFERENT SURFACES.** On a run he follows the route, so **the
 prose** is what fails. Exploring, he leaves it — clicking links out of order, reading panes the
 prose never mentions — so **the lab's coverage and HRW's instrument** both fail, and that day
 produced three teaching answers alongside a bridge that had stopped publishing what a pane drew,
@@ -712,12 +712,12 @@ tests still cannot, which is worth more than the individual bugs.
 **Do not read the absence of questions as success** — `question-ledger.md` states it as standing:
 *"No questions at all is ambiguous."* What counts is an **explicit** report that a lab landed, as
 `dae-construction.md` got on 2026-08-17 with zero corrections — the first evidence that the
-template transfers to a lab written by an author who had already walked one.
+template transfers to a lab written by an author who had already run one.
 
 
 #### `matching-live.md` is a DEBUGGER lab, and that is an instrument, not a stage
 
-*(This replaced a two-pass model on 2026-09-01. Doug had agreed on 2026-08-15 to walk each subject
+*(This replaced a two-pass model on 2026-09-01. Doug had agreed on 2026-08-15 to run each subject
 twice — concepts first, Rumoca's code second — and then ruled the split away: **"Let us eliminate
 entirely the notion of passes through the labs. What matters most for labs is that their content
 is math-inspired, code grounded."** Code-grounding applies from the first sentence of every lab,
@@ -769,8 +769,8 @@ and therefore what it may **not** assume without building it first:
 
 - **DAE index as a formal object.** It is *defined* in the lab, as a distance, from what an
   integrator can be asked for.
-- **Jacobian singularity, Newton iteration, structural rank.** The 2026-08-18 walk rebuilt the
-  central argument on **matching**, which Doug had already walked — the same fact reached by
+- **Jacobian singularity, Newton iteration, structural rank.** The 2026-08-18 run rebuilt the
+  central argument on **matching**, which Doug had already run — the same fact reached by
   counting rather than by linear algebra.
 - **Pantelides by name**, or any algorithm invoked as an authority rather than shown.
 
@@ -790,7 +790,7 @@ a successful exchange.** It is the one place where the conversation, which Decis
 teaching, actively hides the measurement this bar depends on. **Say so at the bench when it
 happens** — that report is the instrument, and it costs nothing to make.
 
-**The three corrections the last walk produced are this constraint firing**, and they are the
+**The three corrections the last run produced are this constraint firing**, and they are the
 worked examples of it: *solver* used where *integrator* was meant (wrong difficulty named); a
 replacement that assumed Newton and Jacobians (rebuilt on matching); and backward references that
 **retold** earlier results in prose, including a hand-written table duplicating the Incidence view.
@@ -799,7 +799,7 @@ Doug: *"HRW is your platform. Use it."*
 ### The rule the others now serve: prose to the first PREDICTION, then the pane
 
 **Agreed with Doug 2026-08-12, and concept labs are to be written on this assumption.**
-It came out of his own account of walking the first two: the labs felt like **books** —
+It came out of his own account of running the first two: the labs felt like **books** —
 gaps, and a struggle to read — while the conversation was unlike a **lecture**, because
 questions get answered *and the lab gets fixed*. See
 [`../vision.md`](../vision.md), "Why this beats books and lectures".
@@ -857,7 +857,7 @@ against it. So:
   whether a `category` is drawn as a heading, whether rows are legible, whether something is
   scrolled out of view. The checker verifies **content, never rendering**.
 
-**What this cost to learn:** Doug walked `connect-expansion.md` against the real pane on
+**What this cost to learn:** Doug run `connect-expansion.md` against the real pane on
 2026-08-13 and found **six** disagreements in one sitting — wrong group headings, a layout
 implied by a table that had no counterpart, and a claim that two renderings of an equation
 lived in different panes when both are columns of the same row. Four of the six are now the
@@ -870,7 +870,7 @@ to be able to navigate backward from a subordinate lab to the top-level lab so t
 navigate downward to another subordinate lab."*
 
 [`the-concepts.md`](the-concepts.md) is a **hub**: ten rows, each an `hrw://lab/<name>`
-link into a phase lab. Those links ran one way only, so walking the chain meant reopening the
+link into a phase lab. Those links ran one way only, so running the chain meant reopening the
 picker between every pair — with the hub sitting alphabetically among its own children, at
 position 21 of 23.
 
@@ -911,7 +911,7 @@ time, so a link that resolves is right by construction, while `tech-debt.md`'s `
 rotted inside a day. Functions, types, enum variants and struct fields all resolve.
 
 **This is the half that pays for grounding:** `fixture_labs_reference_files_that_exist` resolves
-every one in the FAST suite, so a renamed symbol fails a test rather than a walk.
+every one in the FAST suite, so a renamed symbol fails a test rather than a run.
 
 **AND IT IS WHAT MAKES THE CONVERSATION SAFE, NOT ONLY THE PROSE** *(2026-09-01)*. Rule 9 records
 that grounding is the only defence that transfers to the bench, because no checker can see what
@@ -942,7 +942,7 @@ lab has no parent to go up to, so the button would be dead most of the time.
 ### The rules this rests on
 
 **One capability per lab, and keep it narrow.** The scarce resource is **attention per
-expectation**, not the number of walks. A wide lab consumes the surplus that produces
+expectation**, not the number of runs. A wide lab consumes the surplus that produces
 off-stop findings rather than multiplying them, and a stop failure in a narrow lab implicates
 exactly one feature.
 
@@ -964,9 +964,9 @@ rot — only its links.** A renamed symbol fails a test; an expectation that qui
 true does not. Grounding (rule 9) narrows this, because a claim naming code can be checked, but it
 does not close it.
 
-*(Until 2026-09-01 this paragraph also prescribed a selection principle — "walk whatever just
+*(Until 2026-09-01 this paragraph also prescribed a selection principle — "run whatever just
 changed, plus one stale one" — and queued a `last_walked` feature derived from the action trail.
-**Both were removed as walking discipline**, which Doug eliminated that day: the `walked:` markers
+**Both were removed as running discipline**, which Doug eliminated that day: the `run:` markers
 had already gone on 2026-08-31, and this was a plan to rebuild the same tracking from a different
 source. The `unbuilt:` tag went with it, since an absence tag on work that must not be done reads
 as a to-do a later session may pick up in good faith.)*
@@ -986,11 +986,11 @@ named exemplar before writing a new lab of that kind.
 
 ### Concept — `connect-expansion.md`
 
-**Doug, after walking it: *"That is the template for all other labs."*** — and after the drafting
+**Doug, after running it: *"That is the template for all other labs."*** — and after the drafting
 sweep: *"all of your phase 1 concept labs have been great. You have completely nailed that
 format."* *(His words, 2026-08-17, before the numbering was retired; "phase 1" there is drafting.)*
 
-**This template is frozen.** It is validated by Doug's walks, which is the one signal Claude cannot
+**This template is frozen.** It is validated by Doug's runs, which is the one signal Claude cannot
 generate, so it changes only on his report. The shape of every stop:
 
 ```markdown
@@ -1097,7 +1097,7 @@ convention becomes load-bearing before it is known to work.
 
 **And it is the first kind whose reader is not Doug.** Its audience is maintainers, which flips who
 judges it under the two-audience rule ([`../../DECISIONS.md`](../../DECISIONS.md)): the test becomes
-*"did a maintainer act on it without asking Claude?"* — so **Doug's walk cannot validate one.**
+*"did a maintainer act on it without asking Claude?"* — so **Doug's run cannot validate one.**
 
 ### Keep the lab's history out of the lab
 
@@ -1119,7 +1119,7 @@ read to **learn**, so history sits between the reader and the idea. A rules file
 **decide**, and the failure it must prevent is a session re-deriving a rule that was retired.
 
 **That is not hypothetical here.** On 2026-09-01 alone, retired rules came back five separate ways:
-walking discipline returned as a queued `last_walked` feature, `compiler-phases/` was described as
+running discipline returned as a queued `last_walked` feature, `compiler-phases/` was described as
 a deferral store in six places, and the `Predict` counts outlived the checker that superseded them.
 **Each would have been prevented by one dated line saying what changed.** So this file carries its
 corrections and the labs carry none — the same test decides both: *if this note were gone, would

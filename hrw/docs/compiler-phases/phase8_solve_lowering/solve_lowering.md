@@ -53,7 +53,7 @@ The DAE IR is excellent for mathematical reasoning — it preserves symbolic
 expressions, equation origins, MLS Appendix B partitions, and connects back to
 the source model. It is *not* a good direct target for high-performance
 execution: every consumer (BDF integrator, CUDA kernel, MLIR pipeline, code
-generator) would otherwise re-walk the expression trees, re-build variable
+generator) would otherwise re-run the expression trees, re-build variable
 layouts, re-compute Jacobians, and re-decide how to lay out compute graphs.
 
 `SolveProblem` is the canonical execution-facing artifact. It captures, once:
@@ -120,7 +120,7 @@ three separate slots. This layout is the contract between the IR and every
 downstream consumer: once the layout is fixed, residual code, AD code, and
 integrator buffers all agree on the same indexing.
 
-The layout is built by `build_var_layout` (in `layout.rs`), which walks the
+The layout is built by `build_var_layout` (in `layout.rs`), which runs the
 DAE and emits a deterministic ordering (Modelica state vars first, then
 algebraics, then outputs, then parameters).
 
@@ -162,7 +162,7 @@ so backends can emit specialised kernels — for example a diagonal multiply
 instead of a full GEMM — when the lowering phase proves a sparser structure.
 
 `ScalarProgramBlock` itself is a sequence of three-address SSA ops over the
-state, parameter, and scratch registers — basically a tiny tree-walk IR for
+state, parameter, and scratch registers — basically a tiny tree-run IR for
 arithmetic, comparisons, builtin calls, and conditional assignments.
 
 ---
@@ -240,7 +240,7 @@ Two main consumers receive the `SolveProblem`:
 
 `simulate_solve_model` (in `rumoca-sim/src/lib.rs`) runs the integrator
 against a `SolveProblem`. The continuous residual and AD compute blocks are
-evaluated by the configured execution backend (Cranelift JIT, the tree-walk
+evaluated by the configured execution backend (Cranelift JIT, the tree-run
 `rumoca-eval-solve`, MLIR, …), and the integrator (BDF, RK45) drives the
 state vector forward.
 
@@ -318,5 +318,5 @@ types.
 | `rumoca-phase-solve/src/event_actions.rs` | Lower event-time actions |
 | `rumoca-phase-solve/src/stencil/` | Detect and lower affine stencils (PDEs) |
 | `rumoca-ir-solve/src/lib.rs` | `SolveProblem`, `ComputeBlock`, `ComputeNode` types |
-| `rumoca-ir-solve/src/visitor.rs` | Visitor trait for walking SolveProblem |
-| `rumoca-eval-solve/` | Tree-walk evaluator for SolveProblem (reference backend) |
+| `rumoca-ir-solve/src/visitor.rs` | Visitor trait for running SolveProblem |
+| `rumoca-eval-solve/` | Tree-run evaluator for SolveProblem (reference backend) |

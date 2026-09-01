@@ -322,7 +322,7 @@ pub fn module_sizes() -> Result<Vec<ModuleSize>, String> {
 /// and a test that only passes once a subdirectory exists is not a test of the
 /// scan.
 ///
-/// **No skip list, unlike `doc_citations::rust_sources`.** That one walks
+/// **No skip list, unlike `doc_citations::rust_sources`.** That one runs
 /// `crates/` and must dodge `target/`; this walks `src/` only, where the
 /// extension filter is the entire guard needed (`field_help.json` is the one
 /// non-`.rs` file there).

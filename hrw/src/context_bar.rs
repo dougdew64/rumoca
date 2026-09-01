@@ -203,7 +203,7 @@ pub(crate) enum PointKind {
     ///
     /// **The text is the rendered prose, not the markdown source**, on his ruling:
     /// egui hands back what the pane displays. Locating it in the source is Claude's
-    /// job, and is where the `walked:` / `authored:` rules apply.
+    /// job, and is where the `run:` / `authored:` rules apply.
     LabPassage {
         /// Which lab it was read in — the document the passage can be found in.
         lab: String,

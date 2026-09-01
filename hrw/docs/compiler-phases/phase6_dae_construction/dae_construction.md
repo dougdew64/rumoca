@@ -81,7 +81,7 @@ is how Modelica implements memory across discontinuities.
 
 A variable becomes a **state** if its name appears as the argument to `der()`.
 
-The scanner walks all equations, initial equations, and variable bindings
+The scanner runs all equations, initial equations, and variable bindings
 (bindings are checked here because they are converted to equations *after* state
 detection):
 
@@ -504,7 +504,7 @@ the codegen path. Both call the same `rumoca-phase-structural::dae_prepare`
 helpers, so every downstream consumer (simulator, template codegen,
 solve-IR lowering) receives an index-1 DAE built by the same code paths.
 
-A full walk-through — what differential index means, the
+A full run-through — what differential index means, the
 `index_reduce_missing_state_derivatives_once` algorithm step by step, the
 chain-rule symbolic differentiator, the three state-demotion sweeps
 (orphan / no-derivative / no-assignable-row), the broader prep-pipeline

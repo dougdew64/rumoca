@@ -31,7 +31,7 @@
 //! view rebuilds the situation from the DAE: incidence, matching, BLT blocks,
 //! and then `tear_algebraic_loop_with_trace` on each coupled block, using
 //! `block_local_incidence` to translate the block into the 0..n index space the
-//! algorithm works in. Recorded and live playback run the *same* walk
+//! algorithm works in. Recorded and live playback run the *same* run
 //! ([`walk_blocks`]); the only difference is where the frames are delivered.
 
 use std::sync::Arc;
@@ -44,7 +44,7 @@ use rumoca_phase_structural::{LiveTrace, TearingFrame, TearingStep};
 
 use crate::playback::{Animated, Playback};
 
-/// Seconds between auto-advance frames. Slower than matching's cursor walk:
+/// Seconds between auto-advance frames. Slower than matching's cursor run:
 /// each frame here is a decision about the system, not a probe.
 const FRAME_INTERVAL: f64 = 0.7;
 
@@ -65,7 +65,7 @@ pub struct BlockNames {
 /// One frame, tagged with the coupled block it belongs to.
 ///
 /// A model may hold several algebraic loops and each is torn independently. The
-/// replay walks them in order, so a frame has to say which block it is about.
+/// replay runs them in order, so a frame has to say which block it is about.
 #[derive(Debug, Clone)]
 pub struct BlockFrame {
     /// Index into the animation's `blocks`.
@@ -78,7 +78,7 @@ pub struct TearingAnimation {
     playback: Playback<BlockFrame>,
     /// Names per coupled block, parallel to `BlockFrame::block`. Populated on
     /// construction for a recorded replay; for a live session it is built up
-    /// front too, since walking the blocks is cheap and only the *frames* need
+    /// front too, since running the blocks is cheap and only the *frames* need
     /// to arrive from the debugger thread.
     blocks: Vec<BlockNames>,
 }
@@ -251,7 +251,7 @@ impl TearingAnimation {
         }
     }
 
-    /// Start a live debug session: the same walk, on a thread that parks until
+    /// Start a live debug session: the same run, on a thread that parks until
     /// the debugger attaches, pushing frames as they are produced.
     pub fn start_live(dae: rumoca_ir_dae::Dae, frame_delay: std::time::Duration) -> Option<Self> {
         // Names are needed by the *renderer* from the first frame onward, so

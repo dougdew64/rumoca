@@ -71,7 +71,7 @@ impl StructuralView {
     ];
 }
 
-/// Sub-tab selector for the Initialization stage: the IR tree, or a walk of the
+/// Sub-tab selector for the Initialization stage: the IR tree, or a run of the
 /// initial-condition solve plan.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) enum InitView {

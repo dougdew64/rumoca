@@ -345,7 +345,7 @@ impl IncidenceMatrix {
     /// # Rows, not cells
     ///
     /// The sparse row storage is published as-is — `rows[i]` is the sorted column indices
-    /// where equation *i* has an entry. That is exactly what `draw_matrix` walks, so it is
+    /// where equation *i* has an entry. That is exactly what `draw_matrix` runs, so it is
     /// the pane's content rather than a rendering of it. A dense grid would be a
     /// *different* representation and would need its own correctness argument.
     ///

@@ -310,7 +310,7 @@ night's evidence, which Claude noted is `n = 1`; the guard against that is not w
 - **who caught it** — the repo's one reliable signal for Claude's comprehension failing
 
 **If nightly audits start finding things before Doug does, the habit is working. If he keeps
-finding things the nights walked past, the lens is aimed wrong** — change the lens, not the
+finding things the nights run past, the lens is aimed wrong** — change the lens, not the
 cadence.
 
 #### The lens to lead with: A CLAIM THAT OUTRUNS ITS EVIDENCE

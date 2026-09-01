@@ -77,7 +77,7 @@ the fallout. The Rust compiler and the test suite do most of the work; a few gen
 - After fixing compile breakage (step 2), grep the lab files for any function, type, or variable
   name that changed. Pay special attention to:
   - `LiveTrace::push` line number (the breakpoint site)
-  - `MatchingStep` / `TarjanStep` enum variants (the frame types the lab walks through)
+  - `MatchingStep` / `TarjanStep` enum variants (the frame types the lab runs through)
   - `augment_traced` / `strongconnect` parameter lists and local names
   - `emit_matching_frame` / `TracedTarjanState::record` call sites
 - Update the affected labs to match the new code — line numbers, code excerpts, and locals tables.

@@ -38,7 +38,7 @@
 //! also the wire format Claude reads, and renaming a protocol buys nothing.
 //! Expect the two vocabularies to differ here; that is intended, not drift.
 //!
-//! The key-path is accumulated as the recursive walk descends: each level
+//! The key-path is accumulated as the recursive run descends: each level
 //! pushes its segment (`Seg::Key` or `Seg::Index`) onto a `Vec<Seg>` path,
 //! and pops it when returning. This keeps the tree entirely type-agnostic
 //! while still giving Claude an exact JSON-path address.
@@ -277,7 +277,7 @@ struct Expansion {
 //   path.push(Seg::Key("field_name"))   // or Seg::Index(i) for arrays
 // After returning:
 //   path.pop()
-// At any point during the walk, `path` holds the complete address from the
+// At any point during the run, `path` holds the complete address from the
 // root to the current node. When the user clicks, we snapshot it (`path.to_vec()`).
 //
 // ## Interaction contract
@@ -858,7 +858,7 @@ fn header(key: &str, hint: &str) -> egui::RichText {
 // Single O(N) pre-pass: collect pointers to every Value node that is an
 // ancestor of a leaf matching `tracked`. During rendering, nodes in this
 // set get `default_open(true)` so the path to the tracked identifier is
-// fully expanded without re-walking the subtree at every level.
+// fully expanded without re-running the subtree at every level.
 fn collect_tracked_ancestors(
     value: &Value,
     tracked: &str,
@@ -867,7 +867,7 @@ fn collect_tracked_ancestors(
     // `fold`, not `any`: `any` short-circuits at the first matching child, so
     // later siblings were never visited and their ancestors never recorded —
     // the tree opened the path to the *first* mention only. Every child must be
-    // walked for every path to be openable.
+    // run for every path to be openable.
     let dominated = match value {
         Value::Object(map) => map.iter().fold(false, |found, (k, v)| {
             let here = if k == tracked {

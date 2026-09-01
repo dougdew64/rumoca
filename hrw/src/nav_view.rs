@@ -291,7 +291,7 @@ mod tests {
 
     /// **The breadcrumb is the only thing on screen that says where you are**, and it has
     /// to name the specimen *and* every level — a trail showing just the class you landed
-    /// on cannot be walked back mentally, which is the whole reason "Back" is not enough.
+    /// on cannot be run back mentally, which is the whole reason "Back" is not enough.
     #[test]
     fn the_crumb_names_the_specimen_then_every_level() {
         let h = draw(Nav::one("Resistor").then("Pin"));

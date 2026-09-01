@@ -435,7 +435,7 @@ you use it.
       13 tests. Two decisions worth knowing before Phase 2: quoted identifiers
       lex as `Identifier`, not `String` (so `'end of travel'` stays a clickable
       name), and tokens tile the input exactly including whitespace, so
-      rendering can walk the list and emit every byte once.
+      rendering can run the list and emit every byte once.
 - [x] **Phase 2 — Syntax highlighting (#36)** ✅ 2026-07-27.
       `hrw/src/source_view.rs` (line clipping + segment merge, 8 tests),
       `colors::syntax_color`, and the render loop in `app.rs`. Identifier

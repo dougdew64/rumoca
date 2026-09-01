@@ -23,7 +23,7 @@
 //! 2. **Tokens tile the input exactly, on character boundaries.** Concatenating
 //!    every token's byte range in order reproduces the source, with no gaps and
 //!    no overlaps — whitespace included, which is why [`TokenKind::Whitespace`]
-//!    exists. Rendering can therefore walk the token list and emit every byte
+//!    exists. Rendering can therefore run the token list and emit every byte
 //!    exactly once, rather than interleaving tokens with separately-tracked
 //!    "the rest of the line". Every boundary falls between characters, so
 //!    `source[tok.start..tok.end]` is always a legal slice — a caller cannot
@@ -542,7 +542,7 @@ mod tests {
     }
 
     /// Every byte accounted for, exactly once, in order. This is the property
-    /// rendering depends on: walk the tokens and you have emitted the file.
+    /// rendering depends on: run the tokens and you have emitted the file.
     fn assert_tiles(source: &str, tokens: &[Token]) {
         let mut expected_start = 0usize;
         for t in tokens {

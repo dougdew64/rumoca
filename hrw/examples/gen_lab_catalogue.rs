@@ -9,7 +9,7 @@
 //! writes the file rather than a second implementation of it.
 //!
 //! `docs/ideas.md` #63: Claude could answer with text or a freshly written ad hoc
-//! lab, and had no way to say *"the answer already exists -- walk
+//! lab, and had no way to say *"the answer already exists -- run
 //! `failure-typecheck` from stop 2"*. At fourteen labs, reading all of them to
 //! answer one question is the cost this removes.
 

@@ -49,7 +49,7 @@ cargo run --example gen_trace -- <Model>     # (re)writes docs/specimen-notebook
 ```
 
 Then write `purpose.md` (start from [`_TEMPLATE.md`](_TEMPLATE.md)) — **intent only**:
-a few lines on the phenomenon it was authored to trigger, and no walkthrough, no
+a few lines on the phenomenon it was authored to trigger, and no run-through, no
 mechanism, no numbers. Numbers live in `trace/`; mechanism is regenerated on demand.
 When the specimen answers a question, add a one-line *link* under "Where it has been
 used" and put the entry itself in the ledger.

@@ -559,7 +559,7 @@ mod tests {
     /// And the same thing through the widget, because the pure function is only half the
     /// path: the row must actually *call* it when the stage changes.
     ///
-    /// This is the probe that found the defect, kept as a test. It walks the reader's
+    /// This is the probe that found the defect, kept as a test. It runs the reader's
     /// route — pick Aliases on Index Reduction, then click the Structural tab — and
     /// asserts on what the tab row shows afterwards, which is where the symptom was
     /// visible: no tab highlighted at all.

@@ -86,8 +86,8 @@ different equation. **N nested frames is an N-edge alternating path.**
 **Falsified if:** the stack is flat at every break, or two frames report the same `eq`.
 
 *What just happened.* **This is the stop the lab exists for, and it is not visible from the
-animation.** The augmenting-path search walks alternately along unmatched and matched edges, looking
-for an unmatched unknown. That walk is implemented as recursion — so the *path* the algorithm is
+animation.** The augmenting-path search runs alternately along unmatched and matched edges, looking
+for an unmatched unknown. That run is implemented as recursion — so the *path* the algorithm is
 currently exploring is literally the sequence of frames on the stack, and its length is the depth.
 
 Read the stack bottom-up and you are reading the path from its start. Step until it deepens and you

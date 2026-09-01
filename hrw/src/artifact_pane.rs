@@ -18,7 +18,7 @@
 //!
 //! # The summary sits BESIDE the artifact, not instead of it
 //!
-//! Doug, 2026-08-05, walking `failure-typecheck.md`: *"there is no tree in the failing
+//! Doug, 2026-08-05, running `failure-typecheck.md`: *"there is no tree in the failing
 //! typecheck stage view."* There was one in the data — `DimensionMismatch`'s Typecheck
 //! stage carries 7.4 KB of instantiated overlay **plus** an `error` key, assembled by the
 //! worker on purpose, whose comment reads *"the instantiated overlay is the last good

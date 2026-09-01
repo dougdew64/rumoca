@@ -9,7 +9,7 @@
 //! line numbers "go stale silently, and a learner following one with wrong line
 //! numbers is simply confused" — nothing compiles a Markdown table.
 //!
-//! Two of those three were established by Doug walking a debugger for an hour
+//! Two of those three were established by Doug running a debugger for an hour
 //! per specimen. **All three are derivable without one**, and this module
 //! derives them:
 //!
@@ -22,7 +22,7 @@
 //!
 //! ## What it does NOT replace
 //!
-//! Everything the walks discovered about the **instrument** rather than the
+//! Everything the runs discovered about the **instrument** rather than the
 //! algorithm: that an anchor stop exposes only `frame_index`, that `Option`
 //! payloads are invisible one level down, that `var`/`iter` reading unavailable
 //! means the loop *ended*, and the frame-delay paint race. None of that is in
@@ -301,7 +301,7 @@ pub fn emit_sites(source: &str) -> BTreeMap<String, Vec<usize>> {
 ///   depth has already come back up.
 /// - `EquationFailed` is the driver again — depth 0.
 ///
-/// Pinned against both debugger walks by
+/// Pinned against both debugger runs by
 /// `the_derived_depths_match_what_the_debugger_showed`.
 #[must_use]
 pub fn derive_depths(steps: &[MatchingStep]) -> Vec<usize> {
@@ -519,7 +519,7 @@ pub fn reference() -> String {
     out.push_str(
         "**Depth is derived from the step sequence, not from a stack** — \
          `TryDisplace` descends and `DisplaceOk`/`DisplaceFail` return. It is \
-         pinned against two real debugger walks by `matching_ledger`'s tests.\n\n",
+         pinned against two real debugger runs by `matching_ledger`'s tests.\n\n",
     );
     out.push_str(
         "**What is missing here, deliberately:** the two `augment_traced:243` \
@@ -539,7 +539,7 @@ mod tests {
     /// 133 is the `emit_matching_frame(` call; **137** is where the variant is
     /// named, inside the struct-literal argument. It was published as 137 for a
     /// day — read by hand from the wrong line of the same call, in the one row
-    /// no walk had ever observed. This test is the mechanism that makes reading
+    /// no run had ever observed. This test is the mechanism that makes reading
     /// it by hand unnecessary.
     #[test]
     fn every_step_has_an_emit_site() {
@@ -622,7 +622,7 @@ mod tests {
         assert_eq!(
             derive_depths(&proportional),
             vec![0, 1, 1, 1, 0, 1, 1, 2, 2, 2, 1, 1],
-            "ProportionalLoop's depths must match the walked stack"
+            "ProportionalLoop's depths must match the run stack"
         );
 
         // TwiceDefined, observed depths 0,1,1,1,0,1,1,1,0.
@@ -644,11 +644,11 @@ mod tests {
         assert_eq!(
             derive_depths(&twice),
             vec![0, 1, 1, 1, 0, 1, 1, 1, 0],
-            "TwiceDefined's depths must match the walked stack"
+            "TwiceDefined's depths must match the run stack"
         );
     }
 
-    /// **The generated ledger reproduces the walked run, step for step.**
+    /// **The generated ledger reproduces the run run, step for step.**
     ///
     /// Non-vacuity for the whole generator: it re-runs the real algorithm over
     /// `TwiceDefined`'s recorded incidence and must produce exactly the frames
@@ -662,11 +662,7 @@ mod tests {
     fn the_generated_ledger_reproduces_the_twicedefined_walk() {
         let rows = ledger_rows("TwiceDefined").expect("TwiceDefined must have a structural trace");
         let steps: Vec<&str> = rows.iter().map(|(_, s, _, _)| s.as_str()).collect();
-        assert_eq!(
-            rows.len(),
-            10,
-            "the walk produced ten frames, got {steps:?}"
-        );
+        assert_eq!(rows.len(), 10, "the run produced ten frames, got {steps:?}");
 
         assert!(
             steps[0].contains("Start"),

@@ -145,7 +145,7 @@ const fn tint(r: u8, g: u8, b: u8, alpha: u8) -> Color32 {
 /// Exists because scrolling a row to the centre of a screen full of near-identical
 /// rows, without marking it, leaves the reader guessing which one was the target.
 /// The node-pointing fixture lab asserted this highlight before it was built —
-/// Doug walked the lab and found the claim false (2026-07-30).
+/// Doug run the lab and found the claim false (2026-07-30).
 pub const JUMP_FILL: Color32 = tint(0x42, 0xC5, 0xF5, 0x45);
 
 /// Tracked-identifier background fill (subtle, alpha 0x30 ≈ 19%).

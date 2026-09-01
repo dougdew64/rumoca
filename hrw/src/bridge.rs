@@ -54,13 +54,13 @@
 //! click (e.g., a bare `"name": "flange_a"`) usually have **no provenance of
 //! their own** — the nearest `location`/`span` lives on an ancestor node.
 //!
-//! So the bridge walks **up** the tree from the clicked node to the root,
+//! So the bridge runs **up** the tree from the clicked node to the root,
 //! looking for the tightest enclosing provenance:
 //! - `location` (preferred): `rumoca_core::Location` with byte offsets + `file_name`
 //! - `span` (fallback): `rumoca_core::Span` with byte offsets + opaque `source` id
 //!
 //! Once found, the byte range is sliced out of the Modelica source file, and
-//! the enclosing line(s) are included for context. This walk is fully generic
+//! the enclosing line(s) are included for context. This run is fully generic
 //! (it pattern-matches on JSON structure, not Rumoca types), maintaining the
 //! one-generic-tree rule.
 
@@ -355,7 +355,7 @@ pub fn fixture_labs() -> Vec<PathBuf> {
         // `README.md` documents the directory. `CATALOGUE.md` is *generated for
         // Claude* — it exists so a question can be answered by citing a lab rather
         // than retelling one (`docs/ideas.md` #63) — and Doug found it sitting in his
-        // picker on 2026-08-05, one row among fifteen, offering to be walked.
+        // picker on 2026-08-05, one row among fifteen, offering to be run.
         //
         // **This is the single definition of "is a lab file".** `lab::catalogue`
         // had its own copy of this filter, which is how the catalogue managed to
@@ -577,7 +577,7 @@ impl Seg {
     /// `Index(3)` does `v[3]`. Returns `None` if the key/index doesn't exist.
     /// This is the fundamental building block of `navigate()`.
     ///
-    /// `pub` as `get_in` for the tree, which walks a jump target's ancestors to
+    /// `pub` as `get_in` for the tree, which runs a jump target's ancestors to
     /// open them. Named differently from the private `get` so it does not read
     /// like a `serde_json` method at the call site.
     pub fn get_in<'a>(&self, v: &'a Value) -> Option<&'a Value> {
@@ -780,7 +780,7 @@ pub enum Focus<'a> {
     /// **`text` is what the pane RENDERED**, markdown stripped — that is what egui can
     /// hand back, and Doug ruled it sufficient. It is enough to answer *"what does this
     /// mean?"*; for *"improve this paragraph"* Claude locates the source itself, which
-    /// is where `docs/fixture-labs/README.md`'s `walked:` and `authored:` rules bind.
+    /// is where `docs/fixture-labs/README.md`'s `run:` and `authored:` rules bind.
     LabPassage {
         /// The lab it was read in, as the picker labels it.
         lab: &'a str,
@@ -896,7 +896,7 @@ const MAX_MENTION_CONTEXTS: usize = 6;
 ///
 /// Collects `Vec<Seg>` rather than formatted strings because the caller needs
 /// to navigate back to each hit to build its neighbourhood; a rendered
-/// `"a.b[0].c"` cannot be walked, and re-parsing one would be guesswork the
+/// `"a.b[0].c"` cannot be run, and re-parsing one would be guesswork the
 /// moment a key contains a dot — which, in `bindings.__pre__.overSpeed`, it does.
 ///
 /// Wrapped by [`mention_paths`] for callers outside this module.
@@ -1787,7 +1787,7 @@ fn build(ask: &Ask) -> Value {
             "note": "prose the reader selected in HRW's lab panel and captured. This is \
                      the RENDERED text, so markdown markup is stripped and it will not \
                      match the source byte-for-byte -- locate it in the file named below. \
-                     Before editing it, check whether it sits inside a `walked:` region \
+                     Before editing it, check whether it sits inside a `run:` region \
                      (may be fixed, and the marker re-dated in the same commit) or an \
                      `authored:` region (Doug's own prose -- report a false claim, never \
                      rewrite it).",
@@ -2175,13 +2175,13 @@ pub fn navigate<'a>(root: &'a Value, path: &[Seg]) -> Option<&'a Value> {
     Some(cur)
 }
 
-// The span-ascent algorithm: walk from the clicked node up to the root,
+// The span-ascent algorithm: run from the clicked node up to the root,
 // returning the tightest (deepest) enclosing `location` or `span`.
 //
 // Why "ascent"? The clicked leaf usually has no provenance of its own.
 // For example, clicking `"name": "flange_a"` gives a bare string — no
 // byte offsets. But its parent (a component object) carries a `location`
-// with byte offsets into the Modelica source. By walking up the path from
+// with byte offsets into the Modelica source. By running up the path from
 // leaf to root, we find the nearest ancestor that has provenance.
 //
 // The loop iterates `depth` from `path.len()` (the leaf) down to 0 (the root).
@@ -2395,7 +2395,7 @@ mod tests {
         assert!(
             doc["lab_passage"]["note"]
                 .as_str()
-                .is_some_and(|n| n.contains("authored:") && n.contains("walked:")),
+                .is_some_and(|n| n.contains("authored:") && n.contains("run:")),
             "the note must carry the editing rules, since this capture is what a \
              \"improve this paragraph\" request arrives with",
         );
@@ -3262,7 +3262,7 @@ mod tests {
     /// The jump control and the emitted context must see the same nodes.
     ///
     /// `mention_paths` is what the tree scrolls through; `tracking.paths` is
-    /// what Claude is told. They come from one walk on purpose — a second
+    /// what Claude is told. They come from one run on purpose — a second
     /// matcher written for the UI would be a second definition of *mention*, and
     /// the app would highlight one set of nodes while describing another. That
     /// class of drift is what the whole phase was spent removing.
@@ -3880,7 +3880,7 @@ mod tests {
 
         assert!(
             files >= 10 && scanned >= 100,
-            "only {scanned} test bodies across {files} files were scanned; the walk \
+            "only {scanned} test bodies across {files} files were scanned; the run \
              or the split stopped matching, so this checks nothing",
         );
         assert!(

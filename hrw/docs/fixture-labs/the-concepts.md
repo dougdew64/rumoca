@@ -1,4 +1,4 @@
-# The concepts — a week's walk through the pipeline
+# The concepts — a week's run through the pipeline
 
 <!-- kind: hub -->
 
@@ -31,7 +31,7 @@ with a named algorithm and a textbook behind it.
 9. [events](hrw://lab/events) — what happens at an instant?
 
 **Two orderings, and they differ.** The list above is *pipeline* order. If you would rather follow
-the mathematics than the machinery, walk **3 → 4 → 5** first: matching, BLT and tearing are one
+the mathematics than the machinery, run **3 → 4 → 5** first: matching, BLT and tearing are one
 continuous argument on the same three-equation model, and they are the densest linear algebra in
 the set.
 

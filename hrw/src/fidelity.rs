@@ -1150,7 +1150,7 @@ mod tests {
         println!(
             "fidelity F2-F7: {} models, {subjects_checked} incidence-bearing reports \
              ({with_blocks} with blocks, {with_matching} with a matching, \
-             {with_singular_error} singular), {stage_values} stage IRs walked, \
+             {with_singular_error} singular), {stage_values} stage IRs run, \
              {} violations",
             MODELS.len(),
             violations.len(),
@@ -1189,10 +1189,7 @@ mod tests {
             subjects_checked >= 20,
             "only {subjects_checked} incidence-bearing reports (F2, F3)"
         );
-        assert!(
-            stage_values >= 50,
-            "only {stage_values} stage IRs walked (F7)"
-        );
+        assert!(stage_values >= 50, "only {stage_values} stage IRs run (F7)");
         assert!(
             with_blocks >= 5,
             "only {with_blocks} reports had BLT blocks (F4)"

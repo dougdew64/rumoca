@@ -41,7 +41,7 @@ does not order at all, and one that splits into independent pieces.
 **Falsified if:** any block has size greater than 1.
 
 *What just happened.* A block of size 1 is one equation determining one unknown from values
-already known. Twenty-three of them in a row is **forward substitution** — the solver walks the
+already known. Twenty-three of them in a row is **forward substitution** — the solver runs the
 list once, evaluating, and never iterates.
 
 On the spy plot this is the diagonal: every marked cell on or below it, nothing above. That shape

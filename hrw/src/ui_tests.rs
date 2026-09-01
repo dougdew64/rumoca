@@ -1,7 +1,7 @@
 //! **Headless UI tests** — `docs/verification-plan.md` item 2.
 //!
 //! HRW has ~12,000 lines of UI and, until now, essentially one test that
-//! exercised rendering. Everything else was verified by Doug walking fixture
+//! exercised rendering. Everything else was verified by Doug running fixture
 //! labs, which makes **his attention the project's scarce resource**. These
 //! tests convert the *mechanical* half of that — did the click select the node,
 //! is the panel empty after a mode switch, does the notice exist — so his
@@ -41,7 +41,7 @@
 //!
 //! **The general move: when a layout defect is reported, ask what number was
 //! wrong.** If the app can hold that number, the defect is testable, and it need
-//! not cost Doug a walk ever again. What stays genuinely his is what has no
+//! not cost Doug a run ever again. What stays genuinely his is what has no
 //! number — colour, proportion, whether a thing reads well.
 //!
 //! # Three facts that make a test fail for reasons unrelated to the code
@@ -246,7 +246,7 @@ fn the_harness_renders_hrw_and_sees_widgets() {
 /// # Why four states rather than two
 ///
 /// *Always* is a claim about every state, and a two-case test would leave the modes
-/// Doug actually walks in unchecked. Lab mode before a stop loads anything is the
+/// Doug actually runs in unchecked. Lab mode before a stop loads anything is the
 /// case that started the conversation; the navigation view is the one branch of
 /// `central_panel_ui` that draws no tab row, so the bar had to be added there
 /// separately and could regress on its own.
@@ -265,16 +265,24 @@ fn the_context_bar_is_present_in_every_state() {
         ("a specimen loaded", || {
             let mut app = App::test_default();
             app.test_set_ui_mode_specimen();
-            app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+            app.test_set_session_state(
+                "RcCircuit.mo",
+                "RcCircuit",
+                crate::worker::StageKind::Parse,
+            );
             app
         }),
         // `UiMode` defaults to Lab, which is why this one sets no mode: it is the
-        // state HRW actually launches in, and the one Doug walks labs in.
+        // state HRW actually launches in, and the one Doug runs labs in.
         ("lab mode, nothing loaded", App::test_default),
         ("the navigation view", || {
             let mut app = App::test_default();
             app.test_set_ui_mode_specimen();
-            app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+            app.test_set_session_state(
+                "RcCircuit.mo",
+                "RcCircuit",
+                crate::worker::StageKind::Parse,
+            );
             app.test_push_nav("Modelica.Blocks.Interfaces.RealInput");
             app
         }),
@@ -319,7 +327,7 @@ fn the_bar_shows_context_not_advice() {
 
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
-    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+    app.test_set_session_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
     app.test_view_log();
     let h = harness(app);
 
@@ -390,7 +398,7 @@ fn a_captured_lab_passage_is_shown_quoted_and_claims_no_stage() {
 
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
-    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+    app.test_set_session_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
     app.test_point_at_lab_passage("connect-expansion", "two separate graphs");
     let h = harness(app);
 
@@ -455,7 +463,7 @@ fn the_bar_names_the_open_lab() {
 fn only_the_tab_row_starts_a_simulation_and_the_pane_says_so() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
-    app.test_set_walked_state(
+    app.test_set_session_state(
         "RcCircuit.mo",
         "RcCircuit",
         crate::worker::StageKind::Simulation,
@@ -550,7 +558,7 @@ fn the_lab_picker_shows_every_fixture_and_no_readme() {
         h.query_by_label_contains("CATALOGUE").is_none(),
         "CATALOGUE.md is generated FOR CLAUDE — the index that lets an answer cite a \
          lab instead of retelling it. Doug found it in his picker on 2026-08-05, one \
-         row among fifteen offering to be walked. It is not a lab and must not be \
+         row among fifteen offering to be run. It is not a lab and must not be \
          offered as one",
     );
     assert!(
@@ -704,7 +712,7 @@ fn a_link_far_down_a_long_lab_still_dispatches() {
     );
 }
 
-/// **Links still work after a walk has been played and stopped.**
+/// **Links still work after a run has been played and stopped.**
 ///
 /// The state Doug reads labs in is rarely a fresh one — he plays, stops, and then
 /// goes back to reading manually. That leaves autoplay holding a schedule: `stop()`
@@ -712,11 +720,11 @@ fn a_link_far_down_a_long_lab_still_dispatches() {
 /// naming the last link and the lab text stayed rendered as **two** markdown
 /// documents for all subsequent manual reading.
 ///
-/// Splitting is now gated on a walk actually running, so the idle path is byte for
+/// Splitting is now gated on a run actually running, so the idle path is byte for
 /// byte the plain one. This test pins that: a click after a run must behave exactly
 /// like a click before one.
 #[test]
-fn a_link_still_dispatches_after_a_walk_has_been_stopped() {
+fn a_link_still_dispatches_after_a_session_has_been_stopped() {
     let mut h = harness(App::test_default());
     h.state_mut().test_set_specimen_files(&["RcCircuit.mo"]);
     assert!(h.state_mut().test_select_fixture_lab("node-pointing"));
@@ -736,7 +744,7 @@ fn a_link_still_dispatches_after_a_walk_has_been_stopped() {
     assert_eq!(
         h.state().test_selected_name().as_deref(),
         Some("RcCircuit.mo"),
-        "a stopped walk must leave the lab readable and its links live",
+        "a stopped run must leave the lab readable and its links live",
     );
 }
 
@@ -751,7 +759,7 @@ fn a_link_still_dispatches_after_a_walk_has_been_stopped() {
 /// The clock itself is tested in `autoplay::tests`, without a window. This test's
 /// job is only that the button is reachable and the readout reaches the screen.
 #[test]
-fn the_play_button_starts_a_walk_and_the_readout_reports_it() {
+fn the_play_button_starts_a_session_and_the_readout_reports_it() {
     let mut h = harness(App::test_default());
 
     // Exact label, not `contains`: the animation views have their own Play button,
@@ -788,18 +796,18 @@ fn the_play_button_starts_a_walk_and_the_readout_reports_it() {
     // says *something* about which beat is showing is this test's business.
     assert!(
         h.query_by_label_contains("beat 1/").is_some(),
-        "the running walk must say where it is — a progress readout that renders \
-         nothing is indistinguishable from a walk that is not running",
+        "the running run must say where it is — a progress readout that renders \
+         nothing is indistinguishable from a run that is not running",
     );
     assert!(
         h.query_by_label("\u{23f8} Pause").is_some(),
-        "a running walk must offer Pause, or a recording cannot be stopped mid-take",
+        "a running run must offer Pause, or a recording cannot be stopped mid-take",
     );
 }
 
 /// Selecting a different lab clears the stage side — **on screen**.
 ///
-/// The bug this guards against was found by walking: *"the RHS doesn't
+/// The bug this guards against was found by running: *"the RHS doesn't
 /// re-initialise on a second lab"*, which made Station 1 look as though it had
 /// already been done. `app::tests::switching_labs_resets_the_stage_side` covers
 /// the state; this covers the state actually reaching the frame.
@@ -808,7 +816,7 @@ fn switching_labs_clears_the_stage_side_on_screen() {
     let mut h = harness(App::test_default());
 
     // Walk into a lab far enough to have a model and a stage on the right.
-    h.state_mut().test_set_walked_state(
+    h.state_mut().test_set_session_state(
         "/x/RcCircuit.mo",
         "RcCircuit",
         crate::worker::StageKind::Structural,
@@ -897,8 +905,8 @@ fn a_stop_needing_a_specimen_is_refused_with_a_visible_notice() {
 /// A lab link acts **clicked in isolation**, not only after its predecessors.
 ///
 /// This is the *"stop 4 works only if I click 1-3 first"* bug — the kind a human
-/// walking in order never sees, because they always click stop 1 first. Driving
-/// one link into an app that has *only* the specimen loaded is something a walk
+/// running in order never sees, because they always click stop 1 first. Driving
+/// one link into an app that has *only* the specimen loaded is something a run
 /// structurally cannot do, which makes this the clearest case of the suite
 /// catching what Doug cannot.
 ///
@@ -913,7 +921,7 @@ fn a_lab_link_acts_when_clicked_in_isolation() {
         "# Fixture\n\n[Structural → Incidence](hrw://stage/Structural/Incidence)\n",
     );
     let mut h = harness(app);
-    h.state_mut().test_set_walked_state(
+    h.state_mut().test_set_session_state(
         "/x/RcCircuit.mo",
         "RcCircuit",
         crate::worker::StageKind::Parse,
@@ -1057,7 +1065,7 @@ fn the_corpus_is_visible_unfiltered_and_opens_on_click() {
 fn the_background_names_both_the_specimen_and_the_stage() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
-    app.test_set_walked_state(
+    app.test_set_session_state(
         "MotorWithBrake.mo",
         "MotorWithBrake",
         crate::worker::StageKind::Flatten,
@@ -1088,7 +1096,7 @@ fn the_background_names_both_the_specimen_and_the_stage() {
 fn the_background_names_the_stage_before_a_model_exists() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
-    app.test_set_walked_state(
+    app.test_set_session_state(
         "MotorWithBrake.mo",
         "MotorWithBrake",
         crate::worker::StageKind::Flatten,
@@ -1298,7 +1306,7 @@ fn the_log_view_renders_every_entry_it_holds() {
     // The central panel needs a loaded specimen before it draws its body, so the
     // log view is unreachable without one — a fact worth knowing before writing
     // any test that expects the right-hand side to render.
-    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+    app.test_set_session_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
     app.test_set_log(&[
         (LogLevel::Info, "compiling RcCircuit.mo"),
         (LogLevel::StageStart, "Flatten"),
@@ -1333,7 +1341,7 @@ fn the_log_view_renders_every_entry_it_holds() {
 fn an_empty_log_view_says_so_rather_than_rendering_blank() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
-    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+    app.test_set_session_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
     app.test_view_empty_log();
     let h = harness(app);
 
@@ -1477,7 +1485,7 @@ fn a_library_model_awaiting_its_source_is_not_told_to_select_one() {
 
 /// **A flagged stage shows its artifact BESIDE its error, not instead of it.**
 ///
-/// Doug, 2026-08-05, walking `docs/fixture-labs/failure-typecheck.md`: *"there is no
+/// Doug, 2026-08-05, running `docs/fixture-labs/failure-typecheck.md`: *"there is no
 /// tree in the failing typecheck stage view."* There was one in the data —
 /// `DimensionMismatch`'s Typecheck stage carries the whole instantiated overlay plus
 /// an `error` key, assembled by the worker precisely so both could be shown.
@@ -1550,7 +1558,7 @@ fn showing_a_variable_in_source_marks_the_line_it_landed_on() {
     app.test_set_ui_mode_specimen();
     // A specimen must be selected: `ShowSource` is not on `requires_specimen`'s
     // exempt list, and correctly so — there is no source to show without one.
-    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+    app.test_set_session_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
     app.test_dispatch_show_source(7);
 
     assert_eq!(
@@ -1986,7 +1994,7 @@ fn the_chrome_stays_on_screen_at_every_width() {
     ] {
         let mut app = App::test_default();
         app.test_set_ui_mode_specimen();
-        app.test_set_walked_state(
+        app.test_set_session_state(
             "RcCircuit.mo",
             "RcCircuit",
             crate::worker::StageKind::Flatten,
@@ -2043,7 +2051,7 @@ fn a_rendered_frame_publishes_the_current_view() {
 
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
-    app.test_set_walked_state(
+    app.test_set_session_state(
         "RcCircuit.mo",
         "RcCircuit",
         crate::worker::StageKind::Flatten,
@@ -2106,7 +2114,7 @@ fn a_rendered_frame_publishes_the_current_view() {
 /// solid**, gap reaching 705pt.
 ///
 /// **The first version of this test could not have caught it, because it loaded no
-/// lab.** `App::test_default` has no lab text and `test_set_walked_state` seeds one
+/// lab.** `App::test_default` has no lab text and `test_set_session_state` seeds one
 /// short line of source, so every width in the LHS was small and every drag worked.
 /// **A fixture narrow enough to pass is a fixture that tests nothing here** — so the
 /// lab case now loads `the-concepts.md` from disk, the real document with the
@@ -2180,7 +2188,7 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
     //
     // The floor was bought down first — the lab count removed, `30s — teaser` → `30s`,
     // `✨ Claude's answer` → `✨ Answer` — taking the one-row minimum from 580pt to
-    // 405.9pt. At 1280 the panel settles at 450.5pt, **35%**, against the 40% Doug walks
+    // 405.9pt. At 1280 the panel settles at 450.5pt, **35%**, against the 40% Doug runs
     // labs at, so he never meets it.
     //
     // **At 640 he does**: a ~410pt floor is most of the window, which is HRW at half
@@ -2198,7 +2206,7 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
             if !mode_is_lab {
                 app.test_set_ui_mode_specimen();
             }
-            app.test_set_walked_state(
+            app.test_set_session_state(
                 "RcCircuit.mo",
                 "RcCircuit",
                 crate::worker::StageKind::Flatten,
@@ -2239,7 +2247,7 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
                 started_at * w,
             );
 
-            // Grab the divider and walk it hard left, holding the button down —
+            // Grab the divider and run it hard left, holding the button down —
             // the gap only opened *during* a drag past the stop, so releasing
             // first would miss it.
             h.drag_at(Pos2::new(started_at * w, h_px * 0.5));
@@ -2345,7 +2353,7 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
 // Baseline suite, chunk 3 — CROSS-PANE effects
 // ===========================================================================
 //
-// **This is the chunk a human walk is worst at.** A reader clicks something and
+// **This is the chunk a human run is worst at.** A reader clicks something and
 // checks the pane they clicked in — the tab lit up, so the click worked. What
 // they do not check is the other three panes the same click moved, because
 // nothing draws their attention there.
@@ -2368,7 +2376,7 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
 fn clicking_a_stage_tab_leaves_the_log_view() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
-    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+    app.test_set_session_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
     app.test_view_log();
     let mut h = harness(app);
     assert!(
@@ -2410,7 +2418,7 @@ fn clicking_a_stage_tab_leaves_the_log_view() {
 fn clicking_a_stage_tab_reaches_the_context_bar() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
-    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
+    app.test_set_session_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
     let mut h = harness(app);
 
     // **The background is always context**, so the bar is never truly empty —
@@ -2461,7 +2469,7 @@ fn clicking_a_stage_tab_reaches_the_context_bar() {
 fn the_log_button_returns_without_changing_the_stage() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
-    app.test_set_walked_state(
+    app.test_set_session_state(
         "RcCircuit.mo",
         "RcCircuit",
         crate::worker::StageKind::Flatten,
@@ -2683,7 +2691,7 @@ fn switching_labs_asks_the_pane_to_return_to_the_top() {
 ///
 /// **A one-shot spent on the wrong frame is the classic form of this bug**, and it fails
 /// intermittently: whether the text is cached yet depends on poll timing, so the fix
-/// would work when tested and not when walked.
+/// would work when tested and not when run.
 #[test]
 fn a_return_to_the_top_is_not_spent_on_a_frame_with_no_lab() {
     let _guard = AdHocLab::absent();
@@ -2747,7 +2755,7 @@ fn a_stop_request_is_spent_by_the_pane() {
 
 /// **A stale offset is discarded rather than slicing a `str` in half.**
 ///
-/// Labs are re-read whenever their mtime changes, and Doug walks them *while* they are
+/// Labs are re-read whenever their mtime changes, and Doug runs them *while* they are
 /// being edited — that is the working mode of this project, not a corner case. So an
 /// offset recorded against the previous text is expected, and `&text[..n]` panics if `n`
 /// is not a character boundary.

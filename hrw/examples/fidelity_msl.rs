@@ -416,7 +416,7 @@ fn main() {
         t_run.elapsed().as_secs_f64(),
     );
     eprintln!(
-        "coverage: {} subjects ({} with blocks, {} with a matching), {} stage IRs walked,          {} equation sheets, {} identifier indexes, {} empty stages",
+        "coverage: {} subjects ({} with blocks, {} with a matching), {} stage IRs run,          {} equation sheets, {} identifier indexes, {} empty stages",
         cov.subjects,
         cov.with_blocks,
         cov.with_matching,

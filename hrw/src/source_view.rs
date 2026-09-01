@@ -351,7 +351,7 @@ pub(crate) fn dotted_path_ending_at(text: &str, tokens: &[LineToken], i: usize) 
     let mut parts = vec![&text[tokens[i].start..tokens[i].end]];
     let mut j = i;
     // Step back over a dot, then the identifier before it, skipping whitespace
-    // in case the text is written `b . phi`. Running out of tokens ends the walk,
+    // in case the text is written `b . phi`. Running out of tokens ends the run,
     // which is why that case is the loop condition rather than another `break`.
     while let Some(dot) = prev_significant(tokens, j) {
         if tokens[dot].kind != TokenKind::Operator

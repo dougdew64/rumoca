@@ -226,7 +226,7 @@ Full treatment: [typecheck_and_dims.md](phase3_typecheck_and_dims/typecheck_and_
 
 ## Flattening (Phase 5)
 
-Flattening walks the instance tree and emits a **`flat::Model`** — a single
+Flattening runs the instance tree and emits a **`flat::Model`** — a single
 flat structure with no class hierarchy. Variable names become globally
 qualified (e.g. `body.position.x`); `connect()` statements expand into equality
 equations for potential variables and sum-to-zero equations for `flow`

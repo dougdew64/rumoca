@@ -652,9 +652,9 @@ impl StageKind {
     /// `Simulation`**.
     ///
     /// `Simulation` is in `ALL` because it is a tab, but it is not a compilation stage:
-    /// `StageBundle::get()` *panics* on it. So any code that walks stages and asks the
+    /// `StageBundle::get()` *panics* on it. So any code that runs stages and asks the
     /// bundle for each one must use this list, not `ALL`. Added 2026-07-29 after
-    /// `failure_context` walked `ALL` and hit that panic in three tests — the trap is
+    /// `failure_context` run `ALL` and hit that panic in three tests — the trap is
     /// easy to fall into and silent until something calls `get`.
     pub const COMPILATION: &[StageKind] = &[
         StageKind::Parse,
@@ -1090,7 +1090,7 @@ pub enum FromWorker {
         reduced_frames: StructuralFrames,
         /// `pre()`-lowering frames (idea #40), **captured during the compile above**
         /// by `rumoca_phase_dae`'s capture scope. The pass runs *inside* DAE
-        /// construction, so the finished DAE cannot be re-walked to recover them —
+        /// construction, so the finished DAE cannot be re-run to recover them —
         /// which is why the scope exists rather than a second pass.
         ///
         /// *(Comment corrected 2026-08-04: it read "replay frames … recorded by
@@ -1457,7 +1457,7 @@ type ParsedDocuments = Vec<(String, StoredDefinition)>;
 ///
 /// # The problem this solves
 ///
-/// `parse_source_root_with_cache` is an *on-disk* cache. Every call re-walks the
+/// `parse_source_root_with_cache` is an *on-disk* cache. Every call re-runs the
 /// root, re-hashes every file's bytes, deserializes every parsed AST back out of
 /// the artifact cache and re-validates the package layout. For the MSL that is
 /// **2,553 files and ~4.0 s, and the test suite pays it ten times** — measured
@@ -1869,7 +1869,7 @@ impl WorkerState {
         // **Closes with the name it opened with.** It read `"Compile (…ms)"` against a
         // `"Compile (for simulation)"` start until 2026-08-04, found by the
         // emit-time bracket check the moment it was added — on the *simulation* path,
-        // which the log tests never walk because they compile and stop. A reader
+        // which the log tests never run because they compile and stop. A reader
         // scanning for where the compile ended was looking for a name that was never
         // printed, and the balance check saw one start and one end and was content.
         log(
@@ -2459,7 +2459,7 @@ impl WorkerState {
         // for a compiler. So `Located::source` is `""` for every library model,
         // and `session.get_document(uri).content` cannot supply the pane.
         //
-        // **The URI is a filesystem path** (`collect_modelica_files` walked it),
+        // **The URI is a filesystem path** (`collect_modelica_files` run it),
         // and Rumoca's parsed-artifact cache is keyed on a hash of those files,
         // so a file that changed since parsing would have invalidated the cache.
         // Disk text and parsed text therefore agree by construction.
@@ -3211,7 +3211,7 @@ impl WorkerState {
                 // 2026-08-04 this stage was built *after* solve lowering and
                 // never logged at all — so the log showed the chain jumping
                 // Flatten → Structural, with the phase they both depend on
-                // missing. Doug found it walking the lab that teaches it.
+                // missing. Doug found it running the lab that teaches it.
                 //
                 // Moved here rather than logged where it stood: logging it in
                 // place would have reported DAE construction *finishing after*
@@ -3247,7 +3247,7 @@ impl WorkerState {
                 // explaining the same stop is redundant; a learner opening the
                 // DAE tab of a model with no DAE and finding nothing is a dead
                 // end, and the lab that found this
-                // (`docs/fixture-labs/dae-construction.md`) walks exactly that
+                // (`docs/fixture-labs/dae-construction.md`) runs exactly that
                 // path.
                 let dae_stage = run_stage!(
                     "DAE construction",
@@ -4653,7 +4653,7 @@ fn block_to_json(b: &rumoca_phase_structural::BlockReport) -> serde_json::Value 
 /// and it is the one that showed manual enumeration was not converging: its labels
 /// sit in a bare string array (`residual_equations`) with no field name of their own,
 /// so the scan that found the first four could not see it at all.
-/// `lib::unidentified_equation_labels` now walks for them instead.
+/// `lib::unidentified_equation_labels` now runs for them instead.
 fn tearing_to_json(t: &rumoca_phase_structural::TearingReport) -> serde_json::Value {
     serde_json::json!({
         "tear_vars": t.tear_vars,
@@ -4845,7 +4845,7 @@ pub fn is_def_id_key(key: &str) -> bool {
 
 /// Collect every DefId appearing under a DefId-named key anywhere in the IR.
 ///
-/// Recursively walks the JSON tree. When it finds an object key that matches
+/// Recursively runs the JSON tree. When it finds an object key that matches
 /// one of `DEF_ID_KEYS` and whose value is a u64, it inserts the id into
 /// `out`. `BTreeSet` deduplicates automatically (a DefId may appear in
 /// multiple places in the IR).
@@ -5695,7 +5695,7 @@ const NON_PHASE_BRACKETS: &[&str] = &["Rumoca compile", "Compile (for simulation
 /// A bracket is a claim: *this named thing ran, and what is nested inside it belongs
 /// to that thing*. Until 2026-08-04 the log carried a bracket called **"DAE
 /// pipeline"** — five real phases given an invented parent because it read tidily.
-/// Doug found it walking the lab that teaches DAE construction, and named the class:
+/// Doug found it running the lab that teaches DAE construction, and named the class:
 /// *"logging is supposed to accurately describe what actually happened."*
 ///
 /// Accepts a **prefix** match, because brackets carry qualifiers a reader needs — a

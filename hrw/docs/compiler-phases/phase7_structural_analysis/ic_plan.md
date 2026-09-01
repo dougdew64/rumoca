@@ -189,7 +189,7 @@ relaxed fallback (next subsection) is attempted.
 ### Steps 4–6: BLT and conversion
 
 `build_blt_from_incidence` runs Tarjan and produces the BLT block list for
-the algebraic subsystem. `convert_blt_blocks_to_ic` then walks each block
+the algebraic subsystem. `convert_blt_blocks_to_ic` then runs each block
 and decides which `IcBlock` variant fits.
 
 ---
@@ -243,7 +243,7 @@ fn build_loop_block(dae, eq_indices, var_info, var_name_to_idx) -> IcBlock {
 The loop has its own coordinate system: equations and unknowns are indexed
 $0 \dots N - 1$ within the block, separate from the global y-vector or the
 algebraic subsystem indexing. `build_loop_block` builds a fresh
-`ScalarUnknownResolver` over the loop's unknowns and walks each equation's
+`ScalarUnknownResolver` over the loop's unknowns and runs each equation's
 expression to fill `local_eq_unknowns: Vec<HashSet<usize>>`.
 
 ### Tearing call
@@ -282,7 +282,7 @@ tearing picks eq A as the causal step for $R$, the runtime cannot solve `v = R*i
 for $R$ symbolically (it doesn't know whether $i$ is zero) and falls back to
 Newton — slow and brittle. Eq B would have given a clean symbolic solution.
 
-`improve_causal_assignment` walks each causal step that lacks a symbolic
+`improve_causal_assignment` runs each causal step that lacks a symbolic
 solution and checks whether any **residual equation** references the same
 variable and admits a symbolic solve for it. If so, the two equations are
 swapped: the residual becomes the new causal equation (with its symbolic

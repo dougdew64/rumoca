@@ -50,7 +50,7 @@ Rumoca is, and what each phase produces.
 
 **Phase 7 has six drill-downs and the others have none or one.** That is not neglect — it is
 where the interesting algorithms live, and where HRW's animated views point.
-[A five-lesson guided lab](phase7_structural_analysis/guided-lab.md) walks it with animated
+[A five-lesson guided lab](phase7_structural_analysis/guided-lab.md) runs it with animated
 replays and live-stepped debugging.
 
 ## Two things to know before trusting a page here

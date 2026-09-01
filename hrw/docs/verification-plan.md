@@ -29,7 +29,7 @@ divided cleanly by *whether the toolchain could see them*:
 And the standing asymmetry, which predates that day:
 
 > **11,939 lines of UI code. One test that exercises rendering.** Everything else is verified
-> by Doug walking labs.
+> by Doug running labs.
 
 `docs/tech-debt.md`'s second trigger names the property: **verifiability, not Rust.** This plan
 is that trigger's first application.
@@ -176,8 +176,8 @@ errs toward "still absent" on doubt, because this test fails the build: a false 
 wrong failure, a false negative leaves a claim for the lint to surface.
 
 *(`last_walked` was the second tag and was removed on 2026-09-01 along with the paragraph carrying
-it. It marked the absence of walk-tracking derived from the action trail — work Doug ruled must not
-be done, having retired the `walked:` markers on 2026-08-31 and the walking discipline itself the
+it. It marked the absence of run-tracking derived from the action trail — work Doug ruled must not
+be done, having retired the `run:` markers on 2026-08-31 and the running discipline itself the
 next day. **An absence tag on forbidden work is worse than none**: it reads as a to-do a later
 session may pick up in good faith, which is exactly what an `unbuilt:` tag is designed to invite.)*
 
@@ -311,7 +311,7 @@ verify at implementation time rather than assuming.
 
 **What it should catch — every one of these was found by hand:**
 
-| Bug found by walking a lab | The assertion that replaces it |
+| Bug found by running a lab | The assertion that replaces it |
 |---|---|
 | "the tree node is not highlighted" | assert highlight state after a `PointAtNode` link |
 | "the RHS doesn't re-initialise on a second lab" | assert the stage panel is empty after a mode switch |
@@ -344,7 +344,7 @@ cannot be constructed outside eframe, so no harness could call it. The body move
 `_frame`, unused.** One unused parameter was the whole barrier between ~12,000 lines of UI and
 an automated test.
 
-| Test | Replaces a bug found by walking |
+| Test | Replaces a bug found by running |
 |---|---|
 | `the_harness_renders_hrw_and_sees_widgets` | the non-vacuity guard for all the others |
 | `the_lab_picker_shows_every_fixture_and_no_readme` | pins the README exclusion **at the rendered layer** |
@@ -368,7 +368,7 @@ existence**, since HRW deliberately refuses a stage link with no specimen. Probi
 behaviour instead of trusting the premise turned that into the notice test, which is one of
 the four the plan set out to write.
 
-**What remains for this item:** more of the mechanical lab assertions, as labs are walked and
+**What remains for this item:** more of the mechanical lab assertions, as labs are run and
 their checkable halves become clear. The capability is the deliverable; the assertions
 accumulate.
 

@@ -164,7 +164,7 @@ appear, never on their values. A model can be structurally fine and still numeri
 which is a different failure and a different lab
 ([structural-vs-numerical-rank](hrw://lab/structural-vs-numerical-rank)).
 
-The algorithm is **augmenting paths** — take an unmatched equation, walk alternately along
+The algorithm is **augmenting paths** — take an unmatched equation, run alternately along
 unmatched and matched edges, and if you reach an unmatched unknown, flip the path to gain one
 pair. [matching-live](hrw://lab/matching-live) steps that search in the debugger, where the call
 stack *is* the path.

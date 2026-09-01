@@ -136,7 +136,7 @@ Two facts make the missing-derivative case possible.
   reference can keep that status even after the reference is gone.
 
 - **The classifier scans more places than `f_x`.** Phase 6's
-  state-detection scanner walks regular equations, **initial
+  state-detection scanner runs regular equations, **initial
   equations**, and **variable bindings** looking for `der(...)`
   references. The index-reduction pass, by contrast, looks only at
   `f_x` (the continuous equations the integrator actually solves).
@@ -279,7 +279,7 @@ below.
 
 ## What "Differential Index" Means
 
-The behaviour we just walked through has a formal name. The
+The behaviour we just run through has a formal name. The
 **differential index** of a DAE is, informally, the smallest number of
 times you must time-differentiate (a subset of) its equations to obtain a
 system in which every derivative can be solved for explicitly.
@@ -403,7 +403,7 @@ itself triggers another round.
 
 The pass is **Pantelides-flavoured** in that it iterates until convergence,
 but it does **not** track an augmented matching across rounds (Pantelides's
-defining contribution). Each round simply walks the current state list and
+defining contribution). Each round simply runs the current state list and
 applies the per-state procedure below.
 
 ### The per-state procedure

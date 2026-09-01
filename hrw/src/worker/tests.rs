@@ -1464,7 +1464,7 @@ fn a_scratch_specimen_compiles_end_to_end() {
 )]
 fn hrw_rederived_tearing_matches_rumocas_report() {
     /// The tear variables Rumoca's report lists, flattened across blocks in
-    /// report order — the same order `tear_variable_names` walks.
+    /// report order — the same order `tear_variable_names` runs.
     fn reported_tears(report: &serde_json::Value) -> Vec<String> {
         report
             .get("blocks")
@@ -1680,7 +1680,7 @@ const F1_MODELS: &[&str] = &[
 /// `docs/fidelity-plan.md` F1, second of three. The incidence view renders the
 /// matching overlay from the report, but [`MatchingAnimation`] **re-runs Kuhn's
 /// algorithm** on the parsed matrix to produce its frames — so the green circles
-/// the animation walks through could in principle end somewhere the compiler
+/// the animation runs through could in principle end somewhere the compiler
 /// never went.
 ///
 /// The comparison is exact rather than by size, because a maximum matching is
@@ -2557,7 +2557,7 @@ fn an_unbalanced_model_reports_its_balance() {
 /// the last tab before Structural, so **the succeeding stage reported the
 /// failure and the failing stage reported nothing.**
 ///
-/// Found by walking `docs/fixture-labs/dae-construction.md`, whose
+/// Found by running `docs/fixture-labs/dae-construction.md`, whose
 /// counterexample stop opens this tab expecting an explanation — the pane-is-a-
 /// reporter rule reaching a pane that was already shipping.
 ///
@@ -4034,7 +4034,7 @@ fn no_stage_shows_content_hrw_invented() {
 ///
 /// `"DAE pipeline"` is the real string that was in HRW's log until 2026-08-04: a
 /// bracket wrapping five genuine phases under a parent that does not exist,
-/// written because it read tidily. Doug found it walking the DAE lab. **A test
+/// written because it read tidily. Doug found it running the DAE lab. **A test
 /// that only checked real names against real logs would have passed the entire
 /// time that string was shipping**, so the negative case is the test.
 #[test]
@@ -4083,7 +4083,7 @@ fn the_bracket_check_rejects_an_invented_phase() {
 ///    against ends, which a *mismatched* pair satisfies perfectly — open
 ///    `Flatten`, close `Typecheck`, and the count is still zero while the
 ///    indentation on screen tells the reader that one phase contains another.
-///    This walks a stack of names instead.
+///    This runs a stack of names instead.
 #[test]
 #[cfg_attr(
     not(feature = "slow-tests"),
@@ -5317,7 +5317,7 @@ fn manifest_stage_rosters_match_the_pipeline() {
 
     let mut checked = 0usize;
     // Every specimen the notebook covers, as its manifest names it. Collected
-    // while walking, and checked against `specimens/` below.
+    // while running, and checked against `specimens/` below.
     let mut covered: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
 
     for entry in std::fs::read_dir(&notebook)
@@ -5359,7 +5359,7 @@ fn manifest_stage_rosters_match_the_pipeline() {
     }
 
     // **Every specimen must HAVE a notebook entry**, which the loop above cannot
-    // say — it walks the notebook, so a specimen with no trace is not a failure
+    // say — it runs the notebook, so a specimen with no trace is not a failure
     // there but an absence, and the loop skips it in silence.
     //
     // That is not hypothetical. `IncompatibleConnect` and `UndefinedRef` carried
@@ -5995,10 +5995,10 @@ fn the_corpus_outcome_matrix_is_unchanged() {
         .collect();
     names.sort();
 
-    // Non-vacuity: a walk that found nothing must not pass as "no drift".
+    // Non-vacuity: a run that found nothing must not pass as "no drift".
     assert!(
         names.len() >= 20,
-        "only {} specimens found \u{2014} the walk is broken, not the corpus",
+        "only {} specimens found \u{2014} the run is broken, not the corpus",
         names.len(),
     );
 

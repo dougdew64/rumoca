@@ -31,7 +31,7 @@ come from parameters and are not always literal. Here `small` has 2 elements and
 
 > ### A defect this stop found — and it is fixed, 2026-08-05
 >
-> **This stop originally promised a tree. Doug walked it and there was none.**
+> **This stop originally promised a tree. Doug run it and there was none.**
 >
 > The stage value always contained one: 7.4 KB of instantiated overlay — `components`, `classes`,
 > `type_roots` — **plus** an `error` key, assembled by the worker on purpose, its comment reading
@@ -52,7 +52,7 @@ come from parameters and are not always literal. Here `small` has 2 elements and
 > behaviour before being kept.
 >
 > **The wrong expectation is recorded here rather than quietly rewritten**, because how it was
-> found is the lesson: a lab claimed something about a pane, and it took someone actually walking
+> found is the lesson: a lab claimed something about a pane, and it took someone actually running
 > it to notice. That is the second time this week.
 
 ---

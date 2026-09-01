@@ -11,7 +11,7 @@ the concepts and names right."*
 
 ## 1. How this started, and why the first answer was wrong
 
-Doug, walking the labs: *"the whole 'Act' thing keeps distracting me while I'm walking labs.
+Doug, running the labs: *"the whole 'Act' thing keeps distracting me while I'm running labs.
 'Act' is something that I associate with a theater or movie script."*
 
 **The association is not a quirk — it is the word's origin, and it fights the design.** A script's
@@ -143,7 +143,7 @@ The first is the clearest gain: the things being named **are** the anchors (`dec
 **Nothing that currently works changes shape.**
 
 Doug, approving this plan: *"all of your phase 1 concept labs have been great. You have completely
-nailed that format."* That format is validated by **his walks**, which is the one signal Claude
+nailed that format."* That format is validated by **his runs**, which is the one signal Claude
 cannot generate. Therefore:
 
 - **The concept template is frozen.** Act→Stop is a relabel. Not one word of
@@ -227,8 +227,8 @@ occurrences are all prose.
 
 - **A bug-report lab template.** No instance exists. Its audience is *Rumoca maintainers, not
   Doug* — the first lab kind whose reader is not him, which flips who judges it under the
-  two-audience rule and means his walk cannot validate it.
-- **Changing `parse_stations`** so Play walks only numbered stops. Real imprecision — `CATALOGUE.md`
+  two-audience rule and means his run cannot validate it.
+- **Changing `parse_stations`** so Play runs only numbered stops. Real imprecision — `CATALOGUE.md`
   lists "What this lab cannot check" as a stop — but it changes autoplay behaviour and deserves
   its own decision rather than riding along. <!-- unbuilt: parse_numbered_stops -->
 - **Renaming the ⏹ Stop button.** No contact surface; see §3.

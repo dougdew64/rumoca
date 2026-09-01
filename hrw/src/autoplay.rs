@@ -136,7 +136,7 @@ pub struct LabStation {
     ///
     /// Deduplicating would be wrong here in a way it is not for hook registration:
     /// `dae-construction.md` returns to `hrw://load/SingleInertia/Dae` three times,
-    /// and those are three different moments in the walk.
+    /// and those are three different moments in the run.
     pub links: Vec<LabLink>,
 }
 
@@ -434,7 +434,7 @@ impl Autoplay {
     /// Track window focus, pausing while HRW is not the front window.
     ///
     /// An external stop brings Wolfram Desktop or System Modeler forward, and a
-    /// clock that kept running behind another window would advance the walk while
+    /// clock that kept running behind another window would advance the run while
     /// nobody was looking at it — the recording would come back to a lab that had
     /// moved on. Focus returning lifts *this* pause and no other, so a user-pressed
     /// Pause is not undone by clicking away and back.
@@ -521,7 +521,7 @@ impl Autoplay {
     }
 
     /// Fraction of the run completed, for a progress bar and for scrolling the
-    /// lab text in step with the walk.
+    /// lab text in step with the run.
     pub fn fraction(&self) -> f32 {
         if self.beats.is_empty() {
             return 0.0;
@@ -657,7 +657,7 @@ Short.
     /// **Duplicate links are kept**, unlike hook registration.
     ///
     /// `dae-construction.md` returns to the same DAE tab three times, and those are
-    /// three different moments in the walk. Deduplicating would silently shorten
+    /// three different moments in the run. Deduplicating would silently shorten
     /// the run and drop two of them.
     #[test]
     fn a_repeated_link_is_a_repeated_beat() {
@@ -987,7 +987,7 @@ Short.
             "the big gap in the document must be the big gap in the scroll              ({gap} bytes vs {crowded})",
         );
 
-        // Positions must not go backwards; the walk reads top to bottom.
+        // Positions must not go backwards; the run reads top to bottom.
         for w in beats.windows(2) {
             assert!(
                 w[1].byte_offset >= w[0].byte_offset,
@@ -1014,7 +1014,7 @@ Short.
         assert_eq!(
             ap.phase(),
             Phase::Paused,
-            "an external window pauses the walk"
+            "an external window pauses the run"
         );
         assert!(
             ap.tick(Duration::from_secs(10), false).is_none(),

@@ -204,7 +204,7 @@ Absolute, regardless of how safe it looks at 3 a.m.:
 - **Anything that changes what a pane *claims*.** Accuracy outranks everything, and a pane's claim
   is the one thing no checker here verifies for meaning.
 - **Anything trading fidelity for anything else.**
-- **Lab prose.** Doug's lab walks are his primary learning exercise; rewriting an explanation
+- **Lab prose.** Doug's lab runs are his primary learning exercise; rewriting an explanation
   unsupervised is not Claude's to do. Fixing a checker-caught number or a dead link is fine.
 - **Raising any ceiling or budget** — the reading-path ceilings (`docs/reading-budgets.txt`), the
   field-count ratchet, the orphaned-doc budget. Raised with nobody reading the reasoning, it is a

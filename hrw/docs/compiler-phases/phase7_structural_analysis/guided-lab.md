@@ -1,6 +1,6 @@
 # Structural Analysis — Guided Lab
 
-A five-lesson interactive walkthrough of structural analysis using HRW and
+A five-lesson interactive run-through of structural analysis using HRW and
 specimens. Each lesson introduces one concept, uses specific specimens, and tells
 you exactly what to do in HRW to see the concept in action.
 

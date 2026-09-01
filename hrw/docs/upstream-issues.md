@@ -45,7 +45,7 @@ Issue 2 suits that far better than issue 1:
 - **HRW's usefulness is the point of the story rather than an aside**, so nobody has to
   claim it.
 
-`docs/fixture-labs/the-oracle.md` already walks this narrative and would want tightening
+`docs/fixture-labs/the-oracle.md` already runs this narrative and would want tightening
 for a recording — a demo lab is a third kind after ad hoc and fixture: few stops, no
 scrolling, deterministic start, nothing needing a second read.
 
@@ -518,7 +518,7 @@ assert((1 + alpha*(T_heatPort - T_ref)) >= Modelica.Constants.eps,
 
 **Not verified.** The correlation is exact across seven specimens and the mechanism is a guess
 from reading one MSL file. Before filing, confirm by compiling a one-line model whose only
-content is an `assert` with a relation, and by checking whether Rumoca's event partitioning walks
+content is an `assert` with a relation, and by checking whether Rumoca's event partitioning runs
 assert conditions.
 
 ### Which bug this is
@@ -854,7 +854,7 @@ Parsing a five-line model costs about as long as parsing a five-line model.
 ~21 s, about **3,500x** the work being cached. None of it appears in `SourceRootCacheTiming` --
 `collect_files_ms`, `hash_inputs_ms`, `cache_deserialize_ms`, `parse_files_ms`,
 `validate_layout_ms` and `cache_write_ms` together account for a handful of milliseconds. The
-only uninstrumented step on a miss is `maybe_prune_cache_after_write`, which walks and prunes
+only uninstrumented step on a miss is `maybe_prune_cache_after_write`, which runs and prunes
 the entire shared cache.
 
 **Unverified:** that the prune is the whole 21 s. It is the only uninstrumented step on the miss

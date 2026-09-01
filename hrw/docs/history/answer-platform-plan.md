@@ -127,12 +127,12 @@ half of it means re-deriving it worse in three weeks.
 
 ## Next batch — complete the paradigm shift  *(ordered)*
 
-**B1–B3 delivered 2026-07-30**, and all five fixture labs walked clean by Doug. The
+**B1–B3 delivered 2026-07-30**, and all five fixture labs run clean by Doug. The
 answer channel now reaches every noun the capture can describe, spans three platforms,
 and the teaching database is mechanically checked.
 
 What that cost in bugs is the part worth remembering: **fourteen defects**, of which Doug
-found nine by walking labs and the tests and clippy found five. Not one was found by
+found nine by running labs and the tests and clippy found five. Not one was found by
 Claude reading its own code. Several were in the artifacts *describing* HRW rather than in
 HRW — a lab asserting a highlight that had never been built, a diagnostic file describing
 the state before an action, two lab expectations that nothing could contradict.

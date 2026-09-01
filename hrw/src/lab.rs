@@ -103,7 +103,7 @@ pub(crate) struct LabState {
     /// one navigation for which the top of the document is the wrong answer.
     pub(crate) restore_scroll_y: Option<f32>,
 
-    /// **The self-running walk** of whichever lab is showing.
+    /// **The self-running run** of whichever lab is showing.
     ///
     /// Lives here rather than on `App` because it plays *this* lab and means
     /// nothing without one — `app_does_not_regrow_its_field_count` asked the
@@ -131,7 +131,7 @@ pub(crate) struct LabState {
     /// Maximum scroll offset of the lab text, measured last frame — the clamp.
     pub(crate) lab_max_scroll: Option<f32>,
 
-    /// **The mode a self-running walk started in**, to return to when it ends.
+    /// **The mode a self-running run started in**, to return to when it ends.
     ///
     /// A lab stop may legitimately leave Lab mode: `hrw://source/<line>` switches
     /// to Specimen mode because that is the only place the source renders, and a
@@ -140,7 +140,7 @@ pub(crate) struct LabState {
     /// Doug, 2026-08-03: *"at the completion of the lab, the mode is being switched
     /// from lab mode to specimen mode."*
     ///
-    /// **The stop is not wrong; the run just has to clean up after itself.** A walk
+    /// **The stop is not wrong; the run just has to clean up after itself.** A run
     /// is a round trip, so it restores what it borrowed, on finishing *or* on Stop.
     pub(crate) mode_before_autoplay: Option<crate::ui_state::UiMode>,
 }
@@ -365,7 +365,7 @@ impl LabState {
 ///   *test* with a pass/fail criterion rather than an explanation that would rot.
 ///
 /// Keeping them in one list (rather than one panel each) is deliberate: from the
-/// reader's side both are "a sequence of stops to walk", and the distinction is about
+/// reader's side both are "a sequence of stops to run", and the distinction is about
 /// where the file lives, not about how it is used.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum LabSource {
@@ -664,7 +664,7 @@ mod tests_comment_stripping {
 
     /// **An unterminated comment keeps its text instead of eating the document.**
     ///
-    /// Labs are re-read on every mtime change and Doug edits them while walking, so a
+    /// Labs are re-read on every mtime change and Doug edits them while running, so a
     /// file saved mid-keystroke is a normal thing to render. **A pane that empties while
     /// he types would read as a far worse bug than a stray `<!--`** — and it would be
     /// blamed on whatever he had just typed.

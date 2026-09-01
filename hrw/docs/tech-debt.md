@@ -35,7 +35,7 @@ from what we expect to touch.
 **2026-08-19 demonstrated it.** The lab transport bar's non-monotonic width had `MIN_LEFT_POINTS`,
 two divider-test thresholds, `MAX_LAB_CHROME` and the picker's adaptive width all tuned *around*
 it. **It was never on anyone's list** — nobody planned to touch that bar until a Back button
-needed a slot — so no targeted sweep would have scoped it in. It was found by walking into it, at
+needed a slot — so no targeted sweep would have scoped it in. It was found by running into it, at
 the cost of an evening and two dead theories.
 
 **During a comprehensive sweep, general software-engineering principle is admissible grounds** —
@@ -186,7 +186,7 @@ verification loop is tight, the second says something is unwatched.
 | 08-15 | `architecture.md` stale ×3 | toolchain | `architecture_regions_are_current` |
 | 08-15 | notebook 25 days stale | Claude | found while regenerating for the id fix |
 | 08-15 | coupled-block assertions never executed | Claude | writing the id checker |
-| 08-16 | no hint why `C.v` is a state | **Doug** | walking the lab |
+| 08-16 | no hint why `C.v` is a state | **Doug** | running the lab |
 | 08-16 | the Why explanation was hover-only, undiscoverable | **Doug** | "I don't see what you've added" |
 | 08-16 | `view.json` stopped publishing what the pane drew | Claude | prompted by Doug's question about the labs |
 | 08-16 | `tests/msl_resolve.rs` unrun since ≥08-05 | **Doug** | "Do all of the checkers run?" |
@@ -219,7 +219,7 @@ note; the rest quote the commit.
 | date | defect | caught by | note |
 |---|---|---|---|
 | 08-17 | a new lab opened partway down, not at its top | **Doug** | *"When I click a subordinate lab link in the-concepts hub…"* |
-| 08-17 | a stop link did not land at its stop | **Doug** | same walk *(inferred)* |
+| 08-17 | a stop link did not land at its stop | **Doug** | same run *(inferred)* |
 | 08-17 | lab `kind` markers were visible in the pane | **Doug** | *"is now visible in the…"* |
 | 08-17 | a stage summary claimed more than its frames recorded | Claude | following Doug's *"way, way too short"* |
 | 08-19 | eighteen lab references opened a browser | **Doug** | *"I found a broken link in blt-ordering"* |
@@ -231,7 +231,7 @@ note; the rest quote the commit.
 | 08-21 | the Flatten sub-view row stranded | Claude | column read |
 | 08-21 | a test named `…matches_worker` never touched the worker | Claude | reading `worker.rs` for #48 |
 | 08-22 | Look links recompiled an already-loaded specimen | **Doug** | *"even if those specimens are already loaded"* |
-| 08-22 | the lab implied HRW represents a "node"; so did a doc comment | **Doug** | re-walking connections |
+| 08-22 | the lab implied HRW represents a "node"; so did a doc comment | **Doug** | re-running connections |
 | 08-22 | `connect` called one edge, is one edge **per member** | **Doug** | *"That seems wrong"* |
 | 08-22 | the 08-12 lab repair was lost to the 08-13 rewrite | Claude | investigating Doug's question |
 | 08-22 | the mandatory reading path was growing unchecked | Claude | answering Doug's question about the arrangement |
@@ -246,7 +246,7 @@ note; the rest quote the commit.
 | 08-23 | `alias_anim` and `ic_plan_anim` nested a scroll area and capped it, same defect Doug found on 08-16 | toolchain | night 2; generalising `connection_anim`'s per-file check caught both on its first run |
 | 08-23 | `symbol_is_defined` matched a **prefix** — a new `pantelides_ladder` module silently retired the `pantelides` claim of absence | toolchain | night 2; `claims_of_absence_are_still_true` fired the moment the module landed |
 | 08-23 | `architecture.md` cited `mem::take`, which resolved only via that loose match | toolchain | night 2; exposed by tightening the resolver — it names std, so it now reads `std::mem::take` |
-| 08-23 | `alias_anim` and `ic_plan_anim` opened on frame 1 with a step **already applied** — no opening frame, since birth | **Doug** | walking the two views night 2 had just touched; the same pair again, and the column read had missed it by reading the trait and not the frame semantics |
+| 08-23 | `alias_anim` and `ic_plan_anim` opened on frame 1 with a step **already applied** — no opening frame, since birth | **Doug** | running the two views night 2 had just touched; the same pair again, and the column read had missed it by reading the trait and not the frame semantics |
 | 08-23 | `drain_worker`'s `DefTree` arm cleared the loading indicator for a request **still in flight** — the one arm of six with no staleness guard | Claude | night 3, column read of the router's six arms |
 | 08-23 | `requires_specimen`'s doc said *"the three that do not need one"* while its list held **six** | Claude | night 3, column read of `dispatch_hrw_link`'s twelve arms |
 | 08-24 | a recompile drew the **previous** compile's matrix over the current compile's report — `CompileProgress` invalidated no view cache | Claude | night 3 found it; **Doug ruled it a fiction rather than a trade**, on the principles |
@@ -674,7 +674,7 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   *Found 2026-08-22, when two unrelated scratch specimens broke the test's other assertion. That
   one is fixed; this one is the half that stayed.*
 
-## UI defects — found by walking
+## UI defects — found by running
 
 - [ ] **The "✨ Claude's answer" row vanishes when no ad hoc lab exists, and its absence is
   indistinguishable from breakage.** *(Doug, 2026-08-15: "the 'Claude's Answer' lab seems to
@@ -713,7 +713,7 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   *Files:* `lab.rs`, `app.rs`.
 
 - [ ] **A selected fixture lab does not always open scrolled to the top.**
-  *(Doug, 2026-08-01, walking the fixture labs as a smoke test.)*
+  *(Doug, 2026-08-01, running the fixture labs as a smoke test.)*
 
   **Cause identified, not guessed.** The lab pane is
   `egui::ScrollArea::vertical().id_salt("lab")` (`app.rs`) — **one fixed id for every
@@ -853,7 +853,7 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
 - [ ] **`build_declaring_classes` resolves only the first path segment.** `src.V` resolves
   exactly; `gear.flange_a.tau` yields `gear`'s type, which *contains* the declaration rather
   than being it. The UI wording says "in" rather than "declared in", so it is honest — but a
-  deeper resolution would need to walk into library class IRs that are loaded on demand.
+  deeper resolution would need to run into library class IRs that are loaded on demand.
   *File:* `app.rs`.
 
 - [x] **The bridge ack says "I read your request", and HRW reads it as "a breakpoint exists."**
@@ -1282,7 +1282,7 @@ noticed, and today nothing would notice.
 
 ## ~~A flagged stage shows its error INSTEAD OF its artifact~~ — FIXED 2026-08-05
 
-**Found by Doug 2026-08-05**, walking `failure-typecheck.md`: the lab claimed a tree below the
+**Found by Doug 2026-08-05**, running `failure-typecheck.md`: the lab claimed a tree below the
 diagnostic and there was none. **Rank 0** — the pane shows less than the stage holds, and says
 nothing about it.
 
@@ -1385,7 +1385,7 @@ a filesystem call in the paint path.
 
 ### Two things this broke, and both were the fixture's fault
 
-- `test_set_walked_state` names files that do not exist (`RcCircuit.mo`). Harmless while the
+- `test_set_session_state` names files that do not exist (`RcCircuit.mo`). Harmless while the
   failure was silent; once the pane reported it, tests broke. **The fixture was the unrealistic
   thing** — a test whose app is in a state the real app cannot reach is testing something that
   does not happen — so it now seeds source text rather than the assertion being loosened.
@@ -1518,7 +1518,7 @@ still zero while the indentation tells the reader one phase contains another.
 
 **It found a real defect within seconds of being added** — the simulate path opened
 `"Compile (for simulation)"` and closed `"Compile (…ms)"`. Two names for one bracket, on the
-path the log tests never walk because they compile and stop.
+path the log tests never run because they compile and stop.
 
 **Three stale doc comments corrected the same day**, all describing behaviour removed hours
 earlier: two `from_captured*` constructors still promised a re-derivation fallback they no
@@ -1582,7 +1582,7 @@ statement about *which constructor exists*, not about what a given view is showi
   own assertion at the time it is written, per the pane-is-a-reporter rule.
 
 **Do not treat this as swept because the fictions are gone.** The fictions were found by Doug
-walking two labs, not by any check, and the next one will be found the same way unless the
+running two labs, not by any check, and the next one will be found the same way unless the
 category acquires coverage.
 
 ## UI testing debt — the harness exists and almost nothing uses it
@@ -1624,7 +1624,7 @@ labels and state text are ordinary widgets; only the matrix underneath is not.
 
 **This matters for the division of labour.** The standing plan is that fixture
 labs cover what cannot be automated, and that set is much smaller than it looked
-— which means labs should *not* be spent re-walking widget panes a headless
+— which means labs should *not* be spent re-running widget panes a headless
 test can hold. Two things stay Doug's alone regardless of harness reach:
 **colour** (fills carry meaning throughout HRW and the tree records no colour)
 and **layout** (a widget laid out off-screen is still in the tree — the reason
@@ -1643,7 +1643,7 @@ from:
    look identical: `specimen_source_ui` (which was silently empty for library
    models until 2026-08-01), the Purpose tab, the source map.
 3. **Everything reachable by a click that changes state elsewhere** — the stage
-   tab row, the mode switch. Cross-pane effects are where a test beats a walk,
+   tab row, the mode switch. Cross-pane effects are where a test beats a run,
    since a human checks the pane they clicked in.
 
 **The animations are testable, and none of them are tested** *(added 2026-08-02, from

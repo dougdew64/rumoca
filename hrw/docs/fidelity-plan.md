@@ -172,7 +172,7 @@ density. Start there.
 
 Let the lab **be** the bug report rather than accompany it. A report that doubles as a
 pitch can read as using a maintainer's review time for promotion; "here is the malfunction,
-walked stop by stop" is simply the clearest explanation they will receive, and HRW's
+run stop by stop" is simply the clearest explanation they will receive, and HRW's
 usefulness is then demonstrated **implicitly**. `docs/fixture-labs/the-oracle.md` is
 already this shape — it explains a real Rumoca defect and never argues that HRW is good.
 
@@ -377,7 +377,7 @@ about, and the one the first draft omitted.
 
 | | |
 |---|---|
-| F2-F7 | 10 models, 30 incidence-bearing reports, 100 stage IRs walked, **0 violations** |
+| F2-F7 | 10 models, 30 incidence-bearing reports, 100 stage IRs run, **0 violations** |
 | F8 | 16 models serialized; largest total 1.88 MB (`Drivetrain`), largest single stage 536 KB |
 | F9 | 6 failing specimens, 14 abnormal stages, 8 with structure, 6 source locations verified |
 

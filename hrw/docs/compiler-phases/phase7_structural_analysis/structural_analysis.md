@@ -71,14 +71,14 @@ out in three contiguous groups in that order, matching the layout of the
 solver's state vector and Jacobian.
 
 The construction lives in
-`crates/rumoca-phase-structural/src/incidence.rs` and walks
+`crates/rumoca-phase-structural/src/incidence.rs` and runs
 each residual expression to collect referenced unknowns. The most important
 subtlety is that the walker **does not descend into the argument of `der()`** —
 inside `der(x)`, the symbol `x` is a *known* state value at this time step, not
 an unknown column. The `der(x)` dependency is recorded through a separate
 collection path that maps state names to their `DerState` columns.
 
-A full walk-through — concept-level motivation, the three-map array-aware name
+A full run-through — concept-level motivation, the three-map array-aware name
 resolver, line-by-line treatment of `collect_equation_unknowns`, the
 `der()`-argument subtlety with its supporting test, the dependency-graph
 construction that feeds Tarjan, and a worked two-mass-spring example — is in
@@ -98,7 +98,7 @@ matched to (i.e., responsible for) `v`.
 
 Rumoca implements **Kuhn's augmenting-path algorithm** in
 `crates/rumoca-phase-structural/src/matching.rs`. The outer
-loop walks equations in index order and, for each one, runs a depth-first
+loop runs equations in index order and, for each one, runs a depth-first
 search to find an *augmenting path* — a chain of displacements that ends at a
 free unknown. Toggling the matched/unmatched status of every edge along the
 path grows the matching by exactly one.
@@ -114,7 +114,7 @@ If maximum matching is imperfect, the system is **structurally singular**
 (over- or under-determined); the caller reports the unmatched equations and
 unknowns by name so the modeler can locate the problem.
 
-A full walk-through — bipartite-graph framing, the augmenting-path theorem,
+A full run-through — bipartite-graph framing, the augmenting-path theorem,
 line-by-line annotation of `augment()`, and a worked example showing the
 recursion stack as an augmenting path — is in the drill-down document:
 
@@ -146,7 +146,7 @@ topological order of the condensation DAG) places producers first and
 consumers last, which is already the BLT evaluation order. No reversal is
 needed.
 
-A full walk-through — index/lowlink/stack mechanics, why "on stack" is
+A full run-through — index/lowlink/stack mechanics, why "on stack" is
 distinct from "visited", the SCC-root condition, the directionality argument,
 a worked four-node example, and complexity analysis — is in the drill-down:
 
@@ -174,11 +174,11 @@ triangular.
 
 The construction in
 `crates/rumoca-phase-structural/src/blt.rs` is a thin wrapper over
-Tarjan: it calls `tarjan_scc`, then walks each SCC and converts it into the
+Tarjan: it calls `tarjan_scc`, then runs each SCC and converts it into the
 appropriate `BltBlock` variant by looking up the `EquationRef`s and matched
 `UnknownId`s from the incidence.
 
-A full walk-through — the matrix view of BLT, why no reordering of Tarjan's
+A full run-through — the matrix view of BLT, why no reordering of Tarjan's
 output is needed, the `scc_to_block` conversion logic, and a worked
 mixed-scalar-plus-loop example — is in the drill-down:
 
@@ -212,7 +212,7 @@ The function returns `None` when no useful reduction is achievable (every
 unknown appears in every equation, or the algorithm makes no progress). The
 caller falls back to coupled Levenberg-Marquardt over the whole block.
 
-A full walk-through — the Cellier idea explained from first principles, the
+A full run-through — the Cellier idea explained from first principles, the
 two helper functions (`resolve_causal_equations`, `count_var_appearances`),
 why `BTreeSet`/`BTreeMap` are used for determinism, why equations stay in
 `remaining_eqs` after tearing, the post-condition checks, and a worked 3×3
@@ -265,7 +265,7 @@ square system, the fallback tries to drop a balanced subset of redundant
 equations and unmatched unknowns to recover a solvable subsystem; the dropped
 unknowns are pinned by `start` attributes.
 
-A full walk-through — the algebraic-only incidence build, the y-vector
+A full run-through — the algebraic-only incidence build, the y-vector
 indexing scheme, the four IcBlock variants in detail, the
 `improve_causal_assignment` post-pass with motivating example, the relaxed-
 fallback selection algorithm with its tier system and trace mode, and how

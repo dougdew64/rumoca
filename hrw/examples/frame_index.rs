@@ -113,7 +113,7 @@ fn main() {
     // `error - (reference - measurement)`. This tool printed `equation_names()`
     // instead — `f_x[0] (top-level model equation)` — so a lab author quoting it
     // wrote an expectation naming a string **that never appears on screen**, and the
-    // walk would fail on a stop where nothing was actually wrong.
+    // run would fail on a stop where nothing was actually wrong.
     //
     // Found 2026-08-03 while auditing `docs/fixture-labs/matching.md` against the
     // strings the animation renders.

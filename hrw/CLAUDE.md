@@ -467,7 +467,7 @@ the next phase touches — is procedure and lives there.
 > reading path outgrows its limit. **The limits, the unit and what crossing one means live in
 > [`docs/reading-budgets.txt`](docs/reading-budgets.txt) and nowhere else.**
 >
-> **THE TWO MODES DOUG WORKS IN — walking labs when he can focus, low-supervision work
+> **THE TWO MODES DOUG WORKS IN — running labs when he can focus, low-supervision work
 > when he cannot — and the decision boundary that comes with them are in
 > [`docs/working-with-doug.md`](docs/working-with-doug.md), under *Standing rules*.**
 >
@@ -514,7 +514,7 @@ the next phase touches — is procedure and lives there.
 > Publishing it is: give its data type a `to_bridge_json`, then one arm in
 > `App::publish_current_view`.
 >
-> ## Open questions a walk may hit
+> ## Open questions a lab session may hit
 >
 > - **A reproduced state-count inconsistency**, in `docs/upstream-issues.md`: `Drivetrain`'s index
 >   reduction demotes nine states to three while solve lowering reports **9**, and
@@ -592,7 +592,7 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
   something runs them:** `fixture_lab_links_all_resolve` parses every link on every test run.
   Three rules, each bought with a defect, and the README carries what each cost:
   - **One lab per capability, narrow** — the scarce resource is Doug's attention per
-    expectation, not his walks (`docs/ideas.md` #49).
+    expectation, not his sessions (`docs/ideas.md` #49).
   - **An expectation must say WHERE to look** — he reported "nothing happened" at a stop
     correctly refused with the reason on screen, in the status bar the lab never named.
   - **Every `**Expected:**` line must be violable.** Hedged expectations teach him to read

@@ -81,7 +81,7 @@ impl App {
         self.lab.text().is_some()
     }
 
-    /// Start a self-running walk, as the Play button does.
+    /// Start a self-running run, as the Play button does.
     pub(crate) fn test_start_autoplay(&mut self) {
         self.start_autoplay();
     }
@@ -130,7 +130,7 @@ impl App {
     ///
     /// The state that showed only the error until 2026-08-05 — `Stage::recovered`'s
     /// value is the last good artifact *plus* an `error` key, and the pane rendered
-    /// the summary in place of the tree. Doug found it walking `failure-typecheck.md`.
+    /// the summary in place of the tree. Doug found it running `failure-typecheck.md`.
     pub(crate) fn test_set_flagged_stage_with_artifact(&mut self, kind: StageKind) {
         self.stage = kind;
         self.model = Some("Fixture".to_owned());
@@ -372,12 +372,12 @@ impl App {
         });
     }
 
-    /// Put the right-hand side into the state a walked-into lab would leave.
-    pub(crate) fn test_set_walked_state(&mut self, specimen: &str, model: &str, stage: StageKind) {
+    /// Put the right-hand side into the state a run-into lab would leave.
+    pub(crate) fn test_set_session_state(&mut self, specimen: &str, model: &str, stage: StageKind) {
         self.selected = Some(PathBuf::from(specimen));
         self.model = Some(model.to_owned());
         self.stage = stage;
-        // **Seeded, because a walked state implies the source was read.** These
+        // **Seeded, because a run state implies the source was read.** These
         // fixtures name files that do not exist (`RcCircuit.mo`), which was harmless
         // only while a failed read silently produced an empty string. Once the sweep
         // made that failure visible (2026-08-04) the pane began reporting it, which
@@ -2024,7 +2024,7 @@ fn a_replay_keeps_its_place_across_a_stage_switch() {
     let mut h = harness(app);
     h.run_steps(2);
 
-    // Part-way through the walk, which is the state worth preserving.
+    // Part-way through the run, which is the state worth preserving.
     assert!(
         h.state_mut()
             .on_screen_animation_mut()
@@ -2051,7 +2051,7 @@ fn a_replay_keeps_its_place_across_a_stage_switch() {
         "a replay built from the compile outlives a visit to another stage — \
              nothing it was built from changed. Before 2026-08-20 this returned cursor 0: \
              the report sub-view row cleared it on the way through, and a reader who had \
-             walked to block 2 was silently put back at the start",
+             run to block 2 was silently put back at the start",
     );
 }
 
@@ -3011,7 +3011,7 @@ fn a_running_simulation_is_announced_in_the_pane() {
 
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
-    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", StageKind::Simulation);
+    app.test_set_session_state("RcCircuit.mo", "RcCircuit", StageKind::Simulation);
     app.sim_running = true;
 
     let h = crate::ui_tests::harness(app);
@@ -3188,7 +3188,7 @@ fn parse_hrw_link_load_specimen() {
 /// at dispatch: `fixture_lab_links_all_resolve` walks every link in every
 /// lab, so a typo — or an anchor whose locating fragment was edited away —
 /// fails the suite. Accepting the link and reporting the problem at click
-/// time would move the discovery into the middle of a walk, which is exactly
+/// time would move the discovery into the middle of a run, which is exactly
 /// where a lab must not surprise its reader.
 #[test]
 fn parse_hrw_link_breakpoint_validates_the_anchor_name() {
@@ -3807,7 +3807,7 @@ fn every_capture_view_name_round_trips_as_a_link_slug() {
 /// **Every noun the capture can describe is reachable by a link.**
 ///
 /// The whole of #42's design principle, in one assertion per noun. Written as an
-/// exhaustive match on `Focus` and a field-by-field walk of `Tracking`, so *adding a
+/// exhaustive match on `Focus` and a field-by-field run of `Tracking`, so *adding a
 /// noun to the capture fails this test until a verb exists for it* — which is the
 /// only way the principle stays true rather than becoming a paragraph nobody checks.
 ///
@@ -3931,7 +3931,7 @@ fn switching_labs_resets_the_stage_side() {
 
     let mut app = App::test_default();
     app.select_lab(a.clone());
-    // Simulate having walked a stop: a specimen loaded, a stage reached.
+    // Simulate having run a stop: a specimen loaded, a stage reached.
     app.selected = Some(PathBuf::from("/x/RcCircuit.mo"));
     app.model = Some("RcCircuit".to_owned());
     app.stage = StageKind::Structural;
@@ -4421,7 +4421,7 @@ fn every_lab_link_round_trips_through_describe() {
 
 /// **Every sub-view a lab link names is AVAILABLE for the specimen it names.**
 ///
-/// Doug, 2026-08-12, walking `connect-expansion.md`: *"Act 2 … contains a link for
+/// Doug, 2026-08-12, running `connect-expansion.md`: *"Act 2 … contains a link for
 /// RcCircuit → Structural → Summary, and that link actually navigates to RcCircuit
 /// → Structural → Incidence."*
 ///
@@ -4434,7 +4434,7 @@ fn every_lab_link_round_trips_through_describe() {
 /// they were not told to look at (`fixture-labs/README.md`'s second rule, which
 /// this is the second instance of).
 ///
-/// **Six such links existed across three labs; one walk found one of them.**
+/// **Six such links existed across three labs; one run found one of them.**
 ///
 /// # How it checks without compiling
 ///
@@ -4468,7 +4468,7 @@ fn every_lab_sub_view_link_is_available_for_its_specimen() {
         for link in extract_hrw_links(&text) {
             // Only the form that names a specimen AND a sub-view can be checked
             // here: a bare `hrw://stage/...` carries no specimen, so which model
-            // is loaded when it is clicked depends on the walk.
+            // is loaded when it is clicked depends on the run.
             let Some(HrwLink::LoadAndSwitch(model, stage, Some(sub))) = parse_hrw_link(&link)
             else {
                 continue;
@@ -4793,7 +4793,7 @@ fn every_sub_view_slug_round_trips() {
 
 /// A node link marks the row it pointed at, and the mark outlives the scroll.
 ///
-/// Doug walked the node-pointing fixture and reported the node was not highlighted.
+/// Doug run the node-pointing fixture and reported the node was not highlighted.
 /// He was right twice over: the lab asserted a highlight, and **there was none** —
 /// `scroll_if_jump_target` only ever scrolled. The lab was right about what should
 /// happen, though: a row scrolled to the centre of a screen of near-identical rows,
@@ -5174,9 +5174,9 @@ fn a_link_to_a_flatten_sub_view_this_model_lacks_is_refused() {
 /// anyway.
 ///
 /// **Without this the guard would notice-and-drop a live lab link** —
-/// `hrw://load/RcCircuit/Flatten/Connections` in `connect-expansion.md` — on every walk,
+/// `hrw://load/RcCircuit/Flatten/Connections` in `connect-expansion.md` — on every run,
 /// with a message naming a stage the reader was not on. Found by reasoning about the
-/// ordering before writing the guard, not by a walk.
+/// ordering before writing the guard, not by a run.
 #[test]
 fn a_sub_view_link_for_another_stage_is_not_refused() {
     let (mut app, _tx) = App::test_with_sender();
@@ -5198,7 +5198,7 @@ fn a_sub_view_link_for_another_stage_is_not_refused() {
     );
 }
 
-/// **A self-running walk puts the mode back when it ends.**
+/// **A self-running run puts the mode back when it ends.**
 ///
 /// Doug, 2026-08-03: *"at the completion of the lab, the mode is being switched
 /// from lab mode to specimen mode."*
@@ -5209,10 +5209,10 @@ fn a_sub_view_link_for_another_stage_is_not_refused() {
 /// an unattended run finished with the lab nowhere on screen — and the last two
 /// stops played to nobody.
 ///
-/// **A walk is a round trip.** Only the mode is restored: the stage and the
-/// specimen are the *result* of the walk and worth keeping.
+/// **A run is a round trip.** Only the mode is restored: the stage and the
+/// specimen are the *result* of the run and worth keeping.
 #[test]
-fn a_finished_walk_returns_to_the_mode_it_started_in() {
+fn a_finished_session_returns_to_the_mode_it_started_in() {
     let mut app = App::test_default();
     app.ui_mode = UiMode::Lab;
     app.selected = Some(PathBuf::from("/x/RcCircuit.mo"));
@@ -5226,7 +5226,7 @@ fn a_finished_walk_returns_to_the_mode_it_started_in() {
     );
 
     app.restore_mode_after_autoplay();
-    assert_eq!(app.ui_mode, UiMode::Lab, "the walk must put the mode back");
+    assert_eq!(app.ui_mode, UiMode::Lab, "the run must put the mode back");
     assert!(
         app.lab.mode_before_autoplay.is_none(),
         "and consume the record"
@@ -5267,7 +5267,7 @@ fn a_finished_walk_returns_to_the_mode_it_started_in() {
 /// would have fixed Doug's sequence; both are needed because a run can also be
 /// restarted on the *same* lab without a selection change.
 #[test]
-fn starting_a_walk_forgets_where_the_last_one_stopped() {
+fn starting_a_session_forgets_where_the_last_one_stopped() {
     let mut app = App::test_default();
 
     // Stand in for a run stopped half way down a lab.
@@ -5690,7 +5690,7 @@ fn the_clamp_does_not_touch_a_non_report_stage() {
 ///
 /// It needs no specimen *loaded* — like the load verbs, it makes sense on its own,
 /// which matters because the adjudicator case is often "open this in SM and see that
-/// it refuses", reached without walking a lab first.
+/// it refuses", reached without running a lab first.
 #[test]
 fn the_system_modeler_verb_stands_alone() {
     assert_eq!(
@@ -5775,7 +5775,7 @@ fn a_link_can_set_the_follow() {
 
 /// A link's frame number is the one on screen — the two must not be off by one.
 ///
-/// Doug walked the fixture lab and found the link and the counter disagreeing.
+/// Doug run the fixture lab and found the link and the counter disagreeing.
 /// The fixture had even *documented* the discrepancy ("frames are 0-based in links,
 /// 1-based in the display"), which is writing a bug down instead of fixing it.
 ///
@@ -6160,7 +6160,7 @@ fn open_resets_all_specimen_state() {
 #[test]
 fn the_diagnostic_snapshot_names_the_sub_view() {
     let mut app = App::test_default();
-    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", StageKind::Flatten);
+    app.test_set_session_state("RcCircuit.mo", "RcCircuit", StageKind::Flatten);
 
     app.viewport.flatten = FlattenView::Equations;
     assert_eq!(app.diagnostic_snapshot()["sub_view"], "EquationSheet");
@@ -6188,7 +6188,7 @@ fn the_diagnostic_snapshot_names_the_sub_view() {
 #[test]
 fn leaving_a_published_view_removes_the_file() {
     let mut app = App::test_default();
-    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", StageKind::Flatten);
+    app.test_set_session_state("RcCircuit.mo", "RcCircuit", StageKind::Flatten);
     app.viewport.flatten = FlattenView::Equations;
     app.cached_equation_sheet = Some(equation_sheet::EquationSheet {
         n_equations: 1,
@@ -6218,7 +6218,7 @@ fn leaving_a_published_view_removes_the_file() {
 #[test]
 fn republishing_the_same_view_is_a_no_op() {
     let mut app = App::test_default();
-    app.test_set_walked_state("RcCircuit.mo", "RcCircuit", StageKind::Parse);
+    app.test_set_session_state("RcCircuit.mo", "RcCircuit", StageKind::Parse);
 
     app.publish_current_view();
     let first = app.viewport.last_published_view.clone();
@@ -6252,7 +6252,7 @@ mod tests_incidence_row_link {
         // **A stage link is refused with no model loaded** — the guard behind Doug's
         // "no specimen loaded" report on 2026-08-16. Without this the test asserts
         // against a dispatch that never ran.
-        app.test_set_walked_state(
+        app.test_set_session_state(
             "/x/RcCircuit.mo",
             "RcCircuit",
             crate::worker::StageKind::Structural,
@@ -6284,7 +6284,7 @@ mod tests_incidence_row_link {
     #[test]
     fn extending_the_verb_did_not_break_the_camera_aim() {
         let mut app = App::test_default();
-        app.test_set_walked_state(
+        app.test_set_session_state(
             "/x/RcCircuit.mo",
             "RcCircuit",
             crate::worker::StageKind::Structural,

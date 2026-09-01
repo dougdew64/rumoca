@@ -235,7 +235,7 @@ and since 2026-08-30 `.gitignore` re-includes it, so both arrive with a checkout
 
 **It did not always, and the reason it changed is worth keeping.** Upstream Rumoca ignores
 `.claude/` wholesale, so this file was per machine and this section used to be a recipe for
-recreating it by hand. Doug reported the allowlist's absence as real friction while walking labs:
+recreating it by hand. Doug reported the allowlist's absence as real friction while running labs:
 *"the high latency of your answers… seems to be caused by you asking for my approval to perform
 tasks."* Then the context hook landed, and a per-machine hook fails **silently** — he captures a
 lab passage on the other machine, asks *"what is this?"*, and Claude answers confidently about the

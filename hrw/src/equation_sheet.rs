@@ -38,7 +38,7 @@ impl EquationSheet {
     ///
     /// # Why this exists
     ///
-    /// Doug, 2026-08-13, mid-walk: *"I was just about to describe to you with a bunch
+    /// Doug, 2026-08-13, mid-run: *"I was just about to describe to you with a bunch
     /// of text what the HRW Flatten → Equations view is showing when I realized that we
     /// should implement a way for you to 'see' what that view is showing."* Claude
     /// cannot see the GUI, so every question about a pane was costing a manual
@@ -46,7 +46,7 @@ impl EquationSheet {
     ///
     /// # The rule this function has to obey
     ///
-    /// **It serializes the struct the renderer walks. It does not describe what was
+    /// **It serializes the struct the renderer runs. It does not describe what was
     /// drawn.** A second implementation that re-derived "what the pane shows" would be
     /// a fiction generator of exactly the kind `CLAUDE.md` bans: plausible, unfalsifiable
     /// from the outside, and wrong the moment the renderer changes. `equation_sheet_ui`
@@ -736,7 +736,7 @@ pub fn build(dae: &dae::Dae, source_info: Option<(&str, &str)>) -> EquationSheet
 
     /// Find the equation that differentiates `var_name`, if any.
     ///
-    /// **This walks the expression tree; it does not search text.**
+    /// **This runs the expression tree; it does not search text.**
     /// `expr_contains_der_of` is Rumoca's own structural query — it visits
     /// `BuiltinCall { function: Der, .. }` nodes and asks whether the argument
     /// *refers to* this variable. Searching the rendered string for `"der(C.v)"`
@@ -776,7 +776,7 @@ pub fn build(dae: &dae::Dae, source_info: Option<(&str, &str)>) -> EquationSheet
                 description: v.description.clone().filter(|d| !d.is_empty()),
                 start: v.start.as_ref().map(expr_format::format_expr),
                 // Only states are searched: for every other kind the scan would
-                // cost a walk of `f_x` to learn nothing, since their reason is
+                // cost a run of `f_x` to learn nothing, since their reason is
                 // either the absence of a match or the declaration itself.
                 derivative_evidence: (kind == "state")
                     .then(|| derivative_evidence(dae, &var_name))

@@ -265,7 +265,7 @@ mod tests {
     /// **The pane's path and the corpus on disk agree.**
     ///
     /// [`note_path`] is built from three literals, and nothing else in HRW would notice
-    /// if one of them drifted — the notebook checks walk the directory themselves. The
+    /// if one of them drifted — the notebook checks run the directory themselves. The
     /// pane would simply go quiet and report every specimen as unnoted.
     #[test]
     fn a_real_specimens_note_is_found_where_the_pane_looks() {

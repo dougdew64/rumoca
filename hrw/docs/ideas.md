@@ -17,7 +17,7 @@ decision when it's picked up.
 ## Prioritization model: guided labs drive feature priority
 
 The `docs/compiler-phases/` documents are being re-envisioned as **guided lab
-scripts** — each phase chapter becomes a walkthrough that leverages HRW and
+scripts** — each phase chapter becomes a run-through that leverages HRW and
 specimens to teach the phase's concepts interactively (see idea #24). This
 re-envisioning provides the **prioritization principle** for this backlog:
 
@@ -137,7 +137,7 @@ would reuse the Arc-3 canvas.
 
 **Scout first:** whether Rumoca already assembles the init system anywhere reusable.
 Pieces exist — `build_ic_relaxation_hint` already detects *singular initial algebraic
-subsystems* (it drives the relaxation hint), and `build_ic_plan` walks the algebraic
+subsystems* (it drives the relaxation hint), and `build_ic_plan` runs the algebraic
 init — but neither incorporates the user's `initial equation`s / fixed starts into one
 matched system. If Rumoca does not expose it, reproducing the assembly risks a
 subtly-wrong analysis (cf. the Arc-4 nonlinear-constraint reimplementation caution) —
@@ -164,7 +164,7 @@ Trace infrastructure in `rumoca-phase-structural` (`maximum_matching_with_trace`
 (`flatten_ref_with_options_traced`, `connections::trace`).
 
 The **replay / reveal** distinction is deliberate and worth preserving: only some
-phases hide a search. Alias elimination walks a list and substitutes; the IC plan is
+phases hide a search. Alias elimination runs a list and substitutes; the IC plan is
 already computed when HRW sees it. Those two get a stepper for the *accumulation*
 (the unknown count falling, the plan's shape emerging) but no Debug button, and their
 module docs say why. See `DECISIONS.md` (2026-07-29).
@@ -193,7 +193,7 @@ trust would teach the wrong thing.
 2026-07-29 (Doug) whether Solve Lowering was meant to get an animation. It was
 not, and the reason is the replay/reveal test above. Two of the phase's three
 jobs are translations with nothing hidden: `layout.rs` packs DAE variables into
-the solver's `y`/`p` slots (a walk that assigns indices, and the result is
+the solver's `y`/`p` slots (a run that assigns indices, and the result is
 already readable as `problem.layout` / `problem.solve_layout` in the stage
 tree), and `lower.rs` compiles each equation into a register-machine program,
 one node at a time.
@@ -269,7 +269,7 @@ participates in (Events), and its solver variable slot (Solve lowering / Simulat
 **Half delivered 2026-07-28** — the *find-and-jump* half exists for the followed
 identifier. The Context Bar's Following row shows `3 of 4 in Flatten` with prev
 / next arrows; each jump opens the collapsed ancestors and scrolls the match to
-the centre of the tree. Matches come from `bridge::mention_paths`, the same walk
+the centre of the tree. Matches come from `bridge::mention_paths`, the same run
 that produces `tracking.paths` in the emitted context, so the tree and Claude
 cannot disagree about where an identifier appears.
 
@@ -443,7 +443,7 @@ and this repository does not settle those by reading.
 **Note only — not a plan.** The hinge Doug's three questions turn on is the distinction the body of
 this item already names, and it is the one a reader must have before any of it can land:
 
-- **Incidence is STRUCTURAL** — does equation *i* mention unknown *j*? Doug has walked this.
+- **Incidence is STRUCTURAL** — does equation *i* mention unknown *j*? Doug has run this.
 - **The Jacobian is NUMERICAL** — ∂fᵢ/∂xⱼ, an actual value at a point.
 - **A system can have full structural rank and still be numerically singular**, because the nonzeros
   happen to cancel.
@@ -637,7 +637,7 @@ before HRW existed — standalone theory explanations of each Rumoca phase with 
 connection to the tool that can *show* the phase happening. Now that HRW can
 render every phase's IR on real specimens, those docs should be re-envisioned as
 **guided lab scripts**: the theory is preserved (and remains the explanation
-layer), but the structure becomes a walkthrough keyed to HRW actions and
+layer), but the structure becomes a run-through keyed to HRW actions and
 specimens.
 
 - **Why it matters:** a guided lab unifies what was previously separate — "read
@@ -940,7 +940,7 @@ Captured 2026-07-25. Extend the `hrw://` link scheme with finer-grained navigati
 
 **Why it matters:** the current `hrw://stage/X` links get the user to the right tab,
 but the lab text still says "expand this, scroll to that." Finer-grained links would
-make the entire walkthrough clickable — every "look at X" becomes a link that takes
+make the entire run-through clickable — every "look at X" becomes a link that takes
 you there.
 
 **Relates to:** #32 (extends the link scheme), #33 (tooltips could use the same
@@ -1081,7 +1081,7 @@ session is not.
 (`crates/rumoca-phase-dae/src/pre_lowering.rs`) has a clean four-beat structure
 that maps directly onto animation frames:
 
-1. **Discover** — `collect_pre_targets_from_*` walks equations, conditions,
+1. **Discover** — `collect_pre_targets_from_*` runs equations, conditions,
    clocks, event actions and initialization, finding every `pre(x)`. Frame per
    target found, with the equation it was found in.
 2. **Name** — `rumoca_core::pre_slot_name(base)` mints `__pre__.x`. One frame
@@ -1248,7 +1248,7 @@ end-to-end lab did:
 under charter Decision 13 — a planning note is not a rule).* The ad hoc channel is built and works;
 it becomes the **primary** one only when the fixture labs are spent. **The signal to watch is
 Doug's questions outrunning the labs**, and [`question-ledger.md`](question-ledger.md) is where to
-notice it. Charter Decision 14 does not advance this: the conversational loop during a walk is not
+notice it. Charter Decision 14 does not advance this: the conversational loop during a run is not
 an ad hoc *lab*, and produces no document.
 
 ### Why this is the missing half
@@ -1446,7 +1446,7 @@ the app is, which is presumably how the BLT sideways-drift survived as long as i
 did. A stop that says "watch the stack depth as Tarjan descends" gives Doug something
 specific to check, so a drifting diagram registers as *wrong* rather than as *normal*.
 
-So the full loop: Claude composes (logical surface + aims attention) → Doug walks it
+So the full loop: Claude composes (logical surface + aims attention) → Doug runs it
 in acceptance mode (rendered surface) → bug reported → **fixed in flight if it is
 degrading the lab**, rather than only logged → lab restarted clean.
 
@@ -1670,7 +1670,7 @@ deferred differential test, now reframed), `user-wolfram-tools` and
 
 ### ⟶ RE-RAISED AS A POSSIBLE LONG-TERM PURPOSE, AND DELIBERATELY DEFERRED — 2026-08-22
 
-**Doug, looking ahead before the connections re-walk:** *"after I've ramped up, then you and I might
+**Doug, looking ahead before the connections re-run:** *"after I've ramped up, then you and I might
 treat HRW as the starting point for a much more interesting project: using HRW to diagnose and
 correct simulation failures."* He noted the project had no long-term scope at all — the name is
 literally the ramp-up goal — and that working together had changed his estimate of what was possible.
@@ -1950,7 +1950,7 @@ accepts is exactly a filable issue.
    Absent rather than present-and-empty on a clean compile, so "nothing failed" cannot
    be confused with "the field was not populated".
 
-   **Bug found and fixed while doing it:** `failure_context` walked `StageKind::ALL`,
+   **Bug found and fixed while doing it:** `failure_context` run `StageKind::ALL`,
    which ends with `Simulation` — a tab, not a compilation stage, and
    `StageBundle::get()` *panics* on it. Three existing tests caught it. There is now a
    `StageKind::COMPILATION` list with a comment on the trap, because it is easy to fall
@@ -2074,7 +2074,7 @@ catch, and this task attacks them.
 
 ### What to build
 
-A specimen per failure mode, each with a `purpose.md` and a lab that walks its
+A specimen per failure mode, each with a `purpose.md` and a lab that runs its
 diagnosis. Known coverage as of 2026-07-29:
 
 | Phase | Failure to exhibit | Status |
@@ -2438,7 +2438,7 @@ specimen nearly every time.
 **Not "reduce the number of loads" — make each load cheaper.** The 10 loads are near-irreducible
 (one shared worker, one poison-guard test, four fresh-session helper tests, two resolve-failure
 rebuilds), but **87 % of a load is `parse_source_root_with_cache`**, which is a *disk* cache: every
-call re-walks the root, re-hashes 2,553 files and re-deserializes every AST.
+call re-runs the root, re-hashes 2,553 files and re-deserializes every AST.
 
 | phase of one MSL load | cost |
 |---|---:|
@@ -2812,7 +2812,7 @@ make unnecessary.
 
 ## 49. A narrow fixture lab per HRW feature
 
-Doug's plan, 2026-07-30, after one fixture-lab walk produced four bugs:
+Doug's plan, 2026-07-30, after one fixture-lab run produced four bugs:
 
 > I'm the bottleneck for UI testing. In particular, my ability to focus on expected
 > results during UI testing is the real limiting factor. Narrowly scoped labs are more
@@ -2821,7 +2821,7 @@ Doug's plan, 2026-07-30, after one fixture-lab walk produced four bugs:
 
 ### Why narrow, and why Claude was wrong about it
 
-Claude proposed the opposite — *wider* labs — on noticing that **half** of that walk's
+Claude proposed the opposite — *wider* labs — on noticing that **half** of that run's
 bugs came from outside the stops (Lab mode's wrong empty-state message, found by starting
 HRW and clicking nothing; and the stage side not resetting between labs, which lives in
 the gap *between* labs). That read the evidence backwards.
@@ -2829,7 +2829,7 @@ the gap *between* labs). That read the evidence backwards.
 Those two were found **because the lab was short enough to leave attention to spare.** A
 wider lab spends that surplus on more stops: it consumes what produced the off-stop
 findings rather than multiplying them. **The scarce resource is Doug's attention per
-expectation, not the number of walks.**
+expectation, not the number of runs.**
 
 Two further arguments, less obvious:
 
@@ -2842,7 +2842,7 @@ Two further arguments, less obvious:
 
 ### The rationale for the whole scheme
 
-These cover **what no test can reach**: every one of that walk's four bugs was HRW being
+These cover **what no test can reach**: every one of that run's four bugs was HRW being
 internally consistent and *wrong about what it should do*. A test encodes Claude's model of
 correct behaviour — the same model that produced the bug — so it cannot find a fault in it.
 A lab states the expectation in prose Doug reads against reality.
@@ -2869,7 +2869,7 @@ Have none — a rough enumeration of the surface, to be firmed up when the work 
 
 Neither is worth building at three.
 
-1. **A selection principle.** Doug cannot walk twenty. Suggested: *the lab for whatever
+1. **A selection principle.** Doug cannot run twenty. Suggested: *the lab for whatever
    just changed, plus one stale one* — regressions caught immediately, coverage swept
    slowly.
 2. **Visible staleness, and this is the one that matters.** Nothing currently catches a
@@ -2878,8 +2878,8 @@ Neither is worth building at three.
    fixtures Claude can eyeball them; at twenty-five it cannot.
 
    **Nearly free already:** every `lab-link` click is in the action trail, so "last
-   walked" is derivable from data HRW already writes. Showing it in the lab list makes
-   "this covers a feature changed since it was last walked" visible at a glance.
+   run" is derivable from data HRW already writes. Showing it in the lab list makes
+   "this covers a feature changed since it was last run" visible at a glance.
 
 **Relates to:** #42 (fixture labs as an artifact, and the ephemerality rule that exempts
 them), `project-labs-multiply-testing` in Claude's memory, and `hrw/CLAUDE.md`'s
@@ -2934,7 +2934,7 @@ failure mode a one-day sample cannot show, and there is some evidence it is live
 
 **Revisit if** the project shifts from building to maintaining, or if a bug is ever traced
 to logic no test had run. Until then, Doug's own rule decides it: attention is the scarce
-resource, and a coverage report competes directly with walking a lab — which has a
+resource, and a coverage report competes directly with running a lab — which has a
 measured yield of nine bugs in a day.
 
 **Relates to:** #49 (narrow fixture labs), `project-labs-multiply-testing` in Claude's
@@ -3068,7 +3068,7 @@ functionality to the specimen list, correct?"*
 **The sweep of 2026-08-02 answered yes, and it is the answer that counts** — the first run to
 check Parse IR for real. Every previous sweep ran those checks against
 `{"classes":{},"within":null}` and found nothing because there was nothing there, so the earlier
-zero was vacuous. This one walked a real Modelica AST: mean peak memory rose 1,228 → 1,353 MB,
+zero was vacuous. This one run a real Modelica AST: mean peak memory rose 1,228 → 1,353 MB,
 and F7 went from sampling roughly *two* nodes of the Parse stage to its 400-path cap.
 
 **Result: 2,614 rows, `outcome=ok`, `n_violations=0`, no failed checks.**
@@ -3308,7 +3308,7 @@ per-stage system. A new **mode** has its own list, and it is shorter but not emp
 - `specimen_detail` and the other `ui_mode ==` guards, which are *not* exhaustive matches
   and therefore **will not** be caught: grep `ui_mode ==` and decide each site deliberately
 - the idle-hint text (Lab mode's wrong hint was a bug Doug reported on 2026-07-30)
-- `clear_specimen_state` / mode-switch reset — the second bug from that same walk was state
+- `clear_specimen_state` / mode-switch reset — the second bug from that same run was state
   surviving a switch
 - a fixture lab for the mode, per `docs/ideas.md` #49
 
@@ -3439,7 +3439,7 @@ it**, and which path is right depends on what Doug wants to understand *today*.
 
 This is the part worth getting right, because the obvious move is wrong.
 
-A curriculum is a **verb**, not a noun. It is an utterance — *"walk me from the simplest
+A curriculum is a **verb**, not a noun. It is an utterance — *"run me from the simplest
 algebraic loop to the hardest, explaining what tearing does at each"* — and HRW's whole
 premise is that Claude supplies the verb while HRW supplies an exact noun
 (`docs/context-assembly.md`, `hrw-works-with-claude-not-without`).
@@ -4150,7 +4150,7 @@ silent degradation to a guess is the failure mode this project treats as worst.
 
 ### The minimum that would close it
 
-**Record the lab's identity with the link, and the stop index when a walk is playing.** During
+**Record the lab's identity with the link, and the stop index when a run is playing.** During
 autoplay the stop is known exactly (`Beat::stop`); a manual click knows the lab but not which
 occurrence of the link it hit — so the honest emission is *lab + link + stop-if-known*, with
 the absence stated rather than filled in. **The emitter must stay exact**
@@ -4168,7 +4168,7 @@ entry and this idea are two halves of one loop**, written the same evening.
 ### What is deliberately open
 
 - **How much more.** Doug's *"more rather than less"* is a direction, not a specification.
-  Dwell time per stop, revisits, which stops are skipped, whether a lab was walked or played —
+  Dwell time per stop, revisits, which stops are skipped, whether a lab was run or played —
   each is a candidate and none is chosen.
 - **Whether HRW should prompt.** The professor's pause is a *question asked of the student*,
   and nothing in HRW asks Doug anything. Whether a lab stop should be able to pose a question
@@ -4178,7 +4178,7 @@ entry and this idea are two halves of one loop**, written the same evening.
   a person's study behaviour. Doug asked for it, it stays local to his machine, and the
   artifacts are already gitignored. Worth re-checking only if any of those three change.
 
-**Do not design this before walking the existing labs.** Doug's reason is the right one: the
+**Do not design this before running the existing labs.** Doug's reason is the right one: the
 experience of using `dae-construction.md` and `matching.md` is what will say which signals
 actually matter, and building to a guess would produce the wrong instrument confidently.
 
@@ -4250,7 +4250,7 @@ Two mitigations, both cheap: prefer questions whose mechanical answer *requires*
 by understanding rank deficiency), and ask for the **reason** alongside the click, which is a
 question Claude can grade even though HRW cannot.
 
-### Not before the labs are walked
+### Not before the labs are run
 
 Same constraint as #60, and Doug set it: the experience of using `dae-construction.md` and
 `matching.md` is what will say which steps are worth asking about. **A quiz on a step nobody
@@ -4287,7 +4287,7 @@ Front-matter in each fixture lab, three fields:
   `failure` (shows a phase refusing). This is the distinction the flat list loses.
 - **`chain`** — which compiler phase it sits at, so the list can order by the pipeline rather
   than alphabetically. `the-chain-of-problems.md` already defines that order.
-- **`requires`** — a lab that assumes another has been walked. Currently implicit and only in
+- **`requires`** — a lab that assumes another has been run. Currently implicit and only in
   Claude's head.
 
 **Deliberately not built** when first discussed, on the grounds that the picker had 8 entries and
@@ -4311,7 +4311,7 @@ solves. Build the smallest of the three that works.
 
 Claude's answering repertoire today is **text**, then **an ad hoc lab** (`✨ Claude's answer`,
 written to `.hrw-bridge/lab.md`). There is no third move for *"the answer is already on disk;
-walk `failure-typecheck` stop 2."*
+run `failure-typecheck` stop 2."*
 
 **So a question whose answer exists gets a freshly-written lab instead**, which costs a
 regeneration, produces a second telling of something already told, and — worst — **loses the
@@ -4333,14 +4333,14 @@ says what each one covers without opening it.
   read one source. `feedback-claude-is-the-context-consumer` applies: design the front-matter for
   Claude's lookup, and let the picker use what is there.
 - ~~**A way to say "start here"**~~ — ✅ **BUILT.** `hrw://lab/<name>/station/<slug>` opens a
-  fixture lab at a named stop, so an answer can be *"walk `failure-typecheck` from stop 2"*. The
+  fixture lab at a named stop, so an answer can be *"run `failure-typecheck` from stop 2"*. The
   form existed from the start; the handler recorded a destination that **nothing consumed**, so
   every such link opened its lab and landed wherever the pane happened to be. Fixed 2026-08-17.
   **The `unbuilt:` tag here was false for two days and could never have fired**, because its
   target named a phrase rather than a symbol — `sweep-2026-08-19.md`, Finding 1.
 - **A rule about when to reuse rather than write.** Reuse when the existing lab's expectations
   answer the question as asked. Write fresh when the question is about a *different* specimen or a
-  narrower slice — a lab that nearly fits, walked as though it fits, is worse than a new one.
+  narrower slice — a lab that nearly fits, run as though it fits, is worse than a new one.
 
 ### The trap to avoid
 
@@ -4364,11 +4364,11 @@ An ad hoc lab is **ephemeral by construction** — `.hrw-bridge/lab.md` is gitig
 scratch specimens in `.hrw-bridge/specimens/` it usually references. That is right: most answers
 should not become artifacts.
 
-**But some should**, and the ones that should are only identifiable *after* Doug has walked them.
+**But some should**, and the ones that should are only identifiable *after* Doug has run them.
 Today that promotion is Claude editing files by hand at Doug's request, which means it happens
 when Doug thinks to ask and not when he notices the lab was good.
 
-**The moment of recognition is while walking it.** A right-click on `✨ Claude's answer` in the
+**The moment of recognition is while running it.** A right-click on `✨ Claude's answer` in the
 lab list is where the decision belongs.
 
 ### What promotion actually involves — more than a file move
@@ -4447,7 +4447,7 @@ argument did.
 
 ### The reconciliation, which #63 already built
 
-The obvious objection: **the fixture labs are valuable and Doug walks them independently.**
+The obvious objection: **the fixture labs are valuable and Doug runs them independently.**
 Making the answer central must not make them second-class.
 
 **It does not, and the shape is already in place.** `hrw://lab/<name>/station/<slug>` (built
@@ -4456,7 +4456,7 @@ Making the answer central must not make them second-class.
 > **The answer is the index; the fixtures are the corpus.**
 
 Doug does not browse labs and then read one. He asks, and the answer routes him into the durable
-material — which he can then walk on his own, exactly as now. The labs list stops being the front
+material — which he can then run on his own, exactly as now. The labs list stops being the front
 door and becomes what it always was: the shelf.
 
 ### Shapes, none chosen
@@ -4474,7 +4474,7 @@ door and becomes what it always was: the shelf.
   central surface in the app would be blank. That is either the app's front door for asking, or a
   design failure — and which one is not obvious.
 - **Does history matter?** The answer is overwritten by the next question. If it becomes central,
-  is a walked-and-valued answer worth keeping? [#64](#64-promote-claudes-answer-to-a-fixture-from-the-lab-list)
+  is a run-and-valued answer worth keeping? [#64](#64-promote-claudes-answer-to-a-fixture-from-the-lab-list)
   is one response (promote it); a session history is another.
 - **What does it cost when Claude is wrong?** Decision 7 ranks accuracy above everything, and
   centrality raises the stakes: a wrong claim in a buried lab row misleads once, the same claim on
@@ -4532,14 +4532,14 @@ is no longer enough because ideal gears make a state non-independent*.
 
 **The labs are what find the defects.** Doug, the same day: *"The testing of this lab has
 yielded a great many bug fixes and feature enhancements."* That is the measured pattern, not a
-hope — walking two curriculum labs produced, among others: the DAE tab that did not exist, five
+hope — running two curriculum labs produced, among others: the DAE tab that did not exist, five
 tree-only stages that could not be pointed into, replays presented as the compilation, fabricated
 BLT blocks, a pane that showed its error instead of its artifact, and the whole
 source-provenance feature.
 
 **So the rate limit is Doug's attention, not authoring effort.** A lab written faster than it can
-be walked buys nothing, and the labs rule already says the scarce resource is *attention per
-expectation*. **Write the next one when the previous has been walked**, which is also what keeps
+be run buys nothing, and the labs rule already says the scarce resource is *attention per
+expectation*. **Write the next one when the previous has been run**, which is also what keeps
 each one honest — a lab written against an untested pane is a claim nobody has checked.
 
 ### What to do before each one
@@ -4839,7 +4839,7 @@ prerequisite to be got through; it is the vocabulary in which stage two's answer
 
 ### The backward trace is the forward provenance, read in reverse — and its last link exists
 
-The chain a non-convergence question would walk:
+The chain a non-convergence question would run:
 
 ```
 Newton fails on block B                      (solver — no instrumentation yet, #68)
@@ -4862,7 +4862,7 @@ on its own for the lab it serves, *and* is a segment of this chain.
   **structural**, and mostly already computable.
 - **"Why is it slow, and what can I simplify?"** wants **cost attributed to structure** — which
   blocks dominate, how large the torn systems are, how often the Jacobian is refactorised — and
-  then the same walk back to source. That needs per-block measurement the solver does not
+  then the same run back to source. That needs per-block measurement the solver does not
   currently emit.
 
 **Simplification is the more valuable and the harder one.** Knowing *which* equations to remove
@@ -5088,7 +5088,7 @@ this defect is exactly what would have corrupted it.
 
 **`#70` answered a smaller question and this is the real one.** That entry asked whether Claude
 could see *where* the debugger stopped, found no, and found that one click closes the gap. Fine
-for a single question. **It does not scale to stepping**, which is the actual use: Doug walks
+for a single question. **It does not scale to stepping**, which is the actual use: Doug runs
 through `augment_traced` or Pantelides, and asks what is happening *as it happens*. A click per
 question, carrying one line of text, is a keyhole onto a running process.
 
@@ -5312,7 +5312,7 @@ implementation. The third has been the weak one everywhere. This is what a stron
 ### What must be settled first
 
 **Two empirical unknowns, and they change how the stop is written** — neither is answerable
-without walking it:
+without running it:
 
 - **Do two breakpoints interleave cleanly?** With the anchor *and* one in `augment_traced`, does
   each frame give a tidy two-stop rhythm, or a confusing double-stop where the learner loses
@@ -5331,7 +5331,7 @@ entirely on the call stack — which, per reason 2, is still most of the value.
 **A lab that promises synchronization and then drifts teaches something false**, which is worse
 than homework — homework is merely unhelpful. **So every expectation here must be specific and
 violable**: *"the stack shows 3 frames of `augment_traced`; the animation shows edge 1 → 0"*, never
-*"the debugger and the animation stay in step"*. And it **must be walked before it is called
+*"the debugger and the animation stay in step"*. And it **must be run before it is called
 done**; Claude cannot verify any of it.
 
 ### Shape
@@ -5369,7 +5369,7 @@ the material for naming turned out not to be at the breakpoint at all:
 reading `live_trace.rs` would have produced this table, because at the anchor every stop looks
 identical.
 
-**The failure rows were added by the `TwiceDefined` walk below**, and the table is now complete
+**The failure rows were added by the `TwiceDefined` run below**, and the table is now complete
 for the success *and* failure paths:
 
 | stop | how you know which it is |
@@ -5453,7 +5453,7 @@ it.
 So, I want a lab which compares and contrasts two models."*** The success path alone could not
 supply `DisplaceFail` or `EquationFailed`, because `ProportionalLoop` succeeds.
 
-**`CapacitorLoop` was the obvious candidate and is the wrong one. Measured before walking**, from
+**`CapacitorLoop` was the obvious candidate and is the wrong one. Measured before running**, from
 the generated notebook traces:
 
 | | ProportionalLoop | **TwiceDefined** | CapacitorLoop |
@@ -5464,10 +5464,10 @@ the generated notebook traces:
 | frames | 12 | **9** | ~114 |
 
 **CapacitorLoop's failure is at its LAST equation**, so the interesting stops sit ~110 Continues
-in — an ordeal, not a walk. `TwiceDefined` reaches both failure steps in nine frames. It stays the
+in — an ordeal, not a run. `TwiceDefined` reaches both failure steps in nine frames. It stays the
 right specimen for Station 4's *physical* story (a capacitor across an ideal source is a real
 modelling mistake); for learning the algorithm's failure path under a debugger, the synthetic 2×2
-is strictly better. **Sizing a walk from the notebook trace before doing one is the reusable move
+is strictly better. **Sizing a run from the notebook trace before doing one is the reusable move
 here.**
 
 **Thirteen of fourteen predictions exact.** The ledger, every row read from a live stack:
@@ -5547,12 +5547,12 @@ the marking inside the cell, not in a sentence underneath.**
 
 ### Frame-delay evidence
 
-Two screen readings this walk, **both in step** (`frame_index` 3 → "Frame 4", 8 → "Frame 9"),
+Two screen readings this run, **both in step** (`frame_index` 3 → "Frame 4", 8 → "Frame 9"),
 against one lag in three at 20 ms. Consistent with the two-tier delay; still a small sample.
 
 ### ✅ AND THE DATA IS NOW GENERATED — `matching_ledger.rs`, 2026-08-08
 
-Doug, on being told most of the walk had been *verification* rather than discovery: *"build the
+Doug, on being told most of the run had been *verification* rather than discovery: *"build the
 ledger generator and the line number check. We need to figure out how to keep that data accurate
 even as we make changes to the code being referenced by the labs."*
 
@@ -5563,36 +5563,36 @@ even as we make changes to the code being referenced by the labs."*
 — naming the regeneration command **and the first line that changed**. Verified must-fire by
 shifting `matching.rs` two lines: every emit site moved and the test caught it.
 
-**Three things turned out to be derivable that had cost an hour of walking each:**
+**Three things turned out to be derivable that had cost an hour of running each:**
 
 - **Emit sites** — scanned out of the source, attributed to the `emit_matching_frame(` **call**
   line rather than the line naming the variant. This is the check that would have caught the
   133/137 error automatically.
 - **Depth** — recovered from the step sequence alone: `TryDisplace` descends,
-  `DisplaceOk`/`DisplaceFail` return. **Pinned against both debugger walks**, which is what keeps
+  `DisplaceOk`/`DisplaceFail` return. **Pinned against both debugger runs**, which is what keeps
   it from being a derivation checked only against itself — the vacuous-test trap from the same day.
 - **The ledger** — the real traced algorithm re-run over the specimen's *recorded* incidence from
-  its notebook trace, so no compile and no MSL. It reproduces both walks exactly, and
+  its notebook trace, so no compile and no MSL. It reproduces both runs exactly, and
   `ProportionalLoop`'s final matching agrees with the compile's recorded result.
 
 **`maximum_bipartite_matching.md` no longer carries the numbers**, only the two facts about them
 that are about the algorithm rather than about lines. A number written in two places goes stale in
 one of them.
 
-**What generation cannot replace, and this is the boundary that matters.** Everything the walks
+**What generation cannot replace, and this is the boundary that matters.** Everything the runs
 found about the *instrument* — anchor stops exposing only `frame_index`, invisible `Option`
 payloads, `var`/`iter` meaning the loop ended, the paint race — is not in the source and not
 derivable. Neither are the two `augment_traced:243` give-ups, which **emit no frame and therefore
 cannot appear in any generated ledger**; the reference says so in its own text. And neither is the
 check that matters most: **whether a promised rhythm survives contact with a human.** Three
-confident claims were falsified by Doug walking on 2026-08-08, and a test written from the same
+confident claims were falsified by Doug running on 2026-08-08, and a test written from the same
 wrong model would have agreed with every one of them.
 
 ---
 
 ## 74. Only the FIRST Debug press worked — cppvsdbg will not re-bind a removed line
 
-**Doug, 2026-08-08**, walking `matching.md` in preparation for `#73`: *"the first time that I hit
+**Doug, 2026-08-08**, running `matching.md` in preparation for `#73`: *"the first time that I hit
 the 'Debug' button, the breakpoint is correctly set and execution stops… when I then hit the
 'Debug' button a second time, the breakpoint is again set, but only briefly. In fact, it only
 shows an empty circle instead of a red circle."*
@@ -5636,7 +5636,7 @@ One-way door, either route.
   or use Enable All Breakpoints"* — a remedy measured not to work, which costs a debugging
   session before the reader stops believing it. It now says to start a new debug session, guarded
   by a test that fails if the old wording returns. **Advice that does not work is worse than no
-  advice**, and this one shipped because it was written from the fix rather than from a walk.
+  advice**, and this one shipped because it was written from the fix rather than from a run.
 - **No layer can detect it.** VS Code exposes **no `verified` field** on `vscode.Breakpoint`, so
   the extension cannot tell a bound breakpoint from a hollow one; a disabled-then-enabled anchor
   looks identical to a working one in `vscode.debug.breakpoints`. **`#75`'s `breakpointPresent`
@@ -5867,7 +5867,7 @@ them would put a runtime condition behind a compile-time flag.
 
 ## 77. A live lab needs THREE panes, and the layout only has two
 
-**Doug, 2026-08-08**, walking `matching-live.md`: *"there's a basic UI problem: I need to have HRW
+**Doug, 2026-08-08**, running `matching-live.md`: *"there's a basic UI problem: I need to have HRW
 in lab mode, but then that makes the HRW RHS small when HRW is using only 50% of my screen and
 VS Code is using the other 50% of my screen."*
 
@@ -5913,7 +5913,7 @@ back is the same defect in a new dress.
 
 ### The arithmetic is now measured, and it rules squeezing out entirely (2026-08-12)
 
-Doug reached the same wall from the other direction — a 13" laptop with no external monitor, walking
+Doug reached the same wall from the other direction — a 13" laptop with no external monitor, running
 the labs: *"there's not enough space on my small screen to display the lab and the RHS."*
 
 **The number that settles it: HRW runs at `DEFAULT_ZOOM` = 2.0**, so a 13" 1280×720 screen gives it
@@ -5960,7 +5960,7 @@ the fix cost one constant rather than a new layout.
 points, so the *three*-pane live-lab case this entry was opened for is improved but not solved —
 HRW at half width is ~640 points again, and that is exactly the regime measured above. The stop
 strip, drawer and alternating-mode options all remain on the table for `matching-live.md`; they are
-simply no longer needed to walk the other eight labs.
+simply no longer needed to run the other eight labs.
 
 **And the general lesson, which is bigger than the layout:** *a UI constant that compensates for a
 platform quirk becomes a bug when the platform changes, and it does not announce itself.* Three weeks
@@ -5969,13 +5969,13 @@ port.
 
 ## 78. Back / Forward for the RHS — an auto-navigation with no return path
 
-**Doug, 2026-08-12, walking `connect-expansion.md`:** *"I'm in the Connect sub-lab, looking at the
+**Doug, 2026-08-12, running `connect-expansion.md`:** *"I'm in the Connect sub-lab, looking at the
 Flatten stage, Equations sub tab. When I click on an equation, that correctly navigates me to the
 Structural stage, Incidence sub-tab. Unfortunately, there is no way to navigate backward to the
 Flatten stage, Equations sub tab that I had been at… It seems that I need buttons for navigating
 backward and forward in the RHS."*
 
-**The first walked finding from the nine labs, and it is about the instrument rather than a count.**
+**The first run finding from the nine labs, and it is about the instrument rather than a count.**
 
 ### He is not stuck, and that is a separate problem
 
@@ -6091,10 +6091,10 @@ Station 1 rather than repeating it.
 
 ### Why it is not written yet
 
-Labs are converted to the Predict/Look/Falsified template **as Doug walks them**, because the
-conversion is itself the teaching (`CLAUDE.md`, current work). He is walking in compiler-phase
+Labs are converted to the Predict/Look/Falsified template **as Doug runs them**, because the
+conversion is itself the teaching (`CLAUDE.md`, current work). He is running in compiler-phase
 order and is on Connections → DAE, so tearing is some way off. Writing the act now would convert
-a lab he is not walking, which is the one thing that rule forbids.
+a lab he is not running, which is the one thing that rule forbids.
 
 ### How the commitment survives until then
 
@@ -6296,7 +6296,7 @@ missing is the general structural decision procedure.
 
 | piece | status |
 |---|---|
-| structural matching, BLT / Tarjan | **built** — and walked in `matching-live.md`, `blt-ordering.md` |
+| structural matching, BLT / Tarjan | **built** — and run in `matching-live.md`, `blt-ordering.md` |
 | the DAE-preparation funnel — alias demotion, state-row reduction, dummy-state reduction | **built**, and *observed* since 2026-08-18 rather than mirrored |
 | dummy-derivative elimination | **built** — `rumoca-phase-solve/src/dummy_derivative.rs`, whose own header says it mirrors OpenModelica |
 | symbolic construction/rewriting of equations | **partly built** — `rumoca-phase-structural/src/dae_prepare/symbolic.rs` (`split_linear_der_target`, expression builders) |
@@ -6347,7 +6347,7 @@ curiosity.** See [`working-with-doug.md`](working-with-doug.md) for why any of i
    implementing it here. What it establishes is that the reduction is achievable, not which
    algorithm achieves it.
 2. **FINISH WALKING INDEX REDUCTION.** Implementing before understanding inverts Doug's own
-   principle, and `index-reduction.md` is mid-walk.
+   principle, and `index-reduction.md` is mid-run.
 3. **ASK UPSTREAM FIRST.** Pattern-based may be a deliberate choice, or already on someone's
    roadmap. **That question is itself a good first substantive contact with the maintainers**,
    valuable whether or not the implementation ever happens.

@@ -42,7 +42,7 @@ Everything you just watched was decided from the pattern alone. HRW never evalua
 the cells in order.
 
 *(A plain markdown link to a `.nb` gets handed to the browser, which does nothing useful
-with it; Doug hit that walking this lab on 2026-07-30. The **notebook verb** hands the
+with it; Doug hit that running this lab on 2026-07-30. The **notebook verb** hands the
 file to the OS association instead, so HRW never needs to know where Wolfram is
 installed.)*
 
@@ -73,7 +73,7 @@ error anywhere. `ProportionalLoop` is structurally non-singular.
 **It would look identical at loop gain −1.** Same pattern, same blocks, same tearing —
 because **nothing in this view can tell the difference.**
 
-*(This stop linked to `Structural/Summary` until Doug walked the lab: that tab exists
+*(This stop linked to `Structural/Summary` until Doug run the lab: that tab exists
 only when a model is* singular*, so the link named a view with no tab. HRW now refuses
 such a link and says so, rather than selecting it and rendering the singular summary for
 a non-singular model.)*

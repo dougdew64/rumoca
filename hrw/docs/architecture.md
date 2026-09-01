@@ -77,7 +77,7 @@ hrw/
 │   ├── reduction_anim.rs  # Animated index-reduction stepper (step-by-step replay)
 │   ├── tearing_anim.rs    # Animated tearing stepper (greedy loop-breaking replay)
 │   ├── alias_anim.rs      # Alias-elimination reveal (substitutions, one at a time)
-│   ├── ic_plan_anim.rs    # Initial-condition plan walk (t=0 solve order)
+│   ├── ic_plan_anim.rs    # Initial-condition plan run (t=0 solve order)
 │   ├── connection_anim.rs # Connection-expansion replay (connect() -> equations)
 │   ├── reduction_view.rs  # Index reduction process summary panel
 │   ├── equation_sheet.rs     # Readable equation sheet from the flat DAE
@@ -115,7 +115,7 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**66 modules, 74,992 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**66 modules, 74,993 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
@@ -125,8 +125,8 @@ showing 48 equations. They are derived now, and
 | `worker.rs` | 5,857 |
 | `doc_citations.rs` | 5,795 |
 | `bridge.rs` | 4,195 |
-| `ui_tests.rs` | 2,941 |
-| `fidelity.rs` | 1,852 |
+| `ui_tests.rs` | 2,949 |
+| `fidelity.rs` | 1,849 |
 | `equation_sheet.rs` | 1,540 |
 | `tree.rs` | 1,299 |
 | `incidence_view.rs` | 1,219 |
@@ -141,7 +141,7 @@ showing 48 equations. They are derived now, and
 | `ic_plan_anim.rs` | 876 |
 | `context_bar.rs` | 869 |
 | `lab_panel.rs` | 855 |
-| `matching_ledger.rs` | 834 |
+| `matching_ledger.rs` | 830 |
 | `model_list.rs` | 770 |
 | `survey.rs` | 769 |
 | `stage_tabs.rs` | 766 |
@@ -185,7 +185,7 @@ showing 48 equations. They are derived now, and
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 101 |
 | `field_help.rs` | 67 |
-| **total** | **74,992** |
+| **total** | **74,993** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -325,7 +325,7 @@ not fire).
 **Stage 6 is logged in its true position, and that took a correction.** Until
 2026-08-04 the DAE stage was built *after* solve lowering and never logged, so the log
 showed the chain jumping Flatten → Structural with the phase they both depend on
-missing — Doug found it while walking the lab that teaches the step. It was moved
+missing — Doug found it while running the lab that teaches the step. It was moved
 rather than logged where it stood, because logging it in place would have reported DAE
 construction finishing *after* the five phases that consume its output: a second
 fiction in place of the first.
@@ -529,7 +529,7 @@ Three groups need more than a title:
 
 - **Current selection + compilation results** holds a `StageBundle` — every compilation
   stage in one struct — plus the model name and `def_index`. `StageBundle::get()`
-  *panics* on `Simulation`, which is why anything walking stages must use
+  *panics* on `Simulation`, which is why anything running stages must use
   `StageKind::COMPILATION` rather than `ALL`.
 - **Cached structural views** are `Option<Option<T>>`: the outer layer is cache state,
   the inner one the parse result. They exist to keep structural-report JSON out of the
@@ -651,7 +651,7 @@ function that renders any `serde_json::Value`:
 
 ### Path accumulation
 
-As the recursive walk descends, each level pushes a path segment (`Seg::Key("name")`
+As the recursive run descends, each level pushes a path segment (`Seg::Key("name")`
 or `Seg::Index(3)`) onto a `Vec<Seg>`. When the user clicks a leaf, the full path
 is the node's address from the stage root (e.g., `components → inertia → type_def_id`).
 This path is captured into the bridge focus file.
@@ -1182,7 +1182,7 @@ already translated back to names, so `walk_blocks` rebuilds the situation from
 the DAE — incidence, matching, BLT blocks, then
 `rumoca_phase_structural::block_local_incidence` to get into block-local space —
 and re-runs `tear_algebraic_loop_with_trace` with an observer attached. The same
-walk serves recorded and live playback, so the two cannot diverge.
+run serves recorded and live playback, so the two cannot diverge.
 
 Which DAE depends on the tab: Structural tears the raw DAE, Index Reduction the
 reduced one (`App::tearing_dae`), because that is the system its report
@@ -1190,7 +1190,7 @@ describes — and a high-index model's raw DAE has no full matching, hence no
 blocks, hence nothing to tear.
 
 **Alias-elimination reveal** (`alias_anim.rs`) and
-**initial-condition plan walk** (`ic_plan_anim.rs`): both are
+**initial-condition plan run** (`ic_plan_anim.rs`): both are
 `Playback`-driven like the replays, but they are **reveals of recorded lists,
 not replays of searches**, and both say so in their module docs. Rumoca's
 elimination pass has no backtracking and no competing candidate; the IC plan is
@@ -1268,7 +1268,7 @@ Phase 1 of `docs/answer-platform-plan.md`).
 - **Text is the default medium** (Doug, 2026-07-29): Claude answers in text and
   writes a lab only when asked. The failure mode is asymmetric — text that should
   have been a lab costs one follow-up, while a lab that should have been text
-  costs minutes of walking stops to reach a two-sentence answer.
+  costs minutes of running stops to reach a two-sentence answer.
 
 ### Index reduction summary (`reduction_view.rs`)
 
@@ -1370,7 +1370,7 @@ Two categories of files, both in `.hrw-bridge/` (gitignored):
 Rumoca IR nodes carry source provenance (`location` or `span` fields with byte
 offsets into the Modelica source). But leaf nodes usually have no provenance of
 their own — the nearest `location`/`span` lives on an ancestor. So the bridge
-walks **up** the serde tree from the clicked node to the root, looking for the
+runs **up** the serde tree from the clicked node to the root, looking for the
 tightest enclosing provenance. Once found, the byte range is sliced from the
 Modelica source file, expanded to whole lines for context.
 

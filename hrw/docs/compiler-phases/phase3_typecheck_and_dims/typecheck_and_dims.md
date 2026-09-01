@@ -172,7 +172,7 @@ cannot be changed after the model is compiled. The flag is `Component.is_structu
 
 ## Type Inference for Expressions
 
-`infer_expression_type()` in `late_methods.rs` walks the expression tree
+`infer_expression_type()` in `late_methods.rs` runs the expression tree
 recursively:
 
 | Expression kind | Type inference rule |

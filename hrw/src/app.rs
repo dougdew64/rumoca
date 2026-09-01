@@ -1204,7 +1204,7 @@ impl App {
         }
     }
 
-    /// Build and begin a self-running walk of the lab currently showing.
+    /// Build and begin a self-running run of the lab currently showing.
     ///
     /// Only links that **parse** become beats. A lab that names a verb in prose
     /// would otherwise contribute a beat that dispatches nothing and stalls the run
@@ -1233,7 +1233,7 @@ impl App {
         // Remember where we started, so the run can put it back. A stop may
         // legitimately leave Lab mode — `hrw://source/<line>` must, since the
         // source only renders in Specimen mode — and `matching.md` ends Station 3 with
-        // exactly that, so the walk used to finish with the lab off screen.
+        // exactly that, so the run used to finish with the lab off screen.
         self.lab.mode_before_autoplay = Some(self.ui_mode);
 
         // **Start from where the pane is, not from where the last run stopped.**
@@ -1253,12 +1253,12 @@ impl App {
 
     /// End a run and restore what it borrowed.
     ///
-    /// **A walk is a round trip.** Called both when the last beat elapses and when
+    /// **A run is a round trip.** Called both when the last beat elapses and when
     /// Stop is pressed, because a viewer who stops halfway is no more interested in
     /// being left in Specimen mode than one who watches to the end.
     ///
     /// Only the *mode* is restored, not the stage or the specimen: those are the
-    /// result of the walk and worth keeping on screen. It is the **frame** the lab
+    /// result of the run and worth keeping on screen. It is the **frame** the lab
     /// was being read in that has to come back.
     fn restore_mode_after_autoplay(&mut self) {
         if let Some(mode) = self.lab.mode_before_autoplay.take()
@@ -1284,14 +1284,14 @@ impl App {
         self.lab.autoplay.set_focused(ctx.input(|i| i.focused));
 
         // `stable_dt` rather than `unstable_dt`: a single slow frame should not
-        // jump the walk forward by its own hitch.
+        // jump the run forward by its own hitch.
         let dt = std::time::Duration::from_secs_f32(ctx.input(|i| i.stable_dt).min(0.25));
         if let Some(next) = self.lab.autoplay.tick(dt, self.compiling) {
             self.dispatch_beat(next);
         }
         // The last beat has elapsed: put the mode back before the reader notices it
         // moved. A stop that switched to Specimen mode (`hrw://source/<line>`) would
-        // otherwise leave the walk ending with no lab on screen.
+        // otherwise leave the run ending with no lab on screen.
         if self.lab.autoplay.phase() == crate::autoplay::Phase::Finished {
             self.restore_mode_after_autoplay();
         }
@@ -2614,13 +2614,13 @@ impl App {
     /// the two views that additionally depend on captured frames.
     ///
     /// **Extracted 2026-08-12 so a lab link can be checked without a compile.**
-    /// Doug, walking `connect-expansion.md`: *"Act 2 … contains a link for RcCircuit
+    /// Doug, running `connect-expansion.md`: *"Act 2 … contains a link for RcCircuit
     /// → Structural → Summary, and that link actually navigates to RcCircuit →
     /// Structural → Incidence."* The link parsed, so
     /// `fixture_lab_links_all_resolve` passed it; `Summary` is simply **not
     /// available on the Structural stage of a non-singular model**, so the app
     /// refused it, said so in the status bar, and left the sub-view where it was.
-    /// Six such links existed across three labs and one walk found one of them.
+    /// Six such links existed across three labs and one run found one of them.
     ///
     /// `every_lab_sub_view_link_is_available_for_its_specimen` calls **this**
     /// function against each specimen's committed manifest note, so the check cannot
@@ -2839,7 +2839,7 @@ impl App {
                     // left panel's `ModelListNav::Select` arm has always followed, and
                     // which this arm did not. Doug, 2026-08-22: every `▶ Look` link in
                     // a stop recompiled the specimen the previous link had just
-                    // compiled, so walking one lab paid a full compile per stop.
+                    // compiled, so running one lab paid a full compile per stop.
                     //
                     // **Nothing is lost by skipping it.** The workflow `open`'s comment
                     // protects — assemble context, arm a breakpoint, recompile to hit
@@ -4013,7 +4013,7 @@ impl App {
     ///
     /// Unlike the other animated views this one is not built from the stage's
     /// JSON report: tearing works in each coupled block's own 0..n index space,
-    /// and the report has already translated back to names. So the view walks
+    /// and the report has already translated back to names. So the view runs
     /// the DAE again (`tearing_anim::walk_blocks`) and re-runs the algorithm
     /// with an observer attached.
     ///
@@ -4040,7 +4040,7 @@ impl App {
         if self.stage_views.tearing_anim.is_none() {
             // **Captured first, re-derived only as a fallback.** `from_captured`
             // returns `None` when the capture is absent or disagrees with the
-            // report, and `record` then re-runs the walk — a faithful picture beats
+            // report, and `record` then re-runs the run — a faithful picture beats
             // an empty one, and refusing to *guess an alignment* is what the
             // `None` is for.
             // **Only under Structural.** The tearing view also renders on the
@@ -4052,7 +4052,7 @@ impl App {
             // Structural tab tears the raw DAE, Index Reduction the reduced one.
             // Pairing one tab's report with the other's frames is the mismatch this
             // whole set of captures exists to make impossible.
-            // **No `record` fallback.** Re-walking the DAE here would tear blocks the
+            // **No `record` fallback.** Re-running the DAE here would tear blocks the
             // compiler never built — see `structural_unavailable`.
             self.stage_views.tearing_anim = Some(
                 self.stages
@@ -4185,7 +4185,7 @@ impl App {
             .is_some_and(|a| !a.is_empty())
     }
 
-    /// The initial-condition plan walk, on the Initialization stage.
+    /// The initial-condition plan run, on the Initialization stage.
     fn ic_plan_anim_ui(&mut self, ui: &mut egui::Ui) {
         if self.compile_views.ic_plan_anim.is_none() {
             self.compile_views.ic_plan_anim = Some(
@@ -5255,7 +5255,7 @@ impl App {
 
     /// Rebuild the jump match list if the stage or the followed name changed.
     ///
-    /// Cheap on the common path — a tuple comparison — because the walk itself
+    /// Cheap on the common path — a tuple comparison — because the run itself
     /// is not: it visits every node of the stage IR and lexes every code-bearing
     /// string. Same discipline as `tracking_summary`, which is computed on a
     /// click and never per frame.
@@ -5908,7 +5908,7 @@ impl App {
     /// the source declaration are keyed by (idea #37's "wrinkle").
     fn set_tracked_identifier(&mut self, name: String) {
         let name = crate::identifier_index::strip_der(&name).to_owned();
-        // The action most likely to be the last one before a crash: it walks
+        // The action most likely to be the last one before a crash: it runs
         // every stage's IR and lexes every code-bearing string in it, which is
         // exactly how the 2026-07-28 em-dash panic was reached.
         diagnostics::record_action(
@@ -6445,7 +6445,7 @@ enum HrwLink {
     ///
     /// **The verb that lets one lab cite another.** Added 2026-08-05 for
     /// `docs/ideas.md` #63: Claude's answering repertoire was text, then a freshly
-    /// written ad hoc lab, with no way to say *"the answer already exists — walk
+    /// written ad hoc lab, with no way to say *"the answer already exists — run
     /// `failure-typecheck` from stop 2."* Ten link forms existed and none opened a
     /// lab, so a composed answer could only *describe* a fixture in prose. The
     /// expectations are the thing being lost by that: a fixture's `**Expected:**`
@@ -6463,7 +6463,7 @@ enum HrwLink {
     /// `hrw://breakpoint/<anchor>` — **arm a source breakpoint the reader would
     /// otherwise set by hand.**
     ///
-    /// Doug, 2026-08-08, walking `matching-live.md`: *"Having to manually set
+    /// Doug, 2026-08-08, running `matching-live.md`: *"Having to manually set
     /// breakpoints is friction. I'd like to instead click on links to set
     /// breakpoints."* A live lab cannot avoid breakpoints — they are the
     /// instrument — but it can stop making the reader transcribe a line number
@@ -6478,7 +6478,7 @@ enum HrwLink {
     /// **A name that resolves to no anchor does not parse**, so
     /// `fixture_lab_links_all_resolve` fails on a typo or on an anchor whose
     /// locating fragment was edited away — the lab is checked at test time
-    /// rather than discovered broken mid-walk.
+    /// rather than discovered broken mid-run.
     ///
     /// **Add-only** (`bridge::arm_source_breakpoint`): `docs/ideas.md` #74 makes
     /// removal a one-way door, so a toggle would break the next click.
@@ -6555,7 +6555,7 @@ enum HrwLink {
     ///
     /// Found 2026-08-03 while rewriting `docs/fixture-labs/dae-construction.md` against
     /// the new DAE tab: every `hrw://stage/Dae/Tree/node/…` in it failed to parse, and
-    /// `fixture_lab_links_all_resolve` said so before the lab was ever walked — the
+    /// `fixture_lab_links_all_resolve` said so before the lab was ever run — the
     /// case the link checker exists for.
     PointAtNode(StageKind, Option<SubView>, Vec<Seg>),
     /// `hrw://follow/<name>` — follow an identifier, as a right-click Follow would.
@@ -6811,7 +6811,7 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
         ["load", specimen] => Some(HrwLink::LoadSpecimen((*specimen).to_owned())),
         // **Validated here, not at dispatch.** An unknown anchor failing to
         // parse is what puts `fixture_lab_links_all_resolve` in front of it, so
-        // a renamed anchor breaks the suite instead of a walk.
+        // a renamed anchor breaks the suite instead of a run.
         ["breakpoint", name] if crate::matching_ledger::anchor_by_name(name).is_some() => {
             Some(HrwLink::ArmBreakpoint((*name).to_owned()))
         }

@@ -59,14 +59,14 @@ should transfer equally to Rumoca, Wolfram System Modeler, OpenModelica, Dymola,
 any other tool.
 
 
-## Why this beats books and lectures — Doug's model, after the first lab walk
+## Why this beats books and lectures — Doug's model, after the first lab run
 
-*(Doug, 2026-08-12, having walked `connect-expansion.md` and started `dae-construction.md`. His
+*(Doug, 2026-08-12, having run `connect-expansion.md` and started `dae-construction.md`. His
 words; the refinements after them are Claude's, and one of them contradicts him.)*
 
 > *"I began this effort because I believed that it would be possible to create a learning tool and
 > process which would be more effective for me than books and attending lectures. I believe that we
-> are on the right track. But, after just a bit of lab walking, it is striking to me how similar the
+> are on the right track. But, after just a bit of lab running, it is striking to me how similar the
 > labs are initially to the books, yet how different our conversation is from the lectures. At least
 > initially, the labs have gaps and I struggle to understand what is written in the labs. That
 > experience is very much like my experience with books. However, during our conversation, you answer
@@ -178,7 +178,7 @@ falsify Claude.**
 *(Doug, 2026-08-15, after `connect-expansion.md` was finished.)*
 
 > *"My most important observation is that working together to improve that lab was
-> educational. In fact, at least so far, more educational than actually walking the completed
+> educational. In fact, at least so far, more educational than actually running the completed
 > lab."*
 
 **This inverts the assumed order.** The model above treats the lab as the artifact and the
@@ -189,7 +189,7 @@ finished lab is closer to a by-product.
 
 1. **He had to hold a model precise enough to detect a mismatch.** *"This does not agree with the
    pane"* is impossible without a prediction already in hand. Every disagreement was a
-   prediction error **he generated himself**, and walking a correct lab produces agreement,
+   prediction error **he generated himself**, and running a correct lab produces agreement,
    which produces nothing.
 2. **The disagreements were conceptual, never typographical.** Nodes versus connection sets;
    potential and flow as siblings versus as kinds of one thing; three versus six; spanning tree
@@ -199,9 +199,9 @@ finished lab is closer to a by-product.
    graph?"* and *"what does 'computed' mean?"* came from real confusion about phrases Claude had
    used believing them clear — and could not have been anticipated.
 
-**The confound, stated because it is large.** The lab he walked at the end was one **he had
-co-written**, so of course it taught less; he already knew it. The honest comparison is walking a
-lab he had no hand in, which has not been run. It may be that improving beats walking, or merely
+**The confound, stated because it is large.** The lab he run at the end was one **he had
+co-written**, so of course it taught less; he already knew it. The honest comparison is running a
+lab he had no hand in, which has not been run. It may be that improving beats running, or merely
 that *first contact* beats *second contact* with the same material. **The next lab is that
 test**, and it should be treated as one.
 
@@ -222,7 +222,7 @@ gap.** A lab that could be fully machine-checked would teach less, not more.
   constant round-tripping between prose and pane. Doug hit that friction before adopting the lab
   framing, which is corroboration rather than coincidence.
 - **A lab whose panes cannot falsify anything is a lab that should be prose in
-  `compiler-phases/`** instead of a walk.
+  `compiler-phases/`** instead of a run.
 
 ### Which teaching job HRW should try to win — I-do / we-do / you-do
 
@@ -268,7 +268,7 @@ The labs can focus more on being labs and less on being like textbooks."*
 **Why the prose was long is the whole argument.** A lab could not be asked questions, so every
 confusion it might provoke had to be answered inline — which is *the textbook's constraint*, the
 same one the we-do row above says an instrument removes. The labs inherited it for **prose** long
-after HRW had removed it for **panes**. Exposition was doing two jobs: being the walk, and
+after HRW had removed it for **panes**. Exposition was doing two jobs: being the run, and
 pre-empting every question. The second is now unnecessary.
 
 **It strengthens we-do rather than merely shortening it.** A prediction is only worth making about
@@ -288,7 +288,7 @@ written to pre-empt questions is prose written past what was verified** — whic
 that, and the capture makes the trade cheap.
 
 **The boundary: fewer claims, never looser ones.** Terseness applies to *exposition*. It must not
-touch a `**Expected:**` line, which is the walk's test and must stay violable — and it must not
+touch a `**Expected:**` line, which is the run's test and must stay violable — and it must not
 become vagueness. *"The system is singular"* is terse and checkable; *"things go wrong"* is neither.
 The writing rules are in [`fixture-labs/README.md`](fixture-labs/README.md).
 
@@ -314,8 +314,8 @@ whether he understood it; **asking the question that exposes a gap tests the sam
 a sentence instead of a rewrite.**
 
 **Its whole apparatus went with it**, and that is the point rather than a side effect: the
-`<!-- authored: -->` marker, `<!-- walked: -->` (also withdrawn — *"keeping track of what labs I
-have walked doesn't yield enough value to justify the bookkeeping"*), both checkers, and the
+`<!-- authored: -->` marker, `<!-- run: -->` (also withdrawn — *"keeping track of what labs I
+have run doesn't yield enough value to justify the bookkeeping"*), both checkers, and the
 supersession ceremony built for them. **Doug's own verdict on the request that produced them:**
 *"we have been spending a lot of time running checkers and such because I requested a way for me
 to edit lab files. I think that my request now seems like a bad idea."*
@@ -407,7 +407,7 @@ section still named both)*:
 
 | Was | Is now | Why it changed |
 |---|---|---|
-| the end-to-end lab document, as spine | [`compiler-phases/the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md) for the *reasoning*, and an **ad hoc lab** for the *walk* | The stored lab rotted — it asserted a 7×7 incidence matrix on a tab showing 48 equations. Deleted 2026-08-01; its conceptual half, which makes no claim about what is on screen, was kept. |
+| the end-to-end lab document, as spine | [`compiler-phases/the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md) for the *reasoning*, and an **ad hoc lab** for the *run* | The stored lab rotted — it asserted a 7×7 incidence matrix on a tab showing 48 equations. Deleted 2026-08-01; its conceptual half, which makes no claim about what is on screen, was kept. |
 | specimen narratives, as worked examples | a generated [`specimen-notebook/<Model>/trace/`](specimen-notebook/) plus a short hand-written `purpose.md` | 1,632 lines of narrative became 638 of purpose on 2026-07-29. **Numbers are read from the trace, which is correct by construction**; Claude regenerates the explanation on demand. |
 
 **The pattern behind both is the project's governing rule:** *store what cannot be

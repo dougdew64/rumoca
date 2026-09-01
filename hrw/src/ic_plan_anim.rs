@@ -1,4 +1,4 @@
-//! Animated initial-condition stepper — walks the plan Rumoca will follow to
+//! Animated initial-condition stepper — runs the plan Rumoca will follow to
 //! compute a consistent state at t=0.
 //!
 //! ## Why this phase is worth animating
@@ -89,7 +89,7 @@ pub struct PlanContext {
     pub pinned_unknowns: Vec<String>,
 }
 
-/// One step of the walk: the opening state, or one block of the plan.
+/// One step of the run: the opening state, or one block of the plan.
 ///
 /// **`Start` is the opening frame — nothing solved, nothing attempted.** Added
 /// 2026-08-23 with `alias_anim`'s, after Doug reported both views opening "with
@@ -124,10 +124,10 @@ impl IcPlanAnimation {
     ///
     /// Returns `None` when the report has no `blocks` array — which is the case
     /// for a model whose initialization *failed* (the stage then carries an
-    /// `error` instead). A failed initialization has no plan to walk.
+    /// `error` instead). A failed initialization has no plan to run.
     pub fn from_report(report: &serde_json::Value) -> Option<Self> {
         // Required: a model whose initialization failed carries an `error` instead,
-        // and has no plan to walk.
+        // and has no plan to run.
         report.get("blocks")?.as_array()?;
         let mut problems = Vec::new();
         let blocks: Vec<IcBlock> =
@@ -163,7 +163,7 @@ impl IcPlanAnimation {
 
         // **No opening frame when there is no plan.** A lone `Start` would make
         // `is_empty()` false for a model with nothing to solve at t=0, and the
-        // pane would offer a walk through nothing instead of saying so.
+        // pane would offer a run through nothing instead of saying so.
         let frames: Vec<IcStep> = if blocks.is_empty() {
             Vec::new()
         } else {
@@ -184,7 +184,7 @@ impl IcPlanAnimation {
         self.playback.position().1.saturating_sub(1)
     }
 
-    /// The blocks walked so far — empty at the opening frame.
+    /// The blocks run so far — empty at the opening frame.
     ///
     /// `skip(1)` steps over `Start`, and the cursor doubles as the count for the
     /// same reason it does in `alias_anim`: at frame 0 no block has run, and at
@@ -222,7 +222,7 @@ impl IcPlanAnimation {
         self.playback.is_empty()
     }
 
-    /// Render the header, the controls, and the plan walk. No Debug button:
+    /// Render the header, the controls, and the plan run. No Debug button:
     /// see the module note on why this phase has no live trace to offer.
     pub fn ui(&mut self, ui: &mut egui::Ui) {
         for p in &self.problems {
@@ -343,7 +343,7 @@ impl IcPlanAnimation {
         }
     }
 
-    /// Goal line, how far through the plan the walk is, and the sequence so far.
+    /// Goal line, how far through the plan the run is, and the sequence so far.
     fn render_running_state(&self, ui: &mut egui::Ui) {
         ui.label(
             egui::RichText::new(
@@ -357,7 +357,7 @@ impl IcPlanAnimation {
 
         // **The cursor IS the count of blocks executed**, because frame 0 is the
         // opening state. This used to read `cursor + 1`, which is what made the
-        // walk open claiming a block had already been solved.
+        // run open claiming a block had already been solved.
         let done = self.playback.cursor();
         let total = self.n_blocks();
         let solved: usize = self.blocks_done().map(IcBlock::unknowns_solved).sum();
@@ -750,7 +750,7 @@ mod tests {
         assert_eq!(anim.which(), "ic_plan");
     }
 
-    /// **The walk opens before any block has been solved.**
+    /// **The run opens before any block has been solved.**
     ///
     /// The sibling of `alias_anim`'s guard, from the same report: Doug,
     /// 2026-08-23, found both views opening *"with progress already having been
@@ -808,7 +808,7 @@ mod tests {
     }
 
     /// A failed initialization carries an `error` and no `blocks`; there is no
-    /// plan to walk, and the view must decline rather than render an empty one.
+    /// plan to run, and the view must decline rather than render an empty one.
     #[test]
     fn a_failed_initialization_yields_no_view() {
         let failed = serde_json::json!({"error": {"kind": "underdetermined"}});
@@ -845,7 +845,7 @@ mod tests {
     }
 
     /// End to end on a real specimen: the plan Rumoca actually produces must be
-    /// one this view can walk. Guards against a Rumoca rename silently emptying
+    /// one this view can run. Guards against a Rumoca rename silently emptying
     /// the view — the shape tests above would all still pass.
     ///
     /// `MixedLoop` rather than the IC-focused `RcCircuit` because
@@ -859,7 +859,7 @@ mod tests {
             .expect("MixedLoop is standalone and must compile");
         let n_x = dae.variables.states.len();
         let Ok(plan) = rumoca_phase_structural::build_ic_plan(&dae, n_x) else {
-            return; // planning failed; there is no plan to walk
+            return; // planning failed; there is no plan to run
         };
         let hint = rumoca_phase_structural::build_ic_relaxation_hint(&dae, n_x);
         let json = crate::worker::ic_plan_to_json(
@@ -871,6 +871,6 @@ mod tests {
         let anim = IcPlanAnimation::from_report(&json)
             .expect("a successful plan always carries a blocks array");
         let (_, total) = anim.position();
-        assert!(total > 0, "RcCircuit has an initial-condition plan to walk");
+        assert!(total > 0, "RcCircuit has an initial-condition plan to run");
     }
 }

@@ -75,7 +75,7 @@ He learns by understanding *why*, and a mechanism explained before its motivatio
 land.
 
 **HE IS A BEGINNER AT THIS, AND THE DEPTH ORDER IS CONCEPTS NOW, DETAILS LATER** *(Doug,
-2026-08-12, walking the labs)*: *"let's agree now that I am beginner and so benefit from
+2026-08-12, running the labs)*: *"let's agree now that I am beginner and so benefit from
 easy-to-understand conceptual explanations now. Later, I will dig deeper and benefit from
 details such as the distinction which you just shared."*
 
@@ -96,7 +96,7 @@ The operational rule:
 
 - **Answer the question asked, at the depth asked, and stop.**
 - **Detail that is true but premature is simply not said yet — and it does not need storing.**
-  Charter Decision 14 makes the conversation part of the walk: Doug selects the sentence, presses
+  Charter Decision 14 makes the conversation part of the run: Doug selects the sentence, presses
   🎯 and asks, so the detail arrives *at the moment he wants it*. **A question he can now ask is
   better than a paragraph he did not.** *(Until 2026-09-01 this bullet sent such detail to
   `compiler-phases/`. That directory is Rumoca reference documentation, not a deferral store, and
@@ -120,14 +120,14 @@ re-made every time; a finished lab can be *read*. It binds in both directions, a
 and **do not assume anything past it** (which is how a gap gets left).
 
 **The baseline comes from CO-DEVELOPMENT, not from a lab existing.** Doug's claim is well
-supported here because he argued this one into shape over a week. A lab he merely *walked* is
+supported here because he argued this one into shape over a week. A lab he merely *run* is
 much weaker evidence — [`question-ledger.md`](question-ledger.md) already records that **silence
 is ambiguous and must never be read as success**. So:
 
 | how the lab came to be | what may be assumed |
 |---|---|
 | **co-developed** — he questioned it into shape | he knows its material |
-| **walked, no questions** | ambiguous. Ask before building on it |
+| **run, no questions** | ambiguous. Ask before building on it |
 | **written, unwalked** | nothing |
 
 **NOTHING RECORDS WHICH ROW A LAB IS IN, deliberately since 2026-08-31** — *"that bookkeeping
@@ -259,13 +259,13 @@ education has real deadlines; see [`tech-debt.md`](tech-debt.md) on why fixes ar
 *(Moved here from `CLAUDE.md`'s Current work on 2026-09-01. It is a standing agreement about how
 Doug works, which is this file's subject, and it was never in-flight work.)*
 
-> *"During my mornings and evenings I can focus on walking labs. But during my workdays I cannot
+> *"During my mornings and evenings I can focus on running labs. But during my workdays I cannot
 > focus on this project as much. So, during my workdays, I will task you with performing
 > refactoring and fixing bugs."*
 
 **LAB PROSE IS NOT WORKDAY WORK, and the reason is not scheduling** *(2026-08-22)*: *"most of my
-conceptual learning happens when iterating with you during [lab] walks… making the lab prose
-correct and personally effective during those walks is my primary learning exercise right now."*
+conceptual learning happens when iterating with you during [lab] runs… making the lab prose
+correct and personally effective during those runs is my primary learning exercise right now."*
 **Improving an explanation alone consumes the material his learning runs on.** Fixing a
 checker-caught number, a dead link or a stale citation is fine; **rewriting an explanation
 unsupervised is not Claude's to do.**

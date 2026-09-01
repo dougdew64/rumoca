@@ -843,7 +843,7 @@ conclude `RcCircuit` has no aliases. Nothing in the corpus checks a pane's claim
 1. **`default_sub_view_for` redirects all three.** The regression guard asserts them **as a set**
    (`no_index_reduction_only_view_survives_a_move_to_structural`), so a fourth such view added
    without the redirect fails there rather than on screen — the exact mistake, encoded. A second
-   test walks the reader's route through the widget, because the pure function is only half the
+   test runs the reader's route through the widget, because the pure function is only half the
    path: the row must actually *call* it. Both fail against the old code.
 2. **`App::clamp_structural_sub_view` checks the RESULT of every door.** Three places write
    `viewport.structural` — the tab row, the stage-change default, the `hrw://` link guard — and
@@ -1004,7 +1004,7 @@ one false statement with another. **A dangling symbol reference is a cheap fix; 
 
 - **FIVE sites, not four.** `playback.rs`'s test doc — *"which is what lets the lifecycle release a
   breakpoint armed for a session that never began"* — describes the same deleted mechanism without
-  naming the function, so the symbol grep that found the other four walked straight past it.
+  naming the function, so the symbol grep that found the other four run straight past it.
   **A stale-mechanism sweep cannot be a symbol grep**, because prose describing a thing outlives
   prose naming it.
 - **The question needed verifying, not establishing.** It was answered in the repository twice
@@ -1658,7 +1658,7 @@ already on screen.
 `HrwLink::LoadAndSwitch` sets `pending_sub_view` and leaves the stage change to the compile
 landing, so for the whole compile window the request names Flatten while `self.stage` is
 still the previous stage and `flatten_content()` is empty. A guard matching on `sub` alone
-would have **refused `hrw://load/RcCircuit/Flatten/Connections` on every walk** — a live link
+would have **refused `hrw://load/RcCircuit/Flatten/Connections` on every run** — a live link
 in `connect-expansion.md` — with a notice naming a stage the reader was not on. Matching
 `(sub, self.stage)` fixes it, and **incidentally closes the same latent hole for the
 structural arm**, which reads `self.stage` internally and could refuse a Structural link
@@ -2027,7 +2027,7 @@ The three existing `ui_tests` drive the whole application to reach this pane. Th
 |---|---|
 | `a_note_is_rendered_and_the_placeholder_is_not` | the two arms are exclusive — *beside* never becomes *instead of*, and the reverse never happens either |
 | `a_missing_note_renders_the_placeholder` | the absence is stated **with an address**, not left blank |
-| `a_real_specimens_note_is_found_where_the_pane_looks` | `note_path`'s three literals against the corpus on disk — nothing else in HRW would notice one drifting, because the notebook checks walk the directory themselves |
+| `a_real_specimens_note_is_found_where_the_pane_looks` | `note_path`'s three literals against the corpus on disk — nothing else in HRW would notice one drifting, because the notebook checks run the directory themselves |
 | `a_missing_note_is_only_looked_for_once` | the memo, above |
 | `no_model_reads_nothing` | an absent model leaves no entry behind |
 | `the_purpose_placeholder_fits_the_actual_state` | *(moved from `app/tests.rs`, unchanged)* |
@@ -2256,7 +2256,7 @@ four cache fields, called `reset_for`, and asserted they survived — which **ca
 after the split they are in a different struct. Its doc comment even claimed it would catch
 someone adding `compile_views.invalidate_all()` beside the `reset_for` call; it would not, since
 it never runs that code. **The tell is that a test's setup and its assertion touch the same struct
-the change just separated.** The shipped test paints `frame_ui`, walks the IC plan to block 2,
+the change just separated.** The shipped test paints `frame_ui`, runs the IC plan to block 2,
 switches to Structural and back, and asserts `(2, 3)` — must-fire verified by restoring the old
 clearing, which fails with `(0, 3)`.
 
@@ -2552,5 +2552,5 @@ From [`sweep-2026-08-19.md`](sweep-2026-08-19.md), in value order:
    unaudited.
 
 **And the sweep's own gap:** it had no measurement and no adversarial pass. The transport-bar
-defect was found by walking into it, not by looking for it — so the next comprehensive sweep
+defect was found by running into it, not by looking for it — so the next comprehensive sweep
 should be driven by something other than Claude's own list.

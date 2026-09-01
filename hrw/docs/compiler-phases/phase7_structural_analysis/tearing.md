@@ -188,7 +188,7 @@ fn count_var_appearances(
 }
 ```
 
-Plain frequency counting: for each pending equation, walk its unknowns; for
+Plain frequency counting: for each pending equation, run its unknowns; for
 each unknown that is itself still pending, bump its count. The map's value is
 "how many remaining equations still reference this remaining variable." The
 tear-variable selector consumes this map.

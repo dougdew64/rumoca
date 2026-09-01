@@ -15,7 +15,7 @@ code never says what it is *for*.
 
 *A few lines. What the model is, and the phenomenon it was made to exercise.*
 
-*No mechanism, no walkthrough, no numbers — numbers live in `trace/`, and Claude regenerates
+*No mechanism, no run-through, no numbers — numbers live in `trace/`, and Claude regenerates
 mechanism from the IR more accurately than a stored copy nothing checks. If a sentence explains
 **how** rather than **why this file exists**, delete it.*
 

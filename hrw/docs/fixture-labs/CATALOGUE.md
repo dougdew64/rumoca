@@ -363,12 +363,12 @@ A concept lab. Walk [blt-ordering](hrw://lab/blt-ordering) first — it produces
 
 ## `the-concepts`
 
-**The concepts — a week's walk through the pipeline**
+**The concepts — a week's run through the pipeline**
 
 Start here. This is the map for the labs of the compiler phases, in the order
 
 - **Stops:**
-  - `the-concepts-a-week-s-walk-through-the-pipeline` — The concepts — a week's walk through the pipeline
+  - `the-concepts-a-week-s-run-through-the-pipeline` — The concepts — a week's run through the pipeline
   - `the-route` — The route
   - `the-four-numbers-that-connect-the-labs` — The four numbers that connect the labs
   - `the-one-structural-idea-the-whole-pipeline-turns-on` — The one structural idea the whole pipeline turns on

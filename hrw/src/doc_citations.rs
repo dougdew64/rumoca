@@ -432,7 +432,7 @@ Some prose.
         // Non-vacuity: a clean scan of nothing is not a clean scan.
         assert!(
             scanned > 20,
-            "only scanned {scanned} documents — the walk is broken"
+            "only scanned {scanned} documents — the run is broken"
         );
         assert!(
             offences.is_empty(),
@@ -545,7 +545,7 @@ Some prose.
 
         assert!(
             scanned > 100,
-            "only {scanned} files scanned — the walk is broken"
+            "only {scanned} files scanned — the run is broken"
         );
         assert!(
             bad.is_empty(),
@@ -595,7 +595,7 @@ Some prose.
         collect_rust(&src, &mut files);
         assert!(
             files.len() > 10,
-            "only found {} sources — the walk is broken",
+            "only found {} sources — the run is broken",
             files.len()
         );
 
@@ -1250,7 +1250,7 @@ Some prose.
     /// job is proving a symbol **absent**.
     ///
     /// So it uses the qualifier the citation already carries, which the leaf-only path
-    /// throws away: find `enum A`, walk to its matching brace, and look for the variant
+    /// throws away: find `enum A`, run to its matching brace, and look for the variant
     /// at the start of a line inside. Precise in both directions.
     ///
     /// Found by extending the citation checker to `architecture.md`, where **five of
@@ -1301,10 +1301,10 @@ Some prose.
         })
     }
 
-    /// Every Rust source in the workspace, walked and read **once**.
+    /// Every Rust source in the workspace, run and read **once**.
     ///
     /// **Memoised because [`symbol_is_defined`] is called once per `unbuilt:` tag**,
-    /// and each call used to re-walk `crates/` — 56 crates — and re-read every file
+    /// and each call used to re-run `crates/` — 56 crates — and re-read every file
     /// it found. Nine tags therefore paid for nine full-workspace reads.
     ///
     /// **Measured 2026-08-13**, after Doug reported answer latency as friction:
@@ -1360,7 +1360,7 @@ Some prose.
                     .take_while(|c| !c.is_whitespace() && *c != ')' && *c != '`')
                     .collect();
                 let got: Vec<&str> = link.split('/').collect();
-                // Subsequence match: walk `got`, consuming each named segment of
+                // Subsequence match: run `got`, consuming each named segment of
                 // `wanted` in order. `*` consumes nothing and simply allows a gap.
                 let mut g = 0usize;
                 wanted.iter().all(|w| {
@@ -1543,7 +1543,7 @@ Some prose.
     /// wrong. Inserting any backticked table between a marker and its own had the same
     /// effect.
     ///
-    /// So the walk now stops at the first line that is neither blank nor part of a
+    /// So the run now stops at the first line that is neither blank nor part of a
     /// table: a marker's region is the table that follows it, and nothing else. An empty
     /// result therefore means *"marker present, table missing"*, which callers report
     /// rather than skip.
@@ -2517,7 +2517,7 @@ Some prose.
         // Non-vacuity: a scan that reached no lab would pass for ever.
         assert!(
             scanned >= 10,
-            "only {scanned} labs scanned \u{2014} the walk is broken, not the labs"
+            "only {scanned} labs scanned \u{2014} the run is broken, not the labs"
         );
         assert!(
             findings.is_empty(),
@@ -2582,15 +2582,15 @@ Some prose.
         // Every `finding <ID>` in the sources, with where it was written.
         let src = hrw.join("src");
         let mut cited: Vec<(String, String)> = Vec::new();
-        let mut walk = vec![src.clone()];
-        while let Some(dir) = walk.pop() {
+        let mut run = vec![src.clone()];
+        while let Some(dir) = run.pop() {
             for e in std::fs::read_dir(&dir)
                 .expect("src must be readable")
                 .flatten()
             {
                 let p = e.path();
                 if p.is_dir() {
-                    walk.push(p);
+                    run.push(p);
                     continue;
                 }
                 if p.extension().and_then(|x| x.to_str()) != Some("rs") {
@@ -2649,7 +2649,7 @@ Some prose.
     /// `CLAUDE.md`'s gate procedure greps the staged **paths**: anything under `src/`,
     /// `crates/`, `examples/` or `Cargo.toml` means FULL, and everything else means
     /// FAST. A lab edit is docs-only, so it returns FAST — **correctly, for the prose
-    /// that is most of a walk's output.** But the five `<!-- pane-* -->` tables in
+    /// that is most of a run's output.** But the five `<!-- pane-* -->` tables in
     /// `connect-expansion.md` are verified by *slow* tests, so editing one and running
     /// FAST means the verification does not happen: a green suite over an unchecked
     /// claim. **That is the silent wrong negative this repository treats as the error
@@ -2772,7 +2772,7 @@ Some prose.
     ///
     /// Until 2026-08-13, every *count* in a lab was read from a generated trace and was
     /// sound, while every *rendering* claim — what the groups are called, how many are in
-    /// each — was **unverified**, because Claude cannot see the GUI. Doug walked
+    /// each — was **unverified**, because Claude cannot see the GUI. Doug run
     /// `connect-expansion.md` against the real pane and found six disagreements in one
     /// sitting. Four of them were structure claims of exactly the kind this now checks.
     ///
@@ -2875,7 +2875,7 @@ Some prose.
             let sheet = equation_sheet
                 .unwrap_or_else(|| panic!("{specimen}: healthy specimen must have a sheet"));
 
-            // The pane's real groups, from the value the renderer walks.
+            // The pane's real groups, from the value the renderer runs.
             let real: Vec<(String, usize)> = sheet
                 .groups
                 .iter()
@@ -3452,7 +3452,7 @@ Some prose.
 
     /// **Equation text a lab quotes is text HRW actually renders.**
     ///
-    /// Doug, 2026-08-12, walking `connect-expansion.md`: *"the Connect sub-lab has this
+    /// Doug, 2026-08-12, running `connect-expansion.md`: *"the Connect sub-lab has this
     /// equation text: `f_x[19]  connection equation: src.p.v = R.p.v` but in the Flatten
     /// → Equations sub-tab that equation is shown with `0 = src.p.v - R.p.v`."*
     ///
@@ -3686,7 +3686,7 @@ Some prose.
         );
         assert!(
             missing.is_empty(),
-            "{} lab(s) the overview links into offer no way back to it, so walking the \
+            "{} lab(s) the overview links into offer no way back to it, so running the \
              chain means reopening the picker at every stop. Add \
              `[▲ The chain overview](hrw://lab/{})` after the H1 and in the closing \
              section: {:?}",
@@ -3773,7 +3773,7 @@ Some prose.
             if line.starts_with("## ") {
                 // The emoji-prefixed form the adjudication labs use — `## 📐 Station 1 — …`
                 // — is a stop too. Matching on "Station " rather than on a line prefix is
-                // what makes those four labs visible to this walk at all.
+                // what makes those four labs visible to this run at all.
                 if line.contains("Station ") {
                     stops.push((line.to_owned(), String::new()));
                 } else if let Some((_, body)) = stops.last_mut().map(|s| (&s.0, &mut s.1)) {
@@ -3827,7 +3827,7 @@ Some prose.
 
         assert!(
             checked >= 90,
-            "only {checked} stops were inspected across the corpus — the heading walk is \
+            "only {checked} stops were inspected across the corpus — the heading run is \
              broken, not the labs",
         );
         assert!(
@@ -4273,7 +4273,7 @@ Some prose.
     ///
     /// **Every existing checker would have passed it.** The id is well-formed, the
     /// equation exists, the link resolves, and no quoted text was wrong. Doug would
-    /// have walked to that stop, seen `der in f_x[14]` on screen, and had to work out
+    /// have run to that stop, seen `der in f_x[14]` on screen, and had to work out
     /// which of the two of us was mistaken — the precise failure this repository
     /// exists to prevent, since he cannot tell which parts are false.
     ///
@@ -4734,7 +4734,7 @@ Some prose.
     ///
     /// # Absence is where everything hides
     ///
-    /// Every checker in this file walks subjects — specimens, labs, stage files —
+    /// Every checker in this file runs subjects — specimens, labs, stage files —
     /// and every one of them has `continue` arms for subjects it cannot read. Those
     /// arms are invisible: the check reports what it *found*, never what it *passed
     /// over*, so a deleted trace or a renamed lab quietly shrinks coverage while the
@@ -4772,7 +4772,7 @@ Some prose.
             assert!(
                 self.inspected >= min_inspected,
                 "{what}: only {} subject(s) inspected, expected at least \
-                 {min_inspected} \u{2014} the walk is broken, not the corpus",
+                 {min_inspected} \u{2014} the run is broken, not the corpus",
                 self.inspected,
             );
             assert!(
@@ -4922,7 +4922,7 @@ Some prose.
     ///
     /// Doug, 2026-08-16: *"Eventually, I will want very much to add LoopWithInertia to
     /// the tearing lab, as you've recommended. Please ensure that we do that."* He is
-    /// walking the labs in compiler-phase order and is on Connections → DAE, so
+    /// running the labs in compiler-phase order and is on Connections → DAE, so
     /// tearing is weeks away. A promise made now, in a conversation, is exactly the
     /// thing `CLAUDE.md` says must live in the repository instead: *code whose
     /// rationale exists only in chat violates the rule the moment the session ends.*
@@ -4931,7 +4931,7 @@ Some prose.
     ///
     /// The act cannot simply be written today — `tearing.md` is still in its
     /// 2026-08-08 prose form, and the agreement is that a lab is converted **as Doug
-    /// walks it**, because the conversion is itself the teaching. So the commitment
+    /// runs it**, because the conversion is itself the teaching. So the commitment
     /// has to survive until that moment and fire precisely then.
     ///
     /// Conversion is detectable: a converted lab runs each act to a **Predict**. Only
@@ -4966,7 +4966,7 @@ Some prose.
         let predicts = text.matches("**Predict.**").count();
         let converted = predicts >= 2;
         if !converted {
-            // Not yet walked. Nothing to enforce, and saying so keeps the pass honest
+            // Not yet run. Nothing to enforce, and saying so keeps the pass honest
             // rather than silent.
             println!(
                 "tearing.md is not yet converted ({predicts} Predict marker(s)); the \
@@ -5274,15 +5274,15 @@ mod tests_orphaned_docs {
 
         let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");
         let mut files: Vec<(String, Vec<usize>)> = Vec::new();
-        let mut walk = vec![src.clone()];
-        while let Some(dir) = walk.pop() {
+        let mut run = vec![src.clone()];
+        while let Some(dir) = run.pop() {
             for e in std::fs::read_dir(&dir)
                 .expect("src must be readable")
                 .flatten()
             {
                 let p = e.path();
                 if p.is_dir() {
-                    walk.push(p);
+                    run.push(p);
                 } else if p.extension().and_then(|x| x.to_str()) == Some("rs") {
                     let rel = p
                         .strip_prefix(&src)
@@ -5298,7 +5298,7 @@ mod tests_orphaned_docs {
         // Non-vacuity: the scan reached the tree, not an empty directory.
         assert!(
             files.len() > 40,
-            "only {} source files scanned \u{2014} the walk is broken, not the tree",
+            "only {} source files scanned \u{2014} the run is broken, not the tree",
             files.len(),
         );
 
@@ -5628,7 +5628,7 @@ mod tests_guarded_regions {
         assert_eq!(
             guarded_regions(&before),
             guarded_regions(&after),
-            "a prose edit was reported as a guarded change, which would send every walk \
+            "a prose edit was reported as a guarded change, which would send every run \
              edit to the 220s gate",
         );
     }
@@ -5658,7 +5658,7 @@ mod tests_guarded_regions {
 
     /// **A marker whose table was deleted must not adopt the next table in the file.**
     ///
-    /// The bounded walk added 2026-08-22. Unbounded, `pane-groups` here would skip past
+    /// The bounded run added 2026-08-22. Unbounded, `pane-groups` here would skip past
     /// the prose and return the `pane-origins` rows, comparing one claim against another
     /// model's numbers and reporting confident nonsense.
     #[test]
@@ -5699,7 +5699,7 @@ mod tests_guarded_regions {
 /// `lab_panel` renders into `ScrollArea::both()`, and inside a scroll area with the
 /// horizontal axis enabled **a child that allocates beyond the `Ui`'s `max_rect`
 /// expands it for every later sibling**. So a table wider than the panel silently
-/// becomes the wrap width for every paragraph after it. Doug walked into it on
+/// becomes the wrap width for every paragraph after it. Doug run into it on
 /// 2026-08-28: *"prose does get wrapped, but only according to the width of the table
 /// which precedes it."*
 ///
@@ -5781,7 +5781,7 @@ fn no_lab_table_is_wider_than_the_panel() {
     // Non-vacuity: a scan that found no labs would pass while checking nothing.
     assert!(
         scanned >= 10,
-        "only {scanned} labs scanned; the walk is broken"
+        "only {scanned} labs scanned; the run is broken"
     );
 
     assert!(

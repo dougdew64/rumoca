@@ -169,7 +169,7 @@ fn scc_to_block(scc: &[usize], incidence: &Incidence, match_eq: &[Option<usize>]
 The block is emitted *in the order Tarjan returned the SCCs*. That order, as
 discussed in [Tarjan's drill-down](tarjan_scc.md#why-the-output-order-is-already-reverse-topological),
 is already correct for BLT — dependencies first. The downstream evaluator
-walks the resulting `Vec<BltBlock>` from index 0 upward.
+runs the resulting `Vec<BltBlock>` from index 0 upward.
 
 ---
 
@@ -198,7 +198,7 @@ adj[2] = [1]         // eq2 references v1 (owned by eq1)
 There is a 2-cycle between eq1 and eq2 (each references the other's owned
 variable), and eq0 is a producer for eq1.
 
-Tarjan walks the graph and emits two SCCs in reverse topological order:
+Tarjan runs the graph and emits two SCCs in reverse topological order:
 
 1. `[0]` — the scalar producer.
 2. `[1, 2]` (or `[2, 1]`) — the loop.

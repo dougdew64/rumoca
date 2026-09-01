@@ -117,7 +117,7 @@ for diagnostics.
 
 **Step 2**: `build_unknown_resolvers` creates two lookup structures -- one for
 `DerState` columns and one for `Variable` columns. These are used during
-expression walking to translate a variable name to its column index.
+expression running to translate a variable name to its column index.
 
 **Step 3**: For each equation in `dae.continuous.equations`, extract the set of
 unknown column indices that appear in its residual expression.
@@ -195,13 +195,13 @@ assert_eq!(triplets, vec![(0, 0)]);
 For each equation, the code calls `collect_equation_unknowns` (in
 `incidence.rs`), which uses several collectors:
 
-1. A `DerOperandCollector` walks the equation's RHS expression to find all
+1. A `DerOperandCollector` runs the equation's RHS expression to find all
    operands of `der(...)` calls, preserving subscripts so that `der(p[1])`
    resolves to the exact scalar `der` unknown rather than the un-subscripted
    base. These are resolved through the `der_resolver` to yield `DerState`
    column indices.
 
-2. `collect_expression_unknowns(expr, variable_resolver, &mut result)` -- walks
+2. `collect_expression_unknowns(expr, variable_resolver, &mut result)` -- runs
    every other variable reference in the expression and resolves them through
    `variable_resolver`.
 
@@ -282,7 +282,7 @@ every expression variant via its visitor methods:
 
 | Expression form | Action |
 |-----------------|--------|
-| `VarRef { name, subscripts }` | Resolve all indices for `name[subscripts]` via `resolve_var_ref_all`; also walk subscripts themselves (they may contain unknowns) |
+| `VarRef { name, subscripts }` | Resolve all indices for `name[subscripts]` via `resolve_var_ref_all`; also run subscripts themselves (they may contain unknowns) |
 | `Index { base, subscripts }` | If base is a `VarRef`, combine base and outer subscripts to form a canonical key like `u[1]`; otherwise recurse into base |
 | `Binary { lhs, rhs }` | Recurse into both sides |
 | `Unary { rhs }` | Recurse into rhs |

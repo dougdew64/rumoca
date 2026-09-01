@@ -95,7 +95,7 @@ Doug points, clicks and selects to assemble the *noun* — a specimen, a stage, 
 
 **Rank: accuracy outranks every other consideration in the instrumentation** — features, polish, performance, completeness of a pane, and the cost of a change to the Rumoca crates. Where the two conflict, the Rumoca change is the cheap option, because Decision 6's glass box is worth nothing if the glass distorts.
 
-**Rationale, from the failure that produced this decision.** On August 4, 2026, after a corpus-scale fidelity programme had reported 2,614 models green with zero violations, Doug walked the first two curriculum labs and found the observatory's log and UI carrying fictions: a named phase that does not exist, phases re-run and presented as the compilation, and decomposition blocks rendered for a system the compiler had refused to decompose. **The fidelity programme could not have caught any of them** — it verifies that a structure matches what Rumoca produced, and a fabricated structure is well-formed while a replay's output is identical by construction. Doug's statement of the principle:
+**Rationale, from the failure that produced this decision.** On August 4, 2026, after a corpus-scale fidelity programme had reported 2,614 models green with zero violations, Doug run the first two curriculum labs and found the observatory's log and UI carrying fictions: a named phase that does not exist, phases re-run and presented as the compilation, and decomposition blocks rendered for a system the compiler had refused to decompose. **The fidelity programme could not have caught any of them** — it verifies that a structure matches what Rumoca produced, and a fabricated structure is well-formed while a replay's output is identical by construction. Doug's statement of the principle:
 
 > *"My top priority continues to be education. HRW is merely a tool to help me learn. In order for me to learn about Rumoca, HRW must accurately represent Rumoca."*
 
@@ -174,24 +174,24 @@ the exception.
 
 **Decision 14 — A walk is a lab session, not a reading (adopted v1.10, September 1, 2026).** *Extends Decision 8 from the panes to the prose, and retires the model the lab rules were written for.*
 
-**Doug's words, September 1, 2026:** *"by adding the capture button, you've changed what a walk is. The conversational loop is now part of the walk. Our old notion of walks was not-interactive and was ineffective. Honestly, I want to entirely eliminate our previous notion of walks."*
+**Doug's words, September 1, 2026:** *"by adding the capture button, you've changed what a run is. The conversational loop is now part of the run. Our old notion of runs was not-interactive and was ineffective. Honestly, I want to entirely eliminate our previous notion of runs."*
 
 **The old model is retired, not deprecated.** It held that a lab's prose must stand alone: explain every term before use, pre-empt every question, be complete enough to read unaccompanied. **No part of it survives as a default.** A session encountering a rule that assumes self-sufficient prose should read that rule as superseded by this decision rather than reconcile the two.
 
-**What a walk is now.** The lab supplies three things: **the route** — which specimen, which pane, in what order; **the checkpoints** — predictions Doug commits to before looking; and **the claims**, which must be true and machine-checked. Claude supplies the explanation, on demand, at the point of confusion. **The prose no longer teaches; it provokes the exchange that teaches.**
+**What a run is now.** The lab supplies three things: **the route** — which specimen, which pane, in what order; **the checkpoints** — predictions Doug commits to before looking; and **the claims**, which must be true and machine-checked. Claude supplies the explanation, on demand, at the point of confusion. **The prose no longer teaches; it provokes the exchange that teaches.**
 
 **Claude therefore holds two roles, and they are not the same job** *(Doug's distinction)*:
 
 | role | when | responsible for |
 |---|---|---|
-| **lab guide** | before the walk | the route, the stops, the claims — everything checkable in advance |
-| **lab instructor** | during the walk | answering at the point of confusion, and watching what Doug does with the apparatus |
+| **lab guide** | before the run | the route, the stops, the claims — everything checkable in advance |
+| **lab instructor** | during the run | answering at the point of confusion, and watching what Doug does with the apparatus |
 
 **Conflating them is the failure to avoid.** A guide who tries to instruct in advance writes the textbook this decision retires; an instructor who only recites the route is not answering the question actually asked.
 
 **This is not a new idea, which is the argument for it.** [`vision.md`](vision.md) already holds that **the RHS is a lab, not an illustration**, and Decision 8 already holds that Doug assembles the *noun* by pointing while the *verb* is his own utterance. The panes have been a lab for a month; the labs were still a textbook. The 🎯 capture is Decision 8 realised for prose, and this decision is the consequence nobody had drawn.
 
-**AND THE HAZARD IT CREATES, which is binding.** A conversational walk delivers Claude's errors at the moment Doug is most receptive to them, in the register most likely to be believed — the *effective but false* quadrant, which he cannot detect precisely because it landed. **So Decision 7 governs here without exception: the lab's claims stay machine-checked even though Claude is present to answer.** Claude's presence is not a substitute for a checker; it is the reason one is needed.
+**AND THE HAZARD IT CREATES, which is binding.** A conversational run delivers Claude's errors at the moment Doug is most receptive to them, in the register most likely to be believed — the *effective but false* quadrant, which he cannot detect precisely because it landed. **So Decision 7 governs here without exception: the lab's claims stay machine-checked even though Claude is present to answer.** Claude's presence is not a substitute for a checker; it is the reason one is needed.
 
 **Decision 15 — Labs are labs, and Claude is the lab instructor (adopted v1.11, September 1, 2026).** *Decision 14 established what the activity is; this one gives it its name, and the name is not cosmetic.*
 
@@ -235,7 +235,7 @@ the exception.
 
 **The evidence is from the day this was adopted, and it runs both ways — which is why the decision is a distinction rather than a simple "fewer rules".**
 
-Six defects found in one sweep were **all the same shape**: prose doing by hand what a mechanism already did, and the hand copy was always the stale one — walk-tracking that survived its own repeal as prose, a directory described by a purpose it had never had, `Predict` counts outliving the checker that superseded them, three roster tables, and a duplicate created while fixing a pointer. **The mechanism was never the wrong one.**
+Six defects found in one sweep were **all the same shape**: prose doing by hand what a mechanism already did, and the hand copy was always the stale one — run-tracking that survived its own repeal as prose, a directory described by a purpose it had never had, `Predict` counts outliving the checker that superseded them, three roster tables, and a duplicate created while fixing a pointer. **The mechanism was never the wrong one.**
 
 And four failures the same day were caught by mechanisms rather than by capability, all Claude's: reaching for a shell-generated edit that would have corrupted silently; writing a bare `hrw://tour/` that a checker rejected, the third instance of that trap; a must-fire revert-and-check that confirmed a new guard actually fired; and proposing a name **one commit after recording the collision-check discipline and not running it**. None was a failure of just-in-time reasoning. Each was invisible from the inside at the moment it was made.
 
@@ -301,7 +301,7 @@ The observatory is built incrementally in curriculum order — the arc-1 version
 
 **To Purdue.** As of v1.1 this is the primary adjacency: the specimen robots serve the MS coursework directly, and the deterministic modeling competency is the substrate for the curriculum's later layers (estimation, control, planning). The archetype catalog remains the join table — compiler phases on one side, now robot subsystems rather than city geography on the other. Rerun (rerun.io), the egui-based robotics visualization tool co-owning egui_plot, is noted as the likely convergence point of this tooling lineage and the robotics toolchain. The Crazyflie-class drone, PX4/ArduPilot ecosystem, and SO(3)/stochastic material are the queued specimens of the deferred layer.
 
-**To HCW.** Demoted by v1.1 from instrument supplier to deferred beneficiary — shelved by the same charter mechanism that shelved Astro, intact and unforeclosed. The archetype catalog remains domain-blind: everything learned on robot specimens transfers to infrastructure specimens whenever HCW resumes, and the structure-first observation mode developed at the workbench is the same mode that will eventually walk the two cities. Astro, WASM embedding, and the published simulation site remain HCW's long-term architecture, untouched.
+**To HCW.** Demoted by v1.1 from instrument supplier to deferred beneficiary — shelved by the same charter mechanism that shelved Astro, intact and unforeclosed. The archetype catalog remains domain-blind: everything learned on robot specimens transfers to infrastructure specimens whenever HCW resumes, and the structure-first observation mode developed at the workbench is the same mode that will eventually run the two cities. Astro, WASM embedding, and the published simulation site remain HCW's long-term architecture, untouched.
 
 **To Rumoca upstream.** Contributions are a welcome byproduct, not an obligation. The differential rig and the initialization arc are the most likely sources. Contribution work follows the project's own gates (SPEC-governed invariants, MSL parity tests, the `rum` developer CLI).
 
