@@ -256,21 +256,10 @@ walked many times but *met* once, and that Doug had therefore partly spent his b
 treat re-reads as first encounters. Let's not worry so much about that first encounter stuff."* So
 it is a mild reason to make drafts good, not a resource to ration a walk around.
 
-### Why a textbook is correct and ineffective, and why that is not a failure of effort
+### Why a textbook is correct and ineffective
 
-**Doug, 2026-08-22:** *"A textbook is typically correct, but also typically ineffective. Our
-opportunity is to be correct and effective. And not merely generally effective, but personally
-effective."*
-
-**A textbook must work for a distribution of readers, and that forces three things on it:**
-**completeness** (it cannot know what you already know, so it says everything), **fixed order** (it
-cannot reorder for you), and **no feedback** (it cannot tell whether anything landed). **All three
-constraints are lifted here.** The opportunity is not to try harder than a textbook — it is that we
-are not solving the same problem.
-
-**And there is a correctness axis a textbook cannot reach.** A textbook is right about *Modelica in
-general*; a tour is right about **this compiler, on this model, in this run**, checked against a
-real compile. That is what makes "correct *and* effective" a target rather than a boast.
+**The argument lives in [`../vision.md`](../vision.md)**, with the rest of HRW's
+positioning against textbooks. **The rule it produces is below.**
 
 ### Tune to Doug's DURABLE profile, never to his transient state
 
@@ -698,6 +687,86 @@ implied by a table that had no counterpart, and a claim that two renderings of a
 lived in different panes when both are columns of the same row. Four of the six are now the
 kind a test catches.
 
+### A tour the overview links into must link back — with `hrw://`, twice
+
+**Doug, 2026-08-17:** *"There's a top-level tour which links to subordinate tours. I really want
+to be able to navigate backward from a subordinate tour to the top-level tour so that I can then
+navigate downward to another subordinate tour."*
+
+[`the-concepts.md`](the-concepts.md) is a **hub**: ten rows, each an `hrw://tour/<name>`
+link into a phase tour. Those links ran one way only, so walking the chain meant reopening the
+picker between every pair — with the hub sitting alphabetically among its own children, at
+position 21 of 23.
+
+**The convention is two back-links per tour**, and each placement answers a different moment:
+
+```markdown
+# Fixture tour — <phase>: <the idea>
+
+[The chain overview](hrw://tour/the-concepts)
+```
+
+- **After the H1** — for *"wrong tour, take me back"*, before any reading has happened.
+- **In the closing section** — `Or go back up: [The chain overview](hrw://tour/the-concepts)`
+  — for the reader who finished and wants the next phase.
+
+**AND THAT GOVERNS EVERY LINK IN A TOUR, NOT ONLY LINKS TO TOURS** — a rule stated three times
+about whichever file type was in front of us, and evaded three times by the next one:
+
+| to reach | write |
+|---|---|
+| another tour | `hrw://tour/the-concepts` |
+| a doc under `hrw/docs/` | `hrw://doc/upstream-issues.md` — nesting allowed |
+| **a source file, at a symbol** | `hrw://src/hrw/src/bridge.rs#resolve_source` |
+| a Wolfram notebook | `hrw://notebook/structural-vs-numerical-rank.nb` |
+| a web page | an ordinary `https://` link — **the browser is right here** |
+
+**Every code name a grounded tour states should be an `hrw://src` link** *(2026-08-31)* — Doug,
+pointing at *"`connections/mod.rs` uses union-find"*: *"This reference and others like it would be
+much more helpful as links to the code files in VS Code."* A name he cannot reach is a citation;
+one he can click is the source. **Name the symbol, never a line** — the line is computed at click
+time, so a link that resolves is right by construction, while `tech-debt.md`'s `worker.rs:3434`
+rotted inside a day. Functions, types, enum variants and struct fields all resolve.
+
+**This is the half that pays for grounding:** `fixture_tours_reference_files_that_exist` resolves
+every one in the FAST suite, so a renamed symbol fails a test rather than a walk.
+
+`doc_citations::no_tour_links_to_a_bare_file_path` fails on anything else, in the fast suite, on
+the day it is written; **the three defects and the reasoning live on that test**, not here.
+
+`doc_citations::every_tour_the_overview_links_to_links_back` derives the list from the overview's
+own links and reports the two failures separately, because *no way back* and *a way back that
+goes nowhere* look identical in a diff.
+
+**And the hub sorts first in the picker**, with a separator beneath it
+(`TourState::picker_order`). That was chosen over a dedicated "up" button because the transport
+bar already sets the panel's width floor and another control raises it — and because a capability
+tour has no parent to go up to, so the button would be dead most of the time.
+
+### The rules this rests on
+
+**One capability per tour, and keep it narrow.** The scarce resource is **attention per
+expectation**, not the number of walks. A wide tour consumes the surplus that produces
+off-stop findings rather than multiplying them, and a stop failure in a narrow tour implicates
+exactly one feature.
+
+**Every `**Expected:**` line must be violable.** Write what would be *different* if the
+feature broke — a number, a named field, "nothing moves", "the counter goes down". *"Mostly
+collapsed"* where the truth is **fully** collapsed tests nothing, and hedged expectations
+teach the reader to skim, which defeats the point.
+
+**An expectation must say WHERE to look**, not only what to look for. A stop was once
+correctly refused with the reason on screen, and reported as "nothing happened", because the
+tour never said notices live in the status bar.
+
+**Write the tour while you still know what should happen.** Both the worst expectations ever
+shipped here described behaviour Claude had *not* just built.
+
+**Past ten or so fixtures this needs a selection principle** — walk whatever just changed,
+plus one stale one — and **visible staleness**: nothing currently catches a tour whose
+*expectations* rot, only its links. "Last walked" is derivable from the `tour-link` entries in
+the action trail, and nobody has built it yet. <!-- unbuilt: last_walked -->
+
 ## The templates — one per kind
 
 **Every kind's template ends the same way: a claim that can fail.** What differs is how the stop
@@ -882,86 +951,6 @@ blurb trap twenty lines below has contradicted since 2026-08-22. Regenerate if a
   connectors to be type-compatible, and Rumoca does check. Four"*. Nothing about headings was
   involved. **A new intro section goes BELOW the tour's opening bold line**, or the catalogue's
   description of that tour changes with it.
-
-### A tour the overview links into must link back — with `hrw://`, twice
-
-**Doug, 2026-08-17:** *"There's a top-level tour which links to subordinate tours. I really want
-to be able to navigate backward from a subordinate tour to the top-level tour so that I can then
-navigate downward to another subordinate tour."*
-
-[`the-concepts.md`](the-concepts.md) is a **hub**: ten rows, each an `hrw://tour/<name>`
-link into a phase tour. Those links ran one way only, so walking the chain meant reopening the
-picker between every pair — with the hub sitting alphabetically among its own children, at
-position 21 of 23.
-
-**The convention is two back-links per tour**, and each placement answers a different moment:
-
-```markdown
-# Fixture tour — <phase>: <the idea>
-
-[The chain overview](hrw://tour/the-concepts)
-```
-
-- **After the H1** — for *"wrong tour, take me back"*, before any reading has happened.
-- **In the closing section** — `Or go back up: [The chain overview](hrw://tour/the-concepts)`
-  — for the reader who finished and wants the next phase.
-
-**AND THAT GOVERNS EVERY LINK IN A TOUR, NOT ONLY LINKS TO TOURS** — a rule stated three times
-about whichever file type was in front of us, and evaded three times by the next one:
-
-| to reach | write |
-|---|---|
-| another tour | `hrw://tour/the-concepts` |
-| a doc under `hrw/docs/` | `hrw://doc/upstream-issues.md` — nesting allowed |
-| **a source file, at a symbol** | `hrw://src/hrw/src/bridge.rs#resolve_source` |
-| a Wolfram notebook | `hrw://notebook/structural-vs-numerical-rank.nb` |
-| a web page | an ordinary `https://` link — **the browser is right here** |
-
-**Every code name a grounded tour states should be an `hrw://src` link** *(2026-08-31)* — Doug,
-pointing at *"`connections/mod.rs` uses union-find"*: *"This reference and others like it would be
-much more helpful as links to the code files in VS Code."* A name he cannot reach is a citation;
-one he can click is the source. **Name the symbol, never a line** — the line is computed at click
-time, so a link that resolves is right by construction, while `tech-debt.md`'s `worker.rs:3434`
-rotted inside a day. Functions, types, enum variants and struct fields all resolve.
-
-**This is the half that pays for grounding:** `fixture_tours_reference_files_that_exist` resolves
-every one in the FAST suite, so a renamed symbol fails a test rather than a walk.
-
-`doc_citations::no_tour_links_to_a_bare_file_path` fails on anything else, in the fast suite, on
-the day it is written; **the three defects and the reasoning live on that test**, not here.
-
-`doc_citations::every_tour_the_overview_links_to_links_back` derives the list from the overview's
-own links and reports the two failures separately, because *no way back* and *a way back that
-goes nowhere* look identical in a diff.
-
-**And the hub sorts first in the picker**, with a separator beneath it
-(`TourState::picker_order`). That was chosen over a dedicated "up" button because the transport
-bar already sets the panel's width floor and another control raises it — and because a capability
-tour has no parent to go up to, so the button would be dead most of the time.
-
-### The rules this rests on
-
-**One capability per tour, and keep it narrow.** The scarce resource is **attention per
-expectation**, not the number of walks. A wide tour consumes the surplus that produces
-off-stop findings rather than multiplying them, and a stop failure in a narrow tour implicates
-exactly one feature.
-
-**Every `**Expected:**` line must be violable.** Write what would be *different* if the
-feature broke — a number, a named field, "nothing moves", "the counter goes down". *"Mostly
-collapsed"* where the truth is **fully** collapsed tests nothing, and hedged expectations
-teach the reader to skim, which defeats the point.
-
-**An expectation must say WHERE to look**, not only what to look for. A stop was once
-correctly refused with the reason on screen, and reported as "nothing happened", because the
-tour never said notices live in the status bar.
-
-**Write the tour while you still know what should happen.** Both the worst expectations ever
-shipped here described behaviour Claude had *not* just built.
-
-**Past ten or so fixtures this needs a selection principle** — walk whatever just changed,
-plus one stale one — and **visible staleness**: nothing currently catches a tour whose
-*expectations* rot, only its links. "Last walked" is derivable from the `tour-link` entries in
-the action trail, and nobody has built it yet. <!-- unbuilt: last_walked -->
 
 ## Further reading
 

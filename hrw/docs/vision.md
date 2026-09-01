@@ -112,6 +112,26 @@ HRW owes him is the part a textbook cannot supply. The operational test — *an 
 place by predicting something the code does* — is in
 [`fixture-tours/README.md`](fixture-tours/README.md), with the worked cases.
 
+### Why a textbook is correct and INEFFECTIVE, and why that is not a failure of effort
+
+**Doug, 2026-08-22:** *"A textbook is typically correct, but also typically ineffective. Our
+opportunity is to be correct and effective. And not merely generally effective, but personally
+effective."*
+
+**A textbook must work for a distribution of readers, and that forces three things on it:**
+**completeness** (it cannot know what you already know, so it says everything), **fixed order** (it
+cannot reorder for you), and **no feedback** (it cannot tell whether anything landed). **All three
+constraints are lifted here.** The opportunity is not to try harder than a textbook — it is that we
+are not solving the same problem.
+
+**And there is a correctness axis a textbook cannot reach.** A textbook is right about *Modelica in
+general*; a tour is right about **this compiler, on this model, in this run**, checked against a
+real compile. That is what makes "correct *and* effective" a target rather than a boast.
+
+*(Moved here from `fixture-tours/README.md` on 2026-09-01. The textbook case was being
+argued in three places by then; this file is where HRW's positioning belongs, and the README keeps
+only the authoring rule it produces.)*
+
 ### The three surfaces have distinct jobs, and the RHS is a lab
 
 Doug's model, in his words:
