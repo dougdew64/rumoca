@@ -553,14 +553,24 @@ mechanical substitution. **This table is the target vocabulary, not a descriptio
 
 ## The kinds
 
-**Every kind has stops. What varies is the activity at them** — Doug's model, 2026-08-17.
+**Every kind has stations. What varies is the activity at them** — Doug's model, 2026-08-17.
+
+**ONLY ONE KIND IS RENAMED UNDER DECISION 15: `adjudication` → `calibration`.** It is the one whose
+old name explained nothing, and *calibration against a reference standard* is exactly what asking
+System Modeler is. **`concept`, `feature` and `failure` keep their names**, because Decision 15
+requires renaming what carries the *tour* metaphor and those three never did — they read correctly
+in a lab already. Three lab-native alternatives were proposed and **all three collided**:
+`experiment` is a **Modelica annotation**, `orientation` is rotational mechanics (184 in `crates/`),
+and `diagnosis` is Rumoca's compiler diagnostics (804). The charter carries the account under
+Decision 15. **Collision-check any candidate against `src/`, `crates/` and `specimens/` before
+proposing it.**
 
 | kind | the activity at a stop | goal |
 |---|---|---|
 | **concept** | prose → **Predict** → Look → confirm or reject | teach one step of the chain |
 | **feature** | **do** the action → check what happened | verify one HRW capability |
 | **failure** | **read** the diagnosis → check what it says | show what a broken model looks like |
-| **adjudication** | **ask another implementation** | settle what HRW cannot settle |
+| **calibration** *(was `adjudication`)* | **ask a reference implementation** | settle what HRW cannot settle |
 | **hub** | none — a table of links | route into the concept tours |
 | **ad hoc** | anything | answer the question just asked |
 | **bug report** | narrate a failure for a recording | hand a maintainer a reproduction <!-- unbuilt: bug_report_tour --> |
