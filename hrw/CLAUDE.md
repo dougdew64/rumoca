@@ -803,10 +803,9 @@ upstream — and *fatal to an unattended run*, since a prompt with nobody awake 
 from a hang), whether HRW is holding `hrw.exe`, the parsed-artifact cache, and the bridge
 extension. Blocking problems exit non-zero and name their fix.
 
-**ITERATING AND GATING ARE DIFFERENT ACTS, AND CONFLATING THEM COST DOUG TWO HOURS**
-*(measured 2026-08-15, from the session transcript)*. Of 274 minutes of compute that day,
-**172 went to `--features slow-tests` across 61 invocations** — 63 % of all waiting, for
-**six** commits. The gate itself is not the problem; running it thirty-odd times is.
+**ITERATING AND GATING ARE DIFFERENT ACTS, AND CONFLATING THEM COST DOUG TWO HOURS** *(measured
+2026-08-15: 172 of that day's 274 compute-minutes went to `--features slow-tests` across 61
+invocations, for six commits)*. **The gate is not the problem; running it thirty-odd times is.**
 
 ```text
 # ITERATE — while editing, and for every must-fire revert-and-check. ~10s.
@@ -820,16 +819,11 @@ cargo clippy -p hrw --all-targets                  # covers the BIN; check the e
 cargo test -p hrw --lib -- --test-threads=1
 ```
 
-**`--lib` ALONE SILENTLY SKIPS `tests/`, AND IT DID SO FOR AT LEAST ELEVEN DAYS**
-*(found 2026-08-16, when Doug asked whether every checker runs in the gate)*.
-`tests/msl_resolve.rs` — two tests proving the MSL dependency-loading path resolves
-`Modelica.*` references end to end — had not run in any pre-commit gate since at least
-2026-08-05. It passes, and costs **6.3 s**. Nothing was broken; nothing would have said so
-either.
-
-**Every target the gate names must be spelled out, because `--lib` is a filter and a filter
-is silent about what it removed.** `doc_citations::every_test_target_runs_in_the_documented_gate`
-now fails if a file appears in `tests/` that this command does not name.
+**EVERY TARGET THE GATE NAMES MUST BE SPELLED OUT, because `--lib` is a filter and a filter is
+silent about what it removed.** `--lib` alone skipped `tests/msl_resolve.rs` from every pre-commit
+gate for at least eleven days; nothing was broken and nothing would have said so.
+`doc_citations::every_test_target_runs_in_the_documented_gate` now fails if a file appears in
+`tests/` that the command does not name.
 
 **Deliberately still outside the gate**, and these are choices rather than oversights:
 
@@ -839,12 +833,11 @@ now fails if a file appears in `tests/` that this command does not name.
 | `examples/fidelity_msl`, `examples/survey_msl` | hours-long corpus sweeps with their own runbook and watchdog |
 | doc-tests | `cargo test -p hrw --doc` runs **0** tests; there is nothing there to lose |
 
-**The filtered line was missing from this file until 2026-08-15, and its absence is the whole
-story.** The gate table below answers *"which gate before I commit?"* and returns **FULL** for
-any `src/` change — correctly. But it was the **only** decision procedure written down, so it
-got applied after every edit as well, and there was no sanctioned cheap option to reach for
-instead. A rule that is right for its own question becomes wrong when it is the only rule
-present. **Switching feature sets is not why**: measured at 1–2 s, cargo keeps both variants.
+**The filtered ITERATE line was missing from this file until 2026-08-15, and its absence is the
+whole story.** The gate rule answers *"which gate before I commit?"* — correctly — but it was the
+**only** decision procedure written down, so it got applied after every edit too, with no
+sanctioned cheap option to reach for instead. **A rule that is right for its own question becomes
+wrong when it is the only rule present.**
 
 **ANNOUNCE THE COST BEFORE PAYING IT.** Before any command expected to exceed ~60 s, say what
 it is and roughly what it costs, so Doug can redirect *before* the wait rather than discover it.
@@ -861,21 +854,14 @@ difference. **Do not quote a timing it did not produce, and never subtract two t
 learn from the diff?** A finding, a decision, a correction, or work left owed. If yes, update the
 handoff box in *this* commit. If no — most commits — do nothing and move on.
 
-**It is standing authorisation, not a request to be granted.** This file already says *"Claude
-never needs permission for context maintenance"*, and Doug still had to prompt for it on
-2026-08-18 and twice on 2026-08-19: *"It seems that you should be performing context maintenance
-automatically. Are you not able to do that?"*
-
-**The cause, so the fix targets it.** Maintenance was being treated as a **task** — something
-done when asked — rather than a **step** in a sequence that already runs every time. And it
-competes for context budget against the work, which is exactly backwards: **the work is what gets
-lost without it.** A session that runs out of context having shipped code and no handoff has
-spent its budget on the half that a `git log` could partly reconstruct, and skipped the half that
-nothing can.
+**It is standing authorisation, not a request to be granted**, and it is a **step** in a sequence
+that already runs — not a task done when asked, which is the framing that had Doug prompting for
+it three times. A session that runs out of context having shipped code and no handoff spent its
+budget on the half a `git log` can partly reconstruct and skipped the half nothing can.
 
 **This is the same asymmetry the permission allowlist and the cost-announcement rules record:**
 Claude can see the need and does not feel the cost; Doug feels it and cannot see the need.
-Whenever that shape appears, the mechanism belongs on Claude's side.
+**Whenever that shape appears, the mechanism belongs on Claude's side.**
 
 **The pre-commit order is FMT, then GENERATE, then GATE — and it is an order, not a set.**
 `docs/architecture.md` carries module **line counts** derived from the source, so:
