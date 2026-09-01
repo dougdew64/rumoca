@@ -8,7 +8,7 @@ re-litigate one of its decisions in-session; amend the charter or accept it.
 
 **How Rumoca Works — a mastery project in the mathematics and computer science of modeling and simulating deterministic systems**
 
-*Adopted July 2, 2026. Amended to v1.1 on July 18, 2026 (Decision 2 rewritten: specimen systems changed from Chicago/Bloomington-Normal infrastructure to robot subsystems, for time-constraint and Purdue-alignment reasons; consequential edits throughout Sections 2, 4, 5, 6, and 7). **Amended to v1.2 on August 4, 2026: Decision 7 — Accuracy — added at Doug's direction, after fictions were found in the observatory's log and UI that the fidelity programme was structurally unable to detect. It is the first decision to state a rank against the others. Amended to v1.3 on August 5, 2026: Decision 8 — The instrument assumes the reasoner — recording the noun/verb formulation as a guiding principle and adopting its consequence as binding on what UI gets built. Amended to v1.4 the same day: Decision 9 — Minimize learning friction — stating the hierarchy education → accuracy → low friction, and that accuracy outranks friction where they conflict. Amended to v1.5 on August 24, 2026: Decision 7 gains a second justification — accuracy and consistency are preconditions of *Claude's* ability to reason about and maintain the codebase, not only of Doug's learning — and consistency is stated as a test subordinate to what it serves. Amended to v1.6 on September 1, 2026: Decision 10 — The documents are constitutional; conclusions are not rules — after a document review found that the only genuine rule-versus-rule contradiction in the governing documents existed solely because an earlier conversational conclusion had been written down as a rule.** Doug, principal. This charter is the HRW analog of the HCW Project Constitution: a standing statement of purpose, scope, method, and binding decisions, amended deliberately rather than drifted from.*
+*Adopted July 2, 2026. Amended to v1.1 on July 18, 2026 (Decision 2 rewritten: specimen systems changed from Chicago/Bloomington-Normal infrastructure to robot subsystems, for time-constraint and Purdue-alignment reasons; consequential edits throughout Sections 2, 4, 5, 6, and 7). **Amended to v1.2 on August 4, 2026: Decision 7 — Accuracy — added at Doug's direction, after fictions were found in the observatory's log and UI that the fidelity programme was structurally unable to detect. It is the first decision to state a rank against the others. Amended to v1.3 on August 5, 2026: Decision 8 — The instrument assumes the reasoner — recording the noun/verb formulation as a guiding principle and adopting its consequence as binding on what UI gets built. Amended to v1.4 the same day: Decision 9 — Minimize learning friction — stating the hierarchy education → accuracy → low friction, and that accuracy outranks friction where they conflict. Amended to v1.5 on August 24, 2026: Decision 7 gains a second justification — accuracy and consistency are preconditions of *Claude's* ability to reason about and maintain the codebase, not only of Doug's learning — and consistency is stated as a test subordinate to what it serves. Amended to v1.6 on September 1, 2026: Decision 10 — The documents are constitutional; conclusions are not rules — after a document review found that the only genuine rule-versus-rule contradiction in the governing documents existed solely because an earlier conversational conclusion had been written down as a rule. Amended to v1.7 the same day: Decision 11 — Four documents, and what decides where a thing goes — adopting Doug's division (his decisions in the charter, Claude's craft in CLAUDE.md, procedure in running-things.md, history in DECISIONS.md) and the who-authored-it test that routes between them.** Doug, principal. This charter is the HRW analog of the HCW Project Constitution: a standing statement of purpose, scope, method, and binding decisions, amended deliberately rather than drifted from.*
 
 ---
 
@@ -122,6 +122,31 @@ Doug points, clicks and selects to assemble the *noun* — a specimen, a stage, 
 **The consequence, binding: when uncertain, ask for a ruling rather than write a rule.** Doug: *"If ever you are uncertain when needing to make a decision, you can simply ask me for a ruling. As you wrote, what we really need is a better feedback loop, not more rules."* A ruling costs one exchange and binds one case; a rule costs a line in every future session and binds every case, including the ones nobody considered.
 
 **And this decision is why the charter is where it sits.** A rule about how rules are made is constitutional by construction, so it is amended deliberately and by Doug — which is also the only self-consistent way to adopt it, since adding it to a rules file would be an instance of the habit it forbids.
+
+**Decision 11 — Four documents, and what decides where a thing goes (adopted v1.7, September 1, 2026).** *The filing rule Decision 10 needs in order to be actionable.*
+
+**Doug's words: *"your decisions in the charter, my craft in CLAUDE.md, procedure in running-things.md, history in DECISIONS.md."***
+
+| document | holds | authored by |
+|---|---|---|
+| **`CHARTER.md`** | purpose, scope, and standing **decisions** | **Doug** |
+| **`CLAUDE.md`** | the working **craft** that binds every session | **Claude**, learned from defects |
+| **`docs/running-things.md`** | **procedure** — commands, gates, diagnostic tells | either; it is operational |
+| **`DECISIONS.md`** | **history** — what was ruled, when, and why | either; **it does not bind** |
+
+**THE ROUTING TEST IS WHO AUTHORED IT.** *Did Doug decide it, or did Claude learn it?* A thing may
+bind in all cases without being a decision of the principal: *"use the Edit tool, never a shell
+heredoc"* binds always and is craft, learned from three silent corruptions — putting it in the
+charter would make Doug the amender of Claude's working habits. Conversely *"do not optimise HRW to
+widen test scope"* binds because **Doug said so**, and belongs here however operational it sounds.
+
+**The failure this prevents is a decision of Doug's living in a rules file**, where Claude may
+compress, generalise or quietly supersede it in the course of ordinary maintenance. A charter
+decision can only be amended deliberately and by him — which is the whole point of having one.
+
+**And the corollary that makes Decision 10 usable: when something binds but is neither a decision
+nor craft, it is a RULING, and rulings go to `DECISIONS.md` or nowhere.** That is the default, not
+the exception.
 
 **Decision 6 — Instrumentation.** A Rust/egui observatory application, developed in Visual Studio Code with the Claude Code extension, with the VS Code debugger treated as a first-class learning instrument. The app loads a System Modeler-authored model, compiles it via Rumoca linked as a library (git/path dependency on the Rumoca workspace, since v0.8+ distributes binaries via GitHub releases rather than crates.io), and runs simulations — so that a breakpoint can be set inside a compiler phase while it processes a specimen. Your model, their phase, your breakpoint: the curriculum in one gesture.
 
