@@ -6419,11 +6419,26 @@ adopted on the day Decision 10 was adopted *against* promoting conclusions into 
 defensible — they are Doug's, and most absorbed craft that already existed elsewhere — but growth
 at that rate, in a document meant to be amended deliberately, is the signal rather than the content.
 
-**What a clean-up would need that the `CLAUDE.md` passes had.** Those worked because the test came
-from outside the document: Decision 16's three questions, applied one item at a time with Doug
-ruling on each. **The charter has no such test above it** — it *is* the authority — so the
-instrument has to be different, and is probably *does this decision still describe how the project
-actually works?* Decision 2 was falsified within seven weeks and no checker noticed.
+**THE METHOD IS DOUG'S, AND IT IS BETTER THAN THE ONE THIS ENTRY FIRST GUESSED AT** *(2026-09-01)*:
+*"For each item in the charter, I would ask you for your interpretation, and ask you if we could
+trim the item while preserving your interpretation."*
+
+**It tests what the text DOES rather than what it says.** A charter decision's job is to bind
+Claude's behaviour, so if his interpretation survives a trim the shorter text is doing the same
+work — and if it does not, the cut clause was load-bearing. It also inverts the problem that
+governed the `CLAUDE.md` passes: **Claude is not the judge here, he is the instrument.** His
+interpretation is the reading; Doug checks it against intent. Each side does only what it can.
+
+**Its one weakness, and the fix.** Claude cannot un-read the original, so his confirmation that a
+trim preserves his interpretation is partly reconstruction — the same shape as *he knows what he
+meant and cannot un-know it*. **The clean test is a fresh session**: hand it the trimmed decision
+with no access to the original and ask what it means. Same rule derived → the trim holds. Hedging
+or a question → the cut clause was carrying weight.
+
+*(This entry first proposed "does this decision still describe how the project actually works?"
+That is a staleness check, not a size check — still worth running, since Decision 2 was falsified
+within seven weeks and no checker noticed, but it is a different question from whether a decision
+can be shorter.)*
 
 **And Claude is the wrong judge here, more than for `CLAUDE.md`.** The charter is the one document
 only Doug may amend. Claude's part is the measurement — sizes, growth, which decisions nothing
