@@ -368,8 +368,21 @@ convince a PhD friend. Tune hard enough to one reader and nobody else can use th
 - **Never tune to transient state** — what he asked yesterday, what is on his screen now. That is
   genuinely personal and does not generalise.
 
-**And that split is the fixture/ad hoc split**, which is a good sign both are drawn in the right
-place: durable profile → fixture tour; transient state → ad hoc tour.
+**THE SPLIT IS BY ARTIFACT LIFETIME, AND THERE ARE NOW THREE CHANNELS** *(corrected 2026-09-01)*.
+It read *"durable profile → fixture tour; transient state → ad hoc tour"*, which was a clean
+mapping while those were the only two. Decision 14 added a third — **the conversation** — and it
+lands on the side this rule says never to tune to.
+
+| channel | lifetime | tune to |
+|---|---|---|
+| a fixture lab — its route, checkpoints and claims | months, re-read | **the durable profile** |
+| an ad hoc tour | seconds, discarded | the moment |
+| **an answer at the bench, after 🎯** | the exchange | **the moment — and that is the point** |
+
+**So the rule governs what OUTLIVES the moment, not what Claude may say in it.** What is on Doug's
+screen is precisely what a captured passage is *for*; tuning an answer to it is correct. **What must
+never absorb transient state is the artifact**, because it is read months later by someone — Doug
+included — who no longer has that screen.
 
 ### Drafting aims at "correct AND structurally disciplined", not at "correct"
 
