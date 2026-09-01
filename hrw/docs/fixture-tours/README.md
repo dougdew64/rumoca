@@ -621,38 +621,37 @@ lab by having you *read* the diagnosis.
 the shape of *every* tour, "applied as tours are touched" — which read as *"the other twelve are
 unconverted."* They are **differently designed**, and conversions stop at the concept tours.
 
-### Feature tours — the subject is HRW
+**WHICH LABS EXIST IS IN [`CATALOGUE.md`](CATALOGUE.md), WHICH IS GENERATED** by
+`cargo run -p hrw --example gen_tour_catalogue` and kept honest by
+`app::tests::tour_catalogue_is_current`. *(Three per-kind rosters lived here until 2026-09-01 and
+were deleted rather than corrected: the concept one listed **2** labs when there were **11**,
+omitting `connect-expansion` — the lab in active use. A generated roster already existed. What
+follows is what each kind **is**, which is a rule; membership is data.)*
 
-Each verifies one feature. A failed stop implicates exactly one thing.
+### Feature labs — the subject is HRW
 
-| Tour | Verifies |
-|---|---|
-| [`node-pointing.md`](node-pointing.md) | pointing at a tree node, and following an identifier |
-| [`frame-seeking.md`](frame-seeking.md) | stopping an animation on a given frame; addressing an equation |
-| [`camera-aiming.md`](camera-aiming.md) | whether the canvas camera lands where a link says |
+**Each verifies one feature. A failed station implicates exactly one thing.**
 
-### Adjudication tours — the subject is a question HRW cannot settle
+### Calibration labs *(was: adjudication)* — the subject is a question HRW cannot settle
 
-| Tour | Settles |
-|---|---|
-| [`structural-vs-numerical-rank.md`](structural-vs-numerical-rank.md) | full structural rank with numerical singularity — two stops in HRW, then a notebook |
-| [`the-oracle.md`](the-oracle.md) | a model Rumoca accepts and System Modeler rejects |
+**These mark every station with the instrument it uses** — 📐 HRW, ⚙ System Modeler, 🧮 Wolfram —
+so the activity varies *within* the lab, not only between labs. The convention was invented ad hoc
+and is written down because it turned out to be the clearest thing in the corpus. **Decision 15
+makes it obviously right rather than merely useful:** a calibration lab moves between instruments,
+so saying which one you are standing at is the point of the kind.
 
-**These mark every stop with the instrument it uses** — 📐 HRW, ⚙ System Modeler, 🧮 Wolfram — so
-the activity varies *within* the tour, not only between tours. The convention was invented ad hoc
-and is written down here because it turned out to be the clearest thing in the corpus.
-
-### Concept tours — the subject is the compiler, and HRW is the instrument
+### Concept labs — the subject is the compiler, and HRW is the instrument
 
 Each teaches one step of
 [`the-chain-of-problems.md`](../compiler-phases/the-chain-of-problems.md). **The prose is
-load-bearing** (Doug, 2026-08-03): a stop is the explanation, and the pane is the evidence for
-it. These are longer than a feature tour on purpose.
+load-bearing** (Doug, 2026-08-03): a station is the explanation, and the pane is the evidence for
+it. These are longer than a feature lab on purpose.
 
-| Tour | Teaches |
-|---|---|
-| [`dae-construction.md`](dae-construction.md) | how the flat model becomes states/algebraics/parameters + residuals, why the equation count must equal the unknown count, and what an unbalanced model actually means — with excursions to Wolfram and System Modeler |
-| [`matching.md`](matching.md) | **animation-based** — bipartite matching by augmenting-path search: greedy success, the moment the algorithm backs up and re-homes an earlier assignment, and a system that is square but structurally singular |
+**DECISION 14 QUALIFIES THAT, and the qualification is narrow.** The prose is load-bearing **for
+the prediction** — it must carry enough that Doug can commit to an answer before looking. The
+*explanation* now arrives at the bench when he asks. So "longer on purpose" survives as a
+statement about what a prediction costs to set up, **not as licence to explain in advance**;
+rules 8 and 12 govern the difference.
 
 **An animation-based tour pauses on algorithm *steps*, not panes.** Its links are
 `hrw://stage/<Stage>/<View>/frame/<n>`, and the frame numbers come from
