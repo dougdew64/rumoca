@@ -1072,6 +1072,13 @@ all**. The old advice was "run FULL", right about needing a compile and wrong ab
 tests. **Measured: 11.1 s (median of 3, spread 2.5 %) against ~101 s.** `cargo run -p hrw
 --example gate` selects it; `gate_policy::touches_a_verified_tour_region` decides.
 
+**AND A FULL GATE DURING A TOUR EDIT IS A BUG** — Doug, standing, the same day: *"unless we are
+adding a specimen, I will consider a full gate run during a tour edit to be a bug."* The cause is
+always the same and is never in `gate_policy`: **tour-facing DATA living in `src/`.** The gate says
+so when it sees the shape (`gate_policy::full_gate_on_a_tour_edit_is_suspect`, whose doc comment
+carries why it warns rather than aborts); the fix is to move the data to `docs/`, as
+`reading-budgets.txt`, `pinned-claims.txt` and the derived pane roster all were.
+
 **FAST is not "skip the tests"** — the doc and tour checkers are exactly what a docs-only change
 *can* break, and they are the cheap ones:
 

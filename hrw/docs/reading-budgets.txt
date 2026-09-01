@@ -133,7 +133,15 @@
 # tests verifying them against a real compile are slow-gated. Without that sentence the
 # row reads as an optimisation and gets skipped in favour of FULL, which is exactly the
 # habit it exists to break.
-mandatory = 1971
+# …then 1971 → 1978 on 2026-08-31, for Doug's standing ruling: "unless we are adding a
+# specimen, I will consider a full gate run during a tour edit to be a bug."
+#
+# Seven lines, and they buy the DIAGNOSIS rather than the rule. The rule alone would send
+# a session hunting in `gate_policy`, where the cause has never been — it is always
+# tour-facing DATA living in `src/`, which is what the budgets, the pinned claims and the
+# pane roster each turned out to be. Naming the cause and the three worked fixes is what
+# makes the next instance a five-minute move instead of a rediscovery.
+mandatory = 1978
 
 
 # ===========================================================================

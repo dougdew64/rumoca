@@ -68,6 +68,41 @@ pub fn touches_a_verified_tour_region<'a>(changed: impl IntoIterator<Item = &'a 
         .any(|p| p.starts_with("hrw/docs/fixture-tours/") && p.ends_with(".md"))
 }
 
+/// Is this diff the shape Doug ruled a **bug** on 2026-08-31?
+///
+/// > *"Going forward, unless we are adding a specimen, I will consider a full gate run
+/// > during a tour edit to be a bug."*
+///
+/// # Why this is a warning and not an assertion
+///
+/// The rule is about a **cause**, and the cause is not visible from paths. A tour edit that
+/// drags in `src/` is a bug because the `src/` file held **tour-facing data** — that was
+/// true of the reading budgets, the pinned claims and the `PANES` roster, all three of
+/// which moved to `docs/` the day the rule was made. But a session might legitimately fix
+/// an unrelated defect in the same commit, and failing the gate for that would be a rule
+/// enforcing tidiness rather than the thing it is for.
+///
+/// **So it fires a note at the moment the cost is about to be paid**, names the rule, and
+/// names the likely cause. That is the honest strength of the evidence: the shape is
+/// suspicious, not proof.
+///
+/// # The one sanctioned exception, detected rather than remembered
+///
+/// Adding a specimen genuinely needs FULL — a corpus-matrix baseline is established by a
+/// real compile, and `the_corpus_outcome_matrix_is_unchanged` is not in the TOUR gate. A
+/// diff that adds or edits a `specimens/*.mo` is therefore silent, which is exactly the
+/// carve-out Doug stated rather than a judgement about it.
+pub fn full_gate_on_a_tour_edit_is_suspect<'a>(changed: impl IntoIterator<Item = &'a str>) -> bool {
+    let paths: Vec<&str> = changed.into_iter().collect();
+    let edits_a_tour = paths
+        .iter()
+        .any(|p| p.starts_with("hrw/docs/fixture-tours/") && p.ends_with(".md"));
+    let adds_a_specimen = paths
+        .iter()
+        .any(|p| p.starts_with("hrw/specimens/") && p.ends_with(".mo"));
+    edits_a_tour && !adds_a_specimen && needs_full_gate(paths.iter().copied())
+}
+
 /// Does a change touch the path that decides **what HRW reports Rumoca did**?
 ///
 /// # Why this needs its own question
@@ -203,6 +238,35 @@ mod tests {
         // And FULL still wins outright: `tour` is only consulted when needs_full_gate is
         // false, but a caller that got that backwards would silently under-gate.
         assert!(needs_full_gate([tour, "hrw/src/worker.rs"]));
+    }
+
+    /// **The tour-edit-plus-`src/` shape is reported, and the specimen carve-out is not.**
+    ///
+    /// Both arms matter and a single assertion would hide one: a check that never fires is
+    /// indistinguishable from a clean repository, and a check that always fires is noise
+    /// that gets ignored — which is how a warning stops being read.
+    #[test]
+    fn a_tour_edit_that_drags_in_source_is_reported_unless_a_specimen_came_with_it() {
+        let tour = "hrw/docs/fixture-tours/connect-expansion.md";
+
+        assert!(
+            full_gate_on_a_tour_edit_is_suspect([tour, "hrw/src/doc_citations.rs"]),
+            "a tour edit that forces a src/ change is the shape Doug ruled a bug"
+        );
+        assert!(
+            !full_gate_on_a_tour_edit_is_suspect([
+                tour,
+                "hrw/src/doc_citations.rs",
+                "hrw/specimens/ScopedConnect.mo",
+            ]),
+            "adding a specimen is the one sanctioned reason, and it is DETECTED rather \
+             than remembered"
+        );
+
+        // A tour edit alone is not suspect — it is not even FULL.
+        assert!(!full_gate_on_a_tour_edit_is_suspect([tour]));
+        // Nor is `src/` work with no tour in it, which is the ordinary FULL case.
+        assert!(!full_gate_on_a_tour_edit_is_suspect(["hrw/src/app.rs"]));
     }
 
     /// **One `src/` file among twenty documents still means FULL.**

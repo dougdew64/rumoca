@@ -142,6 +142,22 @@ fn main() {
         );
     }
 
+    // **Doug's 2026-08-31 ruling, said at the moment the cost is about to be paid.**
+    // Not an abort: the shape is suspicious, not proof, and a session may have fixed an
+    // unrelated defect in the same commit. What it must not be is silent — every FULL
+    // gate he paid for during tour work that day came from tour-facing DATA living in
+    // `src/`, and each was invisible until the four minutes had already gone.
+    if hrw::gate_policy::full_gate_on_a_tour_edit_is_suspect(refs.iter().copied()) {
+        eprintln!(
+            "NOTE: this diff edits a tour AND touches src/, with no specimen added.\n\
+             Doug, 2026-08-31: \"unless we are adding a specimen, I will consider a full \
+             gate run during a tour edit to be a bug.\"\n\
+             The usual cause is tour-facing DATA in src/ that belongs in docs/ \u{2014} \
+             reading-budgets.txt, pinned-claims.txt and the derived pane roster were all \
+             this. Check before paying ~101 s.\n"
+        );
+    }
+
     let mut steps = vec![step(
         "fmt hrw",
         &["fmt", "-p", "hrw"],
