@@ -271,26 +271,9 @@ fails if the target resolves; its doc comment carries the four stale cases and w
 *negative* is the error nobody catches. Coverage is expected to be low — tag when you write the
 claim, the way provenance tags do.
 
-**REFACTOR FOR CLAUDE'S COMPREHENSION, NOT FOR A HUMAN'S** *(Doug, 2026-08-05 — standing
-policy)*. His words: *"no human being has yet needed to comprehend or maintain any functions
-[in HRW]. Instead, at least so far, you have been doing the comprehending and maintaining. …
-We will refactor HRW functions when doing so improves your ability to comprehend or maintain
-those functions, or will improve your ability to test those functions and keep them correct."*
-
-**So the trigger is one of three, and none of them is a line count:**
-
-1. Claude's **comprehension** of the code degrades.
-2. Claude's **ability to maintain** it degrades.
-3. A refactor would **improve testability** — the same rule
-   [`docs/format-and-app-plan.md`](docs/format-and-app-plan.md) already states: *no extraction
-   lands without a test that could not have been written before it.* **That rule governs
-   extracting a FUNCTION OR A TYPE and nothing else** — see its scope note, added after it was
-   read as governing a file-level move of a `#[cfg(test)]` module and deferred the largest,
-   safest step of the whole arc.
-
-**This is why the three complexity lints are declined** (`hrw/Cargo.toml` carries the full
-reasoning). They encode a human-comprehension heuristic, and enforcing it would reward splitting
-a function *to satisfy the lint* — extraction with no new seam and no new test.
+**WHEN TO REFACTOR is charter Decision 12(b)** — Claude's comprehension, his ability to
+maintain, or testability, and **never a line count.** The three complexity lints are declined
+for that reason (`hrw/Cargo.toml` carries it).
 
 ### Two signals that a file has outgrown what Claude can hold
 
@@ -340,38 +323,10 @@ to Rust and egui. The surface: **`canvas.rs`, `incidence_view.rs`, `matching_ani
 **now**. `docs/upstream-strategy.md` puts HRW itself last among deliverables, being the only one
 asking for maintenance burden.
 
-**DO NOT optimise HRW to widen test scope** (Doug, 2026-07-31 — standing boundary,
-[`docs/fidelity-plan.md`](docs/fidelity-plan.md)). Measurement showed HRW's *compile path*, not
-the checks, costs 30 s and 3.5 GB on a 4,193-equation model. Doug: *"we should not redesign
-worker.rs's compile path. Perhaps ever… If some models cannot be fidelity-tested within our
-limits, so be it."* The stage JSON trees, equation sheet, identifier index and animation frames
-**are the product**. Raising `-TimeoutSec` / `-MaxProcGB` when measurement justifies it is
-calibration, not optimisation, and is fine. **HRW is an education project, not a production
-tool.**
-
-**THE PROHIBITION IS REVISABLE ON EVIDENCE, AND "PERHAPS EVER" WAS HIDING THAT** *(Doug,
-2026-08-21)*: *"until we have an evidence-based reason to change our policy, let's maintain our
-prohibition against a redesign of worker.rs's compile path."* Unchanged in force — **and now
-carrying the condition under which it could change**, which the old phrasing gave a reader no way
-to find. That is the *"state what the rule does not forbid"* mechanism applied to this rule.
-
-**AND THE OPERATIONAL HALF, because this is where it will be got wrong: "evidence-based reason"
-means bringing the evidence to DOUG, never concluding in-session that the evidence authorises
-proceeding.** The live temptation is concrete — `#48` may measure MSL loading as the dominant test
-cost, and a session could read that finding as permission. **It is not.** The measurement is a
-finding; the policy change is Doug's call. **Splitting `worker.rs` into modules is not a redesign
-of the compile path** and needs no such permission; changing how the MSL session is loaded, cached
-or shared does.
-
-**Refactoring `worker.rs` therefore has a boundary `app.rs`'s never had: extract AROUND the
-compile path, do not restructure it.** `compile_target` (1,085 lines) will invite exactly that,
-and it is on record as hard to *test* because it takes `&mut self` and emits through a closure —
-**not because it is long.** That is a testability seam, which is the licensed kind.
-
-**The composition primitives are frozen** — one point-at + one follow + background, unchanged
-until a practical scenario demonstrates a need. Multiple `follow` items and a third "compare"
-primitive were considered and deliberately not built; **do not re-propose them from first
-principles.**
+**THREE STANDING PROHIBITIONS ARE CHARTER DECISION 12**, not craft, and only Doug amends them:
+**(a)** do not optimise HRW to widen test scope — and `worker.rs`'s compile path is extracted
+*around*, never restructured; **(b)** refactor for Claude's comprehension, never a line count;
+**(c)** the composition primitives are frozen. **Read the charter, not a summary.**
 
 **No heuristic name-matching** — [`docs/identity-and-provenance.md`](docs/identity-and-provenance.md).
 No substring search ever decides identity. Cited by six source files.
