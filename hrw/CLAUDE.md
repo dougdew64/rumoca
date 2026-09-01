@@ -424,50 +424,34 @@ commented 1,085-line function did not bite. `compile_target` is hard to *test* b
 `&mut self` and emits through a closure — **not because it is long.**
 
 
-**The human reader is Doug, and he named two scenarios** *(2026-08-05)*. They pull in opposite
-directions, so the policy is **two-tier**, not one rule:
+**The human reader is Doug, and he named two scenarios** *(2026-08-05)* that pull in opposite
+directions, so the policy is **two-tier**.
 
-**Scenario 1 — Doug reads to understand, and asks Claude.** *"I will need to gain a rough
-understanding of all of this HRW code which you have written… so long as you can answer my
-questions about the code which you wrote, then all will be well."*
+**Scenario 1 — he reads to understand and asks.** *"so long as you can answer my questions about
+the code which you wrote, then all will be well."* **The rule this creates is on CLAUDE, not on the
+code: always be able to answer.** Its consequence is that **the *why* must live in the repository,
+not in a conversation that scrolls away** — a comment, `DECISIONS.md`, or a doc. Code whose
+rationale exists only in chat violates this the moment the session ends, and it rules out
+constructs whose behaviour Claude would have to guess at.
 
-> **The rule this creates is on CLAUDE, not on the code: always be able to answer Doug's
-> questions about code you wrote.** Its practical consequence is that **the *why* must live in
-> the repository, not in a conversation that scrolls away** — a comment, `DECISIONS.md`, or a
-> doc. Code whose rationale exists only in chat violates this rule the moment the session ends.
-> It also rules out writing constructs whose behaviour Claude would have to guess at.
+**Scenario 2 — he edits the visualizations himself.** *"I will likely make changes to the code by
+myself and then request that you comprehend, improve and test the code which I've written."* Those
+files are therefore held to **human** comprehension, Doug specifically — decades of C/C++/Java, new
+to Rust and egui. The surface: **`canvas.rs`, `incidence_view.rs`, `matching_anim.rs`,
+`tarjan_anim.rs`, `spyplot.rs`**, plus any new custom-painted view. Four rules follow:
 
-**Scenario 2 — Doug edits the visualizations himself.** *"Eventually it will become impractical
-for me to describe to you the details of visualizations which I want… I will likely make changes
-to the code by myself and then request that you comprehend, improve and test the code which I've
-written."*
-
-> **The visualization files are held to HUMAN comprehension**, and Doug specifically: decades of
-> C/C++/Java, **new to Rust and egui** (`docs/working-with-doug.md`). Measured 2026-08-05, that
-> surface is **`canvas.rs`, `incidence_view.rs`, `matching_anim.rs`, `tarjan_anim.rs`,
-> `spyplot.rs`**, plus any new custom-painted view.
->
-> **The barrier there is idiom, not length.** A 203-line `draw_matrix` that is a linear sequence
-> of paint calls is the *easy* kind of code for a C++ programmer. What is hard is closures
-> capturing state, iterator chains standing in for loops, `impl Trait`, and borrow-checker
-> dances around `&mut Ui`. **Prefer the plain form in these files even when the idiomatic Rust
-> is terser**, and comment the egui idiom where it appears, because he is learning it here.
->
-> **Keep geometry named and single-sourced.** `tarjan_anim::equation_world_pos` is the pattern:
-> one function owning where a thing sits, so changing the layout is changing one place, and
-> drawing and camera-aiming cannot disagree.
->
-> **AND THE SHARP PROBLEM: these are the least-testable files in the project.** The
-> surfaces `egui_kittest` cannot reach are `incidence_view.rs` cells and `spyplot.rs`
-> — **exactly the code Doug will edit.** *(Scroll configuration was listed here as a third
-> and is not one; see the correction above.)* So the response is to
-> **push logic out of the paint path into checkable data**, as `Plot::problems()` and
-> `IncidenceMatrix::problems()` now do: a thin renderer over verified data means his edits land
-> on a small surface whose correctness he can see, rather than on parsing whose errors are
-> invisible. **When touching these files, move a computation out before adding one in.**
->
-> **This applies to new visualization code and to files as they are touched — not as a refactor
-> campaign.** Doug said *eventually*; building for it now would be speculation.
+- **The barrier is idiom, not length.** A linear sequence of paint calls is the *easy* kind of code
+  for a C++ programmer; closures capturing state, iterator chains, `impl Trait` and borrow-checker
+  dances around `&mut Ui` are not. **Prefer the plain form even when idiomatic Rust is terser**, and
+  comment the egui idiom where it appears.
+- **Keep geometry named and single-sourced** — `tarjan_anim::equation_world_pos` is the pattern, so
+  drawing and camera-aiming cannot disagree about where a thing sits.
+- **These are the least-testable files in the project**, and `egui_kittest` cannot reach
+  `incidence_view.rs` cells or `spyplot.rs` — **exactly the code he will edit.** So **push logic out
+  of the paint path into checkable data**, as `Plot::problems()` and `IncidenceMatrix::problems()`
+  do. **When touching these files, move a computation out before adding one in.**
+- **This binds as files are touched, never as a campaign.** He said *eventually*; building for it
+  now would be speculation.
 
 **The `crates/rumoca-*` instrumentation is not covered by any of this** and stays under
 `[workspace.lints]`, complexity lints included, because it is offered to human maintainers
