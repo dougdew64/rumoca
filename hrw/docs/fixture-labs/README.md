@@ -354,12 +354,10 @@ read that twice" is as useful said out loud at a stop as it is written against a
 resource to ration a walk around** — Doug, 2026-08-22: *"I often re-read articles and books, and
 sometimes treat re-reads as first encounters."*
 
-### Why a textbook is correct and ineffective
-
-**The argument lives in [`../vision.md`](../vision.md)**, with the rest of HRW's
-positioning against textbooks. **The rule it produces is below.**
-
 ### Tune to Doug's DURABLE profile, never to his transient state
+
+*(Why a textbook is correct and ineffective — HRW's whole positioning against textbooks — is in
+[`../vision.md`](../vision.md). This is the rule it produces.)*
 
 **The danger in "personally effective", and it cuts against Doug's own goal for
 `index-reduction.md`** — that it be *"the best demonstration of the value of this HRW project"* and
@@ -503,11 +501,17 @@ He is not the instrument.**
 
 **Run HRW (`cargo run -p hrw`), open Lab mode, pick one.** That is the whole of it.
 
-**THERE IS NO WALKING DISCIPLINE, AND THERE ARE NO OBLIGATIONS ON DOUG HERE** *(his ruling,
+**THERE IS NO SESSION DISCIPLINE, AND THERE ARE NO OBLIGATIONS ON DOUG HERE** *(his ruling,
 2026-09-01)*: *"that discipline was turning education into a chore, including frequent pesters from
 you about the need to walk labs."* **This section used to prescribe an order to click in and
-require him to report every mismatch however minor.** Both are gone. He runs a lab when he wants
-to, in whatever order he likes, and reports whatever he feels like reporting.
+require him to report every mismatch however minor.** Both are gone. **He runs a lab when he wants
+to, in whatever order he likes.**
+
+**What he reports is unowed, not unimportant** — and the distinction matters, because the first
+version of this paragraph said he *"reports whatever he feels like reporting"*, which is looser
+than what Doug ruled. He removed the **obligation**. He did not say the reports stop mattering:
+*"I couldn't have guessed that"* and *"I had to read that twice"* remain **the one signal Claude
+cannot generate**, and nothing replaces them.
 
 **The one thing worth knowing is apparatus, not procedure: notices appear in the STATUS BAR** along
 the bottom of the window. A reader who does not know where the readout is cannot read it — a real
@@ -535,6 +539,22 @@ the strongest evidence the metaphor fits rather than being imposed on it.
 `Predict` and `Expected` were already lab-native too. The full reasoning behind the original
 choice, and the four name collisions it uncovered, are in
 [`../lab-kinds-plan.md`](../lab-kinds-plan.md).
+
+**THE VERB IS `run`, AND THE SESSION IS A `session`** *(Doug's ruling, 2026-09-01, completing the
+table above)*. **`walk` was a tour word and the first rename missed it** — Decision 15 settled the
+nouns and never touched the verb, leaving ~350 occurrences in `docs/` and ~230 in `src/`. Charter
+Decision 14 had already named the replacement: *"a walk is a **lab session**, not a reading."*
+
+| was | is |
+|---|---|
+| *walk a tour* | **run a lab** |
+| *a walk* | **a lab session** |
+| `a_finished_walk_returns_to_the_mode_it_started_in` | `a_finished_session_…` |
+
+**AND `walk` COLLIDES EXACTLY AS `stop` DID, so the rename is surgical, never blind.** Two senses
+live in `src/`: the **lab session** (`test_set_walked_state`, *"a self-running walk, as the Play
+button does"*) and **traversal**, which must survive untouched — `walk_modules()`, `fn walk(dir:
+&Path)`, *"it walks the alias equations"*, *"walking into library class IR"*.
 
 **WHY `station` AND NOT `step`, so nobody re-proposes it.** This section exists because `stop`
 *collided*: a compile stops and a debugger stops. Any replacement had to survive that test, and
@@ -1167,4 +1187,4 @@ blurb trap twenty lines below has contradicted since 2026-08-22. Regenerate if a
 - 👤 [`../architecture.md`](../architecture.md) — how lab mode and the `hrw://` link
   vocabulary work
 - 👤 [`../../README.md`](../../README.md) — what HRW is, and the capture plan that keeps
-  screenshots honest by taking them at these stops
+  screenshots honest by taking them at these stations
