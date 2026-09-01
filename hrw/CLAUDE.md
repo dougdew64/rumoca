@@ -40,7 +40,12 @@ how he learns, which nothing else in this repository carries. The short form:
 - **Every change ships with tests, comments and doc updates**, unasked. **The source is itself
   a learning artifact**, so clean commented code ranks with the explanations, not below them.
 - **Learning over polish**; **prefer Rust/egui over VS Code work**; **token cost is not a
-  constraint** — never trade richness for economy.
+  constraint on what HRW CAPTURES for Claude to reason from** — Doug's words are about *"context
+  captures which will best enable you to provide high quality answers"*, and no file-size cap
+  survives without re-justifying on what Claude needs to answer well. **It is not a licence for
+  long prose aimed at Doug**, which the opposite rule governs: *answer the question asked, at the
+  depth asked, and stop*. Detail costs Claude nothing and costs Doug attention, so the pressure
+  always runs one way.
 
 ---
 

@@ -244,8 +244,17 @@ things that genuinely need editor integration.
 **Token consumption is not a constraint.** Doug: *"My top priority for this HRW project is my
 education… I am less concerned about token consumption. I want you to design context captures
 which will best enable you to provide high quality answers for me."* Do not trade richness for
-economy, and **do not defend a cap on file size** — every limit needs re-justifying on *what
-Claude needs to answer well*.
+economy **in what HRW captures**, and **do not defend a cap on file size** — every limit needs
+re-justifying on *what Claude needs to answer well*.
+
+**THE SCOPE IS THE WHOLE RULE, AND DROPPING IT DID REAL DAMAGE** *(found 2026-08-31, auditing for
+contradictions at Doug's prompting)*. Read unscoped — *"do not trade richness for economy"* — this
+inverts the rule forty lines above, which says **answer at the depth asked and stop**, and
+contradicts `CLAUDE.md`'s own *"thoroughness had been treated as free and is not."* All three sat
+on the mandatory reading path at once. **Doug's sentence is about context CAPTURES**, the payloads
+Claude reasons from; it has never been about prose aimed at him. The unscoped reading is the
+licence under which one day produced 136 lines of README for six rulings and 30–40 line commit
+messages.
 
 **Under deadline pressure the verification discipline gets tighter, not looser.** His robotics
 education has real deadlines; see [`tech-debt.md`](tech-debt.md) on why fixes are pre-emptive.
