@@ -398,15 +398,20 @@ naming them.
 
 **Every kind has stops. What varies is the activity at them** — Doug's model, 2026-08-17.
 
-| kind | tours | the activity at a stop | goal |
-|---|---|---|---|
-| **concept** | 10 | prose → **Predict** → Look → confirm or reject | teach one step of the chain |
-| **feature** | 3 | **do** the action → check what happened | verify one HRW capability |
-| **failure** | 6 | **read** the diagnosis → check what it says | show what a broken model looks like |
-| **adjudication** | 2 | **ask another implementation** | settle what HRW cannot settle |
-| **hub** | 1 | none — a table of links | route into the concept tours |
-| **ad hoc** | live | anything | answer the question just asked |
-| **bug report** | none yet | narrate a failure for a recording | hand a maintainer a reproduction <!-- unbuilt: bug_report_tour --> |
+| kind | the activity at a stop | goal |
+|---|---|---|
+| **concept** | prose → **Predict** → Look → confirm or reject | teach one step of the chain |
+| **feature** | **do** the action → check what happened | verify one HRW capability |
+| **failure** | **read** the diagnosis → check what it says | show what a broken model looks like |
+| **adjudication** | **ask another implementation** | settle what HRW cannot settle |
+| **hub** | none — a table of links | route into the concept tours |
+| **ad hoc** | anything | answer the question just asked |
+| **bug report** | narrate a failure for a recording | hand a maintainer a reproduction <!-- unbuilt: bug_report_tour --> |
+
+*(The per-kind tour counts were dropped on 2026-09-01. They were hand-maintained beside the tours
+they counted, and `concept` had already drifted from 10 to 11 with nothing to notice — the failure
+`CLAUDE.md` names as the cheapest in this repository to leave stale. `CATALOGUE.md` is generated
+and carries the current membership.)*
 
 **Each tour declares its kind machine-readably**, immediately under the H1:
 
