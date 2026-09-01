@@ -199,6 +199,94 @@ mod tests {
         );
     }
 
+    /// **Every relative markdown link in a governing document resolves.**
+    ///
+    /// The sibling above checks *backtick citations* — `` `src/app.rs` `` — and nothing
+    /// checked `[text](path)`. That gap let the tour → lab rename move
+    /// `docs/fixture-tours/` and leave **five broken links in `CLAUDE.md`** while the FULL
+    /// gate reported 915 tests green. It was found by grep, days later, and only because
+    /// someone happened to look.
+    ///
+    /// **`fixture_lab_links_all_resolve` covers the labs; the governing documents had no
+    /// equivalent** — which is exactly the asymmetry that makes a green run misleading:
+    /// the confidence a gate produces does not know what it failed to measure.
+    ///
+    /// **Skipped deliberately**, each because it is not a claim about a file in this repo:
+    /// `hrw://` links (the app resolves those, and `no_lab_links_to_a_bare_file_path`
+    /// governs their form), absolute URLs, bare `#anchor` fragments, and any target
+    /// containing a `<` placeholder such as `hrw://lab/<name>` — the metavariable trap that
+    /// has bitten this repository three times.
+    ///
+    /// **A link inside a code span is an EXAMPLE, not a link**, and is skipped. `DECISIONS.md`
+    /// quotes `` `[the-mathematics.md](the-mathematics.md)` `` while explaining why that form
+    /// was wrong; the file has since been renamed, and "fixing" the example would destroy the
+    /// account. Same family as the metavariable trap — text that *looks* like a live reference
+    /// because it is demonstrating one.
+    ///
+    /// **Non-vacuity is asserted**, because a link extractor that silently stops matching
+    /// would otherwise pass forever.
+    #[test]
+    fn every_markdown_link_in_a_governing_document_resolves() {
+        let mut broken: Vec<String> = Vec::new();
+        let mut checked = 0usize;
+
+        for doc in doc_files() {
+            let text = std::fs::read_to_string(&doc).unwrap_or_default();
+            let dir = doc.parent().unwrap_or(Path::new("."));
+            for line in text.lines() {
+                // A line whose links are all inside code spans is demonstrating markdown,
+                // not using it. Cheap test: strip `...` spans before extracting.
+                let mut outside = String::with_capacity(line.len());
+                let mut in_span = false;
+                for ch in line.chars() {
+                    if ch == '`' {
+                        in_span = !in_span;
+                    } else if !in_span {
+                        outside.push(ch);
+                    }
+                }
+                for target in markdown_link_targets(&outside) {
+                    // Not a claim about a file in this repository.
+                    if target.starts_with("hrw://")
+                        || target.starts_with("http://")
+                        || target.starts_with("https://")
+                        || target.starts_with("mailto:")
+                        || target.starts_with('#')
+                        || target.contains('<')
+                        || target.is_empty()
+                    {
+                        continue;
+                    }
+                    // A trailing `#anchor` names a heading, not a file.
+                    let path_part = target.split('#').next().unwrap_or(target);
+                    if path_part.is_empty() {
+                        continue;
+                    }
+                    checked += 1;
+                    if !dir.join(path_part).exists() {
+                        broken.push(format!(
+                            "{}: [..]({target})",
+                            doc.file_name().unwrap_or_default().to_string_lossy()
+                        ));
+                    }
+                }
+            }
+        }
+
+        assert!(
+            checked > 50,
+            "expected the governing documents to link freely; found only {checked} \
+             relative links, which means the extractor stopped matching rather than the \
+             documents stopped linking",
+        );
+        assert!(
+            broken.is_empty(),
+            "markdown links point at files that do not exist \u{2014} a rename moved the \
+             target and nothing said so:\n  {}",
+            broken.join("\n  "),
+        );
+    }
+
     /// A path that is part of a longer path is not a citation.
     ///
     /// Guards the false positive that made the first version unusable: a quoted panic

@@ -10,7 +10,13 @@ See `docs/CHARTER.md` for binding decisions; this file records the smaller calls
 > 2026-07-22 reading *"guided tours drive backlog prioritization"* is a true statement about what
 > was decided that day — rewriting it would have Doug deciding something he did not. Same rule that
 > keeps the deleted `end_to_end_tour.md` under its real name. **Read `tour` here as `lab`, `stop` as
-> `station`, and do not "fix" it.**
+> `station`, and do not "fix" it.
+>
+> **LINK TARGETS ARE THE EXCEPTION, and they were repointed on 2026-09-01.** A quotation is a claim
+> about what was said; **a link is a claim about where a file is *now*.** So the display text keeps
+> the historical name — `` [`docs/fixture-tours/README.md`](docs/fixture-labs/README.md) `` — while
+> the target follows the file. `doc_citations::every_markdown_link_in_a_governing_document_resolves`
+> fails by name if one stops resolving.**
 
 ## Arc 1 — Parse → Resolve → Typecheck
 
@@ -3184,7 +3190,7 @@ than a judgement about which tour is relevant now.
 
 **Doug:** *"The tours are fundamentally important for this HRW project. We have to get the concepts
 and names right."* The plan and its full reasoning are
-[`docs/tour-kinds-plan.md`](docs/tour-kinds-plan.md); this is the decision and what it cost.
+[`docs/tour-kinds-plan.md`](docs/lab-kinds-plan.md); this is the decision and what it cost.
 
 ### The unit is a stop, because the top-level noun is already "tour"
 
@@ -4567,7 +4573,7 @@ now becomes practical, because he can pull it on demand instead of meeting it un
 
 ### Where it is written down, and how it is applied
 
-Rules in [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md); pedagogy in
+Rules in [`docs/fixture-tours/README.md`](docs/fixture-labs/README.md); pedagogy in
 [`docs/vision.md`](docs/vision.md), under the I-do / we-do / you-do frame it modifies.
 
 **One tour at a time, as he walks it** — the existing conversion rule, unchanged. **`connect-expansion`
@@ -4639,7 +4645,7 @@ lesson — `node` exists precisely because Rumoca has none — so abstract model
 be **labelled as the reader's**. And the failure mode is *true, checkable and useless*: naming a
 type teaches nothing, while the contrast and the rationale are what land.
 
-**Recorded in [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md)** and applied first to
+**Recorded in [`docs/fixture-tours/README.md`](docs/fixture-labs/README.md)** and applied first to
 `connect-expansion`'s opening, at his request. The mandatory-reading budget rose 862 → 902 to hold
 it, with the reasoning on the constant.
 
@@ -4672,7 +4678,7 @@ exactly like a right one. Here there is Rumoca, and both participants can check.
 objections were each an **implementer's** question, the kind a textbook never answers. Recorded in
 [`docs/vision.md`](docs/vision.md) as HRW being a **complement** to textbooks; the operational test
 and its worked cases are in
-[`docs/fixture-tours/README.md`](docs/fixture-tours/README.md). Budget 913 → 930.
+[`docs/fixture-tours/README.md`](docs/fixture-labs/README.md). Budget 913 → 930.
 
 ## 2026-08-31 — the introduction builds the model, the stops reinforce or break it
 
@@ -4702,7 +4708,7 @@ set**, because `build_connection_sets` pushes flow inside the per-scope loop and
 That is a missing *challenging* stop, since the model predicts a `connect` yields its flow and
 potential equations together.
 
-Recorded in [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md) with the audit.
+Recorded in [`docs/fixture-tours/README.md`](docs/fixture-labs/README.md) with the audit.
 Budget 930 → 965.
 
 ## 2026-08-31 — an abstraction must also lose to the code's own noun, and graphs/nodes leave the tours

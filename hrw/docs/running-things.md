@@ -115,7 +115,7 @@ cargo test -p hrw --test msl_resolve --features slow-tests -- --test-threads=1
 ```
 
 **With HRW closed the combined line works** (measured 2026-08-22: 823 + 2, 128 s), which is why an
-unattended run requires it closed — see [`docs/unattended-runs.md`](docs/unattended-runs.md), **read
+unattended run requires it closed — see [`docs/unattended-runs.md`](unattended-runs.md), **read
 that before doing any work while Doug is asleep.**
 
 **`.hrw-bridge/lab.md` IS LIVE STATE, AND TESTS THAT PAINT MUST HOLD IT** *(2026-08-16, three
@@ -239,7 +239,7 @@ MSL. They are gated by `slow-tests` and reported as ignored *with a reason*. **P
 not the fix** — they serialize on a global `Mutex<WorkerState>` regardless, saving about two
 seconds; `docs/ideas.md` **#48** (memoize compiled specimens) is.
 
-**Long runs → [`docs/long-runs.md`](docs/long-runs.md)**, the runbook for the MSL survey and the
+**Long runs → [`docs/long-runs.md`](long-runs.md)**, the runbook for the MSL survey and the
 fidelity sweep: copy-paste commands, what to watch, how to resume, what each abort verdict
 means. *Why* each precaution exists is `docs/architecture.md` §11.
 
@@ -258,8 +258,8 @@ no-backtick-continuations rule, each with its account.
   machine would never have tripped.
 
 **THE LAST LARGE SWEEP IS DONE** — 2026-08-04/05, 2,614 green, zero violations. The run and its
-numbers are in [`docs/fidelity-plan.md`](docs/fidelity-plan.md) and
-[`docs/reports.md`](docs/reports.md); what a session needs from it is the **two standing limits**
+numbers are in [`docs/fidelity-plan.md`](fidelity-plan.md) and
+[`docs/reports.md`](reports.md); what a session needs from it is the **two standing limits**
 on what a green sweep means:
 
 **Representation is verified at corpus scale; equivalence at sample scale.** The sweep establishes
@@ -277,7 +277,7 @@ their scope. The flaw was reading a corpus-scale green as an answer to "is HRW f
 the noun/verb split must be stated with it.**
 
 **When the fidelity checks run** (policy 2026-07-31; reasoning in
-[`docs/fidelity-plan.md`](docs/fidelity-plan.md)). Small scale — the 16 curated specimens —
+[`docs/fidelity-plan.md`](fidelity-plan.md)). Small scale — the 16 curated specimens —
 **stays in the pre-commit run** (~90 s), answering *"did HRW drift from itself?"*, which is not
 a rare event: both bugs found on 2026-07-31 were HRW-internal drift, weeks old. Large scale gets
 its own feature gate. Run the large suite: **(1)** after rebasing on upstream (a step in
@@ -293,7 +293,7 @@ failure message and no MSL model produces an empty stage, so **F10's absence cla
 to act on** and its zero covers only the two near-tautological clauses. Absence is a property of
 *failing* compiles and the corpus has none. Another 8.5-hour sweep of the same corpus would
 re-confirm the same narrow zero; #46 is what turns it into coverage. See
-[`docs/fidelity-plan.md`](docs/fidelity-plan.md), "F10's first corpus run".
+[`docs/fidelity-plan.md`](fidelity-plan.md), "F10's first corpus run".
 
 ### A `crates/` CHANGE COSTS DOUG ONE FULL MSL RE-PARSE ON HIS NEXT LAUNCH — 2026-08-22
 
