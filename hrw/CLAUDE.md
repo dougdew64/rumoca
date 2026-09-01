@@ -661,9 +661,19 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >
 > ```text
 > cargo test -p hrw --lib -- --test-threads=1 doc_citations tour   # 6.1s -- while editing
-> cargo run -q -p hrw --example gen_tour_catalogue                 # 9.9s -- ONLY if a ## heading changed
-> cargo test -p hrw --lib -- --test-threads=1                      # 29.9s -- before the commit
+> cargo run -q -p hrw --example gen_tour_catalogue                 # 9.9s -- see the trigger below
+> cargo run -p hrw --example gate                                  # before the commit
 > ```
+>
+> **The third line is the RUNNER, not the plain fast suite** *(corrected 2026-08-31)*. It said
+> `cargo test -p hrw --lib` — which for a tour edit is the one gate that **cannot see the
+> change**, because the tests verifying guarded tables against a real compile are slow-gated off.
+> The runner picks TOUR for a tour edit (11.1 s) and FAST otherwise.
+>
+> **And the generator's trigger is not only a `##` heading** — that comment said `ONLY`, which the
+> blurb trap twenty lines below has contradicted since 2026-08-22. Regenerate if a `##` heading
+> **or the tour's first bolded line** moved; when in doubt run the checkers first and let
+> `tour_catalogue_is_current` tell you.
 >
 > **TWO TRAPS, both of which have cost the full 220 s gate before:**
 >
