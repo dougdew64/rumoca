@@ -389,11 +389,40 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > **Claude is the wrong judge of what to cut** and should supply evidence, not verdicts: this
 > history is the record of his own failures.
 >
-> **NEXT: tour rules that create friction**, then `docs/fixture-tours/README.md`. Nights 1-7 and
-> what each found are in [`docs/unattended-run-log.md`](docs/unattended-run-log.md); the nightly
-> document step is in [`docs/unattended-runs.md`](docs/unattended-runs.md), which owns both the
-> *restore, never choose* boundary and the finding that document drift is **same-day** — so the
-> risk window is hours, and a day of heavy mechanism change should end with a sweep.
+> **THE TOUR-RULE SWEEP IS DONE — 25 items, 2026-09-01.** Every rule in
+> [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md) was decided one at a time with Doug
+> ruling on each: 19 kept (most with a correction), 2 cut, 1 named the standing loop target, the
+> vocabulary settled, 2 renamed. **The dominant defect, found six times: a mechanism exists, prose
+> beside it does the same job by hand, and the hand copy rots.** The mechanism was never the wrong
+> one.
+>
+> **⟶ THE RENAME IS DECIDED AND NOT YET EXECUTED. THIS IS THE NEXT WORK.**
+>
+> Charter Decision 15 replaces the concept of tours with labs. **The vocabulary is settled** (rule
+> 16): **`lab` / `station` / `observation` / `instructor`** — `observation`, `Predict` and
+> `Expected` were already lab-native and do not move. Only `adjudication` → `calibration` among the
+> kinds; `concept`, `feature` and `failure` keep their names, and `experiment` / `orientation` /
+> `diagnosis` are **rejected on domain collisions** recorded under Decision 15.
+>
+> **Scope: ~3,750 occurrences** — 2,117 across 39 files in `src/`, 1,629 across 65 documents, plus
+> `hrw://tour/<name>` (**every link rewritten, no alias** — Doug's ruling), the `fixture-tours/`
+> directory path, `<!-- kind: -->` markers in 23 labs, and `.hrw-bridge/tour.md`, which is live
+> state the running app polls. **HRW must be closed for that last one**; Doug's standing
+> authorisation is that it stays closed whenever Claude says so, and the obligation is to say when
+> it may reopen.
+>
+> **Decision 15 binds the sequence and forbids a mechanical substitution.** The reimagining is done;
+> what remains is one atomic pass. **The skeletons in `The templates` still say `Stop N` on
+> purpose** — copied into new labs, they would otherwise produce labs disagreeing with the 23
+> existing ones. Do not fix them individually.
+>
+> **OPEN, and Doug has not ruled:** whether the pass runs in one sitting or is staged. Staging means
+> choosing where a half-renamed tree may rest, which Decision 15 calls worse than no rename.
+>
+> Nights 1-7 and what each found are in [`docs/unattended-run-log.md`](docs/unattended-run-log.md);
+> the nightly document step is in [`docs/unattended-runs.md`](docs/unattended-runs.md), which owns
+> both the *restore, never choose* boundary and the finding that document drift is **same-day** — so
+> the risk window is hours, and a day of heavy mechanism change should end with a sweep.
 >
 > **OWED, and both wait for the next `src/` errand rather than buying a gate of their own** —
 > [`docs/tech-debt.md`](docs/tech-debt.md), *"Owed sweeps"*. Doug ruled that on 2026-08-31.
