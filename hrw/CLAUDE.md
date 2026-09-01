@@ -623,17 +623,18 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
 - Architectural invariants are in Rumoca's numbered SPEC files; comments cite Modelica Language
   Specification sections. **Respect phase boundaries** — IR crates are pure data.
 
-## Architecture rules (charter §4.4, Decision 6)
+## Architecture craft
 
-- Rumoca is linked **as a library**, via path deps on `../crates/rumoca-*`. **Never shell out to
-  the Rumoca CLI.** A load-IR-from-JSON import path is retained as a secondary mode only.
-- Compilation and simulation run on a **worker thread**, results returned over a channel. The
-  egui `update()` loop never blocks and never calls the compiler or solver directly.
-- Native builds only. No WASM, no web deployment (charter Decision 5).
+*(What the charter settles — Rumoca linked as a library and never shelled out to, native builds
+only, no WASM — is Decisions 4, 5 and 6. **Read them there.** What follows is craft.)*
+
+- **The egui `update()` loop never blocks and never calls the compiler or solver directly.**
+  Compilation and simulation run on a worker thread, results returned over a channel.
 - **One generic serde-value tree inspector** pointed at every stage's IR — not per-stage bespoke
-  tree widgets. Graph and custom-painter views arrive in their own arcs.
-- **New pipeline stages must be wired into ALL per-stage systems** — stage-diff highlight,
-  stage-file publishing, and the notebook trace.
+  tree widgets.
+- **A new pipeline stage must be wired into ALL per-stage systems** — stage-diff highlight,
+  stage-file publishing, and the notebook trace. Miss one and the stage is silently half-present.
+
 
 ## Debugging conventions
 
@@ -645,42 +646,26 @@ set inside a Rumoca phase while it processes a specimen.
 - `[profile.dev.package]`: keep full debug info on all Rumoca crates.
 - Setup, launch config and failure signatures: [`docs/setup-windows.md`](docs/setup-windows.md).
 
-**WHEN DOUG IS AT A BREAKPOINT, READ `hrw/.hrw-bridge/debug-state.json`** *(built 2026-08-08,
-`docs/ideas.md` #72)*. **Claude cannot see a debug session** — #70 measured it: a stop yields no
-location, no stack and no values, and no tool exposes them. Stopping does surface the *file* via
-an `ide_opened_file` event, and a **selected** line arrives, but the running program's state does
-not. So the bridge extension publishes it: stack frames, the innermost location, and the locals of
-its most local scope.
+**CLAUDE CANNOT SEE A DEBUG SESSION.** A stop yields no location, no stack and no values to him,
+so when Doug is at a breakpoint the state comes from `.hrw-bridge/debug-state.json`, which the
+bridge extension publishes. **Check `writtenAtMs` and `seq` before believing any of it** — nothing
+deletes the file at shutdown, so a stale payload is the expected case and is indistinguishable from
+a current one by content alone. **How to read its fields, and the trap of substituting
+`breakpoint-request.json`, are in [`docs/running-things.md`](docs/running-things.md).**
 
-**Three rules for reading it, and the first is not optional:**
 
-- **CHECK `writtenAtMs` AND `seq` BEFORE BELIEVING ANY OF IT.** A payload from the *previous* step
-  is indistinguishable from a current one by content alone, and describing the wrong state
-  confidently is the exact failure this repository spends most of its rules on. Nothing deletes
-  the file at shutdown, deliberately — so a stale file is the expected case, not an anomaly.
-- **`variables: null` means NOT FETCHED**, with `variablesError` saying why. `[]` means fetched
-  and empty. Never report the first as "no locals".
-- **`frameCount` is the truth; `frames` may be capped** (`framesTruncated`). Depth matters:
-  for `augment_traced` the stack **is** the augmenting path — N nested frames is an N-edge
-  alternating path with each frame's `eq` a node on it.
+## Specimen craft
 
-**And do not substitute `breakpoint-request.json` for it.** That file holds the line HRW *asked*
-to arm, which at the live-trace anchor coincides with where Doug is stopped — so answering from it
-looks like working debugger vision until the day he stops somewhere else. #70 records this trap in
-full; **right often enough to be trusted is the failure mode.**
+*(The charter settles what a specimen IS — authored in System Modeler, portable Modelica subset,
+no MSL MultiBody, and the differential-comparison protocol: §4.1 and §4.3, Decisions 2 and 3.
+**Read them there.** What follows is craft.)*
 
-## Specimen rules (charter §4.3, §4.1)
-
-- Specimens live in `specimens/`, authored in Wolfram System Modeler, in the **portable Modelica
-  subset** — no Wolfram extensions. Done = compiles and runs equivalently in both.
-- **Every specimen carries a `// purpose:` comment** (one line, phenomenon-focused), plus a
-  `docs/specimen-notebook/<Model>/` trace and `purpose.md`.
-- **Scratch specimens live in `.hrw-bridge/specimens/`** — Claude writes them mid-conversation to
-  answer a question; HRW lists them within a second, no restart. **Not** held to the rules above,
-  and **ephemeral by construction**. **A scratch name may not shadow a curated one** — the
-  collision is reported and the file skipped, because silently loading a different model than the
-  name says would have Claude reason confidently about source Doug is not looking at.
-- **No MSL MultiBody.** Mechanical components come from our own small planar library.
-- Comparison protocol: identical solver tolerances and initial conditions, explicit `experiment`
-  annotations; agreement metric = relative error on state trajectories and event-time deltas.
-- **Prefer standards** — MSL and portable Modelica over custom implementations.
+- **Every specimen carries a one-line `// purpose:` comment**, phenomenon-focused, plus a
+  `docs/specimen-notebook/<Model>/` trace and `purpose.md`. **A new specimen must also be wired
+  into the corpus outcome baseline**, or `the_corpus_outcome_matrix_is_unchanged` fails by name.
+- **Scratch specimens live in `.hrw-bridge/specimens/`** — written mid-conversation to answer a
+  question, listed within a second, and **ephemeral by construction**, so they are not held to the
+  rules above.
+- **A scratch name may not shadow a curated one.** The collision is reported and the file skipped,
+  because silently loading a different model than the name says would have Claude reasoning
+  confidently about source Doug is not looking at.
