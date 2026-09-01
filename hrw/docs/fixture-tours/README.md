@@ -387,8 +387,12 @@ included — who no longer has that screen.
 ### Drafting aims at "correct AND structurally disciplined", not at "correct"
 
 **Doug predicts drafts will be mostly correct and mostly ineffective. Treat that as a
-prediction to fight, not a plan** — because first encounter is non-renewable, every avoidable
-weakness in a draft spends a measurement that cannot be got back.
+prediction to fight, not a plan** — because an avoidable weakness spends a walk on something a
+checker could have caught, and the walk is the scarce resource.
+
+*(This said "first encounter is non-renewable", which Doug overturned the same day and which the
+section above now records correctly: he often treats re-reads as first encounters. Corrected
+2026-09-01 — the two paragraphs were one section apart and said opposite things.)*
 
 Claude cannot measure effectiveness, but three **structural proxies** are available without Doug:
 
@@ -401,6 +405,11 @@ tour actually cost)*. The expensive part of that tour was never the iteration �
 Rumoca to check a claim**, writing two specimens, and running System Modeler. Those are Claude's
 hours, not Doug's, which makes them the cheapest available lever on every remaining tour: **every
 claim a draft makes should be checked against the source before Doug ever sees it.**
+
+**AND UNDER DECISION 14 IT BUYS A SECOND THING: THE ANSWER AT THE BENCH.** A claim verified while
+drafting is a claim Claude can *answer from* when Doug captures the sentence and asks — grounded,
+rather than reconstructed on the spot in front of him. **Pre-draft verification is therefore the
+only preparation the conversation gets**, since nothing checks it live.
 
 **The line, and it is easy to cross in the name of thoroughness:** verification targets *claims the
 tour makes*, never *questions the tour does not raise*. Doug's connector-type question — **can a
