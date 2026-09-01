@@ -4738,3 +4738,36 @@ README states what a tour writer must *do*, in as few lines as the rule survives
 holds Doug's words, the evidence, and what each ruling cost. The README's pedagogy section came
 back from **990 to 918 lines** on the day this was noticed — the first downward move of any budget
 that day.
+
+## 2026-08-31 — the reading-path ratchet is retired for ceilings plus nightly maintenance
+
+**Doug:** *"we seem to be constantly battling budgets. Doing so has become its own source of
+friction. We created those budgets to protect against hitting a documents wall. But, we never
+actually predicted where that wall was or how close we are to it."*
+
+**The measurement settles it.** Fifteen raises in one day, **zero rejections** — a gate that never
+rejects is billing, not filtering, and the documents grew anyway. The *"set at the achieved value,
+never leave slack"* rule made it worse rather than better: three **downward** adjustments that
+afternoon each moved the next toll closer, which Doug spotted before Claude did. And the file
+enforcing it had reached **353 lines — longer than three of the four documents it guarded.**
+
+**Three things changed.**
+
+**The unit.** Characters, not lines. `CHARTER.md` runs 182 chars/line against `docs/README.md`'s
+75, so the line budget had been treating 164 lines of the first as cheaper than 149 of the second —
+backwards by nearly three to one. Characters approximate tokens, which is the cost actually paid.
+
+**The number.** The old targets were *"approved by Doug"*, never derived. The mandatory path is now
+capped at **a quarter of a 200k context** (200,000 chars ≈ 50k tokens); it sits at 151,725, or 75 %.
+**A ceiling is not a target and is never re-tightened to the achieved value** — that rule is what
+converted every addition into a toll.
+
+**The watching.** Moved off the workday and onto the night: `examples/doc_report`, a standing step
+in every unattended run. It reports sizes against ceilings **and cross-document duplication of
+400+ character passages** — which is the variable that actually failed, since the growth that
+started all this was four rulings written into two files each. It **never edits**: deduplicating
+and retiring closed history are unattended work, trimming an explanation is Doug's.
+
+Recorded in [`docs/unattended-runs.md`](docs/unattended-runs.md); the derivation is in
+[`docs/reading-budgets.txt`](docs/reading-budgets.txt), whose 353 lines of raise-history were
+deleted rather than migrated — it was the record of a retired mechanism.

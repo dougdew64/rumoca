@@ -125,6 +125,48 @@ Absolute, regardless of how safe it looks at 3 a.m.:
 - **`docs/upstream-issues.md` P1**, and anything else awaiting a Doug protocol.
 - **Pushing.**
 
+## DOCUMENT MAINTENANCE RUNS EVERY NIGHT — it is not an item, it is a standing step
+
+**Doug, 2026-08-31**, retiring the per-commit budget ratchet: *"rather than fighting budget
+battles several times during a workday, perhaps we can do document clean-up every night during
+that night's unattended run. And, if during a document cleanup you determine that we're about to
+hit a document wall, then we can pause and work together to trim documents."*
+
+**So it runs on every unattended night, before the night's actual item, and it is one command:**
+
+```text
+cargo run -p hrw --example doc_report
+```
+
+It prints every reading path's size against its **ceiling** (`docs/reading-budgets.txt`, derived —
+the mandatory path is capped at a quarter of a 200k context) and lists **passages of 400+
+characters appearing in more than one document**. Exit **0** means nothing is needed; **1** means
+the morning starts here.
+
+**Why duplication and not just size.** The growth that caused the whole budget problem was never a
+document getting long — it was **the same prose in two files**, four rulings written into both
+`DECISIONS.md` and `fixture-tours/README.md` on one day. A size check sees that as "a document
+grew" and bills for it; this sees the thing itself.
+
+### What the night may do, and what waits for Doug
+
+`CLAUDE.md` already authorises Claude to reorganise and condense documents without asking. **The
+line is the same one that governs tour prose: an explanation is Doug's learning material, so
+trimming one is his call.**
+
+| do it unattended | leave it for Doug |
+|---|---|
+| retire closed history to `DECISIONS.md` | trim or reword an explanation |
+| delete a duplicated passage, keeping one | restructure a README |
+| fix a stale claim or a dead link | anything that crosses a ceiling |
+
+**`doc_report` never edits**, deliberately. A sweep that both decides and acts, unwatched, on
+documents whose value is judgement is exactly what Doug reserved to himself. It reports; the night
+acts within the left column; a ceiling crossing goes in the run log and waits.
+
+**A ceiling crossing is not a licence to raise the ceiling.** That was the ratchet, and it charged
+fifteen tolls in one day while rejecting nothing.
+
 ## What IS good unattended work
 
 Chosen because the `app.rs` arc measured it, not because it sounds safe:

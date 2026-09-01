@@ -2132,98 +2132,73 @@ Some prose.
     ///
     /// # Raising a budget is allowed; raising it SILENTLY is not
     ///
-    /// The `app_does_not_regrow_its_field_count` contract. **Both budgets are set at the
-    /// achieved values**, so any growth fails by name and arrives with its reasoning in
-    /// the same commit. Doug's approved targets were 1,900 and 250; the last ~11 and ~13
-    /// lines were left rather than compress rationale, which is where real loss happens.
+    /// # Ceilings, not ratchets — retired the ratchet 2026-08-31
+    ///
+    /// Each budget used to be set at the **achieved** value, so any growth failed and
+    /// arrived with a written justification. Doug retired it: *"we never actually
+    /// predicted where that wall was or how close we are to it."*
+    ///
+    /// **Fifteen raises in one day, zero rejections.** A gate that never rejects is
+    /// billing, not filtering — and the documents grew anyway. The *"never leave slack"*
+    /// rule made it actively worse: three **downward** adjustments that afternoon each
+    /// moved the next toll closer. Meanwhile the file enforcing it had reached 353 lines,
+    /// longer than three of the four documents it guarded.
+    ///
+    /// # Characters, because lines mismeasured by 2.7x
+    ///
+    /// `CHARTER.md` runs 182 chars per line against `docs/README.md`'s 75, so the line
+    /// budget treated 164 lines of the first as cheaper than 149 of the second.
+    /// [`crate::doc_sizes`] carries the roster and the measurement.
+    ///
+    /// # What replaces it
+    ///
+    /// Wide ceilings **derived** in `docs/reading-budgets.txt` — the mandatory path capped
+    /// at a quarter of a 200k context — plus nightly growth and duplication reporting by
+    /// `examples/doc_report`. **Crossing a ceiling is not a licence to raise it.** It means
+    /// the documents need work, and trimming an explanation is Doug's call, so the nightly
+    /// report escalates rather than deciding.
     #[test]
     fn the_mandatory_reading_path_stays_small() {
-        /// Every file a session must read before acting, relative to `hrw/`.
-        const MANDATORY: &[&str] = &[
-            "CLAUDE.md",
-            "docs/working-with-doug.md",
-            "docs/CHARTER.md",
-            "docs/README.md",
-        ];
-        let mandatory_budget = budget("mandatory"); // docs/reading-budgets.txt
-        let current_work_budget = budget("current_work"); // docs/reading-budgets.txt
-
-        /// **Tier 2 — conditionally mandatory**, and the hole tier 1 left open.
-        ///
-        /// `CLAUDE.md` says to read `fixture-tours/README.md` before writing or
-        /// converting a tour, so it is mandatory *for tour work* — and it grew **101
-        /// lines on 2026-08-22 alone**, entirely outside tier 1's budget. Prose that
-        /// cannot grow in `CLAUDE.md` will otherwise grow here instead, which is
-        /// displacement rather than reduction.
-        const CONDITIONAL: &[&str] = &[
-            "docs/fixture-tours/README.md",
-            // Read before any work done while Doug is asleep, and the one document
-            // whose reader has nobody to ask — so it is budgeted from the day it
-            // lands rather than after it grows.
-            "docs/unattended-runs.md",
-        ];
-        let conditional_budget = budget("conditional"); // docs/reading-budgets.txt
-
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let mut total = 0usize;
         let mut rows: Vec<String> = Vec::new();
-        for rel in MANDATORY {
-            let text = std::fs::read_to_string(hrw.join(rel))
-                .unwrap_or_else(|e| panic!("{rel} is on the mandatory reading path: {e}"));
-            let n = text.lines().count();
-            // Non-vacuity: a path that resolved to something tiny would let the budget
-            // pass while measuring the wrong file.
-            assert!(n > 50, "{rel} has only {n} lines \u{2014} wrong file?");
+        let mut total = 0usize;
+        for rel in crate::doc_sizes::MANDATORY {
+            let n = crate::doc_sizes::chars_of(&hrw, rel);
             rows.push(format!("{rel}: {n}"));
             total += n;
         }
 
-        let claude = std::fs::read_to_string(hrw.join("CLAUDE.md")).expect("CLAUDE.md");
-        let current_work = claude
-            .lines()
-            .skip_while(|l| !l.starts_with("## Current work"))
-            .skip(1)
-            .take_while(|l| !l.starts_with("## Running things"))
-            .count();
+        let current_work = crate::doc_sizes::current_work_chars(&hrw);
+        let ceiling = budget("current_work");
         assert!(
-            current_work > 20,
-            "the `## Current work` section was not located \u{2014} its heading or the \
-             one after it was renamed, and this check is measuring nothing"
-        );
-
-        assert!(
-            current_work <= current_work_budget,
-            "`## Current work` is {current_work} lines, budget {current_work_budget} \
+            current_work <= ceiling,
+            "`## Current work` is {current_work} chars, ceiling {ceiling} \
              (docs/reading-budgets.txt).\n\n\
-             That section holds what is IN FLIGHT. A closed arc belongs in DECISIONS.md \
-             with a link from here, never restated \u{2014} which is how it reached 882 \
-             lines and 45 % of the file. If this really is live work, raise the budget in \
-             THIS commit, with the reasoning appended to its block in that file.",
+             A ceiling is not a target and must NOT be raised to fit \u{2014} that is the \
+             ratchet this replaced. The section holds what is IN FLIGHT; a closed arc \
+             belongs in DECISIONS.md with a link from here.",
         );
 
+        let ceiling = budget("mandatory");
         assert!(
-            total <= mandatory_budget,
-            "the mandatory reading path is {total} lines, budget {mandatory_budget} \
+            total <= ceiling,
+            "the mandatory reading path is {total} chars, ceiling {ceiling} \
              (docs/reading-budgets.txt):\n  {}\n\n\
-             Every session reads all of it before its first action, so this is the number \
-             that decides whether the documents become unreadable. Move closed history to \
-             DECISIONS.md, or raise the budget in THIS commit, with the reasoning appended \
-             to its block in that file.",
+             A ceiling is not a target and must NOT be raised to fit. Past it a session \
+             spends more on preamble than any document is worth, and the answer is \
+             restructuring \u{2014} which is Doug's call, not a number's.",
             rows.join("\n  "),
         );
 
-        for rel in CONDITIONAL {
-            let text = std::fs::read_to_string(hrw.join(rel))
-                .unwrap_or_else(|e| panic!("{rel} is conditionally mandatory: {e}"));
-            let n = text.lines().count();
-            assert!(n > 50, "{rel} has only {n} lines \u{2014} wrong file?");
+        let ceiling = budget("conditional");
+        for rel in crate::doc_sizes::CONDITIONAL {
+            let n = crate::doc_sizes::chars_of(&hrw, rel);
             assert!(
-                n <= conditional_budget,
-                "{rel} is {n} lines, budget {conditional_budget} \
-                 (docs/reading-budgets.txt).\n\n\
-                 It is read before any tour work, so it is mandatory when it matters. \
-                 Prose barred from CLAUDE.md must not simply reappear here \u{2014} that \
-                 is displacement, not reduction.",
+                n <= ceiling,
+                "{rel} is {n} chars, ceiling {ceiling} (docs/reading-budgets.txt).\n\n\
+                 Read before one kind of work, so mandatory when it matters. Past this it \
+                 is not read before a task, it is consulted \u{2014} which means it wants \
+                 splitting, not a bigger number.",
             );
         }
     }
