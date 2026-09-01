@@ -12,7 +12,7 @@ code never says what it is *for*.
 A constant-torque motor driving a rotor through an ideal 5:1 gear to a spring-damped load, with
 a braking torque engaged by a `when` clause above a speed threshold.
 
-Authored as an **end-to-end tour** specimen: the gear constraint forces index reduction while the
+Authored as an **end-to-end lab** specimen: the gear constraint forces index reduction while the
 brake logic forces discrete events, so one model does nontrivial work in structural analysis,
 index reduction *and* events.
 

@@ -77,7 +77,7 @@ UI, and confusing them has twice threatened a working feature:
   because that is what the user asked for. It is correct and must not be "fixed".
 
 **Judge by where the frames came from, never by the word.** Without this written down a later
-session reads *"the reduction replay"* in a tour and either removes a working feature or concludes
+session reads *"the reduction replay"* in a lab and either removes a working feature or concludes
 the fictions were dealt with and stops looking.
 
 **AND A LARGE GREEN RESULT COVERS THE TERRITORY IT MEASURED AND NO MORE, WHILE THE CONFIDENCE IT
@@ -275,7 +275,7 @@ for that reason (`hrw/Cargo.toml` carries it).
 
 ### DEFAULT TO TEACHING, NOT TO BUILDING — a standing instruction, not a mood
 
-**Doug, 2026-08-08:** *"I will finally begin a serious walk through the tours and try to shift our
+**Doug, 2026-08-08:** *"I will finally begin a serious walk through the labs and try to shift our
 conversation to be about my education rather than about HRW features."* And the reason, which
 should not need saying twice: *"We've been working on this project for three weeks, and I have not
 yet been rewarded with a learning experience."*
@@ -285,7 +285,7 @@ it true?"*** — not *"what should we build?"* A feature is warranted when it un
 [`docs/ideas.md`](docs/ideas.md) is where the rest goes. **Treat an hour of HRW polish during a
 walk as a cost.**
 
-**Neither the tours nor the UI are fundamental — the mathematics as Rumoca implements it is.** So
+**Neither the labs nor the UI are fundamental — the mathematics as Rumoca implements it is.** So
 a mismatch may be fixed by changing the *pane*, and on 2026-08-13 one was. But **labels must
 expose Rumoca's structure, not a pedagogically convenient one**; when prose and pane disagree,
 **Rumoca is the arbiter.**
@@ -294,7 +294,7 @@ expose Rumoca's structure, not a pedagogically convenient one**; when prose and 
 is what the pane *rendered*, so it will not match the markdown byte-for-byte.
 
 **The rest is owned elsewhere and must not be restated here** — prose runs only to the first
-prediction, and one tour at a time ([`docs/fixture-tours/README.md`](docs/fixture-tours/README.md));
+prediction, and one lab at a time ([`docs/fixture-labs/README.md`](docs/fixture-labs/README.md));
 concepts now, details later, and the two things Claude cannot judge
 ([`docs/working-with-doug.md`](docs/working-with-doug.md)).
 
@@ -389,8 +389,8 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > **Claude is the wrong judge of what to cut** and should supply evidence, not verdicts: this
 > history is the record of his own failures.
 >
-> **THE TOUR-RULE SWEEP IS DONE — 25 items, 2026-09-01.** Every rule in
-> [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md) was decided one at a time with Doug
+> **THE LAB-RULE SWEEP IS DONE — 25 items, 2026-09-01.** Every rule in
+> [`docs/fixture-labs/README.md`](docs/fixture-labs/README.md) was decided one at a time with Doug
 > ruling on each: 19 kept (most with a correction), 2 cut, 1 named the standing loop target, the
 > vocabulary settled, 2 renamed. **The dominant defect, found six times: a mechanism exists, prose
 > beside it does the same job by hand, and the hand copy rots.** The mechanism was never the wrong
@@ -398,15 +398,15 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >
 > **⟶ THE RENAME IS DECIDED AND NOT YET EXECUTED. THIS IS THE NEXT WORK.**
 >
-> Charter Decision 15 replaces the concept of tours with labs. **The vocabulary is settled** (rule
+> Charter Decision 15 replaces the concept of labs with labs. **The vocabulary is settled** (rule
 > 16): **`lab` / `station` / `observation` / `instructor`** — `observation`, `Predict` and
 > `Expected` were already lab-native and do not move. Only `adjudication` → `calibration` among the
 > kinds; `concept`, `feature` and `failure` keep their names, and `experiment` / `orientation` /
 > `diagnosis` are **rejected on domain collisions** recorded under Decision 15.
 >
 > **Scope: ~3,750 occurrences** — 2,117 across 39 files in `src/`, 1,629 across 65 documents, plus
-> `hrw://tour/<name>` (**every link rewritten, no alias** — Doug's ruling), the `fixture-tours/`
-> directory path, `<!-- kind: -->` markers in 23 labs, and `.hrw-bridge/tour.md`, which is live
+> `hrw://lab/<name>` (**every link rewritten, no alias** — Doug's ruling), the `fixture-labs/`
+> directory path, `<!-- kind: -->` markers in 23 labs, and `.hrw-bridge/lab.md`, which is live
 > state the running app polls. **HRW must be closed for that last one**; Doug's standing
 > authorisation is that it stays closed whenever Claude says so, and the obligation is to say when
 > it may reopen.
@@ -437,19 +437,19 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > reading path outgrows its limit. **The limits, the unit and what crossing one means live in
 > [`docs/reading-budgets.txt`](docs/reading-budgets.txt) and nowhere else.**
 >
-> **THE TWO MODES DOUG WORKS IN — walking tours when he can focus, low-supervision work
+> **THE TWO MODES DOUG WORKS IN — walking labs when he can focus, low-supervision work
 > when he cannot — and the decision boundary that comes with them are in
 > [`docs/working-with-doug.md`](docs/working-with-doug.md), under *Standing rules*.**
 >
 > ### ⟶ THE WALK IS THE MODE — Doug, 2026-08-21
 >
-> *"my hope going forward is to focus on improving tours, not feature code."* **The iteration
-> loop, the two gate traps and the one-tour-at-a-time rule are in
-> [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md)** — read before touching a tour.
+> *"my hope going forward is to focus on improving labs, not feature code."* **The iteration
+> loop, the two gate traps and the one-lab-at-a-time rule are in
+> [`docs/fixture-labs/README.md`](docs/fixture-labs/README.md)** — read before touching a lab.
 >
 > **⟶ WHERE THE WALK IS — `connect-expansion`, RE-WALKED, THEN `dae-construction`**
 >
-> **Doug, 2026-08-22:** *"I will walk tours in the same sequence as the compiler phases"* —
+> **Doug, 2026-08-22:** *"I will walk labs in the same sequence as the compiler phases"* —
 > `the-concepts.md`'s own numbering: **dae-construction → matching (→ matching-live) → blt-ordering
 > → tearing → index-reduction → initialization → solve-lowering → events.**
 >
@@ -459,7 +459,7 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >
 > **NOTHING TRACKS OR REPORTS WHAT HAS BEEN RUN, IN A MARKER OR IN PROSE** *(Doug, 2026-09-01)*:
 > *"that discipline was turning education into a chore, including frequent pesters from you about
-> the need to walk tours."* The `walked:`/`authored:` markers went on 2026-08-31 — *"that
+> the need to walk labs."* The `walked:`/`authored:` markers went on 2026-08-31 — *"that
 > bookkeeping doesn't yield enough value"* — **and this section went on doing it by hand anyway**,
 > keeping a backlog of which stops had no reader yet and surfacing it every session. That is the
 > pestering, and it is what a session reads first. **Do not reintroduce it in either form**; judge
@@ -467,8 +467,8 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >
 > **`index-reduction.md` carries a harder bar**, staked in public: **index reduction explained to
 > anybody with only basic calculus** — the bar is PREDICTION, not comprehension. That constraint,
-> the provoke-questions rules and the one-tour-at-a-time rule are all in
-> [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md); read it before touching a tour.
+> the provoke-questions rules and the one-lab-at-a-time rule are all in
+> [`docs/fixture-labs/README.md`](docs/fixture-labs/README.md); read it before touching a lab.
 >
 > **REFACTORING IS QUEUED, NOT IN FLIGHT: `app.rs` then `worker.rs`, with bug discovery as the
 > stated goal** — Doug's standing order, 2026-08-21, unworked since. The seam heuristic, why the
@@ -488,8 +488,8 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >   example rather than write around it. Needs a System Modeler adjudication (`#43`).
 > - **`RcCircuit` reports one `zero_crossing_condition`** with no `when` clause at all.
 >   `events.md` Act 1 quotes only the four counts that are explicable.
-> - **`#77`** — a live tour needs three panes and the layout has two. **Largely resolved 2026-08-12**
->   (`docs/ideas.md` #77, `DECISIONS.md`); tours are **taller** now, which is the correct trade.
+> - **`#77`** — a live lab needs three panes and the layout has two. **Largely resolved 2026-08-12**
+>   (`docs/ideas.md` #77, `DECISIONS.md`); labs are **taller** now, which is the correct trade.
 >   **What survives is only the genuine three-pane case** — HRW at half width beside VS Code — so
 >   `matching-live.md` alone may still want a layout change; do not build one for the other eight.
 
@@ -505,7 +505,7 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
 **What stays here, because it binds rather than instructs:**
 
 - **The gate is green before every commit**, via the runner: `cargo run -p hrw --example gate`.
-  It decides FAST, TOUR or FULL from the working tree; `gate_policy` is the rule and has tests.
+  It decides FAST, LAB or FULL from the working tree; `gate_policy` is the rule and has tests.
 - **ITERATING AND GATING ARE DIFFERENT ACTS.** Filter while editing; gate once, before the commit.
   Conflating them cost 172 of one day's 274 compute-minutes for six commits.
 - **ANNOUNCE THE COST BEFORE PAYING IT** — before any command expected to exceed ~60 s, say what
@@ -553,14 +553,14 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
 - **[`docs/upstream-issues.md`](docs/upstream-issues.md)** — **Claude adds entries and never
   files them.** Only *reproduced* bugs, with suspect code marked unverified: a confident wrong
   diagnosis wastes a maintainer's time and costs the credibility this project is building.
-- **[`docs/fixture-tours/`](docs/fixture-tours/) — tours that are *tests*, not explanations.**
-  Versioned, unlike an ad hoc tour (`.hrw-bridge/tour.md`, gitignored). **Only justified because
-  something runs them:** `fixture_tour_links_all_resolve` parses every link on every test run.
+- **[`docs/fixture-labs/`](docs/fixture-labs/) — labs that are *tests*, not explanations.**
+  Versioned, unlike an ad hoc lab (`.hrw-bridge/lab.md`, gitignored). **Only justified because
+  something runs them:** `fixture_lab_links_all_resolve` parses every link on every test run.
   Three rules, each bought with a defect, and the README carries what each cost:
-  - **One tour per capability, narrow** — the scarce resource is Doug's attention per
+  - **One lab per capability, narrow** — the scarce resource is Doug's attention per
     expectation, not his walks (`docs/ideas.md` #49).
   - **An expectation must say WHERE to look** — he reported "nothing happened" at a stop
-    correctly refused with the reason on screen, in the status bar the tour never named.
+    correctly refused with the reason on screen, in the status bar the lab never named.
   - **Every `**Expected:**` line must be violable.** Hedged expectations teach him to read
     them loosely, and terser prose does not license looser claims.
 - **[`docs/specimen-notebook/`](docs/specimen-notebook/)** — per specimen: `trace/` (durable

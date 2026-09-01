@@ -515,7 +515,7 @@ fn row_hover(doc: Option<&String>, trackable: Option<&str>, declared_at: Option<
     }
     // **Where this came from, before what you can do with it.**
     //
-    // Doug, 2026-08-05, resuming the DAE tour: *"I'm not able to relate anything in
+    // Doug, 2026-08-05, resuming the DAE lab: *"I'm not able to relate anything in
     // the DAE tree to the Modelica source from which the tree was derived."* He
     // reported it as a UI problem constrained by screen real estate; measuring found
     // the real cause is that **source locations decay through the pipeline** — 41 of

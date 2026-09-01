@@ -31,7 +31,7 @@ Measured 2026-08-16, across every committed trace:
 specimen it chose, and its assertions about the missing half ran **zero times while reporting
 success**. That produced three separate near-misses in two days: the coupled-block branch of
 `an_equation_id_names_the_same_equation_in_every_pane`, check 3 of
-`an_equation_id_a_tour_cites_names_the_equation_the_prose_claims`, and the 2026-08-02 F-check
+`an_equation_id_a_lab_cites_names_the_equation_the_prose_claims`, and the 2026-08-02 F-check
 sweep that "found nothing because there was nothing there".
 
 `doc_citations::the_corpus_covers_every_feature_the_checkers_need` fails if this model ever stops

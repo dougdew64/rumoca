@@ -68,6 +68,8 @@ pub mod ic_plan_anim;
 pub mod identifier_index;
 pub mod incidence_view;
 pub mod json_read;
+pub mod lab;
+pub mod lab_panel;
 pub mod log_view;
 pub mod machine_policy;
 pub mod matching_anim;
@@ -102,8 +104,6 @@ pub mod tearing_anim;
 #[cfg(test)]
 pub mod test_support;
 pub mod timing;
-pub mod tour;
-pub mod tour_panel;
 pub mod tree;
 pub mod ui_state;
 pub mod worker;
@@ -152,7 +152,7 @@ pub fn byte_offset_to_line(source: &str, byte_offset: usize) -> u32 {
 ///
 /// **Measured 2026-08-08** (`docs/ideas.md` #73): stepping `ProportionalLoop`,
 /// the screen was in step at frames 3 and 12 and **one frame behind at frame
-/// 11**. An intermittent lag is worse than a constant one, because a tour cannot
+/// 11**. An intermittent lag is worse than a constant one, because a lab cannot
 /// describe it and a learner reads it as their own mistake.
 ///
 /// 150 ms is ~9 vsync intervals. It is invisible to a user who is clicking
@@ -575,7 +575,7 @@ mod tests_live_delay {
     /// sometimes and not others, which was measured live: in step at frames 3
     /// and 12, one frame behind at frame 11.
     ///
-    /// **An intermittent lag is worse than a constant one**, because a tour
+    /// **An intermittent lag is worse than a constant one**, because a lab
     /// cannot describe it and a learner reads it as their own mistake. So this
     /// asserts a *margin*, not equality: pinning `== 150ms` would pass for a
     /// value that had drifted back under the vsync interval by a different route.

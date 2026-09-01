@@ -47,7 +47,7 @@ thing it points at** — the failure mode that produced every stale record found
 ## Upgrading is lazy, deliberately
 
 There is **no audit project.** Tagging 9,000 lines up front would be a week of work
-producing tags nobody had checked — the same mistake as writing tour prose ahead of use.
+producing tags nobody had checked — the same mistake as writing lab prose ahead of use.
 
 Instead: when a real question sends Claude into the source, the claims it *actually
 checked while answering* get tagged on the way past. The database becomes trustworthy

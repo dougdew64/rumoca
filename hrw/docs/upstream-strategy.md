@@ -172,7 +172,7 @@ Concrete implications for testing and implementation decisions:
    re-derive is worth less than no number.
 3. **Anything published must be honestly bounded.** F1-F9 establish that HRW agrees with
    Rumoca. They do **not** establish that Rumoca is right, and they do not test the rendered
-   UI — the fixture tours do that. Every published document needs its own *"what this does
+   UI — the fixture labs do that. Every published document needs its own *"what this does
    not establish"* section, for the same reason the bug-PR demo does: **one visible overreach
    costs more than several missing checks** (`docs/fidelity-plan.md`).
 4. **Fidelity work is instrumental, not only defensive.** It is what makes the questions good.

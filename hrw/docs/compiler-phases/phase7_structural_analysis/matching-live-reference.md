@@ -24,8 +24,8 @@ Where each `MatchingStep` is pushed. **This is the line a debugger reports for t
 
 ## Breakpoint anchors
 
-The lines a live tour sends you to. Each is located by what the line *says*, so moving the code moves the number here — and
-`every_line_the_live_tour_cites_is_a_real_anchor` fails if [`matching-live.md`](../../fixture-tours/matching-live.md) still quotes the old one.
+The lines a live lab sends you to. Each is located by what the line *says*, so moving the code moves the number here — and
+`every_line_the_live_lab_cites_is_a_real_anchor` fails if [`matching-live.md`](../../fixture-labs/matching-live.md) still quotes the old one.
 
 | name | line | what you are looking at |
 |---|---|---|

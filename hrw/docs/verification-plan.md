@@ -29,7 +29,7 @@ divided cleanly by *whether the toolchain could see them*:
 And the standing asymmetry, which predates that day:
 
 > **11,939 lines of UI code. One test that exercises rendering.** Everything else is verified
-> by Doug walking tours.
+> by Doug walking labs.
 
 `docs/tech-debt.md`'s second trigger names the property: **verifiability, not Rust.** This plan
 is that trigger's first application.
@@ -78,7 +78,7 @@ rather than "the checker found nothing", and only the checkers below carry the r
 | `doc_citations::claims_of_absence_are_still_true` | `the_unbuilt_tag_is_parsed_and_both_verdicts_fire` |
 | `doc_citations::provenance_tags_are_well_formed` | `provenance_tags_are_recognised_by_form` |
 | `doc_citations::documents_contain_no_stray_control_characters` | **`a_stray_control_character_is_reported` — added by this audit** |
-| `app::fixture_tour_links_all_resolve` | `parse_hrw_link_invalid_stage` proves the predicate rejects; the test carries its own non-vacuity guard |
+| `app::fixture_lab_links_all_resolve` | `parse_hrw_link_invalid_stage` proves the predicate rejects; the test carries its own non-vacuity guard |
 | F8's stage-IR ceiling | non-vacuity guard on row count — *"a model produced no row, so the loop exited early"* |
 | `specimen_purpose::purpose_placeholder` | `the_purpose_placeholder_fits_the_actual_state` |
 | `bridge::check_breakpoint_ack` | `live_trace_breakpoint_arm_remove_and_ack` |
@@ -116,7 +116,7 @@ four items do not cover, because nothing here is silent tooling or UI:
 
 | Stale claim | Reality | How long |
 |---|---|---|
-| #42: frame position, pointed-at node, followed identifier are *"still below the reach of a link"* | all three shipped; **three fixture tours actively test them** | 2 days |
+| #42: frame position, pointed-at node, followed identifier are *"still below the reach of a link"* | all three shipped; **three fixture labs actively test them** | 2 days |
 | #42: *"specimens become a medium of explanation… it is currently impossible"* | `.hrw-bridge/specimens/` shipped | 2 days |
 | #45 audit: structural *"spans are dropped"* | fixed — and **step 1 of the same idea said so** | 3 days |
 | `context-assembly.md`: *"not yet implemented"* | the Context Bar shipped 2026-07-28 | 4 days |
@@ -136,7 +136,7 @@ Scratch specimens do not exist. <!-- unbuilt: App::scratch_specimens -->
 ```
 
 The test resolves each `unbuilt:` target and **fails if it resolves** — a link slug against
-`SubView::from_slug` and the fixture-tour corpus, a Rust path against the source. The failure
+`SubView::from_slug` and the fixture-lab corpus, a Rust path against the source. The failure
 message says *"`ideas.md` line N claims X is unbuilt; it exists at Y"*. `doc_citations.rs`
 already has the scanner, the boundary-matching and the workspace-root plumbing, so this is
 mostly a second predicate over machinery that exists.
@@ -311,15 +311,15 @@ verify at implementation time rather than assuming.
 
 **What it should catch — every one of these was found by hand:**
 
-| Bug found by walking a tour | The assertion that replaces it |
+| Bug found by walking a lab | The assertion that replaces it |
 |---|---|
 | "the tree node is not highlighted" | assert highlight state after a `PointAtNode` link |
-| "the RHS doesn't re-initialise on a second tour" | assert the stage panel is empty after a mode switch |
+| "the RHS doesn't re-initialise on a second lab" | assert the stage panel is empty after a mode switch |
 | "stop 4 works only if I click 1-3 first" | drive each link in isolation and assert |
 | "the notice was invisible" | assert a notice widget exists and is not styled as the idle hint |
 
 **Done when:** the harness is established, **the mechanical assertions from the five fixture
-tours are automated**, and the convention for writing them is documented.
+labs are automated**, and the convention for writing them is documented.
 
 **Explicitly OUT of scope** — this is what stops the item ballooning:
 
@@ -328,9 +328,9 @@ tours are automated**, and the convention for writing them is documented.
 - **Image snapshot testing.** Adds wgpu to the test path and asserts on pixels, which is
   brittle and answers a question nobody asked.
 - **Anything requiring judgement.** Whether a layout reads clearly, whether an expectation is
-  violable, whether a view *teaches* — those stay Doug's, and the fixture tours stay.
+  violable, whether a view *teaches* — those stay Doug's, and the fixture labs stay.
 
-**The point is not to replace the tours.** It is to convert their *mechanical* half — did the
+**The point is not to replace the labs.** It is to convert their *mechanical* half — did the
 click do the thing? — so Doug's attention goes only where judgement is required.
 
 #### Landed 2026-08-01 — the capability plus five assertions
@@ -347,15 +347,15 @@ an automated test.
 | Test | Replaces a bug found by walking |
 |---|---|
 | `the_harness_renders_hrw_and_sees_widgets` | the non-vacuity guard for all the others |
-| `the_tour_picker_shows_every_fixture_and_no_readme` | pins the README exclusion **at the rendered layer** |
-| `switching_tours_clears_the_stage_side_on_screen` | *"the RHS doesn't re-initialise on a second tour"* |
+| `the_lab_picker_shows_every_fixture_and_no_readme` | pins the README exclusion **at the rendered layer** |
+| `switching_labs_clears_the_stage_side_on_screen` | *"the RHS doesn't re-initialise on a second lab"* |
 | `a_stop_needing_a_specimen_is_refused_with_a_visible_notice` | *"the notice was invisible"* |
-| `a_tour_link_acts_when_clicked_in_isolation` | *"stop 4 works only if I click 1-3 first"* |
+| `a_lab_link_acts_when_clicked_in_isolation` | *"stop 4 works only if I click 1-3 first"* |
 
 **Two harness facts, each of which first produced a wrong diagnosis:**
 
 1. **A widget laid out off-screen is queryable but not clickable.** At the 800x600 default,
-   HRW's panels push the central content out of the viewport: `query_by_label` found the tour
+   HRW's panels push the central content out of the viewport: `query_by_label` found the lab
    links, `click()` landed on nothing, and the test read as *"the feature is broken"*. Hence
    1600x1200. **If a click appears to do nothing, check the layout before the logic.**
 2. **`Harness::run` cannot be used** — `tick_prewarm` requests a repaint every frame awaiting a
@@ -368,7 +368,7 @@ existence**, since HRW deliberately refuses a stage link with no specimen. Probi
 behaviour instead of trusting the premise turned that into the notice test, which is one of
 the four the plan set out to write.
 
-**What remains for this item:** more of the mechanical tour assertions, as tours are walked and
+**What remains for this item:** more of the mechanical lab assertions, as labs are walked and
 their checkable halves become clear. The capability is the deliverable; the assertions
 accumulate.
 

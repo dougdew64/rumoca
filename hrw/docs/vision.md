@@ -59,29 +59,29 @@ should transfer equally to Rumoca, Wolfram System Modeler, OpenModelica, Dymola,
 any other tool.
 
 
-## Why this beats books and lectures — Doug's model, after the first tour walk
+## Why this beats books and lectures — Doug's model, after the first lab walk
 
 *(Doug, 2026-08-12, having walked `connect-expansion.md` and started `dae-construction.md`. His
 words; the refinements after them are Claude's, and one of them contradicts him.)*
 
 > *"I began this effort because I believed that it would be possible to create a learning tool and
 > process which would be more effective for me than books and attending lectures. I believe that we
-> are on the right track. But, after just a bit of tour walking, it is striking to me how similar the
-> tours are initially to the books, yet how different our conversation is from the lectures. At least
-> initially, the tours have gaps and I struggle to understand what is written in the tours. That
+> are on the right track. But, after just a bit of lab walking, it is striking to me how similar the
+> labs are initially to the books, yet how different our conversation is from the lectures. At least
+> initially, the labs have gaps and I struggle to understand what is written in the labs. That
 > experience is very much like my experience with books. However, during our conversation, you answer
-> questions and improve the tours. I don't get to ask questions during lectures and the lecturer
+> questions and improve the labs. I don't get to ask questions during lectures and the lecturer
 > doesn't improve the books."*
 
-**The tours are books. The difference is not the prose, it is the repair loop.** This is a design
+**The labs are books. The difference is not the prose, it is the repair loop.** This is a design
 finding rather than a complaint, and it was measured within an hour: three questions produced three
-tour defects, every one of them **a term used before it was defined** — "the graph is solved", "the
-connection graph", "the components are computed". Prose fails the same way in a tour as in a
+lab defects, every one of them **a term used before it was defined** — "the graph is solved", "the
+connection graph", "the components are computed". Prose fails the same way in a lab as in a
 textbook. What a textbook lacks is a reader who can make it change.
 
 **And the compounding property is the thing neither medium has.** A lecture is synchronous but lossy;
 a book is durable but static. Here a question is answered synchronously *and* the answer is routed
-into the repository — the tour, [`compiler-phases/`](compiler-phases/),
+into the repository — the lab, [`compiler-phases/`](compiler-phases/),
 [`question-ledger.md`](question-ledger.md). **Asking permanently improves the artifact**, including
 for future-Doug, which is why the routing discipline in
 [`working-with-doug.md`](working-with-doug.md) is load-bearing rather than tidy.
@@ -96,14 +96,14 @@ for future-Doug, which is why the routing discipline in
 > described in textbooks. … This HRW project is a complement to textbooks and accomplishes what
 > textbooks cannot."*
 
-**This narrows the section above rather than repeating it.** *"The tours are books; the difference
+**This narrows the section above rather than repeating it.** *"The labs are books; the difference
 is the repair loop"* was about **who can fix the prose**. This is about **what the prose is allowed
-to claim** — and it is the stronger statement, because it says the tours should not be books at all
+to claim** — and it is the stronger statement, because it says the labs should not be books at all
 in their content, only in their form.
 
 **The mechanism, and it is not a preference.** A textbook's claims are unfalsifiable *in principle*
 for its reader: there is no artifact to check them against, so a claim that is vague, over-general
-or simply wrong reads exactly like one that is right. Here there is Rumoca. **Claude can check tour
+or simply wrong reads exactly like one that is right. Here there is Rumoca. **Claude can check lab
 prose against it, and so can Doug** — and the four-pass sentence is the demonstration in both
 directions. Every pass stated a textbook abstraction (union-find "starts with singletons"); every
 objection Doug raised was an *implementer's* question (*"under what circumstances can that happen?"*);
@@ -111,10 +111,10 @@ and the resolution came from reading the callers of `get_or_insert_idx`. **No te
 been wrong in a way that was detectable, and none could have been corrected.**
 
 **The consequence for content:** a textbook-style abstraction that cannot be mapped to Rumoca's code
-does not belong in a tour — Doug can get it from a textbook, where it is cheaper and no worse. What
+does not belong in a lab — Doug can get it from a textbook, where it is cheaper and no worse. What
 HRW owes him is the part a textbook cannot supply. The operational test — *an abstraction earns its
 place by predicting something the code does* — is in
-[`fixture-tours/README.md`](fixture-tours/README.md), with the worked cases.
+[`fixture-labs/README.md`](fixture-labs/README.md), with the worked cases.
 
 ### Why a textbook is correct and INEFFECTIVE, and why that is not a failure of effort
 
@@ -129,10 +129,10 @@ constraints are lifted here.** The opportunity is not to try harder than a textb
 are not solving the same problem.
 
 **And there is a correctness axis a textbook cannot reach.** A textbook is right about *Modelica in
-general*; a tour is right about **this compiler, on this model, in this run**, checked against a
+general*; a lab is right about **this compiler, on this model, in this run**, checked against a
 real compile. That is what makes "correct *and* effective" a target rather than a boast.
 
-*(Moved here from `fixture-tours/README.md` on 2026-09-01. The textbook case was being
+*(Moved here from `fixture-labs/README.md` on 2026-09-01. The textbook case was being
 argued in three places by then; this file is where HRW's positioning belongs, and the README keeps
 only the authoring rule it produces.)*
 
@@ -144,13 +144,13 @@ Doug's model, in his words:
 > features after I have gained a very basic conceptual understanding… my very basic conceptual
 > understanding will enable me to form expectations for what I should see in the RHS features of HRW,
 > so that I will use those RHS features to test my expectations. In other words, the RHS will be
-> partly helpful for you to demonstrate what your tour prose attempts to explain, and the RHS will be
+> partly helpful for you to demonstrate what your lab prose attempts to explain, and the RHS will be
 > mostly helpful as a kind of lab for me to explore and test my expectations."*
 
 **Accept this, and note what it settles.** It gives a criterion for whether a pane is worth building:
 **a pane that only illustrates what the prose said is redundant; a pane that can falsify an
-expectation is not.** That is the same rule `fixture-tours/README.md` already imposes for a different
-reason — *every `**Expected:**` line must be violable* — which was written to make the tours **test
+expectation is not.** That is the same rule `fixture-labs/README.md` already imposes for a different
+reason — *every `**Expected:**` line must be violable* — which was written to make the labs **test
 HRW**. Doug has arrived at it from the other side: violable expectations are also how **he** learns.
 One mechanism, two purposes, and the second one is the reason to keep it strict.
 
@@ -159,60 +159,60 @@ One mechanism, two purposes, and the second one is the reason to keep it strict.
 **1. The threshold is a PREDICTION, not understanding — so the lab enters much earlier than Doug
 expects.** He proposes prose first, lab after "very basic conceptual understanding". The trap is that
 "later" never arrives: if the RHS waits for understanding, the prose has to carry the whole
-explanation, and the tours drift to reference depth one good question at a time — the failure already
+explanation, and the labs drift to reference depth one good question at a time — the failure already
 identified. **A prediction is far cheaper than understanding.** *"There should be three groups"* is a
 crude, testable, falsifiable prediction available after two sentences, and checking it is the
 fastest way to find out the two sentences were misread. So: **prose to the first prediction, then the
 pane.** Not prose to comprehension.
 
 **2. The lab checks CLAUDE, not only Doug — and this is the stronger argument for using it early.**
-Doug framed the RHS as testing *his* expectations. It also tests the prose. Every tour count is read
+Doug framed the RHS as testing *his* expectations. It also tests the prose. Every lab count is read
 from a generated trace and is therefore sound; **every rendering claim is unverified**, and Claude
 cannot see the GUI. Twice on 2026-08-12 Claude asserted something it had not checked and was caught —
-once by Doug, once by a checker. So each time Doug compares a pane against a tour claim he is
-auditing the tour, and that audit exists nowhere else. **The lab is the only instrument that can
+once by Doug, once by a checker. So each time Doug compares a pane against a lab claim he is
+auditing the lab, and that audit exists nowhere else. **The lab is the only instrument that can
 falsify Claude.**
 
 ### The repair loop may BE the teaching, not the thing that improves the teaching
 
 *(Doug, 2026-08-15, after `connect-expansion.md` was finished.)*
 
-> *"My most important observation is that working together to improve that tour was
+> *"My most important observation is that working together to improve that lab was
 > educational. In fact, at least so far, more educational than actually walking the completed
-> tour."*
+> lab."*
 
-**This inverts the assumed order.** The model above treats the tour as the artifact and the
+**This inverts the assumed order.** The model above treats the lab as the artifact and the
 conversation as its repair mechanism. This says the repair is where the learning happened, and the
-finished tour is closer to a by-product.
+finished lab is closer to a by-product.
 
 **Three mechanisms, and they are identifiable rather than mysterious:**
 
 1. **He had to hold a model precise enough to detect a mismatch.** *"This does not agree with the
    pane"* is impossible without a prediction already in hand. Every disagreement was a
-   prediction error **he generated himself**, and walking a correct tour produces agreement,
+   prediction error **he generated himself**, and walking a correct lab produces agreement,
    which produces nothing.
 2. **The disagreements were conceptual, never typographical.** Nodes versus connection sets;
    potential and flow as siblings versus as kinds of one thing; three versus six; spanning tree
    versus roster. **The friction was the curriculum**, and it clustered precisely where Claude
    had asserted something it could not check.
-3. **He chose the questions.** A tour explains what *Claude* predicts will confuse him. *"Which
+3. **He chose the questions.** A lab explains what *Claude* predicts will confuse him. *"Which
    graph?"* and *"what does 'computed' mean?"* came from real confusion about phrases Claude had
    used believing them clear — and could not have been anticipated.
 
-**The confound, stated because it is large.** The tour he walked at the end was one **he had
+**The confound, stated because it is large.** The lab he walked at the end was one **he had
 co-written**, so of course it taught less; he already knew it. The honest comparison is walking a
-tour he had no hand in, which has not been run. It may be that improving beats walking, or merely
-that *first contact* beats *second contact* with the same material. **The next tour is that
+lab he had no hand in, which has not been run. It may be that improving beats walking, or merely
+that *first contact* beats *second contact* with the same material. **The next lab is that
 test**, and it should be treated as one.
 
 **The design consequence, if it survives the test.** It reads as an argument for shipping
-under-polished tours, and is not. The disagreements that taught were concentrated in **claims
+under-polished labs, and is not. The disagreements that taught were concentrated in **claims
 Claude could not verify** — not in claims it had been lazy about. So: get every checkable thing
 right, and be *loud* about what remains unchecked, because that is where his attention pays.
 
-That is what `**Falsified if**` and *"What this tour cannot check"* already are. **So the
+That is what `**Falsified if**` and *"What this lab cannot check"* already are. **So the
 unverified half is the valuable half, and it should stop being written about as a regrettable
-gap.** A tour that could be fully machine-checked would teach less, not more.
+gap.** A lab that could be fully machine-checked would teach less, not more.
 
 ### What this predicts about what to build
 
@@ -221,7 +221,7 @@ gap.** A tour that could be fully machine-checked would teach less, not more.
 - **[`ideas.md`](ideas.md) #78 (Back/Forward for the RHS) rises in value**, because lab work is
   constant round-tripping between prose and pane. Doug hit that friction before adopting the lab
   framing, which is corroboration rather than coincidence.
-- **A tour whose panes cannot falsify anything is a tour that should be prose in
+- **A lab whose panes cannot falsify anything is a lab that should be prose in
   `compiler-phases/`** instead of a walk.
 
 ### Which teaching job HRW should try to win — I-do / we-do / you-do
@@ -258,16 +258,16 @@ executable acceptance criterion and is real work with a real upstream audience.
 
 #### ⟶ TERSE EXPOSITION IS A PEDAGOGICAL CHOICE, NOT AN ECONOMY — 2026-08-30
 
-*(Doug, on the day tour prose became pointable: he is the tourist, Claude is the guide.)*
+*(Doug, on the day lab prose became pointable: he is the tourist, Claude is the guide.)*
 
-**Tours may now be written to PROVOKE questions rather than to pre-empt them**, because he can
-select any sentence in the tour panel and ask about it (`CLAUDE.md`, the 🎯 capture). His words:
-*"you can be more terse in your tour prose as I can always ask you questions about your prose.
-The tours can focus more on being tours and less on being like textbooks."*
+**Labs may now be written to PROVOKE questions rather than to pre-empt them**, because he can
+select any sentence in the lab panel and ask about it (`CLAUDE.md`, the 🎯 capture). His words:
+*"you can be more terse in your lab prose as I can always ask you questions about your prose.
+The labs can focus more on being labs and less on being like textbooks."*
 
-**Why the prose was long is the whole argument.** A tour could not be asked questions, so every
+**Why the prose was long is the whole argument.** A lab could not be asked questions, so every
 confusion it might provoke had to be answered inline — which is *the textbook's constraint*, the
-same one the we-do row above says an instrument removes. The tours inherited it for **prose** long
+same one the we-do row above says an instrument removes. The labs inherited it for **prose** long
 after HRW had removed it for **panes**. Exposition was doing two jobs: being the walk, and
 pre-empting every question. The second is now unnecessary.
 
@@ -290,7 +290,7 @@ that, and the capture makes the trade cheap.
 **The boundary: fewer claims, never looser ones.** Terseness applies to *exposition*. It must not
 touch a `**Expected:**` line, which is the walk's test and must stay violable — and it must not
 become vagueness. *"The system is singular"* is terse and checkable; *"things go wrong"* is neither.
-The writing rules are in [`fixture-tours/README.md`](fixture-tours/README.md).
+The writing rules are in [`fixture-labs/README.md`](fixture-labs/README.md).
 
 #### The continuations, and what protects each
 
@@ -303,22 +303,22 @@ wanted.)*
 | 1 | **Implement Pantelides** — [`ideas.md`](ideas.md) #83 | `pantelides_ladder`: five rungs, rung 1 green and four verified red, against a committed System Modeler oracle |
 | 2 | **Author the visualizations himself** | [`../CLAUDE.md`](../CLAUDE.md)'s two-tier comprehension policy, and its standing rule to *move a computation out before adding one in* whenever one of the five view files is touched |
 
-**⟶ THE THIRD WAS WITHDRAWN, 2026-08-31.** It read *"replace Claude's tour content with his
-own"*, and Doug retired it outright: *"I have concluded that my goal of replacing Claude's tour
+**⟶ THE THIRD WAS WITHDRAWN, 2026-08-31.** It read *"replace Claude's lab content with his
+own"*, and Doug retired it outright: *"I have concluded that my goal of replacing Claude's lab
 content with my own is a bad idea. I am completely withdrawing that goal."*
 
-**What replaced it is a better instrument for the same end.** Tour prose became *pointable* the
+**What replaced it is a better instrument for the same end.** Lab prose became *pointable* the
 day before — select a passage, press the target button, ask — so the loop is now *"I will ask you
-questions and then you can make edits to the tour files."* Authoring the prose was a way to test
+questions and then you can make edits to the lab files."* Authoring the prose was a way to test
 whether he understood it; **asking the question that exposes a gap tests the same thing and costs
 a sentence instead of a rewrite.**
 
 **Its whole apparatus went with it**, and that is the point rather than a side effect: the
-`<!-- authored: -->` marker, `<!-- walked: -->` (also withdrawn — *"keeping track of what tours I
+`<!-- authored: -->` marker, `<!-- walked: -->` (also withdrawn — *"keeping track of what labs I
 have walked doesn't yield enough value to justify the bookkeeping"*), both checkers, and the
 supersession ceremony built for them. **Doug's own verdict on the request that produced them:**
 *"we have been spending a lot of time running checkers and such because I requested a way for me
-to edit tour files. I think that my request now seems like a bad idea."*
+to edit lab files. I think that my request now seems like a bad idea."*
 
 **So you-do now rests on the two heavier continuations**, #1 and #2 — which were always the
 substantial ones. That is a real change to the balance of this frame, made deliberately and not
@@ -407,7 +407,7 @@ section still named both)*:
 
 | Was | Is now | Why it changed |
 |---|---|---|
-| the end-to-end tour document, as spine | [`compiler-phases/the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md) for the *reasoning*, and an **ad hoc tour** for the *walk* | The stored tour rotted — it asserted a 7×7 incidence matrix on a tab showing 48 equations. Deleted 2026-08-01; its conceptual half, which makes no claim about what is on screen, was kept. |
+| the end-to-end lab document, as spine | [`compiler-phases/the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md) for the *reasoning*, and an **ad hoc lab** for the *walk* | The stored lab rotted — it asserted a 7×7 incidence matrix on a tab showing 48 equations. Deleted 2026-08-01; its conceptual half, which makes no claim about what is on screen, was kept. |
 | specimen narratives, as worked examples | a generated [`specimen-notebook/<Model>/trace/`](specimen-notebook/) plus a short hand-written `purpose.md` | 1,632 lines of narrative became 638 of purpose on 2026-07-29. **Numbers are read from the trace, which is correct by construction**; Claude regenerates the explanation on demand. |
 
 **The pattern behind both is the project's governing rule:** *store what cannot be
@@ -435,21 +435,21 @@ In detail:
    [`compiler-phases/`](compiler-phases/), one directory per phase; **Phase 7 has six of
    them**, which is where the interesting algorithms are.
 
-3. **Three-tier progression** — the delivery mechanism within each tour:
+3. **Three-tier progression** — the delivery mechanism within each lab:
    - **Snapshot** shows the result (static IR view) — establishes what the algorithm produced
    - **Replay** shows the process (recorded animation) — reveals how the algorithm works
    - **Live-stepping** lets Doug test his understanding by predicting what happens next
 
-Every guided tour has **explicit learning goals** — what Doug should understand by the
+Every guided lab has **explicit learning goals** — what Doug should understand by the
 end. The three tiers are designed to achieve those goals, not as standalone features.
 
 ## Learning goals — the spine
 
 **These are the goals, and they outlived their vehicle** *(re-titled 2026-08-01; they were
-headed "end-to-end tour", a document since deleted)*. Nothing here depended on that file —
+headed "end-to-end lab", a document since deleted)*. Nothing here depended on that file —
 each goal is a statement about **Doug's understanding**, which is the deliverable, so the
 list stands unchanged while the way it is reached has moved to the chain of problems, the
-phase drill-downs and ad hoc tours.
+phase drill-downs and ad hoc labs.
 
 Doug should be able to:
 
@@ -476,7 +476,7 @@ Doug should be able to:
    same chain that System Modeler, Dymola, and OpenModelica all must implement in
    some form.
 
-7. **Know where to go deeper** — for each stage, know which phase tour (chapter) to
+7. **Know where to go deeper** — for each stage, know which phase lab (chapter) to
    read and which specimen best illustrates the concept.
 
 These goals are revisable as Doug's understanding deepens.
@@ -552,7 +552,7 @@ The same rule as the ad hoc curriculum (`docs/ideas.md` #53), one level up:
   platform stays general — query surface, exact context, composable instruments.
 - **No stored lessons, per domain or otherwise.** Domain knowledge is Claude's and is
   regenerable; a stored version rots, which is what retired 1,632 lines of specimen narrative
-  and the end-to-end tour's prose.
+  and the end-to-end lab's prose.
 
 What *is* worth building is whatever widens the query surface or sharpens the context: the
 filters of #53, the timings of #54, better nouns.
@@ -577,7 +577,7 @@ adding stored *verbs*.
 
 ## Principles
 
-- **Problem before solution.** Every explanation, tour stop, and narrative leads with
+- **Problem before solution.** Every explanation, lab stop, and narrative leads with
   the problem before presenting the solution. What would go wrong without this step?
   What is insufficient about what we have so far?
 

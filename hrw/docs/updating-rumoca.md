@@ -70,17 +70,17 @@ the fallout. The Rust compiler and the test suite do most of the work; a few gen
   demand, and `purpose.md` makes no claim a rebase can invalidate. The trace is generated, so it
   cannot go stale either.
 
-## 6. Update guided tours
-- Guided tours (`docs/compiler-phases/*/guided-tour.md`) contain **line numbers, code snippets,
+## 6. Update guided labs
+- Guided labs (`docs/compiler-phases/*/guided-lab.md`) contain **line numbers, code snippets,
   and local-variable names** from the Rumoca crates. A rebase that moves code, renames locals, or
-  changes trace-step variants will silently stale the tour without any compiler error.
-- After fixing compile breakage (step 2), grep the tour files for any function, type, or variable
+  changes trace-step variants will silently stale the lab without any compiler error.
+- After fixing compile breakage (step 2), grep the lab files for any function, type, or variable
   name that changed. Pay special attention to:
   - `LiveTrace::push` line number (the breakpoint site)
-  - `MatchingStep` / `TarjanStep` enum variants (the frame types the tour walks through)
+  - `MatchingStep` / `TarjanStep` enum variants (the frame types the lab walks through)
   - `augment_traced` / `strongconnect` parameter lists and local names
   - `emit_matching_frame` / `TracedTarjanState::record` call sites
-- Update the affected tours to match the new code — line numbers, code excerpts, and locals tables.
+- Update the affected labs to match the new code — line numbers, code excerpts, and locals tables.
 
 ## 7. Refresh `docs/compiler-phases/` — if phases changed
 - **Claude maintains these and commits them.** *(Corrected 2026-08-01. This step said they were

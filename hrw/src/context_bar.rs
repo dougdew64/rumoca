@@ -173,7 +173,7 @@ pub(crate) struct PointedAt {
     /// The stage the capture was made in — **`None` for a capture that is not in a
     /// stage at all.**
     ///
-    /// It was a bare `StageKind` until 2026-08-30, when tour passages became
+    /// It was a bare `StageKind` until 2026-08-30, when lab passages became
     /// capturable and there was no honest value to put here. **The shortcut was to
     /// store whichever stage happened to be selected**, and it would have put a false
     /// claim into `focus.json` and `session.json` — *"pointed at in Parse"* about a
@@ -193,27 +193,27 @@ pub(crate) enum PointKind {
     Stage,
     /// The specimen as a whole.
     Specimen,
-    /// **A passage of tour prose**, selected in the tour panel and captured with 🎯.
+    /// **A passage of lab prose**, selected in the lab panel and captured with 🎯.
     ///
     /// The first capture shape that is not part of a compile, which is why
     /// [`PointedAt::stage`] became an `Option` when this landed. Doug asked for it
-    /// after four frictions in asking about tour text: switching to VS Code, finding
+    /// after four frictions in asking about lab text: switching to VS Code, finding
     /// the `.md`, locating the passage in source, and — the one that decided it — a
     /// bare *"What is this?"* having no referent unless he prefaced it.
     ///
     /// **The text is the rendered prose, not the markdown source**, on his ruling:
     /// egui hands back what the pane displays. Locating it in the source is Claude's
     /// job, and is where the `walked:` / `authored:` rules apply.
-    TourPassage {
-        /// Which tour it was read in — the document the passage can be found in.
-        tour: String,
+    LabPassage {
+        /// Which lab it was read in — the document the passage can be found in.
+        lab: String,
     },
 }
 
 /// What the Context Bar was asked to do, for `App` to perform.
 ///
 /// The **fourth instance** of the render-and-report pattern, after
-/// [`crate::specimen_source`]'s `Option<String>`, [`crate::tour_panel`]'s
+/// [`crate::specimen_source`]'s `Option<String>`, [`crate::lab_panel`]'s
 /// `TransportRequest` and [`crate::stage_tabs`]'s `TabClick` — and the first where
 /// deferring costs provably nothing, because every one of these was already
 /// performed below the last `ui` call in the function.
@@ -263,7 +263,7 @@ pub(crate) fn context_bar_ui(
     declaring_classes: &HashMap<String, String>,
     def_index: &BTreeMap<u64, DefInfo>,
     model: Option<&str>,
-    tour: Option<&str>,
+    lab: Option<&str>,
 ) -> Option<ContextBarPress> {
     let mut press: Option<ContextBarPress> = None;
 
@@ -273,7 +273,7 @@ pub(crate) fn context_bar_ui(
             // Worth saying only when it **differs** from the background
             // stage; otherwise it repeats the line above as if it were a
             // second, independent fact.
-            // **`Some(other)` only.** A tour passage has no stage, so there is no
+            // **`Some(other)` only.** A lab passage has no stage, so there is no
             // divergence to report and saying "pointed at in Parse" would invent one.
             if let Some(point_stage) = point.stage
                 && point_stage != stage
@@ -301,7 +301,7 @@ pub(crate) fn context_bar_ui(
         ui,
         model,
         Some(stage),
-        tour,
+        lab,
         stage_ir_count(stages),
         def_index.len(),
     );
@@ -504,7 +504,7 @@ pub(crate) fn stage_ir_count(stages: &StageBundle) -> usize {
 /// than in a parallel flag, matching `bridge::Ask::stage`, which is already `None` for
 /// a navigated definition.
 ///
-/// **The tour is background too.** `session.json` has carried the open tour's name
+/// **The lab is background too.** `session.json` has carried the open lab's name
 /// since 2026-08-19 for deixis, so Claude already had it while the bar did not say so —
 /// the under-reporting that prompted this. What is *not* here is the current stop,
 /// declined 2026-08-19 with four reasons; do not add it.
@@ -513,12 +513,12 @@ pub(crate) fn stage_ir_count(stages: &StageBundle) -> usize {
 ///
 /// Split out of the painter on 2026-08-30 for the reason `working-with-doug.md` gives
 /// for the animation views: **move a computation out before adding one in.** Every
-/// claim this row makes — that a stage ran, that a tour is open — is now checkable
+/// claim this row makes — that a stage ran, that a lab is open — is now checkable
 /// directly, and the painter is a label.
 pub(crate) fn always_summary(
     model: Option<&str>,
     stage: Option<StageKind>,
-    tour: Option<&str>,
+    lab: Option<&str>,
     stage_ir_count: usize,
     def_count: usize,
 ) -> String {
@@ -531,8 +531,8 @@ pub(crate) fn always_summary(
         (Some(model), None) => parts.push(model.to_owned()),
         (None, None) => {}
     }
-    if let Some(tour) = tour {
-        parts.push(format!("tour: {tour}"));
+    if let Some(lab) = lab {
+        parts.push(format!("lab: {lab}"));
     }
     // **Always present, including as zeroes.** They are the standing context Claude
     // reads without being pointed at anything, and a row that omitted them when empty
@@ -550,13 +550,13 @@ pub(crate) fn always_summary(
 /// > 'Always' category seems to be part of 'Follow' instead of always-available
 /// > context."*
 ///
-/// > *"the specimen, stage and tour are listed, but no category is specified for
+/// > *"the specimen, stage and lab are listed, but no category is specified for
 /// > them."*
 ///
 /// **Those are one defect seen from two sides.** The session facts sat in a row labelled
 /// `Always` that only rendered in the *assembled* branch — so a row asserting "always"
 /// appeared only once something was pointed at or followed. Meanwhile specimen, stage
-/// and tour rendered unlabelled beside the title, in the same category and looking like
+/// and lab rendered unlabelled beside the title, in the same category and looking like
 /// a different one. A label claiming more than the mechanism delivers is the lens
 /// `unattended-runs.md` leads with; this is that, in the UI.
 ///
@@ -567,7 +567,7 @@ pub(crate) fn always_ui(
     ui: &mut egui::Ui,
     model: Option<&str>,
     stage: Option<StageKind>,
-    tour: Option<&str>,
+    lab: Option<&str>,
     stage_ir_count: usize,
     def_count: usize,
 ) {
@@ -575,13 +575,13 @@ pub(crate) fn always_ui(
         ui.colored_label(crate::colors::CONTEXT_ALWAYS, "   Always       ");
         ui.colored_label(
             crate::colors::CONTEXT_ALWAYS,
-            always_summary(model, stage, tour, stage_ir_count, def_count),
+            always_summary(model, stage, lab, stage_ir_count, def_count),
         )
         .on_hover_text(
             "True for the whole session, whatever you have clicked. Every pipeline \
              stage's full IR is on disk under .hrw-bridge/stages/, and the DefId table \
              resolves numeric ids to names. Claude reads these \u{2014} and the specimen, \
-             stage and open tour \u{2014} without you pointing at anything.",
+             stage and open lab \u{2014} without you pointing at anything.",
         );
     });
 }
@@ -590,7 +590,7 @@ pub(crate) fn always_ui(
 mod tests {
     use super::*;
 
-    /// **A tour passage records no stage, and the bar claims none.**
+    /// **A lab passage records no stage, and the bar claims none.**
     ///
     /// [`PointedAt::stage`] became an `Option` for this capture shape, and the whole
     /// point was refusing the shortcut: storing whichever stage happened to be selected
@@ -599,16 +599,16 @@ mod tests {
     /// requirement. No shortcuts. Add types as necessary to ensure accuracy."*
     ///
     /// This pins the type-level half — that a passage can be constructed with no stage,
-    /// and that `PointKind` carries the tour so the quotation is never orphaned from
+    /// and that `PointKind` carries the lab so the quotation is never orphaned from
     /// its document. What the *file* says is
-    /// [`crate::bridge::tests::a_tour_passage_emits_its_tour_and_no_stage`].
+    /// [`crate::bridge::tests::a_lab_passage_emits_its_lab_and_no_stage`].
     #[test]
-    fn a_tour_passage_point_has_no_stage() {
+    fn a_lab_passage_point_has_no_stage() {
         let point = PointedAt {
             seq: 7,
             target: "Tearing splits each block and takes a Schur complement.".to_owned(),
-            kind: PointKind::TourPassage {
-                tour: "the-concepts".to_owned(),
+            kind: PointKind::LabPassage {
+                lab: "the-concepts".to_owned(),
             },
             stage: None,
             request: crate::bridge::AskRequest::Explain,
@@ -618,8 +618,8 @@ mod tests {
             "prose is not in a compile phase, so naming one would invent a fact",
         );
         match &point.kind {
-            PointKind::TourPassage { tour } => assert_eq!(tour, "the-concepts"),
-            _ => panic!("expected a tour passage"),
+            PointKind::LabPassage { lab } => assert_eq!(lab, "the-concepts"),
+            _ => panic!("expected a lab passage"),
         }
     }
 
@@ -661,10 +661,10 @@ mod tests {
             "the stage is real even before the model name lands: {compiling:?}",
         );
 
-        let toured = always_summary(None, None, Some("connect-expansion"), 0, 0);
+        let with_lab = always_summary(None, None, Some("connect-expansion"), 0, 0);
         assert!(
-            toured.contains("tour: connect-expansion"),
-            "an open tour is standing context and is named: {toured:?}",
+            with_lab.contains("lab: connect-expansion"),
+            "an open lab is standing context and is named: {with_lab:?}",
         );
     }
     use crate::identifier_index::IndexedVariable;

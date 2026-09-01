@@ -8,7 +8,7 @@
 //! `stage_tab_bar_ui` was 280 lines touching **12** of `App`'s fields and calling **two**
 //! `App` methods — `open` (the Debug-mode specimen switcher) and `start_simulation` (the
 //! inline ▶ button). Both are presses, so the callback pattern that carried
-//! [`crate::specimen_source`] and [`crate::tour_panel`] out would have applied — but
+//! [`crate::specimen_source`] and [`crate::lab_panel`] out would have applied — but
 //! **deferring either one changes what this frame draws**:
 //!
 //! - `App::open` sets `compiling`, clears the stage bundle and switches to the log view,
@@ -33,7 +33,7 @@
 //! **The consequence the bullet predicted is real and is accepted.** `sim_running` now
 //! arrives as a parameter computed *before* the row draws, so on the click frame it is still
 //! false and the spinner does not appear until the next frame — which egui paints
-//! immediately after an interaction. This is exactly [`crate::tour_panel`]'s *"Play is
+//! immediately after an interaction. This is exactly [`crate::lab_panel`]'s *"Play is
 //! deferred by exactly one frame"*, and the alternative was handing this row `&mut App`.
 //!
 //! # Why `selectable_label` and not `selectable_value`
@@ -78,7 +78,7 @@ use crate::worker::{Stage, StageBundle, StageKind};
 /// What the tab row did, for `App` to finish.
 ///
 /// The **third instance** of the render-and-report pattern (`specimen_source` returned
-/// `Option<String>`, `tour_panel` an `Option<TransportRequest>`), and the first where
+/// `Option<String>`, `lab_panel` an `Option<TransportRequest>`), and the first where
 /// variants differ only in their *consequence*: the two tab clicks both leave the log
 /// view and only [`Stage`](TabClick::Stage) asks for a capture, while
 /// [`RunSimulation`](TabClick::RunSimulation) does neither.

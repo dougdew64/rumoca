@@ -30,7 +30,7 @@ adjudicated by an independent Modelica implementation rather than argued from th
 ## Which to file first
 
 **Issue 2 (connector validation).** Doug's plan (2026-07-30) is to open one bug PR with a
-screen-capture video of a self-playing HRW tour attached — no campaigning, just something
+screen-capture video of a self-playing HRW lab attached — no campaigning, just something
 likely to prompt a reviewer to ask what it is.
 
 Issue 2 suits that far better than issue 1:
@@ -45,8 +45,8 @@ Issue 2 suits that far better than issue 1:
 - **HRW's usefulness is the point of the story rather than an aside**, so nobody has to
   claim it.
 
-`docs/fixture-tours/the-oracle.md` already walks this narrative and would want tightening
-for a recording — a demo tour is a third kind after ad hoc and fixture: few stops, no
+`docs/fixture-labs/the-oracle.md` already walks this narrative and would want tightening
+for a recording — a demo lab is a third kind after ad hoc and fixture: few stops, no
 scrolling, deterministic start, nothing needing a second read.
 
 ---
@@ -407,7 +407,7 @@ every outcome matched exactly.
 
 ## Index reduction's demoted states are still counted as states downstream
 
-**Found 2026-08-08** while writing `docs/fixture-tours/index-reduction.md` from generated
+**Found 2026-08-08** while writing `docs/fixture-labs/index-reduction.md` from generated
 notebook traces. **Reproduced on two specimens, same direction both times.**
 
 ### Reproduction
@@ -457,7 +457,7 @@ report. **Adjudicate before filing** — `docs/ideas.md` #43's System Modeler re
 
 ## `zero_crossing_conditions` counts a condition the event partition does not contain
 
-**Found 2026-08-16** while writing `docs/fixture-tours/events.md`, which needed to explain a
+**Found 2026-08-16** while writing `docs/fixture-labs/events.md`, which needed to explain a
 number Doug can see on screen. Reproduced across five specimens.
 
 ### Reproduction
@@ -537,7 +537,7 @@ which reading is intended.
 
 HRW's Events pane reports the summary counts. On a smooth model it therefore says *"1 zero
 crossing"* and can show nothing behind it — a number with no evidence, which is the one thing
-`hrw/CLAUDE.md` forbids a pane from doing. `events.md` Stop 2 currently names the anomaly and
+`hrw/CLAUDE.md` forbids a pane from doing. `events.md` Station 2 currently names the anomaly and
 points here rather than reasoning around it.
 
 **A one-line fix in either direction removes the need for that paragraph.**
@@ -577,7 +577,7 @@ rebase checklist.
 **And the same gap produced a documented teaching error here.** HRW's summary
 (`differentiated_rows`) reported zero for a model whose captured frames recorded four
 differentiations, because the summary scans the *final* DAE while the differentiated rows are
-removed by a later elimination step. A tour taught the opposite of what the compiler did for its
+removed by a later elimination step. A lab taught the opposite of what the compiler did for its
 whole existence (`DECISIONS.md`, 2026-08-17).
 
 ### The ask — ✅ BUILT 2026-08-18, and ready to offer
@@ -694,7 +694,7 @@ file does.
 **Record the result here**, with the version of System Modeler, and update
 [`specimen-notebook/CartesianPendulum/purpose.md`](specimen-notebook/CartesianPendulum/purpose.md),
 whose Provenance section currently says the round-trip has not been done. **`the-oracle.md` is the
-tour for this gesture** and its stop 3 is the worked example of asking the other implementation.
+lab for this gesture** and its stop 3 is the worked example of asking the other implementation.
 
 **And it settles charter §4.3 for this specimen**, which requires *"compiles and runs equivalently
 in both"* — a bar `CartesianPendulum` currently fails on the Rumoca side, deliberately.

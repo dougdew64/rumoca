@@ -1,8 +1,8 @@
-//! **Self-running tours** — the schedule and the clock behind the Play button.
+//! **Self-running labs** — the schedule and the clock behind the Play button.
 //!
 //! Doug, 2026-08-03: a LinkedIn screenshot of HRW drew immediate interest, and
-//! explaining *what a tour is* in prose to people who have never seen the tool is
-//! harder than showing one. So a tour needs to run itself, for long enough to be
+//! explaining *what a lab is* in prose to people who have never seen the tool is
+//! harder than showing one. So a lab needs to run itself, for long enough to be
 //! captured as a video and no longer.
 //!
 //! # Why this module is pure
@@ -26,7 +26,7 @@
 //! 2. **Time is weighted by prose length.** Stops are not equal: a stop that sets
 //!    up the phase deserves longer on screen than one that points at a field. Prose
 //!    length is a crude proxy for that and a good one, now that
-//!    [`the tour prose is load-bearing`](../docs/fixture-tours/README.md).
+//!    [`the lab prose is load-bearing`](../docs/fixture-labs/README.md).
 //!
 //! 3. **The clock stops while the app is busy.** A `load` beat compiles a
 //!    specimen. If the countdown ran through the compile, the video would spend its
@@ -50,7 +50,7 @@ pub const TOTAL_CHOICES: [(&str, u64); 4] = [("30s", 30), ("60s", 60), ("90s", 9
 /// Default run length: 90 seconds.
 ///
 /// The middle of the commonly cited 30–90s range for feed video, and long
-/// enough that a seven-stop tour still gets several seconds per beat.
+/// enough that a seven-stop lab still gets several seconds per beat.
 pub const DEFAULT_TOTAL: Duration = Duration::from_secs(90);
 
 /// Floor on any single beat, so a short stop is still readable.
@@ -59,7 +59,7 @@ pub const DEFAULT_TOTAL: Duration = Duration::from_secs(90);
 /// second on a 30s run and read as a glitch rather than a step.
 const MIN_BEAT: Duration = Duration::from_millis(900);
 
-/// How long the tour text takes to travel to a new beat's position.
+/// How long the lab text takes to travel to a new beat's position.
 ///
 /// **After this, it holds still for the rest of the beat.** Doug, 2026-08-03:
 /// *"the scrolling never pauses when a frame is being displayed."* The scroll was
@@ -83,7 +83,7 @@ const SCROLL_TRAVEL: Duration = Duration::from_millis(450);
 /// a different and slower job.
 ///
 /// **The run length is fixed, so this takes time from prose-only stops rather than
-/// adding it.** That is the intended trade: the stops with links are where the tour
+/// adding it.** That is the intended trade: the stops with links are where the lab
 /// is actually doing something. For absolutely longer pauses rather than relatively
 /// longer ones, pick a longer total.
 const LINK_WEIGHT_MULTIPLIER: f64 = 2.0;
@@ -99,7 +99,7 @@ const EXTERNAL_WEIGHT_MULTIPLIER: f64 = 2.5;
 
 /// One link, and **where in the document it sits**.
 ///
-/// The position is what lets the tour text scroll to the link being dispatched
+/// The position is what lets the lab text scroll to the link being dispatched
 /// rather than to a guess. Doug, 2026-08-03: *"when a link for a frame is
 /// encountered … the scrolling should be paused with that frame link showing with
 /// perhaps a line or two of text which is above that frame link."*
@@ -111,7 +111,7 @@ const EXTERNAL_WEIGHT_MULTIPLIER: f64 = 2.5;
 /// lay between them, so a stop with seven links and a stop with one advanced by the
 /// same distance.
 #[derive(Debug, Clone, PartialEq)]
-pub struct TourLink {
+pub struct LabLink {
     pub url: String,
     /// Byte offset of the **start of the line** this link is on.
     ///
@@ -122,10 +122,10 @@ pub struct TourLink {
     pub byte_offset: usize,
 }
 
-/// One stop of a tour: a heading, its prose, and the links inside it in order.
+/// One stop of a lab: a heading, its prose, and the links inside it in order.
 #[derive(Debug, Clone, PartialEq)]
-pub struct TourStop {
-    /// The heading text, with the `##` and any leading `Stop N —` intact, because
+pub struct LabStation {
+    /// The heading text, with the `##` and any leading `Station N —` intact, because
     /// that is what a viewer sees as the caption.
     pub heading: String,
     /// Characters of prose, used to weight this stop's share of the run.
@@ -137,7 +137,7 @@ pub struct TourStop {
     /// Deduplicating would be wrong here in a way it is not for hook registration:
     /// `dae-construction.md` returns to `hrw://load/SingleInertia/Dae` three times,
     /// and those are three different moments in the walk.
-    pub links: Vec<TourLink>,
+    pub links: Vec<LabLink>,
 }
 
 /// One dispatched moment: show this link for this long.
@@ -149,7 +149,7 @@ pub struct Beat {
     pub link: Option<String>,
     /// How long to remain here once the app is idle.
     pub dwell: Duration,
-    /// Byte offset of the line this beat's link is on. The tour text is split
+    /// Byte offset of the line this beat's link is on. The lab text is split
     /// here and rendered in two halves, so the seam **is** the link's position and
     /// the scroll lands on it exactly.
     pub byte_offset: usize,
@@ -157,21 +157,21 @@ pub struct Beat {
 
 /// The addressable name of a stop, derived from its heading.
 ///
-/// `## Stop 2 — The surprise` becomes `stop-2-the-surprise`. Lowercased, with every
+/// `## Station 2 — The surprise` becomes `station-2-the-surprise`. Lowercased, with every
 /// run of non-alphanumerics collapsed to a single `-` and the ends trimmed.
 ///
-/// **This is what makes `hrw://tour/<name>/stop/<slug>` stable.** An ordinal would
+/// **This is what makes `hrw://lab/<name>/station/<slug>` stable.** An ordinal would
 /// have been easier and is the wrong choice: inserting a stop shifts every later
 /// citation **silently**, which is exactly how the `worker.rs:3434` citation in
 /// `docs/tech-debt.md` rotted inside a day. A slug is immune to insertion and **fails
 /// loudly** when a heading is renamed — and loud failure is the only kind
-/// `fixture_tour_links_all_resolve` can act on.
+/// `fixture_lab_links_all_resolve` can act on.
 ///
 /// Deliberately derived rather than authored. An explicit `<!-- anchor: … -->` per
-/// stop would be more stable still and would put the burden on the tour author for
+/// stop would be more stable still and would put the burden on the lab author for
 /// every stop, including the ones nothing ever links to. Renames are rare; the
 /// checker catches them.
-pub fn stop_slug(heading: &str) -> String {
+pub fn station_slug(heading: &str) -> String {
     let mut out = String::new();
     let mut pending_dash = false;
     for ch in heading.trim_start_matches('#').trim().chars() {
@@ -188,19 +188,19 @@ pub fn stop_slug(heading: &str) -> String {
     out
 }
 
-/// Split tour markdown into stops.
+/// Split lab markdown into stops.
 ///
 /// A `##` heading starts a stop; everything before the first one becomes the
 /// **preamble stop**, titled from the `#` heading. The preamble is a stop rather
 /// than being skipped because a video needs a beat of title card before it starts
-/// moving, and the tour already has the words for one.
+/// moving, and the lab already has the words for one.
 ///
 /// Fenced code blocks are skipped when looking for headings, so a `##` comment
 /// inside a Modelica or shell block cannot invent a stop.
-pub fn parse_stops(text: &str) -> Vec<TourStop> {
-    let mut stops: Vec<TourStop> = Vec::new();
-    let mut title = String::from("Tour");
-    let mut current: Option<TourStop> = None;
+pub fn parse_stations(text: &str) -> Vec<LabStation> {
+    let mut stops: Vec<LabStation> = Vec::new();
+    let mut title = String::from("Lab");
+    let mut current: Option<LabStation> = None;
     let mut in_fence = false;
 
     // Byte offsets of line starts. Always char boundaries, so the consumer can
@@ -224,10 +224,10 @@ pub fn parse_stops(text: &str) -> Vec<TourStop> {
         if !in_fence && let Some(rest) = trimmed.strip_prefix("## ") {
             if let Some(done) = current.take() {
                 stops.push(done);
-            } else if !stops.is_empty() || title != "Tour" {
+            } else if !stops.is_empty() || title != "Lab" {
                 // Close the preamble, if anything preceded the first `##`.
             }
-            current = Some(TourStop {
+            current = Some(LabStation {
                 heading: rest.trim().to_owned(),
                 prose_chars: 0,
                 heading_offset: line_start,
@@ -238,9 +238,9 @@ pub fn parse_stops(text: &str) -> Vec<TourStop> {
         let stop = match current.as_mut() {
             Some(s) => s,
             None => {
-                // Still in the preamble; open it lazily so a tour that starts
+                // Still in the preamble; open it lazily so a lab that starts
                 // with `##` does not get an empty leading card.
-                current = Some(TourStop {
+                current = Some(LabStation {
                     heading: title.clone(),
                     prose_chars: 0,
                     heading_offset: 0,
@@ -251,7 +251,7 @@ pub fn parse_stops(text: &str) -> Vec<TourStop> {
         };
         stop.prose_chars += line.trim().chars().count();
         stop.links
-            .extend(links_in_order(line).into_iter().map(|url| TourLink {
+            .extend(links_in_order(line).into_iter().map(|url| LabLink {
                 url,
                 byte_offset: line_start,
             }));
@@ -291,7 +291,7 @@ fn links_in_order(line: &str) -> Vec<String> {
 /// schedule keeps rather than approximately keeps. What the *run* may exceed is
 /// covered in the module docs: waiting on a compile is untimed by design.
 pub fn schedule(
-    stops: &[TourStop],
+    stops: &[LabStation],
     total: Duration,
     is_external: impl Fn(&str) -> bool,
 ) -> Vec<Beat> {
@@ -322,7 +322,7 @@ pub fn schedule(
     let sum: f64 = raw.iter().map(|(_, _, w, _)| w).sum();
     let min_ms = MIN_BEAT.as_millis() as f64;
 
-    // The floor can overrun the budget on a long tour with a short total. When it
+    // The floor can overrun the budget on a long lab with a short total. When it
     // does, honouring the floor would silently break the duration promise, so the
     // floor yields: an even split is the least-bad answer and is still uniform.
     let floored = min_ms * raw.len() as f64 > total_ms;
@@ -380,7 +380,7 @@ pub struct Autoplay {
     /// Total time actually spent, including waits — what the recording will be.
     real_elapsed: Duration,
     /// Time since the current beat was **dispatched**, which keeps running while
-    /// the app is busy. Drives [`Self::travel_t`] so the tour text moves to the
+    /// the app is busy. Drives [`Self::travel_t`] so the lab text moves to the
     /// link *during* the compile it caused rather than after it.
     since_dispatch: Duration,
     /// **Who paused matters.** A pause caused by the window losing focus should
@@ -435,7 +435,7 @@ impl Autoplay {
     ///
     /// An external stop brings Wolfram Desktop or System Modeler forward, and a
     /// clock that kept running behind another window would advance the walk while
-    /// nobody was looking at it — the recording would come back to a tour that had
+    /// nobody was looking at it — the recording would come back to a lab that had
     /// moved on. Focus returning lifts *this* pause and no other, so a user-pressed
     /// Pause is not undone by clicking away and back.
     ///
@@ -455,7 +455,7 @@ impl Autoplay {
         }
     }
 
-    /// Abandon the run. The tour text and the app's state stay as they are — a
+    /// Abandon the run. The lab text and the app's state stay as they are — a
     /// viewer who stops halfway is looking at something they wanted to look at.
     pub fn stop(&mut self) {
         self.phase = Some(Phase::Idle);
@@ -521,7 +521,7 @@ impl Autoplay {
     }
 
     /// Fraction of the run completed, for a progress bar and for scrolling the
-    /// tour text in step with the walk.
+    /// lab text in step with the walk.
     pub fn fraction(&self) -> f32 {
         if self.beats.is_empty() {
             return 0.0;
@@ -572,7 +572,7 @@ impl Autoplay {
         t * t * (3.0 - 2.0 * t)
     }
 
-    /// Byte offset in the tour text of the line the current beat's link is on.
+    /// Byte offset in the lab text of the line the current beat's link is on.
     ///
     /// The consumer splits the markdown here and renders both halves, so the seam
     /// is the link's exact pixel position — no estimate involved.
@@ -584,7 +584,7 @@ impl Autoplay {
     }
 
     /// The stop index currently showing, for the caption.
-    pub fn current_stop(&self) -> Option<usize> {
+    pub fn current_station(&self) -> Option<usize> {
         self.beats
             .get(self.index.min(self.beats.len().saturating_sub(1)))
             .map(|b| b.stop)
@@ -616,11 +616,11 @@ mod tests {
     }
 
     const SAMPLE: &str = "\
-# Fixture tour — demo
+# Fixture lab — demo
 
 Preamble prose that sets the scene for the whole thing.
 
-## Stop 1 — first
+## Station 1 — first
 
 Some prose here, a moderate amount of it, enough to weigh more than stop two.
 More prose on a second line to make the difference unmistakable.
@@ -628,7 +628,7 @@ More prose on a second line to make the difference unmistakable.
 [a](hrw://load/M/Dae)
 [b](hrw://stage/Dae/node/x)
 
-## Stop 2 — second
+## Station 2 — second
 
 Short.
 
@@ -637,14 +637,14 @@ Short.
 
     #[test]
     fn parsing_finds_the_preamble_and_every_stop_in_order() {
-        let stops = parse_stops(SAMPLE);
+        let stops = parse_stations(SAMPLE);
         assert_eq!(stops.len(), 3, "preamble plus two stops: {stops:#?}");
         assert_eq!(
-            stops[0].heading, "Fixture tour — demo",
+            stops[0].heading, "Fixture lab — demo",
             "the preamble is titled by `#`"
         );
         assert!(stops[0].links.is_empty(), "the preamble has no links here");
-        assert_eq!(stops[1].heading, "Stop 1 — first");
+        assert_eq!(stops[1].heading, "Station 1 — first");
         let urls: Vec<&str> = stops[1].links.iter().map(|l| l.url.as_str()).collect();
         assert_eq!(urls, vec!["hrw://load/M/Dae", "hrw://stage/Dae/node/x"]);
         assert_eq!(stops[2].links[0].url, "hrw://notebook/n.nb");
@@ -661,7 +661,7 @@ Short.
     /// the run and drop two of them.
     #[test]
     fn a_repeated_link_is_a_repeated_beat() {
-        let stops = parse_stops("## S\n[a](hrw://load/M/Dae)\ntext\n[b](hrw://load/M/Dae)\n");
+        let stops = parse_stations("## S\n[a](hrw://load/M/Dae)\ntext\n[b](hrw://load/M/Dae)\n");
         assert_eq!(
             stops[0].links.len(),
             2,
@@ -672,7 +672,7 @@ Short.
     /// A `##` inside a fenced block is code, not a stop.
     #[test]
     fn a_heading_inside_a_code_fence_does_not_invent_a_stop() {
-        let stops = parse_stops("## Real\n```sh\n## not a heading\n```\ntext\n");
+        let stops = parse_stations("## Real\n```sh\n## not a heading\n```\ntext\n");
         assert_eq!(stops.len(), 1, "one real stop: {stops:#?}");
     }
 
@@ -683,7 +683,7 @@ Short.
     /// invisible in review and obvious in a recording that overruns its slot.
     #[test]
     fn the_dwells_sum_to_the_requested_total() {
-        let stops = parse_stops(SAMPLE);
+        let stops = parse_stations(SAMPLE);
         for secs in [30u64, 60, 90, 180] {
             let total = Duration::from_secs(secs);
             let beats = schedule(&stops, total, |l| l.contains("notebook"));
@@ -696,7 +696,7 @@ Short.
     /// More prose earns more time, and an external hop earns more still.
     #[test]
     fn weighting_favours_long_stops_and_external_hops() {
-        let stops = parse_stops(SAMPLE);
+        let stops = parse_stations(SAMPLE);
         let beats = schedule(&stops, Duration::from_secs(90), |l| l.contains("notebook"));
 
         let stop1: Duration = beats.iter().filter(|b| b.stop == 1).map(|b| b.dwell).sum();
@@ -720,7 +720,7 @@ Short.
     /// Every stop appears, including one with no links at all.
     #[test]
     fn a_prose_only_stop_still_gets_a_beat() {
-        let stops = parse_stops("# T\nintro\n\n## Silent\njust words, no links\n");
+        let stops = parse_stations("# T\nintro\n\n## Silent\njust words, no links\n");
         let beats = schedule(&stops, Duration::from_secs(30), |_| false);
         let covered: Vec<usize> = beats.iter().map(|b| b.stop).collect();
         for i in 0..stops.len() {
@@ -807,7 +807,7 @@ Short.
     ///
     /// Doug: *"the scrolling never pauses when a frame is being displayed."* The
     /// travel used to be driven by `fraction()`, a **clock**, so the prose crept
-    /// every frame -- worst exactly where the tour is best, with a deliberately
+    /// every frame -- worst exactly where the lab is best, with a deliberately
     /// paused animation under text that would not stay still.
     #[test]
     fn the_text_travels_then_stops_until_the_beat_changes() {
@@ -913,7 +913,7 @@ Short.
     ///
     /// Two estimates preceded this and both failed. The first scrolled by the clock,
     /// so the text crept continuously. The second scrolled by beat *ordinal* -- Doug:
-    /// *"the scroll is being advanced by a constant number of tour prose lines for
+    /// *"the scroll is being advanced by a constant number of lab prose lines for
     /// each advancement"* -- which spaced beats evenly regardless of how much text
     /// lay between them.
     ///
@@ -948,7 +948,7 @@ Short.
         lines.push("## Far below".to_owned());
         lines.push("[e](hrw://x/5)".to_owned());
         let text = lines.join("\n");
-        let stops = parse_stops(&text);
+        let stops = parse_stations(&text);
         let beats = schedule(&stops, Duration::from_secs(60), |_| false);
 
         let by_url = |u: &str| {
@@ -1039,16 +1039,16 @@ Short.
 
     /// The whole of `dae-construction.md` schedules, and does so sanely.
     ///
-    /// **Non-vacuity for the feature as a whole**: the tour this was built for must
+    /// **Non-vacuity for the feature as a whole**: the lab this was built for must
     /// produce a run with real structure, not one giant beat or a hundred flashes.
     #[test]
-    fn the_dae_tour_schedules_into_a_watchable_run() {
+    fn the_dae_lab_schedules_into_a_watchable_run() {
         let path = concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/docs/fixture-tours/dae-construction.md"
+            "/docs/fixture-labs/dae-construction.md"
         );
-        let text = std::fs::read_to_string(path).expect("the tour is versioned");
-        let stops = parse_stops(&text);
+        let text = std::fs::read_to_string(path).expect("the lab is versioned");
+        let stops = parse_stations(&text);
         assert!(
             stops.len() >= 8,
             "preamble plus seven stops, got {}",
@@ -1067,7 +1067,7 @@ Short.
             beats.iter().map(|b| b.dwell).sum::<Duration>(),
             DEFAULT_TOTAL,
         );
-        // Every stop of the tour is represented; none is scheduled out.
+        // Every stop of the lab is represented; none is scheduled out.
         for i in 0..stops.len() {
             assert!(
                 beats.iter().any(|b| b.stop == i),

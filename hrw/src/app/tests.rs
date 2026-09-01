@@ -64,21 +64,21 @@ impl App {
         self.viewing_log
     }
 
-    /// Select a fixture tour by file stem, as clicking it in the picker would.
+    /// Select a fixture lab by file stem, as clicking it in the picker would.
     ///
     /// Reads the file immediately rather than waiting for the poll interval, so a
-    /// headless test does not have to sleep to see the tour it just chose.
-    pub(crate) fn test_select_fixture_tour(&mut self, stem: &str) -> bool {
-        let Some(path) = bridge::fixture_tours()
+    /// headless test does not have to sleep to see the lab it just chose.
+    pub(crate) fn test_select_fixture_lab(&mut self, stem: &str) -> bool {
+        let Some(path) = bridge::fixture_labs()
             .into_iter()
             .find(|p| p.file_stem().and_then(|s| s.to_str()) == Some(stem))
         else {
             return false;
         };
-        self.select_tour(TourSource::Fixture(path));
-        self.tour.polled_at = None;
-        self.poll_tour_file();
-        self.tour.text().is_some()
+        self.select_lab(LabSource::Fixture(path));
+        self.lab.polled_at = None;
+        self.poll_lab_file();
+        self.lab.text().is_some()
     }
 
     /// Start a self-running walk, as the Play button does.
@@ -88,18 +88,18 @@ impl App {
 
     /// Stop a run, as the Stop button does.
     pub(crate) fn test_stop_autoplay(&mut self) {
-        self.tour.autoplay.stop();
+        self.lab.autoplay.stop();
         self.restore_mode_after_autoplay();
     }
 
     /// The autoplay clock's phase, for asserting a run is actually under way.
     pub(crate) fn test_autoplay_phase(&self) -> crate::autoplay::Phase {
-        self.tour.autoplay.phase()
+        self.lab.autoplay.phase()
     }
 
     /// Beats done and beats total, as the readout shows them.
     pub(crate) fn test_autoplay_progress(&self) -> (usize, usize) {
-        self.tour.autoplay.progress()
+        self.lab.autoplay.progress()
     }
 
     /// Put the right-hand side on the log, as it is while a compile runs.
@@ -161,25 +161,25 @@ impl App {
         );
     }
 
-    /// Put tour text on screen **without touching the disk**.
+    /// Put lab text on screen **without touching the disk**.
     ///
-    /// **Added 2026-08-05, because two tests were reading the live ad hoc tour.**
-    /// `.hrw-bridge/tour.md` is gitignored and ephemeral by construction — Claude
+    /// **Added 2026-08-05, because two tests were reading the live ad hoc lab.**
+    /// `.hrw-bridge/lab.md` is gitignored and ephemeral by construction — Claude
     /// overwrites it every time he answers a question — and
     /// `a_stop_needing_a_specimen_is_refused_with_a_visible_notice` and
-    /// `a_tour_link_acts_when_clicked_in_isolation` both clicked a link that happened
+    /// `a_lab_link_acts_when_clicked_in_isolation` both clicked a link that happened
     /// to be in whatever answer was last written. **They passed for months on content
     /// no one had chosen**, and broke the moment an answer was written that did not
     /// contain that link.
     ///
     /// A test whose fixture is a scratch file is not testing what it says it tests.
-    pub(crate) fn test_set_tour_text(&mut self, markdown: &str) {
-        self.tour.selected = Some(TourSource::AdHoc);
-        self.tour.cached = Some((markdown.to_owned(), std::time::SystemTime::now()));
+    pub(crate) fn test_set_lab_text(&mut self, markdown: &str) {
+        self.lab.selected = Some(LabSource::AdHoc);
+        self.lab.cached = Some((markdown.to_owned(), std::time::SystemTime::now()));
         // Far in the future so `poll` does not immediately re-read the real file and
         // replace what this just set.
-        self.tour.polled_at = Some(std::time::Instant::now());
-        self.ui_mode = UiMode::Tour;
+        self.lab.polled_at = Some(std::time::Instant::now());
+        self.ui_mode = UiMode::Lab;
     }
 
     /// Drive the "Show in the Modelica source" verb, as the context menu does.
@@ -345,34 +345,34 @@ impl App {
         });
     }
 
-    /// Drive a link the way a tour click would, without a rendered hyperlink.
+    /// Drive a link the way a lab click would, without a rendered hyperlink.
     pub(crate) fn follow_link_for_test(&mut self, url: &str) {
         if let Some(link) = parse_hrw_link(url) {
             self.dispatch_hrw_link(link);
         }
     }
 
-    /// Seed a captured tour passage, as pressing 🎯 would leave it.
+    /// Seed a captured lab passage, as pressing 🎯 would leave it.
     ///
     /// **Sets the point directly rather than driving the button**, deliberately: the
     /// capture needs a real label selection, which a headless harness cannot make, and
     /// the copy round trip is already pinned by
     /// [`the_copy_catcher_runs_after_plugins_registered_before_it`]. What is untested
     /// without this is the last hop — whether the bar *renders* what was captured.
-    pub(crate) fn test_point_at_tour_passage(&mut self, tour: &str, text: &str) {
+    pub(crate) fn test_point_at_lab_passage(&mut self, lab: &str, text: &str) {
         let seq = self.context.next_seq();
         self.context.pointed_at = Some(PointedAt {
             seq,
             target: text.to_owned(),
-            kind: PointKind::TourPassage {
-                tour: tour.to_owned(),
+            kind: PointKind::LabPassage {
+                lab: lab.to_owned(),
             },
             stage: None,
             request: bridge::AskRequest::Explain,
         });
     }
 
-    /// Put the right-hand side into the state a walked-into tour would leave.
+    /// Put the right-hand side into the state a walked-into lab would leave.
     pub(crate) fn test_set_walked_state(&mut self, specimen: &str, model: &str, stage: StageKind) {
         self.selected = Some(PathBuf::from(specimen));
         self.model = Some(model.to_owned());
@@ -452,7 +452,7 @@ impl App {
             nav_loading: None,
             nav_error: None,
             notice: None,
-            ui_mode: UiMode::Tour,
+            ui_mode: UiMode::Lab,
             specimen_detail: SpecimenDetail::default(),
             show_settings: false,
             show_help: false,
@@ -481,7 +481,7 @@ impl App {
             split: SplitState::default(),
             context: ContextBarState::default(),
             source: SourceViewState::default(),
-            tour: TourState::default(),
+            lab: LabState::default(),
             aim_at_equation: None,
             seek_frame: None,
             cached_purpose_notes: HashMap::new(),
@@ -1987,12 +1987,12 @@ fn report_cache_invalidated_on_stage_switch() {
 /// (it needs `current_stage().value`), which is what calls `reset_for`.
 #[test]
 fn a_replay_keeps_its_place_across_a_stage_switch() {
-    use crate::ui_tests::{AdHocTour, harness};
+    use crate::ui_tests::{AdHocLab, harness};
     use crate::worker::Stage;
 
-    // Auto-selecting an ad hoc tour resets the stage side. See the note on
-    // `AdHocTour` — its presence is environment, not code.
-    let _tour_state = AdHocTour::absent();
+    // Auto-selecting an ad hoc lab resets the stage side. See the note on
+    // `AdHocLab` — its presence is environment, not code.
+    let _lab_state = AdHocLab::absent();
 
     let mut app = App::test_default();
     app.stages.initialization = Stage {
@@ -2076,10 +2076,10 @@ fn a_replay_keeps_its_place_across_a_stage_switch() {
 /// different question — the IC plan cache was `None` when it should have been built.
 #[test]
 fn a_stranded_structural_sub_view_does_not_take_over_another_stage() {
-    use crate::ui_tests::{AdHocTour, harness};
+    use crate::ui_tests::{AdHocLab, harness};
     use crate::worker::Stage;
 
-    let _tour_state = AdHocTour::absent();
+    let _lab_state = AdHocLab::absent();
 
     let mut app = App::test_default();
     app.stages.initialization = Stage {
@@ -2931,7 +2931,7 @@ fn a_stray_copy_never_becomes_the_next_capture() {
 
     // Now a real press, whose own copy arrives next frame.
     app.pending_passage = Some(PendingPassage {
-        tour: "connect-expansion".to_owned(),
+        lab: "connect-expansion".to_owned(),
         frames_left: 3,
     });
     *app.copy_sink.lock().expect("sink") = Some("two separate graphs".to_owned());
@@ -2948,8 +2948,8 @@ fn a_stray_copy_never_becomes_the_next_capture() {
         "prose is not in a phase, and the whole type change was to be able to say so",
     );
     match &point.kind {
-        PointKind::TourPassage { tour } => assert_eq!(tour, "connect-expansion"),
-        _ => panic!("expected a tour passage"),
+        PointKind::LabPassage { lab } => assert_eq!(lab, "connect-expansion"),
+        _ => panic!("expected a lab passage"),
     }
 }
 
@@ -2965,7 +2965,7 @@ fn a_press_with_nothing_selected_expires_and_says_so() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
     app.pending_passage = Some(PendingPassage {
-        tour: "connect-expansion".to_owned(),
+        lab: "connect-expansion".to_owned(),
         frames_left: 2,
     });
 
@@ -3077,15 +3077,15 @@ fn drain_worker_log_appends_entry() {
 fn link_verbs_declare_whether_they_need_a_specimen() {
     // Navigation between FILES: no model is involved, so a reader with nothing loaded
     // must still be able to follow a citation. Both historical failures are in this
-    // list — `OpenTour` (2026-08-05) and `OpenDoc` (2026-08-31).
+    // list — `OpenLab` (2026-08-05) and `OpenDoc` (2026-08-31).
     for link in [
-        HrwLink::OpenTour {
-            tour: "failure-parse".to_owned(),
+        HrwLink::OpenLab {
+            lab: "failure-parse".to_owned(),
             stop: None,
         },
-        HrwLink::OpenTour {
-            tour: "failure-parse".to_owned(),
-            stop: Some("stop-1-the-failure-itself".to_owned()),
+        HrwLink::OpenLab {
+            lab: "failure-parse".to_owned(),
+            stop: Some("station-1-the-failure-itself".to_owned()),
         },
         HrwLink::OpenDoc("upstream-issues.md".to_owned()),
         HrwLink::OpenSource("crates/rumoca-core/src/lib.rs#VarName".to_owned()),
@@ -3116,7 +3116,7 @@ fn link_verbs_declare_whether_they_need_a_specimen() {
 /// Same shape as the test above and the same reason for existing: the exhaustive match in
 /// `leaves_hrw` guarantees an *answer* per verb, never a *correct* one. The two cases that
 /// separate a right answer from a plausible one are here — `OpenDoc` spawns `code` and so
-/// hops out, while `OpenTour` opens in HRW's own panel and does not, which is the pair a
+/// hops out, while `OpenLab` opens in HRW's own panel and does not, which is the pair a
 /// reader skimming "the Open* verbs" would get wrong.
 #[test]
 fn a_verb_that_opens_another_application_gets_a_longer_beat() {
@@ -3133,8 +3133,8 @@ fn a_verb_that_opens_another_application_gets_a_longer_beat() {
         );
     }
     for link in [
-        HrwLink::OpenTour {
-            tour: "the-concepts".to_owned(),
+        HrwLink::OpenLab {
+            lab: "the-concepts".to_owned(),
             stop: None,
         },
         HrwLink::LoadSpecimen("RcCircuit".to_owned()),
@@ -3144,9 +3144,9 @@ fn a_verb_that_opens_another_application_gets_a_longer_beat() {
     }
 }
 
-/// **The tour-citation forms parse.** Missing when the form shipped, which is
-/// exactly the gap a must-fire test exists to close: `fixture_tour_links_all_resolve`
-/// only checks links found in *fixture* tours, and `tour_citations_…` only checks
+/// **The lab-citation forms parse.** Missing when the form shipped, which is
+/// exactly the gap a must-fire test exists to close: `fixture_lab_links_all_resolve`
+/// only checks links found in *fixture* labs, and `lab_citations_…` only checks
 /// that cited names exist — **neither exercises the parser itself**, so a form that
 /// failed to parse would show up as "the link does nothing" with nothing failing.
 /// *(Placed with its own `#[test]`, and the one below restored: inserting this
@@ -3155,25 +3155,25 @@ fn a_verb_that_opens_another_application_gets_a_longer_beat() {
 /// `CLAUDE.md` warns about. **`dead_code = "deny"`, adopted this morning, is what
 /// caught it**; without that lint the suite would have gone green one test short.)*
 #[test]
-fn parse_hrw_link_tour_and_stop() {
+fn parse_hrw_link_lab_and_stop() {
     assert_eq!(
-        parse_hrw_link("hrw://tour/failure-parse"),
-        Some(HrwLink::OpenTour {
-            tour: "failure-parse".to_owned(),
+        parse_hrw_link("hrw://lab/failure-parse"),
+        Some(HrwLink::OpenLab {
+            lab: "failure-parse".to_owned(),
             stop: None
         }),
     );
     assert_eq!(
         parse_hrw_link(
-            "hrw://tour/failure-parse/stop/stop-4-the-distinction-this-specimen-anchors"
+            "hrw://lab/failure-parse/station/station-4-the-distinction-this-specimen-anchors"
         ),
-        Some(HrwLink::OpenTour {
-            tour: "failure-parse".to_owned(),
-            stop: Some("stop-4-the-distinction-this-specimen-anchors".to_owned()),
+        Some(HrwLink::OpenLab {
+            lab: "failure-parse".to_owned(),
+            stop: Some("station-4-the-distinction-this-specimen-anchors".to_owned()),
         }),
     );
     // An empty name names nothing, as with `notebook/`.
-    assert_eq!(parse_hrw_link("hrw://tour/"), None);
+    assert_eq!(parse_hrw_link("hrw://lab/"), None);
 }
 
 #[test]
@@ -3185,11 +3185,11 @@ fn parse_hrw_link_load_specimen() {
 /// **An unknown breakpoint anchor must NOT parse** (`docs/ideas.md` #73).
 ///
 /// This is the whole reason the name is validated in the parser rather than
-/// at dispatch: `fixture_tour_links_all_resolve` walks every link in every
-/// tour, so a typo — or an anchor whose locating fragment was edited away —
+/// at dispatch: `fixture_lab_links_all_resolve` walks every link in every
+/// lab, so a typo — or an anchor whose locating fragment was edited away —
 /// fails the suite. Accepting the link and reporting the problem at click
 /// time would move the discovery into the middle of a walk, which is exactly
-/// where a tour must not surprise its reader.
+/// where a lab must not surprise its reader.
 #[test]
 fn parse_hrw_link_breakpoint_validates_the_anchor_name() {
     assert!(
@@ -3212,7 +3212,7 @@ fn parse_hrw_link_breakpoint_validates_the_anchor_name() {
 /// It targets Rumoca's source, and `matching-live.md` deliberately has the
 /// reader place breakpoints in a session before the model finishes
 /// compiling. Requiring one would refuse the link at exactly the moment the
-/// tour tells them to click it.
+/// lab tells them to click it.
 #[test]
 fn arming_a_breakpoint_does_not_require_a_specimen() {
     assert!(
@@ -3253,7 +3253,7 @@ fn parse_hrw_link_not_hrw_scheme() {
 /// The one thing this form does that no other link form does: it **rejoins** the
 /// remaining segments instead of matching a fixed count. `splitn(5, '/')` was already
 /// raised from 4 once, when `stage/…/node/<n>` silently glommed into one segment and the
-/// link did nothing on click — the worst outcome in a tour, since the screen says
+/// link did nothing on click — the worst outcome in a lab, since the screen says
 /// nothing. A subdirectory path is the same hazard in a new place, so it is pinned here.
 #[test]
 fn parse_hrw_link_doc_keeps_a_nested_path() {
@@ -3315,7 +3315,7 @@ fn a_pinned_panel_width_does_not_overwrite_the_chosen_split() {
     // A real choice on a roomy window is learned.
     //
     // **480/1200 rather than 461/1152 since 2026-08-19**: `MIN_LEFT_POINTS` rose to
-    // 465 when the tour bar stopped wrapping, so 461 is now *below the floor* and is
+    // 465 when the lab bar stopped wrapping, so 461 is now *below the floor* and is
     // correctly read as pinned rather than chosen. The ratio is still 0.40 — the
     // property under test is unchanged, only the window it needs to fit in.
     split.observe(480.0, 1200.0);
@@ -3356,10 +3356,10 @@ fn extract_hrw_links_deduplicates() {
     assert_eq!(links.len(), 1);
 }
 
-/// **Every `hrw://` link in every committed tour survives extraction AND parsing.**
+/// **Every `hrw://` link in every committed lab survives extraction AND parsing.**
 ///
 /// Doug, 2026-08-16: *"There are two Act 2 links which don't cause any action when
-/// clicked."* `fixture_tour_links_all_resolve` was green, because it parses URLs it
+/// clicked."* `fixture_lab_links_all_resolve` was green, because it parses URLs it
 /// is handed. Nothing checked the step *before* that — that `extract_hrw_links`,
 /// which decides where a URL **ends**, hands over the same string the author wrote.
 ///
@@ -3370,20 +3370,20 @@ fn extract_hrw_links_deduplicates() {
 /// see this**, which is why it went unnoticed while a test claimed the links
 /// resolved.
 #[test]
-fn every_tour_link_survives_extraction_and_parsing() {
-    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+fn every_lab_link_survives_extraction_and_parsing() {
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
     let mut checked = 0usize;
     let mut broken: Vec<String> = Vec::new();
 
     for entry in std::fs::read_dir(&dir)
-        .expect("fixture-tours exists")
+        .expect("fixture-labs exists")
         .flatten()
     {
         let path = entry.path();
         if path.extension().and_then(|e| e.to_str()) != Some("md") {
             continue;
         }
-        let text = std::fs::read_to_string(&path).expect("readable tour");
+        let text = std::fs::read_to_string(&path).expect("readable lab");
         let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("?");
         let extracted = extract_hrw_links(&text);
 
@@ -3414,12 +3414,12 @@ fn every_tour_link_survives_extraction_and_parsing() {
 
     assert!(
         checked >= 40,
-        "only {checked} markdown links were inspected across the tours; the \
-             extraction is broken, not the tours",
+        "only {checked} markdown links were inspected across the labs; the \
+             extraction is broken, not the labs",
     );
     assert!(
         broken.is_empty(),
-        "{} tour link(s) are clickable but inert:\n  {}",
+        "{} lab link(s) are clickable but inert:\n  {}",
         broken.len(),
         broken.join("\n  "),
     );
@@ -3427,9 +3427,9 @@ fn every_tour_link_survives_extraction_and_parsing() {
 
 /// **A fired hook is consumed, so a link below it is still reachable.**
 ///
-/// The regression behind Doug's report that two Stop 2 links "don't cause any
+/// The regression behind Doug's report that two Station 2 links "don't cause any
 /// action when clicked". `egui_commonmark` never clears a hook it sets, and
-/// `drain_hrw_hooks` only *read* it — so the first link clicked anywhere in a tour
+/// `drain_hrw_hooks` only *read* it — so the first link clicked anywhere in a lab
 /// was re-dispatched every frame forever, and being first in document order it
 /// masked every link below it.
 ///
@@ -3515,7 +3515,7 @@ fn a_scratch_specimen_is_listed_and_marked() {
         app.model_list.files.contains(&probe),
         "scratch specimens join the list"
     );
-    // Scratch sorts BEFORE the curated corpus, matching the tour list: the
+    // Scratch sorts BEFORE the curated corpus, matching the lab list: the
     // just-written thing is the one most likely wanted next, and burying it under
     // 18 curated specimens made the common case the awkward one.
     //
@@ -3524,7 +3524,7 @@ fn a_scratch_specimen_is_listed_and_marked() {
     // the moment a second one existed (2026-08-22: two probes written to answer a
     // question about connector type checking, both sorting ahead of it).
     // `.hrw-bridge/specimens/` is live state the suite does not control, the same
-    // class as `.hrw-bridge/tour.md`, and the fix is to assert what the feature
+    // class as `.hrw-bridge/lab.md`, and the fix is to assert what the feature
     // promises rather than what one directory happened to contain.
     let last_scratch = app
         .model_list
@@ -3635,7 +3635,7 @@ fn find_specimen_does_not_match_substring() {
 
 /// A link can point at the source, with or without a line.
 ///
-/// Closes the second quiet tour hole: two tours *quoted* a source line because
+/// Closes the second quiet lab hole: two labs *quoted* a source line because
 /// nothing could point at one.
 #[test]
 fn a_link_can_point_at_a_source_line() {
@@ -3713,9 +3713,9 @@ fn only_an_unrescuable_model_gets_its_source_blamed() {
 
 /// A link can address a sub-view, on both the load and the switch forms.
 ///
-/// Closes the quiet tour hole logged 2026-07-29: links reached a stage tab and
+/// Closes the quiet lab hole logged 2026-07-29: links reached a stage tab and
 /// no further, so every animation had to be handed off in prose ("same tab →
-/// now click **Incidence**"). The first tour had two working links and four
+/// now click **Incidence**"). The first lab had two working links and four
 /// such hand-offs.
 #[test]
 fn a_link_can_address_a_sub_view() {
@@ -3832,7 +3832,7 @@ fn every_capture_noun_is_reachable_by_a_link() {
             parse_hrw_link("hrw://load/CapacitorLoop").is_some(),
         ),
         // `Focus::Nothing` is the absence of a point; there is nothing to navigate
-        // to, and a verb for it would mean "un-point", which no tour has wanted.
+        // to, and a verb for it would mean "un-point", which no lab has wanted.
         (
             "Tracking::name",
             parse_hrw_link("hrw://follow/emf.phi").is_some(),
@@ -3884,60 +3884,60 @@ fn every_stage_round_trips_between_capture_and_link() {
     }
 }
 
-/// Every link in every **fixture tour** resolves against the current parser.
+/// Every link in every **fixture lab** resolves against the current parser.
 ///
-/// A fixture tour is kept and versioned — unlike an ad hoc tour, which is gitignored
-/// and regenerated per question. The ephemerality rule was never about tours; it was
-/// about *explanation*, which rots because nothing checks it. A fixture tour has a
+/// A fixture lab is kept and versioned — unlike an ad hoc lab, which is gitignored
+/// and regenerated per question. The ephemerality rule was never about labs; it was
+/// about *explanation*, which rots because nothing checks it. A fixture lab has a
 /// pass/fail criterion, and **this test is what makes that true**: without something
-/// executing it, a saved tour is stored prose with extra steps, and would drift from
-/// the app exactly as `end_to_end_tour.md`'s 7x7 matrix did.
+/// executing it, a saved lab is stored prose with extra steps, and would drift from
+/// the app exactly as `end_to_end_lab.md`'s 7x7 matrix did.
 ///
 /// Checks the links only. Whether the camera *looks* right is Doug's half — that is
 /// the whole reason the fixture exists.
-/// The picker names each tour by what it *is*, not by where it lives.
+/// The picker names each lab by what it *is*, not by where it lives.
 #[test]
-fn tour_labels_name_what_the_tour_is() {
+fn lab_labels_name_what_the_lab_is() {
     assert!(
-        TourSource::AdHoc.label().contains("Answer"),
-        "the ad hoc tour is named by its role; its filename is an implementation \
+        LabSource::AdHoc.label().contains("Answer"),
+        "the ad hoc lab is named by its role; its filename is an implementation \
              detail nobody should need to know",
     );
-    let fixture = TourSource::Fixture(PathBuf::from("/x/docs/fixture-tours/camera-aiming.md"));
+    let fixture = LabSource::Fixture(PathBuf::from("/x/docs/fixture-labs/camera-aiming.md"));
     assert_eq!(fixture.label(), "camera-aiming");
     assert_eq!(
         fixture.path(),
-        PathBuf::from("/x/docs/fixture-tours/camera-aiming.md")
+        PathBuf::from("/x/docs/fixture-labs/camera-aiming.md")
     );
     assert_eq!(
-        TourSource::AdHoc.path(),
-        PathBuf::from(crate::bridge::TOUR_FILE)
+        LabSource::AdHoc.path(),
+        PathBuf::from(crate::bridge::LAB_FILE)
     );
 }
 
-/// Switching tours re-initialises the right-hand side; re-selecting does not.
+/// Switching labs re-initialises the right-hand side; re-selecting does not.
 ///
-/// Doug: clicking a link in one tour and then choosing a second tour left the first
-/// tour's specimen on screen. A tour is a self-contained sequence whose first stop
-/// loads a specimen, so the leftover state invites reading the new tour's stops
-/// against the old tour's model — and makes Stop 1 look already done.
+/// Doug: clicking a link in one lab and then choosing a second lab left the first
+/// lab's specimen on screen. A lab is a self-contained sequence whose first stop
+/// loads a specimen, so the leftover state invites reading the new lab's stops
+/// against the old lab's model — and makes Station 1 look already done.
 ///
 /// The reset reuses `open`'s own field list via `clear_specimen_state`, rather than
 /// a second copy that would drift from it.
 #[test]
-fn switching_tours_resets_the_stage_side() {
-    let a = TourSource::Fixture(PathBuf::from("/x/a.md"));
-    let b = TourSource::Fixture(PathBuf::from("/x/b.md"));
+fn switching_labs_resets_the_stage_side() {
+    let a = LabSource::Fixture(PathBuf::from("/x/a.md"));
+    let b = LabSource::Fixture(PathBuf::from("/x/b.md"));
 
     let mut app = App::test_default();
-    app.select_tour(a.clone());
+    app.select_lab(a.clone());
     // Simulate having walked a stop: a specimen loaded, a stage reached.
     app.selected = Some(PathBuf::from("/x/RcCircuit.mo"));
     app.model = Some("RcCircuit".to_owned());
     app.stage = StageKind::Structural;
 
-    // Re-selecting the SAME tour must not throw away work in progress.
-    app.select_tour(a.clone());
+    // Re-selecting the SAME lab must not throw away work in progress.
+    app.select_lab(a.clone());
     assert_eq!(
         app.selected,
         Some(PathBuf::from("/x/RcCircuit.mo")),
@@ -3945,8 +3945,8 @@ fn switching_tours_resets_the_stage_side() {
     );
     assert_eq!(app.model.as_deref(), Some("RcCircuit"));
 
-    // A different tour starts clean.
-    app.select_tour(b.clone());
+    // A different lab starts clean.
+    app.select_lab(b.clone());
     assert_eq!(app.selected, None, "the specimen is cleared");
     assert_eq!(app.model, None, "and so is the model");
     assert_eq!(
@@ -3954,53 +3954,49 @@ fn switching_tours_resets_the_stage_side() {
         StageKind::Parse,
         "and the stage returns to the start"
     );
-    assert_eq!(app.tour.selected, Some(b));
+    assert_eq!(app.lab.selected, Some(b));
 }
 
 /// The list offers the fixtures, ad hoc first when one exists.
 ///
-/// Doug asked for in-app selection so a fixture tour no longer has to be copied over
-/// `.hrw-bridge/tour.md` before starting HRW. Ad hoc goes first because it answers
+/// Doug asked for in-app selection so a fixture lab no longer has to be copied over
+/// `.hrw-bridge/lab.md` before starting HRW. Ad hoc goes first because it answers
 /// the question just asked; burying it under the fixtures would make the common case
 /// the awkward one.
 #[test]
-fn the_tour_list_offers_fixtures_with_ad_hoc_first() {
+fn the_lab_list_offers_fixtures_with_ad_hoc_first() {
     let mut app = App::test_default();
-    app.poll_tour_file();
+    app.poll_lab_file();
 
     assert!(
-        app.tour
+        app.lab
             .available
             .iter()
-            .any(|t| matches!(t, TourSource::Fixture(_))),
-        "the checked-in fixture tours should be listed: {:?}",
-        app.tour
+            .any(|t| matches!(t, LabSource::Fixture(_))),
+        "the checked-in fixture labs should be listed: {:?}",
+        app.lab
             .available
             .iter()
-            .map(TourSource::label)
+            .map(LabSource::label)
             .collect::<Vec<_>>(),
     );
 
-    // **A README is not a tour.** `docs/fixture-tours/` gained one on
+    // **A README is not a lab.** `docs/fixture-labs/` gained one on
     // 2026-08-01 under the two-audience convention (`DECISIONS.md`), and the
     // enumeration takes every `.md` in the directory — so without the
-    // exclusion in `bridge::fixture_tours` the picker offers a tour called
+    // exclusion in `bridge::fixture_labs` the picker offers a lab called
     // "README" whose stops do not exist. Pinned here because the next
     // directory README would reintroduce it silently.
-    let labels: Vec<String> = app.tour.available.iter().map(TourSource::label).collect();
+    let labels: Vec<String> = app.lab.available.iter().map(LabSource::label).collect();
     assert!(
         !labels.iter().any(|l| l.eq_ignore_ascii_case("README")),
-        "README.md must not be offered as a tour: {labels:?}",
+        "README.md must not be offered as a lab: {labels:?}",
     );
-    if app.tour.available.contains(&TourSource::AdHoc) {
+    if app.lab.available.contains(&LabSource::AdHoc) {
+        assert_eq!(app.lab.available[0], LabSource::AdHoc, "ad hoc sorts first");
         assert_eq!(
-            app.tour.available[0],
-            TourSource::AdHoc,
-            "ad hoc sorts first"
-        );
-        assert_eq!(
-            app.tour.selected,
-            Some(TourSource::AdHoc),
+            app.lab.selected,
+            Some(LabSource::AdHoc),
             "and is selected by default"
         );
     }
@@ -4008,62 +4004,62 @@ fn the_tour_list_offers_fixtures_with_ad_hoc_first() {
     // Selecting a fixture drops the previous text immediately rather than leaving
     // it on screen until the next poll.
     let fixture = app
-        .tour
+        .lab
         .available
         .iter()
-        .find(|t| matches!(t, TourSource::Fixture(_)))
+        .find(|t| matches!(t, LabSource::Fixture(_)))
         .cloned()
         .expect("a fixture exists");
-    app.select_tour(fixture.clone());
-    assert!(app.tour.cached.is_none(), "old text cleared on switch");
-    app.tour.polled_at = None;
-    app.poll_tour_file();
-    assert_eq!(app.tour.selected, Some(fixture));
-    assert!(app.tour.cached.is_some(), "the chosen fixture is loaded");
+    app.select_lab(fixture.clone());
+    assert!(app.lab.cached.is_none(), "old text cleared on switch");
+    app.lab.polled_at = None;
+    app.poll_lab_file();
+    assert_eq!(app.lab.selected, Some(fixture));
+    assert!(app.lab.cached.is_some(), "the chosen fixture is loaded");
 }
 
 /// **The chain overview sorts first in the picker, and the separator follows it.**
 ///
 /// Doug, 2026-08-17: *"I really want to be able to navigate backward from a
-/// subordinate tour to the top-level tour so that I can then navigate downward to
-/// another subordinate tour."* Two things answer that — a back-link inside each phase
-/// tour (checked by `doc_citations::every_tour_the_overview_links_to_links_back`) and
+/// subordinate lab to the top-level lab so that I can then navigate downward to
+/// another subordinate lab."* Two things answer that — a back-link inside each phase
+/// lab (checked by `doc_citations::every_lab_the_overview_links_to_links_back`) and
 /// the hub sitting at the top of the picker, which is this.
 ///
-/// **Asserted against `available`, not against a literal list**, so a new tour cannot
+/// **Asserted against `available`, not against a literal list**, so a new lab cannot
 /// slip in above the overview: the check is *position relative to everything else*.
 ///
 /// **And the non-vacuity guard matters here more than usual.** Alphabetically
-/// `the-concepts` already sorts after most tours, so a test that merely looked for
+/// `the-concepts` already sorts after most labs, so a test that merely looked for
 /// it in the list would pass with the hoist deleted. This asserts index 0 *and* that
 /// there is something below it to be above.
 #[test]
 fn the_chain_overview_sorts_first_in_the_picker() {
     let mut app = App::test_default();
-    app.poll_tour_file();
+    app.poll_lab_file();
 
-    let (ordered, hoisted) = app.tour.picker_order();
+    let (ordered, hoisted) = app.lab.picker_order();
     let labels: Vec<String> = ordered.iter().map(|s| s.label()).collect();
 
     assert_eq!(
         hoisted, 1,
-        "exactly one tour is the chain overview; the picker draws its separator at \
+        "exactly one lab is the chain overview; the picker draws its separator at \
              this index, so 0 would silently mean 'no hub on disk' and 2 would mean the \
              predicate matched something else. Order was: {labels:?}",
     );
     assert!(
         ordered[0].is_overview(),
-        "the-concepts.md is the hub the nine phase tours hang off and must be the \
+        "the-concepts.md is the hub the nine phase labs hang off and must be the \
              first row in the picker; it was {:?}",
         labels.first(),
     );
     assert!(
         ordered.len() > 1,
         "the hoist is vacuous with nothing beneath it — the corpus should hold every \
-             phase tour as well: {labels:?}",
+             phase lab as well: {labels:?}",
     );
     // The tail keeps the enumeration's own order. Not sorted here, deliberately: the
-    // hoist is the only reordering, and asserting more would pin `bridge::fixture_tours`
+    // hoist is the only reordering, and asserting more would pin `bridge::fixture_labs`
     // twice.
     assert!(
         ordered[1..].iter().all(|s| !s.is_overview()),
@@ -4072,41 +4068,41 @@ fn the_chain_overview_sorts_first_in_the_picker() {
     );
 }
 
-/// **The tour catalogue is current.**
+/// **The lab catalogue is current.**
 ///
-/// `docs/fixture-tours/CATALOGUE.md` is generated by
-/// `cargo run -p hrw --example gen_tour_catalogue` and is **written for Claude** —
-/// it is how a question gets answered by citing a tour that already demonstrates
+/// `docs/fixture-labs/CATALOGUE.md` is generated by
+/// `cargo run -p hrw --example gen_lab_catalogue` and is **written for Claude** —
+/// it is how a question gets answered by citing a lab that already demonstrates
 /// the thing, instead of by writing a new one that retells it without its checked
 /// expectations (`docs/ideas.md` #63).
 ///
-/// **A stale catalogue is worse than none.** It would send Claude to cite a tour
+/// **A stale catalogue is worse than none.** It would send Claude to cite a lab
 /// about the wrong specimen with full confidence, and #63 already records that
-/// citing a tour makes its claims your own. Every field in it is derived, so
+/// citing a lab makes its claims your own. Every field in it is derived, so
 /// "stale" only ever means "not regenerated" — which is exactly what this catches.
 ///
-/// Adding, renaming or re-stopping a tour fails here with the command to run.
+/// Adding, renaming or re-stopping a lab fails here with the command to run.
 #[test]
-fn tour_catalogue_is_current() {
-    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+fn lab_catalogue_is_current() {
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
     let path = dir.join("CATALOGUE.md");
     let Ok(on_disk) = std::fs::read_to_string(&path) else {
-        panic!("no CATALOGUE.md — run: cargo run -p hrw --example gen_tour_catalogue");
+        panic!("no CATALOGUE.md — run: cargo run -p hrw --example gen_lab_catalogue");
     };
     // The same function the example calls, not a reimplementation of it: a
     // checker that duplicates what it checks is the drift `fidelity-plan.md`
     // warns about, and is why `catalogue` lives in the library.
-    let fresh = crate::tour::catalogue();
+    let fresh = crate::lab::catalogue();
     assert_eq!(
         on_disk, fresh,
         "CATALOGUE.md is out of date \u{2014} run: \
-             cargo run -p hrw --example gen_tour_catalogue",
+             cargo run -p hrw --example gen_lab_catalogue",
     );
 }
 
-/// **Every `hrw://tour/…` citation names a tour that exists, at a stop that exists.**
+/// **Every `hrw://lab/…` citation names a lab that exists, at a stop that exists.**
 ///
-/// `fixture_tour_links_all_resolve` checks the *grammar* — `tour/x/stop/y` parses
+/// `fixture_lab_links_all_resolve` checks the *grammar* — `lab/x/station/y` parses
 /// whether or not `x` or `y` are real. That is the gap this closes, and it is the
 /// gap that makes the slug design worth anything: a **renamed heading fails here
 /// loudly**, which is the whole reason stops are addressed by slug rather than by
@@ -4115,29 +4111,29 @@ fn tour_catalogue_is_current() {
 ///
 /// Added 2026-08-05 with the link form (`docs/ideas.md` #63).
 #[test]
-fn tour_citations_name_a_real_tour_and_a_real_stop() {
-    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+fn lab_citations_name_a_real_lab_and_a_real_stop() {
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
     let Ok(entries) = std::fs::read_dir(&dir) else {
         return;
     };
-    let tours: Vec<PathBuf> = entries
+    let labs: Vec<PathBuf> = entries
         .flatten()
         .map(|e| e.path())
         .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("md"))
         .collect();
 
     let mut checked = 0usize;
-    for path in &tours {
+    for path in &labs {
         let text = std::fs::read_to_string(path).unwrap();
-        for raw in text.split("hrw://tour/").skip(1) {
+        for raw in text.split("hrw://lab/").skip(1) {
             let cite: String = raw
                 .chars()
                 .take_while(|c| !c.is_whitespace() && *c != ')' && *c != '`')
                 .collect();
-            // **A documented form is not a citation.** `CATALOGUE.md` and any tour
-            // explaining the link form write `hrw://tour/<name>/stop/<slug>`
+            // **A documented form is not a citation.** `CATALOGUE.md` and any lab
+            // explaining the link form write `hrw://lab/<name>/station/<slug>`
             // literally, and the angle brackets are what say "placeholder". Without
-            // this the checker demanded a tour called `<name>`.
+            // this the checker demanded a lab called `<name>`.
             if cite.contains('<') {
                 continue;
             }
@@ -4146,19 +4142,19 @@ fn tour_citations_name_a_real_tour_and_a_real_stop() {
             let target = dir.join(format!("{name}.md"));
             assert!(
                 target.exists(),
-                "{} cites tour `{name}`, which does not exist",
+                "{} cites lab `{name}`, which does not exist",
                 path.display(),
             );
             checked += 1;
 
-            // `stop/<slug>` — the slug must match a heading in the cited tour.
-            if parts.next() == Some("stop")
+            // `stop/<slug>` — the slug must match a heading in the cited lab.
+            if parts.next() == Some("station")
                 && let Some(slug) = parts.next()
             {
                 let cited = std::fs::read_to_string(&target).unwrap();
-                let slugs: Vec<String> = crate::autoplay::parse_stops(&cited)
+                let slugs: Vec<String> = crate::autoplay::parse_stations(&cited)
                     .iter()
-                    .map(|s| crate::autoplay::stop_slug(&s.heading))
+                    .map(|s| crate::autoplay::station_slug(&s.heading))
                     .collect();
                 assert!(
                     slugs.iter().any(|s| s == slug),
@@ -4169,7 +4165,7 @@ fn tour_citations_name_a_real_tour_and_a_real_stop() {
             }
         }
     }
-    // Non-vacuity is NOT asserted: no tour cites another yet. This test exists so
+    // Non-vacuity is NOT asserted: no lab cites another yet. This test exists so
     // that the first one to do so is checked, and it would pass silently on a
     // corpus with no citations at all — which is correct here and would not be if
     // citations were expected. Stated rather than left as an accident.
@@ -4178,13 +4174,13 @@ fn tour_citations_name_a_real_tour_and_a_real_stop() {
 
 /// Node paths in the **node-pointing** fixture resolve against the real IR.
 ///
-/// `fixture_tour_links_all_resolve` checks only the grammar — a path can parse
-/// perfectly and point at nothing. A fixture tour with a made-up path is a broken
+/// `fixture_lab_links_all_resolve` checks only the grammar — a path can parse
+/// perfectly and point at nothing. A fixture lab with a made-up path is a broken
 /// test that *looks* fine, which is the worst kind, so the paths are checked against
 /// the specimen's own trace.
 ///
-/// Stop 5 is deliberately unresolvable (it belongs to `CapacitorLoop`, which fails
-/// structurally); the tour expects a notice there, so it is excluded by name.
+/// Station 5 is deliberately unresolvable (it belongs to `CapacitorLoop`, which fails
+/// structurally); the lab expects a notice there, so it is excluded by name.
 #[test]
 fn node_pointing_fixture_paths_exist_in_the_real_ir() {
     let trace = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -4194,13 +4190,12 @@ fn node_pointing_fixture_paths_exist_in_the_real_ir() {
     };
     let ir: Value = serde_json::from_str(&text).unwrap();
 
-    let tour =
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours/node-pointing.md");
-    let Ok(md) = std::fs::read_to_string(&tour) else {
+    let lab = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs/node-pointing.md");
+    let Ok(md) = std::fs::read_to_string(&lab) else {
         return;
     };
 
-    // The one path the tour expects to fail, by design.
+    // The one path the lab expects to fail, by design.
     const DELIBERATELY_ABSENT: &str = "error.unmatched_unknowns[0]";
     let mut checked = 0usize;
     for link in extract_hrw_links(&md) {
@@ -4211,14 +4206,14 @@ fn node_pointing_fixture_paths_exist_in_the_real_ir() {
         if raw == DELIBERATELY_ABSENT {
             assert!(
                 bridge::navigate(&ir, &path).is_none(),
-                "Stop 5 relies on {raw} being absent from RcCircuit; if it now exists \
-                     the tour tests nothing",
+                "Station 5 relies on {raw} being absent from RcCircuit; if it now exists \
+                     the lab tests nothing",
             );
             continue;
         }
         assert!(
             bridge::navigate(&ir, &path).is_some(),
-            "{raw} is in the fixture tour but not in RcCircuit's structural IR",
+            "{raw} is in the fixture lab but not in RcCircuit's structural IR",
         );
         checked += 1;
     }
@@ -4228,17 +4223,17 @@ fn node_pointing_fixture_paths_exist_in_the_real_ir() {
     );
 }
 
-/// A fixture tour's referenced files exist.
+/// A fixture lab's referenced files exist.
 ///
-/// The cross-platform tour points at a Wolfram notebook, and a stop referencing a
+/// The cross-platform lab points at a Wolfram notebook, and a stop referencing a
 /// file that is not there tests nothing while looking fine — the same failure as a
 /// made-up node path. Fixture notebooks are therefore **versioned beside their
-/// tour**, not written to the gitignored bridge directory: an *ad hoc* notebook is
-/// ephemeral like an ad hoc tour, but a fixture has expected outcomes, and a test
+/// lab**, not written to the gitignored bridge directory: an *ad hoc* notebook is
+/// ephemeral like an ad hoc lab, but a fixture has expected outcomes, and a test
 /// that vanishes on a fresh checkout is not a test.
 #[test]
-fn fixture_tours_reference_files_that_exist() {
-    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+fn fixture_labs_reference_files_that_exist() {
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
     let Ok(entries) = std::fs::read_dir(&dir) else {
         return;
     };
@@ -4278,7 +4273,7 @@ fn fixture_tours_reference_files_that_exist() {
         }
 
         // And `hrw://src/<path>#<symbol>` targets — **the check that makes the
-        // code-grounding agreement pay.** A tour claim naming `generate_equality_equations`
+        // code-grounding agreement pay.** A lab claim naming `generate_equality_equations`
         // is worth more than one about "graphs" precisely because this can refute it, so a
         // symbol renamed out of the source breaks the suite instead of Doug's click.
         for link in extract_hrw_links(&text) {
@@ -4320,26 +4315,26 @@ fn fixture_tours_reference_files_that_exist() {
     );
 }
 
-/// Every `hrw://` link in every fixture tour parses.
+/// Every `hrw://` link in every fixture lab parses.
 ///
-/// **Enumerates through `bridge::fixture_tours`, not its own `read_dir`.** It had
+/// **Enumerates through `bridge::fixture_labs`, not its own `read_dir`.** It had
 /// a private copy until 2026-08-01, which is a second definition of "what is a
-/// fixture tour" — and the two drifted the moment the directory gained a
-/// `README.md`: the app correctly stopped offering it as a tour while this test
+/// fixture lab" — and the two drifted the moment the directory gained a
+/// `README.md`: the app correctly stopped offering it as a lab while this test
 /// still scanned it and failed on the bare `hrw://` in its prose. *A check that
 /// exists twice is a check that drifts*, which is the same lesson F1 and F7 both
 /// produced.
 #[test]
-fn fixture_tour_links_all_resolve() {
-    let mut tours = 0usize;
+fn fixture_lab_links_all_resolve() {
+    let mut labs = 0usize;
     let mut links = 0usize;
-    for path in bridge::fixture_tours() {
-        tours += 1;
+    for path in bridge::fixture_labs() {
+        labs += 1;
         let text = std::fs::read_to_string(&path).unwrap();
         let found = extract_hrw_links(&text);
         assert!(
             !found.is_empty(),
-            "a fixture tour with no links tests nothing: {}",
+            "a fixture lab with no links tests nothing: {}",
             path.display(),
         );
         for link in found {
@@ -4352,8 +4347,8 @@ fn fixture_tour_links_all_resolve() {
         }
     }
     assert!(
-        tours > 0 && links > 0,
-        "expected at least one fixture tour with links"
+        labs > 0 && links > 0,
+        "expected at least one fixture lab with links"
     );
 }
 
@@ -4378,16 +4373,16 @@ fn fixture_tour_links_all_resolve() {
 /// **ten hand-picked literals**, and it would catch the `SeekFrame` break below. **The
 /// difference is that its coverage is a fixed sample and this one's is the corpus.** A
 /// census on 2026-08-22 counted 70 `LoadAndSwitch`, 14 `PointAtNode`, 9 `SeekFrame` and
-/// 5 `AimAtEquation` across the tours — real payloads, including quoted node keys, that
-/// no literal list contains. **A tour introducing a new form is covered here the day it
+/// 5 `AimAtEquation` across the labs — real payloads, including quoted node keys, that
+/// no literal list contains. **A lab introducing a new form is covered here the day it
 /// lands, and never by a literal list.**
 ///
-/// A synthetic companion for the two forms tours do not use — `SwitchStage` with no
+/// A synthetic companion for the two forms labs do not use — `SwitchStage` with no
 /// sub-view, and `ShowSource` with a line — was written and then **deleted**: both are
 /// already in that test's literals, and a duplicate makes one defect fail two tests
 /// while saying the same thing twice.
 ///
-/// Unparseable links are skipped deliberately — [`fixture_tour_links_all_resolve`] owns
+/// Unparseable links are skipped deliberately — [`fixture_lab_links_all_resolve`] owns
 /// that claim, for the same reason.
 ///
 /// **`SeekFrame` is the case it earns its keep on.** `describe` emits `n + 1` and the
@@ -4395,12 +4390,12 @@ fn fixture_tour_links_all_resolve() {
 /// screen while the value is 0-based. That off-by-one is invisible to every other check
 /// and would round-trip wrongly the moment either side changed alone.
 #[test]
-fn every_tour_link_round_trips_through_describe() {
+fn every_lab_link_round_trips_through_describe() {
     let mut checked = 0usize;
-    for path in bridge::fixture_tours() {
-        let text = std::fs::read_to_string(&path).expect("readable tour");
+    for path in bridge::fixture_labs() {
+        let text = std::fs::read_to_string(&path).expect("readable lab");
         for url in extract_hrw_links(&text) {
-            // Resolution is `fixture_tour_links_all_resolve`'s claim, not this one.
+            // Resolution is `fixture_lab_links_all_resolve`'s claim, not this one.
             let Some(link) = parse_hrw_link(&url) else {
                 continue;
             };
@@ -4409,7 +4404,7 @@ fn every_tour_link_round_trips_through_describe() {
             assert_eq!(
                 again.as_ref(),
                 Some(&link),
-                "a link did not survive parse -> describe -> parse\n  tour:     {}\n  \
+                "a link did not survive parse -> describe -> parse\n  lab:     {}\n  \
                  original: {url}\n  describe: {described}\n  reparsed: {again:?}",
                 path.display(),
             );
@@ -4424,22 +4419,22 @@ fn every_tour_link_round_trips_through_describe() {
     );
 }
 
-/// **Every sub-view a tour link names is AVAILABLE for the specimen it names.**
+/// **Every sub-view a lab link names is AVAILABLE for the specimen it names.**
 ///
 /// Doug, 2026-08-12, walking `connect-expansion.md`: *"Act 2 … contains a link for
 /// RcCircuit → Structural → Summary, and that link actually navigates to RcCircuit
 /// → Structural → Incidence."*
 ///
-/// **`fixture_tour_links_all_resolve` passed every one of these, and was right to.**
+/// **`fixture_lab_links_all_resolve` passed every one of these, and was right to.**
 /// It checks the *grammar* — `Structural/Summary` is a real stage and a real
 /// sub-view, so it parses. What it cannot know is that **`Summary` exists on the
 /// Structural stage only for a singular system**: on `RcCircuit` the app refuses
 /// it, says so in the status bar, and leaves the sub-view wherever it was. The
 /// reader sees the stage change and the wrong view, with the explanation in a pane
-/// they were not told to look at (`fixture-tours/README.md`'s second rule, which
+/// they were not told to look at (`fixture-labs/README.md`'s second rule, which
 /// this is the second instance of).
 ///
-/// **Six such links existed across three tours; one walk found one of them.**
+/// **Six such links existed across three labs; one walk found one of them.**
 ///
 /// # How it checks without compiling
 ///
@@ -4452,10 +4447,10 @@ fn every_tour_link_round_trips_through_describe() {
 /// **`Animate` and `AliasAnim` are skipped, loudly.** Their availability also
 /// depends on frames captured at compile time, which a trace cannot settle, so the
 /// predicate returns `None` and this test counts them as unchecked rather than
-/// assuming they pass. No tour links to either today; if one does, the count below
+/// assuming they pass. No lab links to either today; if one does, the count below
 /// says so instead of the link going silently unverified.
 #[test]
-fn every_tour_sub_view_link_is_available_for_its_specimen() {
+fn every_lab_sub_view_link_is_available_for_its_specimen() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let mut checked = 0usize;
     let mut skipped_frame_dependent = 0usize;
@@ -4463,8 +4458,8 @@ fn every_tour_sub_view_link_is_available_for_its_specimen() {
     let mut no_manifest: Vec<String> = Vec::new();
     let mut broken: Vec<String> = Vec::new();
 
-    for path in bridge::fixture_tours() {
-        let tour = path
+    for path in bridge::fixture_labs() {
+        let lab = path
             .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("?")
@@ -4511,13 +4506,13 @@ fn every_tour_sub_view_link_is_available_for_its_specimen() {
                 .join(&model)
                 .join("trace/manifest.json");
             let Ok(raw) = std::fs::read_to_string(&manifest) else {
-                no_manifest.push(format!("{tour}: {link} (no trace for {model})"));
+                no_manifest.push(format!("{lab}: {link} (no trace for {model})"));
                 continue;
             };
             let json: serde_json::Value = match serde_json::from_str(&raw) {
                 Ok(v) => v,
                 Err(e) => {
-                    no_manifest.push(format!("{tour}: {link} (unreadable manifest: {e})"));
+                    no_manifest.push(format!("{lab}: {link} (unreadable manifest: {e})"));
                     continue;
                 }
             };
@@ -4537,7 +4532,7 @@ fn every_tour_sub_view_link_is_available_for_its_specimen() {
                 Some(false) => {
                     checked += 1;
                     broken.push(format!(
-                        "{tour}: {link}\n      {model}'s {} note is {} \u{2014} so \
+                        "{lab}: {link}\n      {model}'s {} note is {} \u{2014} so \
                              {} is not offered there, and the click will land on whichever \
                              sub-view was already showing",
                         key,
@@ -4554,7 +4549,7 @@ fn every_tour_sub_view_link_is_available_for_its_specimen() {
 
     assert!(
         no_manifest.is_empty(),
-        "a tour names a specimen with no committed trace, so its links cannot be \
+        "a lab names a specimen with no committed trace, so its links cannot be \
              checked at all:\n  {}",
         no_manifest.join("\n  "),
     );
@@ -4564,11 +4559,11 @@ fn every_tour_sub_view_link_is_available_for_its_specimen() {
     assert!(
         checked >= 10,
         "only {checked} sub-view links were checked ({skipped_frame_dependent} skipped as \
-             frame-dependent) \u{2014} the extraction is broken, not the tours",
+             frame-dependent) \u{2014} the extraction is broken, not the labs",
     );
     assert!(
         broken.is_empty(),
-        "{} tour link(s) name a sub-view the specimen does not offer:\n  {}",
+        "{} lab link(s) name a sub-view the specimen does not offer:\n  {}",
         broken.len(),
         broken.join("\n  "),
     );
@@ -4577,12 +4572,12 @@ fn every_tour_sub_view_link_is_available_for_its_specimen() {
     // carry — the same treatment `Animate` and `AliasAnim` get above. It was an unchecked
     // `continue` under a comment claiming they are "always present" until 2026-08-21.
     //
-    // A bound rather than an equality: a new tour link of this shape should not fail a
+    // A bound rather than an equality: a new lab link of this shape should not fail a
     // test about the checker, but a *sweep* of them means the blind spot has grown enough
     // to be worth the manifest field. `RcCircuit/Flatten/Connections` is the one today.
     assert!(
         skipped_conditional_non_report <= 4,
-        "{skipped_conditional_non_report} tour links name a conditional non-report \
+        "{skipped_conditional_non_report} lab links name a conditional non-report \
          sub-view, and nothing checks any of them \u{2014} the manifest needs a field per \
          conditional tab before this grows further (docs/app-split-plan.md)",
     );
@@ -4590,7 +4585,7 @@ fn every_tour_sub_view_link_is_available_for_its_specimen() {
 
 /// **Every link that names a sub-view defers it, rather than applying it.**
 ///
-/// This is the bug Doug found by clicking the fixture tour in order: Stop 5's
+/// This is the bug Doug found by clicking the fixture lab in order: Station 5's
 /// `hrw://stage/IndexReduction/Animate/frame/2` showed the Index Reduction
 /// *Summary* the first time, and the replay only on a second click.
 ///
@@ -4649,7 +4644,7 @@ fn every_sub_view_link_defers_through_pending_sub_view() {
 ///
 /// Without a budget it would sit pending until the reader wandered into an animated
 /// view and then fire there — a link taking effect somewhere it was never pointed.
-/// Stop 6 of the frame-seeking fixture is exactly this case.
+/// Station 6 of the frame-seeking fixture is exactly this case.
 #[test]
 fn a_seek_that_never_lands_expires() {
     let mut app = App::test_default();
@@ -4673,7 +4668,7 @@ fn a_seek_that_never_lands_expires() {
 
 /// The compile outcome names the first failing stage, or how far it got.
 ///
-/// Doug found the gap by reloading a tour and asking what the trail said an hour
+/// Doug found the gap by reloading a lab and asking what the trail said an hour
 /// later: it still read `compiling: true, model: null`, because the trail ended at
 /// "specimen sent to the worker" and nothing recorded the finish. The app block was
 /// accurate for the last *action* and increasingly wrong about *now*.
@@ -4726,13 +4721,13 @@ fn the_compile_outcome_names_the_first_failure() {
     );
 }
 
-/// A link's trail entry is the link, so the trail can be read against the tour.
+/// A link's trail entry is the link, so the trail can be read against the lab.
 ///
-/// Doug asked whether Claude can see him click a tour link. It could not — the
+/// Doug asked whether Claude can see him click a lab link. It could not — the
 /// action trail showed the specimen load and nothing after, so a report of "several
-/// bugs in the node-pointing tour" had to be reconstructed by asking. Now every
+/// bugs in the node-pointing lab" had to be reconstructed by asking. Now every
 /// followed link is recorded, and recorded as its **canonical URL** rather than a
-/// `Debug` dump, so it lines up with the tour's own text at a glance.
+/// `Debug` dump, so it lines up with the lab's own text at a glance.
 ///
 /// Round-tripped rather than pinned to literals: `describe` and `parse_hrw_link`
 /// must agree, which is the same parity rule as everywhere else.
@@ -4799,8 +4794,8 @@ fn every_sub_view_slug_round_trips() {
 /// A node link marks the row it pointed at, and the mark outlives the scroll.
 ///
 /// Doug walked the node-pointing fixture and reported the node was not highlighted.
-/// He was right twice over: the tour asserted a highlight, and **there was none** —
-/// `scroll_if_jump_target` only ever scrolled. The tour was right about what should
+/// He was right twice over: the lab asserted a highlight, and **there was none** —
+/// `scroll_if_jump_target` only ever scrolled. The lab was right about what should
 /// happen, though: a row scrolled to the centre of a screen of near-identical rows,
 /// unmarked, leaves the reader guessing which one was meant.
 ///
@@ -4990,14 +4985,14 @@ fn a_link_into_a_non_report_stage_applies_its_sub_view() {
 /// So this drives `frame_ui` and asserts the viewport moved.
 #[test]
 fn a_frame_link_into_flatten_connections_navigates() {
-    use crate::ui_tests::{AdHocTour, harness};
+    use crate::ui_tests::{AdHocLab, harness};
 
-    // **No ad hoc tour for the duration.** HRW auto-selects one when nothing else
-    // is chosen, and selecting a tour resets the stage side — so this test passed
+    // **No ad hoc lab for the duration.** HRW auto-selects one when nothing else
+    // is chosen, and selecting a lab resets the stage side — so this test passed
     // or failed depending on whether Claude had answered a question recently. It
     // started failing the first time one existed, which is the environment
     // changing rather than the code.
-    let _tour_state = AdHocTour::absent();
+    let _lab_state = AdHocLab::absent();
 
     let mut app = App::test_default();
     // A specimen must be selected or the link is refused by design — the "no specimen
@@ -5178,7 +5173,7 @@ fn a_link_to_a_flatten_sub_view_this_model_lacks_is_refused() {
 /// is that there is nothing to report: `apply_sub_view` drops a stage-mismatched request
 /// anyway.
 ///
-/// **Without this the guard would notice-and-drop a live tour link** —
+/// **Without this the guard would notice-and-drop a live lab link** —
 /// `hrw://load/RcCircuit/Flatten/Connections` in `connect-expansion.md` — on every walk,
 /// with a message naming a stage the reader was not on. Found by reasoning about the
 /// ordering before writing the guard, not by a walk.
@@ -5205,13 +5200,13 @@ fn a_sub_view_link_for_another_stage_is_not_refused() {
 
 /// **A self-running walk puts the mode back when it ends.**
 ///
-/// Doug, 2026-08-03: *"at the completion of the tour, the mode is being switched
-/// from tour mode to specimen mode."*
+/// Doug, 2026-08-03: *"at the completion of the lab, the mode is being switched
+/// from lab mode to specimen mode."*
 ///
 /// The stop that does it is not wrong. `hrw://source/<line>` *must* switch to
 /// Specimen mode, because that is the only place the source renders, and a reader
-/// clicking it wants to be taken there. But `matching.md` ends Stop 3 with one, so
-/// an unattended run finished with the tour nowhere on screen — and the last two
+/// clicking it wants to be taken there. But `matching.md` ends Station 3 with one, so
+/// an unattended run finished with the lab nowhere on screen — and the last two
 /// stops played to nobody.
 ///
 /// **A walk is a round trip.** Only the mode is restored: the stage and the
@@ -5219,21 +5214,21 @@ fn a_sub_view_link_for_another_stage_is_not_refused() {
 #[test]
 fn a_finished_walk_returns_to_the_mode_it_started_in() {
     let mut app = App::test_default();
-    app.ui_mode = UiMode::Tour;
+    app.ui_mode = UiMode::Lab;
     app.selected = Some(PathBuf::from("/x/RcCircuit.mo"));
-    app.tour.mode_before_autoplay = Some(UiMode::Tour);
+    app.lab.mode_before_autoplay = Some(UiMode::Lab);
 
     app.dispatch_hrw_link(HrwLink::ShowSource(Some(9)));
     assert_eq!(
         app.ui_mode,
         UiMode::Specimen,
-        "precondition: a source stop legitimately leaves Tour mode",
+        "precondition: a source stop legitimately leaves Lab mode",
     );
 
     app.restore_mode_after_autoplay();
-    assert_eq!(app.ui_mode, UiMode::Tour, "the walk must put the mode back");
+    assert_eq!(app.ui_mode, UiMode::Lab, "the walk must put the mode back");
     assert!(
-        app.tour.mode_before_autoplay.is_none(),
+        app.lab.mode_before_autoplay.is_none(),
         "and consume the record"
     );
 
@@ -5251,65 +5246,65 @@ fn a_finished_walk_returns_to_the_mode_it_started_in() {
 /// **A new run does not scroll back from where the last one stopped.**
 ///
 /// Doug's sequence, 2026-08-03: watch `matching` to the middle, Stop, select
-/// `frame-seeking`, select `matching` again, press Play — and *"the matching tour
+/// `frame-seeking`, select `matching` again, press Play — and *"the matching lab
 /// rescrolls very visibly from the stopped position back up to the top before the
-/// tour begins playing."*
+/// lab begins playing."*
 ///
 /// **The pane was believed correct at the time, and it was not** — re-selecting a
-/// tour did *not* put it at the top, which Doug reported on 2026-08-17 and
-/// `switching_tours_asks_the_pane_to_return_to_the_top` now holds. The sentence that
+/// lab did *not* put it at the top, which Doug reported on 2026-08-17 and
+/// `switching_labs_asks_the_pane_to_return_to_the_top` now holds. The sentence that
 /// stood here ("the pane itself was correct") is corrected rather than deleted,
 /// because believing it is what kept the search inside HRW's own bookkeeping and
 /// away from the `ScrollArea` that actually holds the offset.
 ///
 /// **The bookkeeping was also wrong, and this test is about that half.**
-/// `tour_link_y` and `tour_prev_link_y` are pixel positions
+/// `lab_link_y` and `lab_prev_link_y` are pixel positions
 /// measured in one document at one beat, and nothing cleared them — so the first
 /// frame of the new run interpolated *from* the stopped position and travelled
 /// back over the full window.
 ///
-/// Cleared at both boundaries: selecting a tour, and starting a run. Either alone
+/// Cleared at both boundaries: selecting a lab, and starting a run. Either alone
 /// would have fixed Doug's sequence; both are needed because a run can also be
-/// restarted on the *same* tour without a selection change.
+/// restarted on the *same* lab without a selection change.
 #[test]
 fn starting_a_walk_forgets_where_the_last_one_stopped() {
     let mut app = App::test_default();
 
-    // Stand in for a run stopped half way down a tour.
-    app.tour.tour_link_y = Some(4_000.0);
-    app.tour.tour_prev_link_y = Some(3_800.0);
-    app.tour.tour_measured_beat = Some(12);
+    // Stand in for a run stopped half way down a lab.
+    app.lab.lab_link_y = Some(4_000.0);
+    app.lab.lab_prev_link_y = Some(3_800.0);
+    app.lab.lab_measured_beat = Some(12);
 
-    // Boundary 1: choosing a tour. Positions from another document are not
+    // Boundary 1: choosing a lab. Positions from another document are not
     // merely stale, they are measured against a different length of text.
-    app.reset_for_new_tour();
+    app.reset_for_new_lab();
     assert_eq!(
-        app.tour.tour_link_y, None,
-        "a new tour forgets the old positions"
+        app.lab.lab_link_y, None,
+        "a new lab forgets the old positions"
     );
-    assert_eq!(app.tour.tour_prev_link_y, None);
-    assert_eq!(app.tour.tour_measured_beat, None);
+    assert_eq!(app.lab.lab_prev_link_y, None);
+    assert_eq!(app.lab.lab_measured_beat, None);
 
-    // Boundary 2: pressing Play, which also covers replaying the *same* tour
+    // Boundary 2: pressing Play, which also covers replaying the *same* lab
     // with no selection change in between — the case boundary 1 cannot see.
     //
-    // The staging order matters. `test_select_fixture_tour` routes through
-    // `select_tour`, which itself resets — so setting the stale values before it
+    // The staging order matters. `test_select_fixture_lab` routes through
+    // `select_lab`, which itself resets — so setting the stale values before it
     // would let this assertion pass on boundary 1's work and prove nothing about
     // Play at all.
     assert!(
-        app.test_select_fixture_tour("matching"),
+        app.test_select_fixture_lab("matching"),
         "the fixture must be readable, or Play below does nothing",
     );
-    app.tour.tour_link_y = Some(4_000.0);
-    app.tour.tour_prev_link_y = Some(3_800.0);
+    app.lab.lab_link_y = Some(4_000.0);
+    app.lab.lab_prev_link_y = Some(3_800.0);
     app.test_start_autoplay();
     assert_eq!(
-        app.tour.tour_link_y, None,
+        app.lab.lab_link_y, None,
         "pressing Play must start from the pane's own position; interpolating \
              from the last run's makes the text scroll backwards before it begins",
     );
-    assert_eq!(app.tour.tour_prev_link_y, None);
+    assert_eq!(app.lab.lab_prev_link_y, None);
 
     // Non-vacuity: the run really did start, so this is not passing because
     // nothing happened.
@@ -5318,11 +5313,11 @@ fn starting_a_walk_forgets_where_the_last_one_stopped() {
 
 /// **A `stop/<slug>` link records where that stop actually begins.**
 ///
-/// The first half of the citation feature: `hrw://tour/<name>/stop/<slug>` exists so
-/// an answer can send Doug to *a stop* rather than to a tour he then has to scan.
+/// The first half of the citation feature: `hrw://lab/<name>/station/<slug>` exists so
+/// an answer can send Doug to *a stop* rather than to a lab he then has to scan.
 ///
 /// **It was written and never read for as long as it existed.** The handler set
-/// `scroll_to_offset` and no frame ever consumed it, so a stop link opened the tour
+/// `scroll_to_offset` and no frame ever consumed it, so a stop link opened the lab
 /// and landed wherever the pane happened to be. Two things hid it: the corpus holds
 /// exactly **one** such link, and the symptom is indistinguishable from the
 /// stale-scroll bug fixed the same day — both look like *"it opened in the wrong
@@ -5336,18 +5331,18 @@ fn a_stop_link_records_where_that_stop_begins() {
     let mut app = App::test_default();
 
     // The corpus's only stop link, from `failure-resolve.md`.
-    app.dispatch_hrw_link(HrwLink::OpenTour {
-        tour: "failure-parse".to_owned(),
-        stop: Some("stop-4-the-distinction-this-specimen-anchors".to_owned()),
+    app.dispatch_hrw_link(HrwLink::OpenLab {
+        lab: "failure-parse".to_owned(),
+        stop: Some("station-4-the-distinction-this-specimen-anchors".to_owned()),
     });
 
     let offset = app
-        .tour
+        .lab
         .scroll_to_offset
         .expect("a stop link must record where to land");
-    let text = app.tour.text().expect("the tour must be loaded");
+    let text = app.lab.text().expect("the lab must be loaded");
     assert!(
-        text[offset..].starts_with("## Stop 4"),
+        text[offset..].starts_with("## Station 4"),
         "the offset must name the heading the slug asked for, or the pane scrolls \
              confidently to the wrong stop. It landed on: {:?}",
         &text[offset..(offset + 40).min(text.len())],
@@ -5365,18 +5360,18 @@ fn a_stop_link_records_where_that_stop_begins() {
 /// keep until 2026-08-17, since nothing scrolled anywhere. Now that a stop link does
 /// move the pane, the failure branch matters more, not less: *"it opened at the top"*
 /// and *"it opened at the stop I asked for"* have to be distinguishable, or a renamed
-/// heading reads as a tour whose first stop is the one you wanted.
+/// heading reads as a lab whose first stop is the one you wanted.
 #[test]
 fn a_stop_link_naming_nothing_reports_it_rather_than_landing_anywhere() {
     let mut app = App::test_default();
 
-    app.dispatch_hrw_link(HrwLink::OpenTour {
-        tour: "failure-parse".to_owned(),
+    app.dispatch_hrw_link(HrwLink::OpenLab {
+        lab: "failure-parse".to_owned(),
         stop: Some("no-such-stop-anywhere".to_owned()),
     });
 
     assert!(
-        app.tour.scroll_to_offset.is_none(),
+        app.lab.scroll_to_offset.is_none(),
         "an unresolved stop must record no destination",
     );
     let notice = app.notice.as_deref().unwrap_or_default();
@@ -5385,80 +5380,80 @@ fn a_stop_link_naming_nothing_reports_it_rather_than_landing_anywhere() {
         "the reader must be told which stop is missing and where they ended up \
              instead; got {notice:?}",
     );
-    // Non-vacuity: the tour itself did open, so this is the *stop* failing rather
+    // Non-vacuity: the lab itself did open, so this is the *stop* failing rather
     // than the whole link.
     assert!(
-        app.tour.text().is_some(),
-        "the tour still opens — only the stop within it was not found",
+        app.lab.text().is_some(),
+        "the lab still opens — only the stop within it was not found",
     );
 }
 
-/// **Switching tours requests a return to the top.**
+/// **Switching labs requests a return to the top.**
 ///
 /// The state half of Doug's 2026-08-17 report; the paint half — that a rendering
 /// frame actually spends the request — is
-/// `ui_tests::switching_tours_asks_the_pane_to_return_to_the_top`. **Both are
+/// `ui_tests::switching_labs_asks_the_pane_to_return_to_the_top`. **Both are
 /// needed, and this one alone would have been the wrong test**: the bug lived
 /// precisely in the gap, where `reset_scroll` diligently cleared three fields and
 /// none of them positions the view.
 #[test]
-fn switching_tours_requests_a_return_to_the_top() {
+fn switching_labs_requests_a_return_to_the_top() {
     let mut app = App::test_default();
 
-    // A switch that really happens. `test_select_fixture_tour` routes through
-    // `select_tour`, so this exercises the same path the picker and an
-    // `hrw://tour/…` link both take.
+    // A switch that really happens. `test_select_fixture_lab` routes through
+    // `select_lab`, so this exercises the same path the picker and an
+    // `hrw://lab/…` link both take.
     assert!(
-        app.test_select_fixture_tour("node-pointing"),
+        app.test_select_fixture_lab("node-pointing"),
         "the fixture must be readable, or the switch below does nothing",
     );
     assert!(
-        app.tour.scroll_to_top,
-        "arriving at a tour must ask the pane to start at the beginning",
+        app.lab.scroll_to_top,
+        "arriving at a lab must ask the pane to start at the beginning",
     );
 
     // Spent by a paint, which this test does not do — so clear it by hand and
     // confirm a *second* switch asks again. A one-shot that only ever fires once
     // would fix the first navigation of a session and no other.
-    app.tour.scroll_to_top = false;
+    app.lab.scroll_to_top = false;
     assert!(
-        app.test_select_fixture_tour("camera-aiming"),
+        app.test_select_fixture_lab("camera-aiming"),
         "the second fixture must be readable too",
     );
     assert!(
-        app.tour.scroll_to_top,
+        app.lab.scroll_to_top,
         "every switch asks, not just the first",
     );
 
-    // **Re-selecting the tour already showing must NOT ask.** `select_tour` returns
-    // false there deliberately, to keep a reader's place in a tour they are partway
+    // **Re-selecting the lab already showing must NOT ask.** `select_lab` returns
+    // false there deliberately, to keep a reader's place in a lab they are partway
     // through — and yanking them to the top would be the same defect wearing the
     // opposite sign.
-    app.tour.scroll_to_top = false;
-    app.test_select_fixture_tour("camera-aiming");
+    app.lab.scroll_to_top = false;
+    app.test_select_fixture_lab("camera-aiming");
     assert!(
-        !app.tour.scroll_to_top,
-        "re-picking the tour already open is not a switch, and must leave the \
+        !app.lab.scroll_to_top,
+        "re-picking the lab already open is not a switch, and must leave the \
              reader where they were",
     );
 }
 
 /// **Non-vacuity for the test above**: the scenario is real, not hypothetical.
 ///
-/// A tour with no mode-switching stop would make the round trip untestable and
+/// A lab with no mode-switching stop would make the round trip untestable and
 /// the fix unnecessary. `matching.md` has one, near its end, which is why the bug
-/// showed up as "at the completion of the tour".
+/// showed up as "at the completion of the lab".
 #[test]
-fn a_fixture_tour_really_does_contain_a_mode_switching_stop() {
-    let found = bridge::fixture_tours().into_iter().any(|p| {
+fn a_fixture_lab_really_does_contain_a_mode_switching_stop() {
+    let found = bridge::fixture_labs().into_iter().any(|p| {
         std::fs::read_to_string(&p)
             .map(|t| t.contains("hrw://source/"))
             .unwrap_or(false)
     });
     assert!(
         found,
-        "no fixture tour contains a `hrw://source/` stop, so nothing exercises \
-             the mode round trip — either a tour lost one or this guard is stale",
+        "no fixture lab contains a `hrw://source/` stop, so nothing exercises \
+             the mode round trip — either a lab lost one or this guard is stale",
     );
 }
 
@@ -5467,7 +5462,7 @@ fn a_fixture_tour_really_does_contain_a_mode_switching_stop() {
 /// Parse, Resolve, Instantiate, Typecheck and DAE render one generic tree and have
 /// no `SubView` variants, so the four-segment `node` form cannot name a node in any
 /// of them — the richest noun in the link vocabulary was unavailable on the stages
-/// with the least else to point at. Found 2026-08-03 when the DAE tour's
+/// with the least else to point at. Found 2026-08-03 when the DAE lab's
 /// `hrw://stage/Dae/Tree/node/x` links all failed to parse.
 ///
 /// **Checks the property, not the five known names**: a tree-only stage added later
@@ -5484,7 +5479,7 @@ fn a_node_link_reaches_every_stage_including_the_tree_only_ones() {
             kind.name(),
         );
 
-        // Round-trip, so the form a capture *writes* is one a tour can read back.
+        // Round-trip, so the form a capture *writes* is one a lab can read back.
         let Some(link) = parsed else { unreachable!() };
         assert_eq!(link.describe(), format!("stage/{}/node/x", kind.slug()));
 
@@ -5509,9 +5504,9 @@ fn a_node_link_reaches_every_stage_including_the_tree_only_ones() {
 
 /// A stop clicked out of order says so, instead of doing nothing.
 ///
-/// Doug clicked a tour's fourth stop first. Nothing happened: with no specimen the
+/// Doug clicked a lab's fourth stop first. Nothing happened: with no specimen the
 /// stage area returns early, so the link set state nothing consumed. Silence is the
-/// one outcome a tour cannot survive, because there is no way to tell it from a
+/// one outcome a lab cannot survive, because there is no way to tell it from a
 /// broken link.
 ///
 /// The state is **not** left pending. Setting it and returning would be worse than
@@ -5566,7 +5561,7 @@ fn a_stop_needing_a_specimen_refuses_without_one() {
 
 /// Sub-view availability depends on the model, not only the stage.
 ///
-/// Doug found the cross-platform tour linking to `Structural/Summary` on
+/// Doug found the cross-platform lab linking to `Structural/Summary` on
 /// `ProportionalLoop`. The slug is valid for the stage, so `SubView::from_slug`
 /// accepts it — but Summary only has a tab when a model is **singular**, and
 /// ProportionalLoop is not. The link selected a view with no tab and the panel
@@ -5695,7 +5690,7 @@ fn the_clamp_does_not_touch_a_non_report_stage() {
 ///
 /// It needs no specimen *loaded* — like the load verbs, it makes sense on its own,
 /// which matters because the adjudicator case is often "open this in SM and see that
-/// it refuses", reached without walking a tour first.
+/// it refuses", reached without walking a lab first.
 #[test]
 fn the_system_modeler_verb_stands_alone() {
     assert_eq!(
@@ -5744,7 +5739,7 @@ fn the_notebook_verb_needs_a_name() {
 
 /// A verb written in prose, inside a code span, is not a link.
 ///
-/// Documentation about `hrw://` belongs in tours and doc comments, and writing it in
+/// Documentation about `hrw://` belongs in labs and doc comments, and writing it in
 /// backticks is how one writes it. The extractor must not turn that into a hook.
 #[test]
 fn a_code_span_mention_is_not_extracted_as_a_link() {
@@ -5780,7 +5775,7 @@ fn a_link_can_set_the_follow() {
 
 /// A link's frame number is the one on screen — the two must not be off by one.
 ///
-/// Doug walked the fixture tour and found the link and the counter disagreeing.
+/// Doug walked the fixture lab and found the link and the counter disagreeing.
 /// The fixture had even *documented* the discrepancy ("frames are 0-based in links,
 /// 1-based in the display"), which is writing a bug down instead of fixing it.
 ///
@@ -5903,7 +5898,7 @@ fn sub_view_slugs_are_stage_scoped() {
 /// **Every sub-view name the capture emits is addressable by a link, and vice
 /// versa.** This is #42's design principle as an assertion: `hrw://` should
 /// express any noun `focus.json` can describe, so the two directions share one
-/// vocabulary. Without this test the two lists drift, and a tour would point at
+/// vocabulary. Without this test the two lists drift, and a lab would point at
 /// a view whose capture name had been renamed.
 #[test]
 fn link_slugs_and_capture_names_are_the_same_vocabulary() {
@@ -5956,32 +5951,32 @@ fn link_slugs_and_capture_names_are_the_same_vocabulary() {
     }
 }
 
-/// An ad hoc tour written to the bridge round-trips, and its links parse.
+/// An ad hoc lab written to the bridge round-trips, and its links parse.
 ///
-/// Replaces `tour_document_hrw_links_are_valid`, which checked the links in
-/// `end_to_end_tour.md` — a document HRW no longer shows. Its prose was
-/// retired 2026-07-29 and tour mode now renders whatever Claude writes to
-/// `.hrw-bridge/tour.md`, so the subject of that test no longer existed.
+/// Replaces `lab_document_hrw_links_are_valid`, which checked the links in
+/// `end_to_end_lab.md` — a document HRW no longer shows. Its prose was
+/// retired 2026-07-29 and lab mode now renders whatever Claude writes to
+/// `.hrw-bridge/lab.md`, so the subject of that test no longer existed.
 ///
 /// Touches the shared bridge directory, so it needs `--test-threads=1` like
 /// the other bridge tests.
 #[test]
-fn an_ad_hoc_tour_round_trips_through_the_bridge() {
-    let saved = std::fs::read_to_string(bridge::TOUR_FILE).ok();
+fn an_ad_hoc_lab_round_trips_through_the_bridge() {
+    let saved = std::fs::read_to_string(bridge::LAB_FILE).ok();
 
-    let tour = "# Stop 1
+    let lab = "# Station 1
 
 Open [the Structural tab](hrw://stage/Structural).
 
-                    # Stop 2
+                    # Station 2
 
 Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
 ";
     std::fs::create_dir_all(bridge::BRIDGE_DIR).unwrap();
-    std::fs::write(bridge::TOUR_FILE, tour).unwrap();
+    std::fs::write(bridge::LAB_FILE, lab).unwrap();
 
-    let (text, _mtime) = bridge::read_tour().expect("a written tour is readable");
-    assert!(text.contains("Stop 1"), "{text}");
+    let (text, _mtime) = bridge::read_lab().expect("a written lab is readable");
+    assert!(text.contains("Station 1"), "{text}");
 
     let links = extract_hrw_links(&text);
     assert_eq!(links.len(), 2, "both links found: {links:?}");
@@ -5990,11 +5985,11 @@ Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
     }
 
     // Absence is the normal state, not an error.
-    std::fs::remove_file(bridge::TOUR_FILE).unwrap();
-    assert!(bridge::read_tour().is_none(), "no tour file means no tour");
+    std::fs::remove_file(bridge::LAB_FILE).unwrap();
+    assert!(bridge::read_lab().is_none(), "no lab file means no lab");
 
     if let Some(prev) = saved {
-        std::fs::write(bridge::TOUR_FILE, prev).unwrap();
+        std::fs::write(bridge::LAB_FILE, prev).unwrap();
     }
 }
 
@@ -6243,12 +6238,12 @@ mod tests_incidence_row_link {
     /// # Why this verb was extended rather than a new one added
     ///
     /// `equation` reached only the canvas views, where it aims a camera. The Incidence
-    /// view's rows *are* equations and nothing could link to one — so a tour could open
+    /// view's rows *are* equations and nothing could link to one — so a lab could open
     /// the matrix and then had to describe the row in prose. On `Drivetrain`'s 97 rows
     /// that is the difference between pointing and gesturing, and the index-reduction
-    /// tour hit it: it hand-copied a five-row table the pane already draws.
+    /// lab hit it: it hand-copied a five-row table the pane already draws.
     ///
-    /// **A separate `row` verb would put two words on one job.** The tour template's own
+    /// **A separate `row` verb would put two words on one job.** The lab template's own
     /// rule 2 forbids exactly that, and "point at equation N" is what both views are
     /// being asked for — the canvas moves a camera, the matrix marks a row.
     #[test]
@@ -6274,7 +6269,7 @@ mod tests_incidence_row_link {
         assert_eq!(
             app.viewport.highlighted_eq_row,
             Some(4),
-            "the row a tour points at must be marked; without this the link opens the \
+            "the row a lab points at must be marked; without this the link opens the \
              matrix and says nothing about which row it meant",
         );
         assert_eq!(app.stage, crate::worker::StageKind::Structural);
@@ -6308,139 +6303,139 @@ mod tests_incidence_row_link {
 }
 
 #[cfg(test)]
-mod tests_tour_in_diagnostics {
+mod tests_lab_in_diagnostics {
     use super::*;
 
-    /// **The diagnostic capture names the tour that is open.**
+    /// **The diagnostic capture names the lab that is open.**
     ///
     /// Doug, 2026-08-19: *"I'd like to enjoy the convenience of deixis when asking
-    /// questions about statements which you've made in tours. Currently, it seems that
-    /// I have to copy / paste those tour statements."*
+    /// questions about statements which you've made in labs. Currently, it seems that
+    /// I have to copy / paste those lab statements."*
     ///
-    /// The capture reported `ui_mode: "Tour"` and nothing else about the tour, so
+    /// The capture reported `ui_mode: "Lab"` and nothing else about the lab, so
     /// **which document he was reading was unrecoverable** — and pasting was the only
     /// way to ask a question about it. With the name published, *"the Newton paragraph"*
-    /// resolves, because the tours are on disk and can be read once the document is
+    /// resolves, because the labs are on disk and can be read once the document is
     /// known.
     ///
     /// **Absence stays distinguishable from silence**, which is why the null case is
-    /// asserted too: no tour open must read as `null`, not as a missing key that could
+    /// asserted too: no lab open must read as `null`, not as a missing key that could
     /// equally mean the field was never written.
     #[test]
-    fn the_capture_names_the_open_tour() {
+    fn the_capture_names_the_open_lab() {
         let mut app = App::test_default();
 
         let none_open = app.diagnostic_snapshot();
         assert_eq!(
-            none_open.get("tour"),
+            none_open.get("lab"),
             Some(&serde_json::Value::Null),
-            "with no tour open the key must be present and null \u{2014} a missing key \
+            "with no lab open the key must be present and null \u{2014} a missing key \
              cannot be told apart from a field that was never published",
         );
 
         assert!(
-            app.test_select_fixture_tour("index-reduction"),
+            app.test_select_fixture_lab("index-reduction"),
             "the fixture must be readable, or nothing below is testing a selection",
         );
 
         let open = app.diagnostic_snapshot();
         let name = open
-            .get("tour")
+            .get("lab")
             .and_then(serde_json::Value::as_str)
             .unwrap_or_default();
         assert!(
             name.contains("index-reduction"),
-            "the capture must name the open tour so a question about it can be answered \
+            "the capture must name the open lab so a question about it can be answered \
              without pasting; got {name:?}",
         );
     }
 }
 
 #[cfg(test)]
-mod tests_tour_back {
+mod tests_lab_back {
     use super::*;
 
-    /// **Back returns to the tour a link came from, at the offset it was left at.**
+    /// **Back returns to the lab a link came from, at the offset it was left at.**
     ///
-    /// Doug, 2026-08-19: *"while in the index reduction tour, I can click a link to
-    /// navigate to the blt-ordering tour, but then I cannot navigate back."* Authored
+    /// Doug, 2026-08-19: *"while in the index reduction lab, I can click a link to
+    /// navigate to the blt-ordering lab, but then I cannot navigate back."* Authored
     /// back-links solved the hub case in August and cannot solve this one: the
-    /// hub-to-tour edge has a canonical parent, cross-references do not.
+    /// hub-to-lab edge has a canonical parent, cross-references do not.
     #[test]
-    fn back_returns_to_the_previous_tour_where_it_was_left() {
+    fn back_returns_to_the_previous_lab_where_it_was_left() {
         let mut app = App::test_default();
-        assert!(app.test_select_fixture_tour("index-reduction"));
+        assert!(app.test_select_fixture_lab("index-reduction"));
 
         // Stand in for having read part way down before following a link.
-        app.tour.current_scroll_y = 812.0;
-        assert!(app.test_select_fixture_tour("blt-ordering"));
+        app.lab.current_scroll_y = 812.0;
+        assert!(app.test_select_fixture_lab("blt-ordering"));
         assert_eq!(
-            app.tour.history.len(),
+            app.lab.history.len(),
             1,
             "following a link must record where it came from, or Back has nothing to pop",
         );
 
-        app.tour_back();
+        app.lab_back();
 
         let back_on = app
-            .tour
+            .lab
             .selected
             .as_ref()
             .and_then(|s| match s {
-                TourSource::Fixture(p) => p.file_stem().and_then(|n| n.to_str()),
-                TourSource::AdHoc => None,
+                LabSource::Fixture(p) => p.file_stem().and_then(|n| n.to_str()),
+                LabSource::AdHoc => None,
             })
             .unwrap_or_default()
             .to_owned();
         assert_eq!(back_on, "index-reduction");
         assert_eq!(
-            app.tour.restore_scroll_y,
+            app.lab.restore_scroll_y,
             Some(812.0),
             "and to the place in it the reader had reached \u{2014} landing at the top of \
              a document you were halfway down is most of the friction, not a detail",
         );
         assert!(
-            app.tour.history.is_empty(),
+            app.lab.history.is_empty(),
             "the entry is consumed, not reusable"
         );
     }
 
     /// **Back does not record its own navigation.**
     ///
-    /// The classic history bug named in `ideas.md` #78: a Back that pushes the tour it is
+    /// The classic history bug named in `ideas.md` #78: a Back that pushes the lab it is
     /// leaving ping-pongs between two documents, and nothing further up the stack is ever
     /// reachable.
     #[test]
     fn back_does_not_push_what_it_is_leaving() {
         let mut app = App::test_default();
-        assert!(app.test_select_fixture_tour("index-reduction"));
-        assert!(app.test_select_fixture_tour("blt-ordering"));
-        app.tour_back();
+        assert!(app.test_select_fixture_lab("index-reduction"));
+        assert!(app.test_select_fixture_lab("blt-ordering"));
+        app.lab_back();
 
         assert!(
-            app.tour.history.is_empty(),
+            app.lab.history.is_empty(),
             "a stack that grows when you go back is one you can never reach the bottom of",
         );
         // And Back with nothing to return to is a no-op rather than a panic.
-        app.tour_back();
-        assert!(app.tour.history.is_empty());
+        app.lab_back();
+        assert!(app.lab.history.is_empty());
     }
 
-    /// **Re-selecting the tour already open records nothing**, or the stack fills with
+    /// **Re-selecting the lab already open records nothing**, or the stack fills with
     /// entries that go nowhere and Back looks enabled while doing nothing visible.
     #[test]
-    fn reselecting_the_open_tour_does_not_grow_the_history() {
+    fn reselecting_the_open_lab_does_not_grow_the_history() {
         let mut app = App::test_default();
-        assert!(app.test_select_fixture_tour("index-reduction"));
-        assert!(app.test_select_fixture_tour("index-reduction"));
-        assert!(app.tour.history.is_empty());
+        assert!(app.test_select_fixture_lab("index-reduction"));
+        assert!(app.test_select_fixture_lab("index-reduction"));
+        assert!(app.lab.history.is_empty());
     }
 }
 
 /// **A `▶ Look` link to the specimen already loaded must switch, not recompile.**
 ///
 /// Doug, 2026-08-22: *"the Look links always seem to compile specimens, even if those
-/// specimens are already loaded and compiled."* Walking one tour paid a full compile
+/// specimens are already loaded and compiled."* Walking one lab paid a full compile
 /// per stop, because every stop's Look link names the same specimen.
 ///
 /// The rule is not new — the left panel's `ModelListNav::Select` arm has always

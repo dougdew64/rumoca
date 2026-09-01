@@ -130,7 +130,7 @@ pub(crate) fn has_content_beside_the_error(stage: &Stage) -> bool {
 /// **Why validate at all:** the tree otherwise expands as far as the path goes and stops,
 /// which reads as "it opened something" rather than "that path is wrong". The camera aim
 /// and the frame seek both refuse-and-report; this makes the third verb consistent. A
-/// link naming something that is not there is a bug in the tour, and must be visible.
+/// link naming something that is not there is a bug in the lab, and must be visible.
 ///
 /// A free function rather than a method because the caller holds an immutable borrow of
 /// the stage while rendering, so it cannot also take `&mut self` — the same constraint

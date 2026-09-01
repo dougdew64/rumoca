@@ -54,7 +54,7 @@ use crate::{
 ///   — named "cached" but never invalidated, because they are *results*
 ///   assigned from a finished compile.
 /// - **Self-keying memos** (`cached_purpose_notes` keyed by model,
-///   `cached_tour` keyed by mtime, `cached_source` per specimen) — each already
+///   `cached_lab` keyed by mtime, `cached_source` per specimen) — each already
 ///   carries whatever tells it when it is stale.
 ///
 /// Folding all twenty into one bag would have cleared the memos on every stage

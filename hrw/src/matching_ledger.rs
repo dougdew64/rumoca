@@ -2,10 +2,10 @@
 //!
 //! ## Why this module exists
 //!
-//! `docs/ideas.md` #73's live-trace tours quote three things from
+//! `docs/ideas.md` #73's live-trace labs quote three things from
 //! `crates/rumoca-phase-structural/src/matching.rs`: **which line emits which
 //! `MatchingStep`**, **the frame-by-frame ledger for a specimen**, and **the
-//! recursion depth at each frame**. `CLAUDE.md` already warns that tours quoting
+//! recursion depth at each frame**. `CLAUDE.md` already warns that labs quoting
 //! line numbers "go stale silently, and a learner following one with wrong line
 //! numbers is simply confused" — nothing compiles a Markdown table.
 //!
@@ -27,8 +27,8 @@
 //! payloads are invisible one level down, that `var`/`iter` reading unavailable
 //! means the loop *ended*, and the frame-delay paint race. None of that is in
 //! the source, and none of it is derivable here. Neither is the check that
-//! matters most — **whether a tour's promised rhythm survives contact with a
-//! human**, which `#73` requires before Stop 5 ships.
+//! matters most — **whether a lab's promised rhythm survives contact with a
+//! human**, which `#73` requires before Station 5 ships.
 //!
 //! **The error this would have caught**: `EquationFailed` was stated as
 //! `matching.rs:137` for a day. 137 is where the variant is *named*; 133 is the
@@ -46,25 +46,25 @@ use rumoca_phase_structural::matching::{MatchingStep, maximum_matching_with_trac
 /// produce a table that looks current.
 const MATCHING_SOURCE: &str = include_str!("../../crates/rumoca-phase-structural/src/matching.rs");
 
-/// The anchor's source, for the three lines a live tour tells the reader to
+/// The anchor's source, for the three lines a live lab tells the reader to
 /// stop at.
 const LIVE_TRACE_SOURCE: &str =
     include_str!("../../crates/rumoca-phase-structural/src/live_trace.rs");
 
-/// The tour whose line citations are checked against [`anchors`].
-pub const LIVE_TOUR_PATH: &str = "docs/fixture-tours/matching-live.md";
+/// The lab whose line citations are checked against [`anchors`].
+pub const LIVE_LAB_PATH: &str = "docs/fixture-labs/matching-live.md";
 
-/// A line a live-trace tour points the reader at, found by what the line
+/// A line a live-trace lab points the reader at, found by what the line
 /// *says* rather than by where it currently sits.
 ///
 /// **Doug, 2026-08-08: "Rotting is bad. If line numbers will help, add line
-/// numbers."** So the tour carries them — and
-/// `every_line_the_live_tour_cites_is_a_real_anchor` fails when they move,
+/// numbers."** So the lab carries them — and
+/// `every_line_the_live_lab_cites_is_a_real_anchor` fails when they move,
 /// which is what makes carrying them safe rather than reckless.
 pub struct Anchor {
     /// Stable name used in prose and in the generated reference.
     pub name: &'static str,
-    /// File the line lives in, as a tour would write it.
+    /// File the line lives in, as a lab would write it.
     pub file: &'static str,
     /// 1-based line.
     pub line: usize,
@@ -72,13 +72,13 @@ pub struct Anchor {
     pub what: &'static str,
 }
 
-/// Look an anchor up by the name a tour uses in `hrw://breakpoint/<name>`.
+/// Look an anchor up by the name a lab uses in `hrw://breakpoint/<name>`.
 ///
 /// Returns the file, the line **derived from the current source**, and what the
 /// reader is being sent to look at.
 ///
 /// **The link names the anchor; it never carries the line.** Same decision, and
-/// the same reason, as `HrwLink::OpenTour` addressing stops by slug rather than
+/// the same reason, as `HrwLink::OpenLab` addressing stops by slug rather than
 /// ordinal: a number embedded in prose rots silently when the code moves, while
 /// a name fails loudly. Here it cannot even fail loudly — the line is resolved
 /// at click time, so the link is simply always right.
@@ -102,10 +102,10 @@ fn line_where(source: &str, from: usize, pred: impl Fn(&str) -> bool) -> Option<
         .map(|(i, _)| i + 1)
 }
 
-/// The lines a live tour cites, derived from source.
+/// The lines a live lab cites, derived from source.
 ///
 /// Each is located by a distinctive fragment of the line itself, so moving code
-/// changes the number here and in the tour together — the whole point.
+/// changes the number here and in the lab together — the whole point.
 #[must_use]
 pub fn anchors() -> Vec<Anchor> {
     let mut out = Vec::new();
@@ -236,7 +236,7 @@ fn variants_in(seg: &str) -> Vec<String> {
 ///
 /// **The call line, not the line naming the variant.** A stack frame reports
 /// where the call was made, so that is the number a debugger shows and the only
-/// one worth quoting in a tour.
+/// one worth quoting in a lab.
 ///
 /// A variant can map to more than one line, and one does:
 /// `DisplaceOk`/`DisplaceFail` share a single emit whose `step:` is an `if`
@@ -438,7 +438,7 @@ fn describe(step: &MatchingStep) -> String {
 ///
 /// Written by `examples/gen_matching_reference.rs` and compared against disk by
 /// `matching_ledger::tests::the_generated_reference_is_current`, the same
-/// generate/compare shape as `tour::catalogue`.
+/// generate/compare shape as `lab::catalogue`.
 #[must_use]
 pub fn reference() -> String {
     let mut out = String::new();
@@ -481,10 +481,10 @@ pub fn reference() -> String {
 
     out.push_str("## Breakpoint anchors\n\n");
     out.push_str(
-        "The lines a live tour sends you to. Each is located by what the line \
+        "The lines a live lab sends you to. Each is located by what the line \
          *says*, so moving the code moves the number here — and\n\
-         `every_line_the_live_tour_cites_is_a_real_anchor` fails if \
-         [`matching-live.md`](../../fixture-tours/matching-live.md) still quotes \
+         `every_line_the_live_lab_cites_is_a_real_anchor` fails if \
+         [`matching-live.md`](../../fixture-labs/matching-live.md) still quotes \
          the old one.\n\n",
     );
     out.push_str("| name | line | what you are looking at |\n|---|---|---|\n");
@@ -557,7 +557,7 @@ mod tests {
             assert!(
                 sites.contains_key(variant),
                 "no emit site found for {variant} \u{2014} the scanner missed it, \
-                 and a missing row is how a tour ends up quoting a guess: {sites:?}"
+                 and a missing row is how a lab ends up quoting a guess: {sites:?}"
             );
         }
 
@@ -577,7 +577,7 @@ mod tests {
     /// **`DisplaceOk` and `DisplaceFail` share a line, and that must survive.**
     ///
     /// Collapsing the site list to one entry would hide that the emit site does
-    /// not determine the outcome — the thing a tour would otherwise get wrong
+    /// not determine the outcome — the thing a lab would otherwise get wrong
     /// by assuming a line number names a step.
     #[test]
     fn the_two_displacement_outcomes_share_one_emit_site() {
@@ -688,7 +688,7 @@ mod tests {
     }
 
     /// **Every anchor is found.** A `None` from the scan would silently drop a
-    /// row, and a tour citing a line the reference does not list is exactly the
+    /// row, and a lab citing a line the reference does not list is exactly the
     /// rot this module exists to stop.
     #[test]
     fn every_anchor_resolves() {
@@ -707,7 +707,7 @@ mod tests {
     /// Two independent derivations of the same line: this module scans the
     /// source compiled into the binary, `bridge::find_live_trace_line` scans the
     /// file on disk at runtime and is what the Debug button sends to VS Code. If
-    /// they disagree, the tour tells the reader to look somewhere the debugger
+    /// they disagree, the lab tells the reader to look somewhere the debugger
     /// will not stop.
     #[test]
     fn the_documented_anchor_is_the_one_the_bridge_arms() {
@@ -718,27 +718,27 @@ mod tests {
         let (_, armed) = crate::bridge::find_live_trace_line().expect("bridge must locate it");
         assert_eq!(
             documented.line, armed,
-            "the tour would send the reader to live_trace.rs:{} while the Debug \
+            "the lab would send the reader to live_trace.rs:{} while the Debug \
              button arms :{armed}",
             documented.line
         );
     }
 
-    /// **Every `file.rs:NNN` the live tour cites is a real anchor.**
+    /// **Every `file.rs:NNN` the live lab cites is a real anchor.**
     ///
     /// Doug, 2026-08-08: *"Rotting is bad. If line numbers will help, add line
-    /// numbers."* This is what makes carrying them safe. A tour is prose and
+    /// numbers."* This is what makes carrying them safe. A lab is prose and
     /// nothing compiles it, so without this a shifted line stays plausible
     /// forever — and the reader who follows it blames themselves.
     ///
-    /// **Set membership, not position**, so the tour may cite anchors in any
+    /// **Set membership, not position**, so the lab may cite anchors in any
     /// order and skip ones it does not need. A uniform shift is still caught:
     /// after it, the old numbers are no longer anchors at all.
     #[test]
-    fn every_line_the_live_tour_cites_is_a_real_anchor() {
-        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(LIVE_TOUR_PATH);
+    fn every_line_the_live_lab_cites_is_a_real_anchor() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(LIVE_LAB_PATH);
         let Ok(text) = std::fs::read_to_string(&path) else {
-            // The tour is optional; its absence is not a failure of this check.
+            // The lab is optional; its absence is not a failure of this check.
             return;
         };
 
@@ -766,7 +766,7 @@ mod tests {
                     let line: usize = tail[..end].parse().expect("digits");
                     assert!(
                         known.contains(&(file.to_owned(), line)),
-                        "{LIVE_TOUR_PATH} cites {file}:{line}, which is not an anchor or an \
+                        "{LIVE_LAB_PATH} cites {file}:{line}, which is not an anchor or an \
                          emit site any more \u{2014} the code moved. Current anchors: {:?}",
                         known
                             .iter()
@@ -780,20 +780,20 @@ mod tests {
             }
         }
 
-        // **Non-vacuity.** A tour that cites nothing would pass every assertion
+        // **Non-vacuity.** A lab that cites nothing would pass every assertion
         // above while carrying no checkable claim at all.
         assert!(
             checked >= 4,
-            "expected the live tour to cite several source lines, found {checked} \u{2014} \
+            "expected the live lab to cite several source lines, found {checked} \u{2014} \
              either it stopped citing them or the scan stopped finding them"
         );
     }
 
     /// **The reference on disk matches a fresh generation.**
     ///
-    /// The same generate-and-compare shape as `tour_catalogue_is_current`, and
+    /// The same generate-and-compare shape as `lab_catalogue_is_current`, and
     /// the reason this whole module exists: when `matching.rs` moves, this fails
-    /// and names the command, instead of the tours quietly citing lines that
+    /// and names the command, instead of the labs quietly citing lines that
     /// have shifted.
     #[test]
     fn the_generated_reference_is_current() {

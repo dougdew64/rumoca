@@ -7,11 +7,11 @@
 //! Written for `docs/ideas.md` #46, which adds a failure specimen per compiler
 //! phase. The specimen's comment states which phase it is *meant* to break at;
 //! this reports which phase it *does* break at, so the two can be compared
-//! before a tour is written about either.
+//! before a lab is written about either.
 //!
-//! **The order matters.** Authoring a specimen and then writing a tour asserting
-//! it fails at phase X, without checking, is how a tour comes to teach something
-//! untrue — and the tour would pass its own link check the whole time. This is
+//! **The order matters.** Authoring a specimen and then writing a lab asserting
+//! it fails at phase X, without checking, is how a lab comes to teach something
+//! untrue — and the lab would pass its own link check the whole time. This is
 //! the same discipline as `oracle first for specimens`: find out what actually
 //! happens before concluding anything.
 

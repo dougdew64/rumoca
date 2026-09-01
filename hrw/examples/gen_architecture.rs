@@ -7,7 +7,7 @@
 //! **The generator itself lives in `hrw::arch_doc`**, so
 //! `arch_doc::tests::architecture_regions_are_current` checks the same code that
 //! writes the file rather than a second implementation of it — the same split, for
-//! the same reason, as `gen_tour_catalogue` and `hrw::tour::catalogue`.
+//! the same reason, as `gen_lab_catalogue` and `hrw::lab::catalogue`.
 //!
 //! Unlike `CATALOGUE.md`, `architecture.md` is **not** generated whole: it is
 //! hand-written reasoning with derived numbers in marker-delimited regions, and

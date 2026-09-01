@@ -12,7 +12,7 @@
 //!
 //! [`Summary`] is derived from the rows every time it is asked for. Storing the
 //! numbers alongside the table would let them disagree with it, which is the
-//! `end_to_end_tour.md` failure — stored prose describing a 7x7 incidence matrix
+//! `end_to_end_lab.md` failure — stored prose describing a 7x7 incidence matrix
 //! on a tab showing 48 equations, uncaught because nothing checked it.
 //!
 //! **The statistics are a noun; the statements about them are a verb.** HRW

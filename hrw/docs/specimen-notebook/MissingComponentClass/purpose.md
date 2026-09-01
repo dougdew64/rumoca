@@ -25,8 +25,8 @@ Its first draft claimed *"Breaks at: INSTANTIATE"*, reasoning that a missing cla
 different phase's problem from a missing variable — building the component tree rather than
 resolving an identifier.
 
-**That was wrong, and `cargo run -p hrw --example failure_map` said so before any tour was
-written about it.** To Rumoca both are name resolution. Had the check been skipped, the tour
+**That was wrong, and `cargo run -p hrw --example failure_map` said so before any lab was
+written about it.** To Rumoca both are name resolution. Had the check been skipped, the lab
 would have taught a phase boundary that does not exist, and it would have passed its own link
 check the whole time.
 

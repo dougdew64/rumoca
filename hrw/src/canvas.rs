@@ -487,7 +487,7 @@ mod tests {
     /// Centring puts the target in the middle of the viewport, in world terms.
     ///
     /// The arithmetic half of camera aiming — the half Claude can verify. Whether the
-    /// node then *looks* centred needs Doug's eyes; that is what the fixture tour is
+    /// node then *looks* centred needs Doug's eyes; that is what the fixture lab is
     /// for.
     #[test]
     fn pan_to_center_puts_the_target_in_the_middle() {
@@ -512,7 +512,7 @@ mod tests {
     /// Zoom is preserved: aiming says *where* to look, not how far in.
     ///
     /// Changing zoom on a link would silently discard whatever the reader had set up
-    /// while exploring, which is the opposite of helpful mid-tour.
+    /// while exploring, which is the opposite of helpful mid-lab.
     #[test]
     fn centring_at_different_zooms_keeps_the_target_centred() {
         let size = egui::vec2(300.0, 300.0);

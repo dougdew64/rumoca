@@ -206,16 +206,16 @@ impl ConnectionAnimation {
     /// # Why this pane, and why it was the one left
     ///
     /// It is the **only view that shows connection sets**, which makes it the only
-    /// evidence behind `connect-expansion.md` Stop 1.
+    /// evidence behind `connect-expansion.md` Station 1.
     ///
     /// **What it shows is SETS, not nodes** — six of them for `RcCircuit`. The stop's
     /// *three nodes, of sizes 2, 2 and 3* follows only by dividing by the two kinds,
     /// and is the reader's own arithmetic. **"Node" appears nowhere in Rumoca and
     /// nowhere in HRW**; this comment used to call the pane evidence *for* the node
-    /// count, which is the same conflation the tour itself made until Doug caught it
+    /// count, which is the same conflation the lab itself made until Doug caught it
     /// on 2026-08-22.
     ///
-    /// Every other claim in that tour became checkable when the equation sheet started
+    /// Every other claim in that lab became checkable when the equation sheet started
     /// publishing; this one stayed on Claude's word alone.
     ///
     /// # No summary is synthesized, and that is the whole design
@@ -235,7 +235,7 @@ impl ConnectionAnimation {
     ///
     /// `frame` is **1-based**, matching the on-screen counter *and*
     /// `hrw://stage/Flatten/Connections/frame/<n>`, so a number read here can be pasted
-    /// into a tour link. `index` is the raw cursor. Both are published because getting
+    /// into a lab link. `index` is the raw cursor. Both are published because getting
     /// this wrong lands a reader one frame early, silently.
     #[must_use]
     pub fn to_bridge_json(&self) -> serde_json::Value {

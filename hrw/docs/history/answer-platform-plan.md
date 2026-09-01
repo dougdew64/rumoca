@@ -26,12 +26,12 @@ Everything still live was moved out before retirement. Nothing here is the only 
 ---
 
 Written 2026-07-29, at the end of the session that reframed the project. Sequences
-`docs/ideas.md` #41 (Claude's teaching database), #42 (ad hoc tours), #43 (Wolfram
+`docs/ideas.md` #41 (Claude's teaching database), #42 (ad hoc labs), #43 (Wolfram
 and System Modeler as answer channels), #5 (four-bar linkage + planar mechanics),
 and the tech-debt discipline.
 
 Supersedes the "agreed work order (2026-07-28)" in `hrw/CLAUDE.md`, whose items 3–5
-(attempt the tour, refactor `bridge.rs`, Phases 6–7) were written before the tour
+(attempt the lab, refactor `bridge.rs`, Phases 6–7) were written before the lab
 was attempted and found wanting.
 
 ---
@@ -52,20 +52,20 @@ account they are *the most educational thing the project has produced*:
 > "my experiments with the features which you have built have been the most
 > educational aspect of this entire project so far."
 
-The tour was worthless; the animations were the best part; both were speculative.
+The lab was worthless; the animations were the best part; both were speculative.
 So speculativeness is not the discriminator. The discriminator is:
 
 > **A feature you did not know you needed teaches you by being used. Prose you did
 > not know you needed just rots.**
 
-The tour's defect was never that it was built early — it was that it **stored
+The lab's defect was never that it was built early — it was that it **stored
 regenerable content that nothing checked**. Two different defects, collapsed into
 one by the first version of this section.
 
 **So the rule is narrower than "build only what a question asks for":**
 
 - **Do not store regenerable explanation ahead of use.** This is the real rule, and
-  it is what retired the narratives and the tour prose.
+  it is what retired the narratives and the lab prose.
 - **Features are exempt, and speculative features are often correct.** In a domain
   nobody has mapped — Doug: *"I'm still trying to get my head around the
   possibilities of software in this new age of AI"* — **feature-building is the
@@ -77,7 +77,7 @@ one by the first version of this section.
 
 **What this changes about the sequencing below.** Phase 1 still comes first, but as
 the *enabler of experimentation* rather than as a hedge against overbuilding: while
-every tour needs a rebuild, tours cannot be experimented with at all. And Phase 2
+every lab needs a rebuild, labs cannot be experimented with at all. And Phase 2
 is no longer "the requirements document for Phase 3" — one problem from one chapter
 of a many-chaptered book is an anecdote, not a requirements process. Doug:
 *"Working through the first Cellier problem might not be all that informative for
@@ -95,7 +95,7 @@ added, and concluded the instruments had run ahead of their use. Doug rejected t
 correctly:
 
 > I would describe this day as a breakthrough change of project philosophy. Exhibit A is the
-> concept of ad hoc tours which you create to answer questions. [...] I want very much to
+> concept of ad hoc labs which you create to answer questions. [...] I want very much to
 > complete our paradigm change for HRW [...] while today's discussion is still fresh in my
 > head.
 
@@ -105,10 +105,10 @@ govern hundreds of future decisions:
 - **HRW stopped being a tool Doug uses and became a medium both parties write to.** The
   inbound noun channel (Context Bar) gained a return path (#42).
 - **Store what cannot be regenerated** — which retired 1,632 lines of narrative, re-aimed
-  `docs/compiler-phases` at Claude, and killed the tour's prose.
+  `docs/compiler-phases` at Claude, and killed the lab's prose.
 - **Features are experimentable; stored prose is not** (Doug's correction of Claude's
   over-generalisation).
-- **Tours multiply user testing**, and holes in tours are the signal.
+- **Labs multiply user testing**, and holes in labs are the signal.
 - **Three platforms, three questions**, with System Modeler as an *adjudicator* that
   corrects Claude's bias toward blaming its own specimen.
 - **Deadlines are real**, so gaps get fixed pre-emptively; and **audit narrowly, fix
@@ -127,15 +127,15 @@ half of it means re-deriving it worse in three weeks.
 
 ## Next batch — complete the paradigm shift  *(ordered)*
 
-**B1–B3 delivered 2026-07-30**, and all five fixture tours walked clean by Doug. The
+**B1–B3 delivered 2026-07-30**, and all five fixture labs walked clean by Doug. The
 answer channel now reaches every noun the capture can describe, spans three platforms,
 and the teaching database is mechanically checked.
 
 What that cost in bugs is the part worth remembering: **fourteen defects**, of which Doug
-found nine by walking tours and the tests and clippy found five. Not one was found by
+found nine by walking labs and the tests and clippy found five. Not one was found by
 Claude reading its own code. Several were in the artifacts *describing* HRW rather than in
-HRW — a tour asserting a highlight that had never been built, a diagnostic file describing
-the state before an action, two tour expectations that nothing could contradict.
+HRW — a lab asserting a highlight that had never been built, a diagnostic file describing
+the state before an action, two lab expectations that nothing could contradict.
 
 
 ### B1. Finish the answer channel (#42's remainder)  ✅ **DONE 2026-07-30**
@@ -149,7 +149,7 @@ framing they are **load-bearing**:
   properties (portable subset, `// purpose:` comments, System Modeler round-trip intent) that
   scratch models would degrade. Note that 2026-07-29's four hand-authored specimens are
   *durable* and correctly belong in the curated set; the split is for disposable probes.
-- **`Canvas` camera aiming.** A tour that cannot make Doug *look at* node 25 is an incomplete
+- **`Canvas` camera aiming.** A lab that cannot make Doug *look at* node 25 is an incomplete
   channel. Read `should_refit` and its tests first — the sideways-drift bug shows how fragile
   that camera is.
 - **Animation frame addressing.** A stop can name a view but not the moment inside it, and
@@ -159,14 +159,14 @@ framing they are **load-bearing**:
 - **`central_panel_ui` (664 lines)** — its four near-parallel sub-tab bars are exactly what
   frame addressing reworks. Same reasoning.
 
-### B2. #47 — tours that span platforms  ✅ **DONE 2026-07-30**
+### B2. #47 — labs that span platforms  ✅ **DONE 2026-07-30**
 
 Without this the paradigm is "HRW plus chat" rather than three platforms. Per-stop medium, a
 gitignored path for notebooks, and Claude evaluating before delivering while **Doug**
 evaluates to learn.
 
 **The first one already has its question**, so do not design it in the abstract: the
-`CapacitorLoop` tour ends by admitting HRW cannot show a matrix with full *structural* rank
+`CapacitorLoop` lab ends by admitting HRW cannot show a matrix with full *structural* rank
 that is numerically singular. Mathematica can, on a 3x3 Doug can perturb himself.
 
 ### B3. #41 stages B-C — make the database trustworthy  ✅ **DONE 2026-07-30**
@@ -186,7 +186,7 @@ improve it. Parse, Instantiate, Events, Solve lowering, and a *working* flatten 
 
 ### Then, in their own time
 
-**#17** as a cross-platform tour rather than as HRW work. **#5** (four-bar) when there is
+**#17** as a cross-platform lab rather than as HRW work. **#5** (four-bar) when there is
 appetite for the rabbit hole. **The mathematics** — Cellier, or a model that will not
 compile — when Doug is ready; that one only he can start.
 
@@ -206,24 +206,24 @@ compile — when Doug is ready; that one only he can start.
 
 ---
 
-## Phase 1 — Minimum viable ad hoc tour  ✅ **DONE 2026-07-29**
+## Phase 1 — Minimum viable ad hoc lab  ✅ **DONE 2026-07-29**
 
-**Only one change: load the tour document from disk at runtime.** Today it is
-`include_str!`'d into the binary, so a new tour needs a rebuild.
+**Only one change: load the lab document from disk at runtime.** Today it is
+`include_str!`'d into the binary, so a new lab needs a rebuild.
 
 - A scratch path Claude writes to, picked up without restarting HRW.
-- Tour-mode panel reads from there when a file is present, falls back to nothing
+- Lab-mode panel reads from there when a file is present, falls back to nothing
   when it is not.
 - **Deliberately do not touch the link vocabulary.** The existing three verbs
-  (`load`, `stage`, `load/stage`) are enough for a first tour, and the fourth verb
-  should be chosen by a tour that needed it.
+  (`load`, `stage`, `load/stage`) are enough for a first lab, and the fourth verb
+  should be chosen by a lab that needed it.
 
-**Exit criterion — met.** Claude writes `.hrw-bridge/tour.md` mid-conversation and
-Doug sees it without a rebuild. Delivered as `bridge::read_tour` +
-`App::poll_tour_file`; the round trip and link parsing are covered by
-`an_ad_hoc_tour_round_trips_through_the_bridge`.
+**Exit criterion — met.** Claude writes `.hrw-bridge/lab.md` mid-conversation and
+Doug sees it without a rebuild. Delivered as `bridge::read_lab` +
+`App::poll_lab_file`; the round trip and link parsing are covered by
+`an_ad_hoc_lab_round_trips_through_the_bridge`.
 
-**Two things the work turned up.** The old `tour_document_hrw_links_are_valid` test
+**Two things the work turned up.** The old `lab_document_hrw_links_are_valid` test
 had `end_to_end_tour.md` as its subject, a document HRW no longer shows — replaced.
 And `narrative_hrw_links_are_valid` had started passing **vacuously**: the notebook
 conversion renamed `narrative.md` to `purpose.md` and its `continue` swallowed every
@@ -238,14 +238,14 @@ in HRW" and "Claude cannot." Everything else in #42 is refinement.
 Start the actual loop: read a narrative, work here, solve the problem. Use
 **existing specimens** — do not build new ones in anticipation.
 
-Suggested starting material: the structural-analysis chapters the retired tour
+Suggested starting material: the structural-analysis chapters the retired lab
 already cited (Cellier & Kofman, *CSM* Ch. 9.3–9.5), where Rumoca's fit is best,
 so the first attempt tests **the loop** rather than **the fit**.
 
 **What this phase produces:**
 
 - Ledger entries — the first real ones with HRW context attached.
-- Evidence about what tours cannot yet express. **Evidence, not a requirements
+- Evidence about what labs cannot yet express. **Evidence, not a requirements
   document** — one problem is an anecdote. Expect to run several, over a period,
   before the pattern is trustworthy.
 - Possibly a specimen or two, which starts to say whether ad hoc specimens matter.
@@ -269,10 +269,10 @@ building more of #42 to experiment with is a legitimate move at any point.
 Deliberately **not gated on Phase 2 finishing.** Build a first iteration, experiment,
 and let a period of use decide what to keep.
 
-**Reordered 2026-07-29 by evidence rather than guesswork.** The first tour hit two
+**Reordered 2026-07-29 by evidence rather than guesswork.** The first lab hit two
 holes, and that changes the ranking: sub-tab links degraded *four* navigation moments
-in a single tour, which makes gap 2 the most-felt item rather than gap 1. See the
-tour-holes table in `docs/tech-debt.md`.
+in a single lab, which makes gap 2 the most-felt item rather than gap 1. See the
+lab-holes table in `docs/tech-debt.md`.
 
 1. **Link vocabulary parity with `focus.json`** — the design principle is that
    `hrw://` should express any noun `focus.json` can describe. Same vocabulary,
@@ -283,7 +283,7 @@ tour-holes table in `docs/tech-debt.md`.
    vocabulary, not cleanup.
 3. **`Canvas` camera aiming** — no way to centre on a node today. Read
    `should_refit` and its tests first: the 2026-07-29 sideways-drift bug shows how
-   fragile that camera is, and a tour aiming it will fight the same fit logic.
+   fragile that camera is, and a lab aiming it will fight the same fit logic.
 4. **`bridge.rs` decomposition** (2,365 lines) — it owns `focus.json`, so it owns
    half of vocabulary parity. Sequenced *here* rather than earlier for exactly that
    reason.
@@ -295,8 +295,8 @@ tour-holes table in `docs/tech-debt.md`.
 
 **Build a first iteration and experiment**, rather than waiting for each item to
 be demanded. The order above is a guess at likely demand, not a gate. The one thing
-to keep disciplined is the *storage* rule: a tour that gets built and used is fine
-whether or not a question asked for it; a tour whose prose gets **saved** as a
+to keep disciplined is the *storage* rule: a lab that gets built and used is fine
+whether or not a question asked for it; a lab whose prose gets **saved** as a
 durable artifact is not (see #42's ephemerality rule).
 
 ## Phase 4 — #41 stage B: the citation checker  *(small, can slot in anywhere)*
@@ -339,8 +339,8 @@ three deliberately pushed into #42 rather than swept.
 **Adopted 2026-07-29** (Doug: *"Your tech debt proposal is spot on… We are entirely
 agile for this project"*):
 
-- **Every sweep starts from the tour-holes table** at the top of `docs/tech-debt.md`.
-  A tour hole is a place HRW stopped Claude from answering a question, so it degrades
+- **Every sweep starts from the lab-holes table** at the top of `docs/tech-debt.md`.
+  A lab hole is a place HRW stopped Claude from answering a question, so it degrades
   the deliverable rather than costing future effort — and it arrives with the question
   it blocked as evidence. Doug: *"Fixing those gaps and bugs is high priority."* It is
   the only section of that file whose priority is not a judgement call.
@@ -374,8 +374,8 @@ clippy warnings in HRW (the Rumoca crates are clean and denied, HRW is not).
   both toolchains via #43 and diff the trajectories.
 - **The retired `end_to_end_tour.md` prose.** Its chain-of-problems spine and its
   Cellier/Hairer citations are worth keeping; the stage-by-stage walkthroughs are
-  not. Not scheduled — it should be cut down when a tour needs its spine, so the
-  cut is informed by what a real tour wanted.
+  not. Not scheduled — it should be cut down when a lab needs its spine, so the
+  cut is informed by what a real lab wanted.
 - **Phases 6–7 of `source-tooling-plan.md`** (tree rework, canvas views). Half of
   Phase 6's search work already landed as the jump-to-followed-identifier control.
   What remains should be re-derived from real questions, not from a plan written

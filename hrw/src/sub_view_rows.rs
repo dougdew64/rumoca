@@ -34,11 +34,11 @@
 //! | `App::apply_pending_view_and_seek` | whether an `hrw://` link is honoured |
 //! | [`flatten_row_ui`]'s clamp | whether the surviving selection is drawable |
 //!
-//! **The link guard was a `_ => true` wildcard until this ruling**, so a tour link naming
+//! **The link guard was a `_ => true` wildcard until this ruling**, so a lab link naming
 //! `Flatten/SourceMap` for a model without one was accepted, selected a tab that is not
 //! drawn, and landed the reader on the tree — the *exact* defect Doug reported on
 //! `Structural/Summary` on 2026-08-12, in the one arm the fix for it did not reach.
-//! `app::tests::every_tour_sub_view_link_is_available_for_its_specimen` carried the same
+//! `app::tests::every_lab_sub_view_link_is_available_for_its_specimen` carried the same
 //! belief in a comment: *"Flatten/Events/Initialization sub-views are always present."*
 //!
 //! **`Tree` is available unconditionally in all three**, matching
@@ -107,7 +107,7 @@ pub(crate) struct FlattenContent {
 ///
 /// Pure, and takes [`FlattenContent`] rather than `&App`, so a checker can reach it
 /// without a compile — the property that lets
-/// `App::structural_view_available_from_stage` be called from the tour-link test.
+/// `App::structural_view_available_from_stage` be called from the lab-link test.
 pub(crate) fn flatten_view_available(v: FlattenView, have: FlattenContent) -> bool {
     match v {
         // Falls back to the generic tree, which every stage has.

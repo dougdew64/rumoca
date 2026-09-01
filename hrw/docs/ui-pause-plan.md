@@ -23,7 +23,7 @@ merely looks large** — so each target below cites what it actually cost.
 | Target | Size | Evidence it costs something |
 |---|---|---|
 | **Cache layer** | 20 `cached_*` fields, **40 invalidation sites**, `clear_specimen_state` hand-lists 24 in 54 lines, **no completeness test** | A missed invalidation renders **stale plausible data** — silently wrong and confident. Same disease as the "wire every new stage" rule. |
-| **Left panel** (tours + model list, inline in `frame_ui`) | ~450 lines | Edited **three times on 2026-08-01** (corpus list, filter, dividers). Two of those edits shipped defects Doug caught: the corpus hidden, then vacuous tests. |
+| **Left panel** (labs + model list, inline in `frame_ui`) | ~450 lines | Edited **three times on 2026-08-01** (corpus list, filter, dividers). Two of those edits shipped defects Doug caught: the corpus hidden, then vacuous tests. |
 | **`central_panel_ui`** | 771 lines | The stage tabs and every stage view in one function. |
 | **`App`** | **105 fields**, 53 `&mut self` methods | Blast radius is unpredictable: threading one field through `Compiled` meant hunting every construction site by hand. |
 | **`app.rs` as a file** | 9,562 lines | **Caused defects directly.** Too large for targeted edits, so Claude fell back on generated scripts with string anchors — which produced attribute theft twice in one day (silently disabling a regression guard), leaked Rust escapes into comment text, and one blind global replace Doug rightly rejected. |
@@ -151,7 +151,7 @@ refactor's clothes:
 |---|---|---|
 | **Stage-view caches** | 11 + key | On stage change *and* on every compile — **listed by hand in both places** |
 | **Compile outputs** | `cached_flat`, `cached_dae`, `cached_equation_sheet` | Never — they are *results*, assigned from a finished compile |
-| **Self-keying memos** | `cached_purpose_notes` (by model), `cached_tour` (by mtime), `cached_source` (per specimen) | Each already carries what tells it it is stale |
+| **Self-keying memos** | `cached_purpose_notes` (by model), `cached_lab` (by mtime), `cached_source` (per specimen) | Each already carries what tells it it is stale |
 
 Folding all twenty into one `Default` reset would have **cleared the memos on every stage
 change** — a behaviour change, not a refactor. Only the first family was extracted, into
@@ -189,7 +189,7 @@ otherwise have to thread.
 
 ## Step 3 — The left panel
 
-The tours picker and the model list, ~450 lines lifted out of `frame_ui` into a new pane
+The labs picker and the model list, ~450 lines lifted out of `frame_ui` into a new pane
 module. **Highest edit frequency in the file**, and the region whose defects Doug caught three
 times yesterday.
 
@@ -236,7 +236,7 @@ references to gain nothing.
 ### Finished — touch only shared state
 
 `matching_anim_ui`, `tarjan_anim_ui`, `alias_anim_ui`, `ic_plan_anim_ui`,
-`background_ui`, `no_tour_ui`. **Leave these alone.**
+`background_ui`, `no_lab_ui`. **Leave these alone.**
 
 ### Finished in practice — one or two fields, cohesive with the shared set
 
@@ -254,7 +254,7 @@ characterization."*
 |---|---|---|
 | `context_bar_ui` | `ContextBarState` | 10 → 1 |
 | `specimen_source_ui` | `SourceViewState` | 7 → 1 |
-| `tour_panel_ui` | `TourState` | 4 → 1 |
+| `lab_panel_ui` | `LabState` | 4 → 1 |
 
 **`App`: 75 → 57**, past step 4's ≤ 60 target.
 
@@ -282,14 +282,14 @@ bare `{}` replacement that landed in an unrelated format string).
 | Module | Lines | Why it could move |
 |---|---|---|
 | `model_list.rs` | 533 | Owns its state, **returns an outcome** instead of acting |
-| `tour.rs` | 166 | Same: `select`/`poll` report *whether the selection changed* |
+| `lab.rs` | 166 | Same: `select`/`poll` report *whether the selection changed* |
 
 `app.rs`: **10,087 → 9,434.**
 
 **The rule the split follows is "narrow first, move second", and it is not
 optional.** A module boundary is free only once a pane has stopped reaching into
 `App`; moving one that still takes `&mut App` would mean widening `App`'s fields,
-which undoes exactly the encapsulation the extraction bought. `tour_panel_ui`'s
+which undoes exactly the encapsulation the extraction bought. `lab_panel_ui`'s
 *rendering* stayed behind for that reason even though its state moved.
 
 **Stopping here, deliberately.** `context_bar_ui` and `specimen_source_ui` have

@@ -91,7 +91,7 @@ current layout, and can be **skipped in `git blame`** afterwards.
 
 ### Three things to check before running it, each cheap and each capable of failing
 
-1. **Does any document cite an `hrw/` source line number?** The fixture tours do not (verified
+1. **Does any document cite an `hrw/` source line number?** The fixture labs do not (verified
    2026-08-04, and `docs/compiler-phases/` cites *Rumoca* symbols). **`docs/` more broadly is
    unchecked.** `grep -rn "\.rs:[0-9]" docs/` before, and fix what it finds — a reformat
    invalidates every such citation silently.

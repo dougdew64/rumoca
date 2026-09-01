@@ -45,7 +45,7 @@ git checkout hrw
 Git for Windows ships `core.autocrlf=true` in its **system** config
 (`C:/Program Files/Git/etc/gitconfig`) and a CRLF checkout breaks the tests that read
 repository files as exact text. If a clone predates that file, the symptom is two failures —
-`tour_catalogue_is_current` and `app_does_not_regrow_its_field_count`, the second of which
+`lab_catalogue_is_current` and `app_does_not_regrow_its_field_count`, the second of which
 **reports a false reason** (*"the App struct must be closed by a `}` at column 0"*, when the
 struct is fine and the line is `}\r`). The repair:
 
@@ -235,10 +235,10 @@ and since 2026-08-30 `.gitignore` re-includes it, so both arrive with a checkout
 
 **It did not always, and the reason it changed is worth keeping.** Upstream Rumoca ignores
 `.claude/` wholesale, so this file was per machine and this section used to be a recipe for
-recreating it by hand. Doug reported the allowlist's absence as real friction while walking tours:
+recreating it by hand. Doug reported the allowlist's absence as real friction while walking labs:
 *"the high latency of your answers… seems to be caused by you asking for my approval to perform
 tasks."* Then the context hook landed, and a per-machine hook fails **silently** — he captures a
-tour passage on the other machine, asks *"what is this?"*, and Claude answers confidently about the
+lab passage on the other machine, asks *"what is this?"*, and Claude answers confidently about the
 wrong subject with nothing on screen to say the channel is dead. That decided it.
 
 **The one gotcha, if this ever needs re-doing:** the ignore rule must be `.claude/*`, not
@@ -356,7 +356,7 @@ everything, fails at the *link* step with `Access is denied. (os error 5)`, and 
 **This is the trap:** the failure is one line at the end of a long build, and everything else
 about the run looks healthy.
 
-It cost a troubleshooting cycle on 2026-08-03 — a tour-link click that "did nothing" and could
+It cost a troubleshooting cycle on 2026-08-03 — a lab-link click that "did nothing" and could
 not be reproduced by three headless tests. Restarting HRW resolved it, and the bug was never
 found in the code, which is the signature of this rather than of a defect.
 

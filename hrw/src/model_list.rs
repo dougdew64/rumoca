@@ -529,10 +529,10 @@ impl ModelListState {
             self.scratch.insert(path.clone());
             scratch.push(path);
         }
-        // **Scratch first, matching the tour list** (Doug, 2026-07-29). The ephemeral,
+        // **Scratch first, matching the lab list** (Doug, 2026-07-29). The ephemeral,
         // just-written thing is the one most likely to be wanted next — a probe exists
         // because a question is open right now. Appending it after 18 curated specimens
-        // buried the common case, which is the same mistake the tour picker avoids by
+        // buried the common case, which is the same mistake the lab picker avoids by
         // putting Claude's answer at the top.
         //
         // Safe to reorder because a scratch name colliding with a curated one is
@@ -643,7 +643,7 @@ mod tests_absence {
     ///
     /// The survey that chose U+2731 also reported **U+25B6 absent** — and U+25B6 is the
     /// ▶ on the run button, which plainly renders, and was until that afternoon the
-    /// prefix on 101 tour hyperlinks Doug described as *triangles*. So this API, asked
+    /// prefix on 101 lab hyperlinks Doug described as *triangles*. So this API, asked
     /// this way, says "missing" about glyphs that draw.
     ///
     /// **That does not weaken either assertion here, and the asymmetry is the reason

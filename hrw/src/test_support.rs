@@ -85,13 +85,13 @@ end ScratchProbe;
 /// returned early when it was not, so **in a clean checkout they asserted nothing and
 /// said so to nobody** — the must-fire rule pointed at tests rather than at production
 /// code. The obvious fix, writing the file in the test, is how the three
-/// `.hrw-bridge/tour.md` defects happened (`CLAUDE.md`): *"a test that wrote its own
+/// `.hrw-bridge/lab.md` defects happened (`CLAUDE.md`): *"a test that wrote its own
 /// and **deleted Doug's** afterwards"*.
 ///
 /// **That directory is live state.** Doug runs HRW from the working tree while the
 /// suite runs, and Claude writes probes into it mid-conversation to answer questions —
 /// two of them are sitting there as of 2026-08-22. So the contract is the one
-/// [`crate::ui_tests::AdHocTour`] already proved for the tour file: **save what was
+/// [`crate::ui_tests::AdHocLab`] already proved for the lab file: **save what was
 /// there, and put it back in `Drop`** so a failing assertion cannot poison the
 /// directory for the next run or for the app Doug has open.
 ///
@@ -148,7 +148,7 @@ impl Drop for ScratchSpecimen {
 ///
 /// Without these, a guard that quietly failed to put a file back would leave every
 /// test that uses it green while poisoning the directory — the exact shape of the
-/// tour-file defects it was written to avoid.
+/// lab-file defects it was written to avoid.
 #[cfg(test)]
 mod tests_scratch_specimen {
     use super::{SCRATCH_PROBE_NAME, ScratchSpecimen};

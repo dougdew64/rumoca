@@ -218,7 +218,7 @@ pub(crate) fn report_sub_view_row_ui(
         // before they mean anything; this one is a replay of the
         // *search*, and the search failing is the most instructive
         // thing on a singular stage. It was hidden here until
-        // 2026-07-29, when writing a tour to answer "what does a rank
+        // 2026-07-29, when writing a lab to answer "what does a rank
         // deficiency of 1 mean?" ran straight into its absence
         // (ideas #44). Nothing else was needed: the trace already
         // emits `MatchingStep::EquationFailed` and the view already
@@ -401,7 +401,7 @@ mod tests {
     /// Matching.
     ///
     /// This is the row's oldest rule and the one with a history: Matching was gated out
-    /// with the other three until 2026-07-29, when a tour asking "what does a rank
+    /// with the other three until 2026-07-29, when a lab asking "what does a rank
     /// deficiency of 1 mean?" ran into its absence. Watching the augmenting-path search
     /// fail is the *most* instructive thing on a singular stage, so it is exactly the tab
     /// that must survive.

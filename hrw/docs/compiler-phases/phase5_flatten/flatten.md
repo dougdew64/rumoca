@@ -310,8 +310,8 @@ classifies these variables and equations into the MLS Appendix B partition.
 two union-finds and the DAE phase's separate spanning-tree check were all read directly; §3 below is
 explicitly marked as not verified.
 
-**Held here rather than in `fixture-tours/connect-expansion.md` — Doug's call:** *"past the level of
-useful detail for this tour."* It is the right answer for a later, deeper pass.
+**Held here rather than in `fixture-labs/connect-expansion.md` — Doug's call:** *"past the level of
+useful detail for this lab."* It is the right answer for a later, deeper pass.
 
 **1. The `connect`-expansion graph — confined to Flatten, and destroyed with it.**
 
@@ -387,7 +387,7 @@ checking properly.**
 ### The five connection validations, and the one thing none of them checks
 
 *Verified 2026-08-12 against `crates/rumoca-phase-flatten/src/connections/mod.rs`* — read while
-answering Doug's question about connector type checking. The tour carries the conceptual version;
+answering Doug's question about connector type checking. The lab carries the conceptual version;
 this is the code-level list.
 
 `validate_connections` (line 499) applies these to **each pair of variables being joined**:

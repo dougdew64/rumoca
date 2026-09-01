@@ -32,17 +32,17 @@
 //!    stage's full IR, rewritten once per compile. Claude can diff any two stages
 //!    by reading two files (e.g., `instantiate.json` vs `typecheck.json`).
 //!
-//! 3. **Tour file** (`.hrw-bridge/tour.md`) — the one channel that runs the *other
-//!    way*, added 2026-07-29 (ideas #42). Claude writes a markdown tour; HRW's
-//!    tour mode renders it and picks up a rewrite without a restart. Where
+//! 3. **Lab file** (`.hrw-bridge/lab.md`) — the one channel that runs the *other
+//!    way*, added 2026-07-29 (ideas #42). Claude writes a markdown lab; HRW's
+//!    lab mode renders it and picks up a rewrite without a restart. Where
 //!    `focus.json` carries a noun *out* to Claude, this carries a sequence of
 //!    nouns *back*, as `hrw://` links the reader can click.
 //!
 //!    Living in the gitignored bridge directory is deliberate: #42 says ad hoc
-//!    tours are **ephemeral by default** — regenerated against the current tree
+//!    labs are **ephemeral by default** — regenerated against the current tree
 //!    rather than retrieved and re-checked — and putting them here makes the
 //!    filesystem enforce that instead of Claude's discipline. What persists is
-//!    the *question* the tour answered, in `docs/question-ledger.md`.
+//!    the *question* the lab answered, in `docs/question-ledger.md`.
 //!
 //! The `.hrw-bridge/` directory is gitignored. The paths are repo-relative
 //! (via `CARGO_MANIFEST_DIR`) so they are stable across Claude Code sessions.
@@ -123,7 +123,7 @@ pub(crate) const BREAKPOINT_ACK_FILE: &str = concat!(
 /// 2026-07-29 and Claude recommended against; this is that split.
 ///
 /// Living under the gitignored bridge directory makes them **ephemeral by
-/// construction**, the same rule as `tour.md`: what persists is the *question*, in
+/// construction**, the same rule as `lab.md`: what persists is the *question*, in
 /// `docs/question-ledger.md`. A probe worth keeping gets promoted into `specimens/`
 /// deliberately, with a `// purpose:` line — which is the moment it stops being a probe.
 pub const SCRATCH_SPECIMEN_DIR: &str =
@@ -144,33 +144,33 @@ pub fn scratch_specimens() -> Vec<PathBuf> {
     found
 }
 
-/// An ad hoc tour written by Claude, rendered by HRW's tour mode (ideas #42).
+/// An ad hoc lab written by Claude, rendered by HRW's lab mode (ideas #42).
 ///
 /// The only bridge file that flows *into* HRW rather than out of it.
-pub const TOUR_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/tour.md");
+pub const LAB_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/lab.md");
 
-/// Fixture tours — kept, versioned, and executed by `fixture_tour_links_all_resolve`.
+/// Fixture labs — kept, versioned, and executed by `fixture_lab_links_all_resolve`.
 ///
 /// Hard-coded rather than configurable: the directory is part of the repository layout,
 /// not a user preference, and one fewer setting is one fewer thing to be wrong.
-pub const FIXTURE_TOURS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/fixture-tours");
+pub const FIXTURE_LABS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/fixture-labs");
 
-/// Notebooks belonging to fixture tours — versioned, because a fixture has expected
+/// Notebooks belonging to fixture labs — versioned, because a fixture has expected
 /// outcomes and a test that vanishes on a fresh checkout is not a test.
 pub const FIXTURE_NOTEBOOKS_DIR: &str =
-    concat!(env!("CARGO_MANIFEST_DIR"), "/docs/fixture-tours/notebooks");
+    concat!(env!("CARGO_MANIFEST_DIR"), "/docs/fixture-labs/notebooks");
 
-/// Notebooks Claude writes to answer one question — ephemeral, like `tour.md`.
+/// Notebooks Claude writes to answer one question — ephemeral, like `lab.md`.
 pub const SCRATCH_NOTEBOOKS_DIR: &str =
     concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/notebooks");
 
-/// The repository documents a tour may link to with `hrw://doc/<name>`.
+/// The repository documents a lab may link to with `hrw://doc/<name>`.
 pub const DOCS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/docs");
 
 /// The workspace root — the tree `hrw://src/<path>` resolves against.
 ///
 /// One level above this crate, so it covers both `crates/rumoca-*` and `hrw/` itself.
-/// A tour grounded in Rumoca's code cites both.
+/// A lab grounded in Rumoca's code cites both.
 #[must_use]
 pub fn workspace_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -192,11 +192,11 @@ pub struct SourceTarget {
 ///
 /// # Why a symbol rather than a line number
 ///
-/// This is [`crate::matching_ledger::anchor_by_name`]'s decision applied to tour prose,
-/// and `HrwLink::OpenTour`'s before it: **a number in prose rots silently when code
+/// This is [`crate::matching_ledger::anchor_by_name`]'s decision applied to lab prose,
+/// and `HrwLink::OpenLab`'s before it: **a number in prose rots silently when code
 /// moves, while a name fails loudly.** The line is computed from the file at click time,
 /// so a link that resolves is right by construction, and a symbol that has been renamed
-/// away fails in `doc_citations::tour_source_links_resolve` rather than in front of Doug.
+/// away fails in `doc_citations::lab_source_links_resolve` rather than in front of Doug.
 ///
 /// # What counts as finding a symbol
 ///
@@ -240,7 +240,7 @@ pub fn resolve_source(target: &str) -> Option<SourceTarget> {
 /// **Two shapes, because the first version only had one and the checker caught it
 /// immediately.** Keyword-prefixed items (`fn union`, `struct UnionFind`) were covered;
 /// **enum variants were not**, and `hrw://src/…/trace.rs#SetFormed` failed on the first
-/// run of `fixture_tours_reference_files_that_exist` — which is the whole argument for
+/// run of `fixture_labs_reference_files_that_exist` — which is the whole argument for
 /// the checker, since the alternative was Doug clicking it.
 fn line_defining(source: &str, symbol: &str) -> Option<usize> {
     let keywords = [
@@ -278,10 +278,10 @@ fn line_defining(source: &str, symbol: &str) -> Option<usize> {
 
 /// Resolve a `hrw://notebook/<name>` target to a file on disk.
 ///
-/// Looks in the fixture directory first, then the scratch one, so a fixture tour keeps
+/// Looks in the fixture directory first, then the scratch one, so a fixture lab keeps
 /// working even when an ad hoc notebook of the same name exists.
 ///
-/// **Rejects anything with a path separator or `..`.** A tour is authored by Claude and
+/// **Rejects anything with a path separator or `..`.** A lab is authored by Claude and
 /// versioned, but the verb hands a path to the operating system's file association — so
 /// the set of things it can open stays a *file name in one of two known directories*,
 /// rather than whatever a link happens to spell.
@@ -306,11 +306,11 @@ pub fn resolve_notebook(name: &str) -> Option<PathBuf> {
 ///
 /// That verb exists because a plain markdown link to a `.nb` is handed to the **browser**,
 /// which does nothing useful with it — Doug hit it on 2026-07-30. **It recurred on
-/// 2026-08-31 with `.md`**: five tours linked `[upstream-issues.md](../upstream-issues.md)`,
+/// 2026-08-31 with `.md`**: five labs linked `[upstream-issues.md](../upstream-issues.md)`,
 /// and clicking one opened Chrome — *"instead of attempting to open the file in VS Code."*
 /// **The July fix did not generalise because it was a verb, not a rule**: nothing stopped
 /// the next relative link from being written, and
-/// `doc_citations::no_tour_links_to_a_bare_file_path` is the half that does.
+/// `doc_citations::no_lab_links_to_a_bare_file_path` is the half that does.
 ///
 /// # What it refuses, and why a subdirectory is allowed here
 ///
@@ -333,31 +333,31 @@ pub fn resolve_doc(name: &str) -> Option<PathBuf> {
     Some(path)
 }
 
-/// List the fixture tours, sorted by file name.
+/// List the fixture labs, sorted by file name.
 ///
-/// Distinct from the ad hoc tour in [`TOUR_FILE`]: an ad hoc tour answers one question
-/// and is regenerated, a fixture tour is a **test** with a pass/fail criterion and is
-/// kept. See `docs/fixture-tours/camera-aiming.md` for the shape.
+/// Distinct from the ad hoc lab in [`LAB_FILE`]: an ad hoc lab answers one question
+/// and is regenerated, a fixture lab is a **test** with a pass/fail criterion and is
+/// kept. See `docs/fixture-labs/camera-aiming.md` for the shape.
 /// **`README.md` is excluded**: the directory gained one on 2026-08-01 under the
 /// two-audience convention (`DECISIONS.md`), and without this it would appear in
-/// the tour picker as a tour called "README" whose stops do not exist. A README
+/// the lab picker as a lab called "README" whose stops do not exist. A README
 /// describes the directory; it is not a member of it.
-pub fn fixture_tours() -> Vec<PathBuf> {
-    let Ok(entries) = fs::read_dir(FIXTURE_TOURS_DIR) else {
+pub fn fixture_labs() -> Vec<PathBuf> {
+    let Ok(entries) = fs::read_dir(FIXTURE_LABS_DIR) else {
         return Vec::new();
     };
     let mut found: Vec<PathBuf> = entries
         .flatten()
         .map(|e| e.path())
         .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("md"))
-        // **Not every `.md` in this directory is a tour.**
+        // **Not every `.md` in this directory is a lab.**
         //
         // `README.md` documents the directory. `CATALOGUE.md` is *generated for
-        // Claude* — it exists so a question can be answered by citing a tour rather
+        // Claude* — it exists so a question can be answered by citing a lab rather
         // than retelling one (`docs/ideas.md` #63) — and Doug found it sitting in his
         // picker on 2026-08-05, one row among fifteen, offering to be walked.
         //
-        // **This is the single definition of "is a tour file".** `tour::catalogue`
+        // **This is the single definition of "is a lab file".** `lab::catalogue`
         // had its own copy of this filter, which is how the catalogue managed to
         // exclude itself while the picker did not. It now calls this function.
         .filter(|p| {
@@ -371,16 +371,16 @@ pub fn fixture_tours() -> Vec<PathBuf> {
     found
 }
 
-/// Read the ad hoc tour, with the modification time it was read at.
+/// Read the ad hoc lab, with the modification time it was read at.
 ///
-/// Returns `None` when no tour has been written — the common case, and not an
+/// Returns `None` when no lab has been written — the common case, and not an
 /// error. The mtime lets a caller re-read only when the file actually changed,
-/// so a tour Claude rewrites mid-conversation appears without a restart and an
+/// so a lab Claude rewrites mid-conversation appears without a restart and an
 /// unchanged one costs one `stat` per poll.
-pub fn read_tour() -> Option<(String, std::time::SystemTime)> {
-    let meta = fs::metadata(TOUR_FILE).ok()?;
+pub fn read_lab() -> Option<(String, std::time::SystemTime)> {
+    let meta = fs::metadata(LAB_FILE).ok()?;
     let mtime = meta.modified().ok()?;
-    let text = fs::read_to_string(TOUR_FILE).ok()?;
+    let text = fs::read_to_string(LAB_FILE).ok()?;
     Some((text, mtime))
 }
 
@@ -400,9 +400,9 @@ const MATCHING_FILE: &str = concat!(
 
 /// Resolve a short source-file name to the path the extension needs.
 ///
-/// **Only the files a tour may arm a breakpoint in**, deliberately: a link is
-/// user-facing text, and resolving arbitrary paths from one would let a tour —
-/// or an ad hoc tour Claude writes — point the debugger anywhere.
+/// **Only the files a lab may arm a breakpoint in**, deliberately: a link is
+/// user-facing text, and resolving arbitrary paths from one would let a lab —
+/// or an ad hoc lab Claude writes — point the debugger anywhere.
 pub fn traced_source_path(file: &str) -> std::io::Result<std::path::PathBuf> {
     let raw = match file {
         "live_trace.rs" => LIVE_TRACE_FILE,
@@ -771,7 +771,7 @@ pub enum Focus<'a> {
     ///   empty — the thread is the whole subject". Same reasoning as
     ///   `mentions: 0` in the tracking section.
     Nothing,
-    /// **A passage of tour prose**, selected in the tour panel and captured with 🎯.
+    /// **A passage of lab prose**, selected in the lab panel and captured with 🎯.
     ///
     /// The first focus that is not part of a compile: there is no stage, no IR and no
     /// key path, which is why [`Ask::stage`] is `None` for one of these and why
@@ -780,10 +780,10 @@ pub enum Focus<'a> {
     /// **`text` is what the pane RENDERED**, markdown stripped — that is what egui can
     /// hand back, and Doug ruled it sufficient. It is enough to answer *"what does this
     /// mean?"*; for *"improve this paragraph"* Claude locates the source itself, which
-    /// is where `docs/fixture-tours/README.md`'s `walked:` and `authored:` rules bind.
-    TourPassage {
-        /// The tour it was read in, as the picker labels it.
-        tour: &'a str,
+    /// is where `docs/fixture-labs/README.md`'s `walked:` and `authored:` rules bind.
+    LabPassage {
+        /// The lab it was read in, as the picker labels it.
+        lab: &'a str,
         /// The selected prose, verbatim as rendered.
         text: &'a str,
     },
@@ -1106,7 +1106,7 @@ fn generated_origin(name: &str) -> Option<Value> {
 /// be a second thing to keep in sync.
 #[derive(Clone)]
 pub struct View<'a> {
-    /// Which of the three left-panel modes: Tour, Specimen, Debug.
+    /// Which of the three left-panel modes: Lab, Specimen, Debug.
     pub ui_mode: &'a str,
     /// The sub-view within the current stage, when the stage has sub-tabs
     /// (Structural and Flatten do; the generic tree stages do not).
@@ -1705,7 +1705,7 @@ fn build(ask: &Ask) -> Value {
         Focus::Stage => "stage",
         Focus::Specimen => "specimen",
         Focus::Nothing => "none",
-        Focus::TourPassage { .. } => "tour_passage",
+        Focus::LabPassage { .. } => "lab_passage",
     };
     // **The slug, not the display name.** This used to emit `StageKind::name`, which
     // reads "Index reduction" with a space — so the capture named a stage that
@@ -1714,8 +1714,8 @@ fn build(ask: &Ask) -> Value {
     // carries the prose label alongside it.
     // **`None` needs a REASON, not one spelling, since 2026-08-31.** There had been a
     // single sentinel — *"(navigated definition)"* — because that was the only way a
-    // capture could lack a stage. A tour passage is now the second, and it emitted the
-    // first one's text: `kind: "tour_passage"` beside `stage: "(navigated definition)"`,
+    // capture could lack a stage. A lab passage is now the second, and it emitted the
+    // first one's text: `kind: "lab_passage"` beside `stage: "(navigated definition)"`,
     // two contradictory claims about one capture. Found by a column read of the arms
     // added the day before, which is the tool's own advertised yield: a list of siblings
     // where one member is wrong.
@@ -1723,7 +1723,7 @@ fn build(ask: &Ask) -> Value {
     // Absence stated, and stated *accurately* — the same rule that made the field an
     // `Option` rather than letting it borrow whichever stage was selected.
     let no_stage = match ask.focus {
-        Focus::TourPassage { .. } => "(tour prose, not a compile phase)",
+        Focus::LabPassage { .. } => "(lab prose, not a compile phase)",
         _ => "(navigated definition)",
     };
     let stage_str = ask.stage.map_or(no_stage, StageKind::slug);
@@ -1778,21 +1778,21 @@ fn build(ask: &Ask) -> Value {
         doc["node"] = build_node(key_path, stage_value, ask.specimen);
         doc["cross_stage"] = build_cross_stage(ask, key_path);
     }
-    // **A tour passage carries its own section**, because none of the IR machinery
+    // **A lab passage carries its own section**, because none of the IR machinery
     // above applies: there is no stage IR to navigate, no key path, and no cross-stage
     // diff to build. The note says what the text IS, so a reader does not go looking
     // for the passage byte-for-byte in the markdown and conclude the capture is wrong.
-    if let Focus::TourPassage { tour, text } = &ask.focus {
-        doc["tour_passage"] = json!({
-            "note": "prose the reader selected in HRW's tour panel and captured. This is \
+    if let Focus::LabPassage { lab, text } = &ask.focus {
+        doc["lab_passage"] = json!({
+            "note": "prose the reader selected in HRW's lab panel and captured. This is \
                      the RENDERED text, so markdown markup is stripped and it will not \
                      match the source byte-for-byte -- locate it in the file named below. \
                      Before editing it, check whether it sits inside a `walked:` region \
                      (may be fixed, and the marker re-dated in the same commit) or an \
                      `authored:` region (Doug's own prose -- report a false claim, never \
                      rewrite it).",
-            "tour": tour,
-            "file": format!("hrw/docs/fixture-tours/{tour}.md"),
+            "lab": lab,
+            "file": format!("hrw/docs/fixture-labs/{lab}.md"),
             "text": text,
         });
     }
@@ -2335,20 +2335,20 @@ fn shape(v: &Value) -> Value {
 mod tests {
     use super::*;
 
-    /// **A tour-passage capture emits its tour, its text, and NO stage.**
+    /// **A lab-passage capture emits its lab, its text, and NO stage.**
     ///
     /// The file is what Claude actually reads, so this is the half that matters for
     /// accuracy. Three claims, each of which the obvious implementation gets wrong:
     ///
     /// - `stage` names **why** there is no stage, not merely that there is none. It
     ///   first emitted *"(navigated definition)"* — the only sentinel that existed —
-    ///   which was a false claim standing beside `kind: "tour_passage"`. A column read
+    ///   which was a false claim standing beside `kind: "lab_passage"`. A column read
     ///   found it the next day: absence must be stated *accurately*, not just stated.
-    /// - `kind` is `tour_passage`, distinguishable from the three IR shapes.
+    /// - `kind` is `lab_passage`, distinguishable from the three IR shapes.
     /// - the passage section names the **file**, because the emitted text is what the
     ///   pane rendered and will not match the markdown byte-for-byte.
     #[test]
-    fn a_tour_passage_emits_its_tour_and_no_stage() {
+    fn a_lab_passage_emits_its_lab_and_no_stage() {
         let defs = BTreeMap::new();
         let ask = Ask {
             seq: 12,
@@ -2360,13 +2360,13 @@ mod tests {
             def_index: &defs,
             parse_value: None,
             resolve_value: None,
-            focus: Focus::TourPassage {
-                tour: "dae-construction",
+            focus: Focus::LabPassage {
+                lab: "dae-construction",
                 text: "A DAE is well posed when the counts agree.",
             },
             tracking: None,
             view: View {
-                ui_mode: "Tour",
+                ui_mode: "Lab",
                 stage_view: None,
                 specimen_detail: None,
                 viewing_log: false,
@@ -2376,24 +2376,24 @@ mod tests {
         };
 
         let doc = build(&ask);
-        assert_eq!(doc["kind"], "tour_passage");
+        assert_eq!(doc["kind"], "lab_passage");
         assert_eq!(
-            doc["stage"], "(tour prose, not a compile phase)",
+            doc["stage"], "(lab prose, not a compile phase)",
             "the sentinel must say WHY there is no stage \u{2014} \u{201c}(navigated \
              definition)\u{201d} was a false claim about this capture, and naming a \
              phase would send Claude to the wrong place entirely",
         );
-        assert_eq!(doc["tour_passage"]["tour"], "dae-construction");
+        assert_eq!(doc["lab_passage"]["lab"], "dae-construction");
         assert_eq!(
-            doc["tour_passage"]["file"], "hrw/docs/fixture-tours/dae-construction.md",
+            doc["lab_passage"]["file"], "hrw/docs/fixture-labs/dae-construction.md",
             "the file is named because the rendered text will not match the source",
         );
         assert_eq!(
-            doc["tour_passage"]["text"],
+            doc["lab_passage"]["text"],
             "A DAE is well posed when the counts agree.",
         );
         assert!(
-            doc["tour_passage"]["note"]
+            doc["lab_passage"]["note"]
                 .as_str()
                 .is_some_and(|n| n.contains("authored:") && n.contains("walked:")),
             "the note must carry the editing rules, since this capture is what a \
@@ -2492,7 +2492,7 @@ mod tests {
             assert!(resolve_doc(bad).is_none(), "{bad:?} must be refused");
         }
 
-        // The document the tours actually link to, and one in a subdirectory — the case
+        // The document the labs actually link to, and one in a subdirectory — the case
         // `resolve_notebook`'s rule would have rejected outright.
         for good in [
             "upstream-issues.md",
@@ -2516,7 +2516,7 @@ mod tests {
     ///
     /// **The symbol half is the point, so it is what the assertions are about.** A path
     /// alone is `resolve_doc` with a different root; what is new here is resolving a NAME
-    /// to a line at click time, so a tour citing `union` keeps working when the function
+    /// to a line at click time, so a lab citing `union` keeps working when the function
     /// moves and fails loudly when it is renamed away.
     ///
     /// Two properties are pinned that a naive `contains` would get wrong, both of which
@@ -2570,7 +2570,7 @@ mod tests {
         assert!(resolve_source(&format!("{rel}#no_such_symbol_anywhere")).is_none());
 
         // **An enum VARIANT resolves, and a use site does not steal it.** The first
-        // version of this resolver knew only keyword-introduced items, so the tour's
+        // version of this resolver knew only keyword-introduced items, so the lab's
         // `#SetFormed` link failed on the checker's first run. `mod.rs` mentions
         // `ConnectionStep::SetFormed` at its emit site; the definition is in `trace.rs`,
         // and the qualified use must not match there or anywhere.
@@ -2702,7 +2702,7 @@ mod tests {
     /// **Ordinary paths are spelled exactly as before the quoting rule existed.**
     ///
     /// Quoting had to be additive: `hrw://` links live in checked-in fixture
-    /// tours and in every `focus.json` written so far, so a key that never needed
+    /// labs and in every `focus.json` written so far, so a key that never needed
     /// escaping must still render byte-identically or those links break.
     #[test]
     fn quoting_did_not_change_how_ordinary_paths_are_written() {

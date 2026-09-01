@@ -1,4 +1,4 @@
-//! **Which frame handles which identifier** — the lookup that makes a tour link
+//! **Which frame handles which identifier** — the lookup that makes a lab link
 //! land on an algorithm *step* rather than a stage.
 //!
 //! ```text
@@ -14,8 +14,8 @@
 //! by. Then you could capture that fact in the navigation link."*
 //!
 //! `hrw://stage/Structural/MatchingAnim/frame/<n>` has worked since the
-//! frame-seeking tour. What was missing was any way to know `<n>` without
-//! watching the animation — so a tour author would be **guessing a number that
+//! frame-seeking lab. What was missing was any way to know `<n>` without
+//! watching the animation — so a lab author would be **guessing a number that
 //! the link checker cannot catch**, because a wrong-but-valid frame index
 //! resolves fine and simply lands on the wrong step. That is the quiet failure
 //! this removes.
@@ -102,7 +102,7 @@ fn main() {
     // and `from_incidence` is now `#[cfg(test)]` so it is not reachable anyway.
     let Some(anim) = MatchingAnimation::from_captured_frames(&mat, &matching_frames) else {
         eprintln!("{model}: the compile recorded no matching frames for this system");
-        eprintln!("(nothing to number \u{2014} a tour cannot link to a frame that does not exist)");
+        eprintln!("(nothing to number \u{2014} a lab cannot link to a frame that does not exist)");
         std::process::exit(1);
     };
 
@@ -111,11 +111,11 @@ fn main() {
     // The animation stores `mat.equation_texts()` and `step_description` renders
     // those, so equation 0 of `ProportionalLoop` is labelled
     // `error - (reference - measurement)`. This tool printed `equation_names()`
-    // instead — `f_x[0] (top-level model equation)` — so a tour author quoting it
+    // instead — `f_x[0] (top-level model equation)` — so a lab author quoting it
     // wrote an expectation naming a string **that never appears on screen**, and the
     // walk would fail on a stop where nothing was actually wrong.
     //
-    // Found 2026-08-03 while auditing `docs/fixture-tours/matching.md` against the
+    // Found 2026-08-03 while auditing `docs/fixture-labs/matching.md` against the
     // strings the animation renders.
     let eqs = mat.equation_texts();
     let vars = mat.unknown_names();
@@ -130,7 +130,7 @@ fn main() {
 
     let mut shown = 0usize;
     for (n, step) in anim.steps().iter().enumerate() {
-        // `var` is what a tour points at; `eq` is which equation was trying.
+        // `var` is what a lab points at; `eq` is which equation was trying.
         let (var, line) = match step {
             // The opening frame names no variable, because the search has not
             // reached one — it is the system before any of this.
@@ -175,7 +175,7 @@ fn main() {
         };
 
         if let Some(f) = &filter {
-            // Substring, because a tour author knows `der(w)` and not its index.
+            // Substring, because a lab author knows `der(w)` and not its index.
             // Deliberately not identity matching: this is an authoring aid whose
             // output a human reads before using, not something that decides
             // identity on its own. See `docs/identity-and-provenance.md`.

@@ -80,7 +80,7 @@ mandatory = 200000
 current_work = 30000
 
 # Tier 2 -- conditionally mandatory, checked per file rather than summed, because they
-# are read before different kinds of work: docs/fixture-tours/README.md before tour work
+# are read before different kinds of work: docs/fixture-labs/README.md before lab work
 # (56,013 today), docs/unattended-runs.md before any unattended run (31,113).
 # 80,000 is ~20k tokens: a document past that is not read before a task, it is consulted.
 conditional = 80000

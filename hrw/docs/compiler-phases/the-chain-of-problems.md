@@ -10,7 +10,7 @@ solution — Doug learns by understanding why.
 
 **Salvaged 2026-08-01 from `end_to_end_tour.md`**, which was deleted the same day. That
 document was 1,071 lines: twelve stop-by-stop walkthroughs asserting specific numbers on
-specific tabs, plus these conceptual sections. **The walkthroughs had rotted** — Stop 8
+specific tabs, plus these conceptual sections. **The walkthroughs had rotted** — Station 8
 described a 7×7 incidence matrix on a tab that shows 48 equations, and nothing caught it
 because nothing checks prose. HRW stopped showing the document on 2026-07-29, but the file
 stayed inside the teaching database, where a later session would read it as authoritative.
@@ -115,7 +115,7 @@ Each link below goes to the phase's own drill-down — the same problem-before-s
 structure, at the level of individual algorithms. *(All twelve verified to resolve
 2026-08-01.)*
 
-| Topic | Phase tour | Key algorithm |
+| Topic | Phase lab | Key algorithm |
 |-------|-----------|---------------|
 | Parsing | [Phase 1](phase1_parsing_and_ast/parsing_and_ast.md) | Recursive descent |
 | Name resolution | [Phase 2](phase2_resolve_and_scope/resolve_and_scope.md) | Scope chain lookup |
@@ -129,7 +129,7 @@ structure, at the level of individual algorithms. *(All twelve verified to resol
 | Solve lowering | [Phase 8](phase8_solve_lowering/solve_lowering.md) | Variable layout, AD Jacobian |
 | Simulation | [Phase 9](phase9_simulation/simulation.md) | BDF/ESDIRK, event detection |
 
-The [structural-analysis guided tour](phase7_structural_analysis/guided-tour.md) is the
+The [structural-analysis guided lab](phase7_structural_analysis/guided-lab.md) is the
 deepest of these — five lessons with animated replays and live-stepped debugging.
 
 **For actual numbers about a specimen, read its trace**, never prose: the

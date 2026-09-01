@@ -626,7 +626,7 @@ mod tests {
             "clean to begin with"
         );
 
-        record_action("tour-link", "stage/Structural/Tree");
+        record_action("lab-link", "stage/Structural/Tree");
         assert!(
             with_diag(|d| d.session_dirty).unwrap_or(false),
             "recording marks the session dirty rather than writing",

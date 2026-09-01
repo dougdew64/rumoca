@@ -1074,7 +1074,7 @@ fn singular_structural_carries_summary_data() {
 ///
 /// `index-reduction.md` taught, for its whole existence, that `Drivetrain`
 /// performs **zero** differentiations — *"the textbook mechanism was not
-/// needed"* — in the tour named for the algorithm that differentiates. The
+/// needed"* — in the lab named for the algorithm that differentiates. The
 /// compiler differentiates at least four times on that model.
 ///
 /// **Both halves of HRW were telling the truth.** `differentiated_rows` is
@@ -1084,7 +1084,7 @@ fn singular_structural_carries_summary_data() {
 /// what *survived*. Nothing said so, and nothing compared them.
 ///
 /// **Every other checker in this repository compares a document to a trace,
-/// and the trace said zero.** So the tour was consistent with the artefact and
+/// and the trace said zero.** So the lab was consistent with the artefact and
 /// wrong about the compiler, and no amount of document-versus-trace checking
 /// could have found it. This is the first check that holds two views of the
 /// *same run* against each other.
@@ -1098,7 +1098,7 @@ fn singular_structural_carries_summary_data() {
 /// **And at least one specimen must differentiate.** That clause is the one
 /// that matters most, because it encodes the thing Claude got wrong: reading
 /// `differentiated_rows: []` across all 17 specimens produced the confident
-/// conclusion that *Rumoca never differentiates*, and a tour was written on it.
+/// conclusion that *Rumoca never differentiates*, and a lab was written on it.
 /// **A green corpus-wide zero is indistinguishable from a feature that never
 /// runs** — the same shape as `fidelity-plan.md`'s F10, whose absence clause
 /// had nothing to act on.
@@ -1183,7 +1183,7 @@ fn a_reduction_summary_never_claims_more_than_its_frames_recorded() {
         "no specimen in this set differentiates anything, so the comparison above \
          ran against nothing on the side that matters. **This clause exists because \
          the corpus-wide zero in `differentiated_rows` was once read as proof that \
-         Rumoca never differentiates, and a tour was written on it.** If this fires, \
+         Rumoca never differentiates, and a lab was written on it.** If this fires, \
          either the specimens changed or index reduction stopped differentiating — \
          and the second is a finding, not a test to relax:\n  {}",
         rows.join("\n  "),
@@ -2557,7 +2557,7 @@ fn an_unbalanced_model_reports_its_balance() {
 /// the last tab before Structural, so **the succeeding stage reported the
 /// failure and the failing stage reported nothing.**
 ///
-/// Found by walking `docs/fixture-tours/dae-construction.md`, whose
+/// Found by walking `docs/fixture-labs/dae-construction.md`, whose
 /// counterexample stop opens this tab expecting an explanation — the pane-is-a-
 /// reporter rule reaching a pane that was already shipping.
 ///
@@ -3545,7 +3545,7 @@ fn compilation_emits_log_entries() {
     // Doug, 2026-08-04: *"our logs do not report the begin or end of that DAE
     // phase. Worse, our logs contain a fiction about a DAE pipeline which
     // includes the phases which follow the DAE phase."* The stage had a tab, a
-    // trace file and a tour, and the log skipped straight from Flatten to
+    // trace file and a lab, and the log skipped straight from Flatten to
     // Structural — while a bracket labelled "DAE pipeline" claimed to span five
     // phases that come *after* DAE construction.
     //
@@ -4034,7 +4034,7 @@ fn no_stage_shows_content_hrw_invented() {
 ///
 /// `"DAE pipeline"` is the real string that was in HRW's log until 2026-08-04: a
 /// bracket wrapping five genuine phases under a parent that does not exist,
-/// written because it read tidily. Doug found it walking the DAE tour. **A test
+/// written because it read tidily. Doug found it walking the DAE lab. **A test
 /// that only checked real names against real logs would have passed the entire
 /// time that string was shipping**, so the negative case is the test.
 #[test]
@@ -4903,7 +4903,7 @@ fn a_singular_system_captures_matching_but_no_blocks() {
     assert!(
         !matching_frames.is_empty(),
         "matching runs before the singularity is discovered, so its search IS \
-         capturable \u{2014} this is what the matching tour's third act shows",
+         capturable \u{2014} this is what the matching lab's third act shows",
     );
     assert!(
         tarjan_frames.is_empty(),
@@ -5415,7 +5415,7 @@ fn manifest_stage_rosters_match_the_pipeline() {
 /// pre-Flatten stages since **2026-07-29** — found 2026-08-15, twenty-five days
 /// later, by accident. `manifest_stage_rosters_match_the_pipeline` catches a stage
 /// appearing or disappearing; it cannot see a stage whose *contents* have drifted,
-/// which is what actually happened and what every count in the nine tours rests on.
+/// which is what actually happened and what every count in the nine labs rests on.
 ///
 /// # Why it has its own feature gate, which is the interesting part
 ///

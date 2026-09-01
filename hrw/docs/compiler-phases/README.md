@@ -50,7 +50,7 @@ Rumoca is, and what each phase produces.
 
 **Phase 7 has six drill-downs and the others have none or one.** That is not neglect — it is
 where the interesting algorithms live, and where HRW's animated views point.
-[A five-lesson guided tour](phase7_structural_analysis/guided-tour.md) walks it with animated
+[A five-lesson guided lab](phase7_structural_analysis/guided-lab.md) walks it with animated
 replays and live-stepped debugging.
 
 ## Two things to know before trusting a page here
@@ -67,7 +67,7 @@ used most. See [`../provenance.md`](../provenance.md).
 
 **Numbers about a specimen come from its trace, never from prose here.** The generated
 [`../specimen-notebook/`](../specimen-notebook/) entries are correct by construction. This is
-not a hypothetical caution: a 1,071-line tour in this directory was deleted on 2026-08-01 for
+not a hypothetical caution: a 1,071-line lab in this directory was deleted on 2026-08-01 for
 asserting a 7×7 incidence matrix on a tab that shows 48 equations, uncaught for weeks because
 nothing checks prose.
 

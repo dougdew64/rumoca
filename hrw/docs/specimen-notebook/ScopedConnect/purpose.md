@@ -20,12 +20,12 @@ its sets come out three potential and three flow and the rule *"the set count is
 count"* holds by accident. Here it fails outright — **three potential sets, seven flow sets, three
 junctions** — which is what makes this a stop that breaks the model rather than reinforcing it.
 The audit that found the hole is in
-[`fixture-tours/README.md`](../../fixture-tours/README.md), under the rule that an abstraction
+[`fixture-labs/README.md`](../../fixture-labs/README.md), under the rule that an abstraction
 with no stop is untested confidence.
 
 ## Why a divider rather than something smaller
 
-It has to **simulate**, or the tour cannot use it past Flatten, and it has to have a junction whose
+It has to **simulate**, or the lab cannot use it past Flatten, and it has to have a junction whose
 connects are genuinely split across scopes. Two series segments is the smallest thing that is both.
 `Segment` is declared inside the model rather than at file scope for the reason recorded on
 [`IncompatibleConnect`](../IncompatibleConnect/purpose.md): a second top-level class makes the
@@ -33,4 +33,4 @@ reachable-closure pipeline return no result at all.
 
 ## Where it has been used
 
-- `connect-expansion.md` — the stop that falsifies the node-count rule built in Stop 1.
+- `connect-expansion.md` — the stop that falsifies the node-count rule built in Station 1.

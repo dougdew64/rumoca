@@ -2,7 +2,7 @@
 //!
 //! HRW has ~12,000 lines of UI and, until now, essentially one test that
 //! exercised rendering. Everything else was verified by Doug walking fixture
-//! tours, which makes **his attention the project's scarce resource**. These
+//! labs, which makes **his attention the project's scarce resource**. These
 //! tests convert the *mechanical* half of that — did the click select the node,
 //! is the panel empty after a mode switch, does the notice exist — so his
 //! attention goes only where judgement is required.
@@ -21,7 +21,7 @@
 //! deliberately not enabled** (`snapshot`/`wgpu` features off): it asserts on
 //! pixels, needs a GPU in the test path, and is brittle.
 //!
-//! **So the canvas views stay the fixture tours' job**, and that is now their
+//! **So the canvas views stay the fixture labs' job**, and that is now their
 //! focused purpose rather than an accident of what nobody automated.
 //!
 //! # Geometry is reachable when the app records it
@@ -65,7 +65,7 @@
 //!
 //! **A widget laid out off-screen is queryable but not clickable.** At the
 //! harness's 800x600 default, HRW's panels push the central content out of the
-//! viewport — the tour links were in the accessibility tree, `query_by_label`
+//! viewport — the lab links were in the accessibility tree, `query_by_label`
 //! found them, and `click()` landed on nothing. The test read as *"the feature is
 //! broken"*. It is not: the window was too small. Hence 1600x1200 below, and
 //! hence the rule — **if a click appears to do nothing, check the layout before
@@ -80,7 +80,7 @@
 //!
 //! Driving the UI is cheap; compiling a model against the MSL is not — 30s and
 //! 3.5 GB on a large one. These assert on **UI mechanics with state set
-//! directly**, which is what the mechanical half of a tour actually checks. A
+//! directly**, which is what the mechanical half of a lab actually checks. A
 //! test that needs real IR belongs beside the worker tests, behind
 //! `slow-tests`.
 
@@ -89,61 +89,61 @@ use egui_kittest::kittest::Queryable;
 
 use crate::app::App;
 
-/// Hold `.hrw-bridge/tour.md` at a chosen state for the duration of a test, and put
+/// Hold `.hrw-bridge/lab.md` at a chosen state for the duration of a test, and put
 /// back whatever was there on the way out — including on a panic.
 ///
 /// # Why every test that paints needs this
 ///
-/// **The ad hoc tour is live state, not scratch space.** It is Claude's answer to
+/// **The ad hoc lab is live state, not scratch space.** It is Claude's answer to
 /// Doug's last question, and HRW *auto-selects it* when nothing else is chosen
-/// (`tour::poll`), which resets the stage side. So its mere presence changes what a
+/// (`lab::poll`), which resets the stage side. So its mere presence changes what a
 /// painted frame does.
 ///
 /// Three tests were written without accounting for that, and all three were wrong in a
-/// different direction — found on 2026-08-16, the first day an ad hoc tour existed
+/// different direction — found on 2026-08-16, the first day an ad hoc lab existed
 /// while the suite ran:
 ///
-/// 1. `the_ad_hoc_tour_row_is_present_even_with_no_ad_hoc_tour` **asserted** the file
+/// 1. `the_ad_hoc_lab_row_is_present_even_with_no_ad_hoc_lab` **asserted** the file
 ///    was absent, so it failed whenever the feature had been used. A precondition of
 ///    "the user has not used the product recently" measures the environment.
-/// 2. `the_ad_hoc_tour_is_a_button_and_not_a_picker_entry` wrote its own fixture and
+/// 2. `the_ad_hoc_lab_is_a_button_and_not_a_picker_entry` wrote its own fixture and
 ///    **deleted** it afterwards, destroying a real answer without a word.
 /// 3. `a_frame_link_into_flatten_connections_navigates` painted with whatever happened
-///    to be on disk, and started failing when an ad hoc tour appeared and the
+///    to be on disk, and started failing when an ad hoc lab appeared and the
 ///    auto-selection reset the viewport it was asserting on.
 ///
 /// One helper, three uses: `absent()` for tests that need none, `with(text)` for tests
 /// that need one. Both restore.
-pub(crate) struct AdHocTour(Option<String>);
+pub(crate) struct AdHocLab(Option<String>);
 
-impl AdHocTour {
-    /// No ad hoc tour exists for the duration.
+impl AdHocLab {
+    /// No ad hoc lab exists for the duration.
     pub(crate) fn absent() -> Self {
-        let saved = std::fs::read_to_string(crate::bridge::TOUR_FILE).ok();
-        let _ = std::fs::remove_file(crate::bridge::TOUR_FILE);
+        let saved = std::fs::read_to_string(crate::bridge::LAB_FILE).ok();
+        let _ = std::fs::remove_file(crate::bridge::LAB_FILE);
         Self(saved)
     }
 
-    /// An ad hoc tour with `text` exists for the duration.
+    /// An ad hoc lab with `text` exists for the duration.
     pub(crate) fn with(text: &str) -> Self {
-        let path = std::path::Path::new(crate::bridge::TOUR_FILE);
+        let path = std::path::Path::new(crate::bridge::LAB_FILE);
         if let Some(dir) = path.parent() {
             std::fs::create_dir_all(dir).expect("bridge dir");
         }
         let saved = std::fs::read_to_string(path).ok();
-        std::fs::write(path, text).expect("write the ad hoc tour");
+        std::fs::write(path, text).expect("write the ad hoc lab");
         Self(saved)
     }
 }
 
-impl Drop for AdHocTour {
+impl Drop for AdHocLab {
     fn drop(&mut self) {
         match self.0.take() {
             Some(text) => {
-                let _ = std::fs::write(crate::bridge::TOUR_FILE, text);
+                let _ = std::fs::write(crate::bridge::LAB_FILE, text);
             }
             None => {
-                let _ = std::fs::remove_file(crate::bridge::TOUR_FILE);
+                let _ = std::fs::remove_file(crate::bridge::LAB_FILE);
             }
         }
     }
@@ -246,7 +246,7 @@ fn the_harness_renders_hrw_and_sees_widgets() {
 /// # Why four states rather than two
 ///
 /// *Always* is a claim about every state, and a two-case test would leave the modes
-/// Doug actually walks in unchecked. Tour mode before a stop loads anything is the
+/// Doug actually walks in unchecked. Lab mode before a stop loads anything is the
 /// case that started the conversation; the navigation view is the one branch of
 /// `central_panel_ui` that draws no tab row, so the bar had to be added there
 /// separately and could regress on its own.
@@ -268,9 +268,9 @@ fn the_context_bar_is_present_in_every_state() {
             app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
             app
         }),
-        // `UiMode` defaults to Tour, which is why this one sets no mode: it is the
-        // state HRW actually launches in, and the one Doug walks tours in.
-        ("tour mode, nothing loaded", App::test_default),
+        // `UiMode` defaults to Lab, which is why this one sets no mode: it is the
+        // state HRW actually launches in, and the one Doug walks labs in.
+        ("lab mode, nothing loaded", App::test_default),
         ("the navigation view", || {
             let mut app = App::test_default();
             app.test_set_ui_mode_specimen();
@@ -315,7 +315,7 @@ fn the_context_bar_is_present_in_every_state() {
 /// to and the half a harness can see.
 #[test]
 fn the_bar_shows_context_not_advice() {
-    let _no_ad_hoc = AdHocTour::absent();
+    let _no_ad_hoc = AdHocLab::absent();
 
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
@@ -367,7 +367,7 @@ fn the_three_context_categories_have_distinct_colours() {
     }
 }
 
-/// **A captured tour passage reaches the SCREEN, quoted and claiming no stage.**
+/// **A captured lab passage reaches the SCREEN, quoted and claiming no stage.**
 ///
 /// # The gap this closes, and why it is exactly the shape that hid all evening
 ///
@@ -379,19 +379,19 @@ fn the_three_context_categories_have_distinct_colours() {
 /// So this asserts the two claims the bar makes about a passage, both of which the
 /// obvious implementation gets wrong:
 ///
-/// - **the quotation is shown**, not the `PointKind` name — a row reading *"tour
+/// - **the quotation is shown**, not the `PointKind` name — a row reading *"lab
 ///   passage"* would tell Doug nothing about which sentence Claude holds;
 /// - **no stage is named.** `PointedAt::stage` is `None` here, and the row that reports
 ///   a point captured elsewhere must stay silent rather than print the tab that happens
 ///   to be selected. That shortcut is the one the `Option` was introduced to refuse.
 #[test]
-fn a_captured_tour_passage_is_shown_quoted_and_claims_no_stage() {
-    let _no_ad_hoc = AdHocTour::absent();
+fn a_captured_lab_passage_is_shown_quoted_and_claims_no_stage() {
+    let _no_ad_hoc = AdHocLab::absent();
 
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
     app.test_set_walked_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
-    app.test_point_at_tour_passage("connect-expansion", "two separate graphs");
+    app.test_point_at_lab_passage("connect-expansion", "two separate graphs");
     let h = harness(app);
 
     assert!(
@@ -406,30 +406,30 @@ fn a_captured_tour_passage_is_shown_quoted_and_claims_no_stage() {
     );
 }
 
-/// **The bar names the open tour**, which is what makes it context rather than
+/// **The bar names the open lab**, which is what makes it context rather than
 /// something Claude has to be told.
 ///
-/// `session.json` has carried the open tour's name since 2026-08-19, so the bar was
+/// `session.json` has carried the open lab's name since 2026-08-19, so the bar was
 /// under-reporting context Claude already had — the gap Doug's question opened. This
-/// is the *rendered* half, proving `App` actually passes the tour through; what the
+/// is the *rendered* half, proving `App` actually passes the lab through; what the
 /// row says in each state is `context_bar::tests::always_summary_states_only_what_is_true`.
 #[test]
-fn the_bar_names_the_open_tour() {
-    // **`.hrw-bridge/tour.md` is live state and `tour::poll` auto-selects it**, so an
-    // ad hoc tour on disk would be the one named, and this would pass whichever tour
-    // the wiring actually carried. `AdHocTour` exists for exactly that.
-    let _no_ad_hoc = AdHocTour::absent();
+fn the_bar_names_the_open_lab() {
+    // **`.hrw-bridge/lab.md` is live state and `lab::poll` auto-selects it**, so an
+    // ad hoc lab on disk would be the one named, and this would pass whichever lab
+    // the wiring actually carried. `AdHocLab` exists for exactly that.
+    let _no_ad_hoc = AdHocLab::absent();
 
     let mut app = App::test_default();
     assert!(
-        app.test_select_fixture_tour("connect-expansion"),
-        "precondition: connect-expansion is a checked-in fixture tour",
+        app.test_select_fixture_lab("connect-expansion"),
+        "precondition: connect-expansion is a checked-in fixture lab",
     );
     let h = harness(app);
     assert!(
-        h.query_by_label_contains("tour: connect-expansion")
+        h.query_by_label_contains("lab: connect-expansion")
             .is_some(),
-        "with a tour open the bar must name it \u{2014} it is context by the same rule \
+        "with a lab open the bar must name it \u{2014} it is context by the same rule \
          specimen and stage are, and Claude has had it in session.json since \
          2026-08-19 while the bar stayed silent",
     );
@@ -480,25 +480,25 @@ fn only_the_tab_row_starts_a_simulation_and_the_pane_says_so() {
     );
 }
 
-/// The tour picker offers exactly the fixture tours — **rendered**, not merely
+/// The lab picker offers exactly the fixture labs — **rendered**, not merely
 /// listed.
 ///
-/// `app::tests::the_tour_list_offers_fixtures_with_ad_hoc_first` already asserts
-/// this against `App::tours`. **This asserts it against what is on screen**,
+/// `app::tests::the_lab_list_offers_fixtures_with_ad_hoc_first` already asserts
+/// this against `App::labs`. **This asserts it against what is on screen**,
 /// which is the half that was previously checkable only by Doug looking at it.
 ///
 /// It also pins the `README.md` exclusion at the rendered layer:
-/// `docs/fixture-tours/` gained a README on 2026-08-01 and `bridge::fixture_tours`
-/// had to learn to skip it, or the picker would offer a tour whose stops do not
+/// `docs/fixture-labs/` gained a README on 2026-08-01 and `bridge::fixture_labs`
+/// had to learn to skip it, or the picker would offer a lab whose stops do not
 /// exist.
 #[test]
-fn the_tour_picker_shows_every_fixture_and_no_readme() {
+fn the_lab_picker_shows_every_fixture_and_no_readme() {
     let mut h = harness(App::test_default());
 
     // **The picker is a combo box since 2026-08-16, so its items exist only while the
     // popup is open.** Opening it is now part of the act being tested, not setup: with
-    // 22 tours the always-open list cost about 400 points of vertical space, over half
-    // the tour panel on a 13" screen, for a control used a few times a day.
+    // 22 labs the always-open list cost about 400 points of vertical space, over half
+    // the lab panel on a 13" screen, for a control used a few times a day.
     //
     // Asserting against the closed box instead would have been the easy way to keep
     // this test green, and it would have stopped checking that every fixture is
@@ -506,35 +506,35 @@ fn the_tour_picker_shows_every_fixture_and_no_readme() {
     // **Queried by `value`, not by label.** A ComboBox exposes its selected text as
     // the node value and carries no label, so `label_contains` finds nothing — which
     // is how this test failed after the change, rather than by finding the wrong node.
-    h.get_by_value("Pick a tour…").click();
+    h.get_by_value("Pick a lab…").click();
     h.run_steps(2);
 
     // **Derived from the corpus, not restated.** This loop used to iterate a
     // hand-written list of eight names while the test's own name claimed *every*
-    // fixture; a census on 2026-08-22 found **22 tours on disk and 9 named here**, so
+    // fixture; a census on 2026-08-22 found **22 labs on disk and 9 named here**, so
     // fourteen were never checked. Worse than the shortfall is the shape: a
-    // hand-written roster can only notice a tour that **disappears** from the picker,
-    // never one that is added and never wired — because a tour missing from the picker
+    // hand-written roster can only notice a lab that **disappears** from the picker,
+    // never one that is added and never wired — because a lab missing from the picker
     // is also missing from the list, so nothing queries it and the test stays green.
     //
     // The same circular guarantee was found and fixed in `stage_tabs.rs` the same day.
-    // [`crate::bridge::fixture_tours`] is *"the single definition of is-a-tour-file"*,
+    // [`crate::bridge::fixture_labs`] is *"the single definition of is-a-lab-file"*,
     // so deriving from it makes the name true.
-    let tours: Vec<String> = crate::bridge::fixture_tours()
+    let labs: Vec<String> = crate::bridge::fixture_labs()
         .iter()
         .filter_map(|p| p.file_stem().and_then(|s| s.to_str()).map(str::to_owned))
         .collect();
     // Non-vacuity: an empty or truncated corpus would make the loop below assert
     // nothing at all, which is the failure this whole change is about.
     assert!(
-        tours.len() >= 20,
-        "expected the full tour corpus, found {}: {tours:?}",
-        tours.len(),
+        labs.len() >= 20,
+        "expected the full lab corpus, found {}: {labs:?}",
+        labs.len(),
     );
-    for tour in &tours {
+    for lab in &labs {
         // `contains`, not exact: since 2026-08-05 a row reads
         // "failure-typecheck  ·  DimensionMismatch" so the model can be searched for
-        // as well as the phase. The tour name is still the row's identity.
+        // as well as the phase. The lab name is still the row's identity.
         //
         // **`get_all_…().next()`, not `query_by_label_contains`** — the latter
         // panics on two matches, and since `matching-live.md` split off on
@@ -542,25 +542,25 @@ fn the_tour_picker_shows_every_fixture_and_no_readme() {
         // this loop asserts, so a second match is none of its business; the
         // module doc above records the same rule.
         assert!(
-            h.get_all_by_label_contains(tour).next().is_some(),
-            "the tour picker should offer {tour:?}; it is a checked-in fixture",
+            h.get_all_by_label_contains(lab).next().is_some(),
+            "the lab picker should offer {lab:?}; it is a checked-in fixture",
         );
     }
     assert!(
         h.query_by_label_contains("CATALOGUE").is_none(),
         "CATALOGUE.md is generated FOR CLAUDE — the index that lets an answer cite a \
-         tour instead of retelling it. Doug found it in his picker on 2026-08-05, one \
-         row among fifteen offering to be walked. It is not a tour and must not be \
+         lab instead of retelling it. Doug found it in his picker on 2026-08-05, one \
+         row among fifteen offering to be walked. It is not a lab and must not be \
          offered as one",
     );
     assert!(
         h.query_by_label("README").is_none(),
-        "README.md is documentation ABOUT the tours, not a tour — offering it would \
+        "README.md is documentation ABOUT the labs, not a lab — offering it would \
          give the picker an entry whose stops do not exist",
     );
 }
 
-// **The visible tour count was removed 2026-08-19, and so was its test.**
+// **The visible lab count was removed 2026-08-19, and so was its test.**
 //
 // Doug went sixteen days without reading it once. Deleted rather than weakened: a
 // test kept for a removed feature is a standing claim that the feature exists.
@@ -616,32 +616,32 @@ fn a_tree_opens_its_root_but_not_its_children() {
     );
 }
 
-/// **Clicking a tour link dispatches it** — the interaction the whole tour system
+/// **Clicking a lab link dispatches it** — the interaction the whole lab system
 /// rests on, and until 2026-08-03 the one with no test.
 ///
-/// Doug: *"I'm attempting to read through a tour manually without playing the tour.
-/// Unfortunately, clicking on the tour links now causes nothing to happen."*
+/// Doug: *"I'm attempting to read through a lab manually without playing the lab.
+/// Unfortunately, clicking on the lab links now causes nothing to happen."*
 ///
-/// Everything else about tours was guarded — that the links *resolve*
-/// (`fixture_tour_links_all_resolve`), that dispatch does the right thing
+/// Everything else about labs was guarded — that the links *resolve*
+/// (`fixture_lab_links_all_resolve`), that dispatch does the right thing
 /// (`app::tests`), that the picker lists them — and the click joining those two
 /// halves was covered by nothing at all. A whole feature can be verified end to end
 /// with a hole exactly where the user touches it.
 #[test]
-fn clicking_a_tour_link_dispatches_it() {
+fn clicking_a_lab_link_dispatches_it() {
     let mut h = harness(App::test_default());
     // **`.mo`, not a bare stem.** `find_specimen` matches on `file_name()` against
     // `"{name}.mo"`, so a stem here makes the lookup miss and the click looks dead
     // when it was the fixture that was wrong.
     h.state_mut().test_set_specimen_files(&["RcCircuit.mo"]);
     assert!(
-        h.state_mut().test_select_fixture_tour("node-pointing"),
+        h.state_mut().test_select_fixture_lab("node-pointing"),
         "the fixture must be readable, or the click below has nothing to hit",
     );
     h.run_steps(2);
 
     // **A link near the top of the document, deliberately.** `node-pointing.md`
-    // carries its first on line 17. A link far down a long tour is in the
+    // carries its first on line 17. A link far down a long lab is in the
     // accessibility tree but clipped by the scroll area, so the click lands on
     // nothing and the test reads as "the feature is broken" — the harness trap this
     // file's own header warns about.
@@ -656,7 +656,7 @@ fn clicking_a_tour_link_dispatches_it() {
     );
 }
 
-/// **A link far down a long tour dispatches too.**
+/// **A link far down a long lab dispatches too.**
 ///
 /// Separated from the near-top case because they fail for different reasons and a
 /// single test could not tell them apart. `matching.md` is 15k characters and its
@@ -670,7 +670,7 @@ fn clicking_a_tour_link_dispatches_it() {
 /// # Why this clicks through accesskit, and what that costs
 ///
 /// **It used to use a synthesized pointer click, and it passed for a reason that was
-/// itself a bug** (2026-08-12). The tour pane was a vertical-only `ScrollArea`, so the
+/// itself a bug** (2026-08-12). The lab pane was a vertical-only `ScrollArea`, so the
 /// panel inflated to its content's width — 899pt of a 1280pt window — and the wide
 /// layout made the document short enough that this link fell inside the visible
 /// viewport. Enabling horizontal scrolling fixed the panel width, prose now wraps to
@@ -680,15 +680,15 @@ fn clicking_a_tour_link_dispatches_it() {
 ///
 /// `click_accesskit` *"can also click widgets that are not currently visible"*, which
 /// matches what this test is for: **dispatch**, not reachability. The pointer path stays
-/// covered by `a_link_near_the_top_of_a_tour_dispatches` above, on a link that is
+/// covered by `a_link_near_the_top_of_a_lab_dispatches` above, on a link that is
 /// genuinely on screen — so the pair still covers both, and neither depends on the pane
 /// happening to be mis-sized.
 #[test]
-fn a_link_far_down_a_long_tour_still_dispatches() {
+fn a_link_far_down_a_long_lab_still_dispatches() {
     let mut h = harness(App::test_default());
     h.state_mut().test_set_specimen_files(&["BouncingBall.mo"]);
     assert!(
-        h.state_mut().test_select_fixture_tour("matching"),
+        h.state_mut().test_select_fixture_lab("matching"),
         "the fixture must be readable, or the click below has nothing to hit",
     );
     h.run_steps(2);
@@ -706,10 +706,10 @@ fn a_link_far_down_a_long_tour_still_dispatches() {
 
 /// **Links still work after a walk has been played and stopped.**
 ///
-/// The state Doug reads tours in is rarely a fresh one — he plays, stops, and then
+/// The state Doug reads labs in is rarely a fresh one — he plays, stops, and then
 /// goes back to reading manually. That leaves autoplay holding a schedule: `stop()`
 /// clears the beats but a *finished* run does not, so `current_byte_offset` kept
-/// naming the last link and the tour text stayed rendered as **two** markdown
+/// naming the last link and the lab text stayed rendered as **two** markdown
 /// documents for all subsequent manual reading.
 ///
 /// Splitting is now gated on a walk actually running, so the idle path is byte for
@@ -719,7 +719,7 @@ fn a_link_far_down_a_long_tour_still_dispatches() {
 fn a_link_still_dispatches_after_a_walk_has_been_stopped() {
     let mut h = harness(App::test_default());
     h.state_mut().test_set_specimen_files(&["RcCircuit.mo"]);
-    assert!(h.state_mut().test_select_fixture_tour("node-pointing"));
+    assert!(h.state_mut().test_select_fixture_lab("node-pointing"));
     h.run_steps(2);
 
     // Play, then stop — the state manual reading actually happens in.
@@ -736,14 +736,14 @@ fn a_link_still_dispatches_after_a_walk_has_been_stopped() {
     assert_eq!(
         h.state().test_selected_name().as_deref(),
         Some("RcCircuit.mo"),
-        "a stopped walk must leave the tour readable and its links live",
+        "a stopped walk must leave the lab readable and its links live",
     );
 }
 
 /// **The Play button exists, and the running readout reports.**
 ///
 /// The pane-is-a-reporter rule applied to the transport built on 2026-08-03: a
-/// self-running tour whose progress readout silently rendered nothing would look
+/// self-running lab whose progress readout silently rendered nothing would look
 /// exactly like one that was working, because the *stage side* would still be
 /// moving. That is the partial-report shape the Context Bar defect had — every
 /// visible thing correct, and the missing part leaving no gap where it was.
@@ -758,13 +758,13 @@ fn the_play_button_starts_a_walk_and_the_readout_reports_it() {
     // and a substring query matches both.
     assert!(
         h.query_by_label("\u{25b6} Play").is_some(),
-        "tour mode must offer a Play button; it is the whole transport",
+        "lab mode must offer a Play button; it is the whole transport",
     );
 
-    // Choose the curriculum tour, which is the one this was built to record.
+    // Choose the curriculum lab, which is the one this was built to record.
     assert!(
-        h.state_mut().test_select_fixture_tour("dae-construction"),
-        "the fixture tour must be readable, or the run below is vacuous",
+        h.state_mut().test_select_fixture_lab("dae-construction"),
+        "the fixture lab must be readable, or the run below is vacuous",
     );
     h.run_steps(2);
 
@@ -777,11 +777,11 @@ fn the_play_button_starts_a_walk_and_the_readout_reports_it() {
         "clicking Play must actually start the clock",
     );
 
-    // Non-vacuity: a real tour schedules many beats, not one.
+    // Non-vacuity: a real lab schedules many beats, not one.
     let (_, total) = h.state().test_autoplay_progress();
     assert!(
         total >= 15,
-        "the DAE tour should schedule ~20 beats, got {total}"
+        "the DAE lab should schedule ~20 beats, got {total}"
     );
 
     // The readout is on screen. Its exact wording is the UI's business; that it
@@ -797,17 +797,17 @@ fn the_play_button_starts_a_walk_and_the_readout_reports_it() {
     );
 }
 
-/// Selecting a different tour clears the stage side — **on screen**.
+/// Selecting a different lab clears the stage side — **on screen**.
 ///
 /// The bug this guards against was found by walking: *"the RHS doesn't
-/// re-initialise on a second tour"*, which made Stop 1 look as though it had
-/// already been done. `app::tests::switching_tours_resets_the_stage_side` covers
+/// re-initialise on a second lab"*, which made Station 1 look as though it had
+/// already been done. `app::tests::switching_labs_resets_the_stage_side` covers
 /// the state; this covers the state actually reaching the frame.
 #[test]
-fn switching_tours_clears_the_stage_side_on_screen() {
+fn switching_labs_clears_the_stage_side_on_screen() {
     let mut h = harness(App::test_default());
 
-    // Walk into a tour far enough to have a model and a stage on the right.
+    // Walk into a lab far enough to have a model and a stage on the right.
     h.state_mut().test_set_walked_state(
         "/x/RcCircuit.mo",
         "RcCircuit",
@@ -819,7 +819,7 @@ fn switching_tours_clears_the_stage_side_on_screen() {
         "precondition: the RHS has something on it"
     );
 
-    // Now pick a *different* tour. `contains`, because an entry carries its
+    // Now pick a *different* lab. `contains`, because an entry carries its
     // specimens after the name.
     //
     // **The picker is a combo box since 2026-08-16, so it must be opened first.**
@@ -827,19 +827,19 @@ fn switching_tours_clears_the_stage_side_on_screen() {
     // carries no label, so `label_contains` finds nothing at all — which is how this
     // failed, rather than by clicking the wrong thing.
     //
-    // *(The previous note here — "pick a tour that sorts early, or the last row falls
+    // *(The previous note here — "pick a lab that sorts early, or the last row falls
     // outside the harness viewport" — no longer applies: the popup is its own scroll
     // area and the old always-open list is gone. Kept in the history rather than the
     // comment.)*
-    h.get_by_value("Pick a tour\u{2026}").click();
+    h.get_by_value("Pick a lab\u{2026}").click();
     h.run_steps(2);
     h.get_by_label_contains("camera-aiming").click();
     h.run_steps(2);
 
     assert!(
         h.state().test_model().is_none(),
-        "switching tours must clear the model, or the new tour is read against the \
-         old tour's state and its first stop looks already done",
+        "switching labs must clear the model, or the new lab is read against the \
+         old lab's state and its first stop looks already done",
     );
     assert_eq!(
         h.state().test_stage(),
@@ -852,13 +852,13 @@ fn switching_tours_clears_the_stage_side_on_screen() {
 ///
 /// **This is the "the notice was invisible" bug**, and the story is worth
 /// keeping. Doug clicked a stop that HRW correctly refused, with the reason on
-/// screen, and reported that nothing happened — because the tour said "a notice
+/// screen, and reported that nothing happened — because the lab said "a notice
 /// appears" and never said notices live in the status bar. Two things were
 /// wrong: the expectation did not say *where to look*, and nothing verified the
 /// notice was rendered at all.
 ///
-/// This closes the second half. The first half is a rule for writing tours, in
-/// `docs/fixture-tours/README.md`.
+/// This closes the second half. The first half is a rule for writing labs, in
+/// `docs/fixture-labs/README.md`.
 ///
 /// **It also documents that the refusal is correct.** An earlier version of the
 /// isolation test below clicked this same link on a fresh app and asserted the
@@ -868,11 +868,11 @@ fn switching_tours_clears_the_stage_side_on_screen() {
 #[test]
 fn a_stop_needing_a_specimen_is_refused_with_a_visible_notice() {
     let mut app = App::test_default();
-    // **Its own tour text, not the live ad hoc file.** This used to click a link out
-    // of `.hrw-bridge/tour.md`, which is gitignored and rewritten every time Claude
+    // **Its own lab text, not the live ad hoc file.** This used to click a link out
+    // of `.hrw-bridge/lab.md`, which is gitignored and rewritten every time Claude
     // answers a question — so it passed on content nobody had chosen, and broke the
     // day an answer was written that did not happen to contain this link.
-    app.test_set_tour_text(
+    app.test_set_lab_text(
         "# Fixture\n\n[Structural → Incidence](hrw://stage/Structural/Incidence)\n",
     );
     let mut h = harness(app);
@@ -894,7 +894,7 @@ fn a_stop_needing_a_specimen_is_refused_with_a_visible_notice() {
     );
 }
 
-/// A tour link acts **clicked in isolation**, not only after its predecessors.
+/// A lab link acts **clicked in isolation**, not only after its predecessors.
 ///
 /// This is the *"stop 4 works only if I click 1-3 first"* bug — the kind a human
 /// walking in order never sees, because they always click stop 1 first. Driving
@@ -906,10 +906,10 @@ fn a_stop_needing_a_specimen_is_refused_with_a_visible_notice() {
 /// **link dispatch**, not on compilation — `open()` would spawn a real compile
 /// against the MSL for no gain here.
 #[test]
-fn a_tour_link_acts_when_clicked_in_isolation() {
+fn a_lab_link_acts_when_clicked_in_isolation() {
     let mut app = App::test_default();
-    // Own tour text — see the note in the test above.
-    app.test_set_tour_text(
+    // Own lab text — see the note in the test above.
+    app.test_set_lab_text(
         "# Fixture\n\n[Structural → Incidence](hrw://stage/Structural/Incidence)\n",
     );
     let mut h = harness(app);
@@ -920,7 +920,7 @@ fn a_tour_link_acts_when_clicked_in_isolation() {
     );
     h.run_steps(2);
 
-    // A mid-tour link, with none of the stops before it clicked.
+    // A mid-lab link, with none of the stops before it clicked.
     h.get_by_label("Structural → Incidence").click();
     h.run_steps(2);
 
@@ -932,21 +932,21 @@ fn a_tour_link_acts_when_clicked_in_isolation() {
     );
 }
 
-/// A tour link can address a **corpus model**, not only a specimen file.
+/// A lab link can address a **corpus model**, not only a specimen file.
 ///
 /// **This was the gap that blocked just-in-time curricula.** A curriculum is
-/// delivered as an ad hoc tour — Claude writes `.hrw-bridge/tour.md` with the
+/// delivered as an ad hoc lab — Claude writes `.hrw-bridge/lab.md` with the
 /// models in the chosen order — and until 2026-08-01 `hrw://load/` resolved only
 /// through `find_specimen`, which looks in `specimens/`. The worker could compile
 /// an MSL model by name (`compile_model_by_name`, built for the fidelity sweep)
 /// and **the UI had no way to ask**, so the 2,626-model corpus was unreachable
-/// from a tour no matter how good a filter got.
+/// from a lab no matter how good a filter got.
 ///
 /// Asserts on **dispatch**, not on compilation: the point is that the request is
 /// made and the selection updated. Compiling an MSL model against the MSL costs
 /// seconds and belongs behind `slow-tests`.
 #[test]
-fn a_tour_link_can_address_a_corpus_model() {
+fn a_lab_link_can_address_a_corpus_model() {
     let mut h = harness(App::test_default());
     h.state_mut()
         .follow_link_for_test("hrw://load/Modelica.Electrical.Analog.Basic.Resistor");
@@ -1253,7 +1253,7 @@ fn a_programmatic_source_scroll_keeps_the_left_margin() {
 
 /// The status bar renders the notice it was given.
 ///
-/// Notices are how HRW refuses things. On 2026-07-30 Doug clicked a tour link
+/// Notices are how HRW refuses things. On 2026-07-30 Doug clicked a lab link
 /// that was correctly refused, with the reason on screen, and reported that
 /// nothing had happened — the text was there but styled as background chrome.
 /// A notice that is not *seen* has not been delivered.
@@ -1477,7 +1477,7 @@ fn a_library_model_awaiting_its_source_is_not_told_to_select_one() {
 
 /// **A flagged stage shows its artifact BESIDE its error, not instead of it.**
 ///
-/// Doug, 2026-08-05, walking `docs/fixture-tours/failure-typecheck.md`: *"there is no
+/// Doug, 2026-08-05, walking `docs/fixture-labs/failure-typecheck.md`: *"there is no
 /// tree in the failing typecheck stage view."* There was one in the data —
 /// `DimensionMismatch`'s Typecheck stage carries the whole instantiated overlay plus
 /// an `error` key, assembled by the worker precisely so both could be shown.
@@ -1895,10 +1895,10 @@ fn the_stored_panel_width_matches_what_was_drawn() {
     );
 }
 
-/// **Tour mode opens at the same fraction as Specimen mode.**
+/// **Lab mode opens at the same fraction as Specimen mode.**
 ///
 /// Doug, 2026-08-02: *"The LHS width for specimen mode is fixed. But, not for
-/// tour mode."*
+/// lab mode."*
 ///
 /// The two panels used different egui ids, and egui stores a resizable panel's
 /// width **per id** — so they had two independent widths, and the same code
@@ -1909,8 +1909,8 @@ fn the_stored_panel_width_matches_what_was_drawn() {
 /// modes together from now on, so a future change cannot separate them silently.
 #[test]
 fn both_modes_open_at_the_same_split() {
-    let tour = harness(App::test_default());
-    let tour_f = tour.state().test_split_fraction().expect("tour panel drew");
+    let lab = harness(App::test_default());
+    let lab_f = lab.state().test_split_fraction().expect("lab panel drew");
 
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
@@ -1921,15 +1921,15 @@ fn both_modes_open_at_the_same_split() {
         .expect("specimen panel drew");
 
     assert!(
-        (tour_f - specimen_f).abs() < 0.001,
-        "the two modes must open identically; tour drew {tour_f}, specimen {specimen_f}",
+        (lab_f - specimen_f).abs() < 0.001,
+        "the two modes must open identically; lab drew {lab_f}, specimen {specimen_f}",
     );
 }
 
 /// Switching modes **queues a reset**, so each mode opens at 40/60.
 ///
 /// Doug's requirement: *"The 40%/60% division will continue to be the default
-/// when opening specimen or tour mode."*
+/// when opening specimen or lab mode."*
 ///
 /// **The flag, not the width, is what this asserts.** egui owns the width while
 /// a drag is in progress, so the reset has to happen *during* the next paint —
@@ -1954,7 +1954,7 @@ fn switching_modes_queues_a_split_reset() {
 
     h.get_by_label("View").click();
     h.run_steps(2);
-    h.get_by_label("Tour").click();
+    h.get_by_label("Lab").click();
     h.run_steps(1);
 
     assert!(
@@ -2099,17 +2099,17 @@ fn a_rendered_frame_publishes_the_current_view() {
 /// # The second defect, and why this test missed it the first time
 ///
 /// Doug, hours later: *"the divider does not move. Instead, only the right edge of the
-/// LHS tour content moves."* A **different** cause with the same signature — a
+/// LHS lab content moves."* A **different** cause with the same signature — a
 /// vertical-only `ScrollArea` reports its content's full width as the width it wants,
-/// and `egui_commonmark` does not wrap tables, so the tour panel's minimum became the
+/// and `egui_commonmark` does not wrap tables, so the lab panel's minimum became the
 /// widest table in the document: it opened at **899pt instead of 512pt and was frozen
 /// solid**, gap reaching 705pt.
 ///
 /// **The first version of this test could not have caught it, because it loaded no
-/// tour.** `App::test_default` has no tour text and `test_set_walked_state` seeds one
+/// lab.** `App::test_default` has no lab text and `test_set_walked_state` seeds one
 /// short line of source, so every width in the LHS was small and every drag worked.
 /// **A fixture narrow enough to pass is a fixture that tests nothing here** — so the
-/// tour case now loads `the-concepts.md` from disk, the real document with the
+/// lab case now loads `the-concepts.md` from disk, the real document with the
 /// widest table in the set, and asserts the panel *opens at the default width* rather
 /// than at its content's.
 #[allow(
@@ -2127,10 +2127,10 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
     // without asserting an exact chrome width that styling may legitimately change.
     const MAX_CHROME: f32 = 40.0;
 
-    // **Tour mode has a floor, and that is now a decision rather than a defect**
+    // **Lab mode has a floor, and that is now a decision rather than a defect**
     // *(Doug, 2026-08-16)*.
     //
-    // The tour transport bar carries controls that cannot compress — a button whose
+    // The lab transport bar carries controls that cannot compress — a button whose
     // label is fixed text, a combo box, the playback controls. A *vertical list* of
     // labels shrinks; a *horizontal bar of widgets* does not. So once the picker moved
     // into that bar, the panel stopped tracking the divider below about 250pt while its
@@ -2140,8 +2140,8 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
     // Measured before deciding:
     //
     // ```text
-    // tour=true   panel floors at 250–255, inner 194  → 56pt
-    // tour=false  panel floors at 212,     inner 194  → 19pt (ordinary chrome)
+    // lab=true   panel floors at 250–255, inner 194  → 56pt
+    // lab=false  panel floors at 212,     inner 194  → 19pt (ordinary chrome)
     // ```
     //
     // Doug's call, having seen the divider open further right than before: *"it would
@@ -2150,11 +2150,11 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
     // of the 13" pressure, so he rarely drags the divider at all now.
     //
     // **What this bound still forbids** is the failure it was written for: a panel that
-    // keeps growing away from its content (98–148pt, and unbounded as the tour got
+    // keeps growing away from its content (98–148pt, and unbounded as the lab got
     // wider). A named floor 16pt above ordinary chrome is a different thing from a
-    // panel that has stopped listening, and `the_tour_panel_still_reaches_its_floor`
+    // panel that has stopped listening, and `the_lab_panel_still_reaches_its_floor`
     // below asserts the floor is *reached* rather than merely tolerated.
-    const MAX_TOUR_CHROME: f32 = 62.0;
+    const MAX_LAB_CHROME: f32 = 62.0;
 
     // Point-space sizes, with whether the divider can move at all at that size.
     //
@@ -2164,27 +2164,27 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
     // movement there was this test's first failure, and the honest fix was to stop
     // requiring it — see `width_range`, which says a window that narrow simply has
     // nothing draggable about it.
-    // **The real tour, from disk, not a fixture.** Its widest line is 178 characters
+    // **The real lab, from disk, not a fixture.** Its widest line is 178 characters
     // and it carries the route table; a synthetic short document is exactly what let
     // the 899pt freeze through unnoticed.
-    let real_tour = std::fs::read_to_string(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours/the-concepts.md"),
+    let real_lab = std::fs::read_to_string(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs/the-concepts.md"),
     )
-    .expect("the-concepts.md must be readable — it is the widest tour");
+    .expect("the-concepts.md must be readable — it is the widest lab");
 
     // **640×360 no longer expects movement, and that is a cost accepted rather than a
-    // bug tolerated** *(2026-08-19)*. Un-wrapping the tour transport bar makes its
+    // bug tolerated** *(2026-08-19)*. Un-wrapping the lab transport bar makes its
     // one-row width a hard floor on the panel — the price of a minimum that varies
     // *monotonically* with the bar's contents, which the wrapped version never did:
     // five separate edits to it each failed this test in a different place.
     //
-    // The floor was bought down first — the tour count removed, `30s — teaser` → `30s`,
+    // The floor was bought down first — the lab count removed, `30s — teaser` → `30s`,
     // `✨ Claude's answer` → `✨ Answer` — taking the one-row minimum from 580pt to
     // 405.9pt. At 1280 the panel settles at 450.5pt, **35%**, against the 40% Doug walks
-    // tours at, so he never meets it.
+    // labs at, so he never meets it.
     //
     // **At 640 he does**: a ~410pt floor is most of the window, which is HRW at half
-    // width beside VS Code — the `matching-live.md` debugger layout. That tour wants a
+    // width beside VS Code — the `matching-live.md` debugger layout. That lab wants a
     // wider window now. Recorded here rather than in a commit message because this line
     // *is* the decision.
     for (w, h_px, expect_movement) in [
@@ -2192,10 +2192,10 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
         (640.0, 360.0, false),
         (500.0, 340.0, false),
     ] {
-        for mode_is_tour in [true, false] {
+        for mode_is_lab in [true, false] {
             let mut app = App::test_default();
-            // Tour is `UiMode`'s `#[default]`, so the tour case needs no switch.
-            if !mode_is_tour {
+            // Lab is `UiMode`'s `#[default]`, so the lab case needs no switch.
+            if !mode_is_lab {
                 app.test_set_ui_mode_specimen();
             }
             app.test_set_walked_state(
@@ -2203,8 +2203,8 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
                 "RcCircuit",
                 crate::worker::StageKind::Flatten,
             );
-            if mode_is_tour {
-                app.test_set_tour_text(&real_tour);
+            if mode_is_lab {
+                app.test_set_lab_text(&real_lab);
             }
             let mut h = Harness::builder()
                 .with_size(Vec2::new(w, h_px))
@@ -2218,7 +2218,7 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
 
             // **The panel opens where HRW put it, not where its content wants.** This
             // is the assertion that names the second defect directly: with the real
-            // tour loaded the panel opened at 899pt of a 1280pt window — 70 %, while
+            // lab loaded the panel opened at 899pt of a 1280pt window — 70 %, while
             // reporting a 40 % default — because wide unwrapped content was setting
             // the minimum. The floor may legitimately push it *wider* than 40 % on a
             // narrow window, so this bounds it from above only.
@@ -2227,12 +2227,12 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
             // a 640pt window it is necessarily a large *fraction*, and asserting a
             // fraction there tests the window size rather than the layout. What still
             // matters at any size is that the floor is the **bar's** width and not the
-            // tour prose's: 480pt is the bar plus chrome, and the 899pt failure this
+            // lab prose's: 480pt is the bar plus chrome, and the 899pt failure this
             // assertion was written for would still trip it.
             let ceiling = if w >= 1000.0 { 0.55 } else { 455.0 / w };
             assert!(
                 started_at <= ceiling,
-                "{w}x{h_px} tour={mode_is_tour}: the panel opened at {:.0}% of the \
+                "{w}x{h_px} lab={mode_is_lab}: the panel opened at {:.0}% of the \
                  window ({:.1}pt) \u{2014} content is dictating the width instead of \
                  the split, so there is nothing left to drag",
                 started_at * 100.0,
@@ -2257,7 +2257,7 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
                 moved |= (panel_w - started_at * w).abs() > 1.0;
 
                 // **The floor must be REACHED, not merely tolerated.** Widening
-                // `MAX_TOUR_CHROME` accepts that the transport bar cannot compress; it
+                // `MAX_LAB_CHROME` accepts that the transport bar cannot compress; it
                 // must not accept a panel that keeps drifting wider, which is the
                 // defect this test was written for and which Doug saw again on
                 // 2026-08-16 as *"the vertical divider defaulting far to the right when
@@ -2278,22 +2278,22 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
                 if x <= 8.0 {
                     assert!(
                         panel_w <= 455.0,
-                        "{w}x{h_px} tour={mode_is_tour}: dragged hard left, the panel \
-                         settled at {panel_w:.1}pt. Since 2026-08-19 the un-wrapped tour \
+                        "{w}x{h_px} lab={mode_is_lab}: dragged hard left, the panel \
+                         settled at {panel_w:.1}pt. Since 2026-08-19 the un-wrapped lab \
                          bar's one-row width IS this floor, measured at 431.7pt with Back — so a \
                          higher number means something was added to that bar without a \
                          matching reduction, and the RHS pays for it permanently.",
                     );
                 }
 
-                let budget = if mode_is_tour {
-                    MAX_TOUR_CHROME
+                let budget = if mode_is_lab {
+                    MAX_LAB_CHROME
                 } else {
                     MAX_CHROME
                 };
                 assert!(
                     panel_w - inner_w <= budget,
-                    "{w}x{h_px} tour={mode_is_tour}, pointer at x={x:.0}: the panel is \
+                    "{w}x{h_px} lab={mode_is_lab}, pointer at x={x:.0}: the panel is \
                      {panel_w:.1}pt wide but its content was laid out against \
                      {inner_w:.1}pt \u{2014} a {:.1}pt gap, so the content has detached \
                      from the divider",
@@ -2301,7 +2301,7 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
                 );
                 assert!(
                     inner_w > 0.0,
-                    "{w}x{h_px} tour={mode_is_tour}: the content was given {inner_w:.1}pt, \
+                    "{w}x{h_px} lab={mode_is_lab}: the content was given {inner_w:.1}pt, \
                      which is not a width",
                 );
             }
@@ -2314,20 +2314,20 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
             // the way this test would rot into a tautology. The defect needed a drag
             // *in progress* to appear, so a test that never drags cannot see it.
             // **At 640 the answer differs by mode, since 2026-08-19.** The un-wrapped
-            // tour bar sets a 435pt floor, which on a 640pt window leaves the tour panel
+            // lab bar sets a 435pt floor, which on a 640pt window leaves the lab panel
             // a usable range — while Specimen mode, whose left panel has no bar and so no
             // floor of its own, is already at its content minimum and cannot move. One
             // expectation per width stopped being expressible when the two modes acquired
             // different minimums.
             let expect_movement = if (w - 640.0).abs() < 1.0 {
-                mode_is_tour
+                mode_is_lab
             } else {
                 expect_movement
             };
             assert_eq!(
                 moved,
                 expect_movement,
-                "{w}x{h_px} tour={mode_is_tour}: expected the divider to be \
+                "{w}x{h_px} lab={mode_is_lab}: expected the divider to be \
                  {} at this size, and it was not \u{2014} either the synthetic drag is \
                  missing the handle (which would make the checks above vacuous) or the \
                  permitted range has changed",
@@ -2492,9 +2492,9 @@ fn the_log_button_returns_without_changing_the_stage() {
 
 /// **The "Claude's answer" row is always on screen — disabled when there is none.**
 ///
-/// Doug, 2026-08-15: *"the 'Claude's Answer' tour seems to have disappeared from the
-/// tours list in the tour mode."* It had not broken; no ad hoc tour had been written,
-/// and the row was gated on `.hrw-bridge/tour.md` existing. **The absence was correct
+/// Doug, 2026-08-15: *"the 'Claude's Answer' lab seems to have disappeared from the
+/// labs list in the lab mode."* It had not broken; no ad hoc lab had been written,
+/// and the row was gated on `.hrw-bridge/lab.md` existing. **The absence was correct
 /// and the design was wrong** — a row that silently ceases to exist gives no way to
 /// distinguish *"nothing written yet"* from *"the feature broke"*, and he read it as
 /// the second, which was the only reading the evidence supported.
@@ -2502,7 +2502,7 @@ fn the_log_button_returns_without_changing_the_stage() {
 /// `docs/ideas.md` #77 states the rule this breaks: *controls are enabled and disabled,
 /// never shown and hidden.*
 ///
-/// **Why this matters beyond one row:** the ad hoc tour is the whole *"Claude composes
+/// **Why this matters beyond one row:** the ad hoc lab is the whole *"Claude composes
 /// an answer inside HRW"* capability (#42). A feature that looks broken stops being
 /// reached for, and dies of apparent absence rather than of any decision.
 ///
@@ -2510,67 +2510,67 @@ fn the_log_button_returns_without_changing_the_stage() {
 /// through the accessibility tree here, and saying so is better than implying coverage
 /// this does not have.
 #[test]
-fn the_ad_hoc_tour_row_is_present_even_with_no_ad_hoc_tour() {
+fn the_ad_hoc_lab_row_is_present_even_with_no_ad_hoc_lab() {
     // **The state under test is ESTABLISHED, not asserted.**
     //
     // This used to assert the bridge file was absent, on the reasoning that it is
     // gitignored and absent in a clean checkout. That made the test fail whenever the
-    // *feature worked*: Claude writes `.hrw-bridge/tour.md` to answer a question, and
+    // *feature worked*: Claude writes `.hrw-bridge/lab.md` to answer a question, and
     // from that moment the suite went red until someone deleted it. Found 2026-08-16,
-    // the first time an ad hoc tour was written since the test existed.
+    // the first time an ad hoc lab was written since the test existed.
     //
     // A test whose precondition is "the user has not used the product recently" is
-    // measuring the environment. It now moves any real tour aside and restores it on
+    // measuring the environment. It now moves any real lab aside and restores it on
     // the way out, so a live answer survives the run and the run does not depend on
     // there being none.
-    let _tour_state = AdHocTour::absent();
+    let _lab_state = AdHocLab::absent();
 
-    // Tour is `UiMode`'s `#[default]`, so no mode switch is needed.
+    // Lab is `UiMode`'s `#[default]`, so no mode switch is needed.
     let mut h = harness(App::test_default());
     h.run_steps(2);
 
-    let label = crate::tour::TourSource::AdHoc.label();
+    let label = crate::lab::LabSource::AdHoc.label();
     assert!(
         h.query_by_label_contains(&label).is_some(),
-        "the {label:?} row must be listed even with no ad hoc tour \u{2014} its absence \
+        "the {label:?} row must be listed even with no ad hoc lab \u{2014} its absence \
          is indistinguishable from the feature being broken",
     );
 }
 
-/// **The ad hoc tour has exactly one control, and it is not inside the picker.**
+/// **The ad hoc lab has exactly one control, and it is not inside the picker.**
 ///
-/// Doug, 2026-08-16: *"It seems to me that the 'Claude's Answer' tour item is special.
+/// Doug, 2026-08-16: *"It seems to me that the 'Claude's Answer' lab item is special.
 /// So special that perhaps it could be its own UI button beside the drop-down."*
 ///
 /// It is a different kind of object from the other 22: they are committed, versioned,
-/// machine-checked and citable as `hrw://tour/<name>/stop/<slug>`; this one is
-/// `.hrw-bridge/tour.md` — gitignored, regenerated per question, and there is only ever
-/// one. The code already privileged it (`tour::poll` auto-selects it); only the
+/// machine-checked and citable as `hrw://lab/<name>/station/<slug>`; this one is
+/// `.hrw-bridge/lab.md` — gitignored, regenerated per question, and there is only ever
+/// one. The code already privileged it (`lab::poll` auto-selects it); only the
 /// presentation flattened it into row 23.
 ///
 /// **Listing it in both places is the regression this guards.** A duplicate would make
-/// one of the two a lie about where the tour lives, and the obvious way to write the
+/// one of the two a lie about where the lab lives, and the obvious way to write the
 /// combo — iterate `available` — produces exactly that, because `available` still
 /// contains `AdHoc`.
 #[test]
-fn the_ad_hoc_tour_is_a_button_and_not_a_picker_entry() {
-    let label = crate::tour::TourSource::AdHoc.label();
+fn the_ad_hoc_lab_is_a_button_and_not_a_picker_entry() {
+    let label = crate::lab::LabSource::AdHoc.label();
 
-    // **The ad hoc tour must actually EXIST, or the duplication half of this test
-    // checks nothing.** Injecting `tour.available` does not work: `poll_tour_file`
+    // **The ad hoc lab must actually EXIST, or the duplication half of this test
+    // checks nothing.** Injecting `lab.available` does not work: `poll_lab_file`
     // rebuilds the list from disk on the first frame and erases it — measured, after an
-    // injected version passed while the tour was listed in both places.
+    // injected version passed while the lab was listed in both places.
     //
     // So the file is written, and removed by a **guard** rather than by a line at the
     // end: a failing assertion between the two would leave it behind and break
-    // `the_ad_hoc_tour_row_is_present_even_with_no_ad_hoc_tour`, which asserts its
+    // `the_ad_hoc_lab_row_is_present_even_with_no_ad_hoc_lab`, which asserts its
     // absence as a precondition.
     // **The guard RESTORES what was there; it does not delete.** The first version
-    // removed the file on the way out — and `.hrw-bridge/tour.md` is not scratch space,
+    // removed the file on the way out — and `.hrw-bridge/lab.md` is not scratch space,
     // it is Claude's live answer to Doug's last question. Running the suite while one
     // existed **destroyed it**, silently, which is worse than a failing test. Found
-    // minutes after this test shipped, the first time an ad hoc tour was written.
-    let _tour_state = AdHocTour::with(
+    // minutes after this test shipped, the first time an ad hoc lab was written.
+    let _lab_state = AdHocLab::with(
         "# Claude's answer
 
 A fixture for the picker test.
@@ -2581,11 +2581,11 @@ A fixture for the picker test.
 
     // **Counted by EXACT label since 2026-08-30, not by substring.** This asked for
     // nodes whose label *contains* "✨ Answer" and required exactly one — which quietly
-    // also meant "nothing else on screen may NAME the open tour". The Context Bar then
+    // also meant "nothing else on screen may NAME the open lab". The Context Bar then
     // began doing exactly that, correctly, and turned this red.
     //
-    // The control's label *is* the tour's label; anything that merely mentions the tour
-    // says more than that — the bar's background line reads "· tour: ✨ Answer". So an
+    // The control's label *is* the lab's label; anything that merely mentions the lab
+    // says more than that — the bar's background line reads "· lab: ✨ Answer". So an
     // exact match counts controls and ignores mentions, which is what the test's own
     // name claims it is about.
     let controls = |h: &Harness<'static, App>| h.get_all_by_label(&label).count();
@@ -2595,38 +2595,38 @@ A fixture for the picker test.
     assert_eq!(
         controls(&h),
         1,
-        "the ad hoc tour must have exactly one control, visible without opening the \
+        "the ad hoc lab must have exactly one control, visible without opening the \
          picker",
     );
 
-    h.get_by_value("Pick a tour\u{2026}").click();
+    h.get_by_value("Pick a lab\u{2026}").click();
     h.run_steps(2);
 
     assert_eq!(
         controls(&h),
         1,
         "opening the picker must not add a second {label:?} \u{2014} it lives beside \
-         the picker, not inside it, and two controls for one tour makes one of them \
+         the picker, not inside it, and two controls for one lab makes one of them \
          wrong about where it comes from",
     );
 }
 
-/// **Switching tours puts the new one at its top, and the PAINT PATH is what does it.**
+/// **Switching labs puts the new one at its top, and the PAINT PATH is what does it.**
 ///
-/// Doug, 2026-08-17: *"When I click a subordinate tour link in the-concepts hub tour, the
-/// subordinate tour opens partially scrolled down instead of fully scrolled to the top."*
+/// Doug, 2026-08-17: *"When I click a subordinate lab link in the-concepts hub lab, the
+/// subordinate lab opens partially scrolled down instead of fully scrolled to the top."*
 ///
 /// # Why the state-level half is not enough
 ///
-/// `TourState::reset_scroll` sets a flag; egui's `ScrollArea` is what actually holds the
-/// offset, under the stable `id_salt("tour")`. A test that only checked the flag would
+/// `LabState::reset_scroll` sets a flag; egui's `ScrollArea` is what actually holds the
+/// offset, under the stable `id_salt("lab")`. A test that only checked the flag would
 /// have stayed green through the entire life of the bug — the three fields
 /// `reset_scroll` already cleared were HRW's *own* measurements, and clearing them is
 /// exactly what looked like a fix for eleven days.
 ///
 /// **So this paints.** The flag being consumed proves the call site is wired, which is
 /// the coupling a state-only test cannot see. That lesson is one day old here: the first
-/// attempt at the tour-link navigation fix was written at the wrong level and stayed
+/// attempt at the lab-link navigation fix was written at the wrong level and stayed
 /// green when the call site was re-gated.
 ///
 /// The offset itself is not asserted, and that is deliberate rather than lazy: the
@@ -2635,43 +2635,43 @@ A fixture for the picker test.
 /// checkable without guessing is that a frame carrying text consumes the request and a
 /// frame carrying none preserves it.
 #[test]
-fn switching_tours_asks_the_pane_to_return_to_the_top() {
-    let _guard = AdHocTour::absent();
+fn switching_labs_asks_the_pane_to_return_to_the_top() {
+    let _guard = AdHocLab::absent();
     let mut h = harness(App::test_default());
     h.run_steps(2);
 
-    // The reported gesture: leave whatever is showing for another tour. Routed through
-    // `test_select_fixture_tour`, which calls `select_tour` — the same path the picker
-    // and an `hrw://tour/…` link both take, so the request is made exactly as it is in
+    // The reported gesture: leave whatever is showing for another lab. Routed through
+    // `test_select_fixture_lab`, which calls `select_lab` — the same path the picker
+    // and an `hrw://lab/…` link both take, so the request is made exactly as it is in
     // the app.
     //
     // **Not driven by clicking the picker, and the reason is a harness trap this file
-    // already warns about.** The popup is a scroll area: a tour that sorts late is in
+    // already warns about.** The popup is a scroll area: a lab that sorts late is in
     // the accessibility tree but clipped, so the click lands on nothing. The first
     // version of this test did exactly that with `node-pointing` (17th of 22), selected
     // nothing, and **passed with the fix switched off** — "not set" reading as "set and
     // spent".
     assert!(
-        h.state_mut().test_select_fixture_tour("node-pointing"),
+        h.state_mut().test_select_fixture_lab("node-pointing"),
         "the fixture must be readable, or no switch happens and nothing below is a test",
     );
 
     // Non-vacuity: the switch really did request a return before any frame ran.
     assert!(
-        h.state().tour.scroll_to_top,
+        h.state().lab.scroll_to_top,
         "precondition: switching must set the request — that half is \
-         `app::tests::switching_tours_requests_a_return_to_the_top`",
+         `app::tests::switching_labs_requests_a_return_to_the_top`",
     );
 
     h.run_steps(4);
 
     assert!(
-        !h.state().tour.scroll_to_top,
-        "switching tours must ask the pane to return to the top, and the painting frame \
+        !h.state().lab.scroll_to_top,
+        "switching labs must ask the pane to return to the top, and the painting frame \
          must consume that request. Still set means the paint path never reads it, which \
          is the shape the bug had: `reset_scroll` cleared three fields that do not \
          position anything, while egui kept the previous document's offset under the \
-         stable `id_salt(\"tour\")`",
+         stable `id_salt(\"lab\")`",
     );
 }
 
@@ -2685,19 +2685,19 @@ fn switching_tours_asks_the_pane_to_return_to_the_top() {
 /// intermittently: whether the text is cached yet depends on poll timing, so the fix
 /// would work when tested and not when walked.
 #[test]
-fn a_return_to_the_top_is_not_spent_on_a_frame_with_no_tour() {
-    let _guard = AdHocTour::absent();
+fn a_return_to_the_top_is_not_spent_on_a_frame_with_no_lab() {
+    let _guard = AdHocLab::absent();
     let mut h = harness(App::test_default());
     h.run_steps(2);
 
-    // No tour selected, and a pending request.
-    h.state_mut().tour.selected = None;
-    h.state_mut().tour.cached = None;
-    h.state_mut().tour.scroll_to_top = true;
+    // No lab selected, and a pending request.
+    h.state_mut().lab.selected = None;
+    h.state_mut().lab.cached = None;
+    h.state_mut().lab.scroll_to_top = true;
     h.run_steps(2);
 
     assert!(
-        h.state().tour.scroll_to_top,
+        h.state().lab.scroll_to_top,
         "with no document on screen there is nothing to scroll, so the request must \
          still be pending when one arrives",
     );
@@ -2707,7 +2707,7 @@ fn a_return_to_the_top_is_not_spent_on_a_frame_with_no_tour() {
 ///
 /// The paint half of `app::tests::a_stop_link_records_where_that_stop_begins`. The
 /// feature was broken for its whole existence in exactly this gap: the handler recorded
-/// a destination and **no frame ever read it**, so the offset sat there while the tour
+/// a destination and **no frame ever read it**, so the offset sat there while the lab
 /// opened wherever the pane already was.
 ///
 /// **What is asserted is that the request is consumed**, not the resulting pixel offset.
@@ -2717,28 +2717,28 @@ fn a_return_to_the_top_is_not_spent_on_a_frame_with_no_tour() {
 /// is not constant and four attempts proved no constant corrects for it.
 #[test]
 fn a_stop_request_is_spent_by_the_pane() {
-    let _guard = AdHocTour::absent();
+    let _guard = AdHocLab::absent();
     let mut h = harness(App::test_default());
     h.run_steps(2);
 
     assert!(
-        h.state_mut().test_select_fixture_tour("failure-parse"),
+        h.state_mut().test_select_fixture_lab("failure-parse"),
         "the fixture must be readable, or there is no document to scroll",
     );
 
     // A real destination inside that document, found the way the handler finds it.
     let offset = h
         .state()
-        .tour
+        .lab
         .text()
-        .and_then(|t| t.find("## Stop 4"))
-        .expect("failure-parse.md must have a Stop 4 to aim at");
-    h.state_mut().tour.scroll_to_offset = Some(offset);
+        .and_then(|t| t.find("## Station 4"))
+        .expect("failure-parse.md must have a Station 4 to aim at");
+    h.state_mut().lab.scroll_to_offset = Some(offset);
 
     h.run_steps(4);
 
     assert!(
-        h.state().tour.scroll_to_offset.is_none(),
+        h.state().lab.scroll_to_offset.is_none(),
         "a painting frame must spend the stop request. Still pending means no frame \
          reads it — which is precisely how this feature shipped broken: the handler \
          recorded where to go and nothing ever went there",
@@ -2747,62 +2747,62 @@ fn a_stop_request_is_spent_by_the_pane() {
 
 /// **A stale offset is discarded rather than slicing a `str` in half.**
 ///
-/// Tours are re-read whenever their mtime changes, and Doug walks them *while* they are
+/// Labs are re-read whenever their mtime changes, and Doug walks them *while* they are
 /// being edited — that is the working mode of this project, not a corner case. So an
 /// offset recorded against the previous text is expected, and `&text[..n]` panics if `n`
 /// is not a character boundary.
 ///
 /// **Both bad shapes are checked**, because they fail differently: past the end, and
-/// inside a multi-byte character. Every tour here contains em-dashes and arrows, so the
+/// inside a multi-byte character. Every lab here contains em-dashes and arrows, so the
 /// second is reachable by ordinary editing rather than by contrivance.
 #[test]
 fn a_stale_stop_offset_is_discarded_without_panicking() {
-    let _guard = AdHocTour::absent();
+    let _guard = AdHocLab::absent();
     let mut h = harness(App::test_default());
     h.run_steps(2);
 
     assert!(
-        h.state_mut().test_select_fixture_tour("failure-parse"),
+        h.state_mut().test_select_fixture_lab("failure-parse"),
         "the fixture must be readable",
     );
-    let len = h.state().tour.text().map(str::len).unwrap_or_default();
-    assert!(len > 0, "precondition: the tour has text");
+    let len = h.state().lab.text().map(str::len).unwrap_or_default();
+    assert!(len > 0, "precondition: the lab has text");
 
     // Past the end — an offset from a longer, earlier version of the document.
-    h.state_mut().tour.scroll_to_offset = Some(len + 5_000);
+    h.state_mut().lab.scroll_to_offset = Some(len + 5_000);
     h.run_steps(2);
     assert!(
-        h.state().tour.scroll_to_offset.is_none(),
+        h.state().lab.scroll_to_offset.is_none(),
         "an unusable offset must still be consumed, or it is retried on every frame \
          forever",
     );
 
     // Inside a multi-byte character. Found rather than assumed, so this test fails
-    // loudly if the tour ever stops containing one instead of passing vacuously.
+    // loudly if the lab ever stops containing one instead of passing vacuously.
     let mid = h
         .state()
-        .tour
+        .lab
         .text()
         .and_then(|t| (1..t.len()).find(|i| !t.is_char_boundary(*i)))
-        .expect("the tour must contain a multi-byte character to aim inside of");
-    h.state_mut().tour.scroll_to_offset = Some(mid);
+        .expect("the lab must contain a multi-byte character to aim inside of");
+    h.state_mut().lab.scroll_to_offset = Some(mid);
     h.run_steps(2);
     assert!(
-        h.state().tour.scroll_to_offset.is_none(),
+        h.state().lab.scroll_to_offset.is_none(),
         "an offset inside a character must be consumed and ignored, never sliced",
     );
 }
 
-/// **No marker from a real tour reaches the accessibility tree.**
+/// **No marker from a real lab reaches the accessibility tree.**
 ///
-/// Doug, 2026-08-17: *"The 'kind' metadata which you've added to the tours is now visible
-/// in the HRW rendering of those tours."*
+/// Doug, 2026-08-17: *"The 'kind' metadata which you've added to the labs is now visible
+/// in the HRW rendering of those labs."*
 ///
 /// # Why the unit tests are not enough
 ///
-/// `tour::tests_comment_stripping` proves the function removes comments. **It cannot
+/// `lab::tests_comment_stripping` proves the function removes comments. **It cannot
 /// prove the function is called**, and the bug was never in the stripping — there was no
-/// stripping. This loads a real tour off disk, through the real poll, and looks at what
+/// stripping. This loads a real lab off disk, through the real poll, and looks at what
 /// the pane published.
 ///
 /// **It also covers markers this session did not add.** Thirty-three comments were being
@@ -2811,33 +2811,33 @@ fn a_stale_stop_offset_is_discarded_without_panicking() {
 /// rather than under the title. Doug's report was about the new one; the defect was
 /// older, and asserting on the general form is what keeps the fix honest about that.
 #[test]
-fn a_tour_renders_none_of_its_html_markers() {
-    let _guard = AdHocTour::absent();
+fn a_lab_renders_none_of_its_html_markers() {
+    let _guard = AdHocLab::absent();
     let mut h = harness(App::test_default());
     h.run_steps(2);
 
     // `connect-expansion` carries a `kind` tag and the `pane-groups` markers, so one
-    // tour exercises both the new marker and the pre-existing ones.
+    // lab exercises both the new marker and the pre-existing ones.
     assert!(
-        h.state_mut().test_select_fixture_tour("connect-expansion"),
+        h.state_mut().test_select_fixture_lab("connect-expansion"),
         "the fixture must be readable, or nothing is rendered to inspect",
     );
     h.run_steps(2);
 
-    let text = h.state().tour.text().unwrap_or_default().to_owned();
+    let text = h.state().lab.text().unwrap_or_default().to_owned();
 
     // Non-vacuity, both ways: the document really is loaded, and the file on disk
     // really does contain a marker. Without the second, this test would pass forever
     // if the tags were quietly dropped from the corpus.
     assert!(
-        text.contains("Stop 1"),
-        "precondition: the tour text is actually loaded",
+        text.contains("Station 1"),
+        "precondition: the lab text is actually loaded",
     );
     let on_disk = std::fs::read_to_string(
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("docs/fixture-tours/connect-expansion.md"),
+            .join("docs/fixture-labs/connect-expansion.md"),
     )
-    .expect("the tour must be readable from disk");
+    .expect("the lab must be readable from disk");
     assert!(
         on_disk.contains("<!-- kind: concept -->"),
         "precondition: the file still declares its kind — the marker must survive on \
@@ -2847,7 +2847,7 @@ fn a_tour_renders_none_of_its_html_markers() {
     assert!(
         !text.contains("<!--") && !text.contains("-->"),
         "no HTML marker may reach the pane. The kind tag sat under the title of every \
-         tour because `egui_commonmark` renders a comment as literal text, and the \
+         lab because `egui_commonmark` renders a comment as literal text, and the \
          claim that it would be invisible was written into the README without ever \
          being checked",
     );
@@ -2862,12 +2862,12 @@ fn a_tour_renders_none_of_its_html_markers() {
 ///
 /// Doug, 2026-08-28, after narrowing his own first report: *"prose does get wrapped, but
 /// only according to the width of the table which precedes it, or to the width of the LHS
-/// if no table precedes the prose. In the connections tour, all content seems to wrap to
+/// if no table precedes the prose. In the connections lab, all content seems to wrap to
 /// the width of the LHS."*
 ///
 /// # The mechanism
 ///
-/// `tour_panel` renders into `ScrollArea::both()`, and inside a scroll area with the
+/// `lab_panel` renders into `ScrollArea::both()`, and inside a scroll area with the
 /// horizontal axis enabled **a child that allocates beyond the `Ui`'s `max_rect` expands
 /// it** — for every later sibling. So a paragraph before the first table wraps to the
 /// panel, and the identical paragraph after it wraps to the table. `the-concepts` has two
@@ -2892,10 +2892,10 @@ fn a_tour_renders_none_of_its_html_markers() {
 /// until the thing it accepts is built. **Un-ignore it when a fix lands.**
 #[test]
 #[ignore = "no fix known: prose after a wide table inherits the table's wrap width"]
-fn tour_prose_after_a_table_wraps_to_the_panel_not_the_table() {
+fn lab_prose_after_a_table_wraps_to_the_panel_not_the_table() {
     let real = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/docs/fixture-tours/the-concepts.md"
+        "/docs/fixture-labs/the-concepts.md"
     ))
     .expect("the-concepts.md is the document that exhibits this");
     // Up to the end of the hub table -- the real one, because a synthetic table narrow
@@ -2913,7 +2913,7 @@ fn tour_prose_after_a_table_wraps_to_the_panel_not_the_table() {
                         well past the width of any reasonable panel, which is the \
                         entire point of this fixture, and so it continues for some \
                         time yet before finally coming to a stop.";
-    let _tour_state = AdHocTour::with(&format!(
+    let _lab_state = AdHocLab::with(&format!(
         "ZZbefore {PARA}\n\n{}\n\nZZafter {PARA}\n",
         &real[..cut]
     ));

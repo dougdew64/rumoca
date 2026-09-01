@@ -19,4 +19,4 @@ cleanly. Loading the two back to back is the point.
 ## Where it has been used
 
 Entries in [`question-ledger.md`](../../question-ledger.md) — the record lives there; this is an index into it.
-- **2026-07-29** — *"Why did the structural phase fail for the CapacitorLoop specimen?"* Asked twice; the second was a re-test after source-line highlighting shipped. Produced the `CapacitorLoop`/`RcCircuit` contrast tour, in which Claude had to correct itself about single-nonzero columns being "a single point of failure".
+- **2026-07-29** — *"Why did the structural phase fail for the CapacitorLoop specimen?"* Asked twice; the second was a re-test after source-line highlighting shipped. Produced the `CapacitorLoop`/`RcCircuit` contrast lab, in which Claude had to correct itself about single-nonzero columns being "a single point of failure".

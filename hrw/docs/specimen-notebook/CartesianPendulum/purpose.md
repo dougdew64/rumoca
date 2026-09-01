@@ -15,7 +15,7 @@ x ^ 2 + y ^ 2 = L ^ 2;          // the constraint
 
 **Every other constraint in the corpus is an *alias*** — one variable equal to another times a
 constant — which substitution removes without differentiating anything. `Drivetrain`'s nine
-states fall to three that way, and the tour written from it could not show differentiation
+states fall to three that way, and the lab written from it could not show differentiation
 because the model never needs it.
 
 **`x² + y² = L²` cannot be substituted away.** It is nonlinear in two states at once, so the only

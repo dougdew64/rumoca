@@ -3,6 +3,15 @@
 Running log of nontrivial implementation choices, newest last. One line + rationale each.
 See `docs/CHARTER.md` for binding decisions; this file records the smaller calls made in-session.
 
+> **VOCABULARY NOTE — entries before 2026-09-01 say "tour", and that is deliberate.** Charter
+> Decision 15 renamed the concept to a **lab**, its unit from `stop` to `station`, and Claude's role
+> from guide to **instructor**; every live document and all of `src/` moved in one atomic pass.
+> **This file did not, because it is history and does not bind** (Decision 11). An entry dated
+> 2026-07-22 reading *"guided tours drive backlog prioritization"* is a true statement about what
+> was decided that day — rewriting it would have Doug deciding something he did not. Same rule that
+> keeps the deleted `end_to_end_tour.md` under its real name. **Read `tour` here as `lab`, `stop` as
+> `station`, and do not "fix" it.**
+
 ## Arc 1 — Parse → Resolve → Typecheck
 
 - **2026-07-18 — Dependencies added.** `eframe 0.35` (charter-blessed shell), `serde_json`

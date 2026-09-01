@@ -15,7 +15,7 @@
 //!
 //! Run this after **any** change to `crates/rumoca-phase-structural/src/matching.rs`.
 //! Line numbers move when code above them moves, and `CLAUDE.md`'s standing
-//! warning is that nothing compiles a Markdown table — a tour quoting a shifted
+//! warning is that nothing compiles a Markdown table — a lab quoting a shifted
 //! line simply confuses the reader. The test turns that silent rot into a
 //! failure that names this command.
 

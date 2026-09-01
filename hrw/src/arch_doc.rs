@@ -19,7 +19,7 @@
 //! which was added on 2026-08-03 and never written in, so the document showed the
 //! chain jumping Flatten → Structural with the phase they both depend on absent.
 //!
-//! That is the same failure as the deleted `end_to_end_tour.md`, which asserted a
+//! That is the same failure as the deleted `end_to_end_lab.md`, which asserted a
 //! 7×7 incidence matrix on a tab showing 48 equations: **prose carrying a number
 //! that nothing checks.** `doc_citations` verifies that cited *paths* resolve; no
 //! test in this repository could see a cited *count* drift.
@@ -33,7 +33,7 @@
 //! live in **marker-delimited regions** that [`splice`] rewrites in place, and the
 //! prose around them is never touched.
 //!
-//! Everything else follows [`crate::tour::catalogue`]'s pattern exactly, for its
+//! Everything else follows [`crate::lab::catalogue`]'s pattern exactly, for its
 //! reason: the generator lives **here, in the library**, so
 //! `architecture_regions_are_current` checks the same code that writes the file
 //! rather than a second implementation of it. A checker that reimplements what it
@@ -87,7 +87,7 @@ pub const ARCHITECTURE_DOC: &str = "docs/architecture.md";
 ///
 /// Quoted in **every** failure message in this module, so a failing test tells the
 /// reader what to run rather than only what went wrong — the same courtesy
-/// `tour_catalogue_is_current` pays.
+/// `lab_catalogue_is_current` pays.
 pub const GEN_COMMAND: &str = "cargo run -p hrw --example gen_architecture";
 
 /// A region's body generator. `fn` pointers rather than a name-keyed `match`, so
@@ -527,7 +527,7 @@ mod tests {
 
     /// **The generated regions of `architecture.md` are current.**
     ///
-    /// The same generate-and-compare shape as `app::tests::tour_catalogue_is_current`
+    /// The same generate-and-compare shape as `app::tests::lab_catalogue_is_current`
     /// and `matching_ledger`'s reference check, and it calls the same [`splice`] the
     /// example calls rather than a second implementation of it.
     ///

@@ -303,7 +303,7 @@ mod tests {
     /// **The one defect here that no reader could catch: the halves swapped.**
     ///
     /// Both panes would render a well-formed matrix under a correct-looking heading, and
-    /// the Before pane would be showing the reduced system while the tour says it is the
+    /// the Before pane would be showing the reduced system while the lab says it is the
     /// raw DAE — the whole point of the stage, inverted, in silence. Must-fire verified by
     /// exchanging the two `get_or_insert_with` sources: this then fails with `(2, 2)`
     /// where it expects `(3, 3)`.

@@ -36,11 +36,11 @@ that leaves the machine or cannot be undone** — filing an issue, posting anywh
 something git does not hold.
 
 **THE ONE HOLE IN THAT MODEL, named the day it was stated: GITIGNORED STATE IS NOT PROTECTED.**
-`.hrw-bridge/` — `tour.md`, `focus.json`, `view.json`, scratch specimens and notebooks — is
+`.hrw-bridge/` — `lab.md`, `focus.json`, `view.json`, scratch specimens and notebooks — is
 outside git, so commit-never-push does **not** make an overnight change to it reversible.
-`tour.md` in particular is Claude's answer to Doug's last question, and deleting it would destroy
+`lab.md` in particular is Claude's answer to Doug's last question, and deleting it would destroy
 something no `git reset` restores. **Treat `.hrw-bridge/` as read-only overnight**, except where a
-test already restores what it touched (`ui_tests::AdHocTour`).
+test already restores what it touched (`ui_tests::AdHocLab`).
 
 ### What Claude will and will not do
 
@@ -57,7 +57,7 @@ test already restores what it touched (`ui_tests::AdHocTour`).
 
 - touch `worker.rs`'s **compile path**, or how the **MSL** is loaded, cached or shared
 - change **what any pane claims**, or trade fidelity for anything
-- **rewrite tour prose.** Fixing a checker-caught number or a dead link is fine.
+- **rewrite lab prose.** Fixing a checker-caught number or a dead link is fine.
 - **raise any ceiling or budget**
 - **push**
 
@@ -112,7 +112,7 @@ changed that afternoon and its description did not — so the yield came from a 
 mechanism change, not from accumulated rot. Point it at the documents again after the next such
 day, not tomorrow.
 
-**The obvious next work needs Doug awake:** `connect-expansion` is rewritten and unwalked, Stop 6
+**The obvious next work needs Doug awake:** `connect-expansion` is rewritten and unwalked, Station 6
 and `ScopedConnect` have never been read by anyone, and night 7 left him one ruling — hard rule 5
 against the document item — **ruled the next morning**, and recorded in the log.
 
@@ -204,7 +204,7 @@ Absolute, regardless of how safe it looks at 3 a.m.:
 - **Anything that changes what a pane *claims*.** Accuracy outranks everything, and a pane's claim
   is the one thing no checker here verifies for meaning.
 - **Anything trading fidelity for anything else.**
-- **Tour prose.** Doug's tour walks are his primary learning exercise; rewriting an explanation
+- **Lab prose.** Doug's lab walks are his primary learning exercise; rewriting an explanation
   unsupervised is not Claude's to do. Fixing a checker-caught number or a dead link is fine.
 - **Raising any ceiling or budget** — the reading-path ceilings (`docs/reading-budgets.txt`), the
   field-count ratchet, the orphaned-doc budget. Raised with nobody reading the reasoning, it is a
@@ -246,9 +246,9 @@ Two ways the project stops moving, and the nightly report sees one of them:
   binds — and picks one, silently. **Nothing measures this**, and it is the nearer wall.
 
 **2026-08-31 produced three contradictions in one day**, every one caught by conversation rather
-than by a check: `fixture-tours/README.md` said `node` earned its place while the tour it governs
+than by a check: `fixture-labs/README.md` said `node` earned its place while the lab it governs
 had dropped the abstraction; a checker was named for vocabulary its subject no longer used; and a
-pinned assertion quoted a sentence the tour had deleted.
+pinned assertion quoted a sentence the lab had deleted.
 
 **`doc_report`'s duplication check finds COPIES, not contradictions** — an exact repeated passage,
 which is the benign case. **A passage that was copied and then edited in one place only is the
@@ -273,13 +273,13 @@ needed; **1** means the morning starts here.
 
 **Why duplication and not just size.** The growth that caused the whole budget problem was never a
 document getting long — it was **the same prose in two files**, four rulings written into both
-`DECISIONS.md` and `fixture-tours/README.md` on one day. A size check sees that as "a document
+`DECISIONS.md` and `fixture-labs/README.md` on one day. A size check sees that as "a document
 grew" and bills for it; this sees the thing itself.
 
 ### What the night may do, and what waits for Doug
 
 `CLAUDE.md` already authorises Claude to reorganise and condense documents without asking. **The
-line is the same one that governs tour prose: an explanation is Doug's learning material, so
+line is the same one that governs lab prose: an explanation is Doug's learning material, so
 trimming one is his call.**
 
 | do it unattended | leave it for Doug |

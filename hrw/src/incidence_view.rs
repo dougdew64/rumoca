@@ -53,7 +53,7 @@ pub struct IncidenceMatrix {
     ///
     /// Added by the 2026-08-04 sweep, which found three silent-loss sites here — the
     /// most consequential in HRW, because this matrix is the object the matching and
-    /// BLT tours teach on:
+    /// BLT labs teach on:
     ///
     /// 1. A non-numeric entry in a row's `unknowns` **dropped a column**, so the
     ///    matrix would show an equation not depending on a variable it depends on.
@@ -372,7 +372,7 @@ impl IncidenceMatrix {
                     // 2026-08-15 sweep, by the test written for exactly this promise.
                     "id": self.equation_ids.get(i).map(String::as_str).unwrap_or(label),
                     // The report's own wording, kept because it carries the origin and
-                    // is what a tour quoting the structural report will have copied.
+                    // is what a lab quoting the structural report will have copied.
                     "label": label,
                     "text": self.equation_texts.get(i),
                     "unknown_columns": self.rows.get(i),
@@ -1166,7 +1166,7 @@ mod bridge_json_tests {
         assert_eq!(published["n_matched"], 2);
         assert_eq!(
             published["structurally_singular"], false,
-            "a fully matched 2x2 is not singular, and this flag is what a tour quotes",
+            "a fully matched 2x2 is not singular, and this flag is what a lab quotes",
         );
         assert_eq!(
             published["unknowns"],

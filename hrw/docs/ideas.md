@@ -14,27 +14,27 @@ arc depends on them, and settled decisions live in [`DECISIONS.md`](../DECISIONS
 current work in [`CLAUDE.md`](../CLAUDE.md). Promote an item here into an arc /
 decision when it's picked up.
 
-## Prioritization model: guided tours drive feature priority
+## Prioritization model: guided labs drive feature priority
 
-The `docs/compiler-phases/` documents are being re-envisioned as **guided tour
+The `docs/compiler-phases/` documents are being re-envisioned as **guided lab
 scripts** — each phase chapter becomes a walkthrough that leverages HRW and
 specimens to teach the phase's concepts interactively (see idea #24). This
 re-envisioning provides the **prioritization principle** for this backlog:
 
-> **Build the feature that the next guided tour needs.**
+> **Build the feature that the next guided lab needs.**
 
-The workflow: (1) design the guided tour for a phase — what concepts it teaches,
+The workflow: (1) design the guided lab for a phase — what concepts it teaches,
 what specimens it uses, what the learner should *see* at each step; (2) identify
 gaps — which "the learner should see X" moments require HRW enhancements that
 don't exist yet; (3) build those enhancements (pulled from this backlog or newly
-identified); (4) write the tour, now fully supported by the tool.
+identified); (4) write the lab, now fully supported by the tool.
 
-Items below can be **tour-linked** (needed by a specific guided tour) or
-**generic** (supports the tool broadly). Tour-linked items carry a
-`Tours: #phase` tag. When planning work, tour-linked items for the *current*
-tour take priority over unlinked items of the same severity.
+Items below can be **lab-linked** (needed by a specific guided lab) or
+**generic** (supports the tool broadly). Lab-linked items carry a
+`Labs: #phase` tag. When planning work, lab-linked items for the *current*
+lab take priority over unlinked items of the same severity.
 
-| Item | Tours |
+| Item | Labs |
 |------|-------|
 | #14 Rank deficiency visualization | Structural Analysis |
 | #15 Matching-as-permutation view | Structural Analysis |
@@ -48,21 +48,21 @@ tour take priority over unlinked items of the same severity.
 | #21 Event lowering process | Events |
 | #5 Four-bar linkage + planar library | Index Reduction |
 | #7 Full init-system structural analysis | Initialization |
-| #10 Cross-stage identifier tracking | (all tours) |
-| #11 In-view search | (all tours) |
-| #26 VS Code extension: Trace / Debug / Arm-it | (all tours) |
+| #10 Cross-stage identifier tracking | (all labs) |
+| #11 In-view search | (all labs) |
+| #26 VS Code extension: Trace / Debug / Arm-it | (all labs) |
 | #27 Equation sheet (readable DAE) | Flatten, Structural Analysis |
 | #28 Source-to-equation traceability | Flatten (bridges Parse–Flatten) |
 | #29 Solver stepping visualization | Simulation |
 | #30 Live solver stepping (LiveTrace) | Simulation |
 | #31 Revisit all simulator functionality | Simulation |
-| #32 ~~In-app tour view~~ ✅ | (all tours) |
-| #34 Sub-view / tree-node links | (all tours) |
-| #35 Multiple tour documents + progress | (all tours) |
-| #33 Comprehensive tooltips | (all tours) |
-| #36 Modelica syntax highlighting | (all tours) |
-| #37 Reverse identifier tracking | (all tours) |
-| #38 Syntax highlighting for canvas axis labels | (all tours) |
+| #32 ~~In-app lab view~~ ✅ | (all labs) |
+| #34 Sub-view / tree-node links | (all labs) |
+| #35 Multiple lab documents + progress | (all labs) |
+| #33 Comprehensive tooltips | (all labs) |
+| #36 Modelica syntax highlighting | (all labs) |
+| #37 Reverse identifier tracking | (all labs) |
+| #38 Syntax highlighting for canvas axis labels | (all labs) |
 | #1, #4, #13, #23 | generic |
 
 ---
@@ -339,7 +339,7 @@ simulation, using the actual Rumoca codebase as the teaching material.
   as control-system models).
 - **Shape (to figure out):** the right delivery format — could be structured
   `docs/explorations/` walkthroughs, could be interactive sessions using HRW's
-  capture→explain flow, could be annotated code tours, or a combination.
+  capture→explain flow, could be annotated code labs, or a combination.
   The format should leverage Claude's ability to read the Rumoca source, point at
   specific functions and data structures, and connect them to textbook definitions.
   It should also leverage HRW's views — "open BouncingBall, click the Structural
@@ -420,7 +420,7 @@ Looking ahead past the ramp-up, he sketched the questions he expects to ask:
 whether the linearization is singular, `eval` for which value went non-finite, and the third
 question is `#45`'s diagnostic mode, which is deferred.
 
-**And it locates a real gap in the curriculum.** The nine tours run Parse → solve lowering and stop;
+**And it locates a real gap in the curriculum.** The nine labs run Parse → solve lowering and stop;
 this question lives *after* solve lowering, in the solver. `#66` already says *"compilation is a
 MEANS, and the end is simulation"* — **this is the concrete case for that claim**, and the reason
 the near-term curriculum should not treat solve lowering as the finish line. Recorded there too.
@@ -432,7 +432,7 @@ repository's specimens, and has not seen the JSON shape `--format json` emits. T
 from reading `cli.rs`, `jacobian.rs` and their doc comments.
 
 **That is a lead, not a fact** (`docs/provenance.md`), and it is exactly the footing this project
-has twice had to lift things off. **Before any of it becomes a tour or a pane: run it, compare
+has twice had to lift things off. **Before any of it becomes a lab or a pane: run it, compare
 against a real compile, and find out where it disagrees with what is written here.** The specific
 claims most worth distrusting are that the inspectors accept our specimens at all, and that the
 names in `JacobianReport` match the names HRW's other panes use — the second is an *identity* claim,
@@ -630,27 +630,27 @@ the worker thread.
 - **For now:** let the phase-boundary tech-debt sweep catch performance issues as they
   surface — it has a good track record.
 
-## 24. Re-envision compiler-phases docs as HRW-driven guided tours
+## 24. Re-envision compiler-phases docs as HRW-driven guided labs
 
 Captured 2026-07-22 (Doug). The `docs/compiler-phases/` documents were written
 before HRW existed — standalone theory explanations of each Rumoca phase with no
 connection to the tool that can *show* the phase happening. Now that HRW can
 render every phase's IR on real specimens, those docs should be re-envisioned as
-**guided tour scripts**: the theory is preserved (and remains the explanation
+**guided lab scripts**: the theory is preserved (and remains the explanation
 layer), but the structure becomes a walkthrough keyed to HRW actions and
 specimens.
 
-- **Why it matters:** a guided tour unifies what was previously separate — "read
+- **Why it matters:** a guided lab unifies what was previously separate — "read
   the theory doc" and "click around in HRW" — into one experience: "open
   BouncingBall, click Structural, look at the incidence matrix — *this is* the
   bipartite adjacency matrix from the theory. Hover row 3 — that equation
   references two unknowns..." The theory explains what you're seeing, not what
   you might someday see.
 - **The curriculum-aware teacher model:** Claude acts as a curriculum-aware
-  teacher — designing each tour with explicit learning goals first, then
-  identifying which HRW enhancements the tour needs (features pulled from this
-  ideas backlog), building those features, and finally writing the tour. The
-  tours **drive feature prioritization** for the entire backlog (see the
+  teacher — designing each lab with explicit learning goals first, then
+  identifying which HRW enhancements the lab needs (features pulled from this
+  ideas backlog), building those features, and finally writing the lab. The
+  labs **drive feature prioritization** for the entire backlog (see the
   prioritization model at the top of this file and `docs/vision.md`).
 - **Shape:** enhanced markdown documents in `docs/compiler-phases/`, each
   structured as a sequence of steps: "open specimen X → click tab Y → observe Z
@@ -660,15 +660,15 @@ specimens.
 - **Sequencing:** start with the phases that have the richest visual/algorithmic
   content — **Structural Analysis** and **Index Reduction** — where the most
   backlog items cluster and the learning payoff is highest. Simpler phases
-  (Parse, Resolve) can follow with lighter tours.
+  (Parse, Resolve) can follow with lighter labs.
 - **Relationship to idea #13 (guided learning explorations):** #13 proposed
   explorations organized by *mathematical topic* (linear algebra, ODEs, etc.)
-  for Doug's coursework. The guided tours here are organized by *compiler
-  phase*. They're complementary: a tour says "here's what Structural Analysis
+  for Doug's coursework. The guided labs here are organized by *compiler
+  phase*. They're complementary: a lab says "here's what Structural Analysis
   does," an exploration says "here's how maximum matching connects to your
   linear algebra class." Both draw on the same HRW features and specimens.
-- **Design constraint:** features built to support tours must be general-purpose
-  HRW enhancements, not one-off tour widgets. The tours are one way to
+- **Design constraint:** features built to support labs must be general-purpose
+  HRW enhancements, not one-off lab widgets. The labs are one way to
   experience the features; the features enrich HRW permanently.
 
 ## 26. VS Code extension integration: Trace / Debug / Debug-shortcut
@@ -895,7 +895,7 @@ simulation-related features can deliver their full value.
 
 ## 33. Comprehensive tooltips — surface contextual help across all HRW widgets
 
-**Tours:** all tours
+**Labs:** all labs
 
 **Problem:** Generic field help is currently delivered as hover tooltips on tree
 nodes (the doc strings from `field_help.json`) — instant, zero-click, at the point
@@ -923,8 +923,8 @@ They complement the "explain" chat shortcut (deep, specimen-specific, multi-para
 without replacing it. A tooltip answers "what is this?"; the chat shortcut answers
 "why does this have this value in this specimen?"
 
-**Relates to:** #32 (in-app tour view — tooltips handle generic field help, freeing
-the UI for richer content like guided tours).
+**Relates to:** #32 (in-app lab view — tooltips handle generic field help, freeing
+the UI for richer content like guided labs).
 
 ## 34. Sub-view and tree-node navigation links
 
@@ -932,42 +932,42 @@ Captured 2026-07-25. Extend the `hrw://` link scheme with finer-grained navigati
 
 - `hrw://view/<ViewName>` — switch to a specific sub-view within a stage. For
   example, `hrw://view/SpyPlot` on the Structural tab switches from Tree to SpyPlot.
-  Useful for tour steps like "now look at the spy plot to see the BLT blocks."
+  Useful for lab steps like "now look at the spy plot to see the BLT blocks."
 - `hrw://node/<path>` — expand the JSON tree to a specific node path and scroll to
   it. For example, `hrw://node/classes/GearWithBrake/body/equations` would expand
-  and scroll to the equations list. Enables tour steps like "expand equations and
+  and scroll to the equations list. Enables lab steps like "expand equations and
   find the connect nodes."
 
 **Why it matters:** the current `hrw://stage/X` links get the user to the right tab,
-but the tour text still says "expand this, scroll to that." Finer-grained links would
+but the lab text still says "expand this, scroll to that." Finer-grained links would
 make the entire walkthrough clickable — every "look at X" becomes a link that takes
 you there.
 
 **Relates to:** #32 (extends the link scheme), #33 (tooltips could use the same
 node-path addressing).
 
-## 35. Multiple tour documents and progress tracking
+## 35. Multiple lab documents and progress tracking
 
-Captured 2026-07-25. Currently HRW embeds a single tour document (the end-to-end
-tour). Extensions:
+Captured 2026-07-25. Currently HRW embeds a single lab document (the end-to-end
+lab). Extensions:
 
-- **Multiple tours:** a tour selector (dropdown or list) to choose between the
-  end-to-end tour and per-phase deep-dive tours (e.g. "Structural Analysis Tour",
-  "Index Reduction Tour"). Tour documents live in `docs/compiler-phases/` as they
+- **Multiple labs:** a lab selector (dropdown or list) to choose between the
+  end-to-end lab and per-phase deep-dive labs (e.g. "Structural Analysis Lab",
+  "Index Reduction Lab"). Lab documents live in `docs/compiler-phases/` as they
   do now; HRW discovers them by convention or a manifest.
-- **Progress tracking:** persistent checkmarks on tour stops the user has visited,
+- **Progress tracking:** persistent checkmarks on lab stops the user has visited,
   a "you are here" marker, and bookmarks. Stored per-user (e.g. in a local file
-  or egui persistence). Helps the learner resume a partially-completed tour.
-- **Tour table of contents:** a clickable outline of the current tour's stops,
-  visible at the top of the tour panel. Clicking a stop scrolls to it (using
+  or egui persistence). Helps the learner resume a partially-completed lab.
+- **Lab table of contents:** a clickable outline of the current lab's stops,
+  visible at the top of the lab panel. Clicking a stop scrolls to it (using
   `egui_commonmark`'s heading scroll-to feature).
 
-**Why it matters:** as the curriculum grows, a single monolithic tour won't scale.
-Phase-specific tours are natural complements to the end-to-end overview. Progress
+**Why it matters:** as the curriculum grows, a single monolithic lab won't scale.
+Phase-specific labs are natural complements to the end-to-end overview. Progress
 tracking helps with multi-session learning — Doug may work through the Structural
-tour over several days.
+lab over several days.
 
-**Relates to:** #24 (guided tours as HRW-driven walkthroughs), #32 (the
+**Relates to:** #24 (guided labs as HRW-driven walkthroughs), #32 (the
 infrastructure this extends).
 
 ## 36. Modelica syntax highlighting in the Specimen source view
@@ -1138,7 +1138,7 @@ views, ideas #9 / #19–#22, and `DECISIONS.md` (2026-07-28) on where
 
 ## 41. Claude's teaching database — infrastructure for answering Doug's questions
 
-Requested 2026-07-29 (Doug), after abandoning the end-to-end tour because its
+Requested 2026-07-29 (Doug), after abandoning the end-to-end lab because its
 prose was worse than the live conversation, and after establishing that **no part
 of HRW needs to work without Claude**:
 
@@ -1161,13 +1161,13 @@ follows **store what cannot be regenerated**:
 - **Do not store:** Claude's explanations of what a phase does. Those regenerate
   on demand, and writing them down builds an echo chamber a later session
   mistakes for an authoritative outside source. This is not hypothetical — the
-  `end_to_end_tour.md` Stop 8 failure (describes a 7x7 incidence matrix on a tab
+  `end_to_end_tour.md` Station 8 failure (describes a 7x7 incidence matrix on a tab
   that shows 48 equations) is exactly this, and Claude nearly adopted the same
   documents as trusted reference without noticing.
 
 ### Staging — deliberately incremental
 
-The tour's mistake was building explanatory infrastructure ahead of real use.
+The lab's mistake was building explanatory infrastructure ahead of real use.
 Do not repeat it here. Build in this order, and only advance when the previous
 stage has enough content to justify the next:
 
@@ -1187,7 +1187,7 @@ signal than "which tab was opened most".
 exists. An ad-hoc version of this run on 2026-07-29 found 16 of 17 paths resolve
 and one broken, since fixed: a test file that had moved to 
 `crates/rumoca-sim/src/solve_lowering/tests.rs`.
-Catches the tour's failure mode mechanically, and is the "emitter correct,
+Catches the lab's failure mode mechanically, and is the "emitter correct,
 reasoner supplements" discipline applied to Claude's own memory.
 
 **(C) Provenance tags — a convention plus a lint.** Every claim marked `verified`
@@ -1226,46 +1226,46 @@ importantly, **Cellier's problems**, which are the only part of the system where
 something outside the loop gets to say Claude was wrong.
 
 **Relates to:** the `hrw-works-with-claude-not-without` principle, `#9`
-(animations, for the replay/reveal distinction), `#35` (tour progress tracking —
+(animations, for the replay/reveal distinction), `#35` (lab progress tracking —
 now largely superseded), `docs/context-assembly.md`, and the retirement of
 `end_to_end_tour.md`'s explanatory prose.
 
 ---
 
-## 42. Ad hoc tours — HRW as a channel for Claude's *answers*, not just its input
+## 42. Ad hoc labs — HRW as a channel for Claude's *answers*, not just its input
 
 Requested 2026-07-29 (Doug), immediately after agreeing the phase docs are
 Claude's database and noticing the specimen notebook has the same problem the
-end-to-end tour did:
+end-to-end lab did:
 
-> Instead of using HRW's tour mode to enable a hard-coded end-to-end tour, I want
-> to use tour mode for working through tours which you've created ad hoc in
+> Instead of using HRW's lab mode to enable a hard-coded end-to-end lab, I want
+> to use lab mode for working through labs which you've created ad hoc in
 > response to questions which I ask. […] Sometimes, HRW will provide you a MUCH
 > more effective way to answer my questions than by merely emitting text here in
 > this chat window.
 
-**THE INVESTMENT CASE IS NOT YET DUE** *(moved here from `fixture-tours/README.md` on 2026-09-01,
+**THE INVESTMENT CASE IS NOT YET DUE** *(moved here from `fixture-labs/README.md` on 2026-09-01,
 under charter Decision 13 — a planning note is not a rule).* The ad hoc channel is built and works;
-it becomes the **primary** one only when the fixture tours are spent. **The signal to watch is
-Doug's questions outrunning the tours**, and [`question-ledger.md`](question-ledger.md) is where to
+it becomes the **primary** one only when the fixture labs are spent. **The signal to watch is
+Doug's questions outrunning the labs**, and [`question-ledger.md`](question-ledger.md) is where to
 notice it. Charter Decision 14 does not advance this: the conversational loop during a walk is not
-an ad hoc *tour*, and produces no document.
+an ad hoc *lab*, and produces no document.
 
 ### Why this is the missing half
 
 The project already has a noun channel *inbound*: Doug assembles context with the
 mouse, HRW emits `focus.json`, Claude reasons. But the **answer** has only ever
-come back as chat text. Ad hoc tours give the return path the same shape as the
+come back as chat text. Ad hoc labs give the return path the same shape as the
 input — Claude can answer with a *sequence of HRW contexts*.
 
 **Design principle: `hrw://` links should express any noun `focus.json` can
 describe.** `focus.json` is the noun going out; `hrw://` is the noun coming back.
 Same vocabulary, opposite direction.
 
-### The rule that prevents this rotting like the tour did
+### The rule that prevents this rotting like the lab did
 
-**A tour is regenerable output; the question is the durable artifact.** So ad hoc
-tours are **ephemeral by default**. If Doug wants one again months later, Claude
+**A lab is regenerable output; the question is the durable artifact.** So ad hoc
+labs are **ephemeral by default**. If Doug wants one again months later, Claude
 does not retrieve a stale file — it regenerates against the current tree, correct
 by construction. What gets stored is the *question*, which #41's ledger already
 covers. This is the same "store what cannot be regenerated" rule, third
@@ -1273,22 +1273,22 @@ application.
 
 ### Current state (verified 2026-07-29 by reading `app.rs`)
 
-Tour mode is a left panel rendering **one markdown file `include_str!`'d into the
+Lab mode is a left panel rendering **one markdown file `include_str!`'d into the
 binary at compile time** (`end_to_end_tour.md`, `app.rs` ~3770), plus clickable
 `hrw://` links parsed by `parse_hrw_link` with exactly three verbs:
 `load/<Specimen>`, `stage/<Stage>`, `load/<Specimen>/<Stage>`.
 
-So the *mechanism* is close to right. The failure was never the tour concept — it
+So the *mechanism* is close to right. The failure was never the lab concept — it
 was static content, bound at build time, with a link vocabulary too coarse to
 point at anything interesting.
 
 ### Gaps, in order of size-to-value
 
-1. ~~**Runtime loading.**~~ ✅ **DELIVERED 2026-07-29.** Tour mode now renders
-   `.hrw-bridge/tour.md`, polled every 250 ms and re-read on mtime change; absence
+1. ~~**Runtime loading.**~~ ✅ **DELIVERED 2026-07-29.** Lab mode now renders
+   `.hrw-bridge/lab.md`, polled every 250 ms and re-read on mtime change; absence
    shows a short note rather than the retired `end_to_end_tour.md`. Living in the
    gitignored bridge directory makes the ephemerality rule structural rather than
-   a discipline. `bridge::read_tour`, `App::poll_tour_file`, `App::no_tour_ui`.
+   a discipline. `bridge::read_lab`, `App::poll_lab_file`, `App::no_lab_ui`.
 2. **Link vocabulary.** ✅ **Sub-views delivered 2026-07-29.**
    `hrw://stage/<Stage>/<SubView>` and `hrw://load/<Specimen>/<Stage>/<SubView>`,
    with slugs that *are* the capture's own names (`SubView::from_slug` resolves them
@@ -1300,9 +1300,9 @@ point at anything interesting.
    2026-08-01 — this paragraph claimed they were unreachable for two days after they
    shipped, which is how a stale record turns into re-building what exists.)* The
    vocabulary now reaches every noun the capture can describe, **verified against the
-   fixture tours that exercise each form**:
+   fixture labs that exercise each form**:
 
-   | Noun | Link form | Fixture tour |
+   | Noun | Link form | Fixture lab |
    |---|---|---|
    | animation frame | `hrw://stage/Structural/MatchingAnim/frame/41` | `frame-seeking.md` |
    | tree node | `hrw://stage/Structural/Tree/node/blocks[3].unknown` | `node-pointing.md` |
@@ -1310,7 +1310,7 @@ point at anything interesting.
    | equation (canvas) | `hrw://stage/Structural/TarjanAnim/equation/11` | `frame-seeking.md` |
    | camera aim | — | `camera-aiming.md` |
 
-   Each tour also drives an **out-of-range** case (`frame/99999`, `equation/999`), so a
+   Each lab also drives an **out-of-range** case (`frame/99999`, `equation/999`), so a
    bad address fails visibly rather than silently doing nothing.
 3. ~~**Ad hoc specimens — split, do not repurpose.**~~ ✅ **DELIVERED 2026-07-30**, and
    split exactly as recommended. Scratch models live in **`.hrw-bridge/specimens/`**,
@@ -1346,7 +1346,7 @@ understood the possibilities of this project."*
   number be checked. This half was always right.
 - **`narrative.md` — retire the prose.** Claude's regenerable explanation with
   hand-transcribed numbers that nothing verifies: the same species as
-  `end_to_end_tour.md` Stop 8 (describes a 7x7 matrix on a tab showing 48
+  `end_to_end_tour.md` Station 8 (describes a 7x7 matrix on a tab showing 48
   equations).
 - **Replacement is not prose:** a short record of why the specimen exists (which
   phenomenon it triggers) and which of Doug's questions it was built for or
@@ -1374,13 +1374,13 @@ and grid panels. "Frame 7" is meaningful for both; **"node 25" is meaningful onl
 for the canvas ones.**
 
 **Missing capability — camera aiming.** `Canvas` has `request_fit` and
-drag-to-pan and *nothing that centres on a given node*. A tour stop saying "watch
+drag-to-pan and *nothing that centres on a given node*. A lab stop saying "watch
 what happens at node 25" currently cannot make Doug look at node 25. This is the
-single biggest gap for canvas-view tours.
+single biggest gap for canvas-view labs.
 
   *Warning attached:* the 2026-07-29 canvas bug (diagram sliding sideways because
   a line of text above it changed the height, and the fit is uniform-scale +
-  horizontally centred) shows how fragile that camera is. A tour deliberately
+  horizontally centred) shows how fragile that camera is. A lab deliberately
   aiming it will be fighting the same fit logic — see `should_refit` in
   `canvas.rs` and its tests before building this.
 
@@ -1391,7 +1391,7 @@ and the vocabulary must say so rather than pretend otherwise.
 
 **The replay/reveal split has to reach the link.** A stop on the Tearing view can
 legitimately offer to arm the debugger; one on the IC plan cannot, because there
-is nothing to trace. If links cannot express that, a tour will show a Debug
+is nothing to trace. If links cannot express that, a lab will show a Debug
 button that does nothing — exactly the defect Doug found on the pre-lowering view.
 
 **Do not over-fit to these eight either.** All eight are *compiler-phase*
@@ -1401,26 +1401,26 @@ animation would address **time**, not a frame index. The address space needs at
 least three shapes and only one is currently sampled — though see #22 on why the
 solver shape is not urgent.
 
-### The unplanned payoff: tours multiply user testing
+### The unplanned payoff: labs multiply user testing
 
-Doug, 2026-07-29, after the first tour produced #44 on its first use:
+Doug, 2026-07-29, after the first lab produced #44 on its first use:
 
 > The surface area of HRW had already become more than I could effectively test by
-> myself. This ad hoc tour feature mitigates that problem. […] By asking you
-> questions, and you providing answers as ad hoc tours, we are multiplying the
+> myself. This ad hoc lab feature mitigates that problem. […] By asking you
+> questions, and you providing answers as ad hoc labs, we are multiplying the
 > effective user testing of HRW.
 
 **Why it works: different coverage profiles.** Doug navigates where he already
-knows to go. A tour navigates where **the question** demands, which can be
-somewhere neither party would have visited. #44 is the proof — the tour needed
+knows to go. A lab navigates where **the question** demands, which can be
+somewhere neither party would have visited. #44 is the proof — the lab needed
 `Matching ▶` on a singular system, a place Doug could never navigate to *because it
 is not there*. **You cannot manually test the absence of a feature you do not know
 should exist.**
 
-**Holes in a tour are the signal, so never route silently around one.** The first
-tour's Stop 3 is an admission rather than a stop: "I wanted to send you here and
-cannot, and here is why that gating is wrong." Doug: *"holes in tours can be useful
-ways to identify HRW functionality gaps or bugs."* A tour that hides its gap loses
+**Holes in a lab are the signal, so never route silently around one.** The first
+lab's Station 3 is an admission rather than a stop: "I wanted to send you here and
+cannot, and here is why that gating is wrong." Doug: *"holes in labs can be useful
+ways to identify HRW functionality gaps or bugs."* A lab that hides its gap loses
 the finding *and* leaves the reader wondering why the obvious next place went
 unmentioned.
 
@@ -1434,13 +1434,13 @@ it by watching. **Claude tests the logical surface; Doug tests the rendered one.
 
 **Doug's correction, same day — the rendered surface is covered too, indirectly.**
 Claude's "blind to the rendered surface" claim was too pessimistic. Claude cannot
-see it, but a tour **aims Doug's attention at it**:
+see it, but a lab **aims Doug's attention at it**:
 
 > I'm more likely to experience that kind of bug while being led through one of your
-> tours. […] I will always be in user acceptance testing mode while being led through
-> your tours.
+> labs. […] I will always be in user acceptance testing mode while being led through
+> your labs.
 
-The mechanism: **a rendered bug is a violated expectation, and a tour supplies the
+The mechanism: **a rendered bug is a violated expectation, and a lab supplies the
 expectation.** Undirected use does not — a subtly wrong rendering just looks like how
 the app is, which is presumably how the BLT sideways-drift survived as long as it
 did. A stop that says "watch the stack depth as Tarjan descends" gives Doug something
@@ -1448,34 +1448,34 @@ specific to check, so a drifting diagram registers as *wrong* rather than as *no
 
 So the full loop: Claude composes (logical surface + aims attention) → Doug walks it
 in acceptance mode (rendered surface) → bug reported → **fixed in flight if it is
-degrading the tour**, rather than only logged → tour restarted clean.
+degrading the lab**, rather than only logged → lab restarted clean.
 
 **Boundary on "fix in flight":** yes when the fix is small and the bug is spoiling the
-tour (the 2026-07-29 canvas fix was about an hour, including two wrong hypotheses).
+lab (the 2026-07-29 canvas fix was about an hour, including two wrong hypotheses).
 No when the honest fix is structural — say so and log it rather than derail a
 learning session into a refactor. State which it is and let Doug overrule.
 
-**An unanticipated bonus: a tour's admissions are self-liquidating.** The first
-tour's Stop 3 ("I wanted to send you to `Matching ▶` and cannot") exists only until
-#44 lands. Fix it, regenerate, and the hole evaporates — because tours are
-regenerated rather than stored. A *stored* tour would carry that apology forever and
+**An unanticipated bonus: a lab's admissions are self-liquidating.** The first
+lab's Station 3 ("I wanted to send you to `Matching ▶` and cannot") exists only until
+#44 lands. Fix it, regenerate, and the hole evaporates — because labs are
+regenerated rather than stored. A *stored* lab would carry that apology forever and
 eventually describe HRW as missing a feature it has.
 
 **And the discipline that keeps it worth anything: the testing stays a byproduct.**
-If tour stops get chosen to maximise coverage rather than to answer the question,
-the tours get worse and the answers degrade. The coverage benefit is real *precisely
+If lab stops get chosen to maximise coverage rather than to answer the question,
+the labs get worse and the answers degrade. The coverage benefit is real *precisely
 because* it is incidental.
 
 ### The discipline this needs from Claude
 
-**A tour is for answers that are irreducibly sequential or spatial.** Most
+**A lab is for answers that are irreducibly sequential or spatial.** Most
 questions still get two sentences of text. If "what is a dummy derivative?" starts
-returning a nine-stop tour, this feature has made Claude worse, not better. The
+returning a nine-stop lab, this feature has made Claude worse, not better. The
 new medium is not a licence for verbosity.
 
-**Relates to:** #41 (the ledger stores the questions these tours answer), #35
-(multiple tour documents + progress tracking — largely superseded by this), #9
-(the animation views are the richest tour destinations), `docs/context-assembly.md`
+**Relates to:** #41 (the ledger stores the questions these labs answer), #35
+(multiple lab documents + progress tracking — largely superseded by this), #9
+(the animation views are the richest lab destinations), `docs/context-assembly.md`
 (the noun vocabulary this must reach parity with), and the retirement of
 `end_to_end_tour.md`'s explanatory prose.
 
@@ -1495,7 +1495,7 @@ new medium is not a licence for verbosity.
 > construction, since it already reads two reports.
 >
 > **The practice half is already in use** and needs no build: it settled `IncompatibleConnect`
-> (upstream issue 2), and two fixture tours route through it.
+> (upstream issue 2), and two fixture labs route through it.
 >
 > **Where the value actually is:** Doug's education — an independent implementation that can
 > adjudicate, which is exactly why *oracle first* exists as a rule; it corrects Claude's bias
@@ -1513,7 +1513,7 @@ Requested 2026-07-29 (Doug), extending #42 beyond HRW:
 
 > I want you to view HRW as a platform for answering my questions, when you
 > believe that your response would be best delivered as something like an ad hoc
-> tour instead of as text here in this conversation. Also […] I want you to view
+> lab instead of as text here in this conversation. Also […] I want you to view
 > Wolfram System Modeler and Wolfram desktop app as platforms for answering
 > questions where the responses would be best delivered there.
 
@@ -1659,7 +1659,7 @@ The Wolfram MCP connection is interactive-session-bound and may be absent in
 headless or scheduled runs. Fine for working sessions; do not build anything
 unattended that depends on it.
 
-**Relates to:** #42 (ad hoc tours — same idea, HRW as the channel), #41 (the
+**Relates to:** #42 (ad hoc labs — same idea, HRW as the channel), #41 (the
 ledger), #17 (Jacobian conditioning — the clearest Mathematica use), #4 (the
 deferred differential test, now reframed), `user-wolfram-tools` and
 `user-linear-algebra-learning` in Claude's memory.
@@ -1696,7 +1696,7 @@ built**: the oracle (#43) is a *requirement*, not a nice-to-have, and the corpus
 failures — the 2026-08-04 sweep produced **0 of 2,614 rows carrying a failure message**, so the
 failure paths a diagnostic product lives on are the least-exercised code here. **#46 comes first.**
 
-Raised 2026-07-29 (Doug), after the rank-deficiency tour:
+Raised 2026-07-29 (Doug), after the rank-deficiency lab:
 
 > Your ability to leverage HRW when answering my questions means that HRW could have
 > production value. For example, I might attempt to compile a specimen which I had
@@ -1843,7 +1843,7 @@ note is honest about being unverified; a recorded conclusion pretends to knowled
 is indistinguishable from a verified fact three months later.
 
 **Priority note:** a missing span forces Claude to guess *where* in Doug's source the
-problem is, which is priority 1 in `docs/tech-debt.md`'s ordering — above tour holes.
+problem is, which is priority 1 in `docs/tech-debt.md`'s ordering — above lab holes.
 
 ### The part that makes the System Modeler oracle load-bearing
 
@@ -1917,7 +1917,7 @@ accepts is exactly a filable issue.
    rather than the dramatic late ones.
 2b. ✅ **Highlight the blamed source line** — **DONE 2026-07-29.** The specimen source
    view tints a blamed line and colours its line number, with a hover saying why. Plus
-   `hrw://source[/<line>]`, so a tour can *point* at the line instead of quoting it.
+   `hrw://source[/<line>]`, so a lab can *point* at the line instead of quoting it.
 
    **The design condition is the interesting part: only a model index reduction cannot
    rescue gets its source blamed.** `MotorWithBrake` is structurally singular too, has
@@ -1933,7 +1933,7 @@ accepts is exactly a filable issue.
    cleaner but adds margins), and a blamed line is marked by **colouring its line
    number** rather than adding a gutter glyph (which would widen the column and shift
    every line). Both alternatives risk a layout regression, which is precisely the class
-   of defect Claude has no way to notice — see `project-tours-multiply-testing`.
+   of defect Claude has no way to notice — see `project-labs-multiply-testing`.
 
 3. ✅ **A "why did this fail?" capture** — **DONE 2026-07-29.** `focus.json` gains a
    `pipeline_failure` section carrying the failing stage, its summary, its full `error`
@@ -1983,13 +1983,13 @@ accepts is exactly a filable issue.
    as the witness — which is the strongest form of bug report available.
 
 **Relates to:** #43 (the oracle, now load-bearing), #4 (the differential test, now
-motivated), #42 (a diagnostic answer will often want a tour), the priority order in
+motivated), #42 (a diagnostic answer will often want a lab), the priority order in
 `docs/tech-debt.md`, and `project-engage-rumoca-community` — Rumoca-only failures are
 upstream issues.
 
 ---
 
-## 46. A failure specimen + tour for every compiler phase
+## 46. A failure specimen + lab for every compiler phase
 
 > ### ⟶ AND IT IS NOW LOAD-BEARING FOR DOUG'S STATED GOAL — 2026-08-22
 >
@@ -2026,12 +2026,12 @@ upstream issues.
 > ### ✅ The first one is done — `OverDeterminedShaft`, 2026-08-17
 >
 > **Found while converting `dae-construction.md`:** every unbalanced specimen in the corpus
-> reported `balance = -1`, so the tour read the sign as informative while only the negative half
+> reported `balance = -1`, so the lab read the sign as informative while only the negative half
 > was testable.
 >
 > **Built the same day.** `SingleInertia` plus `w = der(phi)` — nine lines, and it reports
 > `unbalanced model: 3 equations, 2 unknowns (balance = 1)` with the reading *"more equations than
-> unknowns — something is determined twice"*. It needed no new tour, only Stop 6 of
+> unknowns — something is determined twice"*. It needed no new lab, only Station 6 of
 > `dae-construction.md`.
 >
 > **The surplus equation is deliberately consistent**, which is the design rather than an
@@ -2046,15 +2046,15 @@ upstream issues.
 > Recorded in [`fidelity-plan.md`](fidelity-plan.md) ("F10's first corpus run") and in the run
 > policy in [`../CLAUDE.md`](../CLAUDE.md).
 
-Requested 2026-07-29 (Doug), after the `CapacitorLoop`/`RcCircuit` contrast tour:
+Requested 2026-07-29 (Doug), after the `CapacitorLoop`/`RcCircuit` contrast lab:
 
-> I could imagine giving you a task of creating a bunch of new specimens and tours to
+> I could imagine giving you a task of creating a bunch of new specimens and labs to
 > demonstrate failure in each compiler phase. I'd bet that you would identify and fix
 > gaps and bugs while completing that task.
 
 ### Why this works — the mechanism, stated exactly
 
-**A bug is a violated expectation.** A tour supplies Doug's expectation, which is why
+**A bug is a violated expectation.** A lab supplies Doug's expectation, which is why
 he catches *rendered* defects while being led (#42). **Authoring a specimen supplies
 Claude's expectation**, which is why Claude catches *logical* ones: writing a model
 means predicting where and how it should fail, and a prediction is falsifiable in a way
@@ -2074,7 +2074,7 @@ catch, and this task attacks them.
 
 ### What to build
 
-A specimen per failure mode, each with a `purpose.md` and a tour that walks its
+A specimen per failure mode, each with a `purpose.md` and a lab that walks its
 diagnosis. Known coverage as of 2026-07-29:
 
 | Phase | Failure to exhibit | Status |
@@ -2122,28 +2122,28 @@ independently, or its failures are always reported by a neighbour.
    and Wolfram desktop to check your specimen."* Compile each specimen in System
    Modeler: a model **SM accepts and Rumoca rejects** is a Rumoca bug and a filable
    upstream issue (`project-engage-rumoca-community`); a model both reject is a good
-   failure specimen. Do this **before** writing the tour, or the tour may teach a
+   failure specimen. Do this **before** writing the lab, or the lab may teach a
    Rumoca defect as though it were Modelica semantics.
 
 ### Expected yield
 
 Gaps in the failure payloads (#45 step 2), wrong or missing numbers of the
 `rank_deficiency` species, absent source spans on the resolve/typecheck/flatten paths,
-and tour holes wherever a diagnosis needs a view that does not exist. Log each as it
-appears — in the tour-holes table for HRW gaps, and upstream for Rumoca ones.
+and lab holes wherever a diagnosis needs a view that does not exist. Log each as it
+appears — in the lab-holes table for HRW gaps, and upstream for Rumoca ones.
 
 **Relates to:** #45 (diagnostic mode — this is how it gets exercised), #43 (the oracle),
-#42 (tours, and the curated/scratch split), #4 (the differential test), and
+#42 (labs, and the curated/scratch split), #4 (the differential test), and
 `docs/tech-debt.md`'s priority order.
 
 ---
 
-## 47. Cross-platform tours — Wolfram Desktop and System Modeler as tour destinations
+## 47. Cross-platform labs — Wolfram Desktop and System Modeler as lab destinations
 
 Requested 2026-07-29 (Doug), extending #42 and #43:
 
 > Add to the ideas backlog a way to enable you to use Wolfram desktop and SystemModeler
-> for tours. You should not be limited to HRW. I want very much to make HRW great. But,
+> for labs. You should not be limited to HRW. I want very much to make HRW great. But,
 > I do not want to duplicate in HRW functionality that is already in Wolfram desktop and
 > that would always be best used in Wolfram desktop. For example, your answer to one of
 > my questions might be entirely about a linear algebra concept and might be best
@@ -2167,25 +2167,25 @@ interactive, and the structural-vs-numerical rank distinction #17 exists to teac
 pattern from the real model*; Wolfram's is everything numerical done to it. Revisit #17
 under this split before building any of it.
 
-### A notebook already *is* a tour
+### A notebook already *is* a lab
 
 A sequence of cells evaluated in order is structurally the same artifact as a sequence
 of stops. `mcp__Wolfram__WriteNotebook` exists and was verified working 2026-07-29. So
-the capability is **present**; what is missing is only that a tour cannot *span*
+the capability is **present**; what is missing is only that a lab cannot *span*
 platforms.
 
 ### What to build (small)
 
-1. **Per-stop medium in the tour format.** A stop declares where it happens — HRW,
-   notebook, System Modeler — so a single tour can route across all three. Mostly a
+1. **Per-stop medium in the lab format.** A stop declares where it happens — HRW,
+   notebook, System Modeler — so a single lab can route across all three. Mostly a
    convention in the markdown plus a clear visual marker, not new machinery.
 2. **A path a notebook can be handed over at.** Notebooks go in the **gitignored**
    bridge area (`.hrw-bridge/notebooks/`), *not* the repo. **Same ephemerality rule as
-   tours** (#42): a stored notebook rots exactly like the retired specimen narratives
+   labs** (#42): a stored notebook rots exactly like the retired specimen narratives
    did, and the durable artifact is the *question*, in `docs/question-ledger.md`. A
-   plain path in the tour markdown is enough to start — Doug opens it.
+   plain path in the lab markdown is enough to start — Doug opens it.
 3. **Later, optionally:** HRW launching a notebook, and a `wolfram://`-style return
-   link. Neither is needed for the first cross-platform tour, so neither should be built
+   link. Neither is needed for the first cross-platform lab, so neither should be built
    before one exists.
 
 ### Disciplines — extending the medium rule rather than replacing it
@@ -2193,12 +2193,12 @@ platforms.
 - **Text first, always** (the medium rule, `docs/question-ledger.md`), and **one
   non-text medium at a time.** A three-platform answer to a small question is worse
   than a paragraph.
-- **The bias risk grows with each platform.** Claude already noted that composing a tour
+- **The bias risk grows with each platform.** Claude already noted that composing a lab
   is more interesting work than writing a sentence; building a Mathematica notebook is
   more interesting still. The mitigation is unchanged and it is Doug's: he asks.
 - **Never hand over unevaluated Wolfram code** (#43). But deliver a notebook whose cells
   **Doug** evaluates — Claude evaluates first to know it works, then ships cells for him
-  to run. The first tour's Stop 2 taught this: the stop that landed was the one where
+  to run. The first lab's Station 2 taught this: the stop that landed was the one where
   Doug verified something himself rather than being told it. Pre-evaluated output would
   throw that away.
 - **A notebook must not silently become the answer to a compiler question.** If the
@@ -2206,7 +2206,7 @@ platforms.
   access to Rumoca's internals, and a mathematically elegant answer to the wrong
   question is still wrong.
 
-**Relates to:** #42 (tours), #43 (the platforms, and the verified capability), #17
+**Relates to:** #42 (labs), #43 (the platforms, and the verified capability), #17
 (rescoped by this), #46 (System Modeler as arbiter for failure specimens),
 `user-linear-algebra-learning`.
 
@@ -2228,16 +2228,16 @@ let's not attempt any of the other changes as they don't seem to yield sufficien
 test execution time to justify sacrificing fidelity."*
 
 **Then the ground moved, and that is what actually closed it.** He named the next project mode:
-*"my hope going forward is to focus on improving tours, not feature code."* **The 220 s gate is
-keyed on `src/`, `crates/`, `examples/` and `Cargo.toml` — tour work touches none of them.**
+*"my hope going forward is to focus on improving labs, not feature code."* **The 220 s gate is
+keyed on `src/`, `crates/`, `examples/` and `Cargo.toml` — lab work touches none of them.**
 Measured 2026-08-21: editing `index-reduction.md` costs **6.1 s** to check and **~36 s** to commit
-(9.9 s of that `gen_tour_catalogue`, needed only if a `##` heading changed). **The friction this
+(9.9 s of that `gen_lab_catalogue`, needed only if a `##` heading changed). **The friction this
 item existed to remove is ~6 s in the mode Doug is entering**, so further optimisation buys
 sessions he was not going to spend anyway.
 
-**THE ONE TOUR THAT IS STILL EXPENSIVE IS `connect-expansion.md`**, the only one carrying
+**THE ONE LAB THAT IS STILL EXPENSIVE IS `connect-expansion.md`**, the only one carrying
 `<!-- pane-groups -->` tables — verified against a real compile by slow-gated tests, so editing one
-of those tables is the FULL 220 s gate whatever the diff-grep says. Every other tour, including
+of those tables is the FULL 220 s gate whatever the diff-grep says. Every other lab, including
 `index-reduction.md`, has none.
 
 #### The final ledger
@@ -2730,7 +2730,7 @@ extras behind lever 1.
 verifies that compiling it is *reproducible*. The mitigation shipped —
 `compiling_a_specimen_twice_is_reproducible` — and **any new cache owes the same debt**:
 keep one test that does the uncached thing and compares. This is the silent-coverage-loss
-class that `project-tours-multiply-testing` warns about, a detector that quietly stops
+class that `project-labs-multiply-testing` warns about, a detector that quietly stops
 detecting.
 
 **The machine has limited memory**, which is why every lever above is paired with a
@@ -2810,33 +2810,33 @@ make unnecessary.
 
 ---
 
-## 49. A narrow fixture tour per HRW feature
+## 49. A narrow fixture lab per HRW feature
 
-Doug's plan, 2026-07-30, after one fixture-tour walk produced four bugs:
+Doug's plan, 2026-07-30, after one fixture-lab walk produced four bugs:
 
 > I'm the bottleneck for UI testing. In particular, my ability to focus on expected
-> results during UI testing is the real limiting factor. Narrowly scoped tours are more
-> aligned than broad tours with my human focus limitation. So, I envision us implementing
-> a bunch of narrowly focused tours, each targeting an HRW feature.
+> results during UI testing is the real limiting factor. Narrowly scoped labs are more
+> aligned than broad labs with my human focus limitation. So, I envision us implementing
+> a bunch of narrowly focused labs, each targeting an HRW feature.
 
 ### Why narrow, and why Claude was wrong about it
 
-Claude proposed the opposite — *wider* tours — on noticing that **half** of that walk's
-bugs came from outside the stops (Tour mode's wrong empty-state message, found by starting
-HRW and clicking nothing; and the stage side not resetting between tours, which lives in
-the gap *between* tours). That read the evidence backwards.
+Claude proposed the opposite — *wider* labs — on noticing that **half** of that walk's
+bugs came from outside the stops (Lab mode's wrong empty-state message, found by starting
+HRW and clicking nothing; and the stage side not resetting between labs, which lives in
+the gap *between* labs). That read the evidence backwards.
 
-Those two were found **because the tour was short enough to leave attention to spare.** A
-wider tour spends that surplus on more stops: it consumes what produced the off-stop
+Those two were found **because the lab was short enough to leave attention to spare.** A
+wider lab spends that surplus on more stops: it consumes what produced the off-stop
 findings rather than multiplying them. **The scarce resource is Doug's attention per
 expectation, not the number of walks.**
 
 Two further arguments, less obvious:
 
-- **A failed stop in a narrow tour implicates one feature.** In a wide one a stop can fail
+- **A failed stop in a narrow lab implicates one feature.** In a wide one a stop can fail
   for reasons unrelated to its subject, and Doug ends up triaging instead of testing.
-- **Claude authors a narrow tour while it still knows what should happen** — right after
-  building the thing. Both tour errors found on 2026-07-30 ("mostly collapsed"; a
+- **Claude authors a narrow lab while it still knows what should happen** — right after
+  building the thing. Both lab errors found on 2026-07-30 ("mostly collapsed"; a
   highlight asserted before it existed) were written about behaviour Claude had *not* just
   built.
 
@@ -2845,7 +2845,7 @@ Two further arguments, less obvious:
 These cover **what no test can reach**: every one of that walk's four bugs was HRW being
 internally consistent and *wrong about what it should do*. A test encodes Claude's model of
 correct behaviour — the same model that produced the bug — so it cannot find a fault in it.
-A tour states the expectation in prose Doug reads against reality.
+A lab states the expectation in prose Doug reads against reality.
 
 ### Coverage today: 3 of roughly 20
 
@@ -2855,7 +2855,7 @@ Have none — a rough enumeration of the surface, to be firmed up when the work 
 
 | Area | Features wanting a fixture |
 |---|---|
-| Modes | Tour, Specimen, Debug — and the transitions between them |
+| Modes | Lab, Specimen, Debug — and the transitions between them |
 | Specimen view | source syntax highlighting, identifier click-to-follow, blamed-line highlight, the Purpose tab |
 | Stage views | IR tree, stage diff highlighting, per-stage error summaries |
 | Structural | incidence matrix, BLT spy plot |
@@ -2863,27 +2863,27 @@ Have none — a rough enumeration of the surface, to be firmed up when the work 
 | Context Bar | point-at, follow, clearing, the composition of both |
 | Other panes | log view, equation sheet, source map, simulation plot |
 | Live trace | arming, stepping, the debugger handshake |
-| Tour mode itself | the tour list, ad-hoc-vs-fixture, switching |
+| Lab mode itself | the lab list, ad-hoc-vs-fixture, switching |
 
 ### What the suite needs past ten or so fixtures
 
 Neither is worth building at three.
 
-1. **A selection principle.** Doug cannot walk twenty. Suggested: *the tour for whatever
+1. **A selection principle.** Doug cannot walk twenty. Suggested: *the lab for whatever
    just changed, plus one stale one* — regressions caught immediately, coverage swept
    slowly.
 2. **Visible staleness, and this is the one that matters.** Nothing currently catches a
-   tour whose **expectations** rot; `fixture_tour_links_all_resolve` checks only that its
+   lab whose **expectations** rot; `fixture_lab_links_all_resolve` checks only that its
    links parse. "Mostly collapsed" was wrong for weeks with every test passing. At three
    fixtures Claude can eyeball them; at twenty-five it cannot.
 
-   **Nearly free already:** every `tour-link` click is in the action trail, so "last
-   walked" is derivable from data HRW already writes. Showing it in the tour list makes
+   **Nearly free already:** every `lab-link` click is in the action trail, so "last
+   walked" is derivable from data HRW already writes. Showing it in the lab list makes
    "this covers a feature changed since it was last walked" visible at a glance.
 
-**Relates to:** #42 (fixture tours as an artifact, and the ephemerality rule that exempts
-them), `project-tours-multiply-testing` in Claude's memory, and `hrw/CLAUDE.md`'s
-fixture-tour rules — including that every `**Expected:**` line must be **violable**.
+**Relates to:** #42 (fixture labs as an artifact, and the ephemerality rule that exempts
+them), `project-labs-multiply-testing` in Claude's memory, and `hrw/CLAUDE.md`'s
+fixture-lab rules — including that every `**Expected:**` line must be **violable**.
 
 ---
 
@@ -2901,7 +2901,7 @@ them — that is, "code that exists, no test executes it, and it is wrong":
 |---|---|---|
 | Missing code — a guard or feature that did not exist | 5 | **No.** Coverage cannot measure absent code |
 | Executed code doing the wrong thing | 5 | **No.** All ran every frame |
-| Documentation and tour text | 2 | No |
+| Documentation and lab text | 2 | No |
 | A `#[test]` attribute silently lost | 1 | No — the clippy count caught it |
 | Claude's own new tool being wrong | 1 | No |
 
@@ -2911,7 +2911,7 @@ them — that is, "code that exists, no test executes it, and it is wrong":
 
 1. **`app.rs` is ~9,000 lines of egui paint closures Claude cannot drive.** Coverage would
    report them uncovered, correctly, and unactionably — their real testing mechanism is
-   the fixture tours, which no coverage tool can see. The figure would be permanently
+   the fixture labs, which no coverage tool can see. The figure would be permanently
    depressed by design.
 2. **Coverage measures execution, not verification.** A line run by a test that asserts
    nothing counts as covered. A coverage *target* would push toward the tests that raise
@@ -2934,10 +2934,10 @@ failure mode a one-day sample cannot show, and there is some evidence it is live
 
 **Revisit if** the project shifts from building to maintaining, or if a bug is ever traced
 to logic no test had run. Until then, Doug's own rule decides it: attention is the scarce
-resource, and a coverage report competes directly with walking a tour — which has a
+resource, and a coverage report competes directly with walking a lab — which has a
 measured yield of nine bugs in a day.
 
-**Relates to:** #49 (narrow fixture tours), `project-tours-multiply-testing` in Claude's
+**Relates to:** #49 (narrow fixture labs), `project-labs-multiply-testing` in Claude's
 memory, and `docs/tech-debt.md`'s priority order.
 
 ---
@@ -3106,7 +3106,7 @@ question Claude should have asked itself.
 > test mode. After all we could simply add the MSL examples to the specimen list.
 
 **He is right, and the reason is that "mode" is the wrong unit.** Every existing mode changes
-the left panel **and the interaction loop** — Tour reads stops and clicks links, Specimen
+the left panel **and the interaction loop** — Lab reads stops and clicks links, Specimen
 picks from a list and inspects, Debug arms and steps. Test mode's loop is *pick from a list,
 inspect the pipeline*, which **is Specimen mode's loop exactly**. What differs is the list's
 source and its columns: a data question wearing a layout question's clothes. Two modes with
@@ -3158,7 +3158,7 @@ Built in the order the analysis implied, and **step 1 was the one that mattered*
 1. **Corpus addressability** — `ToWorker::CompileLibraryModel`, `App::open_library_model`, and
    `hrw://load/<qualified>`. The worker could already compile any of the 2,626 models
    (`compile_model_by_name`, built for the fidelity sweep) and **the UI had no way to ask**, so
-   a tour could not link to one. That, not the filter, was what blocked just-in-time curricula.
+   a lab could not link to one. That, not the filter, was what blocked just-in-time curricula.
 2. **The corpus as a third list source** — a **collapsed header carrying the model count**,
    always visible, which opens when a filter is typed.
 
@@ -3265,15 +3265,15 @@ neither reproducible nor safely readable months later.
 
 ### Layout, fonts and colours — conform, do not invent (Doug, 2026-07-31)
 
-> The layout for test mode should be the same as for tour mode and specimen mode. And,
+> The layout for test mode should be the same as for lab mode and specimen mode. And,
 > other details such as font choices and colors should be the same.
 
 Read against the code, that requirement mostly *determines* the design, which is the good
 news: there is very little to decide.
 
-`UiMode` today is `{ Tour, Specimen, Debug }` — **three** modes, not two. `Debug`
+`UiMode` today is `{ Lab, Specimen, Debug }` — **three** modes, not two. `Debug`
 deliberately **hides** the LHS so the stage tabs fill the window with VS Code alongside, so
-"the same as tour and specimen" means the two *panelled* modes.
+"the same as lab and specimen" means the two *panelled* modes.
 
 **The structural observation: Test mode is Specimen mode with a different list source.**
 
@@ -3303,14 +3303,14 @@ have cost — six wiring sites, two of which the compiler would not have caught.
 `hrw-stage-diff-highlight-extend` records that a new *stage* must be wired into every
 per-stage system. A new **mode** has its own list, and it is shorter but not empty:
 
-- `UiMode` variant, and the **View menu** entry beside Tour / Specimen / Debug
+- `UiMode` variant, and the **View menu** entry beside Lab / Specimen / Debug
 - `view_context`'s `ui_mode` match — exhaustive, so the compiler catches this one
 - `specimen_detail` and the other `ui_mode ==` guards, which are *not* exhaustive matches
   and therefore **will not** be caught: grep `ui_mode ==` and decide each site deliberately
-- the idle-hint text (Tour mode's wrong hint was a bug Doug reported on 2026-07-30)
+- the idle-hint text (Lab mode's wrong hint was a bug Doug reported on 2026-07-30)
 - `clear_specimen_state` / mode-switch reset — the second bug from that same walk was state
   surviving a switch
-- a fixture tour for the mode, per `docs/ideas.md` #49
+- a fixture lab for the mode, per `docs/ideas.md` #49
 
 ### What Test mode is really for
 
@@ -3451,7 +3451,7 @@ So the thing to build is **query surface**, not lesson storage:
   narration per rung.
 
 A *stored* curriculum is regenerable prose that nothing checks — the exact defect that
-retired 1,632 lines of specimen narrative and the end-to-end tour's prose
+retired 1,632 lines of specimen narrative and the end-to-end lab's prose
 (`feedback-learning-over-polish`, [[store what cannot be regenerated]]). An **ad hoc** one
 cannot rot, because it does not persist. That is not a compromise; it is strictly better.
 
@@ -3772,7 +3772,7 @@ Spice3 family (up to 10,175 equations, 7.7 GB), the induction machines, and
 > I could learn a lot from diagnosing problems experienced by those sixteen models. And we're
 > building HRW to enable you to help me learn about stuff like those problems. So it seems
 > that we should leverage HRW to enable you to teach me during diagnostics. For example,
-> something like ad hoc diagnostic tours.
+> something like ad hoc diagnostic labs.
 
 **The strongest version of this is stronger than stated.** A diagnostic is a *real question
 with stakes*, and this project's thesis is that curriculum emerges from real friction rather
@@ -3794,9 +3794,9 @@ fact about arithmetic, not about modelling. **Worth knowing before investing a s
 
 #### And they are hard to open for exactly the reason they are hard to test
 
-HRW's UI uses the same compile path the sweep does. A diagnostic tour of
+HRW's UI uses the same compile path the sweep does. A diagnostic lab of
 `Spice3BenchmarkFourBitBinaryAdder` means waiting ~15 minutes and 7.7 GB for the first screen.
-That is not a tour, it is an ordeal — and `docs/fidelity-plan.md`'s standing boundary says we
+That is not a lab, it is an ordeal — and `docs/fidelity-plan.md`'s standing boundary says we
 do **not** optimise HRW to fix it.
 
 #### The synthesis: use the difficulty ladder in REVERSE
@@ -3812,11 +3812,11 @@ becomes evidence, not the classroom.**
 
 That is #53's query surface doing the work, and it removes the ordeal without touching HRW.
 
-#### Ad hoc diagnostic tours are #53, pointed at a diagnostic
+#### Ad hoc diagnostic labs are #53, pointed at a diagnostic
 
-Same rule, so it does not need restating in code: **do not build a diagnostic-tour feature.**
-The tour is an utterance Claude composes; HRW supplies the exact noun. What earns building is
-**the query that finds the right model to tour**.
+Same rule, so it does not need restating in code: **do not build a diagnostic-lab feature.**
+The lab is an utterance Claude composes; HRW supplies the exact noun. What earns building is
+**the query that finds the right model to lab**.
 
 #### Label which kind of learning a diagnostic offers
 
@@ -3948,7 +3948,7 @@ each keeps one line saying what it was and where it landed; the reasoning is in 
 | **#27** | Equation sheet — the flat DAE in readable math notation | 2026-07-25 | `equation_sheet.rs` |
 | **#28** | Source-to-equation traceability — bridging the OO/flat divide | 2026-07-25 | `source_map_ui()` in `app.rs` |
 | **#29** | Solver stepping visualization — what the integrator does at each step | 2026-07-25 | solver diagnostics: step size, Newton iterations |
-| **#32** | In-app tour view — tours rendered inside HRW with clickable navigation | 2026-07-25 | three UI modes; superseded in shape by **#42** ad hoc tours |
+| **#32** | In-app lab view — labs rendered inside HRW with clickable navigation | 2026-07-25 | three UI modes; superseded in shape by **#42** ad hoc labs |
 | **#39** | Crash and diagnostic log — troubleshootable without a live session | 2026-07-28 | `src/diagnostics.rs`, `examples/crash_probe.rs`; `architecture.md` §9 |
 | **#40** | Instrument `pre()` lowering | 2026-07-29 | `pre_lowering_anim` on the Events stage. **The finding** — phases take an *observer callback*, not a `LiveTrace`, since that dependency would run backwards through the pipeline: `DECISIONS.md` 2026-07-29 |
 | **#44** | Show `Matching ▶` when the Structural stage is singular | 2026-07-29 | one UI condition — the feature was *written and then gated out of reach*, and nothing tested it: `tech-debt.md` |
@@ -3959,7 +3959,7 @@ each keeps one line saying what it was and where it landed; the reasoning is in 
   thing a tombstone cannot carry.
 - **#50** — *declined*, not delivered. Its entire job is to stop test-coverage measurement being
   re-proposed, so deleting it would invite the proposal it exists to refuse.
-- **#42** and **#45** — **partly** delivered, and still live. #42's ad hoc tours and #45's
+- **#42** and **#45** — **partly** delivered, and still live. #42's ad hoc labs and #45's
   diagnostic audits have shipped sub-items marked in place; each still has open work.
 
 ---
@@ -4045,9 +4045,9 @@ right. The tests cover the opening fraction and the reset; neither can tell you 
 as a drag.
 
 
-**Doug, 2026-08-02.** The horizontal split between the left panel (tour text, or the specimen
+**Doug, 2026-08-02.** The horizontal split between the left panel (lab text, or the specimen
 list plus source/purpose) and the right panel (stages, log, animations) is **fixed**, and he
-wants to drag it. **40/60 stays the default** when Specimen or Tour mode opens.
+wants to drag it. **40/60 stays the default** when Specimen or Lab mode opens.
 
 ### The problem it solves
 
@@ -4064,7 +4064,7 @@ reported on 2026-08-01.
 ### What is actually there now
 
 `LEFT_PANEL_WIDTH_FRACTION = 0.4` in `app.rs`, applied at **two call sites** as
-`ui.available_width() * LEFT_PANEL_WIDTH_FRACTION` — one for Tour mode, one for Specimen mode.
+`ui.available_width() * LEFT_PANEL_WIDTH_FRACTION` — one for Lab mode, one for Specimen mode.
 So the constant is already named and centralised; what is missing is that the width is
 **recomputed from scratch every frame**, leaving nowhere for a drag to be remembered.
 
@@ -4099,8 +4099,8 @@ the layout, not to `App`.
 
 ## 60. Seeing how Doug uses HRW — the professor's pause, and what it needs to work
 
-**Raised by Doug, 2026-08-03**, at the end of the day the first two curriculum tours landed.
-**Not decided** — he was explicit that we lack the experience with the existing tours to choose
+**Raised by Doug, 2026-08-03**, at the end of the day the first two curriculum labs landed.
+**Not decided** — he was explicit that we lack the experience with the existing labs to choose
 a design, and that we resume with this first.
 
 ### The model he described
@@ -4108,7 +4108,7 @@ a design, and that we resume with this first.
 > *"If you were a professor delivering a lecture, you might pause to ask me a question. My
 > answer would be a signal to you about whether or not what you had presented right before my
 > question had landed with me or not. And, if what you had presented had not landed, you might
-> adjust your presentation. Or, in our HRW case, you might adjust the tour."*
+> adjust your presentation. Or, in our HRW case, you might adjust the lab."*
 
 That is a **feedback loop with three parts**, and only one of them exists today:
 
@@ -4116,7 +4116,7 @@ That is a **feedback loop with three parts**, and only one of them exists today:
 |---|---|
 | Doug's question is a signal about the material just presented | ✅ happens every session |
 | Claude knows **what was just presented** | ❌ not reliably — see below |
-| Claude **adjusts the tour** in response | ✅ possible, and cheap: tours are regenerable |
+| Claude **adjusts the lab** in response | ✅ possible, and cheap: labs are regenerable |
 
 **The broken link is the middle one**, and it is what makes the loop lossy. Doug's governing
 statement, and the reason this is not a small feature:
@@ -4129,30 +4129,30 @@ statement, and the reason this is not a small feature:
 Nothing is pushed; everything requires going to look. Two files carry it.
 
 - **`.hrw-bridge/diagnostics/session.json`** — a capped ring of recorded actions, including a
-  **`tour-link` entry for every link clicked**, plus an `app` snapshot (`ui_mode`, `model`,
-  `stage_tab`, `viewing_log`). Live example read that evening: `ui_mode: Tour`,
-  `model: SingleInertia`, `stage_tab: DAE`, last action `tour-link load/SingleInertia/Dae`.
+  **`lab-link` entry for every link clicked**, plus an `app` snapshot (`ui_mode`, `model`,
+  `stage_tab`, `viewing_log`). Live example read that evening: `ui_mode: Lab`,
+  `model: SingleInertia`, `stage_tab: DAE`, last action `lab-link load/SingleInertia/Dae`.
 - **`.hrw-bridge/focus.json`** — the capture, written when Doug points at something and asks.
   Specimen, stage, view, node path.
 
 ### The specific gap, and why it is not a matter of trying harder
 
-**Neither file records which tour is open, or which stop.** The tour is often inferable from
+**Neither file records which lab is open, or which stop.** The lab is often inferable from
 the specimen and stage — and inferring it is exactly the mistake
 [`identity-and-provenance.md`](identity-and-provenance.md) forbids, because the inference is
 **not sound**: `hrw://load/SingleInertia/Dae` occurs **three times** in `dae-construction.md`,
 at three different stops. A bare link URI cannot name a position.
 
-**Sequence alignment does better and is still not enough.** The ordered run of `tour-link`
-actions can be matched against the tour text to locate a position by *order* rather than by
+**Sequence alignment does better and is still not enough.** The ordered run of `lab-link`
+actions can be matched against the lab text to locate a position by *order* rather than by
 name, which is sound — but it degrades silently once the ring drops the earlier entries, and a
 silent degradation to a guess is the failure mode this project treats as worst.
 
 ### The minimum that would close it
 
-**Record the tour's identity with the link, and the stop index when a walk is playing.** During
-autoplay the stop is known exactly (`Beat::stop`); a manual click knows the tour but not which
-occurrence of the link it hit — so the honest emission is *tour + link + stop-if-known*, with
+**Record the lab's identity with the link, and the stop index when a walk is playing.** During
+autoplay the stop is known exactly (`Beat::stop`); a manual click knows the lab but not which
+occurrence of the link it hit — so the honest emission is *lab + link + stop-if-known*, with
 the absence stated rather than filled in. **The emitter must stay exact**
 (`feedback-emitter-correct-reasoner-supplements`): a wrong stop is worse than a missing one,
 because it would send Claude to adjust prose Doug never read.
@@ -4160,7 +4160,7 @@ because it would send Claude to adjust prose Doug never read.
 ### Why this became live now
 
 `question-ledger.md` gained a section on 2026-08-03 recording Doug's grading criterion for the
-curriculum tours — *"the real measure … will be the nature of the questions which I ask"* —
+curriculum labs — *"the real measure … will be the nature of the questions which I ask"* —
 and the procedure it describes logs each question **against the stop that prompted it**. That
 mapping is the whole mechanism, and today it depends on Doug saying where he was. **The ledger
 entry and this idea are two halves of one loop**, written the same evening.
@@ -4168,17 +4168,17 @@ entry and this idea are two halves of one loop**, written the same evening.
 ### What is deliberately open
 
 - **How much more.** Doug's *"more rather than less"* is a direction, not a specification.
-  Dwell time per stop, revisits, which stops are skipped, whether a tour was walked or played —
+  Dwell time per stop, revisits, which stops are skipped, whether a lab was walked or played —
   each is a candidate and none is chosen.
 - **Whether HRW should prompt.** The professor's pause is a *question asked of the student*,
-  and nothing in HRW asks Doug anything. Whether a tour stop should be able to pose a question
+  and nothing in HRW asks Doug anything. Whether a lab stop should be able to pose a question
   — and what would be done with the answer — is a genuinely different feature from observing
   behaviour, and should not be smuggled in with it.
 - **The privacy-shaped question, stated once so it is not rediscovered:** this is instrumenting
   a person's study behaviour. Doug asked for it, it stays local to his machine, and the
   artifacts are already gitignored. Worth re-checking only if any of those three change.
 
-**Do not design this before walking the existing tours.** Doug's reason is the right one: the
+**Do not design this before walking the existing labs.** Doug's reason is the right one: the
 experience of using `dae-construction.md` and `matching.md` is what will say which signals
 actually matter, and building to a guess would produce the wrong instrument confidently.
 
@@ -4204,7 +4204,7 @@ content of frame *n+1*. So a question is **self-authoring** (any specimen with a
 generates them), **self-grading** (an exact index comparison, no heuristic and no answer key to
 maintain), and **incapable of going stale**, because the key is the algorithm rather than a
 transcription of it. That last point is the one paper cannot match — and it is the same
-property that makes the fixture tours' numbers trustworthy.
+property that makes the fixture labs' numbers trustworthy.
 
 ### 2. It inverts the composition primitive rather than adding one
 
@@ -4250,7 +4250,7 @@ Two mitigations, both cheap: prefer questions whose mechanical answer *requires*
 by understanding rank deficiency), and ask for the **reason** alongside the click, which is a
 question Claude can grade even though HRW cannot.
 
-### Not before the tours are walked
+### Not before the labs are walked
 
 Same constraint as #60, and Doug set it: the experience of using `dae-construction.md` and
 `matching.md` is what will say which steps are worth asking about. **A quiz on a step nobody
@@ -4258,36 +4258,36 @@ found confusing measures nothing.**
 
 ---
 
-## 62. Organizing the tours list
+## 62. Organizing the labs list
 
-**Raised by Doug 2026-08-03** while the matching tour was being built, and **re-raised
+**Raised by Doug 2026-08-03** while the matching lab was being built, and **re-raised
 2026-08-05** — *"I believe that we added an item to the ideas backlog to organize the growing
-list of tours."* **We had not.** The thinking happened in conversation and scrolled away, which
+list of labs."* **We had not.** The thinking happened in conversation and scrolled away, which
 is exactly the failure the scenario-1 rule in [`../CLAUDE.md`](../CLAUDE.md) exists to prevent:
 *the rationale must live in the repository, not in the chat*. Recorded now, a day late, as its
 own small evidence for that rule.
 
 ### Why it becomes live after #46
 
-The list is **8 tours**, which is browsable. **#46 adds one failure tour per compiler phase**,
+The list is **8 labs**, which is browsable. **#46 adds one failure lab per compiler phase**,
 taking it to roughly **15** — and they are not peers of the existing ones. A learner opening the
-picker would see `dae-construction` (a curriculum tour meant to teach), `frame-seeking` (a
+picker would see `dae-construction` (a curriculum lab meant to teach), `frame-seeking` (a
 capability test), and `parse-failure` (a demonstration that something breaks) with nothing
 distinguishing them.
 
-**Doug's stated value is expectation-setting**: *"per-phase tours enable me to set expectations
+**Doug's stated value is expectation-setting**: *"per-phase labs enable me to set expectations
 and focus, which makes good use of my scarce attention."* A flat list of 15 works against that
 the moment the names stop being self-explaining.
 
 ### The shape sketched, not chosen
 
-Front-matter in each fixture tour, three fields:
+Front-matter in each fixture lab, three fields:
 
 - **`kind`** — `curriculum` (teaches a concept), `capability` (exercises an HRW feature),
   `failure` (shows a phase refusing). This is the distinction the flat list loses.
 - **`chain`** — which compiler phase it sits at, so the list can order by the pipeline rather
   than alphabetically. `the-chain-of-problems.md` already defines that order.
-- **`requires`** — a tour that assumes another has been walked. Currently implicit and only in
+- **`requires`** — a lab that assumes another has been walked. Currently implicit and only in
   Claude's head.
 
 **Deliberately not built** when first discussed, on the grounds that the picker had 8 entries and
@@ -4295,96 +4295,96 @@ sorting was speculative. **#46 is the evidence that changes it** — revisit imm
 per Doug 2026-08-05.
 
 **What to check first**: whether `kind` alone is sufficient. Three groups in a picker may be all
-the structure 15 tours need, and `chain`/`requires` may be solving a problem the grouping already
+the structure 15 labs need, and `chain`/`requires` may be solving a problem the grouping already
 solves. Build the smallest of the three that works.
 
 ---
 
-## 63. Answer from a tour that already exists
+## 63. Answer from a lab that already exists
 
-**Raised by Doug 2026-08-05**, immediately after the failure tours landed:
+**Raised by Doug 2026-08-05**, immediately after the failure labs landed:
 
-> *"Sometimes you might be able to answer a question by leveraging an already-existing tour, such
-> as a failure tour."*
+> *"Sometimes you might be able to answer a question by leveraging an already-existing lab, such
+> as a failure lab."*
 
 ### The gap
 
-Claude's answering repertoire today is **text**, then **an ad hoc tour** (`✨ Claude's answer`,
-written to `.hrw-bridge/tour.md`). There is no third move for *"the answer is already on disk;
+Claude's answering repertoire today is **text**, then **an ad hoc lab** (`✨ Claude's answer`,
+written to `.hrw-bridge/lab.md`). There is no third move for *"the answer is already on disk;
 walk `failure-typecheck` stop 2."*
 
-**So a question whose answer exists gets a freshly-written tour instead**, which costs a
+**So a question whose answer exists gets a freshly-written lab instead**, which costs a
 regeneration, produces a second telling of something already told, and — worst — **loses the
-expectations**. A fixture tour's `**Expected:**` lines are versioned and were checked; an ad hoc
+expectations**. A fixture lab's `**Expected:**` lines are versioned and were checked; an ad hoc
 retelling has whatever Claude remembers of them.
 
 ### Why it did not matter until now
 
-**Fourteen tours is the threshold.** With three or four, Claude held them in mind. The failure set
+**Fourteen labs is the threshold.** With three or four, Claude held them in mind. The failure set
 alone added six, they are named by *phase* while Doug thinks in *specimens* — he went looking for
-a "DimensionMismatch tour" and there is a `failure-typecheck` — and nothing in the repository
+a "DimensionMismatch lab" and there is a `failure-typecheck` — and nothing in the repository
 says what each one covers without opening it.
 
 ### What it needs
 
-- **A catalogue Claude can read cheaply**: for each tour, the specimen(s), the phase, the kind,
-  and the question it answers. **This is the same front-matter [#62](#62-organizing-the-tours-list)
+- **A catalogue Claude can read cheaply**: for each lab, the specimen(s), the phase, the kind,
+  and the question it answers. **This is the same front-matter [#62](#62-organizing-the-labs-list)
   proposes for the picker** — which is the argument for doing #62 first and letting both consumers
   read one source. `feedback-claude-is-the-context-consumer` applies: design the front-matter for
   Claude's lookup, and let the picker use what is there.
-- ~~**A way to say "start here"**~~ — ✅ **BUILT.** `hrw://tour/<name>/stop/<slug>` opens a
-  fixture tour at a named stop, so an answer can be *"walk `failure-typecheck` from stop 2"*. The
+- ~~**A way to say "start here"**~~ — ✅ **BUILT.** `hrw://lab/<name>/station/<slug>` opens a
+  fixture lab at a named stop, so an answer can be *"walk `failure-typecheck` from stop 2"*. The
   form existed from the start; the handler recorded a destination that **nothing consumed**, so
-  every such link opened its tour and landed wherever the pane happened to be. Fixed 2026-08-17.
+  every such link opened its lab and landed wherever the pane happened to be. Fixed 2026-08-17.
   **The `unbuilt:` tag here was false for two days and could never have fired**, because its
   target named a phrase rather than a symbol — `sweep-2026-08-19.md`, Finding 1.
-- **A rule about when to reuse rather than write.** Reuse when the existing tour's expectations
+- **A rule about when to reuse rather than write.** Reuse when the existing lab's expectations
   answer the question as asked. Write fresh when the question is about a *different* specimen or a
-  narrower slice — a tour that nearly fits, walked as though it fits, is worse than a new one.
+  narrower slice — a lab that nearly fits, walked as though it fits, is worse than a new one.
 
 ### The trap to avoid
 
-**Do not point Doug at a tour without checking it still holds.** Tours go stale silently — nothing
+**Do not point Doug at a lab without checking it still holds.** Labs go stale silently — nothing
 compiles them, and `failure-typecheck` promised a tree that the pane did not show for the whole
-time it existed. **Citing a tour is making its claims your own**, so the reuse path must include
+time it existed. **Citing a lab is making its claims your own**, so the reuse path must include
 re-reading it, not just naming it.
 
 ---
 
-## 64. Promote "Claude's answer" to a fixture from the tour list
+## 64. Promote "Claude's answer" to a fixture from the lab list
 
-**Raised by Doug 2026-08-05**, in the same breath as [#63](#63-answer-from-a-tour-that-already-exists):
+**Raised by Doug 2026-08-05**, in the same breath as [#63](#63-answer-from-a-lab-that-already-exists):
 
 > *"Add an item to the ideas backlog to provide a convenient context menu item for the 'Claude's
-> Answer' tour to promote that tour and its specimens to fixtures."*
+> Answer' lab to promote that lab and its specimens to fixtures."*
 
 ### The problem
 
-An ad hoc tour is **ephemeral by construction** — `.hrw-bridge/tour.md` is gitignored, as are the
+An ad hoc lab is **ephemeral by construction** — `.hrw-bridge/lab.md` is gitignored, as are the
 scratch specimens in `.hrw-bridge/specimens/` it usually references. That is right: most answers
 should not become artifacts.
 
 **But some should**, and the ones that should are only identifiable *after* Doug has walked them.
 Today that promotion is Claude editing files by hand at Doug's request, which means it happens
-when Doug thinks to ask and not when he notices the tour was good.
+when Doug thinks to ask and not when he notices the lab was good.
 
 **The moment of recognition is while walking it.** A right-click on `✨ Claude's answer` in the
-tour list is where the decision belongs.
+lab list is where the decision belongs.
 
 ### What promotion actually involves — more than a file move
 
-This is the part worth designing before building. A fixture tour has **obligations an ad hoc tour
+This is the part worth designing before building. A fixture lab has **obligations an ad hoc lab
 does not**:
 
 | | ad hoc | fixture |
 |---|---|---|
-| Location | `.hrw-bridge/tour.md` | `docs/fixture-tours/<name>.md` |
-| Links | unchecked | **`fixture_tour_links_all_resolve` runs on every test** |
+| Location | `.hrw-bridge/lab.md` | `docs/fixture-labs/<name>.md` |
+| Links | unchecked | **`fixture_lab_links_all_resolve` runs on every test** |
 | Specimens | `.hrw-bridge/specimens/*.mo`, no rules | `specimens/*.mo` with a `// purpose:` comment |
 | Per specimen | nothing | `docs/specimen-notebook/<Model>/purpose.md` **and** a generated trace |
 | Naming | one file, overwritten | a name that will not collide, and does not shadow a curated specimen |
 
-So the action is: **move the tour, move each referenced scratch specimen, generate the traces,
+So the action is: **move the lab, move each referenced scratch specimen, generate the traces,
 and stub the `purpose.md` files** — then the suite tells you what is still missing rather than the
 promotion silently producing a fixture that fails the next test run.
 
@@ -4397,18 +4397,18 @@ promotion silently producing a fixture that fails the next test run.
 - **Should it promote, or stage?** Writing the files and leaving them uncommitted lets Doug and
   Claude finish the `purpose.md` prose together, which is the part a menu item cannot do.
 
-**Depends on nothing; blocked by nothing.** Worth doing after [#62](#62-organizing-the-tours-list),
-since a promoted tour needs the same front-matter a hand-written one does.
+**Depends on nothing; blocked by nothing.** Worth doing after [#62](#62-organizing-the-labs-list),
+since a promoted lab needs the same front-matter a hand-written one does.
 
 ---
 
 ## 65. "Claude's answer" as the centre of the UI
 
-**Raised by Doug 2026-08-05**, on watching the tour-citation mechanism work:
+**Raised by Doug 2026-08-05**, on watching the lab-citation mechanism work:
 
 > *"I have a hunch that 'Claude's Answer' is going to become a focus of the HRW UI, if not THE
 > focus. I have a hunch that we will ultimately find a better, more central location for
-> 'Claude's Answer' than as an item in the tours list."*
+> 'Claude's Answer' than as an item in the labs list."*
 
 And the larger framing, the same message:
 
@@ -4428,14 +4428,14 @@ fixtures. That placement makes three claims that are all false:
    convention. But the answer is not something Doug goes looking for; it is something that
    *arrives*, in response to a thing he said.
 3. **That finding it is free.** Charter Decision 9 says otherwise: after asking a question, Doug
-   switches to Tour mode, finds the row, clicks it. **Three actions to reach a thing that was
+   switches to Lab mode, finds the row, clicks it. **Three actions to reach a thing that was
    produced for him seconds ago**, each of them friction spent on operating the instrument rather
    than learning.
 
 ### Why this follows from the charter rather than being a new direction
 
 **Decision 8 — the noun is assembled by mouse, the verb is an unbounded utterance.** A list of
-pre-written tours is *a menu of verbs*, which is exactly what that decision says cannot work. The
+pre-written labs is *a menu of verbs*, which is exactly what that decision says cannot work. The
 answer surface is where unbounded utterances and their responses live, so the thesis implies it.
 
 **Decision 9 — minimize learning friction.** The answer is the single highest-traffic artifact in
@@ -4447,22 +4447,22 @@ argument did.
 
 ### The reconciliation, which #63 already built
 
-The obvious objection: **the fixture tours are valuable and Doug walks them independently.**
+The obvious objection: **the fixture labs are valuable and Doug walks them independently.**
 Making the answer central must not make them second-class.
 
-**It does not, and the shape is already in place.** `hrw://tour/<name>/stop/<slug>` (built
+**It does not, and the shape is already in place.** `hrw://lab/<name>/station/<slug>` (built
 2026-08-05) lets an answer *cite* a fixture at the exact stop that demonstrates the thing. So:
 
 > **The answer is the index; the fixtures are the corpus.**
 
-Doug does not browse tours and then read one. He asks, and the answer routes him into the durable
-material — which he can then walk on his own, exactly as now. The tours list stops being the front
+Doug does not browse labs and then read one. He asks, and the answer routes him into the durable
+material — which he can then walk on his own, exactly as now. The labs list stops being the front
 door and becomes what it always was: the shelf.
 
 ### Shapes, none chosen
 
 - **A dedicated region** rather than a list row, always present, showing the latest answer.
-- **The tour panel defaults to the answer** whenever it is newer than the last thing viewed —
+- **The lab panel defaults to the answer** whenever it is newer than the last thing viewed —
   cheapest, and reversible.
 - **The answer as the driving surface**: it composes prose, links and embedded views, and the
   stage tabs become a rendering target it points into. The most radical, and the closest to
@@ -4474,12 +4474,12 @@ door and becomes what it always was: the shelf.
   central surface in the app would be blank. That is either the app's front door for asking, or a
   design failure — and which one is not obvious.
 - **Does history matter?** The answer is overwritten by the next question. If it becomes central,
-  is a walked-and-valued answer worth keeping? [#64](#64-promote-claudes-answer-to-a-fixture-from-the-tour-list)
+  is a walked-and-valued answer worth keeping? [#64](#64-promote-claudes-answer-to-a-fixture-from-the-lab-list)
   is one response (promote it); a session history is another.
 - **What does it cost when Claude is wrong?** Decision 7 ranks accuracy above everything, and
-  centrality raises the stakes: a wrong claim in a buried tour row misleads once, the same claim on
+  centrality raises the stakes: a wrong claim in a buried lab row misleads once, the same claim on
   the primary surface misleads by default. **This item should not be built without asking what
-  makes an answer's claims checkable** — the tour-citation checker is a start, since a cited
+  makes an answer's claims checkable** — the lab-citation checker is a start, since a cited
   fixture's expectations were verified even when the surrounding prose was not.
 
 ### Not blocked, and deliberately not urgent
@@ -4491,7 +4491,7 @@ defaults to the answer), watch, then decide whether the radical one is warranted
 
 **Confirmed in use, 2026-08-05.** The first real exercise of the mechanism — *"demonstrate how
 Rumoca responds to a typecheck failure"* — worked as designed on the retrieval side: Claude read
-`CATALOGUE.md` rather than recalling, re-verified the tour's claims with `failure_map` before
+`CATALOGUE.md` rather than recalling, re-verified the lab's claims with `failure_map` before
 citing, and composed an answer linking into `failure-typecheck` at four stops.
 
 **And it exposed a behavioural defect that is this idea's real subject.** Claude wrote the full
@@ -4507,40 +4507,40 @@ place the content should live, which is exactly why its placement in a list row 
 
 ---
 
-## 66. A curriculum tour for every phase and algorithm
+## 66. A curriculum lab for every phase and algorithm
 
-**Stated by Doug 2026-08-05**, resuming the DAE tour:
+**Stated by Doug 2026-08-05**, resuming the DAE lab:
 
-> *"Eventually, we will implement tours like the DAE and matching tours, but for the other phases
+> *"Eventually, we will implement labs like the DAE and matching labs, but for the other phases
 > and algorithms."*
 
 ### What exists, and what this is not
 
-Two **curriculum** tours: `dae-construction.md` and `matching.md`. They teach a concept, on a
+Two **curriculum** labs: `dae-construction.md` and `matching.md`. They teach a concept, on a
 specimen chosen so the concept is unavoidable — `SingleInertia` against `UnbalancedShaft`, one
 line apart.
 
-**Distinct from the six `failure-*` tours** built the same week under [#46](#46-a-failure-specimen--tour-for-every-compiler-phase).
+**Distinct from the six `failure-*` labs** built the same week under [#46](#46-a-failure-specimen--lab-for-every-compiler-phase).
 Those show a phase *reporting trouble* and teach the `Failed`/`Flagged` distinction. A curriculum
-tour shows a phase **working**, and teaches what it is *for*. Both are wanted; neither substitutes.
+lab shows a phase **working**, and teaches what it is *for*. Both are wanted; neither substitutes.
 
 **The chain is already written**: `docs/compiler-phases/the-chain-of-problems.md` names the order,
 and `CLAUDE.md` records index reduction on `Drivetrain` as the next link — *where a square system
 is no longer enough because ideal gears make a state non-independent*.
 
-### Why this is not simply "write eleven tours"
+### Why this is not simply "write eleven labs"
 
-**The tours are what find the defects.** Doug, the same day: *"The testing of this tour has
+**The labs are what find the defects.** Doug, the same day: *"The testing of this lab has
 yielded a great many bug fixes and feature enhancements."* That is the measured pattern, not a
-hope — walking two curriculum tours produced, among others: the DAE tab that did not exist, five
+hope — walking two curriculum labs produced, among others: the DAE tab that did not exist, five
 tree-only stages that could not be pointed into, replays presented as the compilation, fabricated
 BLT blocks, a pane that showed its error instead of its artifact, and the whole
 source-provenance feature.
 
-**So the rate limit is Doug's attention, not authoring effort.** A tour written faster than it can
-be walked buys nothing, and the tours rule already says the scarce resource is *attention per
+**So the rate limit is Doug's attention, not authoring effort.** A lab written faster than it can
+be walked buys nothing, and the labs rule already says the scarce resource is *attention per
 expectation*. **Write the next one when the previous has been walked**, which is also what keeps
-each one honest — a tour written against an untested pane is a claim nobody has checked.
+each one honest — a lab written against an untested pane is a claim nobody has checked.
 
 ### What to do before each one
 
@@ -4552,11 +4552,11 @@ The pattern that has worked twice, and is worth following rather than rediscover
    writing a word. A first draft of `MissingComponentClass` asserted the wrong phase and was
    caught this way.
 3. **Expect the composition to expose gaps**, and fix them rather than writing around them. Both
-   existing curriculum tours did; that is the point of writing them.
+   existing curriculum labs did; that is the point of writing them.
 
 ### The phases are NOT equal candidates, because the goal is math and algorithms
 
-**Doug, 2026-08-05:** *"The curriculum tours and the failure tours are pretty much the heart of my
+**Doug, 2026-08-05:** *"The curriculum labs and the failure labs are pretty much the heart of my
 effort to learn the parts of rumoca which I most care about now: math and algorithms."*
 
 That is a **ranking**, and it had not been written down. Charter §1 says the pipeline is "a
@@ -4573,17 +4573,17 @@ mathematics and some are bookkeeping that has to happen first.
 | **Initialization** | the t=0 system, determinacy, over/under-determination |
 
 **These later — they are real, and they are mostly bookkeeping:** Parse, Resolve, Instantiate,
-Typecheck. Their *failure* tours already exist and carry most of what a learner needs from them,
+Typecheck. Their *failure* labs already exist and carry most of what a learner needs from them,
 which is a further reason not to spend curriculum effort there.
 
-**Flatten, DAE construction and Events sit between.** DAE construction already has its tour;
+**Flatten, DAE construction and Events sit between.** DAE construction already has its lab;
 Flatten's mathematics is connect expansion, which is graph-shaped and genuinely interesting;
 Events is `when`-clause semantics more than analysis.
 
 **One external constraint sharpens the order:** Doug's Purdue linear-algebra applications class
 begins Fall 2026, and **structural analysis is the phase that is linear algebra wearing graph
 clothing** — matching is a permutation, BLT is block triangularization, tearing is a Schur
-complement. A curriculum tour there pays into the coursework directly
+complement. A curriculum lab there pays into the coursework directly
 ([[user-linear-algebra-learning]] in memory; `docs/vision.md`).
 
 ### Compilation is a MEANS, and the end is simulation
@@ -4615,13 +4615,13 @@ call* is not only knowing the mechanism — it is having seen enough failures to
 **That is a different skill, and only one of the two is currently being trained.** Every specimen
 here is authored to work; the 2026-08-04 sweep produced **0 of 2,614 rows carrying a failure
 message**; the failure paths are the least-exercised code in HRW. **`#46` — a failure specimen and
-tour per phase — is the item that closes that**, and on this framing it stops being optional.
+lab per phase — is the item that closes that**, and on this framing it stops being optional.
 
 #### ⟶ THE CURRICULUM BOUNDARY, MADE CONCRETE — 2026-08-22
 
 **Note only; not scheduled, and not discussed.** Doug sketched the questions he expects to ask
 later — *"Why is this partial derivative blowing up my simulation? Where did this partial derivative
-even come from?"* — and **every one of them is downstream of all nine tours.** The tours run Parse →
+even come from?"* — and **every one of them is downstream of all nine labs.** The labs run Parse →
 solve lowering and stop there.
 
 **So solve lowering is the PENULTIMATE lesson, not the last one.** *"Names become indices"* hands
@@ -4630,7 +4630,7 @@ it at all — is unwritten ground, and it is where the stated end actually lives
 audit of what Rumoca already provides for it.
 
 **This is a scope observation, not a proposal.** It does not change the ranking below, and nothing
-here says a solver tour comes next.
+here says a solver lab comes next.
 
 **This does not change the ranking above, and that is the useful part.** Ranked by *mathematical
 content*, the order is structural analysis, index reduction, solve lowering, initialization.
@@ -4650,11 +4650,11 @@ the plan does not need re-deriving. Parse, Resolve, Instantiate and Typecheck ra
 
 ### The three legs, and which one is thin
 
-**Doug, 2026-08-05, on what he needs from a tour:** *"Problem statements, math and algorithms are
+**Doug, 2026-08-05, on what he needs from a lab:** *"Problem statements, math and algorithms are
 the most important for me to learn. And, gaining some understanding of how rumoca implements math
 and algorithms to solve those problems."*
 
-That is a **three-leg template**, and the first two are already the shape both curriculum tours
+That is a **three-leg template**, and the first two are already the shape both curriculum labs
 take — each opens with *"The problem this phase exists to solve"* before naming an algorithm,
 which is `feedback-problem-before-solution` applied to prose.
 
@@ -4662,30 +4662,30 @@ which is `feedback-problem-before-solution` applied to prose.
 the search, frame by frame — but never points into `matching.rs`. A reader finishes it knowing
 what an augmenting path is and nothing about how Rumoca spells one.
 
-**The material exists and is not reachable from a tour**: `docs/compiler-phases/*/guided-tour.md`
+**The material exists and is not reachable from a lab**: `docs/compiler-phases/*/guided-lab.md`
 quotes line numbers, locals and enum variants, but its **audience is Claude**, and HRW's
-*"Show this being set (debugger)"* verb arms a breakpoint without a tour ever suggesting it.
+*"Show this being set (debugger)"* verb arms a breakpoint without a lab ever suggesting it.
 
-**So a curriculum tour should have an implementation stop**, and the cheapest honest form is a
+**So a curriculum lab should have an implementation stop**, and the cheapest honest form is a
 stop that names the function and the debugger gesture — *"this is `augment` in `matching.rs`; arm
 it and watch the recursion"* — rather than transcribing code into prose that will rot. **Nothing
-compiles a tour**, and quoted code is the most rot-prone thing that can go in one
-(`CLAUDE.md`'s standing rule about tours quoting line numbers).
+compiles a lab**, and quoted code is the most rot-prone thing that can go in one
+(`CLAUDE.md`'s standing rule about labs quoting line numbers).
 
-### The one thing it does change: how a curriculum tour ends
+### The one thing it does change: how a curriculum lab ends
 
-A tour that closes with *"you now understand matching"* has taught the means and stopped. **Each
-curriculum tour should end with what it buys when a simulation misbehaves** — one section, named
+A lab that closes with *"you now understand matching"* has taught the means and stopped. **Each
+curriculum lab should end with what it buys when a simulation misbehaves** — one section, named
 plainly, of the form *"when a solve fails/crawls, here is what this phase tells you."*
 
-`matching.md`'s Stop 4 is half of this already: it ends on the permutation and what BLT needs it
+`matching.md`'s Station 4 is half of this already: it ends on the permutation and what BLT needs it
 for. What it does not yet say is that **the blocks are what Newton faces**, and that a large
 coupled block is a slow simulation waiting to happen. That is the shape the section should take,
-and it is cheap to add to a tour that already exists.
+and it is cheap to add to a lab that already exists.
 
 **Deliberately not written as speculation about the solver.** Until stage two instruments the
 solve (`#68`), these sections say what the *structure* implies and stop short of claiming what
-the numbers will do — `#69`'s caution, applied to tour prose rather than to a feature.
+the numbers will do — `#69`'s caution, applied to lab prose rather than to a feature.
 
 **Not scheduled.** The next is index reduction on `Drivetrain` when Doug reaches it.
 
@@ -4701,14 +4701,14 @@ the numbers will do — `#69`'s caution, applied to tour prose rather than to a 
 > within rumoca."*
 
 **This is a question shape, not a feature request**, and it is the first one that runs *from* the
-mathematics *into* the compiler rather than the other way round. Every tour so far starts at a
+mathematics *into* the compiler rather than the other way round. Every lab so far starts at a
 phase and explains its maths; this starts at a topic and asks where it lives.
 
 ### Why the existing machinery is not enough
 
-[#63](#63-answer-from-a-tour-that-already-exists) makes tours findable, and `CATALOGUE.md` is
-derived from them — so it answers *"which tour covers the DAE?"* and cannot answer *"which tour
-covers **Schur complements**?"*, because no tour says that phrase. The vocabulary of the class and
+[#63](#63-answer-from-a-lab-that-already-exists) makes labs findable, and `CATALOGUE.md` is
+derived from them — so it answers *"which lab covers the DAE?"* and cannot answer *"which lab
+covers **Schur complements**?"*, because no lab says that phrase. The vocabulary of the class and
 the vocabulary of the pipeline do not overlap.
 
 **The honest first answer is therefore a search of the source**, not a lookup. That is fine and
@@ -4716,7 +4716,7 @@ should be said out loud rather than papered over with a half-right index.
 
 ### The hazard, and the design rule it implies
 
-**A concept map would be authored, not derived** — unlike the tour catalogue, nothing generates
+**A concept map would be authored, not derived** — unlike the lab catalogue, nothing generates
 *"tearing is a Schur complement"*. So it can be **wrong**, and a wrong entry does not merely fail
 to help: it teaches Doug false mathematics, which Charter Decision 7 ranks as the worst outcome
 this project can produce.
@@ -4743,11 +4743,11 @@ discipline — and stated as reasoning Doug can check rather than as a fact retr
 - **Incidence / network laws** ← `connect` expansion generating Kirchhoff sums
 
 **Each needs verifying against the source before being said to Doug.** `structural-vs-numerical-rank.md`
-already exists as a fixture tour and is the one place some of this has been checked.
+already exists as a fixture lab and is the one place some of this has been checked.
 
 ### What would actually help, if anything is built — AGREED by Doug, 2026-08-05
 
-Not a map. **A worked answer, once**, for the first topic Doug raises — text plus a composed tour
+Not a map. **A worked answer, once**, for the first topic Doug raises — text plus a composed lab
 citing the fixtures that demonstrate it. If a second and third look the same shape, *then* the
 repeated part is worth extracting, and it will be extracted from things that were checked rather
 than guessed.
@@ -4844,7 +4844,7 @@ The chain a non-convergence question would walk:
 ```
 Newton fails on block B                      (solver — no instrumentation yet, #68)
   <- B is a coupled SCC                      (Tarjan, over the matched incidence)
-    <- its members are f_x[i], f_x[j], ...   (the matching's permutation, matching.md Stop 4)
+    <- its members are f_x[i], f_x[j], ...   (the matching's permutation, matching.md Station 4)
       <- each has a span                     (BUILT 2026-08-05)
         <- which is a line in the model      (BUILT 2026-08-05)
 ```
@@ -4854,7 +4854,7 @@ item, and the wash. They were built to answer *"where did this DAE node come fro
 out to be the tail of every backward trace. The links above them are what #68 calls for.
 
 **So the work has a direction it did not obviously have**: each provenance step is worth building
-on its own for the tour it serves, *and* is a segment of this chain.
+on its own for the lab it serves, *and* is a segment of this chain.
 
 ### The two questions want different things
 
@@ -4983,9 +4983,9 @@ this becomes real work.
 
 ### Why it matters more than it looks
 
-The **third leg** of a curriculum tour is the thin one (`#66`): tours show an algorithm *running*
+The **third leg** of a curriculum lab is the thin one (`#66`): labs show an algorithm *running*
 and never point into the code that runs it. Doug's stated remedy is to read the code in the
-debugger and ask. **The quality of that exchange is what substitutes for tour prose that does not
+debugger and ask. **The quality of that exchange is what substitutes for lab prose that does not
 exist yet** — so a friction of one click, repeated across a semester, is worth measuring rather
 than assuming.
 
@@ -5214,7 +5214,7 @@ Verified against a real breakpoint in `augment_traced` on a 2×2 system:
 **What one stop looked like** — line 189, `let can_augment = match match_var[var]`: `eq=0`,
 `var=0`, `vars=[0]`, `visited=[true,false]`, `match_eq=[None,None]`, `match_var=[None,None]`,
 `frames=[TryEquation, Explore]`. **That is enough to predict the algorithm's next four steps**,
-and the stack showed **depth 1** — no displacement yet, Stop 1 territory rather than Stop 2. So
+and the stack showed **depth 1** — no displacement yet, Station 1 territory rather than Station 2. So
 `#73`'s premise is confirmed rather than hoped for.
 
 ### Four findings, each bought with a wrong first attempt
@@ -5229,7 +5229,7 @@ cannot say what was asked is not a measurement.**
 **2. Aggregates arrive as summaries.** A slice renders `{ len=2 }`; elements live behind another
 `variables` request keyed by `variablesReference`, which the first build discarded. **One level is
 now expanded**, bounded by `CHILD_LIMIT` (64), truncation declared via `childrenTruncated`. This
-is the field that matters most: **`match_eq`'s contents are Stop 4's partial permutation.**
+is the field that matters most: **`match_eq`'s contents are Station 4's partial permutation.**
 
 **3. `cppvsdbg` MIXES SYNTHETIC CHILDREN IN WITH REAL ELEMENTS — the live trap.** `match_eq`
 expands to `[len]=2`, `[0]=None`, `[1]=None`, `[Raw View]={data_ptr=0x…}`. **Only `[0]` and `[1]`
@@ -5278,14 +5278,14 @@ known by four.
 
 ---
 
-## 73. Stop 5 should be a live-trace debugging session, not a map of the code
+## 73. Station 5 should be a live-trace debugging session, not a map of the code
 
 **Doug, 2026-08-08**, on reading Act 5: *"It seems that for Act 5, we have an opportunity to
 accomplish something much more spectacular: live trace debugging."*
 
-**He is right, and Stop 5 as shipped under-uses machinery that was built for exactly this.** It
+**He is right, and Station 5 as shipped under-uses machinery that was built for exactly this.** It
 names `maximum_matching_with_trace` and `augment_traced`, offers a breakpoint to set, and stops
-there — ending the tour on *"go and read this"*, which is the homework failure the tour's own
+there — ending the lab on *"go and read this"*, which is the homework failure the lab's own
 *What this cannot check* section warns about.
 
 ### Three reasons this is the right shape
@@ -5304,7 +5304,7 @@ stop cannot do this at all.
 displacement attempt, so N nested frames is an N-edge alternating path and each frame's `eq` is
 a node on it. Stops 1-3 spend a dozen expectations animating that structure from outside; the
 debugger holds it exactly, in the stack pane, for free. Plausibly the strongest single teaching
-artifact in the tour.
+artifact in the lab.
 
 **3. It turns the thinnest leg into the thickest.** `#66`'s three legs are problem, mathematics,
 implementation. The third has been the weak one everywhere. This is what a strong one looks like.
@@ -5328,7 +5328,7 @@ entirely on the call stack — which, per reason 2, is still most of the value.
 
 ### The risk, and the rule it produces
 
-**A tour that promises synchronization and then drifts teaches something false**, which is worse
+**A lab that promises synchronization and then drifts teaches something false**, which is worse
 than homework — homework is merely unhelpful. **So every expectation here must be specific and
 violable**: *"the stack shows 3 frames of `augment_traced`; the animation shows edge 1 → 0"*, never
 *"the debugger and the animation stay in step"*. And it **must be walked before it is called
@@ -5340,14 +5340,14 @@ done**; Claude cannot verify any of it.
 what let a reader place a breakpoint at all. What changes is where the stop *ends*: at a decision
 being made, with a question to ask, instead of at a reading list.
 
-**This is the template for every algorithm tour's third leg** (Tarjan, index reduction, solve
+**This is the template for every algorithm lab's third leg** (Tarjan, index reduction, solve
 lowering), so the shape is worth getting right once here rather than five times later.
 
 ### ✅ WALKED 2026-08-08 — both unknowns settled, and one claim above is wrong
 
 Doug stepped `ProportionalLoop` through `augment_traced` with the anchor plus a breakpoint at
 `matching.rs:189`, reading `debug-state.json` at every stop. **Twelve of twelve predictions about
-the next stop held**, which is the evidence that the model Stop 5 will be written from is sound.
+the next stop held**, which is the evidence that the model Station 5 will be written from is sound.
 
 **Unknown 1 — do two breakpoints interleave cleanly? Neither answer above.** It is **not** a
 two-stop rhythm, because the anchor fires for *every* frame while `189` fires only after
@@ -5385,7 +5385,7 @@ wake, drain the channel and complete a paint, starting from wherever it was in i
 
 > **The first read was in step and was over-generalised into "Act 5 can promise
 > synchronization."** One confirming observation is not a guarantee, and the correction cost
-> nothing only because Doug read the screen a third time. **A tour that promised lockstep would
+> nothing only because Doug read the screen a third time. **A lab that promised lockstep would
 > have taught something false on roughly every third stop.**
 
 **Fixed by the two-tier delay** (see `DECISIONS.md`, 2026-08-08): a stepped session gets a delay
@@ -5411,7 +5411,7 @@ content**, and "N-edge" hides it — which matters directly for `#67`'s linear-a
 - **An anchor stop exposes only `frame_index`.** The innermost scope is `live_trace_breakpoint`,
   whose sole local it is; the algorithm's state is four frames up and the tracker fetches one
   scope. So **`173` tells you *which step*, `189` tells you *what the algorithm knows*** — the two
-  breakpoints are not interchangeable and Stop 5 must say so.
+  breakpoints are not interchangeable and Station 5 must say so.
 - **`Option` payloads are invisible.** `match_var[0]` renders as `Some` with no holder, because
   `#72` expands one level and the payload is one deeper. On a 3×3 the holder is deducible from
   history; **on `Drivetrain` it would not be.** This is the concrete question `#72`'s "do not
@@ -5419,7 +5419,7 @@ content**, and "N-edge" hides it — which matters directly for `#67`'s linear-a
 
 **And the frame numbers disagree by one, permanently:** `frame_index` is 0-based (`push` uses
 `fetch_add`, returning the pre-increment value) while the UI prints `cursor + 1`
-(`lib.rs:230`). **`frame_index + 1` is the number on screen**, and a tour that quotes one while
+(`lib.rs:230`). **`frame_index + 1` is the number on screen**, and a lab that quotes one while
 the learner reads the other is a defect the learner will blame on themselves.
 
 ### The ledger, `ProportionalLoop`, every row read from a live stack
@@ -5445,12 +5445,12 @@ a shape: two flat greedy assignments, a descent, a discovery, and an unwind comm
 on the way back. `frameCount` moves 19 → 20 → 19 across rows 6-10 and is the cheapest way to see
 it.
 
-**Stop 5 should be built on the depth column and the naming table, not on the value readouts.**
+**Station 5 should be built on the depth column and the naming table, not on the value readouts.**
 
-### ✅ THE FAILURE PATH WALKED 2026-08-08 — `TwiceDefined`, and Stop 5 gets a second specimen
+### ✅ THE FAILURE PATH WALKED 2026-08-08 — `TwiceDefined`, and Station 5 gets a second specimen
 
 **Doug: *"Comparisons between working models and models which don't work are very helpful for me.
-So, I want a tour which compares and contrasts two models."*** The success path alone could not
+So, I want a lab which compares and contrasts two models."*** The success path alone could not
 supply `DisplaceFail` or `EquationFailed`, because `ProportionalLoop` succeeds.
 
 **`CapacitorLoop` was the obvious candidate and is the wrong one. Measured before walking**, from
@@ -5465,7 +5465,7 @@ the generated notebook traces:
 
 **CapacitorLoop's failure is at its LAST equation**, so the interesting stops sit ~110 Continues
 in — an ordeal, not a walk. `TwiceDefined` reaches both failure steps in nine frames. It stays the
-right specimen for Stop 4's *physical* story (a capacitor across an ideal source is a real
+right specimen for Station 4's *physical* story (a capacitor across an ideal source is a real
 modelling mistake); for learning the algorithm's failure path under a debugger, the synthetic 2×2
 is strictly better. **Sizing a walk from the notebook trace before doing one is the reusable move
 here.**
@@ -5486,7 +5486,7 @@ here.**
 | — | *outer give-up* | **243** | 1 | **NO FRAME** |
 | 8 | `EquationFailed(1)` | **133** | 0 | |
 
-### The two unnumbered rows are the argument for Stop 5
+### The two unnumbered rows are the argument for Station 5
 
 **Both `243` stops are real algorithm steps that never reach the frame stream.** The inner one is
 equation 0 being asked to move and refusing: its only candidate is `a`, `visited[a]` is already
@@ -5503,7 +5503,7 @@ live; at a `243` stop the `for` loop has *ended*, so the debugger reports them g
 adapter's "optimized away" prose doing real diagnostic work rather than being noise (`#72`'s
 finding 4): **it distinguishes "returning from inside the loop" from "fell out of it."**
 
-### The contrast, which is what the comparison tour is for
+### The contrast, which is what the comparison lab is for
 
 Both specimens produce a depth-2 stack. They are identical in shape and opposite in the one
 property that decides everything:
@@ -5554,7 +5554,7 @@ against one lag in three at 20 ms. Consistent with the two-tier delay; still a s
 
 Doug, on being told most of the walk had been *verification* rather than discovery: *"build the
 ledger generator and the line number check. We need to figure out how to keep that data accurate
-even as we make changes to the code being referenced by the tours."*
+even as we make changes to the code being referenced by the labs."*
 
 **Both tables above are now derived, not transcribed.**
 `docs/compiler-phases/phase7_structural_analysis/matching-live-reference.md` is generated by
@@ -5644,7 +5644,7 @@ One-way door, either route.
   improvement over *"I read your file"*, and still not proof. Recorded in `arm_verdict.ts` so a
   later reader does not quietly upgrade the claim.
 
-**Operating rule for the tours:** do not disable the anchor mid-session. If you do, stop the
+**Operating rule for the labs:** do not disable the anchor mid-session. If you do, stop the
 debugger and start a new session — nothing shorter recovers it.
 
 ### The gate is GONE — the LLDB teardown was deleted, not kept behind a `cfg`
@@ -5803,7 +5803,7 @@ what VS Code was asked to hold, not what `cppvsdbg` resolved. <!-- unverified --
 **Doug, 2026-08-08**, after the platform discussion: *"some of HRW's features only make sense if
 HRW is launched as a debugged process. For example, the live trace 'Debug' buttons and related UI
 features should not even be visible if HRW is not launched as a debugged process. And, relevant
-to our upcoming Stop 5 effort, some tour links should be disabled if HRW is not launched as a
+to our upcoming Station 5 effort, some lab links should be disabled if HRW is not launched as a
 debugged process."*
 
 **Deferred by Doug the same day**, alongside the platform question: *"neither the tech debt nor
@@ -5849,12 +5849,12 @@ Bridge extension is not responding — see `vscode-extension/README.md`"* is the
 a dead end and a fix. This is the context-identification half of the observatory's north star, and
 it moves *"why didn't it stop?"* from a question asked in chat to an answer on screen.
 
-### Tour links declare their requirement rather than going quiet
+### Lab links declare their requirement rather than going quiet
 
-For Stop 5 and every algorithm tour's third leg: a stop that needs a live session should **say so**,
-and say what is missing when it is. **Absence is stated, never filled** — and the tours are
+For Station 5 and every algorithm lab's third leg: a stop that needs a live session should **say so**,
+and say what is missing when it is. **Absence is stated, never filled** — and the labs are
 Markdown read outside HRW too, so a declared requirement is honest in both places. A stop that is
-merely inert teaches the learner that the tour is broken.
+merely inert teaches the learner that the lab is broken.
 
 ### What this does NOT need
 
@@ -5865,10 +5865,10 @@ them would put a runtime condition behind a compile-time flag.
 
 ---
 
-## 77. A live tour needs THREE panes, and the layout only has two
+## 77. A live lab needs THREE panes, and the layout only has two
 
 **Doug, 2026-08-08**, walking `matching-live.md`: *"there's a basic UI problem: I need to have HRW
-in tour mode, but then that makes the HRW RHS small when HRW is using only 50% of my screen and
+in lab mode, but then that makes the HRW RHS small when HRW is using only 50% of my screen and
 VS Code is using the other 50% of my screen."*
 
 **Doug is thinking about the solution; this entry is the problem and its constraints only.**
@@ -5877,8 +5877,8 @@ constraints below are the part that would otherwise be rediscovered.
 
 ### What actually changed
 
-**Every earlier tour needed two surfaces: the tour text and HRW.** A live tour needs **three** —
-the tour text, HRW's animation, *and* VS Code's call stack and variables. The stack is not
+**Every earlier lab needed two surfaces: the lab text and HRW.** A live lab needs **three** —
+the lab text, HRW's animation, *and* VS Code's call stack and variables. The stack is not
 incidental: `#73`'s whole thesis is that the call stack **is** the augmenting path, so it is a
 primary surface, not a reference.
 
@@ -5887,9 +5887,9 @@ thing**, and squeezing is the only move it offers.
 
 ### The arithmetic, which is why squeezing runs out
 
-HRW at half-width, tour panel at its 40 % default, leaves the observatory **30 % of the screen** —
+HRW at half-width, lab panel at its 40 % default, leaves the observatory **30 % of the screen** —
 and the matching animation is a matrix that wants width. Dragging to the 15 % floor buys back
-17 points and makes the tour column too narrow to read prose in.
+17 points and makes the lab column too narrow to read prose in.
 
 ### What is already available, so a solution does not re-invent it
 
@@ -5897,35 +5897,35 @@ and the matching animation is a matrix that wants width. Dragging to the 15 % fl
   watches can run at 15/85 today.
 - **`main.rs --half`** sizes HRW to half-width, full-height, and exists for exactly this
   side-by-side arrangement.
-- **The tour is a Markdown file.** Reading it outside HRW is possible — but `hrw://` links stop
+- **The lab is a Markdown file.** Reading it outside HRW is possible — but `hrw://` links stop
   working, which is precisely what `#73` and the breakpoint links just made load-bearing.
 
 ### The constraint any solution has to respect
 
-**The tour's links are the reason the tour lives inside HRW.** Any layout that moves the prose
+**The lab's links are the reason the lab lives inside HRW.** Any layout that moves the prose
 out of HRW must keep `hrw://load/…`, `hrw://breakpoint/…` and `hrw://stage/…` clickable, or it
 trades one friction for a worse one. That rules out "just read it in VS Code" as-is, and it is
 the question a second window, a collapsible drawer, or an overlay each has to answer.
 
 **And whatever is chosen, controls are enabled and disabled, never shown and hidden** —
-`lib.rs`'s `LiveState` rule. A layout that makes the tour vanish with no trace of how to bring it
+`lib.rs`'s `LiveState` rule. A layout that makes the lab vanish with no trace of how to bring it
 back is the same defect in a new dress.
 
 ### The arithmetic is now measured, and it rules squeezing out entirely (2026-08-12)
 
 Doug reached the same wall from the other direction — a 13" laptop with no external monitor, walking
-the tours: *"there's not enough space on my small screen to display the tour and the RHS."*
+the labs: *"there's not enough space on my small screen to display the lab and the RHS."*
 
 **The number that settles it: HRW runs at `DEFAULT_ZOOM` = 2.0**, so a 13" 1280×720 screen gives it
 **~640×360 points** of layout space, not 1280×720. Everything below is in points.
 
-**The tour panel has an intrinsic minimum width of ~190–210 points**, set by its own content (the
-tour-list rows and the autoplay controls) and **independent of window width** — measured across
+**The lab panel has an intrinsic minimum width of ~190–210 points**, set by its own content (the
+lab-list rows and the autoplay controls) and **independent of window width** — measured across
 1280, 640 and 500 point windows while fixing the divider bug the same day (`DECISIONS.md`,
 2026-08-12). So at 640 points wide:
 
 ```text
-tour panel minimum   ~210pt   =  33% of the window
+lab panel minimum   ~210pt   =  33% of the window
 left for the RHS     ~430pt   =  67%, for a matrix that wants width
 ```
 
@@ -5948,19 +5948,19 @@ the real value, so the compensation had been double-counting since 2026-07-27.
 now gets **~1280×720 points**:
 
 ```text
-tour panel minimum   ~210pt   =  16% of the window   (was 33%)
+lab panel minimum   ~210pt   =  16% of the window   (was 33%)
 at the 40% default   ~512pt for prose, ~768pt for the stage view
 ```
 
 which is the regime a large display was already in. **So this entry is no longer blocking**: a 13"
-screen can now show a readable tour column and a usable stage view at the ordinary 40/60 split, and
+screen can now show a readable lab column and a usable stage view at the ordinary 40/60 split, and
 the fix cost one constant rather than a new layout.
 
-**What survives, and it is the part worth keeping:** the tour panel still cannot go below ~210
-points, so the *three*-pane live-tour case this entry was opened for is improved but not solved —
+**What survives, and it is the part worth keeping:** the lab panel still cannot go below ~210
+points, so the *three*-pane live-lab case this entry was opened for is improved but not solved —
 HRW at half width is ~640 points again, and that is exactly the regime measured above. The stop
 strip, drawer and alternating-mode options all remain on the table for `matching-live.md`; they are
-simply no longer needed to walk the other eight tours.
+simply no longer needed to walk the other eight labs.
 
 **And the general lesson, which is bigger than the layout:** *a UI constant that compensates for a
 platform quirk becomes a bug when the platform changes, and it does not announce itself.* Three weeks
@@ -5969,13 +5969,13 @@ port.
 
 ## 78. Back / Forward for the RHS — an auto-navigation with no return path
 
-**Doug, 2026-08-12, walking `connect-expansion.md`:** *"I'm in the Connect sub-tour, looking at the
+**Doug, 2026-08-12, walking `connect-expansion.md`:** *"I'm in the Connect sub-lab, looking at the
 Flatten stage, Equations sub tab. When I click on an equation, that correctly navigates me to the
 Structural stage, Incidence sub-tab. Unfortunately, there is no way to navigate backward to the
 Flatten stage, Equations sub tab that I had been at… It seems that I need buttons for navigating
 backward and forward in the RHS."*
 
-**The first walked finding from the nine tours, and it is about the instrument rather than a count.**
+**The first walked finding from the nine labs, and it is about the instrument rather than a count.**
 
 ### He is not stuck, and that is a separate problem
 
@@ -5988,10 +5988,10 @@ initializer deliberately opens on `Equations`. *(Read from the source, not obser
 screen says a jump happened, and nothing names where it came from. Those are two distinct misses,
 and a Back button only fixes the first.
 
-### Why a tour-authored return link is NOT the fix
+### Why a lab-authored return link is NOT the fix
 
 The link scheme already reaches sub-views — `hrw://load/TwoLoops/Flatten/EquationSheet` is in this
-very tour, so **#34 is largely built** — and the reflex is to add a return link at the stop. It
+very lab, so **#34 is largely built** — and the reflex is to add a return link at the stop. It
 does not work here: **the stop Doug was on does not tell him to click an equation.** He clicked one
 because the sheet invites it, which is the behaviour the sheet exists to produce. The jump is
 triggered by *curiosity at an arbitrary moment*, so no authored link can be waiting for it. That is
@@ -6041,10 +6041,10 @@ this project.
   from `egui_kittest` — assert that a jump then Back restores stage *and* sub-view, that Forward
   returns, and that Back at the start is disabled rather than absent.
 
-### The tour-navigation case is NOT this, and was solved without it (2026-08-17)
+### The lab-navigation case is NOT this, and was solved without it (2026-08-17)
 
-**Doug asked for tour-to-tour navigation and explicitly ring-fenced these buttons for the RHS:**
-*"I don't want to use up those buttons for tours as I would probably prefer to have those buttons
+**Doug asked for lab-to-lab navigation and explicitly ring-fenced these buttons for the RHS:**
+*"I don't want to use up those buttons for labs as I would probably prefer to have those buttons
 for use in the RHS later on."* That reservation stands — **this entry is still open and still
 unclaimed.**
 
@@ -6052,33 +6052,33 @@ What was built instead is a **back-link in the document plus picker ordering** (
 2026-08-17), and the distinction is worth keeping straight because it is the reason one problem
 needed history and the other did not:
 
-| | the tour hub | this entry |
+| | the lab hub | this entry |
 |---|---|---|
 | the move that needs undoing | **authored** — the overview's table sent him there | **unpredictable** — he clicked an equation out of curiosity |
-| what "back" means | a fixed edge in the tour graph, same on every visit | wherever he happened to be last |
+| what "back" means | a fixed edge in the lab graph, same on every visit | wherever he happened to be last |
 | so the fix is | a link in the document | a recorded history |
 
 **The section above already says this**, from the other direction: *"the stop Doug was on does not
-tell him to click an equation… so no authored link can be waiting for it."* The tour hub is the
-exact complement — the overview *does* tell him which tour to open, so an authored link is waiting
+tell him to click an equation… so no authored link can be waiting for it."* The lab hub is the
+exact complement — the overview *does* tell him which lab to open, so an authored link is waiting
 for it, and history would be the wrong instrument.
 
 ---
 
-## 79. `LoopWithInertia` becomes the final act of the tearing tour
+## 79. `LoopWithInertia` becomes the final act of the tearing lab
 
-**Doug, 2026-08-16, having asked whether the specimen deserved a tour of its own:** *"Eventually,
-I will want very much to add LoopWithInertia to the tearing tour, as you've recommended. Please
+**Doug, 2026-08-16, having asked whether the specimen deserved a lab of its own:** *"Eventually,
+I will want very much to add LoopWithInertia to the tearing lab, as you've recommended. Please
 ensure that we do that."*
 
-**Not a tenth tour.** `README.md`'s first rule is one tour per capability, narrow — the scarce
-resource is Doug's attention per expectation, and a tenth tour would spend it re-establishing
+**Not a tenth lab.** `README.md`'s first rule is one lab per capability, narrow — the scarce
+resource is Doug's attention per expectation, and a tenth lab would spend it re-establishing
 what a coupled block is, on a fourth loop specimen, to deliver one new idea. It is **one act**.
 
 ### The idea it adds, which the existing six acts cannot
 
 Every specimen in `tearing.md` is **timeless**. `ProportionalLoop`, `TwoLoops` and `MixedLoop`
-have no state, so each loop is torn and solved **once**. The tour therefore never confronts the
+have no state, so each loop is torn and solved **once**. The lab therefore never confronts the
 question its own subject raises:
 
 > **What does a coupled block cost when time is advancing?**
@@ -6087,14 +6087,14 @@ question its own subject raises:
 `command → measurement → error → command`, now with `der(w)` beside it. The torn block is
 re-solved **between every pair of integrator steps, for the whole run**. Tearing stops being a
 compile-time tidy-up and becomes a decision about the inner loop of the simulation. That reframes
-Stop 1 rather than repeating it.
+Station 1 rather than repeating it.
 
 ### Why it is not written yet
 
-Tours are converted to the Predict/Look/Falsified template **as Doug walks them**, because the
+Labs are converted to the Predict/Look/Falsified template **as Doug walks them**, because the
 conversion is itself the teaching (`CLAUDE.md`, current work). He is walking in compiler-phase
 order and is on Connections → DAE, so tearing is some way off. Writing the act now would convert
-a tour he is not walking, which is the one thing that rule forbids.
+a lab he is not walking, which is the one thing that rule forbids.
 
 ### How the commitment survives until then
 
@@ -6102,8 +6102,8 @@ Two mechanisms, because a promise in a conversation does not survive the session
 
 - **A marked `## OWED` section at the head of `tearing.md`'s closing material**, so it is seen at
   the moment of use rather than found later.
-- **`doc_citations::the_tearing_tour_gains_its_dynamic_loop_when_it_is_converted`**, which passes
-  while the tour is unconverted, and fails the instant it gains two `**Predict.**` markers
+- **`doc_citations::the_tearing_lab_gains_its_dynamic_loop_when_it_is_converted`**, which passes
+  while the lab is unconverted, and fails the instant it gains two `**Predict.**` markers
   without an `hrw://load/LoopWithInertia` link. It also fails if the OWED note is simply deleted
   — abandoning the act is a decision to record, not a line to remove.
 
@@ -6182,14 +6182,14 @@ This one took **one** reading, because the instrument was fixed first.
 
 ## 81. A pendulum specimen for index reduction — pedagogy, no longer capability
 
-**Doug, 2026-08-17, on the index-reduction tour:** *"index reduction is a large topic and so is not
-well served by a short tour… the tour needs to assume that I have only a basic knowledge of
+**Doug, 2026-08-17, on the index-reduction lab:** *"index reduction is a large topic and so is not
+well served by a short lab… the lab needs to assume that I have only a basic knowledge of
 calculus."*
 
 **The case for this changed mid-investigation, and the change is the point.** The original argument
-was that no specimen in the corpus ever differentiates, so the tour named for Pantelides could not
+was that no specimen in the corpus ever differentiates, so the lab named for Pantelides could not
 show Pantelides. **That argument was wrong**: `Drivetrain` differentiates at least four times, and
-HRW's captured frames record them (`DECISIONS.md`, 2026-08-17). The tour said zero because it read
+HRW's captured frames record them (`DECISIONS.md`, 2026-08-17). The lab said zero because it read
 a field whose name misled it.
 
 **So this is no longer needed to see the phenomenon.** It is wanted because **97 equations and 88
@@ -6225,7 +6225,7 @@ pane against your own arithmetic. That is the whole reason to prefer it over `Dr
   live in **MultiBody**, which charter §4.3 excludes as a *specimen* dependency — using one as a
   diagnostic probe is a different act and probably fine, but it should be a deliberate call.
 - **Which order to work in.** Specimen first, then read `dae_prepare` to find out what
-  `reduce_constrained_dummy_derivatives` actually does, then rewrite the tour. Writing prose first
+  `reduce_constrained_dummy_derivatives` actually does, then rewrite the lab. Writing prose first
   is what produced the error being corrected.
 
 ---
@@ -6233,7 +6233,7 @@ pane against your own arithmetic. That is the whole reason to prefer it over `Dr
 ## 82. The reduction passes should be expandable into their frames
 
 **Owed since 2026-08-19, and filed here on 2026-08-21 because it had no home.** It had been
-sitting under a *"STILL OWED"* line inside `CLAUDE.md`'s tour-transport-bar investigation — a box
+sitting under a *"STILL OWED"* line inside `CLAUDE.md`'s lab-transport-bar investigation — a box
 about a completely unrelated layout bug — and would have been deleted with it. **An owed item
 inside a closed arc's record is an owed item nobody will find.**
 
@@ -6241,12 +6241,12 @@ inside a closed arc's record is an owed item nobody will find.**
 pass actually produced, so a reader can see *what a step did* rather than only that it ran. That
 is the same move `index-reduction.md` needed when it turned out `Drivetrain` differentiates six
 times while the survivor list is empty (`#81`, `DECISIONS.md` 2026-08-17) — **a count with no way
-to open it is exactly the shape that taught a tour the opposite of the truth.**
+to open it is exactly the shape that taught a lab the opposite of the truth.**
 
 **Doug, on the length this implies:** *"my education is more important than strict adherence to
 the template."* **Read that as permission, not as an exemption** — and the distinction matters,
-because [`docs/tour-kinds-plan.md`](tour-kinds-plan.md) §4 freezes the concept template. **The
-template constrains SHAPE, not LENGTH**, so a long tour needs no exemption in the first place;
+because [`docs/lab-kinds-plan.md`](lab-kinds-plan.md) §4 freezes the concept template. **The
+template constrains SHAPE, not LENGTH**, so a long lab needs no exemption in the first place;
 what §4 forbids is moving setup → Predict → ▶ Look → Expected → Falsified if → *What just
 happened*, and adding depth inside those beats does not touch it.
 

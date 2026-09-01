@@ -61,13 +61,13 @@ on a tab showing 48 equations.
 | [`upstream-strategy.md`](upstream-strategy.md) | How engaging Rumoca's maintainers serves Doug's education, and the planning rules that follow. |
 | [`working-with-doug.md`](working-with-doug.md) | Who Doug is, how he learns, and the standing working agreements. **All of it lived only in Claude's memory until 2026-08-01**, and memory does not survive a clone. |
 | [`identity-and-provenance.md`](identity-and-provenance.md) | No heuristic name-matching; identity vs membership; what provenance Rumoca preserves. **Cited by six source files.** |
-| [`tech-debt.md`](tech-debt.md) | The two sweep triggers, the tour-holes table, and the outstanding debt. |
+| [`tech-debt.md`](tech-debt.md) | The two sweep triggers, the lab-holes table, and the outstanding debt. |
 | [`reading-budgets.txt`](reading-budgets.txt) | **THE one home for reading-path limits** — the character ceilings, the unit, the derivation, and what crossing one means. `doc_citations::the_mandatory_reading_path_stays_small` enforces them and `examples/doc_report` watches them nightly; nothing else states them. |
-| [`fixture-tours/pinned-claims.txt`](fixture-tours/pinned-claims.txt) | **Data, not prose.** Sentences a tour must or must not contain, because another guard depends on them. Moved out of `src/` the same day and for the same reason — and the move made the check *stronger*, since it needs no compile and now runs in the fast suite. |
+| [`fixture-labs/pinned-claims.txt`](fixture-labs/pinned-claims.txt) | **Data, not prose.** Sentences a lab must or must not contain, because another guard depends on them. Moved out of `src/` the same day and for the same reason — and the move made the check *stronger*, since it needs no compile and now runs in the fast suite. |
 | [`unattended-run-log.md`](unattended-run-log.md) | **Record, not authority.** What each unattended night did, kept so a lens is not pointed twice at a region already established as clean. Split out of `unattended-runs.md` on 2026-08-31, when 57 % of that file was this log and Doug reported he could no longer understand the rules. |
 | [`app-split-plan.md`](app-split-plan.md) | **Live (2026-08-20).** Splitting `app.rs` (14,437 lines at the outset) into ~1,500-line modules, the seam order from the generated field-group map, and the tech-debt queued behind it. The size target is derived from the nine existing modules that have never produced these failures, not asserted. |
 | [`sweep-2026-08-19.md`](sweep-2026-08-19.md) | **The first scheduled comprehensive sweep.** Discovery only, deliberately scoped — one verified finding (absence tags naming prose can never fire, and one was already false), two leads, and an explicit list of what was *not* looked at. Read before the next scheduled sweep. |
-| [`tour-kinds-plan.md`](tour-kinds-plan.md) | **Live (2026-08-17).** The five tour kinds and what varies between them, why the unit is a **stop** and not an act, the four `stop` name collisions, and the rule that settles them. Read before writing or converting a tour. |
+| [`lab-kinds-plan.md`](lab-kinds-plan.md) | **Live (2026-08-17).** The five lab kinds and what varies between them, why the unit is a **stop** and not an act, the four `stop` name collisions, and the rule that settles them. Read before writing or converting a lab. |
 | [`ui-pause-plan.md`](ui-pause-plan.md) | The UI pause (2026-08-02): what gets tested and refactored, in what order, with the evidence for each and a ratcheted field-count target. |
 | [`format-and-app-plan.md`](format-and-app-plan.md) | Proposed (2026-08-05): `cargo fmt` for the Rumoca crates then `hrw/`, then `app.rs` extraction — with the measurement that the Rumoca formatting drift is ours and blocks upstream CI. |
 | [`ui-findings.md`](ui-findings.md) | Running log of what the pause turned up in passing — harness facts that change how a test is written, and code findings with their disposition. |
@@ -106,7 +106,7 @@ on a tab showing 48 equations.
 | [`../DECISIONS.md`](../DECISIONS.md) | Every nontrivial implementation choice, plus the closed-arc record. |
 | [`question-ledger.md`](question-ledger.md) | Doug's questions verbatim, and what made each click. **The only artifact whose value grows with time.** |
 | [`upstream-issues.md`](upstream-issues.md) | Rumoca bugs, written ready to file. **Claude never files them.** |
-| 👤 [`fixture-tours/`](fixture-tours/) | Tours that are *tests*. One per capability, narrow, with violable expectations. |
+| 👤 [`fixture-labs/`](fixture-labs/) | Labs that are *tests*. One per capability, narrow, with violable expectations. |
 | 👤 [`specimen-notebook/`](specimen-notebook/) | Per specimen: a generated `trace/` and a hand-written `purpose.md`. |
 | 👤 [`reports/`](reports/) | **Generated data, not prose** — the survey, the corpus fidelity artifact and its profile, the specimen report. Explained by [`reports.md`](reports.md); inventoried by [`reports/README.md`](reports/README.md). |
 
@@ -116,8 +116,8 @@ Load-bearing paths, not documents. Moving any of them breaks the app or its test
 
 | Path | Used by |
 |---|---|
-| `fixture-tours/*.md` | the tour picker, and `fixture_tour_links_all_resolve` |
-| `fixture-tours/notebooks/` | cross-platform tour stops |
+| `fixture-labs/*.md` | the lab picker, and `fixture_lab_links_all_resolve` |
+| `fixture-labs/notebooks/` | cross-platform lab stops |
 | `specimen-notebook/<Model>/purpose.md` | the Purpose tab |
 | `specimen-notebook/<Model>/trace/` | the durable per-stage IR |
 | **`reports/msl-survey.csv`** | `fidelity_msl::corpus()` and `survey_msl` — **the corpus definition** |
@@ -144,7 +144,7 @@ lives in [`../CLAUDE.md`](../CLAUDE.md).
 
 **Deleted 2026-08-01: `compiler-phases/end_to_end_tour.md`** (1,071 lines). HRW stopped showing
 it on 2026-07-29, but it stayed inside the teaching database where a later session would read
-it as authoritative — and its twelve stop-by-stop walkthroughs had rotted (Stop 8 described a
+it as authoritative — and its twelve stop-by-stop walkthroughs had rotted (Station 8 described a
 7×7 incidence matrix on a tab that shows 48 equations). Its conceptual sections, which make no
 claim about what is on screen, are now
 [`compiler-phases/the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md).

@@ -143,7 +143,7 @@ Two consequences that changed this plan after it was first written:
 
 Doug, 2026-07-30, on what this is ultimately for:
 
-> I need HRW to provide a tour of the Rumoca malfunction which I can capture as a video or
+> I need HRW to provide a lab of the Rumoca malfunction which I can capture as a video or
 > screenshot to link in the PR description [...] to demonstrate to Rumoca PR reviewers that
 > HRW is useful and therefore worthy of being merged. [...] I need HRW to faithfully
 > represent Rumoca so that the Rumoca PR reviewers don't dismiss HRW as junk.
@@ -170,10 +170,10 @@ density. Start there.
 
 ### A note on how to use the demo
 
-Let the tour **be** the bug report rather than accompany it. A report that doubles as a
+Let the lab **be** the bug report rather than accompany it. A report that doubles as a
 pitch can read as using a maintainer's review time for promotion; "here is the malfunction,
 walked stop by stop" is simply the clearest explanation they will receive, and HRW's
-usefulness is then demonstrated **implicitly**. `docs/fixture-tours/the-oracle.md` is
+usefulness is then demonstrated **implicitly**. `docs/fixture-labs/the-oracle.md` is
 already this shape — it explains a real Rumoca defect and never argues that HRW is good.
 
 ## The one-sentence property

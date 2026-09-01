@@ -285,7 +285,7 @@ impl AliasAnimation {
         //
         // `Drivetrain` has **77** alias eliminations, so under a quarter of them
         // were reachable, inside a small box while the pane around it stayed
-        // empty. That specimen is the index-reduction tour's centrepiece.
+        // empty. That specimen is the index-reduction lab's centrepiece.
         //
         // The parent scrolls; this view just renders. A tall model makes a tall
         // pane, which is the honest result. Held by

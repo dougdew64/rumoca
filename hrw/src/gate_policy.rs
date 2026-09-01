@@ -2,7 +2,7 @@
 //!
 //! `CLAUDE.md` states the rule as a shell grep: a change touching `src/`,
 //! `crates/`, `examples/` or a `Cargo.toml` needs the **full** gate (~230 s);
-//! anything else is docs or tours and needs the **fast** one. *"A docs-only change
+//! anything else is docs or labs and needs the **fast** one. *"A docs-only change
 //! cannot regress compile-heavy behaviour, so paying 225 s for it is ritual rather
 //! than evidence."*
 //!
@@ -36,47 +36,47 @@ pub fn needs_full_gate<'a>(changed: impl IntoIterator<Item = &'a str>) -> bool {
     })
 }
 
-/// Does a docs-only change touch a tour region that is verified against a **real
+/// Does a docs-only change touch a lab region that is verified against a **real
 /// compile**?
 ///
 /// # Why a third verdict, when FAST and FULL had covered everything
 ///
 /// Doug, 2026-08-31: *"every time that we are forced to perform a full gate simply because
-/// I've asked a question or offered an opinion about tour content… it's time for a pause on
-/// tour content improvement to focus on eliminating tour friction."*
+/// I've asked a question or offered an opinion about lab content… it's time for a pause on
+/// lab content improvement to focus on eliminating lab friction."*
 ///
-/// A tour's `<!-- pane-groups -->`, `pane-origins` and `pane-frames` tables are checked by
+/// A lab's `<!-- pane-groups -->`, `pane-origins` and `pane-frames` tables are checked by
 /// **slow-gated** tests that compile a specimen. Editing one touches only `docs/`, so
 /// [`needs_full_gate`] says FAST — correctly, since no `src/` file moved — and the FAST
 /// suite then **cannot see the change at all**, because those tests are gated off. The
 /// standing advice was therefore "run FULL", which is right about needing a compile and
 /// wrong about needing **910 tests**.
 ///
-/// **Measured 2026-08-31: the tour-relevant slow tests cost 11.1 s** (median of 3, spread
+/// **Measured 2026-08-31: the lab-relevant slow tests cost 11.1 s** (median of 3, spread
 /// 2.5 %, via `examples/measure`), against ~101 s for FULL. The binary split was the
 /// problem, not either of its halves.
 ///
 /// # What this is NOT
 ///
 /// **Not a cheaper FULL.** It runs the fast suite plus the slow tests whose names match
-/// `doc_citations` and `tour` — enough to verify a tour's numbers against a compile, and
+/// `doc_citations` and `lab` — enough to verify a lab's numbers against a compile, and
 /// nothing about `worker.rs`, simulation or the corpus. A change touching `src/` still
 /// needs FULL, which is why this is only ever consulted when [`needs_full_gate`] is false.
-pub fn touches_a_verified_tour_region<'a>(changed: impl IntoIterator<Item = &'a str>) -> bool {
+pub fn touches_a_verified_lab_region<'a>(changed: impl IntoIterator<Item = &'a str>) -> bool {
     changed
         .into_iter()
-        .any(|p| p.starts_with("hrw/docs/fixture-tours/") && p.ends_with(".md"))
+        .any(|p| p.starts_with("hrw/docs/fixture-labs/") && p.ends_with(".md"))
 }
 
 /// Is this diff the shape Doug ruled a **bug** on 2026-08-31?
 ///
 /// > *"Going forward, unless we are adding a specimen, I will consider a full gate run
-/// > during a tour edit to be a bug."*
+/// > during a lab edit to be a bug."*
 ///
 /// # Why this is a warning and not an assertion
 ///
-/// The rule is about a **cause**, and the cause is not visible from paths. A tour edit that
-/// drags in `src/` is a bug because the `src/` file held **tour-facing data** — that was
+/// The rule is about a **cause**, and the cause is not visible from paths. A lab edit that
+/// drags in `src/` is a bug because the `src/` file held **lab-facing data** — that was
 /// true of the reading budgets, the pinned claims and the `PANES` roster, all three of
 /// which moved to `docs/` the day the rule was made. But a session might legitimately fix
 /// an unrelated defect in the same commit, and failing the gate for that would be a rule
@@ -89,18 +89,18 @@ pub fn touches_a_verified_tour_region<'a>(changed: impl IntoIterator<Item = &'a 
 /// # The one sanctioned exception, detected rather than remembered
 ///
 /// Adding a specimen genuinely needs FULL — a corpus-matrix baseline is established by a
-/// real compile, and `the_corpus_outcome_matrix_is_unchanged` is not in the TOUR gate. A
+/// real compile, and `the_corpus_outcome_matrix_is_unchanged` is not in the LAB gate. A
 /// diff that adds or edits a `specimens/*.mo` is therefore silent, which is exactly the
 /// carve-out Doug stated rather than a judgement about it.
-pub fn full_gate_on_a_tour_edit_is_suspect<'a>(changed: impl IntoIterator<Item = &'a str>) -> bool {
+pub fn full_gate_on_a_lab_edit_is_suspect<'a>(changed: impl IntoIterator<Item = &'a str>) -> bool {
     let paths: Vec<&str> = changed.into_iter().collect();
-    let edits_a_tour = paths
+    let edits_a_lab = paths
         .iter()
-        .any(|p| p.starts_with("hrw/docs/fixture-tours/") && p.ends_with(".md"));
+        .any(|p| p.starts_with("hrw/docs/fixture-labs/") && p.ends_with(".md"));
     let adds_a_specimen = paths
         .iter()
         .any(|p| p.starts_with("hrw/specimens/") && p.ends_with(".mo"));
-    edits_a_tour && !adds_a_specimen && needs_full_gate(paths.iter().copied())
+    edits_a_lab && !adds_a_specimen && needs_full_gate(paths.iter().copied())
 }
 
 /// Does a change touch the path that decides **what HRW reports Rumoca did**?
@@ -171,11 +171,11 @@ mod tests {
         assert!(needs_full_gate(["Cargo.toml"]));
     }
 
-    /// Docs, tours and notebooks are the fast case — the one the rule exists to make
+    /// Docs, labs and notebooks are the fast case — the one the rule exists to make
     /// cheap, since most commits in a walking session are exactly this.
     #[test]
-    fn documents_and_tours_do_not_need_the_full_gate() {
-        assert!(!needs_full_gate(["hrw/docs/fixture-tours/matching.md"]));
+    fn documents_and_labs_do_not_need_the_full_gate() {
+        assert!(!needs_full_gate(["hrw/docs/fixture-labs/matching.md"]));
         assert!(!needs_full_gate(["hrw/CLAUDE.md", "hrw/DECISIONS.md"]));
         assert!(!needs_full_gate([
             "hrw/docs/specimen-notebook/RcCircuit/purpose.md"
@@ -201,7 +201,7 @@ mod tests {
     fn a_budget_bump_beside_prose_stays_fast_but_a_checker_edit_does_not() {
         assert!(!needs_full_gate([
             "hrw/docs/reading-budgets.txt",
-            "hrw/docs/fixture-tours/connect-expansion.md",
+            "hrw/docs/fixture-labs/connect-expansion.md",
             "hrw/CLAUDE.md",
         ]));
         assert!(
@@ -210,52 +210,52 @@ mod tests {
         );
     }
 
-    /// **A tour edit selects TOUR: not FAST, which cannot see it, and not FULL.**
+    /// **A lab edit selects LAB: not FAST, which cannot see it, and not FULL.**
     ///
     /// The three-way verdict is the whole point, so all three are asserted together —
     /// separate tests would each pass on one arm working, which is how a rule ends up
     /// covering less than it claims.
     #[test]
-    fn a_tour_edit_selects_the_tour_gate_and_a_source_edit_still_selects_full() {
-        let tour = "hrw/docs/fixture-tours/connect-expansion.md";
-        assert!(!needs_full_gate([tour]), "a tour is not a src/ change");
+    fn a_lab_edit_selects_the_lab_gate_and_a_source_edit_still_selects_full() {
+        let lab = "hrw/docs/fixture-labs/connect-expansion.md";
+        assert!(!needs_full_gate([lab]), "a lab is not a src/ change");
         assert!(
-            touches_a_verified_tour_region([tour]),
-            "a tour's guarded tables need a compile the FAST suite gates off"
+            touches_a_verified_lab_region([lab]),
+            "a lab's guarded tables need a compile the FAST suite gates off"
         );
 
         // Prose elsewhere in docs/ is genuinely FAST: nothing there is checked against a
         // compile, so paying 11 s for it would be the same ritual at a smaller price.
-        assert!(!touches_a_verified_tour_region(["hrw/docs/ideas.md"]));
-        assert!(!touches_a_verified_tour_region(["hrw/CLAUDE.md"]));
+        assert!(!touches_a_verified_lab_region(["hrw/docs/ideas.md"]));
+        assert!(!touches_a_verified_lab_region(["hrw/CLAUDE.md"]));
 
-        // The data files that back the checkers are not tours, and neither is the
+        // The data files that back the checkers are not labs, and neither is the
         // generated catalogue — regenerating it must not drag in a compile.
-        assert!(!touches_a_verified_tour_region([
-            "hrw/docs/fixture-tours/pinned-claims.txt"
+        assert!(!touches_a_verified_lab_region([
+            "hrw/docs/fixture-labs/pinned-claims.txt"
         ]));
 
-        // And FULL still wins outright: `tour` is only consulted when needs_full_gate is
+        // And FULL still wins outright: `lab` is only consulted when needs_full_gate is
         // false, but a caller that got that backwards would silently under-gate.
-        assert!(needs_full_gate([tour, "hrw/src/worker.rs"]));
+        assert!(needs_full_gate([lab, "hrw/src/worker.rs"]));
     }
 
-    /// **The tour-edit-plus-`src/` shape is reported, and the specimen carve-out is not.**
+    /// **The lab-edit-plus-`src/` shape is reported, and the specimen carve-out is not.**
     ///
     /// Both arms matter and a single assertion would hide one: a check that never fires is
     /// indistinguishable from a clean repository, and a check that always fires is noise
     /// that gets ignored — which is how a warning stops being read.
     #[test]
-    fn a_tour_edit_that_drags_in_source_is_reported_unless_a_specimen_came_with_it() {
-        let tour = "hrw/docs/fixture-tours/connect-expansion.md";
+    fn a_lab_edit_that_drags_in_source_is_reported_unless_a_specimen_came_with_it() {
+        let lab = "hrw/docs/fixture-labs/connect-expansion.md";
 
         assert!(
-            full_gate_on_a_tour_edit_is_suspect([tour, "hrw/src/doc_citations.rs"]),
-            "a tour edit that forces a src/ change is the shape Doug ruled a bug"
+            full_gate_on_a_lab_edit_is_suspect([lab, "hrw/src/doc_citations.rs"]),
+            "a lab edit that forces a src/ change is the shape Doug ruled a bug"
         );
         assert!(
-            !full_gate_on_a_tour_edit_is_suspect([
-                tour,
+            !full_gate_on_a_lab_edit_is_suspect([
+                lab,
                 "hrw/src/doc_citations.rs",
                 "hrw/specimens/ScopedConnect.mo",
             ]),
@@ -263,20 +263,20 @@ mod tests {
              than remembered"
         );
 
-        // A tour edit alone is not suspect — it is not even FULL.
-        assert!(!full_gate_on_a_tour_edit_is_suspect([tour]));
-        // Nor is `src/` work with no tour in it, which is the ordinary FULL case.
-        assert!(!full_gate_on_a_tour_edit_is_suspect(["hrw/src/app.rs"]));
+        // A lab edit alone is not suspect — it is not even FULL.
+        assert!(!full_gate_on_a_lab_edit_is_suspect([lab]));
+        // Nor is `src/` work with no lab in it, which is the ordinary FULL case.
+        assert!(!full_gate_on_a_lab_edit_is_suspect(["hrw/src/app.rs"]));
     }
 
     /// **One `src/` file among twenty documents still means FULL.**
     ///
-    /// The mixed commit is the case that matters: a session that edits ten tours and
-    /// one module must not be gated by the tours.
+    /// The mixed commit is the case that matters: a session that edits ten labs and
+    /// one module must not be gated by the labs.
     #[test]
     fn one_source_file_among_documents_still_needs_the_full_gate() {
         assert!(needs_full_gate([
-            "hrw/docs/fixture-tours/matching.md",
+            "hrw/docs/fixture-labs/matching.md",
             "hrw/docs/ideas.md",
             "hrw/src/playback.rs",
             "hrw/docs/vision.md",
@@ -304,7 +304,7 @@ mod tests {
     /// question the notebook check answers and the gate cannot.
     ///
     /// The last two assertions are the point of the shape: `app.rs` renders what the
-    /// compile produced but cannot change it, and a tour is prose. Charging those 109 s
+    /// compile produced but cannot change it, and a lab is prose. Charging those 109 s
     /// would make the step feel like a tax and get it switched off, which is how a
     /// check that cries wolf dies.
     #[test]
@@ -323,7 +323,7 @@ mod tests {
             "rendering what a compile produced cannot change what it produced",
         );
         assert!(!touches_the_compile_path([
-            "hrw/docs/fixture-tours/matching.md"
+            "hrw/docs/fixture-labs/matching.md"
         ]));
     }
 

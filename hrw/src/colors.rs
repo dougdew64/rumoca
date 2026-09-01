@@ -72,7 +72,7 @@ pub const ANIM_FAIL: Color32 = Color32::from_rgb(0xEF, 0x53, 0x50);
 /// Tracked-identifier highlight — opaque gold for text/strokes.
 pub const TRACKED_GOLD: Color32 = Color32::from_rgb(0xFF, 0xD5, 0x4F);
 
-/// The Context Bar's **Always** row — specimen, stage, open tour, stage IRs, DefIds.
+/// The Context Bar's **Always** row — specimen, stage, open lab, stage IRs, DefIds.
 ///
 /// One of three colours, one per category of context (Doug, 2026-08-30: *"make the
 /// context bar contents easier to read by using different text colors for each of the
@@ -140,12 +140,12 @@ const fn tint(r: u8, g: u8, b: u8, alpha: u8) -> Color32 {
 ///
 /// **Cyan, deliberately not gold.** Gold means *followed* — a thread through every
 /// stage — and a jump target is a different thing: one row, one link, this moment.
-/// Reusing gold would make a tour stop look like it had set a follow.
+/// Reusing gold would make a lab stop look like it had set a follow.
 ///
 /// Exists because scrolling a row to the centre of a screen full of near-identical
 /// rows, without marking it, leaves the reader guessing which one was the target.
-/// The node-pointing fixture tour asserted this highlight before it was built —
-/// Doug walked the tour and found the claim false (2026-07-30).
+/// The node-pointing fixture lab asserted this highlight before it was built —
+/// Doug walked the lab and found the claim false (2026-07-30).
 pub const JUMP_FILL: Color32 = tint(0x42, 0xC5, 0xF5, 0x45);
 
 /// Tracked-identifier background fill (subtle, alpha 0x30 ≈ 19%).

@@ -86,9 +86,9 @@ use crate::worker::{
 /// `native_pixels_per_point = 1.0` — so the 2.0 *was* the DPI scaling. Native
 /// Windows reports the real value, and the compensation started double-counting.
 ///
-/// **The cost was measured, not guessed** (2026-08-12). At 640 points the tour panel
+/// **The cost was measured, not guessed** (2026-08-12). At 640 points the lab panel
 /// cannot go below ~33 % of the window, because its content needs ~210 points, so
-/// the tour and the stage view could not both be usable on Doug's 13" laptop —
+/// the lab and the stage view could not both be usable on Doug's 13" laptop —
 /// `docs/ideas.md` #77. The same 640-point regime hid the divider defect that
 /// [`MIN_LEFT_POINTS`] fixes, since HRW's own width tests stop at 800 points.
 ///
@@ -107,9 +107,9 @@ use crate::worker::{
 /// value was persisted.
 const DEFAULT_ZOOM: f32 = 1.0;
 
-/// How often tour mode stats `.hrw-bridge/tour.md`. A quarter second is well
+/// How often lab mode stats `.hrw-bridge/lab.md`. A quarter second is well
 /// under human notice and keeps filesystem work out of the paint path.
-pub(crate) const TOUR_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(250);
+pub(crate) const LAB_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(250);
 
 /// How many paints a pending frame seek keeps trying for before giving up.
 ///
@@ -117,7 +117,7 @@ pub(crate) const TOUR_POLL_INTERVAL: std::time::Duration = std::time::Duration::
 /// margin costs nothing and covers a view that defers construction one frame further.
 const SEEK_ATTEMPTS: u8 = 5;
 
-/// How often the scratch specimen directory is re-listed. Slower than the tour poll:
+/// How often the scratch specimen directory is re-listed. Slower than the lab poll:
 /// a specimen appearing a second late is imperceptible, and a rescan re-reads every
 /// specimen's `// purpose:` line.
 pub(crate) const SCRATCH_POLL_INTERVAL: std::time::Duration =
@@ -176,8 +176,8 @@ const DEFAULT_LIBRARIES: &str = concat!(
 // ---- Layout constants ----
 // Named fractions for panel sizes and splits, replacing inline magic numbers.
 
-/// Fraction of available width used by the left panel (tour text or specimen
-/// list) in Tour and Specimen modes.
+/// Fraction of available width used by the left panel (lab text or specimen
+/// list) in Lab and Specimen modes.
 const LEFT_PANEL_WIDTH_FRACTION: f32 = 0.4;
 
 /// How far the divider may be dragged, as a fraction of the window.
@@ -189,15 +189,15 @@ const LEFT_PANEL_WIDTH_FRACTION: f32 = 0.4;
 /// **One id for both left panels**, so there is one stored width and one
 /// behaviour.
 ///
-/// egui remembers a resizable panel's width per id, so `"tour_panel"` and
+/// egui remembers a resizable panel's width per id, so `"lab_panel"` and
 /// `"specimen_panel"` had **two independent widths** — the same code producing
 /// different results depending on which mode a session happened to start in, and
 /// on what had been dragged in each. Doug, 2026-08-02: *"The LHS width for
-/// specimen mode is fixed. But, not for tour mode. Make tour mode the same as
+/// specimen mode is fixed. But, not for lab mode. Make lab mode the same as
 /// specimen mode."*
 ///
 /// **Not reproduced headlessly.** Both modes measure 0.400 in the harness, with
-/// an empty tour, a short one, and one wide enough to force a scrollbar. The two
+/// an empty lab, a short one, and one wide enough to force a scrollbar. The two
 /// ids were the only divergence left, and a stored width is exactly the kind of
 /// state a headless run never has — so this removes the difference rather than
 /// demonstrating it. If the symptom survives, the cause is elsewhere and this
@@ -242,7 +242,7 @@ const MAX_LEFT_FRACTION: f32 = 0.75;
 /// horizontal position. However, the right edge of the LHS content continues to
 /// move leftward"*).
 ///
-/// The panel has an intrinsic minimum width set by its own content — the tour-list
+/// The panel has an intrinsic minimum width set by its own content — the lab-list
 /// rows and the autoplay controls. Measured across three window sizes it sits at
 /// **189–205 points** and does not move with the window, because content does not
 /// care how big the screen is. `MIN_LEFT_FRACTION` *did* move with the window, and
@@ -336,9 +336,9 @@ struct SplitState {
     /// reason it exists rather than being forced past a timer.
     ///
     /// **A countdown, not a flag, and the difference is the whole bug.** Doug,
-    /// 2026-08-02: *"HRW starts in tour mode. And in tour mode, the LHS has too
+    /// 2026-08-02: *"HRW starts in lab mode. And in lab mode, the LHS has too
     /// much width. If I switch to specimen mode, then the LHS has the desired
-    /// 40%. If I switch back to tour mode, then the LHS then has the same 40%."*
+    /// 40%. If I switch back to lab mode, then the LHS then has the same 40%."*
     ///
     /// A one-frame reset worked for **mode switches** and not for **startup** —
     /// and specimen mode looked correct only because it is *only ever reached by
@@ -661,9 +661,9 @@ impl egui::Plugin for CopyCatcher {
 /// attaches itself to the wrong gesture is worse than one that does not happen**, so it
 /// expires and says so.
 struct PendingPassage {
-    /// The tour open when 🎯 was pressed, not when the text arrives — they cannot
+    /// The lab open when 🎯 was pressed, not when the text arrives — they cannot
     /// differ today, and recording the former is what keeps that true if they ever can.
-    tour: String,
+    lab: String,
     /// Frames left before giving up. Three is two more than the round trip needs.
     frames_left: u8,
 }
@@ -730,6 +730,8 @@ struct CompileFrames {
 
 use crate::compile_caches::CompileViewCaches;
 use crate::context_bar::{self, ContextBarPress, ContextBarState, PointKind, PointedAt};
+use crate::lab::{LabSource, LabState};
+use crate::lab_panel::{self, TransportRequest};
 use crate::model_list::{ModelListNav, ModelListState};
 use crate::report_sub_view;
 use crate::specimen_purpose;
@@ -740,8 +742,6 @@ use crate::stage_view::{
     EventsView, FlattenView, InitView, StructuralView, Viewport, events_view_name,
     flatten_view_name, init_view_name, structural_view_name, sub_view_name_for,
 };
-use crate::tour::{TourSource, TourState};
-use crate::tour_panel::{self, TransportRequest};
 use crate::ui_state::{NavEntry, SpecimenDetail, UiMode};
 
 /// The entire application state. In immediate-mode UI, this struct IS the
@@ -909,7 +909,7 @@ pub struct App {
     cached_dae: Option<rumoca_ir_dae::Dae>,
 
     // ---- 13. Markdown rendering ----
-    // Caches parsed markdown for `egui_commonmark`. Shared across tour and
+    // Caches parsed markdown for `egui_commonmark`. Shared across lab and
     // purpose-note rendering so heading IDs and image state persist across frames.
     commonmark_cache: egui_commonmark::CommonMarkCache,
     /// Source lines the compiler blamed, as `(1-based line, why)`.
@@ -923,20 +923,20 @@ pub struct App {
     context: ContextBarState,
     /// Everything the source view owns. See [`SourceViewState`].
     source: SourceViewState,
-    /// Everything the tour panel owns. See [`TourState`].
+    /// Everything the lab panel owns. See [`LabState`].
     ///
     /// Polled rather than watched: stat-ing once per frame would be cheap but
     /// puts filesystem work in the paint path, which the debugging conventions
     /// rule out. A few polls a second is indistinguishable to a reader, and a
-    /// tour Claude writes mid-conversation still appears without a restart.
+    /// lab Claude writes mid-conversation still appears without a restart.
     ///
     /// `pub(crate)` for `ui_tests` only: a headless test has to be able to say "an ad
-    /// hoc tour exists" without writing `.hrw-bridge/tour.md`, which is shared with a
+    /// hoc lab exists" without writing `.hrw-bridge/lab.md`, which is shared with a
     /// running HRW and asserted *absent* by another test. Injecting the state is the
     /// race-free way to give a check a subject — and without one,
-    /// `the_ad_hoc_tour_is_a_button_and_not_a_picker_entry` passed while the ad hoc
-    /// tour was listed in both places.
-    pub(crate) tour: TourState,
+    /// `the_ad_hoc_lab_is_a_button_and_not_a_picker_entry` passed while the ad hoc
+    /// lab was listed in both places.
+    pub(crate) lab: LabState,
     /// A pending camera aim from `hrw://…/equation/<n>`, consumed by whichever canvas
     /// view paints next. `None` means no link asked for one.
     ///
@@ -950,7 +950,7 @@ pub struct App {
     /// **The budget is not decoration.** The animation for a newly-selected sub-view is
     /// not built until that view paints, so the first attempt after navigation always
     /// misses. Retrying unboundedly would be worse: a seek aimed at a view that *never*
-    /// has an animation (Stop 6 of the frame-seeking fixture) would sit armed until the
+    /// has an animation (Station 6 of the frame-seeking fixture) would sit armed until the
     /// reader wandered into an animated view, and then fire there — a link taking effect
     /// somewhere it was never pointed at.
     seek_frame: Option<(usize, u8)>,
@@ -1204,49 +1204,49 @@ impl App {
         }
     }
 
-    /// Build and begin a self-running walk of the tour currently showing.
+    /// Build and begin a self-running walk of the lab currently showing.
     ///
-    /// Only links that **parse** become beats. A tour that names a verb in prose
+    /// Only links that **parse** become beats. A lab that names a verb in prose
     /// would otherwise contribute a beat that dispatches nothing and stalls the run
     /// on a blank screen — and since `parse_hrw_link` is the same gate
-    /// `fixture_tour_links_all_resolve` applies, a scheduled run and a checked tour
+    /// `fixture_lab_links_all_resolve` applies, a scheduled run and a checked lab
     /// cannot disagree about what a link is.
     fn start_autoplay(&mut self) {
-        let Some(text) = self.tour.text().map(str::to_owned) else {
-            self.notify("no tour is showing \u{2014} pick one first");
+        let Some(text) = self.lab.text().map(str::to_owned) else {
+            self.notify("no lab is showing \u{2014} pick one first");
             return;
         };
-        let mut stops = crate::autoplay::parse_stops(&text);
+        let mut stops = crate::autoplay::parse_stations(&text);
         for stop in &mut stops {
             stop.links.retain(|l| parse_hrw_link(&l.url).is_some());
         }
-        let beats = crate::autoplay::schedule(&stops, self.tour.autoplay_total, |l| {
+        let beats = crate::autoplay::schedule(&stops, self.lab.autoplay_total, |l| {
             // An external hop needs longer on screen. The ruling is per verb and lives
             // on the verb — see `HrwLink::leaves_hrw`, which is exhaustive so a new
             // form cannot default into the wrong beat length unnoticed.
             parse_hrw_link(l).is_some_and(|link| link.leaves_hrw())
         });
         if beats.is_empty() {
-            self.notify("this tour has no stops to play");
+            self.notify("this lab has no stops to play");
             return;
         }
         // Remember where we started, so the run can put it back. A stop may
-        // legitimately leave Tour mode — `hrw://source/<line>` must, since the
-        // source only renders in Specimen mode — and `matching.md` ends Stop 3 with
-        // exactly that, so the walk used to finish with the tour off screen.
-        self.tour.mode_before_autoplay = Some(self.ui_mode);
+        // legitimately leave Lab mode — `hrw://source/<line>` must, since the
+        // source only renders in Specimen mode — and `matching.md` ends Station 3 with
+        // exactly that, so the walk used to finish with the lab off screen.
+        self.lab.mode_before_autoplay = Some(self.ui_mode);
 
         // **Start from where the pane is, not from where the last run stopped.**
         //
         // These positions are measured per document per beat, and a stopped run
         // leaves its last one behind. The first frame of a new run interpolates
         // *from* that value, so pressing Play scrolled to the old spot and then
-        // travelled back — visibly, over the full travel window, before the tour
+        // travelled back — visibly, over the full travel window, before the lab
         // had begun. Clearing them makes both ends of the first interpolation zero,
-        // so a tour already at the top simply does not move.
-        self.tour.reset_scroll();
+        // so a lab already at the top simply does not move.
+        self.lab.reset_scroll();
 
-        if let Some(first) = self.tour.autoplay.start(beats) {
+        if let Some(first) = self.lab.autoplay.start(beats) {
             self.dispatch_beat(first);
         }
     }
@@ -1258,10 +1258,10 @@ impl App {
     /// being left in Specimen mode than one who watches to the end.
     ///
     /// Only the *mode* is restored, not the stage or the specimen: those are the
-    /// result of the walk and worth keeping on screen. It is the **frame** the tour
+    /// result of the walk and worth keeping on screen. It is the **frame** the lab
     /// was being read in that has to come back.
     fn restore_mode_after_autoplay(&mut self) {
-        if let Some(mode) = self.tour.mode_before_autoplay.take()
+        if let Some(mode) = self.lab.mode_before_autoplay.take()
             && self.ui_mode != mode
         {
             self.ui_mode = mode;
@@ -1269,30 +1269,30 @@ impl App {
         }
     }
 
-    /// Advance a running tour by one frame.
+    /// Advance a running lab by one frame.
     ///
     /// **Pauses itself when the window loses focus.** An external stop brings
     /// Wolfram Desktop or System Modeler to the front, and a clock that kept
     /// running behind another window would advance HRW while nobody was watching
-    /// it — the recording would return to a tour that had moved on without them.
+    /// it — the recording would return to a lab that had moved on without them.
     /// Clicking back into HRW resumes. That makes an external hop as long as the
     /// viewer wants rather than as long as the schedule guessed.
     fn tick_autoplay(&mut self, ctx: &egui::Context) {
-        if !self.tour.autoplay.is_running() {
+        if !self.lab.autoplay.is_running() {
             return;
         }
-        self.tour.autoplay.set_focused(ctx.input(|i| i.focused));
+        self.lab.autoplay.set_focused(ctx.input(|i| i.focused));
 
         // `stable_dt` rather than `unstable_dt`: a single slow frame should not
         // jump the walk forward by its own hitch.
         let dt = std::time::Duration::from_secs_f32(ctx.input(|i| i.stable_dt).min(0.25));
-        if let Some(next) = self.tour.autoplay.tick(dt, self.compiling) {
+        if let Some(next) = self.lab.autoplay.tick(dt, self.compiling) {
             self.dispatch_beat(next);
         }
         // The last beat has elapsed: put the mode back before the reader notices it
         // moved. A stop that switched to Specimen mode (`hrw://source/<line>`) would
-        // otherwise leave the walk ending with no tour on screen.
-        if self.tour.autoplay.phase() == crate::autoplay::Phase::Finished {
+        // otherwise leave the walk ending with no lab on screen.
+        if self.lab.autoplay.phase() == crate::autoplay::Phase::Finished {
             self.restore_mode_after_autoplay();
         }
         // A timed run must keep painting even when nothing else asks it to.
@@ -1598,7 +1598,7 @@ impl App {
             nav_loading: None,
             nav_error: None,
             notice: None,
-            ui_mode: UiMode::Tour,
+            ui_mode: UiMode::Lab,
             specimen_detail: SpecimenDetail::default(),
             show_settings: false,
             show_help: false,
@@ -1630,7 +1630,7 @@ impl App {
             split: SplitState::default(),
             context: ContextBarState::default(),
             source: SourceViewState::default(),
-            tour: TourState::default(),
+            lab: LabState::default(),
             aim_at_equation: None,
             seek_frame: None,
             cached_purpose_notes: HashMap::new(),
@@ -1765,7 +1765,7 @@ impl App {
 
     /// Clear everything that belonged to the previously loaded specimen.
     ///
-    /// Shared by [`Self::open`] and by switching tours, because both need "forget the
+    /// Shared by [`Self::open`] and by switching labs, because both need "forget the
     /// last model" and **two copies of a thirty-field reset would drift**. That is not
     /// hypothetical: on 2026-07-30 clearing the jump highlight in one of two capture
     /// paths and not the other produced a real bug within the hour.
@@ -2070,7 +2070,7 @@ impl App {
                     // "specimen sent to the worker", so the app block stayed frozen at
                     // `compiling: true, model: null` — accurate for the last *action*,
                     // and increasingly wrong about *now* the longer Doug paused. He
-                    // caught exactly that by reloading a tour and asking what the trail
+                    // caught exactly that by reloading a lab and asking what the trail
                     // said an hour later.
                     //
                     // Says where the pipeline got to, so a failure is legible without
@@ -2445,10 +2445,10 @@ impl App {
             // Excluded by the guard above. `return` rather than a panic keeps
             // that safe even if a future caller forgets.
             Focus::Nothing => return,
-            // **Tour passages do not come through here.** They are captured by
-            // `capture_tour_passage`, which has the tour name and the selected text
+            // **Lab passages do not come through here.** They are captured by
+            // `capture_lab_passage`, which has the lab name and the selected text
             // and needs none of the stage machinery this function is built on.
-            Focus::TourPassage { .. } => return,
+            Focus::LabPassage { .. } => return,
         };
         let stage_values = self.stages.as_stage_pairs();
         let kind = match &focus {
@@ -2456,7 +2456,7 @@ impl App {
             Focus::Stage => PointKind::Stage,
             Focus::Specimen => PointKind::Specimen,
             Focus::Nothing => return,
-            Focus::TourPassage { .. } => return,
+            Focus::LabPassage { .. } => return,
         };
         let ask = self.base_ask(seq, bridge::AskRequest::Explain, focus, &stage_values);
         let result = bridge::write(&ask);
@@ -2568,7 +2568,7 @@ impl App {
     /// Whether a structural sub-view has a tab right now.
     ///
     /// **One predicate, used by the tab bar and by the link guard**, so a link cannot
-    /// select a view that has no tab. Doug hit exactly that: the cross-platform tour
+    /// select a view that has no tab. Doug hit exactly that: the cross-platform lab
     /// linked to `Structural/Summary`, which exists only when a model is *singular* —
     /// `ProportionalLoop` is not, so the link selected a view with no tab and the panel
     /// rendered the singular summary for a non-singular model.
@@ -2599,7 +2599,7 @@ impl App {
 
     /// Whether a stage note reports a structurally singular system.
     ///
-    /// One function, because the *tours* are now checked against the same rule the
+    /// One function, because the *labs* are now checked against the same rule the
     /// app applies, and the note's wording varies: `RcCircuit` carries `null`,
     /// `Drivetrain` carries `"singular"`, and `BenchActuator` carries a sentence
     /// beginning *"structural analysis failed: structurally singular system: 47
@@ -2613,16 +2613,16 @@ impl App {
     /// Sub-view availability decided by **stage and singularity alone** — `None` for
     /// the two views that additionally depend on captured frames.
     ///
-    /// **Extracted 2026-08-12 so a tour link can be checked without a compile.**
+    /// **Extracted 2026-08-12 so a lab link can be checked without a compile.**
     /// Doug, walking `connect-expansion.md`: *"Act 2 … contains a link for RcCircuit
     /// → Structural → Summary, and that link actually navigates to RcCircuit →
     /// Structural → Incidence."* The link parsed, so
-    /// `fixture_tour_links_all_resolve` passed it; `Summary` is simply **not
+    /// `fixture_lab_links_all_resolve` passed it; `Summary` is simply **not
     /// available on the Structural stage of a non-singular model**, so the app
     /// refused it, said so in the status bar, and left the sub-view where it was.
-    /// Six such links existed across three tours and one walk found one of them.
+    /// Six such links existed across three labs and one walk found one of them.
     ///
-    /// `every_tour_sub_view_link_is_available_for_its_specimen` calls **this**
+    /// `every_lab_sub_view_link_is_available_for_its_specimen` calls **this**
     /// function against each specimen's committed manifest note, so the check cannot
     /// drift from the behaviour — the reimplementation hazard
     /// `docs/fidelity-plan.md` warns about.
@@ -2722,9 +2722,9 @@ impl App {
     /// `LoadAndSwitch` already did this correctly and its comment said why; the three
     /// sibling verbs did not, which is the whole bug.
     fn dispatch_hrw_link(&mut self, action: HrwLink) {
-        // **Record every followed link.** Doug clicking a tour stop is the single most
+        // **Record every followed link.** Doug clicking a lab stop is the single most
         // informative thing that happens in a session, and it was invisible: when he
-        // reported bugs in a fixture tour, `session.json` showed the specimen load and
+        // reported bugs in a fixture lab, `session.json` showed the specimen load and
         // nothing after. Now the trail names each stop in order, so a bug report can
         // start from what was actually clicked rather than from a reconstruction.
         //
@@ -2732,7 +2732,7 @@ impl App {
         // *assembles*; overwriting it on every click would destroy what he is pointing
         // at and break the composition primitives. This is a different question —
         // "what did I do", not "what should you look at".
-        diagnostics::record_action("tour-link", action.describe());
+        diagnostics::record_action("lab-link", action.describe());
 
         // A link that needs a specimen, with none loaded, is refused rather than
         // half-applied. Setting `pending_stage` here and returning would be worse than
@@ -2741,44 +2741,44 @@ impl App {
         // exists to close.
         if action.requires_specimen() && self.selected.is_none() {
             self.notify(
-                "no specimen loaded \u{2014} this stop needs one. Start at the tour's first \
+                "no specimen loaded \u{2014} this stop needs one. Start at the lab's first \
                  stop, which loads it.",
             );
             return;
         }
         match action {
-            HrwLink::OpenTour { tour, stop } => {
-                // **One tour citing another**, so a composed answer can send Doug to
+            HrwLink::OpenLab { lab, stop } => {
+                // **One lab citing another**, so a composed answer can send Doug to
                 // an existing demonstration rather than retelling it. `docs/ideas.md`
                 // #63.
-                let found = bridge::fixture_tours()
+                let found = bridge::fixture_labs()
                     .into_iter()
-                    .find(|p| p.file_stem().and_then(|s| s.to_str()) == Some(tour.as_str()));
+                    .find(|p| p.file_stem().and_then(|s| s.to_str()) == Some(lab.as_str()));
                 let Some(path) = found else {
                     // **Named, not silent.** A link that does nothing is the worst
-                    // outcome in a tour, because nothing on screen says why — the
+                    // outcome in a lab, because nothing on screen says why — the
                     // reason the parser caps `splitn` at 5 rather than 4.
-                    self.notice = Some(format!("no fixture tour named `{tour}`"));
+                    self.notice = Some(format!("no fixture lab named `{lab}`"));
                     return;
                 };
-                self.select_tour(TourSource::Fixture(path));
-                self.tour.polled_at = None;
-                self.poll_tour_file();
+                self.select_lab(LabSource::Fixture(path));
+                self.lab.polled_at = None;
+                self.poll_lab_file();
                 if let Some(slug) = stop {
-                    match self.tour.text().map(|t| {
-                        crate::autoplay::parse_stops(t)
+                    match self.lab.text().map(|t| {
+                        crate::autoplay::parse_stations(t)
                             .into_iter()
-                            .find(|s| crate::autoplay::stop_slug(&s.heading) == slug)
+                            .find(|s| crate::autoplay::station_slug(&s.heading) == slug)
                     }) {
-                        Some(Some(found_stop)) => {
-                            self.tour.scroll_to_offset = Some(found_stop.heading_offset);
+                        Some(Some(found_station)) => {
+                            self.lab.scroll_to_offset = Some(found_station.heading_offset);
                         }
-                        // The tour opened but the stop is gone — say which, because
-                        // "it opened at the top" is indistinguishable from a tour
+                        // The lab opened but the stop is gone — say which, because
+                        // "it opened at the top" is indistinguishable from a lab
                         // whose first stop is the one that was asked for.
                         _ => {
                             self.notice = Some(format!(
-                                "`{tour}` has no stop `{slug}` \u{2014} opened at the top"
+                                "`{lab}` has no stop `{slug}` \u{2014} opened at the top"
                             ));
                         }
                     }
@@ -2789,7 +2789,7 @@ impl App {
                 //
                 // The corpus list shows curated specimens, scratch probes and the
                 // 2,626 MSL models in one widget (`docs/ideas.md` #52), so from a
-                // tour's point of view they are all just models. A separate
+                // lab's point of view they are all just models. A separate
                 // `hrw://model/` verb would split one gesture in two and need
                 // merging later, which is the mistake Test mode was.
                 //
@@ -2818,7 +2818,7 @@ impl App {
             }
             HrwLink::ShowSource(line) => {
                 // The source lives in Specimen mode's Source detail, so getting there
-                // means setting both — a tour should not have to tell Doug which mode
+                // means setting both — a lab should not have to tell Doug which mode
                 // to be in.
                 self.ui_mode = UiMode::Specimen;
                 self.split.request_reset(MODE_SWITCH_RESET);
@@ -2839,7 +2839,7 @@ impl App {
                     // left panel's `ModelListNav::Select` arm has always followed, and
                     // which this arm did not. Doug, 2026-08-22: every `▶ Look` link in
                     // a stop recompiled the specimen the previous link had just
-                    // compiled, so walking one tour paid a full compile per stop.
+                    // compiled, so walking one lab paid a full compile per stop.
                     //
                     // **Nothing is lost by skipping it.** The workflow `open`'s comment
                     // protects — assemble context, arm a breakpoint, recompile to hit
@@ -2878,15 +2878,15 @@ impl App {
                 //
                 // `equation` used to reach only the canvas views, where it aims a
                 // camera. The Incidence view has rows *named for equations* and no way
-                // to link to one, so a tour could say "open the matrix" and then had to
+                // to link to one, so a lab could say "open the matrix" and then had to
                 // describe the row in prose — which on a 97-row model is the difference
                 // between pointing and gesturing.
                 //
-                // Doug, 2026-08-18, on a tour that hand-copied a five-row table the
+                // Doug, 2026-08-18, on a lab that hand-copied a five-row table the
                 // pane already draws: *"HRW is your platform. Use it."*
                 //
                 // **One verb, not two.** A separate `row` would put two words on one
-                // job — the thing the tour template's own rule 2 forbids — when "point
+                // job — the thing the lab template's own rule 2 forbids — when "point
                 // at equation N" is what both views are being asked for. Each does it
                 // in its own idiom: the canvas moves a camera, the matrix marks a row.
                 self.viewport.highlighted_eq_row = Some(equation);
@@ -3137,7 +3137,7 @@ impl App {
                 .as_ref()
                 .map(equation_sheet::EquationSheet::to_bridge_json),
             // The only pane that shows connection sets, and therefore the only
-            // evidence for `connect-expansion.md` Stop 1.
+            // evidence for `connect-expansion.md` Station 1.
             StageKind::Flatten if self.viewport.flatten == FlattenView::Connections => self
                 .compile_views
                 .connection_anim
@@ -3187,15 +3187,15 @@ impl App {
             "specimen": self.selected.as_ref().map(|p| p.display().to_string()),
             "model": self.model,
             "ui_mode": format!("{:?}", self.ui_mode),
-            // **Which tour is open**, so a question about "this stop" can be answered.
+            // **Which lab is open**, so a question about "this stop" can be answered.
             //
             // Doug, 2026-08-19: *"I'd like to enjoy the convenience of deixis when asking
-            // questions about statements which you've made in tours. Currently, it seems
-            // that I have to copy / paste those tour statements."* The capture said
-            // `ui_mode: "Tour"` and nothing more, so **which document he was reading was
+            // questions about statements which you've made in labs. Currently, it seems
+            // that I have to copy / paste those lab statements."* The capture said
+            // `ui_mode: "Lab"` and nothing more, so **which document he was reading was
             // unrecoverable** and pasting was the only way to ask about it.
             //
-            // The name, not the text: the tours are on disk, so naming the document is
+            // The name, not the text: the labs are on disk, so naming the document is
             // enough to read the exact wording from it. Publishing the prose would
             // duplicate a file that is already the source of truth, and a duplicate can
             // disagree with it.
@@ -3204,7 +3204,7 @@ impl App {
             // screen was considered and recommended against the same day (`CLAUDE.md`):
             // it answers a question Doug did not ask — he points at statements, not stops
             // — and costs a per-heading render on a pane in constant use.
-            "tour": self.tour.selected.as_ref().map(TourSource::label),
+            "lab": self.lab.selected.as_ref().map(LabSource::label),
             "specimen_detail": format!("{:?}", self.specimen_detail),
             "stage_tab": self.stage.name(),
             // **Which sub-tab of that stage**, which `stage_tab` alone does not say.
@@ -3227,11 +3227,11 @@ impl App {
                         PointKind::Node(path) => format!("node {}", bridge::describe_path(path)),
                         PointKind::Stage => "stage".to_owned(),
                         PointKind::Specimen => "specimen".to_owned(),
-                        // Named with its tour, because "tour passage" alone would
+                        // Named with its lab, because "lab passage" alone would
                         // leave the hook reporting a quotation with no document.
-                        PointKind::TourPassage { tour } => format!("tour passage in {tour}"),
+                        PointKind::LabPassage { lab } => format!("lab passage in {lab}"),
                     },
-                    // Null for a tour passage, which is not in a stage. Stated rather
+                    // Null for a lab passage, which is not in a stage. Stated rather
                     // than filled with whichever tab happened to be selected.
                     "stage": p.stage.map(StageKind::name),
                     "request": format!("{:?}", p.request),
@@ -3738,7 +3738,7 @@ impl App {
                 self.set_tracked_identifier(name);
                 // The whole point of reverse tracking is *seeing* the declaration,
                 // and the specimen source view only renders in Specimen mode — in
-                // Tour or Debug mode the click sets tracking and appears to do
+                // Lab or Debug mode the click sets tracking and appears to do
                 // nothing. So reveal the source, the same way clicking an equation
                 // already navigates to the incidence matrix.
                 if self.tracked_identifier.is_some() {
@@ -4405,12 +4405,12 @@ impl App {
                     // disabled, one not — which is what Doug reported on
                     // 2026-08-02. The row's copy already reads "(none)" and
                     // already lists every specimen.
-                } else if self.ui_mode == UiMode::Tour {
-                    // **Tour mode has no specimen list to select from**, so telling Doug
+                } else if self.ui_mode == UiMode::Lab {
+                    // **Lab mode has no specimen list to select from**, so telling Doug
                     // to select one is advice he cannot take — the same species as the
                     // Purpose tab telling him to select a specimen he had just selected.
-                    // In Tour mode the specimen arrives from a stop.
-                    ui.weak("Walk a tour \u{2014} its first stop loads a specimen.");
+                    // In Lab mode the specimen arrives from a stop.
+                    ui.weak("Walk a lab \u{2014} its first stop loads a specimen.");
                     ui.weak("Pick one from the list on the left.");
                 } else {
                     ui.weak("Select a specimen to compile.");
@@ -4780,56 +4780,54 @@ impl App {
         }
     }
 
-    /// Re-read `.hrw-bridge/tour.md` if it changed since the last read.
+    /// Re-read `.hrw-bridge/lab.md` if it changed since the last read.
     ///
-    /// Polled rather than watched: a `stat` every [`TOUR_POLL_INTERVAL`] is
-    /// simpler than a filesystem watcher, has no platform quirks, and a tour
+    /// Polled rather than watched: a `stat` every [`LAB_POLL_INTERVAL`] is
+    /// simpler than a filesystem watcher, has no platform quirks, and a lab
     /// appearing a quarter-second late is imperceptible. Re-reads only when the
-    /// mtime differs, so an unchanged tour costs one `stat` per poll and no
+    /// mtime differs, so an unchanged lab costs one `stat` per poll and no
     /// markdown re-parse.
-    /// Re-read the tour list and the selected tour's text, at most once per
-    /// [`TOUR_POLL_INTERVAL`].
+    /// Re-read the lab list and the selected lab's text, at most once per
+    /// [`LAB_POLL_INTERVAL`].
     ///
-    /// So a tour Claude writes mid-conversation appears without restarting HRW.
-    fn poll_tour_file(&mut self) {
-        if self.tour.poll() {
-            self.reset_for_new_tour();
+    /// So a lab Claude writes mid-conversation appears without restarting HRW.
+    fn poll_lab_file(&mut self) {
+        if self.lab.poll() {
+            self.reset_for_new_lab();
         }
     }
 
-    /// Switch the Tour panel to `source`, discarding the previous text.
+    /// Switch the Lab panel to `source`, discarding the previous text.
     ///
-    /// Clears `cached_tour` rather than letting the poll notice: without this the old
-    /// tour stays on screen until the next mtime comparison, and a reader who just
-    /// clicked a different tour would see the previous one for up to a poll interval.
-    fn select_tour(&mut self, source: TourSource) {
-        // **Switching tours re-initialises the right-hand side.** A tour is a
+    /// Clears `cached_lab` rather than letting the poll notice: without this the old
+    /// lab stays on screen until the next mtime comparison, and a reader who just
+    /// clicked a different lab would see the previous one for up to a poll interval.
+    fn select_lab(&mut self, source: LabSource) {
+        // **Switching labs re-initialises the right-hand side.** A lab is a
         // self-contained sequence starting from its own first stop, which normally
-        // loads a specimen. Leaving the previous tour's model on screen invites reading
-        // the new tour's stops against the old tour's state — and worse, makes Stop 1
+        // loads a specimen. Leaving the previous lab's model on screen invites reading
+        // the new lab's stops against the old lab's state — and worse, makes Station 1
         // look as though it has already been done.
         //
-        // Only on an actual change: re-clicking the tour already showing should not
+        // Only on an actual change: re-clicking the lab already showing should not
         // throw away a specimen the reader is partway through.
         // **Remember where we were, before the selection changes.** Every switch is
-        // undoable — picker, `hrw://tour/…` link, or the Answer button — because a reader
+        // undoable — picker, `hrw://lab/…` link, or the Answer button — because a reader
         // who lands somewhere unintended wants out regardless of how they arrived.
-        if let Some(previous) = self.tour.selected.clone()
+        if let Some(previous) = self.lab.selected.clone()
             && previous != source
         {
-            self.tour
-                .history
-                .push((previous, self.tour.current_scroll_y));
+            self.lab.history.push((previous, self.lab.current_scroll_y));
         }
-        if self.tour.select(source) {
-            self.reset_for_new_tour();
+        if self.lab.select(source) {
+            self.reset_for_new_lab();
         }
     }
 
-    /// **Return to the tour the reader came from, at the offset they left it.**
+    /// **Return to the lab the reader came from, at the offset they left it.**
     ///
     /// Pops rather than pushes, which is the whole of the *"do not record your own
-    /// navigation"* problem `ideas.md` #78 warns about: a Back that pushed the tour it is
+    /// navigation"* problem `ideas.md` #78 warns about: a Back that pushed the lab it is
     /// leaving would ping-pong between two documents and never reach the rest of the
     /// stack.
     ///
@@ -4839,27 +4837,27 @@ impl App {
     /// prose being returned to. Forward would duplicate an available navigation and bring
     /// the suppression-flag bug Back does not have. Purely additive if the friction ever
     /// appears: the same stack, pushed instead of dropped.
-    fn tour_back(&mut self) {
-        let Some((previous, offset)) = self.tour.history.pop() else {
+    fn lab_back(&mut self) {
+        let Some((previous, offset)) = self.lab.history.pop() else {
             return;
         };
-        if self.tour.select(previous) {
-            self.reset_for_new_tour();
+        if self.lab.select(previous) {
+            self.reset_for_new_lab();
         }
-        // After `reset_for_new_tour`, which requests the top.
-        self.tour.restore_scroll_y = Some(offset);
-        self.tour.polled_at = None;
-        self.poll_tour_file();
+        // After `reset_for_new_lab`, which requests the top.
+        self.lab.restore_scroll_y = Some(offset);
+        self.lab.polled_at = None;
+        self.poll_lab_file();
     }
 
-    /// Re-initialise the right-hand side for a tour that just became current.
+    /// Re-initialise the right-hand side for a lab that just became current.
     ///
-    /// **Stays on `App` deliberately.** A tour is a self-contained sequence
+    /// **Stays on `App` deliberately.** A lab is a self-contained sequence
     /// starting from its own first stop, which normally loads a specimen, so
-    /// switching tours must clear the stage side — but *stages, selection and the
-    /// log are not the tour panel's to touch*. [`TourState`] reports that the
+    /// switching labs must clear the stage side — but *stages, selection and the
+    /// log are not the lab panel's to touch*. [`LabState`] reports that the
     /// selection changed; deciding what that invalidates is the application's job.
-    fn reset_for_new_tour(&mut self) {
+    fn reset_for_new_lab(&mut self) {
         self.clear_specimen_state(false);
         self.selected = None;
         self.stage = StageKind::Parse;
@@ -4868,7 +4866,7 @@ impl App {
         // Scroll positions are measured in the *previous* document and mean nothing
         // in this one. Keeping them let a new run interpolate from wherever the last
         // one was stopped.
-        self.tour.reset_scroll();
+        self.lab.reset_scroll();
     }
 
     /// The top menu bar (File, View, Help).
@@ -4896,10 +4894,10 @@ impl App {
                 });
                 ui.menu_button("View", |ui| {
                     if ui
-                        .selectable_label(self.ui_mode == UiMode::Tour, UiMode::Tour.label())
+                        .selectable_label(self.ui_mode == UiMode::Lab, UiMode::Lab.label())
                         .clicked()
                     {
-                        self.ui_mode = UiMode::Tour;
+                        self.ui_mode = UiMode::Lab;
                         self.split.request_reset(MODE_SWITCH_RESET);
                         ui.close();
                     }
@@ -5030,10 +5028,10 @@ impl App {
         // Rebuild whichever shape was captured. Handling only `Node` here would
         // silently drop stage and specimen captures on the next follow-change,
         // reintroducing the disagreement between bar and file.
-        // **A tour passage is emitted before the stage lookup, because it has no
+        // **A lab passage is emitted before the stage lookup, because it has no
         // stage.** Everything below rebuilds a capture out of some stage's IR; a
         // passage of prose is the first point that is not in a compile at all.
-        if let PointKind::TourPassage { tour } = &point.kind {
+        if let PointKind::LabPassage { lab } = &point.kind {
             let ask = Ask {
                 seq: point.seq,
                 request: point.request,
@@ -5045,8 +5043,8 @@ impl App {
                 def_index: &self.def_index,
                 parse_value: self.stages.parse.value.as_ref(),
                 resolve_value: self.stages.resolve.value.as_ref(),
-                focus: Focus::TourPassage {
-                    tour,
+                focus: Focus::LabPassage {
+                    lab,
                     text: &point.target,
                 },
                 tracking,
@@ -5082,7 +5080,7 @@ impl App {
             (PointKind::Stage, _) => Focus::Stage,
             (PointKind::Specimen, _) => Focus::Specimen,
             // Returned above, before the stage lookup this match sits inside.
-            (PointKind::TourPassage { .. }, _) => return,
+            (PointKind::LabPassage { .. }, _) => return,
         };
         let ask = Ask {
             seq: point.seq,
@@ -5105,23 +5103,23 @@ impl App {
         self.context.point_error = bridge::write(&ask).err().map(|e| e.to_string());
     }
 
-    /// Arm a tour-passage capture: ask egui to copy the selection, and wait for it.
+    /// Arm a lab-passage capture: ask egui to copy the selection, and wait for it.
     ///
     /// Pushing [`egui::Event::Copy`] is the only way to get at a label selection's
     /// text — see [`PendingPassage`] for why the application cannot simply read it.
     /// **Ctrl+C deliberately does not do this**, on Doug's ruling: a copy made to paste
     /// somewhere else must not silently change what Claude has.
-    fn arm_tour_passage_capture(&mut self, ctx: &egui::Context, tour: String) {
+    fn arm_lab_passage_capture(&mut self, ctx: &egui::Context, lab: String) {
         // **Recorded at the PRESS, not only at the capture**, so the action trail
         // distinguishes the two failures. Without it, "nothing happened" was
         // indistinguishable from "the click never arrived" — and it was the latter for
         // a whole evening, because `session.json` is written only when an action is
         // recorded, so a press that reached nothing left the file untouched and every
         // reading of it described HRW's state at startup.
-        diagnostics::record_action("point-at-selection", format!("in {tour}"));
+        diagnostics::record_action("point-at-selection", format!("in {lab}"));
         ctx.input_mut(|i| i.events.push(egui::Event::Copy));
         self.pending_passage = Some(PendingPassage {
-            tour,
+            lab,
             frames_left: 3,
         });
     }
@@ -5143,9 +5141,9 @@ impl App {
         };
         match copied {
             Some(text) => {
-                let tour = pending.tour.clone();
+                let lab = pending.lab.clone();
                 self.pending_passage = None;
-                self.capture_tour_passage(tour, text);
+                self.capture_lab_passage(lab, text);
             }
             None => {
                 pending.frames_left = pending.frames_left.saturating_sub(1);
@@ -5169,8 +5167,8 @@ impl App {
         }
     }
 
-    /// Make a selected tour passage the point, and emit it.
-    fn capture_tour_passage(&mut self, tour: String, text: String) {
+    /// Make a selected lab passage the point, and emit it.
+    fn capture_lab_passage(&mut self, lab: String, text: String) {
         // **Collapsed to one line for the bar and the log.** The passage itself goes to
         // `focus.json` in full; a paragraph rendered into a one-row bar would push the
         // × button off the edge, and the bar's job is to say WHAT is held, not hold it.
@@ -5182,7 +5180,7 @@ impl App {
         };
         let target = format!("\u{201c}{shown}\u{201d}");
 
-        diagnostics::record_action("point-at-tour-passage", format!("in {tour}"));
+        diagnostics::record_action("point-at-lab-passage", format!("in {lab}"));
         self.context.jump_highlight = None;
         let seq = self.context.next_seq();
         self.context.pointed_at = Some(PointedAt {
@@ -5190,7 +5188,7 @@ impl App {
             // The bar shows the abbreviation; `emit_context` sends `target` as the
             // passage text, so this MUST be the full prose, not the elision.
             target: text,
-            kind: PointKind::TourPassage { tour },
+            kind: PointKind::LabPassage { lab },
             // No stage. A passage of prose is not in one.
             stage: None,
             request: bridge::AskRequest::Explain,
@@ -5205,7 +5203,7 @@ impl App {
     ///
     /// Runs once per compile, after the new stages land. Only `PointKind::Node`
     /// can dangle — a stage or specimen point names something that exists by
-    /// construction, and **a tour passage is not in the compile at all**, so
+    /// construction, and **a lab passage is not in the compile at all**, so
     /// recompiling a specimen cannot invalidate it. The arm below says so; this
     /// sentence said "a stage or specimen point" until the variant existed.
     ///
@@ -5228,11 +5226,11 @@ impl App {
                         .as_ref()
                         .is_some_and(|value| bridge::node_exists(value, key_path))
                 }),
-                // **A tour passage cannot dangle on a recompile**, which is the whole
+                // **A lab passage cannot dangle on a recompile**, which is the whole
                 // reason it is listed beside the two that name something existing by
                 // construction: it points at prose in a document, and compiling a
-                // specimen does not touch the tours.
-                PointKind::Stage | PointKind::Specimen | PointKind::TourPassage { .. } => false,
+                // specimen does not touch the labs.
+                PointKind::Stage | PointKind::Specimen | PointKind::LabPassage { .. } => false,
             },
             None => false,
         };
@@ -5583,75 +5581,70 @@ impl App {
         }
     }
 
-    /// The **tour panel**: the picker at the top, the tour's markdown below.
+    /// The **lab panel**: the picker at the top, the lab's markdown below.
     ///
     /// Lifted out of `frame_ui` on 2026-08-02.
     ///
     /// Returns the `hrw://` link the reader clicked, if any. **Returned rather
-    /// than dispatched**, because a tour link can load a specimen, change stage
+    /// than dispatched**, because a lab link can load a specimen, change stage
     /// and move the camera — the panel has no business doing any of that, and
     /// `frame_ui` acts on it before the central panel renders so the whole frame
     /// sees one consistent state.
     ///
-    /// Re-reads the tour file immediately after a pick rather than waiting for
+    /// Re-reads the lab file immediately after a pick rather than waiting for
     /// the poll: *"a click that appears to do nothing for a quarter second reads
     /// as a broken button."*
-    fn tour_panel_ui(&mut self, ui: &mut egui::Ui) -> Option<HrwLink> {
-        self.poll_tour_file();
-        let tour_text = self.tour.text().map(str::to_owned);
-        let tour_links = tour_text
+    fn lab_panel_ui(&mut self, ui: &mut egui::Ui) -> Option<HrwLink> {
+        self.poll_lab_file();
+        let lab_text = self.lab.text().map(str::to_owned);
+        let lab_links = lab_text
             .as_deref()
             .map(extract_hrw_links)
             .unwrap_or_default();
-        register_hrw_hooks(&mut self.commonmark_cache, &tour_links);
+        register_hrw_hooks(&mut self.commonmark_cache, &lab_links);
         let avail = ui.available_width();
-        let mut switch_to: Option<TourSource> = None;
+        let mut switch_to: Option<LabSource> = None;
         let ctx = ui.ctx().clone();
         let shown = self
             .split
             .configure(&ctx, egui::Panel::left(LEFT_PANEL_ID), avail)
             .show(ui, |ui| {
                 self.split.inner_width = Some(ui.available_width());
-                // **The tour picker lives in the transport bar**, not in a section of
-                // its own. Doug, 2026-08-16: the "Tours (23)" header and its divider
+                // **The lab picker lives in the transport bar**, not in a section of
+                // its own. Doug, 2026-08-16: the "Labs (23)" header and its divider
                 // stopped making sense once the list became one combo box and one
                 // button — a titled bar around two controls is chrome announcing
                 // chrome. Both moved into `autoplay_controls_ui`, which already owns
                 // a bar and already sits directly above the prose.
-                switch_to = self.autoplay_controls_ui(ui, &tour_text);
+                switch_to = self.autoplay_controls_ui(ui, &lab_text);
                 ui.separator();
 
-                tour_panel::tour_prose_ui(
-                    ui,
-                    &mut self.tour,
-                    &mut self.commonmark_cache,
-                    &tour_text,
-                );
+                lab_panel::lab_prose_ui(ui, &mut self.lab, &mut self.commonmark_cache, &lab_text);
             });
         if let Some(msg) = self.split.observe(shown.response.rect.width(), avail) {
             self.log_split(msg);
         }
         if let Some(source) = switch_to {
-            self.select_tour(source);
+            self.select_lab(source);
             // Re-read now rather than waiting up to a poll interval: a click that
             // appears to do nothing for a quarter second reads as a broken button.
-            self.tour.polled_at = None;
-            self.poll_tour_file();
+            self.lab.polled_at = None;
+            self.poll_lab_file();
         }
-        drain_hrw_hooks(&mut self.commonmark_cache, &tour_links)
+        drain_hrw_hooks(&mut self.commonmark_cache, &lab_links)
     }
 
     /// The **Specimen left panel** — the specimen list above, and beneath it either the
     /// Modelica source or the purpose note.
     ///
-    /// Lifted out of `frame_ui` on 2026-08-21, the twin of [`Self::tour_panel_ui`] and
+    /// Lifted out of `frame_ui` on 2026-08-21, the twin of [`Self::lab_panel_ui`] and
     /// the reason the seam was visible: the two mode panels are one two-member list, and
     /// one member had been a method call since 2026-08-02 while the other was a hundred
     /// and thirteen lines of body. See
     /// [`docs/app-split-plan.md`](../docs/app-split-plan.md).
     ///
     /// Returns the `hrw://` link the reader clicked in a purpose note, if any —
-    /// returned rather than dispatched for [`Self::tour_panel_ui`]'s reason: a link can
+    /// returned rather than dispatched for [`Self::lab_panel_ui`]'s reason: a link can
     /// load a specimen and move the camera, and `frame_ui` acts on it before the central
     /// panel renders so the whole frame sees one consistent state.
     ///
@@ -5731,12 +5724,12 @@ impl App {
     /// the body.
     ///
     /// **Resolving the note and draining the link hooks stay here**, the same split
-    /// [`Self::tour_panel_ui`] uses for the tour's prose: the pane renders a document
+    /// [`Self::lab_panel_ui`] uses for the lab's prose: the pane renders a document
     /// and the caller decides what a click on it means.
     ///
     /// **The guard this replaced was dead, and saying so is the point.** The old code
-    /// wrote `if hrw_link_action.is_none()`, defending against a tour link the same
-    /// frame — but the tour and specimen panels are arms of a `ui_mode` comparison and
+    /// wrote `if hrw_link_action.is_none()`, defending against a lab link the same
+    /// frame — but the lab and specimen panels are arms of a `ui_mode` comparison and
     /// cannot both run. A condition that can never be false reads as a real interaction
     /// between two panels; there is none.
     fn specimen_purpose_ui(&mut self, ui: &mut egui::Ui) -> Option<HrwLink> {
@@ -5756,36 +5749,35 @@ impl App {
         drain_hrw_hooks(&mut self.commonmark_cache, &links)
     }
 
-    /// The tour transport bar — see [`tour_panel::autoplay_controls_ui`], which
+    /// The lab transport bar — see [`lab_panel::autoplay_controls_ui`], which
     /// holds the body and the rationale.
     ///
     /// **The presses stay here on purpose.** Back, Play and Stop each reach past the
-    /// tour into the application — the tour file, the beat dispatcher, the UI mode a
+    /// lab into the application — the lab file, the beat dispatcher, the UI mode a
     /// run borrowed — so the bar reports what was pressed and `App` performs it, the
     /// same split [`Self::specimen_source_ui`] uses for a clicked identifier.
     ///
-    /// Returns a tour to switch to, because that one is the caller's own business:
-    /// `tour_panel_ui` applies it after the panel has finished drawing.
+    /// Returns a lab to switch to, because that one is the caller's own business:
+    /// `lab_panel_ui` applies it after the panel has finished drawing.
     fn autoplay_controls_ui(
         &mut self,
         ui: &mut egui::Ui,
-        tour_text: &Option<String>,
-    ) -> Option<TourSource> {
-        let request =
-            tour_panel::autoplay_controls_ui(ui, &mut self.tour, self.compiling, tour_text)?;
+        lab_text: &Option<String>,
+    ) -> Option<LabSource> {
+        let request = lab_panel::autoplay_controls_ui(ui, &mut self.lab, self.compiling, lab_text)?;
         match request {
             TransportRequest::Switch(source) => return Some(source),
-            TransportRequest::Back => self.tour_back(),
+            TransportRequest::Back => self.lab_back(),
             TransportRequest::Play => self.start_autoplay(),
             TransportRequest::Stopped => self.restore_mode_after_autoplay(),
             TransportRequest::PointAtSelection => {
-                // The tour's own label, so the capture names the document the passage
+                // The lab's own label, so the capture names the document the passage
                 // can be found in. `None` cannot happen while the panel is drawing a
-                // tour, and is reported rather than assumed away.
-                match self.tour.selected.as_ref().map(TourSource::label) {
-                    Some(tour) => self.arm_tour_passage_capture(ui.ctx(), tour),
+                // lab, and is reported rather than assumed away.
+                match self.lab.selected.as_ref().map(LabSource::label) {
+                    Some(lab) => self.arm_lab_passage_capture(ui.ctx(), lab),
                     None => {
-                        self.notify("\u{26a0} no tour is open, so there is no passage to point at")
+                        self.notify("\u{26a0} no lab is open, so there is no passage to point at")
                     }
                 }
             }
@@ -5847,7 +5839,7 @@ impl App {
             // making "nothing is assembled" distinguishable from "the bar is not
             // rendering" — which the bar being unconditional now settles by itself.
             let hint = self.empty_context_hint();
-            let tour = self.tour.selected.as_ref().map(TourSource::label);
+            let lab = self.lab.selected.as_ref().map(LabSource::label);
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new("Context").strong())
                     .on_hover_text(format!("{EMPTY_CONTEXT_RULE}\n\nRight now: {hint}"));
@@ -5856,7 +5848,7 @@ impl App {
                 ui,
                 self.model.as_deref(),
                 self.selected.is_some().then_some(self.stage),
-                tour.as_deref(),
+                lab.as_deref(),
                 context_bar::stage_ir_count(&self.stages),
                 self.def_index.len(),
             );
@@ -5868,7 +5860,7 @@ impl App {
         // The match list has to be current before the row that reports it.
         self.refresh_jump_matches();
 
-        let tour = self.tour.selected.as_ref().map(TourSource::label);
+        let lab = self.lab.selected.as_ref().map(LabSource::label);
         let press = context_bar::context_bar_ui(
             ui,
             &self.context,
@@ -5879,7 +5871,7 @@ impl App {
             &self.declaring_classes,
             &self.def_index,
             self.model.as_deref(),
-            tour.as_deref(),
+            lab.as_deref(),
         );
 
         match press {
@@ -6011,7 +6003,7 @@ impl App {
     /// Everything below is unchanged and runs in the same order. See
     /// `docs/verification-plan.md` item 2.
     pub(crate) fn frame_ui(&mut self, ui: &mut egui::Ui) {
-        // Before anything draws: collect a tour-passage copy that egui produced for us
+        // Before anything draws: collect a lab-passage copy that egui produced for us
         // on a previous frame. See `PendingPassage`.
         self.collect_pending_passage();
 
@@ -6028,7 +6020,7 @@ impl App {
         // frames. See `Prewarm`.
         self.tick_prewarm(ui.ctx());
 
-        // A self-running tour advances here, after `drain_worker` so `compiling`
+        // A self-running lab advances here, after `drain_worker` so `compiling`
         // reflects this frame rather than the last one — the clock must see the
         // compile finish on the frame it finishes.
         self.tick_autoplay(ui.ctx());
@@ -6061,13 +6053,13 @@ impl App {
         });
 
         // ---- Left panel: content depends on UI mode ----
-        // Tour and Specimen modes show a left panel (tour text or specimen list
+        // Lab and Specimen modes show a left panel (lab text or specimen list
         // + purpose). Debug mode hides it so the stage tabs fill HRW's window
         // (VS Code occupies the left half of the screen).
         let mut hrw_link_action: Option<HrwLink> = None;
 
-        if self.ui_mode == UiMode::Tour {
-            hrw_link_action = self.tour_panel_ui(ui);
+        if self.ui_mode == UiMode::Lab {
+            hrw_link_action = self.lab_panel_ui(ui);
         }
         if self.ui_mode == UiMode::Specimen {
             hrw_link_action = self.specimen_panel_ui(ui);
@@ -6150,7 +6142,7 @@ impl App {
         // Dispatched through the existing `ShowSource` verb rather than reimplemented:
         // that link already switches to Specimen mode, opens the Source detail, leaves
         // the log view and scrolls. A second copy of those four steps would be four
-        // chances for the menu and the tour link to drift apart.
+        // chances for the menu and the lab link to drift apart.
         if let Some(line) = tree_actions.show_source_line {
             self.dispatch_hrw_link(HrwLink::ShowSource(Some(line)));
         }
@@ -6232,7 +6224,7 @@ pub(crate) fn read_purpose(path: &Path) -> Option<String> {
     })
 }
 
-/// A blue-tinted header bar for left-panel sections (Tour, Specimens, Purpose).
+/// A blue-tinted header bar for left-panel sections (Lab, Specimens, Purpose).
 /// Uses a navy background with light-blue text in dark mode, matching the RHS
 /// stage-tab palette for visual consistency.
 pub(crate) struct SectionStyle {
@@ -6370,9 +6362,9 @@ struct FrameIntent {
 /// principle applied: `hrw://` should express any noun `focus.json` can describe, so
 /// the two directions share one vocabulary rather than inventing a second.
 ///
-/// Added 2026-07-29 to close a tour hole. Links reached a stage tab and no further,
+/// Added 2026-07-29 to close a lab hole. Links reached a stage tab and no further,
 /// so every animation and custom view — all of them one level below a stage — had to
-/// be handed off in prose ("same tab → now click **Incidence**"). The first tour had
+/// be handed off in prose ("same tab → now click **Incidence**"). The first lab had
 /// two working links and four such hand-offs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum SubView {
@@ -6445,17 +6437,17 @@ impl SubView {
     }
 }
 
-/// Navigation action parsed from an `hrw://` URI in tour or narrative markdown.
+/// Navigation action parsed from an `hrw://` URI in lab or narrative markdown.
 #[derive(Debug, PartialEq, Eq)]
 enum HrwLink {
-    /// `hrw://tour/<name>[/stop/<slug>]` — open a **fixture tour**, optionally at a
+    /// `hrw://lab/<name>[/station/<slug>]` — open a **fixture lab**, optionally at a
     /// named stop.
     ///
-    /// **The verb that lets one tour cite another.** Added 2026-08-05 for
+    /// **The verb that lets one lab cite another.** Added 2026-08-05 for
     /// `docs/ideas.md` #63: Claude's answering repertoire was text, then a freshly
-    /// written ad hoc tour, with no way to say *"the answer already exists — walk
+    /// written ad hoc lab, with no way to say *"the answer already exists — walk
     /// `failure-typecheck` from stop 2."* Ten link forms existed and none opened a
-    /// tour, so a composed answer could only *describe* a fixture in prose. The
+    /// lab, so a composed answer could only *describe* a fixture in prose. The
     /// expectations are the thing being lost by that: a fixture's `**Expected:**`
     /// lines are versioned and were checked, while a retelling has whatever Claude
     /// remembers of them.
@@ -6467,25 +6459,25 @@ enum HrwLink {
     /// that rotted inside a day). A slug derived from the heading text fails **loudly**
     /// when the heading is renamed, and is immune to insertion — which is the
     /// behaviour the link checker can act on.
-    OpenTour { tour: String, stop: Option<String> },
+    OpenLab { lab: String, stop: Option<String> },
     /// `hrw://breakpoint/<anchor>` — **arm a source breakpoint the reader would
     /// otherwise set by hand.**
     ///
     /// Doug, 2026-08-08, walking `matching-live.md`: *"Having to manually set
     /// breakpoints is friction. I'd like to instead click on links to set
-    /// breakpoints."* A live tour cannot avoid breakpoints — they are the
+    /// breakpoints."* A live lab cannot avoid breakpoints — they are the
     /// instrument — but it can stop making the reader transcribe a line number
-    /// into a gutter while holding the tour in their other hand.
+    /// into a gutter while holding the lab in their other hand.
     ///
     /// **The anchor is named, and the line is resolved at click time** from
     /// [`crate::matching_ledger::anchor_by_name`], which locates it by what the
-    /// line *says*. This is `OpenTour`'s slug decision applied again: a number
+    /// line *says*. This is `OpenLab`'s slug decision applied again: a number
     /// in prose rots silently, a name does not. Here the link cannot even go
     /// stale, because nothing about the line is stored in it.
     ///
     /// **A name that resolves to no anchor does not parse**, so
-    /// `fixture_tour_links_all_resolve` fails on a typo or on an anchor whose
-    /// locating fragment was edited away — the tour is checked at test time
+    /// `fixture_lab_links_all_resolve` fails on a typo or on an anchor whose
+    /// locating fragment was edited away — the lab is checked at test time
     /// rather than discovered broken mid-walk.
     ///
     /// **Add-only** (`bridge::arm_source_breakpoint`): `docs/ideas.md` #74 makes
@@ -6501,10 +6493,10 @@ enum HrwLink {
     /// `hrw://source[/<line>]` — show the Modelica source, optionally scrolled to a
     /// 1-based line.
     ///
-    /// Added 2026-07-29 to close a tour hole: two tours had to *quote* a source line
+    /// Added 2026-07-29 to close a lab hole: two labs had to *quote* a source line
     /// ("reported at line 9, `connect(src.n, gnd.p);`") because nothing could point at
     /// one. Quoting is a prose workaround, which is the quiet-hole species that
-    /// accumulates unnoticed — see the tour-holes table in `docs/tech-debt.md`.
+    /// accumulates unnoticed — see the lab-holes table in `docs/tech-debt.md`.
     ShowSource(Option<u32>),
     /// `hrw://stage/<Stage>/<SubView>/equation/<n>` — go to a canvas view and **aim
     /// the camera** at equation `n`, so a stop can say "watch this equation" and put it
@@ -6522,17 +6514,17 @@ enum HrwLink {
     /// the vocabulary they share, or the capture and the link drift apart exactly as
     /// the stage slug did.
     ///
-    /// Added 2026-07-29. Until then a tour could name a *view* but not a place inside
+    /// Added 2026-07-29. Until then a lab could name a *view* but not a place inside
     /// it, which is where a canvas view's content actually lives: `ideas.md` #42 listed
     /// camera aiming as the biggest missing capability for canvas-backed stops.
     ///
     /// Only meaningful for the canvas-backed views. A text or grid view has no camera,
     /// so the link still navigates and the aim is simply ignored rather than failing
-    /// the stop — a tour degrading to "the right view, not aimed" beats one that
+    /// the stop — a lab degrading to "the right view, not aimed" beats one that
     /// silently does nothing.
     AimAtEquation(StageKind, SubView, usize),
     /// `hrw://stage/<Stage>/<SubView>/frame/<n>` — go to an animated view and **stop on
-    /// frame `n`**, so a tour can point at the moment a decision is made rather than at
+    /// frame `n`**, so a lab can point at the moment a decision is made rather than at
     /// the view containing it.
     ///
     /// The moment is where a replay's content lives: "the algorithm gives up here",
@@ -6551,7 +6543,7 @@ enum HrwLink {
     ///
     /// This was the last and largest parity gap. A node path is the capture's **richest
     /// noun** — it is what a left-click produces, and what most of Doug's questions have
-    /// been about — and until 2026-07-29 a tour could open a tree but not point into it.
+    /// been about — and until 2026-07-29 a lab could open a tree but not point into it.
     ///
     /// **The sub-view is optional, and omitting it is the only form that works for five
     /// stages.** Parse, Resolve, Instantiate, Typecheck and DAE render one generic tree
@@ -6561,9 +6553,9 @@ enum HrwLink {
     /// not, and the asymmetry meant **the richest noun was unavailable on the stages with
     /// the least else to point at.**
     ///
-    /// Found 2026-08-03 while rewriting `docs/fixture-tours/dae-construction.md` against
+    /// Found 2026-08-03 while rewriting `docs/fixture-labs/dae-construction.md` against
     /// the new DAE tab: every `hrw://stage/Dae/Tree/node/…` in it failed to parse, and
-    /// `fixture_tour_links_all_resolve` said so before the tour was ever walked — the
+    /// `fixture_lab_links_all_resolve` said so before the lab was ever walked — the
     /// case the link checker exists for.
     PointAtNode(StageKind, Option<SubView>, Vec<Seg>),
     /// `hrw://follow/<name>` — follow an identifier, as a right-click Follow would.
@@ -6575,9 +6567,9 @@ enum HrwLink {
     Follow(String),
     /// `hrw://notebook/<name.nb>` — open a Wolfram notebook in Wolfram Desktop.
     ///
-    /// The cross-platform tours route through a notebook, and a plain markdown link to
+    /// The cross-platform labs route through a notebook, and a plain markdown link to
     /// one is handed to the *browser* — which does nothing useful with a `.nb`. Doug hit
-    /// exactly that on the first cross-platform tour (2026-07-30). A tour should drive
+    /// exactly that on the first cross-platform lab (2026-07-30). A lab should drive
     /// the reader to the stop, not tell him to go and find the file.
     ///
     /// The name is resolved by `bridge::resolve_notebook`, which restricts it to a file
@@ -6586,7 +6578,7 @@ enum HrwLink {
     /// `hrw://doc/<name.md>` — open a repository document **in VS Code**.
     ///
     /// Doug, 2026-08-31: *"the link for upstream-issues.md causes an attempt to open the
-    /// file in Chrome instead of attempting to open the file in VS Code."* Five tours
+    /// file in Chrome instead of attempting to open the file in VS Code."* Five labs
     /// carried `[upstream-issues.md](../upstream-issues.md)`, and a relative markdown
     /// link is handed to the OS as a URL.
     ///
@@ -6603,7 +6595,7 @@ enum HrwLink {
     ///
     /// Doug, 2026-08-31, pointing at *"`connections/mod.rs` uses union-find"*: *"This
     /// reference and others like it would be much more helpful as links to the code files
-    /// in VS Code."* The day's earlier agreement was that tour claims are **grounded in
+    /// in VS Code."* The day's earlier agreement was that lab claims are **grounded in
     /// Rumoca's code** rather than abstractly mathematical — and the moment prose started
     /// naming `connect_primitive_vars` and `generate_equality_equations`, every one of
     /// those names became somewhere he wants to go. A name he cannot reach is a
@@ -6612,11 +6604,11 @@ enum HrwLink {
     /// **The link carries a symbol, never a line.** `bridge::resolve_source` computes the
     /// line from the file at click time, so the link cannot rot the way
     /// `docs/tech-debt.md`'s `worker.rs:3434` citation did *inside a day*. Same decision
-    /// as `ArmBreakpoint` and `OpenTour`'s slugs, for the same reason.
+    /// as `ArmBreakpoint` and `OpenLab`'s slugs, for the same reason.
     ///
     /// **And it is checked**, which is the half that makes grounding pay: a symbol
-    /// renamed out of the source fails `doc_citations::tour_source_links_resolve` in the
-    /// FAST suite, so the tour breaks in a test rather than under Doug's cursor. That is
+    /// renamed out of the source fails `doc_citations::lab_source_links_resolve` in the
+    /// FAST suite, so the lab breaks in a test rather than under Doug's cursor. That is
     /// the mechanical return promised when the agreement was recorded — a claim naming
     /// `generate_equality_equations` can be wired into the gate, while a claim about
     /// "graphs" never could.
@@ -6625,7 +6617,7 @@ enum HrwLink {
     ///
     /// **The adjudicator verb.** System Modeler is an independent Modelica
     /// implementation, so "SM rejects this model that Rumoca accepts" is the strongest
-    /// claim a tour can make — see `docs/upstream-issues.md` #2, which exists because of
+    /// claim a lab can make — see `docs/upstream-issues.md` #2, which exists because of
     /// exactly that comparison.
     ///
     /// No new mechanism: the System Modeler installer already associates `.mo` with
@@ -6637,7 +6629,7 @@ enum HrwLink {
 impl HrwLink {
     /// Whether this link needs a specimen already loaded.
     ///
-    /// Doug clicked a tour's *fourth* stop first, without the first three, and nothing
+    /// Doug clicked a lab's *fourth* stop first, without the first three, and nothing
     /// happened. With no specimen the whole stage area returns early, so a stage link
     /// set state that nothing consumed — silently, which is the failure mode every other
     /// verb has been taught to avoid.
@@ -6645,7 +6637,7 @@ impl HrwLink {
     /// The ones that do **not** need a specimen are the ones that make sense on their
     /// own, and they are the list below rather than a count in this sentence. It said
     /// *"the three"* until 2026-08-23, by which time the list held **six** — the two
-    /// load verbs and a notebook, plus System Modeler, opening a tour and arming a
+    /// load verbs and a notebook, plus System Modeler, opening a lab and arming a
     /// breakpoint, each added with its own reason and none of them updating the number
     /// here. A count in prose beside the list it counts is the cheapest thing in this
     /// repository to leave stale.
@@ -6658,7 +6650,7 @@ impl HrwLink {
     /// nothing to do with what was clicked. It has now produced that bug twice, and
     /// **Doug reported it both times, in nearly the same words:**
     ///
-    /// - **2026-08-05, `OpenTour`** — *"The links in the 'Claude's answer' tour do not
+    /// - **2026-08-05, `OpenLab`** — *"The links in the 'Claude's answer' lab do not
     ///   work."*
     /// - **2026-08-31, `OpenDoc`** — the new `hrw://doc/` verb shipped with a green gate,
     ///   907 tests, and clicking the link Doug had just asked for showed *"no specimen
@@ -6685,10 +6677,10 @@ impl HrwLink {
         match self {
             // Loading IS the act; requiring a load first would be circular.
             Self::LoadSpecimen(_) | Self::LoadAndSwitch(..) => false,
-            // Opening a document — a tour, a doc, a notebook, a System Modeler model —
+            // Opening a document — a lab, a doc, a notebook, a System Modeler model —
             // is navigation between FILES. No model need be loaded to read one, and
             // `OpenDoc` sitting in this group is the fix for 2026-08-31.
-            Self::OpenTour { .. }
+            Self::OpenLab { .. }
             | Self::OpenNotebook(_)
             | Self::OpenDoc(_)
             | Self::OpenSource(_)
@@ -6729,13 +6721,13 @@ impl HrwLink {
     fn leaves_hrw(&self) -> bool {
         match self {
             // `OpenDoc` spawns `code` and `OpenNotebook` hands the file to Wolfram, so
-            // both put another window in front of the reader. `OpenTour` does not: a
-            // tour opens in HRW's own panel.
+            // both put another window in front of the reader. `OpenLab` does not: a
+            // lab opens in HRW's own panel.
             Self::OpenNotebook(_)
             | Self::OpenDoc(_)
             | Self::OpenSource(_)
             | Self::OpenInSystemModeler(_) => true,
-            Self::OpenTour { .. }
+            Self::OpenLab { .. }
             | Self::LoadSpecimen(_)
             | Self::LoadAndSwitch(..)
             | Self::ArmBreakpoint(_)
@@ -6751,15 +6743,12 @@ impl HrwLink {
     /// One line naming what this link does, for the action trail.
     ///
     /// Reconstructs the canonical URL rather than `Debug`-printing the enum: the trail
-    /// is read by Claude alongside the tour markdown, and matching the tour's own text
-    /// is what makes "Doug clicked Stop 3" legible at a glance.
+    /// is read by Claude alongside the lab markdown, and matching the lab's own text
+    /// is what makes "Doug clicked Station 3" legible at a glance.
     fn describe(&self) -> String {
         match self {
-            Self::OpenTour { tour, stop: None } => format!("tour/{tour}"),
-            Self::OpenTour {
-                tour,
-                stop: Some(s),
-            } => format!("tour/{tour}/stop/{s}"),
+            Self::OpenLab { lab, stop: None } => format!("lab/{lab}"),
+            Self::OpenLab { lab, stop: Some(s) } => format!("lab/{lab}/station/{s}"),
             Self::LoadSpecimen(name) => format!("load/{name}"),
             Self::SwitchStage(kind, None) => format!("stage/{}", kind.slug()),
             Self::SwitchStage(kind, Some(sub)) => {
@@ -6803,7 +6792,7 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
     // 5, not 4: the node form (`stage/<Stage>/<View>/node/<n>`) is five segments.
     // With a cap of 4 the trailing `node/<n>` glommed into one segment and the link
     // silently failed to parse — a link that does nothing is the worst outcome in a
-    // tour, since nothing on screen says why.
+    // lab, since nothing on screen says why.
     let parts: Vec<&str> = path.splitn(5, '/').collect();
     match parts.as_slice() {
         ["load", specimen, stage, view] => {
@@ -6821,19 +6810,19 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
         }
         ["load", specimen] => Some(HrwLink::LoadSpecimen((*specimen).to_owned())),
         // **Validated here, not at dispatch.** An unknown anchor failing to
-        // parse is what puts `fixture_tour_links_all_resolve` in front of it, so
+        // parse is what puts `fixture_lab_links_all_resolve` in front of it, so
         // a renamed anchor breaks the suite instead of a walk.
         ["breakpoint", name] if crate::matching_ledger::anchor_by_name(name).is_some() => {
             Some(HrwLink::ArmBreakpoint((*name).to_owned()))
         }
-        ["tour", name, "stop", slug] if !name.is_empty() && !slug.is_empty() => {
-            Some(HrwLink::OpenTour {
-                tour: (*name).to_owned(),
+        ["lab", name, "station", slug] if !name.is_empty() && !slug.is_empty() => {
+            Some(HrwLink::OpenLab {
+                lab: (*name).to_owned(),
                 stop: Some((*slug).to_owned()),
             })
         }
-        ["tour", name] if !name.is_empty() => Some(HrwLink::OpenTour {
-            tour: (*name).to_owned(),
+        ["lab", name] if !name.is_empty() => Some(HrwLink::OpenLab {
+            lab: (*name).to_owned(),
             stop: None,
         }),
         ["stage", stage, view] => {
@@ -6880,7 +6869,7 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
         // Deliberately not a fallback for a *misspelled* sub-view: that string would
         // have to parse as a path segment, and `parse_path` rejects what is not one.
         // A typo'd view slug still fails the arm above and then fails here, which is
-        // the behaviour a tour author needs — a link that silently degraded to
+        // the behaviour a lab author needs — a link that silently degraded to
         // "somewhere in the stage" is the quiet-wrong-place failure the checker
         // cannot see.
         ["stage", stage, "node", path] => Some(HrwLink::PointAtNode(
@@ -6891,10 +6880,10 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
         ["stage", stage, view, "frame", n] => {
             let kind = StageKind::from_slug(stage)?;
             // **1-based, matching the frame counter on screen** ("Frame 3/11"). Links
-            // were 0-based until 2026-07-29, so a tour saying `frame/40` landed on a
+            // were 0-based until 2026-07-29, so a lab saying `frame/40` landed on a
             // view reading "41" — the link vocabulary and the display disagreeing about
             // the same noun, which is the drift the parity audit exists to catch. The
-            // fixture tour had the discrepancy *written into it* as a parenthetical,
+            // fixture lab had the discrepancy *written into it* as a parenthetical,
             // which is documenting a bug rather than fixing it.
             //
             // `checked_sub(1)` rejects `frame/0` for free: under 1-based numbering there
@@ -6930,7 +6919,7 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
 /// wrong-but-valid index resolves fine and simply shows the wrong step, and no link
 /// checker can see it.
 ///
-/// Found 2026-08-03 while scouting a matching-animation tour.
+/// Found 2026-08-03 while scouting a matching-animation lab.
 /// `a_frame_link_round_trips_through_the_parser` binds this to `parse_hrw_link`, so
 /// the two cannot drift again.
 pub fn frame_link(stage: &str, view: &str, index: usize) -> String {
@@ -6981,13 +6970,13 @@ fn register_hrw_hooks(cache: &mut egui_commonmark::CommonMarkCache, links: &[Str
 ///
 /// The consequence is worse than the two dead links that exposed it. The loop returns
 /// the first `true` hook in **document order**, so after the first click anywhere in a
-/// tour, that link is re-dispatched on every frame forever and **every link below it
+/// lab, that link is re-dispatched on every frame forever and **every link below it
 /// becomes unreachable**: its own hook goes `true`, and the stuck one above it is
 /// always found first.
 ///
 /// It read as "nothing happens" rather than as chaos because dispatching a link that
 /// navigates where the app already is has no visible effect — the app was busy
-/// re-arriving at Stop 1's destination while Doug clicked Stop 2. And it hid for as long
+/// re-arriving at Station 1's destination while Doug clicked Station 2. And it hid for as long
 /// as it did because **restarting HRW clears the cache**, so the next link clicked
 /// after any rebuild worked, and this project rebuilds constantly.
 ///
@@ -7071,7 +7060,7 @@ fn open_in_vscode(path: &Path, line: Option<usize>) -> std::io::Result<()> {
         }
     }
     // Spawning a `.cmd` runs it through `cmd.exe`, which would otherwise flash a console
-    // window over the tour on every doc link. `CREATE_NO_WINDOW`.
+    // window over the lab on every doc link. `CREATE_NO_WINDOW`.
     #[cfg(target_os = "windows")]
     {
         use std::os::windows::process::CommandExt;
@@ -7091,7 +7080,7 @@ fn open_with_os(path: &Path) -> std::io::Result<()> {
         .map(|_| ())
 }
 
-/// Cap markdown heading size to 1.15x body so rendered tour/narrative text stays compact.
+/// Cap markdown heading size to 1.15x body so rendered lab/narrative text stays compact.
 pub(crate) fn set_markdown_text_sizes(ui: &mut egui::Ui) {
     let body_size = ui.text_style_height(&egui::TextStyle::Body);
     ui.style_mut().text_styles.insert(

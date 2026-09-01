@@ -61,7 +61,7 @@ still not a measurement.**
 |---|---|---|
 | 1 — `HrwLink` column read | `4f8239e8` | **no defect.** Parse arms are arity-disjoint, `describe` covers all twelve variants. Added a corpus-wide `parse→describe→parse` guard where only ten hand-picked literals were checked before. |
 | 2 — per-stage wiring audit | `61407cee` | **a false claim.** `every_compilation_stage_has_a_tab_and_the_log_does_not` promised that a hand-written roster made a forgotten tab *"fail by name"*. It cannot: a stage absent from the tab array is absent from that list too, so nothing queries it. It caught **removal, never omission**. |
-| 3 — same pattern elsewhere | `1358e89d` | the tour-picker test named **9 of 22** fixtures while its name claimed every one. Now derived from `fixture_tours()`. |
+| 3 — same pattern elsewhere | `1358e89d` | the lab-picker test named **9 of 22** fixtures while its name claimed every one. Now derived from `fixture_labs()`. |
 
 **Every claim was demonstrated by breaking it, not by passing.** Item 2's break is the one worth
 keeping: with `Events` deleted from **both** the tab array and the old test's list — which is what
@@ -240,7 +240,7 @@ a test's clothes.**
 
 **Item 3 is the column read doing what it is advertised to do**: a list of siblings where one
 member is wrong. `Ask::stage` had a single spelling for `None` — *"(navigated definition)"* — and a
-tour passage inherited it, so `focus.json` emitted `kind: "tour_passage"` beside
+lab passage inherited it, so `focus.json` emitted `kind: "lab_passage"` beside
 `stage: "(navigated definition)"`. **Nothing was missing; the field was filled with the wrong
 reason**, which no check here looks for.
 
@@ -349,7 +349,7 @@ things Doug said.
 | 1 | three documents named the budget ratchet retired hours earlier, one inside a **no-go rule** | the retirement, committed | `65df2587` |
 | 2 | the gate has three verdicts; two documents **and the runner's own header** said two | `gate_policy` | `6d127723` |
 | 3 | `CLAUDE.md` charged **FULL** for a guarded-table edit, three times | the checker's own message | `d3766563` |
-| 4 | the tour loop named the one gate that **cannot see a tour edit**, and said `ONLY` a `##` heading regenerates the catalogue | `gate_policy`, `tour::catalogue` | `ba8ca672` |
+| 4 | the lab loop named the one gate that **cannot see a lab edit**, and said `ONLY` a `##` heading regenerates the catalogue | `gate_policy`, `lab::catalogue` | `ba8ca672` |
 
 **The pattern is one thing, and it is worth more than the four fixes.** Every contradiction was
 **same-day**: a mechanism changed and its description did not. Nothing here had rotted over weeks.
@@ -357,7 +357,7 @@ That says the risk window is hours, not months — and that a day of heavy mecha
 end with this sweep rather than wait for a night.
 
 **Findings 3 and 4 are the ones that mattered.** Both actively instructed a session to do the
-thing Doug had ruled a bug that afternoon: pay the FULL gate for a tour edit. The mechanism to
+thing Doug had ruled a bug that afternoon: pay the FULL gate for a lab edit. The mechanism to
 avoid it was built and green; the prose kept sending readers around it. **A mechanism does not
 take effect when it is built — it takes effect when the documents stop contradicting it.**
 

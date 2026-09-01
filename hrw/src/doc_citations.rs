@@ -26,7 +26,7 @@ mod tests {
     /// touching `src/` to the FULL gate, so while these budgets were `const`s **here**, a
     /// pure prose commit that pushed a document over its budget became a `src/` change and
     /// paid ~170 s instead of ~6 s. Two of the twenty commits pushed that day were exactly
-    /// that — a tour rewrite and a handoff note — costing him about three minutes each,
+    /// that — a lab rewrite and a handoff note — costing him about three minutes each,
     /// waiting on a suite that could not observe the change.
     ///
     /// **A budget is data about documents.** It moves when a document moves, so it belongs
@@ -279,7 +279,7 @@ mod tests {
     ///
     /// **Deliberately does not fail on untagged prose.** Upgrading is lazy by design
     /// (`docs/ideas.md` #41, `docs/provenance.md`): tagging 9,000 lines up front would
-    /// produce tags nobody had checked, which is the tour-prose mistake again. Low
+    /// produce tags nobody had checked, which is the lab-prose mistake again. Low
     /// coverage is expected; a *wrong* tag is not, because a tag is a claim about
     /// trustworthiness and a false one is worse than silence.
     ///
@@ -880,12 +880,12 @@ Some prose.
     #[test]
     fn app_does_not_regrow_its_field_count() {
         /// 105 before the pause (2026-08-02); 94 after `StageViewCaches`; 85
-        /// after `ModelListState`; 75 after `Viewport`; 72 after `TourState`; 57
+        /// after `ModelListState`; 75 after `Viewport`; 72 after `LabState`; 57
         /// after `SourceViewState` and `ContextBarState`.
         ///
         /// **Raised to 58 on 2026-08-02 for `SplitState`** (`ideas.md` #59). The ratchet
         /// fired and the question it asks was answered honestly: the LHS/RHS split is
-        /// **window layout**, used by both the tour and specimen panels and owned by
+        /// **window layout**, used by both the lab and specimen panels and owned by
         /// neither, so there is no pane to push it into. This is the intended outcome of
         /// a ratchet, not a defeat of one — it forced the question and the answer was
         /// recorded rather than assumed.
@@ -956,7 +956,7 @@ Some prose.
     /// **The working tree is checked out with LF line endings.**
     ///
     /// Several tests read repository files as *exact text*:
-    /// `app::tests::tour_catalogue_is_current` diffs `CATALOGUE.md` against
+    /// `app::tests::lab_catalogue_is_current` diffs `CATALOGUE.md` against
     /// freshly generated Markdown, and `app_does_not_regrow_its_field_count`
     /// directly above splits `app.rs` on `"\n}\n"`. Under CRLF both fail — and
     /// the field-count one fails claiming *"the App struct must be closed by a
@@ -987,7 +987,7 @@ Some prose.
 
         // Then the condition it is meant to produce, on the two files whose
         // exact text other tests depend on.
-        for rel in ["src/app.rs", "docs/fixture-tours/CATALOGUE.md"] {
+        for rel in ["src/app.rs", "docs/fixture-labs/CATALOGUE.md"] {
             let text = std::fs::read_to_string(hrw.join(rel))
                 .unwrap_or_else(|e| panic!("{rel} must be readable: {e}"));
 
@@ -1326,7 +1326,7 @@ Some prose.
         })
     }
 
-    /// Does an `hrw://` link form appear in a fixture tour?
+    /// Does an `hrw://` link form appear in a fixture lab?
     ///
     /// The named segments must appear **in order**, with `*` skipping any number
     /// of segments between them — so `hrw://stage/*/frame` matches
@@ -1338,10 +1338,10 @@ Some prose.
     /// still absent. Someone writing `stage/*/frame` means "a stage link with a
     /// frame verb", not "with exactly one thing between".
     ///
-    /// The fixture tours are the right corpus: a link form nothing exercises is
+    /// The fixture labs are the right corpus: a link form nothing exercises is
     /// not really built.
     fn link_form_is_exercised(pattern: &str) -> bool {
-        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
         let Ok(entries) = std::fs::read_dir(&dir) else {
             return false;
         };
@@ -1463,7 +1463,7 @@ Some prose.
         // Both verdicts must be reachable, or the check is decorative.
         assert!(
             !still_absent("hrw://stage/*/frame"),
-            "frame addressing IS exercised by a fixture tour, so this claim would be stale",
+            "frame addressing IS exercised by a fixture lab, so this claim would be stale",
         );
         assert!(
             !still_absent("App::scratch_specimens"),
@@ -1523,7 +1523,7 @@ Some prose.
 
     /// Cells of the table under `<!-- <marker>: <Specimen> -->`, backticks stripped.
     ///
-    /// **The marker names the specimen**, because one tour describes several panes of
+    /// **The marker names the specimen**, because one lab describes several panes of
     /// several models — `connect-expansion.md` covers `RcCircuit` and `TwoLoops` — and a
     /// checker that took "the first table after the marker" would compare one model's
     /// table against another model's compile and report confident nonsense.
@@ -1584,11 +1584,11 @@ Some prose.
         Some(rows)
     }
 
-    /// Every guarded region of a tour document, as `(marker, rows)` pairs.
+    /// Every guarded region of a lab document, as `(marker, rows)` pairs.
     ///
     /// **This is the fingerprint that decides FAST versus FULL**, and it exists because
     /// that decision was previously made by remembering. See
-    /// [`editing_a_guarded_tour_table_needs_the_full_gate`].
+    /// [`editing_a_guarded_lab_table_needs_the_full_gate`].
     ///
     /// Deliberately built from the same [`marked_rows`] the slow checkers use, so the
     /// two can never disagree about what "guarded" means — a second parser would be a
@@ -1713,8 +1713,8 @@ Some prose.
         );
 
         // **Trailing punctuation is trimmed from the probe**, and that is a correction:
-        // the first run reported `tour_panel`'s message uncovered because its test
-        // asserts `"No tour right now"` while the source says `"No tour right now."` —
+        // the first run reported `lab_panel`'s message uncovered because its test
+        // asserts `"No lab right now"` while the source says `"No lab right now."` —
         // the finding was the probe, not the pane.
         let uncovered: Vec<(&String, &String)> = rendered
             .iter()
@@ -1881,8 +1881,8 @@ Some prose.
     /// `viewing_log` is a full-pane override: while it is set, the centre shows the
     /// compilation log instead of the stage. An arm that changed `self.stage` and left
     /// it set would move the reader's stage **behind** the log, so the click produces
-    /// no visible change — *"a link that does nothing is the worst outcome in a tour,
-    /// because nothing on screen says why"*, which this router's own `OpenTour` arm
+    /// no visible change — *"a link that does nothing is the worst outcome in a lab,
+    /// because nothing on screen says why"*, which this router's own `OpenLab` arm
     /// says about a different silence.
     ///
     /// It is the exact failure `apply_pending_view_and_seek` was written for in
@@ -2246,7 +2246,7 @@ Some prose.
     /// # Why it compares against HEAD's commit date, not the wall clock
     ///
     /// A test keyed to `now` starts failing on any old checkout merely because it aged —
-    /// the trap [`editing_a_guarded_tour_table_needs_the_full_gate`] documents. Keyed to
+    /// the trap [`editing_a_guarded_lab_table_needs_the_full_gate`] documents. Keyed to
     /// HEAD both ends move together, so the result is **deterministic on any checkout**.
     ///
     /// # What it cannot claim
@@ -2343,7 +2343,7 @@ Some prose.
     /// Measured before building this. The mandatory docs hold **27** backticked
     /// snake_case identifiers, of which **9 are not code items at all**: JSON fields
     /// (`differentiated_rows`, `n_differentiations`, `zero_crossing_condition`), a
-    /// crate (`egui_commonmark`), examples (`gen_tour_catalogue`), an event name
+    /// crate (`egui_commonmark`), examples (`gen_lab_catalogue`), an event name
     /// (`ide_opened_file`). **A checker over all of them would be a third false
     /// positives, and a checker that cries wolf gets switched off.**
     ///
@@ -2366,7 +2366,7 @@ Some prose.
             "docs/working-with-doug.md",
             "docs/CHARTER.md",
             "docs/README.md",
-            "docs/fixture-tours/README.md",
+            "docs/fixture-labs/README.md",
             // Added 2026-08-23. It is the project's insurance document — read by
             // nobody, so its prose had no correction loop at all, and one paragraph
             // had been describing a *deleted* re-run for weeks.
@@ -2433,9 +2433,9 @@ Some prose.
         );
     }
 
-    /// **Every tour hyperlink looks the same: no glyph in the text, no bold around it.**
+    /// **Every lab hyperlink looks the same: no glyph in the text, no bold around it.**
     ///
-    /// Doug, 2026-08-30: *"In the tours, hyperlinks are given inconsistent visual
+    /// Doug, 2026-08-30: *"In the labs, hyperlinks are given inconsistent visual
     /// treatment… Implement consistent visual treatment for all hyperlinks. There
     /// should not be triangles preceding the hyperlinks. The text of hyperlinks should
     /// be blue. And hyperlinks should be underlined when hovered."*
@@ -2445,11 +2445,11 @@ Some prose.
     /// Blue text and the hover underline are `egui_commonmark`'s defaults, so nothing
     /// had to be styled — **something was suppressing them**. `the-concepts` wrapped its
     /// route links as `**[text](url)**` and rendered them in the body colour; every
-    /// other tour's links are plain and rendered blue.
+    /// other lab's links are plain and rendered blue.
     ///
-    /// The two tours also differed in list context, so that was not yet a conclusion.
+    /// The two labs also differed in list context, so that was not yet a conclusion.
     /// It became one by counting: **bolded links existed only in `the-concepts`** — the
-    /// one tour Doug reported as not blue — while `connect-expansion` has plain links
+    /// one lab Doug reported as not blue — while `connect-expansion` has plain links
     /// *inside list items* and reads blue. One difference tracked the symptom and the
     /// other did not.
     ///
@@ -2468,12 +2468,12 @@ Some prose.
     /// blue. Nor does it police colour directly — colour is not in the accessibility
     /// tree, so the markup that suppresses it is the checkable proxy.
     #[test]
-    fn tour_hyperlinks_are_styled_consistently() {
-        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+    fn lab_hyperlinks_are_styled_consistently() {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
 
         let mut findings: Vec<String> = Vec::new();
         let mut scanned = 0usize;
-        for entry in std::fs::read_dir(&dir).expect("fixture-tours must be readable") {
+        for entry in std::fs::read_dir(&dir).expect("fixture-labs must be readable") {
             let path = entry.expect("readable dir entry").path();
             if path.extension().and_then(|e| e.to_str()) != Some("md") {
                 continue;
@@ -2483,11 +2483,11 @@ Some prose.
                 .expect("named")
                 .to_string_lossy()
                 .into_owned();
-            // Generated from the tours themselves, so it carries whatever they do.
+            // Generated from the labs themselves, so it carries whatever they do.
             if name == "CATALOGUE.md" {
                 continue;
             }
-            let text = std::fs::read_to_string(&path).expect("readable tour");
+            let text = std::fs::read_to_string(&path).expect("readable lab");
             scanned += 1;
 
             for (n, line) in text.lines().enumerate() {
@@ -2499,7 +2499,7 @@ Some prose.
                         if link_text.contains('\u{25b6}') || link_text.contains('\u{25b2}') {
                             findings.push(format!(
                                 "{name}:{n}: link text carries a triangle \u{2014} the \
-                                 glyph is not part of the link and the tours dropped it"
+                                 glyph is not part of the link and the labs dropped it"
                             ));
                         }
                         if before[..open].ends_with("**") && line[at..].contains(")**") {
@@ -2514,14 +2514,14 @@ Some prose.
             }
         }
 
-        // Non-vacuity: a scan that reached no tour would pass for ever.
+        // Non-vacuity: a scan that reached no lab would pass for ever.
         assert!(
             scanned >= 10,
-            "only {scanned} tours scanned \u{2014} the walk is broken, not the tours"
+            "only {scanned} labs scanned \u{2014} the walk is broken, not the labs"
         );
         assert!(
             findings.is_empty(),
-            "tour hyperlinks are styled inconsistently:\n  {}",
+            "lab hyperlinks are styled inconsistently:\n  {}",
             findings.join("\n  "),
         );
     }
@@ -2642,13 +2642,13 @@ Some prose.
         );
     }
 
-    /// **Editing a guarded tour table must not be committed behind the FAST gate.**
+    /// **Editing a guarded lab table must not be committed behind the FAST gate.**
     ///
     /// # The gap this closes, and why it was not a rule problem
     ///
     /// `CLAUDE.md`'s gate procedure greps the staged **paths**: anything under `src/`,
     /// `crates/`, `examples/` or `Cargo.toml` means FULL, and everything else means
-    /// FAST. A tour edit is docs-only, so it returns FAST — **correctly, for the prose
+    /// FAST. A lab edit is docs-only, so it returns FAST — **correctly, for the prose
     /// that is most of a walk's output.** But the five `<!-- pane-* -->` tables in
     /// `connect-expansion.md` are verified by *slow* tests, so editing one and running
     /// FAST means the verification does not happen: a green suite over an unchecked
@@ -2657,7 +2657,7 @@ Some prose.
     ///
     /// The rule already said *"editing one of those tables means FULL, whatever the grep
     /// says"*. **It was enforced by remembering** — Doug asked on 2026-08-22 whether any
-    /// edit to that tour triggers FULL, which is exactly the question a remembered rule
+    /// edit to that lab triggers FULL, which is exactly the question a remembered rule
     /// produces. This makes it fail by name instead.
     ///
     /// # Why it lives in the FAST suite, which is the whole point
@@ -2685,27 +2685,27 @@ Some prose.
         feature = "slow-tests",
         ignore = "the FULL gate is running, so the guarded tables are being checked for real"
     )]
-    fn editing_a_guarded_tour_table_needs_the_full_gate() {
+    fn editing_a_guarded_lab_table_needs_the_full_gate() {
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let dir = hrw.join("docs/fixture-tours");
+        let dir = hrw.join("docs/fixture-labs");
         let repo = hrw.parent().expect("hrw lives inside the workspace");
 
         let mut changed: Vec<String> = Vec::new();
         let mut compared = 0usize;
 
-        for entry in std::fs::read_dir(&dir).expect("fixture-tours must be readable") {
+        for entry in std::fs::read_dir(&dir).expect("fixture-labs must be readable") {
             let path = entry.expect("readable dir entry").path();
             if path.extension().and_then(|e| e.to_str()) != Some("md") {
                 continue;
             }
-            let working = std::fs::read_to_string(&path).expect("readable tour");
+            let working = std::fs::read_to_string(&path).expect("readable lab");
             let here = guarded_regions(&working);
             if here.is_empty() {
                 continue; // no guarded tables: prose edits are genuinely FAST
             }
 
             let name = path.file_name().expect("named file").to_string_lossy();
-            let rel = format!("hrw/docs/fixture-tours/{name}");
+            let rel = format!("hrw/docs/fixture-labs/{name}");
             let Some(head) = file_at_head(repo, &rel) else {
                 // New file, or no git. Either way there is no baseline; say nothing.
                 continue;
@@ -2730,12 +2730,12 @@ Some prose.
 
         assert!(
             changed.is_empty(),
-            "a guarded tour table changed, and this is the FAST suite \u{2014} those tables \
+            "a guarded lab table changed, and this is the FAST suite \u{2014} those tables \
              are verified against a real compile by slow-gated tests, so committing now \
-             would land an unchecked claim behind a green suite.\n\n  {}\n\nRun the TOUR \
+             would land an unchecked claim behind a green suite.\n\n  {}\n\nRun the LAB \
              gate before committing \u{2014} 11.1 s, not the FULL gate's ~101:\n  cargo \
              test -p hrw --lib --features slow-tests -- --test-threads=1 doc_citations \
-             tour\n\n(`cargo run -p hrw --example gate` selects this for you. It is the \
+             lab\n\n(`cargo run -p hrw --example gate` selects this for you. It is the \
              right gate only while the diff is docs-only; a src/ change still needs \
              FULL.)",
             changed.join("\n  "),
@@ -2746,7 +2746,7 @@ Some prose.
         // honestly inert -- see the doc comment.
         if compared == 0 {
             eprintln!(
-                "note: no tour compared against HEAD (not a git checkout?) \u{2014} \
+                "note: no lab compared against HEAD (not a git checkout?) \u{2014} \
                  the guarded-table gate check is inert in this environment"
             );
         }
@@ -2766,11 +2766,11 @@ Some prose.
             .then(|| String::from_utf8_lossy(&out.stdout).into_owned())
     }
 
-    /// **A tour's claims about the equation-sheet PANE match what the pane will show.**
+    /// **A lab's claims about the equation-sheet PANE match what the pane will show.**
     ///
     /// # The gap this closes
     ///
-    /// Until 2026-08-13, every *count* in a tour was read from a generated trace and was
+    /// Until 2026-08-13, every *count* in a lab was read from a generated trace and was
     /// sound, while every *rendering* claim — what the groups are called, how many are in
     /// each — was **unverified**, because Claude cannot see the GUI. Doug walked
     /// `connect-expansion.md` against the real pane and found six disagreements in one
@@ -2786,7 +2786,7 @@ Some prose.
     ///
     /// # The convention it enforces
     ///
-    /// A tour that describes a pane carries a table of its groups:
+    /// A lab that describes a pane carries a table of its groups:
     ///
     /// ```markdown
     /// | group | rows |
@@ -2809,23 +2809,23 @@ Some prose.
         ignore = "compile-heavy; run with --features slow-tests"
     )]
     #[test]
-    fn tour_group_tables_match_the_real_equation_sheet() {
+    fn lab_group_tables_match_the_real_equation_sheet() {
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
 
-        // **The roster is DERIVED from the tours, not listed here** *(2026-08-31)*. It was
-        // a `const PANES: &[(&str, &str)]`, so giving a tour a table about a new specimen
-        // was a `src/` edit — the last routine tour act that forced the FULL gate, and one
-        // of the leaks Doug named when he called a pause on tour content to fix tour
+        // **The roster is DERIVED from the labs, not listed here** *(2026-08-31)*. It was
+        // a `const PANES: &[(&str, &str)]`, so giving a lab a table about a new specimen
+        // was a `src/` edit — the last routine lab act that forced the FULL gate, and one
+        // of the leaks Doug named when he called a pause on lab content to fix lab
         // friction.
         //
         // **Deriving it also closes a hole the list had.** A roster entry with no marker
         // was reported; a **marker with no roster entry was silently unchecked**, so a
-        // tour could add `<!-- pane-groups: Foo -->` and nothing would ever compile `Foo`
+        // lab could add `<!-- pane-groups: Foo -->` and nothing would ever compile `Foo`
         // to compare it. Reading the markers makes that impossible by construction: the
         // thing that declares the claim is the thing that schedules the check.
         let mut panes: Vec<(String, String)> = Vec::new();
-        for path in std::fs::read_dir(hrw.join("docs/fixture-tours"))
-            .expect("the fixture-tour directory must be readable")
+        for path in std::fs::read_dir(hrw.join("docs/fixture-labs"))
+            .expect("the fixture-lab directory must be readable")
             .flatten()
             .map(|e| e.path())
             .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("md"))
@@ -2852,7 +2852,7 @@ Some prose.
         panes.sort();
         assert!(
             !panes.is_empty(),
-            "no `<!-- pane-groups: … -->` marker was found in any tour, so this test would \
+            "no `<!-- pane-groups: … -->` marker was found in any lab, so this test would \
              pass having compared nothing"
         );
         let panes: Vec<(&str, &str)> = panes
@@ -2863,7 +2863,7 @@ Some prose.
         let mut bad: Vec<String> = Vec::new();
         let mut checked = 0usize;
 
-        for (tour, specimen) in panes {
+        for (lab, specimen) in panes {
             // **The memoised helper, not a fresh compile.** Written the other way first
             // and measured at 8.6s of the slow suite's 194s, for specimens other tests
             // had already compiled in the same process. `docs/ideas.md` #48 exists for
@@ -2888,17 +2888,17 @@ Some prose.
                 .filter_map(|(c, _)| c.family())
                 .collect();
 
-            let text = std::fs::read_to_string(hrw.join("docs/fixture-tours").join(tour))
-                .unwrap_or_else(|e| panic!("read {tour}: {e}"));
+            let text = std::fs::read_to_string(hrw.join("docs/fixture-labs").join(lab))
+                .unwrap_or_else(|e| panic!("read {lab}: {e}"));
 
             // **The table is found by an explicit marker, not by shape.** The first
-            // version scanned every `| \`x\` |` row in the file and reported the tour's
+            // version scanned every `| \`x\` |` row in the file and reported the lab's
             // *specimen* table as claiming groups called `RcCircuit` and `Drivetrain`.
             // A checker that guesses which table it is looking at produces findings the
             // reader has to triage, which is how a checker stops being read.
             let Some(rows) = marked_rows(&text, "pane-groups", specimen) else {
                 bad.push(format!(
-                    "{tour}: no `<!-- pane-groups: {specimen} -->` marker, so that pane's \
+                    "{lab}: no `<!-- pane-groups: {specimen} -->` marker, so that pane's \
                      group table cannot be checked \u{2014} add one above the table, or \
                      remove the marker"
                 ));
@@ -2909,9 +2909,9 @@ Some prose.
                 .filter_map(|r| Some((r.first()?.clone(), r.get(1)?.clone())))
                 .collect();
 
-            // **Stop 4's per-origin breakdown**, checked the same way. It is a different
+            // **Station 4's per-origin breakdown**, checked the same way. It is a different
             // question from the group table — origins are per *row*, groups are the
-            // headings — and it was the last table in this tour holding numbers that
+            // headings — and it was the last table in this lab holding numbers that
             // only a hand-count had ever confirmed.
             if let Some(rows) = marked_rows(&text, "pane-origins", specimen) {
                 let mut real_origins: std::collections::BTreeMap<&str, usize> =
@@ -2929,7 +2929,7 @@ Some prose.
                     let actual = real_origins.get(origin.as_str()).copied().unwrap_or(0);
                     if actual.to_string() != *n {
                         bad.push(format!(
-                            "{tour} ({specimen}): claims {n} rows with origin `{origin}`; \
+                            "{lab} ({specimen}): claims {n} rows with origin `{origin}`; \
                              the pane has {actual}"
                         ));
                     }
@@ -2937,14 +2937,14 @@ Some prose.
             }
 
             // **The family heading is checked too**, because the nesting is a claim
-            // about *why* those equations exist. A tour that lists the children while
+            // about *why* those equations exist. A lab that lists the children while
             // never naming the parent is back to presenting them as unrelated siblings
             // — the defect the grouping was introduced to fix.
             for family in &families {
                 checked += 1;
                 if !text.contains(family) {
                     bad.push(format!(
-                        "{tour}: the pane groups several kinds under `{family}` and the tour \
+                        "{lab}: the pane groups several kinds under `{family}` and the lab \
                          never names it"
                     ));
                 }
@@ -2956,11 +2956,11 @@ Some prose.
                     // Distinguish "named wrongly" from "counted wrongly": the fixes
                     // differ, and one message for both hides which it is.
                     Some((_, claimed_n)) if claimed_n != &n.to_string() => bad.push(format!(
-                        "{tour}: `{label}` is listed as {claimed_n}; the pane has {n}"
+                        "{lab}: `{label}` is listed as {claimed_n}; the pane has {n}"
                     )),
                     Some(_) => {}
                     None => bad.push(format!(
-                        "{tour}: the pane produces a group `{label}` ({n} rows) that the \
+                        "{lab}: the pane produces a group `{label}` ({n} rows) that the \
                          table never names"
                     )),
                 }
@@ -2970,7 +2970,7 @@ Some prose.
             for (label, _) in &claimed {
                 if !real.iter().any(|(l, _)| l == label) {
                     bad.push(format!(
-                        "{tour}: the table claims a group `{label}` that {specimen}'s pane \
+                        "{lab}: the table claims a group `{label}` that {specimen}'s pane \
                          does not produce"
                     ));
                 }
@@ -2983,18 +2983,18 @@ Some prose.
         );
         assert!(
             bad.is_empty(),
-            "tour prose disagrees with the equation-sheet pane:\n  {}",
+            "lab prose disagrees with the equation-sheet pane:\n  {}",
             bad.join("\n  "),
         );
     }
 
-    /// **`connect-expansion.md` Stop 1's set sizes match the connection replay.**
+    /// **`connect-expansion.md` Station 1's set sizes match the connection replay.**
     ///
-    /// # The last claim in that tour nobody could check
+    /// # The last claim in that lab nobody could check
     ///
-    /// Stop 1 predicts *sets of 2, 2 and 3*, and sends the reader to **Flatten →
+    /// Station 1 predicts *sets of 2, 2 and 3*, and sends the reader to **Flatten →
     /// Connections** — the only pane that shows connection sets. Every other claim in the
-    /// tour became checkable when the equation sheet started publishing; this one rested
+    /// lab became checkable when the equation sheet started publishing; this one rested
     /// on Claude having read a trace correctly and never on anything a test could see.
     ///
     /// # What it checks, and the distinction it is careful about
@@ -3004,9 +3004,9 @@ Some prose.
     /// pairing by name means no merge ever crosses between members — so the two kinds
     /// come out with the same membership and are still six separate sets, not three.
     ///
-    /// **Renamed from `tour_node_sizes_…` on 2026-08-31**, when Doug ruled the node
-    /// abstraction out of the tour entirely: *"It is not helpful to me to draw textbook
-    /// graphs or nodes for this."* The tour now predicts connection sets directly, which
+    /// **Renamed from `lab_node_sizes_…` on 2026-08-31**, when Doug ruled the node
+    /// abstraction out of the lab entirely: *"It is not helpful to me to draw textbook
+    /// graphs or nodes for this."* The lab now predicts connection sets directly, which
     /// is the compiler's own noun — and the rename matters because a test named for a
     /// vocabulary its subject no longer uses is how a checker stops being read. **The
     /// assertions did not change**; they were always about sets, and only the words
@@ -3021,7 +3021,7 @@ Some prose.
         ignore = "compile-heavy; run with --features slow-tests"
     )]
     #[test]
-    fn tour_set_sizes_match_the_connection_replay() {
+    fn lab_set_sizes_match_the_connection_replay() {
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         // Memoised, for the reason above: `RcCircuit` is compiled by several tests in
         // this process and a fresh compile here bought nothing but 4.3 seconds.
@@ -3060,7 +3060,7 @@ Some prose.
         assert_eq!(
             potential,
             vec![2, 2, 3],
-            "Stop 1 predicts sets of 2, 2 and 3, so the POTENTIAL sets must be three \
+            "Station 1 predicts sets of 2, 2 and 3, so the POTENTIAL sets must be three \
              sets of 2, 2 and 3 `.v` variables"
         );
         assert_eq!(
@@ -3071,7 +3071,7 @@ Some prose.
         );
 
         // **The set count the pane declares.** Six, not three — the sizes above are per
-        // kind, and `RcCircuit`'s two kinds come out with matching membership. Stop 6
+        // kind, and `RcCircuit`'s two kinds come out with matching membership. Station 6
         // exists because that matching is not a law.
         let complete = frames
             .iter()
@@ -3088,16 +3088,16 @@ Some prose.
             "six sets produce 4 potential + 3 flow equations"
         );
 
-        // The tour's own words, so a reworded prediction cannot drift from this check.
-        let tour = std::fs::read_to_string(hrw.join("docs/fixture-tours/connect-expansion.md"))
+        // The lab's own words, so a reworded prediction cannot drift from this check.
+        let lab = std::fs::read_to_string(hrw.join("docs/fixture-labs/connect-expansion.md"))
             .expect("read connect-expansion.md");
 
-        // **Every frame the tour cites by ORDINAL is the frame it says it is.**
+        // **Every frame the lab cites by ORDINAL is the frame it says it is.**
         //
-        // Stop 2 links `…/Connections/frame/7` and `/frame/13` to point at the moment the
-        // n-1 asymmetry happens. `fixture_tour_links_all_resolve` checks only that such a
+        // Station 2 links `…/Connections/frame/7` and `/frame/13` to point at the moment the
+        // n-1 asymmetry happens. `fixture_lab_links_all_resolve` checks only that such a
         // link *parses*. An ordinal citation is the fragility this repository already
-        // designed around once — `OpenTour` addresses stops by **slug**, because
+        // designed around once — `OpenLab` addresses stops by **slug**, because
         // "inserting a stop shifts every later citation silently, exactly as a source
         // line number does" — and one extra frame emitted by the flatten pass would move
         // both of these with nothing to notice.
@@ -3107,8 +3107,8 @@ Some prose.
         // when they move. This also pins the **order** the sets are formed in — flow
         // before potential — which the size assertions above cannot see, since they
         // sort.
-        let cited = marked_rows(&tour, "pane-frames", "RcCircuit")
-            .expect("Stop 2 cites frames by number; the table pinning them must exist");
+        let cited = marked_rows(&lab, "pane-frames", "RcCircuit")
+            .expect("Station 2 cites frames by number; the table pinning them must exist");
         assert!(
             !cited.is_empty(),
             "the pane-frames table is empty, so the frame links it exists to pin are \
@@ -3121,7 +3121,7 @@ Some prose.
             let idx: usize = n.parse().expect("frame ordinal must be a number");
             let frame = frames
                 .get(idx - 1)
-                .unwrap_or_else(|| panic!("the tour cites frame {n}, past the end of the replay"));
+                .unwrap_or_else(|| panic!("the lab cites frame {n}, past the end of the replay"));
             assert_eq!(
                 frame["frame"].as_u64(),
                 Some(idx as u64),
@@ -3152,13 +3152,13 @@ Some prose.
             );
         }
         assert!(
-            tour.contains("/frame/") && cited.len() >= 2,
-            "Stop 2's two frame citations must both be pinned"
+            lab.contains("/frame/") && cited.len() >= 2,
+            "Station 2's two frame citations must both be pinned"
         );
-        // **Stop 1's wording is pinned in `docs/fixture-tours/pinned-claims.txt`**, not
+        // **Station 1's wording is pinned in `docs/fixture-labs/pinned-claims.txt`**, not
         // here. The numbers above are proved against a real compile and guard nothing if
-        // the tour has quietly stopped predicting them — but that half needs no compile,
-        // so it moved to `every_pinned_tour_claim_holds` in the FAST suite, where a
+        // the lab has quietly stopped predicting them — but that half needs no compile,
+        // so it moved to `every_pinned_lab_claim_holds` in the FAST suite, where a
         // reword fails in seconds instead of at the next FULL run.
     }
 
@@ -3450,9 +3450,9 @@ Some prose.
         }
     }
 
-    /// **Equation text a tour quotes is text HRW actually renders.**
+    /// **Equation text a lab quotes is text HRW actually renders.**
     ///
-    /// Doug, 2026-08-12, walking `connect-expansion.md`: *"the Connect sub-tour has this
+    /// Doug, 2026-08-12, walking `connect-expansion.md`: *"the Connect sub-lab has this
     /// equation text: `f_x[19]  connection equation: src.p.v = R.p.v` but in the Flatten
     /// → Equations sub-tab that equation is shown with `0 = src.p.v - R.p.v`."*
     ///
@@ -3460,13 +3460,13 @@ Some prose.
     /// stores every continuous equation as an expression that must equal zero, so the
     /// equation sheet prints the **residual** form `0 = src.p.v - R.p.v`, while the
     /// structural report writes a **label** for a human reading a matching:
-    /// `f_x[19] (connection equation: src.p.v = R.p.v)`. Both are real. The tour quoted
+    /// `f_x[19] (connection equation: src.p.v = R.p.v)`. Both are real. The lab quoted
     /// one and sent the reader to the other, which is a **provenance** error rather than
     /// a fabrication — and no spell-check, link check or count check could see it.
     ///
     /// *(Corrected 2026-08-13: this comment used to say the two forms "live in *different
     /// panes*". They do not. `view.json` shows the equation sheet carries **both** — the
-    /// residual as `text`, the label as `origin` — which is the claim the tour got wrong
+    /// residual as `text`, the label as `origin` — which is the claim the lab got wrong
     /// too. Reading the pane rather than reasoning about it is what settled it.)*
     ///
     /// # What this checks, and what it deliberately does not
@@ -3474,7 +3474,7 @@ Some prose.
     /// Both forms are recoverable from the committed traces without a compile:
     /// `structural.json` carries every `equation` label and every `equation_text`. So a
     /// quoted string must appear in that union. **It does not verify the string is quoted
-    /// from the pane the tour points at** — `tour_group_tables_match_the_real_equation_sheet`
+    /// from the pane the lab points at** — `lab_group_tables_match_the_real_equation_sheet`
     /// above does that, by compiling. This catches *invented* text and text that has
     /// drifted from the traces.
     ///
@@ -3484,7 +3484,7 @@ Some prose.
     ///   after stripping `0 = `. Placeholders containing `<` are skipped, so
     ///   `` `0 = <expression>` `` in prose is not mistaken for a quote.
     #[test]
-    fn equation_text_quoted_in_tours_matches_the_traces() {
+    fn equation_text_quoted_in_labs_matches_the_traces() {
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
 
         // Every equation label and every rendered residual, from every trace.
@@ -3514,11 +3514,11 @@ Some prose.
 
         let mut checked = 0usize;
         let mut bad: Vec<String> = Vec::new();
-        let tours = hrw.join("docs/fixture-tours");
-        let mut tour_files: Vec<PathBuf> = Vec::new();
-        collect_markdown(&tours, &mut tour_files);
+        let labs = hrw.join("docs/fixture-labs");
+        let mut lab_files: Vec<PathBuf> = Vec::new();
+        collect_markdown(&labs, &mut lab_files);
 
-        for path in tour_files {
+        for path in lab_files {
             let Ok(text) = std::fs::read_to_string(&path) else {
                 continue;
             };
@@ -3562,11 +3562,11 @@ Some prose.
         }
 
         // **Non-vacuity.** The defect that prompted this was seven such lines in one
-        // tour; a run that inspects none of them has stopped working.
+        // lab; a run that inspects none of them has stopped working.
         assert!(
             checked >= 5,
             "only {checked} quoted equation strings were inspected — the extraction is \
-             broken, not the tours",
+             broken, not the labs",
         );
         assert!(
             bad.is_empty(),
@@ -3577,63 +3577,63 @@ Some prose.
         println!("equation strings checked against the traces: {checked}");
     }
 
-    /// **Every tour the chain overview sends you into must link back to it.**
+    /// **Every lab the chain overview sends you into must link back to it.**
     ///
     /// # The friction this closes
     ///
     /// Doug, 2026-08-17: *"I encountered yet again an annoying bit of friction which
-    /// happens when there's a top-level tour which links to subordinate tours. I really
-    /// want to be able to navigate backward from a subordinate tour to the top-level tour
-    /// so that I can then navigate downward to another subordinate tour."*
+    /// happens when there's a top-level lab which links to subordinate labs. I really
+    /// want to be able to navigate backward from a subordinate lab to the top-level lab
+    /// so that I can then navigate downward to another subordinate lab."*
     ///
-    /// `the-concepts.md` is a hub: ten rows, each an `hrw://tour/<name>` link into a
-    /// phase tour. **The links ran one way only.** Walking the chain therefore meant
-    /// opening the picker between every pair of tours — with the hub sitting alphabetically
+    /// `the-concepts.md` is a hub: ten rows, each an `hrw://lab/<name>` link into a
+    /// phase lab. **The links ran one way only.** Walking the chain therefore meant
+    /// opening the picker between every pair of labs — with the hub sitting alphabetically
     /// in the middle of the list, indistinguishable from its own children.
     ///
     /// # Why a checker rather than just the ten edits
     ///
-    /// **A missing back-link is invisible from inside the tour that lacks it.** Every
-    /// other tour checker asks *"is what this document says true?"*, and a document with
-    /// no way back says nothing false — the ten tours were internally perfect and the
+    /// **A missing back-link is invisible from inside the lab that lacks it.** Every
+    /// other lab checker asks *"is what this document says true?"*, and a document with
+    /// no way back says nothing false — the ten labs were internally perfect and the
     /// chain was still a dead end at every stop. Same shape as the Context Bar's missing
     /// background and the notebook's absent specimens: **a partial report leaves no gap
     /// where the missing part was.**
     ///
     /// So the property has to be stated across *two* files, which is exactly what nothing
-    /// checked before. It is also the property most likely to rot: the eleventh tour added
+    /// checked before. It is also the property most likely to rot: the eleventh lab added
     /// to the overview's table is one line in one file, and remembering the second edit is
     /// the part that fails.
     ///
     /// # What it checks
     ///
-    /// For every `hrw://tour/<name>` the overview links to, `<name>.md` must contain
-    /// `hrw://tour/the-concepts` — an **`hrw://` link, not a markdown one**. That
+    /// For every `hrw://lab/<name>` the overview links to, `<name>.md` must contain
+    /// `hrw://lab/the-concepts` — an **`hrw://` link, not a markdown one**. That
     /// distinction is the defect it was written against: `solve-lowering.md` and
     /// `matching-live.md` both referenced the overview as `[the-concepts.md](…)`, which
     /// HRW's commonmark renderer hands to the *operating system* as a relative file URL.
-    /// It opens nothing, or opens a text editor. Only the `hrw://` form is a tour link.
+    /// It opens nothing, or opens a text editor. Only the `hrw://` form is a lab link.
     #[test]
-    fn every_tour_the_overview_links_to_links_back() {
-        let tours = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
-        let overview = tours.join(format!("{}.md", crate::tour::OVERVIEW_TOUR));
+    fn every_lab_the_overview_links_to_links_back() {
+        let labs = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
+        let overview = labs.join(format!("{}.md", crate::lab::OVERVIEW_LAB));
         let text = std::fs::read_to_string(&overview).unwrap_or_else(|e| {
             panic!(
-                "{} is the entry point every phase tour hangs off: {e}",
+                "{} is the entry point every phase lab hangs off: {e}",
                 overview.display()
             )
         });
 
         // The rows the overview sends the reader into, in order, deduplicated. Derived
         // from the links rather than from a list here, so adding a row to the table is the
-        // only edit needed to bring a new tour under this check.
+        // only edit needed to bring a new lab under this check.
         let mut referenced: Vec<String> = Vec::new();
-        for tail in text.split("hrw://tour/").skip(1) {
+        for tail in text.split("hrw://lab/").skip(1) {
             let name: String = tail
                 .chars()
                 .take_while(|c| c.is_alphanumeric() || *c == '-' || *c == '_')
                 .collect();
-            if name.is_empty() || name == crate::tour::OVERVIEW_TOUR {
+            if name.is_empty() || name == crate::lab::OVERVIEW_LAB {
                 continue;
             }
             if !referenced.contains(&name) {
@@ -3642,32 +3642,32 @@ Some prose.
         }
 
         // **Non-vacuity.** An extraction that finds nothing would report a chain of
-        // perfect back-links across zero tours — the failure mode this file has hit four
+        // perfect back-links across zero labs — the failure mode this file has hit four
         // times, most recently with three source-text checks matching their own prose.
         assert!(
             referenced.len() >= 9,
-            "found only {} tours referenced by {}: {referenced:?} — the chain has nine \
+            "found only {} labs referenced by {}: {referenced:?} — the chain has nine \
              phases plus the live variant, so the extraction is broken rather than the \
              overview",
             referenced.len(),
-            crate::tour::OVERVIEW_TOUR,
+            crate::lab::OVERVIEW_LAB,
         );
 
         let mut missing: Vec<String> = Vec::new();
         let mut markdown_only: Vec<String> = Vec::new();
         for name in &referenced {
-            let path = tours.join(format!("{name}.md"));
+            let path = labs.join(format!("{name}.md"));
             let Ok(body) = std::fs::read_to_string(&path) else {
-                // A dangling row is `fixture_tour_links_all_resolve`'s business, not this
+                // A dangling row is `fixture_lab_links_all_resolve`'s business, not this
                 // test's; reporting it twice would give one defect two names.
                 continue;
             };
-            if body.contains("hrw://tour/the-concepts") {
+            if body.contains("hrw://lab/the-concepts") {
                 continue;
             }
             // Distinguish "no way back at all" from "a way back that goes to the OS",
             // because they read identically in a diff and only one of them looks done.
-            if body.contains(&format!("]({}.md)", crate::tour::OVERVIEW_TOUR)) {
+            if body.contains(&format!("]({}.md)", crate::lab::OVERVIEW_LAB)) {
                 markdown_only.push(name.clone());
             } else {
                 missing.push(name.clone());
@@ -3676,50 +3676,50 @@ Some prose.
 
         assert!(
             markdown_only.is_empty(),
-            "{} tour(s) reference the overview as a plain markdown file link, which HRW \
-             hands to the operating system rather than opening as a tour — it looks like a \
+            "{} lab(s) reference the overview as a plain markdown file link, which HRW \
+             hands to the operating system rather than opening as a lab — it looks like a \
              back-link in the source and does nothing when clicked. Use \
-             `[▲ The chain overview](hrw://tour/{})`: {:?}",
+             `[▲ The chain overview](hrw://lab/{})`: {:?}",
             markdown_only.len(),
-            crate::tour::OVERVIEW_TOUR,
+            crate::lab::OVERVIEW_LAB,
             markdown_only,
         );
         assert!(
             missing.is_empty(),
-            "{} tour(s) the overview links into offer no way back to it, so walking the \
+            "{} lab(s) the overview links into offer no way back to it, so walking the \
              chain means reopening the picker at every stop. Add \
-             `[▲ The chain overview](hrw://tour/{})` after the H1 and in the closing \
+             `[▲ The chain overview](hrw://lab/{})` after the H1 and in the closing \
              section: {:?}",
             missing.len(),
-            crate::tour::OVERVIEW_TOUR,
+            crate::lab::OVERVIEW_LAB,
             missing,
         );
-        println!("tours linked back to the overview: {}", referenced.len());
+        println!("labs linked back to the overview: {}", referenced.len());
     }
 
-    /// The kinds a tour may declare, and whether that kind predicts.
+    /// The kinds a lab may declare, and whether that kind predicts.
     ///
-    /// **`docs/tour-kinds-plan.md` is the authority**; this table is its executable half.
+    /// **`docs/lab-kinds-plan.md` is the authority**; this table is its executable half.
     /// The `predicts` column is the whole point of declaring a kind at all: without it,
-    /// *"a concept tour that lost its predictions"* and *"a feature tour that correctly
+    /// *"a concept lab that lost its predictions"* and *"a feature lab that correctly
     /// has none"* are the same document to a checker.
-    const TOUR_KINDS: &[(&str, bool)] = &[
+    const LAB_KINDS: &[(&str, bool)] = &[
         ("concept", true),
         ("feature", false),
         ("failure", false),
-        ("adjudication", false),
+        ("calibration", false),
         ("hub", false),
     ];
 
-    /// Every fixture tour, as `(name, kind, text)`.
+    /// Every fixture lab, as `(name, kind, text)`.
     ///
-    /// Panics rather than skipping an unreadable or untagged tour: a roster that
+    /// Panics rather than skipping an unreadable or untagged lab: a roster that
     /// silently shrinks turns every check below into a check of nothing, which is the
     /// vacuity failure this file has now hit five times.
-    fn tours_with_kinds() -> Vec<(String, String, String)> {
-        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+    fn labs_with_kinds() -> Vec<(String, String, String)> {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
         let mut out = Vec::new();
-        for entry in std::fs::read_dir(&dir).expect("docs/fixture-tours must be readable") {
+        for entry in std::fs::read_dir(&dir).expect("docs/fixture-labs must be readable") {
             let path = entry.expect("a readable dir entry").path();
             if path.extension().and_then(|x| x.to_str()) != Some("md") {
                 continue;
@@ -3729,7 +3729,7 @@ Some prose.
                 .and_then(|s| s.to_str())
                 .unwrap_or_default()
                 .to_owned();
-            // Neither is a tour: one is documentation ABOUT tours, the other is
+            // Neither is a lab: one is documentation ABOUT labs, the other is
             // generated FROM them.
             if name == "README" || name == "CATALOGUE" {
                 continue;
@@ -3743,9 +3743,9 @@ Some prose.
                 .unwrap_or_else(|| {
                     panic!(
                         "{name}.md declares no kind. Add `<!-- kind: … -->` under the H1 — \
-                         one of {:?}. Without it no checker can tell a concept tour that lost \
-                         its predictions from a feature tour that correctly has none.",
-                        TOUR_KINDS.iter().map(|(k, _)| *k).collect::<Vec<_>>(),
+                         one of {:?}. Without it no checker can tell a concept lab that lost \
+                         its predictions from a feature lab that correctly has none.",
+                        LAB_KINDS.iter().map(|(k, _)| *k).collect::<Vec<_>>(),
                     )
                 })
                 .trim()
@@ -3755,26 +3755,26 @@ Some prose.
         out.sort();
         assert!(
             out.len() >= 20,
-            "found only {} fixture tours — the enumeration is broken, and every check \
+            "found only {} fixture labs — the enumeration is broken, and every check \
              below would pass over an empty corpus",
             out.len(),
         );
         out
     }
 
-    /// The numbered stops of a tour, as `(heading, body-up-to-the-next-heading)`.
+    /// The numbered stops of a lab, as `(heading, body-up-to-the-next-heading)`.
     ///
-    /// **`Stop 0` is returned like any other but is exempt from the prediction rule** by
+    /// **`Station 0` is returned like any other but is exempt from the prediction rule** by
     /// its caller: a zero stop is setup — it has something to check and nothing to
     /// predict. `matching-live.md` and `frame-seeking.md` both have one.
-    fn numbered_stops(text: &str) -> Vec<(String, String)> {
+    fn numbered_stations(text: &str) -> Vec<(String, String)> {
         let mut stops: Vec<(String, String)> = Vec::new();
         for line in text.lines() {
             if line.starts_with("## ") {
-                // The emoji-prefixed form the adjudication tours use — `## 📐 Stop 1 — …`
-                // — is a stop too. Matching on "Stop " rather than on a line prefix is
-                // what makes those four tours visible to this walk at all.
-                if line.contains("Stop ") {
+                // The emoji-prefixed form the adjudication labs use — `## 📐 Station 1 — …`
+                // — is a stop too. Matching on "Station " rather than on a line prefix is
+                // what makes those four labs visible to this walk at all.
+                if line.contains("Station ") {
                     stops.push((line.to_owned(), String::new()));
                 } else if let Some((_, body)) = stops.last_mut().map(|s| (&s.0, &mut s.1)) {
                     // A later non-stop heading ends the current stop.
@@ -3798,26 +3798,26 @@ Some prose.
     ///
     /// # Why this one and not `Predict`
     ///
-    /// Doug's model, 2026-08-17: *"while all kinds of tours have stops, each kind of tour
+    /// Doug's model, 2026-08-17: *"while all kinds of labs have stops, each kind of lab
     /// might have different activities at its stops."* True — and the corpus says exactly
     /// one thing does **not** vary. `Predict` appears zero times in all 12 non-concept
-    /// tours and once per stop in all 10 concept tours; `Expected` appears at every stop
+    /// labs and once per stop in all 10 concept labs; `Expected` appears at every stop
     /// of every kind.
     ///
-    /// **So `Expected` is what makes a tour a *test* rather than an explanation**, which
-    /// is this directory's whole justification. `Predict` is merely how a *concept* tour
-    /// earns its Expected — a feature tour earns the same claim by having Doug **do** the
-    /// action, a failure tour by having him **read** the diagnosis.
+    /// **So `Expected` is what makes a lab a *test* rather than an explanation**, which
+    /// is this directory's whole justification. `Predict` is merely how a *concept* lab
+    /// earns its Expected — a feature lab earns the same claim by having Doug **do** the
+    /// action, a failure lab by having him **read** the diagnosis.
     ///
-    /// A stop with no falsifiable line is a paragraph with a heading, and a tour of those
+    /// A stop with no falsifiable line is a paragraph with a heading, and a lab of those
     /// is the stored prose this project retired 1,632 lines of.
     #[test]
-    fn every_stop_of_every_tour_owes_an_expected() {
+    fn every_stop_of_every_lab_owes_an_expected() {
         let mut checked = 0usize;
         let mut bad: Vec<String> = Vec::new();
 
-        for (name, _kind, text) in tours_with_kinds() {
-            for (heading, body) in numbered_stops(&text) {
+        for (name, _kind, text) in labs_with_kinds() {
+            for (heading, body) in numbered_stations(&text) {
                 checked += 1;
                 if !body.contains("**Expected:") && !body.contains("**Expected**") {
                     bad.push(format!("{name}.md  {}", heading.trim()));
@@ -3828,61 +3828,61 @@ Some prose.
         assert!(
             checked >= 90,
             "only {checked} stops were inspected across the corpus — the heading walk is \
-             broken, not the tours",
+             broken, not the labs",
         );
         assert!(
             bad.is_empty(),
             "{} stop(s) state nothing that could fail. Every stop of every kind owes an \
-             **Expected:** — it is what makes a tour a test rather than an explanation:\n  {}",
+             **Expected:** — it is what makes a lab a test rather than an explanation:\n  {}",
             bad.len(),
             bad.join("\n  "),
         );
         println!("stops carrying a falsifiable Expected: {checked}");
     }
 
-    /// **A tour predicts if and only if its kind says it does.**
+    /// **A lab predicts if and only if its kind says it does.**
     ///
     /// # Both directions matter, and they fail for opposite reasons
     ///
-    /// **A concept tour without predictions** has lost its engine. The prediction is what
+    /// **A concept lab without predictions** has lost its engine. The prediction is what
     /// makes Doug an instrument rather than an audience — it is the reason the unit is a
-    /// question rather than a topic — and a concept tour that merely explains and then
+    /// question rather than a topic — and a concept lab that merely explains and then
     /// shows is the "book" form he reported bouncing off.
     ///
-    /// **A feature tour *with* predictions** is the other error, and it is the one Claude
-    /// was about to commit. On 2026-08-17 Claude wrote that the 12 non-concept tours were
+    /// **A feature lab *with* predictions** is the other error, and it is the one Claude
+    /// was about to commit. On 2026-08-17 Claude wrote that the 12 non-concept labs were
     /// *"unconverted, not differently designed"* — which would have meant converting them,
     /// and the count says otherwise: zero predictions across all twelve is a design, not a
     /// backlog. **There is no gradient anywhere in the corpus**, and this check is what
     /// keeps it that way.
     ///
-    /// `Stop 0` is exempt: it is setup, with an expectation to check and nothing to
+    /// `Station 0` is exempt: it is setup, with an expectation to check and nothing to
     /// predict.
     #[test]
-    fn a_tour_predicts_if_and_only_if_its_kind_says_so() {
+    fn a_lab_predicts_if_and_only_if_its_kind_says_so() {
         let mut bad: Vec<String> = Vec::new();
-        let mut concept_stops = 0usize;
-        let mut other_stops = 0usize;
+        let mut concept_stations = 0usize;
+        let mut other_stations = 0usize;
 
-        for (name, kind, text) in tours_with_kinds() {
-            let predicts = TOUR_KINDS
+        for (name, kind, text) in labs_with_kinds() {
+            let predicts = LAB_KINDS
                 .iter()
                 .find(|(k, _)| *k == kind)
                 .unwrap_or_else(|| {
                     panic!(
                         "{name}.md declares kind {kind:?}, which is not one of {:?}",
-                        TOUR_KINDS.iter().map(|(k, _)| *k).collect::<Vec<_>>(),
+                        LAB_KINDS.iter().map(|(k, _)| *k).collect::<Vec<_>>(),
                     )
                 })
                 .1;
 
-            for (heading, body) in numbered_stops(&text) {
-                let is_setup = heading.contains("Stop 0");
+            for (heading, body) in numbered_stations(&text) {
+                let is_setup = heading.contains("Station 0");
                 let has = body.contains("**Predict.**");
                 if predicts {
-                    concept_stops += 1;
+                    concept_stations += 1;
                 } else {
-                    other_stops += 1;
+                    other_stations += 1;
                 }
 
                 if predicts && !has && !is_setup {
@@ -3902,35 +3902,37 @@ Some prose.
         // **Non-vacuity on BOTH arms.** A run that inspected only concept stops would
         // report the negative rule as holding across nothing at all.
         assert!(
-            concept_stops >= 40 && other_stops >= 40,
-            "inspected {concept_stops} concept stops and {other_stops} other stops — one \
+            concept_stations >= 40 && other_stations >= 40,
+            "inspected {concept_stations} concept stops and {other_stations} other stops — one \
              arm of this check is running on an empty set",
         );
         assert!(
             bad.is_empty(),
-            "{} stop(s) disagree with their tour's declared kind:\n  {}",
+            "{} stop(s) disagree with their lab's declared kind:\n  {}",
             bad.len(),
             bad.join("\n  "),
         );
-        println!("stops checked against their kind: {concept_stops} concept, {other_stops} other");
+        println!(
+            "stops checked against their kind: {concept_stations} concept, {other_stations} other"
+        );
     }
 
-    /// **Every pinned tour claim still holds.**
+    /// **Every pinned lab claim still holds.**
     ///
     /// # What a pin is, and why it is not a test of the prose
     ///
     /// A pin does not check that a sentence is *true*. It checks that a sentence **some
-    /// other guard depends on** is still there. `tour_set_sizes_match_the_connection_replay`
+    /// other guard depends on** is still there. `lab_set_sizes_match_the_connection_replay`
     /// proves against a real compile that `RcCircuit` forms sets of 2, 2 and 3 — and that
-    /// proof guards nothing if Stop 1 has quietly stopped predicting 2, 2 and 3. The pin is
+    /// proof guards nothing if Station 1 has quietly stopped predicting 2, 2 and 3. The pin is
     /// what makes such a reword loud instead of silent.
     ///
     /// # Why the strings are in `docs/` and this test is FAST — 2026-08-31
     ///
-    /// Doug: *"Why did we have to run the full gate for a tour change?"* Because the tour
+    /// Doug: *"Why did we have to run the full gate for a lab change?"* Because the lab
     /// change forced a **checker** change: these strings were hard-coded here, so rewording
     /// a pinned sentence was a `src/` edit and cost the ~170 s FULL gate — during a phase
-    /// whose whole activity is rewording tours. Same finding as `reading-budgets.txt`, one
+    /// whose whole activity is rewording labs. Same finding as `reading-budgets.txt`, one
     /// file later: **data about documents was living in code.**
     ///
     /// **And it made the guard stronger, not merely cheaper.** `text.contains(…)` reads a
@@ -3938,12 +3940,12 @@ Some prose.
     /// a function with ones that DO compile a specimen. Split out, a reword that forgets its
     /// pin now fails in the fast suite rather than at the next FULL run.
     ///
-    /// **What still needs FULL, correctly:** a tour's *numbers*. A `<!-- pane-groups -->`
+    /// **What still needs FULL, correctly:** a lab's *numbers*. A `<!-- pane-groups -->`
     /// table or a frame ordinal is checked against a real compile, and no data file changes
     /// that.
     #[test]
-    fn every_pinned_tour_claim_holds() {
-        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+    fn every_pinned_lab_claim_holds() {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
         let path = dir.join("pinned-claims.txt");
         let spec = std::fs::read_to_string(&path)
             .unwrap_or_else(|e| panic!("{} must be readable: {e}", path.display()));
@@ -3957,22 +3959,22 @@ Some prose.
             }
             // Two separators, so the claim itself may contain `|` without escaping.
             let mut parts = line.splitn(3, '|');
-            let (Some(tour), Some(kind), Some(claim)) = (parts.next(), parts.next(), parts.next())
+            let (Some(lab), Some(kind), Some(claim)) = (parts.next(), parts.next(), parts.next())
             else {
                 panic!(
-                    "{}:{} is not `<tour> | require|forbid | <text>`: {line}",
+                    "{}:{} is not `<lab> | require|forbid | <text>`: {line}",
                     path.display(),
                     i + 1,
                 );
             };
-            let (tour, kind, claim) = (tour.trim(), kind.trim(), claim.trim());
+            let (lab, kind, claim) = (lab.trim(), kind.trim(), claim.trim());
 
-            // **A pin naming a missing tour fails rather than skipping.** A pin pointing
+            // **A pin naming a missing lab fails rather than skipping.** A pin pointing
             // at nothing is indistinguishable from one that passes, which is the
             // claims-of-absence trap in a new place.
-            let text = std::fs::read_to_string(dir.join(tour)).unwrap_or_else(|e| {
+            let text = std::fs::read_to_string(dir.join(lab)).unwrap_or_else(|e| {
                 panic!(
-                    "{}:{} pins {tour}, which is not readable: {e}",
+                    "{}:{} pins {lab}, which is not readable: {e}",
                     path.display(),
                     i + 1
                 )
@@ -3980,9 +3982,9 @@ Some prose.
 
             let present = text.contains(claim);
             match kind {
-                "require" if !present => bad.push(format!("{tour} no longer says {claim:?}")),
+                "require" if !present => bad.push(format!("{lab} no longer says {claim:?}")),
                 "forbid" if present => {
-                    bad.push(format!("{tour} says {claim:?}, which is forbidden"))
+                    bad.push(format!("{lab} says {claim:?}, which is forbidden"))
                 }
                 "require" | "forbid" => {}
                 other => panic!(
@@ -4011,17 +4013,17 @@ Some prose.
         );
     }
 
-    /// **No tour calls its units "acts" again.**
+    /// **No lab calls its units "acts" again.**
     ///
     /// A ratchet, in the shape `app_does_not_regrow_its_field_count` established. The
-    /// rename cost 110 edits across ten tours and it would come back one heading at a
-    /// time, written from the memory of a tour read an hour earlier — which is exactly how
+    /// rename cost 110 edits across ten labs and it would come back one heading at a
+    /// time, written from the memory of a lab read an hour earlier — which is exactly how
     /// the word arrived in the first place: `matching.md` shipped with Acts on the same
     /// day `dae-construction.md` shipped with Stops, and nobody noticed for thirteen days.
     #[test]
-    fn no_tour_heading_calls_a_stop_an_act() {
+    fn no_lab_heading_calls_a_stop_an_act() {
         let mut bad: Vec<String> = Vec::new();
-        for (name, _kind, text) in tours_with_kinds() {
+        for (name, _kind, text) in labs_with_kinds() {
             for (i, line) in text.lines().enumerate() {
                 if line.starts_with("## ") && (line.contains("Act ") || line.contains("Scene ")) {
                     bad.push(format!("{name}.md:{}  {}", i + 1, line.trim()));
@@ -4030,33 +4032,33 @@ Some prose.
         }
         assert!(
             bad.is_empty(),
-            "{} heading(s) call a stop an act or a scene. The top-level noun is `tour`, so \
+            "{} heading(s) call a stop an act or a scene. The top-level noun is `lab`, so \
              the unit is a `stop`; theatre vocabulary casts the reader as an audience, and \
-             the tours exist to make him an instrument:\n  {}",
+             the labs exist to make him an instrument:\n  {}",
             bad.len(),
             bad.join("\n  "),
         );
     }
 
-    /// **A tour never links to a bare file path.**
+    /// **A lab never links to a bare file path.**
     ///
     /// # The same defect twice, eleven months apart in file type only
     ///
-    /// A tour is rendered *inside HRW*, and a link egui does not recognise is handed to
+    /// A lab is rendered *inside HRW*, and a link egui does not recognise is handed to
     /// **`open_url`** — the OS browser. So a relative path that reads perfectly in an
     /// editor becomes, on click, Chrome being asked to fetch `../upstream-issues.md`.
     ///
     /// - **2026-07-30** — eighteen links to `.nb` notebooks opened the browser, which does
     ///   nothing useful with a Wolfram notebook. Fixed by adding the `hrw://notebook/`
     ///   verb and rewriting them.
-    /// - **2026-08-31** — five tours linked `[upstream-issues.md](../upstream-issues.md)`.
+    /// - **2026-08-31** — five labs linked `[upstream-issues.md](../upstream-issues.md)`.
     ///   Doug: *"causes an attempt to open the file in Chrome instead of attempting to
     ///   open the file in VS Code."* Fixed by adding `hrw://doc/`.
     ///
     /// **The July fix did not generalise because it was a VERB, not a RULE.** Adding
     /// `hrw://notebook/` fixed the eighteen links that existed and did nothing whatever
     /// about the nineteenth, or about the first `.md` one — nothing in the repository said
-    /// *"a tour link goes through HRW"*, so the next author wrote the natural markdown and
+    /// *"a lab link goes through HRW"*, so the next author wrote the natural markdown and
     /// no gate disagreed. **This test is the half that generalises**, and it is why the
     /// `.md` recurrence should be the last of its family: a link to a `.pdf`, a `.csv` or
     /// a source file now fails here on the day it is written, before it is ever clicked.
@@ -4071,14 +4073,14 @@ Some prose.
     /// read this as a ban on leaving HRW.
     ///
     /// **It also says nothing about `README.md` or `CATALOGUE.md`**, which
-    /// [`tours_with_kinds`] already excludes: those are read in an editor, where a
+    /// [`labs_with_kinds`] already excludes: those are read in an editor, where a
     /// relative path is the right form and `hrw://` would be the broken one. **Same text,
     /// opposite correct answer, decided by where it is rendered** — which is why the rule
-    /// is scoped to tours rather than to markdown.
+    /// is scoped to labs rather than to markdown.
     #[test]
-    fn no_tour_links_to_a_bare_file_path() {
+    fn no_lab_links_to_a_bare_file_path() {
         let mut bad: Vec<String> = Vec::new();
-        for (name, _kind, text) in tours_with_kinds() {
+        for (name, _kind, text) in labs_with_kinds() {
             for (i, line) in text.lines().enumerate() {
                 for target in markdown_link_targets(line) {
                     let ok = target.starts_with("hrw://")
@@ -4092,11 +4094,11 @@ Some prose.
         }
         assert!(
             bad.is_empty(),
-            "{} tour link(s) name a path rather than a verb. A tour is rendered inside \
+            "{} lab link(s) name a path rather than a verb. A lab is rendered inside \
              HRW, so a link egui does not recognise is handed to the OS BROWSER — which \
              cannot open a local file and will not try. Use `hrw://doc/<name>.md` for a \
              document under `hrw/docs/`, `hrw://notebook/<name>.nb` for a Wolfram \
-             notebook, or `hrw://tour/<name>` for another tour. `http(s)://` is fine: the \
+             notebook, or `hrw://lab/<name>` for another lab. `http(s)://` is fine: the \
              browser is the right place for a web page.\n  {}",
             bad.len(),
             bad.join("\n  "),
@@ -4105,7 +4107,7 @@ Some prose.
 
     /// Every `[text](target)` on one line, as the targets alone.
     ///
-    /// Deliberately not a markdown parse: a tour's links are authored one per pair of
+    /// Deliberately not a markdown parse: a lab's links are authored one per pair of
     /// brackets and this is the whole grammar in play. It does mean an inline-code span
     /// containing the sequence would be read as a link — which has not happened, and would
     /// fail loudly rather than silently if it did.
@@ -4127,7 +4129,7 @@ Some prose.
 
     /// **`matching-live.md` keeps its three words apart.**
     ///
-    /// This is the one document where **stop** (a place in the tour), **break** (where the
+    /// This is the one document where **stop** (a place in the lab), **break** (where the
     /// debugger halts) and **anchor** (the named location a break is armed at) are all in
     /// play at once. Before the rename its units were "acts", so "a stop" unambiguously
     /// meant the debugger; afterwards the same phrase reads most naturally as the *wrong*
@@ -4139,15 +4141,15 @@ Some prose.
     /// This check is exact instead: the note must be present, and the two phrasings that
     /// were actually wrong must not come back.
     #[test]
-    fn the_live_tour_keeps_stop_break_and_anchor_apart() {
+    fn the_live_lab_keeps_stop_break_and_anchor_apart() {
         let path =
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours/matching-live.md");
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs/matching-live.md");
         let text = std::fs::read_to_string(&path).expect("matching-live.md must be readable");
 
         // **The note and the three wrong phrasings are pinned in
-        // `docs/fixture-tours/pinned-claims.txt`**, moved there 2026-08-31 so that
+        // `docs/fixture-labs/pinned-claims.txt`**, moved there 2026-08-31 so that
         // rewording them is a docs change rather than a `src/` one. What stays here is
-        // the part a data file cannot express: the *reason* this tour is special, which
+        // the part a data file cannot express: the *reason* this lab is special, which
         // is that `stop`, `break` and `anchor` are all live in it at once and the
         // Act→Stop rename CREATED that collision rather than exposing one.
         assert!(
@@ -4156,16 +4158,16 @@ Some prose.
         );
     }
 
-    /// **A `<tour>.md Stop N` reference in the source resolves to a real heading.**
+    /// **A `<lab>.md Station N` reference in the source resolves to a real heading.**
     ///
     /// # The gap this closes
     ///
-    /// Nineteen comments in `src/` named a tour unit — *"evidence for
+    /// Nineteen comments in `src/` named a lab unit — *"evidence for
     /// `connect-expansion.md` Act 1"*, *"`matching.md` ends Act 3 with one"* — and every
-    /// one of them dangled the moment the tours were renamed. Nothing noticed, because a
+    /// one of them dangled the moment the labs were renamed. Nothing noticed, because a
     /// comment is not compiled and a stale one is indistinguishable from a live one.
     ///
-    /// **These are navigational, not decorative.** A comment that says *"see Stop 4"* is
+    /// **These are navigational, not decorative.** A comment that says *"see Station 4"* is
     /// how the next session finds the prose a piece of code exists to serve; pointing at a
     /// stop that is not there sends it looking for something that never arrives.
     ///
@@ -4175,9 +4177,9 @@ Some prose.
     /// whole discipline rests on. So the check skips a line quoting him, which is why it
     /// looks only for the *current* vocabulary.
     #[test]
-    fn a_stop_a_source_comment_cites_exists_in_that_tour() {
+    fn a_stop_a_source_comment_cites_exists_in_that_lab() {
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let tours = hrw.join("docs/fixture-tours");
+        let labs = hrw.join("docs/fixture-labs");
 
         let mut checked = 0usize;
         let mut bad: Vec<String> = Vec::new();
@@ -4196,23 +4198,23 @@ Some prose.
             };
             let src_name = src.file_name().and_then(|n| n.to_str()).unwrap_or("?");
             for (i, line) in text.lines().enumerate() {
-                // A tour named in backticks, then `Stop <n>` anywhere later on the same
+                // A lab named in backticks, then `Stop <n>` anywhere later on the same
                 // line. **Adjacency was the first implementation and it was too narrow** —
                 // it matched 3 of the 19 real references, because most of them read
-                // "`matching.md` ends Stop 3 with one" rather than "`matching.md` Stop 3".
+                // "`matching.md` ends Station 3 with one" rather than "`matching.md` Station 3".
                 // A check that inspects a sixth of its subject is most of the way to
                 // vacuous while looking green.
-                let Some(stop_at) = line.find("Stop ") else {
+                let Some(stop_at) = line.find("Station ") else {
                     continue;
                 };
-                let n: String = line[stop_at + "Stop ".len()..]
+                let n: String = line[stop_at + "Station ".len()..]
                     .chars()
                     .take_while(char::is_ascii_digit)
                     .collect();
                 if n.is_empty() {
                     continue;
                 }
-                // The nearest tour named *before* the citation owns it.
+                // The nearest lab named *before* the citation owns it.
                 let head = &line[..stop_at];
                 let Some(md) = head.rfind(".md`") else {
                     continue;
@@ -4220,25 +4222,25 @@ Some prose.
                 let Some(open) = head[..md].rfind('`') else {
                     continue;
                 };
-                let tour = &head[open + 1..md];
-                if tour.is_empty() || tour.contains(' ') || tour.contains('/') {
+                let lab = &head[open + 1..md];
+                if lab.is_empty() || lab.contains(' ') || lab.contains('/') {
                     continue;
                 }
 
                 checked += 1;
-                let Ok(body) = std::fs::read_to_string(tours.join(format!("{tour}.md"))) else {
-                    bad.push(format!("{src_name}:{}  no tour named {tour:?}", i + 1));
+                let Ok(body) = std::fs::read_to_string(labs.join(format!("{lab}.md"))) else {
+                    bad.push(format!("{src_name}:{}  no lab named {lab:?}", i + 1));
                     continue;
                 };
-                if !body.contains(&format!("Stop {n} ")) {
-                    bad.push(format!("{src_name}:{}  {tour}.md has no Stop {n}", i + 1));
+                if !body.contains(&format!("Station {n} ")) {
+                    bad.push(format!("{src_name}:{}  {lab}.md has no Station {n}", i + 1));
                 }
             }
         }
 
         // **What this does NOT reach, said out loud rather than left as a green result.**
-        // A citation whose tour is named on an *earlier* line of the same doc comment —
-        // "/// **`connect-expansion.md` Stop 1's set sizes…**" followed later by "Stop 1
+        // A citation whose lab is named on an *earlier* line of the same doc comment —
+        // "/// **`connect-expansion.md` Station 1's set sizes…**" followed later by "Station 1
         // predicts *sets of 2, 2 and 3*" — is invisible here, because the pairing is
         // per-line. Roughly
         // half the references in `doc_citations.rs` are that shape. Widening to whole doc
@@ -4255,14 +4257,14 @@ Some prose.
             bad.len(),
             bad.join("\n  "),
         );
-        println!("source comments citing a tour stop: {checked}");
+        println!("source comments citing a lab stop: {checked}");
     }
 
-    /// **An equation id a tour cites must name the equation the prose claims.**
+    /// **An equation id a lab cites must name the equation the prose claims.**
     ///
     /// # The gap this closes, found by falling into it
     ///
-    /// `equation_text_quoted_in_tours_matches_the_traces` above verifies quoted
+    /// `equation_text_quoted_in_labs_matches_the_traces` above verifies quoted
     /// *text*. Nothing verified a quoted **id**. On 2026-08-16 a new act of
     /// `connect-expansion.md` was written claiming `C.v` reads `der in f_x[19]` —
     /// a real, existing equation, and the wrong one: `f_x[19]` is the connection
@@ -4277,7 +4279,7 @@ Some prose.
     ///
     /// # What it checks
     ///
-    /// The Why column renders `der in f_x[N]`, so a tour quoting that string is
+    /// The Why column renders `der in f_x[N]`, so a lab quoting that string is
     /// quoting a **pane cell**, and the cell is checkable against the committed
     /// trace without a compile:
     ///
@@ -4289,7 +4291,7 @@ Some prose.
     ///    wrong variable — a two-state model where the ids are swapped.
     ///
     /// The specimen comes from the nearest preceding `hrw://load/<Specimen>/` link,
-    /// which the tour template guarantees: every expectation follows a **▶ Look**
+    /// which the lab template guarantees: every expectation follows a **▶ Look**
     /// link. A citation with no preceding link is counted and skipped rather than
     /// guessed at.
     ///
@@ -4298,7 +4300,7 @@ Some prose.
     ///
     /// # What the current corpus does NOT exercise, stated rather than left silent
     ///
-    /// **Check 3 is vacuous today.** The only tour citing a Why cell is
+    /// **Check 3 is vacuous today.** The only lab citing a Why cell is
     /// `connect-expansion.md`, on `RcCircuit`, which has exactly **one** derivative
     /// equation — so a wrong id there always fails check 2 first, and the
     /// wrong-variable branch never runs. That is the same shape as the coupled-block
@@ -4309,11 +4311,11 @@ Some prose.
     /// repeated: point the section at `BouncingBall` (which differentiates `h` in
     /// `f_x[0]` and `v` in `f_x[1]`) and cite `h` with `f_x[1]`. It fails with
     /// *"says `h` reads `der in f_x[1]`, but BouncingBall differentiates it in
-    /// f_x[0], not f_x[1]"*. **The first tour to quote a Why cell on a multi-state
+    /// f_x[0], not f_x[1]"*. **The first lab to quote a Why cell on a multi-state
     /// specimen makes this real**, and until then check 3 is a guard nothing proves
     /// still works.
     #[test]
-    fn an_equation_id_a_tour_cites_names_the_equation_the_prose_claims() {
+    fn an_equation_id_a_lab_cites_names_the_equation_the_prose_claims() {
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
 
         // specimen -> (id -> equation_text), straight from the committed traces.
@@ -4355,14 +4357,14 @@ Some prose.
         let mut ledger = SkipLedger::default();
         let mut bad: Vec<String> = Vec::new();
 
-        let mut tour_files: Vec<PathBuf> = Vec::new();
-        collect_markdown(&hrw.join("docs/fixture-tours"), &mut tour_files);
+        let mut lab_files: Vec<PathBuf> = Vec::new();
+        collect_markdown(&hrw.join("docs/fixture-labs"), &mut lab_files);
 
-        for path in tour_files {
+        for path in lab_files {
             let Ok(text) = std::fs::read_to_string(&path) else {
                 continue;
             };
-            let tour = path.file_name().and_then(|n| n.to_str()).unwrap_or("?");
+            let lab = path.file_name().and_then(|n| n.to_str()).unwrap_or("?");
             let mut specimen: Option<String> = None;
 
             for (i, line) in text.lines().enumerate() {
@@ -4388,7 +4390,7 @@ Some prose.
                 }
                 let Some(spec) = specimen.as_deref() else {
                     ledger.skip(
-                        &format!("{tour}:{}", i + 1),
+                        &format!("{lab}:{}", i + 1),
                         "no preceding hrw://load link names the specimen",
                     );
                     continue;
@@ -4396,7 +4398,7 @@ Some prose.
                 ledger.inspected();
                 let Some(equations) = by_specimen.get(spec) else {
                     bad.push(format!(
-                        "{tour}:{}: cites an equation of `{spec}`, which has no committed \
+                        "{lab}:{}: cites an equation of `{spec}`, which has no committed \
                          trace",
                         i + 1
                     ));
@@ -4415,14 +4417,14 @@ Some prose.
                     let id = cite.trim_start_matches("der in ").trim();
                     let Some(eq_text) = equations.get(id) else {
                         bad.push(format!(
-                            "{tour}:{}: cites `{id}`, which names no equation in {spec}",
+                            "{lab}:{}: cites `{id}`, which names no equation in {spec}",
                             i + 1
                         ));
                         continue;
                     };
                     if !eq_text.contains("der(") {
                         bad.push(format!(
-                            "{tour}:{}: claims `{id}` differentiates something, but that \
+                            "{lab}:{}: claims `{id}` differentiates something, but that \
                              equation has no derivative in it: {eq_text}",
                             i + 1
                         ));
@@ -4438,7 +4440,7 @@ Some prose.
                             && real_id != id
                         {
                             bad.push(format!(
-                                "{tour}:{}: says `{var}` reads `{cite}`, but {spec} \
+                                "{lab}:{}: says `{var}` reads `{cite}`, but {spec} \
                                  differentiates it in {real_id}, not {id}",
                                 i + 1
                             ));
@@ -4450,21 +4452,21 @@ Some prose.
 
         assert!(
             checked >= 1,
-            "no `der in f_x[N]` citations were found in any tour; the extraction is \
+            "no `der in f_x[N]` citations were found in any lab; the extraction is \
              broken, or the Why column stopped being quoted (in which case delete \
              this test rather than let it pass on nothing)",
         );
         assert!(
             bad.is_empty(),
-            "{} tour citation(s) name the wrong equation:\n  {}",
+            "{} lab citation(s) name the wrong equation:\n  {}",
             bad.len(),
             bad.join("\n  "),
         );
-        // **Budget zero.** Every citation in a committed tour follows a ▶ Look link,
-        // because the template requires one. A skip here means a tour stopped saying
-        // which specimen it is talking about — a tour defect, not a reason for this
+        // **Budget zero.** Every citation in a committed lab follows a ▶ Look link,
+        // because the template requires one. A skip here means a lab stopped saying
+        // which specimen it is talking about — a lab defect, not a reason for this
         // check to quietly cover less.
-        ledger.assert_coverage("tour equation-id citations", 1, 0);
+        ledger.assert_coverage("lab equation-id citations", 1, 0);
     }
 
     /// **Every test target runs in the gate the documentation names.**
@@ -4492,7 +4494,7 @@ Some prose.
     /// rather than in six weeks.
     ///
     /// It deliberately does **not** check the reverse — that everything named still
-    /// exists — because `fixture_tour_links_all_resolve` and the citation checks
+    /// exists — because `fixture_lab_links_all_resolve` and the citation checks
     /// already fail loudly on a path that has moved.
     #[test]
     fn every_test_target_runs_in_the_documented_gate() {
@@ -4571,7 +4573,7 @@ Some prose.
     ///
     /// - the coupled-block branch of `an_equation_id_names_the_same_equation_in_every_pane`,
     ///   asserted on `RcCircuit` (0 coupled blocks) and never executed;
-    /// - check 3 of `an_equation_id_a_tour_cites_names_the_equation_the_prose_claims`,
+    /// - check 3 of `an_equation_id_a_lab_cites_names_the_equation_the_prose_claims`,
     ///   vacuous because `RcCircuit` has one derivative equation;
     /// - the 2026-08-02 corpus sweep, whose F-checks "found nothing because there was
     ///   nothing there".
@@ -4732,10 +4734,10 @@ Some prose.
     ///
     /// # Absence is where everything hides
     ///
-    /// Every checker in this file walks subjects — specimens, tours, stage files —
+    /// Every checker in this file walks subjects — specimens, labs, stage files —
     /// and every one of them has `continue` arms for subjects it cannot read. Those
     /// arms are invisible: the check reports what it *found*, never what it *passed
-    /// over*, so a deleted trace or a renamed tour quietly shrinks coverage while the
+    /// over*, so a deleted trace or a renamed lab quietly shrinks coverage while the
     /// suite stays green.
     ///
     /// That is the same failure as `--lib` silently skipping `tests/`, and as
@@ -4805,7 +4807,7 @@ Some prose.
     /// and the bridge published `kind`, `start` and `unit` only. `view.json` described
     /// a pane that no longer existed.
     ///
-    /// It was found because Doug asked whether the tours needed updating — that is,
+    /// It was found because Doug asked whether the labs needed updating — that is,
     /// **by a question, not by the toolchain.** `tech-debt.md`'s backward sweep trigger
     /// fires on exactly that.
     ///
@@ -4907,20 +4909,20 @@ Some prose.
         );
     }
 
-    /// **The tearing tour gains its dynamic-loop act at the moment it is converted.**
+    /// **The tearing lab gains its dynamic-loop act at the moment it is converted.**
     ///
     /// **DELIVERED 2026-08-17.** `tearing.md` was converted with `LoopWithInertia` as its
-    /// Stop 5, so this test now runs its *enforcing* branch — 5 `**Predict.**` markers and
+    /// Station 5, so this test now runs its *enforcing* branch — 5 `**Predict.**` markers and
     /// an `hrw://load/LoopWithInertia` link — rather than the not-yet-converted early
     /// return. The `## OWED` note it used to guard is gone because the act replaced it,
     /// which is the outcome the note asked for. What remains guarded: the act cannot be
-    /// removed while the tour stays converted.
+    /// removed while the lab stays converted.
     ///
     /// # A commitment, made mechanical
     ///
     /// Doug, 2026-08-16: *"Eventually, I will want very much to add LoopWithInertia to
-    /// the tearing tour, as you've recommended. Please ensure that we do that."* He is
-    /// walking the tours in compiler-phase order and is on Connections → DAE, so
+    /// the tearing lab, as you've recommended. Please ensure that we do that."* He is
+    /// walking the labs in compiler-phase order and is on Connections → DAE, so
     /// tearing is weeks away. A promise made now, in a conversation, is exactly the
     /// thing `CLAUDE.md` says must live in the repository instead: *code whose
     /// rationale exists only in chat violates the rule the moment the session ends.*
@@ -4928,14 +4930,14 @@ Some prose.
     /// # Why it triggers on conversion rather than on a date
     ///
     /// The act cannot simply be written today — `tearing.md` is still in its
-    /// 2026-08-08 prose form, and the agreement is that a tour is converted **as Doug
+    /// 2026-08-08 prose form, and the agreement is that a lab is converted **as Doug
     /// walks it**, because the conversion is itself the teaching. So the commitment
     /// has to survive until that moment and fire precisely then.
     ///
-    /// Conversion is detectable: a converted tour runs each act to a **Predict**. Only
+    /// Conversion is detectable: a converted lab runs each act to a **Predict**. Only
     /// `connect-expansion.md` has been converted, and it carries six. So two or more
     /// `**Predict.**` markers means the work has started, and from that instant the
-    /// tour must also mention `LoopWithInertia`.
+    /// lab must also mention `LoopWithInertia`.
     ///
     /// **It cannot fire early** — `tearing.md` has zero markers today, so this passes
     /// until someone begins the conversion, which is the only time the reminder is
@@ -4947,9 +4949,9 @@ Some prose.
     /// named, not that the teaching landed — the half no test reaches, and the half
     /// Doug reports.
     #[test]
-    fn the_tearing_tour_gains_its_dynamic_loop_when_it_is_converted() {
-        let tour = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours/tearing.md");
-        let text = std::fs::read_to_string(&tour).expect("tearing.md exists");
+    fn the_tearing_lab_gains_its_dynamic_loop_when_it_is_converted() {
+        let lab = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs/tearing.md");
+        let text = std::fs::read_to_string(&lab).expect("tearing.md exists");
 
         // The owed-work note must survive until the work is done: deleting it is how
         // a commitment quietly stops existing.
@@ -4979,7 +4981,7 @@ Some prose.
             text.contains("hrw://load/LoopWithInertia"),
             "tearing.md has been converted to the Predict/Look template ({predicts} \
              Predict markers) but still has no ▶ Look link for LoopWithInertia. The \
-             owed act is: the same 3-cycle as Stop 1, now re-solved between every pair \
+             owed act is: the same 3-cycle as Station 1, now re-solved between every pair \
              of integrator steps \u{2014} what a coupled block costs when time is \
              advancing.",
         );
@@ -5036,14 +5038,14 @@ Some prose.
 }
 
 #[cfg(test)]
-mod tests_tour_link_form {
+mod tests_lab_link_form {
     use std::path::PathBuf;
 
-    /// **A tour referenced from a tour must be an `hrw://` link, not a file link.**
+    /// **A lab referenced from a lab must be an `hrw://` link, not a file link.**
     ///
     /// Doug, 2026-08-19, testing the new Back control: *"I found a broken link in the
-    /// blt-ordering tour. The link for matching.md causes an external browser window to
-    /// open instead of opening that tour in HRW."*
+    /// blt-ordering lab. The link for matching.md causes an external browser window to
+    /// open instead of opening that lab in HRW."*
     ///
     /// **There were eighteen of them.** HRW's commonmark renderer hands a relative file
     /// link to the operating system, so `[`matching.md`](matching.md)` opens a browser —
@@ -5051,21 +5053,21 @@ mod tests_tour_link_form {
     /// is the same defect the hub back-links had on 2026-08-17, fixed there and never
     /// generalised, which is why it was still waiting in ten other documents.
     ///
-    /// **Nothing could have caught it.** `fixture_tour_links_all_resolve` checks `hrw://`
+    /// **Nothing could have caught it.** `fixture_lab_links_all_resolve` checks `hrw://`
     /// links; a markdown file link is not one, so it was invisible to every checker here
     /// — and invisible in the rendered pane too, since it looks like an ordinary link
     /// until clicked.
     ///
-    /// The hub's `[file](x.md)` cells are exempt: they sit beside an `hrw://tour/…` link
+    /// The hub's `[file](x.md)` cells are exempt: they sit beside an `hrw://lab/…` link
     /// in the same cell and are labelled "file", which is a different offer rather than a
     /// broken one.
     #[test]
-    fn a_tour_is_never_referenced_by_a_plain_file_link() {
-        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+    fn a_lab_is_never_referenced_by_a_plain_file_link() {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
         let mut checked = 0usize;
         let mut bad: Vec<String> = Vec::new();
 
-        for entry in std::fs::read_dir(&dir).expect("the tour directory must be readable") {
+        for entry in std::fs::read_dir(&dir).expect("the lab directory must be readable") {
             let path = entry.expect("a readable entry").path();
             if path.extension().and_then(|x| x.to_str()) != Some("md") {
                 continue;
@@ -5104,15 +5106,15 @@ mod tests_tour_link_form {
             .count();
         assert!(
             total_links > 5,
-            "only {total_links} links seen in a tour known to be full of them \u{2014} the \
+            "only {total_links} links seen in a lab known to be full of them \u{2014} the \
              scan is broken, not the corpus",
         );
         assert!(
             bad.is_empty(),
-            "{} tour reference(s) use a plain markdown file link. HRW hands those to the \
-             operating system, so they open a browser rather than the tour \u{2014} and \
+            "{} lab reference(s) use a plain markdown file link. HRW hands those to the \
+             operating system, so they open a browser rather than the lab \u{2014} and \
              they look identical to a working link in the source. Use \
-             `[\u{25b6} name](hrw://tour/name)`:\n  {}",
+             `[\u{25b6} name](hrw://lab/name)`:\n  {}",
             bad.len(),
             bad.join("\n  "),
         );
@@ -5249,7 +5251,7 @@ mod tests_orphaned_docs {
             ("stage_view.rs", 1),
             ("sub_view_rows.rs", 1),
             ("tarjan_anim.rs", 2),
-            ("tour_panel.rs", 1),
+            ("lab_panel.rs", 1),
             ("ui_tests.rs", 5),
             // 19 → 20 on 2026-08-21 (`docs/ideas.md` #48, lever C). Triaged, not
             // waved through: the new hit is `worker.rs`'s
@@ -5482,7 +5484,7 @@ mod tests_orphaned_docs {
     /// touched again is invisible here — that stock is what the budgeted check covers.
     /// Together: one watches the flow exactly, the other watches the stock loosely.
     /// **On a clean tree this test is inert**, exactly like
-    /// [`super::tests::editing_a_guarded_tour_table_needs_the_full_gate`], which is
+    /// [`super::tests::editing_a_guarded_lab_table_needs_the_full_gate`], which is
     /// why its must-fire half is [`the_stranded_item_is_detected`] over literals
     /// rather than anything requiring a checkout.
     ///
@@ -5599,7 +5601,7 @@ mod tests_orphaned_docs {
 
 /// **The guarded-region parser, tested without git or a compile.**
 ///
-/// [`tests::editing_a_guarded_tour_table_needs_the_full_gate`] needs a git checkout to
+/// [`tests::editing_a_guarded_lab_table_needs_the_full_gate`] needs a git checkout to
 /// say anything, and is honestly inert without one. These do not: they pin the two
 /// properties the whole FAST/FULL decision rests on — **a prose edit is not a guarded
 /// change, and a table edit is** — as pure functions of text.
@@ -5610,18 +5612,18 @@ mod tests_orphaned_docs {
 mod tests_guarded_regions {
     use super::tests::{guarded_regions, marked_rows};
 
-    /// A tour with one guarded table and prose on both sides of it.
-    fn tour(rows: &str, prose: &str) -> String {
+    /// A lab with one guarded table and prose on both sides of it.
+    fn lab(rows: &str, prose: &str) -> String {
         format!(
-            "# A tour\n\n{prose}\n\n<!-- pane-groups: RcCircuit -->\n\n\
+            "# A lab\n\n{prose}\n\n<!-- pane-groups: RcCircuit -->\n\n\
              | group | rows |\n|---|---|\n{rows}\n\nMore prose about {prose}.\n"
         )
     }
 
     #[test]
     fn editing_prose_is_not_a_guarded_change() {
-        let before = tour("| `Component equations` | 16 |", "the voltages are equal");
-        let after = tour("| `Component equations` | 16 |", "the potentials are equal");
+        let before = lab("| `Component equations` | 16 |", "the voltages are equal");
+        let after = lab("| `Component equations` | 16 |", "the potentials are equal");
         assert_ne!(before, after, "the fixture must actually differ");
         assert_eq!(
             guarded_regions(&before),
@@ -5633,8 +5635,8 @@ mod tests_guarded_regions {
 
     #[test]
     fn editing_a_guarded_row_is_a_guarded_change() {
-        let before = tour("| `Component equations` | 16 |", "same prose");
-        let after = tour("| `Component equations` | 17 |", "same prose");
+        let before = lab("| `Component equations` | 16 |", "same prose");
+        let after = lab("| `Component equations` | 17 |", "same prose");
         assert_ne!(
             guarded_regions(&before),
             guarded_regions(&after),
@@ -5645,7 +5647,7 @@ mod tests_guarded_regions {
 
     #[test]
     fn removing_a_marker_is_a_guarded_change() {
-        let before = tour("| `Component equations` | 16 |", "same prose");
+        let before = lab("| `Component equations` | 16 |", "same prose");
         let after = before.replace("<!-- pane-groups: RcCircuit -->", "");
         assert!(
             !guarded_regions(&before).is_empty() && guarded_regions(&after).is_empty(),
@@ -5690,11 +5692,11 @@ mod tests_guarded_regions {
     }
 }
 
-/// **No tour table is wide enough to break the wrapping of the prose beneath it.**
+/// **No lab table is wide enough to break the wrapping of the prose beneath it.**
 ///
 /// # The defect this bounds
 ///
-/// `tour_panel` renders into `ScrollArea::both()`, and inside a scroll area with the
+/// `lab_panel` renders into `ScrollArea::both()`, and inside a scroll area with the
 /// horizontal axis enabled **a child that allocates beyond the `Ui`'s `max_rect`
 /// expands it for every later sibling**. So a table wider than the panel silently
 /// becomes the wrap width for every paragraph after it. Doug walked into it on
@@ -5720,34 +5722,34 @@ mod tests_guarded_regions {
 ///
 /// **The bound is panel-dependent and this is the reference panel.** A reader who drags
 /// the divider narrower breaks sooner; one on a wide monitor never sees it at all. 90 is
-/// the widest that is safe at the default, which is where a tour is first read.
+/// the widest that is safe at the default, which is where a lab is first read.
 ///
 /// # The exceptions, and why they are listed rather than fixed
 ///
-/// **Tour prose is Doug's**, and converting a table changes how a tour teaches — so
+/// **Lab prose is Doug's**, and converting a table changes how a lab teaches — so
 /// the two below are recorded, not rewritten. `the-concepts` was converted on
 /// 2026-08-28 *because he asked for it*, and its route table became a numbered list
 /// and its three-graph matrix three labelled blocks.
 #[test]
-fn no_tour_table_is_wider_than_the_panel() {
+fn no_lab_table_is_wider_than_the_panel() {
     /// Widest table row that still lets the next paragraph wrap correctly.
     const MAX_TABLE_ROW: usize = 90;
-    /// Tours whose tables are over and have not been converted. **Converting one is
+    /// Labs whose tables are over and have not been converted. **Converting one is
     /// a change to how it teaches, so it needs Doug.** Removing a name from this list
     /// is the goal; adding one needs his say-so.
     const NOT_YET_CONVERTED: &[&str] = &[
         // 116.
         "structural-vs-numerical-rank.md",
-        // 266, and not a tour: the directory's own README, never rendered in the
+        // 266, and not a lab: the directory's own README, never rendered in the
         // panel. Listed so the scan does not have to special-case a filename.
         "README.md",
     ];
 
-    let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-tours");
+    let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
     let mut over: Vec<String> = Vec::new();
     let mut scanned = 0usize;
     for entry in std::fs::read_dir(&dir)
-        .expect("fixture tours are readable")
+        .expect("fixture labs are readable")
         .flatten()
     {
         let path = entry.path();
@@ -5776,15 +5778,15 @@ fn no_tour_table_is_wider_than_the_panel() {
         }
     }
 
-    // Non-vacuity: a scan that found no tours would pass while checking nothing.
+    // Non-vacuity: a scan that found no labs would pass while checking nothing.
     assert!(
         scanned >= 10,
-        "only {scanned} tours scanned; the walk is broken"
+        "only {scanned} labs scanned; the walk is broken"
     );
 
     assert!(
         over.is_empty(),
-        "a tour table is wider than {MAX_TABLE_ROW} characters, which makes every \
+        "a lab table is wider than {MAX_TABLE_ROW} characters, which makes every \
              paragraph beneath it wrap to the TABLE's width instead of the panel's \
              (`ui-findings.md` C21). Narrow the table, or convert it to a list as \
              `the-concepts` was:\n  {}",

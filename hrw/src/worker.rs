@@ -105,7 +105,7 @@ pub enum ToWorker {
     ///
     /// The corpus counterpart of [`Self::Compile`]. Until 2026-08-01 the worker
     /// could do this (`compile_model_by_name`, built for the fidelity sweep) and
-    /// **the UI had no way to ask**, which meant a tour could not link to an MSL
+    /// **the UI had no way to ask**, which meant a lab could not link to an MSL
     /// model and the 2,626-model corpus was unreachable from the app.
     CompileLibraryModel(String),
     /// Extract an arbitrary class from the resolved tree by qualified name, so
@@ -621,7 +621,7 @@ pub enum StageKind {
     /// Added 2026-08-03. It was **built and never shown** — `rumoca-ir-dae` is a
     /// boundary IR like `rumoca-ir-flat`, and HRW simply had no tab for it, so
     /// the leftmost mathematical step of the chain was invisible. Found while
-    /// writing `docs/fixture-tours/dae-construction.md`, which had to teach the
+    /// writing `docs/fixture-labs/dae-construction.md`, which had to teach the
     /// step from its neighbours.
     Dae,
     Structural,
@@ -3211,7 +3211,7 @@ impl WorkerState {
                 // 2026-08-04 this stage was built *after* solve lowering and
                 // never logged at all — so the log showed the chain jumping
                 // Flatten → Structural, with the phase they both depend on
-                // missing. Doug found it walking the tour that teaches it.
+                // missing. Doug found it walking the lab that teaches it.
                 //
                 // Moved here rather than logged where it stood: logging it in
                 // place would have reported DAE construction *finishing after*
@@ -3246,8 +3246,8 @@ impl WorkerState {
                 // Deliberately **additive**: Flatten keeps its copy. Two tabs
                 // explaining the same stop is redundant; a learner opening the
                 // DAE tab of a model with no DAE and finding nothing is a dead
-                // end, and the tour that found this
-                // (`docs/fixture-tours/dae-construction.md`) walks exactly that
+                // end, and the lab that found this
+                // (`docs/fixture-labs/dae-construction.md`) walks exactly that
                 // path.
                 let dae_stage = run_stage!(
                     "DAE construction",
@@ -4789,7 +4789,7 @@ fn flatten_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
 ///   and names the phase that stopped first instead. Claiming a DAE-construction
 ///   problem here would blame the wrong phase.
 ///
-/// Found by `docs/fixture-tours/dae-construction.md`, whose counterexample stop opens
+/// Found by `docs/fixture-labs/dae-construction.md`, whose counterexample stop opens
 /// this exact tab on `UnbalancedShaft`.
 fn dae_absent_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
     match result {
@@ -5002,7 +5002,7 @@ struct ReductionReport {
     /// disagree whenever a later step removes a differentiated row, which on this
     /// corpus is always: `Drivetrain` differentiates six times and retains none.
     ///
-    /// **The gap between them taught a tour the opposite of the truth for its whole
+    /// **The gap between them taught a lab the opposite of the truth for its whole
     /// existence** (`DECISIONS.md`, 2026-08-17). Publishing both is what makes the
     /// pane unable to repeat that: a reader seeing an empty list beside "6 performed"
     /// asks the right question instead of concluding zero.
@@ -5193,7 +5193,7 @@ fn index_reduce_for_structural_analysis(
 /// **The one number the Index Reduction stage could not previously report.** Its
 /// `differentiated_rows` scans the *final* DAE for surviving origin markers, so it
 /// reports zero whenever a later step removes them — which on this corpus is always.
-/// A tour read that zero as *"the compiler did not differentiate"* and taught the
+/// A lab read that zero as *"the compiler did not differentiate"* and taught the
 /// opposite of the truth for its whole existence.
 fn count_differentiations(
     frames: &[rumoca_phase_structural::dae_prepare::IndexReductionFrame],
@@ -5695,7 +5695,7 @@ const NON_PHASE_BRACKETS: &[&str] = &["Rumoca compile", "Compile (for simulation
 /// A bracket is a claim: *this named thing ran, and what is nested inside it belongs
 /// to that thing*. Until 2026-08-04 the log carried a bracket called **"DAE
 /// pipeline"** — five real phases given an invented parent because it read tidily.
-/// Doug found it walking the tour that teaches DAE construction, and named the class:
+/// Doug found it walking the lab that teaches DAE construction, and named the class:
 /// *"logging is supposed to accurately describe what actually happened."*
 ///
 /// Accepts a **prefix** match, because brackets carry qualifiers a reader needs — a

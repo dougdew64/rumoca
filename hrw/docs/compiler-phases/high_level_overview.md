@@ -20,7 +20,7 @@ untagged prose as a lead, not a fact — see [`../provenance.md`](../provenance.
 - this file — what Rumoca is, and what each phase produces.
 
 *`end_to_end_tour.md` was deleted 2026-08-01. Its twelve stop-by-stop walkthroughs had rotted
-(Stop 8 described a 7×7 incidence matrix on a tab that shows 48 equations, uncaught because
+(Station 8 described a 7×7 incidence matrix on a tab that shows 48 equations, uncaught because
 nothing checks prose); its conceptual sections are now `the-chain-of-problems.md`. For numbers
 about a specimen, read its generated trace, never prose.*
 

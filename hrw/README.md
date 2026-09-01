@@ -44,7 +44,7 @@ work can be offered upstream.
 | **A verified corpus** | F1-F9 fidelity checks over **2,614 of the 2,626 MSL models**, all green |
 
 > <!-- CAPTURE 2 — still, PNG. The stage tabs with a cross-stage diff highlight visible.
->      Source: fixture tour `node-pointing.md`, stop 1. -->
+>      Source: fixture lab `node-pointing.md`, stop 1. -->
 > *[stage-view capture pending]*
 
 ## Does it tell the truth?
@@ -84,7 +84,7 @@ description of what you are looking at. The explanation comes from a reasoner th
 description. Neither half is asked to do the other's work, and **what HRW emits is exact rather
 than approximate**: a missing fact is recoverable, a false one is not.
 
-The channel runs both ways. Claude can compose a *tour* — a sequence of clickable stops through
+The channel runs both ways. Claude can compose a *lab* — a sequence of clickable stops through
 HRW's own views — to answer a question that prose alone cannot.
 
 ---
@@ -133,15 +133,15 @@ Build, run, and test from the **workspace root** with `-p hrw`, or from `hrw/` d
 <!-- ============================================================================
      CAPTURE PLAN — read before shooting anything.
 
-     Take captures AT FIXTURE-TOUR STOPS, not at arbitrary moments. A fixture
-     tour already declares what should be on screen in violable terms, and
-     `fixture_tour_links_all_resolve` runs over it on every test run. That makes
-     a stale screenshot DETECTABLE: walking the tour is the check. A capture
+     Take captures AT FIXTURE-LAB STOPS, not at arbitrary moments. A fixture
+     lab already declares what should be on screen in violable terms, and
+     `fixture_lab_links_all_resolve` runs over it on every test run. That makes
+     a stale screenshot DETECTABLE: walking the lab is the check. A capture
      taken at an arbitrary moment has no such property — and screenshots are
      exactly the kind of regenerable-but-unchecked content this project keeps
      getting burned by. Claude cannot regenerate a screenshot.
 
-     Available fixture tours (docs/fixture-tours/):
+     Available fixture labs (docs/fixture-labs/):
        camera-aiming.md                — canvas camera aiming
        frame-seeking.md                — stopping an animation on a given frame
        node-pointing.md                — pointing at a tree node, and following

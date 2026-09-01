@@ -67,7 +67,7 @@ pub struct ReductionView {
     ///
     /// The pane reported differentiation only when `differentiated_rows` was
     /// non-empty, so on `Drivetrain` — six differentiations, none surviving
-    /// `eliminate_trivial` — it said **nothing at all**. A tour read that silence as
+    /// `eliminate_trivial` — it said **nothing at all**. A lab read that silence as
     /// zero and taught the opposite of the truth for its whole existence.
     n_differentiations: usize,
     // Variables removed by symbolic substitution.
@@ -1001,7 +1001,7 @@ mod tests_differentiation_count {
     ///
     /// `Drivetrain` differentiates six times and retains none, and the pane reported
     /// differentiation *only* when the survivor list was non-empty — so it was silent
-    /// exactly when it had the most to say. A tour read that silence as zero and taught
+    /// exactly when it had the most to say. A lab read that silence as zero and taught
     /// the opposite of the truth for its whole existence (`DECISIONS.md`, 2026-08-17).
     #[test]
     fn the_view_carries_differentiations_performed_separately_from_survivors() {

@@ -1,7 +1,7 @@
 //! **Run the pre-commit sequence in the one order that works.**
 //!
 //! ```text
-//! cargo run -p hrw --example gate            # decides FAST, TOUR or FULL from the diff
+//! cargo run -p hrw --example gate            # decides FAST, LAB or FULL from the diff
 //! cargo run -p hrw --example gate -- --full  # force the full suite
 //! cargo run -p hrw --example gate -- --fast  # force the cheap suite
 //! ```
@@ -145,14 +145,14 @@ fn main() {
     // **Doug's 2026-08-31 ruling, said at the moment the cost is about to be paid.**
     // Not an abort: the shape is suspicious, not proof, and a session may have fixed an
     // unrelated defect in the same commit. What it must not be is silent — every FULL
-    // gate he paid for during tour work that day came from tour-facing DATA living in
+    // gate he paid for during lab work that day came from lab-facing DATA living in
     // `src/`, and each was invisible until the four minutes had already gone.
-    if hrw::gate_policy::full_gate_on_a_tour_edit_is_suspect(refs.iter().copied()) {
+    if hrw::gate_policy::full_gate_on_a_lab_edit_is_suspect(refs.iter().copied()) {
         eprintln!(
-            "NOTE: this diff edits a tour AND touches src/, with no specimen added.\n\
+            "NOTE: this diff edits a lab AND touches src/, with no specimen added.\n\
              Doug, 2026-08-31: \"unless we are adding a specimen, I will consider a full \
-             gate run during a tour edit to be a bug.\"\n\
-             The usual cause is tour-facing DATA in src/ that belongs in docs/ \u{2014} \
+             gate run during a lab edit to be a bug.\"\n\
+             The usual cause is lab-facing DATA in src/ that belongs in docs/ \u{2014} \
              reading-budgets.txt, pinned-claims.txt and the derived pane roster were all \
              this. Check before paying ~101 s.\n"
         );
@@ -179,9 +179,9 @@ fn main() {
         "module sizes and App field groups are derived from the formatted source",
     ));
     steps.push(step(
-        "gen_tour_catalogue",
-        &["run", "-q", "-p", "hrw", "--example", "gen_tour_catalogue"],
-        "any `##` heading edit changes a tour's stop list",
+        "gen_lab_catalogue",
+        &["run", "-q", "-p", "hrw", "--example", "gen_lab_catalogue"],
+        "any `##` heading edit changes a lab's stop list",
     ));
     steps.push(step(
         "gen_matching_reference",
@@ -240,12 +240,12 @@ fn main() {
         ));
     }
 
-    // **TOUR: the third verdict.** A docs-only edit to a tour is FAST by the path rule,
+    // **LAB: the third verdict.** A docs-only edit to a lab is FAST by the path rule,
     // and the FAST suite cannot see the guarded pane tables at all, because the tests
     // that verify them against a real compile are slow-gated. So the old advice was "run
     // FULL" — right that a compile is needed, wrong that 910 tests are. Measured at
     // 11.1 s against ~101 s.
-    let tour = !full && hrw::gate_policy::touches_a_verified_tour_region(refs.iter().copied());
+    let lab = !full && hrw::gate_policy::touches_a_verified_lab_region(refs.iter().copied());
     if full {
         steps.push(step(
             "gate (full)",
@@ -263,9 +263,9 @@ fn main() {
             ],
             "the slow-gated checks are the ones a src/ change can break",
         ));
-    } else if tour {
+    } else if lab {
         steps.push(step(
-            "gate (tour)",
+            "gate (lab)",
             &[
                 "test",
                 "-p",
@@ -276,16 +276,16 @@ fn main() {
                 "--",
                 "--test-threads=1",
                 "doc_citations",
-                "tour",
+                "lab",
             ],
-            "a tour's guarded tables are verified against a real compile, and the FAST \
+            "a lab's guarded tables are verified against a real compile, and the FAST \
              suite gates those tests off",
         ));
     } else {
         steps.push(step(
             "gate (fast)",
             &["test", "-p", "hrw", "--lib", "--", "--test-threads=1"],
-            "the doc and tour checkers are what a docs-only change can break",
+            "the doc and lab checkers are what a docs-only change can break",
         ));
     }
 
@@ -294,8 +294,8 @@ fn main() {
         repo.display(),
         if full {
             "FULL"
-        } else if tour {
-            "TOUR"
+        } else if lab {
+            "LAB"
         } else {
             "FAST"
         },

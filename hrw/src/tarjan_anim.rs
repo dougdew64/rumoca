@@ -310,8 +310,8 @@ impl TarjanAnimation {
 
     /// Aim this view's camera at equation `i`, if it exists.
     ///
-    /// Out-of-range indices are ignored rather than clamped: a tour naming an equation
-    /// this model does not have is a **bug in the tour**, and silently aiming somewhere
+    /// Out-of-range indices are ignored rather than clamped: a lab naming an equation
+    /// this model does not have is a **bug in the lab**, and silently aiming somewhere
     /// plausible would hide it. Returns whether the aim was taken, so the caller can
     /// tell "aimed" from "that equation is not here".
     pub fn aim_at_equation(&self, canvas: &mut Canvas, i: usize) -> bool {
@@ -681,7 +681,7 @@ mod tests {
     /// Equations land on a square-ish grid, one world unit apart, centred in their cell.
     ///
     /// This is the arithmetic camera aiming depends on. Claude cannot see whether the
-    /// view then *looks* right — that is what the fixture tour is for — but it can
+    /// view then *looks* right — that is what the fixture lab is for — but it can
     /// check that aiming and drawing compute the same place, which is the failure that
     /// would be near-invisible: a camera landing one cell off looks plausible.
     #[test]
@@ -704,7 +704,7 @@ mod tests {
 
     /// Aiming past the end is refused, not clamped.
     ///
-    /// A tour naming an equation the model does not have is a bug *in the tour*.
+    /// A lab naming an equation the model does not have is a bug *in the lab*.
     /// Clamping would aim somewhere plausible and hide it; refusing surfaces it, and
     /// the caller turns the `false` into a visible notice.
     #[test]

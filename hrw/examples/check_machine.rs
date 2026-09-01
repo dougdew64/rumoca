@@ -273,7 +273,7 @@ fn main() {
         _ => r.line(
             Verdict::Warn,
             "VS Code bridge extension",
-            "only matching-live.md needs it; the other tours run from HRW alone",
+            "only matching-live.md needs it; the other labs run from HRW alone",
             "hrw/docs/setup-windows.md section 6 -- npm install, npm run build, then the junction",
         ),
     }

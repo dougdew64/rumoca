@@ -163,8 +163,8 @@ impl<T> Playback<T> {
     /// Jump the cursor to frame `n`, pausing playback. Returns `false` — and changes
     /// nothing — when `n` is past the end.
     ///
-    /// **Refuses rather than clamps**, the same rule as camera aiming: a tour naming a
-    /// frame this trace does not have is a bug *in the tour*, and landing on the last
+    /// **Refuses rather than clamps**, the same rule as camera aiming: a lab naming a
+    /// frame this trace does not have is a bug *in the lab*, and landing on the last
     /// frame instead would look deliberate and hide it.
     ///
     /// **Pauses**, because a link that seeks into a running animation would be
@@ -188,7 +188,7 @@ impl<T> Playback<T> {
     ///
     /// The on-screen counter and `hrw://…/frame/<n>` links are **1-based** — this
     /// plus one. Anything publishing a frame position for a reader must add the one,
-    /// or a tour link built from it lands a frame early.
+    /// or a lab link built from it lands a frame early.
     #[must_use]
     pub fn cursor(&self) -> usize {
         self.cursor
@@ -307,10 +307,10 @@ mod tests {
 
     /// Seeking lands on the frame, pauses, and refuses to go past the end.
     ///
-    /// All three matter for a tour stop. **Landing** is the point. **Pausing** is what
+    /// All three matter for a lab stop. **Landing** is the point. **Pausing** is what
     /// makes it hold still — a link that seeks into a running animation would be
     /// overtaken by the next tick before the reader's eyes arrived. **Refusing** keeps a
-    /// tour bug visible: clamping to the last frame would look deliberate.
+    /// lab bug visible: clamping to the last frame would look deliberate.
     #[test]
     fn seeking_lands_pauses_and_refuses_to_overshoot() {
         let mut p = Playback::recorded(vec![10, 20, 30, 40], 0.5);
@@ -519,8 +519,8 @@ mod tests_layout {
     /// a week. This test found both on its first run: `alias_anim` capped at
     /// 320pt, holding ~16–18 rows against `Drivetrain`'s **77** alias
     /// eliminations, and `ic_plan_anim` capped at 300pt against `RcCircuit`'s 21
-    /// blocks. `Drivetrain` is the index-reduction tour's centrepiece, so the
-    /// tour's own specimen was showing under a quarter of its list.
+    /// blocks. `Drivetrain` is the index-reduction lab's centrepiece, so the
+    /// lab's own specimen was showing under a quarter of its list.
     ///
     /// # What this checks, and what only Doug can
     ///

@@ -63,9 +63,9 @@ pub(crate) struct NavEntry {
 /// of the window and whether the LHS is visible at all.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum UiMode {
-    /// Guided tour: LHS shows the tour document, RHS shows stage tabs.
+    /// Guided lab: LHS shows the lab document, RHS shows stage tabs.
     #[default]
-    Tour,
+    Lab,
     /// Specimen exploration: LHS shows specimen list + purpose note, RHS shows stage tabs.
     Specimen,
     /// Debugger-assisted: LHS hidden, stage tabs fill the window. VS Code alongside.
@@ -74,25 +74,25 @@ pub enum UiMode {
 
 impl UiMode {
     /// Every variant, for tests that must not miss one.
-    pub const ALL: [UiMode; 3] = [UiMode::Tour, UiMode::Specimen, UiMode::Debug];
+    pub const ALL: [UiMode; 3] = [UiMode::Lab, UiMode::Specimen, UiMode::Debug];
 
     /// **The one spelling of a mode's name.** Both the View menu's label and
     /// `focus.json`'s `ui_mode` field come from here, so they cannot disagree.
     ///
     /// They used to be two independent string literals — `app.rs`'s
     /// `view_context` matched the enum to produce the bridge string, and the
-    /// menu carried its own `"Tour"` — which is a silent-drift shape this
+    /// menu carried its own `"Lab"` — which is a silent-drift shape this
     /// repository has been bitten by repeatedly: nothing compared them, and
     /// `ui_mode` is read by Claude on every prompt rather than by anyone
     /// looking at the screen. Renaming a mode would have changed the button
     /// and left the reported value stale, or the reverse.
     ///
-    /// Added 2026-09-01, before the tour → lab rename, precisely because that
+    /// Added 2026-09-01, before the lab → lab rename, precisely because that
     /// rename touches both sites. **Do not reintroduce a bare mode-name string
     /// literal**; `every_ui_mode_has_one_spelling` is the guard.
     pub fn label(self) -> &'static str {
         match self {
-            UiMode::Tour => "Tour",
+            UiMode::Lab => "Lab",
             UiMode::Specimen => "Specimen",
             UiMode::Debug => "Debug",
         }
@@ -113,7 +113,7 @@ mod tests_ui_mode_label {
         assert_eq!(
             UiMode::ALL.len(),
             3,
-            "UiMode::ALL should list every variant (Tour, Specimen, Debug)"
+            "UiMode::ALL should list every variant (Lab, Specimen, Debug)"
         );
         let names: Vec<&str> = UiMode::ALL.iter().map(|m| m.label()).collect();
         for name in &names {
@@ -134,7 +134,7 @@ mod tests_ui_mode_label {
     /// modes at all would be reporting nothing.
     ///
     /// Reverted-and-checked 2026-09-01: restoring either literal fails this by
-    /// name. It is the guard that made the tour → lab rename safe to start,
+    /// name. It is the guard that made the lab → lab rename safe to start,
     /// since `ui_mode` is read by Claude on every prompt and by nobody looking
     /// at the screen.
     #[test]

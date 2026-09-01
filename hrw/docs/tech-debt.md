@@ -1,11 +1,11 @@
 # Tech Debt — HRW Observatory
 
-**Purpose:** the two sweep triggers, the priority order, the tour holes, and the outstanding
+**Purpose:** the two sweep triggers, the priority order, the lab holes, and the outstanding
 debt with its dispositions.
 **Status:** authority for when a sweep fires and what it prioritises; record for the debt list
 itself.
 **Read when:** at a phase boundary, or after noticing that a defect was caught by Doug rather
-than by the toolchain. Every sweep starts from the tour holes, then re-measures.
+than by the toolchain. Every sweep starts from the lab holes, then re-measures.
 
 Quality improvements identified by code review, grouped by theme and ordered by severity within
 each group.
@@ -32,8 +32,8 @@ different in kind, which is why it is added rather than a reversal. **A forward-
 structurally incapable of finding what neither of us anticipates**, because its scope is drawn
 from what we expect to touch.
 
-**2026-08-19 demonstrated it.** The tour transport bar's non-monotonic width had `MIN_LEFT_POINTS`,
-two divider-test thresholds, `MAX_TOUR_CHROME` and the picker's adaptive width all tuned *around*
+**2026-08-19 demonstrated it.** The lab transport bar's non-monotonic width had `MIN_LEFT_POINTS`,
+two divider-test thresholds, `MAX_LAB_CHROME` and the picker's adaptive width all tuned *around*
 it. **It was never on anyone's list** — nobody planned to touch that bar until a Back button
 needed a slot — so no targeted sweep would have scoped it in. It was found by walking into it, at
 the cost of an evening and two dead theories.
@@ -62,7 +62,7 @@ The rules, in full:
   phase that will rewrite it*, when sweeping would mean designing an abstraction
   before its requirements exist.
 - **Skip what the next phase will rewrite.** Applied three times on 2026-07-29.
-- **Start from the tour holes.** They are the only items that arrive with evidence that
+- **Start from the lab holes.** They are the only items that arrive with evidence that
   they blocked a real answer, which makes theirs the only priority that is not a judgement
   call. **All four logged holes are currently closed** — so a sweep starting there today
   starts empty, which is the correct outcome and not a reason to skip the step. The
@@ -186,15 +186,15 @@ verification loop is tight, the second says something is unwatched.
 | 08-15 | `architecture.md` stale ×3 | toolchain | `architecture_regions_are_current` |
 | 08-15 | notebook 25 days stale | Claude | found while regenerating for the id fix |
 | 08-15 | coupled-block assertions never executed | Claude | writing the id checker |
-| 08-16 | no hint why `C.v` is a state | **Doug** | walking the tour |
+| 08-16 | no hint why `C.v` is a state | **Doug** | walking the lab |
 | 08-16 | the Why explanation was hover-only, undiscoverable | **Doug** | "I don't see what you've added" |
-| 08-16 | `view.json` stopped publishing what the pane drew | Claude | prompted by Doug's question about the tours |
+| 08-16 | `view.json` stopped publishing what the pane drew | Claude | prompted by Doug's question about the labs |
 | 08-16 | `tests/msl_resolve.rs` unrun since ≥08-05 | **Doug** | "Do all of the checkers run?" |
 | 08-16 | connections pane nested three scroll areas | **Doug** | lists not using vertical space |
-| 08-16 | tour link hooks never cleared; first click masked the rest | **Doug** | frame 7 and 13 |
+| 08-16 | lab link hooks never cleared; first click masked the rest | **Doug** | frame 7 and 13 |
 | 08-16 | link navigation dead for 9 of 11 stages | **Doug** | *"still not causing navigation"* — after a wrong fix |
 | 08-16 | divider learned a fraction from a pinned width | **Doug** | maximize from normalized |
-| 08-16 | tests treated the live ad hoc tour as scratch (×3) | Claude | writing one for Doug to test |
+| 08-16 | tests treated the live ad hoc lab as scratch (×3) | Claude | writing one for Doug to test |
 | 08-16 | picker layout regressed the divider | toolchain | `the_left_panel_content_never_detaches…` |
 | 08-16 | duplicate `#[test]`; stolen `#[test]` | toolchain | `no_function_has_two_test_attributes`, `dead_code` |
 
@@ -218,11 +218,11 @@ note; the rest quote the commit.
 
 | date | defect | caught by | note |
 |---|---|---|---|
-| 08-17 | a new tour opened partway down, not at its top | **Doug** | *"When I click a subordinate tour link in the-concepts hub…"* |
+| 08-17 | a new lab opened partway down, not at its top | **Doug** | *"When I click a subordinate lab link in the-concepts hub…"* |
 | 08-17 | a stop link did not land at its stop | **Doug** | same walk *(inferred)* |
-| 08-17 | tour `kind` markers were visible in the pane | **Doug** | *"is now visible in the…"* |
+| 08-17 | lab `kind` markers were visible in the pane | **Doug** | *"is now visible in the…"* |
 | 08-17 | a stage summary claimed more than its frames recorded | Claude | following Doug's *"way, way too short"* |
-| 08-19 | eighteen tour references opened a browser | **Doug** | *"I found a broken link in blt-ordering"* |
+| 08-19 | eighteen lab references opened a browser | **Doug** | *"I found a broken link in blt-ordering"* |
 | 08-19 | the time selector took egui's default width | **Doug** | *"Why is the combobox so wide?"* |
 | 08-19 | the alias view stranded on a stage with no alias tab | Claude | found by a pure function an extraction had produced |
 | 08-20 | a replay restarted after passing through a report stage | Claude | cache-lifetime split *(inferred)* |
@@ -231,13 +231,13 @@ note; the rest quote the commit.
 | 08-21 | the Flatten sub-view row stranded | Claude | column read |
 | 08-21 | a test named `…matches_worker` never touched the worker | Claude | reading `worker.rs` for #48 |
 | 08-22 | Look links recompiled an already-loaded specimen | **Doug** | *"even if those specimens are already loaded"* |
-| 08-22 | the tour implied HRW represents a "node"; so did a doc comment | **Doug** | re-walking connections |
+| 08-22 | the lab implied HRW represents a "node"; so did a doc comment | **Doug** | re-walking connections |
 | 08-22 | `connect` called one edge, is one edge **per member** | **Doug** | *"That seems wrong"* |
-| 08-22 | the 08-12 tour repair was lost to the 08-13 rewrite | Claude | investigating Doug's question |
+| 08-22 | the 08-12 lab repair was lost to the 08-13 rewrite | Claude | investigating Doug's question |
 | 08-22 | the mandatory reading path was growing unchecked | Claude | answering Doug's question about the arrangement |
 | 08-22 | three scratch-specimen tests passed vacuously | Claude | while fixing an unrelated assertion |
-| 08-22 | a `##`-heading edit silently rewrote the catalogue blurb | toolchain | `tour_catalogue_is_current` |
-| 08-22 | an `**Expected:**` marker was removed | toolchain | `every_stop_of_every_tour_owes_an_expected` |
+| 08-22 | a `##`-heading edit silently rewrote the catalogue blurb | toolchain | `lab_catalogue_is_current` |
+| 08-22 | an `**Expected:**` marker was removed | toolchain | `every_stop_of_every_lab_owes_an_expected` |
 | 08-22 | `describe`→`parse` had no round-trip guard | Claude | night 1, column read |
 | 08-22 | a stage with no tab failed nothing; a doc comment claimed otherwise | Claude | night 1 |
 | 08-22 | `…shows_every_fixture…` checked 9 of 22 | Claude | night 1 |
@@ -257,8 +257,8 @@ note; the rest quote the commit.
 | 08-31 | `CLAUDE.md` said **night 6 was queued and unrun**; the run log recorded it closed | Claude | pre-push handoff check. A session starting that night would have queued a spent lens and never reached Doug's night-7 instruction |
 | 08-31 | three documents named the **budget ratchet** retired hours earlier, one of them inside a no-go rule | Claude | night 7, pass 3 |
 | 08-31 | the gate has **three** verdicts; `CLAUDE.md`, `unattended-runs.md` and `examples/gate.rs`'s own header all said two | Claude | night 7, pass 4. The runner's header being wrong is the sharpest: it is what a reader checks when prose and table disagree |
-| 08-31 | `CLAUDE.md` charged **FULL** for a guarded-table edit in three places, hours after the TOUR gate made it 11.1 s | Claude | night 7. The very friction Doug ruled a bug, still being *instructed* by the file read before committing |
-| 08-31 | the tour iteration loop named the plain fast suite — **the one gate that cannot see a tour edit** — and said the catalogue regenerates `ONLY` on a `##` heading, contradicted twenty lines below | Claude | night 7. The `ONLY` cost three catalogue surprises in one day |
+| 08-31 | `CLAUDE.md` charged **FULL** for a guarded-table edit in three places, hours after the LAB gate made it 11.1 s | Claude | night 7. The very friction Doug ruled a bug, still being *instructed* by the file read before committing |
+| 08-31 | the lab iteration loop named the plain fast suite — **the one gate that cannot see a lab edit** — and said the catalogue regenerates `ONLY` on a `##` heading, contradicted twenty lines below | Claude | night 7. The `ONLY` cost three catalogue surprises in one day |
 
 **Seven days: Doug 8, Claude 13, toolchain 3.** Against the first two days' **Doug 10, toolchain 5,
 Claude 5**, the rate that matters moved: **Doug from ~5.0/day to ~1.1/day**, while Claude's own
@@ -332,7 +332,7 @@ class appearing instead would mean point-fixes are not converging.
 | link resolution and dispatch | **yes, twice** — 08-17 and 08-19 |
 
 **The fourth did not recur in its mechanised form and did recur in adjacent ones.**
-`fixture_tour_links_all_resolve` checks that a link *resolves*; the 08-19 defect was eighteen links
+`fixture_lab_links_all_resolve` checks that a link *resolves*; the 08-19 defect was eighteen links
 that resolved and **opened a browser**, and 08-17's was a link that resolved, dispatched, and
 scrolled to the wrong place. **The checker was true the whole time and the feature was broken** —
 which is this project's recurring shape, a claim narrower than the guarantee a reader takes from
@@ -340,7 +340,7 @@ it.
 
 **So the honest reading: mechanisation works on the exact class it names and does not generalise to
 the surface around it.** The remedy is not more mechanisation of link *resolution*; it is that the
-tour-link surface has three failure modes and only one is checked.
+lab-link surface has three failure modes and only one is checked.
 
 ### And the surface Doug's column keeps landing on is UI LAYOUT
 
@@ -395,20 +395,20 @@ reading path and this file is not. A pointer stays there.
 
 | owed | what to do | why it waits |
 |---|---|---|
-| **Blurb pinning** | Pin each tour's catalogue blurb to its expected first bolded line | bit 3× on 2026-08-31 |
+| **Blurb pinning** | Pin each lab's catalogue blurb to its expected first bolded line | bit 3× on 2026-08-31 |
 | **Placeholder extraction** | Teach `extract_hrw_links` to skip targets containing `<` | bit 2× the same day |
-| **Tour-region predicate** | Exclude `README.md` and `CATALOGUE.md` from `gate_policy::touches_a_verified_tour_region` | 5 s per README edit |
+| **Lab-region predicate** | Exclude `README.md` and `CATALOGUE.md` from `gate_policy::touches_a_verified_lab_region` | 5 s per README edit |
 
 **The first two are the same session's self-inflicted wounds, and the first is the expensive one.**
-A bolded paragraph inserted above a tour's opening bold line **silently becomes the catalogue's
+A bolded paragraph inserted above a lab's opening bold line **silently becomes the catalogue's
 blurb**, and nothing reports it — which is why the reflex became regenerating the catalogue every
 turn, ~10 s per prose edit in the mode where Doug feels every second. A metavariable
 (`hrw://src/<workspace path>`, or a bare `hrw://src/` in prose) extracts as a real link and fails
 the reference checker, which at least fails loudly.
 
-**The third is an over-broad predicate, not a defect.** `touches_a_verified_tour_region` matches any
-`.md` under `fixture-tours/`, so editing that directory's README or its generated catalogue selects
-the TOUR gate (11 s) where FAST (6 s) would do. Neither file has a `pane-*` marker, so neither needs
+**The third is an over-broad predicate, not a defect.** `touches_a_verified_lab_region` matches any
+`.md` under `fixture-labs/`, so editing that directory's README or its generated catalogue selects
+the LAB gate (11 s) where FAST (6 s) would do. Neither file has a `pane-*` marker, so neither needs
 a compile.
 
 ## Priority order — read this before choosing what to fix
@@ -442,7 +442,7 @@ Doug the assignment.
    at the top of [`../CLAUDE.md`](../CLAUDE.md).
 1. **Anything that forces Claude to guess instead of verify** — a phase not emitting
    its data, a broken bridge, a claim that cannot be checked. **This is the
-   catastrophic case, not a missing tour.** On 2026-07-29 the textbook shape of a
+   catastrophic case, not a missing lab.** On 2026-07-29 the textbook shape of a
    hidden constraint says Pantelides *differentiates* it; the actual report showed
    `differentiated_rows` empty and `emf.phi` demoted via the dummy-derivative path.
    Recall would have been confidently wrong, and under deadline pressure Doug would
@@ -450,15 +450,15 @@ Doug the assignment.
 2. **Anything that makes HRW unavailable** — crashes, hangs, failure to build. Note
    the test suite *hangs* under the default harness; that class of failure bites worst
    at the worst time.
-3. **Tour holes** — below. These usually *degrade* an answer rather than block it, since a
+3. **Lab holes** — below. These usually *degrade* an answer rather than block it, since a
    text answer remains available. **All four logged holes are closed as of 2026-07-30.**
 4. **Ordinary debt** — everything further down this file.
 
 ---
 
-## Tour holes
+## Lab holes
 
-**A tour hole is a place where HRW stopped Claude from answering a question.** Doug's
+**A lab hole is a place where HRW stopped Claude from answering a question.** Doug's
 ruling, 2026-07-29:
 
 > When attempting to deliver to me the thing which I value most (answers), I want very
@@ -467,17 +467,17 @@ ruling, 2026-07-29:
 
 **These outrank all ordinary debt in this file** (but see the priority order above —
 anything that makes Claude *guess*, or makes HRW *unavailable*, comes first), including
-items that have been open across several sweeps. Ordinary debt costs *future* effort; a tour hole degrades the
+items that have been open across several sweeps. Ordinary debt costs *future* effort; a lab hole degrades the
 *deliverable*, and it arrives with evidence attached — a real question it got in the
 way of. **Every sweep starts here.**
 
 Two kinds, and both count:
 
-- **Loud holes** — Claude cannot get there at all, and has to say so mid-tour. These
+- **Loud holes** — Claude cannot get there at all, and has to say so mid-lab. These
   get noticed because they are embarrassing.
 - **Quiet holes** — Claude works around it with prose ("same tab → now click X") and
-  the tour is a little worse at several points. **These are the dangerous ones**: they
-  accumulate unnoticed, and the first tour produced one that went unlogged until Doug
+  the lab is a little worse at several points. **These are the dangerous ones**: they
+  accumulate unnoticed, and the first lab produced one that went unlogged until Doug
   asked whether holes were being tracked.
 
 **All four logged holes are closed.** They are recorded as one line each rather than as a
@@ -487,21 +487,21 @@ live table, because a table of closed rows reads like open work *(condensed 2026
 |---|---|---|
 | `Matching ▶` hidden when Structural is singular — the view that shows *why* a rank deficiency exists, unavailable exactly when it matters | 2026-07-29 | **No new code.** `MatchingStep::EquationFailed` was already emitted and `matching_anim` already painted the failed row red. The feature was **built and then gated out of reach** — one UI condition — and nothing tested it, which is how it stayed hidden. `a_singular_report_still_animates_and_ends_on_the_failure` pins it. |
 | `hrw://` cannot address a **sub-tab**, so every animation and custom view sat one level below what a link could reach | 2026-07-29 | `SubView::from_slug` resolves slugs *per stage*, and the slugs **are** the capture's own names. `link_slugs_and_capture_names_are_the_same_vocabulary` asserts the two lists cannot drift. |
-| `hrw://` cannot point at a **source line**, so a tour had to *quote* one | 2026-07-29 | `hrw://source[/<line>]`, plus a tinted blamed line — ideas #45 step 2b. |
-| `Canvas` cannot centre on a node | 2026-07-30 | `App::aim_at_equation` → `anim.aim_at_equation(canvas, target)`, with `camera-aiming.md` as its fixture tour. *(This row read "open (unconfirmed)" until 2026-08-01, two days after it shipped — the stale-negative class that `verification-plan.md` item 0b exists to catch.)* |
+| `hrw://` cannot point at a **source line**, so a lab had to *quote* one | 2026-07-29 | `hrw://source[/<line>]`, plus a tinted blamed line — ideas #45 step 2b. |
+| `Canvas` cannot centre on a node | 2026-07-30 | `App::aim_at_equation` → `anim.aim_at_equation(canvas, target)`, with `camera-aiming.md` as its fixture lab. *(This row read "open (unconfirmed)" until 2026-08-01, two days after it shipped — the stale-negative class that `verification-plan.md` item 0b exists to catch.)* |
 
-**Measured effect on the tour that exposed the first three:** regenerated, it went from
-**2 working links and 4 prose hand-offs to 9 links and none**, and Stop 3 turned from an
-apology into the best stop in the tour.
+**Measured effect on the lab that exposed the first three:** regenerated, it went from
+**2 working links and 4 prose hand-offs to 9 links and none**, and Station 3 turned from an
+apology into the best stop in the lab.
 
 **Under-logged twice, and the pattern is the lesson.** The source-line row was added only
-after Doug asked whether it was time to build highlighting — two tours had already worked
+after Doug asked whether it was time to build highlighting — two labs had already worked
 around it in prose and Claude had logged neither. That was the *second* quiet hole missed this
 way. **Loud holes get logged because they are embarrassing; quiet ones get absorbed.** When
-writing a tour, treat every "click this yourself" and every quoted-instead-of-linked reference
+writing a lab, treat every "click this yourself" and every quoted-instead-of-linked reference
 as a row here, mechanically, without judging whether it feels worth mentioning.
 
-**Recording discipline.** When a tour hits a hole: add a row here *and* note it in the
+**Recording discipline.** When a lab hits a hole: add a row here *and* note it in the
 [question ledger](question-ledger.md) entry for the question that exposed it. The
 ledger says which question suffered; this table is what a sweep reads. A hole worked
 around in prose still gets a row — that is the whole point of the quiet/loud split.
@@ -516,7 +516,7 @@ what a future sweep can use: what was fixed, and the lesson. Detail is in git hi
 | Sweep | Scope | Fixed |
 |---|---|---|
 | **2026-07-28** comprehensive | before source-tooling Phases 5-7 | `collect_tracked_ancestors` short-circuited on `any`, so the tree opened a path to the **first** mention only — now folds. `ui()` 1272 → 880. The specimen source view's private copy of the tracking toggle now calls `set_tracked_identifier` like every other entry point. `tree.rs` module docs refreshed. |
-| **2026-07-29** scoped to #42 | before ad hoc tours | `ui()` 982 → 325 via `FrameIntent`, closing an item open across two sweeps and *blocked* the previous time — extraction needed seven out-parameters threaded through, because egui panel closures borrow `self`. Three dead locals removed (`node_ask`, `debug_ask`, `nav_to` — folded in with `.or(…)` where the fold was always the other operand). Batch narrative regeneration **closed as obsolete**. Test-race entry **corrected**: it blamed `bridge.rs` alone, but `worker`'s stdout redirect races too, and both reproduce on a clean tree. |
+| **2026-07-29** scoped to #42 | before ad hoc labs | `ui()` 982 → 325 via `FrameIntent`, closing an item open across two sweeps and *blocked* the previous time — extraction needed seven out-parameters threaded through, because egui panel closures borrow `self`. Three dead locals removed (`node_ask`, `debug_ask`, `nav_to` — folded in with `.or(…)` where the fold was always the other operand). Batch narrative regeneration **closed as obsolete**. Test-race entry **corrected**: it blamed `bridge.rs` alone, but `worker`'s stdout redirect races too, and both reproduce on a clean tree. |
 
 **Three items were deferred into #42 rather than swept**, and the reasoning generalises:
 unifying the four sub-view enums, decomposing `bridge.rs`, and aiming the canvas were all
@@ -649,7 +649,7 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   shadows a curated specimen — the exact *"makes Claude guess"* failure that test exists to
   prevent.
 
-  **`test_support::ScratchSpecimen` is the fix**, on the `ui_tests::AdHocTour` contract: save what
+  **`test_support::ScratchSpecimen` is the fix**, on the `ui_tests::AdHocLab` contract: save what
   was there, write, and restore in `Drop` so unwinding cannot poison the directory. All three
   tests now establish their own precondition, and the probe's source is a shared constant because
   `worker`'s `n_states == 1` assertion is a property of *that* model.
@@ -667,8 +667,8 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
 
   **The fix is not simply to drop the early return.** Making it non-vacuous means the test writes
   its own probe and removes it, in a directory Doug and Claude both use during a session. That is
-  exactly the shape of the three `.hrw-bridge/tour.md` defects (`CLAUDE.md`, *"a test that wrote
-  its own and **deleted Doug's** afterwards"*), so it wants the `ui_tests::AdHocTour` treatment —
+  exactly the shape of the three `.hrw-bridge/lab.md` defects (`CLAUDE.md`, *"a test that wrote
+  its own and **deleted Doug's** afterwards"*), so it wants the `ui_tests::AdHocLab` treatment —
   restore what was there, including on a panic — rather than a naive create/delete.
 
   *Found 2026-08-22, when two unrelated scratch specimens broke the test's other assertion. That
@@ -676,64 +676,64 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
 
 ## UI defects — found by walking
 
-- [ ] **The "✨ Claude's answer" row vanishes when no ad hoc tour exists, and its absence is
-  indistinguishable from breakage.** *(Doug, 2026-08-15: "the 'Claude's Answer' tour seems to
-  have disappeared from the tours list in the tour mode.")*
+- [ ] **The "✨ Claude's answer" row vanishes when no ad hoc lab exists, and its absence is
+  indistinguishable from breakage.** *(Doug, 2026-08-15: "the 'Claude's Answer' lab seems to
+  have disappeared from the labs list in the lab mode.")*
 
-  **Not a regression — diagnosed before logging.** `.hrw-bridge/tour.md` does not exist, and
-  `tour.rs:181` gates the row on that file:
+  **Not a regression — diagnosed before logging.** `.hrw-bridge/lab.md` does not exist, and
+  `lab.rs:181` gates the row on that file:
 
   ```rust
-  if std::path::Path::new(bridge::TOUR_FILE).exists() {
-      tours.push(TourSource::AdHoc);
+  if std::path::Path::new(bridge::LAB_FILE).exists() {
+      labs.push(LabSource::AdHoc);
   }
   ```
 
-  No ad hoc tour has been written this week, `.hrw-bridge/` is gitignored and ephemeral by
-  design, and the listing logic has not changed — the last commits touching `tour.rs` all
+  No ad hoc lab has been written this week, `.hrw-bridge/` is gitignored and ephemeral by
+  design, and the listing logic has not changed — the last commits touching `lab.rs` all
   predate the session. So the row is behaving exactly as built.
 
   **The defect is that "exactly as built" is wrong here**, and the project already has the rule
   it breaks. `lib.rs`'s `LiveState` convention, restated in `docs/ideas.md` #77: *"controls are
-  enabled and disabled, never shown and hidden… A layout that makes the tour vanish with no
+  enabled and disabled, never shown and hidden… A layout that makes the lab vanish with no
   trace of how to bring it back is the same defect in a new dress."* A row that silently ceases
   to exist gives the reader no way to tell **"nothing has been written yet"** from **"the
   feature broke"** — and Doug read it, correctly by the available evidence, as the second.
 
   **Fix:** render the row **always**, disabled when the file is absent, with hover text saying
-  what makes one appear (Claude writes `.hrw-bridge/tour.md`; it is regenerated per question,
+  what makes one appear (Claude writes `.hrw-bridge/lab.md`; it is regenerated per question,
   never retrieved — `docs/ideas.md` #42). Same shape as the disabled Debug button.
 
-  **Why it matters more than one row.** The ad hoc tour is the whole *"Claude can compose an
+  **Why it matters more than one row.** The ad hoc lab is the whole *"Claude can compose an
   answer inside HRW"* capability (#42). If it looks broken, it stops being reached for, and the
   capability dies of apparent absence rather than of any decision.
 
   **Who caught it: Doug.** That is the backward sweep trigger — the code lives somewhere nothing
-  checks, and no test asserts what the tour list offers when the ad hoc file is missing.
-  *Files:* `tour.rs`, `app.rs`.
+  checks, and no test asserts what the lab list offers when the ad hoc file is missing.
+  *Files:* `lab.rs`, `app.rs`.
 
-- [ ] **A selected fixture tour does not always open scrolled to the top.**
-  *(Doug, 2026-08-01, walking the fixture tours as a smoke test.)*
+- [ ] **A selected fixture lab does not always open scrolled to the top.**
+  *(Doug, 2026-08-01, walking the fixture labs as a smoke test.)*
 
-  **Cause identified, not guessed.** The tour pane is
-  `egui::ScrollArea::vertical().id_salt("tour")` (`app.rs`) — **one fixed id for every
-  tour** — and egui persists scroll offset per `ScrollArea` id. Switching tours therefore
-  reuses the previous tour's offset. `select_tour` already resets the right-hand side on a
+  **Cause identified, not guessed.** The lab pane is
+  `egui::ScrollArea::vertical().id_salt("lab")` (`app.rs`) — **one fixed id for every
+  lab** — and egui persists scroll offset per `ScrollArea` id. Switching labs therefore
+  reuses the previous lab's offset. `select_lab` already resets the right-hand side on a
   real change (specimen, stage, log, compiling) and deliberately *not* on re-selecting the
-  same tour; **the scroll offset was simply never included in that reset.**
+  same lab; **the scroll offset was simply never included in that reset.**
 
-  **Fix:** extend the existing "only on an actual change" branch in `select_tour` to raise a
+  **Fix:** extend the existing "only on an actual change" branch in `select_lab` to raise a
   flag, and have the pane apply `.vertical_scroll_offset(0.0)` for one frame. Salting the id
-  per tour is the other option and is worse here — it would make each tour *resume* where it
+  per lab is the other option and is worse here — it would make each lab *resume* where it
   was left, which contradicts the reset that branch exists to perform.
 
-  **Why it matters more than it looks.** Opening mid-document means Stop 1 is off-screen, so
-  a tour whose whole purpose is a sequence starts by hiding its start — the same species as
-  the RHS-not-re-initialising bug, which made Stop 1 look already done.
+  **Why it matters more than it looks.** Opening mid-document means Station 1 is off-screen, so
+  a lab whose whole purpose is a sequence starts by hiding its start — the same species as
+  the RHS-not-re-initialising bug, which made Station 1 look already done.
 
   **This is the class `egui_kittest` is for** (`verification-plan.md` item 2): its table
-  already lists *"the RHS doesn't re-initialise on a second tour"*, and *"scroll offset is 0
-  after selecting a different tour"* is the same assertion shape. **Caught by Doug, which the
+  already lists *"the RHS doesn't re-initialise on a second lab"*, and *"scroll offset is 0
+  after selecting a different lab"* is the same assertion shape. **Caught by Doug, which the
   backward trigger says is the signal** — nothing checks the rendered surface today.
   *File:* `app.rs`.
 
@@ -933,7 +933,7 @@ the pre-Flatten stages since **2026-07-29**. Only **7 of 21** manifests listed t
 so a reader of the committed notebook saw a pipeline HRW no longer had. `hrw/CLAUDE.md` says the
 trace is *"generated and therefore correct by construction — any number about a specimen is read
 from here"*, which makes this a correctness problem: that sentence is a standing instruction to
-trust the notebook, and every count in the nine tours was read from it.
+trust the notebook, and every count in the nine labs was read from it.
 
 **`architecture.md` had exactly this disease and was cured on 2026-08-12 by generating it *and*
 adding a currency test.** The notebook got the first half seventeen days earlier and never got
@@ -1073,7 +1073,7 @@ zero, countable and non-zero, not countable) are now distinct.
 
 ### `incidence_view.rs` — three sites, the most consequential in HRW
 
-Audited and fixed second, because this matrix is the object the matching and BLT tours teach on.
+Audited and fixed second, because this matrix is the object the matching and BLT labs teach on.
 
 1. **A dropped column.** A non-numeric entry in a row's `unknowns` was removed silently, so the
    matrix showed an equation **not depending on a variable it depends on**. Every structural
@@ -1227,14 +1227,14 @@ the background's own shape (`· name · stage`).
   the size-mismatch report added earlier today — the rest are unexamined.
   <!-- unbuilt: str_vec_checked_everywhere -->
 
-## Accuracy items 4 and 5 — stale docs, and the tours
+## Accuracy items 4 and 5 — stale docs, and the labs
 
-**Item 5, the tours: checked and NOT stale.** Verified rather than assumed, four ways —
-no fixture tour cites an HRW source line; the `docs/compiler-phases/` citations that matched
+**Item 5, the labs: checked and NOT stale.** Verified rather than assumed, four ways —
+no fixture lab cites an HRW source line; the `docs/compiler-phases/` citations that matched
 today's changed symbols are all to **Rumoca's** names (`build_blt_from_incidence`, snippets
 quoted from Rumoca sources) and no `crates/rumoca-*` file was touched today; the numeric claims
 (`2 equations, 3 unknowns, balance = -1`) are pinned by passing tests; and
-`fixture_tour_links_all_resolve` runs every build.
+`fixture_lab_links_all_resolve` runs every build.
 
 **Item 4, stale doc comments: the six known ones were fixed as they were found. A systematic
 scan found no further FALSE comments — it found an ambiguity instead**, and the ambiguity is
@@ -1242,7 +1242,7 @@ the more dangerous finding.
 
 ### "Replay" now means two things, and one of them is forbidden
 
-The word is live in both senses, in the source, the UI and the tours:
+The word is live in both senses, in the source, the UI and the labs:
 
 - **Playback of frames recorded during the real compile** — the animation feature. Correct.
   The UI says *"no frame 3 in this replay"*; `frame-seeking.md` says *"the reduction replay
@@ -1255,7 +1255,7 @@ from the flat model"* is **correct and must not be 'fixed'**.
 
 **The failure mode this creates is bidirectional**, which is why it is written into
 [`../CLAUDE.md`](../CLAUDE.md) rather than left as a rename: a later session reads "the
-reduction replay" in a tour and either deletes a working feature, or concludes the fictions
+reduction replay" in a lab and either deletes a working feature, or concludes the fictions
 were already handled and stops looking. **Judge by where the frames came from, never by the
 word.** `CompileFrames` — which holds the good kind — was reworded to avoid it entirely.
 
@@ -1282,7 +1282,7 @@ noticed, and today nothing would notice.
 
 ## ~~A flagged stage shows its error INSTEAD OF its artifact~~ — FIXED 2026-08-05
 
-**Found by Doug 2026-08-05**, walking `failure-typecheck.md`: the tour claimed a tree below the
+**Found by Doug 2026-08-05**, walking `failure-typecheck.md`: the lab claimed a tree below the
 diagnostic and there was none. **Rank 0** — the pane shows less than the stage holds, and says
 nothing about it.
 
@@ -1469,7 +1469,7 @@ unasked question.
   Ranking diffs by importance would be the verb; showing them is not.
 - **The equation sheet's ordering** — *keep if it is the compiler's order*, which is a fact.
   A relevance ranking would be a verb.
-- **The tours list** — **the one live candidate.** Showing `kind` and specimen on a row is a fixed
+- **The labs list** — **the one live candidate.** Showing `kind` and specimen on a row is a fixed
   fact and belongs there. What was dropped is faceted search and prerequisite chains, which infer
   what Doug is looking for. `docs/ideas.md` #62.
 
@@ -1527,10 +1527,10 @@ longer have, and `FromWorker::Compiled` still called the pre-lowering and connec
 held to the same rule as a pane.**
 
 **And `examples/frame_index.rs` was rewritten**, which is the one with teeth: the tool that
-generates the frame numbers the matching tour cites was re-deriving from a committed trace
+generates the frame numbers the matching lab cites was re-deriving from a committed trace
 while the panel rendered captured frames. Its header claimed it *"drives the same constructor
 the panel does"*, true until the panel changed. It now compiles the specimen and reads
-`matching_frames` off the result. **Verified against the tour: 8 / 16 / 114 frames for
+`matching_frames` off the result. **Verified against the lab: 8 / 16 / 114 frames for
 BouncingBall / ProportionalLoop / CapacitorLoop, exactly the numbers in `matching.md`** — so
 the defect was latent, agreeing by determinism, which is the reasoning the capture scopes exist
 to stop relying on. Third defect in that one file.
@@ -1582,7 +1582,7 @@ statement about *which constructor exists*, not about what a given view is showi
   own assertion at the time it is written, per the pane-is-a-reporter rule.
 
 **Do not treat this as swept because the fictions are gone.** The fictions were found by Doug
-walking two tours, not by any check, and the next one will be found the same way unless the
+walking two labs, not by any check, and the next one will be found the same way unless the
 category acquires coverage.
 
 ## UI testing debt — the harness exists and almost nothing uses it
@@ -1602,9 +1602,9 @@ skipped a fourth; nobody sees a fourth thing missing.
 ### Measured 2026-08-01
 
 - **11 tests** in `src/ui_tests.rs`, against **17 `*_ui` functions** in `app.rs`.
-- **5 of the 11 are tour-link tests.** They exist because tours were the first
-  thing with a machine-checkable contract (`fixture_tour_links_all_resolve`), not
-  because tours are the highest-risk surface.
+- **5 of the 11 are lab-link tests.** They exist because labs were the first
+  thing with a machine-checkable contract (`fixture_lab_links_all_resolve`), not
+  because labs are the highest-risk surface.
 - **Panes with no headless test at all:** `menu_bar_ui`, `equation_sheet_ui`,
   `source_map_ui`, `specimen_source_ui`, the stage tab row, the chat panel, the
   help panel, the log view, the Purpose tab, and the status bar's notices.
@@ -1623,8 +1623,8 @@ reach: **`incidence_view.rs:457`** (the matrix cell glyphs) and
 labels and state text are ordinary widgets; only the matrix underneath is not.
 
 **This matters for the division of labour.** The standing plan is that fixture
-tours cover what cannot be automated, and that set is much smaller than it looked
-— which means tours should *not* be spent re-walking widget panes a headless
+labs cover what cannot be automated, and that set is much smaller than it looked
+— which means labs should *not* be spent re-walking widget panes a headless
 test can hold. Two things stay Doug's alone regardless of harness reach:
 **colour** (fills carry meaning throughout HRW and the tree records no colour)
 and **layout** (a widget laid out off-screen is still in the tree — the reason
@@ -1662,7 +1662,7 @@ instructive than the fact.
 
 **What differs is the SIZE OF THE ENCLOSING PANEL.** A vertical-only scroll area reports
 its content's full width as the width it *wants*, and that propagates outward: with the
-real `the-concepts.md` loaded, the tour panel opened at **899pt of a 1280pt window
+real `the-concepts.md` loaded, the lab panel opened at **899pt of a 1280pt window
 instead of 512pt, and the divider froze solid** — the panel had been sized to the widest
 table in the document. Under `both()` the same document opens at 512pt and drags freely.
 Both numbers are read from `App`, and
@@ -1695,7 +1695,7 @@ the whole time, needing no harness feature, and reached only because a **user-re
 symptom named the container**: *"the divider does not move."*
 
 **Do not chase a coverage number.** The metric that would matter is *panes whose
-reports are guarded*, and counting tests instead would reward the tour-link tests
+reports are guarded*, and counting tests instead would reward the lab-link tests
 that already dominate the file.
 
 ### The rule going forward
@@ -1717,7 +1717,7 @@ the way; and step 10 (`eliminate_trivial`) removes 77 equations, taking the diff
 with them.
 
 **Every checker in this repository compares a document to a trace, and the trace said zero.** So
-the tour was consistent with the artefact and wrong about the compiler, and no amount of
+the lab was consistent with the artefact and wrong about the compiler, and no amount of
 document-versus-trace checking could have found it.
 
 ### The check that would have
@@ -1736,7 +1736,7 @@ fix; the rename is what stops the next reader falling in.
 ### Why it is worth building rather than noting
 
 **This is trigger 2 — a defect only a human caught** — and the human did not even catch *it*. Doug
-reported that the tour *felt thin*. The wrong number was three steps down from that. **A defect
+reported that the lab *felt thin*. The wrong number was three steps down from that. **A defect
 found by aesthetic dissatisfaction is one nothing else was looking for**, which is exactly the
 signal this file says should fire a sweep.
 
@@ -1765,7 +1765,7 @@ it. So:
 
 ### Two fixes, and they are not alternatives
 
-1. **Label it now** — one line in the pane and one in the tour. Cheap, honest, and it satisfies the
+1. **Label it now** — one line in the pane and one in the lab. Cheap, honest, and it satisfies the
    rule as written.
 2. **Ask upstream for the real thing.** rumoca-sim runs this funnel during compilation and HRW
    cannot see it, which is why the mirror exists at all. An observation hook there would make the
@@ -1775,13 +1775,13 @@ it. So:
 
 ## `CATALOGUE.md` should carry each stop's `Expected` line
 
-**Logged 2026-08-17 at Doug's request**, immediately after `hrw://tour/<name>/stop/<slug>` was
+**Logged 2026-08-17 at Doug's request**, immediately after `hrw://lab/<name>/station/<slug>` was
 made to actually land at its stop. Doug: *"Your proposal would eliminate a cause for bugs."*
 
 ### The bug class it removes
 
 The catalogue lists every stop's **heading and slug** — 169 rows — and nothing about what the
-stop *claims*. So citing one accurately means opening the tour, reading the stop, and writing a
+stop *claims*. So citing one accurately means opening the lab, reading the stop, and writing a
 summary beside the link. **That summary is written from recollection of something read minutes
 earlier, which is a mechanism this repository has already watched fail:**
 
@@ -1790,25 +1790,25 @@ earlier, which is a mechanism this repository has already watched fail:**
 > equation `src.p.v = R.p.v`, while the capacitor's rate law is `f_x[14]`. **The number was
 > written from memory of one seen an hour earlier.**
 
-That one was caught by building `an_equation_id_a_tour_cites_names_the_equation_the_prose_claims`.
+That one was caught by building `an_equation_id_a_lab_cites_names_the_equation_the_prose_claims`.
 **The general case is not covered**: an equation *id* is checkable against a trace, and a prose
 claim about what a stop says is not.
 
 **Carrying the `Expected` line into the catalogue removes the recollection step entirely** —
 the claim is quoted from the index rather than remembered from a reading. And because the
-catalogue is **generated**, the quote cannot drift: `tour_catalogue_is_current` already fails
-when the file no longer matches the tours.
+catalogue is **generated**, the quote cannot drift: `lab_catalogue_is_current` already fails
+when the file no longer matches the labs.
 
 ### Why the cost of not doing it is now rising
 
 **Before 2026-08-17 a stop link did not work**, so the corpus contained exactly one and citation
 was rare. It works now, which makes composing an answer out of checked stops the natural move
-rather than an unusual one — see `.hrw-bridge/tour.md`'s four-citation example. **The debt's cost
+rather than an unusual one — see `.hrw-bridge/lab.md`'s four-citation example. **The debt's cost
 scales with how often the feature is used, and the feature just became usable.**
 
 ### What it does NOT close, and this needs saying
 
-**An ad hoc tour's summary is still unchecked, and will remain so.** `.hrw-bridge/tour.md` is
+**An ad hoc lab's summary is still unchecked, and will remain so.** `.hrw-bridge/lab.md` is
 gitignored by construction — it is the answer to the question just asked — so no test runs on it.
 The asymmetry to keep in mind:
 
@@ -1818,13 +1818,13 @@ The asymmetry to keep in mind:
 | a **wrong** paraphrase | **silent** | less likely, still silent |
 
 This makes the mistake harder to make. It does not make it detectable. **The verification stays
-with Doug**, which is why the example tour tells him to check that each stop says what the
+with Doug**, which is why the example lab tells him to check that each stop says what the
 citation claims.
 
 ### How to do it
 
-`examples/gen_tour_catalogue.rs` already walks every heading to build the slug list. For each
-numbered stop, take the first `**Expected:**` line of its body — `every_stop_of_every_tour_owes_an_expected`
+`examples/gen_lab_catalogue.rs` already walks every heading to build the slug list. For each
+numbered stop, take the first `**Expected:**` line of its body — `every_stop_of_every_lab_owes_an_expected`
 guarantees one exists — and emit it under the row.
 
 **Two judgement calls to make with measurement, not guesswork:** the file is **21 KB** today and
@@ -2093,7 +2093,7 @@ sweep never opens a scope**, so a 2,626-model run pays nothing.
 
 ## Source provenance thins through the pipeline (and the first measurement of it was wrong) — 41 → 15 → 2 → 0
 
-**Found 2026-08-05**, when Doug resumed the DAE tour: *"I'm not able to relate anything in the DAE
+**Found 2026-08-05**, when Doug resumed the DAE lab: *"I'm not able to relate anything in the DAE
 tree to the Modelica source from which the tree was derived."* He reported it as a UI problem
 constrained by screen real estate. **It is not primarily a UI problem.**
 

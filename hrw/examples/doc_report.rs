@@ -21,7 +21,7 @@
 //! # What it may do, and what it must bring back
 //!
 //! `CLAUDE.md` already authorises Claude to reorganise and condense documents without
-//! asking. The line this must not cross is the same one that governs tour prose: **trimming
+//! asking. The line this must not cross is the same one that governs lab prose: **trimming
 //! an explanation is Doug's learning material and therefore Doug's call.**
 //!
 //! | unattended | bring to Doug |
@@ -166,7 +166,7 @@ fn main() {
     // ---------------------------------------------------- duplication --
     //
     // **The check that would have caught the real failure.** On 2026-08-31 four rulings
-    // were written into both `DECISIONS.md` and `fixture-tours/README.md`; the budget saw
+    // were written into both `DECISIONS.md` and `fixture-labs/README.md`; the budget saw
     // only "a document got longer" and charged for it seven times.
     println!("\n  Duplicated passages (>= {DUPLICATE_FLOOR} chars, across documents)");
     let docs = corpus(&hrw);

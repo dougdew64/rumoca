@@ -13,7 +13,7 @@
 //! somewhere else entirely. Nothing crosses between them — no shared local, no shared
 //! guard — so the `else` is the cheapest whole branch the router has.
 //!
-//! It is also the branch that **calls no `App` method**, which is `tour_prose_ui`'s rule
+//! It is also the branch that **calls no `App` method**, which is `lab_prose_ui`'s rule
 //! for a body (*"which contiguous region calls no `App` method?"*) coming out true for
 //! once on a router. The two buttons want to mutate `self.nav`, which is why they report
 //! a [`NavCommand`] instead: the same deferred-intent pattern the rest of the frame uses.

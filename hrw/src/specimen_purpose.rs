@@ -10,10 +10,10 @@
 //!
 //! # `App` resolves and dispatches; this renders
 //!
-//! The same split [`crate::tour_panel::tour_prose_ui`] uses, and for the same reason:
+//! The same split [`crate::lab_panel::lab_prose_ui`] uses, and for the same reason:
 //! `App::specimen_purpose_ui` reads the note, registers the markdown link hooks, calls
 //! [`purpose_ui`], and drains the hooks — so an `hrw://` link inside a purpose note is
-//! dispatched by the one caller that already dispatches the tour's, and this module
+//! dispatched by the one caller that already dispatches the lab's, and this module
 //! owns no policy about what following a link means. [`purpose_ui`] therefore returns
 //! nothing and never sees an `App`.
 //!

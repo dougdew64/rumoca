@@ -11,7 +11,7 @@ code never says what it is *for*.
 
 A DC motor driving an inertial load with a speed-limit event.
 
-Authored as an **end-to-end tour** specimen, combining four phenomena that drive different
+Authored as an **end-to-end lab** specimen, combining four phenomena that drive different
 phases: cross-domain MSL connectors (parse through flatten), the EMF's internal support
 constraint (index > 1 — one demotion, `emf.phi`), a `when`/`elsewhen` clause (events), and
 stiffness (the solver).
@@ -19,4 +19,4 @@ stiffness (the solver).
 ## Where it has been used
 
 Entries in [`question-ledger.md`](../../question-ledger.md) — the record lives there; this is an index into it.
-- **2026-07-29** — *"The Structural phase summary claims that the rank has a deficiency of 1. What does that mean?"* The first ad hoc tour. Exposed `ideas.md` #44: `Matching ▶` was hidden exactly when a singular system made it most instructive.
+- **2026-07-29** — *"The Structural phase summary claims that the rank has a deficiency of 1. What does that mean?"* The first ad hoc lab. Exposed `ideas.md` #44: `Matching ▶` was hidden exactly when a singular system made it most instructive.

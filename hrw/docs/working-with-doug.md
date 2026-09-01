@@ -75,7 +75,7 @@ He learns by understanding *why*, and a mechanism explained before its motivatio
 land.
 
 **HE IS A BEGINNER AT THIS, AND THE DEPTH ORDER IS CONCEPTS NOW, DETAILS LATER** *(Doug,
-2026-08-12, walking the tours)*: *"let's agree now that I am beginner and so benefit from
+2026-08-12, walking the labs)*: *"let's agree now that I am beginner and so benefit from
 easy-to-understand conceptual explanations now. Later, I will dig deeper and benefit from
 details such as the distinction which you just shared."*
 
@@ -103,34 +103,34 @@ The operational rule:
   the capture removed the need for one.)*
 - **Mention the deeper thing only when it changes whether the simple answer is correct.**
   Otherwise record it silently; an offer per answer is itself noise.
-- **This also filters what goes into a tour.** The routing agreement (answers improve the
-  tour) needs a depth gate, or tours drift to reference depth one good question at a time.
+- **This also filters what goes into a lab.** The routing agreement (answers improve the
+  lab) needs a depth gate, or labs drift to reference depth one good question at a time.
   Doug drew that line himself: *"That distinction is past the level of useful detail for this
-  tour."*
+  lab."*
 
-**A CO-DEVELOPED TOUR IS A MEASUREMENT OF WHAT HE KNOWS — stop guessing at "beginner"**
+**A CO-DEVELOPED LAB IS A MEASUREMENT OF WHAT HE KNOWS — stop guessing at "beginner"**
 *(Doug, 2026-08-15)*: *"now we have a measurement of my knowledge that you can reference when
-drafting prose… Because we worked together to complete that tour, you can assume that I
-understand the material of that connections tour. And you can assume that I don't know anything
-more about connections than what is in that tour."*
+drafting prose… Because we worked together to complete that lab, you can assume that I
+understand the material of that connections lab. And you can assume that I don't know anything
+more about connections than what is in that lab."*
 
 **This is better than a level, because it is an artifact.** "Beginner" is a guess that has to be
-re-made every time; a finished tour can be *read*. It binds in both directions, and both matter:
+re-made every time; a finished lab can be *read*. It binds in both directions, and both matter:
 **do not re-explain what is in it** (it spends the attention the depth rule exists to protect),
 and **do not assume anything past it** (which is how a gap gets left).
 
-**The baseline comes from CO-DEVELOPMENT, not from a tour existing.** Doug's claim is well
-supported here because he argued this one into shape over a week. A tour he merely *walked* is
+**The baseline comes from CO-DEVELOPMENT, not from a lab existing.** Doug's claim is well
+supported here because he argued this one into shape over a week. A lab he merely *walked* is
 much weaker evidence — [`question-ledger.md`](question-ledger.md) already records that **silence
 is ambiguous and must never be read as success**. So:
 
-| how the tour came to be | what may be assumed |
+| how the lab came to be | what may be assumed |
 |---|---|
 | **co-developed** — he questioned it into shape | he knows its material |
 | **walked, no questions** | ambiguous. Ask before building on it |
 | **written, unwalked** | nothing |
 
-**NOTHING RECORDS WHICH ROW A TOUR IS IN, deliberately since 2026-08-31** — *"that bookkeeping
+**NOTHING RECORDS WHICH ROW A LAB IS IN, deliberately since 2026-08-31** — *"that bookkeeping
 doesn't yield enough value."* A fourth row, for prose he authored himself, went with the goal it
 served ([`vision.md`](vision.md), you-do 3, withdrawn the same day). **Judge from the conversation
 and [`question-ledger.md`](question-ledger.md)**, defaulting to *"ask before building on it."*
@@ -140,11 +140,11 @@ robotics goal in [`vision.md`](vision.md), and any reading he does on his own �
 intending to read about union-find in a textbook. The ceiling is *"nothing more from this
 project"*, and he will say when that changes.
 
-**The consequence for authoring: tours may now CITE their predecessors instead of re-explaining
+**The consequence for authoring: labs may now CITE their predecessors instead of re-explaining
 them.** `blt-ordering.md` can say *"a connection set is a set of variables of one kind, from
-`connect-expansion`"* and build from there. That turns the nine tours from independent documents
+`connect-expansion`"* and build from there. That turns the nine labs from independent documents
 into a **sequence**, in the route order
-[`the-concepts.md`](fixture-tours/the-concepts.md) already defines — so a tour that assumes
+[`the-concepts.md`](fixture-labs/the-concepts.md) already defines — so a lab that assumes
 a predecessor must **say which one at the top**, or a reader entering mid-route is stranded with
 no way to know why.
 
@@ -259,12 +259,12 @@ education has real deadlines; see [`tech-debt.md`](tech-debt.md) on why fixes ar
 *(Moved here from `CLAUDE.md`'s Current work on 2026-09-01. It is a standing agreement about how
 Doug works, which is this file's subject, and it was never in-flight work.)*
 
-> *"During my mornings and evenings I can focus on walking tours. But during my workdays I cannot
+> *"During my mornings and evenings I can focus on walking labs. But during my workdays I cannot
 > focus on this project as much. So, during my workdays, I will task you with performing
 > refactoring and fixing bugs."*
 
-**TOUR PROSE IS NOT WORKDAY WORK, and the reason is not scheduling** *(2026-08-22)*: *"most of my
-conceptual learning happens when iterating with you during [tour] walks… making the tour prose
+**LAB PROSE IS NOT WORKDAY WORK, and the reason is not scheduling** *(2026-08-22)*: *"most of my
+conceptual learning happens when iterating with you during [lab] walks… making the lab prose
 correct and personally effective during those walks is my primary learning exercise right now."*
 **Improving an explanation alone consumes the material his learning runs on.** Fixing a
 checker-caught number, a dead link or a stale citation is fine; **rewriting an explanation
@@ -295,7 +295,7 @@ happened.
 
 **Claude cannot tell whether prose lands.** Facts are checkable — links, citations, control
 characters. Whether an explanation *teaches* is Doug's judgement, which is why the fixture
-tours and the README value case are joint work (`../DECISIONS.md`, 2026-08-01).
+labs and the README value case are joint work (`../DECISIONS.md`, 2026-08-01).
 
 ## Related
 

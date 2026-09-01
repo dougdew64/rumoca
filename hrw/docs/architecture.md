@@ -115,15 +115,15 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**66 modules, 75,005 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**66 modules, 74,992 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
-| `app.rs` | 7,123 |
+| `app.rs` | 7,112 |
 | `worker/tests.rs` | 6,620 |
-| `app/tests.rs` | 6,515 |
+| `app/tests.rs` | 6,510 |
 | `worker.rs` | 5,857 |
-| `doc_citations.rs` | 5,793 |
+| `doc_citations.rs` | 5,795 |
 | `bridge.rs` | 4,195 |
 | `ui_tests.rs` | 2,941 |
 | `fidelity.rs` | 1,852 |
@@ -140,14 +140,14 @@ showing 48 equations. They are derived now, and
 | `tarjan_anim.rs` | 934 |
 | `ic_plan_anim.rs` | 876 |
 | `context_bar.rs` | 869 |
-| `tour_panel.rs` | 855 |
+| `lab_panel.rs` | 855 |
 | `matching_ledger.rs` | 834 |
 | `model_list.rs` | 770 |
 | `survey.rs` | 769 |
 | `stage_tabs.rs` | 766 |
 | `arch_doc.rs` | 758 |
+| `lab.rs` | 719 |
 | `sub_view_rows.rs` | 719 |
-| `tour.rs` | 718 |
 | `tearing_anim.rs` | 699 |
 | `canvas.rs` | 681 |
 | `report_sub_view.rs` | 650 |
@@ -185,7 +185,7 @@ showing 48 equations. They are derived now, and
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 101 |
 | `field_help.rs` | 67 |
-| **total** | **75,005** |
+| **total** | **74,992** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -325,7 +325,7 @@ not fire).
 **Stage 6 is logged in its true position, and that took a correction.** Until
 2026-08-04 the DAE stage was built *after* solve lowering and never logged, so the log
 showed the chain jumping Flatten → Structural with the phase they both depend on
-missing — Doug found it while walking the tour that teaches the step. It was moved
+missing — Doug found it while walking the lab that teaches the step. It was moved
 rather than logged where it stood, because logging it in place would have reported DAE
 construction finishing *after* the five phases that consume its output: a second
 fiction in place of the first.
@@ -545,14 +545,14 @@ All three share the same app state — the mode controls the left panel content:
 
 | Mode       | Left panel                              | Right (center) panel |
 |------------|----------------------------------------|----------------------|
-| **Tour**   | End-to-end tour (rendered markdown)     | Stage tabs           |
+| **Lab**   | End-to-end lab (rendered markdown)     | Stage tabs           |
 | **Specimen** | Specimen list (top ⅓) + narrative (bottom ⅔) | Stage tabs   |
 | **Debug**  | Hidden (VS Code alongside)             | Stage tabs           |
 
-**Tour mode** (fullscreen, no VS Code):
+**Lab mode** (fullscreen, no VS Code):
 ```
 ┌───────────────────────┬──────────────────────────────────┐
-│  Tour guide           │  [Specimen ▾] Log│Parse│...│Sim   │
+│  Lab guide           │  [Specimen ▾] Log│Parse│...│Sim   │
 │  (rendered markdown)  ├──────────────────────────────────┤
 │                       │  Stage views                     │
 │                       │                                  │
@@ -593,7 +593,7 @@ hidden, this is the only way to switch specimens.
 
 ### Navigation links (`hrw://`)
 
-Tour and narrative markdown can contain `hrw://` links that trigger in-app
+Lab and narrative markdown can contain `hrw://` links that trigger in-app
 navigation when clicked. The link scheme:
 
 - `hrw://load/<Specimen>` — load and compile a specimen by name
@@ -1240,34 +1240,34 @@ needs the resolved `ClassTree` (which contains the whole MSL) and the instance
 overlay on the UI thread. A worker-side live-debug path would be the right fix;
 see `docs/ideas.md` #9.
 
-### Ad hoc tours (`bridge.rs` + `App::poll_tour_file`)
+### Ad hoc labs (`bridge.rs` + `App::poll_lab_file`)
 
-Tour mode renders **whatever Claude writes to `.hrw-bridge/tour.md`** — the one
+Lab mode renders **whatever Claude writes to `.hrw-bridge/lab.md`** — the one
 bridge file that flows *into* HRW rather than out of it. Where `focus.json` carries
 a noun out to Claude, this carries a sequence of nouns back, as `hrw://` links the
 reader clicks to drive HRW to each stop.
 
 Until 2026-07-29 the panel showed `end_to_end_tour.md`, `include_str!`'d at compile
-time, so a new tour meant a rebuild. That was the single thing standing between
+time, so a new lab meant a rebuild. That was the single thing standing between
 "Claude can compose an answer in HRW" and "Claude cannot" (`docs/ideas.md` #42,
 Phase 1 of `docs/answer-platform-plan.md`).
 
-- **Polled, not watched.** `poll_tour_file` stats the file every
-  `TOUR_POLL_INTERVAL` (250 ms) and re-reads only when the mtime changed. Simpler
-  than a filesystem watcher, no platform quirks, and a tour appearing a
+- **Polled, not watched.** `poll_lab_file` stats the file every
+  `LAB_POLL_INTERVAL` (250 ms) and re-reads only when the mtime changed. Simpler
+  than a filesystem watcher, no platform quirks, and a lab appearing a
   quarter-second late is imperceptible. Keeps filesystem work out of the paint
   path, per the debugging conventions.
-- **Absence is the normal state.** No tour file means `no_tour_ui` — a short note
-  on what tour mode is for. Deliberately *not* the old `end_to_end_tour.md`: its
+- **Absence is the normal state.** No lab file means `no_lab_ui` — a short note
+  on what lab mode is for. Deliberately *not* the old `end_to_end_tour.md`: its
   prose was retired for describing a 7x7 incidence matrix on a tab that shows 48
   equations, and making it the default would put that back on screen.
 - **Ephemeral by construction.** The bridge directory is gitignored, so #42's
-  "tours are regenerated, not retrieved" rule is enforced by the filesystem rather
+  "labs are regenerated, not retrieved" rule is enforced by the filesystem rather
   than by Claude's discipline. What persists is the *question*, in
   `docs/question-ledger.md`.
 - **Text is the default medium** (Doug, 2026-07-29): Claude answers in text and
-  writes a tour only when asked. The failure mode is asymmetric — text that should
-  have been a tour costs one follow-up, while a tour that should have been text
+  writes a lab only when asked. The failure mode is asymmetric — text that should
+  have been a lab costs one follow-up, while a lab that should have been text
   costs minutes of walking stops to reach a two-sentence answer.
 
 ### Index reduction summary (`reduction_view.rs`)
@@ -1641,14 +1641,14 @@ project acquires a false sense of coverage.
 |---|---|---|---|
 | Does HRW's own code work? | the fast unit suite, `cargo test -p hrw --lib` | Claude | every `src/*.rs` |
 | Does HRW work against a real compile? | the slow tests, `--features slow-tests` | Claude | `src/worker.rs`, `src/fidelity.rs` |
-| **Does the rendered UI work?** | fixture tours | **only Doug** | `docs/fixture-tours/` |
+| **Does the rendered UI work?** | fixture labs | **only Doug** | `docs/fixture-labs/` |
 | **Does HRW tell the truth about Rumoca?** | F1-F9 fidelity checks | Claude | `src/fidelity.rs`, `src/worker.rs` |
 | **Does Rumoca tell the truth about Modelica?** | the oracle (System Modeler) | Doug's tools | not built (`ideas.md` #43) |
 | How much of Modelica does Rumoca handle? | the MSL survey | Claude | `examples/survey_msl.rs` |
 | Do the docs still point at real code? | citation checker, provenance tags | Claude | `src/doc_citations.rs` |
 
 Row 3 is the one to stare at. **Claude cannot see pixels.** Every other row is
-machine-verifiable; that one is structurally Doug's, which is why the tours are narrow, why
+machine-verifiable; that one is structurally Doug's, which is why the labs are narrow, why
 their expectations must be violable, and why they must say *where* to look and not only what
 to look for.
 
@@ -2009,8 +2009,8 @@ Three regions, marked by `<!-- BEGIN GENERATED … -->` comments and rewritten b
 `gen_architecture`: the **stage roster** (§4), the **module sizes** (§2), and the
 **`App` field groups** (§5). The generator lives in `hrw::arch_doc` rather than in the
 example, so `architecture_regions_are_current` checks the same code that writes the
-file — the same split, for the same reason, as `gen_tour_catalogue` and
-`hrw::tour::catalogue`. A missing marker is an error rather than a silent no-op, or a
+file — the same split, for the same reason, as `gen_lab_catalogue` and
+`hrw::lab::catalogue`. A missing marker is an error rather than a silent no-op, or a
 green currentness test could describe a document the generator never touched.
 
 **Not generated, deliberately: the suite's test count.** This document used to claim

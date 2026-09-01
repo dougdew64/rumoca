@@ -23,35 +23,35 @@ this project cannot absorb.**
 
 ---
 
-## This is how the curriculum tours get graded
+## This is how the curriculum labs get graded
 
-**Doug, 2026-08-03, on finishing the first two:** *"The real measure of whether the tours are
+**Doug, 2026-08-03, on finishing the first two:** *"The real measure of whether the labs are
 good enough will be the nature of the questions which I ask you while and after I work through
-the tours. If it seems that I have learned what you attempted to explain, then the tours will
+the labs. If it seems that I have learned what you attempted to explain, then the labs will
 have been at least partly successful."*
 
-That criterion has no other instrument. A tour's link checker proves its links resolve and its
+That criterion has no other instrument. A lab's link checker proves its links resolve and its
 `**Expected:**` lines prove its claims are violable — **neither can tell whether the lesson
 landed.** This file can, because it already records the one thing that reveals it.
 
-**So a question arriving during or after a curriculum tour gets logged with the stop it traces
+**So a question arriving during or after a curriculum lab gets logged with the stop it traces
 back to.** The mapping is the whole point: without it there is a pile of questions and a pile
-of tours and no way to connect them.
+of labs and no way to connect them.
 
 Four shapes to watch for, because they call for opposite responses:
 
-- **A question the tour set up and did not answer** — the tour worked. It built enough
+- **A question the lab set up and did not answer** — the lab worked. It built enough
   scaffolding for the next question to be askable. This is the target.
-- **A question the tour already answered** — the explanation did not land. Note *which stop*,
+- **A question the lab already answered** — the explanation did not land. Note *which stop*,
   and try a different angle rather than repeating the prose louder.
-- **A question revealing a misconception the tour created** — the most valuable signal here and
+- **A question revealing a misconception the lab created** — the most valuable signal here and
   the most expensive to miss. A wrong idea installed confidently is worse than no idea, and
-  only Doug can surface it. Fix the tour, and record what the wrong wording was.
+  only Doug can surface it. Fix the lab, and record what the wrong wording was.
 - **No questions at all** — ambiguous, and **do not read it as success.** It means either the
-  tour was complete or it provoked nothing, and those are opposite outcomes. Ask.
+  lab was complete or it provoked nothing, and those are opposite outcomes. Ask.
 
-**The tours are regenerable; this record is not.** Same rule as the rest of the file — which is
-why a tour rewritten in response to a question should say so in its own text, as
+**The labs are regenerable; this record is not.** Same rule as the rest of the file — which is
+why a lab rewritten in response to a question should say so in its own text, as
 `dae-construction.md` does.
 
 ---
@@ -60,7 +60,7 @@ why a tour rewritten in response to a question should say so in its own text, as
 
 Everything else in `docs/` is regenerable. Claude can re-derive what Pantelides
 does, what a coupled block is, how tearing picks a variable — which is exactly
-why the specimen narratives and the end-to-end tour's prose were retired
+why the specimen narratives and the end-to-end lab's prose were retired
 (`docs/ideas.md` #42).
 
 **Doug's questions are not regenerable.** Neither is the confusion behind one, nor
@@ -93,11 +93,11 @@ file, and it is the only artifact here that gets more valuable with time.
   checking the delivery. Hunting for a fresh angle would waste the turn and imply he
   had failed to understand something he understood the first time.
 
-**If composing a tour hits an HRW gap** — you cannot get somewhere, or you work
-around it with prose ("same tab → now click X") — record it in the **tour holes**
+**If composing a lab hits an HRW gap** — you cannot get somewhere, or you work
+around it with prose ("same tab → now click X") — record it in the **lab holes**
 table at the top of [`tech-debt.md`](tech-debt.md), not only here. Doug's ruling:
 those outrank all other tech debt, because they degrade the deliverable rather than
-costing future effort. **Prose workarounds count**: the first tour logged its loud
+costing future effort. **Prose workarounds count**: the first lab logged its loud
 hole (#44) and silently accepted a quiet one at four separate stops, which went
 unnoticed until Doug asked whether holes were being tracked.
 
@@ -113,30 +113,30 @@ calcifies.
   one. "Conversational" when Doug was not pointing at anything. Over months this
   answers a question Claude cannot otherwise ask: *what was he looking at when he
   got stuck?*
-- **Medium** — text, HRW tour, animation, Wolfram notebook, System Modeler
+- **Medium** — text, HRW lab, animation, Wolfram notebook, System Modeler
   (`docs/ideas.md` #43). "The tearing animation" and "the rank computation" are
   different facts about how Doug learns.
 - **What unlocked it** — the specific thing, not a summary of the answer.
 - **Repeat?** — how many times this concept has come up.
 - **Medium feedback** — when Doug comments on the *medium* rather than the answer.
-  He committed on 2026-07-29 to saying so when a tour arrives where text would have
+  He committed on 2026-07-29 to saying so when a lab arrives where text would have
   done, and asked that it be recorded as a signal. Record it here, and treat two
   instances of the same kind as a standing correction, not two isolated notes.
 
 ## The medium rule (Doug, 2026-07-29)
 
-**Lead with text, always. Write a tour only when Doug asks for one.**
+**Lead with text, always. Write a lab only when Doug asks for one.**
 
 His solution to a problem Claude had raised: the failure mode is asymmetric. Text
-that should have been a tour costs one follow-up; a tour that should have been text
+that should have been a lab costs one follow-up; a lab that should have been text
 costs minutes of walking stops to reach a two-sentence answer. Leaving the choice to
-Claude's judgement means Claude polices a bias it cannot feel — composing a tour will
+Claude's judgement means Claude polices a bias it cannot feel — composing a lab will
 always be the more interesting work.
 
 One refinement Claude added and Doug accepted: **text first is not text silent.**
-When a tour would genuinely add something, say so at the end of the text answer, so
-Doug is accepting an offer rather than guessing which answers have a tour behind
-them. Doug also expects to request follow-up tours on his own initiative.
+When a lab would genuinely add something, say so at the end of the text answer, so
+Doug is accepting an offer rather than guessing which answers have a lab behind
+them. Doug also expects to request follow-up labs on his own initiative.
 
 ---
 
@@ -147,10 +147,10 @@ them. Doug also expects to request follow-up tours on his own initiative.
 - **Context:** `focus.json` seq 1, stage `Structural`, `stage_view: Summary`,
   `specimen_detail: Source`, specimen `CapacitorLoop.mo` — **he had the source view
   open**, which is itself the evidence for the re-test reading.
-- **Medium:** text, short. No tour: one already exists for this question and nothing
+- **Medium:** text, short. No lab: one already exists for this question and nothing
   about it needed regenerating.
 - **Repeat?** **Third asking of this concept, and a *re-test*** — the first was before
-  source spans existed, the second produced the contrast tour, this one followed
+  source spans existed, the second produced the contrast lab, this one followed
   source-line highlighting shipping.
 - **Concepts:** structural singularity; high-index vs ill-posed; where blame belongs.
 
@@ -222,7 +222,7 @@ tape assemble beats a breakpoint in `ad.rs` is a question for Doug's reading.
 - **Context:** **first entry with a real HRW capture.** `focus.json` seq 1, `kind:
   stage`, `request: explain`, stage `Structural`, `stage_view: Summary`, specimen
   `MotorWithBrake.mo`, `ui_mode: Specimen`.
-- **Medium:** text first (per the medium rule), then **the first ad hoc tour**, at
+- **Medium:** text first (per the medium rule), then **the first ad hoc lab**, at
   Doug's request — "Write it."
 - **Repeat?** First asking.
 - **Concepts:** structural vs numerical rank; maximum matching as structural rank;
@@ -256,31 +256,31 @@ fact.
   dummy-derivative path instead" detail would have been guessed wrong — the obvious
   assumption for a hidden constraint is that it gets differentiated.
 
-**Outcome — the tour delivered.** Doug walked it and reported: *"I found row 46 and
-have concluded that the ad hoc tour feature is working brilliantly."*
+**Outcome — the lab delivered.** Doug walked it and reported: *"I found row 46 and
+have concluded that the ad hoc lab feature is working brilliantly."*
 
-**So what unlocked it was Stop 2** — finding the one row in a 48x48 matrix with no
-matching marker on it. Everything else in the tour is Claude asserting things; that
+**So what unlocked it was Station 2** — finding the one row in a 48x48 matrix with no
+matching marker on it. Everything else in the lab is Claude asserting things; that
 stop is Doug verifying one himself, which is why it was the stop that had to work.
-**Generalise this when composing tours: at least one stop should be something Doug
+**Generalise this when composing labs: at least one stop should be something Doug
 can check rather than be told.**
 
 Also a small confirmed data point about the rendered surface, which Claude had
-flagged as the risk in this tour: **the incidence view's matching markers are legible
+flagged as the risk in this lab: **the incidence view's matching markers are legible
 enough at 48x48 to spot a single missing one.** That was not obvious in advance.
 
-**Two tour holes, not one — and only the loud one got logged at first.**
+**Two lab holes, not one — and only the loud one got logged at first.**
 
 1. **Loud:** `Matching ▶` hidden when Structural is singular → `docs/ideas.md` #44.
-   Noticed immediately because it forced an admission into the tour.
+   Noticed immediately because it forced an admission into the lab.
 2. **Quiet:** `hrw://` cannot address a sub-tab, so Stops 2, 5 and 6 degrade to
    "same tab → click **Incidence** / **Reduction ▶** / **Aliases ▶** / **Matching ▶**
-   yourself." The tour has **2 working links and 4 prose hand-offs.** This one went
-   unrecorded until Doug asked whether tour holes were being tracked — which is
+   yourself." The lab has **2 working links and 4 prose hand-offs.** This one went
+   unrecorded until Doug asked whether lab holes were being tracked — which is
    exactly why quiet holes need the same discipline as loud ones. Both are now rows
-   in `tech-debt.md`'s tour-holes table.
+   in `tech-debt.md`'s lab-holes table.
 
-**Feature request produced → `docs/ideas.md` #44.** Writing the tour surfaced that
+**Feature request produced → `docs/ideas.md` #44.** Writing the lab surfaced that
 `Matching ▶` is **hidden when Structural is singular**, so the one view that would
 let Doug *watch* the deficiency happen is unavailable exactly when it matters. This
 is the **not-visible-in-HRW** branch of the repeat signal, arriving without needing a
@@ -298,24 +298,24 @@ be confirmed or killed later.
   specimen). #41's claim that the context field would matter is no longer untested:
   knowing Doug was on *Structural → Summary* for *MotorWithBrake* is what made the
   answer specific rather than a definition of rank deficiency in general.
-- **The first tour produced a feature request immediately** (#44). One data point,
+- **The first lab produced a feature request immediately** (#44). One data point,
   but it is the data point the whole #42 argument predicted, so note whether it
   keeps happening — a mechanism that surfaces a real gap per use is worth far more
-  than one that produces tours.
+  than one that produces labs.
 - **n = 3.** Still nothing that supports a generalisation. Resist reading trends
   into it.
 
 ---
 
-## 2026-08-12 — `connect-expansion.md`, the tour's own opening sentence
+## 2026-08-12 — `connect-expansion.md`, the lab's own opening sentence
 
-**The first question from the nine-tour walk, and it is about wording rather than about a count.**
+**The first question from the nine-lab walk, and it is about wording rather than about a count.**
 
-**Doug, verbatim:** *"In the connection tour, you wrote: 'it is one edge in a graph, and the graph is
+**Doug, verbatim:** *"In the connection lab, you wrote: 'it is one edge in a graph, and the graph is
 solved before any equation exists.' Which graph are you referencing?"*
 
-**Traces back to:** the tour's lead paragraph, before Stop 1 — so the very first sentence of prose in
-the tour, not a stop.
+**Traces back to:** the lab's lead paragraph, before Station 1 — so the very first sentence of prose in
+the lab, not a stop.
 
 ### Which shape of question this is
 
@@ -327,7 +327,7 @@ what let it ship.
 
 **Two things were wrong with it:**
 
-1. **"a graph" was ambiguous** across the tour set. Three graphs appear in the nine tours, and this
+1. **"a graph" was ambiguous** across the lab set. Three graphs appear in the nine labs, and this
    sentence sits in the first of them — so the ambiguity is worst exactly where the reader has the
    least context to resolve it.
 2. **"solved" is not an operation on a graph.** What happens is that the **connected components** are
@@ -338,7 +338,7 @@ what let it ship.
 ### What the answer had to contain
 
 The useful answer was not just "the connection graph" but the **disambiguation his question
-implies**, because the distinction is load-bearing for the two tours he walks next:
+implies**, because the distinction is load-bearing for the two labs he walks next:
 
 | graph | where | vertices | edges | question asked | algorithm |
 |---|---|---|---|---|---|
@@ -348,8 +348,8 @@ implies**, because the distinction is load-bearing for the two tours he walks ne
 
 **The insight worth keeping from this exchange:** rows 1 and 3 are both *"find the components"*, and
 the only difference is **undirected versus directed** — which is precisely why one is union-find and
-the other is Tarjan. That single contrast connects Flatten to BLT across four tours, and it existed
-nowhere in the tour set before this question.
+the other is Tarjan. That single contrast connects Flatten to BLT across four labs, and it existed
+nowhere in the lab set before this question.
 
 ### Verified against the source, not against prose
 
@@ -364,9 +364,9 @@ the Potential set rather than having a union-find of its own. The per-set arithm
 
 The lead paragraph now names the graph, its vertices and its edges, says **components are computed**
 rather than "solved", and adds the three-graph note so the ambiguity cannot recur for the next
-reader. Per this file's standing rule, the tour says it was reworded and why.
+reader. Per this file's standing rule, the lab says it was reworded and why.
 
-**What this says about the tours' grading criterion:** the question is evidence the tour is *being
+**What this says about the labs' grading criterion:** the question is evidence the lab is *being
 read closely* — it came from the lead paragraph, which a skimmer skips entirely. That is a better
 signal than agreement would have been.
 
@@ -387,20 +387,20 @@ asymmetry between two frame kinds.
 
 ### The new shape, and why it needed its own entry
 
-The four shapes recorded above are all ways a tour can be **deficient** — imprecise wording, a
+The four shapes recorded above are all ways a lab can be **deficient** — imprecise wording, a
 missing definition, a concept with no counterpart on screen, a hidden feature. These three are
-none of those. **They are questions the tour deliberately does not answer, asked by someone the
-tour has already succeeded on.**
+none of those. **They are questions the lab deliberately does not answer, asked by someone the
+lab has already succeeded on.**
 
 Question 3 is the clearest case. It is only *askable* by someone who already holds the *n*−1
-versus exactly-1 rule, because the asymmetry it asks about **is** that rule. The tour taught the
+versus exactly-1 rule, because the asymmetry it asks about **is** that rule. The lab taught the
 premise; the question is the reader operating on it.
 
 **So the grading criterion gains a positive signal it did not have.** `CLAUDE.md` records that
 *"no questions at all is ambiguous and must not be read as success"*. The converse was never
 specified. It now is: **detailed questions arriving from the panes after a completed walk are the
 success signal**, and they are distinguishable from the deficiency shapes by a test — *could this
-question have been asked before the tour?* If no, the tour worked.
+question have been asked before the lab?* If no, the lab worked.
 
 ### What made each click
 
@@ -417,18 +417,18 @@ question have been asked before the tour?* If no, the tour worked.
 
 ### Doug's own account of the loop, which is the reason this entry exists
 
-> *"You created a first draft of the connections tour, with the assumption that I knew nothing
-> about connections. Then, I began walking the tour and iterating with you to improve that tour.
+> *"You created a first draft of the connections lab, with the assumption that I knew nothing
+> about connections. Then, I began walking the lab and iterating with you to improve that lab.
 > And during those iterations, I gained the basic understanding of connections which was the goal
-> of the tour. Now, I'm going back through the tour, am using HRW's panes to think of more detailed
+> of the lab. Now, I'm going back through the lab, am using HRW's panes to think of more detailed
 > (not-so-basic) questions, and am asking those questions here."*
 
 **Three phases, and the third had not been described before.** The repair loop as teaching was
-recorded 2026-08-15 (`vision.md`); this adds what comes *after* a tour is finished, and it is the
-phase that justifies the tours being short. A tour that answered question 3 pre-emptively would
+recorded 2026-08-15 (`vision.md`); this adds what comes *after* a lab is finished, and it is the
+phase that justifies the labs being short. A lab that answered question 3 pre-emptively would
 have spent his attention before he had a reason to want it.
 
-**The transferable rule for tour authoring:** *a tour's job is to make the reader able to ask the
+**The transferable rule for lab authoring:** *a lab's job is to make the reader able to ask the
 next question, not to answer it.* That is the operational meaning of "not too little, not too
 much", and it gives the boundary a test rather than a feeling.
 
@@ -443,7 +443,7 @@ graph of voltage variables and a graph of current variables?"*
 
 **Traces back to:** `connect-expansion.md`'s lead paragraph — **the same sentence as the 2026-08-12
 entry above** — and to `the-concepts.md`'s three-graphs table, which carried the same flaw in its
-*edges* column. **Medium:** HRW tour, first question of the re-walk. **Repeat: second asking of one
+*edges* column. **Medium:** HRW lab, first question of the re-walk. **Repeat: second asking of one
 sentence, ten days apart.**
 
 ### This is the repeat case, and the cause is NOT that the concept is hard
@@ -460,12 +460,12 @@ model himself and was essentially right. The concept landed. **The prose regress
 | `21f7cbb0` | 08-12 | **the repair** — a block quote naming the graph, its vertices *"one per member of every connector instance"*, its edges, and its undirectedness |
 | `2dfbb504` | **08-13** | **the repair is gone.** Back to *"one edge in a graph … until that graph has been **solved**"* |
 
-**The 2026-08-12 fix survived one day.** The rewrite that made this tour "the template for all other
-tours" reintroduced almost the original sentence, *including* the word "solved" that the fix had
+**The 2026-08-12 fix survived one day.** The rewrite that made this lab "the template for all other
+labs" reintroduced almost the original sentence, *including* the word "solved" that the fix had
 specifically removed. Nothing failed, because **no checker reads prose for meaning** — the link
 checker, the group-table checkers and the catalogue check were all green across that rewrite.
 
-**The rule this buys, and it generalises past tours:** *a repair with no checker is undone by the
+**The rule this buys, and it generalises past labs:** *a repair with no checker is undone by the
 next rewrite of the file it lives in, and the loss is silent.* The repo already knows this shape for
 code (the must-fire rule) and for claims of absence (the `<!-- unbuilt: -->` tag). **Prose repairs
 have no such mechanism**, and this is the first measured instance of one being lost.
@@ -510,31 +510,31 @@ row now says *"one edge per connector member, per `connect`"* — the vertices c
 right, and only the edges column undercounted.
 
 `connect-expansion.md` Act 1 has stated the correct version throughout, including on 2026-08-13
-while the intro contradicted it — **so the tour disagreed with itself for nine days and nothing
+while the intro contradicted it — **so the lab disagreed with itself for nine days and nothing
 could say so.**
 
 ### Doug reclassified it, and the reclassification is the reason the rest of this entry exists
 
 **Doug, verbatim, 2026-08-22:** *"My biggest learning investment during the early stages of this
-project is my phase 2 walks of tours. During those phase 2 walks, my learnings are captured in the
-form of corrected prose in the tours. That corrected prose serves two purposes: 1. You are able to
-use that as a measurement of what I've learned and know. 2. I'm able to use the tour as a trusted
+project is my phase 2 walks of labs. During those phase 2 walks, my learnings are captured in the
+form of corrected prose in the labs. That corrected prose serves two purposes: 1. You are able to
+use that as a measurement of what I've learned and know. 2. I'm able to use the lab as a trusted
 reference during phase 3 walks. Losing the phase 2 prose is a seriously bad regression."*
 
 *(Quoted verbatim. The phase numbering was retired 2026-08-23 for colliding with Rumoca's own
 compiler phases — "phase 2" here is **walking**, "phase 3" is **exploring**.)*
 
 **Claude had filed this as imprecise wording — the cheapest of the four shapes.** It is not. Corrected
-tour prose **is the artifact a walk produces**, and it is load-bearing twice over: it is the
+lab prose **is the artifact a walk produces**, and it is load-bearing twice over: it is the
 only measurement of what Doug knows, and it is what exploring treats as trustworthy. **A lost correction
 is lost learning, not a lost sentence.**
 
 ### The audit that reclassification prompted — one confirmed loss, not a systemic one
 
 **The dangerous pattern is specific: a whole-document rewrite landing *after* a walk.** Found by
-listing every tour commit deleting ≥ 20 lines. Four tours had that exposure:
+listing every lab commit deleting ≥ 20 lines. Four labs had that exposure:
 
-| tour | rewrite | walked before it? | verdict |
+| lab | rewrite | walked before it? | verdict |
 |---|---|---|---|
 | **connect-expansion** | `2dfbb504` **−213** (08-13) | corrected **08-12** | **LOST** — this entry |
 | index-reduction | `404779ee` −139, `3bb69db0` −131 | corrections landed **08-18, after** | safe |
@@ -557,7 +557,7 @@ as uniformly Claude's to replace. That is exactly what happened on 08-13.
 
 **Both of Doug's stated purposes rest on that missing mark:**
 
-- **Measurement** is not merely at risk, it has **never been available**. Reading the tours today
+- **Measurement** is not merely at risk, it has **never been available**. Reading the labs today
   measures Claude's drafts back to himself.
 - **Trusted reference** needs the page to say which sentences Doug validated, and no page says.
 
@@ -582,19 +582,19 @@ walk, when a correction is made**, and backfill only the ledger-recorded ones.
 deleted `walked:` region as a regression — *"that prose is a record of what Doug learned"* — and
 allows exactly one alternative: **agree with Doug that it is superseded, and say so here.**
 
-**His instruction, the day tour prose became pointable:** *"I want you to disregard the edits that
-I made to the connections tour and re-write the tour using our new pedagogical agreement. The edits
+**His instruction, the day lab prose became pointable:** *"I want you to disregard the edits that
+I made to the connections lab and re-write the lab using our new pedagogical agreement. The edits
 which I made no longer make sense."*
 
 ### Why they no longer make sense, which is the part worth keeping
 
-The 2026-08-22 walk produced corrections to prose written under the **old** constraint: a tour
+The 2026-08-22 walk produced corrections to prose written under the **old** constraint: a lab
 could not be asked questions, so exposition had to pre-empt them. **Most of those corrections were
 improvements to explanation** — a clearer account of nodes versus connection sets, a fuller
 statement of the type-compatibility gap, the residual form spelled out. Under
 [`../DECISIONS.md`](../DECISIONS.md), 2026-08-30, that whole category of prose is now written to
 **provoke** questions instead. Corrections that made an explanation *more complete* are corrections
-to a thing the tour no longer tries to be.
+to a thing the lab no longer tries to be.
 
 ### What was NOT superseded, and was preserved verbatim
 
@@ -608,7 +608,7 @@ to a thing the tour no longer tries to be.
 ### The ten regions retired, named individually because that is what licenses each one
 
 `walked_prose_never_changes_silently` accepts a deletion only when the slug appears here — **the
-slug, not the tour**. A blanket *"I rewrote this tour"* must not license removing regions nobody
+slug, not the lab**. A blanket *"I rewrote this lab"* must not license removing regions nobody
 noticed were there, so naming each forces the author to look at what is being retired. That
 mechanism was added the same day, having been promised by the check's own message and never built.
 
@@ -631,5 +631,5 @@ he walks it. That is the honest reading of the mechanism, and the alternative �
 today's date on text written today by Claude — is precisely the false claim the marker exists to
 prevent.
 
-**451 lines to 341.** The tour is first because he asked for it first: *"I've been focused on that
-tour, trying to get this tour format right."*
+**451 lines to 341.** The lab is first because he asked for it first: *"I've been focused on that
+lab, trying to get this lab format right."*

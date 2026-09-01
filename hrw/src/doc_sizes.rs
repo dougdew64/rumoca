@@ -34,9 +34,9 @@ pub const MANDATORY: &[&str] = &[
 /// Read before **one kind** of work, so mandatory when it matters, and checked per file
 /// rather than summed.
 ///
-/// `fixture-tours/README.md` is read before tour work; `unattended-runs.md` before any
+/// `fixture-labs/README.md` is read before lab work; `unattended-runs.md` before any
 /// work done while Doug is asleep — the one document whose reader has nobody to ask.
-pub const CONDITIONAL: &[&str] = &["docs/fixture-tours/README.md", "docs/unattended-runs.md"];
+pub const CONDITIONAL: &[&str] = &["docs/fixture-labs/README.md", "docs/unattended-runs.md"];
 
 /// Size of a tracked document in characters.
 ///
