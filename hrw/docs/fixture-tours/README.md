@@ -187,43 +187,23 @@ the failure this repository exists to prevent.
 conversion rule below already gives. `connect-expansion` is first, at his request: it is the tour
 he has been using to get the format right.
 
-### ⟶ GROUND EVERY CLAIM IN RUMOCA'S CODE, WITH THE TEXTBOOK AS THE QUESTION — 2026-08-31
+### ⟶ MATH-INSPIRED, CODE-GROUNDED — the rules for what a tour may claim
 
-**Doug:** *"rather than provide tour explanations which seem abstractly mathematical in the same
-way that textbook explanations are, perhaps it would be better to use that textbook math as
-inspiration for providing explanations which are grounded in Rumoca code reality."* And the reason
-he offered, which is the strong one: *"it would be easier for you to provide tour explanations
-which you could check for correctness."*
+**Four rulings from 2026-08-30/31.** The rule is here; **the account of each — Doug's words, the
+evidence, what it cost — is in [`../../DECISIONS.md`](../../DECISIONS.md) under those dates.** Do
+not restate it here: this file is read before every tour edit and that one is not.
 
-**The evidence is that all three errors he caught in one hour were the abstract kind, and every
-one would have been stopped by grounding:**
+**1. Ground every claim in Rumoca's code; let the textbook supply the QUESTION, not the answer.**
+An abstract claim has nothing to be wrong against, so no reading and no checker can refute it —
+only a collision months later. A grounded claim is refutable in minutes, **and Doug can refute it
+himself by opening the file.**
 
-| the claim | what grounding forces you to look at |
-|---|---|
-| "neither an assignment nor an equality" | `Potential` dispatches to `generate_equality_equations` |
-| "an edge in each of several graphs" | `UnionFind` — no vertices, no edges, only `union`/`find` |
-| "one graph per member" | one global `potential_uf`; flow not pre-built at all |
+**2. An abstraction must pass BOTH tests before it appears at all.**
 
-The first is the sharpest: the sentence denied equality about a branch that calls a function with
-*equality in its name*. **An abstract claim has nothing to be wrong against**, so no reading and no
-checker can refute it — only a collision months later, which is the failure this repository exists
-to prevent. A grounded claim can be refuted in three minutes, and Doug can refute it himself by
-opening the file, which an abstract one never lets him do.
-
-#### An abstraction earns its place by PREDICTING something the code does — 2026-08-31, sharpened
-
-This began as *"an abstract model is fine when labelled as the reader's."* **That was too weak, and
-one sentence spent four passes proving it.** Doug, after the fourth: *"textbook-style abstractions
-which cannot be mapped to Rumoca code probably don't belong in HRW tours. After all, I can always
-get those textbook-style abstractions from textbooks."*
-
-**Two tests, and the first version of this rule only had the second.** Doug, later the same day:
-*"It is not helpful to me to draw textbook graphs or nodes for this."*
-
-1. **Does the code already have a noun for it?** If so, **use the code's noun.** An abstraction is
+1. **Does the code already have a noun for it?** If so, use the code's noun. An abstraction is
    only ever a stand-in for something unnamed.
-2. **Does it predict something?** An abstraction predicting nothing is dead weight however well
-   labelled.
+2. **Does it predict something the code does?** One predicting nothing is dead weight however
+   honestly it is labelled.
 
 | abstraction | verdict |
 |---|---|
@@ -231,73 +211,21 @@ get those textbook-style abstractions from textbooks."*
 | **node** | Out — duplicates `ConnectionSet`, *and* its prediction is false at two scopes. |
 | **the graph** | Out — duplicates what union-find already computes; predict from merges. |
 
-**All three failed, and the first version of this table passed two of them.** The claim was that
-`node` earned its place because *node count × 2* predicts the set count — but `ScopedConnect` gives
-**3 and 7**, so the tour had to spend a whole stop demolishing a rule it taught two stops earlier.
-**An abstraction needing a correction stop is costing more than it pays.** Removing it made Stop 6
-a clean demonstration of scope instead of a gotcha, and shortened Stops 1–3.
+**3. The LABEL goes in the tour; the COMPARISON goes in the conversation.** A few words stop an
+abstraction impersonating the compiler. What the code stores *instead*, and what the textbook
+version keeps that is never used, is a comparison — it pays only when he pulls it. **The tell is
+that a clause needs a conversation to land**: that is not a gap to fill with more prose, it is
+prose that should have been a name.
 
-**The singleton is what started the sharpening.** It predicted nothing and survived four rewrites
-because it *sounded* like knowledge — Doug killed it by asking under what circumstances it could
-occur, which is the question an implementer asks and a textbook never answers.
+**4. The introduction builds the mental model; the stops reinforce or break it.** So the intro's
+abstractions and the stops' predictions are **the same list seen twice** — an abstraction with no
+stop is untested confidence, and a stop tracing back to no abstraction is trivia. **Select for both
+jobs**: only-reinforce manufactures false confidence, only-challenge never consolidates.
 
-**So the labelling rule stands and is no longer sufficient.** Label the reader's models, *and* drop
-the ones doing no predictive work. Labelling a useless abstraction only makes it honestly useless.
-
-**But the LABEL goes in the tour and the COMPARISON goes in the conversation** *(Doug,
-2026-08-31)*: *"It is much better to perform those comparisons here, only on an as-needed basis
-rather than always performing those comparisons in the tours."* A few words stop an abstraction
-impersonating the compiler — *"the textbook picture"*, *"Rumoca never builds it"*, *"yours, not the
-compiler's"*. Everything past that — what the code stores **instead**, what the textbook version
-keeps that is never used, what that costs — is a comparison, and it only pays when he **pulls** it.
-
-**This is rule 2 above, and the tour had already overrun it using rule 2's own example.** The
-intro carried *"union-find — one parent index per variable it has touched, no edges stored
-anywhere, answering only 'same set?'"*, which is a paragraph on union-find beside a rule saying
-naming it is enough. Doug asked what it meant; the answer was worth having and belonged in the
-conversation, not the page. **The tell is that a clause needs a conversation to land** — that is
-not a gap to fill with more prose, it is prose that should have been a name.
-
-#### The introduction builds the model; the stops reinforce or break it — 2026-08-31
-
-**Doug**, after a morning spent entirely on one introduction: *"Reading that introduction helps me
-to form the mental model which I use during the tour stops. The tour stops help to reinforce the
-mental model which I've formed or to determine that I've formed an incorrect mental model. …
-Please select stops which will help me to reinforce my mental model and which will challenge my
-mental model."*
-
-**This makes the introduction load-bearing rather than preamble**, and it explains why a morning
-there was well spent: a stop can only reinforce or break a model the reader actually holds.
-
-**Composed with the rule above, it gives a test for whether a tour is complete.** If an abstraction
-earns its place only by predicting something the code does, then the intro's abstractions and the
-stops' predictions are **the same list seen twice**. Two failure conditions follow:
-
-- **An abstraction with no stop** — a model handed over with nothing to consolidate or falsify it.
-  Untested confidence, which is the worst thing to leave a reader holding.
-- **A stop tracing back to no abstraction** — trivia. It tests something he was never told to
-  expect, so neither outcome changes what he believes.
-
-**Select for BOTH jobs, and check the mix.** A tour of only-reinforcing stops manufactures false
-confidence; a tour of only-challenging stops never consolidates. `connect-expansion` currently runs
-*challenge, reinforce, reinforce, reinforce, challenge* — Stop 1 sets up a deliberate disagreement,
-Stop 5 probes the boundary, and the middle is all consolidation.
-
-**Auditing a tour this way finds real holes.** `connect-expansion`, 2026-08-31: nine claims in the
-intro, five stops, and **three claims no stop touches.** Two are untestable in `RcCircuit` (members
-pairing by name, and potential-global vs flow-per-scope — the specimen has no mismatch and one
-scope), which means they earn their place weakly *in this tour* and want either a second specimen or
-a shrink to a pointer. The third — flow routing to a plain `Vec` while potential goes to a
-union-find — **is** testable and is currently only told: the replay emits all three flow sets before
-any potential set, because `build_connection_sets` pushes flow inside the per-scope loop and
-potential after it. A missing *challenging* stop, since the model predicts each `connect` yields its
-flow and potential equations together, and it does not.
-
-**And the failure mode this exposes, beyond "true, checkable and useless":** *the textbook model of
-a data structure is not that structure's behaviour in a given program.* Recognising the algorithm
-is not reading it. Union-find's presentation starts every element alone; Rumoca's inserts lazily,
-always already paired with a merge — so the abstraction's first sentence is false here. **Read the
-callers, not the algorithm's reputation.**
+**Two failure modes worth naming, because both look like knowledge.** *True, checkable and
+useless* — naming a type teaches nothing; the contrast and the rationale are what land. And *the
+textbook model of a data structure is not that structure's behaviour in a given program* —
+recognising the algorithm is not reading it. **Read the callers.**
 
 **The mechanical payoff, which is why this outranks style.** `doc_citations` already checks that
 cited paths exist and symbols resolve, so a claim naming `generate_equality_equations` can be

@@ -4695,3 +4695,46 @@ potential equations together.
 
 Recorded in [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md) with the audit.
 Budget 930 → 965.
+
+## 2026-08-31 — an abstraction must also lose to the code's own noun, and graphs/nodes leave the tours
+
+**Doug:** *"It is not helpful to me to draw textbook graphs or nodes for this."* This adds a
+**first** test in front of *"does it predict?"*: **does the code already have a noun for this?** If
+so, use the code's noun — an abstraction is only ever a stand-in for something unnamed.
+
+**Both `node` and `the graph` stood in for `ConnectionSet`, and both had passed the earlier rule.**
+`node` was defended on the ground that *node count × 2* predicts the set count; `ScopedConnect`
+gives **3 and 7**, so `connect-expansion` spent a whole stop demolishing a rule it taught two stops
+earlier. **An abstraction needing a correction stop costs more than it pays.** Removing them
+shortened Stops 1–3, and turned Stop 6 from a gotcha into a clean demonstration of scope.
+
+## 2026-08-31 — the label goes in the tour, the comparison goes in the conversation
+
+**Doug:** *"It is much better to perform those comparisons here, only on an as-needed basis rather
+than always performing those comparisons in the tours."*
+
+A few words stop an abstraction impersonating the compiler — *"the textbook picture"*, *"Rumoca
+never builds it"*. Everything past that is a **comparison** and pays only when pulled.
+
+**The evidence it was blurred is that the README's own rule 2 was violated using rule 2's own
+example.** That rule says *"'Rumoca computes them with union-find' needs no paragraph on
+union-find"* — and the tour carried one. **The operational half: the tell is that a clause needs a
+conversation to land.** That is not a gap to fill with more prose; it is prose that should have
+been a name. Without saying so, the natural correction is to *expand* the clause.
+
+## 2026-08-31 — the account lives in DECISIONS.md, the rule lives in the README
+
+**Doug, watching the budget dance:** *"After several tour edits, I've watched you labor through
+some sort of budget process. Why are tour edits causing that?"*
+
+**They were not.** Tours are unbudgeted; `fixture-tours/README.md` is, because it is read before
+tour work. Every ruling of that day was written **twice** — the account into this file and a long
+section into the README — so the second copy paid a budget toll for prose that already existed.
+**Fifteen budget raises in one day, zero rejections:** a gate that never rejects is not filtering,
+it is billing, and the documents grew anyway.
+
+**So the division of labour is now explicit and is the one this repository already had.** The
+README states what a tour writer must *do*, in as few lines as the rule survives in. This file
+holds Doug's words, the evidence, and what each ruling cost. The README's pedagogy section came
+back from **990 to 918 lines** on the day this was noticed — the first downward move of any budget
+that day.

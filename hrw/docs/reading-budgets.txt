@@ -324,4 +324,24 @@ current_work = 287
 # so, use the code's noun. An abstraction is only ever a stand-in for something unnamed, and
 # both of these stood in for `ConnectionSet`. Eleven lines, and they retire an abstraction
 # that ran through four stops of connect-expansion.
-conditional = 990
+# …then 990 → **918** on 2026-08-31, and this one goes DOWN — the first downward move of
+# any budget that day, after seven raises.
+#
+# Doug: "After several tour edits, I've watched you labor through some sort of budget
+# process. Why are tour edits causing that?"
+#
+# They were not. Tours are unbudgeted; this file is, because it is read before tour work.
+# Every ruling that day was written TWICE — the account into DECISIONS.md and a long
+# section here — so the second copy paid a toll for prose that already existed. Fifteen
+# raises, zero rejections: **a gate that never rejects is not filtering, it is billing**,
+# and the documents grew anyway.
+#
+# The division of labour is the one this repository already had, now applied: **the README
+# states what a tour writer must DO; DECISIONS.md holds the words, the evidence and the
+# cost.** Four rulings collapsed from 111 lines to 39 with nothing lost, because the
+# missing 72 are in DECISIONS.md under the same dates.
+#
+# **The rule this is set by has now earned its keep in the other direction.** "Set at the
+# achieved value, never with slack" is why the reclaim shows up as a lower number instead
+# of quietly becoming room for the next section.
+conditional = 918
