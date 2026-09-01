@@ -115,7 +115,7 @@ something the others cannot.**
 |---|---|---|---|
 | **drafting** | the guide writes the tour | correctness, and structural discipline | **Rumoca + HRW** — a real compile, the checkers |
 | **walking** | Doug walks it, iterating with the guide | **effectiveness** — does it land | **Doug, and only Doug** |
-| **exploring** | Doug leaves the route and asks what the tour never asked | **coverage** — what the guide failed to write at all | **Doug's questions** |
+| **exploring** | Doug leaves the route and asks what the tour never asked | **coverage** *and* **the instrument** — what the guide never wrote, and what the panes do when nobody follows the route | **Doug's questions** |
 
 > **Why not "phases".** They were numbered 1/2/3 until 2026-08-23. **"Phase" already means something
 > important here** — Rumoca has eleven compiler phases and the tours are *about* them — so "phase 2"
@@ -494,69 +494,33 @@ gets.** Length is bought with explanation, never with hedging.
 
 #### A tour's job is to make the reader able to ask the next question, not to answer it
 
-**Doug, 2026-08-16, having re-walked `connect-expansion.md` and then asked three detailed
-questions from the panes:**
+**Doug, 2026-08-16**, re-walking `connect-expansion.md` and then asking three detailed questions
+from the panes: *"Now, I'm going back through the tour, am using HRW's panes to think of more
+detailed (not-so-basic) questions."*
 
-> *"You created a first draft of the connections tour, with the assumption that I knew nothing
-> about connections. Then, I began walking the tour and iterating with you to improve that tour.
-> And during those iterations, I gained the basic understanding… Now, I'm going back through the
-> tour, am using HRW's panes to think of more detailed (not-so-basic) questions."*
+**THE OPERATIONAL TEST FOR "NOT TOO LITTLE, NOT TOO MUCH": could this question have been asked
+BEFORE the tour?** One of his three — *why must an unconnected flow variable get an equation when
+an unconnected potential need not?* — is only **askable** by someone already holding the *n* − 1
+versus exactly-1 rule, because the asymmetry it asks about **is** that rule. A tour that answered
+it pre-emptively would have spent his attention before he had a reason to want it.
 
-**Three phases, and the third is what makes short tours correct:**
+**So write to the point where the reader can generate the question, and stop.** The answer belongs
+in the conversation, where it can be shaped by what he actually noticed.
 
-| phase | what happens | where the learning is |
-|---|---|---|
-| 1 | Claude drafts, assuming no knowledge | nowhere yet — a draft is a hypothesis |
-| 2 | Doug walks it and iterates with Claude | **here** — the repair loop is the teaching (`vision.md`) |
-| 3 | Doug re-walks, reads the panes, asks detailed questions | **here** — and the tour deliberately does not answer these |
+**WALKING AND EXPLORING STRESS DIFFERENT SURFACES.** On a walk he follows the route, so **the
+prose** is what fails. Exploring, he leaves it — clicking links out of order, reading panes the
+prose never mentions — so **the tour's coverage and HRW's instrument** both fail, and that day
+produced three teaching answers alongside a bridge that had stopped publishing what a pane drew,
+three dead scroll areas, links that worked once per session, and a divider that misremembered its
+width. **None of those were connection-specific**, so the expectation for the next tour is that
+exploring finds fewer — and if it does not, the finding is that exploring reaches something the
+tests still cannot, which is worth more than the individual bugs.
 
-**Walking tests the prose. Exploring tests the instrument** *(observed 2026-08-16, when
-`connect-expansion.md` became the first tour to see all three)*. On a walk he follows the
-tour, so the tour is what fails. Exploring, he leaves the route — clicking links out of order,
-reading panes the prose never mentions, hovering things — so the **panes and the navigation** are
-what fail. That day's exploring produced three teaching answers and, alongside them: a missing UI
-explanation, a bridge that had stopped publishing what a pane drew, three dead scroll areas, tour
-links that worked once per session, link navigation broken for nine of eleven stages, and a
-divider that misremembered its width.
+**Do not read the absence of questions as success** — `question-ledger.md` states it as standing:
+*"No questions at all is ambiguous."* What counts is an **explicit** report that a tour landed, as
+`dae-construction.md` got on 2026-08-17 with zero corrections — the first evidence that the
+template transfers to a tour written by an author who had already walked one.
 
-**None of those are connection-specific.** They are shared surfaces, so the expectation for the
-*next* tour is that exploring finds far fewer — and if it does not, the finding is that exploring
-exercises something the tests still cannot reach, which is worth more than the individual bugs.
-
-#### The walk cost nothing the second time — first evidence that the template transfers
-
-**`dae-construction.md`, walked 2026-08-17.** Doug: *"It works correctly. And, it is effective. It
-seems to follow the tour template very well. Just enough instruction and no more."* **Zero
-corrections.**
-
-That is a different result from `connect-expansion.md`, whose walk took most of a day of
-iteration — and the difference is not the subject matter. It is the first tour *written* under the
-template, by an author who had already walked one and knew what the reader would
-know. Which is the claim the template was making, now with one instance behind it.
-
-**But do not read the absence of questions as success**, which `question-ledger.md` states as a
-standing rule: *"No questions at all is ambiguous and must not be read as success."* What counts
-here is his **explicit** report that it was effective — an assessment, not a silence. The
-detailed questions come from exploring, which has not happened for this tour yet, and exploring is
-also where the panes get stressed rather than merely followed.
-
-**So the honest status is: walked clean, exploring outstanding.** One tour has seen all three
-(`connect-expansion.md`); this one has been walked only.
-
-**The test for "not too little, not too much" is therefore operational, not aesthetic:** *could
-this question have been asked before the tour?* One of the three that morning — *why must an
-unconnected flow variable get an equation when an unconnected potential need not?* — is only
-**askable** by someone already holding the *n*−1 versus exactly-1 rule, because the asymmetry it
-asks about **is** that rule. A tour that pre-emptively answered it would have spent his attention
-before he had a reason to want it.
-
-So **write to the point where the reader can generate the question, and stop.** The answer belongs
-in the conversation, where it can be shaped by what he actually noticed —
-charter Decision 8's split, arriving from the other direction: *the noun is assembled by mouse,
-the verb is an unbounded utterance.*
-
-The full account, including what made each of the three questions click, is in
-[`question-ledger.md`](../question-ledger.md), 2026-08-16.
 
 #### `matching-live.md` is a DEBUGGER tour, and that is an instrument, not a stage
 
