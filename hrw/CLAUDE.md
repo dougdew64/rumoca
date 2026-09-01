@@ -456,18 +456,6 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > Publishing it is: give its data type a `to_bridge_json`, then one arm in
 > `App::publish_current_view`.
 >
-> ## WHERE INDEX REDUCTION STANDS — read before touching that tour or tab
->
-> **The corpus spans the phase**: `BouncingBall` (nothing needed), `BenchActuator` (1
-> differentiation), `Drivetrain` (6, at 97 equations), `CartesianPendulum` (not reduced by Rumoca).
-> Smallest-first is the tour's spine and the pendulum is its ending. The pane publishes
-> `n_differentiations`, so a funnel that did nothing now says so. **Rumoca not reducing the
-> canonical index-3 DAE was adjudicated 2026-08-22** — System Modeler reduces it to two states by
-> dynamic state selection, so the gap is evidenced rather than inferred, and Stop 5 and the
-> upstream entry are unblocked. The run and the pre-committed outcomes are in
-> [`docs/upstream-issues.md`](docs/upstream-issues.md); the follow-on work is `docs/ideas.md`
-> **#83** (general Pantelides) and **#5** (the four-bar linkage).
->
 > ## Open questions a walk may hit
 >
 > - **A reproduced state-count inconsistency**, in `docs/upstream-issues.md`: `Drivetrain`'s index
