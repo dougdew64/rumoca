@@ -77,6 +77,7 @@ on a tab showing 48 equations.
 
 | Document | For |
 |---|---|
+| [`running-things.md`](running-things.md) | **Procedure, not rules.** Gate commands and what each suite protects, the notebook content check, long-run safety, and the diagnostic tells for a hung or slept run. Split out of `CLAUDE.md` on 2026-09-01 under charter Decision 11. |
 | 👤 [`setup-windows.md`](setup-windows.md) | A fresh Windows machine → running HRW → live-trace debugging. |
 | 👤 [`long-runs.md`](long-runs.md) | The MSL survey and the fidelity sweep, including the retry pass. **Never run the sweep unbounded.** |
 | 👤 [`updating-rumoca.md`](updating-rumoca.md) | Rebasing the `hrw` branch on upstream. |

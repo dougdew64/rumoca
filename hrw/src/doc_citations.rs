@@ -4510,14 +4510,18 @@ Some prose.
             }
         }
 
-        let claude_md = std::fs::read_to_string(hrw.join("CLAUDE.md")).expect("CLAUDE.md");
+        // **`docs/running-things.md`, not `CLAUDE.md`** — the gate commands moved there on
+        // 2026-09-01 under charter Decision 11, which puts procedure in its own file. This
+        // test caught the move by failing, which is what it is for.
+        let procedures = std::fs::read_to_string(hrw.join("docs/running-things.md"))
+            .expect("docs/running-things.md");
         // The gate line, as the file spells it. Located rather than assumed, so a
         // reworded section fails here instead of silently matching nothing.
         // **Not merely "contains slow-tests"** — the ITERATE line does too, and the
         // first draft of this test found *that* one and reported a failure about the
         // wrong command. The gate is the unfiltered invocation, so the placeholder is
         // what distinguishes them.
-        let gate = claude_md
+        let gate = procedures
             .lines()
             .find(|l| {
                 l.starts_with("cargo test -p hrw")

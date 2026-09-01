@@ -115,7 +115,7 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**66 modules, 74,905 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**66 modules, 74,909 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
@@ -123,7 +123,7 @@ showing 48 equations. They are derived now, and
 | `worker/tests.rs` | 6,620 |
 | `app/tests.rs` | 6,515 |
 | `worker.rs` | 5,857 |
-| `doc_citations.rs` | 5,789 |
+| `doc_citations.rs` | 5,793 |
 | `bridge.rs` | 4,195 |
 | `ui_tests.rs` | 2,941 |
 | `fidelity.rs` | 1,852 |
@@ -185,7 +185,7 @@ showing 48 equations. They are derived now, and
 | `compile_caches.rs` | 101 |
 | `ui_state.rs` | 73 |
 | `field_help.rs` | 67 |
-| **total** | **74,905** |
+| **total** | **74,909** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -1615,7 +1615,7 @@ HRW depends on these Rumoca crates (all via path deps on `../crates/`):
 
 When Rumoca upstream changes an API, the breakage shows up in these imports and
 their call sites. The regression test suite guards against silent regressions during a
-rebase; `CLAUDE.md`'s "Running things" carries the commands, and the suite reports its
+rebase; [`running-things.md`](running-things.md) carries the commands, and the suite reports its
 own size when it runs.
 
 
