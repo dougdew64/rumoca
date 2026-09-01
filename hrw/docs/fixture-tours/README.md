@@ -277,6 +277,12 @@ An abstract claim has nothing to be wrong against, so no reading and no checker 
 only a collision months later. A grounded claim is refutable in minutes, **and Doug can refute it
 himself by opening the file.**
 
+**AND IT APPLIES TO WHAT CLAUDE SAYS, NOT ONLY TO WHAT HE WRITES** *(2026-09-01)*. Decision 14 moved
+most explanation into the conversation, which is the tier **nothing checks** — no checker can see
+what Claude says at the bench. **Grounding is the only defence that transfers there**, because Doug
+can open the file the claim named. So rule 1 is not a drafting rule that also happens to help live;
+**it is the safety mechanism for the one tier that has no other.**
+
 **2. An abstraction must pass BOTH tests before it appears at all.**
 
 1. **Does the code already have a noun for it?** If so, use the code's noun. An abstraction is
@@ -300,6 +306,11 @@ prose that should have been a name.
 abstractions and the stops' predictions are **the same list seen twice** — an abstraction with no
 stop is untested confidence, and a stop tracing back to no abstraction is trivia. **Select for both
 jobs**: only-reinforce manufactures false confidence, only-challenge never consolidates.
+
+**In lab terms this is the PRE-LAB BRIEFING and the EXPERIMENT**, which is what makes the
+matched-lists requirement obvious rather than arbitrary: the briefing establishes what Doug expects,
+and the bench confirms or refutes it. **An abstraction with no stop is a briefing for an experiment
+nobody ran**; a stop with no abstraction is an experiment testing nothing anyone predicted.
 
 **Two failure modes worth naming, because both look like knowledge.** *True, checkable and
 useless* — naming a type teaches nothing; the contrast and the rationale are what land. And *the
