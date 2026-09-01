@@ -228,6 +228,11 @@ is why the three activities are worth keeping distinct and why three consequence
 
 ### ⟶ WRITE TO PROVOKE QUESTIONS, NOT TO PRE-EMPT THEM — 2026-08-30
 
+**THIS IS HOW CHARTER DECISION 14 IS EXECUTED, NOT A PREFERENCE FOR SHORTER PROSE.** Written
+2026-08-30 as guidance layered on the old model; Decision 14 made it the definition of what a lab's
+prose is *for*. The prose does not teach — **it provokes the exchange that teaches**, and the six
+rules below are what that requires of a sentence.
+
 **Doug can select any sentence in the tour panel and ask about it** (the 🎯 capture). That changes
 what exposition is for. His words: *"you can be more terse in your tour prose as I can always ask
 you questions about your prose. The tours can focus more on being tours and less on being like
@@ -241,8 +246,11 @@ merely shortening the page — is in [`../vision.md`](../vision.md). The rules i
    used it — which is a better teaching moment than a definition he did not ask for.
 3. **Exposition serves the PREDICTION, not the concept.** Include what he needs to predict, and
    stop. Anything further front-loads the answer and weakens the step it precedes.
-4. **Never terse in `**Expected:**`.** Those are the walk's test and must stay violable — rule 3
-   of the three below. Terseness there destroys the falsifiability that makes a walk a walk.
+4. **Never terse in `**Expected:**`.** **Every `**Expected:**` line must be violable** — write what
+   would be *different* if the claim were false. Terseness there destroys the falsifiability that
+   makes a walk a walk. **Decision 14 raises this rule rather than relaxing it:** with the
+   explanation moved into conversation, the checkpoint carries the teaching that a paragraph used
+   to, which is also why rule 7's redrawn line makes these Doug's and not Claude's.
 5. **Fewer claims, never looser ones.** *"The system is singular"* is terse and checkable;
    *"things go wrong"* is neither. Vagueness is not brevity, and an unfalsifiable sentence fails
    the same rule an unfalsifiable expectation does.
@@ -256,8 +264,7 @@ pre-empt questions is prose written past what was verified.** Less exposition is
 the failure this repository exists to prevent.
 
 **Applied one tour at a time, as he walks it** — never as a campaign, for the reason the
-conversion rule below already gives. `connect-expansion` is first, at his request: it is the tour
-he has been using to get the format right.
+conversion rule below already gives.
 
 ### ⟶ MATH-INSPIRED, CODE-GROUNDED — the rules for what a tour may claim
 
