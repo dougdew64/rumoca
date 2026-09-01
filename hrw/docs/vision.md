@@ -31,6 +31,10 @@ linkage specimen + un-park the planar mechanics library) is *central*, not parke
 charter's "no MSL MultiBody — build our own planar mechanics" was a **robotics decision made
 before anyone said so.**
 
+**And it carries a tension to be AWARE of, not to resolve** *(2026-08-22)*. Charter §4.3 bars MSL
+MultiBody and robotics engineers use it. That was right for a compilation-learning project.
+**Leave it. Doug will know when it binds, and changing it is a charter act, not a drift.**
+
 **The destination.** This is undertaken *in preparation for and alongside the **Robotics MS at
 Purdue, beginning Fall 2026*** — [`CHARTER.md`](CHARTER.md) §1 and Decision 1 carry the binding
 form. CSM is the **deterministic substrate** the robotics curriculum is built on, which is why
