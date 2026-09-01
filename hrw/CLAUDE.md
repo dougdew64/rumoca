@@ -76,13 +76,8 @@ to a directory the rename had moved.** Nothing resolves this file's markdown lin
 a green run as evidence, say what it measured.**
 
 
-**A QUALITY BAR BECOMES A DISCOURAGEMENT WHEN ONLY ONE PATH CARRIES IT, AND THE FIX IS TO PRICE IT
-OUT LOUD.** Every Rumoca-crate edit carried a checklist and every HRW edit carried none, so where
-two paths reached the same pane **the ungated one won and fictions accumulated for weeks.** The
-capture scopes that replaced every replay landed in **two days** once Doug priced it: *"it is much
-better to defend a rumoca api change to the repo maintainers than to defend replays."* **They were
-unpriced, not difficult.** When accuracy needs a Rumoca change, the change is the cheap option —
-**say what each option costs before concluding the harder-looking one wins.**
+**When accuracy needs a Rumoca change, the change is the cheap option** — see *a quality bar can
+become a discouragement*, below, which carries the account.
 
 **The gates, commit split, dependency rule and rebase triggers are procedure** —
 [`docs/running-things.md`](docs/running-things.md), *Touching a Rumoca crate*. **That instrumentation
