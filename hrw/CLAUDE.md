@@ -997,35 +997,17 @@ cannot say: *this decides what to run BEFORE A COMMIT, and is not the answer to 
 after this edit"* — that is the filtered iteration line above, and conflating the two turned a
 latency fix into a latency cost on the day it landed.
 
-**Where the ~225 s actually goes**, so nobody re-derives it: about twenty tests carry ~129 s of
-it, led by `all_healthy_specimens_simulate` (16 s), `every_stage_serializes_without_panicking`
-(15 s) and `a_rumoca_failure_is_represented_faithfully` (14 s). A rebuild after touching one file
-is **8 s**; a no-op build is **1 s**. It was ~190 s until 2026-08-15; the gate grows as tests are
-added, which is another reason to filter while iterating rather than treat it as a fixed price.
+**WHERE THE GATE'S TIME GOES, measured 2026-08-21** (`docs/ideas.md` #48): **72 compiles at ~3.4 s
+and 10 MSL loads at ~4.4 s are 92 % of the run.** Each compile re-resolves the whole MSL, so a
+two-equation specimen costs 3.5 s and the same file with no MSL loaded costs 0.03 s.
 
-**WHERE IT REALLY GOES, measured 2026-08-21** (`docs/ideas.md` #48, which supersedes the
-per-test figures above): **72 compiles at ~3.4 s and 10 MSL loads at ~4.4 s are 92 % of the run.**
-Each compile re-resolves the whole MSL, so a two-equation specimen costs 3.5 s and the same file
-with no MSL loaded costs 0.03 s. **The per-test table above ranks symptoms; this ranks causes.**
+**FIVE levers are already ruled out by measurement — do not re-propose them**, and #48 records
+which and by how much: cutting `t_end`, parallelism, memoising simulations, memoising specimen
+compiles (already built — `compile_specimen_shared`), and feature-set thrashing.
 
-**FIVE levers already ruled out by measurement — do not re-propose them.** Cutting `t_end` is the
-fifth (**0.4 s** — integration is free; `simulate` averages *less* than `compile_target`).
-Parallelism buys about
-two seconds, because the worker tests serialise on a global `Mutex<WorkerState>` regardless
-(`docs/ideas.md` #48). **Memoising simulations buys about two seconds**: a simulation's key
-must include `t_end`, and the sites are almost all distinct pairs —
-`all_healthy_specimens_simulate` is nine *different* specimens at one `t_end`, so there is
-nothing to reuse. Claude proposed that on 2026-08-15 from a sum of slow-looking tests and
-withdrew it on measuring, which is the same mistake #48 already records once.
-**Memoising specimen *compiles* is already built** — `compile_specimen_shared` caches, so 47 of
-the 59 call sites are already free; #48's remaining title is misleading. And **feature-set
-thrashing is not a cost**: alternating `--features slow-tests` with the plain suite was measured
-at **1–2 s**, because cargo keeps both variants. Claude was one sentence from proposing a
-practice change on that theory before measuring it.
-
-**The pattern in all four: a sum of slow-looking names is not a measurement.** Three of these
-were proposed from arithmetic over test names and died on contact with a clock. Measure the
-thing, then decide.
+**The pattern in all five, and it is the reason to keep the list: a sum of slow-looking names is
+not a measurement.** Three were proposed from arithmetic over test names and died on contact with
+a clock. **Measure the thing, then decide** — `examples/measure` exists for exactly this.
 
 **`--test-threads=1` is required, and since 2026-08-20 it is the DEFAULT** — two pre-existing
 tests race on process-global stdout and on `focus.json`, and the suite **deadlocks** under the
@@ -1095,23 +1077,15 @@ process size, sampled during the run: Doug proposed a 30 GB ceiling on a 31.7 GB
 - **Stop rust-analyzer first** — it holds ~5.7 GB here. **Do not kill the process**; VS Code
   treats that as a crash and restarts it within seconds.
 
-**THE OWED SWEEP IS DONE** — run 2026-08-02, promoted 2026-08-03. Trigger 3 had fired twice:
-the Parse stage of a library model went from `{"classes":{},"within":null}` to its declaring
-file's full AST, and every `Location` in it gained the document URI.
+**THE LAST LARGE SWEEP IS DONE** — 2026-08-04/05, 2,614 green, zero violations. The run and its
+numbers are in [`docs/fidelity-plan.md`](docs/fidelity-plan.md) and
+[`docs/reports.md`](docs/reports.md); what a session needs from it is the **two standing limits**
+on what a green sweep means:
 
-**Result: 2,614 `ok`, 0 violations, 0 failed checks, 12 not checked** (3 free-RAM, 2
-proc-ceiling, 7 timeout — all limits of this machine, not findings).
-
-**And this zero counts, where the previous one did not.** Four F-checks walk
-`StageKind::COMPILATION`, which begins with Parse, so they ran on every model before too — and
-found nothing because there was nothing there. F7 samples up to 400 paths per stage and was
-getting about *two* from an empty AST. It now walks a real one. Mean peak memory rose
-1,228 → 1,353 MB, which is the ASTs being built.
-
-**What it establishes**: HRW's path grammar round-trips over real Modelica ASTs at corpus
-scale. **What it does not**: that HRW's AST equals Rumoca's — nothing in the sweep compares
-them. That equivalence is `worker::tests::hrw_reparse_of_a_library_file_matches_the_sessions_own_ast`,
-over 120 documents. **Representation is verified at corpus scale; equivalence at sample scale.**
+**Representation is verified at corpus scale; equivalence at sample scale.** The sweep establishes
+that HRW's path grammar round-trips over real Modelica ASTs — **not** that HRW's AST equals
+Rumoca's, which nothing in it compares. That equivalence is
+`worker::tests::hrw_reparse_of_a_library_file_matches_the_sessions_own_ast`, over 120 documents.
 
 **AND IT SAYS NOTHING ABOUT WHAT THE COMPILER DID** *(added 2026-08-04, after the fictions)*.
 Every F-check asks about a **noun**: is this structure what Rumoca produced? The claims HRW
