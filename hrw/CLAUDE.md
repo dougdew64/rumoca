@@ -69,24 +69,12 @@ primary reason is so that we can increase the probability of you being able to f
 If we wait too long to fix bugs, it will become too difficult for you to fix those bugs without
 also breaking other code which has been built atop those bugs."*
 
-**One day supplied three demonstrations and one counter-example that sharpens the rule.**
-
-- **The tour transport bar.** Nobody had noticed its wrap behaviour, but `MIN_LEFT_POINTS`, two
-  divider-test thresholds, `MAX_TOUR_CHROME` and the picker's adaptive width had all been tuned
-  *around* it. By the time it was touched, **five perturbations each failed differently**,
-  because the surrounding code encoded the equilibrium. Two theories died before the third
-  worked.
-- **`differentiated_rows`.** A tour was written on the misreading, so correcting the field meant
-  rewriting the tour.
-- **The mirrored funnel.** It existed because Rumoca had no observation API, so deleting it
-  required building one first.
-- **The eighteen browser-opening links** — same age, and they cost **minutes**. Mechanical, all
-  at once, no theories. **Because nothing depended on them:** nobody clicked them, so nothing had
-  grown on top.
-
-**So the cost scales with how much has come to DEPEND on the broken behaviour, not with how long
-it has been broken. The danger sign is load, not age.** A three-day-old bug that things are
-already leaning on is more urgent than a three-week-old one nothing touches.
+**THE COST OF A DELAYED FIX SCALES WITH HOW MUCH HAS COME TO DEPEND ON THE BROKEN BEHAVIOUR, NOT
+WITH HOW LONG IT HAS BEEN BROKEN. THE DANGER SIGN IS LOAD, NOT AGE.** A three-day-old bug that
+things are already leaning on is more urgent than a three-week-old one nothing touches. One day
+supplied both ends: the tour transport bar cost two dead theories because five surrounding
+constants had been tuned *around* it, while eighteen browser-opening links of the same age cost
+**minutes**, because nobody had clicked them and nothing had grown on top.
 
 **And the corollary that binds Claude specifically: he is bad at telling what depends on a
 behaviour.** The divider proved it — four changes made on the assumption of independence, each
@@ -131,20 +119,16 @@ Without this distinction written down, a later session reads *"the reduction rep
 and either **removes a working feature** or, worse, concludes the fictions were already dealt
 with and stops looking. Judge by **where the frames came from**, never by the word.
 
-**WHY THIS RULE WAS MISSING — and what its absence predicts.** The rules below protect against
-*missing* reports (must-fire), *unchecked* claims of absence, and *misidentified* things (no
-heuristic name-matching). **None of them forbade invented content**, so none of the fictions
-ever felt like a violation: each was written as *"here is a way to show him this"*, and HRW's
-tests check data while the falsehood lived in what the pane **claimed**.
+**WHY THIS RULE WAS MISSING, and it will recur in a new dress.** The other rules here protect
+against *missing* reports, *unchecked* claims of absence and *misidentified* things — **none
+forbade invented content**, so no fiction ever felt like a violation: each was written as *"here
+is a way to show him this"*, and HRW's tests check data while the falsehood lived in what the pane
+**claimed**.
 
-The trap that hid it is worth naming, because it will recur in a new dress:
-**[`fidelity-plan.md`](docs/fidelity-plan.md)'s programme verifies the NOUN, and its success
-felt like it verified everything.** 2,614 green rows answers *"is HRW's IR faithful?"* Every
-fiction removed on 2026-08-04 was about a **verb** — what the compiler did, in what order, what
-it declined to do, whether it ran at all — and **not one of F1-F9 could have caught a single
-one of them.** A fabricated BLT block is well-formed and round-trips; a good replay is
-*by construction* indistinguishable in its output. **A large green result covers the territory
-it measured and no more, and the confidence it produces does not know that.**
+**A LARGE GREEN RESULT COVERS THE TERRITORY IT MEASURED AND NO MORE, AND THE CONFIDENCE IT
+PRODUCES DOES NOT KNOW THAT.** 2,614 green fidelity rows felt like they verified everything and
+could not have caught one of the fictions. *(The noun/verb split that explains why is stated where
+it is acted on — under the fidelity sweep in `Running things`.)*
 
 **Instrumentation of the Rumoca crates is intended, and must stay additive,
 observation-only, and upstreamable.** **The checklist below is a quality bar, not a
