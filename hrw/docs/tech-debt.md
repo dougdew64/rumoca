@@ -393,6 +393,28 @@ next `src/` errand instead. **Do them when you are already there; do not schedul
 They sit here rather than in `CLAUDE.md`'s Current work because that section is on the mandatory
 reading path and this file is not. A pointer stays there.
 
+> ### ✅ ALL FOUR DONE 2026-09-01 — the table below is history
+>
+> **The rule bent once and correctly.** *"Do them when you are already there"* assumes one item;
+> **four together justified a deliberate errand**, because they share a single ~130 s FULL gate.
+> Doug ruled it: *"Let's add the item and then do the work now."*
+>
+> **What the fourth found, which is the argument for having done it at all.**
+> `no_lab_uses_retired_vocabulary` immediately caught residue **both** renames had missed — all of
+> it capitalised past case-sensitive regexes. `Walk [matching]` in seven labs, and `**Stops:**`
+> emitted by the catalogue **generator**, so editing the markdown would have done nothing and the
+> word would have returned on the next regeneration.
+>
+> **And two pre-existing defects surfaced.** `a_code_span_mention_is_not_extracted_as_a_link` was
+> misnamed against its own assertion — it asserted the mention *was* extracted, proving only the
+> backtick terminator. And `no_item_loses_its_doc_comment` caught `blurb_of` being inserted above
+> `specimens_in`'s doc comment, stranding it: **the exact defect that rule exists for, committed
+> while adding a checker.**
+>
+> **The guards, all revert-and-checked:** `every_pinned_lab_claim_holds` (the `blurb` verb, 22
+> pins), `extract_hrw_links_skips_placeholders_and_bare_verbs`, `no_lab_uses_retired_vocabulary`,
+> and two new assertions in `a_lab_edit_selects_the_lab_gate_and_a_source_edit_still_selects_full`.
+
 | owed | what to do | why it waits |
 |---|---|---|
 | **Blurb pinning** | Pin each lab's catalogue blurb to its expected first bolded line | bit 3× on 2026-08-31 |

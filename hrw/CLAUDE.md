@@ -484,8 +484,9 @@ the next phase touches — is procedure and lives there.
 > both the *restore, never choose* boundary and the finding that document drift is **same-day** — so
 > the risk window is hours, and a day of heavy mechanism change should end with a sweep.
 >
-> **OWED, and both wait for the next `src/` errand rather than buying a gate of their own** —
-> [`docs/tech-debt.md`](docs/tech-debt.md), *"Owed sweeps"*. Doug ruled that on 2026-08-31.
+> **NOTHING IS OWED.** All four sweeps landed 2026-09-01 as one errand — four items sharing a
+> single FULL gate is what made a deliberate errand cheaper than four ride-alongs.
+> [`docs/tech-debt.md`](docs/tech-debt.md), *"Owed sweeps"*, keeps the record.
 >
 > **This section holds ONLY what is in flight. Everything closed lives in
 > [`DECISIONS.md`](DECISIONS.md)** — *"closed arcs move out of `CLAUDE.md`"*, 2026-08-22, which
