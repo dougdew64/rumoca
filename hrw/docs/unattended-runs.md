@@ -127,6 +127,44 @@ Absolute, regardless of how safe it looks at 3 a.m.:
 
 ## DOCUMENT MAINTENANCE RUNS EVERY NIGHT — it is not an item, it is a standing step
 
+### Read this before the sweep, because it decides every judgement call in it
+
+**Doug, 2026-08-31**, naming the category: *"I believe that performing document maintenance every
+night is our first example of regular project health work which has nothing to do with code
+health. … maintaining those documents in good working order is essential to keeping this HRW
+project healthy. When you are performing nightly document maintenance you should always consider
+that you are doing so to prevent hitting a document wall so that you can keep this project moving
+forward."*
+
+**So the sweep is not tidiness, and its goal is not smaller numbers.** It exists so that a future
+session can still read, trust and act on these documents. Every decision in it answers one
+question: *does the project still move if this stays?*
+
+**That distinction is load-bearing, because the two goals disagree.** A sweep optimising the
+metric deletes a hard-won rule — the number falls and the project gets weaker, since the rule was
+bought with a defect. A sweep optimising for movement deletes a **restated** rule, a closed arc, a
+stale claim, a dead link, a duplicated passage — the number falls and nothing is lost. **Never ask
+"is this document too big". Ask "is anything here no longer earning its place".**
+
+### What a document wall actually is — and size measures only half of it
+
+Two ways the project stops moving, and the nightly report sees one of them:
+
+- **Volume.** A session spends its context reading before it can act. This is what the ceilings
+  watch, and today it sits at **75 %** of a derived limit.
+- **Contradiction.** Two documents state the same rule differently, so a session cannot tell which
+  binds — and picks one, silently. **Nothing measures this**, and it is the nearer wall.
+
+**2026-08-31 produced three contradictions in one day**, every one caught by conversation rather
+than by a check: `fixture-tours/README.md` said `node` earned its place while the tour it governs
+had dropped the abstraction; a checker was named for vocabulary its subject no longer used; and a
+pinned assertion quoted a sentence the tour had deleted.
+
+**`doc_report`'s duplication check finds COPIES, not contradictions** — an exact repeated passage,
+which is the benign case. **A passage that was copied and then edited in one place only is the
+dangerous case and is invisible to it.** Say so in the run log rather than reporting a clean sweep
+as if it covered both; closing that gap is unsolved and wants Doug.
+
 **Doug, 2026-08-31**, retiring the per-commit budget ratchet: *"rather than fighting budget
 battles several times during a workday, perhaps we can do document clean-up every night during
 that night's unattended run. And, if during a document cleanup you determine that we're about to

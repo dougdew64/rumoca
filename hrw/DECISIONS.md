@@ -4771,3 +4771,32 @@ and retiring closed history are unattended work, trimming an explanation is Doug
 Recorded in [`docs/unattended-runs.md`](docs/unattended-runs.md); the derivation is in
 [`docs/reading-budgets.txt`](docs/reading-budgets.txt), whose 353 lines of raise-history were
 deleted rather than migrated — it was the record of a retired mechanism.
+
+## 2026-08-31 — document maintenance is PROJECT HEALTH, and the first kind that is not code health
+
+**Doug, naming a category the project did not have:** *"I believe that performing document
+maintenance every night is our first example of regular project health work which has nothing to do
+with code health. … maintaining those documents in good working order is essential to keeping this
+HRW project healthy. When you are performing nightly document maintenance you should always
+consider that you are doing so to prevent hitting a document wall so that you can keep this project
+moving forward."*
+
+**This is a purpose statement, not a procedure, and that is why it is worth recording.** The
+nightly sweep runs unwatched, so every judgement in it is made with nobody to ask — and *"keep the
+project moving"* and *"make the numbers smaller"* produce **different decisions**. Optimising the
+metric deletes a hard-won rule and the project gets weaker; optimising for movement deletes a
+restated rule, a closed arc, a stale claim, a dead link. Same direction on the number, opposite
+effect. The operative form is in [`docs/unattended-runs.md`](docs/unattended-runs.md): **never ask
+"is this document too big", ask "is anything here no longer earning its place".**
+
+**And it exposed a gap worth stating plainly.** A document wall has two forms — **volume**, which
+the ceilings watch, and **contradiction**, where two documents state one rule differently and a
+session silently picks. **Nothing measures the second, and it is the nearer wall.** That day
+produced three contradictions, all caught by conversation and none by a check. `doc_report`'s
+duplication check finds exact copies, which is the *benign* case; a passage copied and then edited
+in one place only is invisible to it. Recorded as unsolved rather than papered over.
+
+**Doug also said he had been "slow to understand" how Claude depends on these documents. He had
+not.** Claude wrote them and built the ceremony that policed them; Doug found in a day what Claude
+had been paying without noticing for weeks — including that three *downward* budget adjustments were
+each bringing the next toll closer.
