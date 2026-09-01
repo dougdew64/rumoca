@@ -417,9 +417,18 @@ the next phase touches — is procedure and lives there.
 > **6 mechanisms (all ten cited tests verified to resolve), 9 category 3, 17 judgements**, of which
 > three needed work and two of those carried defects Claude had introduced the same day.
 >
-> **STILL OPEN, and the natural first item for the next `src/` errand: nothing resolves this file's
-> markdown links.** Five broke during the rename and the FULL gate passed.
-> `fixture_lab_links_all_resolve` covers the labs; `CLAUDE.md` has no equivalent.
+> **CLOSED 2026-09-01: `doc_citations::every_markdown_link_in_a_governing_document_resolves`.**
+> Nothing checked `[text](path)` in the governing documents — only backtick citations — so the
+> rename left five dead links in this file behind a green FULL gate. **The checker found eleven on
+> its first run**, six of them in `running-things.md`, which was written that morning with
+> `CLAUDE.md`-relative links and gated green four times.
+>
+> **⟶ THE ONE THING NO CHECKER COVERS, AND THE NEXT REAL WORK: the 23 labs have not been READ
+> since the rename.** Their prose was changed by substitution — `Stop N` → `Station N`, `walk` →
+> `run`. The gate proves links resolve, tables match a real compile and kinds are consistent; **it
+> cannot tell whether a sentence still reads.** Four mangled sentences were found in the governing
+> documents by grepping one predicted pattern; the labs had no equivalent pass. **Start with
+> `connect-expansion`'s opening** — and only Doug can detect this.
 >
 > **AND THE RESULT CONTRADICTS WHAT BOTH OF US EXPECTED, so do not read it as failure next time:
 > Decision 16 is a CLASSIFICATION test, not a deletion test.** `The rules` grew from 622 to 640
