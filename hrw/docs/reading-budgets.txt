@@ -141,7 +141,8 @@
 # tour-facing DATA living in `src/`, which is what the budgets, the pinned claims and the
 # pane roster each turned out to be. Naming the cause and the three worked fixes is what
 # makes the next instance a five-minute move instead of a rediscovery.
-mandatory = 1978
+# …then 1978 → 1973 on 2026-08-31, carrying current_work's −5 and nothing else.
+mandatory = 1973
 
 
 # ===========================================================================
@@ -185,7 +186,12 @@ mandatory = 1978
 # gate cannot tell them apart — only a reader can. Worth saying explicitly because it is the
 # opposite of the usual risk here: the counts in that stop are verified against a real
 # compile, so the thing left to fail is the explaining, which nothing checks.
-current_work = 287
+# …then 287 → 282 on 2026-08-31, DOWN, when the owed-sweep block moved to
+# docs/tech-debt.md — which is not on the mandatory reading path, so a list of small
+# `src/` errands stopped being read by every session before every action. A pointer
+# stays. Same move as the DECISIONS.md split an hour earlier: keep the fact that work is
+# owed where it is looked for, and the detail where it belongs.
+current_work = 282
 
 
 # ===========================================================================

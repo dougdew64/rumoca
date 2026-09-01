@@ -377,6 +377,34 @@ repeatedly" was true while sweeps were daily; the corpus is green now and the su
 times a year. A trigger whose conditions can lapse is working as intended — but it means the
 standing candidates list needs re-reading, not just appending to.
 
+## Owed sweeps — small `src/` fixes that must not buy a gate of their own
+
+**Doug, 2026-08-31**, asked whether a five-second imprecision should be swept up next time
+something else took Claude into `src/`: *"Yes."* **That is the rule these live under.** Each is
+small, none is urgent, and each alone would cost a ~101 s FULL gate — so they ride along with the
+next `src/` errand instead. **Do them when you are already there; do not schedule one.**
+
+They sit here rather than in `CLAUDE.md`'s Current work because that section is on the mandatory
+reading path and this file is not. A pointer stays there.
+
+| owed | what to do | why it waits |
+|---|---|---|
+| **Blurb pinning** | Pin each tour's catalogue blurb to its expected first bolded line | bit 3× on 2026-08-31 |
+| **Placeholder extraction** | Teach `extract_hrw_links` to skip targets containing `<` | bit 2× the same day |
+| **Tour-region predicate** | Exclude `README.md` and `CATALOGUE.md` from `gate_policy::touches_a_verified_tour_region` | 5 s per README edit |
+
+**The first two are the same session's self-inflicted wounds, and the first is the expensive one.**
+A bolded paragraph inserted above a tour's opening bold line **silently becomes the catalogue's
+blurb**, and nothing reports it — which is why the reflex became regenerating the catalogue every
+turn, ~10 s per prose edit in the mode where Doug feels every second. A metavariable
+(`hrw://src/<workspace path>`, or a bare `hrw://src/` in prose) extracts as a real link and fails
+the reference checker, which at least fails loudly.
+
+**The third is an over-broad predicate, not a defect.** `touches_a_verified_tour_region` matches any
+`.md` under `fixture-tours/`, so editing that directory's README or its generated catalogue selects
+the TOUR gate (11 s) where FAST (6 s) would do. Neither file has a `pane-*` marker, so neither needs
+a compile.
+
 ## Priority order — read this before choosing what to fix
 
 Set 2026-07-29, when Doug named the real operating constraint: **his robotics
