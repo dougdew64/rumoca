@@ -189,13 +189,15 @@ principle — *the conversation is the instrument; code changes are a byproduct 
 applied to tours. **A finished tour is the residue of a learning session, not its purpose**, which
 is why the three activities are worth keeping distinct and why three consequences bind:
 
-- **A DRAFT IS NOT TRYING TO BE UNIMPROVABLE.** A draft with nothing left to iterate on would
-  delete the exercise. **But the answer is not worse drafts** — it is drafts whose remaining
-  weaknesses are **conceptual rather than mechanical.** Arguing about a wrong count, a dead link or
-  a stop in the wrong order teaches Doug nothing about the compiler; arguing about *whether
-  differentiating the constraint is the natural move* is the whole point. **Drafting's job is to
-  spend the mechanical failure modes so the walk's iterations are all conceptual** — see
-  *"Drafting aims at correct AND structurally disciplined"* below for the line that follows from it.
+- **A DRAFT IS NOT TRYING TO BE UNIMPROVABLE — DRAFTING IS THE INSTRUCTOR'S PREP.** A draft with
+  nothing left to iterate on would delete the exercise. **But the answer is not worse drafts** — it
+  is drafts whose remaining weaknesses are **conceptual rather than mechanical.** **This is what a
+  lab instructor does before class: check the apparatus, so the session is spent on the physics and
+  not on a broken meter.** Arguing about a wrong count, a dead link or a stop in the wrong order
+  teaches Doug nothing about the compiler; arguing about *whether differentiating the constraint is
+  the natural move* is the whole point. **Drafting's job is to spend the mechanical failure modes so
+  the live iterations are all conceptual** — see *"Drafting aims at correct AND structurally
+  disciplined"* below for the line that follows from it.
 - **WHILE WALKING, ENGAGE — DO NOT PATCH.** The efficient reflex is: Doug says the prose is off, Claude
   rewrites it, both move on. **That reflex strips out the learning.** When he pushes back, say why
   it was written that way, what the alternative costs, and where the concept actually sits — and let
@@ -205,6 +207,24 @@ is why the three activities are worth keeping distinct and why three consequence
   hunting in Doug's workdays. It now has a reason beyond scheduling: **improving an explanation
   alone consumes the material his learning runs on.** Fixing a checker-caught number, a dead link or
   a stale citation is fine. **Rewriting an explanation unsupervised is not Claude's to do.**
+
+  **THE LINE IS REDRAWN IN LAB TERMS** *(Doug, 2026-09-01, in light of Decision 14)*. The old
+  wording listed three permitted repairs and forbade one act, which left everything unlisted
+  undecided. **The test is now the one this repository already uses for unsupervised document work:
+  RESTORE, NEVER CHOOSE.**
+
+  | | unsupervised | why |
+  |---|---|---|
+  | a number, link, citation, table, vocabulary slip | **free** | a checker caught it or could; there is one right answer to restore |
+  | a route broken by something that moved — a dead pane, a renamed stage | **free** | restoring apparatus, not designing an experiment |
+  | **the explanation** | **Doug's** | it is the material his learning runs on |
+  | **the predictions and `Expected:` lines** | **Doug's** | **Decision 14 makes these the pedagogical core**, not the prose around them |
+  | **which specimen, which panes, in what order** | **Doug's** | that is designing the experiment |
+
+  **Decision 14 moved the explanation into the conversation, which shrinks how much of a lab is
+  prose — it does not license editing what remains.** If anything it *narrows* the free column,
+  because a prediction now carries the teaching that a paragraph used to. **When the answer is
+  "choose", it is Doug's; when it is "restore", it is Claude's.**
 
 ### ⟶ WRITE TO PROVOKE QUESTIONS, NOT TO PRE-EMPT THEM — 2026-08-30
 
