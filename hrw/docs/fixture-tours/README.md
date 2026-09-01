@@ -334,15 +334,13 @@ routed *into the tour*, which then needed ratifying on a walk — given five exc
 **So `connect-expansion.md` is walked and still open to exploring at the same time**, and every
 other tour will be too. There is no sequence of stages a tour passes through and finishes.
 
-**The rule that falls out, and it is what keeps the walked markers honest:** when an answer found
-by exploring routes *into the tour*, **the new prose enters UNMARKED, and becomes walked only when
-Doug ratifies it.** It is Claude's draft until he has read it, whatever else in the file is already
-protected.
-That happened twice on 2026-08-22 — the type-claim section and the node clarification — and both
-were marked only after *"the tour content looks good"*.
+**The rule that falls out:** when an answer found by exploring routes *into the tour*, **it is
+Claude's draft until Doug has read it** — whatever else in the file he has already walked. Nothing
+records that distinction since the `walked:` markers were retired on 2026-08-31, so **judge it from
+the conversation.**
 
-**The failure it prevents is the one no checker can catch:** prose written by Claude, sitting inside
-a walked tour, carrying a provenance it never earned. See *Marking is Doug's ruling* above.
+**The failure it guards against is one no checker can catch:** prose written by Claude, sitting
+inside a tour Doug has walked, carrying a standing it never earned.
 
 ### The dangerous quadrant is EFFECTIVE BUT FALSE
 
