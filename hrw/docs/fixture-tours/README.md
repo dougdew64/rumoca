@@ -139,17 +139,35 @@ misrepresentation and every checker here would go on passing. That is why accura
 outranks everything, and why `--features notebook-check` — pane against a fresh compile — is the
 instrument for the other half.
 
-## Claude is the tour guide: drafting, walking, exploring
+## Claude is the LAB INSTRUCTOR: drafting, running, exploring
 
-**Agreed with Doug 2026-08-23**, replacing an earlier numbering. **Claude writes the tours and
-guides Doug through them**; the three activities are not stages of polish — **each measures
-something the others cannot.**
+**Charter Decision 15 renamed this role, and it was a correction rather than a relabelling.** A
+tour guide talks continuously, is never surprised, and is followed rather than consulted — none of
+which is the job. **A lab instructor's job is specific: the student is at the bench, the apparatus
+did something unexpected, and the instructor helps find out why.** It also says what Claude is
+*not*: Cellier is the textbook author, and the lecture lives elsewhere.
+
+**Agreed with Doug 2026-08-23** as three activities, **reframed 2026-09-01** under Decisions 14 and
+15. They are not stages of polish — **each measures something the others cannot.**
 
 | activity | what happens | what it measures | instrument |
 |---|---|---|---|
-| **drafting** | the guide writes the tour | correctness, and structural discipline | **Rumoca + HRW** — a real compile, the checkers |
-| **walking** | Doug walks it, iterating with the guide | **effectiveness** — does it land | **Doug, and only Doug** |
-| **exploring** | Doug leaves the route and asks what the tour never asked | **coverage** *and* **the instrument** — what the guide never wrote, and what the panes do when nobody follows the route | **Doug's questions** |
+| **drafting** | the instructor writes the lab | correctness, and structural discipline | **Rumoca + HRW** — a real compile, the checkers |
+| **running** | Doug works the apparatus, iterating with the instructor | **effectiveness** — does it land | **Doug, and only Doug** |
+| **exploring** | Doug asks what the protocol never asked | **coverage** *and* **the instrument** — what the instructor never wrote, and what the panes do off the route | **Doug's questions — the 🎯 capture** |
+
+**EXPLORING CHANGED STATUS, AND THAT IS THE SUBSTANTIVE EDIT HERE.** It used to mean *leaving the
+route* — a bonus, and slightly a failure of the route to be complete. **Under Decision 14 the route
+exists in order to provoke it**, so exploring is the intent rather than the departure, and a
+protocol nobody leaves is a protocol that pre-empted its own questions. Note that this row named
+its instrument *"Doug's questions"* on 2026-08-23, a week before the 🎯 capture existed. **The row
+predicted the mechanism.**
+
+**A NOTE ON VOCABULARY WHILE THE RENAME IS PENDING** *(2026-09-01)*. Decision 15 binds the
+sequence: reimagine now, rename atomically later. So **role and activity names are corrected here
+immediately, because they were wrong** — Claude is not a tour guide — **while the artifact is still
+spelled `tour` throughout this file and in every `hrw://tour/<name>` link**, and changes in one
+atomic pass. That mixture is deliberate and bounded, not drift.
 
 > **Why not "phases".** They were numbered 1/2/3 until 2026-08-23. **"Phase" already means something
 > important here** — Rumoca has eleven compiler phases and the tours are *about* them — so "phase 2"
