@@ -126,7 +126,14 @@
 # docs/README.md — the same one-line cost, for the same reason, as indexing THIS file.
 # Two data files now sit under docs/ holding what used to be constants in `src/`, and an
 # unindexed one is a file nobody finds.
-mandatory = 1961
+# …then 1961 → 1971 on 2026-08-31, for the TOUR gate — a THIRD verdict beside FAST and
+# FULL, and the gate table is the one place a session looks before committing. Ten lines
+# because the reasoning cannot be inferred from the row: a tour edit is docs-only, so the
+# path rule says FAST, and the FAST suite cannot see the pane tables at all because the
+# tests verifying them against a real compile are slow-gated. Without that sentence the
+# row reads as an optimisation and gets skipped in favour of FULL, which is exactly the
+# habit it exists to break.
+mandatory = 1971
 
 
 # ===========================================================================

@@ -36,6 +36,38 @@ pub fn needs_full_gate<'a>(changed: impl IntoIterator<Item = &'a str>) -> bool {
     })
 }
 
+/// Does a docs-only change touch a tour region that is verified against a **real
+/// compile**?
+///
+/// # Why a third verdict, when FAST and FULL had covered everything
+///
+/// Doug, 2026-08-31: *"every time that we are forced to perform a full gate simply because
+/// I've asked a question or offered an opinion about tour content… it's time for a pause on
+/// tour content improvement to focus on eliminating tour friction."*
+///
+/// A tour's `<!-- pane-groups -->`, `pane-origins` and `pane-frames` tables are checked by
+/// **slow-gated** tests that compile a specimen. Editing one touches only `docs/`, so
+/// [`needs_full_gate`] says FAST — correctly, since no `src/` file moved — and the FAST
+/// suite then **cannot see the change at all**, because those tests are gated off. The
+/// standing advice was therefore "run FULL", which is right about needing a compile and
+/// wrong about needing **910 tests**.
+///
+/// **Measured 2026-08-31: the tour-relevant slow tests cost 11.1 s** (median of 3, spread
+/// 2.5 %, via `examples/measure`), against ~101 s for FULL. The binary split was the
+/// problem, not either of its halves.
+///
+/// # What this is NOT
+///
+/// **Not a cheaper FULL.** It runs the fast suite plus the slow tests whose names match
+/// `doc_citations` and `tour` — enough to verify a tour's numbers against a compile, and
+/// nothing about `worker.rs`, simulation or the corpus. A change touching `src/` still
+/// needs FULL, which is why this is only ever consulted when [`needs_full_gate`] is false.
+pub fn touches_a_verified_tour_region<'a>(changed: impl IntoIterator<Item = &'a str>) -> bool {
+    changed
+        .into_iter()
+        .any(|p| p.starts_with("hrw/docs/fixture-tours/") && p.ends_with(".md"))
+}
+
 /// Does a change touch the path that decides **what HRW reports Rumoca did**?
 ///
 /// # Why this needs its own question
@@ -141,6 +173,36 @@ mod tests {
             needs_full_gate(["hrw/docs/reading-budgets.txt", "hrw/src/doc_citations.rs"]),
             "editing the checker itself is still a src/ change",
         );
+    }
+
+    /// **A tour edit selects TOUR: not FAST, which cannot see it, and not FULL.**
+    ///
+    /// The three-way verdict is the whole point, so all three are asserted together —
+    /// separate tests would each pass on one arm working, which is how a rule ends up
+    /// covering less than it claims.
+    #[test]
+    fn a_tour_edit_selects_the_tour_gate_and_a_source_edit_still_selects_full() {
+        let tour = "hrw/docs/fixture-tours/connect-expansion.md";
+        assert!(!needs_full_gate([tour]), "a tour is not a src/ change");
+        assert!(
+            touches_a_verified_tour_region([tour]),
+            "a tour's guarded tables need a compile the FAST suite gates off"
+        );
+
+        // Prose elsewhere in docs/ is genuinely FAST: nothing there is checked against a
+        // compile, so paying 11 s for it would be the same ritual at a smaller price.
+        assert!(!touches_a_verified_tour_region(["hrw/docs/ideas.md"]));
+        assert!(!touches_a_verified_tour_region(["hrw/CLAUDE.md"]));
+
+        // The data files that back the checkers are not tours, and neither is the
+        // generated catalogue — regenerating it must not drag in a compile.
+        assert!(!touches_a_verified_tour_region([
+            "hrw/docs/fixture-tours/pinned-claims.txt"
+        ]));
+
+        // And FULL still wins outright: `tour` is only consulted when needs_full_gate is
+        // false, but a caller that got that backwards would silently under-gate.
+        assert!(needs_full_gate([tour, "hrw/src/worker.rs"]));
     }
 
     /// **One `src/` file among twenty documents still means FULL.**

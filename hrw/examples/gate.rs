@@ -224,6 +224,12 @@ fn main() {
         ));
     }
 
+    // **TOUR: the third verdict.** A docs-only edit to a tour is FAST by the path rule,
+    // and the FAST suite cannot see the guarded pane tables at all, because the tests
+    // that verify them against a real compile are slow-gated. So the old advice was "run
+    // FULL" — right that a compile is needed, wrong that 910 tests are. Measured at
+    // 11.1 s against ~101 s.
+    let tour = !full && hrw::gate_policy::touches_a_verified_tour_region(refs.iter().copied());
     if full {
         steps.push(step(
             "gate (full)",
@@ -241,6 +247,24 @@ fn main() {
             ],
             "the slow-gated checks are the ones a src/ change can break",
         ));
+    } else if tour {
+        steps.push(step(
+            "gate (tour)",
+            &[
+                "test",
+                "-p",
+                "hrw",
+                "--lib",
+                "--features",
+                "slow-tests",
+                "--",
+                "--test-threads=1",
+                "doc_citations",
+                "tour",
+            ],
+            "a tour's guarded tables are verified against a real compile, and the FAST \
+             suite gates those tests off",
+        ));
     } else {
         steps.push(step(
             "gate (fast)",
@@ -252,7 +276,13 @@ fn main() {
     println!(
         "HRW gate  --  {} ({} selected{})",
         repo.display(),
-        if full { "FULL" } else { "FAST" },
+        if full {
+            "FULL"
+        } else if tour {
+            "TOUR"
+        } else {
+            "FAST"
+        },
         if forced_fast || forced_full {
             ", forced"
         } else {

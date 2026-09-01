@@ -2757,10 +2757,12 @@ Some prose.
             changed.is_empty(),
             "a guarded tour table changed, and this is the FAST suite \u{2014} those tables \
              are verified against a real compile by slow-gated tests, so committing now \
-             would land an unchecked claim behind a green suite.\n\n  {}\n\nRun the FULL \
-             gate before committing:\n  cargo test -p hrw --lib --test msl_resolve \
-             --features slow-tests -- --test-threads=1\n\n(If a table's numbers are \
-             genuinely new, the FULL gate is what confirms them against the pane.)",
+             would land an unchecked claim behind a green suite.\n\n  {}\n\nRun the TOUR \
+             gate before committing \u{2014} 11.1 s, not the FULL gate's ~101:\n  cargo \
+             test -p hrw --lib --features slow-tests -- --test-threads=1 doc_citations \
+             tour\n\n(`cargo run -p hrw --example gate` selects this for you. It is the \
+             right gate only while the diff is docs-only; a src/ change still needs \
+             FULL.)",
             changed.join("\n  "),
         );
 
@@ -2833,24 +2835,60 @@ Some prose.
     )]
     #[test]
     fn tour_group_tables_match_the_real_equation_sheet() {
-        // (tour file, specimen) pairs. Grows as tours gain group tables.
-        // Every (tour, specimen) pane a tour makes a table claim about. `TwoLoops` was
-        // added 2026-08-15: Stop 5's claims had rested on a hand-read trace, which is the
-        // footing every other act had already been lifted off.
-        const PANES: &[(&str, &str)] = &[
-            ("connect-expansion.md", "RcCircuit"),
-            ("connect-expansion.md", "TwoLoops"),
-            // Stop 6's specimen, added 2026-08-31. Its whole point is a pair of counts
-            // that DISAGREE — 8 potential rows against 7 flow — so a hand-count is
-            // exactly the thing not to trust here.
-            ("connect-expansion.md", "ScopedConnect"),
-        ];
-
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+
+        // **The roster is DERIVED from the tours, not listed here** *(2026-08-31)*. It was
+        // a `const PANES: &[(&str, &str)]`, so giving a tour a table about a new specimen
+        // was a `src/` edit — the last routine tour act that forced the FULL gate, and one
+        // of the leaks Doug named when he called a pause on tour content to fix tour
+        // friction.
+        //
+        // **Deriving it also closes a hole the list had.** A roster entry with no marker
+        // was reported; a **marker with no roster entry was silently unchecked**, so a
+        // tour could add `<!-- pane-groups: Foo -->` and nothing would ever compile `Foo`
+        // to compare it. Reading the markers makes that impossible by construction: the
+        // thing that declares the claim is the thing that schedules the check.
+        let mut panes: Vec<(String, String)> = Vec::new();
+        for path in std::fs::read_dir(hrw.join("docs/fixture-tours"))
+            .expect("the fixture-tour directory must be readable")
+            .flatten()
+            .map(|e| e.path())
+            .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("md"))
+        {
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                continue;
+            };
+            let name = path
+                .file_name()
+                .and_then(|s| s.to_str())
+                .unwrap_or_default()
+                .to_owned();
+            for (marker, _) in guarded_regions(&text) {
+                // `pane-groups: RcCircuit` — only the group tables drive a compile; the
+                // origin and frame tables are checked opportunistically beside them.
+                if let Some(specimen) = marker.strip_prefix("pane-groups: ") {
+                    let pair = (name.clone(), specimen.trim().to_owned());
+                    if !panes.contains(&pair) {
+                        panes.push(pair);
+                    }
+                }
+            }
+        }
+        panes.sort();
+        assert!(
+            !panes.is_empty(),
+            "no `<!-- pane-groups: … -->` marker was found in any tour, so this test would \
+             pass having compared nothing"
+        );
+        let panes: Vec<(&str, &str)> = panes
+            .iter()
+            .map(|(t, s)| (t.as_str(), s.as_str()))
+            .collect();
+        let panes = &panes[..];
         let mut bad: Vec<String> = Vec::new();
         let mut checked = 0usize;
 
-        for (tour, specimen) in PANES {
+        for (tour, specimen) in panes {
             // **The memoised helper, not a fresh compile.** Written the other way first
             // and measured at 8.6s of the slow suite's 194s, for specimens other tests
             // had already compiled in the same process. `docs/ideas.md` #48 exists for
@@ -2887,7 +2925,7 @@ Some prose.
                 bad.push(format!(
                     "{tour}: no `<!-- pane-groups: {specimen} -->` marker, so that pane's \
                      group table cannot be checked \u{2014} add one above the table, or \
-                     remove the pair from PANES"
+                     remove the marker"
                 ));
                 continue;
             };

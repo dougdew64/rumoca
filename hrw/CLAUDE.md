@@ -1059,8 +1059,18 @@ git diff --cached --name-only | grep -qE '(^|/)(src|crates|examples)/|Cargo\.tom
 
 | verdict | run |
 |---|---|
-| **FAST** — docs, tours, notebooks only | `cargo test -p hrw --lib -- --test-threads=1` **and** the doc checks below |
+| **FAST** — docs, notebooks | `cargo test -p hrw --lib -- --test-threads=1` **and** the doc checks below |
+| **TOUR** — a `docs/fixture-tours/*.md` edit | `cargo test -p hrw --lib --features slow-tests -- --test-threads=1 doc_citations tour` |
 | **FULL** — any `src/`, `crates/`, `examples/` or `Cargo.toml` | the slow-tests line, plus clippy |
+
+**TOUR is the third verdict, added 2026-08-31** — Doug: *"every time that we are forced to
+perform a full gate simply because I've asked a question or offered an opinion about tour
+content… it's time for a pause on tour content improvement to focus on eliminating tour
+friction."* A tour's `pane-*` tables are checked against a **real compile** by slow-gated tests,
+so a tour edit is docs-only (FAST by the path rule) while the FAST suite **cannot see it at
+all**. The old advice was "run FULL", right about needing a compile and wrong about needing 910
+tests. **Measured: 11.1 s (median of 3, spread 2.5 %) against ~101 s.** `cargo run -p hrw
+--example gate` selects it; `gate_policy::touches_a_verified_tour_region` decides.
 
 **FAST is not "skip the tests"** — the doc and tour checkers are exactly what a docs-only change
 *can* break, and they are the cheap ones:
