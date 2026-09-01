@@ -4855,3 +4855,35 @@ restores what it touched.
 **The general lesson: a safety model stated by the person bearing the risk is worth auditing
 against, because it is shorter than the rules and it says what the rules were FOR.** These rules
 had grown to 643 lines without anyone noticing that one of them carried nearly all the safety.
+
+## 2026-08-31 — one home per fact: the gate rule is retired from prose
+
+**Doug:** *"When authoring code, you perform almost flawlessly. Yet, when attempting to make sense
+of all of these rules, you seem to struggle with conflicts. It seems to me that we need to greatly
+simplify our documents."*
+
+**Right about the fix, and the evidence sharpens it.** Of the seven contradictions found that day,
+**not one was a disagreement about what Doug wants.** Every one was a document that had not been
+updated when a mechanism changed — five stale, two scope errors. **The rules do not conflict with
+each other; copies of them fall out of date.**
+
+**The measurement makes it concrete.** *"Gate"* is discussed in **7 of 7** governing documents and
+produced **three** of the day's findings. *"Never push"* appears in **one** and has never drifted.
+**Spread predicts drift.**
+
+**So the target is not fewer words — it is fewer HOMES.** Which is this repository's own rule, never
+applied to the gate: **a checker retires the prose it replaces.** The gate has a mechanism *and* a
+test, so `gate_policy` is the statement and prose anywhere else is a copy waiting to rot. 54 lines
+of verdict table and rationale retired from `CLAUDE.md`; the duplicate description of the runner in
+the same file collapsed to a pointer; `unattended-runs.md` now says only *"it reads the tree and
+decides"*.
+
+**Why compression by DE-DUPLICATION and not by truncation.** This repository has already recorded
+that terse rules fail here — *"a rule that names one of two gates reads as complete"*, and *"a rule
+stating only its positive half is the most-repeated correction."* So a rule's **single** statement
+stays complete, scope and non-forbiddings included; what is removed is its **second and third**
+statements.
+
+**The general form, and the next candidates:** any subject stated in more than one governing
+document is a drift risk proportional to how many. Gate is done. `budget`/`ceiling` sits in four
+files and should go the same way.

@@ -986,12 +986,10 @@ no longer matches the line counts `architecture.md` carries, and `architecture_r
 fails at the end of a 230-second run. **Ten instances is not a memory problem**, and this
 repository's own answer to a rule that keeps being got wrong is to give it a mechanism.
 
-`gate` picks FAST, TOUR or FULL from the working tree by the rule below, runs **all four** generators
-(the matching reference included, which the hand-written list omitted), adds `fmt` **and** `clippy`
-for any `crates/rumoca-*` package the change touches, stops at the first failure naming what that
-step protects, and refuses to start while HRW holds `hrw.exe`. `--fast` / `--full` override the
-verdict. The decision itself is `gate_policy`, in the library so it is reachable by a test —
-choosing FULL needlessly costs four minutes and is obvious, while choosing FAST wrongly is silent.
+**What the runner does is described once, under *Match the gate to the change* below** — not here.
+The one thing worth repeating is *why* the decision lives in `gate_policy` rather than in the
+runner: choosing FULL needlessly costs four minutes and is obvious, while **choosing FAST wrongly
+is silent**, so the rule sits in the library where a test can reach it.
 
 `gen_field_help` is still outside it, deliberately: `build.rs` runs it.
 
@@ -1069,58 +1067,30 @@ fresh compile and failed the notebook gate, on a difference that carries no info
 as `worker.rs` handing in the full document URI. Rewriting the path to be *repo-relative* is a
 different thing, changes which file the string names, and was rejected on 2026-08-16.
 
-**MATCH THE GATE TO THE CHANGE — and let the diff decide, not judgement** *(measured
-2026-08-15, after Doug reported test latency as genuine friction)*. Most commits in a walking
-session touch only documents, and a docs-only change **cannot regress compile-heavy behaviour**,
-so paying 225 s for it is ritual rather than evidence. On 2026-08-15 that ritual cost about ten
-minutes across one session.
-
-**This decides what to run BEFORE A COMMIT. It is not the answer to "what do I run after this
-edit"** — that is the filtered line above. The distinction is written down because its absence
-turned a latency fix into a latency cost on the day it landed: keyed to `--cached`, the table
-speaks about staged changes, but being the only procedure in the file it got applied to every
-iteration, returning FULL for the `src/` work that filled the day.
-
-```bash
-git diff --cached --name-only | grep -qE '(^|/)(src|crates|examples)/|Cargo\.toml' && echo FULL || echo FAST
-```
-
-| verdict | run |
-|---|---|
-| **FAST** — docs, notebooks | `cargo test -p hrw --lib -- --test-threads=1` **and** the doc checks below |
-| **TOUR** — a `docs/fixture-tours/*.md` edit | `cargo test -p hrw --lib --features slow-tests -- --test-threads=1 doc_citations tour` |
-| **FULL** — any `src/`, `crates/`, `examples/` or `Cargo.toml` | the slow-tests line, plus clippy |
-
-**TOUR is the third verdict, added 2026-08-31** — Doug: *"every time that we are forced to
-perform a full gate simply because I've asked a question or offered an opinion about tour
-content… it's time for a pause on tour content improvement to focus on eliminating tour
-friction."* A tour's `pane-*` tables are checked against a **real compile** by slow-gated tests,
-so a tour edit is docs-only (FAST by the path rule) while the FAST suite **cannot see it at
-all**. The old advice was "run FULL", right about needing a compile and wrong about needing 910
-tests. **Measured: 11.1 s (median of 3, spread 2.5 %) against ~101 s.** `cargo run -p hrw
---example gate` selects it; `gate_policy::touches_a_verified_tour_region` decides.
-
-**AND A FULL GATE DURING A TOUR EDIT IS A BUG** — Doug, standing, the same day: *"unless we are
-adding a specimen, I will consider a full gate run during a tour edit to be a bug."* The cause is
-always the same and is never in `gate_policy`: **tour-facing DATA living in `src/`.** The gate says
-so when it sees the shape (`gate_policy::full_gate_on_a_tour_edit_is_suspect`, whose doc comment
-carries why it warns rather than aborts); the fix is to move the data to `docs/`, as
-`reading-budgets.txt`, `pinned-claims.txt` and the derived pane roster all were.
-
-**FAST is not "skip the tests"** — the doc and tour checkers are exactly what a docs-only change
-*can* break, and they are the cheap ones:
+**MATCH THE GATE TO THE CHANGE — and the RUNNER decides, not this file** *(the prose that used
+to restate the rule was retired 2026-08-31)*.
 
 ```text
-cargo test -p hrw --lib doc_citations -- --test-threads=1   # ~1.4s
-cargo test -p hrw --lib tour          -- --test-threads=1   # ~0.3s
+cargo run -p hrw --example gate
 ```
 
-**The one exception, and it is not optional:** a tour's `<!-- pane-groups -->` /
-`pane-origins` / `pane-frames` tables are checked by *slow* tests, because verifying them needs a
-real compile. The diff touches only `docs/`, so the grep says FAST — and the fast suite gates
-those tests off, so it cannot see the change at all. **That is what the TOUR gate is for**
-(11.1 s); it was FULL until 2026-08-31, which was right about needing a compile and wrong about
-needing 910 tests.
+**It reads the working tree and picks FAST, TOUR or FULL.** The rule itself is
+`gate_policy::needs_full_gate` and `touches_a_verified_tour_region`, each with a test; the runner
+adds the generators, `fmt`/`clippy` for any touched Rumoca crate, and refuses to start while HRW
+holds `hrw.exe`. `--fast` / `--full` override.
+
+**Why no table here any more, and this is the general rule not a local tidy-up.** A gate verdict
+was stated in **seven** governing documents. Three of 2026-08-31's contradictions were that prose
+gone stale — two documents and the runner's own header still saying two verdicts, and three places
+still charging FULL for a tour-table edit hours after the TOUR gate made it 11 s. **Not one was a
+disagreement about what the gate should do; every one was a copy that had not been updated.**
+
+**So this file applies its own rule to itself: A CHECKER RETIRES THE PROSE IT REPLACES.** The gate
+has a mechanism *and* a test, so the mechanism is the statement and prose anywhere else is a copy
+waiting to rot. **Run the runner and read its verdict.** What belongs here is only what the runner
+cannot say: *this decides what to run BEFORE A COMMIT, and is not the answer to "what do I run
+after this edit"* — that is the filtered iteration line above, and conflating the two turned a
+latency fix into a latency cost on the day it landed.
 
 **Where the ~225 s actually goes**, so nobody re-derives it: about twenty tests carry ~129 s of
 it, led by `all_healthy_specimens_simulate` (16 s), `every_stage_serializes_without_panicking`

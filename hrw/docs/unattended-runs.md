@@ -160,9 +160,9 @@ the right vehicle for app-side reading, not for the compile path.
    ```text
    cargo run -p hrw --example gate
    ```
-   It picks FAST, TOUR or FULL from the working tree, runs all four generators, adds `fmt` **and**
-   `clippy` for any `crates/rumoca-*` package touched, stops at the first failure naming what that
-   step protects, and refuses to start while HRW holds `hrw.exe`.
+   **It reads the tree and decides.** What it does is described in `CLAUDE.md` and enforced by
+   `gate_policy`; restating the verdict rule here is what made three of night 7's findings, so it
+   is deliberately not restated.
 2. **Never leave the tree dirty.** Every item ends committed or reverted. Nothing half-done.
 3. **Commit, do not push.** Nothing outward-facing happens with nobody awake.
 4. **A hard cap of FOUR items, then stop** — raised from three by Doug on 2026-08-26. Sprawl is
