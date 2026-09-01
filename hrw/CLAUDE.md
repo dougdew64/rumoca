@@ -169,6 +169,13 @@ doc comment, beside the code enforcing it, where it cannot drift. This paragraph
 that way: `no_function_has_two_test_attributes` and `claims_of_absence_are_still_true` already
 carried their histories, so the copies here became pointers.
 
+**OPEN THE TEST AND CHECK THAT IT ACTUALLY CARRIES THE ACCOUNT BEFORE SHRINKING THE PROSE**
+*(2026-09-01)*. A named test is not evidence that the reasoning lives there. Must-fire's account was
+nearly deleted on that assumption, and
+`each_invariant_catches_its_own_violation`'s doc comment turns out to be three lines about its own
+case, saying nothing about the seven silent bugs. **Unverified, this rule licenses deleting the only
+copy** — which is the one failure it exists to prevent.
+
 **GENERALISED 2026-08-31 — ONE HOME PER FACT, whether or not a checker exists.** Doug: *"when
 attempting to make sense of all of these rules, you seem to struggle with conflicts."* Of seven
 contradictions found that day, **none was a disagreement about what he wants** — five were stale
@@ -182,6 +189,11 @@ the findings, while *never push* lives in one and has never drifted.
   `unattended-runs.md` keeps what a night does at a ceiling and lost the derivation of the ceiling.
 - **Counting mentions overstates duplication.** Three of four "ceiling" hits were unrelated senses.
   Only reading finds it, which is a limit on the nightly sweep, not a task for it.
+- **A DUPLICATE IS MOST OFTEN BORN WHILE REMOVING ONE** *(2026-09-01, twice in one session)*. Cutting
+  a rule from one place, Claude restates it in the place he is writing rather than pointing at where
+  it already lives — the quality-bar rule and the violability rule both went that way, each within an
+  hour of the sweep that was hunting exactly this. **The move is always a pointer, never a
+  restatement**, and the moment to check is when prose is being *moved*, not when it is being added.
 
 **The forcing function is a mechanism, not goodwill** — a limit
 (`doc_citations::the_mandatory_reading_path_stays_small`, stated in
@@ -203,14 +215,16 @@ reported success every time:
 - **Line arithmetic stole an attribute.** Inserting by index instead of by seen context put a
   test between a doc comment and its `fn`, silently un-testing a regression guard.
 
-**A generator script is the exception, not the tool of choice.** When one is genuinely
-warranted, write it with the Write tool and run it by path — that pattern never produced shell
-corruption. And **read back anything a shell wrote.**
+**A generator script is the exception, not the tool of choice.** When one is genuinely warranted,
+write it with the Write tool and run it by path — that pattern never produced shell corruption. And
+**read back anything a shell wrote.** *(Validated 2026-09-01 by the tour → lab rename, which
+genuinely warranted five: reading back is what caught a falsified historical filename and three
+mangled quotations.)*
 
-**Do not sell a refactor on these** *(Doug pushed back on exactly that over-claim, 2026-08-02;
-`worker.rs` is the next candidate it could be made about)*. A large file *pressures* Claude toward
-generators, but the corruption is a habit that operates on small files too. A refactor's
-justification is blast radius and testability, and it does not need the help.
+**The corruption is a habit that operates on small files too.** A large file *pressures* Claude
+toward generators, but the memory case was a single short file. **Do not treat file size as the
+risk factor**, and do not offer this rule as an argument for a refactor — that justification is
+charter Decision 12(b), and it does not need the help.
 
 **DO NOT COMMIT TROUBLESHOOTING INSTRUMENTATION, AND DO NOT CALL AN UNCONFIRMED FIX A FIX**
 *(Doug, 2026-08-03, after the LHS-width episode)*. Ten commits went into one 40 %-width bug:
