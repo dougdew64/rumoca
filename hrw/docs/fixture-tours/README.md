@@ -519,25 +519,37 @@ point at the readout before asking anyone to read it.**
 prose anyway — hand-maintained backlogs of which stops had no reader yet. **Do not reintroduce it in
 either form**; judge from the conversation.
 
-## The vocabulary — `tour`, `stop`, `observation`
+## The vocabulary — `lab`, `station`, `observation`
 
-**The top-level noun is `tour`, so the unit is a `stop`.** A tour has stops; that metaphor was
-already chosen by the word "tour", and importing a second one (the units were briefly called
-*acts*) put two metaphors on one job. The full reasoning, and the four name collisions it
-uncovered, are in [`../tour-kinds-plan.md`](../tour-kinds-plan.md).
+**SETTLED 2026-09-01 under charter Decision 15.** The old vocabulary was `tour` / `stop` /
+`observation` / `guide`. **Two of those four were already lab words and did not move**, which is
+the strongest evidence the metaphor fits rather than being imposed on it.
 
-| word | what it is | whose it is |
-|---|---|---|
-| **tour** | a sequence of stops with one goal | the repository's |
-| **stop** | a question, and something to look at | the document's |
-| **observation** | what was found, and whether it matched | **Doug's** |
-| **guide** | who answers what the document cannot | Claude's role |
+| word | what it is | whose it is | changed? |
+|---|---|---|---|
+| **lab** | a sequence of stations with one goal | the repository's | was `tour` |
+| **station** | a question, and something to look at | the document's | was `stop` |
+| **observation** | what was found, and whether it matched | **Doug's** | **already lab-native** |
+| **instructor** | who answers what the document cannot | Claude's role | was `guide` |
 
-**`stop` is a noun only for a tour stop.** The *verb* is free — *"the compile stops at Parse"*
-cannot be misread. This matters because two other things in this project legitimately stop: a
-**compile** (say *halts*, or *not reached*) and a **debugger** (say **break**, at an **anchor**).
-`matching-live.md` is the one document where all three are in play, and it opens with a note
-naming them.
+`Predict` and `Expected` were already lab-native too. The full reasoning behind the original
+choice, and the four name collisions it uncovered, are in
+[`../tour-kinds-plan.md`](../tour-kinds-plan.md).
+
+**WHY `station` AND NOT `step`, so nobody re-proposes it.** This section exists because `stop`
+*collided*: a compile stops and a debugger stops. Any replacement had to survive that test, and
+**`step` fails it far worse — 346 uses in `src/` alone**, including `fn step`, `match step`, and
+single-stepping in the debugger. `run` fails the same way (586). **`station` was the only
+lab-native candidate genuinely unused here: 0 in `src/`, 1 in `docs/`.**
+
+**And the rename retires the collision rather than managing it.** With the unit called a
+`station`, **`stop` becomes free for its natural senses** — a compile halting, a debugger
+breaking — so `matching-live.md` no longer needs the opening note that disambiguated three
+meanings. That is a gain the rename buys beyond the metaphor.
+
+**The artifact is still spelled `tour` in this file, in `hrw://tour/<name>` links and in `src/`.**
+Decision 15 binds the sequence — reimagine first, rename **atomically** afterwards — and forbids a
+mechanical substitution. **This table is the target vocabulary, not a description of the tree.**
 
 ## The kinds
 
