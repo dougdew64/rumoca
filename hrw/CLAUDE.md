@@ -230,14 +230,10 @@ FAILURE** *(named 2026-08-21, from four instances that had each been filed as a 
 correction)*. Every one is the same shape — **a statement true in one domain, applied in a
 wider one**:
 
-- **`fmt` missing from a two-gate rule**, which "read as complete" and cost 82 unformatted
-  hunks across a week in which clippy was run every single time.
-- **A claim about the PIXELS read as a claim about the PANES** — `matrix_panes` had six
-  tests available the whole time it was filed as untestable.
-- **Three null results inside one widget generalised into a property of the widget**, which
-  stopped anyone looking at the scroll axis for eight days.
-- **A rule about extracting a function applied to relocating a test module**, which deferred
-  the largest and safest step of the `app.rs` arc — 71 % of everything that file shed.
+Four instances by 2026-08-21, each filed as a separate correction before anyone saw the pattern —
+the sharpest being **`fmt` missing from a two-gate rule**, which *"read as complete"* and cost 82
+unformatted hunks across a week in which clippy was run every single time. Each is recorded where
+it happened; what generalises is the shape.
 
 **So the mechanism, and it costs one clause: state what a rule does NOT forbid, beside what
 it does.** The template already exists here and is proven — *"REPLAY means two things, and
@@ -319,11 +315,10 @@ reported success every time:
 warranted, write it with the Write tool and run it by path — that pattern never produced shell
 corruption. And **read back anything a shell wrote.**
 
-**Do not sell the `app.rs` refactor on these.** A large file *pressures* Claude toward
-generators, but the corruption is a habit that operates on small files too — the memory case
-proves it. Recorded 2026-08-02 after Doug pushed back on exactly that over-claim: the
-refactor's justification is blast radius and testability, measured in
-[`docs/ui-pause-plan.md`](docs/ui-pause-plan.md), and it did not need the help.
+**Do not sell a refactor on these** *(Doug pushed back on exactly that over-claim, 2026-08-02;
+`worker.rs` is the next candidate it could be made about)*. A large file *pressures* Claude toward
+generators, but the corruption is a habit that operates on small files too. A refactor's
+justification is blast radius and testability, and it does not need the help.
 
 **DO NOT COMMIT TROUBLESHOOTING INSTRUMENTATION, AND DO NOT CALL AN UNCONFIRMED FIX A FIX**
 *(Doug, 2026-08-03, after the LHS-width episode)*. Ten commits went into one 40 %-width bug:
