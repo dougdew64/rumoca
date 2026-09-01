@@ -669,8 +669,9 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 >
 > - **`connect-expansion.md` is the one expensive tour — but only its five guarded tables are.**
 >   It is the only tour carrying `<!-- pane-groups -->` / `pane-origins` / `pane-frames` tables,
->   which slow-gated tests verify against a real compile. **Editing one of those tables means
->   FULL**, whatever the diff-grep says; **editing its prose does not, and never did.**
+>   which slow-gated tests verify against a real compile. **Editing one of those tables means the
+>   TOUR gate** — 11.1 s, not FULL's ~101 — whatever the diff-grep says; **editing its prose does
+>   not, and never did.**
 >
 >   **YOU NO LONGER HAVE TO REMEMBER THAT** *(built 2026-08-22)*.
 >   `doc_citations::editing_a_guarded_tour_table_needs_the_full_gate` compares every guarded region
@@ -720,7 +721,7 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md); read it before touching a tour.
 >
 > **`connect-expansion.md` is still the one tour carrying `pane-groups` tables**, so editing those
-> tables still means the FULL gate.
+> tables means the **TOUR** gate — 11.1 s. It stopped meaning FULL on 2026-08-31.
 >
 > ### ⟶ AFTER `#48`: RESUME REFACTORING, AND THE GOAL IS BUGS — Doug, 2026-08-21
 >
@@ -1093,8 +1094,10 @@ cargo test -p hrw --lib tour          -- --test-threads=1   # ~0.3s
 
 **The one exception, and it is not optional:** a tour's `<!-- pane-groups -->` /
 `pane-origins` / `pane-frames` tables are checked by *slow* tests, because verifying them needs a
-real compile. **Editing one of those tables means FULL**, whatever the grep says — the diff
-touches only `docs/`, and the check that guards it does not run in the fast suite.
+real compile. The diff touches only `docs/`, so the grep says FAST — and the fast suite gates
+those tests off, so it cannot see the change at all. **That is what the TOUR gate is for**
+(11.1 s); it was FULL until 2026-08-31, which was right about needing a compile and wrong about
+needing 910 tests.
 
 **Where the ~225 s actually goes**, so nobody re-derives it: about twenty tests carry ~129 s of
 it, led by `all_healthy_specimens_simulate` (16 s), `every_stage_serializes_without_panicking`
