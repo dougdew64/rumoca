@@ -153,73 +153,38 @@ testing debt"), which also records what `egui_kittest` genuinely cannot reach �
 surfaces**: `incidence_view.rs` cells and `spyplot.rs`. The animations *are* testable.
 **Not growing the debt is free.**
 
-**NARROWED 2026-08-20: that is a claim about the PIXELS, and it had been read as a claim about
-the panes.** `matrix_panes.rs` — the pane that decides which cache is filled from which half of
-the report, which camera looks at it and what is said when there is nothing to show — now has
-**six tests running in 0.02 s**, because captions, split headings and absence notices are
-ordinary labels and a cache is a field a test reads after the frame. Nothing in either painter
-changed to allow it. **Two surfaces cannot be reached; the panes around them always could**, and
-one of those tests catches a Before/After swap that is invisible to every check about what
-reached the screen. Same shape as the scroll-area correction below: *a null result measured at
-one level was generalised into a property of the whole thing.*
+**WHEN A NULL RESULT IS ABOUT TO BECOME "THIS CANNOT BE TESTED", CHECK WHETHER EVERY PROBE WAS
+AIMED AT THE SAME LEVEL.** Three null results inside one widget became a property of the widget and
+stopped anyone looking for eight days; a claim about the **pixels** was read as a claim about the
+**panes**, and `matrix_panes.rs` had six tests available the whole time it was filed as untestable.
+**A wrong *negative* is the error nobody catches, because acting on it means not looking.**
 
-**TWO SCROLL-AREA RULES, each with a test that carries its own account.**
+**Two scroll-area rules, each with a test that carries its own account:** a scroll axis is a claim
+about how a widget negotiates size with its **parent**
+(`ui_tests::the_left_panel_content_never_detaches_from_the_divider`), and **never nest a vertical
+scroll area inside one** — the parent owns the scrolling and the height (`playback::tests_layout`).
 
-- **A scroll axis is a claim about how a widget negotiates size with its PARENT**, not a
-  local config choice — `ui_tests::the_left_panel_content_never_detaches_from_the_divider`.
-- **Never nest a vertical scroll area inside one.** The parent owns the scrolling and the
-  height; a child view just renders — `playback::tests_layout`.
-
-**The transferable rule, which is the part living nowhere else: when a null result is about to
-become "this cannot be tested", check whether every probe was aimed at the same level.** Three
-null results inside one widget were generalised into a property of the widget, and that sentence
-stopped anyone looking for eight days. **A wrong *negative* is the error nobody catches, because
-acting on it means not looking** — the same asymmetry the claims-of-absence rule below is built on.
-
-**Both bugs were reported by Doug, not by a test**, and neither is visible to `egui_kittest` — a
-clipped child is still in the accessibility tree. **Layout is the surface where his report *is* the
+**Both were reported by Doug, not by a test**, and neither is visible to `egui_kittest` — a clipped
+child is still in the accessibility tree. **Layout is the surface where his report *is* the
 verification.**
 
-**A RULE IS ALSO A CLAIM ABOUT ITS SCOPE, AND THAT IS THIS REPOSITORY'S MOST FREQUENT
-FAILURE** *(named 2026-08-21, from four instances that had each been filed as a separate
-correction)*. Every one is the same shape — **a statement true in one domain, applied in a
-wider one**:
 
-Four instances by 2026-08-21, each filed as a separate correction before anyone saw the pattern —
-the sharpest being **`fmt` missing from a two-gate rule**, which *"read as complete"* and cost 82
-unformatted hunks across a week in which clippy was run every single time. Each is recorded where
-it happened; what generalises is the shape.
+**A RULE IS ALSO A CLAIM ABOUT ITS SCOPE, and stating what it does NOT forbid costs one clause.**
+This is the repository's most frequent failure — a statement true in one domain, applied in a wider
+one — and every instance would have been safe with one such sentence. The template is proven:
+*"REPLAY means two things, and only one is forbidden"* was written precisely so a later session
+would not delete a working feature.
 
-**So the mechanism, and it costs one clause: state what a rule does NOT forbid, beside what
-it does.** The template already exists here and is proven — *"REPLAY means two things, and
-only one is forbidden"* was written precisely so a later session would not delete a working
-feature. **Every rule that has bitten us this way would have been safe with one such
-sentence.**
+**And the interpretive half, for when a rule is already written badly: a policy blocking something
+obviously valuable and zero-risk is evidence about the POLICY, not about the action.** Stop and
+re-read the rule before abandoning the move.
 
-**AND THE INTERPRETIVE HALF, which is what a reader can act on when the rule is already
-written badly: a policy blocking something obviously valuable and zero-risk is evidence about
-the POLICY, not about the action.** When a rule forbids the highest-value, lowest-risk move
-available, the odds favour a misreading over the move being wrong. **Stop and re-read the rule
-before abandoning the move.**
+**A QUALITY BAR CAN BECOME A DISCOURAGEMENT, and the fix is to price it out loud.** A rule shapes
+behaviour by making one option feel illegitimate, whatever it says — the Rumoca instrumentation
+checklist did it for weeks, until Doug priced it: *"it is much better to defend a rumoca api change
+to the repo maintainers than to defend replays."* The work landed in two days. **It was unpriced,
+not difficult.**
 
-**A QUALITY BAR CAN BECOME A DISCOURAGEMENT, AND IT HAS NOW DONE SO TWICE.** The first was
-the Rumoca instrumentation checklist: every Rumoca edit carried one and every HRW edit carried
-none, so the ungated path won and fictions accumulated for weeks. The second ran the other
-direction — **the test-block move was deferred *because* it appeared to need justification**,
-while ordinary extractions that fit the rule's template proceeded unexamined. **A rule shapes
-behaviour by making one option feel illegitimate, whatever it says.**
-
-**The fix that worked the first time is the fix: price it explicitly, out loud.** The capture
-scopes landed in two days once Doug said *"it is much better to defend a rumoca api change to
-the repo maintainers than to defend replays."* They were **unpriced, not difficult.** When a
-rule seems to forbid the obvious move, say what each option actually costs before concluding
-the rule wins.
-
-**A PLAN ORGANISED AROUND ONE KIND OF ACT HIDES EVERY OTHER KIND** — the contributing cause
-of the same episode, and it is not a policy failure at all. `app-split-plan.md` was structured
-around **seams**, so an act that is not a seam had no row in it and stayed invisible until
-someone stepped outside the frame. **When a plan has produced no progress on something
-obvious, check whether its own structure has a place to put it.**
 
 **INSERT A TEST AFTER A FUNCTION'S CLOSING BRACE, never before its `fn` line** — anything placed
 between a doc comment and its item is adopted by the wrong one, and the old function silently
@@ -327,35 +292,18 @@ those functions, or will improve your ability to test those functions and keep t
 reasoning). They encode a human-comprehension heuristic, and enforcing it would reward splitting
 a function *to satisfy the lint* — extraction with no new seam and no new test.
 
-### Trigger 2 fired for `app.rs` — what generalises is how the trigger was STATED
-
-**The arc is closed**; its record is [`docs/app-split-plan.md`](docs/app-split-plan.md).
+### Two signals that a file has outgrown what Claude can hold
 
 **State the trigger as "exceeds what Claude can hold, WITH DEFECTS TO SHOW FOR IT", never as
-"large".** Size is the heuristic this policy exists to refuse — it would equally have licensed
-splitting `worker.rs`, which was larger for most of the arc, is larger again now, and **caused none
-of the trouble.** It was left alone as the control, and **its production code is still one file.**
+"large".** Size is the heuristic this policy exists to refuse: it would equally have licensed
+splitting `worker.rs`, which was larger throughout the `app.rs` arc, caused none of the trouble,
+and whose production code is still one file. The arc's record is
+[`docs/app-split-plan.md`](docs/app-split-plan.md).
 
-### And a second observable signal: HANDOFF FREQUENCY
-
-**Doug, 2026-08-19:** *"I hope that you will consider context maintenance as a trigger for code
-refactoring."* **Worth having because it is external and countable** — the only other reliable
-signal, *"defects only a human caught"*, also does not depend on Claude's self-report, and
-**Claude is a poor sensor for his own comprehension failures.**
-
-**But it is a trigger to MEASURE, not to refactor on, and a confound largely disarms it.** Doug,
-the same day: *"ever since I switched to Opus 5, you've been context-limited."* A model change and
-a file growing cannot be told apart by counting handoffs, so use it only when the model has been
-stable across the compared period and **say which model when recording a count**. Handoffs also
-rise with prose volume and long gates.
-
-**Claude has no reliable introspective access to his own context size and must not estimate one** —
-that number belongs to the tooling, not to a guess.
-
-**And length is not the mechanism anyway** — measured 2026-08-05, both failures came from **local
-context at the edit point**, not total length, and roughly eight edits to a linear, heavily
-commented 1,085-line function did not bite. `compile_target` is hard to *test* because it takes
-`&mut self` and emits through a closure — **not because it is long.**
+**Handoff frequency is the second signal, and it MEASURES rather than triggers.** A model change
+and a file growing cannot be told apart by counting handoffs, so use it only across a stable model
+and **say which model when recording a count.** **Claude has no reliable introspective access to
+his own context size and must not estimate one** — that number belongs to the tooling.
 
 
 **The human reader is Doug, and he named two scenarios** *(2026-08-05)* that pull in opposite
