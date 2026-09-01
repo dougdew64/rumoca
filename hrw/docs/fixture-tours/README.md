@@ -788,7 +788,13 @@ questions get answered *and the tour gets fixed*. See
 you to demonstrate what your tour prose attempts to explain, and the RHS will be mostly
 helpful as a kind of lab for me to explore and test my expectations."*
 
-**So the unit of a curriculum stop is a prediction the reader commits to before looking**, and
+**THAT SENTENCE IS WHERE CHARTER DECISION 15 CAME FROM, AND IT IS DATED 2026-08-12** — three weeks
+before the decision was written. **Doug called it a lab first**, the word reached
+[`../vision.md`](../vision.md), and the only thing that happened on 2026-09-01 is that it finally
+reached the labs themselves. The metaphor was never imposed on this project; it had been sitting in
+one half of it, unapplied to the other.
+
+**So the unit of a curriculum station is a prediction the reader commits to before looking**, and
 the prose before it exists only to make that prediction possible:
 
 1. **Explain to the first point where a prediction is possible — then stop.** Not to
@@ -801,10 +807,16 @@ the prose before it exists only to make that prediction possible:
    it was written so a tour could **test HRW**, and it turns out to be how Doug learns, so it
    is now doing two jobs and gets stricter rather than looser.
 3. **Explanation comes AFTER the look**, not before. Explaining first leaves nothing to be
-   wrong about, which is comfortable and teaches less.
-4. **A stop whose pane cannot falsify anything does not belong in a tour.** Move it to
-   [`../compiler-phases/`](../compiler-phases/) as prose. A tour is for claims a pane can
-   refute.
+   wrong about, which is comfortable and teaches less. **Decision 14 MECHANISED this rather than
+   changing it** — the 🎯 capture makes look-then-ask the default path, where it used to be a
+   discipline Claude had to remember. The rule and the mechanism now agree, which is a reason to
+   keep the rule stated, not to drop it as handled.
+4. **A station whose pane cannot falsify anything does not belong in a lab.** **It needs no other
+   home: leave it out, and let Doug ask.** *(This said "move it to `../compiler-phases/` as
+   prose". That directory is Rumoca reference documentation, not an overflow store — and under
+   Decision 14 unfalsifiable material does not need storing anywhere, because it arrives on demand.
+   Corrected 2026-09-01; see the routing table under "Exploring finds omissions".)* A lab is for
+   claims a pane can refute.
 
 **And the reader audits the prose, which is the half Claude cannot do.** Every *count* in
 these tours is read from a generated trace and is sound. Doug: *"if ever during that
