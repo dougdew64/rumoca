@@ -757,7 +757,18 @@ and therefore what it may **not** assume without building it first:
 **The bar is PREDICTION, not comprehension, and this is where a correct tour can still fail.** A
 PhD reader will accept the current text as true. The test is harder: a reader who has never met a
 DAE must be able to predict what the next pane shows *and be right*. Accuracy does not imply that,
-and no checker in this repository can measure it — **only the walk can.**
+and no checker in this repository can measure it — **only running the lab can.**
+
+**AND DECISION 14 PUT THAT MEASUREMENT AT RISK, WHICH IS WORTH NAMING HERE** *(2026-09-01)*. With
+the instructor present, **a failed prediction can be rescued in conversation and neither party
+notices the lab is broken.** Doug cannot predict, asks, gets a good answer, understands — and the
+station that should have carried him is still defective. The explanation patched the gap
+invisibly.
+
+**So: a station whose prediction only worked after Claude explained it is a DEFECT in the lab, not
+a successful exchange.** It is the one place where the conversation, which Decision 14 makes the
+teaching, actively hides the measurement this bar depends on. **Say so at the bench when it
+happens** — that report is the instrument, and it costs nothing to make.
 
 **The three corrections the last walk produced are this constraint firing**, and they are the
 worked examples of it: *solver* used where *integrator* was meant (wrong difficulty named); a
