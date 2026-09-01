@@ -602,13 +602,20 @@ correctly having none."*
 
 ### The invariant is `Expected`, not `Predict`
 
-**Counted, not asserted:** `Predict` appears **zero** times in all 12 non-concept tours, and
-**once per stop** in all 10 concept tours. No gradient, no partial cases.
+**Counted on every test run, not asserted here:**
+`doc_citations::a_tour_predicts_if_and_only_if_its_kind_says_so` enforces it — `Predict` appears
+once per station in a concept tour and nowhere else. No gradient, no partial cases.
 
-So **`Expected` — a violable claim — is what every stop of every kind owes**, and it is what
-makes a tour a *test* rather than an explanation. `Predict` is merely how a **concept** tour
-earns its Expected. A feature tour earns the same claim by having you *do* the action; a failure
-tour by having you *read* the diagnosis.
+*(This paragraph used to quote the counts by hand — "all 12 non-concept tours … all 10 concept
+tours". There are **11** concept tours, and the section above already explains that per-kind counts
+were dropped on 2026-09-01 because `concept` drifted 10 → 11 with nothing to notice. The stale
+number was sitting twenty lines below the note describing it. **A checker retires the prose it
+replaces**; the reasoning lives on the test.)*
+
+So **`Expected` — a violable claim — is what every station of every kind owes**, and it is what
+makes a lab a *test* rather than an explanation. `Predict` is merely how a **concept** lab
+earns its Expected. A feature lab earns the same claim by having you *do* the action; a failure
+lab by having you *read* the diagnosis.
 
 **This corrects a framing that was steering work.** The template below used to be presented as
 the shape of *every* tour, "applied as tours are touched" — which read as *"the other twelve are
