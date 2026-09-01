@@ -423,12 +423,20 @@ the next phase touches — is procedure and lives there.
 > its first run**, six of them in `running-things.md`, which was written that morning with
 > `CLAUDE.md`-relative links and gated green four times.
 >
-> **⟶ THE ONE THING NO CHECKER COVERS, AND THE NEXT REAL WORK: the 23 labs have not been READ
-> since the rename.** Their prose was changed by substitution — `Stop N` → `Station N`, `walk` →
-> `run`. The gate proves links resolve, tables match a real compile and kinds are consistent; **it
-> cannot tell whether a sentence still reads.** Four mangled sentences were found in the governing
-> documents by grepping one predicted pattern; the labs had no equivalent pass. **Start with
-> `connect-expansion`'s opening** — and only Doug can detect this.
+> **⟶ THE LABS' PROSE WAS CHANGED BY SUBSTITUTION, AND NO CHECKER COVERS WHETHER IT STILL READS.**
+> `Stop N` → `Station N`, `walk` → `run`. The gate proves links resolve, tables match a real compile
+> and kinds are consistent; **it cannot tell whether a sentence still reads.** Four mangled
+> sentences were found in the governing documents by grepping one predicted pattern.
+>
+> **THE TWO HIGHEST-RISK CASES WERE CHECKED BY DOUG ON 2026-09-01 AND BOTH PASSED** — do not redo
+> them. **`connect-expansion`'s opening**, the densest prose in the corpus, rewritten twice under
+> the provoke-questions and code-grounding rules. And **Station 6 with `ScopedConnect`**, which
+> carried two risks at once: authored 2026-08-31 to falsify Station 1's rule, machine-checked
+> numbers, and **prose that had never had a reader.**
+>
+> **What remains is ordinary risk across the other labs**, no longer a known exposure — read them as
+> they come up rather than as a campaign. **Only Doug can detect this**, which is why it is recorded
+> here rather than queued as work.
 >
 > **AND THE RESULT CONTRADICTS WHAT BOTH OF US EXPECTED, so do not read it as failure next time:
 > Decision 16 is a CLASSIFICATION test, not a deletion test.** `The rules` grew from 622 to 640
