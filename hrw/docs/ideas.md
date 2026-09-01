@@ -1244,6 +1244,13 @@ end-to-end tour did:
 > more effective way to answer my questions than by merely emitting text here in
 > this chat window.
 
+**THE INVESTMENT CASE IS NOT YET DUE** *(moved here from `fixture-tours/README.md` on 2026-09-01,
+under charter Decision 13 — a planning note is not a rule).* The ad hoc channel is built and works;
+it becomes the **primary** one only when the fixture tours are spent. **The signal to watch is
+Doug's questions outrunning the tours**, and [`question-ledger.md`](question-ledger.md) is where to
+notice it. Charter Decision 14 does not advance this: the conversational loop during a walk is not
+an ad hoc *tour*, and produces no document.
+
 ### Why this is the missing half
 
 The project already has a noun channel *inbound*: Doug assembles context with the

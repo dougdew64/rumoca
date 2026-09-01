@@ -36,9 +36,12 @@ fixture tour has **pass/fail criteria** and an ad hoc tour has prose, and prose 
 project retired 1,632 lines of explanation for that reason, and deleted a 1,071-line tour that
 described a 7×7 matrix on a tab showing 48 equations.
 
-**Only justified because something runs them.** `fixture_tour_links_all_resolve` parses every
-link in this directory on every test run, so a vocabulary change breaks the build rather than
-breaking a document quietly. **A saved tour nobody runs is stored prose with extra steps.**
+**Only justified because something checks them and someone walks them — and those are different
+halves.** `fixture_tour_links_all_resolve` parses every link in this directory on every test run,
+so a vocabulary change breaks the build rather than breaking a document quietly. **That guards the
+plumbing, not the claims.** The expectations are executed by **Doug walking the tour**, which is
+the half of verification only a human can do. **A saved tour that is neither checked nor walked is
+stored prose with extra steps.**
 
 ### And what a tour *is*, which is a different question from what it looks like
 
@@ -84,14 +87,13 @@ using fixture tours. Eventually, after I've learned all that the fixture tours h
 begin using the ad hoc tours which you author to help answer my advanced questions."*
 
 **So fixture tours are the whole channel today, and ad hoc tours are a capability held in reserve.**
-Two consequences worth acting on:
+The consequence worth acting on:
 
-- **Do not push an ad hoc tour at a question the fixture tours already cover.** Answering in the
-  channel he is not yet using trades a durable, checked artifact for an ephemeral one.
-- **`docs/ideas.md` #42's investment case is not yet due.** The ad hoc channel is built and works;
-  it becomes the *primary* one only when the fixtures are spent. **The signal to watch is his
-  questions outrunning the tours**, which `docs/question-ledger.md` is where to notice.
-
+- **Do not AUTHOR a second document where a fixture tour already covers the ground.** Writing a
+  whole ad hoc tour over material a fixture tour already carries trades a durable, checked artifact
+  for an ephemeral one. **The waste is the duplicate document, never the answer** — answering
+  Doug's question mid-walk *is* the walk (charter Decision 14), and produces no artifact to
+  duplicate.
 **So tour content sits in one of three tiers, and a writer should know which one a sentence is in:**
 
 | tier | example in `connect-expansion.md` | kept true by |
@@ -99,6 +101,22 @@ Two consequences worth acting on:
 | **checked against a real compile** | the five `<!-- pane-* -->` tables; the `2, 2, 3` set sizes | a slow test that compiles the specimen and compares |
 | **checked structurally** | every `hrw://` link, the stop catalogue | fast tests — links resolve, `CATALOGUE.md` is current |
 | **prose** | *which* members are in which set; every explanation | **nothing. Only the walk.** |
+| **the conversation** | whatever Claude says when Doug presses 🎯 | **nothing. Only Doug, in the moment.** |
+
+**THE FOURTH ROW IS NEW, AND IT IS WHERE THE EXPOSURE MOVED** *(added 2026-09-01 with charter
+Decision 14)*. Decision 14 shifted the teaching out of the prose and into the conversation, which
+shrinks tier 3's volume without changing its status — and adds a tier that is **unchecked,
+unversioned, and delivered at the moment Doug is most receptive.** That is exactly the *effective
+but false* quadrant he cannot detect. **Claude being present to answer is not a substitute for a
+checker; it is the reason one is needed.**
+
+**THIS IS THE STANDING LOOP TARGET** *(Doug's ruling, 2026-09-01)*. When effort is available for a
+new feedback loop, it goes to the bottom two rows, because that is where the teaching now happens
+and where nothing currently looks. **The lever already exists and is `MATH-INSPIRED,
+CODE-GROUNDED` below**: a claim naming `generate_equality_equations` can be wired into
+`doc_citations`, and a claim about "graphs" can never be. **So the way to check prose and
+conversation is not to check prose and conversation — it is to require that they name code**, and
+then check the names. Grounding is the mechanism, not the manners.
 
 **THE COUNTS ARE THE CHEAP PART TO KEEP TRUE, AND THE ARGUMENT IS THE EXPENSIVE PART.** A number
 can be re-derived from a compile and compared. *"Nothing downstream ever groups connectors"* cannot
