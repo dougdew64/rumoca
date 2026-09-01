@@ -224,39 +224,22 @@ one of those tests catches a Before/After swap that is invisible to every check 
 reached the screen. Same shape as the scroll-area correction below: *a null result measured at
 one level was generalised into a property of the whole thing.*
 
-**SCROLL-AREA CONFIGURATION WAS THE THIRD, AND THAT CLAIM WAS FALSE** *(corrected
-2026-08-12, after a defect hid behind it for eight days)*. `both()` vs `vertical()` was
-recorded as *"config, not behaviour — nothing observable differs"*, on three real
-measurements that were all correct and all taken **inside** the scroll area. What differs
-is **the size of the enclosing panel**: a vertical-only area reports its content's full
-width as the width it wants, so the tour panel opened at 899pt of a 1280pt window instead
-of 512pt and the divider froze. **The question nobody asked was "does the container
-change?"** — and a scroll axis is precisely a claim about how a widget negotiates size
-with its parent. `ui_tests::the_left_panel_content_never_detaches_from_the_divider` now
-fails by name when the axis is reverted.
+**TWO SCROLL-AREA RULES, each with a test that carries its own account.**
 
-**The transferable rule: when a null result is about to become "this cannot be tested",
-check whether every probe was aimed at the same level.** Three null results inside one
-widget were generalised into a property of the widget, and that sentence stopped anyone
-looking for eight days. A wrong *negative* is the error nobody catches, because acting on
-it means **not looking** — the same asymmetry the claims-of-absence rule below is built
-on.
+- **A scroll axis is a claim about how a widget negotiates size with its PARENT**, not a
+  local config choice — `ui_tests::the_left_panel_content_never_detaches_from_the_divider`.
+- **Never nest a vertical scroll area inside one.** The parent owns the scrolling and the
+  height; a child view just renders — `playback::tests_layout`.
 
-**AND THE SECOND SCROLL-AREA BUG, 2026-08-16: NEVER NEST A VERTICAL SCROLL AREA INSIDE
-ONE.** Doug: *"the connection sets lists are not using all available vertical space…
-showing only three connection sets per list."* The rule: **the parent owns the scrolling
-and the height, and a child view just renders.** A tall model then makes a tall pane,
-which is the honest result. **The nesting is the defect; the height cap only set how
-obvious it was** — the full account is on the test's own doc comment.
+**The transferable rule, which is the part living nowhere else: when a null result is about to
+become "this cannot be tested", check whether every probe was aimed at the same level.** Three
+null results inside one widget were generalised into a property of the widget, and that sentence
+stopped anyone looking for eight days. **A wrong *negative* is the error nobody catches, because
+acting on it means not looking** — the same asymmetry the claims-of-absence rule below is built on.
 
-`playback::tests_layout` fails if a view `app.rs` wraps in a scroll area constructs one or
-caps its own height, and **derives that roster from `app.rs` instead of naming a file.**
-The per-file version guarded one view for a week while the identical defect sat in
-`alias_anim` and `ic_plan_anim`; generalising it on 2026-08-23 found both on its first run.
-
-**Both scroll-area bugs were reported by Doug, not by a test**, and neither is visible to
-`egui_kittest` — a clipped child is still in the accessibility tree. Layout remains the
-surface where his report *is* the verification.
+**Both bugs were reported by Doug, not by a test**, and neither is visible to `egui_kittest` — a
+clipped child is still in the accessibility tree. **Layout is the surface where his report *is* the
+verification.**
 
 **A RULE IS ALSO A CLAIM ABOUT ITS SCOPE, AND THAT IS THIS REPOSITORY'S MOST FREQUENT
 FAILURE** *(named 2026-08-21, from four instances that had each been filed as a separate
@@ -590,16 +573,6 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 
 ## Current work
 
-> ### ⟶ OPEN THE NEXT SESSION WITH THIS
->
-> **`the-concepts` WAS WALKED 2026-08-28, AND ITS FINDING IS THE ONE OPEN CODE DEFECT.** Prose after
-> a wide table wraps to the **table's** width, not the panel's — **Doug's diagnosis, not Claude's**,
-> and he ruled the code fix not worth the risk to the rendering path since the scrollbar reaches
-> everything. The *content* is bounded instead: `no_tour_table_is_wider_than_the_panel` at 90 chars,
-> with `structural-vs-numerical-rank` (116) the one name left in its NOT_YET_CONVERTED list, which
-> is meant to shrink. [`docs/ui-findings.md`](docs/ui-findings.md) **C21** carries the measurement
-> and an `#[ignore]`d acceptance test to un-ignore if a fix ever lands.
->
 > ### ⟶ A COMPLETE DOCUMENT REVIEW STARTS 2026-09-01, WITH **THIS FILE** FIRST
 >
 > **Doug will question every paragraph**, beginning with whether it is still needed: *"it seems to
@@ -838,10 +811,8 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > than having to remember to read `focus.json`. Its absence is visible: every line is tagged
 > `[hrw-context]`, and it says outright when `focus.json` predates the session.
 >
-> **Two obligations when a passage arrives.** The emitted text is what the pane *rendered*,
-> so it will not match the markdown byte-for-byte — locate it in the file the capture names.
-> And before improving it, check which region it sits in: `walked:` may be fixed **and
-> re-dated in the same commit**; `authored:` is Doug's and is **reported, never rewritten**.
+> **One obligation when a passage arrives.** The emitted text is what the pane *rendered*, so it
+> will not match the markdown byte-for-byte — locate it in the file the capture names.
 >
 > ### CLAUDE CAN NOW READ THE PANE — use it before asking Doug to describe anything
 >
