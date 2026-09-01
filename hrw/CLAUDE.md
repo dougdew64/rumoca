@@ -410,10 +410,16 @@ the next phase touches — is procedure and lives there.
 > 8,650 lines of Rumoca documentation on a premise only Doug could correct, and created two
 > duplicates while conducting the sweep that hunts duplicates.
 >
-> **TWO PASSES ARE COMPLETE.** The lab rules — 25 items, Doug ruling on each: 19 kept, 2 cut, 1
+> **THREE PASSES ARE COMPLETE.** The lab rules — 25 items, Doug ruling on each: 19 kept, 2 cut, 1
 > named the standing loop target, the vocabulary settled, 2 renamed. Then `The rules` here under
-> Decision 16 — 8 mechanisms, 8 category 3, 23 judgements: **2 cut, 2 routed to procedure, 1
-> duplicate removed, 18 kept.**
+> Decision 16 — 8 mechanisms, 8 category 3, 27 judgements: **2 cut, 3 routed to procedure, 1
+> duplicate removed, 21 kept.** Then `docs/fixture-labs/README.md` under Decision 16 — 40 sections,
+> **6 mechanisms (all ten cited tests verified to resolve), 9 category 3, 17 judgements**, of which
+> three needed work and two of those carried defects Claude had introduced the same day.
+>
+> **STILL OPEN, and the natural first item for the next `src/` errand: nothing resolves this file's
+> markdown links.** Five broke during the rename and the FULL gate passed.
+> `fixture_lab_links_all_resolve` covers the labs; `CLAUDE.md` has no equivalent.
 >
 > **AND THE RESULT CONTRADICTS WHAT BOTH OF US EXPECTED, so do not read it as failure next time:
 > Decision 16 is a CLASSIFICATION test, not a deletion test.** `The rules` grew from 622 to 640
@@ -422,11 +428,18 @@ the next phase touches — is procedure and lives there.
 > sweep found six times** — a mechanism exists, prose beside it does the same job by hand, and the
 > hand copy rots. The mechanism was never the wrong one.
 >
-> **⟶ THE RENAME IS DONE — charter Decision 15 executed 2026-09-01 in one atomic pass.**
+> **⟶ THE RENAME IS DONE — charter Decision 15, executed 2026-09-01 in TWO atomic passes.**
 >
-> **The vocabulary is `lab` / `station` / `observation` / `instructor`.** 127 files, ~3,750
-> occurrences, zero compile errors, full gate green, and **Doug verified the capture button and
-> live debugging by hand** — the half no gate can check. `observation`, `Predict` and `Expected`
+> **The vocabulary is `lab` / `station` / `observation` / `instructor`, and you RUN a lab in a
+> SESSION.** The first pass took the nouns — 127 files, ~3,750 occurrences — and **missed the verb
+> entirely**; Doug caught it. The second took `walk` → `run`/`session` across 85 more files. Both
+> gated green, and **Doug verified the capture button and live debugging by hand** — the half no
+> gate can check.
+>
+> **`walk` and `stop` both collided, and traversal survives untouched**: `walk_modules()`,
+> `fn walk(dir: &Path)`, `walk_blocks`, `walker`, `SIGSTOP`, `backstop`, *"Stop following"*. **Ten
+> `walk`s remain in the governing files on purpose** — two of Doug's quotations, `last_walked`'s
+> real name, Decision 14's own wording, and the collision analysis itself. `observation`, `Predict` and `Expected`
 > were already lab-native and never moved. Among the kinds only `adjudication` → `calibration`;
 > `concept`, `feature` and `failure` keep their names, and `experiment` / `orientation` /
 > `diagnosis` are **rejected on domain collisions** recorded under Decision 15.
