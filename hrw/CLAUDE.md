@@ -585,11 +585,24 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > is meant to shrink. [`docs/ui-findings.md`](docs/ui-findings.md) **C21** carries the measurement
 > and an `#[ignore]`d acceptance test to un-ignore if a fix ever lands.
 >
-> **NIGHT 7 IS QUEUED: eliminate contradictions between the governing documents** — Doug's
-> instruction, 2026-08-31, and a new lens after six nights of reading code. The plan, the
-> restore-never-choose boundary and the four passes are in
-> [`docs/unattended-runs.md`](docs/unattended-runs.md). **Night 6 ran and closed**; this line said
-> otherwise for a day, which is exactly the failure night 7 hunts.
+> **NIGHT 7 RAN AND CLOSED — four contradictions found and resolved, one ruling owed.** The
+> document lens worked on its first run. The record and the four commits are in
+> [`docs/unattended-runs.md`](docs/unattended-runs.md).
+>
+> **⟶ DOUG OWES ONE RULING: hard rule 5 against document work.** That rule says *every unattended
+> item ends in a test that fails by name; if it cannot, it is not unattended work*. **A prose
+> contradiction fix cannot.** He authorised the item explicitly so the night proceeded, with the
+> restore-never-choose boundary as the verification substitute — a *source document* rather than a
+> test. **The conflict is real and unresolved**: is rule 5 scoped to code items, or does document
+> work need a different warrant? Resolving it means ruling on what the rule is *for*, which the
+> boundary reserves to him.
+>
+> **The pattern is worth more than the four fixes.** Every contradiction was **same-day** — a
+> mechanism changed that afternoon and its description did not. Nothing had rotted over weeks. **So
+> the risk window is hours, not months**, and a day of heavy mechanism change should end with this
+> sweep rather than wait for a night. Two of the four actively instructed a session to do the thing
+> Doug had ruled a bug that same afternoon: pay FULL for a tour edit. **A mechanism does not take
+> effect when it is built — it takes effect when the documents stop contradicting it.**
 >
 > **OWED, and both wait for the next `src/` errand rather than buying a gate of their own** —
 > [`docs/tech-debt.md`](docs/tech-debt.md), *"Owed sweeps"*. Doug ruled that on 2026-08-31.

@@ -24,61 +24,20 @@ planned the run does not survive to the machine that executes it. When a run fin
 goes to the run log below and this section is overwritten by the next plan — otherwise it becomes
 the accumulating history `CLAUDE.md`'s *Current work* had to be rescued from.
 
-### QUEUED — night 7: eliminate contradictions between the governing documents
+### QUEUED — nothing. The slot is empty.
 
-**Doug, 2026-08-31:** *"I want you to thoroughly check the documents for inconsistencies and do
-your best to eliminate inconsistencies. If you are unable to resolve inconsistencies, then bring
-those to my attention in the morning."*
+**Night 7 ran and closed 2026-08-31** — the document-contradiction lens, four findings, all
+resolved. Its record is in the run log below.
 
-**A NEW LENS, and the old one is formally retired.** Every previous night read *code*. This reads
-*documents* — the wall the ceilings cannot see, named the same day: two documents stating one rule
-differently, so a session cannot tell which binds and silently picks. Test-suite timing is spent
-(`ideas.md` #48 killed six levers, night 6 the seventh) and is not to be queued again.
+**The lens is NOT spent**, so the rotation rule does not retire it: it returned four on its first
+run. **But do not queue it back-to-back.** Everything it found was *same-day* drift — a mechanism
+changed that afternoon and its description did not — so the yield came from a day of heavy
+mechanism change, not from accumulated rot. Point it at the documents again after the next such
+day, not tomorrow.
 
-**It is not speculative.** The lens found one before it was queued: *"token cost is not a
-constraint — never trade richness for economy"* in `CLAUDE.md`, against *"answer the question
-asked, at the depth asked, and stop"* in `working-with-doug.md` and *"thoroughness had been treated
-as free and is not"* **400 lines away in `CLAUDE.md` itself.** All three on the mandatory reading
-path. Doug's own words were correctly scoped to *context captures*; two rounds of summarising
-dropped the scope.
-
-#### THE BOUNDARY — restore, never choose
-
-**This is the whole safety of the night, and it is one question: is there a source of truth to
-restore to, or must I pick?**
-
-| resolve it alone | bring it to Doug |
-|---|---|
-| a digest broadened or narrowed its source — **restore the source's scope** | two deliberate statements that genuinely differ |
-| Doug's verbatim words are recorded and a gloss overreaches them | resolving it needs a ruling on what he meant |
-| a document claims another says X; that one no longer does | the fix changes what a rule *permits* |
-| a citation names a renamed or deleted symbol, file or test | anything requiring an explanation to be trimmed |
-
-**Restoring a scope from Doug's own quoted sentence is a correction, not a judgement** — that is
-what made the token-cost fix safe to make unattended. **Choosing between two things he said is a
-judgement and is his**, however obvious the answer looks at 3 a.m.
-
-#### METHOD — four passes, highest yield first
-
-1. **Digest audit.** Every place a reading-path document summarises another, compared against the
-   source. This is where the known instance came from, and `CLAUDE.md` is a digest of
-   `working-with-doug.md`, `CHARTER.md` and `docs/README.md` throughout.
-2. **Quote provenance.** Every quoted Doug sentence: does the gloss around it extend the claim?
-   Does the same quote appear elsewhere with a different gloss?
-3. **Cross-reference claims.** Every *"X says Y"* — check that X says Y. Cheap and mechanical.
-4. **Rule pairs by subject.** Group the bolded imperatives by topic and compare within each group.
-   Slowest, and the one most likely to surface a genuine conflict for Doug.
-
-**Scope: the documents that GOVERN behaviour** — `CLAUDE.md`, `docs/working-with-doug.md`,
-`docs/CHARTER.md`, `docs/README.md`, `docs/fixture-tours/README.md`, `docs/vision.md`,
-`docs/unattended-runs.md`, `DECISIONS.md`. **Not `ideas.md`** (6,349 lines of speculation) and
-**not `compiler-phases/`**: a stale idea misleads nobody the way a contradictory rule does.
-
-**Output.** One commit per resolved contradiction, each naming both sides and which source settled
-it. Everything unresolved goes in the run log below **and** the handoff, stated as a pair rather
-than a recommendation — the morning is for Doug to rule, not to ratify.
-
-**Run `cargo run -p hrw --example doc_report` first**, as every night now does.
+**The obvious next work needs Doug awake:** `connect-expansion` is rewritten and unwalked, Stop 6
+and `ScopedConnect` have never been read by anyone, and night 7 left him one ruling — hard rule 5
+against the document item, in the run log below.
 
 ### ⟶ RULED, 2026-08-25 — THE NIGHTS CONTINUE, AND ROTATION IS THE CONDITION
 
@@ -599,3 +558,47 @@ asymmetry this repository already treats as the error nobody catches.
 **So the first lens is: find a claim, then check the mechanism actually delivers it.** Test names
 and doc comments that say *every*, *all*, *always*, *never*, or *fails by name* are the cheapest
 place to start looking.
+
+---
+
+### Night 7 — 2026-08-31. Contradictions between the governing documents
+
+**Doug's item, and a new lens:** *"I want you to thoroughly check the documents for
+inconsistencies and do your best to eliminate inconsistencies. If you are unable to resolve
+inconsistencies, then bring those to my attention in the morning."*
+
+**Four found, four resolved, none needing him.** Every one was a **restore** under the boundary —
+a source of truth existed and the prose had drifted from it — so none required choosing between two
+things Doug said.
+
+| # | contradiction | settled by | commit |
+|---|---|---|---|
+| 1 | three documents named the budget ratchet retired hours earlier, one inside a **no-go rule** | the retirement, committed | `65df2587` |
+| 2 | the gate has three verdicts; two documents **and the runner's own header** said two | `gate_policy` | `6d127723` |
+| 3 | `CLAUDE.md` charged **FULL** for a guarded-table edit, three times | the checker's own message | `d3766563` |
+| 4 | the tour loop named the one gate that **cannot see a tour edit**, and said `ONLY` a `##` heading regenerates the catalogue | `gate_policy`, `tour::catalogue` | `ba8ca672` |
+
+**The pattern is one thing, and it is worth more than the four fixes.** Every contradiction was
+**same-day**: a mechanism changed and its description did not. Nothing here had rotted over weeks.
+That says the risk window is hours, not months — and that a day of heavy mechanism change should
+end with this sweep rather than wait for a night.
+
+**Findings 3 and 4 are the ones that mattered.** Both actively instructed a session to do the
+thing Doug had ruled a bug that afternoon: pay the FULL gate for a tour edit. The mechanism to
+avoid it was built and green; the prose kept sending readers around it. **A mechanism does not
+take effect when it is built — it takes effect when the documents stop contradicting it.**
+
+**Standing step:** `doc_report` ran first and was green — 76 % of ceiling, no cross-document
+duplication.
+
+#### Left for Doug — one, and it is about tonight's own plan
+
+**HARD RULE 5 says every unattended item ends in a test that fails by name; a prose contradiction
+fix cannot.** Doug authorised this item explicitly, so the night proceeded, and the
+restore-never-choose boundary served as the verification substitute — a *source document*, rather
+than a test, is what made each fix checkable. **But the rule as written forbids what the queued
+plan required, and that is a genuine conflict between two things in this file.**
+
+**Not resolved unattended, deliberately.** Resolving it means choosing whether rule 5 is scoped to
+code items or whether document work needs a different warrant — a ruling on what the rule is *for*,
+which is exactly the class the boundary reserves to Doug.

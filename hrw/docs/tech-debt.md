@@ -253,6 +253,12 @@ note; the rest quote the commit.
 | 08-24 | `ic_plan_anim`'s empty-plan message states a **cause** HRW infers — *"every unknown comes from a start attribute"* — beside a header showing Rumoca's own verdict | Claude | night 4; true today by agreement, not derivation. `ui-findings.md` C19, awaiting Doug |
 | 08-24 | 6 of 16 absence messages were named by no test, including 2 of 3 in one file where the third was tested | Claude | night 4; the survey that found them is now a standing checker |
 | 08-24 | `ideas.md` recorded lever B's status **twice and differently** — the final ledger said *declined*, an earlier table still said *blocked on a ruling* | Claude | Doug asked which MSL ruling he owed; there was none, and the stale row is what said otherwise |
+| 08-31 | *"token cost is not a constraint — never trade richness for economy"* against *"answer at the depth asked and stop"* and *"thoroughness had been treated as free and is not"*, the last **400 lines away in the same file** | **Doug** | he asked whether his own recorded declarations might contradict; his words were scoped to *context captures* and two rounds of summarising dropped the scope |
+| 08-31 | `CLAUDE.md` said **night 6 was queued and unrun**; the run log recorded it closed | Claude | pre-push handoff check. A session starting that night would have queued a spent lens and never reached Doug's night-7 instruction |
+| 08-31 | three documents named the **budget ratchet** retired hours earlier, one of them inside a no-go rule | Claude | night 7, pass 3 |
+| 08-31 | the gate has **three** verdicts; `CLAUDE.md`, `unattended-runs.md` and `examples/gate.rs`'s own header all said two | Claude | night 7, pass 4. The runner's header being wrong is the sharpest: it is what a reader checks when prose and table disagree |
+| 08-31 | `CLAUDE.md` charged **FULL** for a guarded-table edit in three places, hours after the TOUR gate made it 11.1 s | Claude | night 7. The very friction Doug ruled a bug, still being *instructed* by the file read before committing |
+| 08-31 | the tour iteration loop named the plain fast suite — **the one gate that cannot see a tour edit** — and said the catalogue regenerates `ONLY` on a `##` heading, contradicted twenty lines below | Claude | night 7. The `ONLY` cost three catalogue surprises in one day |
 
 **Seven days: Doug 8, Claude 13, toolchain 3.** Against the first two days' **Doug 10, toolchain 5,
 Claude 5**, the rate that matters moved: **Doug from ~5.0/day to ~1.1/day**, while Claude's own
