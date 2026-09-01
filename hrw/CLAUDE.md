@@ -424,24 +424,21 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > `the-concepts.md`'s own numbering: **dae-construction → matching (→ matching-live) → blt-ordering
 > → tearing → index-reduction → initialization → solve-lowering → events.**
 >
-> **`connect-expansion` IS BEING RE-WALKED FIRST**, ahead of `dae-construction`, rewritten
-> 2026-08-30 under the provoke-questions rules and **again 2026-08-31 under code-grounding** —
-> its opening walks `connections/mod.rs` and every code name is an `hrw://src` link. **Stops 1
-> and 2 have not been re-walked against that opening**; expect the seams to show there first.
-> **Stop 6 and `ScopedConnect` are BRAND NEW and have never been walked** — the specimen was
-> authored 2026-08-31 to falsify Stop 1's "twice the node count" rule, and its numbers are
-> machine-checked but its *prose* has had no reader.
-> **NOTHING TRACKS WHICH TOURS HAVE BEEN WALKED**
-> since 2026-08-31 — *"that bookkeeping doesn't yield enough value."* The `walked:` and
-> `authored:` markers and both checkers are gone, with the you-do goal the second served. **Do not
-> reintroduce either**; judge from the conversation, per `working-with-doug.md`'s table.
+> **`connect-expansion` was rewritten 2026-08-30 under the provoke-questions rules and again
+> 2026-08-31 under code-grounding** — its opening walks `connections/mod.rs` and every code name is
+> an `hrw://src` link.
 >
-> **`index-reduction.md` is mid-walk and waits its turn at #6** — asked and ruled: *"I will walk
-> the tours in compiler phase order."* **No exception for the tour already in progress.**
+> **NOTHING TRACKS OR REPORTS WHAT HAS BEEN RUN, IN A MARKER OR IN PROSE** *(Doug, 2026-09-01)*:
+> *"that discipline was turning education into a chore, including frequent pesters from you about
+> the need to walk tours."* The `walked:`/`authored:` markers went on 2026-08-31 — *"that
+> bookkeeping doesn't yield enough value"* — **and this section went on doing it by hand anyway**,
+> keeping a backlog of which stops had no reader yet and surfacing it every session. That is the
+> pestering, and it is what a session reads first. **Do not reintroduce it in either form**; judge
+> from the conversation. **Doug runs a lab when he wants to, in whatever order he likes.**
 >
-> **AND IT CARRIES A HARDER BAR**, staked in public: **index reduction explained to anybody with
-> only basic calculus** — the bar is PREDICTION, not comprehension. That constraint, the
-> provoke-questions rules and the one-tour-at-a-time rule are all in
+> **`index-reduction.md` carries a harder bar**, staked in public: **index reduction explained to
+> anybody with only basic calculus** — the bar is PREDICTION, not comprehension. That constraint,
+> the provoke-questions rules and the one-tour-at-a-time rule are all in
 > [`docs/fixture-tours/README.md`](docs/fixture-tours/README.md); read it before touching a tour.
 >
 > **REFACTORING IS QUEUED, NOT IN FLIGHT: `app.rs` then `worker.rs`, with bug discovery as the

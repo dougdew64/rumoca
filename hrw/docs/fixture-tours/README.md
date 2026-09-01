@@ -335,10 +335,14 @@ cannot un-know it. That is not a care problem — it is the same shape as this r
 finding that *Claude is a poor sensor for his own comprehension failures*. **Effectiveness is only
 measurable by someone meeting the idea for the first time.**
 
-**THE OPERATIONAL CONSEQUENCE, and it changes how a walk should be spent: Doug should not
-fact-check.** The reports only he can produce are *"I couldn't have guessed that"*, *"I had to read
-this twice"*, *"this arrived before I needed it"*, *"I don't know why you're telling me this yet."*
-Those are unrecoverable if unsaid. Whether a number is right is Claude's problem and the checkers'.
+**THE OPERATIONAL CONSEQUENCE IS A RELEASE, NOT A DUTY: Doug should not fact-check.** Whether a
+number is right is Claude's problem and the checkers'. **The things only he can see** are *"I
+couldn't have guessed that"*, *"I had to read this twice"*, *"this arrived before I needed it"*,
+*"I don't know why you're telling me this yet."*
+
+*(This read "those are unrecoverable if unsaid", which made a duty roster of it. Reworded
+2026-09-01 with the walking discipline Doug removed: **it is a description of what is useful, not a
+list of reports he owes.** Nobody learns well while filing observations.)*
 
 **AND IT GOVERNS THE CONVERSATION, NOT ONLY THE PROSE** *(2026-09-01)*. This was written about
 drafted paragraphs, but Decision 14 moved most explanation to the bench — where **both halves of
@@ -495,18 +499,25 @@ measure whether it is effective.** He reads *"understandable with only basic cal
 mind that already has the machinery and cannot un-install it either. **He is the person to convince.
 He is not the instrument.**
 
-## Walking one
+## Running one
 
-1. Run HRW — `cargo run -p hrw` from the workspace root.
-2. Open **Tour mode** and pick a tour from the row at the top.
-3. Click each link in order and check the **Expected** line beneath it.
+**Run HRW (`cargo run -p hrw`), open Tour mode, pick one.** That is the whole of it.
 
-**Notices appear in the status bar**, along the bottom of the window. Several stops expect
-one, and a reader who does not know where to look cannot check an expectation — which is a
-real bug this suite has already produced.
+**THERE IS NO WALKING DISCIPLINE, AND THERE ARE NO OBLIGATIONS ON DOUG HERE** *(his ruling,
+2026-09-01)*: *"that discipline was turning education into a chore, including frequent pesters from
+you about the need to walk tours."* **This section used to prescribe an order to click in and
+require him to report every mismatch however minor.** Both are gone. He runs a lab when he wants
+to, in whatever order he likes, and reports whatever he feels like reporting.
 
-**When something does not match, say so even if it looks minor.** Every off-stop finding so
-far came from attention left spare by a short tour, which is why they stay short.
+**The one thing worth knowing is apparatus, not procedure: notices appear in the STATUS BAR** along
+the bottom of the window. A reader who does not know where the readout is cannot read it — a real
+defect this suite has already produced. **That is the lab instructor's job, not a rule for Doug:
+point at the readout before asking anyone to read it.**
+
+**And nothing tracks or reports what has been run.** The `walked:` markers were retired
+2026-08-31 because *"that bookkeeping doesn't yield enough value"*, and the practice survived in
+prose anyway — hand-maintained backlogs of which stops had no reader yet. **Do not reintroduce it in
+either form**; judge from the conversation.
 
 ## The vocabulary — `tour`, `stop`, `observation`
 
