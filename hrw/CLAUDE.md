@@ -396,28 +396,32 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > beside it does the same job by hand, and the hand copy rots.** The mechanism was never the wrong
 > one.
 >
-> **⟶ THE RENAME IS DECIDED AND NOT YET EXECUTED. THIS IS THE NEXT WORK.**
+> **⟶ THE RENAME IS DONE — charter Decision 15 executed 2026-09-01 in one atomic pass.**
 >
-> Charter Decision 15 replaces the concept of labs with labs. **The vocabulary is settled** (rule
-> 16): **`lab` / `station` / `observation` / `instructor`** — `observation`, `Predict` and
-> `Expected` were already lab-native and do not move. Only `adjudication` → `calibration` among the
-> kinds; `concept`, `feature` and `failure` keep their names, and `experiment` / `orientation` /
+> **The vocabulary is `lab` / `station` / `observation` / `instructor`.** 127 files, ~3,750
+> occurrences, zero compile errors, full gate green, and **Doug verified the capture button and
+> live debugging by hand** — the half no gate can check. `observation`, `Predict` and `Expected`
+> were already lab-native and never moved. Among the kinds only `adjudication` → `calibration`;
+> `concept`, `feature` and `failure` keep their names, and `experiment` / `orientation` /
 > `diagnosis` are **rejected on domain collisions** recorded under Decision 15.
 >
-> **Scope: ~3,750 occurrences** — 2,117 across 39 files in `src/`, 1,629 across 65 documents, plus
-> `hrw://lab/<name>` (**every link rewritten, no alias** — Doug's ruling), the `fixture-labs/`
-> directory path, `<!-- kind: -->` markers in 23 labs, and `.hrw-bridge/lab.md`, which is live
-> state the running app polls. **HRW must be closed for that last one**; Doug's standing
-> authorisation is that it stays closed whenever Claude says so, and the obligation is to say when
-> it may reopen.
+> **Two things were deliberately NOT renamed, and both must stay that way.**
+> **`DECISIONS.md`** — 191 mentions — is history and does not bind, so an entry dated 2026-07-22
+> saying *"guided tours drive backlog prioritization"* stays true about that day; it carries a
+> vocabulary note instead. And **`end_to_end_tour.md`** is the real name of a file deleted
+> 2026-08-01 and recoverable from git under it. The bulk pass rewrote that one and a corrective
+> pass put it back; every later pass sentinel-protected it. **A proper noun naming something in the
+> past does not move when the vocabulary does.**
 >
-> **Decision 15 binds the sequence and forbids a mechanical substitution.** The reimagining is done;
-> what remains is one atomic pass. **The skeletons in `The templates` still say `Stop N` on
-> purpose** — copied into new labs, they would otherwise produce labs disagreeing with the 23
-> existing ones. Do not fix them individually.
+> **A CHECKER GAP FOUND BY GREP, NOT BY A TEST, AND STILL OPEN.** `CLAUDE.md` carried **five broken
+> links** to `docs/fixture-tours/README.md` after the directory moved, and the **full gate passed**.
+> Nothing resolves this file's markdown links, though `fixture_lab_links_all_resolve` covers the
+> labs. That is a hole in the most-read file in the reading path — **worth closing on the next
+> `src/` errand.**
 >
-> **OPEN, and Doug has not ruled:** whether the pass runs in one sitting or is staged. Staging means
-> choosing where a half-renamed tree may rest, which Decision 15 calls worse than no rename.
+> **The rename stopped cleanly at the VS Code extension**, which needed no functional change: it
+> knows about debugging, and the bridge contract it reads never carried the word. One doc comment
+> was the entire surface. That is evidence the separation is real rather than aspirational.
 >
 > Nights 1-7 and what each found are in [`docs/unattended-run-log.md`](docs/unattended-run-log.md);
 > the nightly document step is in [`docs/unattended-runs.md`](docs/unattended-runs.md), which owns

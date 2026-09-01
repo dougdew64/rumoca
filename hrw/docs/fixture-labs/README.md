@@ -871,7 +871,7 @@ about whichever file type was in front of us, and evaded three times by the next
 
 **This table defines the `hrw://` verbs, so it is where the rename lands.** `hrw://lab/<name>`
 becomes `hrw://lab/<name>` in the atomic pass — **every occurrence rewritten, no alias** (Doug,
-2026-09-01: *"we are replacing the concept of labs with the concept of labs"*).
+2026-09-01: *"we are replacing the concept of tours with the concept of labs"*).
 `fixture_lab_links_all_resolve` makes that safe: a missed link fails by name rather than rotting.
 The other four verbs are unaffected.
 

@@ -213,7 +213,7 @@ the exception.
 
 **Two rulings, both Doug's, September 1, 2026:**
 
-- **Every `hrw://lab/` link is rewritten atomically. There is no permanent alias.** *"We are replacing the concept of labs with the concept of labs."* `fixture_lab_links_all_resolve` makes this safe: a missed link fails by name rather than rotting.
+- **Every `hrw://lab/` link is rewritten atomically. There is no permanent alias.** *"We are replacing the concept of tours with the concept of labs."* `fixture_lab_links_all_resolve` makes this safe: a missed link fails by name rather than rotting.
 - **HRW stays closed whenever Claude says it must be.** *"HRW will remain closed whenever you tell me that it must be closed."* This is standing authorisation and is **not limited to the rename** — it also covers the gate, which fails while HRW holds `hrw.exe`. The obligation it creates is on Claude: **say so explicitly, and say when it may be reopened.**
 
 **The honest cost, recorded so it is not re-litigated as free.** The rename is roughly 3,750 occurrences across 39 source files and 65 documents, plus a link verb, a directory path and one live-state file. **It buys no capability.** It buys Doug's pedagogical clarity and Claude's alignment with a teaching practice that already works — which under Decision 1 is the purpose, and is therefore a legitimate purchase rather than a free one.
