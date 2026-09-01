@@ -89,11 +89,14 @@ unpriced, not difficult.** When accuracy needs a Rumoca change, the change is th
 must stay additive, observation-only and upstreamable is settled** by the workspace-root `CLAUDE.md`
 and [`docs/upstream-strategy.md`](docs/upstream-strategy.md); do not restate it here.
 
-**When you write a memory, name where it belongs in the repo** (`DECISIONS.md`, "the
-repository is the system of record"). **The memory store does not survive a clone** — it lives
-outside the repo, keyed to the project's filesystem *path*, so a different machine *or a
-different clone path* loses all of it. If a fact has no home in the repository, that is the
-finding.
+**WHEN YOU WRITE A MEMORY, NAME WHERE IT BELONGS IN THE REPO — and charter Decision 11 answers
+that**: Doug's decisions to the charter, Claude's craft here, procedure to `running-things.md`,
+history to `DECISIONS.md`. **If a fact has no home in the repository, that is the finding.**
+
+**The memory store does not survive a clone.** It lives outside the repo, keyed to the project's
+filesystem *path*, so a different machine **or a different clone path** loses all of it — and Doug
+switches machines twice a week. **Writing a memory feels like recording something**; the write
+succeeds, and the loss happens later, on a machine where nobody is looking.
 
 **THE MUST-FIRE RULE.** Any code whose job is to *report* something gets a test proving it
 reports; **silence must be a failure, never a pass.** Its absence makes a change incomplete.
@@ -102,6 +105,13 @@ an array argument collapsed by `powershell -File`, an `eprintln!` swallowed by H
 fd-level `OutputCapture`, a rate limiter gating its own first fire, an announcement silent when
 work was pending by absence. `fidelity.rs` had this discipline
 (`each_invariant_catches_its_own_violation`); the tooling around it did not.
+
+**"REPORTER" HAS WIDENED TWICE, AND THE SECOND TIME WAS 2026-09-01.** It began as *code*, then the
+Context Bar showed that **a pane is a reporter**. Then a **document** proved to be one: `CLAUDE.md`
+carried five broken links through a FULL gate because nothing resolves this file's markdown links,
+while `fixture_lab_links_all_resolve` covers the labs. **A document that cites is reporting, and an
+unresolved citation is silence passing.** Expect the noun to widen again rather than treating the
+current list as the boundary.
 
 **A PANE IS A REPORTER TOO, so a new pane that reports something ships with a headless
 test** (added 2026-08-01). The Context Bar showed three true things and silently omitted a
@@ -123,9 +133,17 @@ about how a widget negotiates size with its **parent**
 (`ui_tests::the_left_panel_content_never_detaches_from_the_divider`), and **never nest a vertical
 scroll area inside one** — the parent owns the scrolling and the height (`playback::tests_layout`).
 
-**Both were reported by Doug, not by a test**, and neither is visible to `egui_kittest` — a clipped
-child is still in the accessibility tree. **Layout is the surface where his report *is* the
-verification.**
+**AND A STANDING LIMIT ON WHAT CLAUDE CAN VERIFY AT ALL, which is not a fact about scroll areas.**
+Both of those were **reported by Doug, not caught by a test**, and neither is visible to
+`egui_kittest` — **a clipped child is still in the accessibility tree**, so a widget can be
+correct in the tree and wrong on the screen. **Where that is true, his report *is* the
+verification**, and there is no test to write instead.
+
+**It is the same boundary as *effectiveness is Doug's*, reached from the tooling side rather than
+the pedagogical one.** Expect it wherever the question is *what did it look like* rather than *what
+did it contain* — layout, legibility, whether an animation reads as a search. **Say which parts of
+a report are test-verified and which are only reasoned**, rather than letting a green run imply
+more than it measured.
 
 
 **A RULE IS ALSO A CLAIM ABOUT ITS SCOPE, and stating what it does NOT forbid costs one clause.**
