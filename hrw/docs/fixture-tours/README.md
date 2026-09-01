@@ -479,11 +479,21 @@ symmetric:
 
 **That is why accuracy outranks effectiveness when they conflict** (`CLAUDE.md`, and charter
 Decision 7): an ineffective truth costs a walk; an effective falsehood corrupts what comes after.
+**Decision 7 states the ranking; this states why it holds** — the two failures differ in
+*detectability*, not just in cost. An ineffective truth announces itself, because Doug notices he
+is lost or bored. An effective falsehood is silent by construction.
 
-**One consequence for the PhD friend, since he is the stated audience for `index-reduction.md`:**
-he judges whether the claim is **credible**; he cannot measure whether it is **effective**. He reads
-*"understandable with only basic calculus"* through a mind that already has the machinery and cannot
-un-install it either. **He is the person to convince. He is not the instrument.**
+**AND IT IS WORSE AT THE BENCH THAN ON THE PAGE** *(2026-09-01)*. Charter Decision 14 records this
+quadrant as its binding hazard, and this section is its description: a live answer is **more
+fluent, tailored to the question just asked, and arrives with no checker between it and Doug.**
+Every property that makes conversation good teaching also makes a wrong answer land better. **So
+the rule that governs drafted prose governs an answer at a stop, and more strictly.**
+
+**One consequence for any EXPERT reader** — the PhD friend is the standing example, but this holds
+for every credentialed reader of any lab: **he judges whether the claim is credible; he cannot
+measure whether it is effective.** He reads *"understandable with only basic calculus"* through a
+mind that already has the machinery and cannot un-install it either. **He is the person to convince.
+He is not the instrument.**
 
 ## Walking one
 
