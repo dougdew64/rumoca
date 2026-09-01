@@ -122,13 +122,11 @@ real Rumoca and rebases stay clean.
 - **Commit Rumoca crate changes separately from HRW code**, so an upstream PR is a clean
   cherry-pick.
 - **Ask before adding a dependency.** Record accepted ones in `DECISIONS.md`.
-- **After changing traced algorithm code, update the guided tours.**
-  `docs/compiler-phases/*/guided-tour.md` quote **line numbers, code excerpts, locals and enum
-  variants** from `crates/rumoca-phase-structural/` (`matching.rs`, `tarjan.rs`,
-  `live_trace.rs`). **Nothing compiles them, so they go stale silently** and a learner
-  following one with wrong line numbers is simply confused. Grep the tours for any name that
-  moved. This applies to *any* such change, not only a rebase — `docs/updating-rumoca.md`
-  step 6 is the rebase instance of the same rule.
+- **`docs/compiler-phases/` is refreshed at the REBASE, not at every change** — steps 6 and 7 of
+  [`docs/updating-rumoca.md`](docs/updating-rumoca.md), which own that procedure. *(Narrowed
+  2026-09-01: this file carried a second copy demanding an update after any traced-algorithm
+  change, which was a standing tax on a file nothing checks. Doug's trigger is the Rumoca version
+  bump, and the rebase runbook already had it.)*
 
 **When you write a memory, name where it belongs in the repo** (`DECISIONS.md`, "the
 repository is the system of record"). **The memory store does not survive a clone** — it lives
@@ -501,15 +499,20 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
   It is the exact tree HRW builds against, no Cargo-cache indirection. "Updating Rumoca" means
   **rebasing the `hrw` branch on upstream**, per
   [`docs/updating-rumoca.md`](docs/updating-rumoca.md).
-- **[`docs/compiler-phases/`](docs/compiler-phases/) — Claude's teaching database.** **Audience
-  is Claude, not Doug**, who reads it only indirectly through answers; Claude maintains and
-  commits it. Start at
-  [`the-chain-of-problems.md`](docs/compiler-phases/the-chain-of-problems.md). **What goes in:**
-  Doug's *questions*, the confusion behind them, and what made a thing click — **not** Claude's
-  explanations, which are regenerable and build an echo chamber a later session mistakes for
-  fact. **Every claim carries provenance** ([`docs/provenance.md`](docs/provenance.md));
-  untagged prose is a **lead, not a fact**, and upgrades lazily when a real question sends
-  Claude into the source. Two tests in `src/doc_citations.rs` check that cited paths exist.
+- **[`docs/compiler-phases/`](docs/compiler-phases/) — the closest thing that exists to Rumoca
+  documentation.** *(Corrected 2026-09-01. It was described here as "Claude's teaching database"
+  whose contents should be Doug's questions rather than Claude's explanations — which is not what
+  it is, is not how it came to exist, and caused a session to propose deleting 8,650 lines of it.)*
+  **Claude wrote these files for Doug BEFORE HRW existed**, and Doug copied them in; upstream
+  Rumoca has no equivalent. Start at
+  [`the-chain-of-problems.md`](docs/compiler-phases/the-chain-of-problems.md).
+  **They are reference, and their maintenance trigger is the Rumoca version bump** — steps 6 and 7
+  of [`docs/updating-rumoca.md`](docs/updating-rumoca.md), which own it. **Keep them.** Two tests
+  in `src/doc_citations.rs` check that their 41 `crates/` citations still resolve, which is what
+  makes a rebase surface what moved.
+  **They describe Rumoca as of the last refresh and carry no provenance tags**, so between
+  refreshes read them as a map rather than as a verified claim — the source is the arbiter.
+  **`the-chain-of-problems.md` is cited from six places in `src/`**; do not move it.
 - **[`docs/question-ledger.md`](docs/question-ledger.md)** — Doug's questions verbatim and what
   made each click. **Scan it before answering in a familiar area.** A repeat branches two ways
   demanding opposite responses: the concept is hard (try a different angle), or the thing is not

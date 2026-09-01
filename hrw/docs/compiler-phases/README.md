@@ -2,11 +2,22 @@
 
 **Purpose:** the entry point to Rumoca's compiler pipeline: where to start, what each phase
 does, and which drill-down answers which question.
-**Status:** 👤 this page and [`the-chain-of-problems.md`](the-chain-of-problems.md) are
-written for a human. **Everything below them is Claude's working database** — raw, detailed,
-and not held to that standard.
+**Status:** 👤 reference — **the closest thing that exists to Rumoca documentation.** Upstream
+has none of this. Claude wrote these files for Doug **before the HRW project existed**, and Doug
+copied them in.
 **Read when:** you want to understand a compiler phase, or you are about to change code that
 touches one.
+
+**Maintenance: these are refreshed at the Rumoca version bump**, not at every change — steps 6
+and 7 of [`../updating-rumoca.md`](../updating-rumoca.md), which own the procedure. Nothing else
+imposes an obligation on them, deliberately: a per-change tax on files no checker reads is how
+they would come to be resented rather than kept.
+
+**How to read them between refreshes.** They describe Rumoca **as of the last refresh** and carry
+no provenance tags, so treat them as **a map, not a verified claim — the source is the arbiter.**
+Their 41 `crates/` citations *are* checked by `doc_citations`, so a rebase surfaces what moved;
+prose around a still-valid path can be stale without anything saying so. The 18 places quoting a
+source **line number** are the first thing to distrust.
 
 ## Start here
 

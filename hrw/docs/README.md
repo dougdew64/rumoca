@@ -96,7 +96,7 @@ on a tab showing 48 equations.
 | 👤 [`architecture.md`](architecture.md) | How HRW works, including §11 the testing architecture and the scale/safety rules. |
 | [`context-assembly.md`](context-assembly.md) | The capture design — how a question carries its context to Claude. **Delivered**; kept for the reasoning. |
 | [`debug-set-sites.md`](debug-set-sites.md) | IR field → the Rumoca line that assigns it, for arming a breakpoint. |
-| [`compiler-phases/`](compiler-phases/) | **Mixed, deliberately.** Its 👤 [`README.md`](compiler-phases/README.md) and 👤 [`the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md) are for a human — why the pipeline has this shape. Everything below them is **Claude's teaching database**, raw and unsummarised, with untagged prose treated as a lead rather than a fact. |
+| 👤 [`compiler-phases/`](compiler-phases/) | **The closest thing that exists to Rumoca documentation** — 23 files, ~8,950 lines, written by Claude for Doug *before HRW existed* and copied in; upstream has no equivalent. **Reference, refreshed at the Rumoca version bump** ([`updating-rumoca.md`](updating-rumoca.md) steps 6-7), not per change. Start at 👤 [`the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md) — cited from six places in `src/`, so do not move it. No provenance tags: between refreshes, a map rather than a verified claim. |
 
 ## Records — append-only
 
