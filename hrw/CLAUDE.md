@@ -346,8 +346,16 @@ to Rust and egui. The surface: **`canvas.rs`, `incidence_view.rs`, `matching_ani
   `incidence_view.rs` cells or `spyplot.rs` — **exactly the code he will edit.** So **push logic out
   of the paint path into checkable data**, as `Plot::problems()` and `IncidenceMatrix::problems()`
   do. **When touching these files, move a computation out before adding one in.**
-- **This binds as files are touched, never as a campaign.** He said *eventually*; building for it
-  now would be speculation.
+- **This binds as files are touched, never as a campaign.** *(Confirmed live 2026-09-01 — Doug: "I
+  do expect to make edits to some of the visualization logic." It is no longer the hypothetical
+  "eventually" of 2026-08-05. **Some**, though: the five files are the measured surface, not a list
+  he has committed to, so a campaign would still be Claude rewriting files nobody asked about.)*
+
+**AND SCENARIO 2 IS THE ONE COUNTERWEIGHT TO CHARTER DECISION 12(b), which is worth stating so a
+later session does not apply the wrong one here.** Everywhere else, code is refactored for
+**Claude's** comprehension and never for a human's. **In these five files a human reader binds** —
+Doug specifically, new to Rust and egui. Applying 12(b) here produces terser idiomatic Rust that
+serves nobody, because the person who has to read it is the one who cannot.
 
 **The `crates/rumoca-*` instrumentation is not covered by any of this** and stays under
 `[workspace.lints]`, complexity lints included, because it is offered to human maintainers
@@ -372,11 +380,13 @@ value case is a joint rewrite** — keep that file accurate and current, but **d
 persuasion alone**: whether prose lands is the one signal Claude cannot generate, and the
 solo attempt at explanation (`end_to_end_tour.md`) is the project's clearest failure.
 
-**Tech-debt sweeps have TWO triggers** ([`docs/tech-debt.md`](docs/tech-debt.md)). Forward:
-each phase boundary, scoped to what the next phase touches. Backward (added 2026-08-01): **code
-that has produced defects only a human caught.** Ask *"who caught it?"* — toolchain, nothing to
-sweep; Doug, the code lives somewhere nothing checks. The property is **verifiability, not
-Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper than converting.
+**THE TECH-DEBT TRIGGER WORTH REMEMBERING IS "WHO CAUGHT IT?"** — **toolchain, nothing to sweep;
+a human, the code lives somewhere nothing checks.** The property is **verifiability, not Rust**, so
+adding a test, a non-vacuity guard or a loud failure is often cheaper than converting anything.
+*(2026-09-01 supplied two: Doug caught the `experiment` collision, and grep caught five broken
+links no test resolves.)* **Both triggers and the debt itself are in
+[`docs/tech-debt.md`](docs/tech-debt.md)**; the forward one — each phase boundary, scoped to what
+the next phase touches — is procedure and lives there.
 
 ---
 
