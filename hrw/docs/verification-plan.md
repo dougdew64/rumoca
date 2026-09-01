@@ -171,10 +171,15 @@ lint — prints, never fails). The convention is in `CLAUDE.md` beside the must-
    examples are drawn from real stale claims, so the first run reported *the documentation of
    the mechanism* as a defect. Fences are skipped now — an example is not an assertion.
 
-**Coverage is 2 tags, deliberately.** Both were verified absent before tagging
-(`survey_filter`, `last_walked`). The resolver errs toward "still absent" on doubt, because
-this test fails the build: a false positive costs a wrong failure, a false negative leaves a
-claim for the lint to surface.
+**Coverage is 1 tag, deliberately** (`survey_filter`), verified absent before tagging. The resolver
+errs toward "still absent" on doubt, because this test fails the build: a false positive costs a
+wrong failure, a false negative leaves a claim for the lint to surface.
+
+*(`last_walked` was the second tag and was removed on 2026-09-01 along with the paragraph carrying
+it. It marked the absence of walk-tracking derived from the action trail — work Doug ruled must not
+be done, having retired the `walked:` markers on 2026-08-31 and the walking discipline itself the
+next day. **An absence tag on forbidden work is worse than none**: it reads as a to-do a later
+session may pick up in good faith, which is exactly what an `unbuilt:` tag is designed to invite.)*
 
 ---
 

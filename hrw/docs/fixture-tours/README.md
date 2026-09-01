@@ -246,11 +246,11 @@ merely shortening the page — is in [`../vision.md`](../vision.md). The rules i
    used it — which is a better teaching moment than a definition he did not ask for.
 3. **Exposition serves the PREDICTION, not the concept.** Include what he needs to predict, and
    stop. Anything further front-loads the answer and weakens the step it precedes.
-4. **Never terse in `**Expected:**`.** **Every `**Expected:**` line must be violable** — write what
-   would be *different* if the claim were false. Terseness there destroys the falsifiability that
-   makes a walk a walk. **Decision 14 raises this rule rather than relaxing it:** with the
-   explanation moved into conversation, the checkpoint carries the teaching that a paragraph used
-   to, which is also why rule 7's redrawn line makes these Doug's and not Claude's.
+4. **Never terse in `**Expected:**`.** Terseness there destroys the falsifiability that makes a lab
+   a test — **the violability rule is stated in full under "The rules this rests on"** and is not
+   repeated here. **Decision 14 raises it rather than relaxing it:** with the explanation moved
+   into conversation, the checkpoint carries the teaching that a paragraph used to, which is also
+   why rule 7's redrawn line makes these Doug's and not Claude's.
 5. **Fewer claims, never looser ones.** *"The system is singular"* is terse and checkable;
    *"things go wrong"* is neither. Vagueness is not brevity, and an unfalsifiable sentence fails
    the same rule an unfalsifiable expectation does.
@@ -926,10 +926,11 @@ expectation**, not the number of walks. A wide tour consumes the surplus that pr
 off-stop findings rather than multiplying them, and a stop failure in a narrow tour implicates
 exactly one feature.
 
-**Every `**Expected:**` line must be violable.** Write what would be *different* if the
-feature broke — a number, a named field, "nothing moves", "the counter goes down". *"Mostly
-collapsed"* where the truth is **fully** collapsed tests nothing, and hedged expectations
-teach the reader to skim, which defeats the point.
+**Every `**Expected:**` line must be violable** — write what would be *different* if the feature
+broke: a number, a named field, "nothing moves", "the counter goes down". *"Mostly collapsed"*
+where the truth is **fully** collapsed tests nothing, and hedged expectations teach the reader to
+skim, which defeats the point. **This is the one home for that rule**; the provoke-questions
+section's fourth point cites it rather than restating it.
 
 **An expectation must say WHERE to look**, not only what to look for. A stop was once
 correctly refused with the reason on screen, and reported as "nothing happened", because the
@@ -938,10 +939,17 @@ tour never said notices live in the status bar.
 **Write the tour while you still know what should happen.** Both the worst expectations ever
 shipped here described behaviour Claude had *not* just built.
 
-**Past ten or so fixtures this needs a selection principle** — walk whatever just changed,
-plus one stale one — and **visible staleness**: nothing currently catches a tour whose
-*expectations* rot, only its links. "Last walked" is derivable from the `tour-link` entries in
-the action trail, and nobody has built it yet. <!-- unbuilt: last_walked -->
+**A GAP STATED HONESTLY, WITH NO WORK QUEUED BEHIND IT: nothing catches a lab whose EXPECTATIONS
+rot — only its links.** A renamed symbol fails a test; an expectation that quietly stopped being
+true does not. Grounding (rule 9) narrows this, because a claim naming code can be checked, but it
+does not close it.
+
+*(Until 2026-09-01 this paragraph also prescribed a selection principle — "walk whatever just
+changed, plus one stale one" — and queued a `last_walked` feature derived from the action trail.
+**Both were removed as walking discipline**, which Doug eliminated that day: the `walked:` markers
+had already gone on 2026-08-31, and this was a plan to rebuild the same tracking from a different
+source. The `unbuilt:` tag went with it, since an absence tag on work that must not be done reads
+as a to-do a later session may pick up in good faith.)*
 
 ## The templates — one per kind
 
