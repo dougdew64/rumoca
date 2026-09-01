@@ -124,7 +124,7 @@ the right vehicle for app-side reading, not for the compile path.
    ```text
    cargo run -p hrw --example gate
    ```
-   It picks FAST or FULL from the working tree, runs all four generators, adds `fmt` **and**
+   It picks FAST, TOUR or FULL from the working tree, runs all four generators, adds `fmt` **and**
    `clippy` for any `crates/rumoca-*` package touched, stops at the first failure naming what that
    step protects, and refuses to start while HRW holds `hrw.exe`.
 2. **Never leave the tree dirty.** Every item ends committed or reverted. Nothing half-done.

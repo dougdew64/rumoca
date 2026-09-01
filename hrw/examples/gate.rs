@@ -1,7 +1,7 @@
 //! **Run the pre-commit sequence in the one order that works.**
 //!
 //! ```text
-//! cargo run -p hrw --example gate            # decides FAST or FULL from the diff
+//! cargo run -p hrw --example gate            # decides FAST, TOUR or FULL from the diff
 //! cargo run -p hrw --example gate -- --full  # force the full suite
 //! cargo run -p hrw --example gate -- --fast  # force the cheap suite
 //! ```

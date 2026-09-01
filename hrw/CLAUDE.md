@@ -962,7 +962,7 @@ no longer matches the line counts `architecture.md` carries, and `architecture_r
 fails at the end of a 230-second run. **Ten instances is not a memory problem**, and this
 repository's own answer to a rule that keeps being got wrong is to give it a mechanism.
 
-`gate` picks FAST or FULL from the working tree by the rule below, runs **all four** generators
+`gate` picks FAST, TOUR or FULL from the working tree by the rule below, runs **all four** generators
 (the matching reference included, which the hand-written list omitted), adds `fmt` **and** `clippy`
 for any `crates/rumoca-*` package the change touches, stops at the first failure naming what that
 step protects, and refuses to start while HRW holds `hrw.exe`. `--fast` / `--full` override the
