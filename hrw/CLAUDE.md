@@ -584,9 +584,11 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > is meant to shrink. [`docs/ui-findings.md`](docs/ui-findings.md) **C21** carries the measurement
 > and an `#[ignore]`d acceptance test to un-ignore if a fix ever lands.
 >
-> **NIGHT 6 IS QUEUED AND UNRUN** — the 17 test compiles that bypass the shared cache, carried from
-> night 5 because that night ended, not because anything forbids it. Plan and gate cost:
-> [`docs/unattended-runs.md`](docs/unattended-runs.md).
+> **NIGHT 7 IS QUEUED: eliminate contradictions between the governing documents** — Doug's
+> instruction, 2026-08-31, and a new lens after six nights of reading code. The plan, the
+> restore-never-choose boundary and the four passes are in
+> [`docs/unattended-runs.md`](docs/unattended-runs.md). **Night 6 ran and closed**; this line said
+> otherwise for a day, which is exactly the failure night 7 hunts.
 >
 > **OWED, and both wait for the next `src/` errand rather than buying a gate of their own** —
 > [`docs/tech-debt.md`](docs/tech-debt.md), *"Owed sweeps"*. Doug ruled that on 2026-08-31.
