@@ -946,17 +946,8 @@ future code that reproduces a trace must reproduce that condition — including 
 path is *spelled*, since `parse_to_ast` stamps it into every `Location` and a `\` for a `/` made
 109 of 109 files look like total drift.
 
-**AND THE DRIVE LETTER'S CASE IS PART OF THAT SPELLING** *(2026-08-17)*. `CARGO_MANIFEST_DIR` is
-not stable in it: the committed traces carry `C:\Users\…`, and the same command in the same
-directory later produced `c:\Users\…` — from both git-bash and PowerShell, so it is cargo's
-resolution and not the shell's. A newly added specimen's four AST stages therefore differed from a
-fresh compile and failed the notebook gate, on a difference that carries no information.
-
-`gen_trace` now uppercases the drive letter before handing the path in
-(`uppercase_drive_letter`). **That is canonicalisation, not editing what the compiler said** —
-`c:\` and `C:\` name the same file, and choosing the spelling we hand in is the same deliberate act
-as `worker.rs` handing in the full document URI. Rewriting the path to be *repo-relative* is a
-different thing, changes which file the string names, and was rejected on 2026-08-16.
+**The drive letter's CASE is part of that spelling**, and `CARGO_MANIFEST_DIR` is not stable in it
+— `gen_trace::uppercase_drive_letter` canonicalises it, and its call site carries why.
 
 **MATCH THE GATE TO THE CHANGE — and the RUNNER decides, not this file** *(the prose that used
 to restate the rule was retired 2026-08-31)*.
@@ -1032,36 +1023,19 @@ seconds; `docs/ideas.md` **#48** (memoize compiled specimens) is.
 fidelity sweep: copy-paste commands, what to watch, how to resume, what each abort verdict
 means. *Why* each precaution exists is `docs/architecture.md` §11.
 
-**NEVER run the fidelity sweep unbounded, and never in a bare loop.** An unbounded 53-model run
-made Doug's machine unusable and forced a hard power-cycle (2026-07-31). Use the watchdog:
+**NEVER run the fidelity sweep unbounded, and never in a bare loop** — an unbounded 53-model run
+made Doug's machine unusable and forced a hard power-cycle (2026-07-31). **Use the watchdog, and
+follow `long-runs.md` step by step rather than from memory**: it carries the commands, the
+rust-analyzer stop, why `--release` is not optional, the 3 GB free-RAM floor and the
+no-backtick-continuations rule, each with its account.
 
-```powershell
-# stop rust-analyzer FIRST via Ctrl+Shift+P -> "rust-analyzer: Stop server"
-cargo build -p hrw --release --example fidelity_msl
-.\scripts\measure-fidelity.ps1 -ModelsFile "C:\tmp\all-models.txt" -Out "C:\Users\dougd\rumoca-runs\fid-full.csv" -Profile "C:\Users\dougd\rumoca-runs\fid-full-memory.csv"
-```
+**Two principles that outlive any particular runbook step:**
 
-**One line per command — no backtick continuations** *(2026-08-04)*. A trailing backtick is
-PowerShell's line continuation and **does not survive a paste** out of a chat window or most
-editors. When it is lost, the first line runs alone and the script starts with **every argument
-at its default**, silently — no error, no warning. Observed: `-Out`/`-Profile` fell back to a
-previous run's files and the script announced **3 models to process** instead of 2,626.
-**`--release` is likewise not optional**: the script runs `target/release/...` and a dev build
-leaves a stale release binary in place. Both are in
-[`docs/long-runs.md`](docs/long-runs.md) with the full account.
-
-**One model per process**, so the worst case is bounded by a single model. **A session rebuild
-is not a memory bound** — it releases what the session holds, not what the allocator
-fragmented. **Only process exit is.** The watchdog guards on **free RAM** (3 GB floor), not
-process size, sampled during the run: Doug proposed a 30 GB ceiling on a 31.7 GB machine, and
-*a guard that cannot fire is indistinguishable from no guard*.
-
-- Long runs go in a **standalone terminal**, not VS Code's.
-- Output goes to `C:\Users\dougd\rumoca-runs\`, **never `C:\tmp`**, and is promoted into `docs/`
-  by `cargo run -p hrw --example promote_run`, which writes the provenance sidecar.
-- **Do not rebuild an example while a run holds its binary.**
-- **Stop rust-analyzer first** — it holds ~5.7 GB here. **Do not kill the process**; VS Code
-  treats that as a crash and restarts it within seconds.
+- **Only process exit bounds memory.** A session rebuild releases what the session holds, not what
+  the allocator fragmented — hence one model per process, so the worst case is one model.
+- **A guard that cannot fire is indistinguishable from no guard.** The watchdog samples **free
+  RAM** during the run rather than process size, after a proposed 30 GB ceiling on a 31.7 GB
+  machine would never have tripped.
 
 **THE LAST LARGE SWEEP IS DONE** — 2026-08-04/05, 2,614 green, zero violations. The run and its
 numbers are in [`docs/fidelity-plan.md`](docs/fidelity-plan.md) and
