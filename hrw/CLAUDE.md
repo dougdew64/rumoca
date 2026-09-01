@@ -750,27 +750,10 @@ Rust**; adding a test, a non-vacuity guard, or a loud failure is often cheaper t
 > **`connect-expansion.md` is still the one tour carrying `pane-groups` tables**, so editing those
 > tables means the **TOUR** gate — 11.1 s. It stopped meaning FULL on 2026-08-31.
 >
-> ### ⟶ AFTER `#48`: RESUME REFACTORING, AND THE GOAL IS BUGS — Doug, 2026-08-21
->
-> **The `app.rs` arc's real return was defects found, not lines moved** — **eight** found by
-> extracting, while 71 % of the lines it shed came from one move that refactored nothing. **Two
-> diverging curves, and the bugs are the one worth buying** ([`docs/app-split-plan.md`](docs/app-split-plan.md)).
->
-> **So: resume `app.rs` with bug discovery as the stated goal, then `worker.rs`** — the order is
-> Doug's. This is trigger 3 (testability), not a line-count target, which the policy above refuses.
->
-> **THE SEAM-SELECTION HEURISTIC CHANGES WITH THE GOAL, and this is the part a session will
-> otherwise get wrong.** Most of the arc chose seams by **cheapness** — the coupling table, the
-> zero-`self` sweep. **If the goal is defects, choose by where defects are likely**: code never
-> closely read, code that cannot currently be tested, and clusters of siblings where one member
-> may differ. The plan's cheap seams are spent; that is expected and is not a reason to stop.
->
-> **AND RUN COLUMN-READ AUDITS AS A CHEAP PARALLEL ACTIVITY, because four of the eight defects
-> came from that ONE tool** — reading a list of siblings as a column and finding the odd member.
-> It found the stranded `Animate` arm, the alias defect, the Flatten stranding and the artifact
-> pane's missing gate. **It needs no extraction at all**, so it does not consume the
-> one-item-per-session budget. Extraction was the forcing function that made someone look, not the
-> mechanism that found them — so schedule the looking directly.
+> **REFACTORING IS QUEUED, NOT IN FLIGHT: `app.rs` then `worker.rs`, with bug discovery as the
+> stated goal** — Doug's standing order, 2026-08-21, unworked since. The seam heuristic, why the
+> goal changes it, and the column-read audit are in
+> [`docs/app-split-plan.md`](docs/app-split-plan.md) §3b.
 >
 > # THE WALK — standing context
 >

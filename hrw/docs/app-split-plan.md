@@ -2496,6 +2496,36 @@ first**, and treat "how many separate places is this in?" as the real size, not 
 
 ---
 
+## 3b. WHEN THIS RESUMES, THE GOAL IS BUGS — Doug, 2026-08-21
+
+*(Moved here from `CLAUDE.md`'s Current work on 2026-09-01. It is not stale — it is Doug's
+standing order and nobody has cancelled it — but it had not been worked in ten days while the
+project ran through tours, friction and documents, so it was a **plan** sitting in a section whose
+rule is "only what is in flight". Plans live in their plan document; Current work keeps a pointer.)*
+
+**The arc's real return was defects found, not lines moved** — **eight** found by extracting, while
+71 % of the lines it shed came from one move that refactored nothing. **Two diverging curves, and
+the bugs are the one worth buying.**
+
+**So: resume `app.rs` with bug discovery as the stated goal, then `worker.rs`** — the order is
+Doug's. This is trigger 3 (testability), not a line-count target, which `CLAUDE.md`'s policy
+refuses.
+
+**THE SEAM-SELECTION HEURISTIC CHANGES WITH THE GOAL, and this is the part a session will
+otherwise get wrong.** Most of the arc chose seams by **cheapness** — the coupling table, the
+zero-`self` sweep. **If the goal is defects, choose by where defects are likely**: code never
+closely read, code that cannot currently be tested, and clusters of siblings where one member may
+differ. The plan's cheap seams are spent; that is expected and is not a reason to stop.
+
+**AND RUN COLUMN-READ AUDITS AS A CHEAP PARALLEL ACTIVITY, because four of the eight defects came
+from that ONE tool** — reading a list of siblings as a column and finding the odd member. It found
+the stranded `Animate` arm, the alias defect, the Flatten stranding and the artifact pane's missing
+gate. **It needs no extraction at all**, so it does not consume the one-item-per-session budget.
+Extraction was the forcing function that made someone look, not the mechanism that found them — so
+schedule the looking directly.
+
+---
+
 ## 4. Explicitly deferred
 
 **`worker.rs` at 10,594 lines.** Doug: *"If we find that your context maintenance problems have
