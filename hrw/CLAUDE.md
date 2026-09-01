@@ -51,84 +51,39 @@ how he learns, which nothing else in this repository carries. The short form:
 
 ## The rules
 
-**EDUCATION IS THE PURPOSE, AND ACCURACY IS ITS PRECONDITION** *(Doug, 2026-08-04, the day
-this rule was found missing)*. HRW exists so Doug can learn Rumoca. **A tool that
-misrepresents Rumoca does not teach him less — it teaches him something false, and he has no
-way to tell which parts are which.** Accuracy therefore outranks every other consideration in
-this repository: features, polish, performance, a tidy log, a complete-looking pane, and **the
-cost of a change to the Rumoca crates**.
+**ACCURACY IS THE PRECONDITION OF EDUCATION, AND IT OUTRANKS EVERYTHING** — including features,
+polish, performance and **the cost of a change to the Rumoca crates**. **This is charter Decision 7,
+and the charter states it**: everything displayed must be traceable to something the compiler
+actually did on the run observed; absence is stated rather than filled; a derived view declares
+itself; a log's ordering and attribution are claims. **Doug's standing authorisation comes with it**
+— *"we will pause and fix code as often as necessary"* — so a day spent removing fictions is not a
+detour.
 
-**STOP AND FIX, AS OFTEN AS NECESSARY** — Doug's standing authorisation, in his words: *"We
-will pause and fix code as often as necessary in order to deliver accuracy."* A day spent
-removing fictions is not a detour from the curriculum. 2026-08-04 was spent entirely on it and
-was the correct use of the day.
+**Read Decision 7 rather than a summary of it.** What follows here is only what the charter does
+*not* say, because it is operational rather than constitutional.
 
-**AND THE PRIMARY REASON IS NOT DOUG'S COMFORT — IT IS WHETHER CLAUDE CAN STILL FIX IT AT ALL**
-*(Doug, 2026-08-19, stating the principle that has governed the project all along)*: *"the
-primary reason is so that we can increase the probability of you being able to fix bugs at all.
-If we wait too long to fix bugs, it will become too difficult for you to fix those bugs without
-also breaking other code which has been built atop those bugs."*
+**A STAGE'S OUTCOME IS A CLAIM TOO: `Outcome::Failed` means "the pipeline stopped here", so at most
+ONE stage per compile may carry it.** Four sites once painted whole runs of stages `Failed` for a
+single stop; `the_corpus_outcome_matrix_is_unchanged` pins it now.
 
-**THE COST OF A DELAYED FIX SCALES WITH HOW MUCH HAS COME TO DEPEND ON THE BROKEN BEHAVIOUR, NOT
-WITH HOW LONG IT HAS BEEN BROKEN. THE DANGER SIGN IS LOAD, NOT AGE.** A three-day-old bug that
-things are already leaning on is more urgent than a three-week-old one nothing touches. One day
-supplied both ends: the tour transport bar cost two dead theories because five surrounding
-constants had been tuned *around* it, while eighteen browser-opening links of the same age cost
-**minutes**, because nobody had clicked them and nothing had grown on top.
+**"REPLAY" MEANS TWO THINGS, AND ONLY ONE IS FORBIDDEN.** Both senses are live in the code and the
+UI, and confusing them has twice threatened a working feature:
 
-**And the corollary that binds Claude specifically: he is bad at telling what depends on a
-behaviour.** The divider proved it — four changes made on the assumption of independence, each
-revealing another coupling. **So "I cannot tell what is built on this yet" is itself an argument
-for fixing now**, while the answer is still small enough to discover.
+- **Playback** — stepping frames *recorded during the real compile*. This is the animation feature
+  and it is **correct**. `CompileFrames` holds them.
+- **Re-execution presented as the compile** — running an algorithm again when a tab opens and
+  drawing the result as if it were what the compiler did. This is the fiction, and it is gone.
+- **A live debug session is neither.** `PendingLiveDebug::PreLowering` genuinely re-runs a phase
+  because that is what the user asked for. It is correct and must not be "fixed".
 
-**NOTHING HRW SHOWS MAY BE INVENTED.** Every number, structure, tree, animation frame and log
-line must be traceable to something Rumoca **actually did on this run**. Three corollaries,
-each bought with a fiction removed on 2026-08-04:
+**Judge by where the frames came from, never by the word.** Without this written down a later
+session reads *"the reduction replay"* in a tour and either removes a working feature or concludes
+the fictions were dealt with and stops looking.
 
-- **Absence is stated, never filled.** A pane with nothing to show says the compiler produced
-  nothing and why. It does not derive a plausible substitute. The BLT tabs of a structurally
-  singular model rendered blocks HRW had computed itself, and a learner reading them would have
-  concluded the compiler decomposed a system it had refused to touch.
-- **A STAGE'S OUTCOME IS A CLAIM TOO: `Outcome::Failed` is defined as *"the pipeline stopped
-  here"*, so at most ONE stage per compile may carry it** *(2026-08-25)*. Four sites painted whole
-  runs of stages `Failed` for a single stop; `the_corpus_outcome_matrix_is_unchanged` now pins it.
-- **A derived view declares that it is derived.** Re-running a phase to observe it is
-  sometimes the only way to see inside it, and that is **legitimate when labelled**. What is
-  forbidden is presenting the re-run as the compilation. Every replay in HRW is now gone,
-  replaced by capture scopes recording the real run — but the rule is about the label, not the
-  mechanism, because the label was never the part that was blocked.
-- **A log line describes what happened, not what reads well.** The "DAE pipeline" bracket named
-  a phase that does not exist, in order to give five phases a tidy parent. Ordering, nesting and
-  attribution are claims, and a claim that reads nicely is still a claim.
+**AND A LARGE GREEN RESULT COVERS THE TERRITORY IT MEASURED AND NO MORE, WHILE THE CONFIDENCE IT
+PRODUCES DOES NOT KNOW THAT.** 2,614 green fidelity rows could not have caught one of the fictions,
+because every check asked about a **noun** and every fiction was a **verb**.
 
-**"REPLAY" MEANS TWO THINGS, AND ONLY ONE IS FORBIDDEN** *(recorded 2026-08-04, after the
-sweep found the collision)*. Both senses are live in this repository and in the UI:
-
-- **Playback** — stepping through frames that were *recorded during the real compile*. This is
-  the animation feature and it is **correct**. The UI says it (*"no frame 3 in this replay"*),
-  the tours say it (*"the reduction replay opens"*), and `CompileFrames` holds them.
-- **Re-execution presented as the compile** — HRW running an algorithm again when a tab opens,
-  and drawing the result as if it were what the compiler did. This is the **fiction**, and it
-  is gone.
-
-**A third case is neither**: a **live debug session** genuinely re-runs a phase under the
-debugger, because that is what the user asked for. `PendingLiveDebug::PreLowering` re-running
-from the flat model is correct and must not be "fixed".
-
-Without this distinction written down, a later session reads *"the reduction replay"* in a tour
-and either **removes a working feature** or, worse, concludes the fictions were already dealt
-with and stops looking. Judge by **where the frames came from**, never by the word.
-
-**WHY THIS RULE WAS MISSING, and it will recur in a new dress.** The other rules here protect
-against *missing* reports, *unchecked* claims of absence and *misidentified* things — **none
-forbade invented content**, so no fiction ever felt like a violation: each was written as *"here
-is a way to show him this"*, and HRW's tests check data while the falsehood lived in what the pane
-**claimed**.
-
-**A LARGE GREEN RESULT COVERS THE TERRITORY IT MEASURED AND NO MORE, AND THE CONFIDENCE IT
-PRODUCES DOES NOT KNOW THAT.** 2,614 green fidelity rows felt like they verified everything and
-could not have caught one of the fictions. *(The noun/verb split that explains why is stated where
-it is acted on — under the fidelity sweep in `Running things`.)*
 
 **Instrumentation of the Rumoca crates is intended, and must stay additive,
 observation-only, and upstreamable.** **The checklist below is a quality bar, not a
