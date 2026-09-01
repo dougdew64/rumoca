@@ -393,79 +393,36 @@ those functions, or will improve your ability to test those functions and keep t
 reasoning). They encode a human-comprehension heuristic, and enforcing it would reward splitting
 a function *to satisfy the lint* — extraction with no new seam and no new test.
 
-### Trigger 2 FIRED for `app.rs` on 2026-08-19 — the split ran, and the FRAMING is what generalises
+### Trigger 2 fired for `app.rs` — what generalises is how the trigger was STATED
 
-**The arc is closed** (2026-08-21; the record is [`docs/app-split-plan.md`](docs/app-split-plan.md),
-the closure box is under *Current work*). What is kept here is **how the trigger was stated**,
-because that is what the next candidate will be judged by.
+**The arc is closed**; its record is [`docs/app-split-plan.md`](docs/app-split-plan.md).
 
-**The case was never that the file was large.** That is the heuristic this policy exists to refuse,
-and it would equally have licensed splitting `worker.rs` — which was larger for most of the arc,
-is larger again now, and **has caused none of the trouble below.** It was deliberately left alone
-as the control.
-
-**The case was that it exceeded what Claude could hold, with defects to show for it.** In one
-session: line-number arithmetic used to locate an edit (one of the three silent-corruption causes
-this file names), Rust generated through a shell three times with doc references silently swallowed
-twice, and repeated edits made against stale assumptions about surrounding code. Each was cheaper
-than reading the region first — which is the definition of a file too big to maintain.
-
-**So state the trigger as "exceeds what Claude can hold, with defects to show for it", never as
-"large".** That stops splitting by line count — and is why **`worker.rs`'s PRODUCTION code is still
-one file**; its `#[cfg(test)]` modules moved out 2026-08-25, which refactors nothing.
+**State the trigger as "exceeds what Claude can hold, WITH DEFECTS TO SHOW FOR IT", never as
+"large".** Size is the heuristic this policy exists to refuse — it would equally have licensed
+splitting `worker.rs`, which was larger for most of the arc, is larger again now, and **caused none
+of the trouble.** It was left alone as the control, and **its production code is still one file.**
 
 ### And a second observable signal: HANDOFF FREQUENCY
 
-**Doug, 2026-08-19:** *"it has seemed that you are needing to perform context maintenance more
-frequently lately. Perhaps the increasingly large files such as `app.rs` are contributing to that.
-I hope that you will consider context maintenance as a trigger for code refactoring."*
+**Doug, 2026-08-19:** *"I hope that you will consider context maintenance as a trigger for code
+refactoring."* **Worth having because it is external and countable** — the only other reliable
+signal, *"defects only a human caught"*, also does not depend on Claude's self-report, and
+**Claude is a poor sensor for his own comprehension failures.**
 
-**This is worth having because it is external and countable.** This file already warns that
-**Claude is a poor sensor for his own comprehension failures** — both August examples were caught
-by the compiler, not by noticing confusion — and the only reliable signal recorded so far is
-*"defects only a human caught"*. Handoff frequency is a second one that does not depend on
-Claude's self-report at all.
+**But it is a trigger to MEASURE, not to refactor on, and a confound largely disarms it.** Doug,
+the same day: *"ever since I switched to Opus 5, you've been context-limited."* A model change and
+a file growing cannot be told apart by counting handoffs, so use it only when the model has been
+stable across the compared period and **say which model when recording a count**. Handoffs also
+rise with prose volume and long gates.
 
-**The mechanism is plausible:** a large file costs context per edit, context spent is session
-length lost, and shorter sessions mean more handoffs. So rising handoff frequency is a candidate
-proxy for maintainability decay.
+**Claude has no reliable introspective access to his own context size and must not estimate one** —
+that number belongs to the tooling, not to a guess.
 
-**It is a trigger to MEASURE, not to refactor on.** Handoffs also rise with prose volume, long
-gates and simply doing more in a session — 2026-08-19 involved a great deal of writing — so the
-correlation is unestablished. When it fires, the response is to find out *which files the session
-was reading*, not to start extracting.
+**And length is not the mechanism anyway** — measured 2026-08-05, both failures came from **local
+context at the edit point**, not total length, and roughly eight edits to a linear, heavily
+commented 1,085-line function did not bite. `compile_target` is hard to *test* because it takes
+`&mut self` and emits through a closure — **not because it is long.**
 
-**AND THERE IS A CONFOUND THAT LARGELY DISARMS IT, NAMED THE SAME DAY IT WAS ADOPTED.** Doug,
-2026-08-19: *"ever since I switched to Opus 5, you've been context-limited. You seemed not to
-experience context maintenance problems when we used Opus 4.6."* **A model change and a file
-growing cannot be told apart by counting handoffs**, so the signal cannot currently attribute
-anything to `app.rs`. Use it only when the model has been stable across the compared period, and
-say which model when recording a count. **Claude has no reliable introspective access to his own
-context size and must not estimate one** — that number belongs to the tooling, not to a guess.
-
-**Three costs measured that day, which do not depend on the model:**
-
-- **`app.rs` at 14,437 lines.** Editing it repeatedly caused the whole file to be re-injected —
-  hundreds of lines per occurrence. The largest single lever, and the reason
-  `format-and-app-plan.md` Step 3 reopened.
-- **Claude's own verbosity.** Commit messages ran 30–40 lines each that day. Thoroughness had
-  been treated as free and is not.
-- **Measure-revert cycles.** The divider investigation took nine or ten build-test rounds. Worth
-  paying, and worth *noticing* — a session doing that has less room for everything else.
-
-**What the evidence says length does to Claude, measured 2026-08-05.** It bit twice this week,
-and both times the cause was **local context at the edit point**, not total length: the
-`Provenance` enum inserted between `#[derive]` and its struct, and an `events_stage` borrow
-error from restructuring a match whose arms moved a value. It did **not** bite across roughly
-eight edits to `compile_target` (**1,085 lines**), which is linear and heavily commented.
-`compile_target` is hard to *test* because it takes `&mut self` and emits through a closure —
-**not because it is long.**
-
-**Claude is a poor sensor for his own comprehension failures**, and this policy should not rest
-on his self-report. Both failures above were caught by the **compiler**, not by noticing
-confusion. The reliable signal is already written down: `tech-debt.md`'s **trigger 2 — code that
-has produced defects only a human caught.** If a function starts producing defects Doug finds
-and Claude does not, the criterion has fired regardless of what Claude reports.
 
 **The human reader is Doug, and he named two scenarios** *(2026-08-05)*. They pull in opposite
 directions, so the policy is **two-tier**, not one rule:
