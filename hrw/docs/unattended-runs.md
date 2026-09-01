@@ -266,10 +266,10 @@ hit a document wall, then we can pause and work together to trim documents."*
 cargo run -p hrw --example doc_report
 ```
 
-It prints every reading path's size against its **ceiling** (`docs/reading-budgets.txt`, derived —
-the mandatory path is capped at a quarter of a 200k context) and lists **passages of 400+
-characters appearing in more than one document**. Exit **0** means nothing is needed; **1** means
-the morning starts here.
+It prints every reading path's size against its **ceiling** — the ceilings, their unit and their
+derivation are stated in [`reading-budgets.txt`](reading-budgets.txt) and nowhere else — and lists
+**passages of 400+ characters appearing in more than one document**. Exit **0** means nothing is
+needed; **1** means the morning starts here.
 
 **Why duplication and not just size.** The growth that caused the whole budget problem was never a
 document getting long — it was **the same prose in two files**, four rulings written into both
@@ -318,8 +318,8 @@ summarises — `CLAUDE.md` digests three others throughout, and both of the firs
 from this), quote provenance, cross-reference claims (*"X says Y"* — check that X says Y), then
 rule pairs grouped by subject.
 
-**A ceiling crossing is not a licence to raise the ceiling.** That was the ratchet, and it charged
-fifteen tolls in one day while rejecting nothing.
+**A ceiling crossing reports and waits.** It is never a licence to raise the ceiling — that rule,
+and why, is in [`reading-budgets.txt`](reading-budgets.txt).
 
 ## What IS good unattended work
 
