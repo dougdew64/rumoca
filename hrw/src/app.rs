@@ -2486,11 +2486,7 @@ impl App {
     /// and merging them would tie the capture's shape to the crash log's.
     fn view_context(&self) -> bridge::View<'_> {
         bridge::View {
-            ui_mode: match self.ui_mode {
-                UiMode::Tour => "Tour",
-                UiMode::Specimen => "Specimen",
-                UiMode::Debug => "Debug",
-            },
+            ui_mode: self.ui_mode.label(),
             stage_view: match self.stage {
                 StageKind::Structural | StageKind::IndexReduction => {
                     Some(structural_view_name(self.viewport.structural))
@@ -4900,7 +4896,7 @@ impl App {
                 });
                 ui.menu_button("View", |ui| {
                     if ui
-                        .selectable_label(self.ui_mode == UiMode::Tour, "Tour")
+                        .selectable_label(self.ui_mode == UiMode::Tour, UiMode::Tour.label())
                         .clicked()
                     {
                         self.ui_mode = UiMode::Tour;
@@ -4908,7 +4904,10 @@ impl App {
                         ui.close();
                     }
                     if ui
-                        .selectable_label(self.ui_mode == UiMode::Specimen, "Specimen")
+                        .selectable_label(
+                            self.ui_mode == UiMode::Specimen,
+                            UiMode::Specimen.label(),
+                        )
                         .clicked()
                     {
                         self.ui_mode = UiMode::Specimen;
@@ -4916,7 +4915,7 @@ impl App {
                         ui.close();
                     }
                     if ui
-                        .selectable_label(self.ui_mode == UiMode::Debug, "Debug")
+                        .selectable_label(self.ui_mode == UiMode::Debug, UiMode::Debug.label())
                         .clicked()
                     {
                         self.ui_mode = UiMode::Debug;

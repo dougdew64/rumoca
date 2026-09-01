@@ -71,3 +71,100 @@ pub enum UiMode {
     /// Debugger-assisted: LHS hidden, stage tabs fill the window. VS Code alongside.
     Debug,
 }
+
+impl UiMode {
+    /// Every variant, for tests that must not miss one.
+    pub const ALL: [UiMode; 3] = [UiMode::Tour, UiMode::Specimen, UiMode::Debug];
+
+    /// **The one spelling of a mode's name.** Both the View menu's label and
+    /// `focus.json`'s `ui_mode` field come from here, so they cannot disagree.
+    ///
+    /// They used to be two independent string literals — `app.rs`'s
+    /// `view_context` matched the enum to produce the bridge string, and the
+    /// menu carried its own `"Tour"` — which is a silent-drift shape this
+    /// repository has been bitten by repeatedly: nothing compared them, and
+    /// `ui_mode` is read by Claude on every prompt rather than by anyone
+    /// looking at the screen. Renaming a mode would have changed the button
+    /// and left the reported value stale, or the reverse.
+    ///
+    /// Added 2026-09-01, before the tour → lab rename, precisely because that
+    /// rename touches both sites. **Do not reintroduce a bare mode-name string
+    /// literal**; `every_ui_mode_has_one_spelling` is the guard.
+    pub fn label(self) -> &'static str {
+        match self {
+            UiMode::Tour => "Tour",
+            UiMode::Specimen => "Specimen",
+            UiMode::Debug => "Debug",
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests_ui_mode_label {
+    use super::UiMode;
+
+    /// `UiMode::ALL` lists every variant, and every label is distinct and
+    /// non-empty. The count is asserted rather than derived, following
+    /// `stage_kind_all_is_exhaustive`: adding a mode means wiring it into the
+    /// View menu *and* into what `focus.json` reports, so the count failing is
+    /// the reminder.
+    #[test]
+    fn every_ui_mode_has_a_distinct_label() {
+        assert_eq!(
+            UiMode::ALL.len(),
+            3,
+            "UiMode::ALL should list every variant (Tour, Specimen, Debug)"
+        );
+        let names: Vec<&str> = UiMode::ALL.iter().map(|m| m.label()).collect();
+        for name in &names {
+            assert!(!name.is_empty(), "a UiMode label is empty");
+        }
+        let unique: std::collections::HashSet<&&str> = names.iter().collect();
+        assert_eq!(unique.len(), names.len(), "duplicate UiMode labels in ALL");
+    }
+
+    /// **The must-fire half: no mode name may be written as a bare literal in
+    /// `app.rs`.** The test above cannot catch the failure that matters — two
+    /// call sites agreeing today and drifting tomorrow — because it only reads
+    /// `label()`. This reads the source instead, and fails if the View menu or
+    /// `view_context` goes back to spelling a mode out by hand.
+    ///
+    /// **Silence must be a failure**, so it also asserts the call sites are
+    /// still there: a test that passes because `app.rs` stopped mentioning
+    /// modes at all would be reporting nothing.
+    ///
+    /// Reverted-and-checked 2026-09-01: restoring either literal fails this by
+    /// name. It is the guard that made the tour → lab rename safe to start,
+    /// since `ui_mode` is read by Claude on every prompt and by nobody looking
+    /// at the screen.
+    #[test]
+    fn every_ui_mode_has_one_spelling() {
+        let src = include_str!("app.rs");
+        for mode in UiMode::ALL {
+            let literal = format!("\"{}\"", mode.label());
+            let bare = format!("UiMode::{:?}, {literal}", mode);
+            assert!(
+                !src.contains(&bare),
+                "app.rs spells the {:?} mode name as a bare literal ({literal}). \
+                 Use `UiMode::{:?}.label()` — the View menu and focus.json's \
+                 `ui_mode` must have one source, or a rename changes one and \
+                 leaves the other stale.",
+                mode,
+                mode
+            );
+            let via_label = format!("UiMode::{:?}.label()", mode);
+            assert!(
+                src.contains(&via_label),
+                "app.rs no longer calls `UiMode::{:?}.label()`. If the View menu \
+                 was restructured, point this test at the new call site — a pass \
+                 here must mean the labels are shared, not that nothing uses them.",
+                mode
+            );
+        }
+        assert!(
+            src.contains("ui_mode: self.ui_mode.label()"),
+            "`view_context` no longer takes `ui_mode` from `UiMode::label()`; \
+             focus.json's mode string can now drift from the button Doug clicks."
+        );
+    }
+}
