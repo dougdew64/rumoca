@@ -314,6 +314,20 @@ doc comment, beside the code enforcing it, where it cannot drift. This paragraph
 that way: `no_function_has_two_test_attributes` and `claims_of_absence_are_still_true` already
 carried their histories, so the copies here became pointers.
 
+**GENERALISED 2026-08-31 — ONE HOME PER FACT, whether or not a checker exists.** Doug: *"when
+attempting to make sense of all of these rules, you seem to struggle with conflicts."* Of seven
+contradictions found that day, **none was a disagreement about what he wants** — five were stale
+copies, two were dropped scopes. **The rules do not conflict; copies of them fall out of date.**
+And spread predicts drift: *gate* was discussed in 7 of 7 governing documents and caused three of
+the findings, while *never push* lives in one and has never drifted.
+
+- **Compress by DE-DUPLICATION, never truncation.** A rule's single statement keeps its scope and
+  its non-forbiddings — terse rules have failed here repeatedly. What goes is its *second* copy.
+- **An ACTOR may state what it must do; it may not restate WHY the rule is what it is.**
+  `unattended-runs.md` keeps what a night does at a ceiling and lost the derivation of the ceiling.
+- **Counting mentions overstates duplication.** Three of four "ceiling" hits were unrelated senses.
+  Only reading finds it, which is a limit on the nightly sweep, not a task for it.
+
 **The forcing function is a mechanism, not goodwill** — a limit
 (`doc_citations::the_mandatory_reading_path_stays_small`, stated in
 [`docs/reading-budgets.txt`](docs/reading-budgets.txt)) plus a nightly sweep (`examples/doc_report`)
