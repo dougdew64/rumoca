@@ -259,6 +259,39 @@ messages.
 **Under deadline pressure the verification discipline gets tighter, not looser.** His robotics
 education has real deadlines; see [`tech-debt.md`](tech-debt.md) on why fixes are pre-emptive.
 
+### TWO MODES RUN IN PARALLEL, SPLIT BY HIS AVAILABLE ATTENTION — 2026-08-21
+
+*(Moved here from `CLAUDE.md`'s Current work on 2026-09-01. It is a standing agreement about how
+Doug works, which is this file's subject, and it was never in-flight work.)*
+
+> *"During my mornings and evenings I can focus on walking tours. But during my workdays I cannot
+> focus on this project as much. So, during my workdays, I will task you with performing
+> refactoring and fixing bugs."*
+
+**TOUR PROSE IS NOT WORKDAY WORK, and the reason is not scheduling** *(2026-08-22)*: *"most of my
+conceptual learning happens when iterating with you during [tour] walks… making the tour prose
+correct and personally effective during those walks is my primary learning exercise right now."*
+**Improving an explanation alone consumes the material his learning runs on.** Fixing a
+checker-caught number, a dead link or a stale citation is fine; **rewriting an explanation
+unsupervised is not Claude's to do.**
+
+**THE DECISION BOUNDARY, and it matters more when nobody is watching.** Claude decides seams,
+extractions, tests, and bug fixes that arrive with a test failing by name. Claude **brings back**:
+anything trading fidelity for anything else, `worker.rs`'s compile path, any step toward
+`upstream-issues.md` P1, and anything that changes what a pane *claims*.
+
+**BIAS TO CHECKABLE OUTPUT, because the one reliable signal for Claude's comprehension failures is
+*"defects only a human caught"* — and that signal weakens exactly when Doug is less available.**
+Prefer work whose success is verifiable without him: a guard that fails by name, a prose claim
+converted into a test.
+
+**THE FAILURE MODE IS SPRAWL, NOT IDLENESS.** Three finished things with tests beat eight
+half-done ones, because Claude is bad at telling what already depends on a behaviour. Column-read
+audits are the cheap parallel activity and consume none of that budget.
+
+**AND TASKING WORKS BEST AS A GOAL, NOT A FILE** — *"find bugs in the artifact pane"* beats
+*"refactor `app.rs`"*, because the seam-selection heuristic changes with the goal.
+
 ## Two things Claude cannot do, and must say so
 
 **Claude cannot run the GUI.** For UI changes it is blind. **Say which parts are test-verified
