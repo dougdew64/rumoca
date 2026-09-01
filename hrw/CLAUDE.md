@@ -1418,11 +1418,3 @@ full; **right often enough to be trusted is the failure mode.**
 - Comparison protocol: identical solver tolerances and initial conditions, explicit `experiment`
   annotations; agreement metric = relative error on state trajectories and event-time deltas.
 - **Prefer standards** — MSL and portable Modelica over custom implementations.
-
-## Arc close-out ritual
-
-An arc is done when: (1) the specimen passes the differential test in both toolchains; (2) the
-arc's observatory pane renders the relevant IR; (3) Doug has single-stepped the phase in the
-debugger on that specimen; (4) the trace log (IR before/after) is captured; (5) this file's
-Current work section is advanced. *(Gates 1 and 3 are under review — treat as
-satisfiable-by-acceptance; `docs/ideas.md` #4.)*
