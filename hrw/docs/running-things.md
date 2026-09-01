@@ -339,6 +339,42 @@ minutes while diagnosing this. `ls -ld` on the directory answers the question in
 
 ---
 
+## Touching a Rumoca crate
+
+*(Moved from `CLAUDE.md` on 2026-09-01 under charter Decisions 11 and 16. These are commands and
+triggers — procedure. What stayed behind is the one thing that is not: that a quality bar carried by
+only one path becomes a discouragement, and the fix is to price both options out loud.)*
+
+**After touching a `crates/rumoca-*` file, run BOTH — `fmt` first, then `clippy` on the formatted
+code:**
+
+```powershell
+cargo fmt -p <that-crate> -- --check
+cargo clippy -p <that-crate> --all-targets
+```
+
+Those crates are clippy-clean **and rustfmt-clean**, and `[workspace.lints]` denies. **Upstream CI
+runs both** (`cargo fmt --all -- --check` is a gating job), so either one failing sinks a PR before
+a maintainer reads it.
+
+**`fmt` was missing from this rule until 2026-08-05, and it cost 82 unformatted hunks across four
+crates** — accumulated over a week in which clippy was run every single time, exactly as written.
+**A rule that names one of two gates reads as complete.** It was found when the fmt work was
+planned, not when the instrumentation landed.
+
+**The order matters because they interact.** Formatting rewraps lines, and rewrapping pushed
+`reduce_constrained_dummy_derivatives_with_trace` from 99 lines to **102**, over `too_many_lines`'s
+threshold of 100 — so a formatting pass turned into a build failure. Running `clippy` first tells
+you the code was clean **in a shape it will not ship in**.
+
+- **Commit Rumoca crate changes separately from HRW code**, so an upstream PR is a clean
+  cherry-pick.
+- **Ask before adding a dependency.** Record accepted ones in `../DECISIONS.md`.
+- **A `crates/` edit costs Doug one full MSL re-parse on his next launch** — the artifact cache key
+  hashes the whole `crates/` tree. Say so when proposing one; he pays it and cannot see it coming.
+- **`docs/compiler-phases/` is refreshed at the REBASE, not at every change** — steps 6 and 7 of
+  [`updating-rumoca.md`](updating-rumoca.md), which own that procedure.
+
 ## Reading a debugger stop
 
 **WHEN DOUG IS AT A BREAKPOINT, READ `hrw/.hrw-bridge/debug-state.json`** *(built 2026-08-08,

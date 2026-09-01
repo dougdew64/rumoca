@@ -51,82 +51,43 @@ how he learns, which nothing else in this repository carries. The short form:
 
 ## The rules
 
-**ACCURACY IS THE PRECONDITION OF EDUCATION, AND IT OUTRANKS EVERYTHING** — including features,
-polish, performance and **the cost of a change to the Rumoca crates**. **This is charter Decision 7,
-and the charter states it**: everything displayed must be traceable to something the compiler
-actually did on the run observed; absence is stated rather than filled; a derived view declares
-itself; a log's ordering and attribution are claims. **Doug's standing authorisation comes with it**
-— *"we will pause and fix code as often as necessary"* — so a day spent removing fictions is not a
-detour.
-
-**Read Decision 7 rather than a summary of it.** What follows here is only what the charter does
-*not* say, because it is operational rather than constitutional.
+**ACCURACY IS THE PRECONDITION OF EDUCATION AND OUTRANKS EVERYTHING** — features, polish,
+performance, and the cost of a change to the Rumoca crates. **This is charter Decision 7 and only
+the charter states it**; read it there rather than any summary. What follows here is operational:
+what the charter does *not* say.
 
 **A STAGE'S OUTCOME IS A CLAIM TOO: `Outcome::Failed` means "the pipeline stopped here", so at most
 ONE stage per compile may carry it.** Four sites once painted whole runs of stages `Failed` for a
 single stop; `the_corpus_outcome_matrix_is_unchanged` pins it now.
 
-**"REPLAY" MEANS TWO THINGS, AND ONLY ONE IS FORBIDDEN.** Both senses are live in the code and the
-UI, and confusing them has twice threatened a working feature:
+**"REPLAY" MEANS THREE THINGS AND ONLY ONE IS FORBIDDEN — judge by where the frames came from,
+never by the word.** **Playback** of frames recorded during the real compile is the animation
+feature and is **correct** (`CompileFrames`). **A live debug session** genuinely re-runs a phase
+because that is what was asked for (`PendingLiveDebug::PreLowering`) and must not be "fixed".
+**Re-execution presented as the compile** is the fiction, and it is gone. *(Twice this has
+threatened a working feature: a session reads "the reduction replay" in a lab and either deletes
+something correct or — the silent case — concludes the fictions were dealt with and stops looking.)*
 
-- **Playback** — stepping frames *recorded during the real compile*. This is the animation feature
-  and it is **correct**. `CompileFrames` holds them.
-- **Re-execution presented as the compile** — running an algorithm again when a tab opens and
-  drawing the result as if it were what the compiler did. This is the fiction, and it is gone.
-- **A live debug session is neither.** `PendingLiveDebug::PreLowering` genuinely re-runs a phase
-  because that is what the user asked for. It is correct and must not be "fixed".
-
-**Judge by where the frames came from, never by the word.** Without this written down a later
-session reads *"the reduction replay"* in a lab and either removes a working feature or concludes
-the fictions were dealt with and stops looking.
-
-**AND A LARGE GREEN RESULT COVERS THE TERRITORY IT MEASURED AND NO MORE, WHILE THE CONFIDENCE IT
+**A LARGE GREEN RESULT COVERS THE TERRITORY IT MEASURED AND NO MORE, WHILE THE CONFIDENCE IT
 PRODUCES DOES NOT KNOW THAT.** 2,614 green fidelity rows could not have caught one of the fictions,
-because every check asked about a **noun** and every fiction was a **verb**.
+because every check asked about a **noun** and every fiction was a **verb**. **And 2026-09-01 added
+a second instance: the FULL gate passed — 915 tests — while `CLAUDE.md` carried five broken links
+to a directory the rename had moved.** Nothing resolves this file's markdown links. **Before citing
+a green run as evidence, say what it measured.**
 
 
-**Instrumentation of the Rumoca crates is intended, and must stay additive,
-observation-only, and upstreamable.** **The checklist below is a quality bar, not a
-discouragement** — added 2026-08-04, because its cumulative weight had become one. Every
-Rumoca edit carried a checklist and every HRW edit carried none, so when two paths led to the
-same pane, the ungated one won and the fiction accumulated. The capture scopes that replaced
-every replay landed in **two days** once Doug priced it explicitly: *"it is much better to
-defend a rumoca api change to the repo maintainers than to defend replays."* They were
-**unpriced, not difficult.** When accuracy needs a Rumoca change, the change is the cheap
-option. Across a crate boundary a phase's `pub(crate)` internals
-are unreachable, so "accessing internals" means **additively widening visibility / adding
-observation hooks in `../crates/rumoca-*`**. Semantics-preserving, so HRW stays faithful to
-real Rumoca and rebases stay clean.
+**A QUALITY BAR BECOMES A DISCOURAGEMENT WHEN ONLY ONE PATH CARRIES IT, AND THE FIX IS TO PRICE IT
+OUT LOUD.** Every Rumoca-crate edit carried a checklist and every HRW edit carried none, so where
+two paths reached the same pane **the ungated one won and fictions accumulated for weeks.** The
+capture scopes that replaced every replay landed in **two days** once Doug priced it: *"it is much
+better to defend a rumoca api change to the repo maintainers than to defend replays."* **They were
+unpriced, not difficult.** When accuracy needs a Rumoca change, the change is the cheap option —
+**say what each option costs before concluding the harder-looking one wins.**
 
-- **After touching a `crates/rumoca-*` file, run BOTH:**
-
-  ```powershell
-  cargo clippy -p <that-crate> --all-targets
-  cargo fmt -p <that-crate> -- --check
-  ```
-
-  Those crates are clippy-clean **and rustfmt-clean**, and `[workspace.lints]` denies. **Upstream
-  CI runs both** (`cargo fmt --all -- --check` is a gating job), so either one failing sinks a PR
-  before a maintainer reads it.
-
-  **`fmt` was missing from this rule until 2026-08-05**, and it cost 82 unformatted hunks across
-  four crates — accumulated over a week in which clippy was run every single time, exactly as
-  written. **A rule that names one of two gates reads as complete.** Found only when the fmt work
-  was planned, not when the instrumentation landed.
-
-  **They interact, which is the reason to run them together rather than in sequence at the end.**
-  Formatting rewraps lines, and rewrapping pushed `reduce_constrained_dummy_derivatives_with_trace`
-  from 99 lines to **102**, over `too_many_lines`'s threshold of 100 — so a formatting pass turned
-  into a build failure. Run `fmt` first, then `clippy` on the formatted code; the reverse tells
-  you the code was clean in a shape it will not ship in.
-- **Commit Rumoca crate changes separately from HRW code**, so an upstream PR is a clean
-  cherry-pick.
-- **Ask before adding a dependency.** Record accepted ones in `DECISIONS.md`.
-- **`docs/compiler-phases/` is refreshed at the REBASE, not at every change** — steps 6 and 7 of
-  [`docs/updating-rumoca.md`](docs/updating-rumoca.md), which own that procedure. *(Narrowed
-  2026-09-01: this file carried a second copy demanding an update after any traced-algorithm
-  change, which was a standing tax on a file nothing checks. Doug's trigger is the Rumoca version
-  bump, and the rebase runbook already had it.)*
+**The gates, commit split, dependency rule and rebase triggers are procedure** —
+[`docs/running-things.md`](docs/running-things.md), *Touching a Rumoca crate*. **That instrumentation
+must stay additive, observation-only and upstreamable is settled** by the workspace-root `CLAUDE.md`
+and [`docs/upstream-strategy.md`](docs/upstream-strategy.md); do not restate it here.
 
 **When you write a memory, name where it belongs in the repo** (`DECISIONS.md`, "the
 repository is the system of record"). **The memory store does not survive a clone** — it lives
