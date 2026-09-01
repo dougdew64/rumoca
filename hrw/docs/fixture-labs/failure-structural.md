@@ -5,7 +5,7 @@
 **Specimens:** `TwiceDefined` and `CapacitorLoop`. Both are flagged `singular`. **They are not
 the same problem**, and telling them apart is the point of this lab.
 
-**Walk `failure-flatten.md` first.** It shows the balance check passing or failing on a *count*.
+**Run `failure-flatten.md` first.** It shows the balance check passing or failing on a *count*.
 This lab is about a system that passes the count and is still unsolvable.
 
 ---

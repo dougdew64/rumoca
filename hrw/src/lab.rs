@@ -484,6 +484,28 @@ impl LabSource {
         seen
     }
 
+    /// **A lab's catalogue blurb: its first bolded line.**
+    ///
+    /// Extracted from the catalogue builder on 2026-09-01 so the pin and the catalogue
+    /// share one derivation — this file already records that duplicating an extraction
+    /// produced a false claim in a comment.
+    ///
+    /// **The trap this exists to make checkable.** The blurb is derived from POSITION, so
+    /// **inserting any bolded paragraph above a lab's opening line silently replaces its
+    /// catalogue summary** — once with a mid-sentence fragment. Nothing about headings is
+    /// involved, and nothing reports it; the reflex became regenerating the catalogue
+    /// after every prose edit, ~10 s each in the mode where Doug feels every second. It
+    /// bit three times on 2026-08-31. `every_pinned_lab_claim_holds` now pins the result
+    /// through the `blurb` verb in `pinned-claims.txt`.
+    ///
+    /// **A new intro section goes BELOW the opening bold line**, or the pin fails by name.
+    pub(crate) fn blurb_of(md: &str) -> String {
+        md.lines()
+            .find(|l| l.trim_start().starts_with("**") && l.len() > 12)
+            .map(|l| l.trim().trim_start_matches("**").replace("**", ""))
+            .unwrap_or_default()
+    }
+
     /// Label for the picker. The ad hoc lab is named by what it *is* rather than by
     /// its filename, which is an implementation detail nobody should have to know.
     pub(crate) fn label(&self) -> String {
@@ -539,12 +561,7 @@ pub fn catalogue() -> String {
             .lines()
             .find_map(|l| l.strip_prefix("# "))
             .unwrap_or("(untitled)");
-        // The first bolded line: labs open with their subject in bold.
-        let lead = md
-            .lines()
-            .find(|l| l.trim_start().starts_with("**") && l.len() > 12)
-            .map(|l| l.trim().trim_start_matches("**").replace("**", ""))
-            .unwrap_or_default();
+        let lead = LabSource::blurb_of(&md);
 
         // **The same extraction the lab list uses**, not a second copy of it. The
         // first version of this duplicated the loop, and the doc comment on
@@ -603,7 +620,7 @@ pub fn catalogue() -> String {
             );
         }
         if !stops.is_empty() {
-            let _ = writeln!(s, "- **Stops:**");
+            let _ = writeln!(s, "- **Stations:**");
             for line in &stops {
                 let _ = writeln!(s, "{line}");
             }

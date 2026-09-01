@@ -4,7 +4,7 @@
 
 [The chain overview](hrw://lab/the-concepts)
 
-**A concept lab.** Walk [matching](hrw://lab/matching) first — it answers *which* equation
+**A concept lab.** Run [matching](hrw://lab/matching) first — it answers *which* equation
 solves *which* unknown, and this lab asks *in what order*.
 
 Every count below was read from the committed traces, never remembered.

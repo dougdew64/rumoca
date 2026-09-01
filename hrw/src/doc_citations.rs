@@ -287,6 +287,79 @@ mod tests {
         );
     }
 
+    /// **No lab uses retired vocabulary.**
+    ///
+    /// Charter Decision 15 replaced `tour` with `lab` and, in a second pass, `walk` with
+    /// `run`/`session`. **There is no alias** — Doug's ruling — so a reintroduction is a
+    /// defect, not a variant spelling.
+    ///
+    /// **Both renames were caught by Doug rather than by a test.** The first missed the
+    /// verb entirely; the second left `Walk [matching]` in seven labs and `**Stops:**` in
+    /// the catalogue *generator*, because the substitution regexes were case-sensitive.
+    /// That is the backward tech-debt trigger — *who caught it?* — answered "a human",
+    /// which means the code lived somewhere nothing checks.
+    ///
+    /// # Why the labs, and only the labs
+    ///
+    /// **The answer here is crisply zero**, so the check needs no allow-list — and an
+    /// allow-list is the exhaustive-list shape that has bitten this repository three
+    /// times. The governing documents legitimately hold ~297 retired words: Doug's
+    /// quotations, Decision 14's own title, `last_walked`'s real name, the traversal
+    /// senses, and `DECISIONS.md`'s 191 historical entries, which are history and do not
+    /// bind. Capping those would need per-file numbers that drift.
+    ///
+    /// **`README.md` is excluded** for the same reason: it is the rules file, and it
+    /// documents the collision analysis by naming the retired words.
+    #[test]
+    fn no_lab_uses_retired_vocabulary() {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
+        let mut bad: Vec<String> = Vec::new();
+        let mut checked = 0usize;
+
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            panic!("{} is not readable", dir.display());
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|x| x.to_str()) != Some("md") {
+                continue;
+            }
+            let name = path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string();
+            if name == "README.md" {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).unwrap_or_default();
+            checked += 1;
+            for (i, line) in text.lines().enumerate() {
+                let lower = line.to_lowercase();
+                for word in ["tour", "tours", "walk", "walks", "walked", "walking"] {
+                    // Word-bounded, so `walk_modules` and `walkable` are untouched.
+                    let bounded = lower.split(|c: char| !c.is_alphanumeric() && c != '_');
+                    if bounded.into_iter().any(|w| w == word) {
+                        bad.push(format!("{name}:{}  says {word:?}", i + 1));
+                    }
+                }
+            }
+        }
+
+        assert!(
+            checked >= 20,
+            "only {checked} labs were read from {} — the scan is broken, which looks \
+             like success",
+            dir.display(),
+        );
+        assert!(
+            bad.is_empty(),
+            "labs use vocabulary charter Decision 15 retired — a lab is a LAB, its unit \
+             a STATION, and Doug RUNS one in a SESSION:\n  {}",
+            bad.join("\n  "),
+        );
+    }
+
     /// A path that is part of a longer path is not a citation.
     ///
     /// Guards the false positive that made the first version unusable: a quoted panic
@@ -4075,8 +4148,25 @@ Some prose.
                     bad.push(format!("{lab} says {claim:?}, which is forbidden"))
                 }
                 "require" | "forbid" => {}
+                // **`blurb` pins the CATALOGUE SUMMARY, which is derived from position.**
+                // `LabSource::blurb_of` takes a lab's first bolded line, so inserting any
+                // bolded paragraph above the opening one silently replaces the summary —
+                // once with a mid-sentence fragment. It bit three times on 2026-08-31 and
+                // nothing reported it, so the reflex became regenerating the catalogue
+                // after every prose edit. A prefix is enough: an insertion changes what
+                // comes first, which is exactly what this compares.
+                "blurb" => {
+                    let actual = crate::lab::LabSource::blurb_of(&text);
+                    if !actual.starts_with(claim) {
+                        bad.push(format!(
+                            "{lab}'s catalogue blurb starts {actual:?}, not {claim:?} — \
+                             a bolded line was inserted above the opening one, which \
+                             silently rewrites the summary",
+                        ));
+                    }
+                }
                 other => panic!(
-                    "{}:{} has kind {other:?}; only `require` and `forbid` exist",
+                    "{}:{} has kind {other:?}; only `require`, `forbid` and `blurb` exist",
                     path.display(),
                     i + 1,
                 ),

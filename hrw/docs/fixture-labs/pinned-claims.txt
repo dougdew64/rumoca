@@ -70,3 +70,43 @@ matching-live.md | require | A **break** is where the *debugger* halts execution
 matching-live.md | forbid  | debugger stop
 matching-live.md | forbid  | at every stop
 matching-live.md | forbid  | about a stop
+
+# ---------------------------------------------------------------------------
+# BLURB PINS -- 2026-09-01
+# ---------------------------------------------------------------------------
+#
+# A lab's catalogue summary is its FIRST BOLDED LINE, derived by position
+# (`LabSource::blurb_of`). So inserting any bolded paragraph above the opening one
+# silently replaces the summary -- once with a mid-sentence fragment, and nothing
+# reported it. It bit three times on 2026-08-31, which is why the reflex became
+# regenerating the catalogue after every prose edit at ~10 s each.
+#
+# A `blurb` pin holds a PREFIX of the expected summary. An insertion changes what comes
+# first, which is exactly what the check compares -- so a short prefix is enough, and a
+# short one also survives ordinary rewording of the sentence's tail.
+#
+# **A new intro section goes BELOW the opening bold line.** If one belongs above, the
+# pin moves with it deliberately rather than the catalogue changing in silence.
+
+blt-ordering.md                 | blurb | A concept lab. Run
+camera-aiming.md                | blurb | This is a test, not an explanation.
+connect-expansion.md            | blurb | This lab counts.
+dae-construction.md             | blurb | A concept lab. It teaches
+events.md                       | blurb | A concept lab. Run
+failure-flatten.md              | blurb | Specimen: `UnbalancedShaft`
+failure-initialization.md       | blurb | Specimens: `OverInitRc`
+failure-parse.md                | blurb | Specimen: `UnclosedModel`
+failure-resolve.md              | blurb | Specimens: `UndefinedRef`
+failure-structural.md           | blurb | Specimens: `TwiceDefined`
+failure-typecheck.md            | blurb | Specimen: `DimensionMismatch`
+frame-seeking.md                | blurb | This is a test, not an explanation.
+index-reduction.md              | blurb | A concept lab. Run
+initialization.md               | blurb | A concept lab. Run
+matching-live.md                | blurb | A concept lab, pass two.
+matching.md                     | blurb | A concept lab. It teaches
+node-pointing.md                | blurb | This is a test, not an explanation.
+solve-lowering.md               | blurb | A concept lab. The last phase
+structural-vs-numerical-rank.md | blurb | The first cross-platform lab.
+tearing.md                      | blurb | A concept lab. Run
+the-concepts.md                 | blurb | Start here.
+the-oracle.md                   | blurb | A lab that leaves HRW

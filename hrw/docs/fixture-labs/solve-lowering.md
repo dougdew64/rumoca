@@ -4,7 +4,7 @@
 
 [The chain overview](hrw://lab/the-concepts)
 
-**A concept lab.** The last phase before simulation. Walk [events](hrw://lab/events) first.
+**A concept lab.** The last phase before simulation. Run [events](hrw://lab/events) first.
 
 Every count below was read from the committed traces, never remembered.
 

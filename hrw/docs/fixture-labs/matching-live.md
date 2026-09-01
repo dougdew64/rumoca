@@ -5,7 +5,7 @@
 [The chain overview](hrw://lab/the-concepts)
 
 **A concept lab, pass two.** [matching](hrw://lab/matching) taught the idea; this one is about
-**Rumoca's code**, stepped in a debugger while it runs. Walk the pass-one lab first — the stops
+**Rumoca's code**, stepped in a debugger while it runs. Run the pass-one lab first — the stations
 below assume you know what a matching is and what a rank deficiency means.
 
 **This is the only lab that needs setup.** Station 0 is not optional, and it is setup rather than

@@ -397,6 +397,7 @@ reading path and this file is not. A pointer stays there.
 |---|---|---|
 | **Blurb pinning** | Pin each lab's catalogue blurb to its expected first bolded line | bit 3× on 2026-08-31 |
 | **Placeholder extraction** | Teach `extract_hrw_links` to skip targets containing `<` | bit 2× the same day |
+| **Retired vocabulary** | Pin the count of retired words (`tour`, `stop`-as-a-unit, `walk`-as-a-session) with an allow-list of the deliberate historical uses | both renames were caught by **Doug**, not a test |
 | **Lab-region predicate** | Exclude `README.md` and `CATALOGUE.md` from `gate_policy::touches_a_verified_lab_region` | 5 s per README edit |
 
 **The first two are the same session's self-inflicted wounds, and the first is the expensive one.**

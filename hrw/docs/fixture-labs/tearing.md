@@ -4,7 +4,7 @@
 
 [The chain overview](hrw://lab/the-concepts)
 
-**A concept lab.** Walk [blt-ordering](hrw://lab/blt-ordering) first — it produces the coupled
+**A concept lab.** Run [blt-ordering](hrw://lab/blt-ordering) first — it produces the coupled
 blocks this lab tries to shrink.
 
 Every count below was read from the committed traces, never remembered.

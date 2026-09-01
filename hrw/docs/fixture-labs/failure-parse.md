@@ -6,7 +6,7 @@
 
 **What this lab is for.** Every other failure lab in this set shows a phase *reporting* a
 problem and carrying on. This one shows the exception: a phase that **stops**, leaving nine
-stages with nothing at all. Walk it first — the others only make sense against it.
+stages with nothing at all. Run it first — the others only make sense against it.
 
 **The question to hold:** when a pane has nothing to show, how do you tell *"the compiler
 produced nothing"* from *"HRW failed to display something"*? That distinction is the whole

@@ -2,10 +2,10 @@
 
 <!-- kind: failure -->
 
-**Specimens:** `UndefinedRef` and `MissingComponentClass`. Walk them together; neither is worth
+**Specimens:** `UndefinedRef` and `MissingComponentClass`. Run them together; neither is worth
 much alone.
 
-**Walk the Parse failure lab first** — or jump straight to the stop that draws the distinction:
+**Run the Parse failure lab first** — or jump straight to the stop that draws the distinction:
 [failure-parse, stop 4](hrw://lab/failure-parse/station/station-4-the-distinction-this-specimen-anchors).
 It establishes `Failed` versus `Flagged`, and this lab is the
 first case of the second kind.

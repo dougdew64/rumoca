@@ -4,7 +4,7 @@
 
 [The chain overview](hrw://lab/the-concepts)
 
-**A concept lab.** Walk [index-reduction](hrw://lab/index-reduction) first — this phase runs on
+**A concept lab.** Run [index-reduction](hrw://lab/index-reduction) first — this phase runs on
 the reduced, index-1 system.
 
 Every count below was read from the committed traces, never remembered.

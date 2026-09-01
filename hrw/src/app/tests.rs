@@ -3356,6 +3356,31 @@ fn extract_hrw_links_deduplicates() {
     assert_eq!(links.len(), 1);
 }
 
+/// **A metavariable is not a link, and neither is a bare verb.**
+///
+/// `hrw://lab/<name>` and `hrw://src/<workspace path>` are prose *describing* a verb;
+/// `hrw://tour/` written mid-sentence names nothing. Both extracted as real URLs and
+/// failed the reference checkers — loudly, which is better than silently, but for a
+/// document that was correct.
+///
+/// **Bitten three times**: twice on 2026-08-31, and again on 2026-09-01 when a sentence
+/// explaining the rename contained `hrw://tour/` and the citation checker reported a lab
+/// named `""`. Each time the fix was to reword the prose; this fixes the extractor.
+///
+/// The positive cases are asserted alongside, so a skip rule that swallowed everything
+/// would fail here rather than looking like success.
+#[test]
+fn extract_hrw_links_skips_placeholders_and_bare_verbs() {
+    let md = "Write [it](hrw://lab/<name>) or `hrw://src/<workspace path>`, never a bare \
+              hrw://tour/ in prose — but [this](hrw://load/RcCircuit) is real.";
+    let links = extract_hrw_links(md);
+    assert_eq!(
+        links,
+        vec!["hrw://load/RcCircuit"],
+        "a placeholder or a bare verb must not register a hook that can never fire"
+    );
+}
+
 /// **Every `hrw://` link in every committed lab survives extraction AND parsing.**
 ///
 /// Doug, 2026-08-16: *"There are two Act 2 links which don't cause any action when
@@ -5737,10 +5762,20 @@ fn the_notebook_verb_needs_a_name() {
     assert!(parse_hrw_link("hrw://notebook").is_none());
 }
 
-/// A verb written in prose, inside a code span, is not a link.
+/// A backtick ends a URL, and a bare verb written in prose is not a link.
 ///
 /// Documentation about `hrw://` belongs in labs and doc comments, and writing it in
 /// backticks is how one writes it. The extractor must not turn that into a hook.
+///
+/// **This test was previously misnamed against its own assertion** *(corrected
+/// 2026-09-01)*. It was called *"a code span mention is not extracted"* and then asserted
+/// that `hrw://notebook/` **was** extracted — proving only the backtick terminator, while
+/// its name claimed the stronger property. The extractor now skips bare verbs, so the
+/// name is finally true, and both facts are asserted separately.
+///
+/// **The extractor still cannot see code spans**, and the name must not be read as
+/// claiming otherwise: `` `hrw://notebook/x.nb` `` in backticks *is* extracted, because
+/// it names a real target and stopping at the backtick is all the extractor does.
 #[test]
 fn a_code_span_mention_is_not_extracted_as_a_link() {
     let md = "Use the [notebook verb](hrw://notebook/x.nb). \
@@ -5748,8 +5783,8 @@ fn a_code_span_mention_is_not_extracted_as_a_link() {
     let links = extract_hrw_links(md);
     assert_eq!(
         links,
-        vec!["hrw://notebook/x.nb", "hrw://notebook/"],
-        "the code-span mention stops at the backtick rather than swallowing it",
+        vec!["hrw://notebook/x.nb"],
+        "the bare verb is skipped, and the real link is unaffected by the backtick",
     );
     // ...and the truncated mention does not parse, so nothing acts on it.
     assert!(parse_hrw_link("hrw://notebook/").is_none());

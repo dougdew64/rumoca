@@ -4,7 +4,7 @@
 
 [The chain overview](hrw://lab/the-concepts)
 
-**A concept lab.** Walk [blt-ordering](hrw://lab/blt-ordering) and
+**A concept lab.** Run [blt-ordering](hrw://lab/blt-ordering) and
 [tearing](hrw://lab/tearing) first. Every model in those was solvable once ordered; this lab
 is about models that are not, and it ends with one that Rumoca cannot rescue at all.
 

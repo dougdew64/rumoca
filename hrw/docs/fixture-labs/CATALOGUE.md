@@ -10,11 +10,11 @@
 
 **Fixture lab — BLT: finding an order, and finding out there isn't one**
 
-A concept lab. Walk [matching](hrw://lab/matching) first — it answers *which* equation
+A concept lab. Run [matching](hrw://lab/matching) first — it answers *which* equation
 
 - **Specimens:** `RcCircuit`, `ProportionalLoop`, `TwoLoops`
 - **Stages:** `Structural`
-- **Stops:**
+- **Stations:**
   - `fixture-lab-blt-finding-an-order-and-finding-out-there-isn-t-one` — Fixture lab — BLT: finding an order, and finding out there isn't one
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `station-1-when-an-order-exists` — Station 1 — When an order exists
@@ -32,7 +32,7 @@ This is a test, not an explanation. It exists so Doug can verify the half of cam
 
 - **Specimens:** `RcCircuit`
 - **Stages:** `Structural`
-- **Stops:**
+- **Stations:**
   - `fixture-lab-camera-aiming` — Fixture lab — camera aiming
   - `station-1-load-and-note-where-the-camera-starts` — Station 1 — Load, and note where the camera starts
   - `station-2-aim-at-the-first-equation` — Station 2 — Aim at the first equation
@@ -49,7 +49,7 @@ This lab counts. `RcCircuit` has four `connect` statements and twenty-three equa
 
 - **Specimens:** `RcCircuit`, `TwoLoops`, `ScopedConnect`
 - **Stages:** `Flatten`
-- **Stops:**
+- **Stations:**
   - `flatten-what-connect-actually-means` — Flatten — what `connect` actually means
   - `station-1-how-many-connection-sets` — Station 1 — How many connection sets?
   - `station-2-how-many-equations-does-a-set-make` — Station 2 — How many equations does a set make?
@@ -68,7 +68,7 @@ A concept lab. It teaches a step of the chain
 
 - **Specimens:** `SingleInertia`, `UnbalancedShaft`, `OverDeterminedShaft`
 - **Stages:** `Dae`, `Flatten`, `Structural`
-- **Stops:**
+- **Stations:**
   - `fixture-lab-dae-construction-the-count-that-decides-everything` — Fixture lab — DAE construction: the count that decides everything
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `station-1-which-declarations-carry-the-past` — Station 1 — Which declarations carry the past?
@@ -86,11 +86,11 @@ A concept lab. It teaches a step of the chain
 
 **Fixture lab — Events: the equations that are not always true**
 
-A concept lab. Walk [initialization](hrw://lab/initialization) first. Everything so far has
+A concept lab. Run [initialization](hrw://lab/initialization) first. Everything so far has
 
 - **Specimens:** `BouncingBall`, `RcCircuit`, `GearWithBrake`
 - **Stages:** `Events`
-- **Stops:**
+- **Stations:**
   - `fixture-lab-events-the-equations-that-are-not-always-true` — Fixture lab — Events: the equations that are not always true
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `station-1-a-model-with-a-real-event` — Station 1 — A model with a real event
@@ -107,7 +107,7 @@ Specimen: `UnbalancedShaft` — `SingleInertia` with one line changed.
 
 - **Specimens:** `UnbalancedShaft`, `SingleInertia`
 - **Stages:** `Dae`, `Flatten`, `Resolve`
-- **Stops:**
+- **Stations:**
   - `failure-lab-flatten-where-the-count-is-checked` — Failure lab — Flatten, where the count is checked
   - `station-1-the-refusal` — Station 1 — The refusal
   - `station-2-why-it-could-not-be-checked-sooner` — Station 2 — Why it could not be checked sooner
@@ -123,7 +123,7 @@ Specimens: `OverInitRc` and `RotationalInertia`. Two ways the t=0 problem goes w
 
 - **Specimens:** `OverInitRc`, `RotationalInertia`
 - **Stages:** `Initialization`, `SolveLowering`
-- **Stops:**
+- **Stations:**
   - `failure-lab-initialization-where-too-much-information-is-the-problem` — Failure lab — Initialization, where too much information is the problem
   - `station-1-more-conditions-than-states` — Station 1 — More conditions than states
   - `station-2-the-other-direction` — Station 2 — The other direction
@@ -139,7 +139,7 @@ Specimen: `UnclosedModel` — ten lines of valid Modelica with its `end` clause 
 
 - **Specimens:** `UnclosedModel`, `Drivetrain`
 - **Stages:** `Parse`, `Resolve`, `Structural`
-- **Stops:**
+- **Stations:**
   - `failure-lab-parse-the-only-phase-that-truly-stops` — Failure lab — Parse, the only phase that truly stops
   - `station-1-the-failure-itself` — Station 1 — The failure itself
   - `station-2-what-stopped-costs` — Station 2 — What "stopped" costs
@@ -151,11 +151,11 @@ Specimen: `UnclosedModel` — ten lines of valid Modelica with its `end` clause 
 
 **Failure lab — Resolve, where a name is looked up and the answer is recorded**
 
-Specimens: `UndefinedRef` and `MissingComponentClass`. Walk them together; neither is worth
+Specimens: `UndefinedRef` and `MissingComponentClass`. Run them together; neither is worth
 
 - **Specimens:** `UndefinedRef`, `MissingComponentClass`
 - **Stages:** `Flatten`, `Resolve`
-- **Stops:**
+- **Stations:**
   - `failure-lab-resolve-where-a-name-is-looked-up-and-the-answer-is-recorded` — Failure lab — Resolve, where a name is looked up and the answer is recorded
   - `station-1-the-error-is-found-here` — Station 1 — The error is found here
   - `station-2-and-the-compile-stops-somewhere-else` — Station 2 — And the compile stops somewhere else
@@ -171,7 +171,7 @@ Specimens: `TwiceDefined` and `CapacitorLoop`. Both are flagged `singular`. They
 
 - **Specimens:** `TwiceDefined`, `CapacitorLoop`
 - **Stages:** `Dae`, `Structural`
-- **Stops:**
+- **Stations:**
   - `failure-lab-structural-analysis-where-counting-stops-being-enough` — Failure lab — Structural analysis, where counting stops being enough
   - `station-1-square-and-singular-anyway` — Station 1 — Square, and singular anyway
   - `station-2-what-matching-finds` — Station 2 — What matching finds
@@ -187,7 +187,7 @@ Specimen: `DimensionMismatch` — a 2-vector assigned from a 3-vector.
 
 - **Specimens:** `DimensionMismatch`, `UnclosedModel`
 - **Stages:** `Flatten`, `SolveLowering`, `Typecheck`
-- **Stops:**
+- **Stations:**
   - `failure-lab-typecheck-which-reports-and-does-not-stop-at-all` — Failure lab — Typecheck, which reports and does not stop at all
   - `station-1-the-diagnosis` — Station 1 — The diagnosis
   - `station-2-the-surprise` — Station 2 — The surprise
@@ -203,7 +203,7 @@ This is a test, not an explanation. It verifies that a link can stop an animatio
 
 - **Specimens:** `MotorWithBrake`
 - **Stages:** `Structural`
-- **Stops:**
+- **Stations:**
   - `fixture-lab-seeking-to-a-frame` — Fixture lab — seeking to a frame
   - `station-0-a-stop-clicked-out-of-order` — Station 0 — A stop clicked out of order
   - `station-1-a-replay-unstarted` — Station 1 — A replay, unstarted
@@ -218,11 +218,11 @@ This is a test, not an explanation. It verifies that a link can stop an animatio
 
 **Fixture lab — Index reduction: when differentiating is the only way out**
 
-A concept lab. Walk [blt-ordering](hrw://lab/blt-ordering) and
+A concept lab. Run [blt-ordering](hrw://lab/blt-ordering) and
 
 - **Specimens:** `CartesianPendulum`, `BouncingBall`, `BenchActuator`, `Drivetrain`
 - **Stages:** `IndexReduction`, `Structural`
-- **Stops:**
+- **Stations:**
   - `fixture-lab-index-reduction-when-differentiating-is-the-only-way-out` — Fixture lab — Index reduction: when differentiating is the only way out
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `station-1-the-case-that-needs-nothing` — Station 1 — The case that needs nothing
@@ -237,11 +237,11 @@ A concept lab. Walk [blt-ordering](hrw://lab/blt-ordering) and
 
 **Fixture lab — Initialization: the values at t = 0**
 
-A concept lab. Walk [index-reduction](hrw://lab/index-reduction) first — this phase runs on
+A concept lab. Run [index-reduction](hrw://lab/index-reduction) first — this phase runs on
 
 - **Specimens:** `BouncingBall`, `RcCircuit`, `OverInitRc`, `RotationalInertia`
 - **Stages:** `Initialization`
-- **Stops:**
+- **Stations:**
   - `fixture-lab-initialization-the-values-at-t-0` — Fixture lab — Initialization: the values at t = 0
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `station-1-the-case-with-nothing-to-solve` — Station 1 — The case with nothing to solve
@@ -259,7 +259,7 @@ A concept lab, pass two. [matching](hrw://lab/matching) taught the idea; this on
 
 - **Specimens:** `ProportionalLoop`, `TwiceDefined`
 - **Stages:** `Structural`
-- **Stops:**
+- **Stations:**
   - `fixture-lab-matching-live-the-call-stack-is-the-augmenting-path` — Fixture lab — Matching, live: the call stack is the augmenting path
   - `station-0-two-things-must-be-true-before-any-of-this-works` — Station 0 — Two things must be true before any of this works
   - `station-1-arm-an-anchor-and-learn-what-an-anchor-is-named` — Station 1 — Arm an anchor, and learn what an anchor is named
@@ -277,7 +277,7 @@ A concept lab. It teaches a step of the chain and uses HRW as the instrument. It
 
 - **Specimens:** `BouncingBall`, `ProportionalLoop`, `CapacitorLoop`
 - **Stages:** `Structural`
-- **Stops:**
+- **Stations:**
   - `fixture-lab-matching-which-equation-solves-which-unknown` — Fixture lab — Matching: which equation solves which unknown
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `station-1-the-case-where-it-is-obvious` — Station 1 — The case where it is obvious
@@ -295,7 +295,7 @@ This is a test, not an explanation. It verifies the last two verbs of the answer
 
 - **Specimens:** `RcCircuit`
 - **Stages:** `Structural`
-- **Stops:**
+- **Stations:**
   - `fixture-lab-pointing-at-a-tree-node-and-following` — Fixture lab — pointing at a tree node, and following
   - `station-1-open-the-tree` — Station 1 — Open the tree
   - `station-2-point-at-a-shallow-node` — Station 2 — Point at a shallow node
@@ -311,11 +311,11 @@ This is a test, not an explanation. It verifies the last two verbs of the answer
 
 **Fixture lab — Solve lowering: names become indices**
 
-A concept lab. The last phase before simulation. Walk [events](hrw://lab/events) first.
+A concept lab. The last phase before simulation. Run [events](hrw://lab/events) first.
 
 - **Specimens:** `BouncingBall`, `RcCircuit`
 - **Stages:** `SolveLowering`
-- **Stops:**
+- **Stations:**
   - `fixture-lab-solve-lowering-names-become-indices` — Fixture lab — Solve lowering: names become indices
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `station-1-where-your-variables-went` — Station 1 — Where your variables went
@@ -333,7 +333,7 @@ The first cross-platform lab. Two stops in HRW, then a notebook — because the 
 
 - **Specimens:** `ProportionalLoop`
 - **Stages:** `Structural`
-- **Stops:**
+- **Stations:**
   - `structural-rank-vs-numerical-rank` — Structural rank vs numerical rank
   - `station-1-the-pattern-from-a-real-model` — 📐 Station 1 — The pattern, from a real model
   - `station-2-what-hrw-concludes-from-it` — 📐 Station 2 — What HRW concludes from it
@@ -346,11 +346,11 @@ The first cross-platform lab. Two stops in HRW, then a notebook — because the 
 
 **Fixture lab — Tearing: guess one number, get the rest for free**
 
-A concept lab. Walk [blt-ordering](hrw://lab/blt-ordering) first — it produces the coupled
+A concept lab. Run [blt-ordering](hrw://lab/blt-ordering) first — it produces the coupled
 
 - **Specimens:** `ProportionalLoop`, `TwoLoops`, `MixedLoop`, `LoopWithInertia`
 - **Stages:** `Structural`
-- **Stops:**
+- **Stations:**
   - `fixture-lab-tearing-guess-one-number-get-the-rest-for-free` — Fixture lab — Tearing: guess one number, get the rest for free
   - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `station-1-guess-one-number-and-the-rest-falls-out` — Station 1 — Guess one number and the rest falls out
@@ -367,7 +367,7 @@ A concept lab. Walk [blt-ordering](hrw://lab/blt-ordering) first — it produces
 
 Start here. This is the map for the labs of the compiler phases, in the order
 
-- **Stops:**
+- **Stations:**
   - `the-concepts-a-week-s-run-through-the-pipeline` — The concepts — a week's run through the pipeline
   - `the-route` — The route
   - `the-four-numbers-that-connect-the-labs` — The four numbers that connect the labs
@@ -385,7 +385,7 @@ A lab that leaves HRW to settle a question HRW cannot settle. Rumoca accepts a m
 
 - **Specimens:** `IncompatibleConnect`
 - **Stages:** `Flatten`
-- **Stops:**
+- **Stations:**
   - `the-oracle-when-rumoca-and-system-modeler-disagree` — The oracle — when Rumoca and System Modeler disagree
   - `station-1-a-specimen-built-to-fail-at-flatten` — 📐 Station 1 — A specimen built to fail at flatten
   - `station-2-where-it-actually-fails` — 📐 Station 2 — Where it actually fails

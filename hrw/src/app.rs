@@ -6941,6 +6941,18 @@ fn extract_hrw_links(text: &str) -> Vec<String> {
             .find([')', ' ', '\n', '"', '>', '`'])
             .unwrap_or(rest.len());
         let url = &rest[..end];
+        // **A METAVARIABLE IS NOT A LINK.** `hrw://lab/<name>` and `hrw://src/<workspace
+        // path>` are prose *describing* the verb, and a bare `hrw://tour/` written in a
+        // sentence names nothing at all. Both extract as real URLs and fail the reference
+        // checkers — which at least fails loudly, but for a document that is correct.
+        //
+        // Bitten **three times**: twice on 2026-08-31 and again on 2026-09-01, when a
+        // sentence explaining the rename contained `hrw://tour/` and
+        // `lab_citations_name_a_real_lab_and_a_real_station` reported a lab named "".
+        // The `<` case is the placeholder; the trailing-slash case is the bare verb.
+        if url.contains('<') || url.ends_with('/') {
+            continue;
+        }
         if !links.contains(&url.to_owned()) {
             links.push(url.to_owned());
         }

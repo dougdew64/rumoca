@@ -4,7 +4,7 @@
 
 [The chain overview](hrw://lab/the-concepts)
 
-**A concept lab.** Walk [initialization](hrw://lab/initialization) first. Everything so far has
+**A concept lab.** Run [initialization](hrw://lab/initialization) first. Everything so far has
 assumed one fixed set of equations; this lab is about models where the equations change.
 
 Every count below was read from the committed traces, never remembered.
