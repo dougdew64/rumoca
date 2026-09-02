@@ -322,6 +322,17 @@ recorded instance is 2026-09-02**: an Answer about the bouncing-ball event quote
 route to any of them, and said *"worth asking System Modeler"* when `hrw://systemmodeler/` exists.
 **Describing an action HRW can perform is the tell.**
 
+**ORDER THE LINKS: A LOAD COMES FIRST.** `source`, `follow`, `stage/node`, `stage/frame`,
+`stage/equation` and `SwitchStage` all **require a loaded specimen** — with none, HRW refuses rather
+than half-applying, because a pending state would fire later and send the reader somewhere no link
+pointed. **The same Answer put two specimen-requiring links above its first `load`**, so the first
+two things Doug could click were guaranteed to be refused, and he reported them as broken.
+
+**That report is the third of its kind, and every time the reason was on screen.** A refused link
+notifies in the **status bar**, which reads as *nothing happened* to anyone not looking there — the
+observation the labs' *an expectation must say WHERE to look* rule is built from. **Say it in the
+Answer**, once, near the first link.
+
 **When a 🎯 capture arrives, locate the passage in the file the capture names.** The emitted text
 is what the pane *rendered*, so it will not match the markdown byte-for-byte.
 
