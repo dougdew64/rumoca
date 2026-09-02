@@ -7092,13 +7092,32 @@ fn open_with_os(path: &Path) -> std::io::Result<()> {
         .map(|_| ())
 }
 
-/// Cap markdown heading size to 1.15x body so rendered lab/narrative text stays compact.
+/// Cap markdown heading size to 1.15x body so rendered lab/narrative text stays compact,
+/// and tint inline `code` spans so they stop reading like bold prose.
+///
+/// **Doug, 2026-09-01:** *"the labs are difficult to read … there's a lot in the labs
+/// which is competing for my visual attention."* Measured in `connect-expansion.md`: 98
+/// bold spans and **166 inline code spans** across 288 lines — roughly one styled
+/// fragment per line, so nothing read as emphasised.
+///
+/// **The tint is an interim, and the reason is a limit rather than a preference.**
+/// Fenced blocks are drawn by HRW itself (`lab_panel::code_block_ui`) and can take any
+/// foreground colour. Inline spans cannot: `egui_commonmark` renders them as
+/// `RichText::code()`, which sets **only** the monospace font and `code_bg_color` and
+/// never a text colour, and the crate exposes no hook for inline spans. Colouring their
+/// text would mean rendering paragraphs ourselves — replacing the markdown renderer
+/// outright, which is a decision with its own cost rather than a styling change.
+///
+/// So inline code is distinguished by a green-tinted **background** matching
+/// `lab_panel::code_colour`'s hue. If that proves insufficient, replacing
+/// `egui_commonmark` becomes a real proposal.
 pub(crate) fn set_markdown_text_sizes(ui: &mut egui::Ui) {
     let body_size = ui.text_style_height(&egui::TextStyle::Body);
     ui.style_mut().text_styles.insert(
         egui::TextStyle::Heading,
         egui::FontId::proportional(body_size * 1.15),
     );
+    ui.style_mut().visuals.code_bg_color = egui::Color32::from_rgb(0x1C, 0x2E, 0x24);
 }
 
 const GOLDEN_RATIO: f32 = 0.618_034;

@@ -750,7 +750,7 @@ pub(crate) fn lab_prose_ui(
                 };
                 let top = ui.cursor().top();
                 if split > 0 {
-                    egui_commonmark::CommonMarkViewer::new().show(ui, &mut *cache, &text[..split]);
+                    show_lab_markdown(ui, &mut *cache, &text[..split]);
                 }
                 measured = Some(ui.cursor().top() - top);
 
@@ -769,7 +769,7 @@ pub(crate) fn lab_prose_ui(
                     ui.scroll_to_cursor(Some(egui::Align::TOP));
                 }
 
-                egui_commonmark::CommonMarkViewer::new().show(ui, &mut *cache, &text[split..]);
+                show_lab_markdown(ui, &mut *cache, &text[split..]);
             }
             None => no_lab_ui(ui),
         }
@@ -789,6 +789,159 @@ pub(crate) fn lab_prose_ui(
     // Every frame, because a switch can happen at any moment and the offset
     // must be the one from just before it.
     lab.current_scroll_y = out.state.offset.y;
+}
+
+/// What lab mode shows when Claude has not written a lab.
+///
+/// Deliberately **not** `end_to_end_lab.md`, which used to be compiled in
+/// here with `include_str!`. That document's prose was retired 2026-07-29
+/// (ideas #42) — it described a 7x7 incidence matrix on a tab that shows 48
+/// equations — so keeping it as the default would put the exact stale
+/// content this change exists to remove back on screen.
+/// One piece of a lab: either prose for `egui_commonmark`, or a fenced code block
+/// HRW draws itself.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum LabSegment<'a> {
+    Prose(&'a str),
+    /// `lang` is the fence tag — `modelica`, `text`, or empty.
+    Code {
+        lang: &'a str,
+        body: &'a str,
+    },
+}
+
+/// **Colour for code, dispatched on the fence language.**
+///
+/// Doug, 2026-09-01: *"can we choose a different color for the Modelica code snippets?
+/// Right now, they are white and so are similar in appearance to the bold white text
+/// elsewhere in the lab."* He ruled all fenced blocks share one colour for now, **with
+/// the capability to differ by language reserved** — which is why this is a `match` on
+/// one arm rather than a constant.
+///
+/// The colour is applied to inline `code` spans too, via `code_bg_color`; see
+/// `app.rs`'s style setup for why those get a tint rather than this foreground.
+// **The single-arm match is the point, not an oversight.** Doug ruled one colour for all
+// fenced blocks *"while reserving the capability to color by language"*, so this exists to
+// be split later. Collapsing it to a constant, as clippy suggests, would delete the seam
+// he asked for and make the next change a signature change instead of an arm.
+#[allow(clippy::match_single_binding)]
+pub(crate) fn code_colour(lang: &str) -> egui::Color32 {
+    match lang {
+        // Every language, until a reason to separate one appears.
+        _ => egui::Color32::from_rgb(0x7E, 0xC6, 0x99),
+    }
+}
+
+/// **Split a lab into prose and fenced code blocks.**
+///
+/// HRW draws code blocks itself because `egui_commonmark` cannot be told what colour to
+/// use: it delegates to `egui_extras`' `CodeTheme::from_style`, which hardcodes its
+/// palette per light/dark and reads only the *font* from our style. An unknown language
+/// like `modelica` then falls through to `LIGHT_GRAY`, which is what made code read like
+/// bold white prose.
+///
+/// **An unterminated fence is prose.** Labs are edited while Doug is reading them, so a
+/// half-typed fence is the expected case rather than a corner one — the same reason the
+/// scroll offset above is validated rather than trusted.
+pub(crate) fn split_lab_segments(text: &str) -> Vec<LabSegment<'_>> {
+    let mut out = Vec::new();
+    let mut rest = text;
+
+    while let Some(open) = rest.find("```") {
+        // Prose before the fence.
+        if open > 0 {
+            out.push(LabSegment::Prose(&rest[..open]));
+        }
+        let after_ticks = &rest[open + 3..];
+        let Some(nl) = after_ticks.find('\n') else {
+            // A fence with no newline after it cannot be a block.
+            out.push(LabSegment::Prose(&rest[open..]));
+            return out;
+        };
+        let lang = after_ticks[..nl].trim();
+        let body_start = &after_ticks[nl + 1..];
+        match body_start.find("```") {
+            Some(close) => {
+                out.push(LabSegment::Code {
+                    lang,
+                    body: &body_start[..close],
+                });
+                // Step past the closing fence and its newline, if present.
+                let tail = &body_start[close + 3..];
+                rest = tail.strip_prefix('\n').unwrap_or(tail);
+            }
+            None => {
+                // Unterminated: hand the remainder back as prose.
+                out.push(LabSegment::Prose(&rest[open..]));
+                return out;
+            }
+        }
+    }
+
+    if !rest.is_empty() {
+        out.push(LabSegment::Prose(rest));
+    }
+    out
+}
+
+/// Draw one fenced block: monospace, coloured, framed, and **selectable**.
+///
+/// **No copy button** — Doug ruled it out, and drawing the block ourselves is what makes
+/// that free rather than a removal. Selection is kept deliberately *because* the button
+/// is gone: without either, code could not be copied at all.
+fn code_block_ui(ui: &mut egui::Ui, lang: &str, body: &str) {
+    let text = egui::RichText::new(body.trim_end_matches('\n'))
+        .monospace()
+        .color(code_colour(lang));
+    egui::Frame::new()
+        .fill(ui.visuals().extreme_bg_color)
+        .stroke(ui.visuals().widgets.noninteractive.bg_stroke)
+        .inner_margin(egui::Margin::same(6))
+        .corner_radius(ui.style().noninteractive().corner_radius)
+        .show(ui, |ui| {
+            ui.add(egui::Label::new(text).selectable(true));
+        });
+}
+
+/// Render a lab's markdown, drawing fenced code blocks ourselves.
+///
+/// Splitting at fence boundaries is safe because a fence is block-level; the surrounding
+/// prose is handed to `egui_commonmark` unchanged.
+///
+/// # A click must be carried across segments
+///
+/// `CommonMarkViewer::show` begins with `prepare_show`, which ends in
+/// `cache.deactivate_link_hooks()` — every hook reset to `false`. Harmless for one
+/// `show` per document; rendering per segment wipes a link clicked in an early segment
+/// when the *next* segment renders, so `App` finds nothing to drain. Clicks are therefore
+/// collected as they happen and re-applied after the last segment, and each prose segment
+/// takes its own id scope so two viewers cannot derive colliding widget ids.
+/// `a_link_far_down_a_long_lab_still_dispatches` caught this: it found the link, clicked
+/// it, dispatched nothing. A wiped hook is indistinguishable from a link nobody pressed.
+pub(crate) fn show_lab_markdown(
+    ui: &mut egui::Ui,
+    cache: &mut egui_commonmark::CommonMarkCache,
+    text: &str,
+) {
+    let mut clicked: Vec<String> = Vec::new();
+    for (i, segment) in split_lab_segments(text).into_iter().enumerate() {
+        match segment {
+            LabSegment::Prose(s) => {
+                ui.push_id(("lab-prose", i), |ui| {
+                    egui_commonmark::CommonMarkViewer::new().show(ui, cache, s);
+                });
+            }
+            LabSegment::Code { lang, body } => code_block_ui(ui, lang, body),
+        }
+        for (name, fired) in cache.link_hooks() {
+            if *fired && !clicked.iter().any(|c| c == name) {
+                clicked.push(name.clone());
+            }
+        }
+    }
+    for name in clicked {
+        cache.link_hooks_mut().insert(name, true);
+    }
 }
 
 /// What lab mode shows when Claude has not written a lab.
@@ -820,6 +973,104 @@ pub(crate) fn no_lab_ui(ui: &mut egui::Ui) {
         bridge::LAB_FILE
     ));
     ui.weak("It appears here within a moment, and a rewrite is picked up live.");
+}
+
+#[cfg(test)]
+mod tests_code_segments {
+    use super::{LabSegment, split_lab_segments};
+
+    /// **Prose and fences alternate, and the fence tag survives.**
+    ///
+    /// The tag is what makes per-language colouring one match arm away, so a splitter
+    /// that dropped it would quietly foreclose the capability Doug reserved.
+    #[test]
+    fn a_fenced_block_is_split_out_with_its_language() {
+        let md = "Before.\n\n```modelica\nconnect(a, b);\n```\n\nAfter.\n";
+        assert_eq!(
+            split_lab_segments(md),
+            vec![
+                LabSegment::Prose("Before.\n\n"),
+                LabSegment::Code {
+                    lang: "modelica",
+                    body: "connect(a, b);\n"
+                },
+                LabSegment::Prose("\nAfter.\n"),
+            ]
+        );
+    }
+
+    /// A fence with no language still splits; the tag is simply empty.
+    #[test]
+    fn an_untagged_fence_still_becomes_a_code_segment() {
+        let md = "```\nplain\n```\n";
+        assert_eq!(
+            split_lab_segments(md),
+            vec![LabSegment::Code {
+                lang: "",
+                body: "plain\n"
+            }]
+        );
+    }
+
+    /// **An unterminated fence is prose, because labs are edited while Doug reads them.**
+    ///
+    /// A half-typed fence is the expected case, not a corner one — the same reason the
+    /// scroll offset in `lab_prose_ui` is validated rather than trusted. Treating it as a
+    /// code block would swallow the rest of the document into a grey box.
+    #[test]
+    fn an_unterminated_fence_is_left_as_prose() {
+        let md = "Text.\n\n```modelica\nhalf typed\n";
+        assert_eq!(
+            split_lab_segments(md),
+            vec![
+                LabSegment::Prose("Text.\n\n"),
+                LabSegment::Prose("```modelica\nhalf typed\n"),
+            ]
+        );
+    }
+
+    /// Several blocks in one document, which every concept lab has.
+    #[test]
+    fn multiple_fences_all_split() {
+        let md = "a\n```text\n1\n```\nb\n```modelica\n2\n```\nc";
+        let segs = split_lab_segments(md);
+        let code: Vec<_> = segs
+            .iter()
+            .filter_map(|s| match s {
+                LabSegment::Code { lang, .. } => Some(*lang),
+                LabSegment::Prose(_) => None,
+            })
+            .collect();
+        assert_eq!(code, vec!["text", "modelica"]);
+    }
+
+    /// **Non-vacuity against the real corpus:** every lab is split, and the labs
+    /// genuinely contain fences. A splitter that stopped matching would otherwise report
+    /// "no code blocks" and look like success.
+    #[test]
+    fn the_real_labs_contain_fenced_blocks() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
+        let mut blocks = 0usize;
+        let mut labs = 0usize;
+        for entry in std::fs::read_dir(&dir).expect("labs directory").flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|x| x.to_str()) != Some("md") {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).unwrap_or_default();
+            labs += 1;
+            blocks += split_lab_segments(&text)
+                .iter()
+                .filter(|s| matches!(s, LabSegment::Code { .. }))
+                .count();
+        }
+        assert!(labs >= 20, "only {labs} labs were read");
+        assert!(
+            blocks >= 20,
+            "only {blocks} fenced blocks found across {labs} labs — the splitter has \
+             stopped matching, which looks like success"
+        );
+    }
 }
 
 #[cfg(test)]

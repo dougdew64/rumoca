@@ -58,7 +58,7 @@
 # 2026-08-31 when the node abstraction was removed, which is the churn that prompted all
 # of this.
 connect-expansion.md | require | of sizes 2, 2 and 3
-connect-expansion.md | require | **6 connection sets** producing **7 equations**
+connect-expansion.md | require | 6 connection sets producing 7 equations
 
 # --- matching-live.md -----------------------------------------------------------------
 #
