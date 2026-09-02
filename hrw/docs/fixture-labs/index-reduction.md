@@ -9,7 +9,7 @@
 is about models that are not, and it ends with one that Rumoca cannot rescue at all.
 
 Every backward reference in this lab is a link, not a retelling. A result restated in prose
-can drift from the pane that produced it; a link cannot. Click them — landing on the stop that
+can drift from the pane that produced it; a link cannot. Click them — landing on the station that
 established something is faster than my summary of it, and it is the real thing.
 
 This lab assumes only that you know what a derivative is. Everything else — what "index"
@@ -129,7 +129,7 @@ unmatched equations: f_x[4]; unmatched unknowns: lambda
 `f_x[4]` is the constraint, and `lambda` is the unknown it stranded. The compiler found
 by algorithm what you found by reading the table above.
 
-Index reduction is the phase that runs that distance. Five stops: a model needing nothing,
+Index reduction is the phase that runs that distance. Five stations: a model needing nothing,
 the smallest model that needs something, the same idea at scale, what the compiler actually
 reaches for, and a model it cannot reduce.
 
@@ -152,7 +152,7 @@ Falsified if: any state is demoted, or the counts differ.
 without a derivative in it. There is no constraint to differentiate and the distance to index 1
 is already zero.
 
-This is the common case, and it is worth establishing first so the next stop reads as a
+This is the common case, and it is worth establishing first so the next station reads as a
 discovery rather than as routine.
 
 ---
@@ -211,7 +211,7 @@ The compiler discovered that from the equations alone, knowing nothing about gea
 
 ## Station 4 — What the compiler actually reached for
 
-Here is the stop this lab exists for, and it is about a number that used to be read wrong.
+Here is the station this lab exists for, and it is about a number that used to be read wrong.
 
 > **Predict.** `Drivetrain` differentiated 6 times. How many of those manufactured equations do
 > you expect to find in the final system?
@@ -241,12 +241,12 @@ Söderlind's, the standard companion to Pantelides. When differentiating would l
 equations than unknowns, you demote a derivative to an ordinary unknown — a *dummy* — to keep the
 count square. That is what those six demotions are.
 
-> ### Why this stop is worded so carefully
+> ### Why this station is worded so carefully
 >
 > Until 2026-08-17 it read *"zero differentiations — the textbook mechanism was not needed"*,
 > because `differentiated_rows` is empty and I read the name instead of the semantics. It
 > counts survivors, not differentiations. The pane now reports both, and it reports them
-> because this stop was wrong.
+> because this station was wrong.
 
 ---
 
@@ -305,7 +305,7 @@ at time = 0.0000477"* — with no mention of index anywhere.
 
 This is not a defect claim. Whether general reduction is missing, deferred, or deliberately
 out of scope is a question for Rumoca's maintainers, and it is filed in
-[`upstream-issues.md`](hrw://doc/upstream-issues.md) as a question. What the stop establishes is the
+[`upstream-issues.md`](hrw://doc/upstream-issues.md) as a question. What the station establishes is the
 boundary: you now know what this compiler does, and what it does not.
 
 ---
@@ -323,7 +323,7 @@ What a differentiated equation looks like. The pane counts them and, on every sp
 makes any, they are gone by the end — so the corpus can tell you six were made and cannot show
 you one.
 
-Whether System Modeler reduces the pendulum. That is the adjudication that would turn Stop
+Whether System Modeler reduces the pendulum. That is the calibration that would turn Station
 5's reading into a fact, and it has not been run. `the-oracle.md` is the lab for that gesture.
 
 ---

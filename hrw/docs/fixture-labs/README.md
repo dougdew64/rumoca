@@ -23,7 +23,7 @@ explanations** — that distinction governs everything below.
 
 ## What a fixture lab is
 
-**A short sequence of clickable stops through HRW's own views, each with an expectation that
+**A short sequence of clickable stations through HRW's own views, each with an expectation that
 can fail.** You pick one from the row of labs at the top of Lab mode and click through it.
 
 They exist because of a gap nothing else covers: **Claude cannot see the rendered UI.** The
@@ -122,7 +122,7 @@ you cannot provide with only conversation text.")*
 | tier | example in `connect-expansion.md` | kept true by |
 |---|---|---|
 | **checked against a real compile** | the five `<!-- pane-* -->` tables; the `2, 2, 3` set sizes | a slow test that compiles the specimen and compares |
-| **checked structurally** | every `hrw://` link, the stop catalogue | fast tests — links resolve, `CATALOGUE.md` is current |
+| **checked structurally** | every `hrw://` link, the station catalogue | fast tests — links resolve, `CATALOGUE.md` is current |
 | **prose** | *which* members are in which set; every explanation | **nothing. Only the run.** |
 | **the conversation** | whatever Claude says when Doug presses 🎯 | **nothing. Only Doug, in the moment.** |
 
@@ -151,7 +151,7 @@ protect a lab's *facts* and leave its *reasoning* entirely to the run, which is 
 Station 1's set sizes in `connect-expansion.md` carry no marker, yet they *are* verified —
 `lab_set_sizes_match_the_connection_replay` asserts `potential == [2, 2, 3]` and
 `flow == [2, 2, 3]` against the real connection frames, hard-coded in the test with a failure
-message naming the stop. What that test does **not** check is the *mapping*: that the first set is
+message naming the station. What that test does **not** check is the *mapping*: that the first set is
 `src.p.v, R.p.v` rather than some other pair. **Before trusting or editing a number, find what checks
 it** — the marker, a named test, or nothing.
 
@@ -216,7 +216,7 @@ is why the three activities are worth keeping distinct and why three consequence
   nothing left to iterate on would delete the exercise. **But the answer is not worse drafts** — it
   is drafts whose remaining weaknesses are **conceptual rather than mechanical.** **This is what a
   lab instructor does before class: check the apparatus, so the session is spent on the physics and
-  not on a broken meter.** Arguing about a wrong count, a dead link or a stop in the wrong order
+  not on a broken meter.** Arguing about a wrong count, a dead link or a station in the wrong order
   teaches Doug nothing about the compiler; arguing about *whether differentiating the constraint is
   the natural move* is the whole point. **Drafting's job is to spend the mechanical failure modes so
   the live iterations are all conceptual** — see *"Drafting aims at correct AND structurally
@@ -325,15 +325,15 @@ version keeps that is never used, is a comparison — it pays only when he pulls
 that a clause needs a conversation to land**: that is not a gap to fill with more prose, it is
 prose that should have been a name.
 
-**4. The introduction builds the mental model; the stops reinforce or break it.** So the intro's
-abstractions and the stops' predictions are **the same list seen twice** — an abstraction with no
-stop is untested confidence, and a stop tracing back to no abstraction is trivia. **Select for both
+**4. The introduction builds the mental model; the stations reinforce or break it.** So the intro's
+abstractions and the stations' predictions are **the same list seen twice** — an abstraction with no
+station is untested confidence, and a station tracing back to no abstraction is trivia. **Select for both
 jobs**: only-reinforce manufactures false confidence, only-challenge never consolidates.
 
 **In lab terms this is the PRE-LAB BRIEFING and the EXPERIMENT**, which is what makes the
 matched-lists requirement obvious rather than arbitrary: the briefing establishes what Doug expects,
-and the bench confirms or refutes it. **An abstraction with no stop is a briefing for an experiment
-nobody ran**; a stop with no abstraction is an experiment testing nothing anyone predicted.
+and the bench confirms or refutes it. **An abstraction with no station is a briefing for an experiment
+nobody ran**; a station with no abstraction is an experiment testing nothing anyone predicted.
 
 **Two failure modes worth naming, because both look like knowledge.** *True, checkable and
 useless* — naming a type teaches nothing; the contrast and the rationale are what land. And *the
@@ -371,7 +371,7 @@ list of reports he owes.** Nobody learns well while filing observations.)*
 drafted paragraphs, but Decision 14 moved most explanation to the bench — where **both halves of
 the asymmetry get worse.** Claude still cannot judge whether a live answer landed, *and* nothing
 checks it. So the four reports above are owed for an answer exactly as for a paragraph: **"I had to
-read that twice" is as useful said out loud at a stop as it is written against a draft.**
+read that twice" is as useful said out loud at a station as it is written against a draft.**
 
 **First encounter is somewhat renewable**, so it is a mild reason to make drafts good, **not a
 resource to ration a run around** — Doug, 2026-08-22: *"I often re-read articles and books, and
@@ -512,7 +512,7 @@ is lost or bored. An effective falsehood is silent by construction.
 quadrant as its binding hazard, and this section is its description: a live answer is **more
 fluent, tailored to the question just asked, and arrives with no checker between it and Doug.**
 Every property that makes conversation good teaching also makes a wrong answer land better. **So
-the rule that governs drafted prose governs an answer at a stop, and more strictly.**
+the rule that governs drafted prose governs an answer at a station, and more strictly.**
 
 **One consequence for any EXPERT reader** — the PhD friend is the standing example, but this holds
 for every credentialed reader of any lab: **he judges whether the claim is credible; he cannot
@@ -543,7 +543,7 @@ point at the readout before asking anyone to read it.**
 
 **And nothing tracks or reports what has been run.** The `run:` markers were retired
 2026-08-31 because *"that bookkeeping doesn't yield enough value"*, and the practice survived in
-prose anyway — hand-maintained backlogs of which stops had no reader yet. **Do not reintroduce it in
+prose anyway — hand-maintained backlogs of which stations had no reader yet. **Do not reintroduce it in
 either form**; judge from the conversation.
 
 ## The vocabulary — `lab`, `station`, `observation`
@@ -606,7 +606,7 @@ and `diagnosis` is Rumoca's compiler diagnostics (804). The charter carries the 
 Decision 15. **Collision-check any candidate against `src/`, `crates/` and `specimens/` before
 proposing it.**
 
-| kind | the activity at a stop | goal |
+| kind | the activity at a station | goal |
 |---|---|---|
 | **concept** | prose → **Predict** → Look → confirm or reject | teach one step of the chain |
 | **feature** | **do** the action → check what happened | verify one HRW capability |
@@ -701,7 +701,7 @@ step. **Do not transcribe the frame number by hand** — links are 1-based and t
 list is 0-based, and that tool spent a day telling authors otherwise.
 
 **Why the "keep it narrow" rule below does not bind these.** That rule protects *attention per
-expectation*, because a feature lab spends your surplus attention on finding off-stop bugs
+expectation*, because a feature lab spends your surplus attention on finding off-station bugs
 in HRW. A concept lab is spending it on the concept instead. The rule it does keep is the
 one that matters for both: **claims stay austere and trace-sourced, however long the prose
 gets.** Length is bought with explanation, never with hedging.
@@ -771,7 +771,7 @@ Cross-platform labs may route through Wolfram Desktop or System Modeler when the
 be made in HRW. Their notebooks are versioned in [`notebooks/`](notebooks/) — a *fixture*
 notebook is kept for the same reason a fixture lab is, while an ad hoc notebook is ephemeral.
 Claude evaluates every cell through the kernel first, then ships them for **you** to evaluate:
-the stop that lands is the one you check yourself.
+the station that lands is the one you check yourself.
 
 ## Rules for writing one
 
@@ -895,7 +895,7 @@ the prose before it exists only to make that prediction possible:
 **And the reader audits the prose, which is the half Claude cannot do.** Every *count* in
 these labs is read from a generated trace and is sound. Doug: *"if ever during that
 learning process I find that the RHS does not agree with the prose, I will report that to
-you."* So a stop should make disagreement easy to notice, which is the same demand as
+you."* So a station should make disagreement easy to notice, which is the same demand as
 rule 2.
 
 **Rendering claims are no longer wholly unverified — as of 2026-08-13, for published
@@ -911,7 +911,7 @@ against it. So:
   whether a `category` is drawn as a heading, whether rows are legible, whether something is
   scrolled out of view. The checker verifies **content, never rendering**.
 
-**What this cost to learn:** Doug run `connect-expansion.md` against the real pane on
+**What this cost to learn:** Doug ran `connect-expansion.md` against the real pane on
 2026-08-13 and found **six** disagreements in one sitting — wrong group headings, a layout
 implied by a table that had no counterpart, and a claim that two renderings of an equation
 lived in different panes when both are columns of the same row. Four of the six are now the
@@ -997,7 +997,7 @@ lab has no parent to go up to, so the button would be dead most of the time.
 
 **One capability per lab, and keep it narrow.** The scarce resource is **attention per
 expectation**, not the number of runs. A wide lab consumes the surplus that produces
-off-stop findings rather than multiplying them, and a stop failure in a narrow lab implicates
+off-station findings rather than multiplying them, and a station failure in a narrow lab implicates
 exactly one feature.
 
 **Every `**Expected:**` line must be violable** — write what would be *different* if the feature
@@ -1006,7 +1006,7 @@ where the truth is **fully** collapsed tests nothing, and hedged expectations te
 skim, which defeats the point. **This is the one home for that rule**; the provoke-questions
 section's fourth point cites it rather than restating it.
 
-**An expectation must say WHERE to look**, not only what to look for. A stop was once
+**An expectation must say WHERE to look**, not only what to look for. A station was once
 correctly refused with the reason on screen, and reported as "nothing happened", because the
 lab never said notices live in the status bar.
 
@@ -1045,7 +1045,7 @@ sweep: *"all of your phase 1 concept labs have been great. You have completely n
 format."* *(His words, 2026-08-17, before the numbering was retired; "phase 1" there is drafting.)*
 
 **This template is frozen.** It is validated by Doug's runs, which is the one signal Claude cannot
-generate, so it changes only on his report. The shape of every stop:
+generate, so it changes only on his report. The shape of every station:
 
 ```markdown
 ## Station N — <a question, not a topic>
@@ -1067,9 +1067,9 @@ generate, so it changes only on his report. The shape of every stop:
 
 **Five things make it work, and four of them are not the format:**
 
-1. **Stops chain.** Each prediction is answerable from the previous stop's *result* — nodes in
+1. **Stations chain.** Each prediction is answerable from the previous station's *result* — nodes in
    Station 1 become the input to Station 2's equation count, which becomes Station 3's row-pairing. **A lab
-   whose stops could be reordered is a list of observations**, which is what this one was before.
+   whose stations could be reordered is a list of observations**, which is what this one was before.
    *(The chaining is a property of the content, not of the word: it survived the rename from "act"
    and must not be lost with it.)*
 2. **Every term is defined at first use, and one word never does two jobs.** This lab needs three
@@ -1078,7 +1078,7 @@ generate, so it changes only on his report. The shape of every stop:
 3. **Say where a claim is *not* visible.** A flow set of *n* prints as one row naming all *n*; a
    potential set prints as *n* − 1 pairs and its size appears nowhere. Stating that turned the
    lab's most persistent confusion into its spine. **If a number you assert cannot be found on the
-   screen, say so in the stop that asserts it.**
+   screen, say so in the station that asserts it.**
 4. **Numbers are declared falsifiable up front.** The lab opens by saying its counts come from
    generated traces and asks to be told when one disagrees — which is what makes the reader an
    instrument rather than an audience.
@@ -1101,8 +1101,8 @@ guess, because the point is whether clicking the thing does the thing.
 ```
 
 **Keep it narrow — one capability per lab.** The scarce resource is attention per expectation, and
-a failed stop in a narrow lab implicates exactly one feature. And **say where to look**: several
-stops expect a status-bar notice, and a reader who does not know that reports "nothing happened".
+a failed station in a narrow lab implicates exactly one feature. And **say where to look**: several
+stations expect a status-bar notice, and a reader who does not know that reports "nothing happened".
 
 ### Failure — `failure-parse.md`
 
@@ -1140,7 +1140,7 @@ instrument as an emoji: 📐 HRW, ⚙ System Modeler, 🧮 Wolfram.
 ```
 
 **Claude evaluates every notebook cell through the kernel first**, then ships it for Doug to
-evaluate — the stop that lands is the one he checks himself. Fixture notebooks are versioned in
+evaluate — the station that lands is the one he checks himself. Fixture notebooks are versioned in
 [`notebooks/`](notebooks/); ad hoc ones are ephemeral.
 
 ### Bug report — not built <!-- unbuilt: bug_report_lab -->

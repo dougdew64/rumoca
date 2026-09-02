@@ -2,7 +2,7 @@
 
 <!-- kind: calibration -->
 
-**The first cross-platform lab.** Two stops in HRW, then a notebook — because the point
+**The first cross-platform lab.** Two stations in HRW, then a notebook — because the point
 it makes cannot be made in either place alone.
 
 The question: the `CapacitorLoop` lab rests on structural rank being *a property of
@@ -10,7 +10,7 @@ the pattern, not the values*. HRW can show you the pattern. It cannot show you a
 with full structural rank that is numerically singular — the case that makes the
 distinction matter.
 
-Each stop says where it happens. 📐 = HRW · 🧮 = Wolfram Desktop.
+Each station says where it happens. 📐 = HRW · 🧮 = Wolfram Desktop.
 
 ---
 
@@ -60,7 +60,7 @@ Expected, in the notebook:
   0, numerical rank 2.
 - §7 — a one-dimensional null space and no solution.
 
-§6 is the stop. If the pattern comparison there returns `False`, the example is broken
+§6 is the station. If the pattern comparison there returns `False`, the example is broken
 and the lab proves nothing.
 
 ## 📐 Station 4 — Back to HRW, and what it would say
@@ -73,7 +73,7 @@ error anywhere. `ProportionalLoop` is structurally non-singular.
 It would look identical at loop gain −1. Same pattern, same blocks, same tearing —
 because nothing in this view can tell the difference.
 
-*(This stop linked to `Structural/Summary` until Doug run the lab: that tab exists
+*(This station linked to `Structural/Summary` until Doug ran the lab: that tab exists
 only when a model is* singular*, so the link named a view with no tab. HRW now refuses
 such a link and says so, rather than selecting it and rendering the singular summary for
 a non-singular model.)*

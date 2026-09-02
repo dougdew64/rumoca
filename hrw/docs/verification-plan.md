@@ -349,7 +349,7 @@ an automated test.
 | `the_harness_renders_hrw_and_sees_widgets` | the non-vacuity guard for all the others |
 | `the_lab_picker_shows_every_fixture_and_no_readme` | pins the README exclusion **at the rendered layer** |
 | `switching_labs_clears_the_stage_side_on_screen` | *"the RHS doesn't re-initialise on a second lab"* |
-| `a_stop_needing_a_specimen_is_refused_with_a_visible_notice` | *"the notice was invisible"* |
+| `a_station_needing_a_specimen_is_refused_with_a_visible_notice` | *"the notice was invisible"* |
 | `a_lab_link_acts_when_clicked_in_isolation` | *"stop 4 works only if I click 1-3 first"* |
 
 **Two harness facts, each of which first produced a wrong diagnosis:**

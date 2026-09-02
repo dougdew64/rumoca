@@ -47,7 +47,7 @@ thing in its own words.
 ## Station 3 — The log agrees with the tabs
 
 Click the Log toggle above the stage tabs. *(There is no lab-link form for the log. The
-first draft of this stop invented one and the link checker rejected it — which is the checker
+first draft of this station invented one and the link checker rejected it — which is the checker
 working: a link form that does not exist must not sit in a lab looking clickable.)*
 
 **Expected:** a `Parse` bracket that opens and closes, and no bracket for any later phase.

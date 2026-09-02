@@ -13,7 +13,7 @@ test run, so a vocabulary change breaks the build instead of breaking this file 
 To run it: open Lab mode and pick camera-aiming from the row of labs at the top
 of the panel. (Before 2026-07-29 this had to be copied over `.hrw-bridge/answer.md` first;
 Doug asked for in-app selection once it was clear the fixtures would accumulate.)
-Notices appear in the status bar, along the bottom of the HRW window. Several stops below expect one; that is where to look.
+Notices appear in the status bar, along the bottom of the HRW window. Several stations below expect one; that is where to look.
 
 
 ---
@@ -26,7 +26,7 @@ Notices appear in the status bar, along the bottom of the HRW window. Several st
 that "centred on one node" looks different from "fitted to everything".
 
 **Expected:** the whole graph fitted in view, with equation 0 at the top-left of the
-grid — not at the centre of the canvas. That is the baseline the next two stops move
+grid — not at the centre of the canvas. That is the baseline the next two stations move
 away from.
 
 ## Station 2 — Aim at the first equation
@@ -43,7 +43,7 @@ Zoom must not change. Aiming says *where* to look, not how far in.
 [Aim at equation 22](hrw://stage/Structural/TarjanAnim/equation/22)
 
 **Expected:** the view recentres on the last equation, bottom-right of the grid. If
-Stops 2 and 3 look identical, aiming is not being applied.
+Stations 2 and 3 look identical, aiming is not being applied.
 
 ## Station 4 — Aim at something that is not there
 

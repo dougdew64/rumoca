@@ -166,7 +166,7 @@ impl App {
     /// **Added 2026-08-05, because two tests were reading the live Answer.**
     /// `.hrw-bridge/answer.md` is gitignored and ephemeral by construction — Claude
     /// overwrites it every time he answers a question — and
-    /// `a_stop_needing_a_specimen_is_refused_with_a_visible_notice` and
+    /// `a_station_needing_a_specimen_is_refused_with_a_visible_notice` and
     /// `a_lab_link_acts_when_clicked_in_isolation` both clicked a link that happened
     /// to be in whatever answer was last written. **They passed for months on content
     /// no one had chosen**, and broke the moment an answer was written that did not
@@ -3155,7 +3155,7 @@ fn a_verb_that_opens_another_application_gets_a_longer_beat() {
 /// `CLAUDE.md` warns about. **`dead_code = "deny"`, adopted this morning, is what
 /// caught it**; without that lint the suite would have gone green one test short.)*
 #[test]
-fn parse_hrw_link_lab_and_stop() {
+fn parse_hrw_link_lab_and_station() {
     assert_eq!(
         parse_hrw_link("hrw://lab/failure-parse"),
         Some(HrwLink::OpenLab {
@@ -4140,7 +4140,7 @@ fn lab_catalogue_is_current() {
 ///
 /// Added 2026-08-05 with the link form (`docs/ideas.md` #63).
 #[test]
-fn lab_citations_name_a_real_lab_and_a_real_stop() {
+fn lab_citations_name_a_real_lab_and_a_real_station() {
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
     let Ok(entries) = std::fs::read_dir(&dir) else {
         return;
@@ -5356,7 +5356,7 @@ fn starting_a_session_forgets_where_the_last_one_stopped() {
 /// `Some`. An offset that resolves to the wrong place would scroll confidently to the
 /// wrong stop, which is worse than not scrolling at all.
 #[test]
-fn a_stop_link_records_where_that_stop_begins() {
+fn a_station_link_records_where_that_station_begins() {
     let mut app = App::test_default();
 
     // The corpus's only stop link, from `failure-resolve.md`.
@@ -5391,7 +5391,7 @@ fn a_stop_link_records_where_that_stop_begins() {
 /// and *"it opened at the stop I asked for"* have to be distinguishable, or a renamed
 /// heading reads as a lab whose first stop is the one you wanted.
 #[test]
-fn a_stop_link_naming_nothing_reports_it_rather_than_landing_anywhere() {
+fn a_station_link_naming_nothing_reports_it_rather_than_landing_anywhere() {
     let mut app = App::test_default();
 
     app.dispatch_hrw_link(HrwLink::OpenLab {
@@ -5473,7 +5473,7 @@ fn switching_labs_requests_a_return_to_the_top() {
 /// the fix unnecessary. `matching.md` has one, near its end, which is why the bug
 /// showed up as "at the completion of the lab".
 #[test]
-fn a_fixture_lab_really_does_contain_a_mode_switching_stop() {
+fn a_fixture_lab_really_does_contain_a_mode_switching_station() {
     let found = bridge::fixture_labs().into_iter().any(|p| {
         std::fs::read_to_string(&p)
             .map(|t| t.contains("hrw://source/"))
@@ -5542,7 +5542,7 @@ fn a_node_link_reaches_every_stage_including_the_tree_only_ones() {
 /// doing nothing — it would fire when a specimen arrived later, sending the reader
 /// somewhere no link had pointed.
 #[test]
-fn a_stop_needing_a_specimen_refuses_without_one() {
+fn a_station_needing_a_specimen_refuses_without_one() {
     let needs = [
         HrwLink::SwitchStage(StageKind::Structural, None),
         HrwLink::ShowSource(Some(9)),

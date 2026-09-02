@@ -23,7 +23,7 @@ If it can, the whole system is a sequence of direct assignments: compute this, t
 next. No iteration anywhere. If it cannot, some group of equations is circular and has to be
 solved simultaneously.
 
-This phase finds out which, and where. Three stops: a system that orders completely, one that
+This phase finds out which, and where. Three stations: a system that orders completely, one that
 does not order at all, and one that splits into independent pieces.
 
 ---
@@ -147,9 +147,9 @@ Whether Station 3 lands as the important one. Decomposition matters more at scal
 extreme, and this lab demonstrates it on four equations, where two 2×2 solves and one 4×4 feel
 equally cheap.
 
-Whether Tarjan is named too late. The algorithm arrives in Station 4 after three stops of its
+Whether Tarjan is named too late. The algorithm arrives in Station 4 after three stations of its
 output, which is deliberate — but a reader who wanted the mechanism first will have spent three
-stops wondering.
+stations wondering.
 
 ---
 

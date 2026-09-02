@@ -874,7 +874,7 @@ fn switching_labs_clears_the_stage_side_on_screen() {
 /// specimen *should* do nothing. Probing the behaviour rather than trusting the
 /// premise turned a wrong test into this one.
 #[test]
-fn a_stop_needing_a_specimen_is_refused_with_a_visible_notice() {
+fn a_station_needing_a_specimen_is_refused_with_a_visible_notice() {
     let mut app = App::test_default();
     // **Its own lab text, not the live Answer file.** This used to click a link out
     // of `.hrw-bridge/answer.md`, which is gitignored and rewritten every time Claude
@@ -2713,7 +2713,7 @@ fn a_return_to_the_top_is_not_spent_on_a_frame_with_no_lab() {
 
 /// **The pane spends a stop request, so a `stop/<slug>` link actually lands.**
 ///
-/// The paint half of `app::tests::a_stop_link_records_where_that_stop_begins`. The
+/// The paint half of `app::tests::a_station_link_records_where_that_station_begins`. The
 /// feature was broken for its whole existence in exactly this gap: the handler recorded
 /// a destination and **no frame ever read it**, so the offset sat there while the lab
 /// opened wherever the pane already was.
@@ -2724,7 +2724,7 @@ fn a_return_to_the_top_is_not_spent_on_a_frame_with_no_lab() {
 /// implementation deliberately refuses to compute, since rendered height per character
 /// is not constant and four attempts proved no constant corrects for it.
 #[test]
-fn a_stop_request_is_spent_by_the_pane() {
+fn a_station_request_is_spent_by_the_pane() {
     let _guard = Answer::absent();
     let mut h = harness(App::test_default());
     h.run_steps(2);
@@ -2764,7 +2764,7 @@ fn a_stop_request_is_spent_by_the_pane() {
 /// inside a multi-byte character. Every lab here contains em-dashes and arrows, so the
 /// second is reachable by ordinary editing rather than by contrivance.
 #[test]
-fn a_stale_stop_offset_is_discarded_without_panicking() {
+fn a_stale_station_offset_is_discarded_without_panicking() {
     let _guard = Answer::absent();
     let mut h = harness(App::test_default());
     h.run_steps(2);

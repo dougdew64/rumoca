@@ -26,7 +26,7 @@ If the bounce happens between two steps, integrating straight through it produce
 ball ends up below the floor, moving down. So the solver must detect the instant, stop there,
 apply the change, and restart.
 
-This phase finds what can change and what has to be watched. Three stops: a model with a real
+This phase finds what can change and what has to be watched. Three stations: a model with a real
 event, a model with none, and a model with several.
 
 ---

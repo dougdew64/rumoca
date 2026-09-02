@@ -29,9 +29,9 @@ Typecheck evaluates dimensions across the instantiated model — it has to, beca
 come from parameters and are not always literal. Here `small` has 2 elements and `big` has 3, and
 `small = big` cannot hold.
 
-> ### A defect this stop found — and it is fixed, 2026-08-05
+> ### A defect this station found — and it is fixed, 2026-08-05
 >
-> This stop originally promised a tree. Doug run it and there was none.
+> This station originally promised a tree. Doug ran it and there was none.
 >
 > The stage value always contained one: 7.4 KB of instantiated overlay — `components`, `classes`,
 > `type_roots` — plus an `error` key, assembled by the worker on purpose, its comment reading
@@ -83,7 +83,7 @@ worth carrying away from this lab.
 **Expected:** the diagnostic names the equation and both dimensions. It is the only place in
 the eleven tabs that says this model is wrong.
 
-*(Since 2026-08-05 the typechecked overlay sits below it rather than being withheld — see stop 1.
+*(Since 2026-08-05 the typechecked overlay sits below it rather than being withheld — see station 1.
 The diagnostic is still the only place in eleven tabs that says the model is wrong.)*
 
 Ten tabs will show you a plausible-looking model. One tab says otherwise. If you skip it, every

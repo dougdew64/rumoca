@@ -26,7 +26,7 @@ Matching is the phase that decides. It pairs each equation with exactly one unkn
 no equation is used twice and no unknown is claimed twice. That pairing is what makes the next
 phase — ordering — even askable.
 
-Four stops: the easy case, the surprising case, the case with no answer, and what the answer is
+Four stations: the easy case, the surprising case, the case with no answer, and what the answer is
 called in the literature.
 
 ---
@@ -90,7 +90,7 @@ Each one *looks* like it is "for" the variable written first: `f_x[0]` for `erro
 
 Falsified if: `f_x[0]` is matched to `error`.
 
-*What just happened.* The left-hand variable is not the answer, and this is the stop to
+*What just happened.* The left-hand variable is not the answer, and this is the station to
 remember. `f_x[0]` was written as *"error is reference minus measurement"*, and the compiler used
 it to determine `measurement`. Algebraically that is the same equation read backwards, which
 Modelica permits because an equation is a relation, not an assignment.
@@ -173,7 +173,7 @@ stack *is* the path.
 
 ## What this lab cannot check
 
-Whether Station 2 reads as a surprise or as pedantry. It is the load-bearing stop — the moment
+Whether Station 2 reads as a surprise or as pedantry. It is the load-bearing station — the moment
 "equations are not assignments" stops being a slogan — and it rests on you having written down
 three pairs first. Skipping the prediction makes it a table of facts.
 

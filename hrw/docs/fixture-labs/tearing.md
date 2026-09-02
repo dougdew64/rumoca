@@ -25,7 +25,7 @@ But a block's *size* is not fixed. Here is the trick, and it is worth seeing bef
 
 So the solver iterates on the guess alone. A 3×3 simultaneous solve becomes a 1×1 one.
 
-Tearing is the phase that chooses what to guess. Five stops: the trick, the choice being made,
+Tearing is the phase that chooses what to guess. Five stations: the trick, the choice being made,
 two blocks torn independently, all three kinds of block in one model, and what it costs once time
 is moving.
 
@@ -150,7 +150,7 @@ Falsified if: no scalar block appears, or no variable in this model carries a de
 *What just happened.* There is a state, so the integrator takes a step, and a step, and a step —
 and the torn block is re-solved between every pair of steps, for the whole run.
 
-That reframes Stops 1 to 4. Tearing is not a compile-time tidy-up whose benefit you count once. The
+That reframes Stations 1 to 4. Tearing is not a compile-time tidy-up whose benefit you count once. The
 choice of *which single variable to guess* is a decision about the innermost loop of the
 simulation, executed thousands of times. A greedy choice that is one variable worse than optimal
 is one extra unknown in every Newton iteration of every time step.

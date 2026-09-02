@@ -73,5 +73,5 @@ criticism of this pane — the most important fact is not the most prominent thi
 
 - Should `determinacy` be lifted out of the tree into the stage note, the way the balance is on
   the DAE tab?
-- Both specimens are flagged. Given stop 3 — a false trajectory with no error — is flagging
+- Both specimens are flagged. Given station 3 — a false trajectory with no error — is flagging
   enough, or should an over-determined initialization stop the pipeline?

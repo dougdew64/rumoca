@@ -256,7 +256,7 @@ fact.
   dummy-derivative path instead" detail would have been guessed wrong — the obvious
   assumption for a hidden constraint is that it gets differentiated.
 
-**Outcome — the lab delivered.** Doug run it and reported: *"I found row 46 and
+**Outcome — the lab delivered.** Doug ran it and reported: *"I found row 46 and
 have concluded that the Answer feature is working brilliantly."*
 
 **So what unlocked it was Station 2** — finding the one row in a 48x48 matrix with no

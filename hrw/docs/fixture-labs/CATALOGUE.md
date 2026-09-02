@@ -205,7 +205,7 @@ This is a test, not an explanation. It verifies that a link can stop an animatio
 - **Stages:** `Structural`
 - **Stations:**
   - `fixture-lab-seeking-to-a-frame` — Fixture lab — seeking to a frame
-  - `station-0-a-stop-clicked-out-of-order` — Station 0 — A stop clicked out of order
+  - `station-0-a-station-clicked-out-of-order` — Station 0 — A station clicked out of order
   - `station-1-a-replay-unstarted` — Station 1 — A replay, unstarted
   - `station-2-jump-into-the-middle` — Station 2 — Jump into the middle
   - `station-3-jump-backwards` — Station 3 — Jump backwards
@@ -329,7 +329,7 @@ A concept lab. The last phase before simulation. Run [events](hrw://lab/events) 
 
 **Structural rank vs numerical rank**
 
-The first cross-platform lab. Two stops in HRW, then a notebook — because the point
+The first cross-platform lab. Two stations in HRW, then a notebook — because the point
 
 - **Specimens:** `ProportionalLoop`
 - **Stages:** `Structural`

@@ -27,7 +27,7 @@ Too much. Nothing stops a model from specifying a state's initial value twice, i
 disagree. Modelica lets you write `initial equation` blocks *and* `start` attributes, and the
 compiler must notice when they over-determine the problem rather than quietly preferring one.
 
-This phase settles both. Three stops: the case with nothing to solve, the case with a real
+This phase settles both. Three stations: the case with nothing to solve, the case with a real
 initialization system, and the case that specifies too much.
 
 ---
@@ -156,7 +156,7 @@ question that has to be answered.
 Whether Station 2's 21 blocks read as significant. A whole BLT decomposition running before time
 starts is the least-known thing in this lab, and it is one number in a tree.
 
-Whether Station 4 is a fourth stop or a second lab. It is the most interesting failure here and it
+Whether Station 4 is a fourth station or a second lab. It is the most interesting failure here and it
 depends on `connect-expansion.md`'s potential/flow asymmetry, which not every reader will have
 fresh.
 

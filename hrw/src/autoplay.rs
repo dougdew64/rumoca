@@ -636,7 +636,7 @@ Short.
 ";
 
     #[test]
-    fn parsing_finds_the_preamble_and_every_stop_in_order() {
+    fn parsing_finds_the_preamble_and_every_station_in_order() {
         let stops = parse_stations(SAMPLE);
         assert_eq!(stops.len(), 3, "preamble plus two stops: {stops:#?}");
         assert_eq!(
@@ -671,7 +671,7 @@ Short.
 
     /// A `##` inside a fenced block is code, not a stop.
     #[test]
-    fn a_heading_inside_a_code_fence_does_not_invent_a_stop() {
+    fn a_heading_inside_a_code_fence_does_not_invent_a_station() {
         let stops = parse_stations("## Real\n```sh\n## not a heading\n```\ntext\n");
         assert_eq!(stops.len(), 1, "one real stop: {stops:#?}");
     }
@@ -695,7 +695,7 @@ Short.
 
     /// More prose earns more time, and an external hop earns more still.
     #[test]
-    fn weighting_favours_long_stops_and_external_hops() {
+    fn weighting_favours_long_stations_and_external_hops() {
         let stops = parse_stations(SAMPLE);
         let beats = schedule(&stops, Duration::from_secs(90), |l| l.contains("notebook"));
 
@@ -719,7 +719,7 @@ Short.
 
     /// Every stop appears, including one with no links at all.
     #[test]
-    fn a_prose_only_stop_still_gets_a_beat() {
+    fn a_prose_only_station_still_gets_a_beat() {
         let stops = parse_stations("# T\nintro\n\n## Silent\njust words, no links\n");
         let beats = schedule(&stops, Duration::from_secs(30), |_| false);
         let covered: Vec<usize> = beats.iter().map(|b| b.stop).collect();

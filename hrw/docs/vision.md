@@ -199,7 +199,7 @@ finished lab is closer to a by-product.
    graph?"* and *"what does 'computed' mean?"* came from real confusion about phrases Claude had
    used believing them clear — and could not have been anticipated.
 
-**The confound, stated because it is large.** The lab he run at the end was one **he had
+**The confound, stated because it is large.** The lab he ran at the end was one **he had
 co-written**, so of course it taught less; he already knew it. The honest comparison is running a
 lab he had no hand in, which has not been run. It may be that improving beats running, or merely
 that *first contact* beats *second contact* with the same material. **The next lab is that

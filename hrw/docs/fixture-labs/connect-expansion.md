@@ -51,7 +51,7 @@ The replay you are about to step through is that pair of acts, once per set — 
 **This lab counts.** `RcCircuit` has four `connect` statements and twenty-three equations, and every
 step from one number to the other is something you can predict before you look.
 
-Each stop asks you to commit to an answer, then sends you to the pane that settles it. The
+Each station asks you to commit to an answer, then sends you to the pane that settles it. The
 answers are read from generated compiler traces, so if a count disagrees with your screen, the lab
 is wrong and I want to know.
 

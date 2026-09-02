@@ -30,7 +30,7 @@ So something has to sort every variable into a role — carried forward through 
 whole run, or solved for afresh at each instant — and then make one claim about the result:
 this system is square. Everything downstream is entitled to assume that claim.
 
-DAE construction is that phase. Seven stops: the sorting, why it sorts that way, what the solver
+DAE construction is that phase. Seven stations: the sorting, why it sorts that way, what the solver
 is really solving for, the claim, what happens when the claim fails in each direction, and why it is
 checked here rather than later.
 
@@ -129,7 +129,7 @@ moment later; repeat.
 
 A state is therefore two things at once — a known value on the way in, and an unknown rate on
 the way out. That double role is why states are counted separately from everything else, and it
-is what the next stop's count is really about.
+is what the next station's count is really about.
 
 ---
 
@@ -152,7 +152,7 @@ a well-posed problem, not a sufficient one — a square system can still be unso
 what `blt-ordering.md` and `structural-vs-numerical-rank.md` are about.
 
 But the *count* is checkable immediately, cheaply, and before any hard work. Rumoca checks it
-here, at the end of DAE construction, and that timing is the subject of the last stop.
+here, at the end of DAE construction, and that timing is the subject of the last station.
 
 ---
 
@@ -281,13 +281,13 @@ result and a real trajectory answer better than a paragraph.
 
 Whether Station 3 lands. The `der(phi)`/`der(w)` result is the one genuinely counter-intuitive
 thing here, and it is asserted in one line. If it reads as a technicality rather than as the
-point, the stop is too short rather than wrong.
+point, the station is too short rather than wrong.
 
-Whether the DAE tree is legible. Stops 1 and 5 send you to a generic serde tree. Whether `x`,
+Whether the DAE tree is legible. Stations 1 and 5 send you to a generic serde tree. Whether `x`,
 `y` and `p` read as a partition — or as three collapsed nodes among thirty — is a rendering
 question no test reaches.
 
-Whether Station 6's contrast with `CapacitorLoop` is worth a stop of its own. It is asserted in
+Whether Station 6's contrast with `CapacitorLoop` is worth a station of its own. It is asserted in
 prose here and demonstrated nowhere in this lab. *(It is demonstrated in
 [matching](hrw://lab/matching) Station 3, which runs that model's 13-of-14 matching — so the claim is
 checkable, just not here.)*
@@ -295,7 +295,7 @@ checkable, just not here.)*
 Whether Station 6 needed its own specimen or could have been prose. It could not: until
 `OverDeterminedShaft` was written on 2026-08-17, every unbalanced specimen in the corpus reported
 `-1`, and the positive half of the sign convention was an assertion. Whether a whole model is the
-right price for one stop is a fair question — the answer here is that the model is nine lines.
+right price for one station is a fair question — the answer here is that the model is nine lines.
 
 ---
 

@@ -5,8 +5,8 @@
 **Specimens:** `UndefinedRef` and `MissingComponentClass`. Run them together; neither is worth
 much alone.
 
-Run the Parse failure lab first — or jump straight to the stop that draws the distinction:
-[failure-parse, stop 4](hrw://lab/failure-parse/station/station-4-the-distinction-this-specimen-anchors).
+Run the Parse failure lab first — or jump straight to the station that draws the distinction:
+[failure-parse, station 4](hrw://lab/failure-parse/station/station-4-the-distinction-this-specimen-anchors).
 It establishes `Failed` versus `Flagged`, and this lab is the
 first case of the second kind.
 
@@ -34,7 +34,7 @@ kept the partial result. Compare `UnclosedModel`, where Parse had nothing to han
 **Expected:** Flatten has Failed — no tree — and says the reachable-closure pipeline produced
 no model.
 
-So the phase that reports is not the phase that stops. Resolve knew at stop 1; the pipeline
+So the phase that reports is not the phase that stops. Resolve knew at station 1; the pipeline
 continued through Instantiate and Typecheck anyway, and gave up when flattening needed a name
 that was never bound.
 
@@ -74,7 +74,7 @@ Click the Log toggle above the stage tabs.
 
 **Expected:** brackets for `Parse`, `Resolve`, and `Rumoca compile` all opening and closing
 normally, with the failure appearing inside the compile. No bracket is missing — every phase
-up to the stop actually ran.
+up to the station actually ran.
 
 Contrast `UnclosedModel`, where later brackets do not appear at all.
 
@@ -84,6 +84,6 @@ Contrast `UnclosedModel`, where later brackets do not appear at all.
 
 - Does the Resolve tab make it clear that its tree is partial? It is, and the pane may not
   say so loudly enough.
-- Would you rather the *stop* be attributed to Resolve, since that is where the cause is? That
+- Would you rather the *halt* be attributed to Resolve, since that is where the cause is? That
   is a real design question and the answer is not obvious — the compiler's own structure says
   Flatten.

@@ -9,7 +9,7 @@ Every path below was read from `docs/specimen-notebook/RcCircuit/trace/structura
 not invented — a fixture lab with a made-up path is a broken test that looks fine.
 
 Pick it from the Labs list.
-Notices appear in the status bar, along the bottom of the HRW window. Several stops below expect one; that is where to look.
+Notices appear in the status bar, along the bottom of the HRW window. Several stations below expect one; that is where to look.
 
 
 ---
@@ -23,7 +23,7 @@ Notices appear in the status bar, along the bottom of the HRW window. Several st
 headers open only for a followed identifier, for Reveal identifiers, or for a jump
 target, and none of those is active yet.
 
-That is what the next stops have to get through.
+That is what the next stations have to get through.
 
 ## Station 2 — Point at a shallow node
 
@@ -44,7 +44,7 @@ that link mean?", and that question is open until you move on.
 **Expected:** `incidence`, `rows` and `rows[0]` all expand, and the view scrolls to
 `equation_text`, whose value is `0 - (src.p.i + src.n.i)` — the first equation's text.
 
-This is the discriminating stop. Getting there by hand is four clicks and a scroll; if it
+This is the discriminating station. Getting there by hand is four clicks and a scroll; if it
 lands without them, the verb works.
 
 ## Station 4 — Point somewhere deeper still
@@ -86,7 +86,7 @@ compile produced, which only the panel knows.)*
 **Expected:** `C.v` — the capacitor voltage, the model's one state — becomes the followed
 identifier. The Context Bar shows it, and the tree marks where it appears.
 
-The stage must not change. Following and pointing are independent primitives; a stop
+The stage must not change. Following and pointing are independent primitives; a station
 may set either without disturbing the other.
 
 ## Station 7 — Follow, then point, and see both

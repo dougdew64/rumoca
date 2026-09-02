@@ -11,7 +11,7 @@ below assume you know what a matching is and what a rank deficiency means.
 This is the only lab that needs setup. Station 0 is not optional, and it is setup rather than
 teaching: it has an expectation to check, but nothing to predict.
 
-A vocabulary note, because this lab needs three words other labs do not. A stop is a
+A vocabulary note, because this lab needs three words other labs do not. A station is a
 place in *this document*. A break is where the *debugger* halts execution. An anchor is
 the named location a break is armed at — `decision`, `recurse`, `give_up`, `push`, `gate`. Keeping
 them apart matters here more than anywhere else in the corpus, because all three are in play at
@@ -85,7 +85,7 @@ different equation. N nested frames is an N-edge alternating path.
 
 Falsified if: the stack is flat at every break, or two frames report the same `eq`.
 
-*What just happened.* This is the stop the lab exists for, and it is not visible from the
+*What just happened.* This is the station the lab exists for, and it is not visible from the
 animation. The augmenting-path search runs alternately along unmatched and matched edges, looking
 for an unmatched unknown. That run is implemented as recursion — so the *path* the algorithm is
 currently exploring is literally the sequence of frames on the stack, and its length is the depth.
@@ -159,7 +159,7 @@ going:
 
 Whether the stack reads as a path. Station 2 is the whole point and it depends on the call stack
 being legible in the VS Code UI, which no test reaches. If the frames collapse or the `eq` local is
-optimised away, the stop says nothing.
+optimised away, the station says nothing.
 
 Whether the anchors are still where the algorithm decides. They are resolved by name, so they
 cannot point at a stale line — but nothing checks that `decision` still sits at a *decision*. A

@@ -49,7 +49,7 @@ Flatten reports it too, because `flatten_stage` has carried the `ToDae` error si
 DAE tab existed.
 
 That duplication is deliberate, decided 2026-08-03: a learner who opens the DAE tab of a model
-with no DAE and finds nothing has hit a dead end. Two tabs explaining the same stop is redundant;
+with no DAE and finds nothing has hit a dead end. Two tabs explaining the same station is redundant;
 one tab silently blank is worse.
 
 Notice what this means for reading the failure map: `UnbalancedShaft` reports `Failed` at two

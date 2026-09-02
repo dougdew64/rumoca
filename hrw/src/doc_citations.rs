@@ -310,6 +310,13 @@ mod tests {
     ///
     /// **`README.md` is excluded** for the same reason: it is the rules file, and it
     /// documents the collision analysis by naming the retired words.
+    ///
+    /// **That exclusion has a price, and 2026-09-02 charged it.** The README held 28
+    /// retired nouns of its own — in the document that *defines* the vocabulary, four
+    /// lines from the sentence calling a half-done rename "worse than no rename". They
+    /// were corrected by hand and **nothing guards them**, because the same section that
+    /// would trip a checker is the section that has to name `stop` to explain it. State
+    /// the gap rather than let the exclusion imply there isn't one.
     #[test]
     fn no_lab_uses_retired_vocabulary() {
         let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
@@ -343,6 +350,11 @@ mod tests {
                         bad.push(format!("{name}:{}  says {word:?}", i + 1));
                     }
                 }
+                // `stop` cannot go in that list: Decision 15 freed its verb sense, so
+                // this one is decided by grammar. See `retired_stop_noun`.
+                if retired_stop_noun(line) {
+                    bad.push(format!("{name}:{}  says \"stop\" as a NOUN", i + 1));
+                }
             }
         }
 
@@ -358,6 +370,214 @@ mod tests {
              a STATION, and Doug RUNS one in a SESSION:\n  {}",
             bad.join("\n  "),
         );
+    }
+
+    /// Does this line use `stop` as the RETIRED NOUN, rather than the freed verb?
+    ///
+    /// # Why this is not another entry in the word list
+    ///
+    /// Charter Decision 15 renamed the noun `stop` to `station` and — unusually, and
+    /// deliberately — left the word itself in service. `fixture-labs/README.md`: *"`stop`
+    /// becomes free for its natural senses — a compile halting, a debugger stopping."* So
+    /// it cannot join `tour` and `walk` in a flat list; a flat list would fail the title of
+    /// `failure-parse.md`, which is correct English.
+    ///
+    /// # What it cost to leave this unbuilt
+    ///
+    /// The rename was ruled on 2026-09-01 and **never executed in prose**: 141 instances
+    /// across 21 labs and 28 more in the rules file, while a test named
+    /// `no_lab_uses_retired_vocabulary` passed every run. Its list held six words for two
+    /// renames and was never extended to the third, which was settled the same afternoon.
+    ///
+    /// That list is the **exhaustive-list shape its own doc comment warns about**, two
+    /// paragraphs above the code that was an instance of it. A list is a claim that it is
+    /// complete, and nothing checks that claim — which is why this repository keeps
+    /// producing the same defect in a new dress.
+    ///
+    /// # The test is grammatical, so neither class drifts
+    ///
+    /// A determiner within three tokens makes it a noun; a modal, an infinitive marker, an
+    /// adverb, a plural subject or a following gerund makes it a verb. Both are **closed
+    /// word classes** — English does not gain modals — where a phrase allow-list would need
+    /// a new entry every time a lab is written.
+    fn retired_stop_noun(line: &str) -> bool {
+        // Closed classes. A determiner before `stop` makes it a thing; a modal or
+        // infinitive marker before it makes it an act.
+        const DETERMINER: &[&str] = &[
+            "a", "an", "the", "this", "that", "these", "those", "each", "every", "per", "next",
+            "last", "first", "second", "third", "fourth", "fifth", "previous", "another", "one",
+            "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "several",
+            "its", "his", "their", "our", "whose", "same", "any", "some", "which", "no",
+        ];
+        const VERB_LEAD: &[&str] = &[
+            "to",
+            "and",
+            "or",
+            "then",
+            "not",
+            "never",
+            "always",
+            "only",
+            "just",
+            "truly",
+            "really",
+            "actually",
+            "simply",
+            "can",
+            "cannot",
+            "could",
+            "will",
+            "would",
+            "must",
+            "may",
+            "might",
+            "should",
+            "shall",
+            "does",
+            "do",
+            "did",
+            "let",
+            "nothing",
+            "something",
+            "anything",
+            "everything",
+        ];
+        // What follows a verb: a place, a complement, or a gerund it governs.
+        const VERB_TAIL: &[&str] = &["being", "there", "here", "somewhere", "at"];
+        // Adverbs that follow only the INFLECTED verb. "which one stops first" is an act;
+        // "a lab's fourth stop first" is a thing, and the two differ only in the `s`.
+        const VERB_TAIL_INFLECTED: &[&str] = &["first", "short"];
+        // A relative pronoun introduces a clause, so what follows is its verb: "the phase
+        // that stops". Contrast the demonstrative "that stop", which is a thing.
+        const RELATIVE: &[&str] = &["that", "which", "who"];
+
+        let tokens: Vec<String> = line
+            .split(|c: char| !c.is_alphanumeric() && c != '\'' && c != '-')
+            .filter(|t| !t.is_empty())
+            .map(str::to_lowercase)
+            .collect();
+
+        for (i, token) in tokens.iter().enumerate() {
+            // `off-stop` has no verb reading at all.
+            if token == "off-stop" {
+                return true;
+            }
+            let possessive = token.ends_with("'s");
+            let base = token.trim_end_matches("'s");
+            if base != "stop" && base != "stops" {
+                continue;
+            }
+            let prev = i
+                .checked_sub(1)
+                .and_then(|j| tokens.get(j))
+                .map(String::as_str);
+            let next = tokens.get(i + 1).map(String::as_str);
+
+            if !possessive {
+                // "and stop.", "can stop", "truly stops"
+                if prev.is_some_and(|p| VERB_LEAD.contains(&p)) {
+                    continue;
+                }
+                // "stops being enough", "stops trying to", "stop at", "stops there"
+                if next.is_some_and(|n| VERB_TAIL.contains(&n) || n.ends_with("ing")) {
+                    continue;
+                }
+                if base == "stops" {
+                    // "which one stops first"
+                    if next.is_some_and(|n| VERB_TAIL_INFLECTED.contains(&n)) {
+                        continue;
+                    }
+                    // "the phase that stops."
+                    if prev.is_some_and(|p| RELATIVE.contains(&p)) {
+                        continue;
+                    }
+                    // Ends the clause with an ordinary subject before it: "where each
+                    // specimen stops." A determiner there instead would make it the
+                    // plural noun — "Three stops:".
+                    if next.is_none() && !prev.is_some_and(|p| DETERMINER.contains(&p)) {
+                        continue;
+                    }
+                }
+                // A plural subject takes a verb: "a few words stop an animation".
+                if prev.is_some_and(|p| {
+                    p.ends_with('s') && !DETERMINER.contains(&p) && !VERB_LEAD.contains(&p)
+                }) {
+                    continue;
+                }
+                // A modal earlier in the clause governs a later bare `stop`:
+                // "should an over-determined initialization stop the pipeline?"
+                if base == "stop" && tokens[..i].iter().any(|t| VERB_LEAD.contains(&t.as_str())) {
+                    continue;
+                }
+            }
+
+            // The noun: a possessive, a numbered station, or a determiner in reach.
+            if possessive || next.is_some_and(|n| n.chars().all(|c| c.is_ascii_digit())) {
+                return true;
+            }
+            if tokens[i.saturating_sub(3)..i]
+                .iter()
+                .any(|t| DETERMINER.contains(&t.as_str()) || t.chars().all(|c| c.is_ascii_digit()))
+            {
+                return true;
+            }
+        }
+        false
+    }
+
+    /// The detector separates the retired noun from the verb Decision 15 kept.
+    ///
+    /// Every string here is real: the nouns are sentences this rename corrected on
+    /// 2026-09-02, and the verbs are sentences it deliberately left alone — including
+    /// `failure-parse.md`'s title, which a flat word list would have failed.
+    #[test]
+    fn the_stop_detector_tells_the_noun_from_the_verb() {
+        for noun in [
+            "the capability that lets a stop point at the moment",
+            "Several stops below expect one",
+            "If Stops 2 and 3 both land forward",
+            "a refused stop leaves nothing armed",
+            "clicking a lab's fourth stop first",
+            "Five stops: a model needing nothing",
+            "an abstraction with no stop is untested confidence",
+            "Each prediction is answerable from the previous stop's result",
+            "a feature lab spends your attention on finding off-stop bugs",
+            "This is the discriminating stop.",
+            "It is the load-bearing stop — the moment",
+            "1. Stops chain.",
+        ] {
+            assert!(
+                retired_stop_noun(noun),
+                "this is the retired NOUN and must be caught: {noun:?}",
+            );
+        }
+
+        for verb in [
+            "# Failure lab — Parse, the only phase that truly stops",
+            "Failure lab — Structural analysis, where counting stops being enough",
+            "So the compiler stops trying to sequence",
+            "And the compile stops somewhere else",
+            "which one stops first",
+            "a link can stop an animation",
+            "A few words stop an animation dead",
+            "Include what he needs to predict, and stop.",
+            "conversions stop at the concept labs",
+            "He did not say the reports stop mattering",
+            "and stops earning it when nobody is reading",
+            "should an over-determined initialization stop the pipeline?",
+            "Nothing stops a model from specifying a state twice",
+            "the solver must detect the instant, stop there,",
+            "Continue (F5) until you stop at the decision anchor",
+            // Both of these the first draft flagged, and each taught a rule: an ordinary
+            // subject closing a clause, and a relative pronoun opening one.
+            "example failure_map, which lists where each specimen stops.",
+            "the phase that reports is not the phase that stops. Resolve knew at station 1",
+        ] {
+            assert!(
+                !retired_stop_noun(verb),
+                "Decision 15 left this VERB in service and it must not be flagged: {verb:?}",
+            );
+        }
     }
 
     /// A path that is part of a longer path is not a citation.
@@ -3973,7 +4193,7 @@ Some prose.
     /// A stop with no falsifiable line is a paragraph with a heading, and a lab of those
     /// is the stored prose this project retired 1,632 lines of.
     #[test]
-    fn every_stop_of_every_lab_owes_an_expected() {
+    fn every_station_of_every_lab_owes_an_expected() {
         let mut checked = 0usize;
         let mut bad: Vec<String> = Vec::new();
 
@@ -4199,7 +4419,7 @@ Some prose.
     /// the word arrived in the first place: `matching.md` shipped with Acts on the same
     /// day `dae-construction.md` shipped with Stops, and nobody noticed for thirteen days.
     #[test]
-    fn no_lab_heading_calls_a_stop_an_act() {
+    fn no_lab_heading_calls_a_station_an_act() {
         let mut bad: Vec<String> = Vec::new();
         for (name, _kind, text) in labs_with_kinds() {
             for (i, line) in text.lines().enumerate() {
@@ -4319,7 +4539,7 @@ Some prose.
     /// This check is exact instead: the note must be present, and the two phrasings that
     /// were actually wrong must not come back.
     #[test]
-    fn the_live_lab_keeps_stop_break_and_anchor_apart() {
+    fn the_live_lab_keeps_station_break_and_anchor_apart() {
         let path =
             PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs/matching-live.md");
         let text = std::fs::read_to_string(&path).expect("matching-live.md must be readable");
@@ -4355,7 +4575,7 @@ Some prose.
     /// whole discipline rests on. So the check skips a line quoting him, which is why it
     /// looks only for the *current* vocabulary.
     #[test]
-    fn a_stop_a_source_comment_cites_exists_in_that_lab() {
+    fn a_station_a_source_comment_cites_exists_in_that_lab() {
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let labs = hrw.join("docs/fixture-labs");
 
@@ -4376,16 +4596,16 @@ Some prose.
             };
             let src_name = src.file_name().and_then(|n| n.to_str()).unwrap_or("?");
             for (i, line) in text.lines().enumerate() {
-                // A lab named in backticks, then `Stop <n>` anywhere later on the same
+                // A lab named in backticks, then `Station <n>` anywhere later on the same
                 // line. **Adjacency was the first implementation and it was too narrow** —
                 // it matched 3 of the 19 real references, because most of them read
                 // "`matching.md` ends Station 3 with one" rather than "`matching.md` Station 3".
                 // A check that inspects a sixth of its subject is most of the way to
                 // vacuous while looking green.
-                let Some(stop_at) = line.find("Station ") else {
+                let Some(station_at) = line.find("Station ") else {
                     continue;
                 };
-                let n: String = line[stop_at + "Station ".len()..]
+                let n: String = line[station_at + "Station ".len()..]
                     .chars()
                     .take_while(char::is_ascii_digit)
                     .collect();
@@ -4393,7 +4613,7 @@ Some prose.
                     continue;
                 }
                 // The nearest lab named *before* the citation owns it.
-                let head = &line[..stop_at];
+                let head = &line[..station_at];
                 let Some(md) = head.rfind(".md`") else {
                     continue;
                 };

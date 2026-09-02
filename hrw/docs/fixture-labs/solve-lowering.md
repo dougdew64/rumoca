@@ -23,7 +23,7 @@ array, and every equation must become arithmetic on those slots.
 This phase does the translation, and it is the last chance to get it wrong. After it, there are
 no names left to check against — only numbers, which is why the mapping itself is worth looking at.
 
-Three stops: the mapping, what else ends up in the arrays, and what the same mapping looks like at
+Three stations: the mapping, what else ends up in the arrays, and what the same mapping looks like at
 scale.
 
 ---
@@ -125,13 +125,13 @@ of five. The overhead is event machinery, and a smooth model barely pays it.
 
 ## What this lab cannot check
 
-Whether the bindings table is findable. Stops 1 and 2 send you into a generic serde tree to a
+Whether the bindings table is findable. Stations 1 and 2 send you into a generic serde tree to a
 nested path. Whether `problem.layout.bindings` reads as a mapping or as a wall of JSON is your
 report, and it is the one thing this lab depends on being legible.
 
 Whether the enum constants are noise or context. The bindings map also contains dozens of
 entries like `StateSelect.never -> Constant(1)` from the MSL. They are real and this lab ignores
-them, which may make the pane look busier than the stops suggest.
+them, which may make the pane look busier than the stations suggest.
 
 What the generated code actually looks like. This phase's output is a layout, and the lab
 stops there. Whether the residual function reads as recognisable arithmetic on `Y[0]` and `Y[1]` is
@@ -157,8 +157,8 @@ It is not diagnosed and there are innocent readings — a dummy-derivative schem
 states around as algebraic variables, so a *scalar* count of them may be correct and merely named
 confusingly. The investigation is in [`upstream-issues.md`](hrw://doc/upstream-issues.md).
 
-This lab deliberately used `BouncingBall` and `RcCircuit` for its stops, both of which demote
-nothing, so every number in Stops 1–3 is unaffected. That was a choice to keep the stops clean, and
+This lab deliberately used `BouncingBall` and `RcCircuit` for its stations, both of which demote
+nothing, so every number in Stations 1–3 is unaffected. That was a choice to keep the stations clean, and
 saying so is better than letting you discover the discrepancy on your own model and doubt the
 whole lab.
 

@@ -237,7 +237,7 @@ note; the rest quote the commit.
 | 08-22 | the mandatory reading path was growing unchecked | Claude | answering Doug's question about the arrangement |
 | 08-22 | three scratch-specimen tests passed vacuously | Claude | while fixing an unrelated assertion |
 | 08-22 | a `##`-heading edit silently rewrote the catalogue blurb | toolchain | `lab_catalogue_is_current` |
-| 08-22 | an `**Expected:**` marker was removed | toolchain | `every_stop_of_every_lab_owes_an_expected` |
+| 08-22 | an `**Expected:**` marker was removed | toolchain | `every_station_of_every_lab_owes_an_expected` |
 | 08-22 | `describe`→`parse` had no round-trip guard | Claude | night 1, column read |
 | 08-22 | a stage with no tab failed nothing; a doc comment claimed otherwise | Claude | night 1 |
 | 08-22 | `…shows_every_fixture…` checked 9 of 22 | Claude | night 1 |
@@ -1862,7 +1862,7 @@ citation claims.
 ### How to do it
 
 `examples/gen_lab_catalogue.rs` already walks every heading to build the slug list. For each
-numbered stop, take the first `**Expected:**` line of its body — `every_stop_of_every_lab_owes_an_expected`
+numbered stop, take the first `**Expected:**` line of its body — `every_station_of_every_lab_owes_an_expected`
 guarantees one exists — and emit it under the row.
 
 **Two judgement calls to make with measurement, not guesswork:** the file is **21 KB** today and
