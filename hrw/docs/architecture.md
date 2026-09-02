@@ -115,13 +115,13 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**66 modules, 75,606 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**66 modules, 75,607 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `app.rs` | 7,143 |
 | `worker/tests.rs` | 6,620 |
-| `app/tests.rs` | 6,545 |
+| `app/tests.rs` | 6,549 |
 | `doc_citations.rs` | 5,973 |
 | `worker.rs` | 5,857 |
 | `bridge.rs` | 4,195 |
@@ -130,7 +130,7 @@ showing 48 equations. They are derived now, and
 | `equation_sheet.rs` | 1,540 |
 | `tree.rs` | 1,299 |
 | `incidence_view.rs` | 1,219 |
-| `lab_panel.rs` | 1,183 |
+| `lab_panel.rs` | 1,180 |
 | `reduction_view.rs` | 1,112 |
 | `connection_anim.rs` | 1,088 |
 | `autoplay.rs` | 1,078 |
@@ -185,7 +185,7 @@ showing 48 equations. They are derived now, and
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 101 |
 | `field_help.rs` | 67 |
-| **total** | **75,606** |
+| **total** | **75,607** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -1240,9 +1240,9 @@ needs the resolved `ClassTree` (which contains the whole MSL) and the instance
 overlay on the UI thread. A worker-side live-debug path would be the right fix;
 see `docs/ideas.md` #9.
 
-### Ad hoc labs (`bridge.rs` + `App::poll_lab_file`)
+### Answers (`bridge.rs` + `App::poll_lab_file`)
 
-Lab mode renders **whatever Claude writes to `.hrw-bridge/lab.md`** — the one
+Lab mode renders **whatever Claude writes to `.hrw-bridge/answer.md`** — the one
 bridge file that flows *into* HRW rather than out of it. Where `focus.json` carries
 a noun out to Claude, this carries a sequence of nouns back, as `hrw://` links the
 reader clicks to drive HRW to each stop.

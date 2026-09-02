@@ -222,7 +222,7 @@ tape assemble beats a breakpoint in `ad.rs` is a question for Doug's reading.
 - **Context:** **first entry with a real HRW capture.** `focus.json` seq 1, `kind:
   stage`, `request: explain`, stage `Structural`, `stage_view: Summary`, specimen
   `MotorWithBrake.mo`, `ui_mode: Specimen`.
-- **Medium:** text first (per the medium rule), then **the first ad hoc lab**, at
+- **Medium:** text first (per the medium rule), then **the first Answer**, at
   Doug's request — "Write it."
 - **Repeat?** First asking.
 - **Concepts:** structural vs numerical rank; maximum matching as structural rank;
@@ -257,7 +257,7 @@ fact.
   assumption for a hidden constraint is that it gets differentiated.
 
 **Outcome — the lab delivered.** Doug run it and reported: *"I found row 46 and
-have concluded that the ad hoc lab feature is working brilliantly."*
+have concluded that the Answer feature is working brilliantly."*
 
 **So what unlocked it was Station 2** — finding the one row in a 48x48 matrix with no
 matching marker on it. Everything else in the lab is Claude asserting things; that

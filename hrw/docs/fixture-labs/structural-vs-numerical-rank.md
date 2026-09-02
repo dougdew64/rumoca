@@ -47,7 +47,7 @@ file to the OS association instead, so HRW never needs to know where Wolfram is
 installed.)*
 
 *(The notebook is versioned beside this lab rather than written to the gitignored bridge
-directory. An ad hoc notebook is ephemeral like an ad hoc lab; a fixture notebook
+directory. An ad hoc notebook is ephemeral like an Answer; a fixture notebook
 has expected outcomes, and a test that vanishes on a fresh checkout is not a test.)*
 
 Expected, in the notebook:

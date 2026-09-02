@@ -5,13 +5,13 @@
 **This is a test, not an explanation.** It exists so Doug can verify the half of camera
 aiming that Claude cannot see: whether the camera actually lands where a link says.
 
-Unlike an ad hoc lab (`.hrw-bridge/lab.md`, gitignored, regenerated per question), a
+Unlike an Answer (`.hrw-bridge/answer.md`, gitignored, regenerated per question), a
 fixture lab is kept and versioned, because it has a pass/fail criterion rather than
 prose that would rot. `fixture_lab_links_all_resolve` parses every link below on every
 test run, so a vocabulary change breaks the build instead of breaking this file quietly.
 
 To run it: open Lab mode and pick camera-aiming from the row of labs at the top
-of the panel. (Before 2026-07-29 this had to be copied over `.hrw-bridge/lab.md` first;
+of the panel. (Before 2026-07-29 this had to be copied over `.hrw-bridge/answer.md` first;
 Doug asked for in-app selection once it was clear the fixtures would accumulate.)
 Notices appear in the status bar, along the bottom of the HRW window. Several stops below expect one; that is where to look.
 

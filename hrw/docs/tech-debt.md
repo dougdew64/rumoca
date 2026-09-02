@@ -194,7 +194,7 @@ verification loop is tight, the second says something is unwatched.
 | 08-16 | lab link hooks never cleared; first click masked the rest | **Doug** | frame 7 and 13 |
 | 08-16 | link navigation dead for 9 of 11 stages | **Doug** | *"still not causing navigation"* — after a wrong fix |
 | 08-16 | divider learned a fraction from a pinned width | **Doug** | maximize from normalized |
-| 08-16 | tests treated the live ad hoc lab as scratch (×3) | Claude | writing one for Doug to test |
+| 08-16 | tests treated the live Answer as scratch (×3) | Claude | writing one for Doug to test |
 | 08-16 | picker layout regressed the divider | toolchain | `the_left_panel_content_never_detaches…` |
 | 08-16 | duplicate `#[test]`; stolen `#[test]` | toolchain | `no_function_has_two_test_attributes`, `dead_code` |
 
@@ -539,7 +539,7 @@ what a future sweep can use: what was fixed, and the lesson. Detail is in git hi
 | Sweep | Scope | Fixed |
 |---|---|---|
 | **2026-07-28** comprehensive | before source-tooling Phases 5-7 | `collect_tracked_ancestors` short-circuited on `any`, so the tree opened a path to the **first** mention only — now folds. `ui()` 1272 → 880. The specimen source view's private copy of the tracking toggle now calls `set_tracked_identifier` like every other entry point. `tree.rs` module docs refreshed. |
-| **2026-07-29** scoped to #42 | before ad hoc labs | `ui()` 982 → 325 via `FrameIntent`, closing an item open across two sweeps and *blocked* the previous time — extraction needed seven out-parameters threaded through, because egui panel closures borrow `self`. Three dead locals removed (`node_ask`, `debug_ask`, `nav_to` — folded in with `.or(…)` where the fold was always the other operand). Batch narrative regeneration **closed as obsolete**. Test-race entry **corrected**: it blamed `bridge.rs` alone, but `worker`'s stdout redirect races too, and both reproduce on a clean tree. |
+| **2026-07-29** scoped to #42 | before Answers | `ui()` 982 → 325 via `FrameIntent`, closing an item open across two sweeps and *blocked* the previous time — extraction needed seven out-parameters threaded through, because egui panel closures borrow `self`. Three dead locals removed (`node_ask`, `debug_ask`, `nav_to` — folded in with `.or(…)` where the fold was always the other operand). Batch narrative regeneration **closed as obsolete**. Test-race entry **corrected**: it blamed `bridge.rs` alone, but `worker`'s stdout redirect races too, and both reproduce on a clean tree. |
 
 **Three items were deferred into #42 rather than swept**, and the reasoning generalises:
 unifying the four sub-view enums, decomposing `bridge.rs`, and aiming the canvas were all
@@ -672,7 +672,7 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   shadows a curated specimen — the exact *"makes Claude guess"* failure that test exists to
   prevent.
 
-  **`test_support::ScratchSpecimen` is the fix**, on the `ui_tests::AdHocLab` contract: save what
+  **`test_support::ScratchSpecimen` is the fix**, on the `ui_tests::Answer` contract: save what
   was there, write, and restore in `Drop` so unwinding cannot poison the directory. All three
   tests now establish their own precondition, and the probe's source is a shared constant because
   `worker`'s `n_states == 1` assertion is a property of *that* model.
@@ -690,8 +690,8 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
 
   **The fix is not simply to drop the early return.** Making it non-vacuous means the test writes
   its own probe and removes it, in a directory Doug and Claude both use during a session. That is
-  exactly the shape of the three `.hrw-bridge/lab.md` defects (`CLAUDE.md`, *"a test that wrote
-  its own and **deleted Doug's** afterwards"*), so it wants the `ui_tests::AdHocLab` treatment —
+  exactly the shape of the three `.hrw-bridge/answer.md` defects (`CLAUDE.md`, *"a test that wrote
+  its own and **deleted Doug's** afterwards"*), so it wants the `ui_tests::Answer` treatment —
   restore what was there, including on a panic — rather than a naive create/delete.
 
   *Found 2026-08-22, when two unrelated scratch specimens broke the test's other assertion. That
@@ -699,20 +699,20 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
 
 ## UI defects — found by running
 
-- [ ] **The "✨ Claude's answer" row vanishes when no ad hoc lab exists, and its absence is
+- [ ] **The "✨ Claude's answer" row vanishes when no Answer exists, and its absence is
   indistinguishable from breakage.** *(Doug, 2026-08-15: "the 'Claude's Answer' lab seems to
   have disappeared from the labs list in the lab mode.")*
 
-  **Not a regression — diagnosed before logging.** `.hrw-bridge/lab.md` does not exist, and
+  **Not a regression — diagnosed before logging.** `.hrw-bridge/answer.md` does not exist, and
   `lab.rs:181` gates the row on that file:
 
   ```rust
   if std::path::Path::new(bridge::LAB_FILE).exists() {
-      labs.push(LabSource::AdHoc);
+      labs.push(LabSource::Answer);
   }
   ```
 
-  No ad hoc lab has been written this week, `.hrw-bridge/` is gitignored and ephemeral by
+  No Answer has been written this week, `.hrw-bridge/` is gitignored and ephemeral by
   design, and the listing logic has not changed — the last commits touching `lab.rs` all
   predate the session. So the row is behaving exactly as built.
 
@@ -724,10 +724,10 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
   feature broke"** — and Doug read it, correctly by the available evidence, as the second.
 
   **Fix:** render the row **always**, disabled when the file is absent, with hover text saying
-  what makes one appear (Claude writes `.hrw-bridge/lab.md`; it is regenerated per question,
+  what makes one appear (Claude writes `.hrw-bridge/answer.md`; it is regenerated per question,
   never retrieved — `docs/ideas.md` #42). Same shape as the disabled Debug button.
 
-  **Why it matters more than one row.** The ad hoc lab is the whole *"Claude can compose an
+  **Why it matters more than one row.** The Answer is the whole *"Claude can compose an
   answer inside HRW"* capability (#42). If it looks broken, it stops being reached for, and the
   capability dies of apparent absence rather than of any decision.
 
@@ -1826,12 +1826,12 @@ when the file no longer matches the labs.
 
 **Before 2026-08-17 a stop link did not work**, so the corpus contained exactly one and citation
 was rare. It works now, which makes composing an answer out of checked stops the natural move
-rather than an unusual one — see `.hrw-bridge/lab.md`'s four-citation example. **The debt's cost
+rather than an unusual one — see `.hrw-bridge/answer.md`'s four-citation example. **The debt's cost
 scales with how often the feature is used, and the feature just became usable.**
 
 ### What it does NOT close, and this needs saying
 
-**An ad hoc lab's summary is still unchecked, and will remain so.** `.hrw-bridge/lab.md` is
+**An Answer's summary is still unchecked, and will remain so.** `.hrw-bridge/answer.md` is
 gitignored by construction — it is the answer to the question just asked — so no test runs on it.
 The asymmetry to keep in mind:
 

@@ -163,8 +163,8 @@ impl App {
 
     /// Put lab text on screen **without touching the disk**.
     ///
-    /// **Added 2026-08-05, because two tests were reading the live ad hoc lab.**
-    /// `.hrw-bridge/lab.md` is gitignored and ephemeral by construction — Claude
+    /// **Added 2026-08-05, because two tests were reading the live Answer.**
+    /// `.hrw-bridge/answer.md` is gitignored and ephemeral by construction — Claude
     /// overwrites it every time he answers a question — and
     /// `a_stop_needing_a_specimen_is_refused_with_a_visible_notice` and
     /// `a_lab_link_acts_when_clicked_in_isolation` both clicked a link that happened
@@ -174,7 +174,7 @@ impl App {
     ///
     /// A test whose fixture is a scratch file is not testing what it says it tests.
     pub(crate) fn test_set_lab_text(&mut self, markdown: &str) {
-        self.lab.selected = Some(LabSource::AdHoc);
+        self.lab.selected = Some(LabSource::Answer);
         self.lab.cached = Some((markdown.to_owned(), std::time::SystemTime::now()));
         // Far in the future so `poll` does not immediately re-read the real file and
         // replace what this just set.
@@ -1987,12 +1987,12 @@ fn report_cache_invalidated_on_stage_switch() {
 /// (it needs `current_stage().value`), which is what calls `reset_for`.
 #[test]
 fn a_replay_keeps_its_place_across_a_stage_switch() {
-    use crate::ui_tests::{AdHocLab, harness};
+    use crate::ui_tests::{Answer, harness};
     use crate::worker::Stage;
 
-    // Auto-selecting an ad hoc lab resets the stage side. See the note on
-    // `AdHocLab` — its presence is environment, not code.
-    let _lab_state = AdHocLab::absent();
+    // Auto-selecting an Answer resets the stage side. See the note on
+    // `Answer` — its presence is environment, not code.
+    let _lab_state = Answer::absent();
 
     let mut app = App::test_default();
     app.stages.initialization = Stage {
@@ -2076,10 +2076,10 @@ fn a_replay_keeps_its_place_across_a_stage_switch() {
 /// different question — the IC plan cache was `None` when it should have been built.
 #[test]
 fn a_stranded_structural_sub_view_does_not_take_over_another_stage() {
-    use crate::ui_tests::{AdHocLab, harness};
+    use crate::ui_tests::{Answer, harness};
     use crate::worker::Stage;
 
-    let _lab_state = AdHocLab::absent();
+    let _lab_state = Answer::absent();
 
     let mut app = App::test_default();
     app.stages.initialization = Stage {
@@ -3549,7 +3549,7 @@ fn a_scratch_specimen_is_listed_and_marked() {
     // the moment a second one existed (2026-08-22: two probes written to answer a
     // question about connector type checking, both sorting ahead of it).
     // `.hrw-bridge/specimens/` is live state the suite does not control, the same
-    // class as `.hrw-bridge/lab.md`, and the fix is to assert what the feature
+    // class as `.hrw-bridge/answer.md`, and the fix is to assert what the feature
     // promises rather than what one directory happened to contain.
     let last_scratch = app
         .model_list
@@ -3911,7 +3911,7 @@ fn every_stage_round_trips_between_capture_and_link() {
 
 /// Every link in every **fixture lab** resolves against the current parser.
 ///
-/// A fixture lab is kept and versioned — unlike an ad hoc lab, which is gitignored
+/// A fixture lab is kept and versioned — unlike an Answer, which is gitignored
 /// and regenerated per question. The ephemerality rule was never about labs; it was
 /// about *explanation*, which rots because nothing checks it. A fixture lab has a
 /// pass/fail criterion, and **this test is what makes that true**: without something
@@ -3924,8 +3924,8 @@ fn every_stage_round_trips_between_capture_and_link() {
 #[test]
 fn lab_labels_name_what_the_lab_is() {
     assert!(
-        LabSource::AdHoc.label().contains("Answer"),
-        "the ad hoc lab is named by its role; its filename is an implementation \
+        LabSource::Answer.label().contains("Answer"),
+        "the Answer is named by its role; its filename is an implementation \
              detail nobody should need to know",
     );
     let fixture = LabSource::Fixture(PathBuf::from("/x/docs/fixture-labs/camera-aiming.md"));
@@ -3935,7 +3935,7 @@ fn lab_labels_name_what_the_lab_is() {
         PathBuf::from("/x/docs/fixture-labs/camera-aiming.md")
     );
     assert_eq!(
-        LabSource::AdHoc.path(),
+        LabSource::Answer.path(),
         PathBuf::from(crate::bridge::LAB_FILE)
     );
 }
@@ -3982,10 +3982,10 @@ fn switching_labs_resets_the_stage_side() {
     assert_eq!(app.lab.selected, Some(b));
 }
 
-/// The list offers the fixtures, ad hoc first when one exists.
+/// The list offers the fixtures, the Answer first when one exists.
 ///
 /// Doug asked for in-app selection so a fixture lab no longer has to be copied over
-/// `.hrw-bridge/lab.md` before starting HRW. Ad hoc goes first because it answers
+/// `.hrw-bridge/answer.md` before starting HRW. The Answer goes first because it answers
 /// the question just asked; burying it under the fixtures would make the common case
 /// the awkward one.
 #[test]
@@ -4017,11 +4017,15 @@ fn the_lab_list_offers_fixtures_with_ad_hoc_first() {
         !labels.iter().any(|l| l.eq_ignore_ascii_case("README")),
         "README.md must not be offered as a lab: {labels:?}",
     );
-    if app.lab.available.contains(&LabSource::AdHoc) {
-        assert_eq!(app.lab.available[0], LabSource::AdHoc, "ad hoc sorts first");
+    if app.lab.available.contains(&LabSource::Answer) {
+        assert_eq!(
+            app.lab.available[0],
+            LabSource::Answer,
+            "the Answer sorts first"
+        );
         assert_eq!(
             app.lab.selected,
-            Some(LabSource::AdHoc),
+            Some(LabSource::Answer),
             "and is selected by default"
         );
     }
@@ -4254,7 +4258,7 @@ fn node_pointing_fixture_paths_exist_in_the_real_ir() {
 /// file that is not there tests nothing while looking fine — the same failure as a
 /// made-up node path. Fixture notebooks are therefore **versioned beside their
 /// lab**, not written to the gitignored bridge directory: an *ad hoc* notebook is
-/// ephemeral like an ad hoc lab, but a fixture has expected outcomes, and a test
+/// ephemeral like an Answer, but a fixture has expected outcomes, and a test
 /// that vanishes on a fresh checkout is not a test.
 #[test]
 fn fixture_labs_reference_files_that_exist() {
@@ -5010,14 +5014,14 @@ fn a_link_into_a_non_report_stage_applies_its_sub_view() {
 /// So this drives `frame_ui` and asserts the viewport moved.
 #[test]
 fn a_frame_link_into_flatten_connections_navigates() {
-    use crate::ui_tests::{AdHocLab, harness};
+    use crate::ui_tests::{Answer, harness};
 
-    // **No ad hoc lab for the duration.** HRW auto-selects one when nothing else
+    // **No Answer for the duration.** HRW auto-selects one when nothing else
     // is chosen, and selecting a lab resets the stage side — so this test passed
     // or failed depending on whether Claude had answered a question recently. It
     // started failing the first time one existed, which is the environment
     // changing rather than the code.
-    let _lab_state = AdHocLab::absent();
+    let _lab_state = Answer::absent();
 
     let mut app = App::test_default();
     // A specimen must be selected or the link is refused by design — the "no specimen
@@ -5986,12 +5990,12 @@ fn link_slugs_and_capture_names_are_the_same_vocabulary() {
     }
 }
 
-/// An ad hoc lab written to the bridge round-trips, and its links parse.
+/// An Answer written to the bridge round-trips, and its links parse.
 ///
 /// Replaces `lab_document_hrw_links_are_valid`, which checked the links in
 /// `end_to_end_lab.md` — a document HRW no longer shows. Its prose was
 /// retired 2026-07-29 and lab mode now renders whatever Claude writes to
-/// `.hrw-bridge/lab.md`, so the subject of that test no longer existed.
+/// `.hrw-bridge/answer.md`, so the subject of that test no longer existed.
 ///
 /// Touches the shared bridge directory, so it needs `--test-threads=1` like
 /// the other bridge tests.
@@ -6418,7 +6422,7 @@ mod tests_lab_back {
             .as_ref()
             .and_then(|s| match s {
                 LabSource::Fixture(p) => p.file_stem().and_then(|n| n.to_str()),
-                LabSource::AdHoc => None,
+                LabSource::Answer => None,
             })
             .unwrap_or_default()
             .to_owned();

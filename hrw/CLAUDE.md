@@ -619,7 +619,7 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
   files them.** Only *reproduced* bugs, with suspect code marked unverified: a confident wrong
   diagnosis wastes a maintainer's time and costs the credibility this project is building.
 - **[`docs/fixture-labs/`](docs/fixture-labs/) — labs that are *tests*, not explanations.**
-  Versioned, unlike an ad hoc lab (`.hrw-bridge/lab.md`, gitignored). **Only justified because
+  Versioned, unlike an **Answer** (`.hrw-bridge/answer.md`, gitignored). **Only justified because
   something runs them:** `fixture_lab_links_all_resolve` parses every link on every test run.
   Three rules, each bought with a defect, and the README carries what each cost:
   - **One lab per capability, narrow** — the scarce resource is Doug's attention per

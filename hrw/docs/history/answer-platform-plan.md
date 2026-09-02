@@ -26,7 +26,7 @@ Everything still live was moved out before retirement. Nothing here is the only 
 ---
 
 Written 2026-07-29, at the end of the session that reframed the project. Sequences
-`docs/ideas.md` #41 (Claude's teaching database), #42 (ad hoc labs), #43 (Wolfram
+`docs/ideas.md` #41 (Claude's teaching database), #42 (Answers), #43 (Wolfram
 and System Modeler as answer channels), #5 (four-bar linkage + planar mechanics),
 and the tech-debt discipline.
 
@@ -95,7 +95,7 @@ added, and concluded the instruments had run ahead of their use. Doug rejected t
 correctly:
 
 > I would describe this day as a breakthrough change of project philosophy. Exhibit A is the
-> concept of ad hoc labs which you create to answer questions. [...] I want very much to
+> concept of Answers which you create to answer questions. [...] I want very much to
 > complete our paradigm change for HRW [...] while today's discussion is still fresh in my
 > head.
 
@@ -206,7 +206,7 @@ compile — when Doug is ready; that one only he can start.
 
 ---
 
-## Phase 1 — Minimum viable ad hoc lab  ✅ **DONE 2026-07-29**
+## Phase 1 — Minimum viable Answer  ✅ **DONE 2026-07-29**
 
 **Only one change: load the lab document from disk at runtime.** Today it is
 `include_str!`'d into the binary, so a new lab needs a rebuild.
@@ -218,7 +218,7 @@ compile — when Doug is ready; that one only he can start.
   (`load`, `stage`, `load/stage`) are enough for a first lab, and the fourth verb
   should be chosen by a lab that needed it.
 
-**Exit criterion — met.** Claude writes `.hrw-bridge/lab.md` mid-conversation and
+**Exit criterion — met.** Claude writes `.hrw-bridge/answer.md` mid-conversation and
 Doug sees it without a rebuild. Delivered as `bridge::read_lab` +
 `App::poll_lab_file`; the round trip and link parsing are covered by
 `an_ad_hoc_lab_round_trips_through_the_bridge`.

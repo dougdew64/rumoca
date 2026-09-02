@@ -32,13 +32,13 @@
 //!    stage's full IR, rewritten once per compile. Claude can diff any two stages
 //!    by reading two files (e.g., `instantiate.json` vs `typecheck.json`).
 //!
-//! 3. **Lab file** (`.hrw-bridge/lab.md`) — the one channel that runs the *other
+//! 3. **Lab file** (`.hrw-bridge/answer.md`) — the one channel that runs the *other
 //!    way*, added 2026-07-29 (ideas #42). Claude writes a markdown lab; HRW's
 //!    lab mode renders it and picks up a rewrite without a restart. Where
 //!    `focus.json` carries a noun *out* to Claude, this carries a sequence of
 //!    nouns *back*, as `hrw://` links the reader can click.
 //!
-//!    Living in the gitignored bridge directory is deliberate: #42 says ad hoc
+//!    Living in the gitignored bridge directory is deliberate: #42 says an Answer
 //!    labs are **ephemeral by default** — regenerated against the current tree
 //!    rather than retrieved and re-checked — and putting them here makes the
 //!    filesystem enforce that instead of Claude's discipline. What persists is
@@ -144,10 +144,10 @@ pub fn scratch_specimens() -> Vec<PathBuf> {
     found
 }
 
-/// An ad hoc lab written by Claude, rendered by HRW's lab mode (ideas #42).
+/// An Answer written by Claude, rendered by HRW's lab mode (ideas #42).
 ///
 /// The only bridge file that flows *into* HRW rather than out of it.
-pub const LAB_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/lab.md");
+pub const LAB_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/answer.md");
 
 /// Fixture labs — kept, versioned, and executed by `fixture_lab_links_all_resolve`.
 ///
@@ -335,7 +335,7 @@ pub fn resolve_doc(name: &str) -> Option<PathBuf> {
 
 /// List the fixture labs, sorted by file name.
 ///
-/// Distinct from the ad hoc lab in [`LAB_FILE`]: an ad hoc lab answers one question
+/// Distinct from the Answer in [`LAB_FILE`]: an Answer answers one question
 /// and is regenerated, a fixture lab is a **test** with a pass/fail criterion and is
 /// kept. See `docs/fixture-labs/camera-aiming.md` for the shape.
 /// **`README.md` is excluded**: the directory gained one on 2026-08-01 under the
@@ -371,7 +371,7 @@ pub fn fixture_labs() -> Vec<PathBuf> {
     found
 }
 
-/// Read the ad hoc lab, with the modification time it was read at.
+/// Read the Answer, with the modification time it was read at.
 ///
 /// Returns `None` when no lab has been written — the common case, and not an
 /// error. The mtime lets a caller re-read only when the file actually changed,
@@ -402,7 +402,7 @@ const MATCHING_FILE: &str = concat!(
 ///
 /// **Only the files a lab may arm a breakpoint in**, deliberately: a link is
 /// user-facing text, and resolving arbitrary paths from one would let a lab —
-/// or an ad hoc lab Claude writes — point the debugger anywhere.
+/// or an Answer Claude writes — point the debugger anywhere.
 pub fn traced_source_path(file: &str) -> std::io::Result<std::path::PathBuf> {
     let raw = match file {
         "live_trace.rs" => LIVE_TRACE_FILE,

@@ -57,7 +57,7 @@ have stops, each kind of lab might have different activities at its stops."*
 | **Failure** | 6 | 24 | 0 | 1/stop |
 | **Adjudication** | 2 | 8 | 0 | 1/stop |
 | **Hub** | 1 (`the-concepts`) | 0 | 0 | 0 |
-| **Ad hoc** | `.hrw-bridge/lab.md` | any | any | any |
+| **Ad hoc** | `.hrw-bridge/answer.md` | any | any | any |
 | **Bug report** | none yet | — | — | — |
 
 **The refinement: the invariant is `Expected`, not the activity.** Predict is exactly **zero** in

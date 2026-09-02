@@ -107,7 +107,7 @@ use crate::worker::{
 /// value was persisted.
 const DEFAULT_ZOOM: f32 = 1.0;
 
-/// How often lab mode stats `.hrw-bridge/lab.md`. A quarter second is well
+/// How often lab mode stats `.hrw-bridge/answer.md`. A quarter second is well
 /// under human notice and keeps filesystem work out of the paint path.
 pub(crate) const LAB_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(250);
 
@@ -931,10 +931,10 @@ pub struct App {
     /// lab Claude writes mid-conversation still appears without a restart.
     ///
     /// `pub(crate)` for `ui_tests` only: a headless test has to be able to say "an ad
-    /// hoc lab exists" without writing `.hrw-bridge/lab.md`, which is shared with a
+    /// hoc lab exists" without writing `.hrw-bridge/answer.md`, which is shared with a
     /// running HRW and asserted *absent* by another test. Injecting the state is the
     /// race-free way to give a check a subject — and without one,
-    /// `the_ad_hoc_lab_is_a_button_and_not_a_picker_entry` passed while the ad hoc
+    /// `the_answer_is_a_button_and_not_a_picker_entry` passed while the Answer
     /// lab was listed in both places.
     pub(crate) lab: LabState,
     /// A pending camera aim from `hrw://…/equation/<n>`, consumed by whichever canvas
@@ -4780,7 +4780,7 @@ impl App {
         }
     }
 
-    /// Re-read `.hrw-bridge/lab.md` if it changed since the last read.
+    /// Re-read `.hrw-bridge/answer.md` if it changed since the last read.
     ///
     /// Polled rather than watched: a `stat` every [`LAB_POLL_INTERVAL`] is
     /// simpler than a filesystem watcher, has no platform quirks, and a lab
@@ -6445,7 +6445,7 @@ enum HrwLink {
     ///
     /// **The verb that lets one lab cite another.** Added 2026-08-05 for
     /// `docs/ideas.md` #63: Claude's answering repertoire was text, then a freshly
-    /// written ad hoc lab, with no way to say *"the answer already exists — run
+    /// written Answer, with no way to say *"the answer already exists — run
     /// `failure-typecheck` from stop 2."* Ten link forms existed and none opened a
     /// lab, so a composed answer could only *describe* a fixture in prose. The
     /// expectations are the thing being lost by that: a fixture's `**Expected:**`

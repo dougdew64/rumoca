@@ -84,7 +84,7 @@ const LAB_PROGRESS_MARGIN: f32 = 6.0;
 /// [`Self::Stopped`] is phrased as a report rather than a request.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum TransportRequest {
-    /// A different lab was chosen — from the picker, or from the ad hoc button.
+    /// A different lab was chosen — from the picker, or from the Answer button.
     Switch(LabSource),
     /// **Back** — return to the lab a cross-lab link was followed from.
     Back,
@@ -212,20 +212,20 @@ pub(crate) fn autoplay_controls_ui(
                 // **Claude's answer is not the same kind of object as the other 22**
                 // (Doug, 2026-08-16). They are committed, versioned, machine-checked
                 // and citable as `hrw://lab/<name>/station/<slug>`; this one is
-                // `.hrw-bridge/lab.md` — gitignored, regenerated per question, and
+                // `.hrw-bridge/answer.md` — gitignored, regenerated per question, and
                 // there is only ever one. `lab::poll` already privileged it by
                 // auto-selecting it; only the presentation had flattened it into a row.
                 //
                 // Leftmost, so its state — present, absent, selected — is answerable
                 // without opening anything. That was the 2026-08-15 defect: the row
                 // was correctly absent and read as a broken feature.
-                let has_ad_hoc = lab.available.contains(&LabSource::AdHoc);
-                let ad_hoc_selected = lab.selected.as_ref() == Some(&LabSource::AdHoc);
+                let has_ad_hoc = lab.available.contains(&LabSource::Answer);
+                let answer_selected = lab.selected.as_ref() == Some(&LabSource::Answer);
                 // `Button::selectable`, not a plain button: this *selects* what you
                 // are reading. A verb-shaped control here would imply otherwise.
                 let resp = ui.add_enabled(
                     has_ad_hoc,
-                    egui::Button::selectable(ad_hoc_selected, LabSource::AdHoc.label()),
+                    egui::Button::selectable(answer_selected, LabSource::Answer.label()),
                 );
                 if has_ad_hoc {
                     if resp
@@ -234,7 +234,7 @@ pub(crate) fn autoplay_controls_ui(
                         )
                         .clicked()
                     {
-                        request = Some(TransportRequest::Switch(LabSource::AdHoc));
+                        request = Some(TransportRequest::Switch(LabSource::Answer));
                     }
                 } else {
                     resp.on_disabled_hover_text(
@@ -287,7 +287,7 @@ pub(crate) fn autoplay_controls_ui(
                                 ui.separator();
                             }
                             let LabSource::Fixture(path) = source else {
-                                // The ad hoc lab has its own control to the left;
+                                // The Answer has its own control to the left;
                                 // listing it twice would make one of them a lie about
                                 // where it lives.
                                 continue;
@@ -1010,10 +1010,7 @@ pub(crate) fn no_lab_ui(ui: &mut egui::Ui) {
         "Fixture labs \u{2014} tests with expected outcomes \u{2014} can be picked above \
              when any exist.",
     );
-    ui.weak(format!(
-        "Claude writes an ad hoc lab to {}",
-        bridge::LAB_FILE
-    ));
+    ui.weak(format!("Claude writes an Answer to {}", bridge::LAB_FILE));
     ui.weak("It appears here within a moment, and a rewrite is picked up live.");
 }
 

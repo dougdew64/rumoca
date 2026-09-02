@@ -40,7 +40,7 @@ something git does not hold.
 outside git, so commit-never-push does **not** make an overnight change to it reversible.
 `lab.md` in particular is Claude's answer to Doug's last question, and deleting it would destroy
 something no `git reset` restores. **Treat `.hrw-bridge/` as read-only overnight**, except where a
-test already restores what it touched (`ui_tests::AdHocLab`).
+test already restores what it touched (`ui_tests::Answer`).
 
 ### What Claude will and will not do
 

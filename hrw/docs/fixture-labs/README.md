@@ -30,9 +30,9 @@ They exist because of a gap nothing else covers: **Claude cannot see the rendere
 test suite checks HRW's logic; a fixture lab checks that clicking the thing does the thing.
 That is the half of verification only a human can do, and these make it cheap to do.
 
-**They are versioned and kept**, unlike an *ad hoc* lab (`.hrw-bridge/lab.md`, gitignored,
+**They are versioned and kept**, unlike an *ad hoc* lab (`.hrw-bridge/answer.md`, gitignored,
 regenerated per question). The difference is not permanence for its own sake — it is that a
-fixture lab has **pass/fail criteria** and an ad hoc lab has prose, and prose rots. This
+fixture lab has **pass/fail criteria** and an Answer has prose, and prose rots. This
 project retired 1,632 lines of explanation for that reason, and deleted a 1,071-line lab that
 described a 7×7 matrix on a tab showing 48 equations.
 
@@ -45,23 +45,39 @@ stored prose with extra steps.**
 
 ### And what a lab *is*, which is a different question from what it looks like
 
-**A lab is a document that makes claims about what a program does.** A **fixture** lab makes them
-*durably*, so they must be kept true; an **ad hoc** lab makes them *about the moment*, so they need
-only be true when written.
+**A lab is a document that makes claims about what a program does**, *durably* — so they must be
+kept true. **An Answer is not a kind of lab** *(Doug's ruling, 2026-09-02)*: it makes its claims
+*about the moment*, so they need only be true when written.
+
+**That distinction was blurred by the tour → lab rename, which mechanically produced "ad hoc
+lab".** The phrase was wrong the way *"tour guide"* was wrong — it inherits a name whose properties
+the thing does not have. **A lab has a route, stations, predictions and machine-checked claims; an
+Answer has none of them by design.** The UI had it right first: `LabSource::Answer` has rendered as
+`✨ Answer` in the picker since 2026-08-19, and only the code and the prose lagged.
+
+**And an Answer earns its place** — Doug, 2026-09-02: *"HRW is intended partly as a platform for you
+to use to provide rich answers that you cannot provide with only conversation text."* That is
+[`../vision.md`](../vision.md)'s *"The platform"* section made operational, and it is **charter
+Decision 8's return path**: Doug assembles the *noun* by pointing (the 🎯 capture, inbound), and an
+Answer is Claude's reply as a route through panes rather than a paragraph. Both directions have to
+be rich or the pair does not work.
+
+**What Decision 14 changed is when one is warranted, not whether.** With the conversation part of
+the session, prose alone is an exchange — so **a route through panes is what earns a document.**
 
 *(Written 2026-08-22, after Doug noticed that `connect-expansion.md` states set sizes of 2, 2 and 3
 as static text — true or false whether or not HRW is open and whether or not `RcCircuit` has ever
 been compiled. The definition above is operational, and says nothing about this.)*
 
 **THE SECOND HALF WAS FIRST WRITTEN AS *"while the program is not running"*, AND DOUG CORRECTED IT
-THE SAME DAY:** ad hoc labs are authored *while HRW runs*, to explain what it is doing —
-`lab::poll` picks up `.hrw-bridge/lab.md` within a second and auto-selects it. **He was right,
+THE SAME DAY:** Answers are authored *while HRW runs*, to explain what it is doing —
+`lab::poll` picks up `.hrw-bridge/answer.md` within a second and auto-selects it. **He was right,
 and the correction is worth more than the fix**, because "is the program running" was a proxy for
 the thing that actually matters.
 
 **What actually differs is the gap between when a claim is WRITTEN and when it is READ.**
 
-| | fixture lab | ad hoc lab |
+| | fixture lab | Answer |
 |---|---|---|
 | written | once, against a compile | now, against what is on screen |
 | read | months later, repeatedly | seconds later, once |
@@ -69,12 +85,12 @@ the thing that actually matters.
 | failure mode | **staleness** — true when written, false later | **misreading** — wrong on arrival |
 | defended by | checkers and the gate | nothing, and nothing is needed |
 
-**Duplicated truth is what rots, and an ad hoc lab duplicates nothing.** Its lifetime is seconds:
+**Duplicated truth is what rots, and an Answer duplicates nothing.** Its lifetime is seconds:
 it is discarded before the world can move under it. That is why it is gitignored and unchecked —
 not laxness, but that there is no gap for staleness to live in.
 
 **And the two failure modes are genuinely different, which is the part to keep.** A fixture lab can
-be perfectly written and *later* false. An ad hoc lab can never go stale — but it can be **wrong
+be perfectly written and *later* false. An Answer can never go stale — but it can be **wrong
 on arrival**, if Claude misreads the bridge or invents what HRW did not say. No checker catches
 that either; the difference is that Doug finds out in the next sentence rather than in three months.
 
@@ -84,13 +100,13 @@ that either; the difference is that Doug finds out in the next sentence rather t
 
 **Doug, 2026-08-22:** *"Right now while I'm beginner mode and just learning the basics, I'm entirely
 using fixture labs. Eventually, after I've learned all that the fixture labs have to offer, I'll
-begin using the ad hoc labs which you author to help answer my advanced questions."*
+begin using the Answers which you author to help answer my advanced questions."*
 
-**So fixture labs are the whole channel today, and ad hoc labs are a capability held in reserve.**
+**So fixture labs are the whole channel today, and Answers are a capability held in reserve.**
 The consequence worth acting on:
 
 - **Do not AUTHOR a second document where a fixture lab already covers the ground.** Writing a
-  whole ad hoc lab over material a fixture lab already carries trades a durable, checked artifact
+  whole Answer over material a fixture lab already carries trades a durable, checked artifact
   for an ephemeral one. **The waste is the duplicate document, never the answer** — answering
   Doug's question mid-run *is* the run (charter Decision 14), and produces no artifact to
   duplicate.
@@ -371,14 +387,14 @@ convince a PhD friend. Tune hard enough to one reader and nobody else can use th
   genuinely personal and does not generalise.
 
 **THE SPLIT IS BY ARTIFACT LIFETIME, AND THERE ARE NOW THREE CHANNELS** *(corrected 2026-09-01)*.
-It read *"durable profile → fixture lab; transient state → ad hoc lab"*, which was a clean
+It read *"durable profile → fixture lab; transient state → Answer"*, which was a clean
 mapping while those were the only two. Decision 14 added a third — **the conversation** — and it
 lands on the side this rule says never to tune to.
 
 | channel | lifetime | tune to |
 |---|---|---|
 | a fixture lab — its route, checkpoints and claims | months, re-read | **the durable profile** |
-| an ad hoc lab | seconds, discarded | the moment |
+| an Answer | seconds, discarded | the moment |
 | **an answer at the bench, after 🎯** | the exchange | **the moment — and that is the point** |
 
 **So the rule governs what OUTLIVES the moment, not what Claude may say in it.** What is on Doug's

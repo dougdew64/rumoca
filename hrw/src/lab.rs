@@ -34,7 +34,7 @@ use crate::bridge;
 pub(crate) struct LabState {
     /// The selected lab's text and the mtime it was read at.
     pub(crate) cached: Option<(String, std::time::SystemTime)>,
-    /// Every lab on offer: the ad hoc one first when it exists, then fixtures.
+    /// Every lab on offer: the Answer first when one exists, then fixtures.
     pub(crate) available: Vec<LabSource>,
     /// Which lab is showing.
     pub(crate) selected: Option<LabSource>,
@@ -279,11 +279,11 @@ impl LabState {
 
         // --- Rebuild the pick list ---
         //
-        // Ad hoc first when it exists: it is the answer to the question just asked,
+        // The Answer first when it exists: it is the reply to the question just asked,
         // and burying it under the fixtures would make the common case the awkward one.
         let mut labs = Vec::new();
         if std::path::Path::new(bridge::LAB_FILE).exists() {
-            labs.push(LabSource::AdHoc);
+            labs.push(LabSource::Answer);
         }
         labs.extend(bridge::fixture_labs().into_iter().map(LabSource::Fixture));
         let list_changed = labs != self.available;
@@ -311,7 +311,7 @@ impl LabState {
             }
         }
 
-        // A selection that no longer exists (the ad hoc lab was deleted, a fixture
+        // A selection that no longer exists (the Answer was deleted, a fixture
         // renamed) must not leave stale text on screen attributed to a live file.
         if self
             .selected
@@ -321,9 +321,9 @@ impl LabState {
             self.selected = None;
             self.cached = None;
         }
-        // Default to the ad hoc lab when one appears and nothing is chosen.
-        if self.selected.is_none() && self.available.contains(&LabSource::AdHoc) {
-            newly_selected |= self.select(LabSource::AdHoc);
+        // Default to the Answer when one appears and nothing is chosen.
+        if self.selected.is_none() && self.available.contains(&LabSource::Answer) {
+            newly_selected |= self.select(LabSource::Answer);
         }
 
         // --- Re-read the selected lab if it changed on disk ---
@@ -345,7 +345,7 @@ impl LabState {
                 }
             }
             // The file vanished between listing and reading. Drop the text rather
-            // than keep a stale copy: for an ad hoc lab, absence is the normal state.
+            // than keep a stale copy: for an Answer, absence is the normal state.
             None => {
                 self.cached = None;
                 self.selected = None;
@@ -359,7 +359,7 @@ impl LabState {
 ///
 /// Two kinds, with different lifetimes and different jobs:
 ///
-/// - **`AdHoc`** — `.hrw-bridge/lab.md`, written by Claude to answer the question just
+/// - **`Answer`** — `.hrw-bridge/answer.md`, written by Claude to answer the question just
 ///   asked. Gitignored, regenerated, ephemeral by construction.
 /// - **`Fixture`** — a file in `docs/fixture-labs/`, kept and versioned because it is a
 ///   *test* with a pass/fail criterion rather than an explanation that would rot.
@@ -369,7 +369,7 @@ impl LabState {
 /// where the file lives, not about how it is used.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum LabSource {
-    AdHoc,
+    Answer,
     Fixture(PathBuf),
 }
 
@@ -443,18 +443,18 @@ pub(crate) const OVERVIEW_LAB: &str = "the-concepts";
 impl LabSource {
     pub(crate) fn path(&self) -> PathBuf {
         match self {
-            Self::AdHoc => PathBuf::from(bridge::LAB_FILE),
+            Self::Answer => PathBuf::from(bridge::LAB_FILE),
             Self::Fixture(p) => p.clone(),
         }
     }
 
     /// Whether this is the chain overview — the hub the phase labs hang off.
     ///
-    /// `AdHoc` is never the overview: it is Claude's answer to the last question, and it
+    /// `Answer` is never the overview: it is Claude's answer to the last question, and it
     /// has its own control beside the picker.
     pub(crate) fn is_overview(&self) -> bool {
         match self {
-            Self::AdHoc => false,
+            Self::Answer => false,
             Self::Fixture(p) => p.file_stem().and_then(|s| s.to_str()) == Some(OVERVIEW_LAB),
         }
     }
@@ -506,7 +506,7 @@ impl LabSource {
             .unwrap_or_default()
     }
 
-    /// Label for the picker. The ad hoc lab is named by what it *is* rather than by
+    /// Label for the picker. The Answer is named by what it *is* rather than by
     /// its filename, which is an implementation detail nobody should have to know.
     pub(crate) fn label(&self) -> String {
         match self {
@@ -517,7 +517,7 @@ impl LabSource {
             // **The word is kept rather than going icon-only:** Doug asked for this
             // control to be prominent and reported it as a broken feature the day it
             // briefly vanished. An unlabelled sparkle is a puzzle; `✨ Answer` is not.
-            Self::AdHoc => "\u{2728} Answer".to_owned(),
+            Self::Answer => "\u{2728} Answer".to_owned(),
             Self::Fixture(p) => p
                 .file_stem()
                 .and_then(|s| s.to_str())

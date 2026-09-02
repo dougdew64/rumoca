@@ -1232,7 +1232,7 @@ now largely superseded), `docs/context-assembly.md`, and the retirement of
 
 ---
 
-## 42. Ad hoc labs — HRW as a channel for Claude's *answers*, not just its input
+## 42. Answers — HRW as a channel for Claude's *answers*, not just its input
 
 Requested 2026-07-29 (Doug), immediately after agreeing the phase docs are
 Claude's database and noticing the specimen notebook has the same problem the
@@ -1255,7 +1255,7 @@ an ad hoc *lab*, and produces no document.
 
 The project already has a noun channel *inbound*: Doug assembles context with the
 mouse, HRW emits `focus.json`, Claude reasons. But the **answer** has only ever
-come back as chat text. Ad hoc labs give the return path the same shape as the
+come back as chat text. Answers give the return path the same shape as the
 input — Claude can answer with a *sequence of HRW contexts*.
 
 **Design principle: `hrw://` links should express any noun `focus.json` can
@@ -1285,7 +1285,7 @@ point at anything interesting.
 ### Gaps, in order of size-to-value
 
 1. ~~**Runtime loading.**~~ ✅ **DELIVERED 2026-07-29.** Lab mode now renders
-   `.hrw-bridge/lab.md`, polled every 250 ms and re-read on mtime change; absence
+   `.hrw-bridge/answer.md`, polled every 250 ms and re-read on mtime change; absence
    shows a short note rather than the retired `end_to_end_tour.md`. Living in the
    gitignored bridge directory makes the ephemerality rule structural rather than
    a discipline. `bridge::read_lab`, `App::poll_lab_file`, `App::no_lab_ui`.
@@ -1406,8 +1406,8 @@ solver shape is not urgent.
 Doug, 2026-07-29, after the first lab produced #44 on its first use:
 
 > The surface area of HRW had already become more than I could effectively test by
-> myself. This ad hoc lab feature mitigates that problem. […] By asking you
-> questions, and you providing answers as ad hoc labs, we are multiplying the
+> myself. This Answer feature mitigates that problem. […] By asking you
+> questions, and you providing answers as Answers, we are multiplying the
 > effective user testing of HRW.
 
 **Why it works: different coverage profiles.** Doug navigates where he already
@@ -1659,7 +1659,7 @@ The Wolfram MCP connection is interactive-session-bound and may be absent in
 headless or scheduled runs. Fine for working sessions; do not build anything
 unattended that depends on it.
 
-**Relates to:** #42 (ad hoc labs — same idea, HRW as the channel), #41 (the
+**Relates to:** #42 (Answers — same idea, HRW as the channel), #41 (the
 ledger), #17 (Jacobian conditioning — the clearest Mathematica use), #4 (the
 deferred differential test, now reframed), `user-wolfram-tools` and
 `user-linear-algebra-learning` in Claude's memory.
@@ -3948,7 +3948,7 @@ each keeps one line saying what it was and where it landed; the reasoning is in 
 | **#27** | Equation sheet — the flat DAE in readable math notation | 2026-07-25 | `equation_sheet.rs` |
 | **#28** | Source-to-equation traceability — bridging the OO/flat divide | 2026-07-25 | `source_map_ui()` in `app.rs` |
 | **#29** | Solver stepping visualization — what the integrator does at each step | 2026-07-25 | solver diagnostics: step size, Newton iterations |
-| **#32** | In-app lab view — labs rendered inside HRW with clickable navigation | 2026-07-25 | three UI modes; superseded in shape by **#42** ad hoc labs |
+| **#32** | In-app lab view — labs rendered inside HRW with clickable navigation | 2026-07-25 | three UI modes; superseded in shape by **#42** Answers |
 | **#39** | Crash and diagnostic log — troubleshootable without a live session | 2026-07-28 | `src/diagnostics.rs`, `examples/crash_probe.rs`; `architecture.md` §9 |
 | **#40** | Instrument `pre()` lowering | 2026-07-29 | `pre_lowering_anim` on the Events stage. **The finding** — phases take an *observer callback*, not a `LiveTrace`, since that dependency would run backwards through the pipeline: `DECISIONS.md` 2026-07-29 |
 | **#44** | Show `Matching ▶` when the Structural stage is singular | 2026-07-29 | one UI condition — the feature was *written and then gated out of reach*, and nothing tested it: `tech-debt.md` |
@@ -3959,7 +3959,7 @@ each keeps one line saying what it was and where it landed; the reasoning is in 
   thing a tombstone cannot carry.
 - **#50** — *declined*, not delivered. Its entire job is to stop test-coverage measurement being
   re-proposed, so deleting it would invite the proposal it exists to refuse.
-- **#42** and **#45** — **partly** delivered, and still live. #42's ad hoc labs and #45's
+- **#42** and **#45** — **partly** delivered, and still live. #42's Answers and #45's
   diagnostic audits have shipped sub-items marked in place; each still has open work.
 
 ---
@@ -4309,8 +4309,8 @@ solves. Build the smallest of the three that works.
 
 ### The gap
 
-Claude's answering repertoire today is **text**, then **an ad hoc lab** (`✨ Claude's answer`,
-written to `.hrw-bridge/lab.md`). There is no third move for *"the answer is already on disk;
+Claude's answering repertoire today is **text**, then **an Answer** (`✨ Claude's answer`,
+written to `.hrw-bridge/answer.md`). There is no third move for *"the answer is already on disk;
 run `failure-typecheck` stop 2."*
 
 **So a question whose answer exists gets a freshly-written lab instead**, which costs a
@@ -4360,7 +4360,7 @@ re-reading it, not just naming it.
 
 ### The problem
 
-An ad hoc lab is **ephemeral by construction** — `.hrw-bridge/lab.md` is gitignored, as are the
+An Answer is **ephemeral by construction** — `.hrw-bridge/answer.md` is gitignored, as are the
 scratch specimens in `.hrw-bridge/specimens/` it usually references. That is right: most answers
 should not become artifacts.
 
@@ -4373,12 +4373,12 @@ lab list is where the decision belongs.
 
 ### What promotion actually involves — more than a file move
 
-This is the part worth designing before building. A fixture lab has **obligations an ad hoc lab
+This is the part worth designing before building. A fixture lab has **obligations an Answer
 does not**:
 
 | | ad hoc | fixture |
 |---|---|---|
-| Location | `.hrw-bridge/lab.md` | `docs/fixture-labs/<name>.md` |
+| Location | `.hrw-bridge/answer.md` | `docs/fixture-labs/<name>.md` |
 | Links | unchecked | **`fixture_lab_links_all_resolve` runs on every test** |
 | Specimens | `.hrw-bridge/specimens/*.mo`, no rules | `specimens/*.mo` with a `// purpose:` comment |
 | Per specimen | nothing | `docs/specimen-notebook/<Model>/purpose.md` **and** a generated trace |

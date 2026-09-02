@@ -407,7 +407,7 @@ section still named both)*:
 
 | Was | Is now | Why it changed |
 |---|---|---|
-| the end-to-end lab document, as spine | [`compiler-phases/the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md) for the *reasoning*, and an **ad hoc lab** for the *run* | The stored lab rotted — it asserted a 7×7 incidence matrix on a tab showing 48 equations. Deleted 2026-08-01; its conceptual half, which makes no claim about what is on screen, was kept. |
+| the end-to-end lab document, as spine | [`compiler-phases/the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md) for the *reasoning*, and an **Answer** for the *run* | The stored lab rotted — it asserted a 7×7 incidence matrix on a tab showing 48 equations. Deleted 2026-08-01; its conceptual half, which makes no claim about what is on screen, was kept. |
 | specimen narratives, as worked examples | a generated [`specimen-notebook/<Model>/trace/`](specimen-notebook/) plus a short hand-written `purpose.md` | 1,632 lines of narrative became 638 of purpose on 2026-07-29. **Numbers are read from the trace, which is correct by construction**; Claude regenerates the explanation on demand. |
 
 **The pattern behind both is the project's governing rule:** *store what cannot be
@@ -449,7 +449,7 @@ end. The three tiers are designed to achieve those goals, not as standalone feat
 headed "end-to-end lab", a document since deleted)*. Nothing here depended on that file —
 each goal is a statement about **Doug's understanding**, which is the deliverable, so the
 list stands unchanged while the way it is reached has moved to the chain of problems, the
-phase drill-downs and ad hoc labs.
+phase drill-downs and Answers.
 
 Doug should be able to:
 

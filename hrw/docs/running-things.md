@@ -118,7 +118,7 @@ cargo test -p hrw --test msl_resolve --features slow-tests -- --test-threads=1
 unattended run requires it closed — see [`docs/unattended-runs.md`](unattended-runs.md), **read
 that before doing any work while Doug is asleep.**
 
-**`.hrw-bridge/lab.md` IS LIVE STATE, AND TESTS THAT PAINT MUST HOLD IT** *(2026-08-16, three
+**`.hrw-bridge/answer.md` IS LIVE STATE, AND TESTS THAT PAINT MUST HOLD IT** *(2026-08-16, three
 defects in one hour)*. It is Claude's answer to Doug's last question, and `lab::poll`
 **auto-selects it** when nothing else is chosen — which resets the stage side. So its mere
 presence changes what a painted frame does, and the suite had never run while one existed.
@@ -126,7 +126,7 @@ presence changes what a painted frame does, and the suite had never run while on
 All three failure modes appeared the first time one did: a test that *asserted* the file was
 absent (failing whenever the feature had been used), a test that wrote its own and **deleted**
 Doug's afterwards, and a test that painted against whatever was on disk. Use
-`ui_tests::AdHocLab::absent()` or `::with(text)`; both restore what was there, including on a
+`ui_tests::Answer::absent()` or `::with(text)`; both restore what was there, including on a
 panic.
 
 **A THIRD GATE EXISTS AND IS NOT IN EITHER OF THOSE — the notebook content check** *(added
