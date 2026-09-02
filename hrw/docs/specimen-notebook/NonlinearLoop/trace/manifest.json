@@ -2,7 +2,7 @@
   "model": "NonlinearLoop",
   "specimen": "specimens/NonlinearLoop.mo",
   "specimen_fnv1a": "73d6f91c3181cf5d",
-  "rumoca_rev": "86fc2b08",
+  "rumoca_rev": "fdcfc248",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {

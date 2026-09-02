@@ -135,8 +135,11 @@ while solve lowering reports 9, and `GearWithBrake` shows the same gap. It is re
 recorded in `docs/upstream-issues.md`, and not diagnosed — `solve-lowering.md` deliberately
 omits its natural example because of it.
 
-An unexplained event count. `RcCircuit` reports one `zero_crossing_condition` while having no
-`when` clause at all. `events.md` Act 1 quotes only the four counts I can account for.
+*(Resolved 2026-09-02, and it was never a Rumoca question.* `RcCircuit` reports one
+`synthetic_root_conditions` while having no `when` clause because the field counts roots
+Rumoca had to *synthesise* — here, one over the MSL Resistor's `R.T_heatPort`. HRW had
+published that field as `zero_crossing_conditions`, which reads as a claim about all zero
+crossings and is not one.*)*
 
 ---
 

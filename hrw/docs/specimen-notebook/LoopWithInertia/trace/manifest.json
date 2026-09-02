@@ -2,7 +2,7 @@
   "model": "LoopWithInertia",
   "specimen": "specimens/LoopWithInertia.mo",
   "specimen_fnv1a": "b79116227c500c5a",
-  "rumoca_rev": "86fc2b08",
+  "rumoca_rev": "fdcfc248",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {

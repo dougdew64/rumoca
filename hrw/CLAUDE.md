@@ -569,8 +569,14 @@ the next phase touches — is procedure and lives there.
 >   reduction demotes nine states to three while solve lowering reports **9**, and
 >   `GearWithBrake` shows the same gap. **Not diagnosed.** `solve-lowering.md` omits its natural
 >   example rather than write around it. Needs a System Modeler adjudication (`#43`).
-> - **`RcCircuit` reports one `zero_crossing_condition`** with no `when` clause at all.
->   `events.md` Act 1 quotes only the four counts that are explicable.
+> - **RESOLVED 2026-09-02, and it was HRW's defect rather than Rumoca's.** `RcCircuit`'s one
+>   `synthetic_root_conditions` with no `when` clause is correct: the field counts roots Rumoca
+>   had to *synthesise* because no relation supplied one — here, over the MSL Resistor's
+>   `R.T_heatPort`. **HRW published it as `zero_crossing_conditions`**, which reads as a claim
+>   about all zero crossings; `BouncingBall` then showed **0**, a bouncing ball apparently
+>   detecting no contact. **A renamed field is a claim, and no fidelity check could catch this
+>   one because every value was right — the defect was in the label.** The upstream entry built
+>   on it is retracted.
 > - **`#77`** — a live lab needs three panes and the layout has two. **Largely resolved 2026-08-12**
 >   (`docs/ideas.md` #77, `DECISIONS.md`); labs are **taller** now, which is the correct trade.
 >   **What survives is only the genuine three-pane case** — HRW at half width beside VS Code — so

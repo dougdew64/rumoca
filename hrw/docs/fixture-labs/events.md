@@ -41,7 +41,7 @@ event, a model with none, and a model with several.
 [Look — BouncingBall → Events](hrw://load/BouncingBall/Events)
 
 **Expected:** the summary reads `condition_equations: 1`, `relations: 1`,
-`discrete_real_updates: 1`, and `zero_crossing_conditions: 0`.
+`discrete_real_updates: 1`, and `synthetic_root_conditions: 0`.
 
 Falsified if: the discrete update count is 0, or no relation is reported.
 
@@ -75,19 +75,22 @@ Falsified if: the pane is blank, or reports a condition equation.
 rather than showing an empty list you would have to interpret. That distinction has been earned:
 an empty pane and a broken pane look identical.
 
-One number here does not fit, and the lab will not pretend otherwise.
-`zero_crossing_conditions` reads 1 for this model, which has no `when` clause anywhere.
+One number here looks wrong and is not. `synthetic_root_conditions` reads 1 for this model,
+which has no `when` clause anywhere.
 
-It is worth knowing what is and is not established about it. Across the corpus, every specimen
-containing an MSL `Resistor` reports exactly 1, and no specimen without one reports any — and in
-this model the collections behind the count, `equations_f_c` and `relations`, are both empty.
-So the count names something the event partition does not contain. The suspect is the `assert`
-inside `Resistor.mo`, which holds the component's only relation; that part is a hypothesis, not
-a finding.
+It counts roots Rumoca had to *synthesise* because no relation already supplied one. Every
+specimen containing an MSL `Resistor` reports exactly 1, and no specimen without one reports
+any — and in `RcCircuit` the synthesised root is a subtraction over `R.T_heatPort`, the
+Resistor's heat port, which nothing in your model mentions. That is why `equations_f_c` and
+`relations` are empty here and the count is still 1: the two collections hold different things,
+and both feed root-finding.
 
-The whole investigation is in [`upstream-issues.md`](hrw://doc/upstream-issues.md), written to be filed.
-A lab that smoothed this over would be teaching you something false about a number you can
-see — and this one is a genuine Rumoca question, not an HRW defect.
+*(Until 2026-09-02 this lab said the number "does not fit" and pointed at an upstream issue.
+Both were wrong, and the fault was HRW's: the pane published Rumoca's `synthetic_root_conditions`
+under the name `zero_crossing_conditions`, which reads as a claim about all zero crossings.
+`BouncingBall` then showed 0 — a bouncing ball apparently detecting no contact. It detects it,
+through `relations`. The upstream entry is retracted; a renamed field is a claim, and this one
+was ours.)*
 
 ---
 

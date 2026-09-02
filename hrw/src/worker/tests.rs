@@ -3341,7 +3341,7 @@ fn events_ir_has_expected_summary_keys() {
         "relations",
         "discrete_real_updates",
         "discrete_valued_updates",
-        "zero_crossing_conditions",
+        "synthetic_root_conditions",
         "scheduled_time_events",
     ] {
         assert!(
@@ -3349,6 +3349,20 @@ fn events_ir_has_expected_summary_keys() {
             "events summary missing key: {key}"
         );
     }
+
+    // **The renamed key must not come back.** `synthetic_root_conditions` was published as
+    // `zero_crossing_conditions` until 2026-09-02, and `BouncingBall` showed `0` — a
+    // bouncing ball apparently detecting no contact. Rumoca detects it through
+    // `conditions.relations`; the field counts only roots it had to *synthesise* because no
+    // relation supplied one. The value was right the whole time, so no fidelity check could
+    // have caught it: **the defect was in the label.**
+    assert!(
+        !summary.contains_key("zero_crossing_conditions"),
+        "the events summary renamed `synthetic_root_conditions` to \
+         `zero_crossing_conditions`, which is a claim Rumoca does not make — the field \
+         counts synthesised roots, not zero crossings, and a relation's root is removed \
+         from it by `remove_relation_duplicate_synthetic_roots`",
+    );
 }
 
 /// The Solve-lowering IR has the expected top-level fields.

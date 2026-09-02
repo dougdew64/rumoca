@@ -2,7 +2,7 @@
   "model": "RotationalInertia",
   "specimen": "specimens/RotationalInertia.mo",
   "specimen_fnv1a": "9c66d89dd6c12dbd",
-  "rumoca_rev": "86fc2b08",
+  "rumoca_rev": "fdcfc248",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {

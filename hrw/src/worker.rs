@@ -4249,6 +4249,17 @@ fn events_stage(result: Option<&PhaseResult>) -> Stage {
 ///
 /// The `summary` object counts each category — the Events tab uses this to
 /// show "no events" for smooth models vs a detailed breakdown for hybrid ones.
+/// **Every key here is Rumoca's own name** *(corrected 2026-09-02)*, because a renamed field
+/// is a claim: this published `synthetic_root_conditions` as `zero_crossing_conditions`, so
+/// `BouncingBall` showed `0` and read as *"the compiler does not detect the contact"*. It
+/// detects it. The field is narrower than that label — it counts roots Rumoca had to
+/// *synthesise* because no relation supplied one, since
+/// `runtime_precompute::remove_relation_duplicate_synthetic_roots` removes any that a
+/// relation already covers and `clock::relation_root_expression` turns `h <= 0` into the root
+/// `h - 0`. `codegen_target` chains both collections into root-finding, so the bounce is
+/// tracked through `relations: 1` and `0` here is correct. A learner reads the label rather
+/// than the source, and no fidelity check compares the two — the *value* was right for three
+/// weeks while the name was not. `the_events_summary_uses_rumocas_own_names` pins the keys.
 fn events_to_json(dae: &rumoca_ir_dae::Dae) -> serde_json::Value {
     let conditions = &dae.conditions;
     let discrete = &dae.discrete;
@@ -4259,7 +4270,7 @@ fn events_to_json(dae: &rumoca_ir_dae::Dae) -> serde_json::Value {
             "relations": conditions.relations.len(),
             "discrete_real_updates": discrete.real_updates.len(),
             "discrete_valued_updates": discrete.valued_updates.len(),
-            "zero_crossing_conditions": events.synthetic_root_conditions.len(),
+            "synthetic_root_conditions": events.synthetic_root_conditions.len(),
             "scheduled_time_events": events.scheduled_time_events.len(),
         },
         "conditions": {
@@ -4271,7 +4282,7 @@ fn events_to_json(dae: &rumoca_ir_dae::Dae) -> serde_json::Value {
             "valued_updates_f_m": ser_value(&discrete.valued_updates),
         },
         "events": {
-            "zero_crossing_conditions": ser_value(&events.synthetic_root_conditions),
+            "synthetic_root_conditions": ser_value(&events.synthetic_root_conditions),
             "scheduled_time_events": ser_value(&events.scheduled_time_events),
         },
     })

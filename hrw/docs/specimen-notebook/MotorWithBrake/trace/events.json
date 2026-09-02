@@ -4,7 +4,7 @@
     "relations": 2,
     "discrete_real_updates": 0,
     "discrete_valued_updates": 1,
-    "zero_crossing_conditions": 1,
+    "synthetic_root_conditions": 1,
     "scheduled_time_events": 0
   },
   "conditions": {
@@ -716,7 +716,7 @@
     ]
   },
   "events": {
-    "zero_crossing_conditions": [
+    "synthetic_root_conditions": [
       {
         "Binary": {
           "op": "Sub",

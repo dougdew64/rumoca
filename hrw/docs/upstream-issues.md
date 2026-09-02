@@ -455,7 +455,40 @@ report. **Adjudicate before filing** — `docs/ideas.md` #43's System Modeler re
 
 ---
 
-## `zero_crossing_conditions` counts a condition the event partition does not contain
+## ~~`zero_crossing_conditions` counts a condition the event partition does not contain~~
+
+> ### ⚠ RETRACTED 2026-09-02 — NOT A RUMOCA DEFECT. IT WAS HRW'S OWN NAME.
+>
+> **Never file this.** Both of its claims are false, and the entry survives only because the
+> reasoning is worth keeping.
+>
+> **What the field means.** `events.synthetic_root_conditions` counts roots Rumoca had to
+> **synthesise** because no relation already supplied one.
+> `runtime_precompute::remove_relation_duplicate_synthetic_roots` deliberately removes any
+> synthetic root a relation covers, and `clock::relation_root_expression` turns `h <= 0` into
+> the root function `h - 0`. `codegen_target` then chains **both** `conditions.relations` and
+> `events.synthetic_root_conditions` into root-finding.
+>
+> **So the table below is evidence FOR that reading, not against it.** Models with an MSL
+> `Resistor` report 1 synthetic root and 0 relations; models with a user `when` report
+> relations and 0 synthetic roots. That is exactly what the de-duplication predicts.
+> `RcCircuit`'s one synthetic root is a `Sub` over `R.T_heatPort` — the Resistor's heat port,
+> which no user relation mentions.
+>
+> **And the counted thing IS inspectable.** The *"Actual"* block below shows only the
+> `conditions` object. The array lives under `events`, a different part of the partition. The
+> consumer looked in the wrong place.
+>
+> **HRW seeded the confusion**, which is the real defect and it was ours: `events_to_json`
+> published `synthetic_root_conditions` under the name `zero_crossing_conditions`, which reads
+> as *the zero crossings* and as something belonging with `conditions`. `BouncingBall` then
+> showed `0` — a bouncing ball apparently detecting no contact. **Rumoca detects it, through
+> `relations`.** Fixed the same day; `the_events_summary_uses_rumocas_own_names` pins the keys.
+>
+> **The rule this cost is already written here: a confident wrong diagnosis wastes a
+> maintainer's time and costs the credibility this project is building.** This one was written,
+> tabulated across seven specimens, and cited in three labs — and no fidelity check could have
+> caught it, because **every value was correct the whole time. The defect was in a label.**
 
 **Found 2026-08-16** while writing `docs/fixture-labs/events.md`, which needed to explain a
 number Doug can see on screen. Reproduced across five specimens.

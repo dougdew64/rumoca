@@ -2,7 +2,7 @@
   "model": "OverDeterminedShaft",
   "specimen": "specimens/OverDeterminedShaft.mo",
   "specimen_fnv1a": "f40929dfbcfb85d8",
-  "rumoca_rev": "c612ad8e",
+  "rumoca_rev": "fdcfc248",
   "rumoca_version": "0.9.20",
   "stages": {
     "parse": {
