@@ -2740,9 +2740,15 @@ impl App {
         // the reader somewhere no link had pointed — the same trap the frame-seek budget
         // exists to close.
         if action.requires_specimen() && self.selected.is_none() {
+            // **The wording must fit an Answer as well as a lab** *(2026-09-02)*. It read
+            // *"this stop needs one. Start at the lab's first stop"* — stale twice over:
+            // `stop` was retired for `station`, and an Answer has no stations to start at.
+            // Doug clicked a source link in an Answer, got this notice, and reported that
+            // nothing happened — the third time a correctly-refused link has been read as
+            // a dead one, which is why the labs require an expectation to say where to look.
             self.notify(
-                "no specimen loaded \u{2014} this stop needs one. Start at the lab's first \
-                 stop, which loads it.",
+                "no specimen loaded \u{2014} this link needs one. Load a specimen first: a \
+                 lab's first station does it, or pick one in Specimen mode.",
             );
             return;
         }
