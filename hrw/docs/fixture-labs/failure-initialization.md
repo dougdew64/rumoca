@@ -5,8 +5,8 @@
 **Specimens:** `OverInitRc` and `RotationalInertia`. Two ways the t=0 problem goes wrong, and
 they are opposites.
 
-**The question to hold:** every earlier lab showed something *missing* — a name, an equation, a
-match. This phase can fail because there is **too much**.
+The question to hold: every earlier lab showed something *missing* — a name, an equation, a
+match. This phase can fail because there is too much.
 
 ---
 
@@ -21,7 +21,7 @@ Initialization solves a *different system* from the one that runs afterwards: at
 derivatives are unknown too, and the initial equations plus `fixed=true` start attributes have to
 determine every state exactly once.
 
-**Give a state two conditions and they may disagree.** Nothing checks that they agree — the count
+Give a state two conditions and they may disagree. Nothing checks that they agree — the count
 is what is checkable, and a surplus is the signal.
 
 ---
@@ -36,7 +36,7 @@ Same phase, opposite complaint. Here the initialization system could not be *sol
 matching is deficient, in the same sense `TwiceDefined` was in `failure-structural.md`, but
 applied to the t=0 system rather than the running one.
 
-**This specimen is not marked DELIBERATELY BROKEN.** It is a specimen we kept for other reasons
+This specimen is not marked DELIBERATELY BROKEN. It is a specimen we kept for other reasons
 that turns out to exercise this path — which is worth knowing, because it means the condition
 arises from ordinary modelling rather than from contrived breakage.
 
@@ -46,13 +46,13 @@ arises from ordinary modelling rather than from contrived breakage.
 
 [Solve lowering](hrw://load/OverInitRc/SolveLowering)
 
-**Expected:** Solve lowering has **content**, for both specimens.
+**Expected:** Solve lowering has content, for both specimens.
 
 By now this should be unsurprising: initialization is flagged, not failed, and the pipeline
 continues. The model would reach a solver, and the solver would start from an initial state
 nobody verified.
 
-**That is the practical stake of this phase.** A simulation that starts wrong produces a
+That is the practical stake of this phase. A simulation that starts wrong produces a
 trajectory that is smooth, plausible, and false — no error anywhere, just the wrong answer.
 
 ---
@@ -64,7 +64,7 @@ trajectory that is smooth, plausible, and false — no error anywhere, just the 
 **Expected:** the stage tree contains a `determinacy` object beside the plan.
 
 That is the compiler's own summary of whether the t=0 system is well-posed, and it is the field to
-read first on any model you are unsure of. **It is one node in a large tree**, which is a fair
+read first on any model you are unsure of. It is one node in a large tree, which is a fair
 criticism of this pane — the most important fact is not the most prominent thing on screen.
 
 ---

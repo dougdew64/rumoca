@@ -62,11 +62,16 @@ connect-expansion.md | require | 6 connection sets producing 7 equations
 
 # --- matching-live.md -----------------------------------------------------------------
 #
-# The one lab where **stop** (a place in the lab), **break** (where the debugger halts)
-# and **anchor** (the named location) are all live at once. The Act->Stop rename CREATED
-# that collision rather than exposing one, and this note is the whole mitigation — so the
-# note is what gets checked, plus the three phrasings that were actually wrong.
-matching-live.md | require | A **break** is where the *debugger* halts execution.
+# The one lab where stop (a place in the lab), break (where the debugger halts) and anchor
+# (the named location) are all live at once. The Act->Stop rename CREATED that collision
+# rather than exposing one, and this note is the whole mitigation — so the note is what
+# gets checked, plus the three phrasings that were actually wrong.
+#
+# The pin lost its bold on 2026-09-01 when Doug's de-bolding was applied to every lab.
+# THE PIN GUARDS THE SENTENCE, NOT ITS EMPHASIS -- so the pin follows the prose rather
+# than the prose being re-bolded to satisfy a checker. Restoring the bold here would have
+# been a document edited for a test's convenience, which is the wrong direction.
+matching-live.md | require | A break is where the *debugger* halts execution.
 matching-live.md | forbid  | debugger stop
 matching-live.md | forbid  | at every stop
 matching-live.md | forbid  | about a stop

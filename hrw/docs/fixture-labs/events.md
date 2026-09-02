@@ -23,10 +23,10 @@ the solution.
 
 That is genuinely hard, and it is worth being precise about why. The integrator advances in steps.
 If the bounce happens between two steps, integrating straight through it produces nonsense — the
-ball ends up below the floor, moving down. So the solver must **detect** the instant, stop there,
+ball ends up below the floor, moving down. So the solver must detect the instant, stop there,
 apply the change, and restart.
 
-**This phase finds what can change and what has to be watched.** Three stops: a model with a real
+This phase finds what can change and what has to be watched. Three stops: a model with a real
 event, a model with none, and a model with several.
 
 ---
@@ -43,16 +43,16 @@ event, a model with none, and a model with several.
 **Expected:** the summary reads `condition_equations: 1`, `relations: 1`,
 `discrete_real_updates: 1`, and `zero_crossing_conditions: 0`.
 
-**Falsified if:** the discrete update count is 0, or no relation is reported.
+Falsified if: the discrete update count is 0, or no relation is reported.
 
-*What just happened.* The `when` clause was taken apart into **three separate things**, and the
+*What just happened.* The `when` clause was taken apart into three separate things, and the
 split is the phase's whole output:
 
-- a **relation** — the comparison that decides, `h <= 0`;
-- a **condition equation** — that relation given a name the solver can evaluate every step;
-- a **discrete update** — what changes when it fires, here the reversal of `v`.
+- a relation — the comparison that decides, `h <= 0`;
+- a condition equation — that relation given a name the solver can evaluate every step;
+- a discrete update — what changes when it fires, here the reversal of `v`.
 
-**The condition is not the action.** The solver needs to evaluate the condition continuously, to
+The condition is not the action. The solver needs to evaluate the condition continuously, to
 find *when* it flips; it needs the action only once, at that instant. Keeping them apart is what
 lets the integrator search for the crossing time without applying anything.
 
@@ -66,28 +66,28 @@ lets the integrator search for the crossing time without applying anything.
 
 [Look — RcCircuit → Events](hrw://load/RcCircuit/Events)
 
-**Expected:** `condition_equations: 0`, `relations: 0`, and both update counts **0**. The note
+**Expected:** `condition_equations: 0`, `relations: 0`, and both update counts 0. The note
 reads *"no events — this model is a smooth (continuous) system."*
 
-**Falsified if:** the pane is blank, or reports a condition equation.
+Falsified if: the pane is blank, or reports a condition equation.
 
-*What just happened.* **Absence is stated, not left blank** — the pane says the model is smooth
+*What just happened.* Absence is stated, not left blank — the pane says the model is smooth
 rather than showing an empty list you would have to interpret. That distinction has been earned:
 an empty pane and a broken pane look identical.
 
-**One number here does not fit, and the lab will not pretend otherwise.**
-`zero_crossing_conditions` reads **1** for this model, which has no `when` clause anywhere.
+One number here does not fit, and the lab will not pretend otherwise.
+`zero_crossing_conditions` reads 1 for this model, which has no `when` clause anywhere.
 
-It is worth knowing what is and is not established about it. Across the corpus, **every specimen
-containing an MSL `Resistor` reports exactly 1, and no specimen without one reports any** — and in
-this model the collections behind the count, `equations_f_c` and `relations`, are both **empty**.
+It is worth knowing what is and is not established about it. Across the corpus, every specimen
+containing an MSL `Resistor` reports exactly 1, and no specimen without one reports any — and in
+this model the collections behind the count, `equations_f_c` and `relations`, are both empty.
 So the count names something the event partition does not contain. The suspect is the `assert`
-inside `Resistor.mo`, which holds the component's only relation; that part is a **hypothesis**, not
+inside `Resistor.mo`, which holds the component's only relation; that part is a hypothesis, not
 a finding.
 
 The whole investigation is in [`upstream-issues.md`](hrw://doc/upstream-issues.md), written to be filed.
-**A lab that smoothed this over would be teaching you something false about a number you can
-see** — and this one is a genuine Rumoca question, not an HRW defect.
+A lab that smoothed this over would be teaching you something false about a number you can
+see — and this one is a genuine Rumoca question, not an HRW defect.
 
 ---
 
@@ -102,17 +102,17 @@ see** — and this one is a genuine Rumoca question, not an HRW defect.
 **Expected:** `condition_equations: 4`, `relations: 4`, `discrete_valued_updates: 1`, and
 `discrete_real_updates: 0`.
 
-**Falsified if:** the counts match `BouncingBall`'s, or no discrete-valued update appears.
+Falsified if: the counts match `BouncingBall`'s, or no discrete-valued update appears.
 
-*What just happened.* **Four conditions for one brake**, which is the interesting part. A brake is
+*What just happened.* Four conditions for one brake, which is the interesting part. A brake is
 not one comparison: it is stuck or sliding, and sliding in one direction or the other, so the model
 needs several relations to say which regime it is in.
 
-And the update is **discrete-valued**, not discrete-real — a mode flag rather than a number. That
+And the update is discrete-valued, not discrete-real — a mode flag rather than a number. That
 is the same distinction as Station 1's split, one level up: `BouncingBall` changes a *value* when it
 fires, `GearWithBrake` changes which *equations apply*.
 
-**Four conditions means four things to watch on every step**, and each is a potential event time
+Four conditions means four things to watch on every step, and each is a potential event time
 the integrator has to locate. This is why event handling dominates the run time of models with
 friction, and why a model that looks small can simulate slowly.
 
@@ -120,15 +120,15 @@ friction, and why a model that looks small can simulate slowly.
 
 ## What this lab cannot check
 
-**Whether Station 2's anomaly is the right thing to include.** A lab that names an unexplained number
+Whether Station 2's anomaly is the right thing to include. A lab that names an unexplained number
 risks reading as *"the tool is unreliable"* rather than *"this is a real open question."* It is
 here because you can see the number, and a lab that omitted it would be the less honest choice.
 
-**Whether the event counts mean anything without the equations behind them.** The pane reports how
+Whether the event counts mean anything without the equations behind them. The pane reports how
 many relations and updates exist, not what they say. `BouncingBall`'s single relation is guessable;
 `GearWithBrake`'s four are not, and this lab does not show them.
 
-**Whether "the integrator locates the crossing" is believable as described.** The mechanism —
+Whether "the integrator locates the crossing" is believable as described. The mechanism —
 bisection or interpolation on the condition, back up, restart — is asserted in prose and
 demonstrated nowhere, because nothing in HRW shows the solver's step-by-step search.
 

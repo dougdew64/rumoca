@@ -8,25 +8,25 @@ made* rather than at the view containing it.
 
 Pick it from the Labs list. Every link below is parsed on every test run by
 `fixture_lab_links_all_resolve`.
-**Notices appear in the status bar**, along the bottom of the HRW window. Several stops below expect one; that is where to look.
+Notices appear in the status bar, along the bottom of the HRW window. Several stops below expect one; that is where to look.
 
 
-**Frame numbers in links match the counter on screen.** `frame/41` puts the view on
+Frame numbers in links match the counter on screen. `frame/41` puts the view on
 "Frame 41". They were 0-based until 2026-07-29, and this file *documented* the
 off-by-one in a parenthetical rather than treating it as the bug it was — Doug spotted
 that while running the stops in order.
 
 *Every matching replay gained an opening frame on 2026-08-23, so each number below now
-lands one step earlier than it used to. The numbers were **left as they are**: this lab
+lands one step earlier than it used to. The numbers were left as they are: this lab
 seeks 41 and 6 to prove that a jump forwards and a jump backwards work, not because
-either is a particular moment in the algorithm. A lab that cited a frame for **what it
-shows** would have had to be re-derived with `cargo run -p hrw --example frame_index`.*
+either is a particular moment in the algorithm. A lab that cited a frame for what it
+shows would have had to be re-derived with `cargo run -p hrw --example frame_index`.*
 
 ---
 
 ## Station 0 — A stop clicked out of order
 
-**Do this before Station 1**, with no specimen loaded. (Arriving here from another lab
+Do this before Station 1, with no specimen loaded. (Arriving here from another lab
 clears the previous one, so that is already true. If you have run a stop since, switch
 to a different lab and back.)
 
@@ -34,8 +34,8 @@ to a different lab and back.)
 
 **Expected:** a notice in the status bar saying no specimen is loaded and to start at the first stop.
 
-**And nothing else happens.** No stage change, no view change. Then click Station 1 below:
-it must behave normally, **not** jump to frame 5 — a refused stop leaves nothing armed to
+And nothing else happens. No stage change, no view change. Then click Station 1 below:
+it must behave normally, not jump to frame 5 — a refused stop leaves nothing armed to
 fire later.
 
 *(Doug found this by clicking a lab's fourth stop first: the link silently did nothing,
@@ -49,7 +49,7 @@ a broken link, which is the one outcome a lab cannot survive.)*
 48 equations, structurally singular, so the search will fail — that is the interesting
 part, and the reason this view is reachable at all (`ideas.md` #44).
 
-**Expected:** frame 1 of many, paused, and it is the **starting point** — a clapper-board
+**Expected:** frame 1 of many, paused, and it is the starting point — a clapper-board
 icon, "48 equations, 48 unknowns, nothing matched yet", and an empty matrix. Frame 1 is
 the system before the search, not its first move.
 
@@ -57,15 +57,15 @@ the system before the search, not its first move.
 
 [Seek to frame 41](hrw://stage/Structural/MatchingAnim/frame/41)
 
-**Expected:** the frame counter reads **41/…** — the same number as the link — and the
-matrix shows a partly-built matching. Playback is **paused**; if it starts running, the
+**Expected:** the frame counter reads 41/… — the same number as the link — and the
+matrix shows a partly-built matching. Playback is paused; if it starts running, the
 seek is not holding.
 
 ## Station 3 — Jump backwards
 
 [Seek to frame 6](hrw://stage/Structural/MatchingAnim/frame/6)
 
-**Expected:** the counter reads **6/…** — down from 41. A seek is not "advance to", it
+**Expected:** the counter reads 6/… — down from 41. A seek is not "advance to", it
 is "go to". If Stops 2 and 3 both land forward, the cursor is being clamped rather than
 set.
 
@@ -81,8 +81,8 @@ frame would look deliberate and hide it.
 
 [Index Reduction → Reduction replay, frame 3](hrw://stage/IndexReduction/Animate/frame/3)
 
-**Expected:** the stage switches, the reduction replay opens **on the first click**, and
-it sits on **frame 3** of its own trace. All eight animated views share one `Playback::seek`, so this exercises
+**Expected:** the stage switches, the reduction replay opens on the first click, and
+it sits on frame 3 of its own trace. All eight animated views share one `Playback::seek`, so this exercises
 that they are genuinely the same mechanism rather than eight lookalikes.
 
 ## Station 6 — Seek a view that has no animation
@@ -91,7 +91,7 @@ that they are genuinely the same mechanism rather than eight lookalikes.
 
 *(Incidence has no replay, so there is no counter to match.)*
 
-**Expected:** the Incidence view opens and **nothing else happens** — no notice, no
+**Expected:** the Incidence view opens and nothing else happens — no notice, no
 error. The link still navigates; the seek is simply not applicable. Degrading to "the
 right view, unsought" beats failing the stop.
 
