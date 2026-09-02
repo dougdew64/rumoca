@@ -204,7 +204,7 @@ place. `CLAUDE.md` already records that `egui_kittest` cannot see layout, and ha
 confirm it. **The toolchain column is dominated by Claude's own fresh mistakes**, caught within
 minutes, which is the loop working as designed.
 
-<!-- ledger-through: 2026-08-25 -->
+<!-- ledger-through: 2026-09-02 -->
 
 ### 08-17 → 08-22, backfilled 2026-08-23 — and the ledger had gone dark
 
@@ -288,6 +288,21 @@ the ledger was built to detect.
 | 08-25 | **HRW called the plain simulate entry point while the CLI called the NaN-tracing one**, so on a diverging model the CLI named the offending variable and the learning instrument reported "step size too small" | Claude | reading `rumoca-sim`'s facade while measuring the above. The wrapper's own doc says it is *"intended for scheduled single-model use"* — which is what pressing Run is |
 
 | 08-25 | **the panic path's log entry claims `elapsed_secs: 0.0`** — a fabricated timestamp. It is built by hand rather than through `make_log`, because `Worker::spawn` holds no compile clock, so it reports the panic as having happened at t=0 of a compile that had been running | Claude | night 5, item 1, while sweeping the log machinery. **Recorded, not fixed**: a log line's time is a claim, and changing one unattended is what hard rule 6 forbids improvising |
+
+| 09-01 | `experiment` proposed as a lab-kind name — it is a **Modelica annotation** in 14 specimens | **Doug** | Claude had recorded the collision-check discipline one commit earlier and not run it |
+| 09-01 | `compiler-phases/` described as a deferral store; Claude proposed deleting 8,650 lines on that premise | **Doug** | only he knew the files predated HRW |
+| 09-01 | the tour → lab rename **missed the verb** entirely — ~580 `walk` occurrences | **Doug** | he read a heading |
+| 09-01 | five broken `CLAUDE.md` links after the rename; the FULL gate passed | grep | nothing resolved this file's markdown links — checker built the same day |
+| 09-01 | prose *about* the rename rewritten by it — Decision 14's title, two of Doug's quotations | grep | third instance of this class |
+| 09-01 | `end_to_end_tour.md`, a deleted file's real name, falsified in 18 places | Claude, same hour | read-back after a generator script |
+| 09-01 | two duplicates created **while conducting the duplicate sweep** | Claude, same day | both from restating a rule being cut rather than pointing at it |
+| 09-01 | doc comment stranded by an insertion above it — **three times in one day** | `no_item_loses_its_doc_comment` | the checker caught every one; knowing the rule did not |
+| 09-01 | `sed` used to edit a file, hours after defending the rule against it | Claude, same hour | no mechanism; self-reported |
+| 09-01 | a link clicked in an early lab segment dispatched nothing — `prepare_show` wipes every hook | `a_link_far_down_a_long_lab_still_dispatches` | **a wiped hook is indistinguishable from a link nobody pressed**; the test predated the change |
+| 09-01 | `a_code_span_mention_is_not_extracted_as_a_link` was **misnamed against its own assertion** | Claude | found while changing the extractor it tested |
+| 09-01 | the per-stage-system rule listed **three** systems and there are more | Claude | the one rule whose own text says its failure is silent |
+| 09-02 | an Answer quoted six counts with **no route to any of them** | **Doug** | *"where is this reported?"* — the labs' own rule is that an expectation must say where to look |
+| 09-02 | the same Answer said *"worth asking System Modeler"* when `hrw://systemmodeler/` exists | **Doug** | describing an action HRW can perform |
 
 **Fourteen rows, and the pattern differs from every section above: two are defects in Claude's
 REASONING, not in a file.** A wrong cause asserted for a timing anomaly, and a cost derived by

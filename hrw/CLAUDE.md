@@ -292,6 +292,24 @@ a mismatch may be fixed by changing the *pane*, and on 2026-08-13 one was. But *
 expose Rumoca's structure, not a pedagogically convenient one**; when prose and pane disagree,
 **Rumoca is the arbiter.**
 
+**ANSWER THROUGH HRW WHEN HRW CAN SHOW IT — a standing expectation, and its failure is silent**
+*(Doug, 2026-09-02)*: *"Enabling you to provide richer answers is a big reason for this HRW project.
+This HRW project provides less advantage over this text conversation if you don't make use of HRW to
+provide rich answers when possible."*
+
+**Before answering, ask what HRW could show** — write an **Answer** to `.hrw-bridge/answer.md` when
+the reply wants a route through panes. There are **eighteen `hrw://` link forms**
+(`app.rs`'s `parse_hrw_link` is the roster): not only `load` and `stage`, but `node` to land on one
+field, `frame` on one animation step, `equation` on one row, `follow` to trace an identifier across
+every stage, `src` to open Rumoca in VS Code, `source` for a specimen line, `breakpoint` to arm a
+live anchor, `systemmodeler` and `notebook` for the oracle.
+
+**Why this needs writing down rather than remembering: a text-only answer looks finished.** Nothing
+signals that the platform went unused — Doug gets a good answer and neither of us notices. **The
+recorded instance is 2026-09-02**: an Answer about the bouncing-ball event quoted six counts with no
+route to any of them, and said *"worth asking System Modeler"* when `hrw://systemmodeler/` exists.
+**Describing an action HRW can perform is the tell.**
+
 **When a 🎯 capture arrives, locate the passage in the file the capture names.** The emitted text
 is what the pane *rendered*, so it will not match the markdown byte-for-byte.
 
