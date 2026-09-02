@@ -322,6 +322,18 @@ recorded instance is 2026-09-02**: an Answer about the bouncing-ball event quote
 route to any of them, and said *"worth asking System Modeler"* when `hrw://systemmodeler/` exists.
 **Describing an action HRW can perform is the tell.**
 
+**WHEN DOUG CORRECTS AN ANSWER, EDIT THE ANSWER — do not reply in chat and leave it standing.**
+*(Doug named this 2026-09-02: "it is great that you are iteratively improving your answer rather
+than creating a sort of conversational thread which follows your original answer.")* **This is a
+third reason an Answer earns its place**, beside *richer than text* and *a route through panes*:
+a chat thread accretes, so the wrong original stays at the top and the reader reconstructs the
+truth from four messages, while **the Answer simply becomes right.**
+
+**The failure is silent in this project's usual way**: replying *"you're right, it's actually X"*
+leaves a document asserting something false, with the correction in a conversation that scrolls
+away — which is the same reason the *why* must live in the repository. Today's Answer took four
+corrections and stayed one document.
+
 **ORDER THE LINKS: A LOAD COMES FIRST.** `source`, `follow`, `stage/node`, `stage/frame`,
 `stage/equation` and `SwitchStage` all **require a loaded specimen** — with none, HRW refuses rather
 than half-applying, because a pending state would fire later and send the reader somewhere no link
