@@ -754,6 +754,39 @@ the stop that lands is the one you check yourself.
 
 ## Rules for writing one
 
+### Emphasis is nearly gone, and what remains is structure — Doug, 2026-09-01
+
+*"The labs are difficult to read … there's a lot in the labs which is competing for my visual
+attention."* Measured in `connect-expansion.md` at the time: **98 bold spans and 166 inline code
+spans across 288 lines of prose** — roughly one styled fragment per line. **Emphasis is
+differential**, so at that density nothing reads as emphasised and the texture has to be parsed
+before the sentence can be read. Across all 22 labs the sweep took **667 bold spans to 153**.
+
+**Write plain prose. Three things carry bold, and each is machine-read or structural:**
+
+| kept | why |
+|---|---|
+| the `#` title and `##` station headers | headings; they never carried `**` at all |
+| `**Predict.**` and `**Expected:**` | checked by `a_lab_predicts_if_and_only_if_its_kind_says_so` and `every_station_of_every_lab_owes_an_expected`, **and** they are the checkpoint grammar charter Decision 14 makes the pedagogical core |
+| the lab's **first bolded line** | `LabSource::blurb_of` reads it to build the catalogue; pinned by the `blurb` verb in `pinned-claims.txt` |
+
+**Do not re-bold a sentence to satisfy a checker.** `matching-live.md`'s vocabulary note was pinned
+as *"A **break** is where…"*; when the bold went, **the pin was updated, not the prose**. A pin
+guards a sentence, not its emphasis.
+
+### Tag a Modelica fence `modelica`, and tag nothing else that way
+
+HRW draws fenced blocks itself (`lab_panel::code_block_ui`) and lexes **`modelica` fences only**,
+with `source_view::SourceHighlight` and `colors::syntax_color` — the same pair the specimen source
+pane uses, so the same `connect(src.p, R.p)` looks identical in both places.
+
+**Everything else stays flat, and that is not laziness.** Most fences in these labs hold compiler
+*output* — `f_x[0]   0 = der(h) - v`, `structurally singular system: 13 matched out of 14`. Running
+those through a Modelica lexer would colour `equations` and `model` as keywords, which is worse than
+no colour. Inline `code` spans take a green-tinted background rather than green text, because
+`egui_commonmark` renders them as `RichText::code()` and exposes no hook for their colour; Doug ruled
+that *"good enough given all of the constraints"* on 2026-09-01.
+
 ### `index-reduction.md` CARRIES A HARDER BAR THAN THE OTHERS — Doug, 2026-08-21
 
 **His words:** *"amongst all of the labs, my hope is for the index reduction lab to be the best.
