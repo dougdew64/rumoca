@@ -75,6 +75,18 @@ a second instance: the FULL gate passed — 915 tests — while `CLAUDE.md` carr
 to a directory the rename had moved.** Nothing resolves this file's markdown links. **Before citing
 a green run as evidence, say what it measured.**
 
+**AND A THIRD KIND, 2026-09-02, WHICH IS NOT "THE CHECK DID NOT RUN" BUT "NO CHECK COULD HAVE
+EXISTED": NOTHING COMPARES A LABEL AGAINST ITS MEANING.** `events_to_json` published Rumoca's
+`synthetic_root_conditions` as `zero_crossing_conditions`, so `BouncingBall` showed **0** — a
+bouncing ball apparently detecting no contact. **Every value was correct for three weeks.** The
+fidelity sweep compares structures, the notebook check compares values, and both were right; the
+defect lived entirely in a name. It reached three labs and an `upstream-issues.md` entry written to
+be filed before Doug said *"accuracy is a requirement, verify."*
+
+**So when HRW renames a field it read from Rumoca, that rename is a CLAIM** — and the cheapest
+defence is not to make one. **Publish Rumoca's own names**; where a friendlier label is genuinely
+wanted, put it in the prose beside the value, never in place of it.
+
 
 **When accuracy needs a Rumoca change, the change is the cheap option** — see *a quality bar can
 become a discouragement*, below, which carries the account.
