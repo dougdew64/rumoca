@@ -884,15 +884,57 @@ pub(crate) fn split_lab_segments(text: &str) -> Vec<LabSegment<'_>> {
     out
 }
 
-/// Draw one fenced block: monospace, coloured, framed, and **selectable**.
+/// Lay out a Modelica block with **the same lexer and palette as the source pane**.
 ///
-/// **No copy button** — Doug ruled it out, and drawing the block ourselves is what makes
-/// that free rather than a removal. Selection is kept deliberately *because* the button
-/// is gone: without either, code could not be copied at all.
+/// Doug, 2026-09-01: *"let's implement syntax highlighting in labs, only for Modelica so
+/// that we can achieve visual consistency across HRW."* The same `connect(src.p, R.p)`
+/// used to render one way in a lab and another in `specimen_source`, because
+/// `egui_commonmark` drew the block and never asked. HRW draws it now, so it can call
+/// [`crate::source_view::SourceHighlight`] and [`crate::colors::syntax_color`] — the
+/// pair `specimen_source` already uses.
+///
+/// **Modelica only, deliberately.** Labs also fence `text` — log excerpts, equation
+/// dumps, command lines — and running those through a Modelica lexer would colour
+/// arbitrary words as keywords, which is worse than a flat colour. That is what the
+/// language dispatch in [`code_colour`] was reserved for.
+///
+/// Unclassified runs take `visuals().text_color()`, matching the source pane rather than
+/// the flat green: consistency is the point, so the two must not differ on the residue.
+fn modelica_layout(ui: &egui::Ui, body: &str) -> egui::text::LayoutJob {
+    use crate::source_view::{SourceHighlight, segments};
+
+    let font = egui::TextStyle::Monospace.resolve(ui.style());
+    let dark = ui.visuals().dark_mode;
+    let plain = ui.visuals().text_color();
+    let highlight = SourceHighlight::new(body);
+
+    let mut job = egui::text::LayoutJob::default();
+    for (i, line) in body.lines().enumerate() {
+        for seg in segments(line, highlight.line(i), &[]) {
+            let color = crate::colors::syntax_color(seg.kind, dark).unwrap_or(plain);
+            job.append(seg.text, 0.0, egui::TextFormat::simple(font.clone(), color));
+        }
+        job.append("\n", 0.0, egui::TextFormat::simple(font.clone(), plain));
+    }
+    job
+}
+
+/// Draw one fenced block: monospace, coloured, framed, and selectable.
+///
+/// No copy button — Doug ruled it out, and drawing the block ourselves is what makes that
+/// free rather than a removal. Selection is kept deliberately *because* the button is
+/// gone: without either, code could not be copied at all. Modelica is lexed by
+/// [`modelica_layout`]; every other language takes the flat [`code_colour`].
 fn code_block_ui(ui: &mut egui::Ui, lang: &str, body: &str) {
-    let text = egui::RichText::new(body.trim_end_matches('\n'))
-        .monospace()
-        .color(code_colour(lang));
+    let body = body.trim_end_matches('\n');
+    let text: egui::WidgetText = if lang == "modelica" {
+        modelica_layout(ui, body).into()
+    } else {
+        egui::RichText::new(body)
+            .monospace()
+            .color(code_colour(lang))
+            .into()
+    };
     egui::Frame::new()
         .fill(ui.visuals().extreme_bg_color)
         .stroke(ui.visuals().widgets.noninteractive.bg_stroke)
@@ -1042,6 +1084,41 @@ mod tests_code_segments {
             })
             .collect();
         assert_eq!(code, vec!["text", "modelica"]);
+    }
+
+    /// **A `modelica` fence is classified, and a `text` fence is not.**
+    ///
+    /// The consistency Doug asked for is that a lab and the source pane colour the same
+    /// Modelica the same way, so this checks the input to that: `SourceHighlight` — the
+    /// lexer `specimen_source` uses — finds keywords in a lab's Modelica. And it checks
+    /// the boundary, because running log output through a Modelica lexer would colour
+    /// arbitrary words as keywords, which is the reason the dispatch is by language.
+    #[test]
+    fn modelica_fences_are_lexed_and_other_fences_are_not() {
+        use crate::modelica_lex::TokenKind;
+        use crate::source_view::SourceHighlight;
+
+        let modelica = "connect(src.p, R.p);\nparameter Real g = 9.81;";
+        let hl = SourceHighlight::new(modelica);
+        let kinds: Vec<TokenKind> = (0..2)
+            .flat_map(|i| hl.line(i).iter().map(|t| t.kind))
+            .collect();
+        assert!(
+            kinds.contains(&TokenKind::Keyword),
+            "the lexer found no keyword in Modelica that declares a `parameter`: {kinds:?}",
+        );
+
+        // The dispatch, not the lexer: a `text` fence keeps the flat colour, so nothing
+        // in a log excerpt can be mistaken for a keyword.
+        let segs = split_lab_segments("```text\nparameter looks like a keyword here\n```\n");
+        assert_eq!(
+            segs,
+            vec![LabSegment::Code {
+                lang: "text",
+                body: "parameter looks like a keyword here\n"
+            }],
+            "a text fence must reach code_block_ui tagged `text`, not `modelica`",
+        );
     }
 
     /// **Non-vacuity against the real corpus:** every lab is split, and the labs
