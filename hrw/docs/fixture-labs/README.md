@@ -89,6 +89,16 @@ the thing that actually matters.
 it is discarded before the world can move under it. That is why it is gitignored and unchecked —
 not laxness, but that there is no gap for staleness to live in.
 
+**AND THE STRONGER REASON IS PEDAGOGICAL** *(Doug, 2026-09-02)*: *"if I'm aware that they are going
+to be overwritten eventually, then I'm much more likely to think harder about your answers."* That
+is a report about **effectiveness**, which Claude cannot assess, so it outranks the staleness
+argument above rather than joining it. One `LAB_FILE` slot; a new Answer overwrites the last, and
+the loss is the point.
+
+**So if a lab book is ever built, filing must COST something.** Keeping an Answer available while
+Doug is still reading makes the scarcity counterfeit — the bookmarked-article failure, where saving
+substitutes for reading. **A Save button beside the text would destroy the effect it preserves.**
+
 **And the two failure modes are genuinely different, which is the part to keep.** A fixture lab can
 be perfectly written and *later* false. An Answer can never go stale — but it can be **wrong
 on arrival**, if Claude misreads the bridge or invents what HRW did not say. No checker catches
@@ -96,14 +106,11 @@ that either; the difference is that Doug finds out in the next sentence rather t
 
 **Everything in this directory manages the fixture side of that split**, which is where the rot is.
 
-### Which channel is live, and when the other one becomes live
+### Both channels are live
 
-**Doug, 2026-08-22:** *"Right now while I'm beginner mode and just learning the basics, I'm entirely
-using fixture labs. Eventually, after I've learned all that the fixture labs have to offer, I'll
-begin using the Answers which you author to help answer my advanced questions."*
-
-**So fixture labs are the whole channel today, and Answers are a capability held in reserve.**
-The consequence worth acting on:
+*(This said Answers were "held in reserve" until the fixture labs were spent. Doug superseded that
+on 2026-09-02: "HRW is intended partly as a platform for you to use to provide rich answers that
+you cannot provide with only conversation text.")*
 
 - **Do not AUTHOR a second document where a fixture lab already covers the ground.** Writing a
   whole Answer over material a fixture lab already carries trades a durable, checked artifact
@@ -567,10 +574,8 @@ Decision 14 had already named the replacement: *"a walk is a **lab session**, no
 | *a run* | **a lab session** |
 | `a_finished_session_returns_to_the_mode_it_started_in` | `a_finished_session_…` |
 
-**AND `run` COLLIDES EXACTLY AS `stop` DID, so the rename is surgical, never blind.** Two senses
-live in `src/`: the **lab session** (`test_set_session_state`, *"a self-running run, as the Play
-button does"*) and **traversal**, which must survive untouched — `walk_modules()`, `fn walk(dir:
-&Path)`, *"it walks the alias equations"*, *"walking into library class IR"*.
+**`walk` collided exactly as `stop` did**, so the rename was surgical: the traversal sense
+(`walk_modules()`, `fn walk(dir: &Path)`) survives untouched in `src/`.
 
 **WHY `station` AND NOT `step`, so nobody re-proposes it.** This section exists because `stop`
 *collided*: a compile stops and a debugger stops. Any replacement had to survive that test, and
