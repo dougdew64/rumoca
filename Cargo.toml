@@ -228,6 +228,21 @@ opt-level = 3
 lto = "thin"
 
 # Speed up parser-heavy runtime in normal debug builds.
+# **egui's debug-only Id diagnostics cost O(2^depth) memory, so they are off here.**
+#
+# In debug builds egui keeps a process-global map from `Id` to a human-readable
+# description, and builds each entry by embedding its parent's ENTIRE string
+# (`egui-0.35.0/src/id.rs`, `id_source::insert_child`). Nested `CollapsingHeader`s
+# therefore double the string per level: measured in pure egui at 5 MB (depth 10),
+# 79 MB (14), 1,260 MB (18). HRW's stage trees nest one level per JSON level and
+# reach depth 24, which aborted the app with a 94 GB commit on 2026-09-02.
+#
+# `debug-assertions = false` compiles that map out for egui alone. Debug INFO is
+# untouched, so egui stays steppable; HRW and every Rumoca crate keep their
+# assertions. Release builds were never affected — the map is `cfg(debug_assertions)`.
+[profile.dev.package.egui]
+debug-assertions = false
+
 [profile.dev.package.rumoca-phase-parse]
 opt-level = 3
 [profile.dev.package.rumoca-compile]

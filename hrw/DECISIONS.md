@@ -4902,3 +4902,34 @@ statements.
 **The general form, and the next candidates:** any subject stated in more than one governing
 document is a drift risk proportional to how many. Gate is done. `budget`/`ceiling` sits in four
 files and should go the same way.
+
+## 2026-09-02 — egui's debug Id diagnostics are compiled out of dev builds
+
+**`[profile.dev.package.egui] debug-assertions = false`**, in the workspace `Cargo.toml`, because
+in debug builds egui keeps a process-global map from `Id` to a readable description and builds each
+entry by embedding its parent's **entire** string. Nested `CollapsingHeader`s double it per level:
+measured in pure egui at 5 MB (depth 10), 79 MB (14), 1,260 MB (18), while `push_id` and `vertical`
+nest to the same depth and stay flat at ~690 KB.
+
+HRW's stage tree nests one level per JSON level, and the Parse AST is 24 deep — about **266 GB**.
+Doug clicked the Parse tab while following `v`, which force-opens the ancestors of every mention and
+so opens the tree to full depth **in a single frame**. HRW committed 94 GB, exhausted the machine's
+commit limit and called `abort()`. Depth 24 now costs 954,537 bytes, and the cost is flat in depth.
+
+**Why a profile stanza and not code.** The alternatives were capping auto-expansion depth — which
+trades away what following a variable is *for*, to route around a bug that is not ours — and
+replacing the nested `CollapsingHeader` with a flat list, which rewrites the paint path, the
+least-testable code in the project and the code Doug has said he will edit himself. The stanza
+changes no code and nothing on screen.
+
+**What it costs:** egui `Id`s print as `salt_1A2B` rather than a readable chain. Id-*clash*
+detection survives — that is gated on `warn_on_id_clash`, not on `debug_assertions` — so only the
+name in the message gets terser. Debug info is untouched, so egui stays steppable, and every other
+crate keeps its assertions. Release builds were never affected.
+
+**Guarded by `doc_citations::egui_debug_id_diagnostics_stay_off_in_dev_builds`**, which carries the
+measurements. The stanza needs a test rather than a comment because what it prevents is invisible
+until the app dies: every test passes without it, since none renders a tree 24 levels deep.
+
+**Owed: report it upstream to egui.** O(2^depth) for nested `CollapsingHeader` in debug builds is
+their bug, not ours, and the reproducer is ten lines.

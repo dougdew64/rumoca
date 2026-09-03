@@ -580,6 +580,79 @@ mod tests {
         }
     }
 
+    /// egui's debug-only `Id` diagnostics stay compiled out of dev builds.
+    ///
+    /// # The defect this prevents, which killed the app on 2026-09-02
+    ///
+    /// In debug builds egui keeps a process-global map from `Id` to a readable
+    /// description, and builds each entry by embedding its parent's **entire**
+    /// string — `format!("{parent_repr}.with({salt:?})")`, in
+    /// `egui-0.35.0/src/id.rs`. Nested `CollapsingHeader`s therefore **double** the
+    /// string per level. Measured in pure egui, no HRW involved:
+    ///
+    /// | nesting depth | peak bytes |
+    /// |---|---|
+    /// | 10 | 5,303,072 |
+    /// | 14 | 79,165,477 |
+    /// | 18 | 1,260,553,616 |
+    ///
+    /// `push_id` and `vertical` nest at the same depth and stay flat (~690 KB), so
+    /// this is `CollapsingHeader` specifically.
+    ///
+    /// HRW's stage tree nests one level per JSON level and the Parse AST is 24 deep
+    /// — about 266 GB. Doug clicked the Parse tab while following a variable, which
+    /// force-opens the ancestors of every mention and so opens the tree to full
+    /// depth **in one frame**. HRW committed 94 GB, exhausted the machine's commit
+    /// limit and called `abort()`.
+    ///
+    /// # Why the fix is a profile stanza and not code
+    ///
+    /// The bug is in a diagnostic HRW gets no value from. `debug-assertions = false`
+    /// for that one package compiles it out: depth 24 costs 954,537 bytes instead of
+    /// 266 GB, and the cost becomes flat in depth rather than exponential. Debug
+    /// *info* is untouched, so egui stays steppable; every other crate keeps its
+    /// assertions; release builds were never affected.
+    ///
+    /// **`warn_on_id_clash` is not `debug_assertions`**, so egui still detects
+    /// duplicate ids — only the id's *name* in the message gets terser.
+    ///
+    /// # Why this is a test and not a comment
+    ///
+    /// What it prevents is invisible until the app dies, and the stanza reads like
+    /// tidy-up-able clutter. Nothing else in the build would notice its removal:
+    /// every test passes without it, because no test renders a tree 24 levels deep.
+    #[test]
+    fn egui_debug_id_diagnostics_stay_off_in_dev_builds() {
+        let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .expect("hrw/ has a parent")
+            .join("Cargo.toml");
+        let manifest = std::fs::read_to_string(&workspace)
+            .unwrap_or_else(|e| panic!("{}: {e}", workspace.display()));
+
+        let mut in_section = false;
+        let mut off = false;
+        for line in manifest.lines() {
+            let t = line.trim();
+            if t.starts_with('[') {
+                in_section = t == "[profile.dev.package.egui]";
+                continue;
+            }
+            if in_section && t.starts_with("debug-assertions") {
+                off = t.split_once('=').is_some_and(|(_, v)| v.trim() == "false");
+            }
+        }
+
+        assert!(
+            off,
+            "`[profile.dev.package.egui] debug-assertions = false` is missing from {}.\n\
+             Without it egui's debug-only Id map grows O(2^depth) and HRW aborts when a \
+             deep stage tree opens — 94 GB on 2026-09-02, from one click. It is not \
+             clutter; see this test's doc comment for the measurements.",
+            workspace.display(),
+        );
+    }
+
     /// A path that is part of a longer path is not a citation.
     ///
     /// Guards the false positive that made the first version unusable: a quoted panic
