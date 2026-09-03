@@ -3274,6 +3274,29 @@ impl App {
         })
     }
 
+    /// The few fields that decide what this frame draws, as one comparable string.
+    ///
+    /// **The change-detector for `diagnostics::begin_render`**, which writes to disk
+    /// whenever this differs from the previous frame's. So it must contain everything
+    /// that changes what is rendered and **nothing that merely ticks** — a sequence
+    /// number, a status line or an animation cursor here would turn a rare write into
+    /// a per-frame one.
+    ///
+    /// `following` earns its place despite not being a view: it is what expands the
+    /// stage tree, and it was half of the pair that aborted HRW on 2026-09-02. The
+    /// stage tab alone would have described that frame as ordinary.
+    fn render_key(&self) -> String {
+        format!(
+            "{:?}/{}/{}/{:?} model={} follow={}",
+            self.ui_mode,
+            self.stage.name(),
+            sub_view_name_for(self.stage, &self.viewport).unwrap_or("-"),
+            self.specimen_detail,
+            self.model.as_deref().unwrap_or("-"),
+            self.tracked_identifier.as_deref().unwrap_or("-"),
+        )
+    }
+
     /// Which animation is on screen and where its cursor stands.
     ///
     /// Reported only for the animation belonging to the *current* stage tab:
@@ -6021,6 +6044,13 @@ impl App {
         // rendered rather than the previous one's. See `diagnostics.rs`.
         diagnostics::set_snapshot(self.diagnostic_snapshot());
 
+        // And put what this frame is about to draw on DISK, before drawing it.
+        // `set_snapshot` above only reaches memory; `flush_session` at the end of the
+        // frame is what writes, so a frame that never ends writes nothing. That is
+        // how the state at the 2026-09-02 out-of-memory abort came to be four and a
+        // half minutes stale. See `diagnostics::InFlight`.
+        diagnostics::begin_render(self.render_key());
+
         // One-shot: force the debugger to resolve live_trace.rs early, so the
         // first Debug click does not pay for it. No-op after the first few
         // frames. See `Prewarm`.
@@ -6201,6 +6231,9 @@ impl App {
         self.publish_current_view();
         diagnostics::set_snapshot(self.diagnostic_snapshot());
         diagnostics::flush_session();
+        // Reached only if the frame did not die. `frames_completed: 0` in the
+        // in-flight record therefore means the first frame of this state killed HRW.
+        diagnostics::end_render();
     }
 }
 

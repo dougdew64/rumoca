@@ -115,19 +115,20 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**66 modules, 75,931 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**66 modules, 76,406 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
-| `app.rs` | 7,149 |
+| `app.rs` | 7,182 |
 | `worker/tests.rs` | 6,634 |
 | `app/tests.rs` | 6,549 |
 | `doc_citations.rs` | 6,266 |
 | `worker.rs` | 5,868 |
 | `bridge.rs` | 4,195 |
-| `ui_tests.rs` | 2,949 |
+| `ui_tests.rs` | 2,987 |
 | `fidelity.rs` | 1,849 |
 | `equation_sheet.rs` | 1,540 |
+| `diagnostics.rs` | 1,390 |
 | `tree.rs` | 1,299 |
 | `incidence_view.rs` | 1,219 |
 | `lab_panel.rs` | 1,180 |
@@ -136,7 +137,6 @@ showing 48 equations. They are derived now, and
 | `autoplay.rs` | 1,078 |
 | `lib.rs` | 1,078 |
 | `matching_anim.rs` | 1,068 |
-| `diagnostics.rs` | 986 |
 | `playback.rs` | 962 |
 | `tarjan_anim.rs` | 934 |
 | `ic_plan_anim.rs` | 876 |
@@ -185,7 +185,7 @@ showing 48 equations. They are derived now, and
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 101 |
 | `field_help.rs` | 67 |
-| **total** | **75,931** |
+| **total** | **76,406** |
 <!-- END GENERATED module-sizes -->
 
 

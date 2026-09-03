@@ -33,7 +33,7 @@
 //!
 //! So the snapshot is the point of this module and the backtrace is a bonus.
 //!
-//! ## Three files, because there are two kinds of death and one kind of history
+//! ## Four files, because there are three kinds of death and one kind of history
 //!
 //! 1. **`crash-<utc>.json`** — written from a panic hook. Complete: panic
 //!    message, location, backtrace, app snapshot, recent actions, log tail.
@@ -54,8 +54,29 @@
 //!    — see [`rotate_previous_session`], and read that before assuming
 //!    `session.json` describes the run you are investigating.
 //!
+//! 4. **`in-flight.json`** — what HRW was **rendering**, written *before* the frame
+//!    drew rather than after. The other three are all written after something
+//!    happened, so **a frame that never ends writes none of them**; this one is
+//!    already on disk when the frame begins. `frames_completed: 0` says the first
+//!    frame of that state was fatal. See [`InFlight`].
+//!
 //! So after a hard death, `previous-session.json` is the file that describes it
 //! and `session.json` describes the restart.
+//!
+//! ## The third kind of death: an abort, which runs no hook at all
+//!
+//! A panic hook covers panics, and `session.json` covers a hard kill because it was
+//! written earlier. **Neither covers an abort.** `handle_alloc_error` and a stack
+//! overflow call `abort()`, which unwinds nothing, runs no hook, and gives the
+//! process no instruction that can execute afterwards — so the entire crash-file
+//! mechanism is blind to exactly the failures whose cause is hardest to guess.
+//!
+//! On 2026-09-02 an out-of-memory abort left the newest file on disk four and a half
+//! minutes stale, and the trigger had to be inferred from the *gap* between its
+//! timestamp and the debugger's. The debugger's record existed only because Doug
+//! happened to be running under one; without that there would have been no stack at
+//! all. `in-flight.json` is the answer to that, and the ordering is the whole of it:
+//! **a record that must survive the process cannot be written by it afterwards.**
 //!
 //! `write_on_demand` produces the same content as a crash file for a session
 //! that is misbehaving without dying — Doug asked for "crashes *and other
@@ -135,6 +156,46 @@ struct Diag {
     /// Set once the panic hook has written a file, so a *second* panic while
     /// unwinding does not overwrite the first — the first is the interesting one.
     crash_written: bool,
+    /// What the current frame is rendering, written to disk *before* it renders.
+    /// See [`begin_render`].
+    in_flight: Option<InFlight>,
+}
+
+/// What HRW is rendering right now, recorded before the rendering happens.
+///
+/// # The gap this closes, measured 2026-09-02
+///
+/// `session.json` is written at the **end** of a frame, deliberately — writing it
+/// from `record_action` pinned the `app` block to the state *before* the action and
+/// cost three phantom bug reports on 2026-07-30. That ordering is correct and stays.
+///
+/// Its consequence is that **a frame which never ends writes nothing at all.** HRW
+/// aborted mid-paint on an out-of-memory failure; the click that caused it was
+/// recorded in memory and died with the process, so the last thing on disk was four
+/// and a half minutes stale. The trigger had to be inferred from the *gap* between
+/// that file's timestamp and the debugger's — and the debugger's record existed only
+/// because Doug happened to be running under one.
+///
+/// A panic would have been caught: [`write_crash_file`] is installed as a panic hook.
+/// **An abort is not a panic.** `handle_alloc_error` calls `abort()`, which unwinds
+/// nothing and runs no hook, so the whole crash-file mechanism is blind to exactly
+/// the failures — out of memory, stack overflow — where the state is hardest to guess
+/// afterwards.
+///
+/// So this record is written *before* the risky work rather than after it, which is
+/// the only ordering that survives a process that stops existing.
+#[derive(Clone)]
+struct InFlight {
+    /// The few fields that decide what gets drawn. Not the whole snapshot: this is
+    /// the change-detector, and a key carrying a sequence number or a status line
+    /// would rewrite the file every frame.
+    key: String,
+    started_at_ms: u128,
+    /// **Zero is the smoking gun.** It means the process died during the first frame
+    /// of this state, which is what distinguishes a single catastrophic frame from a
+    /// leak that took many. This evening's failure was the first kind, and telling
+    /// them apart took a separate experiment.
+    frames_completed: u32,
 }
 
 /// `Option` rather than a const-constructed `Diag` so this needs no const
@@ -176,6 +237,7 @@ pub fn init() {
             session_dirty: false,
             log: VecDeque::new(),
             crash_written: false,
+            in_flight: None,
         });
         was
     };
@@ -270,6 +332,129 @@ pub fn set_snapshot(snapshot: Value) {
     with_diag(|d| d.snapshot = Some(snapshot));
 }
 
+/// Name of the in-flight record. Not `session.json`, which answers a different
+/// question and must keep its end-of-frame ordering.
+const IN_FLIGHT: &str = "in-flight.json";
+
+/// Seed the global with a quiet `Diag`, for tests in this module and in `ui_tests`.
+///
+/// `init()` rotates files and installs a panic hook, neither of which a test wants —
+/// and `with_diag` is a **silent no-op** while the global is `None`, which is what
+/// made `recording_defers_the_write_until_flush` pass vacuously until it asserted on
+/// state. Any test asserting that something was recorded must seed first, or it is
+/// asserting against a no-op.
+///
+/// **Returns a guard, and that is not a nicety.** `DIAG` is process-global and the
+/// suite shares one process. Seeding it without restoring left it `Some` for every
+/// test that ran afterwards — which switched on file writes that had been no-ops for
+/// the whole suite's life and took the fast run from **16 s to 392 s**, while
+/// accumulating hundreds of unrelated actions into the live `session.json`.
+#[cfg(test)]
+#[must_use = "the global stays seeded until this is dropped, which slows and pollutes \
+              every test that follows"]
+pub(crate) fn seed_for_test() -> DiagTestGuard {
+    let guard = DiagTestGuard {
+        previous: DIAG
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take(),
+        in_flight_file: std::fs::read(dir().join(IN_FLIGHT)).ok(),
+    };
+    *DIAG
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(Diag {
+        build: build_info(),
+        snapshot: None,
+        actions: VecDeque::new(),
+        session_dirty: false,
+        log: VecDeque::new(),
+        crash_written: true, // never write a crash file from a test
+        in_flight: None,
+    });
+    guard
+}
+
+/// Restores both the global and `in-flight.json` when dropped.
+///
+/// Two separate hazards, one guard. The global is shared by the whole suite, and
+/// **`in-flight.json` is live state**: it has one fixed name and it is *the* file a
+/// post-mortem reads, so a test's record left behind would be read as the description
+/// of a real death — the failure this module's header calls worse than no diagnostic,
+/// because it is trusted. Same shape as `ui_tests::AdHocTour`, which guards
+/// `.hrw-bridge/tour.md`; `Drop` so a panicking test cleans up too.
+#[cfg(test)]
+pub(crate) struct DiagTestGuard {
+    previous: Option<Diag>,
+    in_flight_file: Option<Vec<u8>>,
+}
+
+#[cfg(test)]
+impl Drop for DiagTestGuard {
+    fn drop(&mut self) {
+        *DIAG
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = self.previous.take();
+        let path = dir().join(IN_FLIGHT);
+        match self.in_flight_file.take() {
+            Some(bytes) => drop(std::fs::write(&path, bytes)),
+            None => drop(std::fs::remove_file(&path)),
+        }
+    }
+}
+
+/// The key of the current in-flight record, for tests that must prove the app set it.
+#[cfg(test)]
+pub(crate) fn in_flight_key_for_test() -> Option<String> {
+    with_diag(|d| d.in_flight.as_ref().map(|f| f.key.clone())).flatten()
+}
+
+/// Record what this frame is about to render, **before** it renders it.
+///
+/// Call at the top of the frame, after [`set_snapshot`]. Writes only when `key`
+/// differs from the last one, so an idle repaint costs a string comparison and no
+/// I/O; the states that matter are the ones a click just changed.
+///
+/// See [`InFlight`] for what this is for and why the existing files could not
+/// answer it.
+pub fn begin_render(key: impl Into<String>) {
+    let key = key.into();
+    let report = with_diag(|d| {
+        if d.in_flight.as_ref().is_some_and(|f| f.key == key) {
+            return None;
+        }
+        d.in_flight = Some(InFlight {
+            key,
+            started_at_ms: now_millis(),
+            frames_completed: 0,
+        });
+        Some(d.in_flight_report())
+    });
+    if let Some(report) = report.flatten() {
+        let _ = write_json(&dir().join(IN_FLIGHT), &report);
+    }
+}
+
+/// Record that the frame completed, so a death during the *first* frame of a state
+/// is distinguishable from one many frames later.
+///
+/// Rewrites the file only on the first completion. After that the record's question
+/// is answered and further writes would be per-frame I/O for nothing.
+pub fn end_render() {
+    let report = with_diag(|d| {
+        let first = match d.in_flight.as_mut() {
+            Some(f) => {
+                f.frames_completed = f.frames_completed.saturating_add(1);
+                f.frames_completed == 1
+            }
+            None => false,
+        };
+        first.then(|| d.in_flight_report())
+    });
+    if let Some(report) = report.flatten() {
+        let _ = write_json(&dir().join(IN_FLIGHT), &report);
+    }
+}
+
 /// Write a diagnostic file for a session that is misbehaving but has not died.
 ///
 /// Same content as a crash file minus the panic. Returns the path written, for
@@ -301,6 +486,29 @@ impl Diag {
             "app": self.snapshot,
             "actions": self.actions.iter().map(Event::to_json).collect::<Vec<_>>(),
             "log": self.log.iter().map(Event::to_json).collect::<Vec<_>>(),
+            "build": self.build,
+        })
+    }
+
+    /// The in-flight record. Carries the same `app` snapshot as a crash file,
+    /// because whoever reads this has no other description of the run.
+    fn in_flight_report(&self) -> Value {
+        let f = self.in_flight.as_ref();
+        json!({
+            "note": "What HRW was RENDERING, written before the frame drew and so \
+                     surviving a death that runs no hook — an abort from out-of-memory \
+                     or stack overflow, which no panic hook can catch. \
+                     `frames_completed: 0` means it died during the FIRST frame of this \
+                     state, which is the signature of one catastrophic frame rather \
+                     than a leak. CHECK `pid` AND `started_at` BEFORE BELIEVING ANY OF \
+                     IT: nothing deletes this file, so a stale record from a healthy \
+                     earlier run is the expected case, not an anomaly.",
+            "render_key": f.map(|f| f.key.clone()),
+            "started_at": f.map(|f| format_utc_millis(f.started_at_ms)),
+            "frames_completed": f.map(|f| f.frames_completed),
+            "pid": std::process::id(),
+            "app": self.snapshot,
+            "actions": self.actions.iter().map(Event::to_json).collect::<Vec<_>>(),
             "build": self.build,
         })
     }
@@ -500,8 +708,29 @@ fn push_capped(queue: &mut VecDeque<Event>, event: Event, cap: usize) {
     queue.push_back(event);
 }
 
+/// Where diagnostics are written — **a subdirectory under `cargo test`**.
+///
+/// # A live file the test suite was quietly overwriting
+///
+/// `writes_a_file_carrying_state_and_the_path_to_it` calls `init()`, which arms the
+/// global for the **rest of the process**; every test that renders a frame afterwards
+/// then flushed to the real `session.json`. So after any test run that file described
+/// *the suite*, carrying 200 of its actions — and nothing said so.
+///
+/// That is a trap laid precisely where it does the most damage. On 2026-09-02 the
+/// only surviving record of an out-of-memory abort was `session.json`, and the whole
+/// diagnosis rested on reading it. Running the suite first would have replaced it
+/// with test data that looks exactly as authoritative.
+///
+/// The fix is not discipline in each test — it is that **a test cannot address the
+/// live files at all.** Tests still exercise the real write path, one directory over.
 fn dir() -> PathBuf {
-    PathBuf::from(DIAGNOSTICS_DIR)
+    let base = PathBuf::from(DIAGNOSTICS_DIR);
+    if cfg!(test) {
+        base.join("test-run")
+    } else {
+        base
+    }
 }
 
 fn write_json(path: &Path, value: &Value) -> std::io::Result<()> {
@@ -619,6 +848,7 @@ mod tests {
             session_dirty: false,
             log: VecDeque::new(),
             crash_written: true, // never write a crash file from a test
+            in_flight: None,
         });
 
         assert!(
@@ -646,6 +876,177 @@ mod tests {
         // A second flush with nothing recorded is a no-op.
         flush_session();
         assert!(!with_diag(|d| d.session_dirty).unwrap_or(true));
+    }
+
+    use super::seed_for_test as seed_diag;
+
+    /// The in-flight record exists before the frame draws, and starts at zero.
+    ///
+    /// **Zero is the whole point.** It is what says the process died during the first
+    /// frame of a state rather than after many, and on 2026-09-02 telling those apart
+    /// took a separate depth-scaling experiment because nothing on disk said which it
+    /// was.
+    #[test]
+    fn a_render_record_starts_before_the_frame_at_zero_completed() {
+        let _guard = seed_diag();
+
+        begin_render("Lab/Parse/Tree model=BouncingBall follow=v");
+
+        let (key, frames) = with_diag(|d| {
+            let f = d.in_flight.as_ref().expect("a record exists");
+            (f.key.clone(), f.frames_completed)
+        })
+        .expect("diagnostics are live");
+        assert_eq!(key, "Lab/Parse/Tree model=BouncingBall follow=v");
+        assert_eq!(frames, 0, "no frame has completed yet — that is the signal");
+    }
+
+    /// A completed frame is counted, so `0` keeps meaning what it claims.
+    ///
+    /// Without this the count would be permanently zero and the field would report
+    /// "died on the first frame" for every state ever rendered — a reporter that
+    /// always fires is as useless as one that never does.
+    #[test]
+    fn a_completed_frame_is_counted_so_zero_stays_meaningful() {
+        let _guard = seed_diag();
+
+        begin_render("Lab/Events/Tree model=BouncingBall follow=-");
+        end_render();
+
+        assert_eq!(
+            with_diag(|d| d.in_flight.as_ref().map(|f| f.frames_completed)).flatten(),
+            Some(1),
+            "surviving a frame must be visible, or zero means nothing",
+        );
+
+        // A second frame still counts, but must not rewrite the file — see
+        // `end_render`. The count is in-memory truth; the file froze at 1.
+        end_render();
+        assert_eq!(
+            with_diag(|d| d.in_flight.as_ref().map(|f| f.frames_completed)).flatten(),
+            Some(2),
+        );
+    }
+
+    /// An unchanged key does not start a new record.
+    ///
+    /// HRW repaints continuously — `tick_prewarm` alone asks for a repaint every
+    /// frame. If an unchanged key rewrote, this would be I/O 60 times a second for a
+    /// file whose content did not change.
+    #[test]
+    fn an_unchanged_render_key_does_not_restart_the_record() {
+        let _guard = seed_diag();
+
+        begin_render("Lab/Parse/Tree model=BouncingBall follow=v");
+        let first = with_diag(|d| d.in_flight.as_ref().map(|f| f.started_at_ms)).flatten();
+        end_render();
+        begin_render("Lab/Parse/Tree model=BouncingBall follow=v");
+
+        assert_eq!(
+            with_diag(|d| d.in_flight.as_ref().map(|f| f.started_at_ms)).flatten(),
+            first,
+            "same state, same record — a restart here would also reset the frame count",
+        );
+        assert_eq!(
+            with_diag(|d| d.in_flight.as_ref().map(|f| f.frames_completed)).flatten(),
+            Some(1),
+            "and the completed frame survives, so the record is not silently rearmed",
+        );
+
+        // A different key does start a new record.
+        begin_render("Lab/Events/Tree model=BouncingBall follow=v");
+        assert_eq!(
+            with_diag(|d| d.in_flight.as_ref().map(|f| f.frames_completed)).flatten(),
+            Some(0),
+            "a new state is a new question",
+        );
+    }
+
+    /// The record carries the state, and says how to distrust itself.
+    ///
+    /// A reader with no other description of the run needs the app snapshot and the
+    /// action trail; and it needs `pid`, because nothing deletes this file and a
+    /// stale record from a healthy earlier run is the expected case.
+    #[test]
+    fn a_render_record_carries_the_snapshot_and_its_own_staleness_check() {
+        let _guard = seed_diag();
+        set_snapshot(json!({ "model": "BouncingBall", "stage_tab": "Parse" }));
+        record_action("view", "Parse");
+        begin_render("Lab/Parse/Tree model=BouncingBall follow=v");
+
+        let report = with_diag(|d| d.in_flight_report()).expect("diagnostics are live");
+
+        assert_eq!(
+            report["render_key"],
+            json!("Lab/Parse/Tree model=BouncingBall follow=v")
+        );
+        assert_eq!(report["frames_completed"], json!(0));
+        assert_eq!(report["app"]["stage_tab"], json!("Parse"));
+        assert_eq!(
+            report["actions"][0]["detail"],
+            json!("Parse"),
+            "the trail comes along: this file may be the only description of the run",
+        );
+        assert_eq!(report["pid"], json!(std::process::id()));
+        assert!(
+            report["started_at"]
+                .as_str()
+                .is_some_and(|s| s.ends_with(" UTC")),
+            "an absolute timestamp, so staleness is decidable: {:?}",
+            report["started_at"],
+        );
+        let note = report["note"].as_str().unwrap_or_default();
+        assert!(
+            note.contains("frames_completed: 0") && note.contains("pid"),
+            "the note must teach a reader both how to read it and how to doubt it",
+        );
+    }
+
+    /// The suite cannot address the live diagnostic files.
+    ///
+    /// The protection this guards is invisible when it works and silent when it
+    /// breaks: without it a test run replaces `session.json` with a description of
+    /// the suite, and the next person to read that file after a crash reads test data
+    /// that looks exactly as authoritative. It went unnoticed from the day
+    /// `writes_a_file_carrying_state_and_the_path_to_it` first called `init()`.
+    #[test]
+    fn tests_never_write_the_live_diagnostic_files() {
+        let live = PathBuf::from(DIAGNOSTICS_DIR);
+        let under_test = dir();
+        assert_ne!(
+            under_test, live,
+            "under `cargo test` the diagnostics directory must not be the live one",
+        );
+        assert!(
+            under_test.starts_with(&live),
+            "but it should still be beneath it, so it is obvious what wrote it: {}",
+            under_test.display(),
+        );
+    }
+
+    /// The record reaches **disk**, which is the entire premise.
+    ///
+    /// Everything above asserts in-memory state, and would pass unchanged if the
+    /// write were pointed at the wrong path or dropped altogether — the file exists
+    /// precisely because the process it describes has stopped existing, so a record
+    /// that never lands is worth nothing at all.
+    ///
+    /// Restores whatever was there first, and does so **before asserting**, so a
+    /// failure cannot leave a live session's record replaced by a test's.
+    #[test]
+    fn the_record_reaches_disk_because_that_is_the_whole_point() {
+        let path = dir().join(IN_FLIGHT);
+        // The guard restores this file, so read it back *before* dropping the guard.
+        let _guard = seed_diag();
+
+        begin_render("test-only/never-a-real-state");
+        let written = std::fs::read_to_string(&path);
+
+        let text = written.expect("begin_render must leave a file behind");
+        assert!(
+            text.contains("test-only/never-a-real-state"),
+            "and it must be THIS record, not a stale one: {text:.200}",
+        );
     }
 
     #[test]
@@ -716,6 +1117,7 @@ mod tests {
             session_dirty: false,
             log: VecDeque::new(),
             crash_written: false,
+            in_flight: None,
         };
         let r = d.report(None);
         for key in [
@@ -741,7 +1143,9 @@ mod tests {
     /// evidence is erased by the most likely next user action.
     #[test]
     fn a_restart_preserves_the_previous_session() {
-        let dir = std::path::PathBuf::from(DIAGNOSTICS_DIR);
+        // `dir()`, not `DIAGNOSTICS_DIR`: under test that is a subdirectory, so this
+        // cannot overwrite the live `session.json` a post-mortem may be about to read.
+        let dir = super::dir();
         std::fs::create_dir_all(&dir).expect("diagnostics dir");
         let (current, previous) = (dir.join("session.json"), dir.join("previous-session.json"));
 

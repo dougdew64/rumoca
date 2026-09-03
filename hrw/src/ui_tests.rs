@@ -197,6 +197,44 @@ fn in_always_row(name: &str) -> String {
     format!("{name} \u{00b7}")
 }
 
+/// Rendering a frame records what that frame is drawing, **before** it draws it.
+///
+/// # Why this test and not only the unit tests
+///
+/// `diagnostics.rs` proves the record behaves; this proves **the app asks for one**.
+/// That is the gap that has bitten this repository over and over — an observer that
+/// works perfectly and is never called. All seven silent bugs of 2026-08-01 were that
+/// shape, and the Context Bar shipped omitting the background for weeks because
+/// everything on screen was correct.
+///
+/// It matters more than usual here, because the whole point of the record is to
+/// survive a death that runs no hook. If `frame_ui` stopped calling `begin_render`,
+/// nothing would fail, nothing would look wrong, and the loss would be discovered
+/// only by a future Claude asking what HRW had been doing when it died — which is
+/// exactly the position this record exists to prevent.
+#[test]
+fn a_rendered_frame_records_what_it_is_about_to_draw() {
+    // Seeding the global switches on writes that are no-ops for the rest of the
+    // suite, and rendering writes the real `in-flight.json`. The guard restores both;
+    // without it a test's record sits where a post-mortem looks for a real death's.
+    let _guard = crate::diagnostics::seed_for_test();
+    assert_eq!(
+        crate::diagnostics::in_flight_key_for_test(),
+        None,
+        "nothing recorded before a frame runs — otherwise this test cannot fail",
+    );
+
+    let _h = harness(App::test_default());
+
+    let key = crate::diagnostics::in_flight_key_for_test()
+        .expect("a rendered frame must leave a record of what it rendered");
+    assert!(
+        key.contains("model=") && key.contains("follow="),
+        "the key must carry the pair that aborted HRW on 2026-09-02 — a stage tab \
+         alone described that frame as ordinary: {key:?}",
+    );
+}
+
 /// The harness renders HRW at all, and the accessibility tree is populated.
 ///
 /// **The non-vacuity test for every test below it.** A harness that rendered
