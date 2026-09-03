@@ -37,7 +37,25 @@ use std::collections::HashMap;
 /// for it. Nothing failed, because a missing tooltip is invisible.
 /// [`tests::every_ir_dependency_is_harvested_for_field_help`] derives the requirement
 /// from `Cargo.toml` so the next `rumoca-ir-*` dependency cannot be forgotten.
-pub const IR_CRATES: &[&str] = &["rumoca-ir-ast", "rumoca-ir-flat", "rumoca-ir-dae"];
+///
+/// # Harvesting does NOT require depending, and assuming it did nearly cost a re-parse
+///
+/// `rumoca-ir-solve` is here while HRW has **no dependency on it** — Solve lowering's IR
+/// reaches the pane as serialised JSON through `rumoca-compile`. `gen_field_help` locates
+/// sources through `cargo metadata`, which lists every **workspace member** whether or not
+/// anything depends on it, so the docs were reachable all along.
+///
+/// This was first reported to Doug as costing a dependency, a moved `Cargo.lock` and one
+/// full MSL re-parse. He accepted that price; it did not exist. **The cheapest check —
+/// does `cargo metadata` already list it — was not run before quoting a cost**, which is
+/// the same shape as this repository's four dead levers: a plausible figure derived by
+/// reasoning rather than measured.
+pub const IR_CRATES: &[&str] = &[
+    "rumoca-ir-ast",
+    "rumoca-ir-flat",
+    "rumoca-ir-dae",
+    "rumoca-ir-solve",
+];
 
 // The field help table is embedded at compile time via `include_str!`.
 // This means the binary is self-contained — no runtime file I/O needed.
