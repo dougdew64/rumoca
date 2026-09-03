@@ -227,7 +227,6 @@ opt-level = 3
 [profile.release]
 lto = "thin"
 
-# Speed up parser-heavy runtime in normal debug builds.
 # **egui's debug-only Id diagnostics cost O(2^depth) memory, so they are off here.**
 #
 # In debug builds egui keeps a process-global map from `Id` to a human-readable
@@ -243,6 +242,7 @@ lto = "thin"
 [profile.dev.package.egui]
 debug-assertions = false
 
+# Speed up parser-heavy runtime in normal debug builds.
 [profile.dev.package.rumoca-phase-parse]
 opt-level = 3
 [profile.dev.package.rumoca-compile]
