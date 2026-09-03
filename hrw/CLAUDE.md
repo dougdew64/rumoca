@@ -445,20 +445,16 @@ the next phase touches — is procedure and lives there.
 
 ## Current work
 
-> ### ⟶ DOUG MOVED TO THE OTHER MACHINE 2026-09-03 — three things do not travel
+> ### ⟶ THE MACHINE SWITCH DID NOT HAPPEN — Doug stayed here, 2026-09-03
 >
-> **1. Run `cargo run -p hrw --example check_machine` first.** Standing rule, and it is the whole
-> reason that example exists.
+> The handoff written for it is gone rather than left standing; a stale instruction to rebuild
+> things "on that machine" is worse than none. **One item survives it and is still owed:**
 >
-> **2. Build the bridge extension there** — `npm install && npm run build` in
-> `hrw/vscode-extension/`, then *Developer: Reload Window*. `out/` and `node_modules/` are
-> gitignored, so that machine still runs the **old** extension, which reports
-> `framesTruncated: false` on a stack it only capped (fixed 2026-09-02, `f6c4064f`). **Doug always
-> launches HRW under the VS Code debugger** — his words — so this is his primary instrument, and
-> until it is rebuilt it understates stack depth without saying so.
->
-> **3. The first HRW launch there pays one full MSL re-parse.** The workspace `Cargo.toml` changed
-> twice on 2026-09-02 and `compiler_source_fingerprint()` hashes its bytes.
+> **Rebuild the bridge extension here** — `npm run build` in `hrw/vscode-extension/`, then
+> *Developer: Reload Window*. `out/` is gitignored, so the running extension is whatever was last
+> built locally, and the fix for the saturated-stack report (`f6c4064f`) is **not** in it until
+> that runs. **Doug always launches HRW under the VS Code debugger** — his words — so it is his
+> primary instrument, and until rebuilt it understates stack depth without saying so.
 >
 > **The OOM arc is closed.** egui's debug-only `Id` map is O(2^depth) in nesting; HRW aborted at a
 > 94 GB commit. Account in [`DECISIONS.md`](DECISIONS.md) and [`docs/upstream-issues.md`](docs/upstream-issues.md)
@@ -470,9 +466,20 @@ the next phase touches — is procedure and lives there.
 > `crates/<name>/src/*.rs` as a workspace path, which cost E1 its GitHub links; teaching it about
 > URLs is a `src/` change nobody has made.
 >
-> **Not in git:** `.hrw-bridge/answer.md` — the BouncingBall Answer Doug called spectacular — is
-> gitignored and stays on this machine. **The memory store does not travel either**, being keyed to
-> this filesystem path; anything load-bearing is in the repository, which is the point of the rule.
+> **AND A THIRD DEFECT CLASS IN THE SAME ANSWER, 2026-09-03 — Doug: *"I don't see this in Solve
+> Lowering."*** He was right three times over: `discrete_real_updates` is an **Events** summary
+> field that I attributed to Solve lowering; there is no `Minus` node; and **Solve lowering has no
+> expression tree at all** — it holds a straight-line instruction program (`LoadY`, `LoadP`,
+> `Unary`, `Binary`) over numbered registers, which is what *lowering* names. `Y[1]` was my
+> shorthand for `problem.layout.bindings.v.Y.index`, borrowed from `solve-lowering.md` **without
+> the table that grounds it**.
+>
+> **The pattern, now three for three: every wrong claim in that Answer was a NOTATION or a
+> LOCATION, never a number.** Each number checked out against the trace — seven `p_scalars`, index
+> 1, one Events update. What failed was *where I said to look* and *what I said it would look
+> like*. **So verify an Answer's pointers against the trace, not only its counts** — a count is
+> checked by `docs/specimen-notebook/`, and nothing checks a pointer, because
+> `.hrw-bridge/answer.md` is gitignored and no checker reads it.
 >
 > ### ⟶ THE DOCUMENT REVIEW IS RUNNING — began 2026-09-01, **this file** first
 >
