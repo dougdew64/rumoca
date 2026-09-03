@@ -114,6 +114,44 @@ describe('caps are declared, never silent', () => {
         assert.equal(s.location.line, 100, 'still the innermost frame');
     });
 
+    // The test above passes 50 frames to a limit of 10, so the SLICE truncates.
+    // Production never reaches that path: the adapter is asked for a fixed number
+    // of levels and cannot return more, so `allFrames.length > frames.length` was
+    // false every time and the truncation logic was correct and unreachable.
+    //
+    // The 2026-09-02 abort published `frameCount: 40, framesTruncated: false` from
+    // a saturated request, and it was reasoned from — a capped stack declared
+    // complete, by the one field `CLAUDE.md` calls "the truth".
+    it('does not call a saturated request complete', () => {
+        const exactly = Array.from({ length: 40 }, (_, i) => ({
+            name: 'node_ui', path: 'tree.rs', line: 300 + i,
+        }));
+        const s = buildDebugState({
+            seq: 6, writtenAtMs: AT, stopped: true, frames: exactly,
+            variables: [], frameLimit: 40, totalFrames: 137,
+        });
+        assert.equal(s.frameCount, 137, 'DAP totalFrames is what EXISTS');
+        assert.equal(
+            s.framesTruncated, true,
+            'returning exactly what was asked for is not evidence of a complete stack',
+        );
+    });
+
+    it('still reports an honest count when the adapter omits totalFrames', () => {
+        // `cppvsdbg` omits it. The caller over-requests by one instead, so a
+        // 41st frame arriving is what reveals the cap.
+        const overRequested = Array.from({ length: 41 }, (_, i) => ({
+            name: 'node_ui', path: 'tree.rs', line: 300 + i,
+        }));
+        const s = buildDebugState({
+            seq: 7, writtenAtMs: AT, stopped: true, frames: overRequested,
+            variables: [], frameLimit: 40,
+        });
+        assert.equal(s.frames.length, 40, 'publish the limit');
+        assert.equal(s.frameCount, 41, 'but say that more were seen');
+        assert.equal(s.framesTruncated, true);
+    });
+
     it('keeps the true variable count when truncating', () => {
         const many = Array.from({ length: 25 }, (_, i) => ({
             name: `v${i}`, value: `${i}`,

@@ -229,6 +229,7 @@ async function publishStop(
     // this feature ended up unable to explain itself.
     const stackAttempts: string[] = [];
     let stackShape: string | undefined;
+    let totalFrames: number | undefined;
 
     try {
         if (threadId === undefined) {
@@ -249,8 +250,15 @@ async function publishStop(
             // `buildDebugState`, which declares truncation rather than hiding it.
             const shapes: Array<{ shape: string; args: Record<string, unknown> }> = [
                 {
-                    shape: `levels=${DEFAULT_FRAME_LIMIT}`,
-                    args: { threadId, startFrame: 0, levels: DEFAULT_FRAME_LIMIT },
+                    // **One MORE than we will publish, so saturation is visible.**
+                    // Asking for exactly the limit and receiving exactly the limit
+                    // is indistinguishable from a stack that happens to be that
+                    // deep, and `buildDebugState` then computed `40 > 40 === false`
+                    // and declared a capped stack complete. Over-requesting by one
+                    // makes the cap detectable even from an adapter that omits
+                    // DAP's `totalFrames`, which `cppvsdbg` does.
+                    shape: `levels=${DEFAULT_FRAME_LIMIT + 1}`,
+                    args: { threadId, startFrame: 0, levels: DEFAULT_FRAME_LIMIT + 1 },
                 },
                 { shape: 'threadId only', args: { threadId } },
                 { shape: 'levels=0 (DAP "all")', args: { threadId, startFrame: 0, levels: 0 } },
@@ -264,7 +272,15 @@ async function publishStop(
                 try {
                     const reply = await session.customRequest('stackTrace', attempt.args);
                     got = reply?.stackFrames ?? [];
-                    stackAttempts.push(`${attempt.shape} -> ${got.length}`);
+                    // DAP's own count of what EXISTS, which the array is not.
+                    const total = reply?.totalFrames;
+                    if (typeof total === 'number') {
+                        totalFrames = total;
+                    }
+                    stackAttempts.push(
+                        `${attempt.shape} -> ${got.length}` +
+                        (typeof total === 'number' ? ` of ${total}` : ' (no totalFrames)'),
+                    );
                 } catch (err) {
                     stackAttempts.push(`${attempt.shape} -> threw ${err}`);
                 }
@@ -385,6 +401,7 @@ async function publishStop(
         variablesScope,
         stackAttempts,
         stackShape,
+        totalFrames,
     });
     publish(state);
     // Must-fire: the channel says what was published, so a silent failure to

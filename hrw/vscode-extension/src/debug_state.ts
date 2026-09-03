@@ -169,6 +169,13 @@ export interface DebugStateInput {
     stackAttempts?: string[];
     /** The request shape that actually produced frames, if any did. */
     stackShape?: string;
+    /**
+     * DAP's `totalFrames` from the `stackTrace` reply: how many frames **exist**,
+     * as against how many were returned. Absent when the adapter omits it, which
+     * `cppvsdbg` does — so the caller also over-requests, to detect saturation
+     * without it. See `frameCount` in [`buildDebugState`].
+     */
+    totalFrames?: number;
     frameLimit?: number;
     variableLimit?: number;
 }
@@ -243,8 +250,22 @@ export function buildDebugState(input: DebugStateInput): DebugState {
         threadId: input.stopped ? (input.threadId ?? null) : null,
         location,
         frames,
-        frameCount: allFrames.length,
-        framesTruncated: allFrames.length > frames.length,
+        // **`totalFrames` when the adapter supplies it, because the array cannot
+        // be trusted to be the whole stack.** DAP defines `totalFrames` as the
+        // number of frames available; the array is only what was *asked for*.
+        //
+        // Reporting `allFrames.length` was wrong whenever the request saturated,
+        // and it did so silently: the extension asked `cppvsdbg` for exactly
+        // `DEFAULT_FRAME_LIMIT` frames, got exactly that many back, and computed
+        // `40 > 40 === false` — a capped stack declared complete. `CLAUDE.md`
+        // tells a reader "`frameCount` is the truth", so the one field carrying
+        // the disclaimer was the field that lied.
+        //
+        // The 2026-09-02 abort published `frameCount: 40, framesTruncated: false`
+        // from a stack that was deeper, and it was reasoned from.
+        frameCount: input.totalFrames ?? allFrames.length,
+        framesTruncated:
+            frames.length < (input.totalFrames ?? allFrames.length),
         variables,
         variableCount: allVariables === null ? null : allVariables.length,
         // Counted over what was PUBLISHED, not over `allVariables`: the cap may
