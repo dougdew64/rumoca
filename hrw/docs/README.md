@@ -105,7 +105,7 @@ on a tab showing 48 equations.
 | [`ideas.md`](ideas.md) | The numbered backlog, #1-#57. Candidates, not commitments; numbers are permanent. |
 | [`../DECISIONS.md`](../DECISIONS.md) | Every nontrivial implementation choice, plus the closed-arc record. |
 | [`question-ledger.md`](question-ledger.md) | Doug's questions verbatim, and what made each click. **The only artifact whose value grows with time.** |
-| [`upstream-issues.md`](upstream-issues.md) | Rumoca bugs, written ready to file. **Claude never files them.** |
+| [`upstream-issues.md`](upstream-issues.md) | Bugs in code we do not own — Rumoca and egui — written ready to file. **Claude never files them.** |
 | 👤 [`fixture-labs/`](fixture-labs/) | Labs that are *tests*. One per capability, narrow, with violable expectations. |
 | 👤 [`specimen-notebook/`](specimen-notebook/) | Per specimen: a generated `trace/` and a hand-written `purpose.md`. |
 | 👤 [`reports/`](reports/) | **Generated data, not prose** — the survey, the corpus fidelity artifact and its profile, the specimen report. Explained by [`reports.md`](reports.md); inventoried by [`reports/README.md`](reports/README.md). |

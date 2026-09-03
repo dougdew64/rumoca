@@ -1,29 +1,41 @@
-# Upstream issues — Rumoca bugs found through HRW
+# Upstream issues — bugs found through HRW, in anyone's code
 
-**Purpose:** reproduced Rumoca bugs, each written to be filable with a copy-paste plus a
-sentence.
+**Purpose:** reproduced bugs in code we do not own, each written to be filable with a
+copy-paste plus a sentence.
 **Status:** record.
 **Read when:** a bug is reproduced and needs recording. **Claude adds entries and never files
 them** — filing is Doug's. Only *reproduced* bugs go in, and suspect code is marked
 unverified: a confident wrong diagnosis costs the credibility this project is building.
 
-**Ready to file with [CogniPilot/rumoca](https://github.com/CogniPilot/rumoca).** Doug files
-these when the time is right; Claude adds entries as they are found and never files them
-itself.
+**BROADENED 2026-09-02 FROM RUMOCA-ONLY, and the reason is the file's own purpose.** It exists
+so an investigation never has to be done twice — and that purpose knows nothing about whose
+repository the bug is in. HRW found an egui defect that aborted the app with a 94 GB commit;
+recording it *here* costs one heading, while a second file would duplicate this charter, the
+adjudication rule and the filing rule, which is the copy-that-rots shape `CLAUDE.md` names as
+this repository's most frequent failure.
+
+**Every entry names its project and its target repository**, because the baseline, the
+adjudication story and the "check it is still broken" step differ per project. Nothing about
+the Rumoca entries changed.
+
+| project | file with | baseline |
+|---|---|---|
+| **Rumoca** | [CogniPilot/rumoca](https://github.com/CogniPilot/rumoca) | `0.9.20`, `hrw` branch cut from upstream `8cdc7419` |
+| **egui** | [emilk/egui](https://github.com/emilk/egui) | `0.35.0`, as pinned by `hrw/Cargo.toml` |
 
 Each entry is written to be **filable with a copy-paste plus a sentence** — reproduction,
 expected vs actual, evidence, and where the suspect code lives — so nothing has to be
 re-investigated months later. That is the whole point of the file: an investigation
 regenerates only at the cost of doing it again.
 
-**Baseline for everything below:** Rumoca `0.9.20`, `hrw` branch cut from upstream
-`8cdc7419`. Verify against current upstream before filing — a bug fixed in the meantime
-should be struck out here, not reported.
+**Verify against current upstream before filing** — a bug fixed in the meantime should be
+struck out here, not reported. Each entry's baseline is in the table above.
 
 **Why this file exists:** bugs found through HRW are opportunities to build the maintainer
-relationship, not just to work around (`project-engage-rumoca-community`). Both entries
-below were found by *auditing failure paths* (`docs/ideas.md` #45), and the second was
-adjudicated by an independent Modelica implementation rather than argued from the spec.
+relationship, not just to work around (`project-engage-rumoca-community`). The two Rumoca
+entries were found by *auditing failure paths* (`docs/ideas.md` #45), and the second was
+adjudicated by an independent Modelica implementation rather than argued from the spec. The
+egui entry came the other way — from a crash Doug hit while using HRW normally.
 
 ---
 
@@ -982,6 +994,112 @@ one.
 2. **A specimen that isolates it**, without issue 2's type mismatch on top — a model with one
    unconnected root-scope flow variable and nothing else wrong. `IncompatibleConnect` cannot
    be that specimen: it is marked DO NOT FIX because its value is the type-check transition.
+
+---
+
+## E1. **egui** — nested `CollapsingHeader` costs O(2^depth) memory in debug builds
+
+**Project:** egui · **File with:** [emilk/egui](https://github.com/emilk/egui) · **Baseline:**
+`0.35.0` · **Status: NOT FILED.** Doug's call, 2026-09-02.
+
+**Found by HRW aborting.** Doug clicked the Parse stage tab while following a variable; HRW
+committed 94 GB, exhausted the machine's commit limit and called `abort()`. This is the only
+entry here found by ordinary use rather than by auditing failure paths.
+
+### Reproduction
+
+Nest `CollapsingHeader`s and render one frame, in a **debug** build:
+
+```rust
+fn nest(ui: &mut egui::Ui, depth: usize) {
+    if depth == 0 {
+        ui.label("leaf");
+        return;
+    }
+    egui::CollapsingHeader::new(format!("h{depth}"))
+        .default_open(true)
+        .show(ui, |ui| nest(ui, depth - 1));
+}
+```
+
+No HRW involved. Measured through `egui_kittest`'s `Harness`; the same recursion in an
+`eframe` app goes down the identical path, though that host was not the one run.
+
+### Expected
+
+Memory proportional to the number of widgets, as for any other container.
+
+### Actual
+
+Peak bytes for one frame, by nesting depth — and the same depths through `push_id` and
+`vertical` for contrast:
+
+| depth | `CollapsingHeader` | `push_id` | `vertical` |
+|---|---|---|---|
+| 10 | 5,303,072 | 665,551 | 665,339 |
+| 14 | 79,165,477 | 675,993 | 676,615 |
+| 18 | 1,260,553,616 | 690,563 | 690,225 |
+
+A factor of ~16 per 4 levels: **2× per level.** The other two containers are flat.
+
+Release builds are unaffected — the mechanism is `#[cfg(debug_assertions)]`.
+
+### Mechanism — two ingredients, neither wrong alone
+
+**1.** `id_source::insert_child`, in `egui-0.35.0/src/id.rs`, stores each `Id`'s description by
+embedding its parent's **entire** string:
+
+```rust
+let formatted = format!("{parent_repr}.with({salt:?})");
+```
+
+With a short salt this is linear: measured at +10 bytes per level for a `&str` salt.
+
+**2.** `Id`'s `Debug` does not print a number — it returns that id's whole stored description.
+So when an `Id` is used *as a salt*, both halves of that `format!` are full-length strings, and
+`CollapsingState::show_body_indented`, in
+`egui-0.35.0/src/containers/collapsing_header.rs`, does exactly that:
+
+```rust
+let id = self.id;
+self.show_body_unindented(ui, |ui| {
+    ui.indent(id, |ui| {          // `Ui::indent` takes `impl AsIdSalt`; `Id` satisfies it
+```
+
+So `body_repr = parent_repr + ".with(" + header_id_repr + ")"`, and `header_id_repr` is itself
+about `parent_repr`. Hence `n → 2n + 7`.
+
+**The `7` is not a fitted constant** — it is `len(".with()")`. Measured repr lengths for
+`id.with(id)` are 37, 81, 169, 345, 697, 1401, and `2n + 7` reproduces the sequence exactly.
+
+### Impact
+
+Any tree or inspector view — file browsers, scene graphs, JSON viewers — in the build type
+where all development happens. The failure is hostile to diagnose: the stack points at
+`format!` inside egui internals, and the allocation that finally fails is a small one, because
+the memory is already gone. HRW's stage tree nests one level per JSON level; at depth 24 the
+extrapolation is ~266 GB.
+
+### Suggested fix
+
+Store the parent's `Id` (8 bytes) rather than its rendered string, and resolve the chain
+lazily when something actually formats it. Nobody reads these strings unless a warning fires,
+so the readable output need not change at all.
+
+### What is inferred rather than proven
+
+**The measurements are all against `0.35.0`.** On 2026-09-02 both ingredients were confirmed
+still present on `master` by reading the source, and no matching issue was found in the
+tracker — but **the reproducer has not been run against `master`**, so "still broken today" is
+read, not executed. Do that before filing.
+
+### Workaround in HRW
+
+`[profile.dev.package.egui] debug-assertions = false` in the workspace `Cargo.toml`, which
+compiles the diagnostic out for that one package: depth 24 drops from ~266 GB to 954,537 bytes
+and the cost becomes flat in depth. Guarded by
+`doc_citations::egui_debug_id_diagnostics_stay_off_in_dev_builds`; the rationale is in
+[`DECISIONS.md`](../DECISIONS.md), 2026-09-02.
 
 ---
 
