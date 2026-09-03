@@ -15,9 +15,9 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-/// IR crates whose fields the observatory renders — extend as later stages
-/// (DAE, etc.) get their own tabs.
-const IR_CRATES: &[&str] = &["rumoca-ir-ast", "rumoca-ir-flat"];
+// The single list of harvested IR crates lives in the library, where a test can
+// reach it — see `field_help::IR_CRATES` for why it fell a stage behind.
+use hrw::field_help::IR_CRATES;
 
 fn main() {
     // Locate each IR crate's source via `cargo metadata` (robust to the cargo

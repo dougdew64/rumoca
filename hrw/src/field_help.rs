@@ -27,6 +27,18 @@
 
 use std::collections::HashMap;
 
+/// IR crates whose `///` field docs are harvested into `field_help.json`.
+///
+/// **Lives here rather than in `gen_field_help` so a test can reach it.** The list is a
+/// fact about which stages have in-app help; the example is only the tool that acts on it.
+///
+/// It fell a stage behind for weeks: DAE got a tab, `rumoca-ir-dae` was not added, and the
+/// pane rendered with no field help while Rumoca already carried 290 lines of `///` docs
+/// for it. Nothing failed, because a missing tooltip is invisible.
+/// [`tests::every_ir_dependency_is_harvested_for_field_help`] derives the requirement
+/// from `Cargo.toml` so the next `rumoca-ir-*` dependency cannot be forgotten.
+pub const IR_CRATES: &[&str] = &["rumoca-ir-ast", "rumoca-ir-flat", "rumoca-ir-dae"];
+
 // The field help table is embedded at compile time via `include_str!`.
 // This means the binary is self-contained — no runtime file I/O needed.
 // The JSON maps field names (strings) to their doc-comment text (strings).
@@ -63,5 +75,59 @@ mod tests {
                 "field_help missing expected key: {key}"
             );
         }
+    }
+
+    /// Every `rumoca-ir-*` crate HRW depends on is harvested for field help.
+    ///
+    /// # What this prevents, and why nothing noticed for weeks
+    ///
+    /// [`IR_CRATES`] listed only `rumoca-ir-ast` and `rumoca-ir-flat`, with a note saying
+    /// to extend it "as later stages get their own tabs". The tabs arrived; the list did
+    /// not follow. So the DAE pane offered **no field help at all** while
+    /// `rumoca-ir-dae` already carried 290 lines of `///` docs — the answers existed and
+    /// HRW was not asking for them.
+    ///
+    /// **A missing tooltip is invisible.** Nothing rendered wrong, no test failed, and the
+    /// loss only surfaced when Doug said he needed to learn the IR and went looking at
+    /// the stage Rumoca documents best.
+    ///
+    /// Derived from `Cargo.toml` rather than a second hand-written list, because a
+    /// hand-written one is the thing that just rotted.
+    #[test]
+    fn every_ir_dependency_is_harvested_for_field_help() {
+        let manifest = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml"))
+            .expect("hrw/Cargo.toml");
+
+        let mut depended: Vec<String> = Vec::new();
+        for line in manifest.lines() {
+            let t = line.trim();
+            if t.starts_with('#') {
+                continue;
+            }
+            if let Some((name, _)) = t.split_once('=') {
+                let name = name.trim();
+                if name.starts_with("rumoca-ir-") && !depended.iter().any(|d| d == name) {
+                    depended.push(name.to_owned());
+                }
+            }
+        }
+
+        assert!(
+            depended.len() >= 3,
+            "only {} rumoca-ir-* dependencies were found in Cargo.toml \u{2014} the scan is \
+             broken, which looks like success",
+            depended.len(),
+        );
+
+        let missed: Vec<&String> = depended
+            .iter()
+            .filter(|d| !IR_CRATES.contains(&d.as_str()))
+            .collect();
+        assert!(
+            missed.is_empty(),
+            "HRW depends on {missed:?} but does not harvest their `///` field docs, so \
+             those stages render with no field help. Add them to `field_help::IR_CRATES` \
+             and re-run `cargo run -p hrw --example gen_field_help`.",
+        );
     }
 }
