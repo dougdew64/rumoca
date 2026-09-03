@@ -6966,7 +6966,28 @@ pub fn frame_link(stage: &str, view: &str, index: usize) -> String {
 }
 
 /// Scan markdown text for all unique `hrw://` URLs (for hook registration).
+///
+/// **De-duplicating, which is right for hooks and wrong for checking.** A hook is
+/// registered once per URL; a *checker* walking the document has to see every
+/// occurrence in order, because which specimen a `node` pointer resolves against is
+/// whatever the nearest preceding `load` said. Use [`hrw_links_in_order`] for that —
+/// `answer_check` does.
 fn extract_hrw_links(text: &str) -> Vec<String> {
+    let mut links = Vec::new();
+    for url in hrw_links_in_order(text) {
+        if !links.contains(&url) {
+            links.push(url);
+        }
+    }
+    links
+}
+
+/// Every `hrw://` URL in the text, in document order, duplicates included.
+///
+/// Split out of [`extract_hrw_links`] on 2026-09-03 so `answer_check` could track the
+/// current specimen across a document. The rejection rules are the interesting part and
+/// they are not obvious, so they live here once rather than in both callers.
+pub(crate) fn hrw_links_in_order(text: &str) -> Vec<String> {
     let mut links = Vec::new();
     for cap in text.match_indices("hrw://") {
         let start = cap.0;
@@ -6989,12 +7010,14 @@ fn extract_hrw_links(text: &str) -> Vec<String> {
         // sentence explaining the rename contained `hrw://tour/` and
         // `lab_citations_name_a_real_lab_and_a_real_station` reported a lab named "".
         // The `<` case is the placeholder; the trailing-slash case is the bare verb.
-        if url.contains('<') || url.ends_with('/') {
+        // An ellipsis is a placeholder for the same reason `<` is: `hrw://stage/
+        // Structural/Tree/node/…` in prose names no node. Added 2026-09-03, when
+        // `answer_check` reached the one in `matching.md` and correctly called it a
+        // path that resolves to nothing.
+        if url.contains('<') || url.contains('\u{2026}') || url.ends_with('/') {
             continue;
         }
-        if !links.contains(&url.to_owned()) {
-            links.push(url.to_owned());
-        }
+        links.push(url.to_owned());
     }
     links
 }

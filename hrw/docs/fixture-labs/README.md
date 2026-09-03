@@ -1054,7 +1054,7 @@ generate, so it changes only on his report. The shape of every station:
 
 > **Predict.** <a question with a committed answer>
 
-[Look — <Specimen> → <Stage> → <SubView>](hrw://load/…)
+`[Look — <Specimen> → <Stage> → <SubView>](hrw://load/…)`
 
 **Expected:** <the answer, exact>
 
@@ -1095,7 +1095,7 @@ guess, because the point is whether clicking the thing does the thing.
 ```markdown
 ## Station N — <the action, imperatively>
 
-[<the link that performs it>](hrw://stage/Structural/Tree/node/…)
+`[<the link that performs it>](hrw://stage/Structural/Tree/node/…)`
 
 **Expected:** <what changes on screen, precisely enough to be wrong>
 ```
@@ -1116,7 +1116,7 @@ that breaks it, because the interest is in what the compiler *says* and how far 
 
 ## Station N — <what this pane reveals>
 
-[<load link>](hrw://load/…)
+`[<load link>](hrw://load/…)`
 
 **Expected:** <the diagnosis, or "not reached", exactly>
 ```

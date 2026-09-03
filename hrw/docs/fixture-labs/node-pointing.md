@@ -55,10 +55,14 @@ lands without them, the verb works.
 
 ## Station 5 — A path that is not there
 
-[Point at `error.unmatched_unknowns[0]`](hrw://stage/Structural/Tree/node/error.unmatched_unknowns[0])
+[Point at `error.unmatched_unknowns[0]`](hrw://stage/Structural/Tree/node/error.unmatched_unknowns[0]) <!-- expects-no-node -->
 
 That path is real — but it belongs to `CapacitorLoop`, which *fails* structurally.
 RcCircuit succeeds, so it has no `error` at all.
+
+*(The marker above tells `every_lab_node_link_lands_on_a_real_node` that this link is
+**supposed** to resolve to nothing — and it is checked both ways, so if RcCircuit ever
+gained an `error` node this station would fail rather than quietly stop testing refusal.)*
 
 **Expected:** nothing moves, and a notice in the status bar says there is no node at that path. It must
 not expand partway and stop, which would read as "it opened something" rather than

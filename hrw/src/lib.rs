@@ -42,6 +42,7 @@
 //!   the document cannot transcribe a count that then rots.
 
 pub mod alias_anim;
+pub mod answer_check;
 pub mod app;
 pub mod arch_doc;
 pub mod artifact_pane;

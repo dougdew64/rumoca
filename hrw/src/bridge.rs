@@ -3533,6 +3533,47 @@ mod tests {
         );
     }
 
+    /// `StageKind::stage_file_name` and `STAGE_FILE_NAMES` agree, in both directions.
+    ///
+    /// The test above pins the constant's shape — count, suffix, uniqueness — and
+    /// nothing tied the *mapping* to it. `answer_check` resolves a lab's node link by
+    /// asking a `StageKind` for its file, so a stage whose spelling drifted from the
+    /// constant would make every pointer into that stage read as `StageUnavailable`:
+    /// **unjudged, which is not a failure.** The checker would go quiet on one stage and
+    /// still report success, which is the shape it was built to end.
+    #[test]
+    fn every_stage_file_name_is_in_the_canonical_list() {
+        let mut mapped: Vec<&str> = Vec::new();
+        for stage in StageKind::ALL {
+            let stage = *stage;
+            match stage.stage_file_name() {
+                Some(file) => {
+                    assert!(
+                        STAGE_FILE_NAMES.contains(&file),
+                        "{} maps to {file:?}, which is not in STAGE_FILE_NAMES",
+                        stage.slug(),
+                    );
+                    mapped.push(file);
+                }
+                None => assert_eq!(
+                    stage,
+                    StageKind::Simulation,
+                    "{} has no stage file, but only Simulation may lack one \u{2014} it is \
+                     a plot, not IR",
+                    stage.slug(),
+                ),
+            }
+        }
+        let mut expected: Vec<&str> = STAGE_FILE_NAMES.to_vec();
+        mapped.sort_unstable();
+        expected.sort_unstable();
+        assert_eq!(
+            mapped, expected,
+            "every entry in STAGE_FILE_NAMES must be reachable from some StageKind, or a \
+             stage file exists that no link can address",
+        );
+    }
+
     /// Depth-first search for the first object with a usable `location`,
     /// recording its key-path into `path`.
     fn first_location_path(v: &Value, path: &mut Vec<Seg>) -> bool {

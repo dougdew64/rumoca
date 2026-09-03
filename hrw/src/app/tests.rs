@@ -3415,7 +3415,18 @@ fn every_lab_link_survives_extraction_and_parsing() {
         // Every URL as it appears in a markdown target, taken independently of
         // the extractor so the two cannot agree on a shared mistake.
         for (i, line) in text.lines().enumerate() {
-            let mut rest = line;
+            // **Outside code spans only, which is not a loosening.** `extract_hrw_links`
+            // already ends a URL at a backtick, on the stated ground that
+            // `` `hrw://notebook/` `` in a code span is prose *about* the verb. This
+            // scanner did not know that, so `fixture-labs/README.md`'s three authoring
+            // TEMPLATES — `` `[<load link>](hrw://load/…)` ``, shown so an author can
+            // copy the shape — read as three real links.
+            //
+            // The independence this test buys is against the extractor and the checker
+            // agreeing on a *mistake*. Agreeing that a code span is not a link is a fact
+            // about markdown, not a shared heuristic, so sharing it costs nothing.
+            let outside_spans: String = line.split('`').step_by(2).collect::<Vec<_>>().join(" ");
+            let mut rest = outside_spans.as_str();
             while let Some(at) = rest.find("](hrw://") {
                 let after = &rest[at + 2..];
                 let Some(close) = after.find(')') else { break };

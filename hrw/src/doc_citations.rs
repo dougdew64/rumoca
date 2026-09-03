@@ -653,6 +653,91 @@ mod tests {
         );
     }
 
+    /// Every `hrw://stage/<S>/node/<path>` link in a lab lands on a node that exists.
+    ///
+    /// # Nothing checked this before 2026-09-03
+    ///
+    /// The lab checkers verify link syntax, that labs and stations exist, and that `src`
+    /// links resolve. **That a node path resolves to a node was checked nowhere** — not
+    /// here and not for an Answer, while fourteen such links sat in the labs. It surfaced
+    /// in an Answer only because that was the newest and least-reviewed prose in the
+    /// building; the exposure was general.
+    ///
+    /// Resolved against the committed `docs/specimen-notebook/<Model>/trace/`, which is
+    /// generated and therefore correct by construction — the right source of truth for
+    /// *versioned* prose. An Answer is checked against `.hrw-bridge/stages/` instead,
+    /// because it describes what is on screen now; `examples/check_answer` does that.
+    ///
+    /// **Unjudged pointers are counted and asserted on.** A specimen with no committed
+    /// trace yields `StageUnavailable`, and a run that checked nothing would otherwise
+    /// pass while proving nothing — the failure shape this repository names most often.
+    #[test]
+    fn every_lab_node_link_lands_on_a_real_node() {
+        let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let notebook = hrw.join("docs/specimen-notebook");
+        let labs = hrw.join("docs/fixture-labs");
+
+        let mut cache: std::collections::HashMap<(String, String), Option<serde_json::Value>> =
+            std::collections::HashMap::new();
+        let mut defects: Vec<String> = Vec::new();
+        let mut resolved = 0usize;
+        let mut unjudged: Vec<String> = Vec::new();
+
+        let Ok(entries) = std::fs::read_dir(&labs) else {
+            panic!("{} is not readable", labs.display());
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|x| x.to_str()) != Some("md") {
+                continue;
+            }
+            let name = path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string();
+            let text = std::fs::read_to_string(&path).unwrap_or_default();
+
+            for p in crate::answer_check::check(&text, |model, stage| {
+                let file = stage.stage_file_name()?;
+                cache
+                    .entry((model.to_owned(), file.to_owned()))
+                    .or_insert_with(|| {
+                        let at = notebook.join(model).join("trace").join(file);
+                        std::fs::read_to_string(at)
+                            .ok()
+                            .and_then(|t| serde_json::from_str(&t).ok())
+                    })
+                    .clone()
+            }) {
+                match p.verdict {
+                    crate::answer_check::Verdict::Resolved => resolved += 1,
+                    v if v.is_defect() => defects.push(format!(
+                        "{name}: {} \u{2014} {v:?} (specimen {:?}, stage {})",
+                        p.raw,
+                        p.specimen.as_deref().unwrap_or("<none>"),
+                        p.stage.slug(),
+                    )),
+                    v => unjudged.push(format!("{name}: {} \u{2014} {v:?}", p.raw)),
+                }
+            }
+        }
+
+        assert!(
+            resolved + defects.len() + unjudged.len() >= 10,
+            "only {} node links were examined across the labs \u{2014} the scan is broken, \
+             which looks exactly like success",
+            resolved + defects.len() + unjudged.len(),
+        );
+        assert!(
+            defects.is_empty(),
+            "lab node links that do not land on a node:\n  {}\n\nA link that resolves to \
+             nothing does nothing when Doug clicks it, and he reads that as the feature \
+             being broken.",
+            defects.join("\n  "),
+        );
+    }
+
     /// A path that is part of a longer path is not a citation.
     ///
     /// Guards the false positive that made the first version unusable: a quoted panic

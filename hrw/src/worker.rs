@@ -763,6 +763,31 @@ impl StageKind {
         }
     }
 
+    /// The file this stage's IR is written to, under `.hrw-bridge/stages/` and under a
+    /// specimen's `trace/`. `None` for `Simulation`, which is a plot rather than IR.
+    ///
+    /// **Spelled out rather than derived from [`slug`].** A PascalCase-to-snake_case
+    /// conversion happens to produce all eleven of these correctly today, which is
+    /// exactly what would make a twelfth stage's mismatch silent.
+    /// `every_stage_file_name_is_in_the_canonical_list` pins these against
+    /// `bridge::STAGE_FILE_NAMES` in both directions.
+    pub fn stage_file_name(self) -> Option<&'static str> {
+        Some(match self {
+            StageKind::Parse => "parse.json",
+            StageKind::Resolve => "resolve.json",
+            StageKind::Instantiate => "instantiate.json",
+            StageKind::Typecheck => "typecheck.json",
+            StageKind::Flatten => "flatten.json",
+            StageKind::Dae => "dae.json",
+            StageKind::Structural => "structural.json",
+            StageKind::IndexReduction => "index_reduction.json",
+            StageKind::Initialization => "initialization.json",
+            StageKind::Events => "events.json",
+            StageKind::SolveLowering => "solve_lowering.json",
+            StageKind::Simulation => return None,
+        })
+    }
+
     /// Parse a PascalCase slug (as used in `hrw://stage/<Slug>` URLs) into a stage kind.
     pub fn from_slug(s: &str) -> Option<Self> {
         match s {
