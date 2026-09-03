@@ -445,6 +445,35 @@ the next phase touches — is procedure and lives there.
 
 ## Current work
 
+> ### ⟶ DOUG MOVED TO THE OTHER MACHINE 2026-09-03 — three things do not travel
+>
+> **1. Run `cargo run -p hrw --example check_machine` first.** Standing rule, and it is the whole
+> reason that example exists.
+>
+> **2. Build the bridge extension there** — `npm install && npm run build` in
+> `hrw/vscode-extension/`, then *Developer: Reload Window*. `out/` and `node_modules/` are
+> gitignored, so that machine still runs the **old** extension, which reports
+> `framesTruncated: false` on a stack it only capped (fixed 2026-09-02, `f6c4064f`). **Doug always
+> launches HRW under the VS Code debugger** — his words — so this is his primary instrument, and
+> until it is rebuilt it understates stack depth without saying so.
+>
+> **3. The first HRW launch there pays one full MSL re-parse.** The workspace `Cargo.toml` changed
+> twice on 2026-09-02 and `compiler_source_fingerprint()` hashes its bytes.
+>
+> **The OOM arc is closed.** egui's debug-only `Id` map is O(2^depth) in nesting; HRW aborted at a
+> 94 GB commit. Account in [`DECISIONS.md`](DECISIONS.md) and [`docs/upstream-issues.md`](docs/upstream-issues.md)
+> **E1**; the guard is `doc_citations::egui_debug_id_diagnostics_stay_off_in_dev_builds`.
+>
+> **Two things are owed.** **E1 is written and NOT FILED** — Doug's call, and its measurements are
+> all against `0.35.0`, so re-run the reproducer on egui `master` before filing rather than trusting
+> the source-read. And `every_documented_source_path_exists` reads *another* project's
+> `crates/<name>/src/*.rs` as a workspace path, which cost E1 its GitHub links; teaching it about
+> URLs is a `src/` change nobody has made.
+>
+> **Not in git:** `.hrw-bridge/answer.md` — the BouncingBall Answer Doug called spectacular — is
+> gitignored and stays on this machine. **The memory store does not travel either**, being keyed to
+> this filesystem path; anything load-bearing is in the repository, which is the point of the rule.
+>
 > ### ⟶ THE DOCUMENT REVIEW IS RUNNING — began 2026-09-01, **this file** first
 >
 > **Doug is questioning every paragraph**, beginning with whether it is still needed: *"it seems to
