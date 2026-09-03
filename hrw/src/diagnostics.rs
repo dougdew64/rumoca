@@ -73,9 +73,15 @@
 //!
 //! On 2026-09-02 an out-of-memory abort left the newest file on disk four and a half
 //! minutes stale, and the trigger had to be inferred from the *gap* between its
-//! timestamp and the debugger's. The debugger's record existed only because Doug
-//! happened to be running under one; without that there would have been no stack at
-//! all. `in-flight.json` is the answer to that, and the ordering is the whole of it:
+//! timestamp and the debugger's.
+//!
+//! **The debugger is not a lucky accident and must not be described as one** (Doug,
+//! 2026-09-02: *"I will always launch HRW using the VS Code debugger"*). It is the
+//! standing workflow, `debug-state.json` is a file and so outlives the process, and
+//! between them they answer **where** a death happened. What they do not answer is
+//! **what the app was doing and how fast** — a stack has no action trail, and a
+//! debugger only publishes when it *stops*, which an abort does and a hang does not.
+//! `in-flight.json` is the complement, and the ordering is the whole of it:
 //! **a record that must survive the process cannot be written by it afterwards.**
 //!
 //! `write_on_demand` produces the same content as a crash file for a session
@@ -173,8 +179,9 @@ struct Diag {
 /// aborted mid-paint on an out-of-memory failure; the click that caused it was
 /// recorded in memory and died with the process, so the last thing on disk was four
 /// and a half minutes stale. The trigger had to be inferred from the *gap* between
-/// that file's timestamp and the debugger's — and the debugger's record existed only
-/// because Doug happened to be running under one.
+/// that file's timestamp and the debugger's. The debugger is always attached — that
+/// is Doug's standing workflow — so it reliably answers *where*; what no stack
+/// carries is what the app was doing, or whether one frame did it or a thousand.
 ///
 /// A panic would have been caught: [`write_crash_file`] is installed as a panic hook.
 /// **An abort is not a panic.** `handle_alloc_error` calls `abort()`, which unwinds
