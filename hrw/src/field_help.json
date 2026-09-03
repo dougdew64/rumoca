@@ -21,6 +21,9 @@
   "algebraic_loops": {
     "rumoca-phase-structural": "Algebraic loops: each inner Vec is a group of equation indices forming a loop."
   },
+  "algebraic_scalar_count": {
+    "rumoca-ir-solve": "Number of algebraic (non-state) scalars solved at each step."
+  },
   "algebraics": {
     "rumoca-ir-dae": "Algebraic variables (y) - variables without derivatives."
   },
@@ -51,6 +54,9 @@
   },
   "array_subscripts": {
     "rumoca-ir-ast": "Array subscripts for type alias definitions (e.g., `type Vector3 = Real[3]`) Stores the `[3]` part as subscripts for later use in type resolution"
+  },
+  "artifacts": {
+    "rumoca-ir-solve": "Derived products kept beside the problem — sparsity, Jacobians, and other artifacts lowering computed once rather than at each step."
   },
   "assert_equations": {
     "rumoca-ir-flat": "Runtime assertion equations from regular equation sections (MLS §8.3.7). Assertions are preserved for flat output but do not contribute to DAE equation balance/unknown counts."
@@ -83,6 +89,9 @@
   "base_partitions": {
     "rumoca-ir-flat": "Base-clock partitions (execute asynchronously from each other)."
   },
+  "base_to_indices": {
+    "rumoca-ir-solve": "For an array, the base name mapped to every slot index its elements occupy. `name_to_idx` addresses one scalar; this addresses a whole array at once, which is what a consumer plotting `x` rather than `x[2]` needs."
+  },
   "binding": {
     "rumoca-ir-ast": "The binding expression from `= expr` in declaration (e.g., `Real v = p.v - n.v`) Separate from `start` to preserve binding when both binding and start modifier are present.",
     "rumoca-ir-flat": "Binding equation value."
@@ -96,6 +105,9 @@
   },
   "binding_source_scope": {
     "rumoca-ir-ast": "Lexical scope where a modification-derived binding was written. Used during flattening to qualify symbolic modifier references according to MLS §7.2.4 without path-depth heuristics."
+  },
+  "bindings": {
+    "rumoca-ir-solve": "Every scalar name in the flat model, mapped to where its value lives. The authoritative name-to-storage map: it is what says whether a number in a trajectory is a state, a parameter, time, or a folded constant. Insertion-ordered, with the model's own scalars first and library-derived entries after them. Most entries are usually [`ScalarSlot::Constant`] rather than slots — a model that imports a large library contributes one binding per resolved enumeration literal, so this map can be orders of magnitude larger than the vectors it describes. [`Self::y_scalars`] and [`Self::p_scalars`] give the vector lengths directly."
   },
   "block_instance": {
     "rumoca-ir-ast": "Reference to the block instance for this state."
@@ -160,6 +172,12 @@
   "clock": {
     "rumoca-ir-flat": "The base clock for this partition."
   },
+  "clocks": {
+    "rumoca-ir-solve": "Clocked-partition structure for synchronous (clocked) equations."
+  },
+  "compiled_parameter_len": {
+    "rumoca-ir-solve": "Length of the `P` block actually allocated at run time, in scalars."
+  },
   "complex_stripped_base": {
     "rumoca-phase-structural": "`.re`/`.im`-stripped component base → positions."
   },
@@ -200,6 +218,9 @@
   },
   "constructor_exprs": {
     "rumoca-ir-dae": "Clock constructor expressions extracted from discrete update equations. These are evaluated against simulation parameters to build tick schedules. This is canonical runtime metadata (always present in DAE schema)."
+  },
+  "continuous": {
+    "rumoca-ir-solve": "The continuous system integrated between events: residuals and derivatives."
   },
   "continuous_partition": {
     "rumoca-ir-flat": "The continuous-time partition (if any). This contains equations without explicit clock associations."
@@ -250,14 +271,23 @@
   "disabled_components": {
     "rumoca-ir-ast": "Disabled conditional components (MLS §4.8). Contains structured instance component paths whose conditions evaluated to false. These components and their sub-components should be excluded from flattening."
   },
+  "discrete": {
+    "rumoca-ir-solve": "Assignments applied *at* an event, and the slots they write."
+  },
   "discrete_input_names": {
     "rumoca-ir-dae": "Discrete-valued variables whose source causality is input. These are carried in `m` when event/discrete lowering needs them in the runtime discrete partition, but local balance still treats their values as externally supplied inputs."
+  },
+  "discrete_real_scalar_names": {
+    "rumoca-ir-solve": "Names of discrete `Real` scalars, which change only at events."
   },
   "discrete_reals": {
     "rumoca-ir-dae": "Discrete Real variables (z) - change only at events (MLS B.1b)."
   },
   "discrete_valued": {
     "rumoca-ir-dae": "Discrete-valued variables (m) - Boolean, Integer, enum (MLS B.1c)."
+  },
+  "discrete_valued_scalar_names": {
+    "rumoca-ir-solve": "Names of discrete non-`Real` scalars — `Boolean`, `Integer`, enumerations."
   },
   "display_unit": {
     "rumoca-ir-ast": "Display-unit string attribute.",
@@ -353,6 +383,9 @@
   "event_actions": {
     "rumoca-ir-dae": "Runtime actions evaluated at event instants. `assert` and `terminate` are integration-flow constructs, not numeric residual expressions. `reinit` is lowered earlier into guarded discrete state-update equations and must not appear here."
   },
+  "events": {
+    "rumoca-ir-solve": "State-event structure: the conditions watched and the roots the solver bisects."
+  },
   "expandable": {
     "rumoca-ir-ast": "True if the class is declared with the `expandable` keyword (MLS §9.1.3) Only meaningful for connector classes"
   },
@@ -365,6 +398,9 @@
   },
   "external_object_name": {
     "rumoca-ir-ast": "If derived from ExternalObject, the full name."
+  },
+  "external_tables": {
+    "rumoca-ir-solve": "External table data referenced by the model, loaded once."
   },
   "field": {
     "rumoca-ir-ast": "The field name to access."
@@ -445,6 +481,9 @@
   "in_spanning_tree": {
     "rumoca-ir-flat": "Whether this edge is in the spanning tree."
   },
+  "indexed_bindings": {
+    "rumoca-ir-solve": "Bindings addressed by structured component reference rather than by rendered name, so a subscripted reference resolves without string formatting. Derived, so not serialized."
+  },
   "initial_algorithm_keyword": {
     "rumoca-ir-ast": "Token for \"initial algorithm\" keyword (if present)"
   },
@@ -468,11 +507,20 @@
   "initial_structured_equations": {
     "rumoca-ir-flat": "Structured source equation families for initial equations."
   },
+  "initial_y": {
+    "rumoca-ir-solve": "Initial value of every continuous state, in `Y` slot order. One entry per state, so its length is `problem.layout.y_scalars`. The values are the evaluated `start` attributes, which makes this the shortest check that the model's declared initial conditions survived lowering."
+  },
+  "initialization": {
+    "rumoca-ir-solve": "The system solved once before integration begins, to satisfy initial equations."
+  },
   "inner": {
     "rumoca-ir-ast": "True if declared with 'inner' prefix (provides instance to outer references)"
   },
   "inner_outer_to_parent_inner": {
     "rumoca-ir-ast": "Mapping from inner-outer component paths to their parent inner paths (MLS §5.4). When a component is declared `inner outer` (e.g., `inner outer StateGraphRoot stateGraphRoot`), it bridges two scopes: it serves as `inner` for children and as `outer` referencing the parent. Same-level connections involving the `inner outer` component should redirect to the parent's inner for flow equation scoping (e.g., `makeProduct.stateGraphRoot` → `stateGraphRoot`)."
+  },
+  "input_scalar_names": {
+    "rumoca-ir-solve": "Names of input scalars, in the order the runtime supplies them."
   },
   "inputs": {
     "rumoca-ir-ast": "Input parameter types.",
@@ -573,6 +621,9 @@
   "language": {
     "rumoca-ir-ast": "Language specification (e.g., \"C\", \"FORTRAN 77\"). Default is \"C\"."
   },
+  "layout": {
+    "rumoca-ir-solve": "Every scalar name in the flat model mapped to where its value lives."
+  },
   "level": {
     "rumoca-ir-ast": "Optional assertion level (AssertionLevel.error or .warning).",
     "rumoca-ir-flat": "Optional assertion level expression."
@@ -657,11 +708,15 @@
   "name_map": {
     "rumoca-ir-ast": "Inverse map from qualified name to DefId for O(1) resolved definition lookup. This includes non-class definitions such as components. Populated during the resolve phase alongside def_map."
   },
+  "name_to_idx": {
+    "rumoca-ir-solve": "The inverse of [`Self::names`]: name to slot index."
+  },
   "name_token": {
     "rumoca-ir-ast": "The token for the component name with exact source location"
   },
   "names": {
-    "rumoca-ir-ast": "All names imported from the package."
+    "rumoca-ir-ast": "All names imported from the package.",
+    "rumoca-ir-solve": "Solver-visible scalar names in slot order, so `names[i]` is the name of slot `i`."
   },
   "nested_machine": {
     "rumoca-ir-ast": "Nested state machine (for hierarchical state machines)."
@@ -727,6 +782,9 @@
   "output": {
     "rumoca-ir-ast": "Output variable that receives the return value (if any)."
   },
+  "output_scalar_count": {
+    "rumoca-ir-solve": "Number of scalars published as outputs."
+  },
   "outputs": {
     "rumoca-ir-ast": "Output variables being assigned (for `(a, b) := func(x)` style calls)",
     "rumoca-ir-dae": "Output variables (left-hand sides of assignments). Used for balance checking per SPEC_0020.",
@@ -741,8 +799,15 @@
   "overlay": {
     "rumoca-ir-ast": "Instance-specific data overlay."
   },
+  "p_scalars": {
+    "rumoca-ir-solve": "Length of the parameter vector `P`, in scalars."
+  },
+  "parameter_count": {
+    "rumoca-ir-solve": "Number of declared parameters. Not the length of `P`: that is [`Self::compiled_parameter_len`], which also counts the slots lowering adds for `__pre__.*` snapshots and relation memory."
+  },
   "parameters": {
-    "rumoca-ir-dae": "Parameters (p) - fixed values during simulation. MLS Appendix B groups parameters/constants under p; constants remain separately tracked in `constants` for compiler/runtime behavior."
+    "rumoca-ir-dae": "Parameters (p) - fixed values during simulation. MLS Appendix B groups parameters/constants under p; constants remain separately tracked in `constants` for compiler/runtime behavior.",
+    "rumoca-ir-solve": "Initial value of every parameter slot, in `P` slot order. Length is `problem.solve_layout.compiled_parameter_len`, so it covers the slots lowering added for `__pre__.*` snapshots and relation memory as well as the model's declared parameters."
   },
   "parent": {
     "rumoca-ir-ast": "Parent scope (None for global scope).",
@@ -775,6 +840,9 @@
   "priority": {
     "rumoca-ir-ast": "Priority of this transition (MLS §17.1: \"priority >= 1\"). Lower number = higher priority. Default: 1",
     "rumoca-ir-flat": "Priority value (lower = higher priority). Must be >= 0."
+  },
+  "problem": {
+    "rumoca-ir-solve": "The system to solve: layouts, equations and event structure."
   },
   "pure": {
     "rumoca-ir-ast": "True if the function is pure (no side effects). MLS §12.3. Only meaningful for function classes. Functions are pure by default. Set to false when declared with `impure` keyword."
@@ -869,6 +937,9 @@
   "schedules": {
     "rumoca-ir-dae": "Lowered periodic clock schedules. This is canonical runtime metadata (always present in DAE schema)."
   },
+  "schema_version": {
+    "rumoca-ir-solve": "Wire-format version of this problem, checked on deserialization."
+  },
   "scope": {
     "rumoca-ir-ast": "Scope where the connect statement was declared (flattened prefix). Used to determine the correct hierarchy level for flow sum equations. Empty string means root level."
   },
@@ -893,8 +964,17 @@
   "shape_expr": {
     "rumoca-ir-ast": "Raw array dimension subscripts (e.g., `n` in `Real x[n]` or `:` in `Real a[:]`) Used for parameter-dependent dimensions that need runtime evaluation Can be Subscript::Expression for explicit dimensions or Subscript::Range for `:`"
   },
+  "shape_indexed_keys": {
+    "rumoca-ir-solve": "Structured lookup key per shaped name. Derived, so not serialized."
+  },
   "shape_is_modification": {
     "rumoca-ir-ast": "True if shape is from a modification (shape=x), false if from subscript \\[x\\]"
+  },
+  "shape_spans": {
+    "rumoca-ir-solve": "Source span of each array's declaration, for diagnostics about its shape."
+  },
+  "shapes": {
+    "rumoca-ir-solve": "Array dimensions per name, for names that are arrays. Scalars are absent."
   },
   "share_base": {
     "rumoca-phase-structural": "Component-ref ident path → positions of aggregate (size > 1), non-index-component unknowns reachable via `reference_shares_component_base`."
@@ -907,6 +987,12 @@
   },
   "solution_expr": {
     "rumoca-phase-structural": "`Some` = direct symbolic eval, `None` = scalar Newton."
+  },
+  "solve_layout": {
+    "rumoca-ir-solve": "Solver-facing counts and name-to-index maps, derived from [`Self::layout`]."
+  },
+  "solver_maps": {
+    "rumoca-ir-solve": "Name-to-index maps for the solver-visible scalars, in slot order."
   },
   "solver_method": {
     "rumoca-ir-flat": "Solver method name."
@@ -969,6 +1055,9 @@
   },
   "start_span": {
     "rumoca-ir-dae": "Source span for the start attribute expression."
+  },
+  "state_scalar_count": {
+    "rumoca-ir-solve": "Number of continuous states — the length of `Y`."
   },
   "state_select": {
     "rumoca-ir-ast": "State selection hint.",
@@ -1165,6 +1254,9 @@
   "variable_final_flags": {
     "rumoca-ir-flat": "Flat-output `final` qualifier flags keyed by variable name (MLS §7.2.6). When present and true, codegen should emit `final` before the declaration prefix."
   },
+  "variable_meta": {
+    "rumoca-ir-solve": "Per-variable metadata — unit, description, variability, bounds — aligned with [`Self::visible_names`]."
+  },
   "variable_starts": {
     "rumoca-ir-dae": "Start expressions for source variables, including variables that may be eliminated from runtime partitions by aliasing. Runtime lowering uses this as semantic metadata for operations such as synchronous back-sampling, where the value before the first source-clock tick is the source variable's `start` attribute."
   },
@@ -1177,7 +1269,16 @@
   "variables": {
     "rumoca-ir-flat": "All variables with globally unique names."
   },
+  "visible_names": {
+    "rumoca-ir-solve": "Names a consumer should offer for plotting or inspection. A subset of `problem.layout.bindings`, which also contains every folded constant the model's libraries contributed."
+  },
+  "visible_value_rows": {
+    "rumoca-ir-solve": "Program computing the current value of each entry in [`Self::visible_names`]. Needed because a visible name is not always a slot — it may be an alias or an expression over slots, and so has to be evaluated rather than read."
+  },
   "when_clauses": {
     "rumoca-ir-flat": "When clauses."
+  },
+  "y_scalars": {
+    "rumoca-ir-solve": "Length of the continuous state vector `Y`, in scalars."
   }
 }

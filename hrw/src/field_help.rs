@@ -231,6 +231,46 @@ mod tests {
         );
     }
 
+    /// The reported symptom: `names` under Solve lowering is about slots, not imports.
+    ///
+    /// Doug, 2026-09-03, five times in one afternoon: he could not find `Y` in Solve
+    /// lowering. Part of why is that the pane's own help was lying — hovering `names`
+    /// under `solver_maps` produced `rumoca-ir-ast`'s *"All names imported from the
+    /// package"*, a doc about an **import clause**.
+    ///
+    /// Both halves of the fix are needed and this test fails without either: the
+    /// per-stage keying, and the `rumoca-ir-solve` doc comment that gives the stage
+    /// something of its own to prefer. Named after the symptom so a future reader can
+    /// find it from the complaint.
+    #[test]
+    fn solve_lowerings_names_is_documented_as_slots_not_imports() {
+        let help = FieldHelp::load();
+        assert_eq!(
+            help.crates_documenting("names"),
+            vec!["rumoca-ir-ast", "rumoca-ir-solve"],
+            "premise: both meanings are on record",
+        );
+
+        let tip = help
+            .for_stage(StageKind::SolveLowering)
+            .get("names")
+            .expect("Solve lowering documents `names`");
+        assert!(
+            tip.contains("slot order"),
+            "Solve lowering must get the solver's meaning, got: {tip}",
+        );
+        assert!(
+            !tip.contains("imported"),
+            "the import-clause doc must not reach this pane: {tip}",
+        );
+        assert!(
+            help.for_stage(StageKind::Parse)
+                .get("names")
+                .is_some_and(|t| t.contains("imported")),
+            "and Parse must still get the AST's meaning",
+        );
+    }
+
     /// Every tooltip names the crate it came from.
     ///
     /// **This is the half that protects the stages `ir_crate` cannot name.**
