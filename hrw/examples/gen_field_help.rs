@@ -30,7 +30,11 @@ fn main() {
     let meta: serde_json::Value =
         serde_json::from_slice(&out.stdout).expect("parse cargo metadata");
 
-    let mut docs: BTreeMap<String, String> = BTreeMap::new();
+    // **field -> crate -> doc**, so a tooltip can say which crate's type it describes.
+    // Flat `field -> doc` was the defect: one global namespace meant `names`, documented
+    // in rumoca-ir-ast as an import clause, supplied the tooltip for Solve lowering's
+    // `solver_maps.names`.
+    let mut docs: BTreeMap<String, BTreeMap<String, String>> = BTreeMap::new();
     for crate_name in IR_CRATES {
         let src_dir = src_dir_of(&meta, crate_name);
         eprintln!(
@@ -41,7 +45,11 @@ fn main() {
         let mut files = Vec::new();
         collect_rs(&src_dir, &mut files);
         for f in &files {
-            extract(&std::fs::read_to_string(f).expect("read source"), &mut docs);
+            extract(
+                &std::fs::read_to_string(f).expect("read source"),
+                crate_name,
+                &mut docs,
+            );
         }
     }
 
@@ -49,7 +57,11 @@ fn main() {
     let out_path = concat!(env!("CARGO_MANIFEST_DIR"), "/src/field_help.json");
     let json = serde_json::to_string_pretty(&docs).expect("serialize");
     std::fs::write(out_path, json + "\n").expect("write field_help.json");
-    eprintln!("wrote {} fields → {out_path}", docs.len());
+    let pairs: usize = docs.values().map(BTreeMap::len).sum();
+    eprintln!(
+        "wrote {} field names, {pairs} (crate, doc) pairs → {out_path}",
+        docs.len()
+    );
 }
 
 /// The `src/` dir of a resolved dependency package, from `cargo metadata`.
@@ -84,7 +96,7 @@ fn collect_rs(dir: &Path, out: &mut Vec<PathBuf>) {
 /// Associate each `///` comment block with the struct field it precedes.
 /// `#[...]` attribute lines between the doc and the field are skipped so the
 /// doc still attaches. Longest doc wins when a field name appears on many types.
-fn extract(src: &str, docs: &mut BTreeMap<String, String>) {
+fn extract(src: &str, crate_name: &str, docs: &mut BTreeMap<String, BTreeMap<String, String>>) {
     let mut buf: Vec<String> = Vec::new();
     for line in src.lines() {
         let t = line.trim_start();
@@ -102,8 +114,17 @@ fn extract(src: &str, docs: &mut BTreeMap<String, String>) {
                     .cloned()
                     .collect::<Vec<_>>()
                     .join(" ");
-                if !doc.is_empty() && docs.get(&name).is_none_or(|d| doc.len() > d.len()) {
-                    docs.insert(name, doc);
+                if !doc.is_empty() {
+                    // Longest wins WITHIN a crate — a field name can appear on several
+                    // types there. Across crates nothing is discarded any more, which is
+                    // the whole point: the reader is told which crate they are reading.
+                    let per_crate = docs.entry(name).or_default();
+                    if per_crate
+                        .get(crate_name)
+                        .is_none_or(|d| doc.len() > d.len())
+                    {
+                        per_crate.insert(crate_name.to_owned(), doc);
+                    }
                 }
             }
             buf.clear();

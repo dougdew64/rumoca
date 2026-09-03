@@ -5824,7 +5824,12 @@ mod tests_orphaned_docs {
             // orphan population without creating or hiding one. Both numbers are set
             // to the achieved value rather than rounded up, per this table's rule that
             // slack gets used.
-            ("worker.rs", 15),
+            // 15 → 16 on 2026-09-03: `StageKind::ir_crate` carries two `#` sections —
+            // *why field help needs the mapping* and *each arm is evidence, not a guess*
+            // — which is this file's ordinary style and reads to the scanner as a second
+            // opening summary. Ordinary prose, so the budget rises with the reasoning
+            // rather than the prose being flattened to satisfy a counter.
+            ("worker.rs", 16),
             ("worker/tests.rs", 5),
         ];
 

@@ -840,9 +840,14 @@ pub struct App {
     show_about: bool,
 
     // ---- 8. Generic field help ----
-    // `field_help` is a compile-time HashMap<field_name, explanation> loaded
-    // from a generated help table, delivered as hover tooltips on tree nodes.
-    field_help: HashMap<String, String>,
+    // Doc comments harvested from the Rumoca crates whose types the panes render,
+    // delivered as hover tooltips on tree nodes.
+    //
+    // **Resolved PER STAGE, not one flat map** — a field name documented in one crate
+    // used to supply the tooltip for that name in every pane, so Solve lowering's
+    // `solver_maps.names` showed `rumoca-ir-ast`'s doc for an import clause. Ask for
+    // `field_help.for_stage(self.stage)`; every tooltip names the crate it came from.
+    field_help: field_help::FieldHelp,
 
     // ---- 9. How the reader is looking at the current stage ----
     /// Sub-view selections, cameras and highlights. See [`Viewport`].
@@ -1603,7 +1608,7 @@ impl App {
             show_settings: false,
             show_help: false,
             show_about: false,
-            field_help: field_help::load(),
+            field_help: field_help::FieldHelp::load(),
             pending_passage: None,
             // The same handle the end-of-pass callback writes into.
             copy_sink: sink,
@@ -4679,7 +4684,7 @@ impl App {
                         artifact_pane::ArtifactTree {
                             opts: self.specimen_tree_options(),
                             def_index: &self.def_index,
-                            field_help: &self.field_help,
+                            field_help: self.field_help.for_stage(self.stage),
                             jump_target: self.context.jump_target.as_deref(),
                             jump_highlight: self.context.jump_highlight.as_deref(),
                         },
@@ -4712,7 +4717,7 @@ impl App {
                     loading: self.nav_loading.as_deref(),
                     error: self.nav_error.as_deref(),
                 },
-                &self.field_help,
+                self.field_help.for_stage(self.stage),
                 &mut intent.tree,
             ) {
                 Some(nav_view::NavCommand::Home) => intent.go_home = true,

@@ -788,6 +788,49 @@ impl StageKind {
         })
     }
 
+    /// The crate owning the Rust type this stage's pane renders, for field help.
+    ///
+    /// # Why field help needs this
+    ///
+    /// `field_help.json` was one flat `field name -> doc` map, so a name documented in
+    /// **any** harvested crate supplied the tooltip for that name in **every** stage.
+    /// Hovering `names` under Solve lowering's `solver_maps` produced
+    /// *"All names imported from the package"* — `rumoca-ir-ast`'s doc for an **import
+    /// clause**. 66 field names are documented in two or more IR crates.
+    ///
+    /// # Each arm is evidence, not a guess
+    ///
+    /// - **Parse/Resolve/Instantiate/Typecheck** publish AST — `parse.json` is a
+    ///   `StoredDefinition`.
+    /// - **Flatten** publishes the flat model.
+    /// - **Dae** and **Events** — `events_to_json` takes `&rumoca_ir_dae::Dae`.
+    /// - **SolveLowering** — `solve_lowering_stage` serialises the `SolveModel` that
+    ///   `rumoca_phase_solve::lower_dae_to_solve_model` returns, and that type lives in
+    ///   `rumoca-ir-solve`.
+    /// - **Structural/IndexReduction** — `structural_to_json` takes
+    ///   `&rumoca_phase_structural::StructuralReport`. **A phase crate, not an IR crate**,
+    ///   which is why the mapping could not be assumed from the stage list.
+    /// - **Initialization** is `None`: its source type was not established, and a wrong
+    ///   arm here reintroduces exactly the wrong-stage tooltip being fixed. `None` means
+    ///   "no preference", which still shows a labelled doc rather than nothing.
+    /// - **Simulation** is a plot, not IR.
+    ///
+    /// `every_stage_ir_crate_is_harvested_or_none` holds this against
+    /// `field_help::IR_CRATES`.
+    pub fn ir_crate(self) -> Option<&'static str> {
+        Some(match self {
+            StageKind::Parse
+            | StageKind::Resolve
+            | StageKind::Instantiate
+            | StageKind::Typecheck => "rumoca-ir-ast",
+            StageKind::Flatten => "rumoca-ir-flat",
+            StageKind::Dae | StageKind::Events => "rumoca-ir-dae",
+            StageKind::SolveLowering => "rumoca-ir-solve",
+            StageKind::Structural | StageKind::IndexReduction => "rumoca-phase-structural",
+            StageKind::Initialization | StageKind::Simulation => return None,
+        })
+    }
+
     /// Parse a PascalCase slug (as used in `hrw://stage/<Slug>` URLs) into a stage kind.
     pub fn from_slug(s: &str) -> Option<Self> {
         match s {

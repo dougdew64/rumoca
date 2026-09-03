@@ -457,7 +457,10 @@ impl App {
             show_settings: false,
             show_help: false,
             show_about: false,
-            field_help: HashMap::new(),
+            // The real table, not an empty one: a test app whose tooltips are all absent
+            // cannot notice a tooltip regression, and loading it is a `serde_json` parse
+            // of an embedded string.
+            field_help: crate::field_help::FieldHelp::load(),
             viewport: Viewport::default(),
             log_entries: Vec::new(),
             viewing_log: false,
