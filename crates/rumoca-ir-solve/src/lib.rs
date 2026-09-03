@@ -1146,13 +1146,21 @@ mod tests;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct SolveProblem {
+    /// Wire-format version of this problem, checked on deserialization.
     pub schema_version: u16,
+    /// Every scalar name in the flat model mapped to where its value lives.
     pub layout: VarLayout,
+    /// Solver-facing counts and name-to-index maps, derived from [`Self::layout`].
     pub solve_layout: SolveLayout,
+    /// The continuous system integrated between events: residuals and derivatives.
     pub continuous: ContinuousSolveSystem,
+    /// The system solved once before integration begins, to satisfy initial equations.
     pub initialization: InitializationSolveSystem,
+    /// Assignments applied *at* an event, and the slots they write.
     pub discrete: DiscreteSolveSystem,
+    /// State-event structure: the conditions watched and the roots the solver bisects.
     pub events: SolveEventPartition,
+    /// Clocked-partition structure for synchronous (clocked) equations.
     pub clocks: SolveClockPartition,
 }
 
@@ -1748,8 +1756,14 @@ pub struct PeriodicEventSchedule {
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct SolverNameIndexMaps {
+    /// Solver-visible scalar names in slot order, so `names[i]` is the name of slot `i`.
     pub names: Vec<String>,
+    /// The inverse of [`Self::names`]: name to slot index.
     pub name_to_idx: IndexMap<String, usize>,
+    /// For an array, the base name mapped to every slot index its elements occupy.
+    ///
+    /// `name_to_idx` addresses one scalar; this addresses a whole array at once, which
+    /// is what a consumer plotting `x` rather than `x[2]` needs.
     pub base_to_indices: IndexMap<String, Vec<usize>>,
 }
 
@@ -1773,14 +1787,26 @@ pub struct PreParamBinding {
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct SolveLayout {
+    /// Name-to-index maps for the solver-visible scalars, in slot order.
     pub solver_maps: SolverNameIndexMaps,
+    /// Number of continuous states — the length of `Y`.
     pub state_scalar_count: usize,
+    /// Number of algebraic (non-state) scalars solved at each step.
     pub algebraic_scalar_count: usize,
+    /// Number of scalars published as outputs.
     pub output_scalar_count: usize,
+    /// Number of declared parameters.
+    ///
+    /// Not the length of `P`: that is [`Self::compiled_parameter_len`], which also counts
+    /// the slots lowering adds for `__pre__.*` snapshots and relation memory.
     pub parameter_count: usize,
+    /// Length of the `P` block actually allocated at run time, in scalars.
     pub compiled_parameter_len: usize,
+    /// Names of input scalars, in the order the runtime supplies them.
     pub input_scalar_names: Vec<String>,
+    /// Names of discrete `Real` scalars, which change only at events.
     pub discrete_real_scalar_names: Vec<String>,
+    /// Names of discrete non-`Real` scalars — `Boolean`, `Integer`, enumerations.
     pub discrete_valued_scalar_names: Vec<String>,
     #[serde(default)]
     pub relation_memory_parameter_indices: Vec<usize>,
@@ -1900,15 +1926,39 @@ impl SolveVariableMeta {
 /// mass-matrix extraction happen before this value is constructed.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct SolveModel {
+    /// The system to solve: layouts, equations and event structure.
     pub problem: SolveProblem,
+    /// Derived products kept beside the problem — sparsity, Jacobians, and other
+    /// artifacts lowering computed once rather than at each step.
     pub artifacts: SolveArtifacts,
+    /// Initial value of every continuous state, in `Y` slot order.
+    ///
+    /// One entry per state, so its length is `problem.layout.y_scalars`. The values are
+    /// the evaluated `start` attributes, which makes this the shortest check that the
+    /// model's declared initial conditions survived lowering.
     pub initial_y: Vec<f64>,
+    /// Initial value of every parameter slot, in `P` slot order.
+    ///
+    /// Length is `problem.solve_layout.compiled_parameter_len`, so it covers the slots
+    /// lowering added for `__pre__.*` snapshots and relation memory as well as the
+    /// model's declared parameters.
     pub parameters: Vec<f64>,
+    /// External table data referenced by the model, loaded once.
     #[serde(default)]
     pub external_tables: ExternalTables,
+    /// Names a consumer should offer for plotting or inspection.
+    ///
+    /// A subset of `problem.layout.bindings`, which also contains every folded constant
+    /// the model's libraries contributed.
     pub visible_names: Vec<String>,
+    /// Program computing the current value of each entry in [`Self::visible_names`].
+    ///
+    /// Needed because a visible name is not always a slot — it may be an alias or an
+    /// expression over slots, and so has to be evaluated rather than read.
     #[serde(default)]
     pub visible_value_rows: ScalarProgramBlock,
+    /// Per-variable metadata — unit, description, variability, bounds — aligned with
+    /// [`Self::visible_names`].
     pub variable_meta: Vec<SolveVariableMeta>,
 }
 

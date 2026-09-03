@@ -5,26 +5,64 @@ use serde::{Deserialize, Serialize};
 
 const F64_BYTES: usize = std::mem::size_of::<f64>();
 
+/// Where one scalar's value lives at run time.
+///
+/// A flat model's variables are partitioned into the solver's two contiguous `f64`
+/// blocks — the continuous state vector `Y` and the parameter vector `P` — plus the two
+/// cases that need no storage: simulation time, and values folded to a compile-time
+/// constant.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum ScalarSlot {
+    /// Simulation time. Supplied by the integrator, so it occupies no slot.
     Time,
+    /// A continuous state: `Y[index]`, at `byte_offset` bytes into the `Y` block.
+    ///
+    /// `byte_offset` is `index * size_of::<f64>()`, carried explicitly so a consumer
+    /// can address the block as bytes without assuming the element width.
     Y { index: usize, byte_offset: usize },
+    /// A parameter: `P[index]`, at `byte_offset` bytes into the `P` block.
+    ///
+    /// `P` holds more than the model's declared parameters: it is also where `__pre__.*`
+    /// snapshots and relation memory live, because those are constant *between* events
+    /// and updated *at* them.
     P { index: usize, byte_offset: usize },
+    /// A value known at compile time, stored inline rather than in either block.
+    ///
+    /// Enumeration literals resolved from a library reach this variant, so a model that
+    /// imports a large library has many `Constant` bindings and few slots.
     Constant(f64),
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct VarLayout {
+    /// Every scalar name in the flat model, mapped to where its value lives.
+    ///
+    /// The authoritative name-to-storage map: it is what says whether a number in a
+    /// trajectory is a state, a parameter, time, or a folded constant. Insertion-ordered,
+    /// with the model's own scalars first and library-derived entries after them.
+    ///
+    /// Most entries are usually [`ScalarSlot::Constant`] rather than slots — a model that
+    /// imports a large library contributes one binding per resolved enumeration literal,
+    /// so this map can be orders of magnitude larger than the vectors it describes.
+    /// [`Self::y_scalars`] and [`Self::p_scalars`] give the vector lengths directly.
     bindings: IndexMap<String, ScalarSlot>,
+    /// Array dimensions per name, for names that are arrays. Scalars are absent.
     #[serde(default)]
     shapes: IndexMap<String, Vec<usize>>,
+    /// Source span of each array's declaration, for diagnostics about its shape.
     #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
     shape_spans: IndexMap<String, Span>,
+    /// Structured lookup key per shaped name. Derived, so not serialized.
     #[serde(skip)]
     shape_indexed_keys: IndexMap<String, ComponentReferenceKey>,
+    /// Bindings addressed by structured component reference rather than by rendered
+    /// name, so a subscripted reference resolves without string formatting. Derived,
+    /// so not serialized.
     #[serde(skip)]
     indexed_bindings: IndexMap<ComponentReferenceKey, Vec<IndexedScalarSlot>>,
+    /// Length of the continuous state vector `Y`, in scalars.
     y_scalars: usize,
+    /// Length of the parameter vector `P`, in scalars.
     p_scalars: usize,
 }
 
