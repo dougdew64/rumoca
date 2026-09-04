@@ -4933,3 +4933,39 @@ until the app dies: every test passes without it, since none renders a tree 24 l
 
 **Owed: report it upstream to egui.** O(2^depth) for nested `CollapsingHeader` in debug builds is
 their bug, not ours, and the reproducer is ten lines.
+
+## 2026-09-04 — a tree node's tooltip renders the equation it encodes
+
+**Doug asked whether the Events tree could show a human-readable equation on hover**, pointing at
+`conditions.equations_f_c[0]`: 99 lines of JSON, 10 levels deep, encoding `c[1] = h <= 0`. Built
+for **Events, DAE, Initialization and Flatten**. `equation_text`'s module doc carries the whole
+scope ruling — **read it there rather than re-deriving**; what follows is only why it is safe and
+what it declines.
+
+**Safe because it renders the TYPED IR in the worker, never the JSON in the pane.** A JSON-to-text
+renderer would be a second formatter free to disagree with `equation_sheet`, each looking right
+alone. `expr_format` is reused, and its match has **no catch-all** — so a new Rumoca expression
+variant breaks the build rather than rendering something plausible. The tooltip says the string is
+**HRW's rendering**, since Rumoca emitted a tree and never that text.
+
+**The mechanism was already here.** `TreeOptions::path_lines` keys per-node facts by
+`describe_path` for exactly this reason — an equation has no name, only a position — so
+`path_equations` mirrors it and the tree still knows nothing about Rumoca types.
+
+**Three scope corrections, and the plan was wrong about each.** *Initialization* is not the
+equation stage it looked like: it publishes an IC **plan**, and the DAE's initial equations live in
+the DAE tree. *Flatten* was not "already covered by the equation sheet" — the sheet renders DAE
+equations. And the *AST stages*, named first, are the one place this is **not** worth doing: an
+equation there **is the source Doug already has open**, and reaching it needs a walker mirroring
+serde paths through ten levels. Highest risk, lowest payoff.
+
+**Solve lowering is declined, not deferred.** It holds no expression trees — only a register
+program (`LoadY { dst, index }`) — so rendering means reconstructing an expression from
+instructions, where a plausible-but-wrong result is easy to make and hard to notice.
+
+**The failure being guarded is silence.** A key that does not match `describe_path` never matches,
+so no tooltip appears — indistinguishable from a node with nothing to render.
+`every_stage_rendering_lands_on_a_real_node` walks `StageKind::ALL` resolving every key against
+real IR, with a per-specimen roster as its non-vacuity half, and pins four renderings because *"it
+resolves"* is not *"it is right"*. **BouncingBall cannot exercise the IC plan** (`n_eq <= n_x`), so
+`RcCircuit` is in the test too — one specimen would have left that renderer green and unrun.
