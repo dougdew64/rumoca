@@ -4369,6 +4369,11 @@ impl App {
                     StageKind::Flatten => Some(&s.flat_node_lines),
                     _ => None,
                 }),
+            // **The current stage's own renderings, and no other stage's.** They travel on
+            // the `Stage` beside the `value` they describe, so this cannot hand the tree a
+            // map built from different IR — the mistake `path_lines` above had to guard
+            // against by hand, because its map is shared and keyed the same way.
+            path_equations: Some(&self.current_stage().rendered),
             jump_to: None,
             highlight: None,
         }

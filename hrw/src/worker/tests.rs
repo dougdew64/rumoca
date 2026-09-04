@@ -3324,6 +3324,64 @@ fn flatten_ir_has_expected_structure() {
     );
 }
 
+/// Every Events rendering is keyed to a node that exists, and says what the node means.
+///
+/// # The failure this forbids is silence
+///
+/// A rendering is looked up by `bridge::describe_path`, so a key that does not match the
+/// path the tree builds simply never matches. **No tooltip appears, and that is
+/// indistinguishable from a node with nothing renderable** — the exact silent-success
+/// shape the must-fire rule exists for. So this walks the keys the worker produced and
+/// resolves each one against the IR the pane is handed.
+///
+/// It also pins the rendering of `BouncingBall`'s condition equation, because that is the
+/// 99-line, 10-level node Doug pointed at on 2026-09-04 and `c[1] = h <= 0` is the whole
+/// reason the feature exists. A formatter that silently dropped an operand would still
+/// produce *a* string, and only comparing against the equation settles it.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn every_events_rendering_lands_on_a_real_node() {
+    let FromWorker::Compiled { stages, .. } = compile_specimen_shared("BouncingBall") else {
+        panic!("expected Compiled");
+    };
+    let events = &stages.events;
+    let ir = events.value.as_ref().expect("events IR");
+
+    assert!(
+        !events.rendered.is_empty(),
+        "BouncingBall has a `when h <= 0` clause, so the Events stage must render at \
+         least its condition equation \u{2014} an empty map here means the renderings are \
+         never attached, which looks exactly like a smooth model",
+    );
+
+    for (path, text) in events.rendered.iter() {
+        let segs = crate::bridge::parse_path(path)
+            .unwrap_or_else(|| panic!("rendering key {path:?} is not a node path"));
+        let mut node = ir;
+        for seg in &segs {
+            node = seg.get_in(node).unwrap_or_else(|| {
+                panic!(
+                    "rendering keyed at {path:?} resolves to nothing in the Events IR \
+                     \u{2014} the tooltip would silently never appear"
+                )
+            });
+        }
+        assert!(!text.is_empty(), "{path} rendered to an empty string");
+    }
+
+    let condition = events
+        .rendered
+        .get("conditions.equations_f_c[0]")
+        .expect("the condition equation is rendered");
+    assert_eq!(
+        condition, "c[1] = h <= 0",
+        "the rendering must be the equation, not merely a plausible string",
+    );
+}
+
 /// The Events stage IR has the expected summary structure.
 #[test]
 #[cfg_attr(

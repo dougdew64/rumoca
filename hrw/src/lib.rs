@@ -58,6 +58,7 @@ pub mod doc_citations;
 pub mod doc_sizes;
 pub mod equation_sheet;
 pub mod equation_sheet_view;
+pub mod equation_text;
 pub mod error_summary;
 pub mod expr_format;
 pub mod fidelity;

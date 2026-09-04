@@ -442,6 +442,15 @@ pub struct Stage {
     /// Where [`value`](Self::value) came from. Set by the constructors; see
     /// [`Provenance`].
     pub provenance: Provenance,
+    /// Human-readable equations for nodes of [`value`](Self::value), keyed by node path.
+    ///
+    /// **Rendered from the TYPED IR while the worker still holds it**, which is the whole
+    /// safety property — see `equation_text`. Empty for every stage that has nothing
+    /// renderable, and empty is a report: no tooltip line rather than a blank one.
+    ///
+    /// Carried on `Stage` rather than beside it so it cannot drift from the `value` it
+    /// describes: the two are built together and travel together.
+    pub rendered: crate::equation_text::Rendered,
 }
 
 /// Constructors for the possible stage outcomes. `pub(crate)` — only the worker
@@ -456,6 +465,7 @@ impl Stage {
             note: None,
             outcome: Outcome::Ok,
             provenance: Provenance::Compiler,
+            rendered: crate::equation_text::Rendered::default(),
         }
     }
 
@@ -497,6 +507,7 @@ impl Stage {
             note: Some(why.into()),
             outcome: Outcome::Flagged,
             provenance: Provenance::Hrw,
+            rendered: crate::equation_text::Rendered::default(),
         }
     }
     /// Stage failed — no IR, just an error message (rendered red).
@@ -508,6 +519,7 @@ impl Stage {
             note: Some(note.into()),
             outcome: Outcome::Failed,
             provenance: Provenance::Empty,
+            rendered: crate::equation_text::Rendered::default(),
         }
     }
     /// A non-error status note for a stage with no IR of its own to show.
@@ -522,6 +534,7 @@ impl Stage {
             note: Some(note.into()),
             outcome: Outcome::Ok,
             provenance: Provenance::Empty,
+            rendered: crate::equation_text::Rendered::default(),
         }
     }
     /// A best-effort IR plus an error note — a recovered parse tree, a singular
@@ -533,6 +546,7 @@ impl Stage {
             note: Some(note.into()),
             outcome: Outcome::Flagged,
             provenance: Provenance::Compiler,
+            rendered: crate::equation_text::Rendered::default(),
         }
     }
     /// A successful IR plus an informational (non-error) note — e.g. the
@@ -543,6 +557,7 @@ impl Stage {
             note: Some(note.into()),
             outcome: Outcome::Ok,
             provenance: Provenance::Compiler,
+            rendered: crate::equation_text::Rendered::default(),
         }
     }
 
@@ -571,6 +586,7 @@ impl Stage {
             // The payload is the compiler's diagnostics, reshaped for display —
             // HRW selected and wrapped, it did not invent a failure.
             provenance: Provenance::Compiler,
+            rendered: crate::equation_text::Rendered::default(),
         }
     }
 
@@ -4287,7 +4303,11 @@ fn events_stage(result: Option<&PhaseResult>) -> Stage {
         (total, uncountable, s.len())
     });
 
-    match counted {
+    // **Bound rather than returned, so all four arms carry the renderings.** Attaching
+    // them per arm would mean four sites, and the one that got missed would show a stage
+    // whose nodes silently have no tooltips — indistinguishable from a stage with nothing
+    // renderable. See `equation_text`.
+    let mut stage = match counted {
         Some((_, uncountable, n)) if uncountable > 0 => Stage::recovered(
             json,
             format!(
@@ -4306,7 +4326,9 @@ fn events_stage(result: Option<&PhaseResult>) -> Stage {
             "the event summary could not be read, so HRW cannot say whether this \
              model has events \u{2014} the tree below is the raw event IR",
         ),
-    }
+    };
+    stage.rendered = crate::equation_text::for_events(&cr.dae);
+    stage
 }
 
 /// Convert the DAE's hybrid/event structure to JSON. Reads directly from the

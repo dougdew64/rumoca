@@ -141,6 +141,22 @@ pub struct TreeOptions<'a> {
     /// Empty for every stage but the DAE, which is also what keeps the per-row lookup
     /// cheap: no map, no path string built.
     pub path_lines: Option<&'a HashMap<String, u32>>,
+    /// Node path -> that node's equation, rendered as Modelica text.
+    ///
+    /// **The same keying as `path_lines`, deliberately**, because it answers the same
+    /// kind of question about the same kind of node and the mechanism was already here.
+    /// An equation has no name, only a position, and this widget must go on knowing
+    /// nothing about Rumoca types (charter §4.4).
+    ///
+    /// Doug, 2026-09-04, pointing at `conditions.equations_f_c[0]` — **99 lines of JSON,
+    /// 10 levels deep, encoding `c[1] = h <= 0`**: *"might it be possible for the events
+    /// stage tree to use the IR for each equation node to provide a complete,
+    /// human-readable equation in a tooltip"*.
+    ///
+    /// The text is **HRW's rendering, not Rumoca's output** — Rumoca never emitted that
+    /// string — so `row_hover` labels it. Built by `equation_text` from the typed IR while
+    /// the worker still holds it, never re-derived from the JSON on screen.
+    pub path_equations: Option<&'a crate::equation_text::Rendered>,
     /// Scroll this node into view and open everything above it, for one frame.
     ///
     /// The "jump to the followed identifier" control. Set for a single frame:
@@ -354,6 +370,10 @@ fn node_ui(
             // caller decided what that path means. Skipped entirely when there is no
             // map, which is every stage but the DAE, so no path string is built.
             let node_line = path_line(path, &opts);
+            // **An equation is an object, so this arm is the one that matters.** A
+            // `dae::Equation` renders as a struct — `conditions.equations_f_c[0]` is an
+            // object header, not a leaf — which is exactly the row Doug hovers.
+            let node_equation = path_equation(path, &opts);
             row_menu(
                 &resp.header_response,
                 path,
@@ -365,10 +385,13 @@ fn node_ui(
                 node_line,
             );
             let doc = field_help.get(key);
-            if doc.is_some() || node_line.is_some() {
-                resp.header_response
-                    .clone()
-                    .on_hover_text(row_hover(doc, None, node_line));
+            if doc.is_some() || node_line.is_some() || node_equation.is_some() {
+                resp.header_response.clone().on_hover_text(row_hover(
+                    doc,
+                    None,
+                    node_line,
+                    node_equation,
+                ));
             }
         }
         Value::Array(arr) => {
@@ -455,6 +478,9 @@ fn node_ui(
                 // The same value the menu item uses — resolved once above, so the
                 // tooltip and the jump can never name different declarations.
                 declared_line,
+                // A leaf is a scalar, so this is almost always `None` — passed for
+                // consistency rather than because a rendering is expected here.
+                path_equation(path, &opts),
             ));
         }
     });
@@ -503,8 +529,27 @@ fn scroll_if_jump_target(is_target: bool, resp: &egui::Response) {
 /// Every row is left-clickable, so the "point at" line is unconditional. Only
 /// rows naming a variable the model actually knows can be followed, so that
 /// line depends on `trackable`.
-fn row_hover(doc: Option<&String>, trackable: Option<&str>, declared_at: Option<u32>) -> String {
+fn row_hover(
+    doc: Option<&String>,
+    trackable: Option<&str>,
+    declared_at: Option<u32>,
+    equation: Option<&str>,
+) -> String {
     let mut out = String::new();
+    // **The equation goes FIRST, above the field documentation.** For a node that is an
+    // equation, `c[1] = h <= 0` is the answer and *"Condition equations: c := f_c(...)"*
+    // is context for it. The 99-line node Doug pointed at on 2026-09-04 needed the one
+    // line, not the category.
+    //
+    // **And it is labelled as a rendering.** Rumoca emitted an expression tree, never
+    // this string; presenting HRW's pretty-printer output as though it came from the
+    // compiler is the invented-content failure in tooltip dress, and *a derived view
+    // declares that it is derived.*
+    if let Some(eq) = equation {
+        out.push_str("HRW rendering of this node:\n    ");
+        out.push_str(eq);
+        out.push_str("\n\n");
+    }
     if let Some(doc) = doc {
         out.push_str(doc);
         out.push_str(
@@ -718,6 +763,19 @@ fn path_line(path: &[Seg], opts: &TreeOptions<'_>) -> Option<u32> {
     map.get(&crate::bridge::describe_path(path)).copied()
 }
 
+/// The rendered equation for a node, looked up by its path.
+///
+/// Same cheap-path discipline as [`path_line`]: no map or an empty one returns before
+/// `describe_path` allocates, so the stages with nothing renderable pay a null check per
+/// row rather than a string build.
+fn path_equation<'a>(path: &[Seg], opts: &TreeOptions<'a>) -> Option<&'a str> {
+    let map = opts.path_equations?;
+    if map.is_empty() {
+        return None;
+    }
+    map.get(&crate::bridge::describe_path(path))
+}
+
 /// The identifier a leaf names, if it names one.
 ///
 /// Offered as "Follow …" in the row menu. Deliberately conservative: the tree
@@ -919,7 +977,7 @@ mod tests {
     fn row_hover_appends_to_field_help_rather_than_replacing_it() {
         let doc = "The variable's causality: input, output, or none.".to_owned();
 
-        let with_doc = row_hover(Some(&doc), None, None);
+        let with_doc = row_hover(Some(&doc), None, None, None);
         assert!(
             with_doc.starts_with(&doc),
             "documentation comes first: {with_doc}"
@@ -930,7 +988,7 @@ mod tests {
         );
 
         // Every row is left-clickable, so the point-at line is unconditional.
-        let bare = row_hover(None, None, None);
+        let bare = row_hover(None, None, None, None);
         assert!(bare.contains("Point at"), "{bare}");
         assert!(
             !bare.contains("Right-click"),
@@ -947,7 +1005,7 @@ mod tests {
         // the DAE IR carries no locations at all — so this line is recovered by
         // *name* from the identifier index, which is built from Parse where the
         // locations survive.
-        let located = row_hover(None, Some("w"), Some(7));
+        let located = row_hover(None, Some("w"), Some(7), None);
         assert!(
             located.contains("Declared at line 7"),
             "the origin must be stated, and stated first: {located}"
@@ -958,10 +1016,49 @@ mod tests {
         );
 
         // Only rows naming a known variable offer the second verb.
-        let followable = row_hover(Some(&doc), Some("emf.phi"), None);
+        let followable = row_hover(Some(&doc), Some("emf.phi"), None, None);
         assert!(followable.starts_with(&doc));
         assert!(followable.contains("Point at"));
         assert!(followable.contains("follow emf.phi"), "{followable}");
+    }
+
+    /// A rendered equation leads the tooltip, is labelled as HRW's, and displaces nothing.
+    ///
+    /// Three claims, and the middle one is the accuracy claim. Rumoca emitted an
+    /// expression *tree*; the string `c[1] = h <= 0` is HRW's pretty-printer output, and
+    /// presenting it unlabelled would be the invented-content failure in tooltip dress.
+    ///
+    /// **Placed after the preceding test's closing brace**, which is the rule this very
+    /// addition broke on its first attempt: anchored on `#[test]`, it landed *below* the
+    /// neighbour's doc comment and adopted it, leaving that test undocumented.
+    /// `no_doc_block_gains_a_second_summary` caught it. Fourth instance on record.
+    #[test]
+    fn a_rendered_equation_leads_the_tooltip_and_says_whose_it_is() {
+        let doc = "Condition equations: c := f_c(relation(v)) (MLS B.1d).".to_owned();
+        let hover = row_hover(Some(&doc), None, None, Some("c[1] = h <= 0"));
+
+        assert!(
+            hover.contains("c[1] = h <= 0"),
+            "the equation is there: {hover:?}"
+        );
+        assert!(
+            hover.contains("HRW rendering"),
+            "and is marked as HRW's rendering rather than Rumoca's output: {hover:?}",
+        );
+        assert!(
+            hover.find("c[1] = h <= 0") < hover.find(doc.as_str()),
+            "the equation comes before the field's category, which is context for it",
+        );
+        assert!(hover.contains(&doc), "and the field help is not displaced");
+
+        // Without a rendering the tooltip is exactly what it was — no empty section, no
+        // stray label. Most nodes in most stages take this path.
+        let plain = row_hover(Some(&doc), None, None, None);
+        assert!(
+            !plain.contains("HRW rendering"),
+            "no label with nothing to label"
+        );
+        assert!(plain.contains(&doc));
     }
 
     use super::*;
