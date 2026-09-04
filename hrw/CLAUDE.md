@@ -493,8 +493,22 @@ the next phase touches — is procedure and lives there.
 > specimens that use the MSL. **That is a standing capability, not a one-off**: the oracle-first
 > rule no longer costs Doug a manual step, so use it before concluding anything from Rumoca.
 >
-> **The entry is Doug's to file, per `docs/upstream-issues.md`'s own rule.** Nothing else about
-> this defect is worth doing first.
+> **The entry is Doug's to file, per `docs/upstream-issues.md`'s own rule.**
+>
+> **RULED 2026-09-04 — DO NOT FIX IT IN THE FORK. WAIT FOR THE RELEASE.** Doug: *"We will
+> definitely not attempt a fix for the fixed = true stuff. Instead, we will wait for the next
+> rumoca release."* **Do not re-propose the fix**, and the reason is not caution: the pending
+> 0.10.0 branch already contains `lower/initial_pins.rs`, whose own doc describes *"a runtime that
+> seeds one value per state and then projects the algebraic unknowns"* — the formulation this
+> project independently derived — and has deleted the `Der => emit_const_at(0.0)` arm. Fixing it
+> here means a large semantic change to code upstream has already rewritten, and a harder rebase.
+>
+> **Upstream is not abandoned; it is mid-release, which reads the same from outside.** `main` last
+> moved 2026-07-29 and Doug's outreach went unanswered, but PR **#340** (194 commits, 2,377 files)
+> was updated 2026-08-27. **So the work is waiting on `git fetch`, not on a person** — and the
+> instrumented reading of that is in [`docs/updating-rumoca.md`](docs/updating-rumoca.md) **step
+> 0**, which is new and exists to stop exactly the near-miss of that day: choose the target,
+> prefer a tag, and check whether the release already fixes what you were about to.
 >
 > **What it explains.** Doug asked for a specimen that plots well and shows the animation panes.
 > **The corpus is not dull — 13 of 18 traced specimens are frozen at their own steady state**,

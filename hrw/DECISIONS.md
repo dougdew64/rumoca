@@ -4969,3 +4969,25 @@ so no tooltip appears — indistinguishable from a node with nothing to render.
 real IR, with a per-specimen roster as its non-vacuity half, and pins four renderings because *"it
 resolves"* is not *"it is right"*. **BouncingBall cannot exercise the IC plan** (`n_eq <= n_x`), so
 `RcCircuit` is in the test too — one specimen would have left that renderer green and unrun.
+
+---
+
+## 2026-09-04 — never back up `CLAUDE.md` to a parent directory; tag instead
+
+Doug copied `hrw/CLAUDE.md` to `../../CLAUDE.md` before the long documents-maintenance pass — a
+sound instinct that turned into a live hazard, and the reason is specific to this one file.
+`CLAUDE.md` is **auto-loaded by walking up from the working directory**, so a copy in a parent does
+not sit inertly beside the original: it is injected as authority alongside it. `repos/` is not a git
+repository, so the copy was tracked by nothing, and it was four days stale.
+
+**What it cost, measured from the diff (`ad1856b4..HEAD`, 170 insertions / 5 deletions):** nothing
+was superseded, but one rule added 2026-09-02 was invisible for a whole session — *answer through
+HRW when HRW can show it*. That session described actions HRW can perform (*"load this and run
+it"*) while `hrw://load` and `hrw://simulate` existed, one of them built the day before. **The rule
+says its own failure is silent, and this is the instance**: the answers were correct and neither
+party noticed the platform went unused.
+
+**A backup of a version-controlled file is redundant with git** — the pre-maintenance text was read
+straight out of `ad1856b4` to work out what had been missed. So: **use a tag or a branch as the
+marker before a large documentation pass.** It costs nothing and cannot shadow anything. Deleted
+2026-09-04 once found.
