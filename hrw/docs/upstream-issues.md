@@ -1198,6 +1198,34 @@ stalled-motor current — which is what `L*der(i) = v` gives when `der(i)` is se
 **The specimens that move are the ones the steady state could not be found for.** That is
 the correlation the mechanism below is inferred from.
 
+**BUT "COULD NOT BE FOUND" IS THE WRONG VERB, and `BouncingBall` shows why** *(corrected
+2026-09-04, when Doug asked why that one simulates correctly)*. The reading above implies the
+solver *attempted* a steady state and failed, falling back near the guess. It does not attempt
+one. The offending equation is **never in the system**:
+
+`BouncingBall` has two equations and its initialization residual has exactly **one row**, which
+disassembles to `Const 0.0 - y[1]` — that is `der(h) - v` with the derivative zeroed, so
+initialization solves `v = 0`. **The model declares `v(start = 0.0)`, so the defect's answer and
+the declared start are the same number.** It is not immune; it collides harmlessly.
+
+Its other two variables escape for reasons that are equally accidental:
+
+- **`der(v) = -g` is dropped from the residual entirely**, which is why one row covers two
+  equations. `initial_residual_equations` keeps a state-derivative row only when one side is a
+  bare `VarRef`, and `-g` is a negation. Had it been kept, the row would read `0 - (-g)` and
+  demand `g = 0` — a hard failure. **The filter is what stands between this defect and a broken
+  build, and it selects on syntax.**
+- **`h` is in no block's unknowns**, so it is never solved and keeps its seeded start.
+
+**So the rule is sharper than the correlation: a model survives when every state the
+initialization happens to solve for already equals what zeroing the derivatives assigns it.**
+`BouncingBall` satisfies that by one coincidence, in one variable.
+
+**Falsifiable, and cheap.** `ThrownBall` is `BouncingBall` with `v(start = -5.0)`. System
+Modeler 15.0 gives `v(0) = -5` and a first bounce at **0.1715 s**, against the analytic root of
+`4.905t^2 + 5t - 1 = 0` = `0.171236`. If Rumoca honours the throw it bounces at 0.171 s; if it
+resets `v` to zero the ball is merely dropped and bounces at **0.452 s** = `sqrt(1/4.905)`.
+
 ### LOCATED 2026-09-04 — one instruction, and it is no longer a suspicion
 
 `BuiltinFunction::Der` lowers to the literal `0.0`, unconditionally and with no
