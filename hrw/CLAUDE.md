@@ -135,6 +135,14 @@ stopped anyone looking for eight days; a claim about the **pixels** was read as 
 **panes**, and `matrix_panes.rs` had six tests available the whole time it was filed as untestable.
 **A wrong *negative* is the error nobody catches, because acting on it means not looking.**
 
+**AND THE CHEAPEST DRESS IT WEARS IS A FILTERED GREP** *(2026-09-04)*. Claude reported that the
+simulation plot did not honour the follow, from `grep "tracked" | grep -iE "plot|sim"` — which
+demands both terms on **one line**. The feature was there and had been: the binding is `let
+tracked = self.tracked_identifier;`, carrying neither word, and the empty result read as absence.
+Doug had nothing followed at the time, so the screen agreed. **A second filter is a claim that
+the thing you seek and the word you chose share a line**, which for a binding is usually false —
+so grep the symbol alone and read the hits, or grep the file.
+
 **Two scroll-area rules, each with a test that carries its own account:** a scroll axis is a claim
 about how a widget negotiates size with its **parent**
 (`ui_tests::the_left_panel_content_never_detaches_from_the_divider`), and **never nest a vertical
