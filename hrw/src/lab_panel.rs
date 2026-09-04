@@ -759,7 +759,7 @@ pub(crate) fn lab_prose_ui(
                 };
                 let top = ui.cursor().top();
                 if split > 0 {
-                    show_lab_markdown(ui, &mut *cache, &text[..split]);
+                    show_lab_markdown(ui, &mut *cache, &text[..split], LabPart::BeforeCursor);
                 }
                 measured = Some(ui.cursor().top() - top);
 
@@ -778,7 +778,7 @@ pub(crate) fn lab_prose_ui(
                     ui.scroll_to_cursor(Some(egui::Align::TOP));
                 }
 
-                show_lab_markdown(ui, &mut *cache, &text[split..]);
+                show_lab_markdown(ui, &mut *cache, &text[split..], LabPart::AfterCursor);
             }
             None => no_lab_ui(ui),
         }
@@ -954,6 +954,43 @@ fn code_block_ui(ui: &mut egui::Ui, lang: &str, body: &str) {
         });
 }
 
+/// Which half of the split document [`show_lab_markdown`] is rendering.
+///
+/// # Why the halves need separate id namespaces
+///
+/// `show_lab_markdown`'s own docs say *"each prose segment takes its own id scope so two
+/// viewers cannot derive colliding widget ids"*. That was true within one call and false
+/// across the two — this repository's most frequent failure in its code dress, **a scope
+/// one level too small.** `lab_prose_ui` renders the document as two
+/// markdown parses split at the current beat's link, and both numbered their segments from
+/// zero, so `("lab-prose", 0)` was pushed twice in one frame.
+///
+/// egui answers an id clash by painting an outline and `🔥`-prefixed debug text over the
+/// offending widget. Doug, 2026-09-04: *"a screen flash in the answer pane happens… At
+/// various points in the playback, that screen flash happens."* Various points, because the
+/// number of segments in each half changes as the split moves — so which widgets collide
+/// changes with it, and sometimes none do.
+///
+/// `part` is required rather than defaulted so a third call site has to say which document
+/// it is rendering, and `the_two_halves_of_a_split_lab_do_not_clash_on_ids` scans a rendered
+/// frame for that `🔥` — which turns a pixel complaint into a failing test.
+pub(crate) enum LabPart {
+    /// Everything up to the current beat's link. Ends at the scroll cursor.
+    BeforeCursor,
+    /// The link's own line and everything after it.
+    AfterCursor,
+}
+
+impl LabPart {
+    /// The id namespace for this half's prose segments.
+    fn salt(&self) -> &'static str {
+        match self {
+            Self::BeforeCursor => "lab-prose-before",
+            Self::AfterCursor => "lab-prose-after",
+        }
+    }
+}
+
 /// Render a lab's markdown, drawing fenced code blocks ourselves.
 ///
 /// Splitting at fence boundaries is safe because a fence is block-level; the surrounding
@@ -969,16 +1006,20 @@ fn code_block_ui(ui: &mut egui::Ui, lang: &str, body: &str) {
 /// takes its own id scope so two viewers cannot derive colliding widget ids.
 /// `a_link_far_down_a_long_lab_still_dispatches` caught this: it found the link, clicked
 /// it, dispatched nothing. A wiped hook is indistinguishable from a link nobody pressed.
+///
+/// `part` names which half of the split document this is, so the two cannot collide on
+/// segment ids — see [`LabPart`].
 pub(crate) fn show_lab_markdown(
     ui: &mut egui::Ui,
     cache: &mut egui_commonmark::CommonMarkCache,
     text: &str,
+    part: LabPart,
 ) {
     let mut clicked: Vec<String> = Vec::new();
     for (i, segment) in split_lab_segments(text).into_iter().enumerate() {
         match segment {
             LabSegment::Prose(s) => {
-                ui.push_id(("lab-prose", i), |ui| {
+                ui.push_id((part.salt(), i), |ui| {
                     egui_commonmark::CommonMarkViewer::new().show(ui, cache, s);
                 });
             }
@@ -1152,6 +1193,55 @@ mod tests_code_segments {
             blocks >= 20,
             "only {blocks} fenced blocks found across {labs} labs — the splitter has \
              stopped matching, which looks like success"
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests_split_ids {
+    use super::*;
+
+    /// The two halves of a split lab derive different ids for the same segment index.
+    ///
+    /// # What this claims, and what it does not
+    ///
+    /// It verifies the property the `LabPart` parameter exists for: `lab_prose_ui` renders
+    /// the document as two markdown parses, and before 2026-09-04 both numbered their prose
+    /// segments from zero, so `("lab-prose", 0)` named one egui scope for both halves. Two
+    /// scopes sharing an id share egui memory, which is wrong on its own terms.
+    ///
+    /// **It does NOT test the screen flash Doug reported that day, and that flash is not
+    /// diagnosed.** The hypothesis was that egui paints its `🔥` id-clash marker over the
+    /// collision. It does not: `Context::check_for_id_clash` is called for registered
+    /// widgets, `Grid`, `Panel` and `ScrollArea` and nothing else, so a colliding `push_id`
+    /// scope paints nothing at all. A frame-scanning detector was written and found no
+    /// marker even with the halves deliberately collided — then deleted rather than kept as
+    /// a test that passes because it cannot see. Its non-vacuity assertion is the only
+    /// reason that was noticed.
+    #[test]
+    fn the_two_halves_of_a_split_lab_derive_different_ids() {
+        let ctx = egui::Context::default();
+        let input = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(
+                egui::Pos2::ZERO,
+                egui::vec2(800.0, 600.0),
+            )),
+            ..Default::default()
+        };
+
+        let mut ids = Vec::new();
+        let _ = ctx.run_ui(input, |ui| {
+            // egui's own derivation, from the salts the two halves actually use.
+            for part in [LabPart::BeforeCursor, LabPart::AfterCursor] {
+                ids.push(ui.push_id((part.salt(), 0usize), |_| {}).response.id);
+            }
+        });
+
+        assert_eq!(ids.len(), 2, "both scopes were created");
+        assert_ne!(
+            ids[0], ids[1],
+            "segment 0 of each half must be a different egui scope \u{2014} sharing one is \
+             what LabPart exists to prevent",
         );
     }
 }
