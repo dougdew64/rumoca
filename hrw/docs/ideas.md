@@ -1234,6 +1234,50 @@ now largely superseded), `docs/context-assembly.md`, and the retirement of
 
 ## 42. Answers — HRW as a channel for Claude's *answers*, not just its input
 
+> ### A THIRD KIND OF ANSWER, NAMED BY DOUG 2026-09-04: THE DIAGNOSIS WALK
+>
+> *"Your Answer is fantastic, and demonstrates an entirely other way for Claude + HRW to be
+> valuable."*
+>
+> **The two kinds already in use are a lab (teaches a concept, walked more than once) and an
+> Answer (answers a question, with a route through panes).** The third is an Answer whose
+> subject is **a claim that the compiler is wrong**, where every assertion is a link to the
+> node that carries it. The instance is the initialization defect: nine sections, each one a
+> pointer into Dae / Solve lowering / Initialization, ending in a simulate link and the
+> oracle's numbers.
+>
+> **Why it is a different kind and not just a well-linked Answer: it makes CLAUDE'S REASONING
+> auditable, rather than Rumoca's output.** An ordinary Answer routes to facts. A diagnosis
+> walk routes to the *inferential steps* — "the start is read", "it survives lowering", "the
+> plan is correct", "nothing pins it", "therefore the steady state is the only solution" —
+> so a reader can find the step that is wrong instead of accepting or rejecting the whole.
+>
+> **And that is the answer to a structural weakness this file already records** (#43, *"the
+> point is independence"*): Claude is author, maintainer, primary reader **and** judge of what
+> is true, four roles with no outside check. A diagnosis walk supplies one that **does not
+> require Doug to read Rust** — he clicks a claim and sees whether the node says what Claude
+> said it says.
+>
+> **The evidence is what he did within minutes of opening it.** Section 3 read *"Block 6
+> solves `C.p.v` from `C.v`"* — the one claim in the document that was a paraphrase rather
+> than a quotation — and he captured
+> `blocks[6].solution.Binary.rhs.Binary.rhs.VarRef.name` with an *explain* request. **He
+> went straight to the only unverifiable sentence in it.** The walk did not merely present
+> evidence; it directed an audit to the weakest link. The section now quotes the expression
+> (`C.v - (0 - C.n.v)`) and links the two sub-nodes instead of paraphrasing.
+>
+> **The cheap rule this yields: a diagnosis walk must link the step, not the conclusion.** A
+> paraphrase of what a node contains is the thing a reader has to check by hand, so it is
+> exactly where the link belongs.
+>
+> **Two costs, so this does not get oversold.** It is only checkable while the specimen is
+> loaded — `check_answer` judged all ten pointers *against the pane* once Doug loaded
+> `RcCircuit`, and against the committed notebook before that, which is the weaker verdict.
+> And it cannot travel: an upstream maintainer cannot walk it. **Its audience is Doug, and
+> its upstream use is as the thing he walks before filing**, which is a self-check on Claude's
+> diagnosis rather than a deliverable.
+
+
 Requested 2026-07-29 (Doug), immediately after agreeing the phase docs are
 Claude's database and noticing the specimen notebook has the same problem the
 end-to-end lab did:
