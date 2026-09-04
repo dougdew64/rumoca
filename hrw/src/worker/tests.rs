@@ -3404,8 +3404,14 @@ fn every_stage_rendering_lands_on_a_real_node() {
     // must render. **It cannot exercise Initialization at all** — `n_eq <= n_x`, so
     // `build_ic_plan` returns empty and the tree has `blocks: []`. RcCircuit has 21
     // blocks. Checking one specimen would have left `for_ic_plan` unexercised and green.
-    let ball = check_renderings("BouncingBall", &[StageKind::Dae, StageKind::Events]);
-    let rc = check_renderings("RcCircuit", &[StageKind::Initialization]);
+    let ball = check_renderings(
+        "BouncingBall",
+        &[StageKind::Dae, StageKind::Events, StageKind::Flatten],
+    );
+    let rc = check_renderings(
+        "RcCircuit",
+        &[StageKind::Initialization, StageKind::Flatten],
+    );
 
     // **Pinned, because "it resolves" is not "it is right".** A formatter that dropped an
     // operand would still produce a string at a valid path, and the walk above would
@@ -3419,6 +3425,16 @@ fn every_stage_rendering_lands_on_a_real_node() {
         rc.initialization.rendered.get("blocks[0]"),
         Some("src.v = src.V"),
         "an IC plan step renders as the assignment it performs",
+    );
+    // **A connect-derived equation, which is the case that justifies Flatten.**
+    // `equations[19]` has origin `Connection`: it is nowhere in the model source, where
+    // Doug wrote `connect(...)`. This is the rendering the AST stages could never offer,
+    // because their equations ARE the source.
+    assert_eq!(
+        rc.flatten.rendered.get("equations[19]"),
+        Some("0 = src.p.v - R.p.v"),
+        "a flat equation renders as the equality it is \u{2014} here the connector \
+         potential equality that `connect(src.p, R.p)` became",
     );
 
     // The one `scalar_newton` block holds an equation INDEX, not an expression, so it is

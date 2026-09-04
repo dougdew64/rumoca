@@ -36,10 +36,16 @@
 //!    **Initialization was in this group by assumption and is not.** Its tree is an IC
 //!    *plan* from `rumoca-phase-structural`, so it needed [`for_ic_plan`] rather than a
 //!    third call to the same helper. The DAE's initial equations live in the *DAE* tree.
-//! 2. **Parse/Resolve/Instantiate/Typecheck** share `rumoca_core::Expression` (the AST
-//!    carries the same `Binary`/`Unary` variants), so expression nodes are renderable
-//!    there, but their *equations* are a different type and need a per-stage adapter.
-//!    Flatten's are already rendered by the equation sheet — reuse, do not add.
+//! 2. **Flatten is built** — [`for_flatten`] — and the AST stages are **deliberately
+//!    not**, which reverses what this note first said.
+//!
+//!    The claim was that Flatten's equations "are already rendered by the equation
+//!    sheet". They are not: the sheet renders **DAE** equations. And the AST stages,
+//!    named first, turn out to be the *least* worth doing — an equation in the AST **is
+//!    the source Doug already has open**, and reaching those nodes needs a walker
+//!    mirroring serde's paths through ten levels of nesting. Highest risk, lowest payoff.
+//!    Flatten is the reverse: `connect` expansion happens there, so its equations appear
+//!    nowhere in the model text.
 //! 3. **Solve lowering cannot**: it holds no expression trees at all, only a
 //!    straight-line register program (`LoadY { dst, index }`, `Binary { dst, op, lhs,
 //!    rhs }`). Rendering that means reconstructing an expression from instructions, where
@@ -174,6 +180,40 @@ pub fn for_dae(d: &dae::Dae) -> Rendered {
         &d.events.synthetic_root_conditions,
         expr_format::format_expr,
     );
+    out
+}
+
+/// Renderings for the Flatten stage, from the flat model.
+///
+/// # Why Flatten and not the AST stages, which the plan named first
+///
+/// Group 2 was *"Parse/Resolve/Instantiate/Typecheck share `rumoca_core::Expression`, so
+/// their expression nodes are renderable"*. True, and **near worthless**: an equation in
+/// the AST **is the source Doug already has open**. `h <= 0` in `parse.json` is what he
+/// typed. Reaching those nodes also needs a walker mirroring serde's paths through ten
+/// levels of nesting — the highest path-mismatch risk in the feature, for the lowest
+/// payoff.
+///
+/// Flatten is the opposite trade. Its equations are **not** the source: this is where
+/// `connect` expansion happens, so `resistor.v = resistor.R * resistor.i` appears where
+/// the model said `connect(...)`. That is the same reason `flat_node_lines` exists and
+/// `equation_sheet` calls Flatten *"the one other tree worth this"*.
+///
+/// # What renders
+///
+/// `rumoca_ir_flat::Equation` holds a `residual: Expression`, so a flat equation is
+/// `0 = residual` — which is what it *means*, and stating it as an equality rather than a
+/// bare expression is why this does not just call `format_expr` and stop.
+///
+/// `assert_equations` and `initial_assert_equations` are `AssertEquation`, a different
+/// type, and `structured_equations` is a family rather than an equation. Left alone: a
+/// renderer for a type nobody has verified is how a mis-keyed map ships green.
+pub fn for_flatten(m: &rumoca_ir_flat::Model) -> Rendered {
+    let mut out = Rendered::default();
+    let residual =
+        |eq: &rumoca_ir_flat::Equation| format!("0 = {}", expr_format::format_expr(&eq.residual));
+    out.extend_indexed("equations", &m.equations, residual);
+    out.extend_indexed("initial_equations", &m.initial_equations, residual);
     out
 }
 

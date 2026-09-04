@@ -4803,7 +4803,13 @@ fn tearing_to_json(t: &rumoca_phase_structural::TearingReport) -> serde_json::Va
 fn flatten_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
     match result {
         Some(PhaseResult::Success(cr)) => match serde_json::to_value(&cr.flat) {
-            Ok(v) => Stage::ok(v),
+            Ok(v) => {
+                let mut s = Stage::ok(v);
+                // From the same `cr.flat` just serialized, so the renderings and the
+                // tree cannot describe different models.
+                s.rendered = crate::equation_text::for_flatten(&cr.flat);
+                s
+            }
             Err(e) => Stage::err(format!("serialize flat model: {e}")),
         },
         Some(PhaseResult::Failed {
