@@ -154,6 +154,15 @@ Both of those were **reported by Doug, not caught by a test**, and neither is vi
 correct in the tree and wrong on the screen. **Where that is true, his report *is* the
 verification**, and there is no test to write instead.
 
+**SO MINE THE REPORT FOR ITS CONSTRAINING NOUN BEFORE REACHING FOR A MECHANISM** *(2026-09-04)*.
+An autoplay flash was chased through a plausible and interesting cause — two document halves
+colliding on egui ids, which egui turns out not to warn about — and cost a commit that had to say
+outright it had not fixed the reported thing. Doug's next sentence contained the answer: *"a
+different scroll position being temporarily rendered."* **A pane showing the wrong OFFSET is a far
+smaller hypothesis space than a pane rendering wrongly**, and once that was the subject the
+diagnosis took one read. Ask what noun he named — an offset, a colour, a width, an order — and
+start there, because he is describing the symptom from the only vantage point that can see it.
+
 **It is the same boundary as *effectiveness is Doug's*, reached from the tooling side rather than
 the pedagogical one.** Expect it wherever the question is *what did it look like* rather than *what
 did it contain* — layout, legibility, whether an animation reads as a search. **Say which parts of
