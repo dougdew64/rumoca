@@ -193,6 +193,30 @@ fn main() -> std::process::ExitCode {
         println!("\n  This is the check that would have caught `Y[1]` and `Minus` on 2026-09-03.");
     }
 
+    // **An Answer carries no bold, and nothing was checking that.**
+    //
+    // Doug ruled on 2026-09-01 that labs are plain prose — measured then at 98 bold spans in
+    // one lab, and swept across all 22 from 667 to 153. `docs/fixture-labs/README.md` keeps
+    // exactly three exceptions, and **not one of them can occur in an Answer**: `Predict.`
+    // and `Expected:` are the station grammar, and the first bolded line is read by
+    // `LabSource::blurb_of` to build the catalogue, which an Answer is not in. So the
+    // correct count here is zero.
+    //
+    // He had to point it out again on 2026-09-04, at 24 spans. A ruling with no mechanism
+    // is a ruling Claude re-breaks, and this is the sixth thing today that was true of the
+    // labs and unchecked for the Answer.
+    let bold = text.matches("**").count();
+    if bold > 0 {
+        println!(
+            "\nBOLD: {} `**` marker(s), and an Answer's correct count is ZERO.\n  \
+             The three exceptions in docs/fixture-labs/README.md are the station grammar\n  \
+             and the catalogue blurb; an Answer has neither. Write plain prose \u{2014} the\n  \
+             renderings, code fences and links already carry the emphasis.",
+            bold
+        );
+        return std::process::ExitCode::FAILURE;
+    }
+
     if defects > 0 {
         println!("\nFIX THE DEFECTS BEFORE HANDING THIS OVER.");
         return std::process::ExitCode::FAILURE;
