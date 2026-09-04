@@ -738,6 +738,61 @@ mod tests {
         );
     }
 
+    /// A test that injects a `Compiled` message holds the live stage files.
+    ///
+    /// # Why a checker and not a note
+    ///
+    /// Draining `FromWorker::Compiled` makes the app call `bridge::write_stages`, which
+    /// **deletes the file for any stage with no value**. A synthetic bundle has one or two,
+    /// so such a test replaces Doug's eleven real stage files and leaves it that way.
+    /// Reported 2026-09-04 as *"only 2 stage files were in the bridge"*.
+    ///
+    /// `ui_tests::StageFiles::preserved()` fixes the five tests that existed. **Nothing
+    /// would stop the sixth**, and the damage is invisible from inside the suite: every
+    /// test passes, and the loss shows up hours later as Claude verifying an Answer's
+    /// pointers against the committed notebook instead of the pane — a sibling artifact
+    /// in place of the screen, which is the habit that produced four wrong pointers that
+    /// same day.
+    ///
+    /// Textual, and that is proportionate: the rule is *"send that message, take that
+    /// guard"*, over one small file. It cannot see a guard taken through a helper, so it
+    /// asks only that the name appear in the same function.
+    #[test]
+    fn a_test_injecting_a_compiled_message_preserves_the_stage_files() {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/app/tests.rs");
+        let text =
+            std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+
+        // Split on `fn `, so each chunk is one function body plus its signature.
+        let mut unguarded: Vec<String> = Vec::new();
+        let mut senders = 0usize;
+        for chunk in text.split("\nfn ") {
+            if !chunk.contains("FromWorker::Compiled") {
+                continue;
+            }
+            senders += 1;
+            if !chunk.contains("StageFiles::preserved") {
+                let name = chunk.split('(').next().unwrap_or("<unnamed>").trim();
+                unguarded.push(name.to_owned());
+            }
+        }
+
+        assert!(
+            senders >= 5,
+            "only {senders} test(s) in app/tests.rs were seen to send \
+             `FromWorker::Compiled`, and there were five \u{2014} the split is broken, \
+             which looks exactly like success",
+        );
+        assert!(
+            unguarded.is_empty(),
+            "these tests send `FromWorker::Compiled` without holding the live stage \
+             files, so running the suite overwrites `.hrw-bridge/stages/` with a \
+             synthetic bundle:\n  {}\n\nAdd `let _stages = \
+             crate::ui_tests::StageFiles::preserved();` as the first line.",
+            unguarded.join("\n  "),
+        );
+    }
+
     /// A path that is part of a longer path is not a citation.
     ///
     /// Guards the false positive that made the first version unusable: a quoted panic

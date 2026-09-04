@@ -2616,6 +2616,10 @@ fn drain_worker_def_tree_keeps_the_indicator_for_a_request_still_in_flight() {
 
 #[test]
 fn drain_worker_compiled_clears_caches_and_updates_state() {
+    // Draining a Compiled makes the app publish every stage's IR, deleting the file
+    // for any stage this synthetic bundle lacks. Without the guard that overwrites
+    // Doug's real stage files with one -- reported 2026-09-04 as "only 2 stage files".
+    let _stages = crate::ui_tests::StageFiles::preserved();
     let (mut app, tx) = App::test_with_sender();
     let path = PathBuf::from("/test/specimen.mo");
     app.selected = Some(path.clone());
@@ -2660,6 +2664,10 @@ fn drain_worker_compiled_clears_caches_and_updates_state() {
 
 #[test]
 fn drain_worker_compiled_stale_path_ignored() {
+    // Draining a Compiled makes the app publish every stage's IR, deleting the file
+    // for any stage this synthetic bundle lacks. Without the guard that overwrites
+    // Doug's real stage files with one -- reported 2026-09-04 as "only 2 stage files".
+    let _stages = crate::ui_tests::StageFiles::preserved();
     let (mut app, tx) = App::test_with_sender();
     app.selected = Some(PathBuf::from("/test/current.mo"));
     app.compiling = true;
@@ -2691,6 +2699,10 @@ fn drain_worker_compiled_stale_path_ignored() {
 
 #[test]
 fn drain_worker_compiled_applies_pending_stage() {
+    // Draining a Compiled makes the app publish every stage's IR, deleting the file
+    // for any stage this synthetic bundle lacks. Without the guard that overwrites
+    // Doug's real stage files with one -- reported 2026-09-04 as "only 2 stage files".
+    let _stages = crate::ui_tests::StageFiles::preserved();
     let (mut app, tx) = App::test_with_sender();
     let path = PathBuf::from("/test/specimen.mo");
     app.selected = Some(path.clone());
@@ -2740,6 +2752,10 @@ fn drain_worker_compiled_applies_pending_stage() {
 
 #[test]
 fn drain_worker_compiled_falls_back_without_pending_stage() {
+    // Draining a Compiled makes the app publish every stage's IR, deleting the file
+    // for any stage this synthetic bundle lacks. Without the guard that overwrites
+    // Doug's real stage files with one -- reported 2026-09-04 as "only 2 stage files".
+    let _stages = crate::ui_tests::StageFiles::preserved();
     let (mut app, tx) = App::test_with_sender();
     let path = PathBuf::from("/test/specimen.mo");
     app.selected = Some(path.clone());
@@ -2781,6 +2797,10 @@ fn drain_worker_compiled_falls_back_without_pending_stage() {
 
 #[test]
 fn drain_worker_compiled_preserves_log_view() {
+    // Draining a Compiled makes the app publish every stage's IR, deleting the file
+    // for any stage this synthetic bundle lacks. Without the guard that overwrites
+    // Doug's real stage files with one -- reported 2026-09-04 as "only 2 stage files".
+    let _stages = crate::ui_tests::StageFiles::preserved();
     let (mut app, tx) = App::test_with_sender();
     let path = PathBuf::from("/test/specimen.mo");
     app.selected = Some(path.clone());

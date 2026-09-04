@@ -149,6 +149,67 @@ impl Drop for Answer {
     }
 }
 
+/// `.hrw-bridge/stages/` is live state too, and the suite was destroying it.
+///
+/// # The report, 2026-09-04
+///
+/// Doug: *"I don't know why only 2 stage files were in the bridge for DriveTrain. We need
+/// to investigate to determine if there's a defect."* There was.
+///
+/// Draining a `FromWorker::Compiled` makes the app publish every stage's IR through
+/// `bridge::write_stages`, which **deletes the file for any stage with no value**. Five
+/// tests in `app/tests.rs` send a synthetic `Compiled` whose bundle has one stage — so
+/// each of them overwrote Doug's eleven real stage files with one, and left it there.
+///
+/// **This is the same defect as `Answer` above, one directory over**, and it is worse in
+/// one respect: the Answer is Doug's to read, while `stages/` is what *Claude* reads to
+/// verify an Answer's pointers against the pane. A truncated directory makes a
+/// verification quietly fall back to the committed notebook — checking a sibling artifact
+/// instead of the screen, which is the habit that produced four wrong pointers that day.
+///
+/// `examples/check_answer` already prints how many stage files it found and which source
+/// judged each pointer, which is how the truncation was noticed at all. That reporting
+/// stays: a guard here stops the suite causing it, and says nothing about a real compile
+/// that legitimately reaches only two stages — a failure specimen does exactly that.
+pub(crate) struct StageFiles(Vec<(std::path::PathBuf, Vec<u8>)>);
+
+impl StageFiles {
+    /// Snapshot every stage file, restoring all of them on drop.
+    pub(crate) fn preserved() -> Self {
+        let dir = std::path::Path::new(crate::bridge::STAGES_DIR);
+        let mut saved = Vec::new();
+        if let Ok(entries) = std::fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Ok(bytes) = std::fs::read(&path) {
+                    saved.push((path, bytes));
+                }
+            }
+        }
+        Self(saved)
+    }
+}
+
+impl Drop for StageFiles {
+    fn drop(&mut self) {
+        let dir = std::path::Path::new(crate::bridge::STAGES_DIR);
+        // Remove whatever the test left, then put back what was there. Restoring without
+        // clearing would leave the test's own stage file beside the real ones, which is
+        // the shape that would have Claude reading `TestModel`'s IR as the specimen's.
+        if let Ok(entries) = std::fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let _ = std::fs::remove_file(entry.path());
+            }
+        }
+        for (path, bytes) in self.0.drain(..) {
+            if let Some(parent) = path.parent() {
+                let _ = std::fs::create_dir_all(parent);
+            }
+            let _ = std::fs::write(path, bytes);
+        }
+    }
+}
+
 /// Drive HRW's whole frame in a headless harness.
 ///
 /// `frame_ui` rather than [`eframe::App::ui`] because the trait method takes an
