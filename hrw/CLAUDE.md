@@ -180,8 +180,16 @@ not difficult.**
 
 **INSERT A TEST AFTER A FUNCTION'S CLOSING BRACE, never before its `fn` line** — anything placed
 between a doc comment and its item is adopted by the wrong one, and the old function silently
-stops being a test. Bitten three times; the history and the mechanism are on
-`doc_citations::no_function_has_two_test_attributes`, which catches it.
+stops being a test. The history and the mechanism are on
+`doc_citations::no_function_has_two_test_attributes` and
+`tests_orphaned_docs::no_doc_block_gains_a_second_summary`, which catch it.
+
+**BITTEN EIGHT TIMES, FIVE OF THEM ON 2026-09-04 ALONE — so the rule is not the gap, the ANCHOR
+is.** Every instance came from anchoring an edit on the text being inserted *before*: `#[test]`,
+or the `fn` line. Both sit **below** the neighbour's doc comment, so matching them puts the new
+item inside it. **Anchor on the preceding item's closing brace instead** — `    }` plus the blank
+line — which is the one position that cannot be inside anything. The checkers catch it every
+time, so the cost is a red gate rather than a silent defect; it is still five gate runs.
 
 **A CHECKER RETIRES THE PROSE IT REPLACES** *(2026-08-22)*. When a rule becomes a test, the prose
 here shrinks to **one sentence and a pointer at the test** — the reasoning belongs on that test's
