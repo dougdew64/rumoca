@@ -219,6 +219,14 @@ async function publishStop(
 ): Promise<void> {
     const threadId: number | undefined = body?.threadId;
     const reason: string | undefined = body?.reason;
+    // **`reason` alone cannot tell a benign stop from a fatal one.** On 2026-09-04 a stop
+    // arrived as `reason: "exception"` with 24 frames, every one of them inside
+    // `nvoglv64.dll` down to `BaseThreadInitThunk` — a graphics-driver worker thread with
+    // no HRW frame on it at all. Whether that was a first-chance exception the driver
+    // handles routinely or an access violation is the whole question, and DAP puts the
+    // answer in these two fields, which were being dropped.
+    const description: string | undefined = body?.description;
+    const text: string | undefined = body?.text;
 
     let frames: RawFrame[] = [];
     let variables: RawVariable[] | null = null;
@@ -394,6 +402,8 @@ async function publishStop(
         sessionName: session.name,
         stopped: true,
         reason,
+        description,
+        text,
         threadId,
         frames,
         variables,

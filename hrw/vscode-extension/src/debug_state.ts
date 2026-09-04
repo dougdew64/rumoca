@@ -144,6 +144,16 @@ export interface DebugStateInput {
     stopped: boolean;
     /** DAP stop reason: `breakpoint`, `step`, `exception`, … */
     reason?: string;
+    /**
+     * DAP's human-readable summary of the stop, and its detail text.
+     *
+     * `reason` is a coarse enum — `"exception"` covers a first-chance exception a
+     * graphics driver handles routinely and an access violation that ends the process.
+     * These two are where DAP puts the difference, and dropping them made a driver-thread
+     * stop on 2026-09-04 unclassifiable from the payload alone.
+     */
+    description?: string;
+    text?: string;
     threadId?: number;
     /** Innermost first, as DAP returns them. */
     frames?: RawFrame[];
@@ -189,6 +199,10 @@ export interface DebugState {
     sessionName: string | null;
     stopped: boolean;
     reason: string | null;
+    /** DAP's summary of the stop, or null. See `DebugStateInput`. */
+    description: string | null;
+    /** DAP's detail text for the stop, or null — the exception's own message. */
+    text: string | null;
     threadId: number | null;
     /** Null whenever not stopped, or when no frame was reported. */
     location: StopLocation | null;
@@ -247,6 +261,10 @@ export function buildDebugState(input: DebugStateInput): DebugState {
         sessionName: input.sessionName ?? null,
         stopped: input.stopped,
         reason: input.stopped ? (input.reason ?? null) : null,
+        // Same gate as `reason`: a description of a stop the program has left would
+        // describe a position it is no longer in.
+        description: input.stopped ? (input.description ?? null) : null,
+        text: input.stopped ? (input.text ?? null) : null,
         threadId: input.stopped ? (input.threadId ?? null) : null,
         location,
         frames,

@@ -152,6 +152,27 @@ describe('caps are declared, never silent', () => {
         assert.equal(s.framesTruncated, true);
     });
 
+    it('carries the exception detail, and drops it once running', () => {
+        // `reason: "exception"` alone could not distinguish a first-chance exception a
+        // graphics driver handles from an access violation. On 2026-09-04 a stop arrived
+        // with 24 frames, all inside nvoglv64.dll, and the payload could not say which.
+        const stopped = buildDebugState({
+            seq: 8, writtenAtMs: AT, stopped: true, reason: 'exception',
+            description: 'Exception has occurred', text: 'c0000005 Access violation',
+            frames: [{ name: 'nvoglv64.dll!0x0', path: undefined, line: 0 }],
+            variables: [],
+        });
+        assert.equal(stopped.description, 'Exception has occurred');
+        assert.match(stopped.text, /c0000005/);
+
+        const running = buildDebugState({
+            seq: 9, writtenAtMs: AT, stopped: false, reason: 'exception',
+            description: 'Exception has occurred', text: 'c0000005 Access violation',
+        });
+        assert.equal(running.description, null, 'a stop the program has left is not current');
+        assert.equal(running.text, null);
+    });
+
     it('keeps the true variable count when truncating', () => {
         const many = Array.from({ length: 25 }, (_, i) => ({
             name: `v${i}`, value: `${i}`,
