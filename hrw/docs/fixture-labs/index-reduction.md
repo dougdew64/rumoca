@@ -218,7 +218,7 @@ Here is the station this lab exists for, and it is about a number that used to b
 
 [Look — Drivetrain → Index reduction](hrw://load/Drivetrain/IndexReduction)
 
-[Point at `reduction`](hrw://stage/IndexReduction/node/reduction)
+[Point at `reduction`](hrw://stage/IndexReduction/Tree/node/reduction)
 
 **Expected:** `n_differentiations` is 6 and `differentiated_rows` is empty — none of them
 survive. The step list shows `reduce_constrained_dummy_derivatives` demoting all 6, and

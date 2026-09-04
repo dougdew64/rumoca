@@ -115,14 +115,14 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**68 modules, 78,887 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**68 modules, 79,005 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `app.rs` | 7,322 |
 | `worker/tests.rs` | 6,826 |
 | `app/tests.rs` | 6,671 |
-| `doc_citations.rs` | 6,411 |
+| `doc_citations.rs` | 6,419 |
 | `worker.rs` | 5,976 |
 | `bridge.rs` | 4,236 |
 | `ui_tests.rs` | 3,051 |
@@ -148,6 +148,7 @@ showing 48 equations. They are derived now, and
 | `arch_doc.rs` | 758 |
 | `lab.rs` | 736 |
 | `sub_view_rows.rs` | 719 |
+| `answer_check.rs` | 700 |
 | `tearing_anim.rs` | 699 |
 | `canvas.rs` | 681 |
 | `report_sub_view.rs` | 650 |
@@ -155,7 +156,6 @@ showing 48 equations. They are derived now, and
 | `modelica_lex.rs` | 595 |
 | `spyplot.rs` | 594 |
 | `identifier_index.rs` | 592 |
-| `answer_check.rs` | 590 |
 | `source_view.rs` | 576 |
 | `alias_anim.rs` | 566 |
 | `artifact_pane.rs` | 514 |
@@ -187,7 +187,7 @@ showing 48 equations. They are derived now, and
 | `json_read.rs` | 119 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 101 |
-| **total** | **78,887** |
+| **total** | **79,005** |
 <!-- END GENERATED module-sizes -->
 
 

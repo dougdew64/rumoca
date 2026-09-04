@@ -6480,7 +6480,7 @@ struct FrameIntent {
 /// be handed off in prose ("same tab → now click **Incidence**"). The first lab had
 /// two working links and four such hand-offs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum SubView {
+pub(crate) enum SubView {
     Structural(StructuralView),
     Flatten(FlattenView),
     Events(EventsView),
@@ -6513,7 +6513,7 @@ impl SubView {
     /// in different stages — `Tree` exists under four of them — and because a link
     /// naming a sub-view the stage does not have should fail to parse rather than
     /// navigate somewhere surprising.
-    fn from_slug(stage: StageKind, slug: &str) -> Option<Self> {
+    pub(crate) fn from_slug(stage: StageKind, slug: &str) -> Option<Self> {
         Some(match stage {
             StageKind::Structural | StageKind::IndexReduction => Self::Structural(match slug {
                 "Summary" => StructuralView::Summary,

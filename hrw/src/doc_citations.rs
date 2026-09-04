@@ -5827,6 +5827,14 @@ mod tests_orphaned_docs {
         // Measured 2026-08-21, after the sweep reattached 25 orphans. Every file
         // absent from this table must have zero.
         const BUDGET: &[(&str, usize)] = &[
+            // 0 -> 1 on 2026-09-04, with the reasoning this ratchet requires. The hit is on
+            // `STAGES_WITH_SUB_VIEWS`, whose doc explains why a node link into a stage with
+            // sub-views must name one — Doug's "this link and other links do not cause
+            // anything to happen". Its paragraph *"So a node link into one of these must
+            // name its sub-view"* opens like a summary because it states the rule the whole
+            // block exists for. Ordinary prose in a prose-heavy module, which is the case
+            // this test's own docs say to raise the number for rather than reword.
+            ("answer_check.rs", 1),
             ("app.rs", 9),
             ("app/tests.rs", 4),
             ("bridge.rs", 9),

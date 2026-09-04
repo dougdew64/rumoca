@@ -131,6 +131,9 @@ fn main() -> std::process::ExitCode {
             Verdict::NoSuchNode => "DEFECT   no such node",
             Verdict::Malformed => "DEFECT   unparseable path",
             Verdict::UnexpectedlyPresent => "DEFECT   marked absent but resolves",
+            // Resolves, and does nothing unless the tree happens to be the showing
+            // sub-view. Name it: `stage/Flatten/Tree/node/...`.
+            Verdict::SubViewUnstated => "DEFECT   sub-view not named",
             Verdict::StageUnavailable => "unjudged no IR for that stage on disk",
             Verdict::NoSpecimen => "unjudged no load link before it",
         };

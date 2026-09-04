@@ -61,6 +61,12 @@ pub enum Verdict {
     /// nor fail. Reported separately so a run cannot look clean by having checked
     /// nothing, which is this repository's most-repeated failure shape.
     StageUnavailable,
+    /// Resolves, but the link names a multi-sub-view stage without saying which sub-view.
+    ///
+    /// **A defect, and the one that resolves perfectly while doing nothing.** See
+    /// [`STAGES_WITH_SUB_VIEWS`]: the jump acts on a tree, and the pane may be showing an
+    /// equation sheet or an animation instead.
+    SubViewUnstated,
     /// A `node` pointer appeared with no preceding `load`, so no specimen is known.
     /// Unjudged for the same reason, and usually a real authoring bug as well — six
     /// verbs need a loaded specimen and the load must come first.
@@ -78,7 +84,10 @@ impl Verdict {
     pub fn is_defect(self) -> bool {
         matches!(
             self,
-            Verdict::NoSuchNode | Verdict::Malformed | Verdict::UnexpectedlyPresent
+            Verdict::NoSuchNode
+                | Verdict::Malformed
+                | Verdict::UnexpectedlyPresent
+                | Verdict::SubViewUnstated
         )
     }
 }
@@ -126,6 +135,38 @@ fn load_target(url: &str) -> Option<&str> {
     (!model.is_empty()).then_some(model)
 }
 
+/// Stages whose pane has more than one sub-view, so a bare `node` link is conditional.
+///
+/// # Why a resolving pointer can still do nothing
+///
+/// Doug, 2026-09-04: *"This link and other links do not cause anything to happen."* Every
+/// one of them resolved — `check_answer` reported 19 of 19 against the pane — because
+/// resolving is a claim about the **IR** and doing something is a claim about the **pane**.
+///
+/// `PointAtNode` with no sub-view "leaves whatever sub-view the stage is already showing,
+/// which for a tree-only stage is its only one". For these five it is not: he was on Flatten
+/// showing `EquationSheet`, which has no tree, so the jump target had nothing to act on and
+/// the click was silent. Ten of the Answer's links were conditional on which sub-view
+/// happened to be up.
+///
+/// So a node link into one of these must name its sub-view — `stage/Flatten/Tree/node/…`.
+/// The slug is `Tree` for all five; the others are `EquationSheet`, `Incidence`, `IcPlan`
+/// and the animations.
+///
+/// # A list, but not a second opinion
+///
+/// `every_sub_viewed_stage_is_listed` derives the truth from `SubView::from_slug` — the UI's
+/// own answer — and asserts this matches it in both directions, so the list cannot fall
+/// behind a new sub-view or invent one. It exists as a list only because this module checks
+/// prose and has no business importing the view enum.
+pub const STAGES_WITH_SUB_VIEWS: &[&str] = &[
+    "Structural",
+    "IndexReduction",
+    "Flatten",
+    "Events",
+    "Initialization",
+];
+
 /// The stage and node path a `node` link addresses, if the link is one.
 ///
 /// **Both arms of the real grammar**, which `App::parse_hrw_link` spells as
@@ -134,15 +175,15 @@ fn load_target(url: &str) -> Option<&str> {
 /// on `every_lab_node_link_lands_on_a_real_node` is what said so — a checker that looks
 /// at a third of its subject and reports nothing wrong is the shape this module exists
 /// to end, so it was worth the guard costing a red run before any real finding.
-fn node_target(url: &str) -> Option<(&str, &str)> {
+fn node_target(url: &str) -> Option<(&str, &str, bool)> {
     let rest = url.strip_prefix("hrw://stage/")?;
     let segs: Vec<&str> = rest.split('/').collect();
-    let (stage, path) = match segs.as_slice() {
-        [stage, _view, "node", path] => (*stage, *path),
-        [stage, "node", path] => (*stage, *path),
+    let (stage, path, has_sub_view) = match segs.as_slice() {
+        [stage, _view, "node", path] => (*stage, *path, true),
+        [stage, "node", path] => (*stage, *path, false),
         _ => return None,
     };
-    (!stage.is_empty() && !path.is_empty()).then_some((stage, path))
+    (!stage.is_empty() && !path.is_empty()).then_some((stage, path, has_sub_view))
 }
 
 /// Resolve every node pointer in `text`, in document order.
@@ -168,7 +209,7 @@ pub fn check(
                 specimen = Some(model.to_owned());
                 continue;
             }
-            let Some((stage_slug, path)) = node_target(&url) else {
+            let Some((stage_slug, path, has_sub_view)) = node_target(&url) else {
                 continue;
             };
             // An unknown stage slug is already caught by the link checkers, so it is
@@ -207,11 +248,20 @@ pub fn check(
 
             // The marker flips the two judged outcomes and leaves the unjudged ones
             // alone: an unavailable stage says nothing about whether a path is absent.
-            let verdict = match (expects_absent, resolution) {
+            let mut verdict = match (expects_absent, resolution) {
                 (true, Verdict::NoSuchNode) => Verdict::AbsentAsExpected,
                 (true, Verdict::Resolved) => Verdict::UnexpectedlyPresent,
                 (_, other) => other,
             };
+            // **Checked only once the path resolves**, so a broken path is reported as a
+            // broken path rather than as a missing sub-view. A pointer that resolves and
+            // still does nothing is the subtler defect and deserves its own verdict.
+            if verdict == Verdict::Resolved
+                && !has_sub_view
+                && STAGES_WITH_SUB_VIEWS.contains(&stage_slug)
+            {
+                verdict = Verdict::SubViewUnstated;
+            }
 
             out.push(Pointer {
                 raw: url.clone(),
@@ -378,6 +428,66 @@ mod tests {
 
     fn loader(ir: Value) -> impl FnMut(&str, StageKind) -> Option<Value> {
         move |_model, stage| (stage == StageKind::SolveLowering).then(|| ir.clone())
+    }
+
+    /// `STAGES_WITH_SUB_VIEWS` is exactly the stages that accept a sub-view slug.
+    ///
+    /// **Derived from `SubView::from_slug`, which is the UI's own answer.** A list that fell
+    /// behind a new sub-view would stop warning about the very links that need it, and would
+    /// do so silently — the shape this module exists to end. A stage wrongly *in* the list is
+    /// the cheaper error, a spurious defect on a link that works, and is caught here too.
+    #[test]
+    fn every_sub_viewed_stage_is_listed() {
+        for stage in StageKind::ALL {
+            let accepts = crate::app::SubView::from_slug(*stage, "Tree").is_some();
+            let listed = STAGES_WITH_SUB_VIEWS.contains(&stage.slug());
+            assert_eq!(
+                accepts,
+                listed,
+                "{}: accepts a `Tree` sub-view = {accepts}, listed = {listed}. A node link \
+                 into a stage with sub-views must name one, and this list is what warns \
+                 about the ones that do not.",
+                stage.slug(),
+            );
+        }
+    }
+
+    /// A bare node link into a sub-viewed stage is a defect even though it resolves.
+    ///
+    /// Doug's 2026-09-04 report: nineteen pointers reported as resolving, and the clicks did
+    /// nothing, because he was on Flatten's equation sheet and the jump acts on a tree.
+    /// Resolving is a claim about the IR; doing something is a claim about the pane.
+    #[test]
+    fn a_bare_node_link_into_a_sub_viewed_stage_is_a_defect() {
+        let ir = serde_json::json!({ "equations": [1, 2] });
+        let make = || {
+            let ir = ir.clone();
+            move |_m: &str, _s: StageKind| Some(ir.clone())
+        };
+
+        let bare = "[l](hrw://load/RcCircuit)\n[x](hrw://stage/Flatten/node/equations[0])\n";
+        let found = check(bare, make());
+        assert_eq!(
+            found[0].verdict,
+            Verdict::SubViewUnstated,
+            "Flatten has sub-views, so this works only when the tree happens to be up",
+        );
+        assert!(found[0].verdict.is_defect());
+
+        let named = "[l](hrw://load/RcCircuit)\n[x](hrw://stage/Flatten/Tree/node/equations[0])\n";
+        assert_eq!(
+            check(named, make())[0].verdict,
+            Verdict::Resolved,
+            "naming the sub-view fixes it",
+        );
+
+        // A tree-only stage needs no sub-view, and must not be nagged about one.
+        let dae = "[l](hrw://load/RcCircuit)\n[x](hrw://stage/Dae/node/equations[0])\n";
+        assert_eq!(
+            check(dae, make())[0].verdict,
+            Verdict::Resolved,
+            "Dae is tree-only, so a bare link there is complete",
+        );
     }
 
     /// A pointer at a real node resolves, and one at an absent node is a defect.
