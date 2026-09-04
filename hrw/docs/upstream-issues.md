@@ -1221,10 +1221,29 @@ Its other two variables escape for reasons that are equally accidental:
 initialization happens to solve for already equals what zeroing the derivatives assigns it.**
 `BouncingBall` satisfies that by one coincidence, in one variable.
 
-**Falsifiable, and cheap.** `ThrownBall` is `BouncingBall` with `v(start = -5.0)`. System
-Modeler 15.0 gives `v(0) = -5` and a first bounce at **0.1715 s**, against the analytic root of
-`4.905t^2 + 5t - 1 = 0` = `0.171236`. If Rumoca honours the throw it bounces at 0.171 s; if it
-resets `v` to zero the ball is merely dropped and bounces at **0.452 s** = `sqrt(1/4.905)`.
+**Falsifiable, and cheap** — `ThrownBall` is `BouncingBall` with `v(start = -5.0)`. The
+prediction was written down before the run: honour the throw and it bounces at 0.171 s; reset
+`v` to zero and the ball is merely dropped and bounces at 0.452 s.
+
+**CONFIRMED 2026-09-04.** Rumoca drops it.
+
+| | System Modeler 15.0 | Rumoca 0.9.20 |
+|---|---|---|
+| `v(0)` | **-5** (as declared) | **0** |
+| peak `|v|` before first impact | 6.668 | **4.395** |
+| what that speed means | thrown: `sqrt(25 + 2*9.81)` = 6.680 | dropped: `sqrt(2*9.81)` = **4.429** |
+
+**This is the most alarming shape the defect takes, and it is why the entry leads with it.**
+`RcCircuit` at least looks obviously wrong — a flat line. `ThrownBall` exits 0 and draws a
+perfectly plausible bouncing ball, with the right restitution and a smooth trajectory. Only the
+physics is wrong, and nothing on screen says so. **A declared, non-default, non-steady-state
+initial condition was discarded in silence on a model whose sibling appears to work.**
+
+**Same symptom class as issue #343** (*"exit 0, plausible CSV"*, filed 2026-08-19 by YahorL,
+where for-loop `der()` equations freeze states past index 2). **Whether they share a root is
+UNVERIFIED** — that one is an array/indexing path and this one is the initialization residual —
+but both end with a derivative reading zero and a believable-looking result. Worth saying in a
+report only as an observation, not a claim.
 
 ### LOCATED 2026-09-04 — one instruction, and it is no longer a suspicion
 
