@@ -3009,7 +3009,11 @@ impl App {
             HrwLink::Follow(name) => {
                 // Following is independent of what is pointed at: a stop may set one,
                 // the other, or both. So this deliberately does not touch the stage.
-                self.set_tracked_identifier(name);
+                //
+                // **`follow_identifier`, not `set_tracked_identifier`** — a link sets and a
+                // click toggles. See `follow_identifier` for the autoplay run this made
+                // undo its own follow.
+                self.follow_identifier(name);
             }
             HrwLink::Simulate(t_end) => {
                 // The notice is for the status bar, which `simulate_from_link` has already
@@ -6000,6 +6004,41 @@ impl App {
             Some(ContextBarPress::GoToClass(class)) => self.navigate_to(class),
             None => {}
         }
+    }
+
+    /// Follow `name`, whether or not it was already followed — for a **link**.
+    ///
+    /// # Why a link must not toggle, reported 2026-09-04
+    ///
+    /// Doug: *"During autoplay, the 'and follow v' link is not clicked."* It was. It found
+    /// `v` already followed — from his previous session, or from an earlier run of the same
+    /// Answer — and [`set_tracked_identifier`](Self::set_tracked_identifier) is a toggle, so
+    /// the beat turned the follow **off**. From outside that is indistinguishable from a
+    /// click that did nothing.
+    ///
+    /// He guessed it was because the link is second on its line. It is not: `links_in_order`
+    /// keeps every URL on a line, and the Answer's 29 links produce 29 beats. The position
+    /// was a coincidence of which link happened to be a `follow`.
+    ///
+    /// **A toggle makes a run's outcome depend on state from before the run.** Play the same
+    /// Answer twice and the second play does the opposite of the first, which is disqualifying
+    /// for something written to be watched and re-watched. `hrw://follow/v` in prose is a
+    /// declarative statement — *be following `v`* — not a keystroke.
+    ///
+    /// The toggle stays where it belongs: a click on the name itself, in the tree, the source
+    /// view or the Context Bar, where clicking twice to undo is the whole affordance.
+    fn follow_identifier(&mut self, name: String) {
+        let name = crate::identifier_index::strip_der(&name).to_owned();
+        if self.tracked_identifier.as_deref() == Some(name.as_str()) {
+            // Already following it: nothing to change, and nothing to record. Re-emitting
+            // would advance `track_seq` and tell Claude the reader had just touched the
+            // follow, which they had not.
+            return;
+        }
+        diagnostics::record_action("follow", format!("follow {name} (link)"));
+        self.tracked_identifier = Some(name);
+        self.context.track_seq = self.context.next_seq();
+        self.emit_context();
     }
 
     /// Toggle the tracked identifier — the single entry point for tracking,

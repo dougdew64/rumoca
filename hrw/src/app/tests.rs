@@ -5848,6 +5848,51 @@ fn a_link_can_set_the_follow() {
     assert_eq!(app.stage, StageKind::Events, "following does not navigate");
 }
 
+/// A follow link SETS; only a click on the name toggles.
+///
+/// # The autoplay run that undid its own follow
+///
+/// Doug, 2026-09-04: *"During autoplay, the 'and follow v' link is not clicked."* It was.
+/// `v` was already followed — from a previous session, or an earlier play of the same Answer
+/// — and the link went through the toggle, so the beat turned the follow **off**. From
+/// outside, indistinguishable from a click that did nothing.
+///
+/// A toggle makes a run's outcome depend on state from before the run: play the same Answer
+/// twice and the second play does the opposite of the first. **Idempotence is the property a
+/// scripted walk needs**, and it is what this pins.
+///
+/// The last assertion is the other half: a click still toggles, because clicking a name twice
+/// to untrack it is the whole affordance in the tree and the source view.
+#[test]
+fn a_follow_link_sets_while_a_click_toggles() {
+    let mut app = App::test_default();
+    // `Follow` requires a loaded specimen, or the dispatch is refused with a notice — which
+    // is the behaviour a bare `test_default` would otherwise be testing instead of this.
+    app.selected = Some(PathBuf::from("/test/specimen.mo"));
+
+    app.dispatch_hrw_link(HrwLink::Follow("v".to_owned()));
+    assert_eq!(app.tracked_identifier.as_deref(), Some("v"));
+
+    // The same link again, which is what a re-played Answer does.
+    app.dispatch_hrw_link(HrwLink::Follow("v".to_owned()));
+    assert_eq!(
+        app.tracked_identifier.as_deref(),
+        Some("v"),
+        "a link states `be following v`, so following it twice still follows v",
+    );
+
+    // A different name replaces rather than accumulating — one follow at a time.
+    app.dispatch_hrw_link(HrwLink::Follow("h".to_owned()));
+    assert_eq!(app.tracked_identifier.as_deref(), Some("h"));
+
+    // And the click path is untouched: the same name clears it.
+    app.set_tracked_identifier("h".to_owned());
+    assert_eq!(
+        app.tracked_identifier, None,
+        "clicking the tracked name still untracks \u{2014} that is the view affordance",
+    );
+}
+
 /// `hrw://simulate` parses both forms and round-trips through `describe`.
 ///
 /// The trail is read alongside the Answer that produced the click, so a link's description
