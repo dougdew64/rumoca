@@ -1103,6 +1103,138 @@ and the cost becomes flat in depth. Guarded by
 
 ---
 
+## A state's initial value comes from the derivative-zero solution, not from its `start`
+
+**Found 2026-09-04**, from Doug's report that no fixture specimen produces a simulation
+plot worth looking at. **Reproduced on two purpose-built models and correlated across the
+whole 25-specimen corpus.** Not filed.
+
+The defect shows from two sides, and the second is what turns a correlation into a
+mechanism: without a `fixed` initial condition a state silently takes the value that makes
+its derivative zero, and *with* one, initialization fails to converge — which is what you
+would expect if the derivative-zero condition were already occupying the equation the
+initial condition needs.
+
+### Reproduction A — the start value is discarded
+
+```modelica
+model RcStartProbe
+  Modelica.Electrical.Analog.Sources.ConstantVoltage src(V = 5);
+  Modelica.Electrical.Analog.Basic.Resistor R(R = 100);
+  Modelica.Electrical.Analog.Basic.Capacitor C(C = 1e-3, v(start = 3));
+  Modelica.Electrical.Analog.Basic.Ground gnd;
+equation
+  connect(src.p, R.p); connect(R.n, C.p); connect(C.n, src.n); connect(src.n, gnd.p);
+  annotation(experiment(StartTime = 0, StopTime = 1, Interval = 0.001, Tolerance = 1e-6));
+end RcStartProbe;
+```
+
+**Expected:** `C.v` rises from 3 toward 5 with `tau = RC = 0.1 s`.
+
+**Actual:** `C.v` is 5 at the first output sample and constant for the whole run.
+`R.v = 0`, `R.i = 0`, `C.i = 0` — the circuit sits at its DC steady state.
+
+**The start value is not lost on the way in.** It survives to the solve model:
+
+| where | `C.v` |
+|---|---|
+| `dae.metadata.variable_starts["C.v"]` | `3` |
+| `SolveModel::initial_y[0]` (`visible_names[0]` is `C.v`) | `3.0` |
+| first output sample | **`5.0`** |
+
+`initial_y`'s own doc calls itself *"the shortest check that the model's declared initial
+conditions survived lowering"*. They survive it. The value changes between there and the
+first sample, i.e. in the initialization solve.
+
+### Reproduction B — supplying the initial condition makes initialization fail
+
+The same model with the one attribute added:
+
+```modelica
+  Modelica.Electrical.Analog.Basic.Capacitor C(C = 1e-3, v(start = 3, fixed = true));
+```
+
+**The front end handles this correctly, all the way to the DAE:**
+
+- `dae.x["C.v"].fixed` is `true`
+- `dae.initial_equations` goes from **0 entries to 1**, and that entry is `C.v = 3` with
+  `origin: "fixed start initialization for C.v"`
+
+**Expected:** the same charging curve, now unambiguously starting at 3.
+
+**Actual:** the simulation fails outright.
+
+```text
+solve-IR evaluation failed: initial variable projection plan did not converge:
+max selected residual row=16 original_row=20 value=2.500000e-1 norm=2.500000e-1
+```
+
+**This is the load-bearing observation.** Adding a correct, non-redundant initial condition
+to a well-posed first-order model should make initialization *easier*, not unsolvable. A
+system that becomes inconsistent when one state is pinned is a system in which that state
+was already pinned by something else.
+
+### The corpus correlation
+
+Every state in all 25 specimens has `fixed = null`, so none of them supplies an initial
+condition and all of them are exposed to whatever the default is. Sorting them by whether
+`der(x) = 0` admits a solution predicts the measured motion in **11 of 11** traced cases:
+
+| `der(x) = 0` solvable? | specimens | max state swing |
+|---|---|---|
+| yes | `RcCircuit`, `CapacitorLoop`, `OverInitRc` | `0` |
+| yes | `Drivetrain`, `GearWithBrake` | `0` |
+| yes | `LoopWithInertia` | `5e-9` |
+| no — needs `g = 0` | `BouncingBall` | `7.93` |
+| no — constant torque | `RotationalInertia`, `SingleInertia` | `2.0` |
+| no — `i = V/R` and `k*i = 0` conflict | `BenchActuator`, `MotorWithBrake` | `42.2` |
+
+`Drivetrain` is the vivid case: its nine states are frozen at values that satisfy every
+gear ratio exactly (`rotor.phi = 2400`, `shaft.phi = 2400/5 = 480`,
+`load.s = 480/200 = 2.4`) and are physically absurd. `L.i = 24` is `V/R = 12/0.5`, the
+stalled-motor current — which is what `L*der(i) = v` gives when `der(i)` is set to zero.
+`BenchActuator`'s `L.i = 12` is `V/R = 12/1.0`, the same arithmetic.
+
+**The specimens that move are the ones the steady state could not be found for.** That is
+the correlation the mechanism below is inferred from.
+
+### Suspect mechanism — UNVERIFIED
+
+Initialization appears to impose `der(x) = 0` and treat `start` as a Newton guess only,
+rather than deriving the state's value from `start`/`fixed` or from an initial equation.
+That is *steady-state initialization*, which every Modelica tool offers as an explicit
+option and none that I know of makes the default.
+
+**No suspect source location is offered**, and that is deliberate. The front end is
+demonstrably correct: `variable_starts`, `x[].fixed` and `initial_equations` all carry the
+right thing. The failure is somewhere in the initialization solve, and a search for a path
+seeding the state vector from `variable_starts` found only clocked-variable start guards —
+but **"I did not find it" is not "it does not exist"**, and a wrong negative from a search
+is the error nobody catches.
+
+One structural oddity noticed and **not** interpreted: in `RcFixedProbe`'s
+`problem.initialization.row_targets`, four `Y` slots (0, 1, 3, 11) are each named by two
+rows, and `projection_indices` excludes only two rows. Two rows writing one slot can be a
+legitimate sequential plan, so this is recorded as something for a maintainer's eye rather
+than as evidence of over-determination.
+
+### Whether this also explains the two open entries above
+
+Plausibly, and unverified. `Drivetrain` and `GearWithBrake` are the two specimens in the
+state-count entry above, and both are frozen here. A third model, a DC motor driving a
+geared load through a compliant shaft, fails at `t = 0` with *"BDF step: ODE solver error:
+Step size is too small"* — a different message, same phase. If initialization is
+over-determined wherever a constraint has been differentiated, one cause would cover all
+three. **Do not state that in a report** until it is traced.
+
+### Adjudicate before filing
+
+`RcStartProbe` is the whole test and needs no HRW: System Modeler either charges the
+capacitor from 3 to 5 or it does not. An RC circuit is the least arguable model in
+existence, which is why it was chosen over the ringing drivetrain that started this.
+
+---
+
 ## Adding to this file
 
 One entry per bug, and only for bugs **reproduced**, not suspected. Include the
