@@ -115,13 +115,13 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**68 modules, 78,347 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**68 modules, 78,540 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
-| `app.rs` | 7,215 |
+| `app.rs` | 7,322 |
 | `worker/tests.rs` | 6,826 |
-| `app/tests.rs` | 6,583 |
+| `app/tests.rs` | 6,669 |
 | `doc_citations.rs` | 6,411 |
 | `worker.rs` | 5,976 |
 | `bridge.rs` | 4,236 |
@@ -187,7 +187,7 @@ showing 48 equations. They are derived now, and
 | `json_read.rs` | 119 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 101 |
-| **total** | **78,347** |
+| **total** | **78,540** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -596,11 +596,19 @@ hidden, this is the only way to switch specimens.
 ### Navigation links (`hrw://`)
 
 Lab and narrative markdown can contain `hrw://` links that trigger in-app
-navigation when clicked. The link scheme:
+navigation when clicked.
 
-- `hrw://load/<Specimen>` — load and compile a specimen by name
-- `hrw://stage/<Stage>` — switch to a stage tab (PascalCase slug)
-- `hrw://load/<Specimen>/<Stage>` — load a specimen and switch to a stage
+**The verb list lives on the `HrwLink` enum in `app.rs`, not here.** This section
+enumerated three verbs — `load/<Specimen>`, `stage/<Stage>`,
+`load/<Specimen>/<Stage>` — and there were eleven by 2026-09-04, so the list was
+wrong for most of its life and gave a confident answer while being so. That is the
+stale-exhaustive-list failure `CLAUDE.md` names, and the fix is a pointer: each
+variant carries its own URL form and the reasoning for it, `parse_hrw_link` is the
+one parser, and `describe` reconstructs the canonical string for the action trail.
+
+Three per-variant questions are asked exhaustively by the compiler rather than by
+anyone remembering — `requires_specimen`, `leaves_hrw` and `describe` all match
+without a `_ =>` arm, each because a silent default had already cost a defect.
 
 Link handling uses `egui_commonmark`'s `add_link_hook` / `get_link_hook` API.
 Before rendering markdown, `register_hrw_hooks` registers all `hrw://` URLs

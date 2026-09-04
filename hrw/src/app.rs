@@ -117,6 +117,14 @@ pub(crate) const LAB_POLL_INTERVAL: std::time::Duration = std::time::Duration::f
 /// margin costs nothing and covers a view that defers construction one frame further.
 const SEEK_ATTEMPTS: u8 = 5;
 
+/// Stop times a simulation will accept, in seconds.
+///
+/// **One home, because two consumers now disagree if it has two.** The slider offers this
+/// range and `hrw://simulate/<seconds>` is checked against it; a link accepting what the
+/// slider cannot show, or refusing what it can, is a contradiction a reader meets rather
+/// than a test. `the_simulate_link_and_the_slider_share_one_range` pins them together.
+const SIM_T_END_RANGE: std::ops::RangeInclusive<f64> = 0.1..=20.0;
+
 /// How often the scratch specimen directory is re-listed. Slower than the lab poll:
 /// a specimen appearing a second late is imperceptible, and a rescan re-reads every
 /// specimen's `// purpose:` line.
@@ -3003,6 +3011,11 @@ impl App {
                 // the other, or both. So this deliberately does not touch the stage.
                 self.set_tracked_identifier(name);
             }
+            HrwLink::Simulate(t_end) => {
+                // The notice is for the status bar, which `simulate_from_link` has already
+                // posted; the return value exists for the tests.
+                let _ = self.simulate_from_link(t_end);
+            }
             HrwLink::SeekFrame(kind, sub, frame) => {
                 self.stage = kind;
                 self.viewing_log = false;
@@ -3396,6 +3409,57 @@ impl App {
         self.notice = status;
     }
 
+    /// `hrw://simulate` — the reader's click, with its three refusals stated.
+    ///
+    /// Split from [`start_simulation`](Self::start_simulation), which is the ▶ button's
+    /// path and assumes a caller that already knows a run is possible. A link arrives from
+    /// prose and may be wrong about all of it, so each refusal says what is missing and
+    /// nothing half-happens: **an out-of-range stop time does not move the slider**, which
+    /// would otherwise leave the reader looking at a value no simulation used.
+    ///
+    /// Returns the notice, so a test reads the same string the status bar shows rather than
+    /// asserting on a side effect.
+    fn simulate_from_link(&mut self, t_end: Option<f64>) -> Option<String> {
+        if let Some(t) = t_end
+            && !SIM_T_END_RANGE.contains(&t)
+        {
+            let msg = format!(
+                "simulate/{t}: stop time must be between {} and {} seconds \u{2014} nothing \
+                 was run, and the slider is unchanged",
+                SIM_T_END_RANGE.start(),
+                SIM_T_END_RANGE.end(),
+            );
+            self.notify(msg.clone());
+            return Some(msg);
+        }
+        if self.selected.is_none() || self.model.is_none() {
+            let msg = "no specimen loaded \u{2014} this link needs one. Load a specimen \
+                       first: a lab's first station does it, or pick one in Specimen mode."
+                .to_owned();
+            self.notify(msg.clone());
+            return Some(msg);
+        }
+        if self.compiling {
+            let msg = "a compile is still running \u{2014} nothing was simulated. Click \
+                       again when it finishes."
+                .to_owned();
+            self.notify(msg.clone());
+            return Some(msg);
+        }
+
+        // Only now, so a refused link leaves the slider showing the value that was
+        // actually used last.
+        if let Some(t) = t_end {
+            self.sim_t_end = t;
+        }
+        // The plot lives on the Simulation tab, so a link that runs without going there
+        // would produce a result the reader cannot see.
+        self.stage = StageKind::Simulation;
+        self.viewing_log = false;
+        self.start_simulation();
+        None
+    }
+
     fn start_simulation(&mut self) {
         if let (Some(path), Some(model)) = (self.selected.clone(), self.model.clone()) {
             self.sim_running = true;
@@ -3431,7 +3495,7 @@ impl App {
         // could not be simulated. One button, one answer.
         ui.horizontal(|ui| {
             ui.add(
-                egui::Slider::new(&mut self.sim_t_end, 0.1..=20.0)
+                egui::Slider::new(&mut self.sim_t_end, SIM_T_END_RANGE)
                     .step_by(0.1)
                     .text("stop time"),
             );
@@ -6487,7 +6551,11 @@ impl SubView {
 }
 
 /// Navigation action parsed from an `hrw://` URI in lab or narrative markdown.
-#[derive(Debug, PartialEq, Eq)]
+///
+/// **`PartialEq` but not `Eq`**, since `Simulate` carries a stop time in seconds and `f64`
+/// is not `Eq`. Nothing here is a map key or needs total equality; the tests compare parsed
+/// links with `==`, which `PartialEq` gives.
+#[derive(Debug, PartialEq)]
 enum HrwLink {
     /// `hrw://lab/<name>[/station/<slug>]` — open a **fixture lab**, optionally at a
     /// named stop.
@@ -6614,6 +6682,30 @@ enum HrwLink {
     /// `emf.phi` and watch where it goes", which is the gesture the cross-stage view was
     /// built for.
     Follow(String),
+    /// `hrw://simulate` — run the model. `hrw://simulate/<seconds>` sets the stop time first.
+    ///
+    /// Doug, 2026-09-04, after a walk through `v` that ended at the Simulation tab:
+    /// *"we need to enable the Answer (link) to start the simulation."* The pane starts
+    /// nothing by design — the tab row's ▶ is the only control — so an Answer could take a
+    /// reader to the plot and then had to say *"now press the button"*, which is the one
+    /// instruction in a click-through walk that is not a click.
+    ///
+    /// # Why the stop time is part of the link
+    ///
+    /// An Answer that quotes trajectory numbers is quoting them **at a stop time**, and the
+    /// slider is state the reader may have moved. Without `<seconds>` the honest version of
+    /// such an Answer has to hedge — *"if you have moved it, your numbers will differ"* —
+    /// which it did. With it, the link states the condition its own figures were taken
+    /// under.
+    ///
+    /// # And why it refuses rather than clamps
+    ///
+    /// The slider's range is 0.1..=20.0. A link asking for 100 s is **refused with a notice
+    /// naming the range**, because clamping would run 20 s and report success, leaving the
+    /// reader comparing an Answer's numbers against a different simulation. That is the
+    /// confidently-wrong shape this repository spends most of its rules on, and a refusal
+    /// is the same choice `PointAtNode` makes for a path that does not resolve.
+    Simulate(Option<f64>),
     /// `hrw://notebook/<name.nb>` — open a Wolfram notebook in Wolfram Desktop.
     ///
     /// The cross-platform labs route through a notebook, and a plain markdown link to
@@ -6749,7 +6841,10 @@ impl HrwLink {
             | Self::AimAtEquation(..)
             | Self::SeekFrame(..)
             | Self::PointAtNode(..)
-            | Self::Follow(_) => true,
+            | Self::Follow(_)
+            // Simulating needs a model to simulate, and `simulate_from_link` says so by
+            // name rather than starting a run of nothing.
+            | Self::Simulate(_) => true,
         }
     }
 
@@ -6785,7 +6880,9 @@ impl HrwLink {
             | Self::AimAtEquation(..)
             | Self::SeekFrame(..)
             | Self::PointAtNode(..)
-            | Self::Follow(_) => false,
+            | Self::Follow(_)
+            // A run happens inside HRW, on the Simulation tab.
+            | Self::Simulate(_) => false,
         }
     }
 
@@ -6826,6 +6923,8 @@ impl HrwLink {
                 bridge::describe_path(path),
             ),
             Self::Follow(name) => format!("follow/{name}"),
+            Self::Simulate(None) => "simulate".to_owned(),
+            Self::Simulate(Some(t)) => format!("simulate/{t}"),
             Self::OpenNotebook(name) => format!("notebook/{name}"),
             Self::OpenDoc(name) => format!("doc/{name}"),
             Self::OpenSource(target) => format!("src/{target}"),
@@ -6886,6 +6985,14 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
         // Longest patterns first: `splitn` caps the segment count, so the node form
         // must be matched before the shorter stage forms can swallow it.
         ["follow", name] => Some(HrwLink::Follow((*name).to_owned())),
+        ["simulate"] => Some(HrwLink::Simulate(None)),
+        // Parsed here, range-checked at dispatch. A non-numeric tail fails to parse and the
+        // link reports as unknown; an out-of-range number parses and is refused by name, so
+        // the two failures read differently to whoever wrote the link.
+        ["simulate", seconds] => seconds
+            .parse::<f64>()
+            .ok()
+            .map(|t| HrwLink::Simulate(Some(t))),
         // A non-empty name: `hrw://notebook/` alone names nothing, and accepting it
         // meant a prose mention of the verb parsed as a link to an unnamed file.
         ["systemmodeler", name] if !name.is_empty() => {

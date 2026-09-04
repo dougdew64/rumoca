@@ -5846,6 +5846,92 @@ fn a_link_can_set_the_follow() {
     assert_eq!(app.stage, StageKind::Events, "following does not navigate");
 }
 
+/// `hrw://simulate` parses both forms and round-trips through `describe`.
+///
+/// The trail is read alongside the Answer that produced the click, so a link's description
+/// has to be the link — `describe` reconstructing `simulate/2` is what makes "Doug ran it for
+/// two seconds" legible without cross-referencing anything.
+#[test]
+fn a_simulate_link_parses_with_and_without_a_stop_time() {
+    assert_eq!(
+        parse_hrw_link("hrw://simulate"),
+        Some(HrwLink::Simulate(None)),
+    );
+    assert_eq!(
+        parse_hrw_link("hrw://simulate/2.5"),
+        Some(HrwLink::Simulate(Some(2.5))),
+    );
+    assert_eq!(
+        parse_hrw_link("hrw://simulate/soon"),
+        None,
+        "a non-numeric tail is not a link, so it reports as unknown rather than as a \
+         refused stop time",
+    );
+
+    assert_eq!(HrwLink::Simulate(None).describe(), "simulate");
+    assert_eq!(HrwLink::Simulate(Some(2.0)).describe(), "simulate/2");
+}
+
+/// The link's accepted stop times are exactly the slider's.
+///
+/// A link accepting what the slider cannot show, or refusing what it can, is a
+/// contradiction the reader meets rather than a test. `SIM_T_END_RANGE` is the one home;
+/// this pins that the refusal path uses it in both directions.
+#[test]
+fn the_simulate_link_and_the_slider_share_one_range() {
+    let lo = *SIM_T_END_RANGE.start();
+    let hi = *SIM_T_END_RANGE.end();
+
+    let mut app = App::test_default();
+    // Both endpoints are inside the range, so neither is refused for range — they fail on
+    // the specimen instead, which is the next check and a different message.
+    for t in [lo, hi] {
+        let notice = app.simulate_from_link(Some(t)).unwrap_or_default();
+        assert!(
+            !notice.contains("stop time must be"),
+            "{t} is in range and must not be refused for range: {notice}",
+        );
+    }
+    for t in [lo / 2.0, hi * 2.0] {
+        let notice = app
+            .simulate_from_link(Some(t))
+            .expect("out of range must be refused");
+        assert!(notice.contains("stop time must be"), "got: {notice}");
+    }
+}
+
+/// Each refusal says what is missing, and a refused link changes nothing.
+///
+/// **The slider is the part worth pinning.** Setting it before validating would leave the
+/// reader looking at a stop time no simulation used — a value that is on screen, plausible,
+/// and false, which is the shape this repository spends most of its rules on.
+#[test]
+fn a_refused_simulate_link_leaves_the_slider_alone() {
+    let mut app = App::test_default();
+    let before = app.sim_t_end;
+
+    let notice = app
+        .simulate_from_link(Some(999.0))
+        .expect("out of range is refused");
+    assert!(notice.contains("nothing was run"), "got: {notice}");
+    assert_eq!(app.sim_t_end, before, "a refused stop time is not applied");
+
+    // In range, but nothing is loaded — a different refusal, and still no change.
+    let notice = app
+        .simulate_from_link(Some(3.0))
+        .expect("no specimen is refused");
+    assert!(notice.contains("no specimen loaded"), "got: {notice}");
+    assert_eq!(
+        app.sim_t_end, before,
+        "the slider waits for a run that can actually happen",
+    );
+    assert_ne!(
+        app.stage,
+        StageKind::Simulation,
+        "and a refused link does not navigate to a plot it cannot fill",
+    );
+}
+
 /// A link's frame number is the one on screen — the two must not be off by one.
 ///
 /// Doug run the fixture lab and found the link and the counter disagreeing.
