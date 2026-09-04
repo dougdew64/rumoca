@@ -3344,6 +3344,9 @@ impl WorkerState {
                             s.note = Some(format!(
                                 "{n_x} state(s), {n_y} algebraic(s), {n_eq} continuous equation(s)",
                             ));
+                            // Built from the same `d` the tree will render, one line
+                            // apart, so the two cannot describe different IR.
+                            s.rendered = crate::equation_text::for_dae(d);
                             s
                         }
                         None => dae_absent_stage(result, &source),
@@ -4122,7 +4125,14 @@ fn initialization_stage(result: Option<&PhaseResult>) -> Stage {
             if let Some(obj) = json.as_object_mut() {
                 obj.insert("determinacy".to_owned(), determinacy);
             }
-            if surplus > 0 {
+            // From the same `plan` the JSON above was built from. Only `ScalarDirect`
+            // blocks render; see `equation_text::for_ic_plan` for what is left alone
+            // and why this stage is not the equation stage it looked like.
+            let rendered = crate::equation_text::for_ic_plan(&plan);
+            // Bound rather than returned, for the reason `events_stage` is: three arms,
+            // and the one that got missed would render no tooltips while looking exactly
+            // like a plan with nothing renderable.
+            let mut stage = if surplus > 0 {
                 Stage::recovered(
                     json,
                     format!(
@@ -4138,7 +4148,9 @@ fn initialization_stage(result: Option<&PhaseResult>) -> Stage {
                 )
             } else {
                 Stage::ok(json)
-            }
+            };
+            stage.rendered = rendered;
+            stage
         }
         Err(e) => {
             let msg = format!("{e}");

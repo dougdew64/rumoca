@@ -3382,6 +3382,124 @@ fn every_events_rendering_lands_on_a_real_node() {
     );
 }
 
+/// **Every** stage's renderings resolve, and the stages that should have some do.
+///
+/// # Why this generalises rather than being copied per stage
+///
+/// The per-stage version was `every_events_rendering_lands_on_a_real_node`, and copying
+/// it for DAE would have copied the one thing worth having — the key-resolution walk —
+/// into a place it could fall behind. This iterates `StageKind::ALL`, so **a stage that
+/// gains renderings is checked without anyone remembering to add a test**, and a stage
+/// that loses them is caught by the roster below.
+///
+/// The roster is the non-vacuity half. Without it, a change that stopped attaching
+/// renderings everywhere would leave every loop body unexecuted and this test green.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn every_stage_rendering_lands_on_a_real_node() {
+    // BouncingBall has two continuous equations and one `when h <= 0`, so DAE and Events
+    // must render. **It cannot exercise Initialization at all** — `n_eq <= n_x`, so
+    // `build_ic_plan` returns empty and the tree has `blocks: []`. RcCircuit has 21
+    // blocks. Checking one specimen would have left `for_ic_plan` unexercised and green.
+    let ball = check_renderings("BouncingBall", &[StageKind::Dae, StageKind::Events]);
+    let rc = check_renderings("RcCircuit", &[StageKind::Initialization]);
+
+    // **Pinned, because "it resolves" is not "it is right".** A formatter that dropped an
+    // operand would still produce a string at a valid path, and the walk above would
+    // pass. One equation per shape: the DAE's flat keys, and the IC plan's assignment.
+    assert_eq!(
+        ball.dae.rendered.get("f_c[0]"),
+        Some("c[1] = h <= 0"),
+        "the DAE tree's condition equation, at its own flat key",
+    );
+    assert_eq!(
+        rc.initialization.rendered.get("blocks[0]"),
+        Some("src.v = src.V"),
+        "an IC plan step renders as the assignment it performs",
+    );
+
+    // The one `scalar_newton` block holds an equation INDEX, not an expression, so it is
+    // deliberately unrendered — absent rather than blank. Losing this would mean the
+    // tooltip started describing rather than rendering.
+    let newton = rc
+        .initialization
+        .value
+        .as_ref()
+        .and_then(|v| v["blocks"].as_array())
+        .expect("blocks array")
+        .iter()
+        .position(|b| b["kind"] == "scalar_newton")
+        .expect("RcCircuit has one scalar_newton block");
+    assert_eq!(
+        rc.initialization.rendered.get(&format!("blocks[{newton}]")),
+        None,
+        "a block with no expression gets no tooltip, not an empty one",
+    );
+}
+
+/// The walk shared by every specimen in the test above.
+fn check_renderings(specimen: &str, expected: &[StageKind]) -> StageBundle {
+    let FromWorker::Compiled { stages, .. } = compile_specimen_shared(specimen) else {
+        panic!("expected Compiled for {specimen}");
+    };
+
+    let mut with_renderings = Vec::new();
+    for stage_kind in StageKind::ALL {
+        // `StageBundle::get` panics on Simulation by contract — it is a plot, not a
+        // compilation stage, and has no `Stage` in the bundle at all.
+        if *stage_kind == StageKind::Simulation {
+            continue;
+        }
+        let stage = stages.get(*stage_kind);
+        let Some(ir) = stage.value.as_ref() else {
+            continue;
+        };
+        if !stage.rendered.is_empty() {
+            with_renderings.push(*stage_kind);
+        }
+        for (path, text) in stage.rendered.iter() {
+            let segs = crate::bridge::parse_path(path).unwrap_or_else(|| {
+                panic!(
+                    "{specimen}/{}: rendering key {path:?} is not a node path",
+                    stage_kind.slug()
+                )
+            });
+            let mut node = ir;
+            for seg in &segs {
+                node = seg.get_in(node).unwrap_or_else(|| {
+                    panic!(
+                        "{specimen}/{}: rendering keyed at {path:?} resolves to nothing in that \
+                         stage's IR \u{2014} the tooltip would silently never appear. \
+                         Stage IR paths are serde's, and they are NOT the same shape \
+                         across stages: the DAE is flat (`f_x`), Events builds its own \
+                         object (`conditions.equations_f_c`).",
+                        stage_kind.slug()
+                    )
+                });
+            }
+            assert!(
+                !text.is_empty(),
+                "{specimen}/{}: {path} rendered to an empty string",
+                stage_kind.slug()
+            );
+        }
+    }
+
+    for want in expected {
+        assert!(
+            with_renderings.contains(want),
+            "{specimen}/{} must render something, and renders nothing \u{2014} \
+             which is what a wholly mis-keyed map looks like. Got: {:?}",
+            want.slug(),
+            with_renderings.iter().map(|s| s.slug()).collect::<Vec<_>>(),
+        );
+    }
+    stages
+}
+
 /// The Events stage IR has the expected summary structure.
 #[test]
 #[cfg_attr(

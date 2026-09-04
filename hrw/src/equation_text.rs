@@ -29,10 +29,13 @@
 //!
 //! Three groups, and only the first is built:
 //!
-//! 1. **DAE, Events, Initialization** hold `dae::Equation` and `rumoca_core::Expression`
-//!    — exactly what `expr_format` takes. [`for_events`] is the first; the others are a
-//!    call each, which is why [`Rendered`] is generic over paths rather than shaped
-//!    around Events.
+//! 1. **DAE and Events** hold `dae::Equation` and `rumoca_core::Expression` — exactly what
+//!    `expr_format` takes. Both are built: [`for_events`] and [`for_dae`], whose keys are
+//!    NOT the same shape, which is the trap that group carries.
+//!
+//!    **Initialization was in this group by assumption and is not.** Its tree is an IC
+//!    *plan* from `rumoca-phase-structural`, so it needed [`for_ic_plan`] rather than a
+//!    third call to the same helper. The DAE's initial equations live in the *DAE* tree.
 //! 2. **Parse/Resolve/Instantiate/Typecheck** share `rumoca_core::Expression` (the AST
 //!    carries the same `Binary`/`Unary` variants), so expression nodes are renderable
 //!    there, but their *equations* are a different type and need a per-stage adapter.
@@ -124,6 +127,95 @@ pub fn for_events(d: &dae::Dae) -> Rendered {
         &d.events.synthetic_root_conditions,
         expr_format::format_expr,
     );
+    out
+}
+
+/// Renderings for the DAE stage, whose tree is the whole `Dae` serialized.
+///
+/// # The keys are serde's, not the Rust field names, and they are not nested
+///
+/// `dae_stage` publishes `Stage::from_ser(d)`, so the paths are whatever `Dae`'s
+/// `Serialize` produces — and that is **flat**, using Rumoca's mathematical names rather
+/// than the Rust partitions: `f_x`, `f_z`, `f_m`, `f_c`, `relation`,
+/// `initial_equations`, `synthetic_root_conditions`. There is no `continuous.` or
+/// `conditions.` prefix here, unlike Events, whose `events_to_json` builds its own object
+/// and chooses its own key names.
+///
+/// **Assuming the Events shape would have produced a map that silently never matched** —
+/// every key wrong, no tooltip anywhere, indistinguishable from a stage with nothing
+/// renderable. The paths above were read off a committed trace rather than inferred from
+/// the struct, and `every_dae_rendering_lands_on_a_real_node` keeps them honest.
+pub fn for_dae(d: &dae::Dae) -> Rendered {
+    let mut out = Rendered::default();
+    out.extend_indexed("f_x", &d.continuous.equations, expr_format::format_equation);
+    out.extend_indexed(
+        "initial_equations",
+        &d.initialization.equations,
+        expr_format::format_equation,
+    );
+    out.extend_indexed(
+        "f_z",
+        &d.discrete.real_updates,
+        expr_format::format_equation,
+    );
+    out.extend_indexed(
+        "f_m",
+        &d.discrete.valued_updates,
+        expr_format::format_equation,
+    );
+    out.extend_indexed("f_c", &d.conditions.equations, expr_format::format_equation);
+    out.extend_indexed(
+        "relation",
+        &d.conditions.relations,
+        expr_format::format_expr,
+    );
+    out.extend_indexed(
+        "synthetic_root_conditions",
+        &d.events.synthetic_root_conditions,
+        expr_format::format_expr,
+    );
+    out
+}
+
+/// Renderings for the Initialization stage, whose tree is an **IC plan**, not equations.
+///
+/// # Initialization was in group 1 by assumption and is not
+///
+/// The 2026-09-04 plan put it beside DAE and Events on the grounds that it shows
+/// `dae.initialization.equations`. It does not: `initialization_stage` publishes
+/// `ic_plan_to_json(&build_ic_plan(..))` — a **solve sequence** from
+/// `rumoca-phase-structural`. The DAE's initial equations appear in the *DAE* tree, as
+/// `initial_equations`, and are rendered there by [`for_dae`].
+///
+/// What is renderable here is `IcBlock::ScalarDirect`, which carries a `var_name` and a
+/// typed `solution_expr` — so the step renders as the assignment it performs, `v = R*i`.
+///
+/// # What is deliberately left unrendered
+///
+/// - **`ScalarNewton`** holds no expression, only `eq_idx` — it says *solve `f_x[3]` for
+///   `v`*. Restating that would be a **description**, not a rendering of an expression,
+///   and the tooltip's label promises the latter.
+/// - **`TornBlock`** and the coupled block nest a causal sequence. Renderable in
+///   principle, and not attempted without a verified case.
+///
+/// **BouncingBall cannot verify any of this** — `n_eq <= n_x`, so `build_ic_plan` returns
+/// empty and its Initialization tree has `blocks: []`. `RcCircuit` has 21 blocks, and is
+/// what `every_stage_rendering_lands_on_a_real_node` uses for this stage. Writing a
+/// renderer with no specimen able to exercise it is how a mis-keyed map ships green.
+pub fn for_ic_plan(blocks: &[rumoca_phase_structural::IcBlock]) -> Rendered {
+    use rumoca_phase_structural::IcBlock;
+
+    let mut out = Rendered::default();
+    out.extend_indexed("blocks", blocks, |b| match b {
+        IcBlock::ScalarDirect {
+            var_name,
+            solution_expr,
+            ..
+        } => format!("{var_name} = {}", expr_format::format_expr(solution_expr)),
+        // Empty means no tooltip line, which is the honest report for a block whose
+        // content is an index rather than an expression.
+        _ => String::new(),
+    });
     out
 }
 
