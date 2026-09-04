@@ -480,6 +480,29 @@ the next phase touches — is procedure and lives there.
 
 ## Current work
 
+> ### ⟶ AN ORACLE RUN IS OWED, AND IT IS THE ONE THING BLOCKING A REAL DEFECT — 2026-09-04
+>
+> **Rumoca initializes a state to the value that zeroes its derivative, ignoring `start`.** The
+> entry is in [`docs/upstream-issues.md`](docs/upstream-issues.md) with both reproducers, and it
+> is **reproduced, unfiled, and mechanistically explained**: a state's `start` survives to
+> `SolveModel::initial_y` and is 5.0 rather than 3.0 at the first output sample, and supplying
+> `fixed = true` makes initialization **fail** instead of fixing it. Sorting the corpus by whether
+> `der(x) = 0` is solvable predicts the motion in **11 of 11** traced specimens.
+>
+> **Doug's step, per oracle-first: run `RcStartProbe` in System Modeler.** An RC circuit either
+> charges from 3 to 5 or it does not. Nothing else about this is worth doing first.
+>
+> **What it explains, and what that means for work already queued.** Doug asked on 2026-09-04 for
+> a specimen that plots well and shows the animation panes. **The corpus is not dull — 13 of 18
+> traced specimens are frozen at their own steady state**, `RcCircuit` included. So a ringing
+> specimen designed now would be designed against a moving target: `.hrw-bridge/specimens/CompliantDrive.mo`
+> (a motor driving a geared load through a compliant shaft) is written and **fails at `t = 0`**,
+> which is probably this same defect and not a design error. **Do not author curated specimens for
+> the plot gap until initialization is fixed.**
+>
+> **Plausible and NOT to be stated in a report: this may subsume the open state-count entry** —
+> `Drivetrain` and `GearWithBrake` are its two specimens and both are frozen here.
+>
 > ### ⟶ THE MACHINE SWITCH DID NOT HAPPEN — Doug stayed here, 2026-09-03
 >
 > The handoff written for it is gone rather than left standing; a stale instruction to rebuild
