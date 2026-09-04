@@ -1227,11 +1227,43 @@ Step size is too small"* — a different message, same phase. If initialization 
 over-determined wherever a constraint has been differentiated, one cause would cover all
 three. **Do not state that in a report** until it is traced.
 
-### Adjudicate before filing
+### ADJUDICATED 2026-09-04 — System Modeler 15.0 disagrees, and the `fixed` defence is closed
 
-`RcStartProbe` is the whole test and needs no HRW: System Modeler either charges the
-capacitor from 3 to 5 or it does not. An RC circuit is the least arguable model in
-existence, which is why it was chosen over the ringing drivetrain that started this.
+Run through the Wolfram Language, so it is reproducible rather than a screenshot:
+
+```wl
+probe = Import["<path>/RcStartProbe.mo", "MO"];
+sim = SystemModelSimulate[probe, 1];
+sim["C.v"] /@ {0., 0.1, 1.}
+```
+
+| model | `C.v(0)` | `C.v(0.1)` | `C.v(1)` | closed form | Rumoca |
+|---|---|---|---|---|---|
+| `RcStartProbe` (`start = 3`) | **3.0** | 4.264242 | 4.999909 | `3 + 2(1-e^{-t/0.1})` | **5, flat** |
+| `RcFixedProbe` (`+ fixed = true`) | **3.0** | 4.264242 | 4.999909 | identical | **fails to converge** |
+| `RcCircuit` (corpus, `start = 0`) | **0.0** | 3.160604 | 4.999773 | `5(1-e^{-t/0.1})` | **5, flat** |
+
+`R.v(0) = 2` and `R.i(0) = 0.02` in the first case — the resistor carries the drop the
+frozen solution has nowhere to put.
+
+**Three things this settles.**
+
+1. **The behaviour is wrong, not merely different.** The values match the analytic solution
+   of a first-order RC to seven figures.
+2. **The `fixed = false` reading is not a defence.** `RcStartProbe` does not declare
+   `fixed`, and System Modeler still takes `start` as the initial condition. So "the
+   attribute is only a guess, and steady state is a permitted completion" does not describe
+   what a reference implementation does with this model.
+3. **`fixed = true` is unambiguous on its own.** System Modeler simulates it identically;
+   Rumoca *fails*. A tool rejecting a model that a reference tool integrates without
+   complaint needs no argument about defaults.
+
+**`RcCircuit` is the entry point to use in the report.** It is a four-component circuit
+with no attribute set anywhere, and it is the model every Modelica introduction opens with.
+
+**Ready to file.** The remaining unverified parts — the mechanism, and the row-target
+observation — stay marked as such, and the report should lead with the measurements above
+rather than with the diagnosis.
 
 ---
 

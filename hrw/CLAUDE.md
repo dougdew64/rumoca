@@ -480,25 +480,35 @@ the next phase touches — is procedure and lives there.
 
 ## Current work
 
-> ### ⟶ AN ORACLE RUN IS OWED, AND IT IS THE ONE THING BLOCKING A REAL DEFECT — 2026-09-04
+> ### ⟶ AN ADJUDICATED INITIALIZATION DEFECT IS READY TO FILE, AND IT GATES THE PLOT WORK — 2026-09-04
 >
-> **Rumoca initializes a state to the value that zeroes its derivative, ignoring `start`.** The
-> entry is in [`docs/upstream-issues.md`](docs/upstream-issues.md) with both reproducers, and it
-> is **reproduced, unfiled, and mechanistically explained**: a state's `start` survives to
-> `SolveModel::initial_y` and is 5.0 rather than 3.0 at the first output sample, and supplying
-> `fixed = true` makes initialization **fail** instead of fixing it. Sorting the corpus by whether
-> `der(x) = 0` is solvable predicts the motion in **11 of 11** traced specimens.
+> **Rumoca initializes a state to the value that zeroes its derivative, ignoring `start`.**
+> [`docs/upstream-issues.md`](docs/upstream-issues.md) carries both reproducers, the 11-of-11
+> corpus correlation, and **System Modeler 15.0's verdict**: `RcCircuit` charges `0 → 5` with
+> `tau = 0.1 s` matching the closed form to seven figures, where Rumoca reports a flat 5. Adding
+> `fixed = true` simulates identically there and makes Rumoca **fail to converge**.
 >
-> **Doug's step, per oracle-first: run `RcStartProbe` in System Modeler.** An RC circuit either
-> charges from 3 to 5 or it does not. Nothing else about this is worth doing first.
+> **THE ORACLE RUN IS DONE — and Claude can run these himself.** `Import[…, "MO"]` +
+> `SystemModelSimulate` through the Wolfram MCP server works on this machine, including on
+> specimens that use the MSL. **That is a standing capability, not a one-off**: the oracle-first
+> rule no longer costs Doug a manual step, so use it before concluding anything from Rumoca.
 >
-> **What it explains, and what that means for work already queued.** Doug asked on 2026-09-04 for
-> a specimen that plots well and shows the animation panes. **The corpus is not dull — 13 of 18
-> traced specimens are frozen at their own steady state**, `RcCircuit` included. So a ringing
-> specimen designed now would be designed against a moving target: `.hrw-bridge/specimens/CompliantDrive.mo`
-> (a motor driving a geared load through a compliant shaft) is written and **fails at `t = 0`**,
-> which is probably this same defect and not a design error. **Do not author curated specimens for
-> the plot gap until initialization is fixed.**
+> **The entry is Doug's to file, per `docs/upstream-issues.md`'s own rule.** Nothing else about
+> this defect is worth doing first.
+>
+> **What it explains.** Doug asked for a specimen that plots well and shows the animation panes.
+> **The corpus is not dull — 13 of 18 traced specimens are frozen at their own steady state**,
+> `RcCircuit` included. **So the plot gap is this defect, not a specimen shortage**, and curated
+> specimens for it wait until initialization is fixed.
+>
+> **`.hrw-bridge/specimens/CompliantDrive.mo` IS ALREADY ORACLE-VALIDATED**, which is the
+> expensive half of promoting it. A motor driving a geared load through a compliant shaft: in
+> System Modeler `load.w` climbs `0 → 26.1 rad/s` while the shaft torque rings at
+> **ω = 32.35 rad/s** (10 cycles in 2 s, decaying 2.59 → 1.16 N·m), and `rotor.w` is exactly
+> `2 x load.w`, confirming the gear. **It fails at `t = 0` under Rumoca** — the same defect, not a
+> design error. When initialization is fixed, this is the specimen to promote, and only the
+> curated ritual is left (System Modeler authoring, `// purpose:`, notebook trace, `purpose.md`,
+> corpus baseline).
 >
 > **Plausible and NOT to be stated in a report: this may subsume the open state-count entry** —
 > `Drivetrain` and `GearWithBrake` are its two specimens and both are frozen here.
