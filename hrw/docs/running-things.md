@@ -394,7 +394,28 @@ its most local scope.
   and empty. Never report the first as "no locals".
 - **`frameCount` is the truth; `frames` may be capped** (`framesTruncated`). Depth matters:
   for `augment_traced` the stack **is** the augmenting path — N nested frames is an N-edge
-  alternating path with each frame's `eq` a node on it.
+  alternating path with each frame's `eq` a node on it. **It became true on 2026-09-02** — the
+  extension asked for exactly `DEFAULT_FRAME_LIMIT` levels, so a deeper stack returned exactly
+  that many and `framesTruncated` computed `40 > 40 == false`. It now over-requests by one and
+  reads DAP's `totalFrames`; `stackAttempts` shows both (`"levels=41 -> 24 of 24"`).
+- **On `reason: "exception"`, read `description` and `text` FIRST.** `reason` is a coarse enum
+  covering both a first-chance exception a driver handles routinely and an access violation, and
+  those two fields are the only place the difference lives. Dropped until `3859b529`.
+
+**A STOP WHOSE STACK IS ALL `nvoglv64.dll` IS THE GRAPHICS DRIVER, NOT HRW** *(2026-09-03, after
+Doug reported a freeze)*. Memory was 1.3 GB, `panic` was null, the action trail was ordinary, and
+all 24 frames sat inside the NVIDIA OpenGL driver down to `BaseThreadInitThunk` — a driver-created
+thread with **no HRW frame on it at all**. **A debugger stop suspends every thread, which is what
+"froze" the UI**; Continue resumes it.
+
+It did not recur after a restart, so treat it as **intermittent, not fixed** — nothing in that
+commit could prevent it, only describe it. What decides whether the debugger halts on driver
+internals at all is Doug's VS Code **Breakpoints** panel, not anything in this repository.
+
+**The reusable part is the discrimination, which took four probes and now takes one each:** memory
+separates an OOM from a stop, `panic` separates a Rust panic from a foreign exception,
+`in-flight.json`'s `frames_completed` separates a single catastrophic frame from a later death, and
+the innermost frames say whose code was running.
 
 **And do not substitute `breakpoint-request.json` for it.** That file holds the line HRW *asked*
 to arm, which at the live-trace anchor coincides with where Doug is stopped — so answering from it

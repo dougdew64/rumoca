@@ -448,13 +448,15 @@ the next phase touches — is procedure and lives there.
 > ### ⟶ THE MACHINE SWITCH DID NOT HAPPEN — Doug stayed here, 2026-09-03
 >
 > The handoff written for it is gone rather than left standing; a stale instruction to rebuild
-> things "on that machine" is worse than none. **One item survives it and is still owed:**
+> things "on that machine" is worse than none. **Its one owed item is DONE** — Doug rebuilt the
+> bridge extension and reloaded on 2026-09-03, verified by `out/*.js` carrying the new fields.
 >
-> **Rebuild the bridge extension here** — `npm run build` in `hrw/vscode-extension/`, then
-> *Developer: Reload Window*. `out/` is gitignored, so the running extension is whatever was last
-> built locally, and the fix for the saturated-stack report (`f6c4064f`) is **not** in it until
-> that runs. **Doug always launches HRW under the VS Code debugger** — his words — so it is his
-> primary instrument, and until rebuilt it understates stack depth without saying so.
+> **The standing fact it leaves behind: `hrw/vscode-extension/out/` is gitignored, so a commit
+> touching the extension does not reach the running VS Code until `npm run build` plus
+> *Developer: Reload Window*.** Doug always launches HRW under the debugger — his words — so the
+> bridge is his primary instrument, and a stale build reports the old schema while looking
+> current. **Say so in the same message as any extension change**, the way a `crates/` edit's MSL
+> re-parse is priced.
 >
 > **The OOM arc is closed.** egui's debug-only `Id` map is O(2^depth) in nesting; HRW aborted at a
 > 94 GB commit. Account in [`DECISIONS.md`](DECISIONS.md) and [`docs/upstream-issues.md`](docs/upstream-issues.md)
