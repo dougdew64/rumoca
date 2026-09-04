@@ -165,7 +165,18 @@ fn main() -> std::process::ExitCode {
         return std::process::ExitCode::FAILURE;
     }
 
-    let scanned = if used_ir.is_empty() {
+    // **The whole pane when the pane is this specimen's, else only the IR that judged.**
+    //
+    // `used_ir` alone was too narrow: it holds only the stages a `node` pointer reached, so
+    // an Answer that says *"hover `f_x[0]` in the DAE tree"* — a load link plus prose,
+    // which is what a tooltip-era Answer looks like — had the DAE outside the haystack, and
+    // every real DAE key was reported as appearing nowhere.
+    //
+    // It was narrow for a reason, and the reason still holds when the pane is stale or
+    // showing something else: scanning a different specimen's IR reported `VarRef` and
+    // `initial_y` as absent. `from_pane > 0` is the discriminator, because a pointer only
+    // resolves against the pane when the session's specimen matches.
+    let scanned = if from_pane > 0 || used_ir.is_empty() {
         &loaded
     } else {
         &used_ir

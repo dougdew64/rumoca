@@ -248,11 +248,42 @@ pub fn tokens_absent_from_every_stage(text: &str, loaded: &[Value]) -> Vec<Strin
         if haystacks.iter().any(|h| h.contains(&token)) {
             continue;
         }
+        // **A subscript is legitimate when its base holds an ARRAY.** `f_x[0]` never
+        // appears literally in JSON — `f_x` is a key and `0` an index — so flagging it was
+        // noise, and the loudest kind: seven of thirteen advisory lines on 2026-09-04 for
+        // zero real findings, which is how an advisory stops being read.
+        //
+        // **"The base exists as a key" is NOT the rule, and trying it first proved why.**
+        // `Y` *is* a key in Solve lowering — `bindings.v.Y` — so that version excluded
+        // `Y[1]`, the original defect this scan was built to catch. The difference is what
+        // the key holds: `f_x` is an array, so `f_x[0]` addresses something; `Y` is an
+        // object mapping a name to a slot, so `Y[1]` addresses nothing and was exactly as
+        // unfindable as Doug reported.
+        if let Some(base) = token.split('[').next().filter(|b| !b.is_empty())
+            && base != token
+            && loaded.iter().any(|ir| key_holds_an_array(ir, base))
+        {
+            continue;
+        }
         if !out.contains(&token) {
             out.push(token);
         }
     }
     out
+}
+
+/// Whether any node anywhere in `ir` is `key` mapped to an array.
+///
+/// The question a subscripted token asks: is `base[0]` addressing something? A key holding
+/// an object answers no, which is what separates `f_x[0]` from `Y[1]`.
+fn key_holds_an_array(ir: &Value, key: &str) -> bool {
+    match ir {
+        Value::Object(map) => map
+            .iter()
+            .any(|(k, v)| (k == key && v.is_array()) || key_holds_an_array(v, key)),
+        Value::Array(items) => items.iter().any(|v| key_holds_an_array(v, key)),
+        _ => false,
+    }
 }
 
 /// Whether a backticked token could plausibly be a name in stage IR.
@@ -280,6 +311,11 @@ fn could_name_a_node(token: &str) -> bool {
         return false;
     }
     if token.ends_with(".md") || token.ends_with(".rs") || token.ends_with(".mo") {
+        return false;
+    }
+    // A trailing dot makes it a prose fragment naming a prefix — `conditions.`,
+    // `discrete.` — not a name anything could carry.
+    if token.ends_with('.') {
         return false;
     }
     // A dotted path with identifier-ish segments, as against a name that merely
@@ -516,6 +552,30 @@ mod tests {
             absent,
             vec!["Y[9]".to_owned()],
             "only the subscript-shaped claim survives: {absent:?}",
+        );
+    }
+
+    /// A subscript is spared when its base holds an ARRAY, and flagged otherwise.
+    ///
+    /// The line between the noise and the original catch, and the two are the same shape.
+    /// `f_x` is an array, so `f_x[0]` addresses something. `Y` is an **object** — a name
+    /// mapped to a slot — so `Y[1]` addresses nothing, which is exactly why Doug could not
+    /// find it. **"The base exists as a key" fails here**: `Y` exists, and that version of
+    /// the rule excluded the very defect this scan was built for.
+    #[test]
+    fn a_subscript_is_spared_only_when_its_base_holds_an_array() {
+        let ir = serde_json::json!({
+            "f_x": [1, 2],
+            "bindings": { "v": { "Y": { "index": 1 } } },
+        });
+        let text = "Hover `f_x[0]` and `f_x[1]`, but `Y[1]` is my invention, and \
+                    `conditions.` is a prefix.";
+        let absent = tokens_absent_from_every_stage(text, &[ir]);
+
+        assert_eq!(
+            absent,
+            vec!["Y[1]".to_owned()],
+            "`Y` is present as a key and still must not spare `Y[1]`: {absent:?}",
         );
     }
 
