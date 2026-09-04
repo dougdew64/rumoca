@@ -43,7 +43,29 @@ semantic change to code upstream had already rewritten.** Do it before any fork-
 after.
 
 ## 1. Rebase the `hrw` branch on upstream
-- `git fetch upstream` (CogniPilot/rumoca), then `git rebase <the target chosen in step 0>` on the
+
+**THE `upstream` REMOTE DOES NOT EXIST — add it first** *(found 2026-09-04; this step opened with
+`git fetch upstream` and `git remote -v` lists only `origin`, which is Doug's fork)*. **The whole
+procedure was blocked at its first command** and nothing said so, because a rebase has not been
+run since HRW moved in-workspace:
+
+```text
+git remote add upstream https://github.com/CogniPilot/rumoca.git
+git fetch upstream --tags
+```
+
+**Know where you are starting from, because the version string will not tell you.** Measured
+2026-09-04: the workspace declares `0.9.20` and `Cargo.lock` agrees, but the newest
+upstream-authored commit in this history is **`8cdc7419`, 2026-07-18** — five commits behind
+`upstream/main`, and *later* than the `v0.9.20` tag of 2026-07-13. **The version number is a label
+carried along in `Cargo.toml`, not a statement about which upstream code is present**, and
+`crates/` additionally carries this fork's instrumentation. To find the real base:
+
+```text
+git log --format="%h %ad %an | %s" --date=short | grep -v dougdew64 | head -3
+```
+
+- Then `git rebase <the target chosen in step 0>` on the
   `hrw` branch. Rumoca's own code advances underneath; your **additive instrumentation
   hooks** should rebase cleanly (that's the point of keeping them observation-only), and `hrw/`
   itself won't conflict — upstream has no files there.
