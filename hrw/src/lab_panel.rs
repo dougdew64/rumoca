@@ -688,6 +688,7 @@ pub(crate) fn lab_prose_ui(
     }
 
     if lab.autoplay.is_running()
+        && measurements_match_beat(lab.lab_measured_beat, lab.autoplay.progress().0)
         && let Some(max_scroll) = lab.lab_max_scroll
     {
         // **Interpolate between two MEASURED positions.** Both come from
@@ -954,6 +955,33 @@ fn code_block_ui(ui: &mut egui::Ui, lang: &str, body: &str) {
         });
 }
 
+/// Whether the measured link positions belong to the beat now showing.
+///
+/// # The one-frame flash, diagnosed 2026-09-04
+///
+/// Doug: *"The flashes happen when the beat number increments… The flash happens for the
+/// entire answer pane, and appears to be a different scroll position being temporarily
+/// rendered for a very small fraction of a second."*
+///
+/// It was, and the position was **two beats back.** `lab_link_y` and `lab_prev_link_y` are
+/// measured from the rendered document and stored *after* the render, so on the frame a beat
+/// increments they still describe the previous beat. `travel_t` is 0 on that frame — the
+/// dispatch just reset it — and `y = from + (to - from) * 0` is exactly `from`, which at that
+/// moment is the link position from **two** beats earlier. One frame at that offset, then
+/// the post-render update makes the endpoints current and the next frame interpolates
+/// correctly. Hence a flash on every increment, including one where the destination is
+/// unchanged.
+///
+/// **So the fix is to force no offset at all on that frame** and let the scroll area keep
+/// what it has. Holding still for one frame is invisible; jumping two beats back is not.
+///
+/// A function rather than an inline comparison because it is the whole of the fix, and this
+/// pane's logic is otherwise unreachable from a test — the rule that says push a computation
+/// out of the paint path before adding one to it.
+fn measurements_match_beat(measured_beat: Option<usize>, beat: usize) -> bool {
+    measured_beat == Some(beat)
+}
+
 /// Which half of the split document [`show_lab_markdown`] is rendering.
 ///
 /// # Why the halves need separate id namespaces
@@ -1200,6 +1228,37 @@ mod tests_code_segments {
 #[cfg(test)]
 mod tests_split_ids {
     use super::*;
+
+    /// No offset is forced on the frame a beat increments, because the measurements are
+    /// still the previous beat's.
+    ///
+    /// This is the flash Doug reported on 2026-09-04, reduced to the one comparison that
+    /// decides it. The endpoints `lab_link_y` and `lab_prev_link_y` are stored after the
+    /// render, so on an increment frame they describe the beat before — and `travel_t` is 0
+    /// there, which makes the target exactly `from`, the position from **two** beats back.
+    ///
+    /// The pane itself cannot be asserted on: nothing in `egui_kittest` reads a scroll
+    /// offset out of a markdown pane. What is checkable is the decision, and the decision is
+    /// the whole fix.
+    #[test]
+    fn no_scroll_is_forced_until_the_new_beat_has_been_measured() {
+        // Steady state within a beat: measurements are current, so the offset applies.
+        assert!(measurements_match_beat(Some(3), 3));
+
+        // The increment frame: the beat moved, nothing has been re-measured yet.
+        assert!(
+            !measurements_match_beat(Some(3), 4),
+            "an offset computed from the previous beat's endpoints must not be forced \u{2014} \
+             that is the frame that rendered two beats back",
+        );
+
+        // First frame of a run, before anything has been measured at all.
+        assert!(
+            !measurements_match_beat(None, 1),
+            "and nothing is forced before the first measurement, which is what keeps the \
+             lead-in at the top",
+        );
+    }
 
     /// The two halves of a split lab derive different ids for the same segment index.
     ///
