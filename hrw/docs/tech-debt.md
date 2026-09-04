@@ -430,6 +430,13 @@ reading path and this file is not. A pointer stays there.
 > pins), `extract_hrw_links_skips_placeholders_and_bare_verbs`, `no_lab_uses_retired_vocabulary`,
 > and two new assertions in `a_lab_edit_selects_the_lab_gate_and_a_source_edit_still_selects_full`.
 
+### Owed again, noticed 2026-09-04 while publishing the simulation to the bridge
+
+| owed | what to do | why it waits |
+|---|---|---|
+| **`view_published` overclaims** | `App::publish_current_view` sets `last_published_view` to the key even when `body` is `None`, so `session.json` reports `view_published: "Simulation"` while `view.json` does not exist. Report the key only when something was written — the field is a **dedup key** and a **claim**, and it cannot honestly be both under one name | It is the absence rule pointed at a diagnostic: a claim that a publish happened when it did not. Found by reading, not by a test, and it misled nobody yet because the stage files answered the question instead |
+| **`experiment(StopTime)` is ignored** | HRW simulates to its own `sim_t_end` (default 2.0) and never reads the specimen's `experiment` annotation. `RcCircuit` asks for 1 s and gets 2; `BenchActuator` asks for 0.5 s and gets 2 | Defensible — the slider is deliberate and `SimData::to_bridge_json` publishes the *requested* `t_end` beside the achieved `t_final` for exactly this reason. But it is **undocumented**, so a reader comparing a specimen's annotation with a trace finds a discrepancy carrying no information. Either honour it as the initial slider value or say in one comment why not |
+
 | owed | what to do | why it waits |
 |---|---|---|
 | **Blurb pinning** | Pin each lab's catalogue blurb to its expected first bolded line | bit 3× on 2026-08-31 |

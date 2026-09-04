@@ -1509,6 +1509,39 @@ new medium is not a licence for verbosity.
 > ([`reports.md`](reports.md)). That binds the **oracle's** design, not the list's, and
 > retrofitting it later would cost the join.
 
+### THE ORACLE RECIPE, AND CLAUDE CAN RUN IT HIMSELF — 2026-09-04
+
+**This is the part every other document points here for**, and until 2026-09-04 the recipe
+implied Doug driving the System Modeler GUI. He does not have to. The Wolfram MCP server on
+this machine reaches System Modeler 15.0, so an adjudication is three lines:
+
+```wl
+probe = Import["c:/…/RcStartProbe.mo", "MO"];   (* returns a SystemModel *)
+sim   = SystemModelSimulate[probe, 1];          (* second arg is t_end *)
+sim["C.v"] /@ {0., 0.1, 1.}                     (* a function of time, sample it *)
+```
+
+**It resolves the MSL.** `RcCircuit`, `RcStartProbe` and `CompliantDrive` — the last using
+`Rotational.Components.{Inertia, SpringDamper, IdealGear}` and `Electrical.Analog.*` — all
+imported and simulated with no library setup. Scratch specimens under
+`.hrw-bridge/specimens/` work, so a question can be answered on a model written minutes ago.
+
+**Useful queries beyond a trajectory:** `sim[{"VariableNames", "C.*"}]`,
+`model["InitialValues"]`, `model["SystemEquations"]`, and
+`SystemModelSimulateSensitivity` for parameter sensitivities.
+
+**What this changes about the standing rule.** *Oracle first, then Rumoca* was worth its
+friction and now has almost none — **so there is no longer an excuse for concluding anything
+from a Rumoca result alone.** On the day this was found it converted a
+reproduced-but-arguable initialization defect into an adjudicated one in about a minute
+([`upstream-issues.md`](upstream-issues.md)), and it validated a candidate specimen's
+dynamics — `omega = 32.35 rad/s` against a hand-calculated 32.4 — which is the expensive
+half of authoring one.
+
+**The oracle-first rule exists to correct a specific bias**: Claude blaming his own specimen
+rather than the compiler. Cheapness does not retire the bias, so run the oracle *before*
+theorising, not after a theory needs support.
+
 Requested 2026-07-29 (Doug), extending #42 beyond HRW:
 
 > I want you to view HRW as a platform for answering my questions, when you
