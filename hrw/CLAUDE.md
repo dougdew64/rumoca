@@ -163,6 +163,16 @@ smaller hypothesis space than a pane rendering wrongly**, and once that was the 
 diagnosis took one read. Ask what noun he named — an offset, a colour, a width, an order — and
 start there, because he is describing the symptom from the only vantage point that can see it.
 
+**AND MEASURE THE UNIT HE IS DESCRIBING, WHICH IS THE MOST REPEATED MISTAKE OF 2026-09-04 —
+four times in one day.** Each was a true measurement of the wrong thing, reported as if it
+settled his question: an Answer's claim checked against the committed notebook rather than
+`.hrw-bridge/stages/`, the file the pane is actually fed; `frameCount` reporting what was
+*requested* of the debug adapter rather than what *exists*; pointers verified to **resolve** in
+the IR and reported as though that settled whether clicking them **does** anything; and
+multi-link lines counted in the *source* when he was describing lines as *rendered*. **A green
+measurement of a sibling artifact is the most convincing way to be wrong here**, because
+nothing in it is false. Name the artifact and the unit before believing the number.
+
 **It is the same boundary as *effectiveness is Doug's*, reached from the tooling side rather than
 the pedagogical one.** Expect it wherever the question is *what did it look like* rather than *what
 did it contain* — layout, legibility, whether an animation reads as a search. **Say which parts of
