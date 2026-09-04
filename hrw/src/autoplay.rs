@@ -704,6 +704,61 @@ mod tests {
         }
     }
 
+    /// Every link in a document becomes a beat — several on one line, or one per line.
+    ///
+    /// # What Doug suspected, and why it was worth measuring
+    ///
+    /// 2026-09-04: *"I wonder if that is because it is the second link on the line. Which
+    /// makes me wonder if other links in the answer are not being clicked because they are
+    /// not the first links in their lines."* The failure he saw had another cause — a follow
+    /// link went through a toggle — but the question was the right one to ask, and a lost
+    /// beat is invisible: a link that never fires looks exactly like one whose action did
+    /// nothing.
+    ///
+    /// Measured on the Answer he was reading: 29 links, 29 beats carrying one. This pins the
+    /// property so it cannot drift, in both arrangements, because they are different code
+    /// paths — `links_in_order` handles several URLs on one source line, and the outer loop
+    /// over lines handles a paragraph that markdown renders as one line but whose links sit
+    /// on separate source lines. **Seven of the Answer's paragraphs are the second kind, and
+    /// an earlier count of this missed all of them** by counting source lines instead.
+    #[test]
+    fn every_link_becomes_a_beat_however_the_lines_are_broken() {
+        // Three arrangements: two on one source line, two soft-wrapped into one rendered
+        // paragraph, and one alone.
+        let text = "\
+# Lab
+
+## Station 1 — several ways to break a line
+
+[a](hrw://load/BouncingBall) \u{b7} [b](hrw://follow/v)
+
+[c](hrw://load/BouncingBall/Parse) \u{b7}
+[d](hrw://stage/Dae/node/x)
+
+[e](hrw://source/10)
+";
+        let stations = parse_stations(text);
+        let beats = schedule(&stations, Duration::from_secs(30), |_| false);
+        let urls: Vec<&str> = beats.iter().filter_map(|b| b.link.as_deref()).collect();
+
+        assert_eq!(
+            urls.len(),
+            text.matches("hrw://").count(),
+            "every link must produce a beat; got {urls:?}",
+        );
+        // Named individually, because a count alone would pass if one link were duplicated
+        // and another dropped.
+        for want in [
+            "hrw://load/BouncingBall",
+            "hrw://follow/v",
+            "hrw://load/BouncingBall/Parse",
+            "hrw://stage/Dae/node/x",
+            "hrw://source/10",
+        ] {
+            assert!(urls.contains(&want), "{want} produced no beat: {urls:?}");
+        }
+    }
+
     const SAMPLE: &str = "\
 # Fixture lab — demo
 
