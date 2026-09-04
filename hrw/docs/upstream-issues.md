@@ -1198,19 +1198,86 @@ stalled-motor current — which is what `L*der(i) = v` gives when `der(i)` is se
 **The specimens that move are the ones the steady state could not be found for.** That is
 the correlation the mechanism below is inferred from.
 
-### Suspect mechanism — UNVERIFIED
+### LOCATED 2026-09-04 — one instruction, and it is no longer a suspicion
+
+`BuiltinFunction::Der` lowers to the literal `0.0`, unconditionally and with no
+initial-mode guard, in `crates/rumoca-phase-solve/src/lower/scalar_ops.rs`:
+
+```rust
+rumoca_core::BuiltinFunction::Der => self.emit_const_at(0.0, span),
+```
+
+The continuous system never reaches that arm — `derivative_rhs.rs` lowers derivatives as
+the outputs being computed — but **the initialization residual does**. Disassembling
+`RcCircuit`'s initialization residual row 0, which targets `C.i`:
+
+```text
+LoadY  y[3] (C.i) -> r0
+LoadP  p[5] (C.C) -> r1
+Const  0.0        -> r2      <-- this is der(C.v)
+Binary Mul r1, r2 -> r3
+Binary Sub r0, r3 -> r4      <-- C.i - C.C*0.0
+StoreOutput r4
+```
+
+That row is `C.i = 0`. Zero current forces `R.v = 0`, hence `C.p.v = 5`, hence `C.v = 5`.
+An opcode census over the entire initialization residual finds **no derivative load of any
+kind** — only `LoadY`, `LoadP` and `Const` — so the initialization problem is the DAE with
+every derivative term replaced by zero. It is square at 23x23 *only* because `der(C.v)` has
+been eliminated, and the state is one of those 23 unknowns with nothing pinning it to
+`start`.
+
+**Why `fixed = true` then fails.** The extra initial equation takes the system to 24 rows,
+and the projection plan responds by dropping the state from the unknowns *and* orphaning
+two rows — 22 unknowns, 22 planned rows, rows 22 and 23 unassigned. One orphan is the
+initial equation itself; the other is a network equation.
+
+**A note on the horizon, measured and not explained.** `RcCircuit` freezes at `t_end = 2`
+but *fails* at `t_end = 1`, the value its own `experiment` annotation asks for:
+`"BDF step: Step size is too small at time = 0.014"`. Recorded separately rather than
+folded into the above — one symptom per claim is what keeps a report checkable.
+
+### What a fix requires — and why it is not one line
+
+Restoring the derivative means the initialization problem needs it as an **unknown**, and
+`rumoca_ir_solve::ScalarSlot` has no derivative variant: it is `Time`, `Y`, `P`,
+`Constant`, and the runtime's projection unknowns are indices into `Y`. So the complete fix
+extends the slot model across `rumoca-ir-solve`, `rumoca-phase-solve` and `rumoca-solver`.
+
+**The tractable alternative is a formulation Rumoca already contains.**
+`rumoca-phase-structural/src/ic_plan.rs:116` states it outright — *"with only
+algebraic+output variables as unknowns (states are known)"*. Applying that to solve lowering
+means holding each state at its start value and dropping the one equation per state that
+determines a derivative. **Measured across the notebook, `algebraics ==
+continuous_equations - states` holds for 19 of 19 specimens**, so that system is square
+everywhere and no new slot kind is needed.
+
+Its limitation, stated rather than hidden: it makes a state's `start` always the initial
+condition, so an explicit `fixed = false`, and a user-written `initial equation` that
+determines a state, would still not be honoured. Those need the derivative as an unknown.
+
+**Guarded by `hrw`'s `worker::tests::rc_circuit_charges_its_capacitor`**, `#[ignore]`d with
+this defect named as the reason, and failing today on `C.v(0) must be the declared start of
+0, got 5`. Un-ignore it when a fix lands.
+
+### The mechanism as first inferred, kept because the reasoning was the route in
 
 Initialization appears to impose `der(x) = 0` and treat `start` as a Newton guess only,
 rather than deriving the state's value from `start`/`fixed` or from an initial equation.
 That is *steady-state initialization*, which every Modelica tool offers as an explicit
 option and none that I know of makes the default.
 
-**No suspect source location is offered**, and that is deliberate. The front end is
-demonstrably correct: `variable_starts`, `x[].fixed` and `initial_equations` all carry the
-right thing. The failure is somewhere in the initialization solve, and a search for a path
-seeding the state vector from `variable_starts` found only clocked-variable start guards —
-but **"I did not find it" is not "it does not exist"**, and a wrong negative from a search
-is the error nobody catches.
+**At this stage no suspect source location was offered, deliberately.** The front end is
+demonstrably correct — `variable_starts`, `x[].fixed` and `initial_equations` all carry the
+right thing — and a search for a path seeding the state vector from `variable_starts` found
+only clocked-variable start guards, which is a **wrong negative waiting to happen**: "I did
+not find it" is not "it does not exist".
+
+**And that caution was right to have.** The search was aimed at the wrong thing entirely:
+nothing overwrites the state vector. The derivative is erased at *lowering*, which makes the
+steady state the only solution the system has. The located account above supersedes this
+paragraph; it is kept because the discipline of not naming a location on a failed search is
+what left room to find the real one.
 
 One structural oddity noticed and **not** interpreted: in `RcFixedProbe`'s
 `problem.initialization.row_targets`, four `Y` slots (0, 1, 3, 11) are each named by two

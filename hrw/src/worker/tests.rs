@@ -433,6 +433,96 @@ fn single_inertia_simulates_to_a_correct_trajectory() {
     );
 }
 
+/// **ACCEPTANCE TEST FOR AN OPEN DEFECT — `#[ignore]`d because it FAILS today.**
+///
+/// `RcCircuit` must charge its capacitor. It does not: Rumoca reports `C.v = 5`
+/// constant from `t = 0`, the DC steady state, where the analytic answer is
+/// `5(1 - e^{-t/RC})` with `RC = 0.1 s`. **System Modeler 15.0 produces the analytic
+/// curve to seven figures** — the adjudication is in
+/// [`docs/upstream-issues.md`](../../docs/upstream-issues.md).
+///
+/// # The defect, located
+///
+/// `BuiltinFunction::Der` lowers to the literal `0.0`
+/// (`rumoca-phase-solve/src/lower/scalar_ops.rs`), so the initialization residual for
+/// `C.i = C * der(C.v)` disassembles to `C.i - (C.C * 0.0)` — that is, `C.i = 0`. Zero
+/// current forces `R.v = 0`, hence `C.p.v = 5`, hence `C.v = 5`. The state is one of the
+/// initialization system's unknowns and nothing pins it to `start`, so its start value is
+/// only a Newton guess.
+///
+/// **It is not one line to fix**, which is why this test is `#[ignore]`d rather than
+/// accompanied by a repair. A correct initialization needs the derivative to be an
+/// unknown, and `ScalarSlot` has no derivative variant — unknowns must live in `Y`. The
+/// tractable alternative is the formulation `rumoca-phase-structural/src/ic_plan.rs`
+/// already documents at its line 116, *"states are known"*: hold each state at its start
+/// value and drop the one equation per state that determines a derivative. Measured
+/// across the notebook, `algebraics == continuous_equations - states` holds for **19 of
+/// 19** specimens, so that formulation is square everywhere — but it changes what every
+/// simulation pane claims, so it is Doug's call and not a session's.
+///
+/// # Why `RcCircuit` and not the specimen that started this
+///
+/// Doug asked for a specimen that plots well. The answer turned out to be that this one
+/// already should. Four components, no attribute set anywhere, and the first model in
+/// every Modelica introduction — so when this passes, 13 of 18 frozen specimens are
+/// expected to come back to life with it, and *that* is the signal to re-measure the
+/// corpus rather than trust this single assertion.
+#[test]
+#[ignore = "OPEN DEFECT: initialization solves der(x) = 0; see docs/upstream-issues.md"]
+fn rc_circuit_charges_its_capacitor() {
+    // **`simulate_specimen`, not the shared worker.** The first draft of this test
+    // compiled through `shared_worker()` with the *cached* compile entry point and got a
+    // different failure — a BDF stall at `t = 0.014` rather than the frozen trajectory —
+    // which would have gone into the bug report as a second symptom it is not.
+    // `simulate_specimen` builds a fresh `WorkerState`, which is the condition
+    // `gen_trace` and the running app both use, and its result matches the committed
+    // notebook byte for byte.
+    let result = crate::worker::simulate_specimen(
+        Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/specimens/RcCircuit.mo"
+        )),
+        "RcCircuit",
+        // **2.0, the corpus baseline, and the horizon is load-bearing.** At `t_end = 1.0`
+        // — the value the specimen's own `experiment` annotation asks for — this model
+        // does not merely freeze, it *fails*: `"BDF step: Step size is too small at time
+        // = 0.014"`. Measured, not explained, and recorded in `docs/upstream-issues.md`
+        // as a separate observation rather than folded into the frozen-trajectory report,
+        // because one symptom per claim is what keeps a bug report checkable.
+        2.0,
+        super::test_msl::msl_roots(),
+    )
+    .expect("simulate RcCircuit");
+
+    let idx = result
+        .names
+        .iter()
+        .position(|n| n == "C.v")
+        .expect("C.v in outputs");
+    let series = &result.data[idx];
+    let first = *series.first().expect("at least one sample");
+    let last = *series.last().expect("at least one sample");
+
+    // The declared start is MSL's default of 0, so the capacitor begins discharged.
+    assert!(
+        first.abs() < 1e-6,
+        "C.v(0) must be the declared start of 0, got {first}"
+    );
+    // tau = RC = 100 * 1e-3 = 0.1 s, so well before t = 2 s it has reached 5.
+    assert!(
+        (last - 5.0).abs() < 1e-3,
+        "C.v(2) must approach the 5 V source, got {last}"
+    );
+    // The non-vacuity guard: a flat trajectory at 5 would satisfy the second assertion
+    // on its own, and that is exactly the defect's signature.
+    let swing = series.iter().copied().fold(f64::NEG_INFINITY, f64::max)
+        - series.iter().copied().fold(f64::INFINITY, f64::min);
+    assert!(
+        swing > 4.9,
+        "the capacitor must actually charge across the run, swing was {swing}"
+    );
+}
+
 /// The stiff bench actuator (a DC motor spinning up an inertial
 /// load) simulates — the Auto solver (BDF) copes with the ~1000x separation
 /// between the fast winding (L/R ~ 1e-4 s) and the slow rotor (J = 0.05). The
