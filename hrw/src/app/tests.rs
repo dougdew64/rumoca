@@ -5370,8 +5370,10 @@ fn starting_a_session_forgets_where_the_last_one_stopped() {
     assert_eq!(app.lab.lab_prev_link_y, None);
 
     // Non-vacuity: the run really did start, so this is not passing because
-    // nothing happened.
-    assert_eq!(app.test_autoplay_phase(), crate::autoplay::Phase::Playing);
+    // nothing happened. **`LeadIn`, not `Playing`** — a run now holds at the document's
+    // top for a second before its first beat, which is what this test's subject (the
+    // scroll positions being cleared) exists to make look right.
+    assert_eq!(app.test_autoplay_phase(), crate::autoplay::Phase::LeadIn);
 }
 
 /// **A `stop/<slug>` link records where that stop actually begins.**

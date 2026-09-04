@@ -72,6 +72,26 @@ const MIN_BEAT: Duration = Duration::from_millis(900);
 /// for; the text tracks the *beat*, which changes in steps.
 const SCROLL_TRAVEL: Duration = Duration::from_millis(450);
 
+/// How long a run holds at the document's top before the first beat.
+///
+/// # The defect this fixes, reported 2026-09-04
+///
+/// Doug: *"When I press the play triangle for your answer to start autoplay, the progress
+/// bar is displayed over the top few lines of your answer's text… My goal is for the
+/// progress bar to NOT obscure any of your answer."*
+///
+/// Nothing was overlapping — the bar is in-layout and cannot paint over the prose. What
+/// happened is that pressing play dispatched beat one **immediately**, and the scroll
+/// target is the current beat's link minus `LAB_CONTEXT_ABOVE`. The first `hrw://` link in
+/// an Answer sits below its title, its opening paragraph and often a code fence, so the
+/// document's beginning slid off the top within `SCROLL_TRAVEL` of the click — while the
+/// progress bar appeared above it in the same instant. The two together read as the bar
+/// covering the text.
+///
+/// So the fix is the one Doug asked for from the other end: hold at the top, with the bar
+/// already showing, and *then* begin. A second is long enough to read a title.
+const LEAD_IN: Duration = Duration::from_millis(1000);
+
 /// **A beat that dispatches a link rests this much longer than plain prose.**
 ///
 /// Doug, 2026-08-03: *"let's double the time that scrolling is paused at links"* —
@@ -358,6 +378,12 @@ pub fn schedule(
 pub enum Phase {
     /// No run in progress.
     Idle,
+    /// Started, holding at the document's top for [`LEAD_IN`] before the first beat.
+    ///
+    /// A run phase, not a pause: [`Autoplay::is_running`] includes it, so the transport
+    /// shows its bar and the caption while the reader sees the title. Nothing is dispatched
+    /// and the beat clock does not advance.
+    LeadIn,
     /// Running; the current beat is counting down.
     Playing,
     /// Held by the user, or by the window losing focus.
@@ -383,6 +409,9 @@ pub struct Autoplay {
     /// the app is busy. Drives [`Self::travel_t`] so the lab text moves to the
     /// link *during* the compile it caused rather than after it.
     since_dispatch: Duration,
+    /// Real time spent in [`Phase::LeadIn`]. Separate from every other clock here
+    /// because it precedes them: the run's budget has not started while this fills.
+    lead_in: Duration,
     /// **Who paused matters.** A pause caused by the window losing focus should
     /// lift the moment focus returns; a pause the user asked for must survive
     /// clicking into another window and back, or the Pause button would be
@@ -396,7 +425,7 @@ impl Autoplay {
     }
 
     pub fn is_running(&self) -> bool {
-        matches!(self.phase(), Phase::Playing | Phase::Paused)
+        matches!(self.phase(), Phase::LeadIn | Phase::Playing | Phase::Paused)
     }
 
     /// Begin a run. Returns the first beat to dispatch, if there is one.
@@ -411,13 +440,20 @@ impl Autoplay {
             self.phase = Some(Phase::Finished);
             return None;
         }
-        self.phase = Some(Phase::Playing);
-        self.beats.first().cloned()
+        // **Nothing is dispatched yet.** The lead-in holds at the top with the transport
+        // already showing; `tick` dispatches beat one when it elapses. Returning the beat
+        // here is what made the document scroll away in the same instant as the click.
+        self.lead_in = Duration::ZERO;
+        self.phase = Some(Phase::LeadIn);
+        None
     }
 
     /// Pause because the user asked. Survives focus changes.
     pub fn pause(&mut self) {
-        if self.phase() == Phase::Playing {
+        // **`LeadIn` too, because the transport offers Pause during it.** A button that
+        // does nothing for a second is worse than one that appears a second late, and the
+        // phase to come back to is derived rather than stored — see `resume`.
+        if matches!(self.phase(), Phase::Playing | Phase::LeadIn) {
             self.phase = Some(Phase::Paused);
             self.paused_by_focus = false;
         }
@@ -426,7 +462,15 @@ impl Autoplay {
     /// Resume because the user asked.
     pub fn resume(&mut self) {
         if self.phase() == Phase::Paused {
-            self.phase = Some(Phase::Playing);
+            // **Derived from the lead-in clock, not remembered.** A stored "was in the
+            // lead-in" flag is a second copy of a fact `lead_in` already carries, and the
+            // two could disagree; this cannot. Resuming an unfinished lead-in returns to
+            // it, so beat one is still dispatched exactly once.
+            self.phase = Some(if self.lead_in < LEAD_IN {
+                Phase::LeadIn
+            } else {
+                Phase::Playing
+            });
             self.paused_by_focus = false;
         }
     }
@@ -443,12 +487,20 @@ impl Autoplay {
     /// rather than as long as the schedule guessed.
     pub fn set_focused(&mut self, focused: bool) {
         match (focused, self.phase()) {
-            (false, Phase::Playing) => {
+            // `LeadIn` counts as running, so losing focus during it must hold too —
+            // otherwise the second at the top elapses behind another window and the run
+            // begins unwatched, which is the whole thing this guard exists to prevent.
+            (false, Phase::Playing | Phase::LeadIn) => {
                 self.phase = Some(Phase::Paused);
                 self.paused_by_focus = true;
             }
             (true, Phase::Paused) if self.paused_by_focus => {
-                self.phase = Some(Phase::Playing);
+                // Same derivation as `resume`: an unfinished lead-in resumes as a lead-in.
+                self.phase = Some(if self.lead_in < LEAD_IN {
+                    Phase::LeadIn
+                } else {
+                    Phase::Playing
+                });
                 self.paused_by_focus = false;
             }
             _ => {}
@@ -471,6 +523,17 @@ impl Autoplay {
     /// viewer spends *looking at a finished frame*, and counting a compile against
     /// it would spend the budget on a progress spinner.
     pub fn tick(&mut self, dt: Duration, busy: bool) -> Option<Beat> {
+        // **The lead-in runs on real time and ignores `busy`.** A compile triggered by the
+        // previous lab may still be finishing; holding the title on screen is exactly what
+        // there is to do while it does, and the clock this delays has not started.
+        if self.phase() == Phase::LeadIn {
+            self.lead_in += dt;
+            if self.lead_in < LEAD_IN {
+                return None;
+            }
+            self.phase = Some(Phase::Playing);
+            return self.beats.first().cloned();
+        }
         if self.phase() != Phase::Playing {
             return None;
         }
@@ -523,7 +586,7 @@ impl Autoplay {
     /// Fraction of the run completed, for a progress bar and for scrolling the
     /// lab text in step with the run.
     pub fn fraction(&self) -> f32 {
-        if self.beats.is_empty() {
+        if self.beats.is_empty() || self.phase() == Phase::LeadIn {
             return 0.0;
         }
         if self.phase() == Phase::Finished {
@@ -566,6 +629,11 @@ impl Autoplay {
         if self.beats.is_empty() {
             return 1.0;
         }
+        // Held at the start of the travel during the lead-in, which puts the scroll target
+        // at the top of the document rather than at beat one's link.
+        if self.phase() == Phase::LeadIn {
+            return 0.0;
+        }
         let travel = SCROLL_TRAVEL;
         let t = (self.since_dispatch.as_secs_f32() / travel.as_secs_f32()).clamp(0.0, 1.0);
         // Smoothstep: a hard jump reads as a glitch, a linear ramp as drift.
@@ -600,6 +668,27 @@ impl Autoplay {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A run past its [`LEAD_IN`], with the first beat already dispatched.
+    ///
+    /// **What every test below used to get from `start` alone.** The lead-in added on
+    /// 2026-09-04 means `start` dispatches nothing, so six tests that were about beat
+    /// *timing* would otherwise each carry a tick to skip it — six copies of a detail none
+    /// of them is testing. `a_run_holds_at_the_top_before_its_first_beat` is the one that
+    /// tests the lead-in itself, and it does not use this.
+    ///
+    /// Returns the first dispatched beat, which is what `start` used to return.
+    fn playing(beats: Vec<Beat>) -> (Autoplay, Option<Beat>) {
+        let mut ap = Autoplay::default();
+        assert_eq!(
+            ap.start(beats),
+            None,
+            "start dispatches nothing; the lead-in does"
+        );
+        let first = ap.tick(LEAD_IN, false);
+        assert_eq!(ap.phase(), Phase::Playing, "the lead-in is over");
+        (ap, first)
+    }
 
     /// A beat for tests, positioned a quarter of the document apart.
     ///
@@ -743,8 +832,8 @@ Short.
     #[test]
     fn a_busy_app_does_not_burn_the_dwell() {
         let beats = vec![beat(0, Some("a"), 2), beat(1, Some("b"), 2)];
-        let mut ap = Autoplay::default();
-        assert_eq!(ap.start(beats).and_then(|b| b.link), Some("a".to_owned()));
+        let (mut ap, first) = playing(beats);
+        assert_eq!(first.and_then(|b| b.link), Some("a".to_owned()));
 
         // Ten seconds of compiling: no advance, and no time charged to the beat.
         for _ in 0..10 {
@@ -778,8 +867,7 @@ Short.
     #[test]
     fn pause_holds_and_resume_continues() {
         let beats = vec![beat(0, None, 2)];
-        let mut ap = Autoplay::default();
-        ap.start(beats);
+        let (mut ap, _) = playing(beats);
         ap.tick(Duration::from_millis(16), false); // arm
         ap.tick(Duration::from_millis(1_000), false);
         ap.pause();
@@ -811,8 +899,7 @@ Short.
     /// paused animation under text that would not stay still.
     #[test]
     fn the_text_travels_then_stops_until_the_beat_changes() {
-        let mut ap = Autoplay::default();
-        ap.start(vec![beat(0, Some("a"), 6), beat(1, Some("b"), 6)]);
+        let (mut ap, _) = playing(vec![beat(0, Some("a"), 6), beat(1, Some("b"), 6)]);
         assert_eq!(ap.travel_t(), 0.0, "a fresh beat has not travelled yet");
 
         ap.tick(SCROLL_TRAVEL, false);
@@ -857,8 +944,7 @@ Short.
     /// are different questions, and conflating them produced this bug.
     #[test]
     fn the_text_reaches_the_link_while_the_app_is_still_busy() {
-        let mut ap = Autoplay::default();
-        ap.start(vec![beat(0, Some("a"), 6), beat(1, Some("load"), 6)]);
+        let (mut ap, _) = playing(vec![beat(0, Some("a"), 6), beat(1, Some("load"), 6)]);
         ap.tick(Duration::from_millis(16), false);
         ap.tick(Duration::from_secs(7), false); // finish beat 0, dispatch beat 1
         assert_eq!(ap.progress().0, 2, "precondition: the load beat is showing");
@@ -889,12 +975,92 @@ Short.
         );
     }
 
+    /// A run holds at the document's top for a second before dispatching anything.
+    ///
+    /// # What this reproduces
+    ///
+    /// Doug, 2026-09-04, on pressing play: the top few lines of an Answer disappeared and
+    /// read as being covered by the progress bar. Nothing overlapped — `start` dispatched
+    /// beat one immediately, and the scroll target is that beat's link, which in an Answer
+    /// sits below the title and opening paragraph. The document's beginning left the screen
+    /// in the same instant as the click.
+    ///
+    /// Three assertions, and the middle one is the fix: `start` returns **no** beat, so
+    /// nothing is dispatched and `travel_t` stays at 0, which puts the scroll target at the
+    /// top rather than at beat one's link.
+    #[test]
+    fn a_run_holds_at_the_top_before_its_first_beat() {
+        let mut ap = Autoplay::default();
+        let first = ap.start(vec![beat(0, Some("a"), 6), beat(1, Some("b"), 6)]);
+
+        assert_eq!(
+            first, None,
+            "nothing is dispatched on the click \u{2014} that is what moved the document",
+        );
+        assert_eq!(ap.phase(), Phase::LeadIn);
+        assert!(
+            ap.is_running(),
+            "the lead-in is a run, so the transport shows its bar while the title is read",
+        );
+        assert_eq!(
+            ap.travel_t(),
+            0.0,
+            "held at the start of the travel, which is the top of the document",
+        );
+        assert_eq!(
+            ap.fraction(),
+            0.0,
+            "and the bar reads zero rather than a first slice"
+        );
+
+        // Most of the way through the lead-in: still nothing.
+        assert_eq!(ap.tick(LEAD_IN - Duration::from_millis(50), false), None);
+        assert_eq!(ap.phase(), Phase::LeadIn, "still holding");
+
+        // Crossing it dispatches beat one, exactly once.
+        let dispatched = ap.tick(Duration::from_millis(60), false);
+        assert!(
+            dispatched.is_some(),
+            "the first beat lands when the lead-in elapses"
+        );
+        assert_eq!(ap.phase(), Phase::Playing);
+    }
+
+    /// The lead-in is pausable, and pausing it does not lose the first beat.
+    ///
+    /// The transport offers Pause from the first frame rather than changing identity a
+    /// second after the click, so this has to hold: a reader who pressed play by mistake
+    /// stops it before anything moves, and resuming still begins at beat one.
+    #[test]
+    fn pausing_during_the_lead_in_still_begins_at_the_first_beat() {
+        let mut ap = Autoplay::default();
+        ap.start(vec![beat(0, Some("a"), 6), beat(1, Some("b"), 6)]);
+
+        ap.tick(Duration::from_millis(200), false);
+        ap.pause();
+        assert_eq!(ap.phase(), Phase::Paused);
+        assert_eq!(
+            ap.tick(Duration::from_secs(10), false),
+            None,
+            "a paused lead-in dispatches nothing however long it is held",
+        );
+
+        ap.resume();
+        // The lead-in resumes where it left off rather than restarting.
+        let dispatched = ap.tick(LEAD_IN, false);
+        assert!(dispatched.is_some(), "resuming still reaches beat one");
+        assert_eq!(
+            ap.progress().0,
+            1,
+            "and it is the FIRST beat, not the second"
+        );
+    }
+
     /// The clock and the text are **different quantities**, and only one of them
     /// advances continuously.
     #[test]
     fn the_progress_bar_tracks_time_while_the_text_tracks_the_beat() {
-        let mut ap = Autoplay::default();
-        ap.start(vec![beat(0, None, 10), beat(1, None, 10)]);
+        let (mut ap, _) = playing(vec![beat(0, None, 10), beat(1, None, 10)]);
         ap.tick(Duration::from_millis(16), false);
         ap.tick(SCROLL_TRAVEL, false);
 
@@ -1006,10 +1172,9 @@ Short.
     #[test]
     fn focus_pauses_itself_without_undoing_a_user_pause() {
         let beats = vec![beat(0, None, 5)];
-        let mut ap = Autoplay::default();
 
         // Focus loss pauses, focus return resumes.
-        ap.start(beats.clone());
+        let (mut ap, _) = playing(beats.clone());
         ap.set_focused(false);
         assert_eq!(
             ap.phase(),
@@ -1023,8 +1188,27 @@ Short.
         ap.set_focused(true);
         assert_eq!(ap.phase(), Phase::Playing, "coming back resumes it");
 
+        // **The lead-in is held too, and comes back as a lead-in.** Otherwise the second
+        // at the document's top would elapse behind another window and the run would begin
+        // unwatched, which is the thing this guard exists to prevent.
+        let mut lead = Autoplay::default();
+        lead.start(beats.clone());
+        lead.set_focused(false);
+        assert_eq!(
+            lead.phase(),
+            Phase::Paused,
+            "losing focus holds the lead-in"
+        );
+        lead.set_focused(true);
+        assert_eq!(
+            lead.phase(),
+            Phase::LeadIn,
+            "and coming back resumes the LEAD-IN rather than the run, because the beat it \
+             precedes has still not been dispatched",
+        );
+
         // A user pause survives the same round trip.
-        ap.start(beats);
+        let (mut ap, _) = playing(beats);
         ap.pause();
         ap.set_focused(false);
         ap.set_focused(true);

@@ -878,10 +878,13 @@ fn the_play_button_starts_a_session_and_the_readout_reports_it() {
     h.state_mut().test_start_autoplay();
     h.run_steps(2);
 
+    // **`LeadIn` is what clicking Play produces**, and the readout below must say so
+    // rather than "playing": a second of stillness that reads as "playing" is a readout
+    // describing something the screen is not doing. Added 2026-09-04 with the lead-in.
     assert_eq!(
         h.state().test_autoplay_phase(),
-        crate::autoplay::Phase::Playing,
-        "clicking Play must actually start the clock",
+        crate::autoplay::Phase::LeadIn,
+        "clicking Play must actually start the run",
     );
 
     // Non-vacuity: a real lab schedules many beats, not one.

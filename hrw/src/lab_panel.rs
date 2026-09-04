@@ -345,17 +345,23 @@ pub(crate) fn autoplay_controls_ui(
                 ui.separator();
 
                 match phase {
-                    Phase::Playing | Phase::Paused => {
-                        let (label, hover) = if phase == Phase::Playing {
+                    // **Pausable from the first frame.** The lead-in is a run, so offering
+                    // Pause here rather than Play means the button does not change identity
+                    // one second after the click — and a reader who pressed play by mistake
+                    // can stop it before anything has moved.
+                    Phase::LeadIn | Phase::Playing | Phase::Paused => {
+                        let (label, hover) = if phase != Phase::Paused {
                             ("\u{23f8} Pause", "Hold the run here.")
                         } else {
                             ("\u{25b6} Resume", "Continue from this beat.")
                         };
                         if ui.button(label).on_hover_text(hover).clicked() {
-                            if phase == Phase::Playing {
-                                lab.autoplay.pause();
-                            } else {
+                            // Anything that is not already paused pauses, which now
+                            // includes the lead-in.
+                            if phase == Phase::Paused {
                                 lab.autoplay.resume();
+                            } else {
+                                lab.autoplay.pause();
                             }
                         }
                         if ui
@@ -539,6 +545,9 @@ pub(crate) fn autoplay_controls_ui(
                     "beat {beat}/{total} \u{00b7} {}",
                     match phase {
                         Phase::Paused => "paused",
+                        // Named, so a second of stillness reads as the run starting rather
+                        // than as the run being stuck.
+                        Phase::LeadIn => "starting",
                         _ if compiling => "compiling \u{2014} clock held",
                         _ => "playing",
                     }
