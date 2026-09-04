@@ -236,6 +236,69 @@ impl SimData {
             })
             .collect()
     }
+
+    /// This run's trajectories, as the bridge and the notebook both publish them.
+    ///
+    /// # Why one function rather than two
+    ///
+    /// This body lived in `examples/gen_trace.rs`, which put the committed
+    /// notebook baseline inside an example the library cannot reach — so the
+    /// live bridge had no simulation file at all, and **the plot pane was the
+    /// only stage whose data Claude could not read.** On 2026-09-04 that cost
+    /// two diagnoses of a flat-trajectory defect: the first was wrong, and the
+    /// second had to rest on Doug squinting at a plot and reporting *"C.v is
+    /// flat at 5, I think"*. A hedged reading of the one artifact under
+    /// suspicion is the worst possible evidence, and it was the only kind
+    /// available.
+    ///
+    /// Sharing the writer is what makes the comparison that matters — a live
+    /// run against the committed baseline — a comparison of like with like. Two
+    /// writers of the same summary can disagree, and a disagreement between
+    /// them would look exactly like the compiler drifting.
+    ///
+    /// # Why a summary and not the full series
+    ///
+    /// Per variable: `initial`, `final`, `min` and `max`. That is not a
+    /// description of the trajectory, it is four of its values — enough to
+    /// answer *"did this move, and from where to where"*, which is the question
+    /// a flat plot raises. The full series is 501 × N floats and answers a
+    /// question nobody has yet asked; add it when one does, rather than
+    /// speculating about shape now.
+    ///
+    /// `t_end` is the requested horizon and is passed in because it belongs to
+    /// the *request*, not the result: `t_final` below is how far the solver
+    /// actually got, and the two differing is a finding rather than an error.
+    pub fn to_bridge_json(&self, t_end: f64) -> serde_json::Value {
+        let variables: Vec<serde_json::Value> = self
+            .names
+            .iter()
+            .enumerate()
+            .map(|(i, name)| {
+                let series = &self.data[i];
+                serde_json::json!({
+                    "name": name,
+                    // The first `n_states` names are the true states; see the
+                    // field's own doc on `SimData`.
+                    "is_state": i < self.n_states,
+                    "initial": series.first().copied().unwrap_or(f64::NAN),
+                    "final": series.last().copied().unwrap_or(f64::NAN),
+                    "min": series.iter().copied().fold(f64::INFINITY, f64::min),
+                    "max": series.iter().copied().fold(f64::NEG_INFINITY, f64::max),
+                })
+            })
+            .collect();
+
+        serde_json::json!({
+            "t_end": t_end,
+            "n_time_points": self.times.len(),
+            "n_variables": self.names.len(),
+            "n_states": self.n_states,
+            "has_discontinuities": self.has_discontinuities,
+            "t_start": self.times.first().copied().unwrap_or(0.0),
+            "t_final": self.times.last().copied().unwrap_or(0.0),
+            "variables": variables,
+        })
+    }
 }
 
 /// Split a plotted trajectory into contiguous segments, breaking it where the
@@ -780,13 +843,32 @@ impl StageKind {
     }
 
     /// The file this stage's IR is written to, under `.hrw-bridge/stages/` and under a
-    /// specimen's `trace/`. `None` for `Simulation`, which is a plot rather than IR.
+    /// specimen's `trace/`.
+    ///
+    /// **`Simulation` returned `None` until 2026-09-04, on the reasoning that it is "a
+    /// plot rather than IR".** That distinction is real and was still the wrong line to
+    /// draw: it made the plot the one pane whose data Claude cannot read, and the flat
+    /// trajectories in `docs/upstream-issues.md` had to be diagnosed from a guess vector
+    /// and Doug's own hedged reading of the screen. The notebook had written
+    /// `simulation.json` all along, so the asymmetry was between the two *destinations*,
+    /// not between IR and plots. `None` now means no such stage exists, and no stage
+    /// returns it.
+    ///
+    /// **It is written on a different trigger from the other eleven**, which is the one
+    /// hazard worth naming here: those are published by a compile, this by a *simulate*.
+    /// So it is kept in step with `App::sim_data` at a single site
+    /// (`App::set_sim_data`) rather than written wherever a result arrives — a
+    /// `simulation.json` outliving the run that produced it would be indistinguishable
+    /// from a current one.
     ///
     /// **Spelled out rather than derived from [`slug`].** A PascalCase-to-snake_case
-    /// conversion happens to produce all eleven of these correctly today, which is
-    /// exactly what would make a twelfth stage's mismatch silent.
+    /// conversion happens to produce all twelve of these correctly today, which is
+    /// exactly what would make a thirteenth stage's mismatch silent.
     /// `every_stage_file_name_is_in_the_canonical_list` pins these against
     /// `bridge::STAGE_FILE_NAMES` in both directions.
+    ///
+    /// **The `Option` now always returns `Some`, and stays anyway.** Callers already
+    /// branch on it, and it is the seam a thirteenth stage would use to decline a file.
     pub fn stage_file_name(self) -> Option<&'static str> {
         Some(match self {
             StageKind::Parse => "parse.json",
@@ -800,7 +882,7 @@ impl StageKind {
             StageKind::Initialization => "initialization.json",
             StageKind::Events => "events.json",
             StageKind::SolveLowering => "solve_lowering.json",
-            StageKind::Simulation => return None,
+            StageKind::Simulation => "simulation.json",
         })
     }
 

@@ -1792,7 +1792,7 @@ impl App {
         // from the last specimen is reset to its default.
         self.model = None;
         self.stages = StageBundle::default();
-        self.sim_data = None;
+        self.set_sim_data(None);
         self.sim_error = None;
         self.sim_running = false;
         self.def_index = BTreeMap::new();
@@ -2108,7 +2108,7 @@ impl App {
                                     data.times.len(),
                                 ),
                             );
-                            self.sim_data = Some(data);
+                            self.set_sim_data(Some(data));
                             self.sim_error = None;
                         }
                         Err(e) => {
@@ -2121,7 +2121,7 @@ impl App {
                                     self.model.as_deref().unwrap_or("<unnamed>"),
                                 ),
                             );
-                            self.sim_data = None;
+                            self.set_sim_data(None);
                             self.sim_error = Some(e);
                         }
                     }
@@ -3464,10 +3464,37 @@ impl App {
         None
     }
 
+    /// Sets the simulation result and keeps `simulation.json` in step with it.
+    ///
+    /// # Why this is a method and not four assignments
+    ///
+    /// `sim_data` is written at four sites — a result arriving, a failure
+    /// arriving, a new simulation starting, and a specimen being cleared. The
+    /// bridge file has to follow **all four**, because the invariant Claude
+    /// reads it under is `simulation.json` exists ⟺ this model has a current
+    /// run. A `simulation.json` left behind by the previous specimen is not a
+    /// stale-looking file; it is indistinguishable from a current one, and it
+    /// would be read as fact.
+    ///
+    /// Four call sites maintaining one invariant by hand is precisely the shape
+    /// `CLAUDE.md`'s column-read audits keep finding a wrong member of — so the
+    /// invariant is held in one place instead, and
+    /// `ui_tests::the_simulation_bridge_file_follows_the_data` pins it by
+    /// driving all four transitions.
+    fn set_sim_data(&mut self, data: Option<SimData>) {
+        let body = data.as_ref().map(|d| d.to_bridge_json(self.sim_t_end));
+        if let Err(e) = bridge::write_stages(&[("simulation", body.as_ref())]) {
+            // Reported, never swallowed: a failed write leaves no file, and no
+            // file is read as "this model was never simulated".
+            self.notify(format!("write_stages(simulation) failed: {e}"));
+        }
+        self.sim_data = data;
+    }
+
     fn start_simulation(&mut self) {
         if let (Some(path), Some(model)) = (self.selected.clone(), self.model.clone()) {
             self.sim_running = true;
-            self.sim_data = None;
+            self.set_sim_data(None);
             self.sim_error = None;
             // **`selected_is_library` decides how `path` is read.** For a library
             // model it holds the qualified name rather than a file, which is why

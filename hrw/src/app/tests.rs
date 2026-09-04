@@ -2841,8 +2841,110 @@ fn drain_worker_compiled_preserves_log_view() {
     );
 }
 
+/// `.hrw-bridge/stages/simulation.json` exists exactly when the app holds a run.
+///
+/// # Why all four transitions, and not just the happy one
+///
+/// The file is written on a **simulate** while the other eleven stage files are written
+/// on a **compile**, so it is the one stage file that can outlive the model it describes.
+/// A `simulation.json` left over from the previous specimen is not a stale-looking file
+/// — it is indistinguishable from a current one, and Claude reads these as fact.
+///
+/// So the invariant is `file exists ⟺ sim_data.is_some()`, and it is maintained at a
+/// single site (`App::set_sim_data`) rather than at the four places `sim_data` is
+/// written. This test drives all four: a result arriving, a failure arriving, a new run
+/// starting, and the specimen being cleared. Three of the four clear the data, and it is
+/// exactly the sort of roster where a column read keeps finding one member that forgot.
+#[test]
+fn the_simulation_bridge_file_follows_the_data() {
+    let _stages = crate::ui_tests::StageFiles::preserved();
+    let sim_file = std::path::Path::new(crate::bridge::STAGES_DIR).join("simulation.json");
+
+    let (mut app, tx) = App::test_with_sender();
+    let path = PathBuf::from("/test/specimen.mo");
+    app.selected = Some(path.clone());
+    // **`model` as well as `selected`**, because `start_simulation` needs both: it is
+    // guarded on `(selected, model)` and does nothing at all without a model. Setting
+    // only `selected` made transition 3 below pass vacuously — the file survived
+    // because the method returned early, which is exactly the "green for the wrong
+    // reason" shape this suite keeps finding.
+    app.model = Some("TestSpecimen".to_owned());
+
+    // Nothing simulated yet: absence is the honest state, and `preserved()` has
+    // already moved any real file out of the way.
+    let _ = std::fs::remove_file(&sim_file);
+    assert!(!sim_file.exists(), "precondition: no run, no file");
+
+    // 1. A result arrives.
+    tx.send(FromWorker::Simulated {
+        path: path.clone(),
+        result: Ok(SimData {
+            times: vec![0.0, 1.0],
+            names: vec!["x".into()],
+            data: vec![vec![2.0, 7.0]],
+            n_states: 1,
+            has_discontinuities: false,
+            solver_steps: vec![],
+        }),
+    })
+    .unwrap();
+    app.drain_worker();
+    assert!(sim_file.exists(), "a completed run must publish its data");
+    let published: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&sim_file).expect("read")).expect("json");
+    assert_eq!(
+        published["variables"][0]["final"], 7.0,
+        "and the file must carry THIS run's numbers, not a placeholder",
+    );
+
+    // 2. A failure arrives. There is no data, so there must be no file — a reader
+    //    finding one would attribute the previous run's trajectory to a failed one.
+    tx.send(FromWorker::Simulated {
+        path: path.clone(),
+        result: Err("solver error: step size is too small at time = 0".to_owned()),
+    })
+    .unwrap();
+    app.drain_worker();
+    assert!(
+        !sim_file.exists(),
+        "a failed run must remove the previous run's file",
+    );
+
+    // 3. A new run starting clears it too, so the pane and the file agree while the
+    //    worker is busy.
+    app.set_sim_data(Some(SimData {
+        times: vec![0.0],
+        names: vec!["x".into()],
+        data: vec![vec![1.0]],
+        n_states: 1,
+        has_discontinuities: false,
+        solver_steps: vec![],
+    }));
+    assert!(sim_file.exists(), "fixture for the next transition");
+    app.start_simulation();
+    assert!(!sim_file.exists(), "starting a run clears the old file");
+
+    // 4. Clearing the specimen clears it — the transition that would otherwise carry
+    //    one model's trajectory into the next model's session.
+    app.set_sim_data(Some(SimData {
+        times: vec![0.0],
+        names: vec!["x".into()],
+        data: vec![vec![1.0]],
+        n_states: 1,
+        has_discontinuities: false,
+        solver_steps: vec![],
+    }));
+    assert!(sim_file.exists(), "fixture for the last transition");
+    app.clear_specimen_state(false);
+    assert!(
+        !sim_file.exists(),
+        "a new specimen must not inherit the previous one's simulation",
+    );
+}
+
 #[test]
 fn drain_worker_simulated_ok_stores_data() {
+    let _stages = crate::ui_tests::StageFiles::preserved();
     let (mut app, tx) = App::test_with_sender();
     let path = PathBuf::from("/test/specimen.mo");
     app.selected = Some(path.clone());
@@ -3048,6 +3150,9 @@ fn a_running_simulation_is_announced_in_the_pane() {
 
 #[test]
 fn drain_worker_simulated_err_stores_error() {
+    // Draining a `Simulated` now syncs `stages/simulation.json`, so this test writes
+    // into live state whether it means to or not.
+    let _stages = crate::ui_tests::StageFiles::preserved();
     let (mut app, tx) = App::test_with_sender();
     let path = PathBuf::from("/test/specimen.mo");
     app.selected = Some(path.clone());
@@ -6266,6 +6371,8 @@ fn purpose_note_hrw_links_are_valid() {
 
 #[test]
 fn open_resets_all_specimen_state() {
+    // `open` clears the specimen, which now removes `stages/simulation.json`.
+    let _stages = crate::ui_tests::StageFiles::preserved();
     let mut app = App::test_default();
     // Populate fields with non-default values to detect missed resets.
     app.model = Some(String::from("OldModel"));

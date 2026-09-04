@@ -5471,6 +5471,18 @@ fn output_capture_handles_large_write_without_deadlock() {
 /// `StageBundle::as_stage_pairs` names must stay in sync with
 /// `bridge::STAGE_FILE_NAMES` — a rename or reorder in one but not the
 /// other silently breaks stage-file publishing.
+///
+/// **The two are no longer equal, and the difference is the point** *(2026-09-04)*.
+/// `as_stage_pairs` is what a **compile** publishes; `simulation.json` is published by a
+/// **simulate**, from `App::set_sim_data`. So the relationship this pins is
+/// *compile pairs + simulation = the canonical list*, with the simulation entry required
+/// to be last.
+///
+/// Asserting plain equality would have been the easy repair when this test first failed,
+/// and it would have deleted the assertion's whole value: `simulation.json` would then
+/// have had to join `as_stage_pairs`, which is a `StageBundle` accessor — and
+/// `StageBundle::get()` *panics* on `Simulation`, because the simulation result is not in
+/// the bundle at all.
 #[test]
 fn stage_pairs_names_match_stage_file_names() {
     use crate::bridge::STAGE_FILE_NAMES;
@@ -5481,11 +5493,26 @@ fn stage_pairs_names_match_stage_file_names() {
         .iter()
         .map(|(name, _)| format!("{name}.json"))
         .collect();
-    let file_names: Vec<&str> = STAGE_FILE_NAMES.to_vec();
+
+    let (compiled, simulated) = STAGE_FILE_NAMES
+        .split_last()
+        .map(|(last, rest)| (rest, *last))
+        .expect("the canonical list is not empty");
 
     assert_eq!(
-        pair_names, file_names,
-        "StageBundle::as_stage_pairs() names diverged from STAGE_FILE_NAMES"
+        pair_names, compiled,
+        "StageBundle::as_stage_pairs() diverged from the compile-published prefix of \
+         STAGE_FILE_NAMES",
+    );
+    assert_eq!(
+        simulated, "simulation.json",
+        "the one entry published by a simulate rather than a compile must stay last, \
+         since the prefix above is what identifies the compile set",
+    );
+    assert_eq!(
+        StageKind::Simulation.stage_file_name(),
+        Some(simulated),
+        "and the stage that publishes it must agree on the name",
     );
 }
 
@@ -6489,6 +6516,81 @@ fn a_simulation_that_succeeded_still_reports_its_non_finite_values() {
         vec![("x".to_owned(), 1), ("y".to_owned(), 2)],
         "every affected series is listed, in the order the model declares them",
     );
+}
+
+/// **A flat trajectory must be reportable as flat, in numbers.**
+///
+/// # The failure this exists to prevent
+///
+/// On 2026-09-04 Doug reported that no fixture specimen produces a simulation plot
+/// worth looking at. Diagnosing it needed one fact per variable — did this move, and
+/// between what values — and HRW published that fact nowhere. The plot pane was the
+/// only stage whose data the bridge did not carry, so the first diagnosis was built on
+/// a *guess vector* (`SolveModel::initial_y`) and was wrong, and the second had to rest
+/// on Doug reading the screen and reporting *"C.v is flat at 5, I think"*.
+///
+/// So this is the must-fire test for the reporter: a series that does not move must say
+/// so, and a series that moves must not be reported as flat. Both directions, because a
+/// summary that called everything flat would have looked exactly as convincing.
+///
+/// `min`/`max` rather than `initial`/`final` alone is the load-bearing part — a
+/// trajectory that rings and returns has `initial == final` while being anything but
+/// flat, and `Drivetrain`'s nine states are the case where telling those apart matters.
+#[test]
+fn the_simulation_summary_distinguishes_a_flat_trajectory_from_a_moving_one() {
+    let data = SimData {
+        times: vec![0.0, 0.5, 1.0],
+        names: vec!["flat".into(), "rising".into(), "ringing".into()],
+        data: vec![
+            vec![5.0, 5.0, 5.0],
+            vec![0.0, 1.0, 2.0],
+            // Returns to where it started, so `initial == final` and only the
+            // extremes reveal that it moved at all.
+            vec![1.0, 3.0, 1.0],
+        ],
+        n_states: 2,
+        has_discontinuities: false,
+        solver_steps: Vec::new(),
+    };
+
+    let json = data.to_bridge_json(1.0);
+    let vars = json["variables"].as_array().expect("variables array");
+    assert_eq!(vars.len(), 3, "one entry per variable, none dropped");
+
+    let swing =
+        |v: &serde_json::Value| v["max"].as_f64().expect("max") - v["min"].as_f64().expect("min");
+
+    assert_eq!(vars[0]["name"], "flat");
+    assert_eq!(swing(&vars[0]), 0.0, "a constant series has zero swing");
+    assert_eq!(
+        vars[0]["initial"], 5.0,
+        "and the value it is stuck at is what the diagnosis needs",
+    );
+
+    assert_eq!(
+        swing(&vars[1]),
+        2.0,
+        "a rising series must not read as flat"
+    );
+    assert_eq!(vars[1]["initial"], 0.0);
+    assert_eq!(vars[1]["final"], 2.0);
+
+    // The non-vacuity guard: this series is the reason `min`/`max` are published at
+    // all, and a summary carrying only endpoints would call it flat.
+    assert_eq!(
+        vars[2]["initial"], vars[2]["final"],
+        "the ringing fixture must start and end at the same value, or it tests nothing",
+    );
+    assert_eq!(swing(&vars[2]), 2.0, "yet its swing must be visible");
+
+    assert_eq!(json["n_states"], 2, "the state/algebraic split is carried");
+    assert_eq!(vars[0]["is_state"], true);
+    assert_eq!(
+        vars[2]["is_state"], false,
+        "past `n_states` the entries are algebraics and outputs",
+    );
+    assert_eq!(json["t_start"], 0.0);
+    assert_eq!(json["t_final"], 1.0);
 }
 
 /// **No `OutputCapture` is ever started while another is live.**

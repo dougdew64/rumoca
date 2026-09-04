@@ -466,6 +466,10 @@ pub const STAGE_FILE_NAMES: &[&str] = &[
     "initialization.json",
     "events.json",
     "solve_lowering.json",
+    // **Written on a simulate, not on a compile** — the only entry here that is. Kept in
+    // step with `App::sim_data` by `App::set_sim_data`, so its presence means *this*
+    // model's run and never a previous one's.
+    "simulation.json",
 ];
 
 /// Maximum size of a captured node's subtree before it degrades to a shape
@@ -3506,12 +3510,16 @@ mod tests {
     }
 
     /// `STAGE_FILE_NAMES` must cover every stage the app writes via `write_stages`.
-    /// This test checks the count matches the pipeline's 10 stages so a new stage
+    /// This test checks the count matches the pipeline's stages so a new stage
     /// addition without updating the constant is caught.
+    ///
+    /// **The `- 1` here was Simulation's exemption, removed 2026-09-04.** Every stage now
+    /// has a file, so the count is exact rather than exact-but-one — and an off-by-one
+    /// that used to be absorbed by the subtraction now fails.
     #[test]
     fn stage_file_names_covers_all_pipeline_stages() {
-        // One file per pipeline stage (Parse through Solve lowering, excluding Simulation).
-        let pipeline_stage_count = StageKind::ALL.len() - 1;
+        // One file per stage, Parse through Simulation, with no exemptions.
+        let pipeline_stage_count = StageKind::ALL.len();
         assert_eq!(
             STAGE_FILE_NAMES.len(),
             pipeline_stage_count,

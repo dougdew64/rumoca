@@ -192,7 +192,11 @@ fn generate_trace(name: &str) -> Result<(), String> {
     let sim_result = if can_simulate {
         match simulate_specimen(&specimen, &model, SIM_T_END, msl_roots()) {
             Ok(data) => {
-                let sim_json = simulation_to_json(&data, SIM_T_END);
+                // **The library's writer, shared with the live bridge since
+                // 2026-09-04.** A second copy here would make the committed baseline
+                // and the running app disagree in a way that looks like the compiler
+                // drifting; see `SimData::to_bridge_json`.
+                let sim_json = data.to_bridge_json(SIM_T_END);
                 std::fs::write(
                     trace_dir.join("simulation.json"),
                     format!("{}\n", serde_json::to_string_pretty(&sim_json).unwrap()),
@@ -245,45 +249,6 @@ fn generate_trace(name: &str) -> Result<(), String> {
 
     eprintln!("  wrote trace for {model} → {}", trace_dir.display());
     Ok(())
-}
-
-/// Build a JSON summary of simulation results: variable names, final values,
-/// time span, and a sampled trajectory (first/last 5 time points for each
-/// variable) — enough to answer questions about the run without storing the
-/// full trajectory.
-fn simulation_to_json(data: &hrw::worker::SimData, t_end: f64) -> serde_json::Value {
-    let variables: Vec<serde_json::Value> = data
-        .names
-        .iter()
-        .enumerate()
-        .map(|(i, name)| {
-            let series = &data.data[i];
-            let initial = series.first().copied().unwrap_or(f64::NAN);
-            let final_val = series.last().copied().unwrap_or(f64::NAN);
-            let min = series.iter().copied().fold(f64::INFINITY, f64::min);
-            let max = series.iter().copied().fold(f64::NEG_INFINITY, f64::max);
-            let is_state = i < data.n_states;
-            serde_json::json!({
-                "name": name,
-                "is_state": is_state,
-                "initial": initial,
-                "final": final_val,
-                "min": min,
-                "max": max,
-            })
-        })
-        .collect();
-
-    serde_json::json!({
-        "t_end": t_end,
-        "n_time_points": data.times.len(),
-        "n_variables": data.names.len(),
-        "n_states": data.n_states,
-        "has_discontinuities": data.has_discontinuities,
-        "t_start": data.times.first().copied().unwrap_or(0.0),
-        "t_final": data.times.last().copied().unwrap_or(0.0),
-        "variables": variables,
-    })
 }
 
 /// FNV-1a 64-bit — a tiny, dependency-free, deterministic content hash.

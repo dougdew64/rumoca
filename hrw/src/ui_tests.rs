@@ -1656,6 +1656,9 @@ fn a_failed_stage_with_only_an_error_shows_no_tree() {
 /// another file marks a line nothing pointed at.
 #[test]
 fn showing_a_variable_in_source_marks_the_line_it_landed_on() {
+    // Clearing the specimen now removes `stages/simulation.json`, so this reaches
+    // live state on its way to a question about a highlighted line.
+    let _stages = StageFiles::preserved();
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
     // A specimen must be selected: `ShowSource` is not on `requires_specimen`'s
