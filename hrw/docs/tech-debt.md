@@ -374,10 +374,33 @@ claims, a remote that does not exist. **The procedure had been carrying an untes
 since HRW moved in-workspace**, and nothing could notice, because a procedure is prose and prose is
 only checked for whether its citations resolve.
 
-**The toolchain column is one row, and that is the finding rather than a good sign.** Everything
-else here lived in a mechanism, a conversation, or a document's reasoning — the three places nothing
-looks. The one mechanised catch was the doc-comment anchor, which fired five times in a day and
-worked every time.
+**The toolchain column is one row — and reading that as a finding is a mistake, corrected here the
+same day Doug asked what the argument was.** *"Only one of seventeen"* sounds like evidence the
+checkers are weak. It is not, because **this column is undercounted by construction**: a clippy
+error, a failing test or a rustfmt diff is fixed in the same minute and never becomes a row. What
+the ratio actually says is that the defects *worth recording* skew toward the ones checkers cannot
+see, which is nearly a tautology. **Read the ratio for Doug-versus-Claude, which is what it was
+built for, and not for the toolchain's effectiveness, which it cannot measure.**
+
+**What does survive is one nameable class, and it is rows 14, 15 and 16: a document claim that
+names real code, resolves, and is false.** Every mechanism here verifies **resolution** — the path
+exists, the symbol is found, the link parses. None verifies **correspondence** — whether the prose's
+claim about that code is true. *"`gen_field_help` re-extracts from `rumoca-ir-ast`"* cites a real
+crate and resolves perfectly; there are five. *"`git fetch upstream`"* is well-formed and names a
+real project; there is no such remote. **`qualified_citations_resolve` was green throughout, and
+correctly so.**
+
+**But the remedy is a REHEARSAL, not a checker**, and that distinction is the useful part. All three
+are in one document, and all three were found by one activity: *verifying* `updating-rumoca.md`
+rather than reading it. A checker pinning crate counts against `IR_CRATES` would have caught 14 and
+neither 15 nor 16. **What would have caught all three is running the procedure once** — it had never
+been executed since HRW moved in-workspace, so the defects were not subtle, they were
+**unexercised**. <!-- unbuilt: gate_policy::procedure_docs_are_rehearsed -->
+
+**The transferable rule: a procedure nobody has run is not documentation, it is a hypothesis.**
+This repository already applies that to code — the must-fire rule exists because an unexercised
+reporter is indistinguishable from a working one. `updating-rumoca.md` is the same shape, and it sat
+unexercised for weeks while every checker over it stayed green.
 
 **Not counted above, deliberately: the initialization defect itself** — Rumoca's, not ours. It is in
 [`upstream-issues.md`](upstream-issues.md), adjudicated against System Modeler, and it was found by
