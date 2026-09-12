@@ -204,7 +204,7 @@ place. `CLAUDE.md` already records that `egui_kittest` cannot see layout, and ha
 confirm it. **The toolchain column is dominated by Claude's own fresh mistakes**, caught within
 minutes, which is the loop working as designed.
 
-<!-- ledger-through: 2026-09-02 -->
+<!-- ledger-through: 2026-09-12 -->
 
 ### 08-17 → 08-22, backfilled 2026-08-23 — and the ledger had gone dark
 
@@ -333,6 +333,56 @@ zero by construction.
 the budgeted `no_doc_block_gains_a_second_summary` watches the standing population loosely at ~29 %
 precision, and the new one watches everything that changed since `HEAD` exactly. **A defect
 committed and never touched again is invisible to the second** — that is what the first is for.
+
+### 09-03 → 09-12 — the Doug column is questions now, not screenshots
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 09-03 | an Answer pointed at **three absent things** in Solve lowering | **Doug** | *"I don't see this"*, three times, then *"I still don't see 'Y'"* |
+| 09-03 | `c[1]` cited as a tree node and not present | **Doug** | *"Do I need to expand some nodes?"* |
+| 09-03 | bold used for emphasis in an Answer, against a standing agreement | **Doug** | he had corrected the same thing before |
+| 09-03 | autoplay clicked only the **first** link on a line | **Doug** | *"You missed many of multiple links per line"* — after a fix that addressed one link |
+| 09-03 | the beat-increment flash blamed on id collisions; his report said *"a different scroll position"* | **Doug** | a mechanism chased past the report's own constraining noun; cost a commit that had to say it had not fixed the reported thing |
+| 09-03 | *"the simulation plot does not honour the follow"* — it did | Claude | a filtered grep needing both terms on one line, against `let tracked = self.tracked_identifier;` |
+| 09-03 | doc comment stranded by an insertion above it | `no_item_loses_its_doc_comment` | bitten eight times total, five of them on 09-04 |
+| 09-04 | **simulation was the one pane whose data the bridge never published** | **Doug** | *"C.v is flat at 5, I think"* — a hedged reading of the only artifact under suspicion, after it had already cost one wrong diagnosis |
+| 09-04 | *"declared starts never reach the state vector"* — they reach `initial_y` intact | Claude | reading `initial_y`'s own doc, which calls itself the check for exactly that |
+| 09-04 | the mechanism in a **public** upstream entry: *"the steady state could not be found"* implies a failed attempt; none is made | **Doug** | *"why does BouncingBall simulate correctly?"* — the equation that would fail is filtered out before the solve |
+| 09-04 | `view_published` reports a publish that did not happen | Claude | `last_published_view` is a dedup key and a claim under one name |
+| 09-04 | `experiment(StopTime)` silently ignored in favour of the slider | Claude | defensible and undocumented; `RcCircuit` asks for 1 s and gets 2 |
+| 09-04 | a **stale copy of `CLAUDE.md` in a parent directory**, injected as authority, untracked, 4 days old | Claude | a grep for a path that should have been there and was not |
+| 09-04 | `updating-rumoca.md` step 4 named **one** harvested crate; there are five, and the table is keyed by stage | Claude | verifying the procedure instead of reading it |
+| 09-04 | the same file said *"nothing else depends on"* the committed traces; **eight source files read them** | Claude | including `answer_check`'s fallback and a gate |
+| 09-04 | `git fetch upstream` — **there is no `upstream` remote**; the rebase plan was blocked at its first command | Claude | prompted by Doug asking which Rumoca version HRW uses |
+| 09-12 | the lab answered the **flow** half of unconnected connectors and left the potential half hanging | **Doug** | *"which compiler phase fails?"* — a reader following the passage carefully reaches the question |
+
+**Seventeen rows: Doug 8, Claude 8, toolchain 1.** The ratio has moved, and not because Doug is
+finding less — because **what he finds has changed kind**. Nine of his ten rows in the 08-16 section
+were things visibly wrong on screen. Here, five of eight are **questions**: *why does BouncingBall
+work*, *which phase fails*, *which version are we on*. None of those is a bug report. Each one
+turned out to sit on top of something wrong.
+
+**That is a better instrument than the screenshots were, and it is worth saying why.** A question
+tests whether Claude's account *holds together*, and three of these found accounts that did not —
+including a wrong mechanism already written into a public entry with Doug's name on it. **No checker
+in this repository verifies a mechanism**, only that claims resolve; `git fetch upstream` is
+well-formed, names a real project, and had never been run.
+
+**The Claude column is dominated by one activity: verifying a document instead of reading it.** Five
+rows come from checking `updating-rumoca.md`'s claims against the code — crate counts, dependency
+claims, a remote that does not exist. **The procedure had been carrying an untested first command
+since HRW moved in-workspace**, and nothing could notice, because a procedure is prose and prose is
+only checked for whether its citations resolve.
+
+**The toolchain column is one row, and that is the finding rather than a good sign.** Everything
+else here lived in a mechanism, a conversation, or a document's reasoning — the three places nothing
+looks. The one mechanised catch was the doc-comment anchor, which fired five times in a day and
+worked every time.
+
+**Not counted above, deliberately: the initialization defect itself** — Rumoca's, not ours. It is in
+[`upstream-issues.md`](upstream-issues.md), adjudicated against System Modeler, and it was found by
+Doug asking for a specimen that plots well. Counting another project's defect here would flatter the
+ratio this ledger exists to keep honest.
 
 ### The standing prediction, checked — 3 of 4, and the fourth is the interesting one
 
