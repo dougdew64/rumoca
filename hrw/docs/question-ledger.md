@@ -633,3 +633,50 @@ prevent.
 
 **451 lines to 341.** The lab is first because he asked for it first: *"I've been focused on that
 lab, trying to get this lab format right."*
+
+---
+
+## 2026-09-12 — "If a potential variable is not mentioned in any connect statement, which compiler phase fails?"
+
+Asked while reading `connect-expansion`, pointing at *"A variable no `connect` touches is not a
+set of one — it is absent"*. **The lab had answered the flow half and left the potential half
+hanging**, which is what the question found: the passage names
+`generate_unconnected_flow_equations` as the pass that rescues an untouched *flow* variable, and
+there is no counterpart for potentials. A reader who follows that carefully arrives exactly here.
+
+**The answer has two halves, and the second is the one worth teaching.**
+
+*Which phase:* none **fails** — every stage reports `Ok` or `Flagged` and the pipeline runs to
+Solve lowering, per Rumoca's recovery design. **Matching, inside structural analysis, is the first
+to flag it**, and index reduction restates it naming the variable: *"1 matched out of 1 equations
+and 2 unknowns; unmatched unknowns: `p.v`"*.
+
+*But usually nothing complains at all*, and that is the part the question exposes. Measured with
+two scratch specimens:
+
+| specimen | DAE | structural |
+|---|---|---|
+| `DanglingPin` — resistor, `R.n` unconnected | 17 algebraic, 17 equations | clean |
+| `OrphanConnector` — a bare `Pin` in the model | 10 algebraic, 9 equations | `singular`, names `p.v` |
+
+**The absent equality is not a hole, because the component was always what supplied that
+equation.** `R.n.i = 0` from the flow pass, plus the resistor's own `R.v = R.R * R.i` and
+`R.v = R.p.v - R.n.v`, gives `R.n.v = R.p.v`. **That is MLS's local-balance requirement showing
+through** — a component is written so its own equations plus `flow = 0` determine its connector
+potentials. Singularity needs a connector with *no component behind it*.
+
+**Oracle agreed, which is worth recording because most of 2026-09-04 it did not.** System
+Modeler 15.0 simulates `DanglingPin` (`R.i = 0`, `R.n.v = R.p.v = 5`) and refuses
+`OrphanConnector` with *"Unbalanced model"* and *"Variables not solvable in any equation:
+'p.v'"* — the same variable, the same class of check. **Rumoca's message carries more detail than
+the oracle's**, since it gives the matched/unknown counts.
+
+**Owed to the lab:** the passage is correct and incomplete. It should say why the absence is
+normally harmless, or a reader does the right reasoning and reaches the wrong conclusion. **Doug's
+to rewrite, not Claude's** — tour prose is his primary learning exercise.
+
+**Candidate specimen:** `OrphanConnector` fills a real gap. `OverDeterminedShaft` covers the
+over-determined half of the balance check (3 equations, 2 unknowns) and **nothing covers the
+under-determined half caught by matching**. `docs/ideas.md` #46 wants a failure specimen per
+phase. It is already oracle-validated, and unlike the plot work it is **blocked by nothing** —
+a structural question, so the initialization defect is irrelevant to it.
