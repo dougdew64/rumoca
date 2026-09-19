@@ -1,7 +1,8 @@
 # Diagnosing models — why a model does not work, and which instrument answers
 
 **Purpose:** the four classes of model failure, the instrument each one needs, and why picking
-the wrong instrument stalls a diagnosis.
+the wrong instrument stalls a diagnosis — **across two axes**: one model with somebody looking,
+and a large campaign with nobody looking.
 **Status:** **DRAFT TAXONOMY — it does not yet prescribe a method.** Raised by Doug 2026-09-19
 as the next phase of the project; to be iterated with him until it does prescribe one.
 **Read when:** a model does not do what it should, and you are about to reach for a tool.
@@ -122,6 +123,80 @@ and ruled connectors in**, in about ten minutes and after a week of reading the 
 mechanism. Eleven specimens fitting a pattern produced a confident causal claim that a twelfth
 model refuted. **Design the twelfth model on purpose.**
 
+## The second axis — by hand, or unattended at scale
+
+**Raised by Doug 2026-09-19, from V&V practice:** among thousands or millions of scenario runs,
+a safety engineer must decide which ones are *not valid evidence*. **Both axes matter to him**,
+so the four classes above are only half of this document.
+
+The classes do not change. **What changes is which of them matter, and what an instrument has to
+be.** Three inversions, and each one reverses a habit that is correct by hand.
+
+### A failure that announces itself becomes free; a plausible one becomes the whole problem
+
+By hand, a crash is annoying and a wrong number is subtle. **Unattended, that reverses
+completely.** A run that fails loudly costs nothing — it is filtered by exit status before anyone
+sees it. **The runs that need a human are the ones that completed, exited zero, and produced a
+believable curve.**
+
+So at scale the classes reorder by *whether the failure is self-announcing*, not by how common
+they are:
+
+| class | unattended, what it looks like | the monitor that catches it |
+|---|---|---|
+| 1 — the scenario says something you did not mean | **silent**; a clean run of the wrong case | input fidelity: the run started and stayed where the scenario said, and inside each sub-model's fitted envelope |
+| 2 — ill-posed | usually loud, and usually caught once at model level — **except per-scenario structural change** (a clutch locking, a constraint activating) which is silent and per-run | residual small throughout; structural re-check at mode switches |
+| 3 — numerically hard | loud when it gives up, **silent when it degrades** | step-size collapse, order thrashing, event-count explosion, conditioning |
+| 4 — the tool is wrong | **silent and systematic** — every run wrong the same way | cross-implementation agreement on a sampled subset |
+
+**Class 4 changes character more than any other.** By hand it is the rarest case and the last
+thing to suspect. At scale it is the most dangerous, because it is **not random**: a tool fault
+corrupts every affected run identically, so it never looks like noise and averaging cannot find
+it. Sampling can, cheaply, because you only need a few runs to disagree.
+
+### The binding constraint becomes the false-positive rate, and it does not exist by hand
+
+By hand a false alarm costs a minute. **Over a million runs a 1 % false-positive rate is ten
+thousand human reviews**, which is not a validity process, it is a new backlog. So a monitor is
+usable only if it is cheap per run *and* quiet, and that rules out instruments that are perfectly
+good by hand — anything needing judgement, anything with a tunable threshold nobody has
+calibrated, anything that fires on legitimate physics.
+
+**This is the main reason the two axes cannot share one prescription**, and it is why Doug wants
+both.
+
+### The lesson `ThrownBall` teaches is the one to design around
+
+`ThrownBall` exits zero, draws a smooth bouncing ball with the correct restitution, and
+**conserves energy exactly between bounces**. It describes a ball that was dropped, when the
+scenario said thrown at 5 m/s. It is a numerically excellent simulation of the wrong initial
+condition.
+
+**Every physical invariant you might monitor is satisfied**, because the run is internally
+consistent. Conservation checks cannot see it. Residual checks cannot see it. Solver health is
+perfect.
+
+**The only check that catches it is the one that sounds too obvious to write down: read the first
+sample back, and compare it against what the scenario asked for.** It is trivial, it is rarely
+done, and it is exactly what failed here — silently, across 13 of 18 traced specimens.
+
+**So the first validity criterion is not a physical invariant. It is that the inputs came back.**
+
+### This repository already has an instrument on this axis
+
+`examples/fidelity_msl` and `examples/survey_msl` are unattended sweeps over thousands of models
+with a watchdog, one model per process, and results promoted with a provenance sidecar. The
+design lessons in [`long-runs.md`](long-runs.md) are scale-axis lessons: bound every run, guard on
+free RAM rather than process size, and never trust a sweep that cannot state what it did *not*
+check.
+
+**And its documented limit is a class boundary.** `../CLAUDE.md` records that the F1–F9 programme
+verifies the **noun** — is this structure what Rumoca produced — and says nothing about the
+**verb**: which phase ran, in what order, what it declined to do. **2,614 green rows answered a
+class-2 question and were read as answering all four.** That is the scale-axis form of this
+document's opening warning: an instrument that cannot see a failure returns a clean result, and at
+corpus scale the clean result arrives with impressive authority.
+
 ## What HRW gives you, per class
 
 | class | HRW today | gap |
@@ -150,3 +225,13 @@ re-proposal of the declined *compare* primitive.
 - **What does the corpus owe?** Eight `DO NOT FIX` failure specimens exist, and
   [`ideas.md`](ideas.md) #46 wants one per phase. This taxonomy suggests a second axis: one per
   *class*, which is not the same cut.
+- **Does the scale axis need its own vocabulary?** V&V practice has frameworks for this —
+  NASA-STD-7009's credibility factors, ISO 21448 for functional insufficiency, ASAM
+  OpenSCENARIO/OpenODD for the scenario description. **Claude is not confident which of these owns
+  the phrase Doug used ("scenario validation") and has not checked**; adopting a standard's terms
+  would make this document legible to people who already have them, and is worth one search
+  before the prescription hardens.
+- **What is the cheapest useful monitor set?** The `ThrownBall` lesson says input fidelity comes
+  first, before any physical invariant. What follows it, and in what order, is the shape the
+  prescriptive version needs — chosen on cost-per-run and false-positive rate, not on how
+  informative each check is.
