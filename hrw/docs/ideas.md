@@ -6574,3 +6574,97 @@ decision boundary) and must **link** the volatile parts rather than restate them
 state matters; or paste the branch URL plus one file, since for most questions raised elsewhere
 — a Modelica concept, a Rust idiom, explaining the project to get advice — the *mission* carries
 the value and the mission is stable.
+
+---
+
+## 87. Parameter sweep over ONE specimen — the instrument Stage A needs
+
+**Not built.** <!-- unbuilt: worker::sweep_parameters -->
+
+**Why, in one line:** [`vvuq-programme.md`](vvuq-programme.md) Stage A treats `BenchActuator`'s
+`R`, `L`, `k` and `J` as distributions rather than numbers, Monte Carlos the simulation, and
+computes Sobol indices. **None of that is possible today.**
+
+**What exists sweeps the wrong axis.** `examples/fidelity_msl` and `examples/survey_msl` sweep
+**models** — thousands of them, one process each, with a watchdog. Nothing sweeps **parameters of
+one model**, which is the axis every UQ activity runs along.
+
+### The design question that decides whether this is cheap or expensive
+
+**Can a parameter change skip the compile?** `rumoca_ir_solve::SolveModel` carries
+`pub parameters: Vec<f64>` — *"initial value of every parameter slot, in P slot order"* — beside
+`initial_y`. If those can be mutated and `rumoca_sim::simulate_solve_model` re-run **without
+re-lowering**, a sweep costs one compile plus N integrations.
+
+**The measured numbers make this the whole ballgame.** `ideas.md` #48 found a specimen compile
+averages **~3.4 s** while integration is so cheap that cutting `t_end` saved **0.4 s** across the
+suite — *"integration is free; `simulate` averages less than `compile_target`"*. So:
+
+| approach | 1,000 runs |
+|---|---|
+| recompile each sample | **~1 hour** |
+| compile once, mutate `parameters`, re-integrate | **minutes** |
+
+**Verify before building.** The question is whether anything downstream of lowering has baked a
+parameter value into a constant — constant folding during lowering would silently ignore the
+mutation and produce a sweep where every run is identical. **That failure is silent and would look
+like a model with no parameter sensitivity**, which is exactly the shape of a wrong answer this
+project keeps finding. A revert-and-check is mandatory: change one parameter, confirm the
+trajectory moves.
+
+### What it needs beyond the runner
+
+- **A sample plan** — one-at-a-time, full factorial, and Latin hypercube. LHS is the one Stage A
+  actually wants.
+- **Output reduction.** A thousand trajectories is not an answer. Reduce each run to the
+  quantities of interest — rise time, overshoot, final value — because a QoI is what a Sobol
+  index is computed over.
+- **Provenance per run**, so a suspicious sample can be re-run exactly. `promote_run` already
+  writes a provenance sidecar for the corpus sweeps; the same shape applies.
+
+**Not a UI feature first.** The artifact is a table of (parameters → QoIs) that something else
+analyses. A pane can come later, and building the pane first would be building the wrong thing.
+
+---
+
+## 88. Compare a trajectory against a REFERENCE — measured data, or a second tool
+
+**Not built.** <!-- unbuilt: app::comparison_view -->
+
+**One feature, two purposes, and both are already recorded as gaps.**
+[`diagnosing-models.md`](diagnosing-models.md) names it twice: as the class-4 instrument, where
+comparing Rumoca against System Modeler is *"currently done by hand — export, read numbers,
+compare in conversation"*; and as what Stage C needs to put measured MicroDuck telemetry beside a
+simulated trajectory.
+
+**Checked, and it does not collide with the frozen composition primitives**
+(`../CLAUDE.md`): that freeze covers point-at and follow for *context capture*, not a plot
+overlay. This is not a re-proposal of the declined *compare* primitive.
+
+### The overlay is not the instrument — the residual is
+
+**Two curves on one axis is the obvious build and the wrong emphasis.** The quantity that matters
+is the **comparison error `E = S - D`** (ASME V&V 20), because that is what a validation verdict
+is formed from. Two curves that look identical at plot resolution can carry a residual with
+structure in it — and structure in the residual is the signature of **model form error**.
+
+**So the pane's primary artifact is `E` against time**, with the overlay as context rather than
+the other way round.
+
+**And the honest version eventually needs a band.** `|E| <= u_val` means *not distinguishable at
+this resolution*, not *correct*; a comparison plot with no uncertainty band invites exactly the
+wrong reading. The band can come after Stage B supplies the numerical contribution — but the pane
+should be designed knowing it is coming, not retrofitted.
+
+### The unglamorous problems that will consume the time
+
+- **Time alignment.** Two sources will not share a sample grid — the robot logs at its 50 Hz
+  control rate, the solver emits at its own communication interval. Interpolating one onto the
+  other is a modelling choice that **injects error into `E`**, so whatever it does must be
+  stated in the pane, not hidden.
+- **Import.** CSV is the obvious interchange. The System Modeler side can come through the
+  Wolfram MCP server, which already returns trajectories as functions of time.
+- **Units and sign conventions**, which is where a comparison silently becomes meaningless.
+
+**What exists to build on:** `SimData`, the plot pane with its discontinuity segmentation, and
+`SimData::non_finite_series` for refusing to draw what cannot be drawn faithfully.
