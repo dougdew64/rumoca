@@ -163,34 +163,32 @@ engineering degree from a University"*, and a robotics MS sits in a College of E
 asking them directly. Worth doing before assuming a second bachelor's is required.
 <!-- unbuilt: doc_citations::tuv_degree_eligibility_confirmed_in_writing -->
 
-### The real question, and the honest answer
+### What the degree question actually turns on
 
-**The question underneath the licensure one is whether credible validation is possible without an
-ME or EE undergraduate degree.** The credential is not the barrier. The **knowledge** is, and it
-is acquirable — the MS is acquiring it.
+**The credential is not the barrier; the knowledge is** — and the knowledge is acquirable, which
+is what a graduate programme is for.
 
 **But the gap is not imaginary, and this document should not pretend otherwise.** Engineering
-judgement about what physics matters comes partly from years of building and breaking physical
-things; a masters compresses that without replacing it, and some employers will filter on degree.
+judgement about *what physics matters* comes partly from years of building and breaking physical
+things. A masters compresses that without replacing it, and some employers do filter on degree.
 
-**What offsets it is a combination that is genuinely uncommon in this niche.** Nearly everyone
-doing simulation V&V arrives from the domain side and treats the solver as an oracle. Arriving
-having read the code that lowers a derivative, found a defect in it, and adjudicated that defect
-against a reference implementation is rare — and it is exactly the competence that *verification*
-of simulation tools requires. The physics is the half to keep deliberately building, which is why
-it is named under the gap list above rather than omitted.
+**What offsets it is a combination uncommon in this niche.** Nearly everyone doing simulation V&V
+arrives from the domain side and treats the solver as an oracle. Arriving having read the code
+that lowers a derivative, found a defect in it, and adjudicated that defect against a reference
+implementation is rare — and it is exactly the competence that *verification* of simulation tools
+requires. **The physics is the half to keep deliberately building**, which is why it is named
+under the gap list above rather than omitted.
 
-**And the experience gate is far closer than a career-change framing suggests.** See *Background*
-above: he has already built DAE export, a generated C solver, and its real-time co-simulation
-host, and that system has fifteen years of production use. **The relevant clocks for TÜV's three
-years and exida's ten do not start from zero**, though whether that work is accepted as
-*functional-safety* experience depends on whether it sat inside a safety lifecycle — a question
-for the certifying body, and one he can answer from memory in a way Claude cannot.
+**And prior work can move the experience clock, which a career-change framing tends to obscure.**
+Building DAE export, a generated solver, and a real-time co-simulation host is substantial
+practice; **whether a certifying body accepts it as *functional-safety* experience depends on
+whether it sat inside a safety lifecycle.** That is a question for the body, not for Claude, and
+the answer decides whether the relevant clocks start at zero or well past it.
 
-**The time-sensitive action, and it is the only thing in this document that decays:** write that
-history down while it is recoverable — scope, role, which standards or safety processes it
-touched, what the HIL system covered, what artifacts exist. Certification bodies assess a
-*described* history, and reconstruction gets harder every year.
+**The time-sensitive action, and the only thing in this document that decays:** write that
+history down while it is recoverable — scope, role, standards or safety processes touched, what
+the system covered, what artifacts exist. **Certification bodies assess a *described* history**,
+and reconstruction gets harder every year.
 
 **Two things Claude does not know** and should not be quoted on: what specific robotics-safety
 employers screen for, and whether the field will professionalise further as autonomy regulation
