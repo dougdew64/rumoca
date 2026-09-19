@@ -61,6 +61,32 @@ Established 2026-09-19 by walking the full chain and asking what covers each ste
 and validation are well served by this project. These three are not served at all**, and they are
 the most senior parts of the job.
 
+> **DOMAIN PHYSICS IS ABSENT FROM THIS LIST BECAUSE IT IS ALREADY PROVIDED FOR, NOT BECAUSE IT IS
+> UNIMPORTANT** *(added 2026-09-19, after Doug read the emphasis of this project's writing and
+> concluded that math and CS are more fundamental than physics or engineering)*.
+>
+> **That conclusion is right about verification and wrong about validation**, and ASME's own
+> definitions are the reason: verification asks whether the equations are solved right —
+> mathematics and CS; **validation asks whether the right equations are being solved, which the
+> standard states as *"representation of the physics."*** The senior judgement this programme aims
+> at is a physics judgement: when `|E| >> u_val`, *"what physics did I leave out?"* has no
+> mathematical answer. Backlash or not; Coulomb friction or viscous; whether gearbox compliance
+> matters at this bandwidth — mechanical and electrical engineering questions, every one.
+>
+> **Math and CS are fundamental as a PREREQUISITE — they gate entry. Physics and engineering are
+> fundamental to the JUDGEMENT — they gate seniority.** Both readings of *fundamental* are true
+> and they are not the same claim.
+>
+> **The gap list omits physics because Doug's Purdue robotics MS supplies it**, on its own
+> schedule and outside this repository. That is the right reason, and it was unwritten until now —
+> **a reader of three gaps could otherwise conclude physics had been judged peripheral**, which
+> would be the opposite of this programme's position.
+>
+> **The distortion had a cause worth naming**: three months of this project sat entirely on the
+> verification side — a compiler pipeline, matching, index reduction, closed-form checks — so
+> nearly everything written here is about the half that is math and CS. The half that is physics
+> begins at Stage C.
+
 ### Gap 1 — Uncertainty quantification
 
 **The only gap that is a mathematical discipline rather than a practice**, so it is the one that
