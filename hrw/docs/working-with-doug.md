@@ -24,6 +24,25 @@ that day: *"I am learning Rumoca in support of that robotics study program. When
 someday to be the guy that engineers ask for help to fix their simulation failures, I specifically
 mean that I want to be the guy that **robotics** engineers ask for help."*
 
+**THE ROLE HAS A NAME, AND HE NAMED IT 2026-09-19: V&V.** *"Going forward, I want to align with
+V&V vocabulary. I intend to focus my Purdue robotics studies and my HRW studies on a career in
+V&V."*
+
+**This is not a change of direction — it is the direction above, named.** *"The guy robotics
+engineers ask to fix their simulation failures"* **is** a verification-and-validation engineer.
+What changes is that the destination now has an **external standard**, and three things follow:
+
+- **Vocabulary is load-bearing.** Use the practitioners' term over a clearer home-grown one, and
+  say which standard it comes from. The roster is in
+  [`diagnosing-models.md`](diagnosing-models.md) — ASME VVUQ 1-2022 for terminology, NASA-STD-7009
+  for credibility, ISO 21448 / ISO 34502 / UL 4600 for the safety-case side.
+- **A second criterion joins learning value**: does this exercise a V&V activity he will be paid
+  to do? That promotes the **scale axis** — unattended monitors, credibility evidence, coverage —
+  which a pure learning framing ranks lower than it should.
+- **Name the technique being used.** Checking a simulator against a problem with a known exact
+  answer is the **Method of Manufactured Solutions**; this project did it repeatedly all through
+  2026-09 without once calling it that, which is exactly the gap a career framing closes.
+
 **Nothing in this repository said why any of it was being learned until then.** It is the fact that
 makes the rest cohere, and it is not derivable from the code or the git history.
 

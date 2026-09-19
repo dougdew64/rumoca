@@ -24,6 +24,55 @@ not yet say *do this, then this*, and it should not be cited as though it does.
 finish without asking Claude. It is being written *with* Doug rather than *for* him, and the
 mark goes on when the prescription lands and a reader can follow it alone.
 
+## Vocabulary — align with V&V practice, not with this document
+
+**Doug, 2026-09-19:** *"Going forward, I want to align with V&V vocabulary. I intend to focus my
+Purdue robotics studies and my HRW studies on a career in V&V."*
+
+**So the standard term wins, even where a home-grown one reads better**, because the audience for
+this work now includes people who already have the terms. Name the source when using one.
+
+| source | what it owns |
+|---|---|
+| **ASME VVUQ 1-2022** | the terminology standard for verification, validation and uncertainty quantification in computational modelling |
+| **ASME V&V 10 / V&V 20** | VVUQ practice for computational solid mechanics / CFD and heat transfer |
+| **NASA-STD-7009** | model-and-simulation **credibility**: verification, validation, input pedigree, uncertainty, robustness, use history |
+| **ISO 21448 (SOTIF)** | hazards from correct-but-inadequate function, rather than from faults |
+| **ISO 34502** | **scenario-based evaluation** — the closest standard to what Doug first called *"scenario validation"* |
+| **UL 4600** | the overarching safety case for autonomous products |
+| **ISO 26262 / IEEE 1012** | automotive functional safety / system and software V&V |
+
+**The split that governs everything:** **verification** asks whether the equations are solved
+right — numerical fidelity. **Validation** asks whether the right equations are being solved —
+representation of the physics. ASME further divides verification into **code verification** (does
+the software implement the equations) and **solution verification** (how large is the numerical
+error in *this* calculation).
+
+### The four classes ARE that split, which is the best evidence the taxonomy is sound
+
+The classes were derived from this project's own failures before any standard was consulted, and
+they land on the standard division almost exactly:
+
+| class here | the standard name |
+|---|---|
+| 1 — the model says something you did not mean | **validation**, plus **input pedigree** when the scenario rather than the model is wrong |
+| 2 — the model is ill-posed | well-posedness of the **conceptual model** — upstream of both |
+| 3 — well-posed but numerically hard | **solution verification** — ASME V&V 20's whole subject |
+| 4 — the tool is wrong | **code verification** |
+
+**And one technique used here all month has a name.** Checking a simulator against a problem
+whose exact answer is known independently is the **Method of Manufactured Solutions**, the
+canonical code-verification technique. `BareRc` — an RC circuit checked against
+`5(1 - e^{-t/0.1})` — is an MMS-style case, and so is `ThrownBall` checked against
+`4.905t^2 + 5t - 1 = 0`. **Use the name from now on.**
+
+**Uncertainty quantification is the axis this document does not yet have.** ASME's committee
+renamed itself from V&V to **VVUQ** for a reason: a validation claim without an uncertainty
+statement is not a claim. Every comparison in this document is against an *exact* answer, where
+uncertainty is negligible and the question does not arise. It will arise the moment a model is
+validated against **measured data**, and nothing here prepares for that.
+<!-- unbuilt: doc_citations::diagnosing_models_covers_uncertainty_quantification -->
+
 ## The mistake this exists to prevent
 
 **An instrument that cannot see a failure returns a clean result, and a clean result reads as
