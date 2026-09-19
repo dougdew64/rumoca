@@ -104,10 +104,27 @@ in FMI 3 co-simulation."*
 infrastructure the physics ran on, which is a different competence from judging what physics a
 model needs.
 
-**Unknown, and not to be assumed:** whether the MSA app performed **index reduction** before
-handing over the DAE, or whether its models were index-1 by construction. That decides whether
-Pantelides is new material or familiar.
-<!-- unbuilt: doc_citations::msa_index_reduction_question_answered -->
+**Answered 2026-09-19: the MSA app performed index reduction using Pantelides.** So the DAE he
+exported was already index-reduced, and **Pantelides was part of the system he worked on rather
+than a concept he is meeting for the first time.**
+
+**But note precisely what that establishes and what it does not.** He built the export, the
+generated C solver and the real-time host — **downstream** of index reduction. Working with the
+output of a production Pantelides implementation is not the same as having implemented one, and
+this document should not blur them. *(Whether he implemented it is not recorded; ask rather than
+assume.)*
+
+**The useful consequence: index reduction is familiar as CONTEXT and possibly new as MECHANISM**,
+which is an unusually good position to learn from — the motivation needs no arguing, only the
+algorithm. It also gives [`ideas.md`](ideas.md) **#83** *(implement general Pantelides for Rumoca
+— Doug writes the algorithm he is studying)* a second justification it did not have: he has
+consumed a working implementation's output professionally, so he has a reference intuition for
+what a production one must produce.
+
+**And it bears on a live finding.** `upstream-issues.md` records that Rumoca does not reduce
+`CartesianPendulum`, the canonical index-3 DAE, where System Modeler reduces it to two states by
+dynamic state selection. Someone who has shipped against a working Pantelides has grounds for an
+opinion there that this project currently lacks.
 
 ## Credentials — what the field actually gates on
 
