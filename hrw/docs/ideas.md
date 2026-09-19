@@ -6536,3 +6536,41 @@ can be shorter.)*
 **And Claude is the wrong judge here, more than for `CLAUDE.md`.** The charter is the one document
 only Doug may amend. Claude's part is the measurement — sizes, growth, which decisions nothing
 cites — and no verdicts.
+
+---
+
+## 86. An orientation page for a Claude with no repo access — RAISED 2026-09-19, UNDECIDED
+
+Doug: *"In conversations separate from this conversation, you and I have referenced this HRW
+project effort. However, you are not able to see this HRW project effort in those other
+conversations. So, there is a real limit to what we can say in those other conversations."*
+
+**He is considering the options; nothing is approved.** What is recorded here is the
+*measurement*, because that is the perishable part and it cost four `curl`s.
+
+**The limit is not visibility — the project is fully readable from outside.**
+
+| measured 2026-09-19 | |
+|---|---|
+| `dougdew64/rumoca` | **public**, raw URLs fetch with no auth |
+| default branch | **`main`** — upstream Rumoca, and `hrw/CLAUDE.md` there is a **404** |
+| the work lives at | `github.com/dougdew64/rumoca/tree/hrw` |
+| `hrw/CLAUDE.md` | 65 KB — written for a Claude that already has the repo and will edit it |
+| `hrw/docs/vision.md` | 38 KB |
+| `hrw/docs/README.md` | 12 KB — an index of *documents*, not of project *state* |
+| the memory store | keyed to the path `c--Users-dougd-source-repos-rumoca`; loads nowhere else |
+
+**So three things block an outside conversation, and none is access:** nothing points at the
+`hrw` branch, so a bare repo URL shows a stranger's project; the authoritative file is the
+wrong door and too large; and memory does not travel.
+
+**If it is ever built, the trap is already known.** A second statement of current state will
+drift from `CLAUDE.md`'s Current work box, and **a stale copy of authority cost a whole
+session's rules on 2026-09-04** — the parent-directory `CLAUDE.md` backup. So such a page may
+carry only what does *not* change (what Rumoca is, what HRW is, the shorthand vocabulary, the
+decision boundary) and must **link** the volatile parts rather than restate them.
+
+**The zero-cost alternatives, for comparison:** use Claude Code in the repo whenever project
+state matters; or paste the branch URL plus one file, since for most questions raised elsewhere
+— a Modelica concept, a Rust idiom, explaining the project to get advice — the *mission* carries
+the value and the mission is stable.
