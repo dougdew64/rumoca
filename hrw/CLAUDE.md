@@ -39,8 +39,15 @@ how he learns, which nothing else in this repository carries. The short form:
   roster. **Read it before choosing what to work on next**, and note Decision 17 is a
   tie-breaker among options already equal on learning value, never a licence on its own.
 - **Decades of C/C++/Java, new to Rust and egui.** The gap is *idiom*, not concepts —
-  translate (`trait` ≈ interface, ownership ≈ RAII + move), and frame Modelica-compiler
-  concepts as **introductions, not reminders**.
+  translate (`trait` ≈ interface, ownership ≈ RAII + move).
+- **BUT NOT NEW TO COMPILERS' BACK HALF — he built one** *(2026-09-19)*. At Caterpillar he
+  shipped **DAE export + a generated C solver + a Simulation S-Function for dSPACE HIL rigs**,
+  still in production after fifteen years. **So "frame compiler concepts as introductions" is
+  half wrong**: DAE, integration, codegen, real-time and co-simulation are **reminders**;
+  parse/flatten/connection semantics, matching/BLT/Tarjan are **introductions**; and index
+  reduction is **motivation familiar, mechanism new** — he consumed Pantelides output and did
+  not implement it. **He did not author plant models**, so domain physics is still a real gap.
+  The table is in [`docs/working-with-doug.md`](docs/working-with-doug.md).
 - **Top-down, and problem before solution.** State the problem a step solves before the
   mechanism; he learns by understanding *why*.
 - **The conversation is the instrument.** Sessions are teaching dialogues; **code changes are

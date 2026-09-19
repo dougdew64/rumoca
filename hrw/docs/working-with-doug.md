@@ -46,6 +46,27 @@ What changes is that the destination now has an **external standard**, and three
 **Nothing in this repository said why any of it was being learned until then.** It is the fact that
 makes the rest cohere, and it is not derivable from the code or the git history.
 
+### HE HAS BUILT THE BACK HALF OF A MODELICA COMPILER — learned 2026-09-19
+
+**This corrects "frame Modelica-compiler concepts as introductions, not reminders", which is
+right for half the pipeline and wrong for the other half.** At Caterpillar, on the team that built
+the internal modelling/simulation/analysis app, he created (~2011) a co-simulation system for HIL
+testing of electronic control modules: **DAE export, a generated solver/simulator in C, wrapped in
+a Simulink S-Function for dSPACE rigs.** Still in production fifteen years later. The full account
+is in [`vvuq-programme.md`](vvuq-programme.md) under *Background*.
+
+| material | how to pitch it |
+|---|---|
+| DAE representation, numerical integration, code generation, real-time constraints | **reminders** — he shipped this |
+| co-simulation coupling, FMI, FMU-for-co-simulation | **reminders with new names** — he built one before FMI existed |
+| parse, resolve, instantiate, flatten, connection-set semantics | **introductions** — genuinely new |
+| matching, BLT ordering, Tarjan | **introductions** |
+| index reduction / Pantelides | **motivation familiar, MECHANISM NEW.** The MSA app ran Pantelides and he consumed its output; **he did not implement it.** Spend the effort on how it works, none on why anyone wants it |
+
+**And he did NOT author the plant models** — product engineering supplied the physics. So the
+domain-physics gap is real, and an impressive infrastructure background must not be read as
+covering it.
+
 **IT NARROWS "SIMULATION FAILURE" TO A SPECIFIC CLASS, and that is the part that changes how to
 work with him.** Robotics models fail on **constraints and stiffness** far more than on anything
 the other compiler phases decide — so `CartesianPendulum` is not an arbitrary textbook example to
