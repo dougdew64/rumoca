@@ -55,6 +55,69 @@ published survey naming them as one assurance landscape. **`ISO 34503` — opera
 taxonomy — is believed relevant and was NOT verified**; check it before citing.
 <!-- unbuilt: doc_citations::vvuq_standards_roster_is_verified -->
 
+## Credentials — what the field actually gates on
+
+**Raised 2026-09-19.** Doug: *"I have only a bachelors degree in CS… I don't believe that I can
+gain licensure as a professional engineer… But I wonder if I will ever be able to do validation
+without being a professional engineer."*
+
+**Searched rather than assumed, because the answer changes what is worth planning for.**
+
+### PE licensure is almost certainly not the gate
+
+- **The industrial exemption.** Most state engineering codes exempt in-house engineers at private
+  manufacturers. Automotive OEMs and aerospace/defence primes generally **do not require state PE
+  licensure** for in-house engineering work.
+- **NCEES has never instituted a PE exam for automotive or aerospace engineers.** There is no
+  licence to obtain in the disciplines nearest this target — the field did not decline to require
+  one; the instrument does not exist.
+- **Where PE does matter**, and the test to apply against any future role: consulting practice,
+  public-sector projects, founding an engineering firm, and in some states the right to use the
+  title *engineer*.
+- **The premise may also be wrong on its own terms.** NCEES model rules and many states permit
+  licensure on a non-ABET degree with additional documented experience — harder, not impossible.
+  **Not verified for Indiana**, and not worth effort unless a target role sits in the column above.
+
+### What the field gates on instead is functional-safety certification
+
+| credential | gate |
+|---|---|
+| **TÜV Rheinland FS Engineer** | 3 years practical functional-safety experience **+ an engineering degree** from a university |
+| **TÜV SÜD FSCP** (ISO 26262) | training plus examination; tiered Engineer / Professional / Expert |
+| **exida CFSP** | examination + **2 years** experience |
+| **exida CFSE** | examination + **10 years** experience + a case study |
+
+**Read the column: these gate on EXPERIENCE, overwhelmingly.** exida's expert tier asks ten years
+and a case study and does not lead with a degree at all.
+
+**And where a degree is named, the Purdue robotics MS is plausibly it** — TÜV Rheinland's *"an
+engineering degree from a University"*, and a robotics MS sits in a College of Engineering.
+**This is Claude's reading, not a ruling from the certifying body**, and it is cheap to settle by
+asking them directly. Worth doing before assuming a second bachelor's is required.
+<!-- unbuilt: doc_citations::tuv_degree_eligibility_confirmed_in_writing -->
+
+### The real question, and the honest answer
+
+**The question underneath the licensure one is whether credible validation is possible without an
+ME or EE undergraduate degree.** The credential is not the barrier. The **knowledge** is, and it
+is acquirable — the MS is acquiring it.
+
+**But the gap is not imaginary, and this document should not pretend otherwise.** Engineering
+judgement about what physics matters comes partly from years of building and breaking physical
+things; a masters compresses that without replacing it, and some employers will filter on degree.
+
+**What offsets it is a combination that is genuinely uncommon in this niche.** Nearly everyone
+doing simulation V&V arrives from the domain side and treats the solver as an oracle. Arriving
+having read the code that lowers a derivative, found a defect in it, and adjudicated that defect
+against a reference implementation is rare — and it is exactly the competence that *verification*
+of simulation tools requires. The physics is the half to keep deliberately building, which is why
+it is named under the gap list above rather than omitted.
+
+**Two things Claude does not know** and should not be quoted on: what specific robotics-safety
+employers screen for, and whether the field will professionalise further as autonomy regulation
+matures. **UL 4600 and ISO 21448 are young, and credentialing tends to follow regulation** — so
+this section has a shelf life and should be re-checked rather than trusted in two years.
+
 ## The three gaps
 
 Established 2026-09-19 by walking the full chain and asking what covers each step. **Verification
