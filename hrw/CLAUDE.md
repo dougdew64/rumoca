@@ -33,7 +33,11 @@ how he learns, which nothing else in this repository carries. The short form:
   (ASME VVUQ 1-2022, NASA-STD-7009, ISO 21448 / 34502, UL 4600), and **name the technique**
   — this project used the Method of Manufactured Solutions all through 2026-09 without once
   calling it that. The roster, the four failure classes and the three axes are in
-  [`docs/diagnosing-models.md`](docs/diagnosing-models.md).
+  [`docs/diagnosing-models.md`](docs/diagnosing-models.md). **Ratified into the charter as
+  v1.13** (§1 destination, §2 scope, Decision 17), and **the plan that serves it is
+  [`docs/vvuq-programme.md`](docs/vvuq-programme.md)** — three gaps, five stages, the standards
+  roster. **Read it before choosing what to work on next**, and note Decision 17 is a
+  tie-breaker among options already equal on learning value, never a licence on its own.
 - **Decades of C/C++/Java, new to Rust and egui.** The gap is *idiom*, not concepts —
   translate (`trait` ≈ interface, ownership ≈ RAII + move), and frame Modelica-compiler
   concepts as **introductions, not reminders**.
