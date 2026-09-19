@@ -4991,3 +4991,27 @@ party noticed the platform went unused.
 straight out of `ad1856b4` to work out what had been missed. So: **use a tag or a branch as the
 marker before a large documentation pass.** It costs nothing and cannot shadow anything. Deleted
 2026-09-04 once found.
+
+---
+
+## 2026-09-19 — two v1.13 items accepted PROVISIONALLY, and the word matters
+
+Doug, on the Decision 2 transparency scoping and on starting the VVUQ programme at Stage A:
+**"The Decision 2 scoping is fine for now. And the Stage A assumption is fine for now."**
+
+**Recorded here rather than in the charter because "fine for now" is not a ruling**, and this
+file is history that does not bind. Both are in force and both are open to revision without an
+amendment debate.
+
+**The Decision 2 item carries the larger risk of being over-read.** Its rationale — that
+actuator transparency serves *verification* while validation needs the opposite, so an actuator
+with unpublished parameters is qualified by its opacity — was **Claude's inference, not Doug's
+stated reasoning**. Doug ratified the text; he did not supply the argument. The charter's own
+amendment log records it as *drafted by Claude*, so the provenance is visible there too. **Do not
+cite that rationale as Doug's position**, and treat it as the first draft of a clause that has
+not yet met a real second robot.
+
+**The Stage A item needs no caveat beyond its own nature** — a plan is provisional by
+construction. What it settles is only that
+[`vvuq-programme.md`](docs/vvuq-programme.md)'s ordering is not disputed: UQ on `BenchActuator`
+first, no hardware required.
