@@ -16,7 +16,7 @@ re-litigate one of its decisions in-session; amend the charter or accept it.
 
 The purpose of HRW is mastery of the mathematics and computer science required to model and simulate deterministic physical systems. This is the top short- and medium-term learning priority, undertaken in preparation for and alongside the Robotics MS at Purdue beginning Fall 2026.
 
-**The destination, stated September 19, 2026 (v1.13).** Until now this chain stopped at the degree, and never said what the degree was for. Doug: *"My goal is to pursue a career in VVUQ. My hope is to specialize in scenario validation… This HRW project is an educational means to my professional end of becoming a VVUQ safety engineer. Likewise, the MicroDuck is an educational means to my professional VVUQ end."* He has also ruled that the degree itself is now undertaken **primarily for professional reasons** rather than, as previously stated, purely for enjoyment.
+**The destination, stated September 19, 2026 (v1.13).** Until now this chain stopped at the degree, and never said what the degree was for. Doug: *"My goal is to pursue a career in VVUQ. My hope is to specialize in scenario validation… This HRW project is an educational means to my professional end of becoming a VVUQ safety engineer. Likewise, the MicroDuck is an educational means to my professional VVUQ end."*
 
 So the purpose chain runs:
 

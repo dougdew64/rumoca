@@ -127,11 +127,8 @@ opinion there that this project currently lacks.
 
 ## Credentials — what the field actually gates on
 
-**Raised 2026-09-19.** Doug: *"I have only a bachelors degree in CS… I don't believe that I can
-gain licensure as a professional engineer… But I wonder if I will ever be able to do validation
-without being a professional engineer."*
-
-**Searched rather than assumed, because the answer changes what is worth planning for.**
+**Researched 2026-09-19**, because whether professional-engineer licensure gates this work changes
+what is worth planning for. **Searched rather than assumed.**
 
 ### PE licensure is almost certainly not the gate
 
