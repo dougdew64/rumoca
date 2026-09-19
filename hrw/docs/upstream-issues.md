@@ -1378,6 +1378,29 @@ the MSL brings.
 and it is now the natural post-rebase regression fixture. Held at
 `.hrw-bridge/specimens/ConnRc.mo` (scratch, gitignored) — **promote it when the rebase lands.**
 
+**TWO CONSTRAINTS ON A MULTI-CLASS SPECIMEN, both found by trying it** *(2026-09-19; the note
+above was written the same morning saying "promote it" and was **not executable as written**,
+which is the unexercised-claim failure this project retracted a checker argument over eight days
+earlier)*:
+
+- **HRW compiles `ast.classes.keys().next()` — the FIRST class in the file.** `worker.rs` says so
+  outright, with the comment *"For a specimen … the file declares one."* `ConnRc.mo` declared six
+  with `connector Pin` first, so HRW compiled **`Pin`** and every stage after Resolve reported
+  *"the reachable-closure pipeline produced no result"*. **The top-level model must be declared
+  first**, which is why the committed file now is.
+- **`Import[…, "MO"]` picks the LAST class**, so System Modeler ran `Gnd` on the same file.
+  Opposite conventions: no ordering satisfies both. **Name the model** —
+  `SystemModelSimulate["ConnRc", 1]` after the import — which is now in [`ideas.md`](ideas.md) #43.
+
+A third, cosmetic: a class named `Res` drew four resolve flags, *"'Res' is a class, not a
+variable; cannot be used as a value (MLS §4.4)"*. Non-fatal — the pipeline recovers — but it put
+noise in every stage pane. Renamed to `Resistor`.
+
+**Re-measured on the corrected file**, because the file changed after the numbers above were
+taken: HRW's pipeline clean through Solve lowering (1 state, 14 algebraics, 15 equations); 0.9.20
+still flat (1 of 16 series moves, and that one is `time`); 0.10.0 10 of 16; System Modeler
+`cap.v` = 0, 3.1606037, 4.9997730 against analytic 4.9997730.
+
 **The general headline is likewise too broad.** *"A state's initial value comes from the
 derivative-zero solution"* describes what several models do, not what Rumoca does — `BareRc`
 is a state whose initial value comes from its `start`. Read the title as naming the symptom.

@@ -1574,6 +1574,22 @@ imported and simulated with no library setup. Scratch specimens under
 `model["InitialValues"]`, `model["SystemEquations"]`, and
 `SystemModelSimulateSensitivity` for parameter sensitivities.
 
+**A MULTI-CLASS FILE NEEDS THE MODEL NAMED, and the failure is silent** *(2026-09-19)*.
+`Import[…, "MO"]` returns **the LAST class in the file**, so a 5-class file whose model sits
+first simulated `Gnd` — a ground with two variables — and reported it as a
+`SystemModelSimulationData` with no complaint until a variable lookup failed. **HRW takes the
+FIRST class** (`ast.classes.keys().next()`), so the two conventions are opposite and no
+ordering satisfies both. Name it instead, which works after the import registers the classes:
+
+```wl
+Import["c:/…/ConnRc.mo", "MO"];          (* registers every class in the file *)
+sim = SystemModelSimulate["ConnRc", 1];  (* name the model, do not pass the Import result *)
+sim["ModelName"]                          (* confirm you simulated what you meant *)
+```
+
+**Check `sim["ModelName"]` whenever the file holds more than one class** — it is the cheap guard
+against adjudicating the wrong model, which looks exactly like a successful oracle run.
+
 **What this changes about the standing rule.** *Oracle first, then Rumoca* was worth its
 friction and now has almost none — **so there is no longer an excuse for concluding anything
 from a Rumoca result alone.** On the day this was found it converted a
