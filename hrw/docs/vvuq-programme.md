@@ -55,6 +55,60 @@ published survey naming them as one assurance landscape. **`ISO 34503` — opera
 taxonomy — is believed relevant and was NOT verified**; check it before citing.
 <!-- unbuilt: doc_citations::vvuq_standards_roster_is_verified -->
 
+## Background — what Doug has already built, and why it re-ranks the gaps
+
+**Learned 2026-09-19, and it corrects assessments written earlier the same day.** Claude had been
+planning for a CS graduate entering simulation work. That is wrong.
+
+**Several years at Caterpillar on the team that built and maintained the internal
+modeling/simulation/analysis (MSA) application** used by many product engineering teams. Within
+that, **~2011, he built a co-simulation system for HIL testing of electronic control modules**: it
+exported the **DAE** from the MSA app together with a **solver/simulator in C**, wrapped in a
+**Simulink S-Function** for execution on dSPACE rigs. **It is still in production fifteen years
+later**, and in summer 2026 his former team contacted him to help them understand it.
+
+### That is the back half of a Modelica compiler, built independently
+
+| what he built (~2011) | Rumoca's name for it |
+|---|---|
+| export the DAE from the MSA app | `rumoca-ir-dae`, from DAE construction |
+| generate a solver/simulator in C | solve lowering + codegen (`rumoca-phase-solve`, `rumoca-phase-codegen`) |
+| a self-contained stepping simulator for a host | an **FMU for Co-Simulation** — FMI 1.0 standardised this in 2010, concurrently |
+| S-Function wrapper for the dSPACE target | the platform binding around generated code |
+
+**He built a bespoke FMU-for-co-simulation before the standard existed to build against**, and
+Rumoca emits FMI 2 and FMI 3 today — upstream `main` carries a commit titled *"Support root events
+in FMI 3 co-simulation."*
+
+### What it re-ranks
+
+- **Code verification is not new to him.** A code generator that emits a solver poses exactly one
+  question — *does the generated C solve the same equations as the model?* — and he owned it, with
+  fifteen years of production use as the answer. This project spent 2026-09 rediscovering the name
+  for something he has practised.
+- **Co-simulation coupling is a V&V problem he has already solved.** Coupling introduces error
+  neither sub-simulator contains, and can destabilise a pairing of individually stable systems;
+  choosing the macro-step and extrapolation is a solution-verification judgement. Under a
+  **real-time deadline**, step size is not freely chosen — the accuracy-versus-cost trade in its
+  least forgiving form.
+- **Fifteen years in production is *use history***, one of NASA-STD-7009's named credibility
+  factors — not a compliment but a credibility argument.
+- **The genuinely new material is the FRONT END and the structural middle**: parsing, flattening,
+  connection-set semantics, instantiation, then matching, BLT ordering, Tarjan and index
+  reduction. **Which is exactly where his own sequence starts**, and probably not a coincidence.
+
+### What it does NOT change
+
+**He did not author or own the plant models** — product engineering teams supplied the physics.
+**So the domain-physics gap named above is real and must not be softened.** He built the
+infrastructure the physics ran on, which is a different competence from judging what physics a
+model needs.
+
+**Unknown, and not to be assumed:** whether the MSA app performed **index reduction** before
+handing over the DAE, or whether its models were index-1 by construction. That decides whether
+Pantelides is new material or familiar.
+<!-- unbuilt: doc_citations::msa_index_reduction_question_answered -->
+
 ## Credentials — what the field actually gates on
 
 **Raised 2026-09-19.** Doug: *"I have only a bachelors degree in CS… I don't believe that I can
@@ -112,6 +166,18 @@ having read the code that lowers a derivative, found a defect in it, and adjudic
 against a reference implementation is rare — and it is exactly the competence that *verification*
 of simulation tools requires. The physics is the half to keep deliberately building, which is why
 it is named under the gap list above rather than omitted.
+
+**And the experience gate is far closer than a career-change framing suggests.** See *Background*
+above: he has already built DAE export, a generated C solver, and its real-time co-simulation
+host, and that system has fifteen years of production use. **The relevant clocks for TÜV's three
+years and exida's ten do not start from zero**, though whether that work is accepted as
+*functional-safety* experience depends on whether it sat inside a safety lifecycle — a question
+for the certifying body, and one he can answer from memory in a way Claude cannot.
+
+**The time-sensitive action, and it is the only thing in this document that decays:** write that
+history down while it is recoverable — scope, role, which standards or safety processes it
+touched, what the HIL system covered, what artifacts exist. Certification bodies assess a
+*described* history, and reconstruction gets harder every year.
 
 **Two things Claude does not know** and should not be quoted on: what specific robotics-safety
 employers screen for, and whether the field will professionalise further as autonomy regulation
