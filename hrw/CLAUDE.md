@@ -506,9 +506,22 @@ the next phase touches — is procedure and lives there.
 > 4.999773`, matching System Modeler and the closed form. **The wait-for-the-release ruling is
 > vindicated and the question it was blocked on is answered: the rebase buys the plots.**
 >
-> **So the next move is the rebase**, and `docs/updating-rumoca.md` is now the live document —
-> its step 0 (choose the target) matters, because **there is still no v0.10.0 tag and #340 has
-> not moved since 2026-08-27**. Rebasing means depending on an unmerged branch.
+> **RULED 2026-09-19 — DO NOT REBASE YET.** Doug: *"We will adhere to the updating-rumoca.md
+> step 0 guidance. In other words, we will not rebase now."* **Knowing the branch works is not a
+> reason to adopt it**: there is still **no v0.10.0 tag**, and **#340 has not moved since
+> 2026-08-27** with its own CI not green, so rebasing means depending on an unmerged ref that
+> may be force-pushed, renamed or abandoned. The measurement changed what we know, not what the
+> rule says.
+>
+> **The signal to watch is a v0.10.0 tag appearing, or #340 merging into `main`** — not further
+> activity on the branch, which has been steady all along. Both are one `curl` to check:
+> `/repos/CogniPilot/rumoca/tags` and `/pulls/340`.
+>
+> **What this blocks, and what it does not.** Blocked while we stay on 0.9.20: the plot/animation
+> specimen work (`CompliantDrive` is oracle-validated and waits), and anything reading a
+> trajectory as evidence. **Not blocked**: structural and flatten work, which is where the
+> corpus is actually wrong-free — `OrphanConnector` is a candidate curated specimen needing no
+> simulation at all, and the `connect-expansion` passage on unconnected potentials is owed.
 >
 > **One breakage is already known: the MSL source-root shape changed.** HRW's `msl_roots()`
 > passes three roots (`Modelica 4.1.0`, `ModelicaServices 4.1.0`, `Complex.mo`); on 0.10.0 that
