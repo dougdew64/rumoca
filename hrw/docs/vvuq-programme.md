@@ -2,7 +2,7 @@
 
 **Purpose:** the plan that takes Doug from where this project stands to competence in the
 activities a senior VVUQ role requires — what to study, what to build, and in what order.
-**Status:** plan. The destination it serves is CHARTER §1 and Decision 17 (proposed v1.13).
+**Status:** plan. The destination it serves is CHARTER §1 and Decision 17 (v1.13).
 **Read when:** choosing what to work on next, or deciding whether a proposal serves the
 destination.
 
