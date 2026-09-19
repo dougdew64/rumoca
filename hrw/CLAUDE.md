@@ -491,6 +491,33 @@ the next phase touches — is procedure and lives there.
 
 ## Current work
 
+> ### ⟶ READ THIS FIRST — THE SEQUENCE AND ITS GATES, stated by Doug 2026-09-19
+>
+> **Everything below is queued behind something.** Doug set the order after ratifying charter
+> v1.13, and **most of what this project has planned is NOT yet due.**
+>
+> | # | what | gate that opens it |
+> |---|---|---|
+> | 1 | **learning the math and algorithms of Modelica compilation** | **NOW — this is where he is** |
+> | 2 | rebase onto 0.10.0 | **the branch is labelled/tagged** |
+> | 3 | learning simulation | the rebase |
+> | 4 | iterating [`docs/diagnosing-models.md`](docs/diagnosing-models.md) toward a prescriptive method | *after* he has begun 3 |
+> | 5 | learning the MicroDuck; modelling a servo in Modelica | **hardware arrives — several months out** |
+> | 6 | building the HRW comparison feature (`ideas.md` #88) | a servo model exists to compare |
+>
+> **So the standing instruction is restraint.** *"Effectively, I am by far the limiting factor"*
+> (2026-09-19). **Do not propose gated work early**, do not treat a gate as a blocker to route
+> around, and do not read a plan's existence as a schedule. The plans are written down precisely
+> so neither of us has to carry them.
+>
+> **What IS live: step 1.** Compilation-stage questions, labs, and anything serving them.
+> `connect-expansion`'s unconnected-potential passage is owed and is squarely in that phase.
+>
+> **One correction this supersedes.** Claude said on 2026-09-19 that VVUQ Stage A was *"available
+> now"* because it needs no hardware. **Available is not next** — it sits after step 3 at the
+> earliest, and Doug's *"fine for now"* on Stage A settled its *ordering within the programme*,
+> not its position in this queue.
+>
 > ### ⟶ AN ADJUDICATED INITIALIZATION DEFECT IS READY TO FILE, AND IT GATES THE PLOT WORK — 2026-09-04
 >
 > **Several models take the value that zeroes a state's derivative instead of its `start`.**

@@ -115,6 +115,13 @@ That is the intersection of this entire programme, and it is not a settled quest
 Each is complete in itself and produces an artifact. **The first two need no hardware and no new
 mathematics to begin.**
 
+> **READY IS NOT NEXT** *(added 2026-09-19, the same day the stages were written)*. Stage A needs
+> no hardware, which Claude reported as *"available now"* — and Doug then set the project order:
+> Modelica compilation first, then the rebase, then simulation, and only after that the
+> diagnostic and VVUQ work. **The whole of this programme sits behind that.** The ordering below
+> is the order *within* the programme; the queue that decides when the programme starts at all is
+> `../CLAUDE.md`'s Current work box. **Do not read this document as a schedule.**
+
 ### Stage A — UQ on a model already in the corpus
 
 `BenchActuator` is a DC motor driving an inertia with parameters `R`, `L`, `k`, `J`. Treat them
