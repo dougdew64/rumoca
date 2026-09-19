@@ -103,11 +103,79 @@ pass.** A worse experiment yields a better-looking result. That is *"an instrume
 see a failure returns a clean result"* with a price attached — here the clean result can be
 bought by measuring badly.
 
-**Where this project sits: the top row, exclusively.** Every comparison in 2026-09 was against a
-closed form or against System Modeler. **Nothing here has ever been validated against measured
-data**, which is why uncertainty never arose — and why nothing in this repository prepares for
-the place professional validation actually lives.
+**Where this project sits today: the top row, exclusively.** Every comparison in 2026-09 was
+against a closed form or against System Modeler. **Nothing here has yet been validated against
+measured data**, which is why uncertainty has not arisen — and why the repository so far
+prepares for code and solution verification but not for validation in the professional sense.
 <!-- unbuilt: doc_citations::diagnosing_models_covers_validation_against_measured_data -->
+
+### The bottom row becomes reachable — a MicroDuck, ordered 2026-09-19
+
+**Doug:** *"I intend to use the MicroDuck as my first robot for education … and as the basis
+for Modelica models which I can compile and simulate with HRW … to perform the kind of
+experiments which you mentioned that we have so far not contemplated."*
+
+[MicroDuck](https://github.com/pollen-robotics/microduck) (Pollen Robotics): a 25 cm, 800 g
+biped with **fifteen servos**, an IMU, a time-of-flight depth sensor and a camera, on a Rockchip
+RK3566 running Linux. Firmware in Rust; a **50 Hz control loop** in `robotd`, with daemons
+speaking **JSON-RPC over Unix sockets**.
+
+**The last detail is the one that matters here.** Validation needs measured data with known
+provenance and timing, and an accessible telemetry path is what usually decides whether hobby
+hardware can supply it. A documented RPC surface at a known loop rate means the *measurement*
+side of `E = S - D` is obtainable rather than aspirational.
+
+### Three references, and the disagreements mean different things
+
+Pollen train policies in **MuJoCo** with PPO and export to ONNX. So this project gains a
+structure it has not had: **two independent simulators and one physical article.**
+
+| comparison | what a disagreement means |
+|---|---|
+| Modelica ↔ MuJoCo | **verification** — two implementations of a model; one of them solves its equations wrongly, or they are not the same equations |
+| either simulator ↔ the robot | **validation** — and the residue after numerical and input uncertainty is **model form error** |
+| MuJoCo ↔ the robot, for a trained policy | the **sim-to-real gap**, which *is* model form error under another name |
+
+**That third row is the tightest link to the V&V destination.** A policy that degrades on
+hardware is the case `|E| >> u_val`: the model was structurally wrong and the policy learned to
+exploit the wrongness. Reinforcement learning calls it the reality gap; V&V calls it model form
+error and has a standard for bounding it.
+
+**Separating verification from validation is what three references buy.** With only a simulator
+and a robot, every disagreement is a single undifferentiated blob. With two simulators, a
+disagreement between them is *provably not* the robot's fault.
+
+### Write validation models FLAT, not from connectors
+
+**Not a workaround — a requirement of the activity.** When the object is to compare against
+measurement and to identify parameters from data, **you must know exactly which equations you
+are validating and exactly where each parameter enters them.**
+
+`connect` expansion generates equations you did not write — potential equalities and flow sums
+derived from the connection sets. That is the right trade for building a system out of
+components, and the wrong one here: it adds model form you did not choose, between a parameter
+you are fitting and the residual you are fitting it against.
+
+**So for validation work, declare the variables and write the equations directly**, the way
+`BareRc` does rather than the way `ConnRc` does. Compose with connectors later, once the flat
+model has been validated and its parameters are known.
+
+### Scope the first experiment to one servo
+
+**A walking biped confounds every error source at once** — contact, friction, servo dynamics,
+timing, sensor noise — and the three-reference structure cannot separate them if they all move
+together. It is also a multibody problem, and the charter's own planar mechanics library
+(`ideas.md` #5) does not exist yet.
+
+**One servo, step response, no contact.** It maps onto models the corpus already has:
+`BenchActuator` is a DC motor driving an inertia, and `CompliantDrive` adds a compliant shaft. A
+hobby servo is that plus an internal position loop and a gearbox with backlash — and **those
+parameters are never published**, so they must be identified from measurement, which is
+**input pedigree** in NASA-STD-7009's terms.
+
+That single experiment exercises the whole VVUQ loop: a model, parameters fitted from data, a
+measurement with real uncertainty, a comparison error, and a verdict about model form. **And it
+is small enough to finish.**
 
 ## The mistake this exists to prevent
 
