@@ -195,6 +195,36 @@ employers screen for, and whether the field will professionalise further as auto
 matures. **UL 4600 and ISO 21448 are young, and credentialing tends to follow regulation** — so
 this section has a shelf life and should be re-checked rather than trusted in two years.
 
+## Where competence comes from — three strands, and what each cannot supply
+
+**This is what the five stages below assume**, and it is worth stating because the stages look
+optional until you see which strand they are the only source for.
+
+Competence in VVUQ arrives along three independent strands. **Each covers a gap the other two
+leave open**, so a plan resting on fewer than three has a hole in it:
+
+| strand | what it supplies | what it CANNOT supply |
+|---|---|---|
+| **employment** in a verification role | countable experience toward certification, organisational position, exposure to a real safety lifecycle | model-adequacy judgement — verification never asks *what the system is* |
+| **graduate study** | fundamentals and vocabulary: dynamics, controls, the mathematics of mechanical systems | **judgement.** Knowing *how much physics is enough for this decision* comes from doing validation and being wrong; a degree compresses the path without replacing it |
+| **a physical article you own** | **validation practice** — a model confronted with measured data, with nobody grading it | countable years, or credentials |
+
+**The consequence for this document: Stage C is not a nice-to-have.** If employment supplies
+verification and study supplies fundamentals, **nothing supplies validation practice except the
+robot.** The stages that put measured data beside a simulated trajectory are the only source for
+the competence the whole programme is named after.
+
+**And the boundary is blurrier than the strands suggest, which helps.** HIL work straddles it: an
+ECM is verified against its requirements *while* a plant model is confronted with hardware
+behaviour — validation wearing verification's clothes. Verification employment is therefore
+closer to the second phase than a clean two-phase model implies.
+
+**The failure mode of this shape of plan, named so it can be watched for.** Time in verification
+does not convert into validation on its own. Organisations typecast, and *"the HIL person"* is a
+role easily occupied for a decade. **Crossing over is a deliberate act** — volunteering for the
+model-adequacy questions, owning a correlation study, being the one who asks what `u_val`
+actually is. Worth knowing at the start rather than noticing the pattern at year five.
+
 ## The three gaps
 
 Established 2026-09-19 by walking the full chain and asking what covers each step. **Verification
