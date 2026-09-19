@@ -402,6 +402,27 @@ This repository already applies that to code — the must-fire rule exists becau
 reporter is indistinguishable from a working one. `updating-rumoca.md` is the same shape, and it sat
 unexercised for weeks while every checker over it stayed green.
 
+**SECOND INSTANCE, 2026-09-19 — nine days later, and it is the same author making the same
+mistake.** `upstream-issues.md` gained the line *"promote `ConnRc` when the rebase lands"*, written
+the same morning. Loading it once — which did not happen until the afternoon — showed it could not
+be carried out: **HRW compiles the FIRST class in a specimen file**, `ConnRc.mo` led with
+`connector Pin`, so HRW had been compiling a connector while eight stages reported *"the
+reachable-closure pipeline produced no result"*. The plan resolved, read fine, and had never been
+executed.
+
+**Two instances in nine days is what makes this worth a mechanism rather than a resolution.** The
+first was a procedure document; the second was a single sentence in a different document. **What
+they share is not their shape but their author's habit** — writing a next step without taking it
+once. So a checker aimed at procedure docs would have caught the first and missed the second, which
+is the argument for the *practice* over the tag above, and against over-fitting a mechanism to the
+first example.
+
+**And the second instance carries a sharper warning than the first.** `Import[…, "MO"]` takes the
+**LAST** class, so System Modeler simulated `Gnd` off the same file and returned an ordinary
+`SystemModelSimulationData` — **a wrong-model adjudication is indistinguishable from a right one**,
+and the oracle is this project's court of last resort. The guard is now one line in
+[`ideas.md`](ideas.md) #43: check `sim["ModelName"]` whenever a file holds more than one class.
+
 **Not counted above, deliberately: the initialization defect itself** — Rumoca's, not ours. It is in
 [`upstream-issues.md`](upstream-issues.md), adjudicated against System Modeler, and it was found by
 Doug asking for a specimen that plots well. Counting another project's defect here would flatter the
