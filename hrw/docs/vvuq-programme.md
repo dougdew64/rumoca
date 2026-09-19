@@ -64,8 +64,8 @@ planning for a CS graduate entering simulation work. That is wrong.
 modeling/simulation/analysis (MSA) application** used by many product engineering teams. Within
 that, **~2011, he built a co-simulation system for HIL testing of electronic control modules**: it
 exported the **DAE** from the MSA app together with a **solver/simulator in C**, wrapped in a
-**Simulink S-Function** for execution on dSPACE rigs. **It is still in production fifteen years
-later**, and in summer 2026 his former team contacted him to help them understand it.
+**Simulink S-Function** for execution on dSPACE rigs. **It has been in production service for
+fifteen years.**
 
 ### That is the back half of a Modelica compiler, built independently
 
