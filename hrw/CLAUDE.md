@@ -27,6 +27,13 @@ implementation choice to [`DECISIONS.md`](DECISIONS.md) with a one-line rational
 **[`docs/working-with-doug.md`](docs/working-with-doug.md) — read it too.** Who Doug is and
 how he learns, which nothing else in this repository carries. The short form:
 
+- **THE DESTINATION IS A CAREER IN V&V** *(2026-09-19)* — the direction stated on 2026-08-22,
+  *"the guy robotics engineers ask to fix their simulation failures"*, now named. **Use the
+  practitioners' term over a clearer home-grown one and say which standard it comes from**
+  (ASME VVUQ 1-2022, NASA-STD-7009, ISO 21448 / 34502, UL 4600), and **name the technique**
+  — this project used the Method of Manufactured Solutions all through 2026-09 without once
+  calling it that. The roster, the four failure classes and the three axes are in
+  [`docs/diagnosing-models.md`](docs/diagnosing-models.md).
 - **Decades of C/C++/Java, new to Rust and egui.** The gap is *idiom*, not concepts —
   translate (`trait` ≈ interface, ownership ≈ RAII + move), and frame Modelica-compiler
   concepts as **introductions, not reminders**.
