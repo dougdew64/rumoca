@@ -493,8 +493,27 @@ the next phase touches — is procedure and lives there.
 > residual, has the state among its plan's unknowns, and whose derivative-zero system also
 > solves to the wrong `v = 5` — **and it simulates correctly**, because the run keeps its seeded
 > value instead of applying the solve. Every condition once blamed holds in the model that
-> works. **Do not restate the old mechanism**; what is unmeasured is *why the initialization
-> solve is applied to one model and not another*, and that is the next thing to measure.
+> works. **Do not restate the old mechanism.**
+>
+> **THE TRIGGER IS CONNECTORS, NOT THE MSL.** `ConnRc` — that topology with hand-written
+> connectors and **no library** — flat-lines on 0.9.20 and is correct in System Modeler. So the
+> deciding factor is reached through `connect` expansion, not through anything the MSL brings.
+>
+> ### ⟶ AND 0.10.0 FIXES IT — MEASURED, NOT INFERRED, 2026-09-19
+>
+> **Built `msl-trace-parity-50` (`853791b`) and ran the reproducers.** `ConnRc` goes from 0 of 16
+> series moving to 10 of 16; `RcCircuit` from 0 of 24 to 15 of 24; both land on `C.v(1) =
+> 4.999773`, matching System Modeler and the closed form. **The wait-for-the-release ruling is
+> vindicated and the question it was blocked on is answered: the rebase buys the plots.**
+>
+> **So the next move is the rebase**, and `docs/updating-rumoca.md` is now the live document —
+> its step 0 (choose the target) matters, because **there is still no v0.10.0 tag and #340 has
+> not moved since 2026-08-27**. Rebasing means depending on an unmerged branch.
+>
+> **One breakage is already known: the MSL source-root shape changed.** HRW's `msl_roots()`
+> passes three roots (`Modelica 4.1.0`, `ModelicaServices 4.1.0`, `Complex.mo`); on 0.10.0 that
+> fails with an unresolved reference to `Integer_inf`. Passing the **parent directory as a
+> single root** works. Expect `worker.rs` and every example carrying `msl_roots()` to need it.
 >
 > **THE ORACLE RUN IS DONE — and Claude can run these himself.** `Import[…, "MO"]` +
 > `SystemModelSimulate` through the Wolfram MCP server works on this machine, including on

@@ -1109,11 +1109,30 @@ and the cost becomes flat in depth. Guarded by
 plot worth looking at. **Reproduced on two purpose-built models and correlated across the
 whole 25-specimen corpus.** Not filed.
 
-> **READ THIS BEFORE FILING — the title names a SYMPTOM, not a mechanism** *(2026-09-19)*.
-> A library-free model exhibits every condition this entry once blamed and gets the **right**
-> answer; see *THE MECHANISM IS NOT ESTABLISHED* below. The reproducers, the located
-> instruction and the oracle verdicts all stand. **The causal story does not**, and this file's
-> own rule is that a confident wrong diagnosis costs a maintainer more than no diagnosis.
+> ## ⟶ DO NOT FILE — FIXED ON THE 0.10.0 BRANCH, MEASURED 2026-09-19
+>
+> **Built `msl-trace-parity-50` (commit `853791b`) and ran the reproducers. The flat-lining is
+> gone.** Same files, two compilers, no edits:
+>
+> | model | 0.9.20 | **0.10.0** | System Modeler 15.0 | analytic |
+> |---|---|---|---|---|
+> | `ConnRc` — `C.v(1)` | **5, flat** | **4.999773** | 4.999773000 | 4.999773000 |
+> | `ConnRc` — series that move | **0 of 16** | **10 of 16** | — | — |
+> | `RcCircuit` — `C.v(1)` | **5, flat** | **4.999773** | 4.999773000 | 4.999773000 |
+> | `RcCircuit` — series that move | 0 of 24 | **15 of 24** | — | — |
+> | `BareRc` — `C.v(1)` | 4.9997713 (already right) | 4.999773 | — | 4.999773 |
+>
+> `RcCircuit`'s `R.LossPower` also goes `0.25 → 5.2e-10` on 0.10.0, and `0.25 = 0.05^2 * 100`
+> is exactly `i^2 R` at `t = 0`. The constants that remain constant are the ones that should:
+> the 5 V source, ground, and the zero-current node.
+>
+> **So the entry documents a real 0.9.20 defect that upstream has already repaired.** Keep it as
+> the record of what was wrong and how it was found; **do not send it to a maintainer**, who
+> would be asked to look at code that no longer exists. Its remaining value is (a) the account,
+> and (b) `ConnRc` as a regression fixture for after the rebase.
+>
+> **The mechanism below stays withdrawn.** Being fixed upstream does not retroactively make the
+> old causal story true, and the withdrawal is what stopped this being filed with one.
 
 The defect shows from two sides: without a `fixed` initial condition a state silently takes
 the value that makes its derivative zero, and *with* one, initialization fails to converge —
@@ -1325,6 +1344,39 @@ differs is only whether the run *applies* the initialization solve: `RcCircuit` 
 **What is NOT established: why the solve is applied in one model and not the other.** That is
 the next thing to measure, and until it is, this entry should not assert a cause.
 <!-- unbuilt: worker::tests::bare_rc_and_rc_circuit_differ_only_in_projection -->
+
+### The trigger is CONNECTORS, not the MSL — isolated 2026-09-19
+
+`BareRc` differs from `RcCircuit` in two ways at once, so it could not say which mattered.
+**`ConnRc` changes one of them**: the same topology with hand-written `Pin`, `Res`, `Cap`,
+`Src` and `Gnd`, 51 lines, and **no library whatsoever**.
+
+```modelica
+connector Pin
+  Real v;
+  flow Real i;
+end Pin;
+-- Res / Cap / Src / Gnd as usual, then:
+model ConnRc
+  Src src(V = 5); Res R(R = 100); Cap C(C = 1e-3); Gnd gnd;
+equation
+  connect(src.p, R.p); connect(R.n, C.p); connect(C.n, src.n); connect(src.n, gnd.p);
+end ConnRc;
+```
+
+**On 0.9.20 it flat-lines exactly like `RcCircuit`** — all 16 series constant, voltages at 5,
+currents at 0. **System Modeler 15.0 charges it correctly**: `C.v` = 0, 3.160603, 4.999773 at
+`t` = 0, 0.1, 1, matching the analytic to nine figures, with `R.p.i(0) = 0.05`. So the model is
+valid Modelica and the flat-line is Rumoca's.
+
+**That rules the MSL out and rules connectors in.** `BareRc` has no connectors and is right;
+`ConnRc` has connectors, no library, and is wrong. Whatever decides whether the initialization
+solve is applied, it is reached by `connect` expansion and its flow equations — not by anything
+the MSL brings.
+
+**This is also the reproducer the entry should have led with**: no library setup, runs anywhere,
+and it is now the natural post-rebase regression fixture. Held at
+`.hrw-bridge/specimens/ConnRc.mo` (scratch, gitignored) — **promote it when the rebase lands.**
 
 **The general headline is likewise too broad.** *"A state's initial value comes from the
 derivative-zero solution"* describes what several models do, not what Rumoca does — `BareRc`

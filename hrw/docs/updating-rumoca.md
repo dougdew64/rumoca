@@ -79,6 +79,20 @@ git log --format="%h %ad %an | %s" --date=short | grep -v dougdew64 | head -3
 - Resolve any conflicts in the instrumentation hooks against the moved phase code, then continue.
 
 ## 2. Fix compile breakage — the compiler is the guide
+
+**KNOWN IN ADVANCE FOR 0.10.0: the MSL source-root shape changed, and this one does NOT
+surface as a compile error** *(measured 2026-09-19 against `853791b`)*. HRW's `msl_roots()`
+hands over three roots:
+
+```text
+vendor/msl/Modelica 4.1.0    vendor/msl/ModelicaServices 4.1.0    vendor/msl/Complex.mo
+```
+
+On 0.10.0 that combination fails at *resolve* with `unresolved component reference` on
+`Integer_inf`. **Passing the parent `vendor/msl` as a single root works.** So it is a runtime
+resolution failure on a real model, not a type error — `cargo build` is green and every
+MSL-dependent test fails instead. `msl_roots()` is duplicated across `worker.rs` and several
+examples, so grep for it rather than fixing the first one.
 - `cargo build`. Rust flags every API change HRW's code relies on: `Session` methods,
   `parse_to_ast`, `ClassTree` lookups (`def_map`, `get_class_by_qualified_name`), the `DefInfo`
   extraction in `src/worker.rs`, serde field access, etc. Fix each error.
