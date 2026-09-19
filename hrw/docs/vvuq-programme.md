@@ -109,12 +109,11 @@ exported was already index-reduced, and **Pantelides was part of the system he w
 than a concept he is meeting for the first time.**
 
 **But note precisely what that establishes and what it does not.** He built the export, the
-generated C solver and the real-time host — **downstream** of index reduction. Working with the
-output of a production Pantelides implementation is not the same as having implemented one, and
-this document should not blur them. *(Whether he implemented it is not recorded; ask rather than
-assume.)*
+generated C solver and the real-time host — **downstream** of index reduction. **Confirmed
+2026-09-19: he did not implement the Pantelides algorithm.** He consumed its output
+professionally, which is a different thing, and this document should not blur them.
 
-**The useful consequence: index reduction is familiar as CONTEXT and possibly new as MECHANISM**,
+**So the position is settled: index reduction is familiar as CONTEXT and new as MECHANISM**,
 which is an unusually good position to learn from — the motivation needs no arguing, only the
 algorithm. It also gives [`ideas.md`](ideas.md) **#83** *(implement general Pantelides for Rumoca
 — Doug writes the algorithm he is studying)* a second justification it did not have: he has
