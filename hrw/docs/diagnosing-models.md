@@ -66,12 +66,48 @@ canonical code-verification technique. `BareRc` — an RC circuit checked agains
 `5(1 - e^{-t/0.1})` — is an MMS-style case, and so is `ThrownBall` checked against
 `4.905t^2 + 5t - 1 = 0`. **Use the name from now on.**
 
-**Uncertainty quantification is the axis this document does not yet have.** ASME's committee
-renamed itself from V&V to **VVUQ** for a reason: a validation claim without an uncertainty
-statement is not a claim. Every comparison in this document is against an *exact* answer, where
-uncertainty is negligible and the question does not arise. It will arise the moment a model is
-validated against **measured data**, and nothing here prepares for that.
-<!-- unbuilt: doc_citations::diagnosing_models_covers_uncertainty_quantification -->
+### The third axis is the REFERENCE, and UQ is what moving along it costs
+
+*(Corrected 2026-09-19, hours after being written. The first version called uncertainty
+quantification "the axis this document does not yet have". That is imprecise: UQ is **absent**
+from class 2 — a structural count has no uncertainty — and **coextensive** with class 3, since
+solution verification simply is numerical uncertainty estimation. Something missing from one
+class and identical to another is not a dimension crossing them.)*
+
+**VVUQ** is **V**erification, **V**alidation and **U**ncertainty **Q**uantification; ASME's
+committee took the third letter because a validation claim without an uncertainty statement is
+not a claim. The dimension that actually crosses the other two is **what you compare against**:
+
+| reference | uncertainty present | technique |
+|---|---|---|
+| an **exact answer** | negligible | **Method of Manufactured Solutions** |
+| the **same model, refined** | numerical only | **Richardson extrapolation**, Grid Convergence Index |
+| **another implementation** | two uncertain results, neither authoritative | the differential method |
+| **measured data** | experimental + input + numerical | **ASME V&V 20** validation |
+
+It crosses the class axis — class 2 needs no reference at all, and class 3's reference is itself
+at a tighter tolerance — and it crosses the scale axis, since measured data is rarely available
+per run, so a campaign falls back to self-consistency plus sampled cross-code.
+
+**At the measured-data end, ASME V&V 20 carries this document's opening warning in its most
+expensive form.** Form the comparison error `E = S - D` (simulation minus data) and a validation
+uncertainty `u_val` combining numerical, input-parameter and experimental contributions. Then:
+
+- **`|E| >> u_val`** — **model form error** is detected *and bounded*: the model is structurally
+  wrong and you know by how much.
+- **`|E| <= u_val`** — you have shown only that the model is **not distinguishable from the data
+  at your resolution**. **You have not shown it is right.**
+
+**Sloppy experiments and coarse numerics inflate `u_val`, which makes validation EASIER to
+pass.** A worse experiment yields a better-looking result. That is *"an instrument that cannot
+see a failure returns a clean result"* with a price attached — here the clean result can be
+bought by measuring badly.
+
+**Where this project sits: the top row, exclusively.** Every comparison in 2026-09 was against a
+closed form or against System Modeler. **Nothing here has ever been validated against measured
+data**, which is why uncertainty never arose — and why nothing in this repository prepares for
+the place professional validation actually lives.
+<!-- unbuilt: doc_citations::diagnosing_models_covers_validation_against_measured_data -->
 
 ## The mistake this exists to prevent
 
