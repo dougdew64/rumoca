@@ -482,11 +482,19 @@ the next phase touches — is procedure and lives there.
 
 > ### ⟶ AN ADJUDICATED INITIALIZATION DEFECT IS READY TO FILE, AND IT GATES THE PLOT WORK — 2026-09-04
 >
-> **Rumoca initializes a state to the value that zeroes its derivative, ignoring `start`.**
+> **Several models take the value that zeroes a state's derivative instead of its `start`.**
 > [`docs/upstream-issues.md`](docs/upstream-issues.md) carries both reproducers, the 11-of-11
 > corpus correlation, and **System Modeler 15.0's verdict**: `RcCircuit` charges `0 → 5` with
 > `tau = 0.1 s` matching the closed form to seven figures, where Rumoca reports a flat 5. Adding
 > `fixed = true` simulates identically there and makes Rumoca **fail to converge**.
+>
+> **THE CAUSE IS NOT KNOWN, and the entry said it was until 2026-09-19.** `BareRc` — the same
+> circuit with **no library**, two equations — shows the `der → Const 0.0` substitution in its
+> residual, has the state among its plan's unknowns, and whose derivative-zero system also
+> solves to the wrong `v = 5` — **and it simulates correctly**, because the run keeps its seeded
+> value instead of applying the solve. Every condition once blamed holds in the model that
+> works. **Do not restate the old mechanism**; what is unmeasured is *why the initialization
+> solve is applied to one model and not another*, and that is the next thing to measure.
 >
 > **THE ORACLE RUN IS DONE — and Claude can run these himself.** `Import[…, "MO"]` +
 > `SystemModelSimulate` through the Wolfram MCP server works on this machine, including on

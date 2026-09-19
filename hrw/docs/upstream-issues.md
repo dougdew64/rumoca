@@ -1109,11 +1109,17 @@ and the cost becomes flat in depth. Guarded by
 plot worth looking at. **Reproduced on two purpose-built models and correlated across the
 whole 25-specimen corpus.** Not filed.
 
-The defect shows from two sides, and the second is what turns a correlation into a
-mechanism: without a `fixed` initial condition a state silently takes the value that makes
-its derivative zero, and *with* one, initialization fails to converge — which is what you
-would expect if the derivative-zero condition were already occupying the equation the
-initial condition needs.
+> **READ THIS BEFORE FILING — the title names a SYMPTOM, not a mechanism** *(2026-09-19)*.
+> A library-free model exhibits every condition this entry once blamed and gets the **right**
+> answer; see *THE MECHANISM IS NOT ESTABLISHED* below. The reproducers, the located
+> instruction and the oracle verdicts all stand. **The causal story does not**, and this file's
+> own rule is that a confident wrong diagnosis costs a maintainer more than no diagnosis.
+
+The defect shows from two sides: without a `fixed` initial condition a state silently takes
+the value that makes its derivative zero, and *with* one, initialization fails to converge —
+which is what you would expect if the derivative-zero condition were already occupying the
+equation the initial condition needs. **That last clause is a plausible reading, not a
+measured one**, and it was the seed of the over-claim corrected below.
 
 ### Reproduction A — the start value is discarded
 
@@ -1271,8 +1277,58 @@ That row is `C.i = 0`. Zero current forces `R.v = 0`, hence `C.p.v = 5`, hence `
 An opcode census over the entire initialization residual finds **no derivative load of any
 kind** — only `LoadY`, `LoadP` and `Const` — so the initialization problem is the DAE with
 every derivative term replaced by zero. It is square at 23x23 *only* because `der(C.v)` has
-been eliminated, and the state is one of those 23 unknowns with nothing pinning it to
-`start`.
+been eliminated, and the state is one of those 23 unknowns.
+
+### THE MECHANISM IS NOT ESTABLISHED — corrected 2026-09-19, and this is the honest limit
+
+**This section previously ended *"...with nothing pinning it to `start`"*, offered as the
+cause.** A counter-example measured 2026-09-12 and written up a week later shows that cannot
+be the discriminator, so it is withdrawn rather than left standing.
+
+`BareRc` is the same physics with **no library at all** — two equations, two variables:
+
+```modelica
+model BareRc
+  parameter Real Vs = 5; parameter Real Rr = 100; parameter Real Cc = 1e-3;
+  Real v(start = 0); Real i;
+equation
+  i = (Vs - v) / Rr;
+  Cc * der(v) = i;
+end BareRc;
+```
+
+**Rumoca 0.9.20 simulates it correctly**: `v(0) = 0`, `v(1) = 4.9997713` against the analytic
+`5(1 - e^{-10}) = 4.999773`, and `i(0) = 0.05 = Vs/Rr`. Re-verified 2026-09-19.
+
+| | `BareRc` | `RcCircuit` |
+|---|---|---|
+| `der` replaced by `Const 0.0` in the residual | **yes** (row 0 is `Cc*0.0 - i`) | yes |
+| plan solves the state as an unknown | **yes** | yes |
+| `initial_y[0]` (the seed) | 0.0 | 0.0 |
+| the derivative-zero system's own solution | **`v = 5`** — also wrong | `C.v = 5` |
+| what the run reports | **`v(0) = 0`, the seed** | `C.v(0) = 5`, the solve |
+
+**Every condition the old text named as the cause holds in the model that works.** What
+differs is only whether the run *applies* the initialization solve: `RcCircuit` takes it,
+`BareRc` keeps its seeded value and is therefore right **by accident** — the same shape as
+`BouncingBall` above, and the second accident of its kind in this entry.
+
+**So what is established is narrower than a mechanism, and it is still worth filing:**
+
+- the substitution exists, is unconditional, and reaches the initialization residual — read
+  from the disassembly of **both** models;
+- the derivative-zero system has the **wrong** solution in both;
+- several models report that wrong solution, and a reference implementation disagrees with
+  every one of them;
+- supplying `fixed = true` makes initialization fail outright.
+
+**What is NOT established: why the solve is applied in one model and not the other.** That is
+the next thing to measure, and until it is, this entry should not assert a cause.
+<!-- unbuilt: worker::tests::bare_rc_and_rc_circuit_differ_only_in_projection -->
+
+**The general headline is likewise too broad.** *"A state's initial value comes from the
+derivative-zero solution"* describes what several models do, not what Rumoca does — `BareRc`
+is a state whose initial value comes from its `start`. Read the title as naming the symptom.
 
 **Why `fixed = true` then fails.** The extra initial equation takes the system to 24 rows,
 and the projection plan responds by dropping the state from the unknowns *and* orphaning
