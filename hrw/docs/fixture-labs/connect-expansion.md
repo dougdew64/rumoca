@@ -22,6 +22,15 @@ needs a pass of its own
 Order cannot change which variables end up together, and a `connect` whose two ends are already in
 one set does nothing at all — `union` compares roots before it merges.
 
+There is no such pass for an unconnected *potential* variable, and none is needed. MLS §4.7 requires
+every component to be locally balanced, so a component's own equations together with `flow = 0` on
+an unconnected connector already determine that connector's potentials: a resistor with one pin
+dangling still balances, because `v = R·i` with `i = 0` fixes the dangling pin's voltage from the
+other pin's. The equation was never the connection's to supply. The case where it genuinely is
+missing is a connector declared in the model with no component behind it — and it is not this phase
+that notices. The DAE comes out one equation short, and matching in structural analysis reports the
+potential by name as an unmatched unknown.
+
 [`connect_primitive_vars`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#connect_primitive_vars) is where a statement becomes merges. It pairs the two connectors'
 members by name, then routes each pair by that member's prefix:
 
