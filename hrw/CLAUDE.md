@@ -38,8 +38,12 @@ how he learns, which nothing else in this repository carries. The short form:
   [`docs/vvuq-programme.md`](docs/vvuq-programme.md)** — three gaps, five stages, the standards
   roster. **Read it before choosing what to work on next**, and note Decision 17 is a
   tie-breaker among options already equal on learning value, never a licence on its own.
-- **Decades of C/C++/Java, new to Rust and egui.** The gap is *idiom*, not concepts —
-  translate (`trait` ≈ interface, ownership ≈ RAII + move).
+- **Decades of C/C++/Java, new to Rust and egui — and TRANSLATE TO CONTEMPORARY C++, not Java**
+  *(2026-09-20; he is ramping up on C++17/20/23 and no longer writes Java)*. The gap is *idiom*,
+  not concepts, and modern C++ is the closer target: `Option` ≈ `std::optional`, `Result` ≈
+  `std::expected`, data-carrying `enum` ≈ `std::variant`, static traits ≈ **concepts**, `dyn`
+  ≈ `virtual`, iterator chains ≈ **ranges**, ownership ≈ RAII + move with the compiler
+  enforcing it. **Lifetimes have no analogue and are the one genuinely new thing.**
 - **BUT NOT NEW TO COMPILERS' BACK HALF — he built one** *(2026-09-19)*. At Caterpillar he
   shipped **DAE export + a generated C solver + a Simulation S-Function for dSPACE HIL rigs**,
   still in production after fifteen years. **So "frame compiler concepts as introductions" is

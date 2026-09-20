@@ -204,7 +204,7 @@ place. `CLAUDE.md` already records that `egui_kittest` cannot see layout, and ha
 confirm it. **The toolchain column is dominated by Claude's own fresh mistakes**, caught within
 minutes, which is the loop working as designed.
 
-<!-- ledger-through: 2026-09-12 -->
+<!-- ledger-through: 2026-09-20 -->
 
 ### 08-17 → 08-22, backfilled 2026-08-23 — and the ledger had gone dark
 
@@ -427,6 +427,47 @@ and the oracle is this project's court of last resort. The guard is now one line
 [`upstream-issues.md`](upstream-issues.md), adjudicated against System Modeler, and it was found by
 Doug asking for a specimen that plots well. Counting another project's defect here would flatter the
 ratio this ledger exists to keep honest.
+
+### 09-13 → 09-20 — the defects moved out of the code and into the record
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 09-13 | the entry's causal mechanism — "the state sits among the unknowns with nothing pinning it" — refuted by a model that has every blamed condition and works | Claude | `BareRc`, measured; written up six days later because the session ended mid-build |
+| 09-19 | the same entry's headline generalised past its evidence: *"a state's initial value comes from der = 0"* describes several models, not Rumoca | Claude | the title was renamed to name a symptom |
+| 09-19 | *"promote `ConnRc` when the rebase lands"* — written that morning, **not executable**: HRW compiles the FIRST class and the file led with `connector Pin` | Claude | found by loading it once; the unexercised-claim failure's second instance |
+| 09-19 | System Modeler simulated `Gnd` off the same file — `Import[…, "MO"]` takes the LAST class — and returned a normal result object | Claude | a wrong-model adjudication looks identical to a right one; guard added to the recipe |
+| 09-19 | a class named `Res` drew four resolve flags for shadowing | Claude | cosmetic; renamed |
+| 09-19 | *"UQ is the third axis"* — imprecise: UQ is absent from class 2 and coextensive with class 3, so it crosses nothing | **Doug** | *"what is the third axis?"* — the reference is the axis; UQ is its cost |
+| 09-19 | the gap list omitted domain physics with **no reason written**, so a reader could conclude it was judged peripheral | **Doug** | his inference from the writing's emphasis exposed the absence |
+| 09-19 | *"frame compiler concepts as introductions, not reminders"* — half wrong for eight weeks; he built the back half of a Modelica compiler in 2011 | **Doug** | by telling Claude what he had built; nothing in the repository could have known |
+| 09-19 | a former employer's internal situation, written and **pushed** to a public repository | **Doug** | the attribution test did not exist; it does now |
+| 09-19 | a verbatim quote of his own words that reads as self-doubt once the conversation is gone, in a public file | **Doug** | accurate, exact, and the mechanism of the problem — a paraphrase carried every finding |
+| 09-19 | a charter clause recording him changing his mind about his own motives | **Doug** | ratified text edited only on his instruction |
+| 09-19 | the reading path pointed at the taxonomy and not at the programme that says what to do next | Claude | caught by the pre-push handoff question |
+| 09-19 | "Stage A is available now" — available is not next; his sequence puts the whole programme behind step 3 | Claude | corrected the same day it was written |
+| 09-20 | Doug's Rust plumbing questions graded as drift when they were the prerequisite for the criterion Claude had just given him | **Doug** | *"I am ignorant about Rust"* — the working agreement already said to weave idiom in on contact |
+
+**Fourteen rows: Doug 7, Claude 7, toolchain 0.** And the zero is correct rather than alarming
+this time, because **not one of the fourteen is a code defect.** Eleven are claims in documents;
+three are working-agreement errors about Doug himself. There was no code to check.
+
+**What the block shows, and it is different from the last one.** The 09-03 block found that Doug's
+catches had become *questions*. This block finds that **his catches are now things only he could
+know**: what he built in 2011, whether a passage reads as self-doubt, what his employer would not
+want public, why he asks plumbing questions. Nothing in the repository, and no possible checker, has
+access to those facts. **The asymmetry is not that Doug sees defects Claude misses. It is that Doug
+holds information Claude cannot obtain except by being told**, and the defects were Claude writing
+as though he had it.
+
+**Three of Doug's seven are the same shape, and it has a rule now.** Accurate, well-sourced,
+public, and wrong to publish — the three tests in the private memory (stranger, attribution,
+quote-versus-paraphrase). The instructive part is *why* the existing rule failed: Claude's attention
+was on **accuracy**, which this project trains hardest, and accuracy is orthogonal to discretion. A
+true, exactly-sourced sentence passed every check that existed and should not have been written.
+
+**Not counted, deliberately: the 0.10.0 confirmation and the three flat-line specimens.** Those are
+findings about Rumoca, and good ones — the branch fixes the defect; connectors are the trigger — but
+they are not *defects in this project*, which is what this ledger counts.
 
 ### The standing prediction, checked — 3 of 4, and the fourth is the interesting one
 
