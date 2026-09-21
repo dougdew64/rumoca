@@ -148,8 +148,22 @@ invisible from the source.**
 | Extension | Id | Why |
 |-----------|-----|-----|
 | C/C++ | `ms-vscode.cpptools` | **Required.** Provides the `cppvsdbg` adapter — the working debug config on windows-msvc. Install the base extension only, *not* the Extension Pack. |
-| rust-analyzer | `rust-lang.rust-analyzer` | Language support |
+| rust-analyzer | `rust-lang.rust-analyzer` | Language support — **and it needs one per-machine step, below** |
 | CodeLLDB | `vadimcn.vscode-lldb` | *Optional.* The alternative adapter, with Rust-aware formatters. Retained; see the caveat below. |
+
+**rust-analyzer runs under the *stable* toolchain here, not the pinned nightly.** The
+workspace `.vscode/settings.json` sets `RUSTUP_TOOLCHAIN=stable` in the analyzer's environment
+(the file carries the full account: on a nightly toolchain the analyzer passes `cargo metadata`
+a `--lockfile-path` flag no current cargo accepts, the fallback query has no dependency graph,
+and Go to Definition across crates silently does nothing). That setting travels with the clone;
+stable's standard-library source does not, so on each machine run
+
+```powershell
+rustup component add rust-src --toolchain stable
+```
+
+Without it the analyzer works but cannot open `std`. `check_machine` warns when it is missing.
+Builds and the debugger are unaffected — they still see the nightly pin.
 
 **Use the `Debug HRW Observatory (cppvsdbg)` launch config.** Verified 2026-07-28: breakpoints
 in the path-dep `crates/rumoca-*` bind and fire, and live-trace stepping advances the animation

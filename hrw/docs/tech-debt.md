@@ -204,7 +204,7 @@ place. `CLAUDE.md` already records that `egui_kittest` cannot see layout, and ha
 confirm it. **The toolchain column is dominated by Claude's own fresh mistakes**, caught within
 minutes, which is the loop working as designed.
 
-<!-- ledger-through: 2026-09-20 -->
+<!-- ledger-through: 2026-09-21 -->
 
 ### 08-17 → 08-22, backfilled 2026-08-23 — and the ledger had gone dark
 
@@ -468,6 +468,25 @@ true, exactly-sourced sentence passed every check that existed and should not ha
 **Not counted, deliberately: the 0.10.0 confirmation and the three flat-line specimens.** Those are
 findings about Rumoca, and good ones — the branch fixes the defect; connectors are the trigger — but
 they are not *defects in this project*, which is what this ledger counts.
+
+### 09-21 — one environment defect, and two wrong diagnoses of it
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 09-21 | rust-analyzer had no cross-crate dependency graph — Go to Definition did nothing, silently — since the nightly pin | **Doug** | *"nothing happens"*; no checker in the project rules on the analyzer, and the analyzer's own status icon was the only tell |
+| 09-21 | first diagnosis: an analyzer/toolchain version mismatch. Prescribed a toolchain-matched analyzer; failed identically | Claude | the log's `--lockfile-path` line, pasted by Doug after restart 2, was the fact; the prescription came before it |
+| 09-21 | second diagnosis: the sysroot query. Prescribed `cargo.sysroot: null`; failed identically, because the flag is sent for the workspace query too | Claude | `cargo metadata --help \| grep lockfile` on both toolchains, and `analysis-stats`, settled it in two minutes — and should have been the FIRST move, not the third |
+
+**Three rows: Doug 1, Claude 2, toolchain 0.** The environment defect is real and is now both fixed
+(`.vscode/settings.json`, with the account) and ruled on (`check_machine` warns when stable's
+`rust-src` is missing — the one piece of the fix that does not travel with a pull).
+
+**The two Claude rows are one shape, and it has a name already:** the unexercised claim, third
+instance. Two prescriptions were written from a plausible reading of a symptom, each cost Doug a
+restart and an index, and each was refuted by the next restart. The third prescription was proved
+from the command line *before* the restart, and worked. **The rule the first two instances produced
+— run a procedure once before trusting it — applies to diagnoses as well as procedures:** measure
+the thing named in the diagnosis before prescribing on it.
 
 ### The standing prediction, checked — 3 of 4, and the fourth is the interesting one
 

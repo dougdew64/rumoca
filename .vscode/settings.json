@@ -8,6 +8,43 @@
   // dropdown instead. See hrw/docs/architecture.md.
   "rust-analyzer.debug.engine": "vadimcn.vscode-lldb",
 
+  // Run rust-analyzer's cargo and rustc under STABLE, even though the workspace pins
+  // nightly-2026-02-27 (rust-toolchain.toml, for WASM threading). Found 2026-09-21,
+  // after three failed restarts, and proved from the command line before the fourth.
+  //
+  // THE DEFECT: on a nightly toolchain the analyzer runs `cargo metadata` with
+  // `--lockfile-path`, and no cargo on this machine accepts that flag any more — not
+  // the pinned nightly (1.95.0, 2026-02-24), not stable 1.97.1 (2026-06-30). The
+  // query fails, the analyzer falls back to `--no-deps`, and a `--no-deps` result has
+  // NO `resolve` graph: every crate loads, none depends on any other, and Go to
+  // Definition across crates has nothing to follow. Symptom: F12 does nothing, a
+  // yellow status icon, and the server stalled near 970 MB with no
+  // target/rust-analyzer dir ever created. Both the bundled analyzer (0.3.3049) and
+  // the toolchain-matched one (1.95.0-nightly) fail identically; the flag is sent
+  // only when the toolchain reads as nightly.
+  //
+  // THE FIX: RUSTUP_TOOLCHAIN=stable in the server's environment beats the directory
+  // pin for every process the analyzer spawns. Stable cargo produces the full graph
+  // for this workspace (991 packages, 991 resolve nodes; no cargo-features needed),
+  // no crate uses #![feature], so stable `cargo check` works for diagnostics too, and
+  // stable's sysroot gives std navigation once its rust-src is installed. Measured:
+  // the database went from 123 MB (islands) to 725 MB (graph + std) with no warning.
+  //
+  // Builds and the debugger are UNAFFECTED — they run from the terminal and launch.json,
+  // which see the nightly pin as before. Only the analyzer's own tooling moves.
+  //
+  // Each machine needs:   rustup component add rust-src --toolchain stable
+  // `examples/check_machine` warns when it is missing (advisory: it costs reading, not building).
+  //
+  // PYO3_PYTHON: upstream's .cargo/config.toml sets it to /usr/bin/python3, a Linux
+  // path that exists on no Windows machine, so `rumoca-bind-python`'s build script
+  // fails under the analyzer (which runs every member's build script; `-p hrw`
+  // builds never touch that crate). Cargo's [env] table yields to a variable already
+  // in the process environment, so this overrides it for the analyzer only. `python`
+  // resolves through PATH on any machine with Python installed. Verified:
+  // `cargo check -p rumoca-bind-python` finishes clean with it, 2026-09-21.
+  "rust-analyzer.server.extraEnv": { "RUSTUP_TOOLCHAIN": "stable", "PYO3_PYTHON": "python" },
+
   // Set to true to make CodeLLDB log its full DAP protocol trace to the "LLDB"
   // output channel. Invaluable when a debug session misbehaves — it is how the
   // adapter's exit code 3221225477 (0xC0000005) was caught during the Windows

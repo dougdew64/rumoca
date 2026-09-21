@@ -40,6 +40,12 @@
 //!   slow gate, which should not be diagnosed as a hang.
 //! - **The VS Code bridge extension** — built and junctioned per machine. Advisory:
 //!   only `matching-live.md` needs it.
+//! - **Stable's `rust-src`** — `.vscode/settings.json` runs rust-analyzer under the
+//!   *stable* toolchain (the pinned nightly's cargo rejects the analyzer's
+//!   `--lockfile-path`, and the fallback loses the dependency graph, so Go to
+//!   Definition across crates does nothing). The settings travel; the toolchain
+//!   component does not. Without it the analyzer works but cannot open `std`.
+//!   Advisory: it costs reading, not building. Found 2026-09-21.
 //!
 //! Blocking problems exit non-zero and name their fix. Advisory ones report and do
 //! not, because a check that fails for things that are merely worth knowing trains
@@ -275,6 +281,43 @@ fn main() {
             "VS Code bridge extension",
             "only matching-live.md needs it; the other labs run from HRW alone",
             "hrw/docs/setup-windows.md section 6 -- npm install, npm run build, then the junction",
+        ),
+    }
+
+    // rust-analyzer runs under stable (see .vscode/settings.json for the full
+    // account), so it is STABLE's sysroot that must carry the std source, not the
+    // pinned nightly's -- `rust-toolchain.toml` installs rust-src for nightly only.
+    // Asking rustc for its sysroot rather than guessing the rustup path means a
+    // relocated toolchain still answers correctly. `+stable` fails outright when
+    // no stable toolchain is installed, which lands on the same Warn.
+    let std_src = Command::new("rustc")
+        .args(["+stable", "--print", "sysroot"])
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| {
+            PathBuf::from(String::from_utf8_lossy(&o.stdout).trim())
+                .join("lib")
+                .join("rustlib")
+                .join("src")
+                .join("rust")
+                .join("library")
+                .join("core")
+                .join("src")
+                .join("lib.rs")
+        });
+    match std_src {
+        Some(p) if p.exists() => r.line(
+            Verdict::Pass,
+            "rust-src for stable",
+            "rust-analyzer can navigate into std",
+            "",
+        ),
+        _ => r.line(
+            Verdict::Warn,
+            "rust-src for stable",
+            "rust-analyzer runs under stable and cannot open std without it",
+            "rustup component add rust-src --toolchain stable",
         ),
     }
 
