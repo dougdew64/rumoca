@@ -98,6 +98,7 @@ on a tab showing 48 equations.
 | 👤 [`architecture.md`](architecture.md) | How HRW works, including §11 the testing architecture and the scale/safety rules. |
 | [`context-assembly.md`](context-assembly.md) | The capture design — how a question carries its context to Claude. **Delivered**; kept for the reasoning. |
 | [`debug-set-sites.md`](debug-set-sites.md) | IR field → the Rumoca line that assigns it, for arming a breakpoint. |
+| 👤 [`rust-for-cpp-readers.md`](rust-for-cpp-readers.md) | Rust → contemporary C++ (17/20/23/26), every row version-tagged with its one point of divergence, anchored to real declarations in this workspace. For **reading** the code, not writing it. The four idioms that do not transliterate — enum-with-data + `match`, destructive moves, `Result` + `?`, lifetimes — and where the effort goes. |
 | 👤 [`compiler-phases/`](compiler-phases/) | **The closest thing that exists to Rumoca documentation** — 23 files, ~8,950 lines, written by Claude for Doug *before HRW existed* and copied in; upstream has no equivalent. **Reference, refreshed at the Rumoca version bump** ([`updating-rumoca.md`](updating-rumoca.md) steps 6-7), not per change. Start at 👤 [`the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md) — cited from six places in `src/`, so do not move it. No provenance tags: between refreshes, a map rather than a verified claim. |
 
 ## Records — append-only
