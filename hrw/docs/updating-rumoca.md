@@ -77,6 +77,17 @@ git log --format="%h %ad %an | %s" --date=short | grep -v dougdew64 | head -3
 - Path deps track the checked-out tree automatically — no `rev` to edit. `cargo build -p hrw`
   re-locks against the new Rumoca. Commit the updated `Cargo.lock`.
 - Resolve any conflicts in the instrumentation hooks against the moved phase code, then continue.
+- **If the rebase moved `rust-toolchain.toml`, re-test the rust-analyzer workaround** — added
+  2026-09-21. `.vscode/settings.json` runs the analyzer under `stable` because the pinned
+  nightly's cargo rejects the `--lockfile-path` flag the analyzer sends on nightly toolchains,
+  and the fallback query has no dependency graph (the file carries the full account). A newer
+  pin may accept the flag, making the line unnecessary; a newer pin may also introduce
+  nightly-only features that stable cannot analyse, making it wrong. Test it the way it was
+  found: `cargo +<new nightly> metadata --help | grep lockfile` says whether the flag exists,
+  and a Go to Definition across crates after a restart says whether the graph is there. Keep,
+  drop, or re-justify the line on that evidence; do not carry it forward unread. The
+  `PYO3_PYTHON` override in the same map is independent of the pin — it corrects upstream's
+  Linux-only path in `.cargo/config.toml` and stays until upstream makes that portable.
 
 ## 2. Fix compile breakage — the compiler is the guide
 
