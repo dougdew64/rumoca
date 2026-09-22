@@ -5,11 +5,18 @@
 [The chain overview](hrw://lab/the-concepts)
 
 **Counting a model's states can give you the wrong number — not miscounted, but wrong as a
-description of the machine.** This lab is about models where that happens, and it ends with one
-Rumoca cannot rescue at all.
+description of the machine.** Connect two rotating bodies with an ideal gear: each has an angle
+and a velocity, so the compiler sees four states, but the gear ratio fixes the second angle as a
+multiple of the first. Knowing one tells you the other. Four states, two freedoms.
 
-**It assumes only that you know what a derivative is.** Everything else — what "index" counts,
-why differentiating a constraint helps, why solvers want index 1 — is built below.
+A state carries the past forward, and you already established how one is identified — nothing
+declares it, some equation *differentiates* it, and the equation sheet's Why column names which:
+
+[◂ Re-read it — DAE construction, Station 2](hrw://lab/dae-construction/station/station-2-what-makes-a-variable-a-state)
+
+**This lab assumes only that you know what a derivative is.** Everything else — what "index"
+counts, why differentiating a constraint helps, why solvers want index 1 — is built at the
+stations, starting with one you work out by hand before the compiler is asked anything.
 
 Run [blt-ordering](hrw://lab/blt-ordering) and [tearing](hrw://lab/tearing) first; every model in
 those was solvable once ordered. Every count below is read from a generated trace, so if one
@@ -17,55 +24,59 @@ disagrees with your screen, the lab is wrong and I want to know.
 
 ---
 
-## The problem this phase exists to solve
+## Station 1 — Why can five equations in five unknowns be unsolvable?
 
-A state carries the past forward, and you already established how one is identified — nothing
-declares it, some equation *differentiates* it, and the equation sheet's Why column names which:
+`CartesianPendulum` is a point mass on a rigid rod, in Cartesian coordinates:
 
-[◂ Re-read it — DAE construction, Station 2](hrw://lab/dae-construction/station/station-2-what-makes-a-variable-a-state)
+```modelica
+der(x) = vx;
+der(y) = vy;
+m * der(vx) = -lambda * x;
+m * der(vy) = -lambda * y - m * g;
+x ^ 2 + y ^ 2 = L ^ 2;
+```
 
-Count the states and you have counted the numbers the integrator steps through time. Here is how
-that count goes wrong. Connect two rotating bodies with an ideal gear. Each has an angle and a velocity, so the compiler
-sees four states. But the gear ratio fixes the second angle as a multiple of the first: knowing
-one tells you the other. Four states, two freedoms.
+**The difficulty is not that there is a constraint.** A DAE solver handles algebraic constraints
+— that is its job. It solves `F(t, y, y') = 0`, constraints included, and index-1 systems are
+full of them. Any explanation that says "the solver cannot cope with a constraint" is hiding the
+real difficulty, and the real one needs nothing but the matching you have already run.
 
-### The problem is not that there is a constraint
-
-A DAE solver handles algebraic constraints — that is its job. It solves `F(t, y, y') = 0`,
-constraints included, and index-1 systems are full of them. So "the solver cannot cope with a
-constraint" is not the difficulty, and any explanation that says so is hiding the real one.
-
-Here is the real one, and it needs nothing but the matching you already run.
-
-Step 1 — what is actually unknown at an instant.
-
-You established this in the DAE lab and it is worth re-reading rather than being retold: a state
-is two things at once, a known value on the way in and an unknown rate on the way out.
+Start from what is actually unknown at an instant. A state is two things at once, a known value
+on the way in and an unknown rate on the way out:
 
 [◂ Re-read it — DAE construction, Station 3](hrw://lab/dae-construction/station/station-3-what-is-the-solver-actually-solving-for)
 
-So when a step begins, the solver already *has* the pendulum's `x`, `y`, `vx`, `vy`. What it must
-work out is the four rates — plus `lambda`, the rod's tension, which is on the list because
-nothing carries it forward. Five unknowns, and the model has five equations.
+So when a step begins the solver already *has* `x`, `y`, `vx` and `vy`. What it must work out is
+the four rates — plus `lambda`, the rod's tension, which is on the list because nothing carries
+it forward. **Five unknowns, and the model has five equations.**
 
-Step 2 — counting is not enough, and HRW will show you why.
+An equation can only help determine a quantity it actually mentions. The Incidence view draws
+exactly that: one row per equation, marked with the unknowns it touches.
 
-An equation can only help determine a quantity it actually mentions, and pairing each equation
-with the one unknown it determines is the matching you have already run.
+> **Predict.** Square is supposed to be the thing you check. Before you look: of those five
+> equations, how many touch one of the five unknowns — and if the answer is not five, which one
+> does not, and what is left unclaimed?
 
-Take the five equations in turn. Four of them mention one of our five unknowns. The fifth,
-the constraint `x^2 + y^2 - L^2`, is built from `x`, `y` and `L` — every one of them already
-known when the step begins. It is a true statement that cannot do any work.
+[Look — CartesianPendulum → Structural → Incidence](hrw://load/CartesianPendulum/Structural/Incidence)
 
-And that strands `lambda`, which appears in only two equations, and both are already needed for
-`der(vx)` and `der(vy)`.
+[Point at the constraint row, `f_x[4]`](hrw://stage/Structural/Incidence/equation/4)
+
+**Expected:** `f_x[4]`'s row is **empty** — it touches none of the five unknowns — while
+`lambda`'s column is marked in exactly two rows, `f_x[2]` and `f_x[3]`.
+
+Falsified if: `f_x[4]` marks any unknown, or `lambda` appears in a number of rows other than two.
+
+### What just happened
+
+The constraint `x^2 + y^2 - L^2` is built from `x`, `y` and `L` — every one already known when
+the step begins. It is a true statement that cannot do any work. And that strands `lambda`, which
+appears in only two equations, both already needed for `der(vx)` and `der(vy)`.
 
 One equation that can pair with nothing, one unknown that nothing is left to determine. Five
-equations, five unknowns, unsolvable. **Station 5 puts that pattern on screen** — the Incidence
-view draws one row per equation, and the constraint's row is empty.
+equations, five unknowns, unsolvable.
 
-That is what high index means: not *"there is a constraint"*, but *"a constraint mentions none
-of the quantities being solved for."*
+**That is what high index means:** not *"there is a constraint"*, but *"a constraint mentions
+none of the quantities being solved for."*
 
 ### Why differentiating is the fix
 
@@ -95,7 +106,7 @@ lambda = m * (vx^2 + vy^2 - g*y) / L^2
 Every unknown now has an equation that mentions it, the matching completes, and the system is
 solvable at each step.
 
-Two differentiations were needed — which is where "index 3" comes from. So *index* is a
+**Two differentiations were needed — which is where "index 3" comes from.** So *index* is a
 distance, not a quality score: how far a system is from one whose constraints talk about the
 unknowns. Index 1 means it is already there, which is why index 1 is the target and why this
 phase exists.
@@ -105,12 +116,13 @@ phase exists.
 > them, and a zero row makes it singular. The matching is that pattern found by counting rather
 > than by arithmetic — which is why a compiler can detect it before any number is computed.
 
-Index reduction is the phase that runs that distance. **You worked the pendulum out by hand just
-now; Station 5 is where the compiler's own answer is on screen beside it.**
+Index reduction is the phase that runs that distance. The next four stations watch it run — and
+then **Station 6 comes back to this pendulum**, where you now know the answer the compiler ought
+to reach.
 
 ---
 
-## Station 1 — The case that needs nothing
+## Station 2 — The case that needs nothing
 
 `BouncingBall` has two states, `h` and `v`.
 
@@ -132,7 +144,7 @@ discovery rather than as routine.
 
 ---
 
-## Station 2 — The smallest model that needs something
+## Station 3 — The smallest model that needs something
 
 `BenchActuator` is a motor driving a load — four states, and one of them is not free.
 
@@ -154,11 +166,11 @@ was never an independent quantity; it was bookkeeping. Removing it needs the con
 in terms of rates, and that restatement is the differentiation the pane counts.
 
 Notice what the pane says about survival. It reports the differentiation happening, and then
-that none of the manufactured equations survive to the end. Hold that; Station 4 is about it.
+that none of the manufactured equations survive to the end. Hold that; Station 5 is about it.
 
 ---
 
-## Station 3 — The same idea, at a scale you could not do by hand
+## Station 4 — The same idea, at a scale you could not do by hand
 
 `Drivetrain` is a motor, an ideal gear, a shaft and a compliant mount.
 
@@ -184,7 +196,7 @@ The compiler discovered that from the equations alone, knowing nothing about gea
 
 ---
 
-## Station 4 — What the compiler actually reached for
+## Station 5 — What the compiler actually reached for
 
 Here is the station this lab exists for, and it is about a number that used to be read wrong.
 
@@ -225,27 +237,18 @@ count square. That is what those six demotions are.
 
 ---
 
-## Station 5 — The model Rumoca cannot reduce
+## Station 6 — The model Rumoca cannot reduce
 
-`CartesianPendulum` is a point mass on a rigid rod, in Cartesian coordinates:
+Back to the pendulum from Station 1. Every constraint in the three stations since was an alias:
+one variable equal to another times a constant, which substitution can remove. `x² + y² = L²` is
+not. It is nonlinear and involves two states at once, so no substitution touches it.
+Differentiation is the only route, which makes this the textbook case and the first real test of
+the phase.
 
-```modelica
-der(x) = vx;
-der(y) = vy;
-m * der(vx) = -lambda * x;
-m * der(vy) = -lambda * y - m * g;
-x ^ 2 + y ^ 2 = L ^ 2;
-```
+**You already know what has to happen.** Station 1 differentiated that constraint twice by hand,
+and the second differentiation is what brings `lambda` within reach.
 
-Five equations, five unknowns — `x`, `y`, `vx`, `vy`, and `lambda`, the rod's tension.
-
-Every constraint you have seen so far was an alias: one variable equal to another times a
-constant, which substitution can remove. `x² + y² = L²` is not. It is nonlinear and involves
-two states at once, so no substitution touches it. Differentiation is the only route — which
-makes this the textbook case, and the first real test of the phase.
-
-> **Predict.** This is the canonical example every treatment of index reduction opens with. How
-> many differentiations will Rumoca perform?
+> **Predict.** So: how many differentiations will Rumoca perform?
 
 [Look — CartesianPendulum → Index reduction](hrw://load/CartesianPendulum/IndexReduction)
 
@@ -264,24 +267,10 @@ unmatched equations: f_x[4]; unmatched unknowns: lambda`.
 
 Falsified if: the unmatched pair is anything other than one equation and `lambda`.
 
-`f_x[4]` is the constraint and `lambda` is its force. That pair is the signature of a
-high-index system, and the Incidence view is where the signature is legible rather than
-reported — one row per equation, marked with the unknowns it touches:
-
-[Look — CartesianPendulum → Structural → Incidence](hrw://load/CartesianPendulum/Structural/Incidence)
-
-[Point at the constraint row, `f_x[4]`](hrw://stage/Structural/Incidence/equation/4)
-
-**Expected:** `f_x[4]`'s row is **empty** — it touches none of the five unknowns — while
-`lambda`'s column is marked in exactly two rows, `f_x[2]` and `f_x[3]`.
-
-Falsified if: `f_x[4]` marks any unknown, or `lambda` appears in a number of rows other than two.
-
-This is the introduction's argument, measured. You worked it out from the equations before the
-lab loaded anything; the pane is where it stops being your arithmetic and becomes the compiler's. The constraint mentions no derivative and no `lambda`, so nothing can pair
-with it; `lambda` appears only in the two force equations, which are already matched to `der(vx)`
-and `der(vy)`. Differentiating the constraint twice would bring accelerations into it — and with
-them `lambda` — at which point the pair matches and the system is index 1.
+**That is the same pair you found in Station 1**, arrived at by a different route. There you
+read it off the incidence pattern — an empty row, a column reachable from only two equations.
+Here the matching reports it as a failure, by name. The compiler found by algorithm what you
+found by reading five equations.
 
 Rumoca's index reduction is pattern-based, not general Pantelides. Read the step names:
 exact aliases, direct assignments, constrained dummy derivatives, states missing a derivative
@@ -300,19 +289,21 @@ boundary: you now know what this compiler does, and what it does not.
 
 ## What this lab cannot check
 
-Whether the four specimens read as one idea. They are meant to: nothing needed, one
-differentiation, six, and then a model where differentiation is required and absent. Whether that
+Whether the four specimens read as one idea. They are meant to: a model that must be
+differentiated by hand before anything else happens, then nothing needed, one differentiation,
+six, and back to the first with the compiler declining. Whether that
 lands as a progression or as four unrelated panes is your report and nothing else's.
 
-Whether "index" survives as a distance rather than a score. The opening builds it that way
-and no pane displays an index number anywhere, so the idea rests entirely on prose.
+Whether "index" survives as a distance rather than a score. Station 1 builds it that way and no
+pane displays an index number anywhere, so the idea rests on that station's prose and the
+arithmetic the reader does there.
 
 What a differentiated equation looks like. The pane counts them and, on every specimen that
 makes any, they are gone by the end — so the corpus can tell you six were made and cannot show
 you one.
 
 Whether System Modeler reduces the pendulum. That is the calibration that would turn Station
-5's reading into a fact, and it has not been run. `the-oracle.md` is the lab for that gesture.
+6's reading into a fact, and it has not been run. `the-oracle.md` is the lab for that gesture.
 
 ---
 

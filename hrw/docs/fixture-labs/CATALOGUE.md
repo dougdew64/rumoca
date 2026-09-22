@@ -217,16 +217,16 @@ This is a test, not an explanation. It verifies that a link can stop an animatio
 
 Counting a model's states can give you the wrong number — not miscounted, but wrong as a
 
-- **Specimens:** `BouncingBall`, `BenchActuator`, `Drivetrain`, `CartesianPendulum`
+- **Specimens:** `CartesianPendulum`, `BouncingBall`, `BenchActuator`, `Drivetrain`
 - **Stages:** `IndexReduction`, `Structural`
 - **Stations:**
   - `fixture-lab-index-reduction-when-differentiating-is-the-only-way-out` — Fixture lab — Index reduction: when differentiating is the only way out
-  - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
-  - `station-1-the-case-that-needs-nothing` — Station 1 — The case that needs nothing
-  - `station-2-the-smallest-model-that-needs-something` — Station 2 — The smallest model that needs something
-  - `station-3-the-same-idea-at-a-scale-you-could-not-do-by-hand` — Station 3 — The same idea, at a scale you could not do by hand
-  - `station-4-what-the-compiler-actually-reached-for` — Station 4 — What the compiler actually reached for
-  - `station-5-the-model-rumoca-cannot-reduce` — Station 5 — The model Rumoca cannot reduce
+  - `station-1-why-can-five-equations-in-five-unknowns-be-unsolvable` — Station 1 — Why can five equations in five unknowns be unsolvable?
+  - `station-2-the-case-that-needs-nothing` — Station 2 — The case that needs nothing
+  - `station-3-the-smallest-model-that-needs-something` — Station 3 — The smallest model that needs something
+  - `station-4-the-same-idea-at-a-scale-you-could-not-do-by-hand` — Station 4 — The same idea, at a scale you could not do by hand
+  - `station-5-what-the-compiler-actually-reached-for` — Station 5 — What the compiler actually reached for
+  - `station-6-the-model-rumoca-cannot-reduce` — Station 6 — The model Rumoca cannot reduce
   - `what-this-lab-cannot-check` — What this lab cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
 

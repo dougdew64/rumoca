@@ -3663,17 +3663,22 @@ Some prose.
         );
     }
 
-    /// **`index-reduction.md` Station 5's Incidence `Expected`, against a real compile.**
+    /// **`index-reduction.md` Station 1's Incidence `Expected`, against a real compile.**
     ///
     /// # Why this station and not the introduction
     ///
     /// The claim — `f_x[4]`'s row is empty, `lambda` is marked in exactly two rows — spent
     /// weeks in that lab's **overview**, where it was performed as an observation: two
-    /// `hrw://` links, a pane to open, and nothing that could fail. It moved into Station 5
+    /// `hrw://` links, a pane to open, and nothing that could fail. It moved into a station
     /// on 2026-09-22 under the redistribution half of `fixture-labs/README.md` rule 4, and
     /// this test is what the move bought. **A number in an overview is unpinned by
     /// construction; the same number in a station can be checked**, which is the whole
     /// content of that rule.
+    ///
+    /// It landed in Station 5 first and became **Station 1** later the same day, when the
+    /// derivation it belongs to was promoted out of the overview into a station of its own:
+    /// the reader now works the pendulum out by hand at Station 1 and meets the compiler's
+    /// own verdict at Station 6.
     ///
     /// The station's reasoning depends on both halves, so both are asserted: an empty row
     /// is an equation that can pair with nothing, and a `lambda` reachable only from two

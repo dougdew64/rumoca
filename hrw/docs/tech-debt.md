@@ -545,6 +545,21 @@ markup defect had no rule at all and now has
 three are the ones worth noticing**, because the genre-blurb defect was in *every single lab* and
 had therefore stopped looking like a defect at all — it looked like the house style.
 
+**And the rule's own end point, reached on `index-reduction` the same day.** Its overview stayed
+at 112 lines after the pass, because the ~90 lines left were a *derivation* — the pendulum's five
+unknowns, the constraint that mentions none of them, the chain rule applied twice — and Doug's
+standard for that lab is that index reduction be followable with basic calculus alone. **Two of
+his rules pointed opposite ways**: stations-first says a derivation is not a prerequisite for any
+station's prediction, and the harder bar says the derivation is the point. Put to him rather than
+settled, and he chose the resolution that satisfies both: **make the derivation a station.**
+
+It already had a station's shape — predict that five equations in five unknowns is enough, open
+the Incidence view, find the constraint's row empty. It is now Station 1, the old five renumber to
+2-6, and Station 6 is its payoff: *you differentiated it twice by hand; the compiler performs
+zero.* The overview is 26 lines. **The general lesson is that an overview which cannot shrink is
+usually one holding an activity, not a briefing** — and the test is whether it could carry an
+`**Expected:**`.
+
 **The spoiler is the defect this corpus is now most exposed to**, and it has no checker and
 probably cannot have one: it requires knowing what a station asks. The check is per station — for
 each `**Predict.**`, is its answer stated anywhere the reader passes first? A hub is the worst

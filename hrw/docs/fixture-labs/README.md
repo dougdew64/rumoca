@@ -359,6 +359,13 @@ sentence is true and stationed, never whether a station still has anything left 
 [**WRITE TO PROVOKE QUESTIONS**](#-write-to-provoke-questions-not-to-pre-empt-them--2026-08-30)
 above, which this is a special case of.
 
+**When an overview will not shrink, it is usually holding an ACTIVITY rather than a briefing.**
+`index-reduction`'s stayed at 112 lines through a full pass, because what remained was a
+derivation the reader performs — and a derivation is what a station is. Promoted, it became
+Station 1 (predict, open the Incidence view, find the constraint's row empty), the rest renumbered
+to 2-6, and the overview fell to 26. **The test is whether the passage could carry an
+`**Expected:**`.** If it could, it is a station that has not been written yet.
+
 **The test for a candidate sentence is therefore a question about a station, not about the
 sentence:** name the station that cannot be attempted without it. If naming one is hard, it does
 not go in. If the station would be *better* without it, it definitely does not.
