@@ -680,3 +680,41 @@ over-determined half of the balance check (3 equations, 2 unknowns) and **nothin
 under-determined half caught by matching**. `docs/ideas.md` #46 wants a failure specimen per
 phase. It is already oracle-validated, and unlike the plot work it is **blocked by nothing** —
 a structural question, so the initialization defect is irrelevant to it.
+
+---
+
+## What makes a station land, and it is the same property a test can pin — 2026-09-22
+
+**Doug, on a Station 1 passage he had just captured:** *"Your stations are good. For example,
+the part of the station which I captured is more effective for me than the overview."* He had
+selected this, from `connect-expansion`:
+
+> Here is every `connect` in `RcCircuit`: […the four statements…] A `Pin` has two variables, so
+> each statement pairs by name into two merges — one joining `.v` to `.v`, one joining `.i` to
+> `.i`. Four statements, eight merges.
+
+**The overview states the same rule** — *"one merge per connector variable the two sides
+share"* — and he had just read it. So the information is not what differs. Four things are:
+
+1. **The specimen's own source is on the page**, all four statements, not described.
+2. **The rule becomes arithmetic he performs**: two variables, four statements, eight merges.
+   The overview asks him to hold a rule; the station asks him to apply it.
+3. **The number he just computed is then wrong in the interesting way** — eight merges, six
+   sets — and the station breaks it deliberately in the next paragraph.
+4. **The break has one named cause he can look at**: `src.n` appears in two `connect`s.
+
+**The finding, and it is what makes this entry worth keeping:** every one of those four is a
+*concrete count tied to a named specimen*, which is exactly the property that lets a test pin
+it. `lab_set_sizes_match_the_connection_replay` compiles `RcCircuit` and checks 6 and 7 against
+the real replay. **The station is machine-checkable and learnable for the same reason** — it
+committed to a number about a model that exists.
+
+**So the overview gap diagnosed the same day is not primarily a missing guard.** Prose that no
+test can pin is usually prose that states a rule without instantiating it, and that is the same
+prose Doug reads past. Adding pinned claims to an overview treats the symptom. The question to
+ask of an overview paragraph is whether it could name a specimen and a number — and if it
+could, it probably belongs in a station.
+
+**Standing consequence for writing labs:** prefer the count over the rule. A rule that never
+meets a specimen is the stored prose this project already retired 1,632 lines of.
+
