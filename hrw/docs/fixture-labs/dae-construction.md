@@ -10,10 +10,14 @@ repeat. That is only possible once every variable has been sorted by **role** �
 through time, fixed for the whole run, or solved afresh at each instant.
 
 Flattening left something faithful and unusable: one flat list of equations, still written in your
-vocabulary, with named variables and `der()` calls. DAE construction is the phase that does the
-sorting — and then makes a single claim about what it produced: **the system is square**, as many
-equations as unknowns. Everything downstream is entitled to assume that claim without re-checking
-it, which is what the last three stations are about.
+vocabulary, with named variables and `der()` calls. DAE construction does the sorting — and then
+makes a single claim about what it produced: **the system is square**, as many equations as
+unknowns. Everything downstream is entitled to assume that claim without re-checking it, which is
+what the last three stations are about.
+
+The sorting and the claim are what this lab follows. The phase does more than that — it also
+lowers algorithm sections, `when` conditions and `pre()` into the hybrid structure the solver
+will actually run — and none of that is on screen here.
 
 Every count below is read from a generated trace, so if one disagrees with your screen, the lab is
 wrong and I want to know.

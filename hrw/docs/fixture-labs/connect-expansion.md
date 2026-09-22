@@ -26,11 +26,17 @@ So `connect(src.p, R.p)` is neither an assignment nor an equation. It is an inst
 **merge sets of variables** — one merge per variable the two connectors share, paired by name —
 and no equation exists until every merge is done.
 
-That is the whole of the phase, and the five numbers below fall out of it. `RcCircuit` has four
-`connect` statements and twenty-three equations; every step from one number to the other is
-something you can predict before you look. Each station asks you to commit to an answer, then
-sends you to the pane that settles it. The answers are read from generated compiler traces, so
-if a count disagrees with your screen, the lab is wrong and I want to know.
+**That merging is one part of flatten, not the whole of it.** The phase also crushes the
+component hierarchy into a single namespace of globally unique names, copies in each component's
+own equations, and rewrites every equation into residual form — `0 = R.v - R.R_actual * R.i`
+rather than `v = R_actual*i`. Station 4 is where the proportion shows: of `RcCircuit`'s
+twenty-three equations, **seven come from the connections and sixteen are the components' own.**
+This lab is about those seven.
+
+Four `connect` statements to seven equations is a short chain, and every step of it is something
+you can predict before you look. Each station asks you to commit to an answer, then sends you to
+the pane that settles it. The answers are read from generated compiler traces, so if a count
+disagrees with your screen, the lab is wrong and I want to know.
 
 ---
 

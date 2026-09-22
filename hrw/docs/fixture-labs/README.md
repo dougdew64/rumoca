@@ -359,6 +359,15 @@ sentence is true and stationed, never whether a station still has anything left 
 [**WRITE TO PROVOKE QUESTIONS**](#-write-to-provoke-questions-not-to-pre-empt-them--2026-08-30)
 above, which this is a special case of.
 
+**Rewriting from empty can introduce a falsehood that triage never could — check the phase's
+scope before writing the summary sentence.** An overview cut to what the stations need is about
+*the lab's slice of a phase*, and the shortest way to close that paragraph is to say the slice is
+the whole. `connect-expansion` said *"that is the whole of the phase"* of connection expansion on
+2026-09-22; flatten also flattens the hierarchy, copies in component equations and rewrites to
+residual form, and **that lab's own Station 4 already measured the contradiction** — 16 of 23
+equations are the components'. **Read the phase crate's module doc**, name what the lab does not
+cover, and let a station's numbers check you.
+
 **When an overview will not shrink, it is usually holding an ACTIVITY rather than a briefing.**
 `index-reduction`'s stayed at 112 lines through a full pass, because what remained was a
 derivation the reader performs — and a derivation is what a station is. Promoted, it became

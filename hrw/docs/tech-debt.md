@@ -545,6 +545,26 @@ markup defect had no rule at all and now has
 three are the ones worth noticing**, because the genre-blurb defect was in *every single lab* and
 had therefore stopped looking like a defect at all — it looked like the house style.
 
+**The pass introduced a false claim, and Doug caught it the same day.** `connect-expansion`'s
+rewritten overview said of connection expansion *"that is the whole of the phase"* — **flatten
+also crushes the hierarchy into one namespace of globally unique names, copies in each
+component's own equations, and rewrites everything into residual form**, per the crate's own
+module doc. The lab's own Station 4 already measured the contradiction: 16 of `RcCircuit`'s 23
+equations are the components', only 7 are the connections'.
+
+**The mechanism is specific to rewriting from empty, so it is worth naming.** Cutting an overview
+to what the stations need produces a document about *the lab's slice of a phase*, and the shortest
+way to end that paragraph is a sentence saying the slice is the thing. Triage never produced this
+error, because triage never wrote a new summary sentence. **A method that removes prose cannot
+introduce a falsehood; a method that rewrites it can** — so the from-empty rule buys accuracy at
+the station level and costs a new failure mode at the summary level.
+
+A sweep for the same shape found one more, milder: `dae-construction` listed the phase's jobs as
+though the two the lab follows were all of them, where it also lowers algorithm sections, `when`
+conditions and `pre()`. Both now name what the lab does not cover. `matching` and `tearing` say
+*"X is the phase that does Y"*, which is focus rather than a claim of exhaustiveness, and were
+left alone.
+
 **And the rule's own end point, reached on `index-reduction` the same day.** Its overview stayed
 at 112 lines after the pass, because the ~90 lines left were a *derivation* — the pendulum's five
 unknowns, the constraint that mentions none of them, the chain rule applied twice — and Doug's
