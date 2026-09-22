@@ -5,11 +5,11 @@
 [The chain overview](hrw://lab/the-concepts)
 
 `connect(src.p, R.p)` looks like wiring two things together. In Rumoca it is neither an assignment
-nor an equation — it is an instruction to merge sets of variables, one merge per member the two
-sides share, and no equation exists until every merge is done.
+nor an equation — it is an instruction to merge sets of variables, one merge per connector
+variable the two sides share, and no equation exists until every merge is done.
 
 Which sets? A `connect` names connectors, not variables — `src.p` is a `Pin`. Expansion derives
-the members and pairs them by name first
+the connector's variables and pairs them by name first
 ([`expand_connector_connection`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#expand_connector_connection)),
 and each pair goes to
 [`union(a, b)`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#UnionFind), which
@@ -32,15 +32,15 @@ that notices. The DAE comes out one equation short, and matching in structural a
 potential by name as an unmatched unknown.
 
 [`connect_primitive_vars`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#connect_primitive_vars) is where a statement becomes merges. It pairs the two connectors'
-members by name, then routes each pair by that member's prefix:
+variables by name, then routes each pair by that variable's prefix:
 
-| the member is | the pair goes to |
+| the connector variable is | the pair goes to |
 |---|---|
 | `flow` | `flow_pairs` — a plain `Vec`, not merged yet |
 | `stream` | `stream_uf` |
 | neither, so potential | `potential_uf` |
 
-A member with no counterpart on the other side is routed nowhere at all. Wire a `Pin` `{v, i}`
+A connector variable with no counterpart on the other side is routed nowhere at all. Wire a `Pin` `{v, i}`
 to a `Flange` `{s, f}` and every pairing fails, so nothing merges and nothing is checked — which is
 why `connect` is also a compatibility claim, and why the language requires a compiler to test it.
 
@@ -81,7 +81,7 @@ connect(C.n, src.n);
 connect(src.n, gnd.p);
 ```
 
-A `Pin` has two members, so each statement pairs by name into two merges — one joining `.v` to
+A `Pin` has two variables, so each statement pairs by name into two merges — one joining `.v` to
 `.v`, one joining `.i` to `.i`. Four statements, eight merges.
 
 Eight merges do not mean eight sets. Watch `src.n`: it is named by `connect(C.n, src.n)` and by
@@ -103,7 +103,7 @@ Eight merges, six sets, because two of them landed in sets that already existed.
 named twice, so `C.n.v`, `src.n.v` and `gnd.p.v` finish in one set of three — and their `.i`
 counterparts in another. The other two statements make sets of two.
 
-So: three sets over the `.v` members, of sizes 2, 2 and 3, and three over the `.i` with exactly the
+So: three sets over the `.v` variables, of sizes 2, 2 and 3, and three over the `.i` with exactly the
 same membership. Six.
 
 Pairing by name is why the two kinds never mix. No merge joins a `.v` to an `.i`, because no
@@ -150,7 +150,7 @@ by the equations it generated:
 | `7` | `EquationsGenerated` | `flow` | `3` | `1` |
 | `13` | `EquationsGenerated` | `potential` | `3` | `2` |
 
-Same three members, different arithmetic. Everything below is that, once per set.
+Same three variables, different arithmetic. Everything below is that, once per set.
 
 > **Predict.** Potential sets of 2, 2 and 3 `.v`, and flow sets of 2, 2 and 3 `.i`. How many
 > equations in total, and how do they split between the two kinds?
@@ -227,9 +227,9 @@ Connector equations
 ```
 
 Rows three and four are the set of three: they chain through `src.n.v`. The third flow row is
-that set's `.i` twin, and it names all three members at once.
+that set's `.i` twin, and it names all three variables at once.
 
-Falsified if no two potential rows share a variable, or if the three-term flow row's members are
+Falsified if no two potential rows share a variable, or if the three-term flow row's variables are
 not the `.i` counterparts of the variables in that chain.
 
 ### What just happened
@@ -329,7 +329,7 @@ equation indices map straight onto its source, which is why `blt-ordering.md` us
 ## Station 6 — Do the sets still come out matched?
 
 Station 1's sets came out matched: three of `.v` and three of `.i`, same membership, because
-pairing by name never lets a merge cross between members. That pairing is real. What is not a law
+pairing by name never lets a merge cross between connector variables. That pairing is real. What is not a law
 is the matching, and `RcCircuit` cannot show you why, because all four of its connects sit at
 root scope.
 
@@ -414,7 +414,7 @@ solves which unknown.
   whether the frames *read* as a phase building sets one at a time is your report and nothing
   else's.
 - Whether a connection is legal. Rumoca checks that *paired* variables agree, but nothing
-  checks that both connectors have the same member set. That gap has its own lab:
+  checks that both connectors declare the same set of variables. That gap has its own lab:
   [the-oracle](hrw://lab/the-oracle).
 - Stream connectors. Named in Station 2 and exercised by no specimen here.
 
