@@ -205,24 +205,25 @@ pub fn region<R>(
             // the running program.
             let primary_click =
                 ui.input(|i| i.pointer.button_clicked(egui::PointerButton::Primary));
-            let inside_item = ui
-                .ctx()
-                .pointer_interact_pos()
-                .is_some_and(|p| item.rect.contains(p));
-            // **Only the surprising case.** A primary click while the menu is open is usually
-            // the reader dismissing it by clicking elsewhere, and recording that made a normal
-            // gesture look like two failures in the trail. What is worth a line is a click that
-            // lands ON the item and is not honoured — which is what named the last defect.
-            if primary_click && inside_item && !item.clicked() {
-                let inside = inside_item;
-                // **Records only the FAILURE, so a working gesture stays quiet.** It logged
-                // every click while it was being diagnosed; kept in this narrowed form because
-                // it is what finally named the defect — `enabled=false … inside_item=true`
-                // said the item was hit and disabled, after six runs in which the trail could
-                // not distinguish that from a click landing elsewhere.
+            // **Records exactly one thing: an ENABLED item, hit, that does not report a
+            // click.** That is the shape which named the last defect in this arc, after six
+            // runs in which the trail could not distinguish it from a click landing elsewhere.
+            //
+            // The two narrower conditions each stop a false alarm. A click *outside* the item
+            // is the reader dismissing the menu, and logging it made a normal gesture look
+            // like two failures. A click on a *greyed* item does nothing by design — that is
+            // step 3's check 2 — so recording it would report correct behaviour as a fault.
+            let hit_and_ignored = primary_click
+                && can_point
+                && !item.clicked()
+                && ui
+                    .ctx()
+                    .pointer_interact_pos()
+                    .is_some_and(|p| item.rect.contains(p));
+            if hit_and_ignored {
                 crate::diagnostics::record_action(
                     "point-menu-click-ignored",
-                    format!("enabled={can_point} inside_item={inside}"),
+                    "enabled, hit, and not honoured".to_owned(),
                 );
             }
             if item.clicked() {
