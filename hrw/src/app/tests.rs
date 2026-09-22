@@ -7013,6 +7013,25 @@ fn a_right_click_on_a_selection_keeps_it_alive_and_copy_yields_the_text() {
          exposes no other way to read it",
     );
 
+    // **THIS HARNESS DOES NOT REPRODUCE THE RIGHT-CLICK COLLAPSE, AND THE ASSERTION ABOVE IS
+    // THEREFORE NOT EVIDENCE THAT THE GESTURE WORKS.** In the real app a secondary press on a
+    // hovered selectable label runs `TextCursorState::pointer_interaction`, whose condition is
+    // `response.hovered() && any_pressed()` — **any** button — and which sets the range to
+    // `CCursorRange::one(cursor_at_pointer)`. The selection collapses to a caret before
+    // `got_copy_event` is reached, 13 lines later in the same function. Doug's third attempt
+    // recorded `point-copy-landed | 1 chars`, which is that caret.
+    //
+    // Here the copy comes back whole, so the synthetic response is not reporting itself
+    // hovered the way a real one does. Kept as a pin on the parts that ARE faithful — the
+    // selection surviving a press, and the copy round trip — with this note so the test is
+    // never again read as clearance for the gesture itself.
+    assert_eq!(
+        copied.as_deref(),
+        Some(TEXT),
+        "if this ever starts returning one character, the harness has become faithful to the \
+         collapse and this note should be replaced by a real assertion about it",
+    );
+
     // **The negative control, and without it the assertions above prove nothing.** If a
     // synthetic context simply never cleared a selection, every check so far would pass
     // for the wrong reason. This is the button's own failure reproduced: a press with no
