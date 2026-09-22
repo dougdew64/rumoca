@@ -215,7 +215,7 @@ This is a test, not an explanation. It verifies that a link can stop an animatio
 
 **Fixture lab — Index reduction: when differentiating is the only way out**
 
-A concept lab. Run [blt-ordering](hrw://lab/blt-ordering) and
+Counting a model's states can give you the wrong number — not miscounted, but wrong as a
 
 - **Specimens:** `BouncingBall`, `BenchActuator`, `Drivetrain`, `CartesianPendulum`
 - **Stages:** `IndexReduction`, `Structural`
@@ -363,11 +363,11 @@ Start here. This is the map for the labs of the compiler phases, in the order
 - **Stations:**
   - `the-concepts-a-week-s-run-through-the-pipeline` — The concepts — a week's run through the pipeline
   - `the-route` — The route
-  - `the-four-numbers-that-connect-the-labs` — The four numbers that connect the labs
   - `the-one-structural-idea-the-whole-pipeline-turns-on` — The one structural idea the whole pipeline turns on
   - `three-graphs-three-classical-questions` — Three graphs, three classical questions
   - `three-things-worth-knowing-before-you-start` — Three things worth knowing before you start
   - `two-open-questions-you-may-hit` — Two open questions you may hit
+  - `after-the-run-the-four-numbers-that-should-agree` — After the run — the four numbers that should agree
   - `what-to-tell-me-afterwards` — What to tell me afterwards
 
 ## `the-oracle`

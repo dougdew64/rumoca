@@ -525,6 +525,31 @@ the three claims answered questions Doug asked this month, one of them two days 
 question ledger records that passage as *his* to rewrite. Every one of those is a reason not to
 *delete*. None of them is a reason not to *move*. Conflating the two is the actual error.
 
+### 09-22, second pass — what applying the rule to all 21 labs turned up
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 09-22 | **every** lab opened with its GENRE, not its subject — *"A concept lab. It teaches a step of the chain"* — and that line is also the catalogue blurb, so the catalogue described lab kinds | Claude | 11 rewritten to open with the lab's own claim; the blurb pins followed the prose, per the standing rule that a pin guards a sentence and not its emphasis |
+| 09-22 | four spoilers, each reading as a useful abstraction: `tearing` (3×3 → 1×1, Station 1), `index-reduction` (Station 5's unmatched pair, verbatim), `connect-expansion` (Station 6's asymmetry), `the-concepts` (a whole section of cross-lab numbers pre-announcing **four stations across four labs**) | Claude | found only by reading each overview against its own stations; no checker looks at this |
+| 09-22 | `initialization`'s table of contents said *"Three stations"* and it has four | Claude | a hand-maintained count with nothing able to notice; all nine TOCs were cut rather than corrected |
+| 09-22 | `failure-structural` opened a bold span in its overview and never closed it, and Station 4 carried a stray closing `**` with no opener | Claude | **survived every gate**: nothing looked at rendering and nothing looked at markup. A span crossing a blank line renders as literal asterisks and inverts the emphasis after it |
+| 09-22 | three feature labs carried their own history in the overview — 0-based frame numbers, a parenthetical about an off-by-one, how camera-aiming was selected before in-app selection existed | Claude | `writing-a-lab.md` already says *keep the lab's history out of the lab*; the rule existed and nothing checked it |
+
+**Five rows, all Claude, and the honest reading is that Doug caused all five.** They were found
+because he supplied a method — write the stations, start the overview empty — and every one had
+survived however many passes came before under *"is this sentence true and does it belong?"*
+
+**Only the last two had a pre-existing rule.** The history rule was written and unenforced; the
+markup defect had no rule at all and now has
+`every_bold_span_in_a_lab_closes_in_its_own_paragraph`, proven in both directions. **The other
+three are the ones worth noticing**, because the genre-blurb defect was in *every single lab* and
+had therefore stopped looking like a defect at all — it looked like the house style.
+
+**The spoiler is the defect this corpus is now most exposed to**, and it has no checker and
+probably cannot have one: it requires knowing what a station asks. The check is per station — for
+each `**Predict.**`, is its answer stated anywhere the reader passes first? A hub is the worst
+case, since everything it spoils is a lab it is sending the reader to.
+
 ### The standing prediction, checked — 3 of 4, and the fourth is the interesting one
 
 It said the mechanised classes *"should stop appearing in the Doug column"*, and that a **new**

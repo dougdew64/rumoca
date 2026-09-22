@@ -105,7 +105,7 @@ failure-resolve.md              | blurb | Specimens: `UndefinedRef`
 failure-structural.md           | blurb | Specimens: `TwiceDefined`
 failure-typecheck.md            | blurb | Specimen: `DimensionMismatch`
 frame-seeking.md                | blurb | This is a test, not an explanation.
-index-reduction.md              | blurb | A concept lab. Run
+index-reduction.md              | blurb | Counting a model's states can give you the wrong number
 initialization.md               | blurb | The system is square, ordered and index-1
 matching-live.md                | blurb | This is the only lab that stops Rumoca mid-algorithm
 matching.md                     | blurb | A Modelica equation is not an assignment.

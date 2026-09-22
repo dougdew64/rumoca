@@ -4,19 +4,16 @@
 
 [The chain overview](hrw://lab/the-concepts)
 
-**A concept lab.** Run [blt-ordering](hrw://lab/blt-ordering) and
-[tearing](hrw://lab/tearing) first. Every model in those was solvable once ordered; this lab
-is about models that are not, and it ends with one that Rumoca cannot rescue at all.
+**Counting a model's states can give you the wrong number — not miscounted, but wrong as a
+description of the machine.** This lab is about models where that happens, and it ends with one
+Rumoca cannot rescue at all.
 
-Every backward reference in this lab is a link, not a retelling. A result restated in prose
-can drift from the pane that produced it; a link cannot. Click them — landing on the station that
-established something is faster than my summary of it, and it is the real thing.
+**It assumes only that you know what a derivative is.** Everything else — what "index" counts,
+why differentiating a constraint helps, why solvers want index 1 — is built below.
 
-This lab assumes only that you know what a derivative is. Everything else — what "index"
-counts, why differentiating a constraint helps, why solvers want index 1 — is built here.
-
-Every count below was read from the committed traces, never remembered. If one disagrees with
-your screen, the lab is wrong and I want to know.
+Run [blt-ordering](hrw://lab/blt-ordering) and [tearing](hrw://lab/tearing) first; every model in
+those was solvable once ordered. Every count below is read from a generated trace, so if one
+disagrees with your screen, the lab is wrong and I want to know.
 
 ---
 
@@ -27,11 +24,8 @@ declares it, some equation *differentiates* it, and the equation sheet's Why col
 
 [◂ Re-read it — DAE construction, Station 2](hrw://lab/dae-construction/station/station-2-what-makes-a-variable-a-state)
 
-Count the states and you have counted the numbers the integrator steps through time.
-
-Except the count can be wrong — not miscounted, but *wrong as a description of the system*.
-
-Connect two rotating bodies with an ideal gear. Each has an angle and a velocity, so the compiler
+Count the states and you have counted the numbers the integrator steps through time. Here is how
+that count goes wrong. Connect two rotating bodies with an ideal gear. Each has an angle and a velocity, so the compiler
 sees four states. But the gear ratio fixes the second angle as a multiple of the first: knowing
 one tells you the other. Four states, two freedoms.
 
@@ -111,20 +105,8 @@ phase exists.
 > them, and a zero row makes it singular. The matching is that pattern found by counting rather
 > than by arithmetic — which is why a compiler can detect it before any number is computed.
 
-### You will see this measured, not asserted
-
-Station 5 reports exactly the failure you just worked out by hand:
-
-```text
-unmatched equations: f_x[4]; unmatched unknowns: lambda
-```
-
-`f_x[4]` is the constraint, and `lambda` is the unknown it stranded. The compiler found
-by algorithm what you found by reading the table above.
-
-Index reduction is the phase that runs that distance. Five stations: a model needing nothing,
-the smallest model that needs something, the same idea at scale, what the compiler actually
-reaches for, and a model it cannot reduce.
+Index reduction is the phase that runs that distance. **You worked the pendulum out by hand just
+now; Station 5 is where the compiler's own answer is on screen beside it.**
 
 ---
 

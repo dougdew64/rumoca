@@ -37,28 +37,6 @@ the set.
 
 ---
 
-## The four numbers that connect the labs
-
-If you carry nothing else, carry these. Each appears in two labs and means the same thing in
-both — checking that they agree is the fastest way to know a lab was read correctly.
-
-`RcCircuit` = 23 equations = 1 state + 22 algebraic. Flattening makes 23 (7 from the connect
-graph, 16 constitutive); BLT finds 23 blocks, none coupled; solve lowering reports 1 state and 22
-algebraic. Three labs, one decomposition.
-
-`ProportionalLoop` = 3 equations, 0 states. Matching pairs all three; BLT puts them in *one*
-irreducible block because nothing can be ordered; tearing cuts it to a 1×1 iteration; solve
-lowering confirms zero states — a model with no dynamics at all.
-
-`Drivetrain` = 97 → 20 → 3. 97 equations after flattening, 20 after index reduction, 3
-surviving states. The middle number is why index reduction exists; the last is how many degrees
-of freedom the machine really has.
-
-`OverInitRc` = 1 state, 2 conditions, surplus +1. The only over-determined specimen, and it
-differs from `RcCircuit` by two lines.
-
----
-
 ## The one structural idea the whole pipeline turns on
 
 A permutation.
@@ -140,6 +118,33 @@ omits its natural example because of it.
 Rumoca had to *synthesise* — here, one over the MSL Resistor's `R.T_heatPort`. HRW had
 published that field as `zero_crossing_conditions`, which reads as a claim about all zero
 crossings and is not one.*)*
+
+---
+
+## After the run — the four numbers that should agree
+
+**Do not read this section before the labs.** Every number below is the answer to a
+`**Predict.**` in two different labs, so reading it first replaces a prediction with a
+recollection. *(It sat above the route until 2026-09-22, where it pre-announced the `Expected` of
+at least four stations across four labs.)*
+
+Afterwards it is the cross-check: each number appears in two labs and means the same thing in
+both, and **checking that they agree is the fastest way to know a lab was read correctly.**
+
+`RcCircuit` = 23 equations = 1 state + 22 algebraic. Flattening makes 23 (7 from the connect
+graph, 16 constitutive); BLT finds 23 blocks, none coupled; solve lowering reports 1 state and 22
+algebraic. Three labs, one decomposition.
+
+`ProportionalLoop` = 3 equations, 0 states. Matching pairs all three; BLT puts them in *one*
+irreducible block because nothing can be ordered; tearing cuts it to a 1×1 iteration; solve
+lowering confirms zero states — a model with no dynamics at all.
+
+`Drivetrain` = 97 → 20 → 3. 97 equations after flattening, 20 after index reduction, 3
+surviving states. The middle number is why index reduction exists; the last is how many degrees
+of freedom the machine really has.
+
+`OverInitRc` = 1 state, 2 conditions, surplus +1. The only over-determined specimen, and it
+differs from `RcCircuit` by two lines.
 
 ---
 

@@ -363,6 +363,18 @@ above, which this is a special case of.
 sentence:** name the station that cannot be attempted without it. If naming one is hard, it does
 not go in. If the station would be *better* without it, it definitely does not.
 
+**Applied to all 21 labs on 2026-09-22, the spoiler was the most common defect after genre
+boilerplate**, and it never looks like one — it reads as a useful abstraction. Four found:
+`tearing` said a 3×3 solve becomes 1×1, which is Station 1's prediction; `index-reduction` printed
+Station 5's `unmatched equations: f_x[4]; unmatched unknowns: lambda` verbatim; `connect-expansion`
+explained the scope asymmetry Station 6 asks you to derive; and `the-concepts` carried a section of
+cross-lab numbers that pre-announced the `Expected` of **at least four stations across four labs**
+— it is now below the route, headed *"do not read this before the labs"*. **A hub is the worst
+place for this**, because everything it spoils is a lab it is sending you to.
+
+**So the check is per station, not per document:** for each `**Predict.**`, is its answer stated
+anywhere the reader passes first — this overview, or the hub that routed them here?
+
 #### The remedy is redistribution, not deletion — Doug, 2026-09-22
 
 Rule 4 names the defect and stops there, so for eight weeks the only thing it could produce was a
