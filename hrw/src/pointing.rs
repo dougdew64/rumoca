@@ -205,11 +205,16 @@ pub fn region<R>(
             // the running program.
             let primary_click =
                 ui.input(|i| i.pointer.button_clicked(egui::PointerButton::Primary));
-            if primary_click && !item.clicked() {
-                let inside = ui
-                    .ctx()
-                    .pointer_interact_pos()
-                    .is_some_and(|p| item.rect.contains(p));
+            let inside_item = ui
+                .ctx()
+                .pointer_interact_pos()
+                .is_some_and(|p| item.rect.contains(p));
+            // **Only the surprising case.** A primary click while the menu is open is usually
+            // the reader dismissing it by clicking elsewhere, and recording that made a normal
+            // gesture look like two failures in the trail. What is worth a line is a click that
+            // lands ON the item and is not honoured — which is what named the last defect.
+            if primary_click && inside_item && !item.clicked() {
+                let inside = inside_item;
                 // **Records only the FAILURE, so a working gesture stays quiet.** It logged
                 // every click while it was being diagnosed; kept in this narrowed form because
                 // it is what finally named the defect — `enabled=false … inside_item=true`

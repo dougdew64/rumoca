@@ -181,7 +181,7 @@ this step was stopped for are outstanding, and **the one it exists for is among 
 |---|---|---|---|
 | 1 | right-click in a **lab**, not an Answer | the `LabProse` branch entirely — the containment check and `source_file()` producing a real path. **No run has touched it.** | ⬜ |
 | 2 | right-click with **nothing selected** | that the item greys for the *right* reason; it was seen greyed only when `last_selection` was being wrongly invalidated | ⬜ |
-| 3 | **tree row menu vs region menu**, in Flatten → Connections | whether an inner row menu and an outer region menu fight over one right-click. **This is why the step stops here**, and its answer decides how step 4 proceeds | ⬜ |
+| 3 | ~~**tree row menu vs region menu**, in Flatten → Connections~~ | **THE CHECK WAS MISSPECIFIED.** The tree and the Connections replay are *sub-views of one stage* and are never drawn at the same time, so no right-click can reach both and there is nothing to contend. **The conflict cannot arise until the tree's own pane is wrapped**, which is step 4 — so this moves there, and step 4 must adopt the tree FIRST rather than last | ➡ step 4 |
 | 4 | ordinary clicking in the lab panel | links, picker, transport bar. **Partly automated**: `clicking_a_lab_link_dispatches_it` and five siblings went red when the wrapper used `Sense::click()` and pass now | ◐ |
 | 5 | right-click in an **Answer** | the whole chain, end to end | ✅ |
 
@@ -225,6 +225,18 @@ response, so the hit test is `ui.rect_contains_pointer`.
 ### Step 4 — adopt the remaining regions ⬜
 
 One commit per group, each runnable.
+
+**Adopt the TREE first, because it carries step 3's unanswered question.** Every other region is
+plain text; the tree's rows already have their own right-click menu, with their own *"Point at"*.
+Wrapping that pane is the first moment an inner row menu and an outer region menu can contend for
+one right-click, and **nothing before it can tell us what egui does** — step 3 asked Doug to
+compare them in Flatten → Connections, which was impossible, because the tree and the replay
+are sub-views of one stage and never on screen together.
+
+Possible outcomes, and each changes the design: the row menu wins and the region menu never opens
+over a row (ideal — rows keep their richer menu); both open (unusable); the region wins and the
+row menu is lost (would require the region to skip rows, or the row menu to gain the selection
+item). **Find out before wrapping anything else.**
 
 ### Step 5 — origin into the emitted context ✅ *(2026-09-22, folded into step 3)*
 
