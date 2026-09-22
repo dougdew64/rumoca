@@ -1,10 +1,10 @@
 # Pointing plan — one verb, reached by right-click, from every region
 
-**Purpose:** the ordered plan for replacing the 🎯 capture button with a right-click *"Point at"*
-on selected text, carried by a shared per-region helper that records **where the text came from**.
-**Status:** live plan, opened 2026-09-22. **Read when:** resuming this work, or touching the
-capture path, `PointKind::LabPassage`, `Focus::LabPassage`, or any pane that renders selectable
-text.
+**Purpose:** how pointing at selected text works, **the egui facts it rests on**, and the record of
+how it was built — eight runs, seven broken links, three tests that gave false greens.
+**Status:** reference. **Delivered 2026-09-22**; kept for the facts and the method, not the plan.
+**Read when:** touching `pointing.rs`, adding a pane that renders selectable text, or **bumping
+egui** — the four numbered facts below are what a bump would break, and each says how it fails.
 
 ---
 
@@ -69,9 +69,13 @@ them at any egui bump.**
 
 ---
 
-## The steps
+## How it was built
 
-Each step says what it *proves*, because several cannot be settled by reading.
+**All eight steps are delivered.** They are kept in order below because each says what it
+*proved* — several could not be settled by reading, and the record of which is which is the part
+worth having. The defects found along the way are in
+[`tech-debt.md`](tech-debt.md); the rulings are in [`../DECISIONS.md`](../DECISIONS.md); the egui
+defect is **E2** in [`upstream-issues.md`](upstream-issues.md).
 
 ### Step 0 — prove the assumption ✅ *(2026-09-22)*
 
@@ -325,3 +329,34 @@ Two tests went with the button — `a_stray_copy_never_becomes_the_next_capture`
   on a gesture that does not normally clobber it.
 - **Menu precedence** cannot be settled by reading, which is why step 3 stops.
 - **Discoverability drops**, mitigated by the always-present greyed item.
+
+---
+
+## Confirmed working, 2026-09-22
+
+Doug: *"Everything seems to be working correctly."* The trail for that run:
+
+```
+point-at-selection | the specimen's Modelica source   → "der( h) = v;"
+point-menu-opened  | the specimen's purpose note
+point-menu-opened  | Flatten → EquationSheet
+```
+
+**The equation sheet is the one worth noticing.** It was never wrapped individually and never
+appeared on any checklist — it works because the stage-pane dispatch is wrapped **once**, which is
+the change made after two panes were found missing. A pane nobody enumerated is pointable by
+default now, and that is the property to preserve.
+
+## What would break this, in order of likelihood
+
+1. **An egui bump.** The four facts above are read out of 0.35's source. Two tests pin the ones
+   that already cost a day — `a_release_arrives_without_its_press_origin` and
+   `a_press_inside_an_open_menu_leaves_the_menu_open` — and both say in their docs what a change
+   would mean.
+2. **A new pane drawn OUTSIDE the stage dispatch**, as the specimen source and purpose panes were.
+   The reachability guard cannot see it: it catches an unconstructed `PointOrigin`, not a region
+   with no origin at all. The new-stage checklist in Claude's memory carries the hand-check.
+3. **A pane gaining row menus later.** It would silently stop being pointable as a region — the
+   region menu would never open, and the row menu would answer for it. Nothing reports this; it
+   was found once by reading the trail and once by reading `model_list.rs` before wrapping it.
+

@@ -90,7 +90,6 @@ on a tab showing 48 equations.
 | Document | Covers |
 |---|---|
 | [`verification-plan.md`](verification-plan.md) | The six-item pause: must-fire tests, the stale-negative test, clearing clippy, a faster suite, headless UI testing, Rust drivers. |
-| [`pointing-plan.md`](pointing-plan.md) | **Live (2026-09-22).** Replacing the 🎯 capture button with a right-click *"Point at"* carried by a shared per-region helper, so a selection's **origin is declared by the region rather than inferred** from `view`. Carries the three egui facts the design rests on — re-check them at an egui bump — and the eight ordered steps. |
 | [`source-tooling-plan.md`](source-tooling-plan.md) | **Part live.** Phases 1-5 delivered; **Phases 6 (tree rework) and 7 (canvas views) are unbuilt design work.** Read before touching the IR tree or a canvas view. |
 
 ## Reference — look things up
@@ -100,6 +99,7 @@ on a tab showing 48 equations.
 | 👤 [`architecture.md`](architecture.md) | How HRW works, including §11 the testing architecture and the scale/safety rules. |
 | [`context-assembly.md`](context-assembly.md) | The capture design — how a question carries its context to Claude. **Delivered**; kept for the reasoning. |
 | [`debug-set-sites.md`](debug-set-sites.md) | IR field → the Rumoca line that assigns it, for arming a breakpoint. |
+| [`pointing-plan.md`](pointing-plan.md) | **How pointing at selected text works, and the four egui facts it rests on** — re-check them at an egui bump, since each is load-bearing and says how it fails. Also the record of the build: eight runs, seven broken links, and three tests that passed while the code they vouched for was broken. |
 | 👤 [`rust-for-cpp-readers.md`](rust-for-cpp-readers.md) | Rust → contemporary C++ (17/20/23/26), every row version-tagged with its one point of divergence, anchored to real declarations in this workspace. For **reading** the code, not writing it. The four idioms that do not transliterate — enum-with-data + `match`, destructive moves, `Result` + `?`, lifetimes — and where the effort goes. |
 | 👤 [`compiler-phases/`](compiler-phases/) | **The closest thing that exists to Rumoca documentation** — 23 files, ~8,950 lines, written by Claude for Doug *before HRW existed* and copied in; upstream has no equivalent. **Reference, refreshed at the Rumoca version bump** ([`updating-rumoca.md`](updating-rumoca.md) steps 6-7), not per change. Start at 👤 [`the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md) — cited from six places in `src/`, so do not move it. No provenance tags: between refreshes, a map rather than a verified claim. |
 
