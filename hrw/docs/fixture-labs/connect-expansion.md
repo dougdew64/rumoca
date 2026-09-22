@@ -15,12 +15,7 @@ and each pair goes to
 [`union(a, b)`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#UnionFind), which
 joins whichever sets currently hold `a` and `b`.
 Nothing else ever puts a variable into the structure, so a pair it has not seen before creates both
-and merges them in the same call: every set starts at two and only grows. A variable no
-`connect` touches is not a set of one — it is absent, which is why an unconnected flow variable
-needs a pass of its own
-([`generate_unconnected_flow_equations`](hrw://src/crates/rumoca-phase-flatten/src/connections/equation_generation.rs#generate_unconnected_flow_equations)).
-Order cannot change which variables end up together, and a `connect` whose two ends are already in
-one set does nothing at all — `union` compares roots before it merges.
+and merges them in the same call.
 
 There is no such pass for an unconnected *potential* variable, and none is needed. MLS §4.7 requires
 every component to be locally balanced, so a component's own equations together with `flow = 0` on
@@ -95,13 +90,18 @@ Eight merges do not mean eight sets. Watch `src.n`: it is named by `connect(C.n,
 
 **Expected:** the replay's last frame declaring 6 connection sets producing 7 equations.
 
-Falsified if that last frame says anything other than 6 and 7.
+Falsified if that last frame says anything other than 6 and 7, or if any set it forms holds
+fewer than two variables.
 
 ### What just happened
 
 Eight merges, six sets, because two of them landed in sets that already existed. `src.n` is
 named twice, so `C.n.v`, `src.n.v` and `gnd.p.v` finish in one set of three — and their `.i`
 counterparts in another. The other two statements make sets of two.
+
+**No set here has size one, and none can.** A merge always names two variables, and nothing else
+ever puts a variable into the union-find — so **every set starts at two and only grows.** The
+sizes you just read, 2, 2 and 3, are the whole range a four-statement circuit can produce.
 
 So: three sets over the `.v` variables, of sizes 2, 2 and 3, and three over the `.i` with exactly the
 same membership. Six.
@@ -323,6 +323,13 @@ Falsified if a connector group appears, or if any equation's origin names a comp
 
 With no `connect`, nothing merges, no set exists and this phase contributes nothing. `TwoLoops`'
 equation indices map straight onto its source, which is why `blt-ordering.md` uses it.
+
+**And that is why the empty case is an absence rather than a set of size one.** Station 1's rule —
+a set starts at two — says a lone variable cannot be a set, so a variable no `connect` touches is
+not in the structure at all. It follows that an unconnected *flow* variable needs a pass of its
+own, [`generate_unconnected_flow_equations`](hrw://src/crates/rumoca-phase-flatten/src/connections/equation_generation.rs#generate_unconnected_flow_equations),
+because no connection set will ever produce its `= 0`. `TwoLoops` is that case taken to the limit:
+every variable absent, so the pass has nothing to do either.
 
 ---
 

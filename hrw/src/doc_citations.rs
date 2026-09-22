@@ -3664,6 +3664,21 @@ Some prose.
              Pairing by name is what keeps the two kinds from ever mixing"
         );
 
+        // **No set has size one, which is Station 1's `Falsified` clause and a property of
+        // `union` rather than of this circuit.** A merge always names two variables and
+        // nothing else ever inserts one, so a set cannot start below two; a lone variable is
+        // absent from the structure instead, which is the claim Station 5 now carries and the
+        // reason `generate_unconnected_flow_equations` has to exist at all. Checked over
+        // EVERY formed set rather than the two the lab cites by ordinal, because the clause
+        // quantifies over all of them.
+        for f in frames.iter().filter(|f| f["step"] == "SetFormed") {
+            let size = f["size"].as_u64().expect("a SetFormed frame declares its size");
+            assert!(
+                size >= 2,
+                "a connection set of size {size} was formed, so Station 1's \"every set                  starts at two\" is false and Station 5's absence argument rests on it",
+            );
+        }
+
         // **The set count the pane declares.** Six, not three — the sizes above are per
         // kind, and `RcCircuit`'s two kinds come out with matching membership. Station 6
         // exists because that matching is not a law.

@@ -6668,3 +6668,43 @@ should be designed knowing it is coming, not retrofitted.
 
 **What exists to build on:** `SimData`, the plot pane with its discontinuity segmentation, and
 `SimData::non_finite_series` for refusing to draw what cannot be drawn faithfully.
+
+## 89. Three stations `connect-expansion` owes — RAISED 2026-09-22
+
+**Produced by applying the overview rule** ([`fixture-labs/README.md`](fixture-labs/README.md),
+rule 4's redistribution half): each of these is a claim the overview makes that **no station in
+that lab can reach**, which the rule says to file rather than keep or delete. Two of them answer
+questions Doug actually asked this month, so deleting them would lose real content; what they
+lack is a specimen.
+
+**89a. Order independence, and the redundant `connect`.** The overview used to say *"order cannot
+change which variables end up together, and a `connect` whose two ends are already in one set does
+nothing at all — `union` compares roots before it merges."* Removed 2026-09-22 because `RcCircuit`
+has no redundant `connect` and reordering is not something a station can ask the reader to do.
+**Needs:** a specimen wiring the same junction twice — `connect(a, b); connect(b, a);` — where the
+set count is the same as without it. That is a two-line model. The station's `Expected` writes
+itself: the same 6 sets and 7 equations as Station 1, from five statements instead of four.
+
+**89b. The unconnected *potential* variable, and MLS §4.7.** The overview carries eight lines on
+why a dangling pin needs no connection equation — local balancing means the component's own
+equations plus `flow = 0` already fix its potential — and why the genuinely missing case is a
+connector with no component behind it, caught not here but by matching. **Added 2026-09-20 to
+answer Doug's question; correct, and unstationed.** *(Its prose is flagged in
+[`question-ledger.md`](question-ledger.md) as incomplete and **Doug's to rewrite, not Claude's**.)*
+**Needs:** `DanglingPin` and `OrphanConnector` promoted from scratch into the corpus. Both already
+exist, and **both are already oracle-validated** — System Modeler simulates the first and refuses
+the second with *"Variables not solvable in any equation: 'p.v'"*, the same variable Rumoca names.
+The measurements are in the ledger. This is the closest of the three to ready.
+
+**89c. The compatibility claim — a `Pin` wired to a `Flange`.** The overview says a connector
+variable with no counterpart is routed nowhere, so nothing merges *and nothing is checked*, and
+then **admits no station can reach it**: *"`RcCircuit` cannot show you why."* The lab's closing
+section already routes the legality question to [`the-oracle`](fixture-labs/the-oracle.md).
+**Needs:** a deliberate mismatch specimen, and a decision about which lab owns it — this one, or
+`the-oracle`, or `failure-flatten`. **Decide the owner before writing the specimen**, because the
+answer changes what the station claims.
+
+**Why these are filed together.** They are one measurement, not three ideas: an overview
+accumulates exactly the claims with nowhere to go, so the count of unstationed abstractions is the
+metric the overview rule replaces a line budget with. `connect-expansion` had three.
+
