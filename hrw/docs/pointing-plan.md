@@ -237,7 +237,7 @@ region must be pointable without becoming a lid over what it wraps, so it senses
 detects the secondary click by hand — and `resp.hovered()` does not fire on a hover-sense
 response, so the hit test is `ui.rect_contains_pointer`.
 
-### Step 4 — adopt the remaining regions ⬜
+### Step 4 — adopt the remaining regions ✅ *(2026-09-22)*
 
 One commit per group, each runnable.
 
@@ -246,6 +246,20 @@ One commit per group, each runnable.
 **The failure is silent and looks like success**, because the Context Bar updates either way and only the emitted `kind` distinguishes them — the same shape as the defect this whole arc began with.
 
 **So a region whose items already have menus cannot be served by wrapping it.** The fix is to give the existing menu the item, not to wrap the pane: `tree.rs`'s `row_menu` gains *"Point at selection"* when text is held, beside its *"Point at"*. One menu, no contention, and the two are visibly different choices rather than one that silently means the other. **That splits step 4 in two:** plain-text regions get the wrapper; regions with item menus get the item.
+
+**DONE, and the rule it produced is the lasting part: a region whose items already carry menus takes the ITEM, not the wrapper.** Only one of the four regions turned out to take a wrapper at all.
+
+| region | how | why |
+|---|---|---|
+| lab panel (prose and the Answer) | wrapper | plain text, no item menus |
+| stage pane — Connections replay | wrapper | plain text |
+| stage pane — the **tree** | **menu item** | every right-click lands on a row; the wrapper never opened once |
+| the **model list** | **menu item** | rows carry their own menu too, found by reading before wrapping |
+| the **log** | wrapper | no row menus |
+
+Both menu-item regions also **renamed their node/model entry** — *"Point at this node"*, *"Point at this specimen"* — so the nouns differ from *"Point at selection"*, which appears only when text is held. `every_point_origin_is_reachable`'s pending list is now **empty**, which is what closes this step.
+
+**The model list was caught by the rule rather than by a run.** After the tree, its menu was checked *before* wrapping it — the first time in this arc that a defect was avoided instead of measured.
 
 **The tree is wrapped as of 2026-09-22** — `artifact_pane_ui`, the pane most stages show — and the question is now live and awaiting a run.
 

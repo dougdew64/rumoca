@@ -2172,7 +2172,7 @@ fn the_model_list_renders_and_reports_without_an_app() {
         .with_size(egui::Vec2::new(1600.0, 1200.0))
         .build_ui_state(
             |ui, s: &mut ModelListState| {
-                let out = s.ui(ui, None, false, false);
+                let out = s.ui(ui, None, false, false, false);
                 if let Some(ModelListNav::Select(p)) = out.nav {
                     *sink.borrow_mut() = Some(p.display().to_string());
                 }

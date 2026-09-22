@@ -4575,7 +4575,19 @@ impl App {
             self.context_bar_ui(ui);
 
             if self.viewing_log {
-                if log_view::ui(ui, &self.log_entries, &mut self.tracing_enabled) {
+                // **A plain-text region, so the wrapper applies here.** The log has no rows
+                // with menus of their own — unlike the tree and the specimen list, where a
+                // right-click always lands on an item and the region menu cannot be reached.
+                let can_point = self.last_selection.is_some();
+                let pointing_ctx = ui.ctx().clone();
+                let (set_tracing, pointing_event) = crate::pointing::region(
+                    ui,
+                    crate::pointing::PointOrigin::Log,
+                    can_point,
+                    |ui| log_view::ui(ui, &self.log_entries, &mut self.tracing_enabled),
+                );
+                self.perform_pointing(&pointing_ctx, pointing_event);
+                if set_tracing {
                     self.worker.send(ToWorker::SetTracing(self.tracing_enabled));
                 }
             } else if self.stage == StageKind::Simulation {
@@ -6010,6 +6022,7 @@ impl App {
                             sel.as_deref(),
                             self.compiling,
                             self.model.is_some(),
+                            self.last_selection.is_some(),
                         );
                         match out.nav {
                             Some(ModelListNav::OpenLibrary(name)) => {
@@ -6030,6 +6043,15 @@ impl App {
                         }
                         if out.point_at_specimen {
                             self.emit_focus(Focus::Specimen);
+                        }
+                        // **A second region whose items carry their own menus**, so the item
+                        // goes in that menu rather than a wrapper that would never open — the
+                        // same finding the tree produced, and the reason `PointOrigin` has a
+                        // `ModelList` variant at all.
+                        if out.point_at_selection
+                            && let Some(text) = self.last_selection.clone()
+                        {
+                            self.point_at_selection(crate::pointing::PointOrigin::ModelList, text);
                         }
                     },
                 );

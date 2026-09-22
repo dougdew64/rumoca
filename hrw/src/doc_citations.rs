@@ -3647,7 +3647,9 @@ Some prose.
     #[test]
     fn every_point_origin_is_reachable() {
         // Adopt a region, delete its line. Empty means step 4 is done.
-        const NOT_YET_ADOPTED: &[&str] = &["ModelList", "Log"];
+        // **Empty: step 4 is done.** Every region a selection can be made in either carries
+        // the wrapper or carries the menu item.
+        const NOT_YET_ADOPTED: &[&str] = &[];
 
         let src_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");
         let mut sources = Vec::new();

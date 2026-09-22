@@ -51,6 +51,9 @@ pub(crate) struct ModelListOutcome {
     /// field rather than a `ModelListNav` variant because it can accompany a
     /// navigation in the same frame, exactly as it could before the split.
     pub(crate) point_at_specimen: bool,
+    /// The reader's highlighted TEXT was pointed at, from a row's context menu. Distinct from
+    /// `point_at_specimen`, which captures the whole model — see `RowAction::PointAtSelection`.
+    pub(crate) point_at_selection: bool,
 }
 
 /// What a row's context menu was asked for.
@@ -60,6 +63,13 @@ pub(crate) enum RowAction {
     Recompile,
     /// Make this model the subject of the next question.
     PointAt,
+    /// **Make the highlighted TEXT the subject, not this model.**
+    ///
+    /// Lives in this menu for the same reason it lives in `tree::row_menu`: a
+    /// `pointing::region` wrapped around a pane whose items have their own menus never
+    /// opens, because every right-click lands on an item. The wrapper was tried on the tree
+    /// on 2026-09-22 and its menu did not appear once.
+    PointAtSelection,
 }
 
 /// **The row context menu, defined once for every list.**
@@ -82,6 +92,7 @@ fn row_context_menu(
     resp: &egui::Response,
     can_recompile: bool,
     can_capture: bool,
+    holding_selection: bool,
     what: &str,
 ) -> Option<RowAction> {
     let mut action = None;
@@ -103,7 +114,10 @@ fn row_context_menu(
 
         ui.separator();
 
-        let btn = ui.add_enabled(can_capture, egui::Button::new("\u{1f3af} Point at"));
+        let btn = ui.add_enabled(
+            can_capture,
+            egui::Button::new(format!("\u{1f3af} Point at this {what}")),
+        );
         let btn = if can_capture {
             btn.on_hover_text(
                 "Make the whole model the subject of your next question, then ask in \
@@ -116,6 +130,21 @@ fn row_context_menu(
         };
         if btn.clicked() {
             action = Some(RowAction::PointAt);
+            ui.close();
+        }
+        // **Only when text is held, and the nouns differ**, for the reason `tree::row_menu`
+        // records: "Point at" beside "Point at selection" is too fine a distinction for a
+        // menu whose failure mode is picking the wrong one without noticing.
+        if holding_selection
+            && ui
+                .button("\u{1f3af} Point at selection")
+                .on_hover_text(
+                    "Make the text you highlighted the subject of your next question \u{2014} \
+                     the characters, not this model.",
+                )
+                .clicked()
+        {
+            action = Some(RowAction::PointAtSelection);
             ui.close();
         }
     });
@@ -218,6 +247,7 @@ impl ModelListState {
         sel: Option<&Path>,
         compiling: bool,
         has_model: bool,
+        holding_selection: bool,
     ) -> ModelListOutcome {
         let mut outcome = ModelListOutcome::default();
         section_header(ui, "Models");
@@ -265,6 +295,7 @@ impl ModelListState {
                 let mut to_open = None;
                 let mut recompile = None;
                 let mut capture_specimen = false;
+                let mut capture_selection = false;
                 // ---- HRW specimens: curated `specimens/` + scratch ----
                 //
                 // **Collapsed at startup, with MSL expanded** (Doug,
@@ -347,9 +378,16 @@ impl ModelListState {
                             } else if let Some(hint) = purpose {
                                 resp = resp.on_hover_text(hint);
                             }
-                            match row_context_menu(&resp, can_recompile, can_capture, "specimen") {
+                            match row_context_menu(
+                                &resp,
+                                can_recompile,
+                                can_capture,
+                                holding_selection,
+                                "specimen",
+                            ) {
                                 Some(RowAction::Recompile) => recompile = Some(path.clone()),
                                 Some(RowAction::PointAt) => capture_specimen = true,
+                                Some(RowAction::PointAtSelection) => capture_selection = true,
                                 None => {}
                             }
                             if resp.clicked() {
@@ -444,12 +482,16 @@ impl ModelListState {
                                         &resp,
                                         can_recompile,
                                         can_capture,
+                                        holding_selection,
                                         "model",
                                     ) {
                                         Some(RowAction::Recompile) => {
                                             open_model = Some(name.clone())
                                         }
                                         Some(RowAction::PointAt) => capture_specimen = true,
+                                        Some(RowAction::PointAtSelection) => {
+                                            capture_selection = true
+                                        }
                                         None => {}
                                     }
 
@@ -483,6 +525,9 @@ impl ModelListState {
                 // from the context menu and can accompany a click.
                 if capture_specimen {
                     outcome.point_at_specimen = true;
+                }
+                if capture_selection {
+                    outcome.point_at_selection = true;
                 }
             });
         outcome
@@ -731,7 +776,7 @@ mod tests_absence {
             .with_size(egui::Vec2::new(400.0, 700.0))
             .build_ui_state(
                 |ui, s: &mut ModelListState| {
-                    s.ui(ui, None, false, false);
+                    s.ui(ui, None, false, false, false);
                 },
                 empty,
             );
@@ -751,7 +796,7 @@ mod tests_absence {
             .with_size(egui::Vec2::new(400.0, 700.0))
             .build_ui_state(
                 |ui, s: &mut ModelListState| {
-                    s.ui(ui, None, false, false);
+                    s.ui(ui, None, false, false, false);
                 },
                 with_error,
             );
