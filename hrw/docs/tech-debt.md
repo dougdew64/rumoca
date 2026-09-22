@@ -496,7 +496,22 @@ the thing named in the diagnosis before prescribing on it.
 | 09-22 | moving `generate_unconnected_flow_equations` to Station 5 left the overview's next paragraph opening *"There is no **such** pass…"* pointing at nothing | Claude | found while re-reading the overview after Doug's catch; removed with the paragraph |
 | 09-22 | a new test's doc comment was spliced into the middle of the neighbouring test's doc comment | toolchain | `no_doc_block_gains_a_second_summary`, exactly what it exists for. Fixed by moving the block, not by raising the budget |
 
-**Three rows: Doug 1, Claude 1, toolchain 1**, and the first is the one worth keeping.
+| 09-22 | `connect-expansion`'s overview explained union-find, pair routing and `ConnectionSet`'s fields, and **never said what a connector is** — in a lab named for what `connect` means | **Doug** | found in one reading, after two rounds of Claude's own triage had rewritten that overview twice without noticing |
+| 09-22 | the same overview gave away Station 6's prediction — it explained why potential merges globally and flow per scope, which is exactly what Station 6 asks the reader to commit to | Claude | found while rewriting from empty; it had survived both triage passes and violates the standing *provoke, do not pre-empt* rule |
+
+**Five rows: Doug 2, Claude 2, toolchain 1**, and Doug's second is the one that changes a rule.
+
+**Why triage could not have found the missing connector.** Triage starts from existing prose and
+asks of each sentence whether it may stay. It can only remove, and it rationalises whatever
+survives — **it never asks what is absent.** Two passes cut that overview 72 → 50 and left the
+central concept of the language undefined. Doug's sequence inverts it: write the stations, start
+the overview **empty**, add only what a station cannot be attempted without. The first question an
+empty overview asks is *what must the reader know*, which is the question that surfaces an absence.
+Rewriting from empty produced the connector introduction and the Station 6 spoiler in one pass.
+
+**And the spoiler is the second thing an absence-blind method misses.** A sentence can be true,
+grounded, stationed, and still wrong to keep — because the station it belongs to has nothing left
+to ask once the reader has read it.
 
 **What Doug's catch actually exposes.** The rule had a `keep`, a `move` and a `file`, and *only the
 first two named a destination.* Faced with prose that was correct, recent and deliberate, the

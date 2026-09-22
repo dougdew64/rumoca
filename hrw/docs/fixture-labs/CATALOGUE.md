@@ -45,7 +45,7 @@ This is a test, not an explanation. It exists so Doug can verify the half of cam
 
 **Flatten — what `connect` actually means**
 
-This lab counts. `RcCircuit` has four `connect` statements and twenty-three equations, and every
+A connector is a bundle of variables that two components meet at. `RcCircuit` wires four
 
 - **Specimens:** `RcCircuit`, `TwoLoops`, `ScopedConnect`
 - **Stages:** `Flatten`

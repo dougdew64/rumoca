@@ -95,7 +95,7 @@ matching-live.md | forbid  | about a stop
 
 blt-ordering.md                 | blurb | A concept lab. Run
 camera-aiming.md                | blurb | This is a test, not an explanation.
-connect-expansion.md            | blurb | This lab counts.
+connect-expansion.md            | blurb | A connector is a bundle of variables that two components meet at.
 dae-construction.md             | blurb | A concept lab. It teaches
 events.md                       | blurb | A concept lab. Run
 failure-flatten.md              | blurb | Specimen: `UnbalancedShaft`

@@ -4,47 +4,33 @@
 
 [The chain overview](hrw://lab/the-concepts)
 
-`connect(src.p, R.p)` looks like wiring two things together. In Rumoca it is neither an assignment
-nor an equation — it is an instruction to merge sets of variables, one merge per connector
-variable the two sides share, and no equation exists until every merge is done.
+**A connector is a bundle of variables that two components meet at.** `RcCircuit` wires four
+components together and never names a variable; it names `src.p`, `R.p`, `C.n` — and each of
+those is a `Pin`, which the standard library declares like this:
 
-Which sets? A `connect` names connectors, not variables — `src.p` is a `Pin`. Expansion derives
-the connector's variables and pairs them by name first
-([`expand_connector_connection`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#expand_connector_connection)),
-and each pair goes to
-[`union(a, b)`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#UnionFind), which
-joins whichever sets currently hold `a` and `b`.
-Nothing else ever puts a variable into the structure, so a pair it has not seen before creates both
-and merges them in the same call.
+```modelica
+connector Pin "Pin of an electrical component"
+  SI.ElectricPotential v "Potential at the pin";
+  flow SI.Current i "Current flowing into the pin";
+end Pin;
+```
 
-[`connect_primitive_vars`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#connect_primitive_vars) is where a statement becomes merges. It pairs the two connectors'
-variables by name, then routes each pair by that variable's prefix:
+Two variables, and **the `flow` prefix is the whole of the physics.** A plain variable is a
+*potential* — something measured *at* a point, like voltage. A `flow` variable is measured
+*through* it, like current. The prefix is how a Modelica library author says which quantity is
+conserved, and it is the reason `connect` cannot be an assignment: joining two pins has to make
+the voltages equal *and* the currents sum to zero, which is two different statements about two
+variables that happen to live in the same bundle.
 
-| the connector variable is | the pair goes to |
-|---|---|
-| `flow` | `flow_pairs` — a plain `Vec`, not merged yet |
-| `stream` | `stream_uf` |
-| neither, so potential | `potential_uf` |
+So `connect(src.p, R.p)` is neither an assignment nor an equation. It is an instruction to
+**merge sets of variables** — one merge per variable the two connectors share, paired by name —
+and no equation exists until every merge is done.
 
-Notice what is not symmetric there. `potential_uf` and `stream_uf` exist, empty, before the first
-statement is read; flow is a list that becomes a union-find per scope, afterwards. That is a
-rule about equations wearing a data structure's clothes: potential merging can be global, because
-n − 1 equalities come out the same whether sets are split or merged, while a flow sum must be
-scoped or it conserves the wrong thing.
-
-What comes out is a `Vec<`[`ConnectionSet`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#ConnectionSet)`>`, each carrying `variables`, `kind` and `scope` — so a
-connection set is a set of variables of one kind, never a set of connectors. `kind` picks the
-generator: `Potential` calls [`generate_equality_equations`](hrw://src/crates/rumoca-phase-flatten/src/connections/equation_generation.rs#generate_equality_equations),
-`Flow` calls [`generate_flow_equation`](hrw://src/crates/rumoca-phase-flatten/src/connections/equation_generation.rs#generate_flow_equation).
-The replay you are about to step through is that pair of acts, once per set — [`SetFormed`](hrw://src/crates/rumoca-phase-flatten/src/connections/trace.rs#SetFormed), then
-[`EquationsGenerated`](hrw://src/crates/rumoca-phase-flatten/src/connections/trace.rs#EquationsGenerated).
-
-**This lab counts.** `RcCircuit` has four `connect` statements and twenty-three equations, and every
-step from one number to the other is something you can predict before you look.
-
-Each station asks you to commit to an answer, then sends you to the pane that settles it. The
-answers are read from generated compiler traces, so if a count disagrees with your screen, the lab
-is wrong and I want to know.
+That is the whole of the phase, and the five numbers below fall out of it. `RcCircuit` has four
+`connect` statements and twenty-three equations; every step from one number to the other is
+something you can predict before you look. Each station asks you to commit to an answer, then
+sends you to the pane that settles it. The answers are read from generated compiler traces, so
+if a count disagrees with your screen, the lab is wrong and I want to know.
 
 ---
 
@@ -61,6 +47,13 @@ connect(src.n, gnd.p);
 
 A `Pin` has two variables, so each statement pairs by name into two merges — one joining `.v` to
 `.v`, one joining `.i` to `.i`. Four statements, eight merges.
+[`expand_connector_connection`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#expand_connector_connection)
+does the pairing; each pair goes to
+[`union(a, b)`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#UnionFind), which joins
+whichever sets currently hold `a` and `b`. The replay you are about to step through is one
+[`SetFormed`](hrw://src/crates/rumoca-phase-flatten/src/connections/trace.rs#SetFormed) then one
+[`EquationsGenerated`](hrw://src/crates/rumoca-phase-flatten/src/connections/trace.rs#EquationsGenerated),
+once per set.
 
 Eight merges do not mean eight sets. Watch `src.n`: it is named by `connect(C.n, src.n)` and by
 `connect(src.n, gnd.p)`, so by the time the second one runs, `src.n.v` is already in a set — and
@@ -119,6 +112,17 @@ Making *n* voltages equal takes n − 1 equations. Making *n* currents sum to ze
 mass flow.
 
 *(Modelica has a third kind, `stream`, for fluid connectors. `Pin` has none.)*
+
+The kind decides twice.
+[`connect_primitive_vars`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#connect_primitive_vars)
+reads each paired variable's prefix to choose where the pair goes — `flow` to a plain `Vec` that
+is not merged yet, `stream` to `stream_uf`, anything else to `potential_uf` — and then each
+finished [`ConnectionSet`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#ConnectionSet)
+carries that `kind` to the generator that reads it:
+[`generate_equality_equations`](hrw://src/crates/rumoca-phase-flatten/src/connections/equation_generation.rs#generate_equality_equations)
+for potential, [`generate_flow_equation`](hrw://src/crates/rumoca-phase-flatten/src/connections/equation_generation.rs#generate_flow_equation)
+for flow. **Why `flow` waits while the others merge immediately is Station 6's question** — do not
+settle it yet.
 
 You can watch the asymmetry on the two size-3 sets in two frames, each set followed immediately
 by the equations it generated:
@@ -360,8 +364,13 @@ are not 8 — which is *n* − 1 over sets of 3, 4 and 4.
 ### What just happened
 
 Three junctions produced three potential sets and seven flow sets. The rule broke, and the
-introduction said why before you got here: potential merges in one global union-find, flow in
-one per scope.
+asymmetry Station 2 asked you to leave open is the reason: **`potential_uf` and `stream_uf` exist,
+empty, before the first statement is read, while flow is the list that becomes a union-find per
+scope afterwards.** Potential merges globally; flow merges once per scope.
+
+That is a rule about equations wearing a data structure's clothes. Potential merging can be
+global because *n* − 1 equalities come out the same whether the sets are split or merged. A flow
+sum cannot, because a sum over the wrong set conserves the wrong thing.
 
 Follow a single junction — `src.p`, `seg1.p`, `seg1.R.p` — through both:
 

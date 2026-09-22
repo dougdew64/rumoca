@@ -335,6 +335,34 @@ matched-lists requirement obvious rather than arbitrary: the briefing establishe
 and the bench confirms or refutes it. **An abstraction with no station is a briefing for an experiment
 nobody ran**; a station with no abstraction is an experiment testing nothing anyone predicted.
 
+#### Write the stations first, and start the overview EMPTY — Doug, 2026-09-22
+
+**The sequence, and it is binding on new labs:** build the stations. Then look at the empty
+overview and ask what, if anything, a station cannot be attempted without. Add only that. *"An
+empty overview should be the starting point."*
+
+**Why the sequence and not just the triage below.** Triage starts from prose that already exists
+and asks of each sentence whether it may stay — so it can only ever *remove*, and it rationalises
+whatever survives. It never asks what is **missing**. Two rounds of triage on
+`connect-expansion` cut 72 lines to 50 and left an overview that explained union-find internals,
+the routing of a pair to its data structure, and the fields of `ConnectionSet` — **and never once
+said what a connector is**, in a lab named for what `connect` means, about a language whose
+distinguishing idea is the connector. Doug found that in one reading. Starting from empty finds it
+in one pass, because the first question an empty overview asks is *what must the reader know*,
+not *may this sentence stay*.
+
+**The second thing triage cannot see: prose that PRE-EMPTS its own station.** The same overview
+explained why potential merging is global and flow merging is per scope — which is the answer to
+Station 6's *"commit to the two counts being equal, or to a reason it breaks."* It read as a
+useful abstraction and was a spoiler, and it survived two passes because triage asks whether a
+sentence is true and stationed, never whether a station still has anything left to ask. See
+[**WRITE TO PROVOKE QUESTIONS**](#-write-to-provoke-questions-not-to-pre-empt-them--2026-08-30)
+above, which this is a special case of.
+
+**The test for a candidate sentence is therefore a question about a station, not about the
+sentence:** name the station that cannot be attempted without it. If naming one is hard, it does
+not go in. If the station would be *better* without it, it definitely does not.
+
 #### The remedy is redistribution, not deletion — Doug, 2026-09-22
 
 Rule 4 names the defect and stops there, so for eight weeks the only thing it could produce was a
