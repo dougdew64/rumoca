@@ -241,6 +241,12 @@ response, so the hit test is `ui.rect_contains_pointer`.
 
 One commit per group, each runnable.
 
+**ANSWERED, 2026-09-22, and it is a fourth outcome none of the three below predicted: the row menu wins and the region menu is UNREACHABLE.** Doug right-clicked tree rows, then drag-selected text in the pane and right-clicked that. The trail carries **no `point-menu-opened` at all**, which `region` records unconditionally — so the region menu never opened once. `point-copy-landed | 7 chars` shows the selection itself was captured normally. The last capture is `kind: node`, so the gesture he read as *"point at my selection"* pointed at the **row under the cursor** instead.
+
+**The failure is silent and looks like success**, because the Context Bar updates either way and only the emitted `kind` distinguishes them — the same shape as the defect this whole arc began with.
+
+**So a region whose items already have menus cannot be served by wrapping it.** The fix is to give the existing menu the item, not to wrap the pane: `tree.rs`'s `row_menu` gains *"Point at selection"* when text is held, beside its *"Point at"*. One menu, no contention, and the two are visibly different choices rather than one that silently means the other. **That splits step 4 in two:** plain-text regions get the wrapper; regions with item menus get the item.
+
 **The tree is wrapped as of 2026-09-22** — `artifact_pane_ui`, the pane most stages show — and the question is now live and awaiting a run.
 
 **Adopt the TREE first, because it carries step 3's unanswered question.** Every other region is
