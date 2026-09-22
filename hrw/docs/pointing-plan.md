@@ -128,7 +128,7 @@ Ctrl+C being mistaken for this gesture's text.** A test pins that an ordinary le
 adopted variant may not stay on the list. So the plan's remaining work is executable rather than
 remembered, and step 4 finishes when that list is empty.
 
-### Step 3 — adopt TWO regions, then stop ⚠ *(2026-09-22 — three runs, three defects, mechanism changed)*
+### Step 3 — adopt TWO regions, then stop ✅ *(2026-09-22 — eight runs, working)*
 
 Lab prose and the Connections pane. Two is enough to prove the thing reading cannot settle:
 **how the wrapper composes with the tree row menu, which already carries its own "Point at"** when
@@ -172,6 +172,25 @@ exactly this. It asserted `has_selection()` survived a right-click — which a c
 does not report itself hovered the way a real one does. **The negative control proved the harness
 could CLEAR a selection; nothing proved it could COLLAPSE one.** A harness that diverges from the
 app on the one behaviour under test is worse than no harness, because it is believed.
+
+**WORKING, on Doug's eighth run.** `point-copy-landed | 31 chars` → `point-menu-opened` →
+`point-menu-click | enabled=true clicked=true inside_item=true` → `point-at-selection`, and
+`focus.json` carrying `kind: selection`, `from: Claude's answer`, **no `file`**. The defect this
+began as — a false file claim for text in the answer document — is gone at the root rather
+than patched.
+
+**Seven failures, each a different link**, in order: the copy pushed after the labels drew; the
+right-click collapsing the selection; the drag predicate reading a `press_origin` egui had
+already cleared; the menu click invalidating its own text; and the guard for that reading pass
+state instead of memory. **Every one was named by the action trail**, never by reasoning from the
+symptom — which is why each fix ends with an instrument rather than only a repair.
+
+**Three tests gave false greens, and they share one shape.** Step 0's harness did not reproduce
+hover, so it could not reproduce the collapse it existed to catch. A scratch probe clicked a
+popup rect captured on the popup's first frame, before the popup moves. The popup-open test
+called its predicate *after* `Popup::show` while the code calls it *before*. **Each verified the
+right ingredient at the wrong moment.** For UI behaviour, a synthetic harness checks logic; only
+the running program checks interaction — so instrument first and let the trail name the link.
 
 **A second defect, and only Doug's run could find it.** He selected text in an answer,
 right-clicked, got the correct menu with the correct origin, chose *"Point at selection"* — and

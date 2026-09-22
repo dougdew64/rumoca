@@ -1747,7 +1747,10 @@ fn build(ask: &Ask) -> Value {
         // record which, and `view.stage_view` names what was on screen rather than what
         // the selection came from. Saying so beats borrowing a stage that was never
         // checked, which is the rule this field exists to enforce.
-        Focus::LabPassage { .. } => "(a selection from a pane; see `view` for what was shown)",
+        // **Defers to `from`, which names the region exactly.** It said "a selection from a
+        // pane" until 2026-09-22, which was wrong for the first real capture made this way:
+        // the text came from Claude's answer document, which is not a pane.
+        Focus::LabPassage { .. } => "(not a compile phase \u{2014} see `from` for the region)",
         _ => "(navigated definition)",
     };
     let stage_str = ask.stage.map_or(no_stage, StageKind::slug);

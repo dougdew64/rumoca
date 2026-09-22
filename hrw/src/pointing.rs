@@ -205,17 +205,19 @@ pub fn region<R>(
             // the running program.
             let primary_click =
                 ui.input(|i| i.pointer.button_clicked(egui::PointerButton::Primary));
-            if primary_click {
+            if primary_click && !item.clicked() {
                 let inside = ui
                     .ctx()
                     .pointer_interact_pos()
                     .is_some_and(|p| item.rect.contains(p));
+                // **Records only the FAILURE, so a working gesture stays quiet.** It logged
+                // every click while it was being diagnosed; kept in this narrowed form because
+                // it is what finally named the defect — `enabled=false … inside_item=true`
+                // said the item was hit and disabled, after six runs in which the trail could
+                // not distinguish that from a click landing elsewhere.
                 crate::diagnostics::record_action(
-                    "point-menu-click",
-                    format!(
-                        "enabled={can_point} clicked={} inside_item={inside}",
-                        item.clicked()
-                    ),
+                    "point-menu-click-ignored",
+                    format!("enabled={can_point} inside_item={inside}"),
                 );
             }
             if item.clicked() {

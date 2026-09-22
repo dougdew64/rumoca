@@ -634,6 +634,35 @@ probably cannot have one: it requires knowing what a station asks. The check is 
 each `**Predict.**`, is its answer stated anywhere the reader passes first? A hub is the worst
 case, since everything it spoils is a lab it is sending the reader to.
 
+### 09-22, the pointing arc — eight runs, seven links, three tests that lied
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 09-22 | a right-click **collapses** the text selection it was meant to act on (`any_pressed()` where egui means primary) | **Doug**, by running it | filed as **E2** in `upstream-issues.md`; the mechanism changed to capturing at selection time |
+| 09-22 | the copy was pushed after the labels drew, so nothing ever saw it | **Doug**, by running it | `got_copy_event` is read *while each label paints*; the 🎯 button only worked by accident of being drawn above the prose |
+| 09-22 | the drag/click predicate read `press_origin()` on the release frame, where egui has already cleared it | **Doug**, by running it | never fired once; `button_clicked` is the surviving form of the same answer |
+| 09-22 | clicking the menu item is itself a primary press, so it invalidated the text it was about to use | **Doug**, by running it | the item re-rendered disabled and a disabled button reports no click |
+| 09-22 | the guard for *that* read `Context::any_popup_open()` (**pass state**, empty at the top of a frame) instead of `Popup::is_any_open()` (**memory**) | **Doug**, by running it | the trail said `enabled=false … inside_item=true`, which named it outright |
+
+**Five rows, all Doug, and none of them findable by reading.** Every fix was correct and exposed
+the next link. What made the arc tractable was not analysis — it was that each repair shipped with
+an *instrument*, so the next run localised the next defect instead of restarting the argument.
+
+**The part worth carrying: three tests passed while the code they vouched for was broken.**
+
+| test | why it lied |
+|---|---|
+| step 0's gesture test | the harness never reported the label as hovered, so it could not reproduce the collapse it was written to catch |
+| a scratch popup probe | clicked the item rect captured on the popup's **first** frame — a popup has no size then and moves on the next |
+| the popup-open test | called the predicate **after** `Popup::show`; the code calls it **before** |
+
+**One shape: each verified the right ingredient at the wrong moment.** A predicate asserted at a
+different moment than it is used is not asserted at all. **For UI behaviour a synthetic harness
+checks logic, not interaction** — so the order is instrument the running program, read the trail,
+then write the test that pins what the trail proved. The tests kept from this arc are the ones
+that pin *egui facts* (`press_origin` is gone at release; a popup stays open across the press),
+because those are what a future egui bump will break.
+
 ### The standing prediction, checked — 3 of 4, and the fourth is the interesting one
 
 It said the mechanised classes *"should stop appearing in the Doug column"*, and that a **new**
