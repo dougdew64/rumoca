@@ -85,6 +85,7 @@ pub mod nav_view;
 /// compiler keeps it building against today's API rather than letting it rot.
 pub mod pantelides_ladder;
 pub mod playback;
+pub mod pointing;
 pub mod pre_lowering_anim;
 pub mod promote;
 pub mod reduction_anim;

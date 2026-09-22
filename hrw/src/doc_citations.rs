@@ -3582,6 +3582,58 @@ Some prose.
         );
     }
 
+    /// **Every `PointOrigin` variant is constructed somewhere, or is listed as not yet
+    /// adopted — and the list must shrink to empty.**
+    ///
+    /// # Why a source scan and not an exhaustive match
+    ///
+    /// A `match` proves every variant is *handled*; nothing proves one is ever *produced*. The
+    /// failure this guards is a pane added without a `pointing::region` wrapper — the region
+    /// renders, the text selects, and it simply cannot be pointed at. **Nothing observable goes
+    /// wrong**, which is the shape of defect this repository keeps finding late.
+    ///
+    /// # The pending list is `docs/pointing-plan.md` step 4, made executable
+    ///
+    /// The helper landed before the regions adopted it, so a plain "all constructed" assertion
+    /// could not pass on the day it was written. Rather than ignore the test — a test nobody
+    /// runs is worse than none — the not-yet-adopted variants are named here, and the check
+    /// **cuts both ways**: a variant that IS constructed may not stay on the list. So the list
+    /// cannot quietly describe a world that has moved on, and step 4 finishes when it is empty.
+    #[test]
+    fn every_point_origin_is_reachable() {
+        // Adopt a region, delete its line. Empty means step 4 is done.
+        const NOT_YET_ADOPTED: &[&str] = &["LabProse", "Answer", "StagePane", "ModelList", "Log"];
+
+        let src_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut sources = Vec::new();
+        collect_rust(&src_dir, &mut sources);
+        let texts: Vec<String> = sources
+            .iter()
+            .filter(|p| !p.ends_with("pointing.rs"))
+            .filter_map(|p| std::fs::read_to_string(p).ok())
+            .collect();
+
+        let constructed = |v: &str| -> bool {
+            let needle = format!("PointOrigin::{v}");
+            texts.iter().any(|t| t.contains(&needle))
+        };
+
+        let missing: Vec<&str> = ["LabProse", "Answer", "StagePane", "ModelList", "Log"]
+            .into_iter()
+            .filter(|v| !constructed(v) && !NOT_YET_ADOPTED.contains(v))
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "{missing:?} are never constructed outside pointing.rs, so the regions they name              cannot be pointed at and nothing else would say so. Either wrap the region              (docs/pointing-plan.md step 4) or delete the variant.",
+        );
+
+        let stale: Vec<&&str> = NOT_YET_ADOPTED.iter().filter(|v| constructed(v)).collect();
+        assert!(
+            stale.is_empty(),
+            "{stale:?} are listed as not yet adopted but ARE constructed. Remove them from              NOT_YET_ADOPTED -- a pending list that outlives the work it describes is how a              checklist stops being read.",
+        );
+    }
+
     /// **Every `**` in a lab is closed, within its own paragraph.**
     ///
     /// # Why paragraph and not file

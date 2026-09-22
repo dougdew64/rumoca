@@ -88,7 +88,7 @@ three facts hold. **It carries a negative control** — a press with no label ho
 the selection — because without it a harness that never clears anything would pass every
 assertion for the wrong reason.
 
-### Step 1 — `PointOrigin` ⬜
+### Step 1 — `PointOrigin` ✅ *(2026-09-22)*
 
 An enum naming every region text can be selected from — lab prose, a named stage sub-view, the
 equation sheet, the model list, the log.
@@ -98,7 +98,15 @@ verified, so lab prose keeps the containment check added 2026-09-22 (`in_source`
 and the check must agree. Everywhere else the wrapper *is* the proof: the region enclosing the
 Connections pane cannot be anything else.
 
-### Step 2 — the shared helper ⬜
+**Done**, in `src/pointing.rs`, with steps 1 and 2 landing together because a variant nobody
+constructs is dead code. **Designing it found a defect the containment check cannot reach:**
+`LabSource::label` returns `✨ Answer` for Claude's answer document, so a selection made in
+it emitted `file: hrw/docs/fixture-labs/✨ Answer.md` — a path that never existed. The
+check passes there, because the text genuinely *is* in the document that was open; it is the
+*file* claim that is false, and only a declared origin separates the two. Hence `Answer` is a
+variant of its own.
+
+### Step 2 — the shared helper ✅ *(2026-09-22)*
 
 `selection::region(ui, origin, |ui| …)`: wraps a region, interacts its rect, attaches the menu,
 pushes `Copy` at open, and returns an optional point request for `App` to perform — the
@@ -107,6 +115,18 @@ render-and-report shape this codebase already uses four times.
 The menu keeps **"Point at selection" always present**, greyed with a reason when there is no
 selection. The button is visible exactly when a selection exists, which teaches the gesture; a
 context menu teaches nothing until tried, and this is the cheap replacement for that affordance.
+
+**Done.** `pointing::region` renders, interacts the rect it occupied with a fresh id, and returns
+`MenuOpened` on the secondary click — the last moment the selection is guaranteed alive —
+and `PointAt` when the item is chosen. `App` performs both: clear the copy slot and push `Copy` on
+the first, use the fetched text on the second. **Clearing before the push is what stops a stale
+Ctrl+C being mistaken for this gesture's text.** A test pins that an ordinary left-click reports
+*nothing*, since otherwise every click in a pane would overwrite the reader's clipboard.
+
+**Step 7's reachability guard was written early, and carries step 4's checklist.**
+`every_point_origin_is_reachable` names the not-yet-adopted variants and **cuts both ways**: an
+adopted variant may not stay on the list. So the plan's remaining work is executable rather than
+remembered, and step 4 finishes when that list is empty.
 
 ### Step 3 — adopt TWO regions, then stop ⬜
 
