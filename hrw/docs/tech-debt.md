@@ -608,6 +608,27 @@ both arms, the positive one on a sentence whose source is thick with markup.
 **It errs toward "in source"**: with no lab text loaded there is nothing to contradict, and
 claiming prose is foreign would be its own false statement.
 
+**Two more fields were still lying, found by Doug using the fixed button.** He captured
+`flow · 1 set(s)` — a lane header from the Connections replay — and the document
+still said `kind: "lab_passage"` and `stage: "(lab prose, not a compile phase)"` **beside a
+section stating the text is in no lab.** Contradictory claims in one document, and the second
+field's own comment records it being introduced to fix exactly that failure once before. Both now
+key on `in_source`: the kind becomes `selection`, and the sentinel says the text came from a pane
+and points at `view`. `a_pane_selection_emits_selection_and_says_it_is_not_prose` pins both.
+
+**The reframe is the finding, and it is Doug's:** *"The capture button is MUCH more useful now as
+it can be used for anything which I can drag-select in the HRW window."* **The fix added no
+capability** — the button always copied the whole window's selection. What it added was an
+honest label, and a capability nobody could rely on became one they could. **A false claim does
+not only mislead; it suppresses the feature it misdescribes.**
+
+**What that reframe leaves unfinished, stated rather than queued silently.** The button lives only
+in the lab panel's transport bar, so general capture is still gated behind having a lab open, and
+its refusal message reads *"no lab is open, so there is no passage to point at"* — the old
+framing. And `view.stage_view` reports what was on screen rather than where the selection came
+from; for a pane capture those are almost certainly the same, and *almost certainly* is what this
+whole entry is about.
+
 **The spoiler is the defect this corpus is now most exposed to**, and it has no checker and
 probably cannot have one: it requires knowing what a station asks. The check is per station — for
 each `**Predict.**`, is its answer stated anywhere the reader passes first? A hub is the worst

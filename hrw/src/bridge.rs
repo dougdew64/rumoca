@@ -1713,7 +1713,15 @@ fn build(ask: &Ask) -> Value {
         Focus::Stage => "stage",
         Focus::Specimen => "specimen",
         Focus::Nothing => "none",
-        Focus::LabPassage { .. } => "lab_passage",
+        // **Two kinds out of one variant, because `in_source` changes what the
+        // capture IS.** Emitting `lab_passage` for a pane selection put two
+        // contradictory claims in one document: this field said prose while the
+        // section below said the text is in no lab. That is the identical defect the
+        // stage sentinel below records having fixed once already.
+        Focus::LabPassage {
+            in_source: true, ..
+        } => "lab_passage",
+        Focus::LabPassage { .. } => "selection",
     };
     // **The slug, not the display name.** This used to emit `StageKind::name`, which
     // reads "Index reduction" with a space — so the capture named a stage that
@@ -1731,7 +1739,15 @@ fn build(ask: &Ask) -> Value {
     // Absence stated, and stated *accurately* — the same rule that made the field an
     // `Option` rather than letting it borrow whichever stage was selected.
     let no_stage = match ask.focus {
-        Focus::LabPassage { .. } => "(lab prose, not a compile phase)",
+        Focus::LabPassage {
+            in_source: true, ..
+        } => "(lab prose, not a compile phase)",
+        // **A third reason, added 2026-09-22.** The text was selected from a pane, so
+        // it was almost certainly rendered *from* some stage — but the capture does not
+        // record which, and `view.stage_view` names what was on screen rather than what
+        // the selection came from. Saying so beats borrowing a stage that was never
+        // checked, which is the rule this field exists to enforce.
+        Focus::LabPassage { .. } => "(a selection from a pane; see `view` for what was shown)",
         _ => "(navigated definition)",
     };
     let stage_str = ask.stage.map_or(no_stage, StageKind::slug);
@@ -2349,6 +2365,66 @@ fn shape(v: &Value) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// **A PANE selection emits neither `lab_passage` nor a prose sentinel.**
+    ///
+    /// The capture button copies whatever is selected anywhere in the window, so a
+    /// selection made in a stage pane reaches the same code path as lab prose. Until
+    /// 2026-09-22 it emitted `kind: "lab_passage"` and `stage: "(lab prose, not a
+    /// compile phase)"` **while the section below said the text is in no lab** — two
+    /// contradictory claims in one document, which is exactly the defect that sentinel
+    /// was introduced to fix the first time.
+    ///
+    /// Pinned because the two fields are read by different things: `kind` routes
+    /// Claude's reasoning, and the sentinel is what a reader sees when they ask which
+    /// phase a capture belongs to.
+    #[test]
+    fn a_pane_selection_emits_selection_and_says_it_is_not_prose() {
+        let ask = Ask {
+            seq: 4,
+            request: AskRequest::Explain,
+            specimen: None,
+            model: Some("RcCircuit"),
+            stage: None,
+            libraries: Vec::new(),
+            def_index: &Default::default(),
+            parse_value: None,
+            resolve_value: None,
+            focus: Focus::LabPassage {
+                lab: "connect-expansion",
+                text: "flow \u{b7} 1 set(s)",
+                in_source: false,
+            },
+            tracking: None,
+            view: View {
+                ui_mode: "Lab",
+                stage_view: Some("Connections"),
+                specimen_detail: None,
+                viewing_log: false,
+                animation: None,
+            },
+            failure: None,
+        };
+
+        let doc = build(&ask);
+        assert_eq!(
+            doc["kind"], "selection",
+            "calling a pane selection a lab passage is the claim this whole check exists \
+             to stop",
+        );
+        assert_ne!(
+            doc["stage"], "(lab prose, not a compile phase)",
+            "the prose sentinel must not be reused for text that is not prose",
+        );
+        assert!(
+            doc["lab_passage"]["file"].is_null(),
+            "no file may be named for text that is in no file",
+        );
+        assert_eq!(
+            doc["lab_passage"]["lab_open"], "connect-expansion",
+            "which lab was open is still worth saying \u{2014} it is where the reader was",
+        );
+    }
 
     /// **A lab-passage capture emits its lab, its text, and NO stage.**
     ///
