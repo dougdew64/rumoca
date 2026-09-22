@@ -180,10 +180,14 @@ this step was stopped for are outstanding, and **the one it exists for is among 
 | # | check | what it would catch | state |
 |---|---|---|---|
 | 1 | right-click in a **lab**, not an Answer | the `LabProse` branch entirely — the containment check and `source_file()` producing a real path | ✅ |
-| 2 | right-click with **nothing selected** | that the item greys for the *right* reason; it was seen greyed only when `last_selection` was being wrongly invalidated | ⬜ |
+| 2 | right-click with **nothing selected** | that the item greys for the *right* reason; it was seen greyed only when `last_selection` was being wrongly invalidated | ✅ |
 | 3 | ~~**tree row menu vs region menu**, in Flatten → Connections~~ | **THE CHECK WAS MISSPECIFIED.** The tree and the Connections replay are *sub-views of one stage* and are never drawn at the same time, so no right-click can reach both and there is nothing to contend. **The conflict cannot arise until the tree's own pane is wrapped**, which is step 4 — so this moves there, and step 4 must adopt the tree FIRST rather than last | ➡ step 4 |
-| 4 | ordinary clicking in the lab panel | links, picker, transport bar. **Partly automated**: `clicking_a_lab_link_dispatches_it` and five siblings went red when the wrapper used `Sense::click()` and pass now | ◐ |
+| 4 | ordinary clicking in the lab panel | links, picker, transport bar. **Automated** for links (`clicking_a_lab_link_dispatches_it` and five siblings went red when the wrapper used `Sense::click()`), and **confirmed live** — Doug's trail shows a `lab-link` dispatching `load/RcCircuit/Flatten/Connections` with the wrapper in place. Picker and transport bar unconfirmed | ◐ |
 | 5 | right-click in an **Answer** | the whole chain, end to end | ✅ |
+
+**Check 2 greyed for the right reason, and the trail proves which.** Two `point-menu-opened` lines with **no `point-copy-landed` between them**: a caret click invalidated the held text, and a click is not a drag, so there was nothing to point at. The same appearance had been produced earlier by a defect, which is why this needed confirming rather than observing.
+
+**It also exposed a flaw in the instrument.** `point-menu-click-ignored` would have fired on a click into a legitimately greyed item — **correct behaviour reported as a fault**. It now requires `can_point` as well, so it records exactly one shape: an *enabled* item, hit, that does not report a click. That is what named the last defect; everything else is noise, and a trail that cries wolf is this arc's most valuable instrument losing its value.
 
 **The `LabProse` branch is proven in the running app too, and it settled the risk the
 normaliser was written for.** Doug pointed at *"merge sets of variables"* in `connect-expansion`.
