@@ -6396,7 +6396,13 @@ impl App {
                         .button_double_clicked(egui::PointerButton::Primary),
             )
         });
-        if primary_pressed {
+        // **A press with a menu open is a press on the MENU, and must not invalidate.**
+        // Clicking *"Point at selection"* is itself a primary press, so the rule below dropped
+        // the held text at the top of the very frame that was about to use it: the item
+        // re-rendered disabled, `clicked()` never fired, and the trail showed
+        // `point-menu-opened` with nothing after it. Doug's sixth run, 2026-09-22.
+        let menu_open = ui.ctx().any_popup_open();
+        if primary_pressed && !menu_open {
             // **A primary press is the only thing that invalidates.** It either starts a new
             // selection or places a caret, and both mean the held text is no longer what is on
             // screen. A *secondary* press must not invalidate: that is the pointing gesture, and

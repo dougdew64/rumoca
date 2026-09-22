@@ -7319,3 +7319,81 @@ fn a_release_arrives_without_its_press_origin() {
         },
     );
 }
+
+/// **A press that lands in an open menu is still seen as a press, and the menu is still open.**
+///
+/// # The bug
+///
+/// `frame_ui` drops the held text on a primary press, because a press on text either starts a
+/// new selection or places a caret. **Clicking *"Point at selection"* is also a primary press.**
+/// So the held text was dropped at the top of the very frame that was about to use it: the menu
+/// item re-rendered disabled, its `clicked()` never fired, and the trail showed
+/// `point-menu-opened` with nothing after it — Doug's sixth run of the same gesture.
+///
+/// The fix skips invalidation while `Context::any_popup_open()`, which rests on one fact that
+/// could easily have gone the other way: **the popup must still register as open on the frame
+/// of the press**, not be closed by it. That is what this pins. If egui ever closes a popup at
+/// press rather than at the item's `clicked()`, this fails and the guard silently stops working.
+#[test]
+fn a_press_inside_an_open_menu_leaves_the_menu_open() {
+    let ctx = egui::Context::default();
+    let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(400.0, 200.0));
+    let modifiers = egui::Modifiers::default();
+    let anchor = egui::pos2(40.0, 20.0);
+
+    // Opened on the first pass and left open; `None` afterwards means "no command", so the
+    // popup keeps whatever memory says — the same shape `pointing::region` uses.
+    let open_now = std::cell::Cell::new(true);
+    let seen_open = std::cell::Cell::new(false);
+
+    let run = |events: Vec<egui::Event>| {
+        let _ = ctx.run_ui(
+            egui::RawInput {
+                screen_rect: Some(screen),
+                events,
+                ..Default::default()
+            },
+            |ui| {
+                let resp = ui.interact(
+                    egui::Rect::from_min_size(anchor, egui::vec2(200.0, 40.0)),
+                    ui.make_persistent_id("region-under-test"),
+                    egui::Sense::hover(),
+                );
+                egui::Popup::menu(&resp)
+                    .open_memory(
+                        open_now
+                            .replace(false)
+                            .then_some(egui::SetOpenCommand::Bool(true)),
+                    )
+                    .show(|ui| {
+                        let _ = ui.button("\u{1f3af} Point at selection");
+                    });
+                seen_open.set(ui.ctx().any_popup_open());
+            },
+        );
+    };
+
+    run(vec![]);
+    assert!(
+        seen_open.get(),
+        "the popup did not open, so nothing below is testing what it claims",
+    );
+
+    // A primary press with the pointer over the menu — what clicking the item is.
+    let over_menu = egui::pos2(anchor.x + 20.0, anchor.y + 20.0);
+    run(vec![
+        egui::Event::PointerMoved(over_menu),
+        egui::Event::PointerButton {
+            pos: over_menu,
+            button: egui::PointerButton::Primary,
+            pressed: true,
+            modifiers,
+        },
+    ]);
+    assert!(
+        seen_open.get(),
+        "the menu must still read as open on the frame of the press -- frame_ui uses exactly \
+         this to tell a click on a menu item from a press on text, and if it goes false here \
+         the held text is dropped before the item can use it",
+    );
+}
