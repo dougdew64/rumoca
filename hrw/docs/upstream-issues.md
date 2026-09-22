@@ -1106,7 +1106,14 @@ and the cost becomes flat in depth. Guarded by
 ## E2. **egui** — a *secondary* click collapses a text selection, so no context menu can act on it
 
 **Project:** egui · **File with:** [emilk/egui](https://github.com/emilk/egui) · **Baseline:**
-`0.35.0`, as pinned by `hrw/Cargo.toml` · **Status: NOT FILED** — awaiting Doug's call.
+`0.35.0`, as pinned by `hrw/Cargo.toml` · **Status: NOT FILED.** Doug's call, 2026-09-22:
+*"For now, let's not act on E2."*
+
+**Written ready, and held deliberately.** HRW works around it — the text is taken when the
+selection is made — so nothing here is blocked. The entry stays current because **the
+workaround's cost is the defect's cost**: a clipboard write per completed drag-selection, which
+is the price of not being able to read a selection at the moment of the gesture. If that ever
+starts to bite, this is the reason why.
 
 **Found by building the feature it blocks.** HRW wanted the ordinary desktop gesture: select
 text, right-click it, choose an item that acts on the selection. It cannot be built, because the
