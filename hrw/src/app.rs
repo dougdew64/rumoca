@@ -4673,142 +4673,164 @@ impl App {
                         .as_deref()
                         .is_some_and(|n| n.contains("singular"));
 
-                if report_ready && self.viewport.structural == StructuralView::SpyPlot {
-                    matrix_panes::spy_plot_pane_ui(
-                        ui,
-                        self.stages.get(self.stage).value.as_ref(),
-                        matrix_panes::MatrixPane {
-                            cache: &mut self.stage_views.spy_plot,
-                            camera: &mut self.viewport.spy,
-                        },
-                        &mut intent.canvas_capture,
-                        self.tracked_identifier.as_deref(),
-                        ir_split,
-                    );
-                } else if report_ready && self.viewport.structural == StructuralView::Incidence {
-                    matrix_panes::incidence_pane_ui(
-                        ui,
-                        self.stages.get(self.stage).value.as_ref(),
-                        matrix_panes::MatrixPane {
-                            cache: &mut self.stage_views.incidence,
-                            camera: &mut self.viewport.incidence,
-                        },
-                        // **The Before pane exists exactly when the split is on**, so the
-                        // pane cannot be handed a camera it must not draw into. See the
-                        // module: the spy plot next door keeps a `bool` because it has no
-                        // Before pane at all.
-                        ir_split.then_some(matrix_panes::MatrixPane {
-                            cache: &mut self.stage_views.before_incidence,
-                            camera: &mut self.viewport.before_incidence,
-                        }),
-                        &mut intent.canvas_capture,
-                        self.tracked_identifier.as_deref(),
-                        self.viewport.highlighted_eq_row,
-                    );
-                } else if report_ready && self.viewport.structural == StructuralView::MatchingAnim {
-                    self.matching_anim_ui(ui, ir_split);
-                } else if report_ready && self.viewport.structural == StructuralView::TarjanAnim {
-                    self.tarjan_anim_ui(ui, ir_split);
-                } else if report_ready && self.viewport.structural == StructuralView::TearingAnim {
-                    self.tearing_anim_ui(ui);
-                } else if report_ready && self.viewport.structural == StructuralView::AliasAnim {
-                    self.alias_anim_ui(ui);
-                } else if report_ready && self.viewport.structural == StructuralView::Summary {
-                    if self.stage == StageKind::Structural {
-                        crate::error_summary::structural_singular_summary(
-                            ui,
-                            &self.stages.structural,
-                        );
-                    } else {
-                        let cached = self.stage_views.reduction.get_or_insert_with(|| {
-                            self.stages
-                                .get(self.stage)
-                                .value
-                                .as_ref()
-                                .and_then(reduction_view::ReductionView::from_report)
-                        });
-                        if let Some(view) = cached {
-                            view.ui(ui, self.tracked_identifier.as_deref());
+                // **One wrapper for every stage sub-view**, rather than one per pane. The
+                // arms below are a dozen and growing, and a pane added without its own would
+                // be silently unpointable — which is exactly how the specimen source and
+                // purpose panes were missed, and found by Doug rather than by a check.
+                //
+                // **It composes with the tree's row menus by doing nothing over them.** A
+                // region menu never opens where a row claims the right-click, measured on
+                // 2026-09-22 before the tree's item was added; so the `else` arm below keeps
+                // its own *"Point at selection"* and this wrapper is simply unreachable there.
+                let can_point = self.last_selection.is_some();
+                let pointing_origin = crate::pointing::PointOrigin::StagePane {
+                    stage: self.stage,
+                    sub_view: sub_view_name_for(self.stage, &self.viewport).map(str::to_owned),
+                };
+                let pointing_ctx = ui.ctx().clone();
+                let (_, stage_pointing) =
+                    crate::pointing::region(ui, pointing_origin, can_point, |ui| {
+                        if report_ready && self.viewport.structural == StructuralView::SpyPlot {
+                            matrix_panes::spy_plot_pane_ui(
+                                ui,
+                                self.stages.get(self.stage).value.as_ref(),
+                                matrix_panes::MatrixPane {
+                                    cache: &mut self.stage_views.spy_plot,
+                                    camera: &mut self.viewport.spy,
+                                },
+                                &mut intent.canvas_capture,
+                                self.tracked_identifier.as_deref(),
+                                ir_split,
+                            );
+                        } else if report_ready
+                            && self.viewport.structural == StructuralView::Incidence
+                        {
+                            matrix_panes::incidence_pane_ui(
+                                ui,
+                                self.stages.get(self.stage).value.as_ref(),
+                                matrix_panes::MatrixPane {
+                                    cache: &mut self.stage_views.incidence,
+                                    camera: &mut self.viewport.incidence,
+                                },
+                                // **The Before pane exists exactly when the split is on**, so the
+                                // pane cannot be handed a camera it must not draw into. See the
+                                // module: the spy plot next door keeps a `bool` because it has no
+                                // Before pane at all.
+                                ir_split.then_some(matrix_panes::MatrixPane {
+                                    cache: &mut self.stage_views.before_incidence,
+                                    camera: &mut self.viewport.before_incidence,
+                                }),
+                                &mut intent.canvas_capture,
+                                self.tracked_identifier.as_deref(),
+                                self.viewport.highlighted_eq_row,
+                            );
+                        } else if report_ready
+                            && self.viewport.structural == StructuralView::MatchingAnim
+                        {
+                            self.matching_anim_ui(ui, ir_split);
+                        } else if report_ready
+                            && self.viewport.structural == StructuralView::TarjanAnim
+                        {
+                            self.tarjan_anim_ui(ui, ir_split);
+                        } else if report_ready
+                            && self.viewport.structural == StructuralView::TearingAnim
+                        {
+                            self.tearing_anim_ui(ui);
+                        } else if report_ready
+                            && self.viewport.structural == StructuralView::AliasAnim
+                        {
+                            self.alias_anim_ui(ui);
+                        } else if report_ready
+                            && self.viewport.structural == StructuralView::Summary
+                        {
+                            if self.stage == StageKind::Structural {
+                                crate::error_summary::structural_singular_summary(
+                                    ui,
+                                    &self.stages.structural,
+                                );
+                            } else {
+                                let cached = self.stage_views.reduction.get_or_insert_with(|| {
+                                    self.stages
+                                        .get(self.stage)
+                                        .value
+                                        .as_ref()
+                                        .and_then(reduction_view::ReductionView::from_report)
+                                });
+                                if let Some(view) = cached {
+                                    view.ui(ui, self.tracked_identifier.as_deref());
+                                } else {
+                                    ui.weak("(no reduction data in this report)");
+                                }
+                            }
+                        } else if report_ready
+                            && self.viewport.structural == StructuralView::Animate
+                        {
+                            // **`report_ready` was missing here and nowhere else in this chain**
+                            // (fixed 2026-08-20). `Animate` is an Index-Reduction-only sub-view,
+                            // and `viewport.structural` deliberately survives a stage change —
+                            // it is a camera. Nothing clamps it off a report stage either:
+                            // `clamp_structural_sub_view` returns early on every other stage, by
+                            // design. So an unguarded branch here meant *this* pane won on
+                            // Events, Initialization and Flatten too, since it sits above all
+                            // three of theirs: leave Index Reduction ▸ Animate for Events and
+                            // the index-reduction replay was drawn under the Events tab.
+                            self.reduction_anim_ui(ui);
+                        } else if events_ready && self.viewport.events == EventsView::PreLowering {
+                            self.pre_lowering_anim_ui(ui);
+                        } else if init_ready && self.viewport.init == InitView::IcPlan {
+                            self.ic_plan_anim_ui(ui);
+                        } else if flatten_ready && self.viewport.flatten == FlattenView::Equations {
+                            self.equation_sheet_ui(ui);
+                        } else if flatten_ready && self.viewport.flatten == FlattenView::SourceMap {
+                            self.source_map_ui(ui);
+                        } else if flatten_ready && self.viewport.flatten == FlattenView::Connections
+                        {
+                            self.connection_anim_ui(ui);
                         } else {
-                            ui.weak("(no reduction data in this report)");
+                            // **The arm with no gate** — every other member of this chain asks
+                            // whether its own sub-view is selected, and this one draws when none
+                            // of them claimed the frame. It is also the only pane most stages
+                            // ever show. See `artifact_pane` for the "beside, not instead of"
+                            // rule its error summary follows.
+                            // **Deliberately NOT wrapped in a `pointing::region`.** It was, for one
+                            // commit, and the region menu never opened once: every right-click in this
+                            // pane lands on a row, and the row's own menu takes it. The row menu then
+                            // answered a gesture meant for the selection by capturing the node — a
+                            // silent substitution that looked like success, because the Context Bar
+                            // updates either way. The selection item lives in `tree::row_menu`, which
+                            // is the only menu a right-click here can reach.
+                            let stage = self.current_stage();
+                            let notice = artifact_pane::artifact_pane_ui(
+                                ui,
+                                stage,
+                                self.stage,
+                                artifact_pane::ArtifactChrome {
+                                    label: self.model.as_deref().unwrap_or("model"),
+                                    prev: self.previous_stage_value(),
+                                    identifier_count: self
+                                        .known_variables
+                                        .as_ref()
+                                        .map(HashSet::len),
+                                    compiling: self.compiling,
+                                },
+                                artifact_pane::ArtifactTree {
+                                    opts: self.specimen_tree_options(),
+                                    def_index: &self.def_index,
+                                    field_help: self.field_help.for_stage(self.stage),
+                                    jump_target: self.context.jump_target.as_deref(),
+                                    jump_highlight: self.context.jump_highlight.as_deref(),
+                                },
+                                &mut intent.tree,
+                            );
+                            // The stage borrow ends with the call, so the notice can finally be
+                            // posted — the same deferred pattern as `FrameIntent`.
+                            if let Some(msg) = notice {
+                                self.context.jump_target = None;
+                                self.notify(msg);
+                            }
                         }
-                    }
-                } else if report_ready && self.viewport.structural == StructuralView::Animate {
-                    // **`report_ready` was missing here and nowhere else in this chain**
-                    // (fixed 2026-08-20). `Animate` is an Index-Reduction-only sub-view,
-                    // and `viewport.structural` deliberately survives a stage change —
-                    // it is a camera. Nothing clamps it off a report stage either:
-                    // `clamp_structural_sub_view` returns early on every other stage, by
-                    // design. So an unguarded branch here meant *this* pane won on
-                    // Events, Initialization and Flatten too, since it sits above all
-                    // three of theirs: leave Index Reduction ▸ Animate for Events and
-                    // the index-reduction replay was drawn under the Events tab.
-                    self.reduction_anim_ui(ui);
-                } else if events_ready && self.viewport.events == EventsView::PreLowering {
-                    self.pre_lowering_anim_ui(ui);
-                } else if init_ready && self.viewport.init == InitView::IcPlan {
-                    self.ic_plan_anim_ui(ui);
-                } else if flatten_ready && self.viewport.flatten == FlattenView::Equations {
-                    self.equation_sheet_ui(ui);
-                } else if flatten_ready && self.viewport.flatten == FlattenView::SourceMap {
-                    self.source_map_ui(ui);
-                } else if flatten_ready && self.viewport.flatten == FlattenView::Connections {
-                    // **Region 2 of `docs/pointing-plan.md` step 3.** Chosen because it is
-                    // where Doug made the pane selection that exposed the false `file:` claim
-                    // — `flow · 1 set(s)`, generated by `connection_anim` and written in no
-                    // lab. It is also the pane that sits beside the tree, so it is the one
-                    // that will show whether an inner row menu and an outer region menu can
-                    // both claim a right-click.
-                    let can_point = self.last_selection.is_some();
-                    let origin = crate::pointing::PointOrigin::StagePane {
-                        stage: self.stage,
-                        sub_view: sub_view_name_for(self.stage, &self.viewport).map(str::to_owned),
-                    };
-                    let ctx = ui.ctx().clone();
-                    let (_, event) = crate::pointing::region(ui, origin, can_point, |ui| {
-                        self.connection_anim_ui(ui);
                     });
-                    self.perform_pointing(&ctx, event);
-                } else {
-                    // **The arm with no gate** — every other member of this chain asks
-                    // whether its own sub-view is selected, and this one draws when none
-                    // of them claimed the frame. It is also the only pane most stages
-                    // ever show. See `artifact_pane` for the "beside, not instead of"
-                    // rule its error summary follows.
-                    // **Deliberately NOT wrapped in a `pointing::region`.** It was, for one
-                    // commit, and the region menu never opened once: every right-click in this
-                    // pane lands on a row, and the row's own menu takes it. The row menu then
-                    // answered a gesture meant for the selection by capturing the node — a
-                    // silent substitution that looked like success, because the Context Bar
-                    // updates either way. The selection item lives in `tree::row_menu`, which
-                    // is the only menu a right-click here can reach.
-                    let stage = self.current_stage();
-                    let notice = artifact_pane::artifact_pane_ui(
-                        ui,
-                        stage,
-                        self.stage,
-                        artifact_pane::ArtifactChrome {
-                            label: self.model.as_deref().unwrap_or("model"),
-                            prev: self.previous_stage_value(),
-                            identifier_count: self.known_variables.as_ref().map(HashSet::len),
-                            compiling: self.compiling,
-                        },
-                        artifact_pane::ArtifactTree {
-                            opts: self.specimen_tree_options(),
-                            def_index: &self.def_index,
-                            field_help: self.field_help.for_stage(self.stage),
-                            jump_target: self.context.jump_target.as_deref(),
-                            jump_highlight: self.context.jump_highlight.as_deref(),
-                        },
-                        &mut intent.tree,
-                    );
-                    // The stage borrow ends with the call, so the notice can finally be
-                    // posted — the same deferred pattern as `FrameIntent`.
-                    if let Some(msg) = notice {
-                        self.context.jump_target = None;
-                        self.notify(msg);
-                    }
-                }
+                self.perform_pointing(&pointing_ctx, stage_pointing);
             } // end: non-Simulation stage rendering
         } else {
             // ---- Navigation view (a class reached via "Go to definition") ----
@@ -5111,16 +5133,31 @@ impl App {
     /// with the tree and the equation sheet — pushing it into the pane would give the
     /// pane a policy it does not own, and would cost it the `&mut self` it just shed.
     fn specimen_source_ui(&mut self, ui: &mut egui::Ui) {
-        if let Some(name) = specimen_source::specimen_source_ui(
+        // A plain-text pane with no row menus, so it takes the wrapper. Missed when step 4
+        // enumerated the regions, and found by Doug the same day: the reachability guard sees
+        // an unconstructed `PointOrigin` variant, but a pane with no variant at all is
+        // invisible to it.
+        let can_point = self.last_selection.is_some();
+        let pointing_ctx = ui.ctx().clone();
+        let (tracked, pointing_event) = crate::pointing::region(
             ui,
-            &mut self.source,
-            &self.model,
-            &self.selected,
-            self.selected_is_library,
-            &self.tracked_identifier,
-            &self.identifier_index,
-            &self.problem_lines,
-        ) {
+            crate::pointing::PointOrigin::SpecimenSource,
+            can_point,
+            |ui| {
+                specimen_source::specimen_source_ui(
+                    ui,
+                    &mut self.source,
+                    &self.model,
+                    &self.selected,
+                    self.selected_is_library,
+                    &self.tracked_identifier,
+                    &self.identifier_index,
+                    &self.problem_lines,
+                )
+            },
+        );
+        self.perform_pointing(&pointing_ctx, pointing_event);
+        if let Some(name) = tracked {
             self.set_tracked_identifier(name);
         }
     }
@@ -6009,13 +6046,24 @@ impl App {
         // pane's two arms need no gate of their own here.
         let links = note.map(extract_hrw_links).unwrap_or_default();
         register_hrw_hooks(&mut self.commonmark_cache, &links);
-        specimen_purpose::purpose_ui(
+        // Same shape as the source pane: markdown, no row menus, so the wrapper serves it.
+        let can_point = self.last_selection.is_some();
+        let pointing_ctx = ui.ctx().clone();
+        let (_, pointing_event) = crate::pointing::region(
             ui,
-            &mut self.commonmark_cache,
-            note,
-            model,
-            self.selected.as_deref(),
+            crate::pointing::PointOrigin::SpecimenPurpose,
+            can_point,
+            |ui| {
+                specimen_purpose::purpose_ui(
+                    ui,
+                    &mut self.commonmark_cache,
+                    note,
+                    model,
+                    self.selected.as_deref(),
+                );
+            },
         );
+        self.perform_pointing(&pointing_ctx, pointing_event);
         drain_hrw_hooks(&mut self.commonmark_cache, &links)
     }
 

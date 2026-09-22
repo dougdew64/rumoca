@@ -65,6 +65,21 @@ pub enum PointOrigin {
         /// The sub-view drawing when the selection was made, where the stage has several.
         sub_view: Option<String>,
     },
+    /// The Modelica source of the loaded specimen.
+    ///
+    /// **No file is named**, although one plainly exists: the capture's top-level `specimen`
+    /// field already carries the path, and repeating it here would be a second claim to keep
+    /// true. Reading `.mo` text is also the one case where the origin alone is enough — the
+    /// text *is* the source.
+    SpecimenSource,
+    /// The specimen's purpose note, `docs/specimen-notebook/<model>/purpose.md`.
+    ///
+    /// **No file either, and this one is a deliberate restraint.** The path is derivable from
+    /// the `model` the capture already carries, but nothing here verifies the text is in it —
+    /// the containment check runs against the lab panel's document. Naming an unverified file
+    /// is exactly the defect this whole enum exists to prevent, so the origin says which pane
+    /// and lets the reader derive the rest.
+    SpecimenPurpose,
     /// The specimen list.
     ModelList,
     /// The compile log.
@@ -85,6 +100,8 @@ impl PointOrigin {
                 stage,
                 sub_view: None,
             } => stage.name().to_owned(),
+            Self::SpecimenSource => "the specimen's Modelica source".to_owned(),
+            Self::SpecimenPurpose => "the specimen's purpose note".to_owned(),
             Self::ModelList => "the specimen list".to_owned(),
             Self::Log => "the compile log".to_owned(),
         }

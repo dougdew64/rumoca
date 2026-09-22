@@ -247,6 +247,12 @@ One commit per group, each runnable.
 
 **So a region whose items already have menus cannot be served by wrapping it.** The fix is to give the existing menu the item, not to wrap the pane: `tree.rs`'s `row_menu` gains *"Point at selection"* when text is held, beside its *"Point at"*. One menu, no contention, and the two are visibly different choices rather than one that silently means the other. **That splits step 4 in two:** plain-text regions get the wrapper; regions with item menus get the item.
 
+**AND THEN TWO PANES WERE MISSING, found by Doug the same day.** *"In the HRW specimen mode, neither the Modelica source pane nor the purpose pane seem to support our new point-at functionality."* Both are plain text, both take the wrapper, and **neither had a `PointOrigin` variant at all** — so `every_point_origin_is_reachable` could not see them. That is the exact gap the new-stage checklist had just been given a line about, and it was found by a reader rather than by the check, one message later.
+
+**The response was to stop enumerating panes.** The stage-pane dispatch is now wrapped **once**, around the whole `if/else if` chain, instead of once per arm: a dozen arms and growing, and any future one would have been silently unpointable. It composes with the tree by doing nothing over it — a region menu never opens where a row claims the right-click — so the tree's arm keeps its own item and the outer wrapper is simply unreachable there. The Connections arm's own wrapper was removed as redundant.
+
+**Regions are now: two panels wrapped, one dispatch wrapped, two menus carrying the item.**
+
 **DONE, and the rule it produced is the lasting part: a region whose items already carry menus takes the ITEM, not the wrapper.** Only one of the four regions turned out to take a wrapper at all.
 
 | region | how | why |
