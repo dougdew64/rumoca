@@ -128,7 +128,7 @@ Ctrl+C being mistaken for this gesture's text.** A test pins that an ordinary le
 adopted variant may not stay on the list. So the plan's remaining work is executable rather than
 remembered, and step 4 finishes when that list is empty.
 
-### Step 3 — adopt TWO regions, then stop ◐ *(2026-09-22 — gesture working; 4 of 5 checks outstanding)*
+### Step 3 — adopt TWO regions, then stop ✅ *(2026-09-22 — closed; check 3 moved to step 4)*
 
 Lab prose and the Connections pane. Two is enough to prove the thing reading cannot settle:
 **how the wrapper composes with the tree row menu, which already carries its own "Point at"** when
@@ -182,7 +182,7 @@ this step was stopped for are outstanding, and **the one it exists for is among 
 | 1 | right-click in a **lab**, not an Answer | the `LabProse` branch entirely — the containment check and `source_file()` producing a real path | ✅ |
 | 2 | right-click with **nothing selected** | that the item greys for the *right* reason; it was seen greyed only when `last_selection` was being wrongly invalidated | ✅ |
 | 3 | ~~**tree row menu vs region menu**, in Flatten → Connections~~ | **THE CHECK WAS MISSPECIFIED.** The tree and the Connections replay are *sub-views of one stage* and are never drawn at the same time, so no right-click can reach both and there is nothing to contend. **The conflict cannot arise until the tree's own pane is wrapped**, which is step 4 — so this moves there, and step 4 must adopt the tree FIRST rather than last | ➡ step 4 |
-| 4 | ordinary clicking in the lab panel | links, picker, transport bar. **Automated** for links (`clicking_a_lab_link_dispatches_it` and five siblings went red when the wrapper used `Sense::click()`), and **confirmed live** — Doug's trail shows a `lab-link` dispatching `load/RcCircuit/Flatten/Connections` with the wrapper in place. Picker and transport bar unconfirmed | ◐ |
+| 4 | ordinary clicking in the lab panel | links, picker, transport bar. **Automated** for links (`clicking_a_lab_link_dispatches_it` and five siblings went red when the wrapper used `Sense::click()`), and confirmed live by the trail. Picker and transport confirmed by Doug directly — **they record no action, so the trail cannot see them**, and his observation is the only instrument there | ✅ |
 | 5 | right-click in an **Answer** | the whole chain, end to end | ✅ |
 
 **Check 2 greyed for the right reason, and the trail proves which.** Two `point-menu-opened` lines with **no `point-copy-landed` between them**: a caret click invalidated the held text, and a click is not a drag, so there was nothing to point at. The same appearance had been produced earlier by a defect, which is why this needed confirming rather than observing.
@@ -240,6 +240,8 @@ response, so the hit test is `ui.rect_contains_pointer`.
 ### Step 4 — adopt the remaining regions ⬜
 
 One commit per group, each runnable.
+
+**The tree is wrapped as of 2026-09-22** — `artifact_pane_ui`, the pane most stages show — and the question is now live and awaiting a run.
 
 **Adopt the TREE first, because it carries step 3's unanswered question.** Every other region is
 plain text; the tree's rows already have their own right-click menu, with their own *"Point at"*.
