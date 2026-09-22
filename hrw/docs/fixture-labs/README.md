@@ -353,10 +353,14 @@ by any test *and* unperformed by the reader, and those turn out to be one proper
 |---|---|
 | orients, or previews a number a station settles | **keep** — this is the briefing |
 | commits to something a station already reaches | **move it into that station**, where an `**Expected:**` pins it |
-| commits to something **no station in this lab can reach** | **neither keep nor delete — it needs a specimen.** File the station the lab owes |
+| commits to something **no station in this lab can reach** | **neither keep nor delete — it needs a specimen.** File the station the lab owes, and move the claim to the lab's **"What this lab cannot check"** section |
 
 **The third row is where a textbook accumulates**, because those claims are precisely the ones with
-nowhere else to go. An overview carrying several has quietly become a textbook with an appendix of
+nowhere else to go — which is exactly why the row names a destination. **Filing the station and
+leaving the prose in the overview is half the disposition and changes nothing**: it was done on the
+first application of this rule, and the overview came out five lines shorter than it went in. A true
+claim the lab cannot demonstrate belongs in the section that exists to say so, where the reader meets
+it as a stated limit rather than as briefing for an experiment that never comes. An overview carrying several has quietly become a textbook with an appendix of
 experiments. The tell is explicit when a lab admits it: `connect-expansion`'s overview said *"`RcCircuit`
 cannot show you why"* about a claim it kept anyway.
 

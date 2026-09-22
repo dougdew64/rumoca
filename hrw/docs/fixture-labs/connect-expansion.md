@@ -17,15 +17,6 @@ joins whichever sets currently hold `a` and `b`.
 Nothing else ever puts a variable into the structure, so a pair it has not seen before creates both
 and merges them in the same call.
 
-There is no such pass for an unconnected *potential* variable, and none is needed. MLS §4.7 requires
-every component to be locally balanced, so a component's own equations together with `flow = 0` on
-an unconnected connector already determine that connector's potentials: a resistor with one pin
-dangling still balances, because `v = R·i` with `i = 0` fixes the dangling pin's voltage from the
-other pin's. The equation was never the connection's to supply. The case where it genuinely is
-missing is a connector declared in the model with no component behind it — and it is not this phase
-that notices. The DAE comes out one equation short, and matching in structural analysis reports the
-potential by name as an unmatched unknown.
-
 [`connect_primitive_vars`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#connect_primitive_vars) is where a statement becomes merges. It pairs the two connectors'
 variables by name, then routes each pair by that variable's prefix:
 
@@ -34,10 +25,6 @@ variables by name, then routes each pair by that variable's prefix:
 | `flow` | `flow_pairs` — a plain `Vec`, not merged yet |
 | `stream` | `stream_uf` |
 | neither, so potential | `potential_uf` |
-
-A connector variable with no counterpart on the other side is routed nowhere at all. Wire a `Pin` `{v, i}`
-to a `Flange` `{s, f}` and every pairing fails, so nothing merges and nothing is checked — which is
-why `connect` is also a compatibility claim, and why the language requires a compiler to test it.
 
 Notice what is not symmetric there. `potential_uf` and `stream_uf` exist, empty, before the first
 statement is read; flow is a list that becomes a union-find per scope, afterwards. That is a
@@ -58,10 +45,6 @@ step from one number to the other is something you can predict before you look.
 Each station asks you to commit to an answer, then sends you to the pane that settles it. The
 answers are read from generated compiler traces, so if a count disagrees with your screen, the lab
 is wrong and I want to know.
-
-Rumoca does check that claim — and the check is strongest where you need it least, absent where
-you need it most. `RcCircuit` cannot show you why: every `connect` here pairs cleanly, so nothing
-below trips it. Ask me, or read [`upstream-issues.md`](hrw://doc/upstream-issues.md).
 
 ---
 
@@ -420,9 +403,23 @@ solves which unknown.
 - How the `Connections` replay presents its sets. The counts come from a trace and are checked;
   whether the frames *read* as a phase building sets one at a time is your report and nothing
   else's.
-- Whether a connection is legal. Rumoca checks that *paired* variables agree, but nothing
-  checks that both connectors declare the same set of variables. That gap has its own lab:
-  [the-oracle](hrw://lab/the-oracle).
+- Whether a connection is legal. A connector variable with no counterpart on the other side is
+  routed nowhere at all: wire a `Pin` `{v, i}` to a `Flange` `{s, f}` and every pairing fails, so
+  nothing merges — **and nothing is checked.** Rumoca checks that *paired* variables agree, but
+  nothing checks that both connectors declare the same set of variables. So `connect` is also a
+  compatibility claim, and the check is strongest where you need it least. `RcCircuit` cannot show
+  you why, because every `connect` here pairs cleanly. That gap has its own lab:
+  [the-oracle](hrw://lab/the-oracle); the question is filed in
+  [`upstream-issues.md`](hrw://doc/upstream-issues.md), and the station this lab owes is ideas #89c.
+- **Why an unconnected *potential* variable needs no pass, while an unconnected flow variable
+  does.** MLS §4.7 requires every component to be locally balanced, so a component's own equations
+  together with `flow = 0` already determine an unconnected connector's potentials — a resistor
+  with one pin dangling still balances, because `v = R·i` with `i = 0` fixes the dangling pin's
+  voltage from the other pin's. The equation was never the connection's to supply. The case where
+  it genuinely *is* missing is a connector with no component behind it, and **this phase does not
+  notice**: the DAE comes out one equation short and matching reports the potential as an unmatched
+  unknown. Every specimen here is fully wired, so none of it is on screen. `DanglingPin` and
+  `OrphanConnector` exist and are oracle-validated — ideas #89b is the station that would show it.
 - Stream connectors. Named in Station 2 and exercised by no specimen here.
 
 Or go back up: [The chain overview](hrw://lab/the-concepts)

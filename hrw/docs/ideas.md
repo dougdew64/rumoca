@@ -6704,6 +6704,14 @@ section already routes the legality question to [`the-oracle`](fixture-labs/the-
 `the-oracle`, or `failure-flatten`. **Decide the owner before writing the specimen**, because the
 answer changes what the station claims.
 
+**Where the prose lives meanwhile — corrected 2026-09-22, same day.** All three claims were first
+filed here and **left in the overview**, which is half the disposition: the overview came out five
+lines shorter than it went in, and Doug said so. 89b and 89c now sit in `connect-expansion`'s
+**"What this lab cannot check"** section, where a reader meets them as stated limits rather than as
+briefing for an experiment that never arrives. 89a is gone from the lab entirely, because unlike the
+other two it was never answering a question — it was mechanism with no reader behind it. The
+overview went 72 → 50 lines once the rule was applied properly.
+
 **Why these are filed together.** They are one measurement, not three ideas: an overview
 accumulates exactly the claims with nowhere to go, so the count of unstationed abstractions is the
 metric the overview rule replaces a line budget with. `connect-expansion` had three.

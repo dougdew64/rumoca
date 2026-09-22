@@ -204,7 +204,7 @@ place. `CLAUDE.md` already records that `egui_kittest` cannot see layout, and ha
 confirm it. **The toolchain column is dominated by Claude's own fresh mistakes**, caught within
 minutes, which is the loop working as designed.
 
-<!-- ledger-through: 2026-09-21 -->
+<!-- ledger-through: 2026-09-22 -->
 
 ### 08-17 → 08-22, backfilled 2026-08-23 — and the ledger had gone dark
 
@@ -487,6 +487,28 @@ restart and an index, and each was refuted by the next restart. The third prescr
 from the command line *before* the restart, and worked. **The rule the first two instances produced
 — run a procedure once before trusting it — applies to diagnoses as well as procedures:** measure
 the thing named in the diagnosis before prescribing on it.
+
+### 09-22 — a rule applied to its own author, and half-applied
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 09-22 | the overview rule's third row was applied as "file the station" and **not** as "move the claim out", so `connect-expansion`'s overview came out 72 → 67 lines | **Doug** | *"The connect-expansion lab overview seems as long as it had been before."* Claude had written the row that morning and reported the small delta as an honest result rather than as a failure to follow it |
+| 09-22 | moving `generate_unconnected_flow_equations` to Station 5 left the overview's next paragraph opening *"There is no **such** pass…"* pointing at nothing | Claude | found while re-reading the overview after Doug's catch; removed with the paragraph |
+| 09-22 | a new test's doc comment was spliced into the middle of the neighbouring test's doc comment | toolchain | `no_doc_block_gains_a_second_summary`, exactly what it exists for. Fixed by moving the block, not by raising the budget |
+
+**Three rows: Doug 1, Claude 1, toolchain 1**, and the first is the one worth keeping.
+
+**What Doug's catch actually exposes.** The rule had a `keep`, a `move` and a `file`, and *only the
+first two named a destination.* Faced with prose that was correct, recent and deliberate, the
+disposition with no destination collapsed into "leave it where it is and write a backlog entry" —
+which changes nothing a reader experiences. **A rule that names an action for two cases and only a
+judgement for the third will be obeyed in the two cases.** The row now names the destination
+(`What this lab cannot check`), and re-applying it took the overview 67 → 50.
+
+**And the caution that produced it was real, which is why this is not simply carelessness.** Two of
+the three claims answered questions Doug asked this month, one of them two days earlier, and the
+question ledger records that passage as *his* to rewrite. Every one of those is a reason not to
+*delete*. None of them is a reason not to *move*. Conflating the two is the actual error.
 
 ### The standing prediction, checked — 3 of 4, and the fourth is the interesting one
 
