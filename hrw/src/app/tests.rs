@@ -430,7 +430,6 @@ impl App {
             // No end-of-pass callback in a bare test App, so nothing ever fills it.
             copy_sink: Default::default(),
             last_selection: None,
-            copy_requested: false,
             worker: Worker {
                 tx,
                 rx,

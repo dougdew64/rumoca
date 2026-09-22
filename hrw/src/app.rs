@@ -831,9 +831,6 @@ pub struct App {
     /// Text fetched when a `pointing::region` menu opened, waiting for the reader to choose
     /// *"Point at"*. Cleared at every menu-open so a stale Ctrl+C can never be mistaken for it.
     last_selection: Option<String>,
-    /// A menu opened and the selection must be copied **at the top of the next frame**, before
-    /// any label draws. See `frame_ui` for why it cannot be pushed where the gesture happened.
-    copy_requested: bool,
 
     /// A transient one-line notice for the status bar.
     ///
@@ -1628,7 +1625,6 @@ impl App {
             // The same handle the end-of-pass callback writes into.
             copy_sink: sink,
             last_selection: None,
-            copy_requested: false,
             viewport: Viewport::default(),
             log_entries: Vec::new(),
             viewing_log: false,
@@ -4783,17 +4779,13 @@ impl App {
                     // lab. It is also the pane that sits beside the tree, so it is the one
                     // that will show whether an inner row menu and an outer region menu can
                     // both claim a right-click.
-                    let has_selection = ui
-                        .ctx()
-                        .plugin::<egui::text_selection::LabelSelectionState>()
-                        .lock()
-                        .has_selection();
+                    let can_point = self.last_selection.is_some();
                     let origin = crate::pointing::PointOrigin::StagePane {
                         stage: self.stage,
                         sub_view: sub_view_name_for(self.stage, &self.viewport).map(str::to_owned),
                     };
                     let ctx = ui.ctx().clone();
-                    let (_, event) = crate::pointing::region(ui, origin, has_selection, |ui| {
+                    let (_, event) = crate::pointing::region(ui, origin, can_point, |ui| {
                         self.connection_anim_ui(ui);
                     });
                     self.perform_pointing(&ctx, event);
@@ -5367,19 +5359,11 @@ impl App {
     ) {
         use crate::pointing::PointingEvent;
         match event {
-            Some(PointingEvent::MenuOpened(_)) => {
-                self.last_selection = None;
-                if let Ok(mut slot) = self.copy_sink.lock() {
-                    let _ = slot.take();
-                }
-                // **Deferred to the top of the next frame**, where labels have not drawn yet.
-                // Pushing it here would be too late to be seen at all — `frame_ui` has the
-                // account. The selection survives the wait: clearing needs a press with no
-                // label hovered, and the menu being open means nothing has been pressed.
-                self.copy_requested = true;
-                ctx.request_repaint();
-            }
-            Some(PointingEvent::PointAt(origin)) => match self.last_selection.take() {
+            // **Nothing to fetch — the text was taken when the selection was made.** This arm
+            // existed to clear the slot and push a copy, and both were wrong: by the time this
+            // runs, the right-click has already collapsed the selection egui would have copied.
+            Some(PointingEvent::MenuOpened(_)) => ctx.request_repaint(),
+            Some(PointingEvent::PointAt(origin)) => match self.last_selection.clone() {
                 Some(text) => self.point_at_selection(origin, text),
                 // **The likeliest cause is a caret rather than a selection**, and the message
                 // leads with it: egui's `has_selection` is `selection.is_some()`, and a click
@@ -5917,13 +5901,10 @@ impl App {
         let avail = ui.available_width();
         let mut switch_to: Option<LabSource> = None;
         let mut pointing_event = None;
-        // Asked once per frame rather than once per region: the selection is global, and
-        // `pointing::region` takes the answer so every wrapper does not re-query the plugin.
-        let has_selection = ui
-            .ctx()
-            .plugin::<egui::text_selection::LabelSelectionState>()
-            .lock()
-            .has_selection();
+        // **What HRW is holding, not what egui reports.** A right-click collapses the selection
+        // to a caret and `has_selection()` is true for a caret, so enabling the item from egui
+        // would offer to point at nothing.
+        let can_point = self.last_selection.is_some();
         let ctx = ui.ctx().clone();
         let shown = self
             .split
@@ -5948,7 +5929,7 @@ impl App {
                 // file.
                 let origin = self.lab_panel_origin();
                 let (_, pointing) = match origin {
-                    Some(origin) => crate::pointing::region(ui, origin, has_selection, |ui| {
+                    Some(origin) => crate::pointing::region(ui, origin, can_point, |ui| {
                         lab_panel::lab_prose_ui(
                             ui,
                             &mut self.lab,
@@ -6382,19 +6363,51 @@ impl App {
     /// Everything below is unchanged and runs in the same order. See
     /// `docs/verification-plan.md` item 2.
     pub(crate) fn frame_ui(&mut self, ui: &mut egui::Ui) {
-        // **The copy must be pushed BEFORE any label draws, which is why it happens here
-        // and not where the gesture was made.** egui collects a label selection inside
-        // `label_text_selection`, as each label is painted: `got_copy_event` reads
-        // `input.events` at that moment. A `Copy` pushed after the prose has drawn is seen
-        // by nothing and is gone when the frame's events are replaced.
+        // **The selection is captured when it is MADE, not when it is pointed at**, and that
+        // inversion is forced by egui rather than chosen. `TextCursorState::pointer_interaction`
+        // fires on `response.hovered() && any_pressed()` — **any** button — and sets the range
+        // to `CCursorRange::one(cursor_at_pointer)`. So a right-click on selected text collapses
+        // it to a caret, 13 lines before `got_copy_event` is reached in the same function. There
+        // is no moment during the gesture at which the selection can still be read: Doug's third
+        // attempt recorded `point-copy-landed | 1 chars`, which is that caret.
         //
-        // That is exactly what happened the first time Doug used the right-click path,
-        // 2026-09-22: the menu opened, the origin was right, and the point was never made,
-        // because `perform_pointing` runs after the panel it belongs to. The 🎯 button never
-        // hit it — it is drawn in the transport bar, *above* the prose, so its push landed in
-        // time by accident of layout.
-        if std::mem::take(&mut self.copy_requested) {
-            ui.ctx().input_mut(|i| i.events.push(egui::Event::Copy));
+        // Every desktop toolkit preserves a selection through a secondary click; egui does not,
+        // and it is filed in `docs/upstream-issues.md`. Until it changes, HRW takes the text at
+        // the end of the drag that produced it.
+        //
+        // **Pushed in this frame, not deferred.** A release is not a press, so nothing collapses
+        // on this frame, and `frame_ui` runs before any label draws — which is the window
+        // `got_copy_event` needs.
+        let (primary_pressed, drag_finished) = ui.input(|i| {
+            let dragged = i
+                .pointer
+                .press_origin()
+                .zip(i.pointer.interact_pos())
+                .is_some_and(|(from, to)| from.distance(to) > 4.0);
+            (
+                i.pointer.button_pressed(egui::PointerButton::Primary),
+                i.pointer.button_released(egui::PointerButton::Primary)
+                    && (dragged
+                        || i.pointer
+                            .button_double_clicked(egui::PointerButton::Primary)),
+            )
+        });
+        if primary_pressed {
+            // **A primary press is the only thing that invalidates.** It either starts a new
+            // selection or places a caret, and both mean the held text is no longer what is on
+            // screen. A *secondary* press must not invalidate: that is the pointing gesture, and
+            // the caret it leaves behind is exactly what this whole arrangement works around.
+            self.last_selection = None;
+        }
+        if drag_finished {
+            let has_selection = ui
+                .ctx()
+                .plugin::<egui::text_selection::LabelSelectionState>()
+                .lock()
+                .has_selection();
+            if has_selection {
+                ui.ctx().input_mut(|i| i.events.push(egui::Event::Copy));
+            }
         }
 
         // Before anything draws: collect a lab-passage copy that egui produced for us

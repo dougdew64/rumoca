@@ -1103,6 +1103,86 @@ and the cost becomes flat in depth. Guarded by
 
 ---
 
+## E2. **egui** — a *secondary* click collapses a text selection, so no context menu can act on it
+
+**Project:** egui · **File with:** [emilk/egui](https://github.com/emilk/egui) · **Baseline:**
+`0.35.0`, as pinned by `hrw/Cargo.toml` · **Status: NOT FILED** — awaiting Doug's call.
+
+**Found by building the feature it blocks.** HRW wanted the ordinary desktop gesture: select
+text, right-click it, choose an item that acts on the selection. It cannot be built, because the
+right-click destroys the selection before any handler runs.
+
+### The defect
+
+`TextCursorState::pointer_interaction`, in `egui/src/text_selection/text_cursor_state.rs`:
+
+```rust
+} else if response.sense.senses_drag() {
+    if response.hovered() && ui.input(|i| i.pointer.any_pressed()) {
+        // The start of a drag (or a click).
+        …
+        self.set_char_range(Some(CCursorRange::one(cursor_at_pointer)));
+```
+
+**`any_pressed()` is true for the secondary button.** A right-click on a hovered selectable label
+therefore takes the "start of a drag" branch and collapses the range to a caret at the pointer.
+
+The comment says *"the start of a drag (or a click)"*, and a text drag is a **primary**-button
+gesture — so the predicate appears to mean `primary_pressed()` and to have been written before
+secondary clicks mattered here.
+
+### Why no workaround inside the frame exists
+
+In `label_text_selection.rs`, for each galley:
+
+| line | what runs |
+|---|---|
+| 562 | `cursor_state.pointer_interaction(…)` — **the collapse** |
+| 575 | `if got_copy_event(ui.ctx()) { self.copy_text(…) }` |
+
+The collapse precedes the read, so pushing `Event::Copy` in the same frame as the right-click
+still copies the caret. There is no later moment either: the selection is already gone.
+
+`LabelSelectionState` exposes only `has_selection()` and `clear_selection()`, and **`has_selection()`
+returns `true` for a caret** — so an application cannot even detect that this has happened.
+
+### Reproduction
+
+Render a selectable `Label`. Drag across it. Right-click on the selection. Push `Event::Copy`.
+The copy yields one character rather than the selected text.
+
+**Measured in HRW**, 2026-09-22, through its own diagnostics: `point-copy-landed | 1 chars`.
+
+### Expected
+
+A secondary press leaves the selection intact, as it does in every desktop toolkit and browser —
+which is what makes "right-click a selection to act on it" a universal gesture. Doug: *"None of
+[my] daily-use apps collapse a text selection when I right-click on a selection to cause a
+context menu to appear."*
+
+### Suggested fix
+
+Narrow the predicate to the button that actually starts a text drag:
+
+```rust
+if response.hovered() && ui.input(|i| i.pointer.button_pressed(PointerButton::Primary)) {
+```
+
+**Not verified against egui's test suite** — the risk is any code depending on a middle-click or
+secondary press moving the caret, which this would change.
+
+### What HRW does instead
+
+Captures the text **when the selection is made** — a `Copy` pushed at the end of the drag that
+produced it — and holds it until the reader points. The right-click's collapse becomes harmless
+because nothing needs to read the selection at that moment.
+
+**It costs a clipboard write per completed drag-selection**, which is the price of the defect:
+the natural design touches the clipboard only when the reader actually points. Doug accepted the
+cost knowingly. A caret click does not copy, and a primary press invalidates the held text, so
+what HRW holds cannot silently go stale.
+
+
 ## A state's initial value comes from the derivative-zero solution, not from its `start`
 
 **Found 2026-09-04**, from Doug's report that no fixture specimen produces a simulation

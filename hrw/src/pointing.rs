@@ -122,12 +122,14 @@ pub enum PointingEvent {
 /// Renders `add`, then attaches the menu to the rect it occupied. Returns what the reader did,
 /// or `None`.
 ///
-/// `has_selection` is passed in rather than read here so the caller asks egui once per frame
-/// instead of once per region.
+/// `can_point` is **whether HRW is holding text**, not whether egui reports a selection. The two
+/// differ exactly when it matters: a right-click collapses the selection to a caret, and
+/// `has_selection()` is `true` for a caret — so an item enabled from it would offer to point at
+/// nothing. `App` captures the text when the drag ends and passes `last_selection.is_some()`.
 pub fn region<R>(
     ui: &mut egui::Ui,
     origin: PointOrigin,
-    has_selection: bool,
+    can_point: bool,
     add: impl FnOnce(&mut egui::Ui) -> R,
 ) -> (R, Option<PointingEvent>) {
     // **A scope, so the rect is what the CLOSURE drew.** `ui.min_rect()` is everything this
@@ -182,16 +184,19 @@ pub fn region<R>(
             // visible and disabled says both that the gesture exists and why it is
             // unavailable.
             let item = ui.add_enabled(
-                has_selection,
+                can_point,
                 egui::Button::new(format!(
                     "\u{1f3af} Point at selection ({})",
                     origin.describe()
                 )),
             );
-            let item = if has_selection {
+            let item = if can_point {
                 item.on_hover_text(crate::POINT_AT_HOVER)
             } else {
-                item.on_disabled_hover_text("Drag across some text first, then right-click it.")
+                item.on_disabled_hover_text(
+                    "Drag across some text first, then right-click it — a caret is not a \
+                     selection.",
+                )
             };
             if item.clicked() {
                 event = Some(PointingEvent::PointAt(origin.clone()));

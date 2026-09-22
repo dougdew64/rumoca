@@ -128,7 +128,7 @@ Ctrl+C being mistaken for this gesture's text.** A test pins that an ordinary le
 adopted variant may not stay on the list. So the plan's remaining work is executable rather than
 remembered, and step 4 finishes when that list is empty.
 
-### Step 3 — adopt TWO regions, then stop ✅ *(2026-09-22, awaiting Doug’s run)*
+### Step 3 — adopt TWO regions, then stop ⚠ *(2026-09-22 — three runs, three defects, mechanism changed)*
 
 Lab prose and the Connections pane. Two is enough to prove the thing reading cannot settle:
 **how the wrapper composes with the tree row menu, which already carries its own "Point at"** when
@@ -148,6 +148,30 @@ both, and `lab_panel_origin` keeps them apart because only one of them is in a f
 pointable, the old emit path would have named `hrw/docs/fixture-labs/✨ Answer.md` for every
 selection in it. Shipping a known-false `file:` claim to get a step boundary was not worth it, so
 `Focus::LabPassage` now carries the origin and the file is the origin's to name.
+
+**THE MECHANISM CHANGED AT THIS STEP, and the plan's premise was wrong.** *"Right-click on the
+selection and read it"* is not possible in egui 0.35: `TextCursorState::pointer_interaction`
+fires on `response.hovered() && any_pressed()` — **any** button — and collapses the range
+to a caret. In `label_text_selection` that is line 562; `got_copy_event` is line 575, so the
+collapse always wins and no in-frame trick recovers it. Doug's third run measured it exactly:
+`point-copy-landed | 1 chars`. Filed as **E2** in `upstream-issues.md`.
+
+**So HRW captures the text when the selection is MADE** — a `Copy` at the end of the drag
+that produced it — and holds it until the reader points. Doug chose this over suppressing the
+press event, which would have broken the tree's own row menus at step 4. It costs a clipboard
+write per completed drag-selection, accepted knowingly. A caret click does not copy; a *primary*
+press invalidates what is held, so it cannot go stale; a *secondary* press does not, because that
+is the pointing gesture.
+
+**`can_point` replaced `has_selection` at the menu**, because `has_selection()` is `true` for the
+caret the right-click leaves — an item enabled from it would offer to point at nothing.
+
+**Step 0 gave a false green, and that is the lesson worth keeping.** It was written to de-risk
+exactly this. It asserted `has_selection()` survived a right-click — which a caret satisfies
+— and then asserted the copied text, which came back whole because the synthetic response
+does not report itself hovered the way a real one does. **The negative control proved the harness
+could CLEAR a selection; nothing proved it could COLLAPSE one.** A harness that diverges from the
+app on the one behaviour under test is worse than no harness, because it is believed.
 
 **A second defect, and only Doug's run could find it.** He selected text in an answer,
 right-clicked, got the correct menu with the correct origin, chose *"Point at selection"* — and
