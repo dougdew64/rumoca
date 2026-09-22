@@ -365,7 +365,9 @@ impl App {
             seq,
             target: text.to_owned(),
             kind: PointKind::LabPassage {
-                lab: lab.to_owned(),
+                origin: crate::pointing::PointOrigin::LabProse {
+                    lab: lab.to_owned(),
+                },
                 in_source: true,
             },
             stage: None,
@@ -427,6 +429,7 @@ impl App {
             pending_passage: None,
             // No end-of-pass callback in a bare test App, so nothing ever fills it.
             copy_sink: Default::default(),
+            last_selection: None,
             worker: Worker {
                 tx,
                 rx,
@@ -3057,7 +3060,9 @@ fn a_stray_copy_never_becomes_the_next_capture() {
 
     // Now a real press, whose own copy arrives next frame.
     app.pending_passage = Some(PendingPassage {
-        lab: "connect-expansion".to_owned(),
+        origin: crate::pointing::PointOrigin::LabProse {
+            lab: "connect-expansion".to_owned(),
+        },
         frames_left: 3,
     });
     *app.copy_sink.lock().expect("sink") = Some("two separate graphs".to_owned());
@@ -3074,7 +3079,12 @@ fn a_stray_copy_never_becomes_the_next_capture() {
         "prose is not in a phase, and the whole type change was to be able to say so",
     );
     match &point.kind {
-        PointKind::LabPassage { lab, .. } => assert_eq!(lab, "connect-expansion"),
+        PointKind::LabPassage { origin, .. } => assert_eq!(
+            origin,
+            &crate::pointing::PointOrigin::LabProse {
+                lab: "connect-expansion".to_owned()
+            }
+        ),
         _ => panic!("expected a lab passage"),
     }
 }
@@ -3091,7 +3101,9 @@ fn a_press_with_nothing_selected_expires_and_says_so() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
     app.pending_passage = Some(PendingPassage {
-        lab: "connect-expansion".to_owned(),
+        origin: crate::pointing::PointOrigin::LabProse {
+            lab: "connect-expansion".to_owned(),
+        },
         frames_left: 2,
     });
 

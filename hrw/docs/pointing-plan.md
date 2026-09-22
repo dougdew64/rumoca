@@ -128,7 +128,7 @@ Ctrl+C being mistaken for this gesture's text.** A test pins that an ordinary le
 adopted variant may not stay on the list. So the plan's remaining work is executable rather than
 remembered, and step 4 finishes when that list is empty.
 
-### Step 3 — adopt TWO regions, then stop ⬜
+### Step 3 — adopt TWO regions, then stop ✅ *(2026-09-22, awaiting Doug’s run)*
 
 Lab prose and the Connections pane. Two is enough to prove the thing reading cannot settle:
 **how the wrapper composes with the tree row menu, which already carries its own "Point at"** when
@@ -138,11 +138,30 @@ an inner row and an outer region both claim one right-click.
 would take the capability away mid-flight. **Doug runs this one**; Claude tests the logical
 surface and he tests the rendered one.
 
+**Regions adopted: the lab panel and the Connections pane.** The lab panel was taken first on
+Doug's instruction — *"I will definitely want to use the new point-at mechanism to point at text
+in your answer documents. In fact, that is probably going to be the most likely place that I will
+use that mechanism."* The answer and a fixture lab draw in the same panel, so one wrapper serves
+both, and `lab_panel_origin` keeps them apart because only one of them is in a file.
+
+**Step 5 was folded in here rather than deferred.** The moment the answer document became
+pointable, the old emit path would have named `hrw/docs/fixture-labs/✨ Answer.md` for every
+selection in it. Shipping a known-false `file:` claim to get a step boundary was not worth it, so
+`Focus::LabPassage` now carries the origin and the file is the origin's to name.
+
+**A defect this step produced and caught the same hour.** The wrapper first used
+`Sense::click()`, which registers the region *after* its children and therefore on top of them:
+it swallowed every primary click in the lab panel, and clicking an `hrw://` link did nothing.
+**Six UI tests went red at once**, which is the only reason it was found before Doug saw it. A
+region must be pointable without becoming a lid over what it wraps, so it senses hover only and
+detects the secondary click by hand — and `resp.hovered()` does not fire on a hover-sense
+response, so the hit test is `ui.rect_contains_pointer`.
+
 ### Step 4 — adopt the remaining regions ⬜
 
 One commit per group, each runnable.
 
-### Step 5 — origin into the emitted context ⬜
+### Step 5 — origin into the emitted context ✅ *(2026-09-22, folded into step 3)*
 
 Replace the `(a selection from a pane; see `view` for what was shown)` sentinel with the declared
 origin, and stop treating `view.stage_view` as evidence of where a selection came from. **Closes

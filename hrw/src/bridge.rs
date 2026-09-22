@@ -786,8 +786,8 @@ pub enum Focus<'a> {
     /// mean?"*; for *"improve this paragraph"* Claude locates the source itself, which
     /// is where `docs/fixture-labs/README.md`'s `run:` and `authored:` rules bind.
     LabPassage {
-        /// The lab that was open when the selection was made, as the picker labels it.
-        lab: &'a str,
+        /// Where the text came from, declared by the region that rendered it.
+        origin: &'a crate::pointing::PointOrigin,
         /// The selected text, verbatim as rendered.
         text: &'a str,
         /// Whether `text` was found in that lab's source. See
@@ -1807,24 +1807,33 @@ fn build(ask: &Ask) -> Value {
     // diff to build. The note says what the text IS, so a reader does not go looking
     // for the passage byte-for-byte in the markdown and conclude the capture is wrong.
     if let Focus::LabPassage {
-        lab,
+        origin,
         text,
         in_source,
     } = &ask.focus
     {
-        doc["lab_passage"] = if *in_source {
-            json!({
-                "note": "prose the reader selected in HRW's lab panel and captured. This                          is the RENDERED text, so markdown markup is stripped and it will                          not match the source byte-for-byte -- locate it in the file named                          below, which HRW verified does contain it. Before editing, check                          whether it sits inside a `run:` region (may be fixed, and the                          marker re-dated in the same commit) or an `authored:` region                          (Doug's own prose -- report a false claim, never rewrite it).",
-                "lab": lab,
-                "file": format!("hrw/docs/fixture-labs/{lab}.md"),
+        // **The file is the origin's to name, and only lab prose has one.** This used to be
+        // `format!("hrw/docs/fixture-labs/{lab}.md")` from whichever lab was open, which
+        // produced a path for Claude's answer document (`✨ Answer`) that has never existed,
+        // and a path for a stage-pane selection that does not contain the text.
+        doc["lab_passage"] = match (origin.source_file(), in_source) {
+            (Some(file), true) => json!({
+                "note": "prose the reader selected in HRW's lab panel and pointed at. This is                          the RENDERED text, so markdown markup is stripped and it will not                          match the source byte-for-byte -- locate it in the file named below,                          which HRW verified does contain it. Before editing, check whether it                          sits inside a `run:` region (may be fixed, and the marker re-dated in                          the same commit) or an `authored:` region (Doug's own prose -- report                          a false claim, never rewrite it).",
+                "from": origin.describe(),
+                "file": file,
                 "text": text,
-            })
-        } else {
-            json!({
-                "note": "text the reader selected while this lab was open -- and it is                          NOT in that lab's source. HRW checked. The capture button copies                          whatever is selected anywhere in the window, so this came from a                          PANE: read `view` for which one, and treat the text as compiler                          output or a rendered label rather than as authored prose. Do not                          look for it in the markdown, and do not edit the lab to make it                          match. No `file` is given because there is no file it is in.",
-                "lab_open": lab,
+            }),
+            (Some(file), false) => json!({
+                "note": "the reader pointed at text in a lab's panel, and HRW could NOT find                          it in that lab's source. Either the prose has changed since, or the                          selection came from something else drawn in the same panel. Treat the                          file below as a lead, not a location, and do not edit it to match.",
+                "from": origin.describe(),
+                "file_searched": file,
                 "text": text,
-            })
+            }),
+            (None, _) => json!({
+                "note": "text the reader pointed at that is NOT in any repository file --                          `from` says which region drew it. Compiler output, a rendered label,                          or Claude's own answer document, which is regenerated per question                          and never stored. **Do not go looking for it in the markdown, and do                          not edit a lab to make it match.** No `file` is given because there                          is no file it is in.",
+                "from": origin.describe(),
+                "text": text,
+            }),
         };
     }
     // The ambient half. A sibling section rather than nested, so the point and
@@ -2391,7 +2400,10 @@ mod tests {
             parse_value: None,
             resolve_value: None,
             focus: Focus::LabPassage {
-                lab: "connect-expansion",
+                origin: &crate::pointing::PointOrigin::StagePane {
+                    stage: StageKind::Flatten,
+                    sub_view: Some("Connections".to_owned()),
+                },
                 text: "flow \u{b7} 1 set(s)",
                 in_source: false,
             },
@@ -2421,8 +2433,9 @@ mod tests {
             "no file may be named for text that is in no file",
         );
         assert_eq!(
-            doc["lab_passage"]["lab_open"], "connect-expansion",
-            "which lab was open is still worth saying \u{2014} it is where the reader was",
+            doc["lab_passage"]["from"], "Flatten \u{2192} Connections",
+            "the origin names the region that drew the text, which is the whole point of \
+             declaring it rather than inferring it from the stage tab",
         );
     }
 
@@ -2453,7 +2466,9 @@ mod tests {
             resolve_value: None,
             focus: Focus::LabPassage {
                 in_source: true,
-                lab: "dae-construction",
+                origin: &crate::pointing::PointOrigin::LabProse {
+                    lab: "dae-construction".to_owned(),
+                },
                 text: "A DAE is well posed when the counts agree.",
             },
             tracking: None,
@@ -2475,7 +2490,7 @@ mod tests {
              definition)\u{201d} was a false claim about this capture, and naming a \
              phase would send Claude to the wrong place entirely",
         );
-        assert_eq!(doc["lab_passage"]["lab"], "dae-construction");
+        assert_eq!(doc["lab_passage"]["from"], "prose in dae-construction");
         assert_eq!(
             doc["lab_passage"]["file"], "hrw/docs/fixture-labs/dae-construction.md",
             "the file is named because the rendered text will not match the source",

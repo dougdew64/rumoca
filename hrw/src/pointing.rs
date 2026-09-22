@@ -133,39 +133,58 @@ pub fn region<R>(
     let inner = add(ui);
     let rect = ui.min_rect();
 
-    // **A fresh id, interacted exactly once.** `tree.rs` records what happens otherwise:
-    // interacting one Response twice in a frame makes egui lose track of the widget id and
-    // click detection stops working.
+    // **`Sense::hover()`, and the reason is a bug this caught on the day it was written.**
+    // With `Sense::click()` the region is registered *after* its children and therefore sits on
+    // top of them, so it swallowed every primary click in the lab panel — six UI tests went red
+    // at once, and clicking an `hrw://` link in a lab did nothing. A region must be pointable
+    // **without becoming a lid over what it wraps**, so it senses hover only and the secondary
+    // click is detected by hand.
+    //
+    // A fresh id, interacted exactly once: `tree.rs` records that interacting one Response
+    // twice in a frame makes egui lose track of the widget id and click detection stops.
     let id = ui.make_persistent_id(("pointing", origin.describe()));
-    let resp = ui.interact(rect, id, egui::Sense::click());
+    let resp = ui.interact(rect, id, egui::Sense::hover());
 
     let mut event = None;
-    if resp.secondary_clicked() {
+    // **`rect_contains_pointer`, not `resp.hovered()`.** A hover-sense response does not report
+    // itself hovered, so asking it produced a menu that never opened — caught by this module's
+    // own test, which is why that test drives real pointer buttons instead of activating a
+    // widget.
+    let over = ui.rect_contains_pointer(rect);
+    let opened = over && ui.input(|i| i.pointer.secondary_clicked());
+    if opened {
         event = Some(PointingEvent::MenuOpened(origin.clone()));
     }
-    resp.context_menu(|ui| {
-        ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-        // **Always present, greyed when there is nothing to point at.** The button this
-        // replaces appeared only when a selection existed, which taught the gesture by being
-        // there; a context menu teaches nothing until it is opened. An item that is visible
-        // and disabled says both that the gesture exists and why it is unavailable.
-        let item = ui.add_enabled(
-            has_selection,
-            egui::Button::new(format!(
-                "\u{1f3af} Point at selection ({})",
-                origin.describe()
-            )),
-        );
-        let item = if has_selection {
-            item.on_hover_text(crate::POINT_AT_HOVER)
-        } else {
-            item.on_disabled_hover_text("Drag across some text first, then right-click it.")
-        };
-        if item.clicked() {
-            event = Some(PointingEvent::PointAt(origin.clone()));
-            ui.close();
-        }
-    });
+
+    // Opened by hand rather than through `Response::context_menu`, which keys on
+    // `secondary_clicked()` — a click sense we deliberately do not have.
+    egui::Popup::menu(&resp)
+        .open_memory(opened.then_some(egui::SetOpenCommand::Bool(true)))
+        .at_pointer_fixed()
+        .show(|ui| {
+            ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+            // **Always present, greyed when there is nothing to point at.** The button this
+            // replaces appeared only when a selection existed, which taught the gesture by
+            // being there; a context menu teaches nothing until it is opened. An item that is
+            // visible and disabled says both that the gesture exists and why it is
+            // unavailable.
+            let item = ui.add_enabled(
+                has_selection,
+                egui::Button::new(format!(
+                    "\u{1f3af} Point at selection ({})",
+                    origin.describe()
+                )),
+            );
+            let item = if has_selection {
+                item.on_hover_text(crate::POINT_AT_HOVER)
+            } else {
+                item.on_disabled_hover_text("Drag across some text first, then right-click it.")
+            };
+            if item.clicked() {
+                event = Some(PointingEvent::PointAt(origin.clone()));
+                ui.close();
+            }
+        });
     (inner, event)
 }
 
