@@ -3582,6 +3582,82 @@ Some prose.
         );
     }
 
+    /// **`index-reduction.md` Station 5's Incidence `Expected`, against a real compile.**
+    ///
+    /// # Why this station and not the introduction
+    ///
+    /// The claim — `f_x[4]`'s row is empty, `lambda` is marked in exactly two rows — spent
+    /// weeks in that lab's **overview**, where it was performed as an observation: two
+    /// `hrw://` links, a pane to open, and nothing that could fail. It moved into Station 5
+    /// on 2026-09-22 under the redistribution half of `fixture-labs/README.md` rule 4, and
+    /// this test is what the move bought. **A number in an overview is unpinned by
+    /// construction; the same number in a station can be checked**, which is the whole
+    /// content of that rule.
+    ///
+    /// The station's reasoning depends on both halves, so both are asserted: an empty row
+    /// is an equation that can pair with nothing, and a `lambda` reachable only from two
+    /// already-spoken-for equations is an unknown nothing is left to determine. Together
+    /// they are why the matching reports `4 matched out of 5`, which Station 5 also pins.
+    ///
+    /// # What it does not check
+    ///
+    /// That the Incidence view *draws* the row as empty. Content, never pixels.
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
+    #[test]
+    fn the_pendulum_constraint_row_is_empty_and_strands_lambda() {
+        let crate::worker::FromWorker::Compiled { stages, .. } =
+            crate::worker::test_msl::compile_specimen_shared("CartesianPendulum")
+        else {
+            panic!("expected Compiled");
+        };
+        let value = stages
+            .structural
+            .value
+            .as_ref()
+            .expect("structural analysis produces IR even when it reports singular");
+        let incidence = &value["incidence"];
+        let names = incidence["unknown_names"]
+            .as_array()
+            .expect("the incidence table names its unknowns");
+        let rows = incidence["rows"].as_array().expect("one row per equation");
+
+        assert_eq!(rows.len(), 5, "the pendulum has five equations");
+        assert_eq!(names.len(), 5, "and five unknowns");
+
+        // The constraint is the last row, and the lab cites it by that id.
+        let constraint = rows
+            .iter()
+            .find(|r| r["id"] == "f_x[4]")
+            .expect("the lab points at f_x[4] by name");
+        assert_eq!(
+            constraint["unknowns"].as_array().map(Vec::len),
+            Some(0),
+            "Station 5 expects f_x[4]'s row to be EMPTY -- x^2 + y^2 - L^2 mentions only              quantities already known when the step begins, which is what makes this high              index rather than merely constrained",
+        );
+
+        let lambda = names
+            .iter()
+            .position(|n| n == "lambda")
+            .expect("lambda is one of the five unknowns");
+        let holding: Vec<&str> = rows
+            .iter()
+            .filter(|r| {
+                r["unknowns"]
+                    .as_array()
+                    .is_some_and(|u| u.iter().any(|i| i.as_u64() == Some(lambda as u64)))
+            })
+            .filter_map(|r| r["id"].as_str())
+            .collect();
+        assert_eq!(
+            holding,
+            vec!["f_x[2]", "f_x[3]"],
+            "Station 5 expects lambda in exactly two rows, and names them -- both are the              force equations, already needed for der(vx) and der(vy), which is why nothing              is left to determine lambda",
+        );
+    }
+
     /// **`connect-expansion.md` Station 1's set sizes match the connection replay.**
     ///
     /// # The last claim in that lab nobody could check
@@ -3672,7 +3748,9 @@ Some prose.
         // EVERY formed set rather than the two the lab cites by ordinal, because the clause
         // quantifies over all of them.
         for f in frames.iter().filter(|f| f["step"] == "SetFormed") {
-            let size = f["size"].as_u64().expect("a SetFormed frame declares its size");
+            let size = f["size"]
+                .as_u64()
+                .expect("a SetFormed frame declares its size");
             assert!(
                 size >= 2,
                 "a connection set of size {size} was formed, so Station 1's \"every set                  starts at two\" is false and Station 5's absence argument rests on it",

@@ -220,7 +220,7 @@ This is a test, not an explanation. It verifies that a link can stop an animatio
 
 A concept lab. Run [blt-ordering](hrw://lab/blt-ordering) and
 
-- **Specimens:** `CartesianPendulum`, `BouncingBall`, `BenchActuator`, `Drivetrain`
+- **Specimens:** `BouncingBall`, `BenchActuator`, `Drivetrain`, `CartesianPendulum`
 - **Stages:** `IndexReduction`, `Structural`
 - **Stations:**
   - `fixture-lab-index-reduction-when-differentiating-is-the-only-way-out` — Fixture lab — Index reduction: when differentiating is the only way out

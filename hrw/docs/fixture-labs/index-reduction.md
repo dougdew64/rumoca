@@ -57,25 +57,18 @@ nothing carries it forward. Five unknowns, and the model has five equations.
 Step 2 — counting is not enough, and HRW will show you why.
 
 An equation can only help determine a quantity it actually mentions, and pairing each equation
-with the one unknown it determines is the matching you have already run. The Incidence view
-draws exactly that: one row per equation, marking which unknowns it touches.
+with the one unknown it determines is the matching you have already run.
 
-[Look — CartesianPendulum → Structural → Incidence](hrw://load/CartesianPendulum/Structural/Incidence)
+Take the five equations in turn. Four of them mention one of our five unknowns. The fifth,
+the constraint `x^2 + y^2 - L^2`, is built from `x`, `y` and `L` — every one of them already
+known when the step begins. It is a true statement that cannot do any work.
 
-Read the rows and the argument makes itself. Four of them touch something on our list. The
-fifth touches nothing at all — and rather than describe it, here it is:
+And that strands `lambda`, which appears in only two equations, and both are already needed for
+`der(vx)` and `der(vy)`.
 
-[Point at the constraint row, `f_x[4]`](hrw://stage/Structural/Incidence/equation/4)
-
-Its row is empty. The constraint `x^2 + y^2 - L^2` is built from `x`, `y` and `L`, every one
-of them already known when the step begins. It is a true statement that cannot do any work.
-
-And that strands `lambda`. It appears in only two rows, `f_x[2]` and `f_x[3]`, and both are needed
-for `der(vx)` and `der(vy)`.
-
-One row that can pair with nothing, one unknown that nothing is left to determine. Five
-equations, five unknowns, unsolvable — and you are looking at the reason rather than reading my
-account of it.
+One equation that can pair with nothing, one unknown that nothing is left to determine. Five
+equations, five unknowns, unsolvable. **Station 5 puts that pattern on screen** — the Incidence
+view draws one row per equation, and the constraint's row is empty.
 
 That is what high index means: not *"there is a constraint"*, but *"a constraint mentions none
 of the quantities being solved for."*
@@ -290,7 +283,20 @@ unmatched equations: f_x[4]; unmatched unknowns: lambda`.
 Falsified if: the unmatched pair is anything other than one equation and `lambda`.
 
 `f_x[4]` is the constraint and `lambda` is its force. That pair is the signature of a
-high-index system. The constraint mentions no derivative and no `lambda`, so nothing can pair
+high-index system, and the Incidence view is where the signature is legible rather than
+reported — one row per equation, marked with the unknowns it touches:
+
+[Look — CartesianPendulum → Structural → Incidence](hrw://load/CartesianPendulum/Structural/Incidence)
+
+[Point at the constraint row, `f_x[4]`](hrw://stage/Structural/Incidence/equation/4)
+
+**Expected:** `f_x[4]`'s row is **empty** — it touches none of the five unknowns — while
+`lambda`'s column is marked in exactly two rows, `f_x[2]` and `f_x[3]`.
+
+Falsified if: `f_x[4]` marks any unknown, or `lambda` appears in a number of rows other than two.
+
+This is the introduction's argument, measured. You worked it out from the equations before the
+lab loaded anything; the pane is where it stops being your arithmetic and becomes the compiler's. The constraint mentions no derivative and no `lambda`, so nothing can pair
 with it; `lambda` appears only in the two force equations, which are already matched to `der(vx)`
 and `der(vy)`. Differentiating the constraint twice would bring accelerations into it — and with
 them `lambda` — at which point the pair matches and the system is index 1.
