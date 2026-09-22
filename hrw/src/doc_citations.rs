@@ -3582,6 +3582,51 @@ Some prose.
         );
     }
 
+    /// **The tree row menu names its two subjects differently, and acts on both.**
+    ///
+    /// # Why the wording is pinned
+    ///
+    /// The row menu offers two captures that look alike and are not: *"Point at this node"*
+    /// sends the node's subtree, neighbourhood and provenance; *"Point at selection"* sends the
+    /// characters the reader highlighted. **The failure mode is choosing the wrong one without
+    /// noticing** — which already happened once, when a `pointing::region` wrapped this pane,
+    /// never opened, and the node item silently answered a gesture meant for the selection. The
+    /// Context Bar updates either way, so nothing on screen distinguishes them.
+    ///
+    /// Doug's call, 2026-09-22: name the node item *"Point at this node"* rather than leaving it
+    /// as *"Point at"*, so the nouns differ, and show the selection item only when text is held.
+    /// A rename back to the ambiguous pair would be invisible to every other check here.
+    ///
+    /// Also asserts the request is **consumed**: an item that sets a flag nothing reads is a
+    /// menu entry that does nothing, and would look identical from the outside.
+    #[test]
+    fn the_tree_menu_distinguishes_its_two_subjects() {
+        let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");
+        let tree = std::fs::read_to_string(src.join("tree.rs")).expect("read tree.rs");
+        let app = std::fs::read_to_string(src.join("app.rs")).expect("read app.rs");
+
+        assert!(
+            tree.contains("Point at this node"),
+            "the node item must name its subject -- \"Point at\" beside \"Point at selection\" \
+             is too fine a distinction for a menu whose failure mode is picking the wrong one",
+        );
+        assert!(
+            tree.contains("Point at selection"),
+            "the selection item must exist in THIS menu: a region wrapped around the tree pane \
+             never opens, because every right-click lands on a row",
+        );
+        assert!(
+            tree.contains("holding_selection"),
+            "and it must be gated on text actually being held, so the two appear together only \
+             when both are available",
+        );
+        assert!(
+            app.contains("tree_actions.point_at_selection"),
+            "the request must be consumed -- an item that sets a flag nothing reads is a menu \
+             entry that does nothing, and looks identical from the outside",
+        );
+    }
+
     /// **Every `PointOrigin` variant is constructed somewhere, or is listed as not yet
     /// adopted — and the list must shrink to empty.**
     ///
@@ -6098,7 +6143,15 @@ mod tests_orphaned_docs {
             // `doug_authored_prose_is_never_edited_silently` and the new pure tests —
             // carries its own summary, so there is no undocumented item an orphan could
             // belong to.
-            ("doc_citations.rs", 6),
+            // 6 -> 7 on 2026-09-22, with the reasoning this ratchet requires. The hit is a
+            // paragraph of `the_tree_menu_distinguishes_its_two_subjects` — *"Doug's call,
+            // 2026-09-22: name the node item…"* — which opens like a summary because it states
+            // the ruling the whole block exists to pin. Triaged by the documented shortcut: the
+            // only item added in that commit is the test itself, and it has its own summary, so
+            // there is no undocumented item for an orphan to belong to. Ordinary prose in a
+            // prose-heavy module, which this test's own docs say to raise the number for rather
+            // than reword.
+            ("doc_citations.rs", 7),
             ("equation_sheet.rs", 1),
             ("lib.rs", 2),
             ("matching_anim.rs", 2),

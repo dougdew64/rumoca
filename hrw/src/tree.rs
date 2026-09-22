@@ -80,6 +80,18 @@ pub struct TreeActions {
     pub debug: Option<Vec<Seg>>,
     /// "Follow this identifier" — reverse tracking (idea #37) from any stage.
     pub track: Option<String>,
+    /// **"Point at selection" — the reader wants the highlighted TEXT, not this node.**
+    ///
+    /// A tree row's own menu is the only menu a right-click in this pane can reach: wrapping
+    /// the pane in a `pointing::region` was tried on 2026-09-22 and **the region menu never
+    /// opened once**, because every right-click lands on a row. Worse, the row menu's "Point
+    /// at" then answered a gesture meant for the selection by capturing the node — a silent
+    /// substitution that looked like success in the Context Bar, since it updates either way.
+    ///
+    /// So the item belongs *in this menu*, beside the node one, rather than in a second menu
+    /// that cannot be reached. Shown only when text is actually held, so the two appear
+    /// together only when both are genuinely available.
+    pub point_at_selection: bool,
     /// "Show in the Modelica source" — the 1-based line a variable is declared on.
     ///
     /// A *line* rather than a name, because the tree already resolved it: passing the
@@ -94,6 +106,10 @@ pub struct TreeActions {
 /// three more positional arguments on an already-long signature.
 #[derive(Default, Clone, Copy)]
 pub struct TreeOptions<'a> {
+    /// Whether HRW is holding selected text, which decides if the row menu offers
+    /// *"Point at selection"* beside *"Point at this node"*. See
+    /// [`TreeActions::point_at_selection`] for why the item lives in this menu at all.
+    pub holding_selection: bool,
     /// The identifier being tracked, highlighted wherever it is mentioned.
     pub tracked: Option<&'a str>,
     /// Every variable name in the compiled model.
@@ -383,6 +399,7 @@ fn node_ui(
                 // No name to follow: an equation is a position, not an identifier.
                 None,
                 node_line,
+                opts.holding_selection,
             );
             let doc = field_help.get(key);
             if doc.is_some() || node_line.is_some() || node_equation.is_some() {
@@ -430,6 +447,7 @@ fn node_ui(
                 None,
                 None,
                 None,
+                opts.holding_selection,
             );
         }
         scalar => {
@@ -468,6 +486,7 @@ fn node_ui(
                 nav_target(key, scalar, def_index, &opts),
                 trackable.clone(),
                 declared_line,
+                opts.holding_selection,
             );
             // Explain the underline. Appended to the field's own help rather
             // than replacing it, so discoverability does not cost the
@@ -643,6 +662,7 @@ fn row_menu(
     // like `nav` and `track`, so the menu never repeats a lookup the row has done and
     // the two cannot disagree about which declaration was meant.
     declared_line: Option<u32>,
+    holding_selection: bool,
 ) {
     resp.context_menu(|ui| {
         // Don't wrap menu labels — widen the menu to fit long "Go to <name>"
@@ -655,13 +675,29 @@ fn row_menu(
         // `Focus`, the wire format) are deliberately unchanged: renaming those
         // would churn the emitted contract for a vocabulary change.
         if ui
-            .button("\u{1f3af} Point at")
+            .button("\u{1f3af} Point at this node")
             .on_hover_text(
                 "Make this node the subject of your next question, then ask in the chat.",
             )
             .clicked()
         {
             actions.capture = Some(path.to_vec());
+            ui.close();
+        }
+        // **Only when text is held, and the nouns differ on purpose.** *"Point at"* beside
+        // *"Point at selection"* was too fine a distinction for a menu whose failure mode is
+        // picking the wrong one without noticing — so the node item says which node, and this
+        // one appears at all only when there is a selection to mean. Doug's call, 2026-09-22.
+        if holding_selection
+            && ui
+                .button("\u{1f3af} Point at selection")
+                .on_hover_text(
+                    "Make the text you highlighted the subject of your next question \u{2014} \
+                     the characters, not this node.",
+                )
+                .clicked()
+        {
+            actions.point_at_selection = true;
             ui.close();
         }
         // Reverse tracking (idea #37) from any stage. The tree is the one view

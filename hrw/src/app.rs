@@ -4457,6 +4457,7 @@ impl App {
     /// tree know about the specimen?"*, and the caller is a router already too long.
     fn specimen_tree_options(&self) -> tree::TreeOptions<'_> {
         tree::TreeOptions {
+            holding_selection: self.last_selection.is_some(),
             tracked: self.tracked_identifier.as_deref(),
             known_variables: self.known_variables.as_ref(),
             declaring_classes: Some(&self.declaring_classes),
@@ -4795,46 +4796,33 @@ impl App {
                     // of them claimed the frame. It is also the only pane most stages
                     // ever show. See `artifact_pane` for the "beside, not instead of"
                     // rule its error summary follows.
-                    // **Step 4 of `docs/pointing-plan.md`, and the tree goes first on
-                    // purpose.** It is the only region whose rows already carry their own
-                    // right-click menu — with their own *"Point at"* — so this is the first
-                    // moment an inner row menu and an outer region menu can contend for one
-                    // right-click. Step 3 asked Doug to compare them in Flatten → Connections,
-                    // which was impossible: the tree and the replay are sub-views of one stage
-                    // and are never on screen together.
-                    let can_point = self.last_selection.is_some();
-                    let pointing_origin = crate::pointing::PointOrigin::StagePane {
-                        stage: self.stage,
-                        sub_view: sub_view_name_for(self.stage, &self.viewport).map(str::to_owned),
-                    };
-                    let pointing_ctx = ui.ctx().clone();
+                    // **Deliberately NOT wrapped in a `pointing::region`.** It was, for one
+                    // commit, and the region menu never opened once: every right-click in this
+                    // pane lands on a row, and the row's own menu takes it. The row menu then
+                    // answered a gesture meant for the selection by capturing the node — a
+                    // silent substitution that looked like success, because the Context Bar
+                    // updates either way. The selection item lives in `tree::row_menu`, which
+                    // is the only menu a right-click here can reach.
                     let stage = self.current_stage();
-                    let (notice, pointing_event) =
-                        crate::pointing::region(ui, pointing_origin, can_point, |ui| {
-                            artifact_pane::artifact_pane_ui(
-                                ui,
-                                stage,
-                                self.stage,
-                                artifact_pane::ArtifactChrome {
-                                    label: self.model.as_deref().unwrap_or("model"),
-                                    prev: self.previous_stage_value(),
-                                    identifier_count: self
-                                        .known_variables
-                                        .as_ref()
-                                        .map(HashSet::len),
-                                    compiling: self.compiling,
-                                },
-                                artifact_pane::ArtifactTree {
-                                    opts: self.specimen_tree_options(),
-                                    def_index: &self.def_index,
-                                    field_help: self.field_help.for_stage(self.stage),
-                                    jump_target: self.context.jump_target.as_deref(),
-                                    jump_highlight: self.context.jump_highlight.as_deref(),
-                                },
-                                &mut intent.tree,
-                            )
-                        });
-                    self.perform_pointing(&pointing_ctx, pointing_event);
+                    let notice = artifact_pane::artifact_pane_ui(
+                        ui,
+                        stage,
+                        self.stage,
+                        artifact_pane::ArtifactChrome {
+                            label: self.model.as_deref().unwrap_or("model"),
+                            prev: self.previous_stage_value(),
+                            identifier_count: self.known_variables.as_ref().map(HashSet::len),
+                            compiling: self.compiling,
+                        },
+                        artifact_pane::ArtifactTree {
+                            opts: self.specimen_tree_options(),
+                            def_index: &self.def_index,
+                            field_help: self.field_help.for_stage(self.stage),
+                            jump_target: self.context.jump_target.as_deref(),
+                            jump_highlight: self.context.jump_highlight.as_deref(),
+                        },
+                        &mut intent.tree,
+                    );
                     // The stage borrow ends with the call, so the notice can finally be
                     // posted — the same deferred pattern as `FrameIntent`.
                     if let Some(msg) = notice {
@@ -6572,6 +6560,25 @@ impl App {
         // ever did, so `nav_to.or(tree_actions.nav_to)` was always the latter.
         let debug_ask = tree_actions.debug;
         let mut node_ask = tree_actions.capture;
+        // **The tree's own menu is where "Point at selection" has to live**, because a
+        // `pointing::region` wrapped around this pane never opens: every right-click lands on
+        // a row. The origin is the stage pane all the same — the text was drawn there — so the
+        // capture is indistinguishable from one made in any other pane, which is the point.
+        if tree_actions.point_at_selection {
+            let origin = crate::pointing::PointOrigin::StagePane {
+                stage: self.stage,
+                sub_view: sub_view_name_for(self.stage, &self.viewport).map(str::to_owned),
+            };
+            match self.last_selection.clone() {
+                Some(text) => self.point_at_selection(origin, text),
+                // The item is only shown while text is held, so reaching this means the
+                // selection went away between the menu opening and the click.
+                None => self.notify(
+                    "\u{26a0} the selection is gone \u{2014} drag across the text again, then \
+                     right-click it",
+                ),
+            }
+        }
         if let Some(name) = tree_actions.nav_to {
             self.navigate_to(name);
         }
