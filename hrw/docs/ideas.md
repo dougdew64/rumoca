@@ -6716,3 +6716,32 @@ overview went 72 → 50 lines once the rule was applied properly.
 accumulates exactly the claims with nowhere to go, so the count of unstationed abstractions is the
 metric the overview rule replaces a line budget with. `connect-expansion` had three.
 
+## 90. Point at GRAPHICS, not only text — RAISED 2026-09-22 by Doug
+
+> *"Eventually, I will want to work with you to enable point-at for graphics."*
+
+**What is missing.** The 2026-09-22 work made every *text* HRW draws a referent: highlight it,
+right-click, *"Point at selection"*. Graphics are not covered, because the gesture rests on a text
+selection — `pointing::region` asks egui for the selected characters, and a spy-plot cell, an
+incidence mark, a canvas node or a plotted curve has none. Today a question about one of those is
+still described in words, which is the friction the text work removed everywhere else.
+
+**The half that already exists, and it is the larger half.** *Addressing* is done:
+`hrw://stage/Structural/Incidence/equation/4` already names one incidence row, and
+`docs/fixture-labs/index-reduction.md` Station 1 uses it. `SubView::from_slug` resolves views by
+their capture names, and `App::aim_at_equation` already centres the canvas on a node. **So the
+work is a GESTURE, not a new addressing scheme** — and probably not a new `Focus` variant either,
+since a graphic element that has a link has a node behind it.
+
+**The design question to settle first, before any code.** What does pointing at a *cell* mean —
+the equation row, the unknown column, or the pair? The pair is the interesting one and the one
+with no existing address. **Answer that with a real question Doug wanted to ask**, not in the
+abstract; [[feedback-primitives-frozen-pending-evidence]] is the standing rule, and this is
+exactly the kind of extension that should wait for the scenario that needs it.
+
+**What is already known about the panes**, from the pointing work: the spy plot, the incidence
+matrix and the plots draw shapes; their *axis labels* and surrounding text are already pointable
+through the stage-pane wrapper, so the gap is precisely the marks themselves. The wrapper senses
+hover only and does not steal clicks, so a per-cell interaction can be added underneath it without
+fighting it — see `docs/pointing-plan.md` for why that sense was chosen.
+
