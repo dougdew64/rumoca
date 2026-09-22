@@ -786,10 +786,14 @@ pub enum Focus<'a> {
     /// mean?"*; for *"improve this paragraph"* Claude locates the source itself, which
     /// is where `docs/fixture-labs/README.md`'s `run:` and `authored:` rules bind.
     LabPassage {
-        /// The lab it was read in, as the picker labels it.
+        /// The lab that was open when the selection was made, as the picker labels it.
         lab: &'a str,
-        /// The selected prose, verbatim as rendered.
+        /// The selected text, verbatim as rendered.
         text: &'a str,
+        /// Whether `text` was found in that lab's source. See
+        /// [`crate::context_bar::PointKind`]'s `LabPassage` for why this is checked
+        /// rather than assumed.
+        in_source: bool,
     },
 }
 
@@ -1786,19 +1790,26 @@ fn build(ask: &Ask) -> Value {
     // above applies: there is no stage IR to navigate, no key path, and no cross-stage
     // diff to build. The note says what the text IS, so a reader does not go looking
     // for the passage byte-for-byte in the markdown and conclude the capture is wrong.
-    if let Focus::LabPassage { lab, text } = &ask.focus {
-        doc["lab_passage"] = json!({
-            "note": "prose the reader selected in HRW's lab panel and captured. This is \
-                     the RENDERED text, so markdown markup is stripped and it will not \
-                     match the source byte-for-byte -- locate it in the file named below. \
-                     Before editing it, check whether it sits inside a `run:` region \
-                     (may be fixed, and the marker re-dated in the same commit) or an \
-                     `authored:` region (Doug's own prose -- report a false claim, never \
-                     rewrite it).",
-            "lab": lab,
-            "file": format!("hrw/docs/fixture-labs/{lab}.md"),
-            "text": text,
-        });
+    if let Focus::LabPassage {
+        lab,
+        text,
+        in_source,
+    } = &ask.focus
+    {
+        doc["lab_passage"] = if *in_source {
+            json!({
+                "note": "prose the reader selected in HRW's lab panel and captured. This                          is the RENDERED text, so markdown markup is stripped and it will                          not match the source byte-for-byte -- locate it in the file named                          below, which HRW verified does contain it. Before editing, check                          whether it sits inside a `run:` region (may be fixed, and the                          marker re-dated in the same commit) or an `authored:` region                          (Doug's own prose -- report a false claim, never rewrite it).",
+                "lab": lab,
+                "file": format!("hrw/docs/fixture-labs/{lab}.md"),
+                "text": text,
+            })
+        } else {
+            json!({
+                "note": "text the reader selected while this lab was open -- and it is                          NOT in that lab's source. HRW checked. The capture button copies                          whatever is selected anywhere in the window, so this came from a                          PANE: read `view` for which one, and treat the text as compiler                          output or a rendered label rather than as authored prose. Do not                          look for it in the markdown, and do not edit the lab to make it                          match. No `file` is given because there is no file it is in.",
+                "lab_open": lab,
+                "text": text,
+            })
+        };
     }
     // The ambient half. A sibling section rather than nested, so the point and
     // the thread are structurally separate and neither can be mistaken for the
@@ -2365,6 +2376,7 @@ mod tests {
             parse_value: None,
             resolve_value: None,
             focus: Focus::LabPassage {
+                in_source: true,
                 lab: "dae-construction",
                 text: "A DAE is well posed when the counts agree.",
             },
