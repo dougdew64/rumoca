@@ -149,6 +149,16 @@ pointable, the old emit path would have named `hrw/docs/fixture-labs/✨ Answer.
 selection in it. Shipping a known-false `file:` claim to get a step boundary was not worth it, so
 `Focus::LabPassage` now carries the origin and the file is the origin's to name.
 
+**A second defect, and only Doug's run could find it.** He selected text in an answer,
+right-clicked, got the correct menu with the correct origin, chose *"Point at selection"* — and
+nothing happened. **egui collects a label selection inside `label_text_selection`, as each label
+paints**, so a `Copy` pushed after the prose has drawn is seen by nothing and is discarded when
+the frame's events are replaced. `perform_pointing` runs after the panel it belongs to, so the
+push was always too late. **The 🎯 button never hit this by accident of layout** — it sits in the
+transport bar, drawn above the prose. The push is now deferred to the top of the next frame in
+`frame_ui`, and `a_copy_pushed_after_the_label_draws_is_lost` pins the egui fact in both
+directions. The action trail is what localised it, which is why the menu-open is recorded.
+
 **A defect this step produced and caught the same hour.** The wrapper first used
 `Sense::click()`, which registers the region *after* its children and therefore on top of them:
 it swallowed every primary click in the lab panel, and clicking an `hrw://` link did nothing.

@@ -430,6 +430,7 @@ impl App {
             // No end-of-pass callback in a bare test App, so nothing ever fills it.
             copy_sink: Default::default(),
             last_selection: None,
+            copy_requested: false,
             worker: Worker {
                 tx,
                 rx,
@@ -7029,5 +7030,104 @@ fn a_right_click_on_a_selection_keeps_it_alive_and_copy_yields_the_text() {
     assert!(
         !selected(),
         "a press with no label hovered MUST clear the selection -- if it does not, this          harness cannot tell a surviving selection from one that was never at risk, and          the right-click assertions above are vacuous",
+    );
+}
+
+/// **A `Copy` pushed after a label has drawn is seen by nothing.**
+///
+/// # The bug this pins
+///
+/// egui collects a label selection *inside* `label_text_selection`, as each label is painted:
+/// `got_copy_event` reads `input.events` at that moment. So the event has to be in the queue
+/// **before** the text draws, and an event pushed later in the same frame is simply dropped when
+/// the frame's events are replaced.
+///
+/// The 🎯 button never hit this, by accident of layout: it lives in the transport bar, which is
+/// drawn *above* the prose, so its push landed in time. The right-click path handles its event
+/// after the panel that contains it — and on 2026-09-22 Doug selected text in an answer,
+/// right-clicked, got the correct menu, chose *"Point at selection"*, and **nothing happened**.
+/// The action trail showed `point-menu-opened` and no point, which is what localised it.
+///
+/// `App` now defers the push to the top of the next frame (`frame_ui`), where nothing has drawn.
+/// This test is the reason that comment can be trusted rather than believed.
+#[test]
+fn a_copy_pushed_after_the_label_draws_is_lost() {
+    use std::sync::{Arc, Mutex};
+
+    const TEXT: &str = "the constraint row is empty";
+
+    let ctx = egui::Context::default();
+    let sink: super::CopySink = Arc::new(Mutex::new(None));
+    ctx.add_plugin(super::CopyCatcher(sink.clone()));
+
+    let rect: Arc<Mutex<Option<egui::Rect>>> = Arc::default();
+    let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(400.0, 200.0));
+
+    // `push_after` reproduces the defect: the event is queued once the text has painted.
+    let run = |events: Vec<egui::Event>, push_after: bool| {
+        let rect = rect.clone();
+        let input = egui::RawInput {
+            screen_rect: Some(screen),
+            events,
+            ..Default::default()
+        };
+        let _ = ctx.run_ui(input, |ui| {
+            let r = ui.label(TEXT);
+            *rect.lock().expect("rect") = Some(r.rect);
+            if push_after {
+                ui.ctx().input_mut(|i| i.events.push(egui::Event::Copy));
+            }
+        });
+    };
+
+    let modifiers = egui::Modifiers::default();
+    run(vec![], false);
+    let label = rect.lock().expect("rect").expect("laid out");
+    let left = egui::pos2(label.left() + 1.0, label.center().y);
+    let right = egui::pos2(label.right() - 1.0, label.center().y);
+    run(
+        vec![
+            egui::Event::PointerMoved(left),
+            egui::Event::PointerButton {
+                pos: left,
+                button: egui::PointerButton::Primary,
+                pressed: true,
+                modifiers,
+            },
+        ],
+        false,
+    );
+    run(vec![egui::Event::PointerMoved(right)], false);
+    run(
+        vec![egui::Event::PointerButton {
+            pos: right,
+            button: egui::PointerButton::Primary,
+            pressed: false,
+            modifiers,
+        }],
+        false,
+    );
+    assert!(
+        ctx.plugin::<egui::text_selection::LabelSelectionState>()
+            .lock()
+            .has_selection(),
+        "nothing is selected, so neither half of this test means anything",
+    );
+
+    // The defect: queued too late to be read.
+    run(vec![], true);
+    assert!(
+        sink.lock().expect("sink").take().is_none(),
+        "a Copy pushed after the label painted must yield nothing -- if egui ever starts \
+         honouring it, the deferral in frame_ui is no longer load-bearing and its comment is \
+         wrong",
+    );
+
+    // The fix: queued before anything draws, which is what `frame_ui` now does.
+    run(vec![egui::Event::Copy], false);
+    assert_eq!(
+        sink.lock().expect("sink").take().as_deref(),
+        Some(TEXT),
+        "a Copy present before the label paints is the only kind egui acts on",
     );
 }

@@ -831,6 +831,9 @@ pub struct App {
     /// Text fetched when a `pointing::region` menu opened, waiting for the reader to choose
     /// *"Point at"*. Cleared at every menu-open so a stale Ctrl+C can never be mistaken for it.
     last_selection: Option<String>,
+    /// A menu opened and the selection must be copied **at the top of the next frame**, before
+    /// any label draws. See `frame_ui` for why it cannot be pushed where the gesture happened.
+    copy_requested: bool,
 
     /// A transient one-line notice for the status bar.
     ///
@@ -1625,6 +1628,7 @@ impl App {
             // The same handle the end-of-pass callback writes into.
             copy_sink: sink,
             last_selection: None,
+            copy_requested: false,
             viewport: Viewport::default(),
             log_entries: Vec::new(),
             viewing_log: false,
@@ -5360,7 +5364,12 @@ impl App {
                 if let Ok(mut slot) = self.copy_sink.lock() {
                     let _ = slot.take();
                 }
-                ctx.input_mut(|i| i.events.push(egui::Event::Copy));
+                // **Deferred to the top of the next frame**, where labels have not drawn yet.
+                // Pushing it here would be too late to be seen at all — `frame_ui` has the
+                // account. The selection survives the wait: clearing needs a press with no
+                // label hovered, and the menu being open means nothing has been pressed.
+                self.copy_requested = true;
+                ctx.request_repaint();
             }
             Some(PointingEvent::PointAt(origin)) => match self.last_selection.take() {
                 Some(text) => self.point_at_selection(origin, text),
@@ -6357,6 +6366,21 @@ impl App {
     /// Everything below is unchanged and runs in the same order. See
     /// `docs/verification-plan.md` item 2.
     pub(crate) fn frame_ui(&mut self, ui: &mut egui::Ui) {
+        // **The copy must be pushed BEFORE any label draws, which is why it happens here
+        // and not where the gesture was made.** egui collects a label selection inside
+        // `label_text_selection`, as each label is painted: `got_copy_event` reads
+        // `input.events` at that moment. A `Copy` pushed after the prose has drawn is seen
+        // by nothing and is gone when the frame's events are replaced.
+        //
+        // That is exactly what happened the first time Doug used the right-click path,
+        // 2026-09-22: the menu opened, the origin was right, and the point was never made,
+        // because `perform_pointing` runs after the panel it belongs to. The 🎯 button never
+        // hit it — it is drawn in the transport bar, *above* the prose, so its push landed in
+        // time by accident of layout.
+        if std::mem::take(&mut self.copy_requested) {
+            ui.ctx().input_mut(|i| i.events.push(egui::Event::Copy));
+        }
+
         // Before anything draws: collect a lab-passage copy that egui produced for us
         // on a previous frame. See `PendingPassage`.
         self.collect_pending_passage();

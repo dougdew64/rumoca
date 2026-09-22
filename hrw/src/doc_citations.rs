@@ -6067,7 +6067,15 @@ mod tests_orphaned_docs {
             // this test's own docs say to raise the number for rather than reword.
             ("answer_check.rs", 1),
             ("app.rs", 9),
-            ("app/tests.rs", 4),
+            // 4 -> 5 on 2026-09-22, with the reasoning this ratchet requires. The hit is the
+            // closing paragraph of `a_copy_pushed_after_the_label_draws_is_lost` — *"`App` now
+            // defers the push to the top of the next frame"* — which opens like a summary
+            // because it states the fix the whole block exists to justify. Triaged by the
+            // documented shortcut: the only item added in that commit is the test itself, and
+            // it has its own summary, so there is no undocumented item for an orphan to belong
+            // to. Ordinary prose in a prose-heavy module, which this test's own docs say to
+            // raise the number for rather than reword.
+            ("app/tests.rs", 5),
             ("bridge.rs", 9),
             ("colors.rs", 1),
             // 3 -> 5 on 2026-08-22, with the reasoning the ratchet requires. Both new
