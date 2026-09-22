@@ -128,7 +128,7 @@ Ctrl+C being mistaken for this gesture's text.** A test pins that an ordinary le
 adopted variant may not stay on the list. So the plan's remaining work is executable rather than
 remembered, and step 4 finishes when that list is empty.
 
-### Step 3 — adopt TWO regions, then stop ✅ *(2026-09-22 — eight runs, working)*
+### Step 3 — adopt TWO regions, then stop ◐ *(2026-09-22 — gesture working; 4 of 5 checks outstanding)*
 
 Lab prose and the Connections pane. Two is enough to prove the thing reading cannot settle:
 **how the wrapper composes with the tree row menu, which already carries its own "Point at"** when
@@ -172,6 +172,18 @@ exactly this. It asserted `has_selection()` survived a right-click — which a c
 does not report itself hovered the way a real one does. **The negative control proved the harness
 could CLEAR a selection; nothing proved it could COLLAPSE one.** A harness that diverges from the
 app on the one behaviour under test is worse than no harness, because it is believed.
+
+**THE GESTURE WORKS. THE STEP IS NOT DONE** — marked complete on 2026-09-22 and corrected the
+same day, by Doug: *"We've completed only the first of those tests."* Four of the five checks
+this step was stopped for are outstanding, and **the one it exists for is among them**:
+
+| # | check | what it would catch | state |
+|---|---|---|---|
+| 1 | right-click in a **lab**, not an Answer | the `LabProse` branch entirely — the containment check and `source_file()` producing a real path. **No run has touched it.** | ⬜ |
+| 2 | right-click with **nothing selected** | that the item greys for the *right* reason; it was seen greyed only when `last_selection` was being wrongly invalidated | ⬜ |
+| 3 | **tree row menu vs region menu**, in Flatten → Connections | whether an inner row menu and an outer region menu fight over one right-click. **This is why the step stops here**, and its answer decides how step 4 proceeds | ⬜ |
+| 4 | ordinary clicking in the lab panel | links, picker, transport bar. **Partly automated**: `clicking_a_lab_link_dispatches_it` and five siblings went red when the wrapper used `Sense::click()` and pass now | ◐ |
+| 5 | right-click in an **Answer** | the whole chain, end to end | ✅ |
 
 **WORKING, on Doug's eighth run.** `point-copy-landed | 31 chars` → `point-menu-opened` →
 `point-menu-click | enabled=true clicked=true inside_item=true` → `point-at-selection`, and
