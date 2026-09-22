@@ -90,6 +90,7 @@ on a tab showing 48 equations.
 | Document | Covers |
 |---|---|
 | [`verification-plan.md`](verification-plan.md) | The six-item pause: must-fire tests, the stale-negative test, clearing clippy, a faster suite, headless UI testing, Rust drivers. |
+| [`pointing-plan.md`](pointing-plan.md) | **Live (2026-09-22).** Replacing the 🎯 capture button with a right-click *"Point at"* carried by a shared per-region helper, so a selection's **origin is declared by the region rather than inferred** from `view`. Carries the three egui facts the design rests on — re-check them at an egui bump — and the eight ordered steps. |
 | [`source-tooling-plan.md`](source-tooling-plan.md) | **Part live.** Phases 1-5 delivered; **Phases 6 (tree rework) and 7 (canvas views) are unbuilt design work.** Read before touching the IR tree or a canvas view. |
 
 ## Reference — look things up

@@ -6878,3 +6878,144 @@ components together and never names a variable; it names `src.p`, `R.p`, `C.n` �
         "with nothing to compare against, claiming the text is foreign would itself be a          false statement",
     );
 }
+
+/// **STEP 0 of `docs/pointing-plan.md`: the assumption the whole design rests on.**
+///
+/// A right-click *on* selected text must leave the selection alive, and a `Copy` pushed while
+/// the context menu is opening must yield that text.
+///
+/// # Why this is a test and not a comment
+///
+/// The 🎯 button exists in its awkward form — acting at mouse-DOWN, with a three-frame wait and
+/// a *"a cursor position is not a selection"* timeout — **because an assumption about egui's
+/// selection lifetime turned out false once already**, and cost an evening that looked like a
+/// click-detection problem. The plan replaces that button with a right-click, on the strength of
+/// three facts read out of egui 0.35's source. Reading is not running.
+///
+/// The facts, and what each assertion below pins:
+///
+/// 1. `label_text_selection.rs` clears a selection when
+///    `any_pressed() && !any_hovered` — so a press **while a label is hovered** spares it. The
+///    button's press lands on the transport bar, which is why it destroys what it acts on; a
+///    right-click lands on the label.
+/// 2. `Popup::context_menu` opens on `secondary_clicked()`, which is mouse-UP, so nothing is
+///    pressed between the right-click and the menu appearing.
+/// 3. egui never exposes the selected text, so the copy round-trip stays — and it must be
+///    triggered while the selection is still alive.
+///
+/// If this fails at an egui bump, `docs/pointing-plan.md` changes rather than being rescheduled.
+#[test]
+fn a_right_click_on_a_selection_keeps_it_alive_and_copy_yields_the_text() {
+    use std::sync::{Arc, Mutex};
+
+    const TEXT: &str = "flow sum equation";
+
+    let ctx = egui::Context::default();
+    let sink: super::CopySink = Arc::new(Mutex::new(None));
+    ctx.add_plugin(super::CopyCatcher(sink.clone()));
+
+    let rect: Arc<Mutex<Option<egui::Rect>>> = Arc::default();
+    let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(400.0, 200.0));
+
+    let run = |events: Vec<egui::Event>| {
+        let rect = rect.clone();
+        let input = egui::RawInput {
+            screen_rect: Some(screen),
+            events,
+            ..Default::default()
+        };
+        let _ = ctx.run_ui(input, |ui| {
+            let r = ui.label(TEXT);
+            *rect.lock().expect("rect") = Some(r.rect);
+        });
+    };
+
+    let modifiers = egui::Modifiers::default();
+    let selected = || {
+        ctx.plugin::<egui::text_selection::LabelSelectionState>()
+            .lock()
+            .has_selection()
+    };
+
+    // One pass to lay the label out, so the drag below has a rect to aim at.
+    run(vec![]);
+    let label = rect.lock().expect("rect").expect("the label was laid out");
+
+    // Drag across the text: press at the left edge, move to the right edge, release.
+    let left = egui::pos2(label.left() + 1.0, label.center().y);
+    let right = egui::pos2(label.right() - 1.0, label.center().y);
+    run(vec![
+        egui::Event::PointerMoved(left),
+        egui::Event::PointerButton {
+            pos: left,
+            button: egui::PointerButton::Primary,
+            pressed: true,
+            modifiers,
+        },
+    ]);
+    run(vec![egui::Event::PointerMoved(right)]);
+    run(vec![egui::Event::PointerButton {
+        pos: right,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers,
+    }]);
+
+    assert!(
+        selected(),
+        "the drag did not select anything, so nothing below is testing what it claims",
+    );
+
+    // **The claim.** A secondary press, on the label, with the selection live.
+    run(vec![egui::Event::PointerButton {
+        pos: right,
+        button: egui::PointerButton::Secondary,
+        pressed: true,
+        modifiers,
+    }]);
+    assert!(
+        selected(),
+        "a right-click ON the selection must not clear it -- this is the whole reason the \
+         plan can replace a mouse-DOWN button with a context menu",
+    );
+
+    // Mouse-up is when `Popup::context_menu` opens, and the grab happens then.
+    run(vec![egui::Event::PointerButton {
+        pos: right,
+        button: egui::PointerButton::Secondary,
+        pressed: false,
+        modifiers,
+    }]);
+    assert!(
+        selected(),
+        "releasing the right button must not clear it either; the menu is open at this point",
+    );
+
+    run(vec![egui::Event::Copy]);
+    let copied = sink.lock().expect("sink").take();
+    assert_eq!(
+        copied.as_deref(),
+        Some(TEXT),
+        "a Copy pushed while the menu is open must hand back the selected text -- egui \
+         exposes no other way to read it",
+    );
+
+    // **The negative control, and without it the assertions above prove nothing.** If a
+    // synthetic context simply never cleared a selection, every check so far would pass
+    // for the wrong reason. This is the button's own failure reproduced: a press with no
+    // label under the pointer.
+    let away = egui::pos2(screen.right() - 10.0, screen.bottom() - 10.0);
+    run(vec![
+        egui::Event::PointerMoved(away),
+        egui::Event::PointerButton {
+            pos: away,
+            button: egui::PointerButton::Primary,
+            pressed: true,
+            modifiers,
+        },
+    ]);
+    assert!(
+        !selected(),
+        "a press with no label hovered MUST clear the selection -- if it does not, this          harness cannot tell a surviving selection from one that was never at risk, and          the right-click assertions above are vacuous",
+    );
+}
