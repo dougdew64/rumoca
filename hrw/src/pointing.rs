@@ -130,8 +130,14 @@ pub fn region<R>(
     has_selection: bool,
     add: impl FnOnce(&mut egui::Ui) -> R,
 ) -> (R, Option<PointingEvent>) {
-    let inner = add(ui);
-    let rect = ui.min_rect();
+    // **A scope, so the rect is what the CLOSURE drew.** `ui.min_rect()` is everything this
+    // `Ui` has placed, which in the lab panel includes the transport bar drawn above — so the
+    // region would have claimed right-clicks on the picker and the buttons too, and reported
+    // them as coming from the prose. An origin that can be wrong about its own extent is the
+    // thing this helper exists to prevent.
+    let scope = ui.scope(add);
+    let inner = scope.inner;
+    let rect = scope.response.rect;
 
     // **`Sense::hover()`, and the reason is a bug this caught on the day it was written.**
     // With `Sense::click()` the region is registered *after* its children and therefore sits on
@@ -153,6 +159,13 @@ pub fn region<R>(
     let over = ui.rect_contains_pointer(rect);
     let opened = over && ui.input(|i| i.pointer.secondary_clicked());
     if opened {
+        // **Recorded at the OPEN, not only at the point**, for the reason the button's own
+        // comment gives: without it, "nothing happened" is indistinguishable from "the gesture
+        // never arrived", and it was the latter for a whole evening. `session.json` is written
+        // only when an action is recorded, so a menu that opened and was dismissed otherwise
+        // leaves the file describing HRW's state at startup — which is exactly what it did the
+        // first time Doug tried this path, 2026-09-22.
+        crate::diagnostics::record_action("point-menu-opened", origin.describe());
         event = Some(PointingEvent::MenuOpened(origin.clone()));
     }
 
