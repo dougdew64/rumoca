@@ -3582,6 +3582,75 @@ Some prose.
         );
     }
 
+    /// **No user-facing string calls pointing a "capture".**
+    ///
+    /// # Why the word was retired
+    ///
+    /// Doug, 2026-09-22: *"'capture' is a low-level plumbing detail which is not as helpful for
+    /// me as the more general high-level concept of 'Pointing at'."* CHARTER Decision 8's
+    /// noun/verb formulation says the noun is assembled by mouse and the verb is an unbounded
+    /// utterance — *"point at"* **is** the assembling verb, and *"capture"* was a second
+    /// word for the same act, named after its implementation (a clipboard round trip).
+    ///
+    /// The plumbing is unchanged and its internal names are deliberately kept: `copy_sink`,
+    /// `CopyCatcher`, `last_selection`. **This checks only what a reader sees** — button
+    /// labels, hover text, notices, and the instructions written into `focus.json`, which is
+    /// the one string here that Claude itself reads back.
+    #[test]
+    fn no_user_facing_string_says_capture() {
+        let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut bad: Vec<String> = Vec::new();
+        let mut checked = 0usize;
+
+        let mut sources = Vec::new();
+        collect_rust(&src, &mut sources);
+        for path in sources {
+            let name = path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string();
+            // Test assertion messages are not user-facing, and they legitimately describe the
+            // mechanism by its internal names.
+            if name.ends_with("tests.rs") {
+                continue;
+            }
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                continue;
+            };
+            for (n, line) in text.lines().enumerate() {
+                let trimmed = line.trim_start();
+                if trimmed.starts_with("//") {
+                    continue;
+                }
+                let user_facing = trimmed.contains("notify(")
+                    || trimmed.contains("on_hover_text(")
+                    || trimmed.contains("on_disabled_hover_text(")
+                    || trimmed.contains("Button::new(");
+                if user_facing {
+                    checked += 1;
+                }
+                if user_facing && line.to_lowercase().contains("captur") {
+                    bad.push(format!("{name}:{}: {}", n + 1, trimmed.trim()));
+                }
+            }
+        }
+
+        assert!(
+            checked > 40,
+            "only {checked} user-facing strings were inspected, so the scan is broken rather \
+             than the vocabulary being clean",
+        );
+        assert!(
+            bad.is_empty(),
+            "{} user-facing string(s) still call pointing a capture. The verb is point-at; \
+             capture names the clipboard round trip, which is plumbing the reader never \
+             sees:\n  {}",
+            bad.len(),
+            bad.join("\n  "),
+        );
+    }
+
     /// **The tree row menu names its two subjects differently, and acts on both.**
     ///
     /// # Why the wording is pinned

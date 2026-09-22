@@ -5015,3 +5015,41 @@ not yet met a real second robot.
 construction. What it settles is only that
 [`vvuq-programme.md`](docs/vvuq-programme.md)'s ordering is not disputed: UQ on `BenchActuator`
 first, no hardware required.
+
+## 2026-09-22 — pointing replaces capturing, and the button is gone
+
+Doug: *"'capture' is a low-level plumbing detail which is not as helpful for me as the more
+general high-level concept of 'Pointing at'. … we could eliminate the capture button entirely,
+along with the notion of 'capture'."*
+
+**What changed.** The 🎯 button in the lab transport bar is deleted. Selected text is pointed at
+by right-clicking it and choosing *"Point at selection"* — from a `pointing::region` wrapper in a
+plain-text pane, or from the row's own menu in a pane whose rows already have one.
+`PointKind::LabPassage` and `Focus::LabPassage` are `Selection`, the emitted section is `selection`
+rather than `lab_passage`, and no user-facing string says "capture" — checked by
+`no_user_facing_string_says_capture`.
+
+**What did NOT change, and Doug approved on that understanding.** The clipboard round trip stays:
+egui exposes `has_selection()` and `clear_selection()` and **never the text**, so a `Copy` event
+remains the only way to read a selection. `copy_sink`, `CopyCatcher` and `last_selection` keep
+their names. The word left the interface; the mechanism did not.
+
+**Two design facts that were discovered rather than chosen**, and both are forced by egui 0.35:
+
+1. **The text is taken when the selection is MADE, not when it is pointed at.** A right-click
+   collapses the selection to a caret before anything can read it —
+   `TextCursorState::pointer_interaction` fires on `any_pressed()`, any button. Filed as **E2** in
+   [`docs/upstream-issues.md`](docs/upstream-issues.md); every desktop toolkit preserves a
+   selection through a secondary click. The cost Doug accepted: one clipboard write per completed
+   drag-selection.
+2. **A region whose items already carry menus takes the ITEM, not the wrapper.** A wrapper there
+   never opens, because every right-click lands on an item — and the item's own *"Point at"* then
+   answers a gesture meant for the selection, **silently**, because the Context Bar updates either
+   way. The tree and the model list both take the item; their node/model entries were renamed to
+   *"Point at this node"* and *"Point at this specimen"* so the nouns differ.
+
+**The record worth keeping is the method, not the feature.** Eight runs found seven broken links,
+and **three tests passed while the code they vouched for was broken** — each verifying the right
+ingredient at the wrong moment. Every defect was named by the action trail instead. The rule that
+came out of it is in [`docs/tech-debt.md`](docs/tech-debt.md): for UI behaviour, instrument the
+running program, read the trail, then write the test that pins what the trail proved.

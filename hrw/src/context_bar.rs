@@ -204,7 +204,7 @@ pub(crate) enum PointKind {
     /// **The text is the rendered prose, not the markdown source**, on his ruling:
     /// egui hands back what the pane displays. Locating it in the source is Claude's
     /// job, and is where the `run:` / `authored:` rules apply.
-    LabPassage {
+    Selection {
         /// **Where the text came from, declared by the region that rendered it.**
         ///
         /// It was a bare lab label until 2026-09-22. The 🎯 press copies whatever is selected
@@ -614,13 +614,13 @@ mod tests {
     /// This pins the type-level half — that a passage can be constructed with no stage,
     /// and that `PointKind` carries the lab so the quotation is never orphaned from
     /// its document. What the *file* says is
-    /// [`crate::bridge::tests::a_lab_passage_emits_its_lab_and_no_stage`].
+    /// [`crate::bridge::tests::lab_prose_emits_its_file_and_no_stage`].
     #[test]
     fn a_lab_passage_point_has_no_stage() {
         let point = PointedAt {
             seq: 7,
             target: "Tearing splits each block and takes a Schur complement.".to_owned(),
-            kind: PointKind::LabPassage {
+            kind: PointKind::Selection {
                 in_source: true,
                 origin: crate::pointing::PointOrigin::LabProse {
                     lab: "the-concepts".to_owned(),
@@ -634,7 +634,7 @@ mod tests {
             "prose is not in a compile phase, so naming one would invent a fact",
         );
         match &point.kind {
-            PointKind::LabPassage { origin, .. } => assert_eq!(
+            PointKind::Selection { origin, .. } => assert_eq!(
                 origin,
                 &crate::pointing::PointOrigin::LabProse {
                     lab: "the-concepts".to_owned()

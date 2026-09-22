@@ -93,12 +93,6 @@ pub(crate) enum TransportRequest {
     /// **Stop was pressed and the clock is already stopped.** What remains is the UI
     /// mode the run borrowed, which only `App` can put back.
     Stopped,
-    /// **🎯 was pressed** — make the selected prose the point.
-    ///
-    /// Reported rather than performed for the usual reason, plus one specific to it:
-    /// the capture needs an `egui::Context` to push a `Copy` event into and two frames
-    /// to collect the result, and neither belongs in a panel that draws markdown.
-    PointAtSelection,
 }
 
 /// **The Play button** — transport for a self-running lab.
@@ -428,79 +422,6 @@ pub(crate) fn autoplay_controls_ui(
                         );
                 });
 
-                // **🎯 — make the selected prose the subject of the next question.**
-                //
-                // Doug, 2026-08-30, after four frictions in asking about lab text:
-                // switching to VS Code, finding the `.md`, locating the passage in
-                // source, and — the one that decided it — a bare "What is this?" having
-                // no referent. The capture reaches Claude through `focus.json`, and the
-                // Context Bar shows what he holds before he asks.
-                //
-                // **LAST IN THE ROW, AND ONLY WHILE A SELECTION EXISTS**, which is not
-                // a style choice: it was drawn first and always, greyed when unusable,
-                // and `the_left_panel_content_never_detaches_from_the_divider` failed —
-                // the panel's permanent floor went 431.7pt to 472.8pt, and its message
-                // says exactly why that matters, that "the RHS pays for it
-                // permanently". This bar is the tuned equilibrium `CLAUDE.md` records
-                // five failed perturbations of, and #77 bought HRW's usability on a 13"
-                // screen with numbers like these.
-                //
-                // A widget that comes and goes belongs at the END of a row — the rule
-                // the Simulation spinner established this morning, applied on its first
-                // new occasion. Here nothing follows it, so its arrival pushes nothing.
-                //
-                // **The cost is discoverability**, paid deliberately: the greyed button
-                // was the thing that announced the feature existed. Doug asked for it,
-                // so he knows; a reader who does not will find it by selecting text.
-                //
-                // The selection lives in an egui *plugin*, which is the only public way
-                // to ask whether one exists — the text itself is never exposed, which
-                // is the whole reason for the copy round trip in `PendingPassage`.
-                let has_selection = ui
-                    .ctx()
-                    .plugin::<egui::text_selection::LabelSelectionState>()
-                    .lock()
-                    .has_selection();
-                // **Tinted, because egui's bundled emoji font is MONOCHROME.** Doug:
-                // "the button has the icon which you've shown here, but the icon is not
-                // coloured." NotoEmoji-Regular has no colour layers, so 🎯 arrives as a
-                // plain glyph — and a plain glyph takes the text colour it is given.
-                // `CONTEXT_POINT` is the one to give it: this button makes a *point*,
-                // and cyan is what the Context Bar and the panes already say that in.
-                if has_selection {
-                    let resp = ui
-                        .button(
-                            egui::RichText::new("\u{1f3af}")
-                                .color(crate::colors::CONTEXT_POINT),
-                        )
-                        .on_hover_text(
-                            "Point at the selected text \u{2014} then ask about it in \
-                             the chat. Ctrl+C still just copies.",
-                        );
-                    // **The PRESS, not the click, and this button cannot use `clicked()`
-                    // at all.** Doug, 2026-08-30: *"when I click the button, it
-                    // disappears and the selection disappears… it seems incorrect that
-                    // the selection is disappearing."* He had the cause exactly right,
-                    // and it is worse than cosmetic:
-                    //
-                    // egui clears a label selection on any pointer press outside a
-                    // hovered label — so pressing this button destroys the very thing it
-                    // acts on, at mouse-DOWN. `clicked()` fires at mouse-UP, by which
-                    // time `has_selection` is false, the button is no longer drawn, and
-                    // **the click is never observed.** Nothing happened, and nothing
-                    // said so.
-                    //
-                    // On the press frame the selection is still live, and the copy this
-                    // schedules is accumulated while the prose paints — after this bar,
-                    // before egui's end-of-pass clear. So the press is not a workaround
-                    // for the ordering; it is the only moment the text exists.
-                    //
-                    // `primary_pressed` is edge-triggered, so holding the button does
-                    // not re-arm on every frame.
-                    if resp.hovered() && ui.input(|i| i.pointer.primary_pressed()) {
-                        request = Some(TransportRequest::PointAtSelection);
-                    }
-                }
             });
 
             if !lab.autoplay.is_running() {

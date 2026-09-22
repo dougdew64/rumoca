@@ -512,7 +512,7 @@ describing the current stage, which they did not choose. A missing `tracking` \
 section likewise means nothing is being followed. `request` is a property of \
 the point, so it is null whenever `kind` is \"none\". If BOTH are absent, \
 nothing has been assembled: say so rather than answering from `stage` or from \
-whatever was captured before.\n\n\
+whatever was pointed at before.\n\n\
 When both are present and the request is ambiguous, compare `seq` with \
 `tracking.seq`: whichever is higher was acted on last and is almost certainly \
 the subject.\n\n\
@@ -785,7 +785,7 @@ pub enum Focus<'a> {
     /// hand back, and Doug ruled it sufficient. It is enough to answer *"what does this
     /// mean?"*; for *"improve this paragraph"* Claude locates the source itself, which
     /// is where `docs/fixture-labs/README.md`'s `run:` and `authored:` rules bind.
-    LabPassage {
+    Selection {
         /// Where the text came from, declared by the region that rendered it.
         origin: &'a crate::pointing::PointOrigin,
         /// The selected text, verbatim as rendered.
@@ -1714,14 +1714,14 @@ fn build(ask: &Ask) -> Value {
         Focus::Specimen => "specimen",
         Focus::Nothing => "none",
         // **Two kinds out of one variant, because `in_source` changes what the
-        // capture IS.** Emitting `lab_passage` for a pane selection put two
+        // capture IS.** Emitting the prose kind for a pane selection put two
         // contradictory claims in one document: this field said prose while the
         // section below said the text is in no lab. That is the identical defect the
         // stage sentinel below records having fixed once already.
-        Focus::LabPassage {
+        Focus::Selection {
             in_source: true, ..
-        } => "lab_passage",
-        Focus::LabPassage { .. } => "selection",
+        } => "selection",
+        Focus::Selection { .. } => "selection",
     };
     // **The slug, not the display name.** This used to emit `StageKind::name`, which
     // reads "Index reduction" with a space — so the capture named a stage that
@@ -1731,7 +1731,7 @@ fn build(ask: &Ask) -> Value {
     // **`None` needs a REASON, not one spelling, since 2026-08-31.** There had been a
     // single sentinel — *"(navigated definition)"* — because that was the only way a
     // capture could lack a stage. A lab passage is now the second, and it emitted the
-    // first one's text: `kind: "lab_passage"` beside `stage: "(navigated definition)"`,
+    // first one's text: `kind: "selection"` beside `stage: "(navigated definition)"`,
     // two contradictory claims about one capture. Found by a column read of the arms
     // added the day before, which is the tool's own advertised yield: a list of siblings
     // where one member is wrong.
@@ -1739,7 +1739,7 @@ fn build(ask: &Ask) -> Value {
     // Absence stated, and stated *accurately* — the same rule that made the field an
     // `Option` rather than letting it borrow whichever stage was selected.
     let no_stage = match ask.focus {
-        Focus::LabPassage {
+        Focus::Selection {
             in_source: true, ..
         } => "(lab prose, not a compile phase)",
         // **A third reason, added 2026-09-22.** The text was selected from a pane, so
@@ -1750,7 +1750,7 @@ fn build(ask: &Ask) -> Value {
         // **Defers to `from`, which names the region exactly.** It said "a selection from a
         // pane" until 2026-09-22, which was wrong for the first real capture made this way:
         // the text came from Claude's answer document, which is not a pane.
-        Focus::LabPassage { .. } => "(not a compile phase \u{2014} see `from` for the region)",
+        Focus::Selection { .. } => "(not a compile phase \u{2014} see `from` for the region)",
         _ => "(navigated definition)",
     };
     let stage_str = ask.stage.map_or(no_stage, StageKind::slug);
@@ -1809,7 +1809,7 @@ fn build(ask: &Ask) -> Value {
     // above applies: there is no stage IR to navigate, no key path, and no cross-stage
     // diff to build. The note says what the text IS, so a reader does not go looking
     // for the passage byte-for-byte in the markdown and conclude the capture is wrong.
-    if let Focus::LabPassage {
+    if let Focus::Selection {
         origin,
         text,
         in_source,
@@ -1819,7 +1819,7 @@ fn build(ask: &Ask) -> Value {
         // `format!("hrw/docs/fixture-labs/{lab}.md")` from whichever lab was open, which
         // produced a path for Claude's answer document (`✨ Answer`) that has never existed,
         // and a path for a stage-pane selection that does not contain the text.
-        doc["lab_passage"] = match (origin.source_file(), in_source) {
+        doc["selection"] = match (origin.source_file(), in_source) {
             (Some(file), true) => json!({
                 "note": "prose the reader selected in HRW's lab panel and pointed at. This is                          the RENDERED text, so markdown markup is stripped and it will not                          match the source byte-for-byte -- locate it in the file named below,                          which HRW verified does contain it. Before editing, check whether it                          sits inside a `run:` region (may be fixed, and the marker re-dated in                          the same commit) or an `authored:` region (Doug's own prose -- report                          a false claim, never rewrite it).",
                 "from": origin.describe(),
@@ -2378,11 +2378,11 @@ fn shape(v: &Value) -> Value {
 mod tests {
     use super::*;
 
-    /// **A PANE selection emits neither `lab_passage` nor a prose sentinel.**
+    /// **A PANE selection emits neither the prose `kind` nor the prose sentinel.**
     ///
     /// The capture button copies whatever is selected anywhere in the window, so a
     /// selection made in a stage pane reaches the same code path as lab prose. Until
-    /// 2026-09-22 it emitted `kind: "lab_passage"` and `stage: "(lab prose, not a
+    /// 2026-09-22 it emitted `kind: "selection"` and `stage: "(lab prose, not a
     /// compile phase)"` **while the section below said the text is in no lab** — two
     /// contradictory claims in one document, which is exactly the defect that sentinel
     /// was introduced to fix the first time.
@@ -2402,7 +2402,7 @@ mod tests {
             def_index: &Default::default(),
             parse_value: None,
             resolve_value: None,
-            focus: Focus::LabPassage {
+            focus: Focus::Selection {
                 origin: &crate::pointing::PointOrigin::StagePane {
                     stage: StageKind::Flatten,
                     sub_view: Some("Connections".to_owned()),
@@ -2432,11 +2432,11 @@ mod tests {
             "the prose sentinel must not be reused for text that is not prose",
         );
         assert!(
-            doc["lab_passage"]["file"].is_null(),
+            doc["selection"]["file"].is_null(),
             "no file may be named for text that is in no file",
         );
         assert_eq!(
-            doc["lab_passage"]["from"], "Flatten \u{2192} Connections",
+            doc["selection"]["from"], "Flatten \u{2192} Connections",
             "the origin names the region that drew the text, which is the whole point of \
              declaring it rather than inferring it from the stage tab",
         );
@@ -2449,13 +2449,14 @@ mod tests {
     ///
     /// - `stage` names **why** there is no stage, not merely that there is none. It
     ///   first emitted *"(navigated definition)"* — the only sentinel that existed —
-    ///   which was a false claim standing beside `kind: "lab_passage"`. A column read
+    ///   which was a false claim standing beside `kind: "selection"`. A column read
     ///   found it the next day: absence must be stated *accurately*, not just stated.
-    /// - `kind` is `lab_passage`, distinguishable from the three IR shapes.
+    /// - `kind` is `lab_passage`, distinguishable from the three IR shapes and from a
+    ///   `selection` made anywhere that is not a lab.
     /// - the passage section names the **file**, because the emitted text is what the
     ///   pane rendered and will not match the markdown byte-for-byte.
     #[test]
-    fn a_lab_passage_emits_its_lab_and_no_stage() {
+    fn lab_prose_emits_its_file_and_no_stage() {
         let defs = BTreeMap::new();
         let ask = Ask {
             seq: 12,
@@ -2467,7 +2468,7 @@ mod tests {
             def_index: &defs,
             parse_value: None,
             resolve_value: None,
-            focus: Focus::LabPassage {
+            focus: Focus::Selection {
                 in_source: true,
                 origin: &crate::pointing::PointOrigin::LabProse {
                     lab: "dae-construction".to_owned(),
@@ -2486,24 +2487,24 @@ mod tests {
         };
 
         let doc = build(&ask);
-        assert_eq!(doc["kind"], "lab_passage");
+        assert_eq!(doc["kind"], "selection");
         assert_eq!(
             doc["stage"], "(lab prose, not a compile phase)",
             "the sentinel must say WHY there is no stage \u{2014} \u{201c}(navigated \
              definition)\u{201d} was a false claim about this capture, and naming a \
              phase would send Claude to the wrong place entirely",
         );
-        assert_eq!(doc["lab_passage"]["from"], "prose in dae-construction");
+        assert_eq!(doc["selection"]["from"], "prose in dae-construction");
         assert_eq!(
-            doc["lab_passage"]["file"], "hrw/docs/fixture-labs/dae-construction.md",
+            doc["selection"]["file"], "hrw/docs/fixture-labs/dae-construction.md",
             "the file is named because the rendered text will not match the source",
         );
         assert_eq!(
-            doc["lab_passage"]["text"],
+            doc["selection"]["text"],
             "A DAE is well posed when the counts agree.",
         );
         assert!(
-            doc["lab_passage"]["note"]
+            doc["selection"]["note"]
                 .as_str()
                 .is_some_and(|n| n.contains("authored:") && n.contains("run:")),
             "the note must carry the editing rules, since this capture is what a \

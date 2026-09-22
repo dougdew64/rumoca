@@ -647,36 +647,6 @@ impl egui::Plugin for CopyCatcher {
     }
 }
 
-/// A 🎯 press waiting for egui to hand back the text the reader selected.
-///
-/// # Why this needs a state machine at all
-///
-/// **egui does not expose a label selection's text to the application.** `has_selection()`
-/// is public; the text is not. What *is* reachable is the copy: when egui performs one it
-/// pushes [`egui::OutputCommand::CopyText`] into `ctx.output()`, which anyone can read.
-///
-/// So the button does not read the selection — it *asks egui to copy*, by pushing an
-/// [`egui::Event::Copy`] into the input queue, and then collects the text egui emits in
-/// response. That round trip costs frames, hence this: press on frame N, egui's
-/// selection plugin acts on N+1, the text is in `output` when frame N+2 begins.
-///
-/// # Why it gives up rather than waiting
-///
-/// The button is only enabled while something is selected, but a selection can vanish
-/// between press and collection — and then no `CopyText` ever arrives. Without a bound
-/// this would sit armed for the rest of the session and fire on the reader's *next*
-/// unrelated Ctrl+C, capturing something they never pointed at. **A capture that
-/// attaches itself to the wrong gesture is worse than one that does not happen**, so it
-/// expires and says so.
-struct PendingPassage {
-    /// Where the selection came from, recorded when the gesture happened rather than when
-    /// the text arrives — they cannot differ today, and recording the former is what keeps
-    /// that true if they ever can.
-    origin: crate::pointing::PointOrigin,
-    /// Frames left before giving up. Three is two more than the round trip needs.
-    frames_left: u8,
-}
-
 /// The fonts HRW installs: egui's bundled set, with **every** font made a fallback for
 /// **both** families.
 ///
@@ -824,8 +794,6 @@ pub struct App {
     nav: Vec<NavEntry>,
     nav_loading: Option<String>,
     nav_error: Option<String>,
-    /// A 🎯 press awaiting the text egui will copy for it. See [`PendingPassage`].
-    pending_passage: Option<PendingPassage>,
     /// Text caught from egui's copy, by the callback registered in `App::new`.
     copy_sink: CopySink,
     /// Text fetched when a `pointing::region` menu opened, waiting for the reader to choose
@@ -1621,7 +1589,6 @@ impl App {
             show_help: false,
             show_about: false,
             field_help: field_help::FieldHelp::load(),
-            pending_passage: None,
             // The same handle the end-of-pass callback writes into.
             copy_sink: sink,
             last_selection: None,
@@ -2464,9 +2431,9 @@ impl App {
             // that safe even if a future caller forgets.
             Focus::Nothing => return,
             // **Lab passages do not come through here.** They are captured by
-            // `capture_lab_passage`, which has the lab name and the selected text
+            // `point_at_selection`, which has the origin and the selected text
             // and needs none of the stage machinery this function is built on.
-            Focus::LabPassage { .. } => return,
+            Focus::Selection { .. } => return,
         };
         let stage_values = self.stages.as_stage_pairs();
         let kind = match &focus {
@@ -2474,7 +2441,7 @@ impl App {
             Focus::Stage => PointKind::Stage,
             Focus::Specimen => PointKind::Specimen,
             Focus::Nothing => return,
-            Focus::LabPassage { .. } => return,
+            Focus::Selection { .. } => return,
         };
         let ask = self.base_ask(seq, bridge::AskRequest::Explain, focus, &stage_values);
         let result = bridge::write(&ask);
@@ -3265,7 +3232,7 @@ impl App {
                         // **The origin says where, so the bar does not have to guess.**
                         // It read "lab passage in X" for everything, including a string
                         // the lab did not contain and text from Claude's answer.
-                        PointKind::LabPassage { origin, .. } => {
+                        PointKind::Selection { origin, .. } => {
                             format!("selection from {}", origin.describe())
                         }
                     },
@@ -5210,7 +5177,7 @@ impl App {
         // **A lab passage is emitted before the stage lookup, because it has no
         // stage.** Everything below rebuilds a capture out of some stage's IR; a
         // passage of prose is the first point that is not in a compile at all.
-        if let PointKind::LabPassage { origin, in_source } = &point.kind {
+        if let PointKind::Selection { origin, in_source } = &point.kind {
             let ask = Ask {
                 seq: point.seq,
                 request: point.request,
@@ -5222,7 +5189,7 @@ impl App {
                 def_index: &self.def_index,
                 parse_value: self.stages.parse.value.as_ref(),
                 resolve_value: self.stages.resolve.value.as_ref(),
-                focus: Focus::LabPassage {
+                focus: Focus::Selection {
                     origin,
                     text: &point.target,
                     in_source: *in_source,
@@ -5260,7 +5227,7 @@ impl App {
             (PointKind::Stage, _) => Focus::Stage,
             (PointKind::Specimen, _) => Focus::Specimen,
             // Returned above, before the stage lookup this match sits inside.
-            (PointKind::LabPassage { .. }, _) => return,
+            (PointKind::Selection { .. }, _) => return,
         };
         let ask = Ask {
             seq: point.seq,
@@ -5283,83 +5250,27 @@ impl App {
         self.context.point_error = bridge::write(&ask).err().map(|e| e.to_string());
     }
 
-    /// Arm a lab-passage capture: ask egui to copy the selection, and wait for it.
-    ///
-    /// Pushing [`egui::Event::Copy`] is the only way to get at a label selection's
-    /// text — see [`PendingPassage`] for why the application cannot simply read it.
-    /// **Ctrl+C deliberately does not do this**, on Doug's ruling: a copy made to paste
-    /// somewhere else must not silently change what Claude has.
-    fn arm_selection_capture(&mut self, ctx: &egui::Context, origin: crate::pointing::PointOrigin) {
-        // **Recorded at the PRESS, not only at the capture**, so the action trail
-        // distinguishes the two failures. Without it, "nothing happened" was
-        // indistinguishable from "the click never arrived" — and it was the latter for
-        // a whole evening, because `session.json` is written only when an action is
-        // recorded, so a press that reached nothing left the file untouched and every
-        // reading of it described HRW's state at startup.
-        diagnostics::record_action("point-at-selection", origin.describe());
-        ctx.input_mut(|i| i.events.push(egui::Event::Copy));
-        self.pending_passage = Some(PendingPassage {
-            origin,
-            frames_left: 3,
-        });
-    }
-
-    /// Collect the copied text, if egui has produced it yet.
+    /// Collect the text egui copied for us, into the slot a *"Point at selection"* will use.
     ///
     /// **Reads `output` without draining it**, so an ordinary Ctrl+C still reaches the
-    /// clipboard: the command stays in the queue for the backend to act on. This only
-    /// looks.
-    fn collect_pending_passage(&mut self) {
-        // **Drained unconditionally, even with nothing pending.** Otherwise an ordinary
-        // Ctrl+C would leave text sitting in the sink, and the next 🎯 press would
-        // collect *that* instead of the passage just selected — a capture attaching
-        // itself to an older gesture, which is the failure `PendingPassage`'s expiry
-        // exists to prevent and would reintroduce by the back door.
-        let copied = self.copy_sink.lock().ok().and_then(|mut s| s.take());
-        let Some(pending) = &mut self.pending_passage else {
-            // **Not a stray copy — this is the right-click path's text arriving.** A
-            // `pointing::region` menu-open cleared the slot and pushed the copy, and this is
-            // the frame it lands on. With no button press pending, whatever arrives belongs to
-            // that gesture, and it waits here until the reader picks the menu item.
-            if let Some(text) = copied {
-                // **Recorded, because this is one of exactly two links that can break the
-                // right-click path and the trail could not tell them apart.** Either the copy
-                // never lands, or the menu item's click never fires; both look identical from
-                // outside — a menu that opened and a point that was never made.
-                diagnostics::record_action(
-                    "point-copy-landed",
-                    format!("{} chars", text.chars().count()),
-                );
-                self.last_selection = Some(text);
-            }
+    /// clipboard: the command stays in the queue for the backend to act on. This only looks.
+    ///
+    /// The copy was requested at the end of the drag that made the selection — see `frame_ui`
+    /// for why it cannot be requested at the moment of pointing — so whatever arrives here
+    /// belongs to the selection now on screen.
+    fn collect_selection_text(&mut self) {
+        let Some(text) = self.copy_sink.lock().ok().and_then(|mut s| s.take()) else {
             return;
         };
-        match copied {
-            Some(text) => {
-                let origin = pending.origin.clone();
-                self.pending_passage = None;
-                self.point_at_selection(origin, text);
-            }
-            None => {
-                pending.frames_left = pending.frames_left.saturating_sub(1);
-                if pending.frames_left == 0 {
-                    self.pending_passage = None;
-                    // **Said out loud, because the bar will show the PREVIOUS point.**
-                    // Silence here would read as "the capture worked", and the reader
-                    // would ask about a passage Claude never received.
-                    //
-                    // **The likeliest cause is a caret rather than a selection**, and
-                    // the message leads with it: egui's `has_selection` is
-                    // `selection.is_some()`, and a click that only places a cursor
-                    // makes it `Some`. Nothing public distinguishes the two, so the
-                    // button appears for both and this is where the difference shows.
-                    self.notify(
-                        "\u{26a0} nothing captured \u{2014} a cursor position is not a \
-                         selection. Drag across the text you mean, then press \u{1f3af}.",
-                    );
-                }
-            }
-        }
+        // **Recorded, because this is one of the two links that can break the gesture and
+        // nothing on screen distinguishes them.** Either the copy never lands, or the menu
+        // item's click never fires; both look identical from outside — a menu that opened and
+        // a point that was never made. It named three separate defects in one afternoon.
+        diagnostics::record_action(
+            "point-copy-landed",
+            format!("{} chars", text.chars().count()),
+        );
+        self.last_selection = Some(text);
     }
 
     /// Perform what a `pointing::region` reported.
@@ -5504,7 +5415,7 @@ impl App {
             // The bar shows the abbreviation; `emit_context` sends `target` as the
             // passage text, so this MUST be the full prose, not the elision.
             target: text,
-            kind: PointKind::LabPassage { origin, in_source },
+            kind: PointKind::Selection { origin, in_source },
             // No stage. A passage of prose is not in one.
             stage: None,
             request: bridge::AskRequest::Explain,
@@ -5546,7 +5457,7 @@ impl App {
                 // reason it is listed beside the two that name something existing by
                 // construction: it points at prose in a document, and compiling a
                 // specimen does not touch the labs.
-                PointKind::Stage | PointKind::Specimen | PointKind::LabPassage { .. } => false,
+                PointKind::Stage | PointKind::Specimen | PointKind::Selection { .. } => false,
             },
             None => false,
         };
@@ -6129,13 +6040,6 @@ impl App {
             TransportRequest::Back => self.lab_back(),
             TransportRequest::Play => self.start_autoplay(),
             TransportRequest::Stopped => self.restore_mode_after_autoplay(),
-            TransportRequest::PointAtSelection => match self.lab_panel_origin() {
-                Some(origin) => self.arm_selection_capture(ui.ctx(), origin),
-                None => self.notify(
-                    "\u{26a0} nothing is open in this panel, so there is nothing to \
-                         point at",
-                ),
-            },
         }
         None
     }
@@ -6455,9 +6359,8 @@ impl App {
             }
         }
 
-        // Before anything draws: collect a lab-passage copy that egui produced for us
-        // on a previous frame. See `PendingPassage`.
-        self.collect_pending_passage();
+        // Before anything draws: collect the copy egui produced for us on a previous frame.
+        self.collect_selection_text();
 
         // First thing every frame: check for results from the worker thread.
         self.drain_worker();

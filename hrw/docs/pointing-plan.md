@@ -281,20 +281,35 @@ Replace the `(a selection from a pane; see `view` for what was shown)` sentinel 
 origin, and stop treating `view.stage_view` as evidence of where a selection came from. **Closes
 the open defect** recorded in `tech-debt.md` under the 09-22 third pass.
 
-### Step 6 — the atomic rename ⬜
+### Step 6 — the atomic rename ✅ *(2026-09-22)*
 
 Button deleted; *"capture"* out of the UI strings, the hover text, `focus.json`'s instructions,
 the action-trail names, `PointKind::LabPassage` → `Selection`, and the docs — **in one commit**,
 per Decision 15's *reimagine now, rename atomically later*.
 
-### Step 7 — guards and records ⬜
+**Done.** The button, `PendingPassage`, the three-frame expiry and `TransportRequest::PointAtSelection` are all gone — `collect_pending_passage` became `collect_selection_text`, which only fills the slot. `Focus::LabPassage` and `PointKind::LabPassage` are `Selection`, and the emitted section is `selection`. The action names were already `point-*`.
+
+**The plumbing keeps its names on purpose**: `copy_sink`, `CopyCatcher`, `last_selection`. egui never exposes the selected text, so the copy round trip is permanent, and renaming it would only hide what the code does. The word left the *interface*, which is what Doug asked for.
+
+Two tests went with the button — `a_stray_copy_never_becomes_the_next_capture` and `a_press_with_nothing_selected_expires_and_says_so` — because both tested the expiry of a press that no longer exists.
+
+### Step 7 — guards and records ✅ *(2026-09-22)*
 
 - Every `PointOrigin` variant is constructed somewhere, so adding a pane and forgetting the
   wrapper fails loudly.
 - No user-facing string says *"capture"*.
 - A `DECISIONS.md` entry.
-- **The new-stage wiring checklist gains a row.** This creates a new per-stage system: a future
-  stage rendering a pane without a region wrapper would be silently unpointable.
+- **The new-stage wiring checklist gains a row.** ✅ It lives in Claude's memory rather than the
+  repository, so that is where it went: a new stage's pane needs either the wrapper or the menu
+  item, **and picking the wrong one fails silently.**
+- **No user-facing string says "capture".** ✅ `no_user_facing_string_says_capture` scans button
+  labels, hover text and notices, skipping test files — whose assertion messages legitimately
+  name the mechanism.
+- **The tree and model-list menus name their two subjects differently.** ✅
+  `the_tree_menu_distinguishes_its_two_subjects`, which also checks the request is *consumed*:
+  an item setting a flag nothing reads is a menu entry that does nothing.
+- **A `DECISIONS.md` entry.** ✅ 2026-09-22, recording what did *not* change as carefully as what
+  did — the clipboard round trip is permanent, and Doug approved on that understanding.
 
 ---
 
