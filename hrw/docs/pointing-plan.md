@@ -179,11 +179,22 @@ this step was stopped for are outstanding, and **the one it exists for is among 
 
 | # | check | what it would catch | state |
 |---|---|---|---|
-| 1 | right-click in a **lab**, not an Answer | the `LabProse` branch entirely — the containment check and `source_file()` producing a real path. **No run has touched it.** | ⬜ |
+| 1 | right-click in a **lab**, not an Answer | the `LabProse` branch entirely — the containment check and `source_file()` producing a real path | ✅ |
 | 2 | right-click with **nothing selected** | that the item greys for the *right* reason; it was seen greyed only when `last_selection` was being wrongly invalidated | ⬜ |
 | 3 | ~~**tree row menu vs region menu**, in Flatten → Connections~~ | **THE CHECK WAS MISSPECIFIED.** The tree and the Connections replay are *sub-views of one stage* and are never drawn at the same time, so no right-click can reach both and there is nothing to contend. **The conflict cannot arise until the tree's own pane is wrapped**, which is step 4 — so this moves there, and step 4 must adopt the tree FIRST rather than last | ➡ step 4 |
 | 4 | ordinary clicking in the lab panel | links, picker, transport bar. **Partly automated**: `clicking_a_lab_link_dispatches_it` and five siblings went red when the wrapper used `Sense::click()` and pass now | ◐ |
 | 5 | right-click in an **Answer** | the whole chain, end to end | ✅ |
+
+**The `LabProse` branch is proven in the running app too, and it settled the risk the
+normaliser was written for.** Doug pointed at *"merge sets of variables"* in `connect-expansion`.
+The source at line 26 reads `**merge sets of variables**` — **bolded** — and egui hands back
+the rendered text with the markup gone. The containment check matched anyway, so the emitted
+context says `file: hrw/docs/fixture-labs/connect-expansion.md` and *"which HRW verified does
+contain it"*. A raw `contains` would have called that passage foreign, which was the failure mode
+that would have made the warning fire on nearly every real capture and so mean nothing.
+
+Note the two captures differ in `kind` exactly as intended: `lab_passage` with a `file` for lab
+prose, `selection` with no `file` for the answer and for a pane.
 
 **WORKING, on Doug's eighth run.** `point-copy-landed | 31 chars` → `point-menu-opened` →
 `point-menu-click | enabled=true clicked=true inside_item=true` → `point-at-selection`, and
