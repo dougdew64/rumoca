@@ -6378,18 +6378,22 @@ impl App {
         // **Pushed in this frame, not deferred.** A release is not a press, so nothing collapses
         // on this frame, and `frame_ui` runs before any label draws — which is the window
         // `got_copy_event` needs.
-        let (primary_pressed, drag_finished) = ui.input(|i| {
-            let dragged = i
-                .pointer
-                .press_origin()
-                .zip(i.pointer.interact_pos())
-                .is_some_and(|(from, to)| from.distance(to) > 4.0);
+        // **A release that is not a click is a drag, and egui has already decided which.**
+        // The first attempt compared `press_origin()` with `interact_pos()` on the release
+        // frame and never fired once: `press_origin` is set to `None` *while the release event
+        // is processed* (`input_state`, the `Released` arm), so by the time `frame_ui` reads it
+        // it is always gone. egui computes `click` from that same origin just before clearing
+        // it, so `button_clicked` is the surviving form of the answer.
+        //
+        // A double-click selects a word without moving the pointer, so it counts too.
+        let (primary_pressed, selection_finished) = ui.input(|i| {
+            let released = i.pointer.button_released(egui::PointerButton::Primary);
+            let was_drag = released && !i.pointer.button_clicked(egui::PointerButton::Primary);
             (
                 i.pointer.button_pressed(egui::PointerButton::Primary),
-                i.pointer.button_released(egui::PointerButton::Primary)
-                    && (dragged
-                        || i.pointer
-                            .button_double_clicked(egui::PointerButton::Primary)),
+                was_drag
+                    || i.pointer
+                        .button_double_clicked(egui::PointerButton::Primary),
             )
         });
         if primary_pressed {
@@ -6399,7 +6403,7 @@ impl App {
             // the caret it leaves behind is exactly what this whole arrangement works around.
             self.last_selection = None;
         }
-        if drag_finished {
+        if selection_finished {
             let has_selection = ui
                 .ctx()
                 .plugin::<egui::text_selection::LabelSelectionState>()

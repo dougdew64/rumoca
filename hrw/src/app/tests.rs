@@ -7149,3 +7149,173 @@ fn a_copy_pushed_after_the_label_draws_is_lost() {
         "a Copy present before the label paints is the only kind egui acts on",
     );
 }
+
+/// **A finished drag-selection copies; a plain click does not.**
+///
+/// # Why this exists
+///
+/// `frame_ui` captures the selected text at the end of the drag that produced it, because a
+/// right-click destroys the selection before anything can read it (egui E2 in
+/// `docs/upstream-issues.md`). Everything therefore depends on telling a drag from a click on
+/// the release frame — and the first attempt at that never fired once.
+///
+/// It compared `press_origin()` with `interact_pos()`. egui sets `press_origin` to `None`
+/// **while processing the release event**, so by the time `frame_ui` reads it, it is always
+/// gone: the capture never happened, the menu item stayed greyed out, and Doug reported it on
+/// his fifth run of the same gesture. egui computes `click` from that origin immediately
+/// before clearing it, so `button_clicked` is the surviving form of the answer.
+///
+/// Both halves are asserted. If only the drag were checked, a predicate that fired on *every*
+/// release would pass — and would write the clipboard on every click in a pane, which is the
+/// cost Doug accepted a bounded version of.
+#[test]
+fn a_finished_drag_copies_and_a_plain_click_does_not() {
+    use std::sync::{Arc, Mutex};
+
+    const TEXT: &str = "a constraint mentions none of the unknowns";
+
+    let ctx = egui::Context::default();
+    let sink: super::CopySink = Arc::new(Mutex::new(None));
+    ctx.add_plugin(super::CopyCatcher(sink.clone()));
+
+    let rect: Arc<Mutex<Option<egui::Rect>>> = Arc::default();
+    let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(400.0, 200.0));
+
+    // Mirrors `frame_ui`: decide at the top of the frame, push the copy before anything draws.
+    let run = |events: Vec<egui::Event>| -> bool {
+        let rect = rect.clone();
+        let input = egui::RawInput {
+            screen_rect: Some(screen),
+            events,
+            ..Default::default()
+        };
+        let mut fired = false;
+        let _ = ctx.run_ui(input, |ui| {
+            let finished = ui.input(|i| {
+                let released = i.pointer.button_released(egui::PointerButton::Primary);
+                let was_drag = released && !i.pointer.button_clicked(egui::PointerButton::Primary);
+                was_drag
+                    || i.pointer
+                        .button_double_clicked(egui::PointerButton::Primary)
+            });
+            if finished {
+                fired = true;
+                ui.ctx().input_mut(|i| i.events.push(egui::Event::Copy));
+            }
+            let r = ui.label(TEXT);
+            *rect.lock().expect("rect") = Some(r.rect);
+        });
+        fired
+    };
+
+    let modifiers = egui::Modifiers::default();
+    let press = |pos| egui::Event::PointerButton {
+        pos,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers,
+    };
+    let release = |pos| egui::Event::PointerButton {
+        pos,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers,
+    };
+
+    run(vec![]);
+    let label = rect.lock().expect("rect").expect("laid out");
+    let left = egui::pos2(label.left() + 1.0, label.center().y);
+    let right = egui::pos2(label.right() - 1.0, label.center().y);
+
+    // A click: press and release at one point, no movement.
+    run(vec![egui::Event::PointerMoved(left), press(left)]);
+    assert!(
+        !run(vec![release(left)]),
+        "a plain click must not copy -- placing a caret is not selecting, and copying here \
+         would overwrite the clipboard on every click in a pane",
+    );
+    assert!(
+        sink.lock().expect("sink").take().is_none(),
+        "and nothing may reach the sink from it",
+    );
+
+    // A drag: press, move, release.
+    run(vec![egui::Event::PointerMoved(left), press(left)]);
+    run(vec![egui::Event::PointerMoved(right)]);
+
+    assert!(
+        run(vec![release(right)]),
+        "a finished drag must copy -- this is the only moment the selection can still be read, \
+         and the predicate that missed it left the menu item greyed out",
+    );
+    assert_eq!(
+        sink.lock().expect("sink").take().as_deref(),
+        Some(TEXT),
+        "and the text it yields must be the selection, not a caret",
+    );
+}
+
+/// **On the release frame, the press origin is already gone.**
+///
+/// This is the whole cause of the capture never firing. `frame_ui`'s first attempt at telling a
+/// drag from a click compared `press_origin()` with `interact_pos()`; egui clears `press_origin`
+/// *while processing the release event*, so the comparison had nothing to work with and the
+/// menu item stayed greyed out through a fifth run of Doug's gesture.
+///
+/// Pinned separately from `a_finished_drag_copies_and_a_plain_click_does_not` because the probe
+/// consumes the release it inspects, and doing that mid-sequence silently broke the drag the
+/// other test depends on. **If egui ever keeps the origin, this fails** and the comment
+/// explaining the current predicate stops being the reason for it.
+#[test]
+fn a_release_arrives_without_its_press_origin() {
+    let ctx = egui::Context::default();
+    let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(400.0, 200.0));
+    let modifiers = egui::Modifiers::default();
+    let at = egui::pos2(40.0, 20.0);
+    let away = egui::pos2(300.0, 20.0);
+
+    let run = |events: Vec<egui::Event>, check: &dyn Fn(&mut egui::Ui)| {
+        let _ = ctx.run_ui(
+            egui::RawInput {
+                screen_rect: Some(screen),
+                events,
+                ..Default::default()
+            },
+            |ui| check(ui),
+        );
+    };
+
+    let nothing = |_: &mut egui::Ui| {};
+    run(
+        vec![
+            egui::Event::PointerMoved(at),
+            egui::Event::PointerButton {
+                pos: at,
+                button: egui::PointerButton::Primary,
+                pressed: true,
+                modifiers,
+            },
+        ],
+        &nothing,
+    );
+    run(vec![egui::Event::PointerMoved(away)], &nothing);
+    run(
+        vec![egui::Event::PointerButton {
+            pos: away,
+            button: egui::PointerButton::Primary,
+            pressed: false,
+            modifiers,
+        }],
+        &|ui| {
+            assert!(
+                ui.input(|i| i.pointer.button_released(egui::PointerButton::Primary)),
+                "the release itself must be visible, or this test proves nothing",
+            );
+            assert!(
+                ui.input(|i| i.pointer.press_origin().is_none()),
+                "and its press origin must be gone -- this is why a predicate built on \
+                 press_origin() never fired, and why button_clicked is used instead",
+            );
+        },
+    );
+}
