@@ -2,15 +2,13 @@
 
 <!-- kind: feature -->
 
-**This is a test, not an explanation.** It verifies the last two verbs of the answer
-channel: pointing at a node inside a stage tree, and setting the follow.
+**This is a test, not an explanation.** It verifies the last two verbs of the answer channel:
+pointing at a node inside a stage tree, and setting the follow.
 
-Every path below was read from `docs/specimen-notebook/RcCircuit/trace/structural.json`,
-not invented — a fixture lab with a made-up path is a broken test that looks fine.
-
-Pick it from the Labs list.
-Notices appear in the status bar, along the bottom of the HRW window. Several stations below expect one; that is where to look.
-
+Pick it from the Labs list. Notices appear in the status bar, along the bottom of the HRW window;
+several stations below expect one, and that is where to look. Every path below was read from
+`docs/specimen-notebook/RcCircuit/trace/structural.json` rather than invented — a fixture lab with
+a made-up path is a broken test that looks fine.
 
 ---
 

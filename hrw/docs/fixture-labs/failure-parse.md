@@ -10,7 +10,7 @@ stages with nothing at all. Run it first — the others only make sense against 
 
 The question to hold: when a pane has nothing to show, how do you tell *"the compiler
 produced nothing"* from *"HRW failed to display something"*? That distinction is the whole
-subject of this lab, and until 2026-08-04 HRW could not always answer it.
+subject of this lab.
 
 ---
 

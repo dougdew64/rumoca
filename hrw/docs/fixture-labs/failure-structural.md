@@ -3,7 +3,7 @@
 <!-- kind: failure -->
 
 **Specimens:** `TwiceDefined` and `CapacitorLoop`. Both are flagged `singular`. **They are not
-the same problem, and telling them apart is the point of this lab.
+the same problem, and telling them apart is the point of this lab.**
 
 Run `failure-flatten.md` first. It shows the balance check passing or failing on a *count*.
 This lab is about a system that passes the count and is still unsolvable.
@@ -77,7 +77,7 @@ Until 2026-08-04 it did — HRW computed a decomposition itself and drew it, for
 compiler had refused to decompose. The Tarjan animation drew a non-empty SCC run for a model that
 produced none.
 
-That was the single worst defect this project has found**, and this specimen is the one that
+**That was the single worst defect this project has found**, and this specimen is the one that
 exposed it. What you see now is the compiler's silence, reported as silence.
 
 ---

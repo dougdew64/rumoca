@@ -3582,6 +3582,87 @@ Some prose.
         );
     }
 
+    /// **Every `**` in a lab is closed, within its own paragraph.**
+    ///
+    /// # Why paragraph and not file
+    ///
+    /// A bold span legitimately wraps across lines, so a per-line parity check is noise —
+    /// most of this corpus would fail it. A span crossing a blank line is a different
+    /// matter: `egui_commonmark` ends the paragraph, so the marker renders as literal
+    /// asterisks and every emphasis after it in that paragraph is inverted.
+    ///
+    /// # What it caught
+    ///
+    /// Two, both in `failure-structural.md`, on 2026-09-22. The overview opened a span at
+    /// *"They are not the same problem"* and never closed it, and a station carried a
+    /// stray closing `**` whose opener had been lost — *"the single worst defect this
+    /// project has found\*\*, and this specimen…"*. Both had survived every gate this
+    /// repository runs, because **nothing looked at rendering and nothing looked at
+    /// markup**; they were found by a hand scan while rewriting overviews.
+    ///
+    /// Emphasis is checked here for the same reason the corpus has so little of it: it is
+    /// differential, so a broken span does not merely look wrong, it moves the emphasis
+    /// onto the wrong words.
+    ///
+    /// Markers inside a code span are literal — `docs/fixture-labs/README.md` documents
+    /// `**Predict.**` in a table cell — so those are stripped before counting.
+    #[test]
+    fn every_bold_span_in_a_lab_closes_in_its_own_paragraph() {
+        let labs = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
+        let mut bad: Vec<String> = Vec::new();
+        let mut checked = 0usize;
+
+        for entry in std::fs::read_dir(&labs).expect("fixture-labs must be readable") {
+            let path = entry.expect("a readable dir entry").path();
+            if path.extension().and_then(|x| x.to_str()) != Some("md") {
+                continue;
+            }
+            let name = path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string();
+            let text = std::fs::read_to_string(&path).unwrap_or_default();
+            for (i, para) in text
+                .split(
+                    "
+
+",
+                )
+                .enumerate()
+            {
+                // Strip code spans: a marker inside backticks is literal text.
+                let mut outside = String::new();
+                let mut in_code = false;
+                for c in para.chars() {
+                    if c == '`' {
+                        in_code = !in_code;
+                    } else if !in_code {
+                        outside.push(c);
+                    }
+                }
+                checked += 1;
+                if !outside.matches("**").count().is_multiple_of(2) {
+                    let first = para.lines().next().unwrap_or("").trim();
+                    bad.push(format!("{name} paragraph {i}: {first:.90}"));
+                }
+            }
+        }
+
+        assert!(
+            checked > 500,
+            "only {checked} paragraphs were inspected, so the splitter is broken rather              than the corpus being clean"
+        );
+        assert!(
+            bad.is_empty(),
+            "{} paragraph(s) open a bold span and do not close it before the paragraph              ends. The marker renders as literal asterisks and inverts every emphasis              after it:
+  {}",
+            bad.len(),
+            bad.join("
+  "),
+        );
+    }
+
     /// **`index-reduction.md` Station 5's Incidence `Expected`, against a real compile.**
     ///
     /// # Why this station and not the introduction

@@ -27,7 +27,7 @@ Giving every equation a job is not yet a recipe. To evaluate `f_x[9]` — Ohm's 
 
 **Fixture lab — camera aiming**
 
-This is a test, not an explanation. It exists so Doug can verify the half of camera
+This is a test, not an explanation. It exists so Doug can verify the half of camera aiming
 
 - **Specimens:** `RcCircuit`
 - **Stages:** `Structural`
@@ -196,7 +196,7 @@ Specimen: `DimensionMismatch` — a 2-vector assigned from a 3-vector.
 
 **Fixture lab — seeking to a frame**
 
-This is a test, not an explanation. It verifies that a link can stop an animation on
+This is a test, not an explanation. It verifies that a link can stop an animation on a
 
 - **Specimens:** `MotorWithBrake`
 - **Stages:** `Structural`
@@ -286,7 +286,7 @@ A Modelica equation is not an assignment. `R.v - R.R_actual * R.i` relates three
 
 **Fixture lab — pointing at a tree node, and following**
 
-This is a test, not an explanation. It verifies the last two verbs of the answer
+This is a test, not an explanation. It verifies the last two verbs of the answer channel:
 
 - **Specimens:** `RcCircuit`
 - **Stages:** `Structural`

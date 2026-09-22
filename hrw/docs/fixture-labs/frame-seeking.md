@@ -2,25 +2,17 @@
 
 <!-- kind: feature -->
 
-**This is a test, not an explanation.** It verifies that a link can stop an animation on
-a specific frame — the capability that lets a station point at *the moment a decision is
-made* rather than at the view containing it.
+**This is a test, not an explanation.** It verifies that a link can stop an animation on a
+specific frame — the capability that lets a station point at *the moment a decision is made*
+rather than at the view containing it.
 
-Pick it from the Labs list. Every link below is parsed on every test run by
-`fixture_lab_links_all_resolve`.
-Notices appear in the status bar, along the bottom of the HRW window. Several stations below expect one; that is where to look.
+**Frame numbers in links match the counter on screen**: `frame/41` puts the view on "Frame 41".
+The two numbers this lab seeks, 41 and 6, are a jump forwards and a jump backwards; neither is a
+particular moment in the algorithm, so neither needs re-deriving when a replay changes length.
 
-
-Frame numbers in links match the counter on screen. `frame/41` puts the view on
-"Frame 41". They were 0-based until 2026-07-29, and this file *documented* the
-off-by-one in a parenthetical rather than treating it as the bug it was — Doug spotted
-that while running the stations in order.
-
-*Every matching replay gained an opening frame on 2026-08-23, so each number below now
-lands one step earlier than it used to. The numbers were left as they are: this lab
-seeks 41 and 6 to prove that a jump forwards and a jump backwards work, not because
-either is a particular moment in the algorithm. A lab that cited a frame for what it
-shows would have had to be re-derived with `cargo run -p hrw --example frame_index`.*
+Pick it from the Labs list. Notices appear in the status bar, along the bottom of the HRW window;
+several stations below expect one, and that is where to look. Every link is parsed on every test
+run by `fixture_lab_links_all_resolve`.
 
 ---
 
