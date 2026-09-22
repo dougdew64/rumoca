@@ -198,6 +198,26 @@ pub fn region<R>(
                      selection.",
                 )
             };
+            // **Instrumented, because six runs of this gesture have each failed at a
+            // different link and reading the trail has settled every one of them.** A
+            // scratch probe of this popup in a synthetic context turned out to be testing
+            // its own click coordinates rather than the app, so the answer has to come from
+            // the running program.
+            let primary_click =
+                ui.input(|i| i.pointer.button_clicked(egui::PointerButton::Primary));
+            if primary_click {
+                let inside = ui
+                    .ctx()
+                    .pointer_interact_pos()
+                    .is_some_and(|p| item.rect.contains(p));
+                crate::diagnostics::record_action(
+                    "point-menu-click",
+                    format!(
+                        "enabled={can_point} clicked={} inside_item={inside}",
+                        item.clicked()
+                    ),
+                );
+            }
             if item.clicked() {
                 event = Some(PointingEvent::PointAt(origin.clone()));
                 ui.close();
