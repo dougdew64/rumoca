@@ -7344,7 +7344,7 @@ fn a_press_inside_an_open_menu_leaves_the_menu_open() {
     // Opened on the first pass and left open; `None` afterwards means "no command", so the
     // popup keeps whatever memory says — the same shape `pointing::region` uses.
     let open_now = std::cell::Cell::new(true);
-    let seen_open = std::cell::Cell::new(false);
+    let seen_open_before_show = std::cell::Cell::new(false);
 
     let run = |events: Vec<egui::Event>| {
         let _ = ctx.run_ui(
@@ -7354,6 +7354,12 @@ fn a_press_inside_an_open_menu_leaves_the_menu_open() {
                 ..Default::default()
             },
             |ui| {
+                // **Read FIRST, which is the order `frame_ui` sees.** It runs at the top of
+                // the frame, before any popup has drawn. Asserting this after `show` is what
+                // made the first version of this test pass while the code it vouched for
+                // never fired.
+                seen_open_before_show.set(egui::Popup::is_any_open(ui.ctx()));
+
                 let resp = ui.interact(
                     egui::Rect::from_min_size(anchor, egui::vec2(200.0, 40.0)),
                     ui.make_persistent_id("region-under-test"),
@@ -7368,15 +7374,17 @@ fn a_press_inside_an_open_menu_leaves_the_menu_open() {
                     .show(|ui| {
                         let _ = ui.button("\u{1f3af} Point at selection");
                     });
-                seen_open.set(ui.ctx().any_popup_open());
             },
         );
     };
 
+    // Frame 1 opens it; the command is applied during that frame, so it is only visible at the
+    // top of frame 2 — which is where `frame_ui` looks.
+    run(vec![]);
     run(vec![]);
     assert!(
-        seen_open.get(),
-        "the popup did not open, so nothing below is testing what it claims",
+        seen_open_before_show.get(),
+        "the popup must read as open before it draws, or frame_ui cannot see it at all",
     );
 
     // A primary press with the pointer over the menu — what clicking the item is.
@@ -7391,7 +7399,7 @@ fn a_press_inside_an_open_menu_leaves_the_menu_open() {
         },
     ]);
     assert!(
-        seen_open.get(),
+        seen_open_before_show.get(),
         "the menu must still read as open on the frame of the press -- frame_ui uses exactly \
          this to tell a click on a menu item from a press on text, and if it goes false here \
          the held text is dropped before the item can use it",

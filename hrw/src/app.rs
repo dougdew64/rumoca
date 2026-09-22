@@ -6401,7 +6401,12 @@ impl App {
         // the held text at the top of the very frame that was about to use it: the item
         // re-rendered disabled, `clicked()` never fired, and the trail showed
         // `point-menu-opened` with nothing after it. Doug's sixth run, 2026-09-22.
-        let menu_open = ui.ctx().any_popup_open();
+        // **`Popup::is_any_open`, not `Context::any_popup_open`.** They answer the same
+        // question from different places: the `Context` method reads *pass state*, which is
+        // filled in as popups draw, so at the TOP of a frame — here — it is always false. The
+        // `Popup` method reads *memory*, which persists across frames. The first guard used the
+        // `Context` form, never fired once, and the item was still disabled on the click frame.
+        let menu_open = egui::Popup::is_any_open(ui.ctx());
         if primary_pressed && !menu_open {
             // **A primary press is the only thing that invalidates.** It either starts a new
             // selection or places a caret, and both mean the held text is no longer what is on
