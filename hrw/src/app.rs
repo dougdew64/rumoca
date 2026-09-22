@@ -5310,6 +5310,14 @@ impl App {
             // the frame it lands on. With no button press pending, whatever arrives belongs to
             // that gesture, and it waits here until the reader picks the menu item.
             if let Some(text) = copied {
+                // **Recorded, because this is one of exactly two links that can break the
+                // right-click path and the trail could not tell them apart.** Either the copy
+                // never lands, or the menu item's click never fires; both look identical from
+                // outside — a menu that opened and a point that was never made.
+                diagnostics::record_action(
+                    "point-copy-landed",
+                    format!("{} chars", text.chars().count()),
+                );
                 self.last_selection = Some(text);
             }
             return;
@@ -5376,10 +5384,18 @@ impl App {
                 // **The likeliest cause is a caret rather than a selection**, and the message
                 // leads with it: egui's `has_selection` is `selection.is_some()`, and a click
                 // that only places a cursor makes it `Some`.
-                None => self.notify(
-                    "\u{26a0} nothing was selected \u{2014} a cursor position is not a \
-                     selection. Drag across the text you mean, then right-click it.",
-                ),
+                None => {
+                    // The other half of the pair above: the item WAS clicked, and no text had
+                    // arrived for it to use.
+                    diagnostics::record_action(
+                        "point-at-failed",
+                        "the item was clicked, but no copied text had arrived".to_owned(),
+                    );
+                    self.notify(
+                        "\u{26a0} nothing was selected \u{2014} a cursor position is not a \
+                         selection. Drag across the text you mean, then right-click it.",
+                    );
+                }
             },
             None => {}
         }

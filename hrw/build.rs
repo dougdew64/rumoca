@@ -13,6 +13,21 @@ fn main() {
     // workspace only the ROOT Cargo.lock is maintained, so read that (../).
     println!("cargo:rerun-if-changed=../Cargo.lock");
     println!("cargo:rerun-if-changed=../.git/HEAD");
+
+    // **`.git/HEAD` alone is not enough, and the gap made every diagnostic lie.** On a
+    // branch that file holds `ref: refs/heads/<branch>` and does not change when you
+    // commit — what changes is the ref it points at. So `git_rev` in `session.json`,
+    // `in-flight.json` and every crash report named the commit at which this script last
+    // ran, which could be dozens of commits stale.
+    //
+    // Found 2026-09-22 while diagnosing the right-click path: a build made minutes earlier
+    // reported `fdcfc248`, a commit from before that day's work, and the stamp could not be
+    // used to answer "is Doug running my fix?" — the one question it exists for.
+    if let Ok(head) = fs::read_to_string("../.git/HEAD")
+        && let Some(git_ref) = head.strip_prefix("ref: ")
+    {
+        println!("cargo:rerun-if-changed=../.git/{}", git_ref.trim());
+    }
     let version = read_rumoca_version();
     let rev = git_head_short().unwrap_or_else(|| String::from("unknown"));
     println!("cargo:rustc-env=HRW_RUMOCA_VERSION={version}");
