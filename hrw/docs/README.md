@@ -83,6 +83,7 @@ on a tab showing 48 equations.
 | 👤 [`setup-windows.md`](setup-windows.md) | A fresh Windows machine → running HRW → live-trace debugging. |
 | 👤 [`long-runs.md`](long-runs.md) | The MSL survey and the fidelity sweep, including the retry pass. **Never run the sweep unbounded.** |
 | 👤 [`updating-rumoca.md`](updating-rumoca.md) | Rebasing the `hrw` branch on upstream. |
+| [`writing-a-lab.md`](writing-a-lab.md) | The keyboard-level mechanics of producing a lab — per-kind templates, the `hrw://` wiring a hub lab requires, and the edit/gate loop with its two traps. Split out of [`fixture-labs/README.md`](fixture-labs/README.md) on 2026-09-22 when that file hit its reading ceiling; **what a lab may *claim* stayed there.** |
 
 ## Live plans — delete when their work lands
 
