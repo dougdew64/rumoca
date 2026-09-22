@@ -4,27 +4,19 @@
 
 [The chain overview](hrw://lab/the-concepts)
 
-**A concept lab.** The last phase before simulation. Run [events](hrw://lab/events) first.
+**A solver does not look variables up by name.** It is handed arrays and a function: *here is the
+current state vector, fill in the derivatives*.
 
-Every count below was read from the committed traces, never remembered.
+Every phase so far has worked in **your** vocabulary — `C.v`, `inertia.flange_b.tau`,
+`R.R_actual`, hierarchical names that are meaningful to a modeller and useless to a numerical
+integrator. So every one of them must become an index into an array, and every equation must
+become arithmetic on those slots.
 
----
+This phase does the translation, and it is the last chance to get it wrong: after it there are no
+names left to check against, only numbers, which is why the mapping itself is worth looking at.
 
-## The problem this phase exists to solve
-
-Every phase so far has worked in *your* vocabulary. `C.v`, `inertia.flange_b.tau`,
-`R.R_actual` — hierarchical names, meaningful to a modeller, and completely useless to a numerical
-integrator.
-
-A solver does not look variables up by name. It is handed arrays and a function: *here is the
-current state vector, fill in the derivatives*. Everything must therefore become an index into an
-array, and every equation must become arithmetic on those slots.
-
-This phase does the translation, and it is the last chance to get it wrong. After it, there are
-no names left to check against — only numbers, which is why the mapping itself is worth looking at.
-
-Three stations: the mapping, what else ends up in the arrays, and what the same mapping looks like at
-scale.
+Run [events](hrw://lab/events) first. Every count below is read from a generated trace, so if one
+disagrees with your screen, the lab is wrong and I want to know.
 
 ---
 

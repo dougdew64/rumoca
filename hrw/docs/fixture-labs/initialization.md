@@ -4,31 +4,23 @@
 
 [The chain overview](hrw://lab/the-concepts)
 
-**A concept lab.** Run [index-reduction](hrw://lab/index-reduction) first — this phase runs on
-the reduced, index-1 system.
-
-Every count below was read from the committed traces, never remembered.
-
----
-
-## The problem this phase exists to solve
-
-The system is square, ordered, and index-1. The integrator still cannot take its first step,
-because it does not have a starting point.
+**The system is square, ordered and index-1 — and the integrator still cannot take its first
+step**, because it does not have a starting point.
 
 That sounds like a non-problem: every state has a `start` attribute, so surely those are the
 starting values. They are not sufficient, for two reasons that pull in opposite directions.
 
-Too little. A state's `start` value fixes the state, but the *algebraic* variables are not
+*Too little.* A state's `start` value fixes the state, but the **algebraic** variables are not
 free — they satisfy equations. Setting `C.v = 0` does not tell you what `R.i` is at *t* = 0; that
 has to be solved for, from the algebraic part of the system, before the first step.
 
-Too much. Nothing stops a model from specifying a state's initial value twice, in ways that
-disagree. Modelica lets you write `initial equation` blocks *and* `start` attributes, and the
+*Too much.* Nothing stops a model from specifying a state's initial value twice, in ways that
+disagree. Modelica lets you write `initial equation` blocks **and** `start` attributes, and the
 compiler must notice when they over-determine the problem rather than quietly preferring one.
 
-This phase settles both. Three stations: the case with nothing to solve, the case with a real
-initialization system, and the case that specifies too much.
+This phase settles both. Run [index-reduction](hrw://lab/index-reduction) first — it runs on the
+reduced, index-1 system. Every count below is read from a generated trace, so if one disagrees
+with your screen, the lab is wrong and I want to know.
 
 ---
 

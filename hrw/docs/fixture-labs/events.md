@@ -4,30 +4,21 @@
 
 [The chain overview](hrw://lab/the-concepts)
 
-**A concept lab.** Run [initialization](hrw://lab/initialization) first. Everything so far has
-assumed one fixed set of equations; this lab is about models where the equations change.
-
-Every count below was read from the committed traces, never remembered.
-
----
-
-## The problem this phase exists to solve
-
-Every phase so far treated the model as one system of equations, true for all time. Ordering,
+**Every phase so far treated the model as one system of equations, true for all time.** Ordering,
 tearing and index reduction all rest on that: a permutation computed once is valid forever.
 
 Physical models break the assumption constantly. A ball bounces — its velocity reverses, but only
 at the instant it touches the floor. A brake engages. A diode conducts. In each case some equation
-holds *sometimes*, and the moment it starts or stops holding is not known in advance: it depends on
-the solution.
+holds *sometimes*, and the moment it starts or stops holding is not known in advance, because it
+depends on the solution.
 
 That is genuinely hard, and it is worth being precise about why. The integrator advances in steps.
 If the bounce happens between two steps, integrating straight through it produces nonsense — the
 ball ends up below the floor, moving down. So the solver must detect the instant, stop there,
-apply the change, and restart.
+apply the change, and restart. This phase finds what can change and what has to be watched.
 
-This phase finds what can change and what has to be watched. Three stations: a model with a real
-event, a model with none, and a model with several.
+Run [initialization](hrw://lab/initialization) first. Every count below is read from a generated
+trace, so if one disagrees with your screen, the lab is wrong and I want to know.
 
 ---
 

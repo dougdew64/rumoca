@@ -4,27 +4,17 @@
 
 [The chain overview](hrw://lab/the-concepts)
 
-**A concept lab.** Run [matching](hrw://lab/matching) first — it answers *which* equation
-solves *which* unknown, and this lab asks *in what order*.
+**Giving every equation a job is not yet a recipe.** To evaluate `f_x[9]` — Ohm's law, which
+determines `R.v` — you need `R.R_actual` and `R.i`, and those come from other equations. So the
+equations have dependencies, and a dependency graph either lays out in a line or it does not.
 
-Every count below was read from the committed traces, never remembered.
+If it does, the whole system is a sequence of direct assignments: compute this, then that, then
+the next, with no iteration anywhere. If it does not, some group of equations is circular and has
+to be solved simultaneously. This phase finds out which, and where.
 
----
-
-## The problem this phase exists to solve
-
-Matching gave every equation a job. That is still not a recipe.
-
-To evaluate `f_x[9]` — Ohm's law, which determines `R.v` — you need `R.R_actual` and `R.i`, and
-those come from other equations. So the equations have dependencies, and a dependency graph
-either can be laid out in a line or it cannot.
-
-If it can, the whole system is a sequence of direct assignments: compute this, then that, then the
-next. No iteration anywhere. If it cannot, some group of equations is circular and has to be
-solved simultaneously.
-
-This phase finds out which, and where. Three stations: a system that orders completely, one that
-does not order at all, and one that splits into independent pieces.
+Run [matching](hrw://lab/matching) first — it answers *which* equation solves *which* unknown, and
+this lab asks *in what order*. Every count below is read from a generated trace, so if one
+disagrees with your screen, the lab is wrong and I want to know.
 
 ---
 

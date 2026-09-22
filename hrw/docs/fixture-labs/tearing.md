@@ -4,30 +4,20 @@
 
 [The chain overview](hrw://lab/the-concepts)
 
-**A concept lab.** Run [blt-ordering](hrw://lab/blt-ordering) first — it produces the coupled
-blocks this lab tries to shrink.
+**A coupled block of size *n* means handing *n* equations in *n* unknowns to a numerical solver**,
+and Newton's cost grows faster than linearly in *n*. So a smaller block is not a tidiness
+preference — it is the difference between a model that simulates and one that crawls.
 
-Every count below was read from the committed traces, never remembered.
+But a block's *size* is not fixed, and the reason is worth seeing before the machinery:
 
----
+> If you guess one of the unknowns, several of the others may follow by direct substitution — and
+> then one leftover equation tells you whether the guess was right.
 
-## The problem this phase exists to solve
+The solver iterates on the guess alone. Tearing is the phase that chooses what to guess.
 
-BLT ordering ended with some blocks that must be solved simultaneously. A block of size *n* means
-handing *n* equations in *n* unknowns to a numerical solver, and Newton's cost grows faster than
-linearly in *n* — so a smaller block is not a tidiness preference, it is the difference between a
-model that simulates and one that crawls.
-
-But a block's *size* is not fixed. Here is the trick, and it is worth seeing before the machinery:
-
-> If you guess one of the unknowns, several of the others may follow by direct substitution —
-> and then one leftover equation tells you whether the guess was right.
-
-So the solver iterates on the guess alone. A 3×3 simultaneous solve becomes a 1×1 one.
-
-Tearing is the phase that chooses what to guess. Five stations: the trick, the choice being made,
-two blocks torn independently, all three kinds of block in one model, and what it costs once time
-is moving.
+Run [blt-ordering](hrw://lab/blt-ordering) first — it produces the coupled blocks this lab tries
+to shrink. Every count below is read from a generated trace, so if one disagrees with your screen,
+the lab is wrong and I want to know.
 
 ---
 

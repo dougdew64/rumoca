@@ -93,11 +93,11 @@ matching-live.md | forbid  | about a stop
 # **A new intro section goes BELOW the opening bold line.** If one belongs above, the
 # pin moves with it deliberately rather than the catalogue changing in silence.
 
-blt-ordering.md                 | blurb | A concept lab. Run
+blt-ordering.md                 | blurb | Giving every equation a job is not yet a recipe.
 camera-aiming.md                | blurb | This is a test, not an explanation.
 connect-expansion.md            | blurb | A connector is a bundle of variables that two components meet at.
-dae-construction.md             | blurb | A concept lab. It teaches
-events.md                       | blurb | A concept lab. Run
+dae-construction.md             | blurb | A numerical integrator never sees your model.
+events.md                       | blurb | Every phase so far treated the model as one system of equations
 failure-flatten.md              | blurb | Specimen: `UnbalancedShaft`
 failure-initialization.md       | blurb | Specimens: `OverInitRc`
 failure-parse.md                | blurb | Specimen: `UnclosedModel`
@@ -106,12 +106,12 @@ failure-structural.md           | blurb | Specimens: `TwiceDefined`
 failure-typecheck.md            | blurb | Specimen: `DimensionMismatch`
 frame-seeking.md                | blurb | This is a test, not an explanation.
 index-reduction.md              | blurb | A concept lab. Run
-initialization.md               | blurb | A concept lab. Run
-matching-live.md                | blurb | A concept lab, pass two.
-matching.md                     | blurb | A concept lab. It teaches
+initialization.md               | blurb | The system is square, ordered and index-1
+matching-live.md                | blurb | This is the only lab that stops Rumoca mid-algorithm
+matching.md                     | blurb | A Modelica equation is not an assignment.
 node-pointing.md                | blurb | This is a test, not an explanation.
-solve-lowering.md               | blurb | A concept lab. The last phase
+solve-lowering.md               | blurb | A solver does not look variables up by name.
 structural-vs-numerical-rank.md | blurb | The first cross-platform lab.
-tearing.md                      | blurb | A concept lab. Run
+tearing.md                      | blurb | A coupled block of size
 the-concepts.md                 | blurb | Start here.
 the-oracle.md                   | blurb | A lab that leaves HRW

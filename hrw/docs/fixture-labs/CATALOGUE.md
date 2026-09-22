@@ -10,13 +10,12 @@
 
 **Fixture lab — BLT: finding an order, and finding out there isn't one**
 
-A concept lab. Run [matching](hrw://lab/matching) first — it answers *which* equation
+Giving every equation a job is not yet a recipe. To evaluate `f_x[9]` — Ohm's law, which
 
 - **Specimens:** `RcCircuit`, `ProportionalLoop`, `TwoLoops`
 - **Stages:** `Structural`
 - **Stations:**
   - `fixture-lab-blt-finding-an-order-and-finding-out-there-isn-t-one` — Fixture lab — BLT: finding an order, and finding out there isn't one
-  - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `station-1-when-an-order-exists` — Station 1 — When an order exists
   - `station-2-when-no-order-exists` — Station 2 — When no order exists
   - `station-3-when-the-system-splits` — Station 3 — When the system splits
@@ -64,13 +63,12 @@ A connector is a bundle of variables that two components meet at. `RcCircuit` wi
 
 **Fixture lab — DAE construction: the count that decides everything**
 
-A concept lab. It teaches a step of the chain
+A numerical integrator never sees your model. At each instant it is told where the system
 
 - **Specimens:** `SingleInertia`, `UnbalancedShaft`, `OverDeterminedShaft`
 - **Stages:** `Dae`, `Flatten`, `Structural`
 - **Stations:**
   - `fixture-lab-dae-construction-the-count-that-decides-everything` — Fixture lab — DAE construction: the count that decides everything
-  - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `station-1-which-declarations-carry-the-past` — Station 1 — Which declarations carry the past?
   - `station-2-what-makes-a-variable-a-state` — Station 2 — What makes a variable a state?
   - `station-3-what-is-the-solver-actually-solving-for` — Station 3 — What is the solver actually solving for?
@@ -86,13 +84,12 @@ A concept lab. It teaches a step of the chain
 
 **Fixture lab — Events: the equations that are not always true**
 
-A concept lab. Run [initialization](hrw://lab/initialization) first. Everything so far has
+Every phase so far treated the model as one system of equations, true for all time. Ordering,
 
 - **Specimens:** `BouncingBall`, `RcCircuit`, `GearWithBrake`
 - **Stages:** `Events`
 - **Stations:**
   - `fixture-lab-events-the-equations-that-are-not-always-true` — Fixture lab — Events: the equations that are not always true
-  - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `station-1-a-model-with-a-real-event` — Station 1 — A model with a real event
   - `station-2-a-model-with-none-and-what-the-pane-says` — Station 2 — A model with none, and what the pane says
   - `station-3-a-model-with-several` — Station 3 — A model with several
@@ -237,13 +234,12 @@ A concept lab. Run [blt-ordering](hrw://lab/blt-ordering) and
 
 **Fixture lab — Initialization: the values at t = 0**
 
-A concept lab. Run [index-reduction](hrw://lab/index-reduction) first — this phase runs on
+The system is square, ordered and index-1 — and the integrator still cannot take its first
 
 - **Specimens:** `BouncingBall`, `RcCircuit`, `OverInitRc`, `RotationalInertia`
 - **Stages:** `Initialization`
 - **Stations:**
   - `fixture-lab-initialization-the-values-at-t-0` — Fixture lab — Initialization: the values at t = 0
-  - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `station-1-the-case-with-nothing-to-solve` — Station 1 — The case with nothing to solve
   - `station-2-the-case-with-a-real-initialization-system` — Station 2 — The case with a real initialization system
   - `station-3-the-case-that-specifies-too-much` — Station 3 — The case that specifies too much
@@ -255,7 +251,7 @@ A concept lab. Run [index-reduction](hrw://lab/index-reduction) first — this p
 
 **Fixture lab — Matching, live: the call stack is the augmenting path**
 
-A concept lab, pass two. [matching](hrw://lab/matching) taught the idea; this one is about
+This is the only lab that stops Rumoca mid-algorithm and reads its state in a debugger.
 
 - **Specimens:** `ProportionalLoop`, `TwiceDefined`
 - **Stages:** `Structural`
@@ -273,13 +269,12 @@ A concept lab, pass two. [matching](hrw://lab/matching) taught the idea; this on
 
 **Fixture lab — Matching: which equation solves which unknown**
 
-A concept lab. It teaches a step of the chain and uses HRW as the instrument. It is still
+A Modelica equation is not an assignment. `R.v - R.R_actual * R.i` relates three quantities
 
 - **Specimens:** `BouncingBall`, `ProportionalLoop`, `CapacitorLoop`
 - **Stages:** `Structural`
 - **Stations:**
   - `fixture-lab-matching-which-equation-solves-which-unknown` — Fixture lab — Matching: which equation solves which unknown
-  - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `station-1-the-case-where-it-is-obvious` — Station 1 — The case where it is obvious
   - `station-2-the-case-that-is-not-obvious-at-all` — Station 2 — The case that is not obvious at all
   - `station-3-the-case-with-no-answer` — Station 3 — The case with no answer
@@ -311,13 +306,12 @@ This is a test, not an explanation. It verifies the last two verbs of the answer
 
 **Fixture lab — Solve lowering: names become indices**
 
-A concept lab. The last phase before simulation. Run [events](hrw://lab/events) first.
+A solver does not look variables up by name. It is handed arrays and a function: *here is the
 
 - **Specimens:** `BouncingBall`, `RcCircuit`
 - **Stages:** `SolveLowering`
 - **Stations:**
   - `fixture-lab-solve-lowering-names-become-indices` — Fixture lab — Solve lowering: names become indices
-  - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `station-1-where-your-variables-went` — Station 1 — Where your variables went
   - `station-2-what-else-is-in-the-arrays` — Station 2 — What else is in the arrays
   - `station-3-the-same-mapping-at-scale` — Station 3 — The same mapping at scale
@@ -346,13 +340,12 @@ The first cross-platform lab. Two stations in HRW, then a notebook — because t
 
 **Fixture lab — Tearing: guess one number, get the rest for free**
 
-A concept lab. Run [blt-ordering](hrw://lab/blt-ordering) first — it produces the coupled
+A coupled block of size *n* means handing *n* equations in *n* unknowns to a numerical solver,
 
 - **Specimens:** `ProportionalLoop`, `TwoLoops`, `MixedLoop`, `LoopWithInertia`
 - **Stages:** `Structural`
 - **Stations:**
   - `fixture-lab-tearing-guess-one-number-get-the-rest-for-free` — Fixture lab — Tearing: guess one number, get the rest for free
-  - `the-problem-this-phase-exists-to-solve` — The problem this phase exists to solve
   - `station-1-guess-one-number-and-the-rest-falls-out` — Station 1 — Guess one number and the rest falls out
   - `station-2-watch-the-choice-being-made` — Station 2 — Watch the choice being made
   - `station-3-two-blocks-torn-independently` — Station 3 — Two blocks, torn independently

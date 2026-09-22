@@ -4,30 +4,18 @@
 
 [The chain overview](hrw://lab/the-concepts)
 
-**A concept lab.** It teaches a step of the chain and uses HRW as the instrument. It is still
-a test: every Expected line is violable.
+**A Modelica equation is not an assignment.** `R.v - R.R_actual * R.i` relates three quantities
+and privileges none of them; which one it is *for* depends on what the rest of the model already
+determines. So you cannot read a system's recipe off the page.
 
-Every count below was read from the committed traces under `docs/specimen-notebook/`, never
-remembered.
+That is why DAE construction handing the solver a square system — as many equations as unknowns —
+is necessary and not enough. Nothing so far says *which* equation determines *which* unknown.
+Matching is the phase that decides, pairing each equation with exactly one unknown so that no
+equation is used twice and no unknown is claimed twice. That pairing is what makes the next
+phase, ordering, askable at all.
 
----
-
-## The problem this phase exists to solve
-
-DAE construction handed the solver a square system: as many equations as unknowns. That is
-necessary and it is not enough, because a square system does not come with instructions.
-
-Nothing so far says *which* equation determines *which* unknown. And you cannot simply read it
-off the page — Modelica equations are not assignments. `R.v - R.R_actual * R.i` relates three
-quantities and privileges none of them; which one it is "for" depends on what the rest of the
-model already determines.
-
-Matching is the phase that decides. It pairs each equation with exactly one unknown, so that
-no equation is used twice and no unknown is claimed twice. That pairing is what makes the next
-phase — ordering — even askable.
-
-Four stations: the easy case, the surprising case, the case with no answer, and what the answer is
-called in the literature.
+Every count below is read from a generated trace, so if one disagrees with your screen, the lab is
+wrong and I want to know.
 
 ---
 

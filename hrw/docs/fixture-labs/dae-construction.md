@@ -4,35 +4,19 @@
 
 [The chain overview](hrw://lab/the-concepts)
 
-**A concept lab.** It teaches a step of the chain
-(`docs/compiler-phases/the-chain-of-problems.md`) and uses HRW as the instrument rather than the
-subject. It is still a test: every Expected line is violable, and a lesson built on a
-wrong number teaches the wrong thing.
+**A numerical integrator never sees your model.** At each instant it is told where the system
+currently is, and it must be told how fast everything is changing, so that it can step forward and
+repeat. That is only possible once every variable has been sorted by **role** — carried forward
+through time, fixed for the whole run, or solved afresh at each instant.
 
-Every count below was read from
-`docs/specimen-notebook/{SingleInertia,UnbalancedShaft,OverDeterminedShaft}/trace/`, never
-remembered. Notices appear in the status bar, along the bottom of the window.
+Flattening left something faithful and unusable: one flat list of equations, still written in your
+vocabulary, with named variables and `der()` calls. DAE construction is the phase that does the
+sorting — and then makes a single claim about what it produced: **the system is square**, as many
+equations as unknowns. Everything downstream is entitled to assume that claim without re-checking
+it, which is what the last three stations are about.
 
----
-
-## The problem this phase exists to solve
-
-You have just come out of flattening, which crushed a hierarchy of components into one flat
-namespace and one flat list of equations — including the connection equations you watched being
-generated. What comes out is faithful, and it is still written in *your* vocabulary: named
-variables, `der()` calls, equations with a left side and a right side.
-
-A numerical integrator cannot use that. It wants a specific shape. At each instant it knows where
-the system currently is, and it needs to be told how fast everything is changing, so it
-can step forward and repeat.
-
-So something has to sort every variable into a role — carried forward through time, fixed for the
-whole run, or solved for afresh at each instant — and then make one claim about the result:
-this system is square. Everything downstream is entitled to assume that claim.
-
-DAE construction is that phase. Seven stations: the sorting, why it sorts that way, what the solver
-is really solving for, the claim, what happens when the claim fails in each direction, and why it is
-checked here rather than later.
+Every count below is read from a generated trace, so if one disagrees with your screen, the lab is
+wrong and I want to know.
 
 ---
 
