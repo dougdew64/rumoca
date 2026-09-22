@@ -718,3 +718,52 @@ could, it probably belongs in a station.
 **Standing consequence for writing labs:** prefer the count over the rule. A rule that never
 meets a specimen is the stored prose this project already retired 1,632 lines of.
 
+### And the rule that follows, which supplies what rule 4 was missing — same day
+
+**Doug, after reading the overview against the station:** *"It seems to me that the lab overview
+is trying to accomplish too much and is failing. Perhaps a rule for the lab overview is that it
+should contain only as much as necessary to introduce the stations. Perhaps some of the statements
+which are currently in the lab overview could be redistributed to the stations, because in the
+stations, those same statements could be checked. We don't want lab overviews which are attempting
+to be mini textbooks."*
+
+**`fixture-labs/README.md` rule 4 already said the defect** — *"an abstraction with no station is
+untested confidence"* — and has said it since 2026-08. It is **unguarded**, and naming a defect is
+all it could do. Doug supplies the remedy: **redistribute, do not delete.**
+
+**The sharp form: if a sentence commits to something a specimen could settle, it belongs in a
+station.** Three dispositions:
+
+| the overview sentence | do this |
+|---|---|
+| orients, or previews a number a station settles | **keep** — this is the briefing |
+| commits to something a station already reaches | **move it there**, where an `**Expected:**` pins it |
+| commits to something **no station in this lab can reach** | **neither keep nor delete — file the station the lab owes** |
+
+The third row is where a textbook accumulates, because those claims have nowhere else to go.
+
+**Measured across 21 labs, so the scope is known.** Median overview: 21 lines, 16% of the file.
+Two outliers — `connect-expansion` at 72 lines, `index-reduction` at **137 lines, 40%**. The rest
+sit between 11 and 38. So this is two labs, not a corpus rewrite.
+
+**`connect-expansion`'s overview audited against its six stations:** three abstractions have no
+station. (1) *order cannot change which variables end up together, and a `connect` whose ends are
+already in one set does nothing* — Station 1 counts sets but never predicts this. (2) *the MLS §4.7
+unconnected-potential paragraph* — needs `DanglingPin`/`OrphanConnector`, which this lab does not
+load, and both are already oracle-validated in this ledger. (3) *a connector variable with no
+counterpart is routed nowhere; wire a `Pin` to a `Flange` and nothing is checked* — and **the
+overview itself admits no station can reach it**: *"RcCircuit cannot show you why."* That admission
+is the disease stating its own name.
+
+**No line budget is being added.** `reading-budgets.txt` records what happened last time a length
+limit policed prose: fifteen raises in one day, zero rejections. Count unstationed abstractions.
+
+**Where this rule is NOT yet recorded, and why — 2026-09-22.** It belongs in
+`fixture-labs/README.md` beside rule 4. That file is **79,934 bytes against a ceiling of 80,000**:
+66 bytes of headroom, so the shortest honest statement of the rule does not fit. The ceiling's own
+message says what that means — *"past this it is not read before a task, it is consulted — which
+means it wants splitting, not a bigger number"* — and `unattended-runs.md` forbids raising a
+ceiling to fit new content. **So this reports and waits.** The lab authority is one rule short
+until that file is split, and the disease is the same one Doug just diagnosed, one level up: a
+README that has become a textbook.
+
