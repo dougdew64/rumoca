@@ -298,10 +298,25 @@ impl ModelListState {
                 let mut capture_selection = false;
                 // ---- HRW specimens: curated `specimens/` + scratch ----
                 //
-                // **Collapsed at startup, with MSL expanded** (Doug,
-                // 2026-08-01) -- the reverse of the first arrangement.
-                // The corpus is now the surface most sessions browse, and
-                // 18 curated files are the ones already known by name.
+                // **Expanded at startup, with MSL collapsed** (Doug,
+                // 2026-09-24) -- reversing the 2026-08-01 arrangement,
+                // and the reason is a change of subject rather than a
+                // change of mind. That arrangement was correct while the
+                // corpus was "the surface most sessions browse": the
+                // question then was *scale* -- does an unseen IR shape
+                // break us -- and 2,626 rows are the corpus for it.
+                //
+                // **The specimen ladder made the curated files the
+                // subject.** `docs/specimen-ladder.md` gives ten rungs,
+                // each naming one development in the field's history and
+                // one specimen that demonstrates it, and every one of
+                // those specimens is in `specimens/`. A session working a
+                // rung opens exactly one of these and never touches the
+                // MSL. Leaving them behind a shut header put the list
+                // being worked from one click below the list that is not.
+                //
+                // Both halves still open on a filter, so searching is
+                // unaffected either way.
                 //
                 // Counted before the header is drawn, because the header
                 // has to say how many are inside it while it is shut. A
@@ -337,7 +352,7 @@ impl ModelListState {
                 };
                 egui::CollapsingHeader::new(hrw_header)
                     .id_salt("hrw_specimen_list")
-                    .default_open(false)
+                    .default_open(true)
                     .open(hrw_open)
                     .show(ui, |ui| {
                         if hrw_hits == 0 {
@@ -397,12 +412,15 @@ impl ModelListState {
                     });
                 // ---- The corpus: the 2,626 MSL models ----
                 //
-                // **Expanded at startup** (Doug, 2026-08-01). The comment
-                // that stood here said the section was "shown only while
-                // filtering" -- true of the first version, false of the
-                // code beneath it since the same day, and left behind. A
-                // comment that describes a design the code abandoned is
-                // worse than none: it is read as intent.
+                // **Collapsed at startup** (Doug, 2026-09-24), reversing
+                // 2026-08-01. Two earlier comments here each described a
+                // design the code had already left -- one said the section
+                // was "shown only while filtering", one said it was
+                // expanded -- so this is the third state this block has
+                // been in and the second stale comment it has carried. A
+                // comment describing an abandoned design is worse than
+                // none: it is read as intent. The reasoning for the
+                // current state is on the HRW header above, stated once.
                 let filter = self.filter.trim().to_owned();
                 let mut open_model: Option<String> = None;
                 {
@@ -428,12 +446,21 @@ impl ModelListState {
                         // asserted the hidden behaviour, so it encoded the
                         // defect as a requirement.
                         //
-                        // **Open at startup, with HRW specimens shut.**
-                        // The earlier worry -- 2,626 rows burying 18
-                        // curated files -- is answered by giving the 18
-                        // their own header rather than by hiding the 2,626.
-                        // Only `MAX_LISTED` rows render, so an open corpus
-                        // costs a bounded amount of screen either way.
+                        // **Shut at startup, with HRW specimens open**
+                        // (Doug, 2026-09-24) -- see the HRW header above
+                        // for why, which is that the specimen ladder made
+                        // the curated files the working surface.
+                        //
+                        // **It stays visible, and that is the part not to
+                        // undo.** The original defect was rendering this
+                        // section *only while filtering*, so an unfiltered
+                        // list showed no sign the corpus existed -- Doug
+                        // started HRW and reported the MSL examples "not
+                        // showing", which was exactly right from where he
+                        // sat. Collapsed-but-headed is not that: the
+                        // header carries the model count, so the corpus
+                        // announces both its existence and its size while
+                        // shut. A filter still forces it open.
                         let header = if filter.is_empty() {
                             format!("MSL corpus \u{2014} {total} models")
                         } else {
@@ -441,7 +468,7 @@ impl ModelListState {
                         };
                         egui::CollapsingHeader::new(header)
                             .id_salt("corpus_list")
-                            .default_open(true)
+                            .default_open(false)
                             .open(if filter.is_empty() { None } else { Some(true) })
                             .show(ui, |ui| {
                                 if hits.is_empty() {

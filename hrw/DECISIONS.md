@@ -5098,3 +5098,48 @@ everywhere, while `phi` — quadratic — takes its whole error from that single
 keeps it**, since the error obeys `e' = 0`. The naive backward-Euler estimate is `h0²/2`; measured
 is consistently ~1.96× that, and **the factor of two is not explained** — no solver code was read
 for it.
+
+---
+
+## 2026-09-24 — the specimen list reverses: HRW specimens open, MSL corpus shut
+
+**Doug's request, and it reverses his own 2026-08-01 decision.** That one was right for its
+subject: the corpus was *"the surface most sessions browse"*, the question being asked of it was
+**scale** — does an unseen IR shape break us — and 2,626 rows are the corpus for that question.
+The 18 curated files were the ones already known by name, so they could afford to be one click
+away.
+
+**`docs/specimen-ladder.md` changed the subject.** Its ten rungs each name one development in the
+field's history and one specimen that demonstrates it, and **every one of those specimens lives in
+`specimens/`**. A session working a rung opens exactly one of them and never touches the MSL. So
+the list being worked from was sitting one click below the list that was not.
+
+**What must not be undone: the corpus stays visible.** Its original defect was rendering the
+section *only while filtering*, so an unfiltered list gave no sign the corpus existed — Doug
+started HRW and reported the MSL examples *"not showing"*, which was exactly right from where he
+sat. **Collapsed-but-headed is a different thing**: the header carries the model count, so the
+corpus announces both its existence and its size while shut, and a filter still forces both
+sections open. `at_startup_hrw_specimens_are_open_and_the_corpus_is_shut` asserts both headers are
+present precisely to keep those two states distinguishable.
+
+**A third stale comment was found in the same block.** It has now held three states, and had
+carried a wrong comment for two of them — first *"shown only while filtering"* after that stopped
+being true, then *"expanded at startup"*. The reasoning now lives **once**, on the HRW header, with
+the corpus block pointing at it.
+
+**Three assertions had to be repaired before this test proved anything**, and the record is worth
+more than the fix:
+
+1. The first corpus assertion looked for the body's `no match` empty-state label. **It passed with
+   the corpus open** — the survey *does* load under the harness, so the section is not empty and
+   renders rows instead. A vacuous assertion that reads as a real one.
+2. `query_by_label_contains` **panics on two or more matches**, so the repaired version failed
+   inside the query helper rather than reporting its own message, and would have depended on there
+   being at least two rows.
+3. `get_all_by_label_contains` **panics on zero matches** — which is the state being asserted — so
+   it turned the passing condition into a red.
+
+`query_all_by_label_contains` asserts nothing and counts, which is what an absence needs. **Both
+halves were then verified to fail with the defaults swapped**, in both directions, rather than
+assumed to. This is the project's standing rule about the three tests that passed while the code
+they vouched for was broken, and it fired four times in one small UI change.

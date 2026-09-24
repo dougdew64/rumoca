@@ -1215,45 +1215,74 @@ fn the_background_names_the_stage_before_a_model_exists() {
     );
 }
 
-/// At startup the **corpus is open and HRW specimens are shut**.
+/// At startup **HRW specimens are open and the corpus is shut**.
 ///
-/// Doug, 2026-08-01, reversing the first arrangement: the corpus is the surface
-/// most sessions browse, and the 18 curated files are the ones already known by
-/// name.
+/// Doug, 2026-09-24, reversing the 2026-08-01 arrangement — and the reason is a
+/// change of subject, not of mind. That arrangement was right while the corpus
+/// was the surface most sessions browsed; `docs/specimen-ladder.md` then made the
+/// curated files the working surface, since every one of its ten rungs names a
+/// specimen in `specimens/`.
 ///
 /// **Both halves are asserted, because either alone can hold while the pair is
-/// wrong.** A test that only checked the corpus was open would have passed on
-/// the previous build too, where nothing was collapsed at all.
+/// wrong** — the same reason the 2026-08-01 version gave, which remains the right
+/// reason with the states swapped.
+///
+/// **Both headers must still be on screen.** The corpus's original defect was
+/// rendering only while filtering, so an unfiltered list showed no sign it
+/// existed; collapsed-but-headed is not that, and this test is what keeps the two
+/// distinguishable.
 #[test]
-fn at_startup_the_corpus_is_open_and_hrw_specimens_are_shut() {
+fn at_startup_hrw_specimens_are_open_and_the_corpus_is_shut() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
     app.test_set_specimen_files(&["RcCircuit.mo", "MotorWithBrake.mo"]);
     let mut h = harness(app);
     h.run_steps(2);
 
-    // A corpus row proves the section is expanded, not merely present.
     assert!(
         h.query_by_label_contains("MSL corpus").is_some(),
-        "the corpus header must be on screen",
+        "the corpus header must stay on screen while shut \u{2014} an absence you cannot \
+         see is indistinguishable from a feature that was never built",
     );
     assert!(
         h.query_by_label_contains("HRW specimens").is_some(),
-        "the HRW section needs a header of its own \u{2014} that is the whole request",
+        "the HRW section needs a header of its own",
     );
+    // A specimen row proves the section is expanded, not merely present.
     assert!(
-        h.query_by_label_contains("RcCircuit").is_none(),
-        "HRW specimens start COLLAPSED, so no specimen row should be rendered",
+        h.query_by_label_contains("RcCircuit").is_some(),
+        "HRW specimens start EXPANDED, so the specimen rows must render",
+    );
+    // **A corpus ROW is the discriminator, and the first attempt at this assertion
+    // was vacuous.** It looked for the body's `no match` empty-state label, which
+    // never renders under the harness because the survey *does* load here — the
+    // corpus is not empty, so an open section shows rows instead. That version
+    // passed with the corpus open, proving nothing. U+1F4E6 prefixes corpus rows
+    // and nothing else in this pane (`model_list.rs` is its only use), so its
+    // absence is exactly "the corpus body did not render".
+    //
+    // **`query_all_…` is the only helper that can express this**, and the two
+    // obvious choices both fail, each in a way that looks like a working test:
+    // `query_by_label_contains` *panics* on two or more matches, and `get_all_…`
+    // panics on **zero** — which is the very state being asserted, so it turned a
+    // passing condition into a red. `query_all_…` asserts nothing and just counts.
+    let corpus_rows = h.query_all_by_label_contains("\u{1f4e6}").count();
+    assert_eq!(
+        corpus_rows, 0,
+        "the corpus starts COLLAPSED, so none of its rows should render \u{2014} \
+         found {corpus_rows}",
     );
 }
 
-/// Clicking the HRW header reveals the specimens it counts.
+/// The HRW header's count matches what its body shows, and the header collapses.
 ///
-/// The header says how many are inside while it is shut; this checks the number
-/// is not decorative. A collapsed section whose count is right but whose body is
-/// empty would look identical until clicked.
+/// **Retargeted 2026-09-24**, when the section became open at startup. It used to
+/// click the header *open* and check the rows appeared; with the default reversed
+/// that click now shuts it, so the same click tests the same wiring from the other
+/// side. The property under test is unchanged: the count is not decorative, and
+/// the header genuinely governs the body.
 #[test]
-fn opening_the_hrw_section_reveals_its_specimens() {
+fn the_hrw_section_count_matches_its_body_and_the_header_collapses_it() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
     app.test_set_specimen_files(&["RcCircuit.mo", "MotorWithBrake.mo"]);
@@ -1263,13 +1292,24 @@ fn opening_the_hrw_section_reveals_its_specimens() {
     assert!(
         h.query_by_label_contains("HRW specimens \u{2014} 2")
             .is_some(),
-        "the header must carry the count while collapsed, or opening it is a guess",
+        "the header must carry the count, or the number beside it is decorative",
+    );
+    assert!(
+        h.query_by_label_contains("RcCircuit").is_some()
+            && h.query_by_label_contains("MotorWithBrake").is_some(),
+        "both counted specimens must be on screen while the section is open",
     );
     h.get_by_label_contains("HRW specimens").click();
     h.run_steps(2);
     assert!(
-        h.query_by_label_contains("RcCircuit").is_some(),
-        "opening the section must show the specimens the header counted",
+        h.query_by_label_contains("RcCircuit").is_none(),
+        "clicking the header must shut the section it counts",
+    );
+    assert!(
+        h.query_by_label_contains("HRW specimens \u{2014} 2")
+            .is_some(),
+        "the count must survive collapsing \u{2014} that is what makes a shut section \
+         worth anything",
     );
 }
 
