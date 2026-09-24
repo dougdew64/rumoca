@@ -1,8 +1,10 @@
 # The Cartesian Pendulum as a DAE: From Equations to a Newton Step
 
 **Purpose:** what a DAE is, why the Cartesian pendulum is one, and what a solver actually does with
-it — fourteen steps from the physical system to a Newton step worked by hand, plus the context that
-is usually missing.
+it — fourteen steps from the physical system to a Newton step worked by hand, then the same model
+through **Rumoca** and **System Modeler**, which disagree about it.
+**Only those two compilers are referenced**, and everything either is said to do was measured on
+this machine. Claims that would need a third tool are left out rather than generalised.
 **Status:** reference, and **incomplete by intent** — *"Connections to coursework"* grows as Doug's
 courses reach the material, and Step 14 leaves the third iteration unworked.
 **Read when:** learning what *index* means, before or alongside
@@ -58,7 +60,9 @@ If you still want the tension, you can compute it afterward from θ and ω. It i
 
 ### Aside 1c: Why anyone uses the Cartesian form
 
-For a pendulum, you wouldn't. But finding "track coordinates" by hand stops being practical in bigger systems: closed-loop linkages, robot arms touching things, and Modelica models built by connecting components. Each connection naturally produces a constraint. Tools like Modelica compilers therefore accept the DAE as written and deal with the constraint mechanically. That is the problem the rest of this walkthrough is building toward.
+For a pendulum, you wouldn't. But finding "track coordinates" by hand stops being practical in bigger systems: closed-loop linkages, robot arms touching things, and Modelica models built by connecting components. Each connection naturally produces a constraint. A Modelica compiler therefore accepts the DAE as written and has to deal with the constraint mechanically. That is the problem the rest of this walkthrough is building toward.
+
+**Two compilers are referred to throughout, and only two**: **Rumoca**, the one this project instruments, and **System Modeler 15.0**, used here as an independent implementation to check claims against. Both are on this machine and everything either is said to do was measured. Where a third tool would be the natural example, the claim is left out instead.
 
 ### Aside 1d: Deriving ω′ = −(g/L)·sin θ
 
@@ -237,7 +241,7 @@ The integrator supplies the missing link. Backward Euler says x′ = (x − x_pr
 
 #### When Newton struggles
 
-Newton needs two things. First, a starting guess close enough that the straight-line model is trustworthy. Start too far away, and the tangent can point somewhere useless. That's one reason solvers use predictors (see Aside 9a). Second, a Jacobian that isn't singular or nearly singular. If J can't be solved cleanly, the jump is meaningless or enormous. The pendulum's index-3 structure pushes J toward that problem as h shrinks.
+Newton needs two things. First, a starting guess close enough that the straight-line model is trustworthy. Start too far away, and the tangent can point somewhere useless. Part II gives this model's version of "useless": the step's equations have a second real root with the mass on the wrong side of the pivot and the rod in violent compression, and only the starting guess rules it out. That's one reason solvers use predictors (see Aside 9a). Second, a Jacobian that isn't singular or nearly singular. If J can't be solved cleanly, the jump is meaningless or enormous. The pendulum's index-3 structure pushes J toward that problem as h shrinks.
 
 The modified Newton from Step 14 bends one rule. It reuses an old J instead of rebuilding it each round. The tangent planes are then slightly wrong, so convergence slows from digit-doubling to steady improvement. But each round is much cheaper.
 
@@ -388,9 +392,9 @@ A different count is also common: the differentiations needed to reach index 1, 
 
 Some authors formalize this count. Kunkel and Mehrmann's strangeness index measures the distance to a form that's solver-ready. For systems like this one, it equals the differentiation index minus one. So the "two differentiations to usable" count is essentially the pendulum's strangeness index. That is a real, established measure; it just isn't the one people mean when they say "index 3."
 
-This is also what a mainstream Modelica compiler does. The Pantelides algorithm finds which equations to differentiate, and how many times, to reach index 1. For the pendulum, it differentiates the constraint twice. The dummy derivative method then chooses which variables to treat as algebraic, so the solver still enforces the original position constraint. That prevents the mass from slowly drifting off the circle, which would happen if you kept only the twice-differentiated version.
+The published algorithms for doing this mechanically are Pantelides, which finds which equations to differentiate and how many times to reach index 1, and the dummy derivative method, which then chooses which variables to treat as algebraic so the solver still enforces the *original* position constraint. That last part matters: keeping only the twice-differentiated version lets the mass drift slowly off the circle.
 
-**Rumoca does not do this, and that is worth knowing before you expect it to.** Its index reduction is pattern-based rather than general Pantelides: it recognises particular shapes of removable constraint, and the rod constraint is not one of them. Part II shows what it reports instead. Nothing above is wrong — it is what the algorithm *would* do — but this project's compiler stops short of it.
+**Rumoca does not implement them.** Its index reduction is pattern-based: it recognises particular shapes of removable constraint, and the rod constraint is not one of them. **System Modeler does** reduce this model — it simulates it, and holds x² + y² = L² to machine precision. Part II has both measurements, and does not claim *how* System Modeler did it, because that is not visible from outside.
 
 #### The chain picture
 
@@ -438,7 +442,7 @@ At our start, the mass is at rest (u = v = 0) at the height of the pivot (y = 0)
 
 Read the formula physically. The term u² + v² is the pull needed to curve the mass's path into a circle. The −g·y term is gravity's share along the rod, since y is negative when the mass is below the pivot.
 
-A starting state that satisfies all three conditions is called consistent. If you hand a solver an inconsistent one, such as velocity not tangent to the circle or the wrong λ, the first step either jerks violently to fix it or Newton fails. Finding consistent values is its own problem, called consistent initialization. IDA has a routine for it, IDACalcIC. Modelica tools build and solve a separate initialization system from the model's `initial equation` sections and the `fixed = true` attributes.
+A starting state that satisfies all three conditions is called consistent. If you hand a solver an inconsistent one, such as velocity not tangent to the circle or the wrong λ, the first step either jerks violently to fix it or Newton fails. Finding consistent values is its own problem, called consistent initialization. IDA has a routine for it, IDACalcIC. A Modelica compiler builds and solves a separate initialization system from the model's `initial equation` sections and the `fixed = true` attributes.
 
 Rumoca builds that separate system too, and on this model it fails on λ for the reason this aside gives — Part II has the message. [`fixture-labs/initialization.md`](fixture-labs/initialization.md) is the lab for the phase.
 
@@ -617,7 +621,7 @@ In unknown order, to four figures:
 Δx = −0.00495    Δy = +0.000495    Δu = −0.0495    Δv = +0.00495    Δλ = +0.495
 ```
 
-Choosing one unknown to break a loop is called tearing, and Δx here is the tearing variable. It's the same technique a Modelica compiler uses on algebraic loops. The loop shrinks to one equation in one unknown, and everything else follows by substitution.
+Choosing one unknown to break a loop is called tearing, and Δx here is the tearing variable. It is the same technique Rumoca uses on algebraic loops. The loop shrinks to one equation in one unknown, and everything else follows by substitution.
 
 Rumoca tears too, and on a coupled block rather than on a Newton iteration — [`fixture-labs/tearing.md`](fixture-labs/tearing.md) is the lab, and its opening is the same trick stated the same way: guess one unknown, get the rest by substitution, and let one leftover equation say whether the guess was right.
 
@@ -633,12 +637,16 @@ Two practical notes on what real solvers do differently. They usually start from
 
 ---
 
-# Part II: The same model through Rumoca
+# Part II: The same model through Rumoca and System Modeler
 
-Everything above was worked by hand. This part runs the identical system through the compiler this
-project is built around, and checks the hand-work against it. **Every number here was measured on
-2026-09-24, not recalled** — `cargo run -p hrw --example stage_outcomes -- specimens/CartesianPendulum.mo`
-and a one-off simulation probe.
+Everything above was worked by hand. This part runs the identical system through two compilers that
+are on this machine — **Rumoca**, which this project instruments, and **System Modeler 15.0**, used as
+an independent implementation — and checks the hand-work against both. **Every number here was
+measured on 2026-09-24, not recalled**: `cargo run -p hrw --example stage_outcomes -- specimens/CartesianPendulum.mo`,
+a one-off simulation probe, and `SystemModelSimulate` in a Wolfram kernel.
+
+The two disagree about this model, which is what makes the comparison worth having. Rumoca stops.
+System Modeler runs it.
 
 ## The specimen
 
@@ -770,6 +778,102 @@ trying to meet tolerance, and shrinking h is precisely what makes an index-3 pro
 the practical reason this document exists: the diagnosis has to come from understanding the
 structure, because the solver cannot supply it.
 
+## System Modeler runs it, and confirms the hand derivation
+
+The same file, imported and simulated:
+
+```
+Import["…/CartesianPendulum.mo", "MO"]
+SystemModelSimulate["CartesianPendulum", 5]      ExitCode 0
+```
+
+It simulates. No warning, no mention of index. **So the model is not defective — Rumoca's limit is
+Rumoca's**, and having a second implementation is how you tell those apart.
+
+Two things it confirms, and they are the two the hand derivation most needed checking.
+
+**The constraint holds.** At every sampled time, x² + y² = 1 exactly. The mass does not drift off
+the circle, which is the failure Aside 7a warns about when only the twice-differentiated constraint
+is kept.
+
+**λ follows the formula Aside 7a derives.** That aside differentiates the constraint twice by hand
+and reaches λ = m·(u² + v² − g·y)/L². Evaluating that expression on System Modeler's own output,
+with m = 1, L = 1, g = 9.81:
+
+| t | λ reported | m·(u² + v² − g·y)/L² | difference |
+|---|---|---|---|
+| 0.1 | 1.44285 | 1.44285 | −1.1×10⁻¹⁵ |
+| 0.5 | 27.0862 | 27.0862 | −2.3×10⁻¹² |
+| 1.0 | 4.85635 | 4.85635 | +3.9×10⁻¹⁴ |
+| 2.5 | 2.51796 | 2.51796 | −2.2×10⁻¹⁵ |
+
+Agreement at machine precision, by an implementation that has never seen this document. **That is
+what an oracle is for**: the derivation could have been plausible and wrong, and nothing in the
+algebra would have said so.
+
+λ(0) = 0 as well, which is Aside 8a's claim that a horizontal rod holding a stationary mass carries
+no load — measured rather than argued.
+
+**What System Modeler does internally is not claimed here.** Its `StateVariables` property comes
+back empty for this model, so the simulation result does not reveal which variables it selected or
+how it reduced the index. It reduced it somehow; this document does not guess further.
+
+## What the hand-worked step is, and is not
+
+Step 11 through Step 13 work one backward-Euler step with g = 10, h = 0.1. It is worth being exact
+about what that answer means, because two different errors are stacked in it and the walkthrough
+does not separate them.
+
+Solving the same backward-Euler equations *exactly* — the answer Newton is converging toward — and
+simulating the true trajectory with g = 10 for comparison:
+
+| | x | y | u | v | λ |
+|---|---|---|---|---|---|
+| after 2 Newton iterations (Step 13) | 0.99505 | −0.099505 | −0.0495 | −0.99505 | 0.495 |
+| **converged** backward-Euler step | 0.995037 | −0.0995037 | −0.0496281 | −0.995037 | 0.498756 |
+| **true** solution at t = 0.1 | 0.99875 | −0.049975 | −0.0499625 | −0.998501 | 1.49925 |
+
+Read the two gaps separately.
+
+**Row 1 to row 2 is Newton's remaining error**, and it is small — the states agree to four or five
+figures after two iterations, and λ to about 0.8%. That is Step 14's "a third iteration would bring
+the residuals to around 10⁻⁶," confirmed. λ is the laggard, which is the 1/h² amplification from
+Step 13 showing up in convergence as well as in magnitude.
+
+**Row 2 to row 3 is the method's error, and it is enormous.** The converged backward-Euler step puts
+the mass at y = −0.0995 when the truth is −0.04998: it has fallen **twice as far as it should**. λ
+is worse — 0.4988 against a true 1.4993, a factor of three.
+
+So the hand-worked answer is *arithmetically correct and physically poor*. Backward Euler is
+first-order, and h = 0.1 is a huge step for this problem. Nothing is wrong with the walkthrough —
+h = 0.1 was chosen so the arithmetic stays visible — but a reader who takes row 1 for the physics
+would be badly misled, and the document said nothing about it until this section.
+
+**This also closes the loop on why the pendulum is hard.** The fix for row 2's error is a smaller h.
+Shrinking h is exactly what drives Δλ/Δx toward 1/h² and the condition number toward 1/h³. An
+index-3 problem punishes the one remedy its accuracy demands, which is why Rumoca's solver ends up
+at h ≈ 5×10⁻⁵ and gives up.
+
+## A second root, and why the first guess matters
+
+Aside 5a says Newton needs a starting guess close enough that the straight-line model is
+trustworthy, and that starting too far away can send the tangent somewhere useless. The pendulum
+supplies a concrete "somewhere useless." Solving the backward-Euler equations for **all** real roots
+returns two:
+
+```
+x =  0.995037   y = −0.0995037   u =  −0.0496281   v = −0.995037   λ =    0.498756
+x = −0.995037   y = +0.0995037   u = −19.9504      v = +0.995037   λ = −200.499
+```
+
+The second is the mass on the *other* side of the pivot, travelling at twenty units per second, with
+the rod in violent compression. It satisfies every equation. It is not the physics, and nothing in
+the equations says so.
+
+Newton finds the first because the guess started there. **The constraint is quadratic, so the
+step's equations genuinely have two solutions, and the only thing choosing between them is where
+you begin.** That is why a predictor is not merely an optimisation.
+
 ## Seeing it in HRW
 
 The lab [`index-reduction.md`](fixture-labs/index-reduction.md) walks this on screen. Station 1
@@ -794,7 +898,7 @@ Most engineering and computer science students take a numerical methods course t
 
 **The textbook habit of reducing by hand.** Textbooks pick problems where a clever coordinate choice removes the constraint, like θ for the pendulum. Students learn to write ODEs, then solve ODEs. The DAE never appears because a human eliminated it before the numerics started. That works for textbook problems and breaks down for real systems, as Aside 1c describes.
 
-**Tools that hide it.** Most engineers who solve DAEs every day don't know it. SPICE is a DAE solver: Kirchhoff's laws are algebraic constraints sitting next to capacitor and inductor rate equations. Chemical process simulators, multibody packages, and Modelica tools are DAE solvers too. A Modelica compiler does the reduction mechanically: matching, BLT sorting, index reduction, tearing. It usually hands the integrator something that is effectively an ODE with algebraic solves embedded. So the ODE-in-disguise idea is literally what those tools produce, and the user never sees the step.
+**Tools that hide it.** Most engineers who solve DAEs every day don't know it. SPICE is a DAE solver: Kirchhoff's laws are algebraic constraints sitting next to capacitor and inductor rate equations. Chemical process simulators, multibody packages, and Modelica tools are DAE solvers too. A Modelica compiler does the reduction mechanically: matching, BLT sorting, index reduction, tearing. It hands the integrator something that is effectively an ODE with algebraic solves embedded. So the ODE-in-disguise idea is literally what such a tool produces, and the user never sees the step — System Modeler simulates the pendulum without ever mentioning index, which Part II measures.
 
 **Seeing that step is what HRW is for**, and Part II is this model's version of it: the same four operations, named, with what each one reports.
 
