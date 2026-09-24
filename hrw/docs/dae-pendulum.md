@@ -388,7 +388,9 @@ A different count is also common: the differentiations needed to reach index 1, 
 
 Some authors formalize this count. Kunkel and Mehrmann's strangeness index measures the distance to a form that's solver-ready. For systems like this one, it equals the differentiation index minus one. So the "two differentiations to usable" count is essentially the pendulum's strangeness index. That is a real, established measure; it just isn't the one people mean when they say "index 3."
 
-This is also what a Modelica compiler does. The Pantelides algorithm finds which equations to differentiate, and how many times, to reach index 1. For the pendulum, it differentiates the constraint twice. The dummy derivative method then chooses which variables to treat as algebraic, so the solver still enforces the original position constraint. That prevents the mass from slowly drifting off the circle, which would happen if you kept only the twice-differentiated version.
+This is also what a mainstream Modelica compiler does. The Pantelides algorithm finds which equations to differentiate, and how many times, to reach index 1. For the pendulum, it differentiates the constraint twice. The dummy derivative method then chooses which variables to treat as algebraic, so the solver still enforces the original position constraint. That prevents the mass from slowly drifting off the circle, which would happen if you kept only the twice-differentiated version.
+
+**Rumoca does not do this, and that is worth knowing before you expect it to.** Its index reduction is pattern-based rather than general Pantelides: it recognises particular shapes of removable constraint, and the rod constraint is not one of them. Part II shows what it reports instead. Nothing above is wrong — it is what the algorithm *would* do — but this project's compiler stops short of it.
 
 #### The chain picture
 
@@ -437,6 +439,8 @@ At our start, the mass is at rest (u = v = 0) at the height of the pivot (y = 0)
 Read the formula physically. The term u² + v² is the pull needed to curve the mass's path into a circle. The −g·y term is gravity's share along the rod, since y is negative when the mass is below the pivot.
 
 A starting state that satisfies all three conditions is called consistent. If you hand a solver an inconsistent one, such as velocity not tangent to the circle or the wrong λ, the first step either jerks violently to fix it or Newton fails. Finding consistent values is its own problem, called consistent initialization. IDA has a routine for it, IDACalcIC. Modelica tools build and solve a separate initialization system from the model's `initial equation` sections and the `fixed = true` attributes.
+
+Rumoca builds that separate system too, and on this model it fails on λ for the reason this aside gives — Part II has the message. [`fixture-labs/initialization.md`](fixture-labs/initialization.md) is the lab for the phase.
 
 The differentiated constraints are called hidden constraints. The model never states them, but every valid state must obey them. Notice the counting. Two differentiations of the rod constraint produced an equation that determines λ. One more would produce an equation for λ′. That count of three is exactly the index 3 from Step 7.
 
@@ -531,6 +535,8 @@ Put back in unknown order, the correction is:
 
 Finding that solve order is the same job a BLT sort does in a Modelica compiler. It reorders the equations so each one solves for exactly one new unknown, which turns the matrix triangular. Sparse linear solvers do something similar when they choose a pivot order.
 
+Rumoca does this in its structural phase, and HRW draws it: [`fixture-labs/blt-ordering.md`](fixture-labs/blt-ordering.md) walks a model that orders completely, one that does not order at all, and one that splits into independent pieces.
+
 This first iteration is lucky. The zeros from y = 0 and λ = 0 break every loop in the matrix, so pure back substitution works. Step 13 isn't so lucky.
 
 The new guess is z₁ = (1, −0.1, 0, −1, 0).
@@ -611,7 +617,9 @@ In unknown order, to four figures:
 Δx = −0.00495    Δy = +0.000495    Δu = −0.0495    Δv = +0.00495    Δλ = +0.495
 ```
 
-Choosing one unknown to break a loop is called tearing, and Δx here is the tearing variable. It's the same technique a Modelica compiler uses on algebraic loops, mentioned in Part II. The loop shrinks to one equation in one unknown, and everything else follows by substitution.
+Choosing one unknown to break a loop is called tearing, and Δx here is the tearing variable. It's the same technique a Modelica compiler uses on algebraic loops. The loop shrinks to one equation in one unknown, and everything else follows by substitution.
+
+Rumoca tears too, and on a coupled block rather than on a Newton iteration — [`fixture-labs/tearing.md`](fixture-labs/tearing.md) is the lab, and its opening is the same trick stated the same way: guess one unknown, get the rest by substitution, and let one leftover equation say whether the guess was right.
 
 Now the rod has come alive. The r5 row can see y, so the solver knows the mass drifted off the circle. The only way to pull it back is through λ. λ acts on u and v through r3 and r4, and u and v act on x and y through r1 and r2. The mass is pulled slightly inward, toward the pivot, and λ turns positive: the rod is in tension.
 
@@ -625,7 +633,156 @@ Two practical notes on what real solvers do differently. They usually start from
 
 ---
 
-# Part II: Context
+# Part II: The same model through Rumoca
+
+Everything above was worked by hand. This part runs the identical system through the compiler this
+project is built around, and checks the hand-work against it. **Every number here was measured on
+2026-09-24, not recalled** — `cargo run -p hrw --example stage_outcomes -- specimens/CartesianPendulum.mo`
+and a one-off simulation probe.
+
+## The specimen
+
+`hrw/specimens/CartesianPendulum.mo` is this document's system:
+
+```modelica
+model CartesianPendulum
+  parameter Real L = 1.0; parameter Real m = 1.0; parameter Real g = 9.81;
+  Real x(start = 1.0); Real y(start = 0.0);
+  Real vx(start = 0.0); Real vy(start = 0.0);
+  Real lambda;
+equation
+  der(x) = vx;
+  der(y) = vy;
+  m * der(vx) = -lambda * x;
+  m * der(vy) = -lambda * y - m * g;
+  x ^ 2 + y ^ 2 = L ^ 2;
+end CartesianPendulum;
+```
+
+Two differences from Step 8, both deliberate. The specimen uses g = 9.81 where the walkthrough
+rounds to 10 for legible arithmetic. And it writes the velocities `vx, vy` where the walkthrough
+writes u, v. **The start values are the same state Step 8 chose**: rod horizontal, mass at rest.
+
+## Step 4's residual form is not a teaching convenience
+
+It is what the compiler emits. Rumoca's DAE stage produces five residuals, and they are the
+document's r1 through r5 in order:
+
+| walkthrough | Rumoca | what Rumoca actually emits |
+|---|---|---|
+| r1 = x′ − u | `f_x[0]` | `der(x) - vx` |
+| r2 = y′ − v | `f_x[1]` | `der(y) - vy` |
+| r3 = m·u′ + λ·x | `f_x[2]` | `m * der(vx) - -(lambda * x)` |
+| r4 = m·v′ + λ·y + m·g | `f_x[3]` | `m * der(vy) - (-(lambda * y) - m * g)` |
+| r5 = x² + y² − L² | `f_x[4]` | `x ^ 2 + y ^ 2 - L ^ 2` |
+
+The DAE stage also sorts the variables exactly as Step 2 does: **4 states, 1 algebraic, 5
+continuous equations.** The algebraic one is `lambda`.
+
+## A trap: "unknown" means two different things
+
+Rumoca's structural analysis lists the unknowns as:
+
+```
+der(x), der(y), der(vx), der(vy), lambda
+```
+
+Those are **rates**, not the values Step 5 solves for. The two are different framings of the same
+system, and it is worth being clear about which is which, because HRW shows one and the
+walkthrough works the other.
+
+- **Before the integrator substitutes** — where structural analysis lives — each equation is asked
+  which *rate* it determines. Matching, BLT and index reduction all happen here. λ sits among the
+  rates because it has none of its own and must be solved for alongside them.
+- **After backward Euler substitutes** — Step 5 — every rate has been rewritten as
+  `(new − old)/h`, so the unknowns become the five *new values*. That is what Newton solves.
+
+The incidence pattern is the same either way, which is why Step 7's argument survives the change of
+framing. Rumoca's incidence rows:
+
+```
+f_x[0]  touches  der(x)
+f_x[1]  touches  der(y)
+f_x[2]  touches  der(vx), lambda
+f_x[3]  touches  der(vy), lambda
+f_x[4]  touches  nothing
+```
+
+That is Step 4's observation, measured: **λ appears in r3 and r4 and not in r5**, and the
+constraint row mentions none of the quantities being solved for.
+
+## What each phase reports
+
+| phase | outcome | what it says |
+|---|---|---|
+| Parse → Flatten | Ok | nothing interesting; the model is small and well-formed |
+| DAE | Ok | 4 states, 1 algebraic, 5 continuous equations |
+| Structural | **Flagged** | `singular` |
+| Index reduction | **Flagged** | `still singular after index reduction: 4 matched out of 5 equations and 5 unknowns; unmatched equations: f_x[4]; unmatched unknowns: lambda` |
+| Initialization | **Flagged** | `IC planning failed: 0 matched out of 1 equations and 1 unknowns; unmatched unknowns: lambda` |
+| Events | Ok | no events — a smooth system |
+| Solve lowering | Ok | it lowers happily, which tells you nothing about solvability |
+
+**Rumoca is a recovering compiler**: almost nothing stops the pipeline. A flagged phase records the
+problem and the next phase runs anyway. So "Solve lowering: Ok" is not a contradiction — it means
+the lowering succeeded, not that the system can be solved.
+
+## Where it stops, and why
+
+The matching finds four of five equations a rate to determine, and leaves `f_x[4]` and `lambda`
+unpaired. **That is exactly the pair Step 7 predicts**, arrived at by a compiler counting rather
+than by the chain argument.
+
+Index reduction is then asked to fix it, and cannot. **Rumoca's index reduction is pattern-based,
+not general Pantelides.** Its passes hunt particular shapes — derivative aliases
+(`connection_alias.rs`), direct assignments (`direct_demotion.rs`), constrained dummy derivatives
+(`dummy_state_metadata.rs`), and states whose derivative row is missing
+(`state_row_reduction.rs`). Every constraint reachable by those is an *alias*: one variable equal
+to another times a constant, which substitution removes.
+
+`x² + y² = L²` is none of those. It is nonlinear and couples two states, so no substitution touches
+it and differentiation is the only route — which is what Aside 7a works through by hand, and what
+Rumoca does not implement. The funnel reports that it did not act.
+
+## Initialization fails on the same variable
+
+Aside 8a says a consistent starting state is its own problem, and that λ is determined by the
+twice-differentiated constraint rather than by anything the model states. Rumoca's initialization
+phase demonstrates it:
+
+```
+IC planning failed: 0 matched out of 1 equations and 1 unknowns; unmatched unknowns: lambda
+```
+
+One unknown, no equation. The model never says what λ is at t = 0, and the hidden constraint that
+would say it is exactly the one that was never derived. **The same gap appears twice, at two
+different phases**, because it is one gap.
+
+## The simulation
+
+```
+solver error: BDF step: ODE solver error: Step size is too small at time = 0.00004774281227423659
+```
+
+That is the failure Step 14's discussion points at, at roughly 5×10⁻⁵ seconds. The solver shrinks h
+trying to meet tolerance, and shrinking h is precisely what makes an index-3 problem worse — Step
+13's Δλ/Δx ratio of 1/h² grows without bound. **Nothing in that message mentions index**, which is
+the practical reason this document exists: the diagnosis has to come from understanding the
+structure, because the solver cannot supply it.
+
+## Seeing it in HRW
+
+The lab [`index-reduction.md`](fixture-labs/index-reduction.md) walks this on screen. Station 1
+asks you to predict whether five equations in five unknowns is enough, then opens the Incidence
+view: `f_x[4]`'s row is empty and `lambda`'s column is marked in exactly two rows. Station 6
+returns to the pendulum after four easier models and shows the compiler declining to reduce it.
+
+**If this document and that lab ever disagree, one of them is teaching something false.** They are
+two views of one system and are meant to be checked against each other.
+
+---
+
+# Part III: Context
 
 These sections sit outside the main walkthrough. They don't advance the pendulum example, but they explain where it fits in the wider world.
 
@@ -638,6 +795,8 @@ Most engineering and computer science students take a numerical methods course t
 **The textbook habit of reducing by hand.** Textbooks pick problems where a clever coordinate choice removes the constraint, like θ for the pendulum. Students learn to write ODEs, then solve ODEs. The DAE never appears because a human eliminated it before the numerics started. That works for textbook problems and breaks down for real systems, as Aside 1c describes.
 
 **Tools that hide it.** Most engineers who solve DAEs every day don't know it. SPICE is a DAE solver: Kirchhoff's laws are algebraic constraints sitting next to capacitor and inductor rate equations. Chemical process simulators, multibody packages, and Modelica tools are DAE solvers too. A Modelica compiler does the reduction mechanically: matching, BLT sorting, index reduction, tearing. It usually hands the integrator something that is effectively an ODE with algebraic solves embedded. So the ODE-in-disguise idea is literally what those tools produce, and the user never sees the step.
+
+**Seeing that step is what HRW is for**, and Part II is this model's version of it: the same four operations, named, with what each one reports.
 
 **It's harder, and it builds on ODEs.** You can't learn DAE methods without first knowing implicit ODE methods, Newton, and stiffness. Then you add ideas with no ODE counterpart: index, hidden constraints, consistent initialization, and drift off the constraint. A lot of ODE methods also fail outright. Explicit methods like classic RK4 have no way to handle an equation with no rate in it, so you need implicit methods from the start. That makes it a second course, and most programs only have room for one.
 
