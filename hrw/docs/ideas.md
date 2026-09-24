@@ -4860,6 +4860,29 @@ than guessed.
 integration exercise numerical analysis, stiffness, and automatic differentiation."* Stage one is
 the structural half of that sentence; this is the numerical half.
 
+### ⟶ THE SEQUENCING IN THE QUOTE ABOVE IS NOW INVERTED — 2026-09-24
+
+*"After I learn all of the compilation stuff"* was the plan for three months. Doug has since
+reversed it, and gave the reason himself: he learned more in two hours from `dae-pendulum.md` than
+in months of pipeline-ordered lab work, because that document **began with problems and reached
+solutions in the order they were invented** — ODE numerics, then algebraic constraints layered on
+top, then modelling languages on top of that. See `question-ledger.md`, 2026-09-24.
+
+**Under discovery order this item stops being stage two and becomes stage one.** Simulation is the
+bottom layer; the compiler is the answer to problems the bottom layer exposes. His own framing:
+*"I can always go learn about the compilation phase which yielded the system which is being
+simulated."*
+
+**`SingleInertia` is the vehicle for building it.** 2 states, **0 algebraics**, no events, index
+reduction a no-op — a genuinely plain ODE, measured 2026-09-24. Nothing to solve simultaneously and
+nothing to enforce, so **a wrong reading is the instrument's fault, not the model's**. That is what
+you want under a new instrument. `docs/specimen-ladder.md` has the full ladder and what each later
+rung adds.
+
+**What does NOT change:** the deferral's technical premise, which is `#22`'s subject — whether the
+integrator is trustworthy enough to teach from. Reordering the curriculum does not answer that, and
+it is still Doug's call.
+
 ### What exists today, and it is thin
 
 A Simulation tab, `simulate_specimen`, `simulate_library_model` (2026-08-05), and the solver
