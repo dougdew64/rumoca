@@ -6264,6 +6264,7 @@ fn the_corpus_outcome_matrix_is_unchanged() {
     const MATRIX: &[(&str, &str)] = &[
         // Healthy: every phase produces IR.
         ("BouncingBall", "OOOOOOOOOOO"),
+        ("HarmonicOscillator", "OOOOOOOOOOO"),
         ("LoopWithInertia", "OOOOOOOOOOO"),
         ("MixedLoop", "OOOOOOOOOOO"),
         ("NonlinearLoop", "OOOOOOOOOOO"),
@@ -6274,10 +6275,16 @@ fn the_corpus_outcome_matrix_is_unchanged() {
         // failure anywhere would give the reader something else to look at.
         ("ScopedConnect", "OOOOOOOOOOO"),
         ("SingleInertia", "OOOOOOOOOOO"),
+        ("StiffDecay", "OOOOOOOOOOO"),
         ("TwoLoops", "OOOOOOOOOOO"),
         // Initialization relaxed something and said so.
         ("OverInitRc", "OOOOOOOOFOO"),
         ("RotationalInertia", "OOOOOOOOFOO"),
+        // Structurally sound and already index 1 — yet IC planning calls the same
+        // system singular and cannot match `lambda`. The disagreement between two
+        // phases about one system is `upstream-issues.md`'s 2026-09-24 entry, and
+        // this row is what would change if it were fixed.
+        ("StabilizedPendulum", "OOOOOOOOFOO"),
         // High-index: structural flags a singular system, reduction fixes it,
         // initialization then reports its relaxation. Four models, one shape.
         ("BenchActuator", "OOOOOOFOFOO"),

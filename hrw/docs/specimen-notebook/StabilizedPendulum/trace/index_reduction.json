@@ -1,0 +1,324 @@
+{
+  "n_equations": 5,
+  "n_unknowns": 5,
+  "coupled_block_count": 0,
+  "matching": [
+    {
+      "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
+      "unknown": "der(x)"
+    },
+    {
+      "equation": "f_x[1] (top-level model equation)",
+      "id": "f_x[1]",
+      "unknown": "der(y)"
+    },
+    {
+      "equation": "f_x[2] (top-level model equation)",
+      "id": "f_x[2]",
+      "unknown": "der(vx)"
+    },
+    {
+      "equation": "f_x[3] (top-level model equation)",
+      "id": "f_x[3]",
+      "unknown": "der(vy)"
+    },
+    {
+      "equation": "f_x[4] (top-level model equation)",
+      "id": "f_x[4]",
+      "unknown": "lambda"
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
+      "unknown": "der(x)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[1] (top-level model equation)",
+      "id": "f_x[1]",
+      "unknown": "der(y)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[4] (top-level model equation)",
+      "id": "f_x[4]",
+      "unknown": "lambda"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[2] (top-level model equation)",
+      "id": "f_x[2]",
+      "unknown": "der(vx)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[3] (top-level model equation)",
+      "id": "f_x[3]",
+      "unknown": "der(vy)"
+    }
+  ],
+  "incidence": {
+    "n_eq": 5,
+    "n_var": 5,
+    "unknown_names": [
+      "der(x)",
+      "der(y)",
+      "der(vx)",
+      "der(vy)",
+      "lambda"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
+        "unknowns": [
+          0
+        ],
+        "equation_text": "der(x) - vx"
+      },
+      {
+        "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
+        "unknowns": [
+          1
+        ],
+        "equation_text": "der(y) - vy"
+      },
+      {
+        "equation": "f_x[2] (top-level model equation)",
+        "id": "f_x[2]",
+        "unknowns": [
+          2,
+          4
+        ],
+        "equation_text": "m * der(vx) - -(lambda * x)"
+      },
+      {
+        "equation": "f_x[3] (top-level model equation)",
+        "id": "f_x[3]",
+        "unknowns": [
+          3,
+          4
+        ],
+        "equation_text": "m * der(vy) - (-(lambda * y) - m * g)"
+      },
+      {
+        "equation": "f_x[4] (top-level model equation)",
+        "id": "f_x[4]",
+        "unknowns": [
+          4
+        ],
+        "equation_text": "2 * (vx ^ 2 + vy ^ 2) + 2 * (x * -(0 - -(lambda * x)) / m + y * -(0 - (-(lambda * y) - m * g)) / m) + 4 * alpha * (x * vx + y * vy) + beta ^ 2 * (x ^ 2 + y ^ 2 - L ^ 2) - 0"
+      }
+    ]
+  },
+  "before": {
+    "n_equations": 5,
+    "n_unknowns": 5,
+    "n_matched": 5,
+    "matching": [
+      {
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
+        "unknown": "der(x)"
+      },
+      {
+        "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
+        "unknown": "der(y)"
+      },
+      {
+        "equation": "f_x[2] (top-level model equation)",
+        "id": "f_x[2]",
+        "unknown": "lambda"
+      },
+      {
+        "equation": "f_x[3] (top-level model equation)",
+        "id": "f_x[3]",
+        "unknown": "der(vy)"
+      },
+      {
+        "equation": "f_x[4] (top-level model equation)",
+        "id": "f_x[4]",
+        "unknown": "der(vx)"
+      }
+    ],
+    "incidence": {
+      "n_eq": 5,
+      "n_var": 5,
+      "unknown_names": [
+        "der(x)",
+        "der(y)",
+        "der(vx)",
+        "der(vy)",
+        "lambda"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (top-level model equation)",
+          "id": "f_x[0]",
+          "unknowns": [
+            0
+          ],
+          "equation_text": "der(x) - vx"
+        },
+        {
+          "equation": "f_x[1] (top-level model equation)",
+          "id": "f_x[1]",
+          "unknowns": [
+            1
+          ],
+          "equation_text": "der(y) - vy"
+        },
+        {
+          "equation": "f_x[2] (top-level model equation)",
+          "id": "f_x[2]",
+          "unknowns": [
+            2,
+            4
+          ],
+          "equation_text": "m * der(vx) - -(lambda * x)"
+        },
+        {
+          "equation": "f_x[3] (top-level model equation)",
+          "id": "f_x[3]",
+          "unknowns": [
+            3,
+            4
+          ],
+          "equation_text": "m * der(vy) - (-(lambda * y) - m * g)"
+        },
+        {
+          "equation": "f_x[4] (top-level model equation)",
+          "id": "f_x[4]",
+          "unknowns": [
+            2,
+            3
+          ],
+          "equation_text": "2 * (vx ^ 2 + vy ^ 2) + 2 * (x * der(vx) + y * der(vy)) + 4 * alpha * (x * vx + y * vy) + beta ^ 2 * (x ^ 2 + y ^ 2 - L ^ 2) - 0"
+        }
+      ]
+    }
+  },
+  "reduction": {
+    "states_before": [
+      "x",
+      "y",
+      "vx",
+      "vy"
+    ],
+    "states_after": [
+      "x",
+      "y",
+      "vx",
+      "vy"
+    ],
+    "demoted_states": [],
+    "n_states_before": 4,
+    "n_states_after": 4,
+    "steps": [
+      {
+        "step": "scalarize_equations",
+        "outcome": "ok",
+        "states_before": 4,
+        "states_after": 4,
+        "equations_before": 5,
+        "equations_after": 5
+      },
+      {
+        "step": "demote_exact_alias_component_states",
+        "outcome": "0 demoted",
+        "states_before": 4,
+        "states_after": 4,
+        "equations_before": 5,
+        "equations_after": 5
+      },
+      {
+        "step": "demote_direct_assigned_states",
+        "outcome": "0 demoted",
+        "states_before": 4,
+        "states_after": 4,
+        "equations_before": 5,
+        "equations_after": 5
+      },
+      {
+        "step": "reduce_constrained_dummy_derivatives",
+        "outcome": "0 demoted",
+        "states_before": 4,
+        "states_after": 4,
+        "equations_before": 5,
+        "equations_after": 5
+      },
+      {
+        "step": "index_reduce_missing_state_derivatives",
+        "outcome": "0 demoted",
+        "states_before": 4,
+        "states_after": 4,
+        "equations_before": 5,
+        "equations_after": 5
+      },
+      {
+        "step": "demote_states_without_assignable_derivative_rows",
+        "outcome": "0 demoted",
+        "states_before": 4,
+        "states_after": 4,
+        "equations_before": 5,
+        "equations_after": 5
+      },
+      {
+        "step": "eliminate_derivative_aliases",
+        "outcome": "ok",
+        "states_before": 4,
+        "states_after": 4,
+        "equations_before": 5,
+        "equations_after": 5
+      },
+      {
+        "step": "demote_states_without_retained_derivative_rows",
+        "outcome": "0 demoted",
+        "states_before": 4,
+        "states_after": 4,
+        "equations_before": 5,
+        "equations_after": 5
+      },
+      {
+        "step": "expand_compound_derivatives",
+        "outcome": "ok",
+        "states_before": 4,
+        "states_after": 4,
+        "equations_before": 5,
+        "equations_after": 5
+      },
+      {
+        "step": "substitute_standalone_state_derivatives_in_non_ode_rows",
+        "outcome": "1 rewritten",
+        "states_before": 4,
+        "states_after": 4,
+        "equations_before": 5,
+        "equations_after": 5
+      },
+      {
+        "step": "eliminate_trivial",
+        "outcome": "0 eliminated",
+        "states_before": 4,
+        "states_after": 4,
+        "equations_before": 5,
+        "equations_after": 5
+      }
+    ],
+    "differentiated_rows": [],
+    "eliminations": [],
+    "n_differentiations": 0,
+    "stopped_at": null,
+    "funnel_completed": true
+  }
+}

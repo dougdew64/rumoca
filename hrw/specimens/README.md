@@ -2,8 +2,12 @@
 
 **Purpose:** what a specimen is, why each one exists, and the rules a new one must meet.
 **Status:** 👤 reference, written for a human — Doug, or a Rumoca maintainer reading the fork.
-**Read when:** adding a specimen, or wondering why HRW ships eighteen small models when the
+**Read when:** adding a specimen, or wondering why HRW ships twenty-eight small models when the
 Modelica Standard Library is right there.
+
+**For the order to *study* them in, see [`../docs/specimen-ladder.md`](../docs/specimen-ladder.md)** —
+this file says what each specimen is for; the ladder says which problem in the history of the field
+it belongs to, and which specimen the one below it cannot express.
 
 ## What these are
 
@@ -13,7 +17,7 @@ contain what a *study* instrument needs: a minimal case per behaviour, with the 
 written recorded next to it.
 
 The MSL is here too — 2,626 models, vendored and surveyed — and it is the better corpus for
-*scale* questions ("does an unseen IR shape break us?"). These eighteen are the better corpus
+*scale* questions ("does an unseen IR shape break us?"). These twenty-eight are the better corpus
 for *shape* questions ("what does index reduction actually do?"), because each isolates one
 thing and nothing else.
 
@@ -26,6 +30,11 @@ file wins.
 | Specimen | Purpose |
 |---|---|
 | `SingleInertia` | Minimal index-1 ODE — two states, all scalar BLT blocks (the baseline) |
+| `HarmonicOscillator` | Integrator **order** made visible — the exact solution is `cos(omega*t)`, so error can be measured rather than assumed |
+| `StiffDecay` | Stiffness at its smallest — two uncoupled exponentials a thousand-fold apart |
+| `LoopWithInertia` | A coupled BLT block **and** a state in one model — tearing and integration together |
+| `CartesianPendulum` | The canonical **index-3** DAE — a nonlinear constraint substitution cannot remove |
+| `StabilizedPendulum` | The same physics with the constraint differentiated **by the modeller** (Baumgarte, 1972) — reaches the solver already at index 1 |
 | `RotationalInertia` | Same physics via MSL connectors — connector expansion; still index-1 |
 | `Drivetrain` | Ideal gears → **high-index, structurally singular** DAE; needs index reduction |
 | `MotorWithBrake` | The end-to-end specimen — every phase: MSL connectors, index reduction (EMF coupling), events, stiff dynamics |
@@ -43,15 +52,19 @@ file wins.
 
 ### The failure specimens — marked DO NOT FIX
 
-Four models are **deliberately broken**, one per compiler failure path, so the diagnosis HRW
+Eight models are **deliberately broken**, one per compiler failure path, so the diagnosis HRW
 produces can be examined. Fixing one destroys what it is for; each says so in its own header.
 
 | Specimen | Fails at |
 |---|---|
+| `UnclosedModel` | parse — the only hard stop in the pipeline |
 | `UndefinedRef` | resolve |
+| `MissingComponentClass` | instantiate |
 | `DimensionMismatch` | typecheck |
 | `IncompatibleConnect` | flatten — and **System Modeler rejects it while Rumoca accepts it**, which is upstream issue 2 |
-| `UnbalancedShaft` | DAE construction |
+| `UnbalancedShaft` | DAE construction — the under-determined half of the balance check |
+| `OverDeterminedShaft` | DAE construction — the over-determined half, 3 equations and 2 unknowns |
+| `TwiceDefined` | structural analysis |
 
 ## Rules for a new specimen
 

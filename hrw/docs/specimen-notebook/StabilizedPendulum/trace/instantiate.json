@@ -1,0 +1,3069 @@
+{
+  "components": {
+    "1": {
+      "instance_id": 1,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 17646367609561022627,
+          "start": 286,
+          "end": 292
+        },
+        "parts": [
+          {
+            "ident": "L",
+            "span": {
+              "source": 17646367609561022627,
+              "start": 286,
+              "end": 292
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 89
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "L",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 3,
+        "start_column": 13,
+        "end_line": 3,
+        "end_column": 19,
+        "start": 286,
+        "end": 292,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "StabilizedPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 3,
+            "start_column": 3,
+            "end_line": 3,
+            "end_column": 12,
+            "start": 276,
+            "end": 285,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+          },
+          "token_number": 4,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 3,
+              "start_column": 22,
+              "end_line": 3,
+              "end_column": 25,
+              "start": 295,
+              "end": 298,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            },
+            "token_number": 8,
+            "token_type": 68
+          },
+          "span": {
+            "source": 17646367609561022627,
+            "start": 295,
+            "end": 298
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "rod length",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 3,
+              "start_column": 22,
+              "end_line": 3,
+              "end_column": 25,
+              "start": 295,
+              "end": 298,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            },
+            "token_number": 8,
+            "token_type": 68
+          },
+          "span": {
+            "source": 17646367609561022627,
+            "start": 295,
+            "end": 298
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "2": {
+      "instance_id": 2,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 17646367609561022627,
+          "start": 325,
+          "end": 331
+        },
+        "parts": [
+          {
+            "ident": "m",
+            "span": {
+              "source": 17646367609561022627,
+              "start": 325,
+              "end": 331
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 90
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "m",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 4,
+        "start_column": 13,
+        "end_line": 4,
+        "end_column": 19,
+        "start": 325,
+        "end": 331,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "StabilizedPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 4,
+            "start_column": 3,
+            "end_line": 4,
+            "end_column": 12,
+            "start": 315,
+            "end": 324,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+          },
+          "token_number": 11,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 4,
+              "start_column": 22,
+              "end_line": 4,
+              "end_column": 25,
+              "start": 334,
+              "end": 337,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            },
+            "token_number": 15,
+            "token_type": 68
+          },
+          "span": {
+            "source": 17646367609561022627,
+            "start": 334,
+            "end": 337
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "point mass",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 4,
+              "start_column": 22,
+              "end_line": 4,
+              "end_column": 25,
+              "start": 334,
+              "end": 337,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            },
+            "token_number": 15,
+            "token_type": 68
+          },
+          "span": {
+            "source": 17646367609561022627,
+            "start": 334,
+            "end": 337
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "3": {
+      "instance_id": 3,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 17646367609561022627,
+          "start": 364,
+          "end": 370
+        },
+        "parts": [
+          {
+            "ident": "g",
+            "span": {
+              "source": 17646367609561022627,
+              "start": 364,
+              "end": 370
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 91
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "g",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 5,
+        "start_column": 13,
+        "end_line": 5,
+        "end_column": 19,
+        "start": 364,
+        "end": 370,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "StabilizedPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 5,
+            "start_column": 3,
+            "end_line": 5,
+            "end_column": 12,
+            "start": 354,
+            "end": 363,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+          },
+          "token_number": 18,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "9.81",
+            "location": {
+              "start_line": 5,
+              "start_column": 22,
+              "end_line": 5,
+              "end_column": 26,
+              "start": 373,
+              "end": 377,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            },
+            "token_number": 22,
+            "token_type": 68
+          },
+          "span": {
+            "source": 17646367609561022627,
+            "start": 373,
+            "end": 377
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "gravitational acceleration",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "9.81",
+            "location": {
+              "start_line": 5,
+              "start_column": 22,
+              "end_line": 5,
+              "end_column": 26,
+              "start": 373,
+              "end": 377,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            },
+            "token_number": 22,
+            "token_type": 68
+          },
+          "span": {
+            "source": 17646367609561022627,
+            "start": 373,
+            "end": 377
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "4": {
+      "instance_id": 4,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 17646367609561022627,
+          "start": 420,
+          "end": 430
+        },
+        "parts": [
+          {
+            "ident": "alpha",
+            "span": {
+              "source": 17646367609561022627,
+              "start": 420,
+              "end": 430
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 92
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "alpha",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 6,
+        "start_column": 13,
+        "end_line": 6,
+        "end_column": 23,
+        "start": 420,
+        "end": 430,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "StabilizedPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 6,
+            "start_column": 3,
+            "end_line": 6,
+            "end_column": 12,
+            "start": 410,
+            "end": 419,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+          },
+          "token_number": 25,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "10.0",
+            "location": {
+              "start_line": 6,
+              "start_column": 26,
+              "end_line": 6,
+              "end_column": 30,
+              "start": 433,
+              "end": 437,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            },
+            "token_number": 29,
+            "token_type": 68
+          },
+          "span": {
+            "source": 17646367609561022627,
+            "start": 433,
+            "end": 437
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "constraint damping gain (velocity level)",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "10.0",
+            "location": {
+              "start_line": 6,
+              "start_column": 26,
+              "end_line": 6,
+              "end_column": 30,
+              "start": 433,
+              "end": 437,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            },
+            "token_number": 29,
+            "token_type": 68
+          },
+          "span": {
+            "source": 17646367609561022627,
+            "start": 433,
+            "end": 437
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "5": {
+      "instance_id": 5,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 17646367609561022627,
+          "start": 494,
+          "end": 503
+        },
+        "parts": [
+          {
+            "ident": "beta",
+            "span": {
+              "source": 17646367609561022627,
+              "start": 494,
+              "end": 503
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 93
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "beta",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 7,
+        "start_column": 13,
+        "end_line": 7,
+        "end_column": 22,
+        "start": 494,
+        "end": 503,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "StabilizedPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 7,
+            "start_column": 3,
+            "end_line": 7,
+            "end_column": 12,
+            "start": 484,
+            "end": 493,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+          },
+          "token_number": 32,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "10.0",
+            "location": {
+              "start_line": 7,
+              "start_column": 25,
+              "end_line": 7,
+              "end_column": 29,
+              "start": 506,
+              "end": 510,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            },
+            "token_number": 36,
+            "token_type": 68
+          },
+          "span": {
+            "source": 17646367609561022627,
+            "start": 506,
+            "end": 510
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "constraint stiffness gain (position level)",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "10.0",
+            "location": {
+              "start_line": 7,
+              "start_column": 25,
+              "end_line": 7,
+              "end_column": 29,
+              "start": 506,
+              "end": 510,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            },
+            "token_number": 36,
+            "token_type": 68
+          },
+          "span": {
+            "source": 17646367609561022627,
+            "start": 506,
+            "end": 510
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "6": {
+      "instance_id": 6,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 17646367609561022627,
+          "start": 559,
+          "end": 565
+        },
+        "parts": [
+          {
+            "ident": "x",
+            "span": {
+              "source": 17646367609561022627,
+              "start": 559,
+              "end": 565
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 94
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "x",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 8,
+        "start_column": 3,
+        "end_line": 8,
+        "end_column": 9,
+        "start": 559,
+        "end": 565,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "StabilizedPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 8,
+              "start_column": 18,
+              "end_line": 8,
+              "end_column": 21,
+              "start": 574,
+              "end": 577,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            },
+            "token_number": 44,
+            "token_type": 68
+          },
+          "span": {
+            "source": 17646367609561022627,
+            "start": 574,
+            "end": 577
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "horizontal position",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "7": {
+      "instance_id": 7,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 17646367609561022627,
+          "start": 604,
+          "end": 610
+        },
+        "parts": [
+          {
+            "ident": "y",
+            "span": {
+              "source": 17646367609561022627,
+              "start": 604,
+              "end": 610
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 95
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "y",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 9,
+        "start_column": 3,
+        "end_line": 9,
+        "end_column": 9,
+        "start": 604,
+        "end": 610,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "StabilizedPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 9,
+              "start_column": 18,
+              "end_line": 9,
+              "end_column": 21,
+              "start": 619,
+              "end": 622,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            },
+            "token_number": 53,
+            "token_type": 68
+          },
+          "span": {
+            "source": 17646367609561022627,
+            "start": 619,
+            "end": 622
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "vertical position",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "8": {
+      "instance_id": 8,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 17646367609561022627,
+          "start": 647,
+          "end": 654
+        },
+        "parts": [
+          {
+            "ident": "vx",
+            "span": {
+              "source": 17646367609561022627,
+              "start": 647,
+              "end": 654
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 96
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "vx",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 10,
+        "start_column": 3,
+        "end_line": 10,
+        "end_column": 10,
+        "start": 647,
+        "end": 654,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "StabilizedPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 10,
+              "start_column": 19,
+              "end_line": 10,
+              "end_column": 22,
+              "start": 663,
+              "end": 666,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            },
+            "token_number": 62,
+            "token_type": 68
+          },
+          "span": {
+            "source": 17646367609561022627,
+            "start": 663,
+            "end": 666
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "horizontal velocity",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "9": {
+      "instance_id": 9,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 17646367609561022627,
+          "start": 693,
+          "end": 700
+        },
+        "parts": [
+          {
+            "ident": "vy",
+            "span": {
+              "source": 17646367609561022627,
+              "start": 693,
+              "end": 700
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 97
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "vy",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 11,
+        "start_column": 3,
+        "end_line": 11,
+        "end_column": 10,
+        "start": 693,
+        "end": 700,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "StabilizedPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 11,
+              "start_column": 19,
+              "end_line": 11,
+              "end_column": 22,
+              "start": 709,
+              "end": 712,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            },
+            "token_number": 71,
+            "token_type": 68
+          },
+          "span": {
+            "source": 17646367609561022627,
+            "start": 709,
+            "end": 712
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "vertical velocity",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "10": {
+      "instance_id": 10,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 17646367609561022627,
+          "start": 737,
+          "end": 748
+        },
+        "parts": [
+          {
+            "ident": "lambda",
+            "span": {
+              "source": 17646367609561022627,
+              "start": 737,
+              "end": 748
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 98
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "lambda",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 12,
+        "start_column": 3,
+        "end_line": 12,
+        "end_column": 14,
+        "start": 737,
+        "end": 748,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "StabilizedPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 17646367609561022627,
+            "start": 737,
+            "end": 748
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "rod tension per unit length — the constraint force",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    }
+  },
+  "classes": {
+    "0": {
+      "instance_id": 0,
+      "class_def_id": 85,
+      "qualified_name": {
+        "parts": []
+      },
+      "source_scope": {
+        "parts": [
+          [
+            "StabilizedPendulum",
+            []
+          ]
+        ]
+      },
+      "source_scope_id": 1,
+      "equations": [
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "FunctionCall": {
+                  "comp": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "der",
+                          "location": {
+                            "start_line": 14,
+                            "start_column": 3,
+                            "end_line": 14,
+                            "end_column": 6,
+                            "start": 816,
+                            "end": 819,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                          },
+                          "token_number": 80,
+                          "token_type": 15
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 17646367609561022627,
+                      "start": 816,
+                      "end": 819
+                    }
+                  },
+                  "args": [
+                    {
+                      "ComponentReference": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "x",
+                              "location": {
+                                "start_line": 14,
+                                "start_column": 7,
+                                "end_line": 14,
+                                "end_column": 8,
+                                "start": 820,
+                                "end": 821,
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                              },
+                              "token_number": 82,
+                              "token_type": 64
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 17646367609561022627,
+                          "start": 820,
+                          "end": 821
+                        }
+                      }
+                    }
+                  ],
+                  "span": {
+                    "source": 17646367609561022627,
+                    "start": 816,
+                    "end": 821
+                  }
+                }
+              },
+              "rhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "vx",
+                        "location": {
+                          "start_line": 14,
+                          "start_column": 12,
+                          "end_line": 14,
+                          "end_column": 14,
+                          "start": 825,
+                          "end": 827,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                        },
+                        "token_number": 85,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 17646367609561022627,
+                    "start": 825,
+                    "end": 827
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "StabilizedPendulum",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 17646367609561022627,
+            "start": 816,
+            "end": 819
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "FunctionCall": {
+                  "comp": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "der",
+                          "location": {
+                            "start_line": 15,
+                            "start_column": 3,
+                            "end_line": 15,
+                            "end_column": 6,
+                            "start": 831,
+                            "end": 834,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                          },
+                          "token_number": 87,
+                          "token_type": 15
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 17646367609561022627,
+                      "start": 831,
+                      "end": 834
+                    }
+                  },
+                  "args": [
+                    {
+                      "ComponentReference": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "y",
+                              "location": {
+                                "start_line": 15,
+                                "start_column": 7,
+                                "end_line": 15,
+                                "end_column": 8,
+                                "start": 835,
+                                "end": 836,
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                              },
+                              "token_number": 89,
+                              "token_type": 64
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 17646367609561022627,
+                          "start": 835,
+                          "end": 836
+                        }
+                      }
+                    }
+                  ],
+                  "span": {
+                    "source": 17646367609561022627,
+                    "start": 831,
+                    "end": 836
+                  }
+                }
+              },
+              "rhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "vy",
+                        "location": {
+                          "start_line": 15,
+                          "start_column": 12,
+                          "end_line": 15,
+                          "end_column": 14,
+                          "start": 840,
+                          "end": 842,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                        },
+                        "token_number": 92,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 17646367609561022627,
+                    "start": 840,
+                    "end": 842
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "StabilizedPendulum",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 17646367609561022627,
+            "start": 831,
+            "end": 834
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "m",
+                            "location": {
+                              "start_line": 16,
+                              "start_column": 3,
+                              "end_line": 16,
+                              "end_column": 4,
+                              "start": 846,
+                              "end": 847,
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                            },
+                            "token_number": 94,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 17646367609561022627,
+                        "start": 846,
+                        "end": 847
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "FunctionCall": {
+                      "comp": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "der",
+                              "location": {
+                                "start_line": 16,
+                                "start_column": 7,
+                                "end_line": 16,
+                                "end_column": 10,
+                                "start": 850,
+                                "end": 853,
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                              },
+                              "token_number": 96,
+                              "token_type": 15
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 17646367609561022627,
+                          "start": 850,
+                          "end": 853
+                        }
+                      },
+                      "args": [
+                        {
+                          "ComponentReference": {
+                            "local": false,
+                            "parts": [
+                              {
+                                "ident": {
+                                  "text": "vx",
+                                  "location": {
+                                    "start_line": 16,
+                                    "start_column": 11,
+                                    "end_line": 16,
+                                    "end_column": 13,
+                                    "start": 854,
+                                    "end": 856,
+                                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                  },
+                                  "token_number": 98,
+                                  "token_type": 64
+                                },
+                                "subs": null
+                              }
+                            ],
+                            "span": {
+                              "source": 17646367609561022627,
+                              "start": 854,
+                              "end": 856
+                            }
+                          }
+                        }
+                      ],
+                      "span": {
+                        "source": 17646367609561022627,
+                        "start": 850,
+                        "end": 856
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 17646367609561022627,
+                    "start": 846,
+                    "end": 856
+                  }
+                }
+              },
+              "rhs": {
+                "Unary": {
+                  "op": "Minus",
+                  "rhs": {
+                    "Binary": {
+                      "op": "Mul",
+                      "lhs": {
+                        "ComponentReference": {
+                          "local": false,
+                          "parts": [
+                            {
+                              "ident": {
+                                "text": "lambda",
+                                "location": {
+                                  "start_line": 16,
+                                  "start_column": 18,
+                                  "end_line": 16,
+                                  "end_column": 24,
+                                  "start": 861,
+                                  "end": 867,
+                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                },
+                                "token_number": 102,
+                                "token_type": 64
+                              },
+                              "subs": null
+                            }
+                          ],
+                          "span": {
+                            "source": 17646367609561022627,
+                            "start": 861,
+                            "end": 867
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "ComponentReference": {
+                          "local": false,
+                          "parts": [
+                            {
+                              "ident": {
+                                "text": "x",
+                                "location": {
+                                  "start_line": 16,
+                                  "start_column": 27,
+                                  "end_line": 16,
+                                  "end_column": 28,
+                                  "start": 870,
+                                  "end": 871,
+                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                },
+                                "token_number": 104,
+                                "token_type": 64
+                              },
+                              "subs": null
+                            }
+                          ],
+                          "span": {
+                            "source": 17646367609561022627,
+                            "start": 870,
+                            "end": 871
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 17646367609561022627,
+                        "start": 861,
+                        "end": 871
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 17646367609561022627,
+                    "start": 860,
+                    "end": 871
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "StabilizedPendulum",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 17646367609561022627,
+            "start": 846,
+            "end": 847
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "m",
+                            "location": {
+                              "start_line": 17,
+                              "start_column": 3,
+                              "end_line": 17,
+                              "end_column": 4,
+                              "start": 875,
+                              "end": 876,
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                            },
+                            "token_number": 106,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 17646367609561022627,
+                        "start": 875,
+                        "end": 876
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "FunctionCall": {
+                      "comp": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "der",
+                              "location": {
+                                "start_line": 17,
+                                "start_column": 7,
+                                "end_line": 17,
+                                "end_column": 10,
+                                "start": 879,
+                                "end": 882,
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                              },
+                              "token_number": 108,
+                              "token_type": 15
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 17646367609561022627,
+                          "start": 879,
+                          "end": 882
+                        }
+                      },
+                      "args": [
+                        {
+                          "ComponentReference": {
+                            "local": false,
+                            "parts": [
+                              {
+                                "ident": {
+                                  "text": "vy",
+                                  "location": {
+                                    "start_line": 17,
+                                    "start_column": 11,
+                                    "end_line": 17,
+                                    "end_column": 13,
+                                    "start": 883,
+                                    "end": 885,
+                                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                  },
+                                  "token_number": 110,
+                                  "token_type": 64
+                                },
+                                "subs": null
+                              }
+                            ],
+                            "span": {
+                              "source": 17646367609561022627,
+                              "start": 883,
+                              "end": 885
+                            }
+                          }
+                        }
+                      ],
+                      "span": {
+                        "source": 17646367609561022627,
+                        "start": 879,
+                        "end": 885
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 17646367609561022627,
+                    "start": 875,
+                    "end": 885
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Sub",
+                  "lhs": {
+                    "Unary": {
+                      "op": "Minus",
+                      "rhs": {
+                        "Binary": {
+                          "op": "Mul",
+                          "lhs": {
+                            "ComponentReference": {
+                              "local": false,
+                              "parts": [
+                                {
+                                  "ident": {
+                                    "text": "lambda",
+                                    "location": {
+                                      "start_line": 17,
+                                      "start_column": 18,
+                                      "end_line": 17,
+                                      "end_column": 24,
+                                      "start": 890,
+                                      "end": 896,
+                                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                    },
+                                    "token_number": 114,
+                                    "token_type": 64
+                                  },
+                                  "subs": null
+                                }
+                              ],
+                              "span": {
+                                "source": 17646367609561022627,
+                                "start": 890,
+                                "end": 896
+                              }
+                            }
+                          },
+                          "rhs": {
+                            "ComponentReference": {
+                              "local": false,
+                              "parts": [
+                                {
+                                  "ident": {
+                                    "text": "y",
+                                    "location": {
+                                      "start_line": 17,
+                                      "start_column": 27,
+                                      "end_line": 17,
+                                      "end_column": 28,
+                                      "start": 899,
+                                      "end": 900,
+                                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                    },
+                                    "token_number": 116,
+                                    "token_type": 64
+                                  },
+                                  "subs": null
+                                }
+                              ],
+                              "span": {
+                                "source": 17646367609561022627,
+                                "start": 899,
+                                "end": 900
+                              }
+                            }
+                          },
+                          "span": {
+                            "source": 17646367609561022627,
+                            "start": 890,
+                            "end": 900
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 17646367609561022627,
+                        "start": 889,
+                        "end": 900
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "Binary": {
+                      "op": "Mul",
+                      "lhs": {
+                        "ComponentReference": {
+                          "local": false,
+                          "parts": [
+                            {
+                              "ident": {
+                                "text": "m",
+                                "location": {
+                                  "start_line": 17,
+                                  "start_column": 31,
+                                  "end_line": 17,
+                                  "end_column": 32,
+                                  "start": 903,
+                                  "end": 904,
+                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                },
+                                "token_number": 118,
+                                "token_type": 64
+                              },
+                              "subs": null
+                            }
+                          ],
+                          "span": {
+                            "source": 17646367609561022627,
+                            "start": 903,
+                            "end": 904
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "ComponentReference": {
+                          "local": false,
+                          "parts": [
+                            {
+                              "ident": {
+                                "text": "g",
+                                "location": {
+                                  "start_line": 17,
+                                  "start_column": 35,
+                                  "end_line": 17,
+                                  "end_column": 36,
+                                  "start": 907,
+                                  "end": 908,
+                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                },
+                                "token_number": 120,
+                                "token_type": 64
+                              },
+                              "subs": null
+                            }
+                          ],
+                          "span": {
+                            "source": 17646367609561022627,
+                            "start": 907,
+                            "end": 908
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 17646367609561022627,
+                        "start": 903,
+                        "end": 908
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 17646367609561022627,
+                    "start": 889,
+                    "end": 908
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "StabilizedPendulum",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 17646367609561022627,
+            "start": 875,
+            "end": 876
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "Binary": {
+                  "op": "Add",
+                  "lhs": {
+                    "Binary": {
+                      "op": "Add",
+                      "lhs": {
+                        "Binary": {
+                          "op": "Add",
+                          "lhs": {
+                            "Binary": {
+                              "op": "Mul",
+                              "lhs": {
+                                "Terminal": {
+                                  "terminal_type": "UnsignedInteger",
+                                  "token": {
+                                    "text": "2",
+                                    "location": {
+                                      "start_line": 20,
+                                      "start_column": 3,
+                                      "end_line": 20,
+                                      "end_column": 4,
+                                      "start": 1067,
+                                      "end": 1068,
+                                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                    },
+                                    "token_number": 124,
+                                    "token_type": 67
+                                  },
+                                  "span": {
+                                    "source": 17646367609561022627,
+                                    "start": 1067,
+                                    "end": 1068
+                                  }
+                                }
+                              },
+                              "rhs": {
+                                "Parenthesized": {
+                                  "inner": {
+                                    "Binary": {
+                                      "op": "Add",
+                                      "lhs": {
+                                        "Binary": {
+                                          "op": "Exp",
+                                          "lhs": {
+                                            "ComponentReference": {
+                                              "local": false,
+                                              "parts": [
+                                                {
+                                                  "ident": {
+                                                    "text": "vx",
+                                                    "location": {
+                                                      "start_line": 20,
+                                                      "start_column": 8,
+                                                      "end_line": 20,
+                                                      "end_column": 10,
+                                                      "start": 1072,
+                                                      "end": 1074,
+                                                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                    },
+                                                    "token_number": 127,
+                                                    "token_type": 64
+                                                  },
+                                                  "subs": null
+                                                }
+                                              ],
+                                              "span": {
+                                                "source": 17646367609561022627,
+                                                "start": 1072,
+                                                "end": 1074
+                                              }
+                                            }
+                                          },
+                                          "rhs": {
+                                            "Terminal": {
+                                              "terminal_type": "UnsignedInteger",
+                                              "token": {
+                                                "text": "2",
+                                                "location": {
+                                                  "start_line": 20,
+                                                  "start_column": 13,
+                                                  "end_line": 20,
+                                                  "end_column": 14,
+                                                  "start": 1077,
+                                                  "end": 1078,
+                                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                },
+                                                "token_number": 129,
+                                                "token_type": 67
+                                              },
+                                              "span": {
+                                                "source": 17646367609561022627,
+                                                "start": 1077,
+                                                "end": 1078
+                                              }
+                                            }
+                                          },
+                                          "span": {
+                                            "source": 17646367609561022627,
+                                            "start": 1072,
+                                            "end": 1078
+                                          }
+                                        }
+                                      },
+                                      "rhs": {
+                                        "Binary": {
+                                          "op": "Exp",
+                                          "lhs": {
+                                            "ComponentReference": {
+                                              "local": false,
+                                              "parts": [
+                                                {
+                                                  "ident": {
+                                                    "text": "vy",
+                                                    "location": {
+                                                      "start_line": 20,
+                                                      "start_column": 17,
+                                                      "end_line": 20,
+                                                      "end_column": 19,
+                                                      "start": 1081,
+                                                      "end": 1083,
+                                                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                    },
+                                                    "token_number": 131,
+                                                    "token_type": 64
+                                                  },
+                                                  "subs": null
+                                                }
+                                              ],
+                                              "span": {
+                                                "source": 17646367609561022627,
+                                                "start": 1081,
+                                                "end": 1083
+                                              }
+                                            }
+                                          },
+                                          "rhs": {
+                                            "Terminal": {
+                                              "terminal_type": "UnsignedInteger",
+                                              "token": {
+                                                "text": "2",
+                                                "location": {
+                                                  "start_line": 20,
+                                                  "start_column": 22,
+                                                  "end_line": 20,
+                                                  "end_column": 23,
+                                                  "start": 1086,
+                                                  "end": 1087,
+                                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                },
+                                                "token_number": 133,
+                                                "token_type": 67
+                                              },
+                                              "span": {
+                                                "source": 17646367609561022627,
+                                                "start": 1086,
+                                                "end": 1087
+                                              }
+                                            }
+                                          },
+                                          "span": {
+                                            "source": 17646367609561022627,
+                                            "start": 1081,
+                                            "end": 1087
+                                          }
+                                        }
+                                      },
+                                      "span": {
+                                        "source": 17646367609561022627,
+                                        "start": 1072,
+                                        "end": 1087
+                                      }
+                                    }
+                                  },
+                                  "span": {
+                                    "source": 17646367609561022627,
+                                    "start": 1072,
+                                    "end": 1087
+                                  }
+                                }
+                              },
+                              "span": {
+                                "source": 17646367609561022627,
+                                "start": 1067,
+                                "end": 1087
+                              }
+                            }
+                          },
+                          "rhs": {
+                            "Binary": {
+                              "op": "Mul",
+                              "lhs": {
+                                "Terminal": {
+                                  "terminal_type": "UnsignedInteger",
+                                  "token": {
+                                    "text": "2",
+                                    "location": {
+                                      "start_line": 20,
+                                      "start_column": 27,
+                                      "end_line": 20,
+                                      "end_column": 28,
+                                      "start": 1091,
+                                      "end": 1092,
+                                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                    },
+                                    "token_number": 136,
+                                    "token_type": 67
+                                  },
+                                  "span": {
+                                    "source": 17646367609561022627,
+                                    "start": 1091,
+                                    "end": 1092
+                                  }
+                                }
+                              },
+                              "rhs": {
+                                "Parenthesized": {
+                                  "inner": {
+                                    "Binary": {
+                                      "op": "Add",
+                                      "lhs": {
+                                        "Binary": {
+                                          "op": "Mul",
+                                          "lhs": {
+                                            "ComponentReference": {
+                                              "local": false,
+                                              "parts": [
+                                                {
+                                                  "ident": {
+                                                    "text": "x",
+                                                    "location": {
+                                                      "start_line": 20,
+                                                      "start_column": 32,
+                                                      "end_line": 20,
+                                                      "end_column": 33,
+                                                      "start": 1096,
+                                                      "end": 1097,
+                                                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                    },
+                                                    "token_number": 139,
+                                                    "token_type": 64
+                                                  },
+                                                  "subs": null
+                                                }
+                                              ],
+                                              "span": {
+                                                "source": 17646367609561022627,
+                                                "start": 1096,
+                                                "end": 1097
+                                              }
+                                            }
+                                          },
+                                          "rhs": {
+                                            "FunctionCall": {
+                                              "comp": {
+                                                "local": false,
+                                                "parts": [
+                                                  {
+                                                    "ident": {
+                                                      "text": "der",
+                                                      "location": {
+                                                        "start_line": 20,
+                                                        "start_column": 36,
+                                                        "end_line": 20,
+                                                        "end_column": 39,
+                                                        "start": 1100,
+                                                        "end": 1103,
+                                                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                      },
+                                                      "token_number": 141,
+                                                      "token_type": 15
+                                                    },
+                                                    "subs": null
+                                                  }
+                                                ],
+                                                "span": {
+                                                  "source": 17646367609561022627,
+                                                  "start": 1100,
+                                                  "end": 1103
+                                                }
+                                              },
+                                              "args": [
+                                                {
+                                                  "ComponentReference": {
+                                                    "local": false,
+                                                    "parts": [
+                                                      {
+                                                        "ident": {
+                                                          "text": "vx",
+                                                          "location": {
+                                                            "start_line": 20,
+                                                            "start_column": 40,
+                                                            "end_line": 20,
+                                                            "end_column": 42,
+                                                            "start": 1104,
+                                                            "end": 1106,
+                                                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                          },
+                                                          "token_number": 143,
+                                                          "token_type": 64
+                                                        },
+                                                        "subs": null
+                                                      }
+                                                    ],
+                                                    "span": {
+                                                      "source": 17646367609561022627,
+                                                      "start": 1104,
+                                                      "end": 1106
+                                                    }
+                                                  }
+                                                }
+                                              ],
+                                              "span": {
+                                                "source": 17646367609561022627,
+                                                "start": 1100,
+                                                "end": 1106
+                                              }
+                                            }
+                                          },
+                                          "span": {
+                                            "source": 17646367609561022627,
+                                            "start": 1096,
+                                            "end": 1106
+                                          }
+                                        }
+                                      },
+                                      "rhs": {
+                                        "Binary": {
+                                          "op": "Mul",
+                                          "lhs": {
+                                            "ComponentReference": {
+                                              "local": false,
+                                              "parts": [
+                                                {
+                                                  "ident": {
+                                                    "text": "y",
+                                                    "location": {
+                                                      "start_line": 20,
+                                                      "start_column": 46,
+                                                      "end_line": 20,
+                                                      "end_column": 47,
+                                                      "start": 1110,
+                                                      "end": 1111,
+                                                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                    },
+                                                    "token_number": 146,
+                                                    "token_type": 64
+                                                  },
+                                                  "subs": null
+                                                }
+                                              ],
+                                              "span": {
+                                                "source": 17646367609561022627,
+                                                "start": 1110,
+                                                "end": 1111
+                                              }
+                                            }
+                                          },
+                                          "rhs": {
+                                            "FunctionCall": {
+                                              "comp": {
+                                                "local": false,
+                                                "parts": [
+                                                  {
+                                                    "ident": {
+                                                      "text": "der",
+                                                      "location": {
+                                                        "start_line": 20,
+                                                        "start_column": 50,
+                                                        "end_line": 20,
+                                                        "end_column": 53,
+                                                        "start": 1114,
+                                                        "end": 1117,
+                                                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                      },
+                                                      "token_number": 148,
+                                                      "token_type": 15
+                                                    },
+                                                    "subs": null
+                                                  }
+                                                ],
+                                                "span": {
+                                                  "source": 17646367609561022627,
+                                                  "start": 1114,
+                                                  "end": 1117
+                                                }
+                                              },
+                                              "args": [
+                                                {
+                                                  "ComponentReference": {
+                                                    "local": false,
+                                                    "parts": [
+                                                      {
+                                                        "ident": {
+                                                          "text": "vy",
+                                                          "location": {
+                                                            "start_line": 20,
+                                                            "start_column": 54,
+                                                            "end_line": 20,
+                                                            "end_column": 56,
+                                                            "start": 1118,
+                                                            "end": 1120,
+                                                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                          },
+                                                          "token_number": 150,
+                                                          "token_type": 64
+                                                        },
+                                                        "subs": null
+                                                      }
+                                                    ],
+                                                    "span": {
+                                                      "source": 17646367609561022627,
+                                                      "start": 1118,
+                                                      "end": 1120
+                                                    }
+                                                  }
+                                                }
+                                              ],
+                                              "span": {
+                                                "source": 17646367609561022627,
+                                                "start": 1114,
+                                                "end": 1120
+                                              }
+                                            }
+                                          },
+                                          "span": {
+                                            "source": 17646367609561022627,
+                                            "start": 1110,
+                                            "end": 1120
+                                          }
+                                        }
+                                      },
+                                      "span": {
+                                        "source": 17646367609561022627,
+                                        "start": 1096,
+                                        "end": 1120
+                                      }
+                                    }
+                                  },
+                                  "span": {
+                                    "source": 17646367609561022627,
+                                    "start": 1096,
+                                    "end": 1120
+                                  }
+                                }
+                              },
+                              "span": {
+                                "source": 17646367609561022627,
+                                "start": 1091,
+                                "end": 1120
+                              }
+                            }
+                          },
+                          "span": {
+                            "source": 17646367609561022627,
+                            "start": 1067,
+                            "end": 1120
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "Binary": {
+                          "op": "Mul",
+                          "lhs": {
+                            "Binary": {
+                              "op": "Mul",
+                              "lhs": {
+                                "Terminal": {
+                                  "terminal_type": "UnsignedInteger",
+                                  "token": {
+                                    "text": "4",
+                                    "location": {
+                                      "start_line": 20,
+                                      "start_column": 61,
+                                      "end_line": 20,
+                                      "end_column": 62,
+                                      "start": 1125,
+                                      "end": 1126,
+                                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                    },
+                                    "token_number": 154,
+                                    "token_type": 67
+                                  },
+                                  "span": {
+                                    "source": 17646367609561022627,
+                                    "start": 1125,
+                                    "end": 1126
+                                  }
+                                }
+                              },
+                              "rhs": {
+                                "ComponentReference": {
+                                  "local": false,
+                                  "parts": [
+                                    {
+                                      "ident": {
+                                        "text": "alpha",
+                                        "location": {
+                                          "start_line": 20,
+                                          "start_column": 65,
+                                          "end_line": 20,
+                                          "end_column": 70,
+                                          "start": 1129,
+                                          "end": 1134,
+                                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                        },
+                                        "token_number": 156,
+                                        "token_type": 64
+                                      },
+                                      "subs": null
+                                    }
+                                  ],
+                                  "span": {
+                                    "source": 17646367609561022627,
+                                    "start": 1129,
+                                    "end": 1134
+                                  }
+                                }
+                              },
+                              "span": {
+                                "source": 17646367609561022627,
+                                "start": 1125,
+                                "end": 1134
+                              }
+                            }
+                          },
+                          "rhs": {
+                            "Parenthesized": {
+                              "inner": {
+                                "Binary": {
+                                  "op": "Add",
+                                  "lhs": {
+                                    "Binary": {
+                                      "op": "Mul",
+                                      "lhs": {
+                                        "ComponentReference": {
+                                          "local": false,
+                                          "parts": [
+                                            {
+                                              "ident": {
+                                                "text": "x",
+                                                "location": {
+                                                  "start_line": 20,
+                                                  "start_column": 74,
+                                                  "end_line": 20,
+                                                  "end_column": 75,
+                                                  "start": 1138,
+                                                  "end": 1139,
+                                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                },
+                                                "token_number": 159,
+                                                "token_type": 64
+                                              },
+                                              "subs": null
+                                            }
+                                          ],
+                                          "span": {
+                                            "source": 17646367609561022627,
+                                            "start": 1138,
+                                            "end": 1139
+                                          }
+                                        }
+                                      },
+                                      "rhs": {
+                                        "ComponentReference": {
+                                          "local": false,
+                                          "parts": [
+                                            {
+                                              "ident": {
+                                                "text": "vx",
+                                                "location": {
+                                                  "start_line": 20,
+                                                  "start_column": 78,
+                                                  "end_line": 20,
+                                                  "end_column": 80,
+                                                  "start": 1142,
+                                                  "end": 1144,
+                                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                },
+                                                "token_number": 161,
+                                                "token_type": 64
+                                              },
+                                              "subs": null
+                                            }
+                                          ],
+                                          "span": {
+                                            "source": 17646367609561022627,
+                                            "start": 1142,
+                                            "end": 1144
+                                          }
+                                        }
+                                      },
+                                      "span": {
+                                        "source": 17646367609561022627,
+                                        "start": 1138,
+                                        "end": 1144
+                                      }
+                                    }
+                                  },
+                                  "rhs": {
+                                    "Binary": {
+                                      "op": "Mul",
+                                      "lhs": {
+                                        "ComponentReference": {
+                                          "local": false,
+                                          "parts": [
+                                            {
+                                              "ident": {
+                                                "text": "y",
+                                                "location": {
+                                                  "start_line": 20,
+                                                  "start_column": 83,
+                                                  "end_line": 20,
+                                                  "end_column": 84,
+                                                  "start": 1147,
+                                                  "end": 1148,
+                                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                },
+                                                "token_number": 163,
+                                                "token_type": 64
+                                              },
+                                              "subs": null
+                                            }
+                                          ],
+                                          "span": {
+                                            "source": 17646367609561022627,
+                                            "start": 1147,
+                                            "end": 1148
+                                          }
+                                        }
+                                      },
+                                      "rhs": {
+                                        "ComponentReference": {
+                                          "local": false,
+                                          "parts": [
+                                            {
+                                              "ident": {
+                                                "text": "vy",
+                                                "location": {
+                                                  "start_line": 20,
+                                                  "start_column": 87,
+                                                  "end_line": 20,
+                                                  "end_column": 89,
+                                                  "start": 1151,
+                                                  "end": 1153,
+                                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                },
+                                                "token_number": 165,
+                                                "token_type": 64
+                                              },
+                                              "subs": null
+                                            }
+                                          ],
+                                          "span": {
+                                            "source": 17646367609561022627,
+                                            "start": 1151,
+                                            "end": 1153
+                                          }
+                                        }
+                                      },
+                                      "span": {
+                                        "source": 17646367609561022627,
+                                        "start": 1147,
+                                        "end": 1153
+                                      }
+                                    }
+                                  },
+                                  "span": {
+                                    "source": 17646367609561022627,
+                                    "start": 1138,
+                                    "end": 1153
+                                  }
+                                }
+                              },
+                              "span": {
+                                "source": 17646367609561022627,
+                                "start": 1138,
+                                "end": 1153
+                              }
+                            }
+                          },
+                          "span": {
+                            "source": 17646367609561022627,
+                            "start": 1125,
+                            "end": 1153
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 17646367609561022627,
+                        "start": 1067,
+                        "end": 1153
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "Binary": {
+                      "op": "Mul",
+                      "lhs": {
+                        "Binary": {
+                          "op": "Exp",
+                          "lhs": {
+                            "ComponentReference": {
+                              "local": false,
+                              "parts": [
+                                {
+                                  "ident": {
+                                    "text": "beta",
+                                    "location": {
+                                      "start_line": 20,
+                                      "start_column": 93,
+                                      "end_line": 20,
+                                      "end_column": 97,
+                                      "start": 1157,
+                                      "end": 1161,
+                                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                    },
+                                    "token_number": 168,
+                                    "token_type": 64
+                                  },
+                                  "subs": null
+                                }
+                              ],
+                              "span": {
+                                "source": 17646367609561022627,
+                                "start": 1157,
+                                "end": 1161
+                              }
+                            }
+                          },
+                          "rhs": {
+                            "Terminal": {
+                              "terminal_type": "UnsignedInteger",
+                              "token": {
+                                "text": "2",
+                                "location": {
+                                  "start_line": 20,
+                                  "start_column": 100,
+                                  "end_line": 20,
+                                  "end_column": 101,
+                                  "start": 1164,
+                                  "end": 1165,
+                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                },
+                                "token_number": 170,
+                                "token_type": 67
+                              },
+                              "span": {
+                                "source": 17646367609561022627,
+                                "start": 1164,
+                                "end": 1165
+                              }
+                            }
+                          },
+                          "span": {
+                            "source": 17646367609561022627,
+                            "start": 1157,
+                            "end": 1165
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "Parenthesized": {
+                          "inner": {
+                            "Binary": {
+                              "op": "Sub",
+                              "lhs": {
+                                "Binary": {
+                                  "op": "Add",
+                                  "lhs": {
+                                    "Binary": {
+                                      "op": "Exp",
+                                      "lhs": {
+                                        "ComponentReference": {
+                                          "local": false,
+                                          "parts": [
+                                            {
+                                              "ident": {
+                                                "text": "x",
+                                                "location": {
+                                                  "start_line": 20,
+                                                  "start_column": 105,
+                                                  "end_line": 20,
+                                                  "end_column": 106,
+                                                  "start": 1169,
+                                                  "end": 1170,
+                                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                },
+                                                "token_number": 173,
+                                                "token_type": 64
+                                              },
+                                              "subs": null
+                                            }
+                                          ],
+                                          "span": {
+                                            "source": 17646367609561022627,
+                                            "start": 1169,
+                                            "end": 1170
+                                          }
+                                        }
+                                      },
+                                      "rhs": {
+                                        "Terminal": {
+                                          "terminal_type": "UnsignedInteger",
+                                          "token": {
+                                            "text": "2",
+                                            "location": {
+                                              "start_line": 20,
+                                              "start_column": 109,
+                                              "end_line": 20,
+                                              "end_column": 110,
+                                              "start": 1173,
+                                              "end": 1174,
+                                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                            },
+                                            "token_number": 175,
+                                            "token_type": 67
+                                          },
+                                          "span": {
+                                            "source": 17646367609561022627,
+                                            "start": 1173,
+                                            "end": 1174
+                                          }
+                                        }
+                                      },
+                                      "span": {
+                                        "source": 17646367609561022627,
+                                        "start": 1169,
+                                        "end": 1174
+                                      }
+                                    }
+                                  },
+                                  "rhs": {
+                                    "Binary": {
+                                      "op": "Exp",
+                                      "lhs": {
+                                        "ComponentReference": {
+                                          "local": false,
+                                          "parts": [
+                                            {
+                                              "ident": {
+                                                "text": "y",
+                                                "location": {
+                                                  "start_line": 20,
+                                                  "start_column": 113,
+                                                  "end_line": 20,
+                                                  "end_column": 114,
+                                                  "start": 1177,
+                                                  "end": 1178,
+                                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                },
+                                                "token_number": 177,
+                                                "token_type": 64
+                                              },
+                                              "subs": null
+                                            }
+                                          ],
+                                          "span": {
+                                            "source": 17646367609561022627,
+                                            "start": 1177,
+                                            "end": 1178
+                                          }
+                                        }
+                                      },
+                                      "rhs": {
+                                        "Terminal": {
+                                          "terminal_type": "UnsignedInteger",
+                                          "token": {
+                                            "text": "2",
+                                            "location": {
+                                              "start_line": 20,
+                                              "start_column": 117,
+                                              "end_line": 20,
+                                              "end_column": 118,
+                                              "start": 1181,
+                                              "end": 1182,
+                                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                            },
+                                            "token_number": 179,
+                                            "token_type": 67
+                                          },
+                                          "span": {
+                                            "source": 17646367609561022627,
+                                            "start": 1181,
+                                            "end": 1182
+                                          }
+                                        }
+                                      },
+                                      "span": {
+                                        "source": 17646367609561022627,
+                                        "start": 1177,
+                                        "end": 1182
+                                      }
+                                    }
+                                  },
+                                  "span": {
+                                    "source": 17646367609561022627,
+                                    "start": 1169,
+                                    "end": 1182
+                                  }
+                                }
+                              },
+                              "rhs": {
+                                "Binary": {
+                                  "op": "Exp",
+                                  "lhs": {
+                                    "ComponentReference": {
+                                      "local": false,
+                                      "parts": [
+                                        {
+                                          "ident": {
+                                            "text": "L",
+                                            "location": {
+                                              "start_line": 20,
+                                              "start_column": 121,
+                                              "end_line": 20,
+                                              "end_column": 122,
+                                              "start": 1185,
+                                              "end": 1186,
+                                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                            },
+                                            "token_number": 181,
+                                            "token_type": 64
+                                          },
+                                          "subs": null
+                                        }
+                                      ],
+                                      "span": {
+                                        "source": 17646367609561022627,
+                                        "start": 1185,
+                                        "end": 1186
+                                      }
+                                    }
+                                  },
+                                  "rhs": {
+                                    "Terminal": {
+                                      "terminal_type": "UnsignedInteger",
+                                      "token": {
+                                        "text": "2",
+                                        "location": {
+                                          "start_line": 20,
+                                          "start_column": 125,
+                                          "end_line": 20,
+                                          "end_column": 126,
+                                          "start": 1189,
+                                          "end": 1190,
+                                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                        },
+                                        "token_number": 183,
+                                        "token_type": 67
+                                      },
+                                      "span": {
+                                        "source": 17646367609561022627,
+                                        "start": 1189,
+                                        "end": 1190
+                                      }
+                                    }
+                                  },
+                                  "span": {
+                                    "source": 17646367609561022627,
+                                    "start": 1185,
+                                    "end": 1190
+                                  }
+                                }
+                              },
+                              "span": {
+                                "source": 17646367609561022627,
+                                "start": 1169,
+                                "end": 1190
+                              }
+                            }
+                          },
+                          "span": {
+                            "source": 17646367609561022627,
+                            "start": 1169,
+                            "end": 1190
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 17646367609561022627,
+                        "start": 1157,
+                        "end": 1190
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 17646367609561022627,
+                    "start": 1067,
+                    "end": 1190
+                  }
+                }
+              },
+              "rhs": {
+                "Terminal": {
+                  "terminal_type": "UnsignedInteger",
+                  "token": {
+                    "text": "0",
+                    "location": {
+                      "start_line": 20,
+                      "start_column": 130,
+                      "end_line": 20,
+                      "end_column": 131,
+                      "start": 1194,
+                      "end": 1195,
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                    },
+                    "token_number": 186,
+                    "token_type": 67
+                  },
+                  "span": {
+                    "source": 17646367609561022627,
+                    "start": 1194,
+                    "end": 1195
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "StabilizedPendulum",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 17646367609561022627,
+            "start": 1067,
+            "end": 1068
+          }
+        }
+      ],
+      "initial_equations": [],
+      "algorithms": [],
+      "initial_algorithms": [],
+      "connections": [],
+      "resolved_imports": []
+    }
+  },
+  "is_partial": false,
+  "class_type": "Model",
+  "root_description": "The Cartesian pendulum with its constraint differentiated by hand and damped (Baumgarte, 1972)",
+  "disabled_components": [],
+  "array_parent_dims": {},
+  "outer_prefix_to_inner": {},
+  "inner_outer_to_parent_inner": {},
+  "synthesized_inners": [],
+  "type_roots": {},
+  "next_id": 11
+}

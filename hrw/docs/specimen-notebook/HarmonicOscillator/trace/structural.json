@@ -1,0 +1,59 @@
+{
+  "n_equations": 2,
+  "n_unknowns": 2,
+  "coupled_block_count": 0,
+  "matching": [
+    {
+      "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
+      "unknown": "der(x)"
+    },
+    {
+      "equation": "f_x[1] (top-level model equation)",
+      "id": "f_x[1]",
+      "unknown": "der(v)"
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
+      "unknown": "der(x)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[1] (top-level model equation)",
+      "id": "f_x[1]",
+      "unknown": "der(v)"
+    }
+  ],
+  "incidence": {
+    "n_eq": 2,
+    "n_var": 2,
+    "unknown_names": [
+      "der(x)",
+      "der(v)"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
+        "unknowns": [
+          0
+        ],
+        "equation_text": "der(x) - v"
+      },
+      {
+        "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
+        "unknowns": [
+          1
+        ],
+        "equation_text": "der(v) - -(omega ^ 2 * x)"
+      }
+    ]
+  }
+}
