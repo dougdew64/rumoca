@@ -2101,13 +2101,65 @@ impl WorkerState {
         // Rumoca API: `simulate_solve_model` runs the solver (Auto = BDF for
         // stiff / RK45 otherwise) from t=0 to t_end, returning time series.
         // `..Default::default()` fills the remaining `SimOptions` fields
-        // (tolerances, max steps, output points) with sensible defaults.
+        // (max steps, output points) with sensible defaults.
+        //
+        // **The model's `experiment(Tolerance = …)` is honored — added 2026-09-24.**
+        //
+        // It was not, and that was found while opening the specimen ladder's rung 1
+        // (`docs/specimen-ladder.md`). `SingleInertia`'s `phi` carries a constant
+        // 9.8e-9 offset; the check on whether it comes from the order-1 startup step
+        // is *"tighten the tolerance and watch it shrink"* — and HRW returned
+        // byte-identical results at 1e-6, 1e-9 and 1e-12, because this struct was
+        // built as `SimOptions { t_end, ..Default::default() }` and never read the
+        // annotation. `rumoca-compile` extracts it (`experiment.rs`) and surfaces it
+        // on the compile result, Rumoca's own CLI honors it (`--atol`/`--rtol` are
+        // documented as *overriding* it), and three other in-tree consumers read it.
+        // HRW was the only one that dropped it.
+        //
+        // **This changes no committed result.** `SimOptions::default()` is
+        // `rtol = atol = 1e-6`, and all fourteen specimens that declare a tolerance
+        // declare exactly `1e-6` — so the corpus matrix, the notebook traces and the
+        // fidelity numbers are untouched. What changes is that an *authored* value
+        // now takes effect, which is what a simulation lab station needs.
+        //
+        // **`t_end` is deliberately NOT taken from `experiment(StopTime)`**, nor is
+        // `Interval` or `Solver`. `t_end` is HRW's own control — the caller passes it
+        // from the UI — and letting an annotation win would make the Run button lie.
+        // Sampling and solver choice would churn every committed trace for no
+        // teaching gain. Tolerance is the one that was blocking a station.
+        //
+        // The filter matches the convention of the three in-tree readers
+        // (`plot_compare.rs`, `rumoca-worker`, `rumoca-bind-wasm`): a tolerance is
+        // used only when finite and strictly positive, and it sets *both*
+        // tolerances, because `experiment` declares one number and the solver wants
+        // two.
         log(LogLevel::StageStart, "Integration".to_owned());
         let t_stage = Instant::now();
-        let opts = rumoca_sim::SimOptions {
+        let authored_tolerance = cr
+            .experiment_tolerance
+            .filter(|value| value.is_finite() && *value > 0.0);
+        let mut opts = rumoca_sim::SimOptions {
             t_end,
             ..Default::default()
         };
+        if let Some(tolerance) = authored_tolerance {
+            opts.rtol = tolerance;
+            opts.atol = tolerance;
+            // Say so in the log: an observatory that silently obeys an annotation
+            // teaches less than one that reports which number it is using.
+            log(
+                LogLevel::Info,
+                format!("tolerance {tolerance:e} from the model's experiment annotation"),
+            );
+        } else {
+            log(
+                LogLevel::Info,
+                format!(
+                    "tolerance {:e} (solver default — the model declares none)",
+                    opts.rtol
+                ),
+            );
+        }
         // **On a failure that smells non-finite, name the variable — 2026-08-25.**
         //
         // `rumoca`'s CLI calls `simulate_with_diagnostics_auto_nan_trace`, which

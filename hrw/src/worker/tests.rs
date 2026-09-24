@@ -7023,3 +7023,83 @@ fn two_compiles_of_one_specimen_log_the_same_structure() {
          of them now inspects one run rather than its own.",
     );
 }
+
+/// **The model's `experiment(Tolerance = …)` reaches the solver.**
+///
+/// # Why this exists: HRW was the one consumer that dropped it
+///
+/// Found 2026-09-24 while opening the specimen ladder's rung 1. `SingleInertia`'s
+/// `phi` carries a constant 9.8e-9 offset, and the natural way to check where it
+/// comes from is to tighten the tolerance and watch it shrink. HRW returned
+/// **byte-identical** results at 1e-6, 1e-9 and 1e-12 — same first step, same 34
+/// steps, same error — because `WorkerState::simulate` built its `SimOptions` as
+/// `{ t_end, ..Default::default() }` and never read the annotation, although
+/// `rumoca-compile` extracts it and three other in-tree consumers use it.
+///
+/// **This test would have passed trivially before the fix and now would not**, which
+/// is the property worth having: it fails if the wiring is ever dropped again.
+///
+/// It asserts a *ratio*, not absolute numbers. The offset's magnitude tracks the
+/// first step size — empirically `err ≈ h0²` across four tolerances spanning eight
+/// orders of magnitude — but the startup step is the solver's business, so pinning a
+/// value here would break on a solver bump for no reason. A hundredfold improvement
+/// over three decades of tolerance is a wide margin around a strong effect.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn an_authored_tolerance_reaches_the_solver() {
+    let base = std::fs::read_to_string(Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/specimens/SingleInertia.mo"
+    )))
+    .expect("read SingleInertia");
+    // `SingleInertia` deliberately carries no experiment annotation, so each variant
+    // below differs from the others in exactly one number.
+    assert!(
+        !base.contains("Tolerance"),
+        "this test builds the annotation itself; SingleInertia must not already declare one"
+    );
+
+    let dir = std::env::temp_dir().join(format!("hrw-tolerance-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("create temp dir");
+
+    let error_at_t_end = |tolerance: &str| -> f64 {
+        let src = base.replace(
+            "end SingleInertia;",
+            &format!(
+                "  annotation(experiment(StartTime = 0, StopTime = 1, Tolerance = {tolerance}));\n\
+                 end SingleInertia;"
+            ),
+        );
+        let path = dir.join(format!("SingleInertia_{tolerance}.mo"));
+        std::fs::write(&path, src).expect("write variant");
+        let sim = crate::worker::simulate_specimen(&path, "SingleInertia", 1.0, vec![])
+            .expect("simulate variant");
+        let phi = sim
+            .names
+            .iter()
+            .position(|n| n == "phi")
+            .expect("phi is a state of SingleInertia");
+        let last = sim.times.len() - 1;
+        let t = sim.times[last];
+        // Exact solution: tau = J = 1, so w = t and phi = t^2/2.
+        (sim.data[phi][last] - t * t / 2.0).abs()
+    };
+
+    let loose = error_at_t_end("1e-6");
+    let tight = error_at_t_end("1e-9");
+    let _ = std::fs::remove_dir_all(&dir);
+
+    assert!(
+        loose > 0.0 && tight > 0.0,
+        "both runs should carry a measurable truncation error (loose {loose:e}, tight {tight:e})"
+    );
+    assert!(
+        tight * 100.0 < loose,
+        "tightening Tolerance from 1e-6 to 1e-9 must improve accuracy by at least 100x, \
+         but the error went {loose:e} -> {tight:e}. Equal values mean the annotation is \
+         being ignored again \u{2014} see WorkerState::simulate's SimOptions."
+    );
+}

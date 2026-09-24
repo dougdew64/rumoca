@@ -5053,3 +5053,48 @@ and **three tests passed while the code they vouched for was broken** — each v
 ingredient at the wrong moment. Every defect was named by the action trail instead. The rule that
 came out of it is in [`docs/tech-debt.md`](docs/tech-debt.md): for UI behaviour, instrument the
 running program, read the trail, then write the test that pins what the trail proved.
+
+---
+
+## 2026-09-24 — HRW honors `experiment(Tolerance)`, and deliberately nothing else in that annotation
+
+**Found by trying to teach rung 1.** `SingleInertia`'s `phi` carries a constant 9.8e-9 offset, and
+the natural check on where it comes from is *"tighten the tolerance and watch it shrink."* HRW
+returned **byte-identical** results at 1e-6, 1e-9 and 1e-12 — same first step, same 34 steps, same
+error — because `WorkerState::simulate` built its options as
+`SimOptions { t_end, ..Default::default() }` and never read the annotation. `rumoca-compile`
+extracts it, Rumoca's CLI documents `--atol`/`--rtol` as *overriding* it, and three other in-tree
+consumers read it. **HRW was the only one that dropped it.**
+
+**The choice worth recording is the scope.** The annotation also carries `StopTime`, `Interval` and
+`Solver`, and none of those is taken:
+
+- **`StopTime` must not win.** `t_end` is HRW's own control, passed in by the caller from the UI.
+  An annotation overriding it would make the Run button lie about what it ran.
+- **`Interval` and `Solver` would churn every committed trace** — sampling and solver choice change
+  the numbers in `docs/specimen-notebook/*/trace/` — for no teaching gain.
+- **Tolerance was the one blocking a station**, and it is the one whose whole purpose is to be
+  varied by a reader.
+
+**It changes no committed result.** `SimOptions::default()` is `rtol = atol = 1e-6`, and all
+fourteen specimens declaring a tolerance declare exactly `1e-6`. So the capability is added where it
+was silently ignored, and nothing that was measured moves.
+
+**The tolerance is now logged either way** — *"from the model's experiment annotation"* or
+*"solver default — the model declares none"*. An observatory that silently obeys an annotation
+teaches less than one that reports which number it used, and this is the same reasoning as *publish
+Rumoca's own names*.
+
+**The guard is `worker::tests::an_authored_tolerance_reaches_the_solver`**, and it was **verified to
+fail with the fix disabled** rather than assumed to: the error went `9.800975e-9 -> 9.800975e-9` and
+the assertion named the site. That check is this project's own rule about the three tests that
+passed while the code they vouched for was broken.
+
+**What fell out of the fix: the mechanism the offset was missing.** With the tolerance honored, the
+offset tracks the first step size as `err ≈ h0²` across four tolerances spanning eight orders of
+magnitude (h0 = 1e-4 → 9.80e-9; 3.761e-6 → 1.386e-11; 1.189e-7 → 1.366e-14). Exactly one step runs
+at order 1 and every later step at order 2, so **`w` — whose solution is linear — is exact
+everywhere, while `phi` — quadratic — takes its whole error from that single startup step and then
+keeps it**, since the error obeys `e' = 0`. The naive backward-Euler estimate is `h0²/2`; measured
+is consistently ~1.96× that, and **the factor of two is not explained** — no solver code was read
+for it.
