@@ -767,3 +767,56 @@ ceiling to fit new content. **So this reports and waits.** The lab authority is 
 until that file is split, and the disease is the same one Doug just diagnosed, one level up: a
 README that has become a textbook.
 
+---
+
+## Two hours beat several months, and Doug diagnosed why — 2026-09-24
+
+**Doug, on the pendulum document built in a separate session that morning:** *"I had the feeling
+that I was learning more about all of this system modeling and simulation stuff in just those
+couple of hours than I had learned during several months of working on this HRW project."*
+
+**And his own diagnosis, which is the valuable part:** *"we focused initially on simulation,
+especially of ODEs. We then discussed the difference between DAEs and ODEs, and considered DAEs to
+be an evolution which is layered atop ODEs… We hadn't yet gotten to the part of the discussion
+about how modeling languages such as Modelica and compilers such as Rumoca were then created…
+In short, we began with problems, such as high index models, and then discussed solutions."*
+
+### The distinction is narrower than "problem before solution", which the labs already do
+
+[[feedback-problem-before-solution]] has been in force since July, and the lab overviews obey it.
+`matching.md` opens *"A Modelica equation is not an assignment"*; `dae-construction.md` opens *"A
+numerical integrator never sees your model."* Those **are** problems, stated first.
+
+**They are problems internal to the compiler.** *"Which equation solves which unknown?"* is only a
+problem once you have accepted that you are building a Modelica compiler. It was never a problem
+Doug had. The document's problems — the mass drifts off the circle, the rates cannot be read off,
+the solver dies at t ≈ 5×10⁻⁵ with no mention of index — are problems about **the world**, and they
+are his whether or not a compiler exists.
+
+**So the rule was being applied per lab and violated across the curriculum.** Every phase is
+motivated by the phase before it; nothing motivates the first phase.
+
+### The second half: order of discovery, not order of execution
+
+The labs run in **pipeline order** — the order the compiler executes. The document ran in
+**discovery order**: ODE numerics (Euler 1760s, Runge-Kutta 1900), then algebraic constraints on
+top (Gear 1971, DASSL 1982), then — not yet written — modeling languages and compilers on top of
+that. Each layer exists because the previous layer's users hit a wall.
+
+Pipeline order is not wrong; it is the right order for *using* HRW. It is the wrong order for
+arriving, because it starts in the middle of the third layer.
+
+### The consequence, and it is a plan rather than a lesson
+
+The document has not reached its third layer. **That unwritten chapter is the one that motivates
+the entire lab corpus**: why a modeling language exists at all, why connecting components generates
+constraints you did not write, and therefore why a compiler must do mechanically what Aside 1d does
+by hand. It is `connect-expansion`'s subject arrived at from underneath.
+
+Written, it would make the document the spine the labs hang from — and would mean a reader meets
+`matching.md` already knowing why anyone would want a matching.
+
+**Also worth noticing: Part II landed because it came late.** The Rumoca and System Modeler
+measurements are compelling *after* the problem has been felt. Opening with them would have been a
+table of phase outcomes.
+
