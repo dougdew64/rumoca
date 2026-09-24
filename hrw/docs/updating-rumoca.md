@@ -185,7 +185,7 @@ cargo test -p hrw --lib --features slow-tests -- --test-threads=1 --ignored
 
 **Then re-run the oracle**, which costs almost nothing now: System Modeler is reachable from the
 Wolfram MCP server (recipe in [`ideas.md`](ideas.md) #43), so "did this release make Rumoca agree
-with a reference implementation on our 25 specimens?" is a script, not an afternoon. That comparison
+with a reference implementation on our 28 specimens?" is a script, not an afternoon. That comparison
 is the strongest single statement this project can make about a release.
 
 ## 4. Regenerate the per-stage field-help table
