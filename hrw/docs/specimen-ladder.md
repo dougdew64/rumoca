@@ -49,12 +49,12 @@ Each rung's specimen is chosen so that **the rung below it cannot express or sol
 | **1** | Euler, *Institutiones calculi integralis*, **1768–70** | solving an initial-value problem **numerically at all**, when no closed form is available | `SingleInertia` | ✅ 2 states, 0 algebraics |
 | **2** | Runge **1895**, Heun **1900**, Kutta **1901** | **accuracy per step** — buying error reduction with function evaluations instead of with smaller `h` | `HarmonicOscillator` | ✅ 2 states, 0 algebraics |
 | **3** | Curtiss & Hirschfelder **1952**; Dahlquist **1963** | stepping **past a dead fast mode** — implicit methods, and the stability theory that justifies them | `StiffDecay` | ✅ 2 states, 0 algebraics |
-| **4** | Gear **1971** | handing the solver `F(t, z, z') = 0` — **algebraic unknowns need not be eliminated first**; Petzold's DASSL (**1982**) makes it production software | `LoopWithInertia` | ✅ 1 state, 3 algebraics, 4 of 4 move |
+| **4** | Gear **1971** | handing the solver `F(t, z, z') = 0` — **algebraic unknowns need not be eliminated first**; Petzold's DASSL (**1982**) makes it production software | `LoopWithInertia` | ❌ compiles clean, but `w` starts at its steady state — see below |
 | **5** | Baumgarte **1972** | **constrained mechanics simulated** — by the *modeller* differentiating the constraint and damping the drift | `StabilizedPendulum` | ❌ see below — and this is the find |
 | **6** | Elmqvist **1978** (Dymola); Modelica 1.0 **Sept 1997** | **declaring** a model by connecting components, instead of deriving `z' = f(z,t)` by hand | `RotationalInertia`, `RcCircuit` | ✅ 5 of 12 move / ⚠ `RcCircuit` dies at t = 0.014 |
 | **7** | Tarjan **1972**, implemented by Duff & Reid **1978** | recovering computational order from declared equations automatically — **BLT**, and with it the discovery that some blocks *cannot* be ordered | `ProportionalLoop` | ✅ steady state, 0 states |
 | **8** | Elmqvist & Otter **1994** | solving a large coupled block by iterating on **a few** variables — tearing | `NonlinearLoop`, `MixedLoop`, `TwoLoops` | ✅ steady state, 0 states |
-| **9** | Gear **1988**, Pantelides **1988**, Mattsson & Söderlind **1993** | **the compiler** detecting and removing high index, so the modeller no longer does rung 5's work by hand | `BenchActuator` (works), `CartesianPendulum` (wall) | ✅ 35 of 48 move / ❌ step size too small |
+| **9** | Gear **1988**, Pantelides **1988**, Mattsson & Söderlind **1993** | **the compiler** detecting and removing high index, so the modeller no longer does rung 5's work by hand | `BenchActuator`, `CartesianPendulum` (wall) | ⚠ index story sound, trajectory partly wrong — see below / ❌ step size too small |
 | **10** | Cellier **1979** | continuous and discrete behaviour in **one** model — state events and zero crossings | `BouncingBall` | ✅ 2 of 3 move |
 
 **Where this diverges from chronology**, and why:
@@ -66,6 +66,69 @@ Each rung's specimen is chosen so that **the rung below it cannot express or sol
   impossible to motivate before there is a declared, unordered equation set to order.
 - **Rung 10's Cellier (1979)** is placed last though it is early, because events are orthogonal to
   everything above and mixing them in earlier obscures the index story.
+
+---
+
+## Which rungs can be completed on 0.9.20 — and the metric that was hiding the answer
+
+**Completing a rung means writing its document and its lab**, which needs Rumoca to produce
+evidence a reader can check. That is a stricter test than "does it compile", and — this is the
+correction — a stricter test than **"how many series move"**, which is what the first version of
+this table reported.
+
+**"Series that move" cannot tell a trajectory from noise.** `LoopWithInertia` was recorded here as
+*"✅ 4 of 4 move"*. It has a closed form, `w = 1 − exp(−10t)`, and against it:
+
+```
+   t        w (Rumoca)        w = 1-exp(-10t)
+ 0.0000    1.000000000000    0.000000000000
+ 0.0100    0.999999999813    0.095162581964
+ 0.1000    0.999999998128    0.632120558829
+ 1.0000    0.999999994962    0.999954600070
+```
+
+`w` is declared `start = 0.0` and **begins at 1.0, its steady state**. All four series "move" — by
+about 1e-8 of drift. The entire transient is missing. **Every row of this table was re-checked
+against a closed form or the oracle on 2026-09-24 after that was found**, and the results below
+replace the movement counts.
+
+| rung | specimen | checked against | verdict on 0.9.20 |
+|---|---|---|---|
+| **1** | `SingleInertia` | `phi = t²/2`, `w = t` | ✅ correct; `phi` carries a constant 9.8e−9 offset |
+| **2** | `HarmonicOscillator` | `cos t`, `−sin t` | ✅ correct to ~1e−6 |
+| **3** | `StiffDecay` | `exp(−t)`, `exp(−1000t)` | ✅ correct to ~5e−7 |
+| **4** | `LoopWithInertia` | `w = 1 − exp(−10t)` | ❌ **flat at the steady state** |
+| **5** | `StabilizedPendulum` | System Modeler | ❌ does not run |
+| **6** | `RotationalInertia` | `SingleInertia`'s closed form | ✅ correct — `phi` 0 → 0.5, `w` 0 → 1 |
+| **6** | `RcCircuit`, `OverInitRc` | analytic RC | ❌ flat, then dies at t = 0.014 |
+| **7** | `ProportionalLoop` | algebraic self-consistency | ✅ correct — 0 states, constant **by construction** |
+| **8** | `NonlinearLoop`, `MixedLoop`, `TwoLoops` | algebraic self-consistency | ✅ correct, same reason |
+| **9** | `BenchActuator` | System Modeler | ⚠ **split** — see below |
+| **10** | `BouncingBall` | `h = 1 − gt²/2` on the first arc | ✅ correct to ~6e−7 |
+
+### So the answer
+
+**Completable now, in full: rungs 1, 2, 3, 6, 7, 8 and 10.** That is seven of ten, and it includes
+every rung whose specimen has either a closed form or no states at all.
+
+**Rung 9 is completable on its own subject, with one specimen restriction.** The index-reduction
+story — `Structural: singular` → `IndexReduction: now solvable` → a running model — is **sound and
+checkable**, and it is what rung 9 is *about*. But `BenchActuator` declares `L.i(start = 0)` and
+Rumoca starts it at **12 A**, which is `src.V / R.R` — the derivative-zero solution again. System
+Modeler starts it at 0 and rises to 11.998 by t = 0.001, a time constant of `L/R = 1e-4 s`. **That
+fast transient is the entire reason `BenchActuator` is the corpus's stiffness specimen, and it is
+exactly the part 0.9.20 gets wrong.** Its mechanical states (`load.phi`, `load.w`) initialize
+correctly. So: use it for the index story, **never for the electrical trajectory**.
+
+**Rungs 4 and 5 are blocked, for different reasons.** Rung 4 needs a *dynamic* system with
+algebraic unknowns and a visible transient, which is precisely the combination 0.9.20 flat-lines.
+Rung 5 does not run at all. Both are documentable — the derivation and the oracle are available —
+but neither lab can check a trajectory, and rung 4's whole point is that the solver integrates a
+state **while** solving algebraics.
+
+**A consolation at rung 3.** `BenchActuator` was the corpus's designated stiffness specimen, and
+its stiffness is the broken part. `StiffDecay`, added 2026-09-24, has no connectors, no algebraic
+coupling and a closed form — so rung 3 survives the defect that removes rung 4.
 
 ---
 
@@ -241,6 +304,12 @@ conceptual:
 | `GearWithBrake` | 7 states, 0 of 49 move | 9/10 |
 | `RcCircuit` | dies at t = 0.014 | 6 |
 | `OverInitRc` | dies at t = 0.014 | 6 |
+| `LoopWithInertia` | **all series "move"; `w` is flat at its steady state** | 4 |
+| `BenchActuator` | `L.i(0) = 12` against a declared `start = 0`; mechanical states fine | 9 (electrical only) |
+
+**The last two were found on 2026-09-24 and had been recorded here as healthy**, because the
+movement count they were judged by cannot see a state that starts on the wrong value and stays
+there. Anything on this list is judged by a closed form or the oracle now, not by a count.
 
 **All four come back with the 0.10.0 rebase**, confirmed on 2026-09-19. So the rebase mostly buys
 breadth at rungs 6 and 9 — and possibly rung 5 as well, per the open question above. Under the new

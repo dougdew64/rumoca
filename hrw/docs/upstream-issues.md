@@ -1461,6 +1461,36 @@ valid Modelica and the flat-line is Rumoca's.
 solve is applied, it is reached by `connect` expansion and its flow equations — not by anything
 the MSL brings.
 
+> #### ⟶ CORRECTED 2026-09-24 — connectors are neither necessary nor sufficient
+>
+> The paragraph above rules the MSL out correctly. **Its second half does not survive two
+> measurements taken while checking which ladder rungs are usable on 0.9.20.**
+>
+> - **`LoopWithInertia` has no connectors and flat-lines.** It is 34 lines of hand-written
+>   Modelica with no `connect` statement anywhere. `w` is declared `start = 0.0`, its closed form
+>   is `w = 1 − exp(−10t)`, and Rumoca gives `w(0) = 1.0` — the steady state — holding to 1e−8 for
+>   the whole run. So connectors are **not necessary**.
+> - **`RotationalInertia` has connectors and is correct.** Same physics as `SingleInertia` through
+>   MSL flanges; `phi` runs 0 → 0.5 and `w` runs 0 → 1, matching the closed form. So connectors are
+>   **not sufficient**.
+>
+> **What the four models have in common is narrower.** `ConnRc`, `RcCircuit` and `LoopWithInertia`
+> each have a state that participates in a **simultaneous algebraic system** at initialization — a
+> capacitor inside a resistive network, or a state inside an algebraic loop. `BareRc`,
+> `SingleInertia` and `RotationalInertia` do not: their states are driven by sources with nothing
+> to solve alongside. Connectors were implicated because `connect` expansion is the usual *way* to
+> get such a system, not because it is the trigger.
+>
+> **This is a pattern across six models, not a mechanism**, and no suspect code has been read for
+> it. It is recorded because the "rules connectors in" sentence is stated more confidently than the
+> evidence now supports, and this file is public.
+>
+> **`BenchActuator` is affected too, and was not previously listed.** It declares
+> `L.i(start = 0)`; Rumoca starts it at **12 A**, which is `src.V / R.R`. System Modeler starts it
+> at 0 and reaches 11.998 by t = 0.001 (`L/R = 1e-4 s`). Its mechanical states initialize
+> correctly, so the model was passed over as healthy — the defect is confined to the one state
+> whose fast transient is the reason the specimen exists.
+
 **This is also the reproducer the entry should have led with**: no library setup, runs anywhere,
 and it is now the natural post-rebase regression fixture. Held at
 `.hrw-bridge/specimens/ConnRc.mo` (scratch, gitignored) — **promote it when the rebase lands.**
