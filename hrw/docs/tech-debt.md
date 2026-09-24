@@ -46,9 +46,26 @@ progress:** `format-and-app-plan.md`'s rule applies to every change made on prin
 **no extraction lands without a test that could not have been written before it.** A refactor
 that enables no test needs a justification other than the principle.
 
-**Why it matters more than tidiness** — `hrw/CLAUDE.md`, "fixability decay": the cost of a
-deferred fix scales with **how much has come to depend on the broken behaviour**, and a blind
-spot is precisely where dependants accumulate unobserved.
+**Why it matters more than tidiness — FIXABILITY DECAY, and this file is its home.** The cost of a
+deferred fix scales with **how much has come to depend on the broken behaviour**, and a blind spot
+is precisely where dependants accumulate unobserved. **So the expensive defect is not the severe
+one, it is the early one**: severity is fixed at discovery, while dependants keep accruing.
+
+*(Re-homed 2026-09-24. This sentence cited `hrw/CLAUDE.md`'s "fixability decay" — a rule the
+2026-09-01 compression cut, leaving the citation pointing at nothing and the reasoning surviving
+only as this paraphrase of it. **Two checkers would each have missed it**:
+`qualified_citations_resolve` reads backtick citations to `crates/`/`src/` paths, and
+`every_markdown_link_in_a_governing_document_resolves` reads `[text](path)` links. **This was
+neither — a prose citation to a NAMED RULE inside another document**, which nothing resolves. It
+is recorded under "who caught it?" below.)*
+
+**Doug named the extension on 2026-09-24**: the 2026-08-19 argument is not only a case for
+*scheduled* sweeps but for **opportunistic hunting during ordinary work** — *"it is good for this
+project when you invest extra time and effort in identifying and fixing defects."* The instance
+that day: the specimen ladder had been written the previous day citing `LoopWithInertia` as *"4 of
+4 series move"*, which was true and meant nothing, because the state sat flat at its steady value
+and moved by 1e-8 of drift. **Curriculum had already been built atop it**, which is exactly the
+shape 2026-08-19 predicted.
 
 The rules, in full:
 
@@ -197,14 +214,30 @@ verification loop is tight, the second says something is unwatched.
 | 08-16 | tests treated the live Answer as scratch (×3) | Claude | writing one for Doug to test |
 | 08-16 | picker layout regressed the divider | toolchain | `the_left_panel_content_never_detaches…` |
 | 08-16 | duplicate `#[test]`; stolen `#[test]` | toolchain | `no_function_has_two_test_attributes`, `dead_code` |
+| 09-24 | ladder judged rungs by "series that move"; `LoopWithInertia` + `BenchActuator` flat-lined while recorded healthy | **Claude** | went looking; curriculum already built atop one |
+| 09-24 | `upstream-issues.md` said an isolation "rules connectors in"; connectors are neither necessary nor sufficient | **Claude** | fell out of the row above |
+| 09-24 | HRW ignored the model's `experiment(Tolerance)`; three other in-tree consumers honour it | **Claude** | probing a thing Doug correctly said was not a defect |
+| 09-24 | four false greens in one UI test — a vacuous assertion, plus two helpers that panic on 2+ and on 0 matches | **Claude** | verified each by swapping the defaults |
+| 09-24 | `tech-debt.md` cited `hrw/CLAUDE.md`'s "fixability decay"; the 09-01 compression cut it | **Doug** | correcting Claude's framing of his own preference |
 
-**Two days: Doug 10, toolchain 5, Claude 5.** The Doug column is dominated by **things that are
-true on screen** — a pane that shows no reason, a link that does nothing, a divider in the wrong
-place. `CLAUDE.md` already records that `egui_kittest` cannot see layout, and half of these
+**08-15 and 08-16: Doug 10, toolchain 5, Claude 5.** The Doug column is dominated by **things that
+are true on screen** — a pane that shows no reason, a link that does nothing, a divider in the
+wrong place. `CLAUDE.md` already records that `egui_kittest` cannot see layout, and half of these
 confirm it. **The toolchain column is dominated by Claude's own fresh mistakes**, caught within
 minutes, which is the loop working as designed.
 
-<!-- ledger-through: 2026-09-22 -->
+**09-24: Claude 4, Doug 1 — and the shape is new enough to be worth naming.** All four of Claude's
+came from **going looking rather than from something looking wrong**: three of the four were
+*green* beforehand, and one had a ✅ beside it in a document written the previous day. **The
+toolchain column is empty**, which is the honest reading — no check existed for any of them, and
+for two of them none could have, since a movement count cannot distinguish a trajectory from drift
+around a wrong constant and nothing resolves a prose citation to a named rule in another document.
+
+**Doug's one row is the interesting one**: he caught it by *correcting Claude's framing of Doug's
+own preference*, which is not a review activity at all. It is the second instance of a defect
+surfacing from a conversation about something else.
+
+<!-- ledger-through: 2026-09-24 -->
 
 ### 08-17 → 08-22, backfilled 2026-08-23 — and the ledger had gone dark
 
