@@ -1599,6 +1599,113 @@ rather than with the diagnosis.
 
 ---
 
+## IC planning fails to match an algebraic unknown that structural analysis matched
+
+**Found 2026-09-24**, while building the specimen ladder's rung 5. **Reproduced on one
+purpose-built 11-line model and adjudicated against System Modeler.** Not filed. Baseline
+`0.9.20`; **whether the 0.10.0 branch fixes it has not been measured**, and that measurement
+should precede any filing.
+
+**Why this is not the flat-line entry above.** That defect is about **states** taking the
+derivative-zero value instead of their `start`. This one is about an **algebraic** unknown —
+there is no derivative to zero, no `start` to discard, and the system is one Rumoca itself
+reports as structurally sound and already index 1.
+
+### Reproduction
+
+`specimens/StabilizedPendulum.mo` — the Cartesian pendulum with its position constraint
+differentiated twice by hand and damped (Baumgarte's 1972 construction), so that no index
+reduction is required:
+
+```modelica
+model StabilizedPendulum
+  parameter Real L = 1.0; parameter Real m = 1.0; parameter Real g = 9.81;
+  parameter Real alpha = 10.0; parameter Real beta = 10.0;
+  Real x(start = 1.0); Real y(start = 0.0);
+  Real vx(start = 0.0); Real vy(start = 0.0);
+  Real lambda;
+equation
+  der(x) = vx;
+  der(y) = vy;
+  m * der(vx) = -lambda * x;
+  m * der(vy) = -lambda * y - m * g;
+  2*(vx^2 + vy^2) + 2*(x*der(vx) + y*der(vy)) + 4*alpha*(x*vx + y*vy)
+    + beta^2*(x^2 + y^2 - L^2) = 0;
+end StabilizedPendulum;
+```
+
+```
+cargo run -p hrw --example stage_outcomes -- specimens/StabilizedPendulum.mo
+```
+
+### Expected
+
+The fifth equation determines `lambda` algebraically from `x`, `y`, `vx`, `vy` (after
+substituting the two acceleration equations), so IC planning should match it.
+
+### Actual
+
+```
+Dae              Ok        4 state(s), 1 algebraic(s), 5 continuous equation(s)
+Structural       Ok
+IndexReduction   Ok        already index-1 — the reduction funnel is a no-op here
+Initialization   Flagged   IC planning failed: structurally singular system: 0 matched
+                           out of 1 equations and 1 unknowns; unmatched equations:
+                           top-level model equation; unmatched unknowns: lambda
+Events           Ok
+SolveLowering    Ok
+```
+
+and the run then dies in the solver:
+
+```
+BDF new panicked: Failed to factorise matrix:
+SymbolicSingular { index: 4 }   (diffsol-0.13.2 sparse_lu.rs:49)
+```
+
+Index 4 is `lambda`, the fifth variable.
+
+### Why this is surprising, and what makes it filable
+
+**Two phases disagree about the same system.** Structural analysis matches all five equations
+and reports `Ok`; index reduction agrees and calls itself a no-op. IC planning, looking at one
+equation and one unknown, reports *structurally singular* and matches nothing. A system cannot
+be both structurally sound and structurally singular, so at least one of the two matchings is
+wrong — and the report says which pair it failed on, which is unusually good evidence to hand a
+maintainer.
+
+### Independent confirmation
+
+**Wolfram System Modeler 15.0 simulates it**, `WSMSimulate[mdl, {0, 2}]`:
+
+| t | `x` | `y` | `lambda` | `x²+y²−1` | analytic `m(v²−g·y)/L²` |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 0 | 0 | 0 |
+| 0.25 | 0.9536646043 | −0.3008717467 | 8.854655724 | −1.5e−8 | 8.854655449 |
+| 0.5 | 0.3910487904 | −0.920369948 | 27.08648745 | −2.4e−9 | 27.08648732 |
+| 1.0 | −0.986291749 | −0.1650108656 | 4.856269462 | −2.8e−11 | 4.856269461 |
+| 2.0 | 0.7935661992 | −0.6084839254 | 17.90768161 | −5.6e−12 | 17.90768161 |
+
+`lambda` agrees with the analytic rod tension to ~1e−9, so the model is the pendulum and not an
+artefact of the stabilisation; the constraint residual **shrinks** across the run, which is what
+the `alpha` and `beta` terms are for. **The model is correct and portable, so the failure is
+Rumoca's.**
+
+### Mechanism — NOT ESTABLISHED
+
+No suspect code has been read. The observation is confined to what the two phases report about
+the same system, and nothing here should be sent as a causal claim. The one thing worth saying
+to a maintainer is the disagreement itself.
+
+### Why it matters beyond this model
+
+It means Rumoca's wall on constrained mechanics is **not only** the missing Pantelides
+implementation. A user who does the index reduction by hand — the standard workaround, and the
+way the field worked from 1972 until 1988 — still cannot simulate. See
+[`specimen-ladder.md`](specimen-ladder.md) rung 5.
+
+---
+
 ## Adding to this file
 
 One entry per bug, and only for bugs **reproduced**, not suspected. Include the
