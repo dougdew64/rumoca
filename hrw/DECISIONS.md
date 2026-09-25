@@ -5143,3 +5143,41 @@ more than the fix:
 halves were then verified to fail with the defaults swapped**, in both directions, rather than
 assumed to. This is the project's standing rule about the three tests that passed while the code
 they vouched for was broken, and it fired four times in one small UI change.
+
+---
+
+## 2026-09-24 — lectures are VS Code documents, and the math is the whole reason
+
+**Doug, after the first lecture was converted to KaTeX:** *"The math renders beautifully. All by
+itself, the math rendering justifies me reading the lectures in VS Code instead of in HRW."*
+
+**So the two artefact types now split cleanly by venue, and that is a feature rather than an
+accident:**
+
+| | lab | lecture |
+|---|---|---|
+| **read in** | HRW | **VS Code's markdown preview** |
+| **needs** | live panes, stage trees, animations | **rendered math** |
+| **links** | `hrw://` forms — eighteen of them | ordinary relative markdown links |
+| **checked** | the gate, every commit | **only at a rebase** (`updating-rumoca.md` step 6b) |
+
+**Do not invest in rendering a lecture inside HRW.** A session spent part of 2026-09-24 
+investigating `egui_commonmark`'s image support on the unchecked assumption that lectures would be
+read in HRW *because the labs are*. They are not. HRW pins `egui_commonmark` with
+`default-features = false`, which excludes `load-images`; **none of that matters** and turning it on
+would be work in service of a premise Doug has now closed.
+
+**Three consequences worth stating so they are not rediscovered:**
+
+- **A lecture may use `$…$` and `$$…$$` freely.** VS Code renders KaTeX by default
+  (`markdown.math.enabled`). `\begin{pmatrix}`, `\tfrac`, `\lim`, `\text{…}` all work, including
+  inside table cells. HRW's renderer would show the raw `$`.
+- **A lecture must NOT use `hrw://` links.** VS Code cannot follow them, so they would be dead in
+  the only place the document is read. **Cite the lab and station by name in prose instead** — *"the
+  `tearing` lab, Station 1"* — which costs Doug one pick in HRW's lab list and cannot rot into a
+  link that silently does nothing. A relative markdown link to a lab *file* is fine where the point
+  is to read it rather than run it.
+- **This is why the one-way reference rule works.** A lecture cites a lab and a lab never cites a
+  lecture: the two live in different applications, so there is no navigation to keep bidirectional
+  and nothing to enforce. That is the same coupling that produced twenty hard-coded back-links to
+  `the-concepts`, removed the same day.
