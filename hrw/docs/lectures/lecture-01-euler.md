@@ -11,6 +11,12 @@ as `markdown.math.enabled`). If the formulas below appear as literal `$` signs, 
 > $\omega$, $\tau$ — means the *mathematical* quantity. `Backticks` — `phi`, `w`, `tau` — mean the
 > Modelica identifier and the number Rumoca reports for it. §1–§3 are about the first; §4 is where
 > they meet.
+>
+> **Displayed equations are numbered by section — (1.1), (2.3) and so on — so you can name one
+> instead of copying it.** Copying rendered math out of the preview pastes as a stack of lines,
+> because KaTeX builds each formula from nested spans and the copy takes the visual layout. Say
+> *"(2.3)"* and I will find it. The numbering is per section so that inserting an equation in §1
+> never renumbers §4.
 
 ---
 
@@ -41,14 +47,14 @@ $t = 1$; it says how fast $\varphi$ is changing, in terms of a quantity that is 
 
 That is the general situation, and it has a name — an **initial value problem**:
 
-$$z' = f(z, t), \qquad z(0) \ \text{given}$$
+$$z' = f(z, t), \qquad z(0) \ \text{given} \tag{1.1}$$
 
 $z$ is the vector of things that carry the past. Here $z = (\varphi, \omega)$, and $f$ is the
 right-hand side the model spells out:
 
 $$z' = \begin{pmatrix} \varphi' \\ \omega' \end{pmatrix}
      = f(z,t) = \begin{pmatrix} \omega \\ \tau / J \end{pmatrix}
-     = \begin{pmatrix} \omega \\ 1 \end{pmatrix}$$
+     = \begin{pmatrix} \omega \\ 1 \end{pmatrix} \tag{1.2}$$
 
 **Every simulation in this project is this problem**, possibly with complications piled on top; the
 rungs above this one are those complications, one at a time.
@@ -58,7 +64,7 @@ rungs above this one are those complications, one at a time.
 For this particular wheel it isn't. Integrate $\omega' = 1$ to get $\omega = t$, integrate
 $\varphi' = t$ to get
 
-$$\varphi(t) = \tfrac{1}{2} t^2,$$
+$$\varphi(t) = \tfrac{1}{2} t^2 \tag{1.3}$$
 
 and you are done — exactly, forever, for any $t$, with a pencil.
 
@@ -78,21 +84,21 @@ idea.
 
 The derivative is *defined* as a limit:
 
-$$z'(t) = \lim_{h \to 0} \frac{z(t + h) - z(t)}{h}$$
+$$z'(t) = \lim_{h \to 0} \frac{z(t + h) - z(t)}{h} \tag{2.1}$$
 
 **A machine cannot take a limit.** It can evaluate that quotient at some particular, finite $h$, and
 that is all it can ever do. So Euler's move is: *stop the limit early and pretend.*
 
 Rearrange the quotient before taking any limit:
 
-$$z(t + h) \;\approx\; z(t) + h \, z'(t)$$
+$$z(t + h) \;\approx\; z(t) + h \, z'(t) \tag{2.2}$$
 
 and $z'(t)$ is the one thing the model hands you — it is $f(z, t)$. So:
 
 > **Forward Euler.** From where you are, ask the model how fast things are changing, believe that
 > rate for a short time $h$, and step.
 >
-> $$z_{n+1} = z_n + h\, f(z_n, t_n)$$
+> $$z_{n+1} = z_n + h\, f(z_n, t_n) \tag{2.3}$$
 
 That's the whole method. It is not an approximation *of* an algorithm; it **is** the algorithm, and
 everything in lectures 2 and 3 is about the damage the word "pretend" does.
@@ -255,7 +261,7 @@ Tighten the tolerance, the solver takes a smaller first step, and the offset fol
 | $10^{-9}$ | $3.761 \times 10^{-6}$ | $1.386 \times 10^{-11}$ |
 | $10^{-12}$ | $1.189 \times 10^{-7}$ | $1.366 \times 10^{-14}$ |
 
-$$\text{error} \;\approx\; h_0^2$$
+$$\text{error} \;\approx\; h_0^2 \tag{4.1}$$
 
 holding across eight orders of magnitude.
 
