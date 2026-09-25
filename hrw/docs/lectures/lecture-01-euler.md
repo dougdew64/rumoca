@@ -82,7 +82,7 @@ That is the general situation, and it has a name — an **initial value problem*
 $$z' = f(z, t), \qquad z(0) \ \text{given} \tag{1.3}$$
 
 $z$ is the vector of things that carry the past. Here $z = (\varphi, \omega)$, and $f$ is the
-right-hand side the model spells out:
+right-hand side:
 
 $$z' = \begin{pmatrix} \varphi' \\ \omega' \end{pmatrix}
      = f(z,t) = \begin{pmatrix} \omega \\ \tau / J \end{pmatrix}
@@ -90,6 +90,36 @@ $$z' = \begin{pmatrix} \varphi' \\ \omega' \end{pmatrix}
 
 **Every simulation in this project is this problem**, possibly with complications piled on top; the
 rungs above this one are those complications, one at a time.
+
+### Who divided by $J$?
+
+**Look again at (1.4), because something was done to the model to produce it.** The model's second
+equation is
+
+```modelica
+J * der(w) = tau;
+```
+
+and the second row of (1.4) is $\tau/J$. Those are not the same object. One is an **equation** — a
+statement that two expressions are equal, with no instruction about which symbol to isolate. The
+other is a **rate, ready to be evaluated**, which is the only thing §2's method can use.
+
+**Nothing in the model performed that division.** Modelica has no assignment here; `=` is equality,
+not `:=`. The division is work, and somebody has to do it.
+
+**Rumoca does it, and you can watch where.** Its DAE stage keeps the equation in **residual** form —
+`J*der(w) - tau`, still not solved for anything — and it is **solve lowering** that produces the
+explicit rate. The evidence is the *mass matrix*: a solver can also accept the un-divided form as
+$M z' = g(z,t)$, carrying $J$ in $M$ rather than dividing. Rumoca does not. Compiling this model
+with $J = 1$ and again with $J = 2.5$ gives the identity mass matrix both times **(measured
+2026-09-25)**, so the $J$ went into the rate, not into $M$.
+
+**One division, on a model with two equations, and that is the whole of it here.** Which is exactly
+why this is the right first specimen: the compiler's job is visible and small enough to hold in
+your head. The rest of the ladder is that same job getting harder — equations arriving through
+connectors instead of being written down, equations that must be solved *simultaneously* because
+none can be isolated alone, and equations where no amount of rearrangement yields a rate at all.
+`the-pipeline` lab is the route through it.
 
 **And now (1.1) can be stated in general, which is where it gets genuinely circular:**
 
@@ -404,11 +434,14 @@ than from memory.
 - **Lecture 3 — stiffness.** There are systems where you cannot shrink $h$ for accuracy, because
   *stability* has already forced it far smaller. `StiffDecay`, and Curtiss & Hirschfelder's 1952
   paper that named it.
-- **The compiler enters at lecture 4**, not before. Everything above treats $f(z, t)$ as
-  **already evaluable** — §2's trade assumes something exists that you can hand numbers to. A
-  Modelica model is not that thing, and Rumoca's entire job is building one from a model that
-  never states it. [`the-pipeline`](../fixture-labs/the-pipeline.md) is the lab route through
-  that.
+- **The compiler is already here** — §1's *Who divided by $J$?* — and the later lectures only
+  raise the price. **That is a correction to this lecture's first draft**, which said the compiler
+  entered at lecture 4 and treated $f$ as simply given. Doug, 2026-09-25: *"even for just plain old
+  Euler, having a compiler seems to provide a tremendous convenience to a modeler."* He is right,
+  and it is stronger than convenience: §2's trade **assumes** an evaluable $f$ exists, and on a
+  two-equation model one already had to be built. What lectures 4 and on add is not the compiler's
+  arrival but the arithmetic getting harder — connectors, simultaneity, and equations that yield no
+  rate at all. [`the-pipeline`](../fixture-labs/the-pipeline.md) is the lab route through it.
 
 ---
 
