@@ -443,6 +443,39 @@ Euler wrote it in 1768, measured honestly. **The gap is 250 years of improvement
 of it is the second factor rather than the first — which is the argument for lecture 2 in one
 number. Smaller steps are the lever you already have; order is the lever you buy.
 
+### What the tolerance is, since everything below turns on it
+
+**The solver is never told what step size to use. It is told how much error to accept per step**,
+and it chooses step sizes to stay under that. After each step it forms a cheap estimate of the
+error that step alone committed — typically by comparing the step against one of a different order
+— and then: **too big, reject the step and retry smaller; comfortably small, grow the next one.**
+That loop is why $h$ varies at all, which was the first surprise in this section.
+
+**It is a *local* criterion with *global* consequences, and the two are not the same number.** The
+tolerance bounds what each step contributes; it does not bound the error in the answer. Nothing
+told this solver that `phi` would be off by $9.8 \times 10^{-9}$ at $t = 1$ — that came out of the
+policy, and measuring it is a separate act from setting the tolerance.
+
+*(When you reach VVUQ, that gap has a name. Turning this knob and watching the answer move is
+**solution verification**, and quantifying how much of your result is the solver rather than the
+model is what it is for.)*
+
+### Where these four runs came from
+
+**`SingleInertia` as shipped declares no tolerance at all** — open it and there is no `annotation`
+of any kind, which is deliberate: it is the corpus baseline and carries nothing that is not the
+physics. Every run elsewhere in this lecture is therefore at the **solver's own default, $10^{-6}$**.
+
+The four rows below come from **four copies of the specimen**, each with one line added:
+
+```modelica
+annotation(experiment(StartTime = 0, StopTime = 1, Tolerance = 1e-9));
+```
+
+which is exactly the exercise Appendix A.2 asks you to repeat. **HRW reports which tolerance a run
+used, in the Log pane** — either *"from the model's experiment annotation"* or *"solver default —
+the model declares none"* — so you never have to infer it from the plots.
+
 Tighten the tolerance, the solver takes a smaller first step, and the offset follows it:
 
 | tolerance | first step $h_0$ | order-1 steps | max order | `phi` error at $t = 1$ |
@@ -586,14 +619,18 @@ actually did, step by step.
 is the whole of §4's explanation, visible directly.
 
 **And you can now vary the tolerance from the model**, which was not true before 2026-09-25 — HRW
-ignored `experiment(Tolerance)` until that was fixed. Add
+ignored `experiment(Tolerance)` until that was fixed.
+
+**`SingleInertia` as shipped has no `annotation` at all**, so it runs at the solver default of
+$10^{-6}$. Copy it, add one line —
 
 ```modelica
 annotation(experiment(StartTime = 0, StopTime = 1, Tolerance = 1e-9));
 ```
 
-to a copy of the specimen, load it, Run, and watch the first step shrink. That reproduces §4's
-tolerance table without writing any Rust.
+— then load the copy, Run, and hover the first step. It shrinks. **That reproduces §4's tolerance
+table without writing any Rust**, and the Log pane tells you which tolerance the run actually used,
+so you can confirm the annotation took effect rather than assuming it did.
 
 ### A.3 Running the pipeline on a model that is **not** in the corpus
 
