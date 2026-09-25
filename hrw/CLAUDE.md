@@ -838,7 +838,8 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
 **What stays here, because it binds rather than instructs:**
 
 - **The gate is green before every commit**, via the runner: `cargo run -p hrw --example gate`.
-  It decides FAST, LAB or FULL from the working tree; `gate_policy` is the rule and has tests.
+  It decides DOCS, FAST, LAB or FULL from the working tree; `gate_policy` is the rule and has
+  tests. **A DOCS diff — only `.md`/`.txt` under `hrw/` — skips clippy, so HRW may stay open.**
 - **ITERATING AND GATING ARE DIFFERENT ACTS.** Filter while editing; gate once, before the commit.
   Conflating them cost 172 of one day's 274 compute-minutes for six commits.
 - **ANNOUNCE THE COST BEFORE PAYING IT** — before any command expected to exceed ~60 s, say what

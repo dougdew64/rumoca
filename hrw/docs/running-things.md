@@ -176,10 +176,17 @@ to restate the rule was retired 2026-08-31)*.
 cargo run -p hrw --example gate
 ```
 
-**It reads the working tree and picks FAST, LAB or FULL.** The rule itself is
-`gate_policy::needs_full_gate` and `touches_a_verified_lab_region`, each with a test; the runner
-adds the generators, `fmt`/`clippy` for any touched Rumoca crate, and refuses to start while HRW
-holds `hrw.exe`. `--fast` / `--full` override.
+**It reads the working tree and picks DOCS, FAST, LAB or FULL.** The rule itself is
+`gate_policy::is_docs_only`, `needs_full_gate` and `touches_a_verified_lab_region`, each with a
+test; the runner adds the generators and `fmt`/`clippy` for any touched Rumoca crate. `--fast` /
+`--full` override.
+
+**It refuses to start while HRW holds `hrw.exe` — EXCEPT on a DOCS diff**, added 2026-09-24.
+`clippy -p hrw --all-targets` is the only step that builds the bin, so a change that is only `.md`
+or `.txt` under `hrw/` skips it and **HRW may stay open**. Verified by mtime rather than inferred:
+a DOCS run leaves `target/debug/hrw.exe` byte-identical. Doug had to close HRW twice in one session
+to commit prose, and cited that cost as a reason to keep lectures out of the repository — the cost
+was this, not the repository.
 
 **Why no table here any more, and this is the general rule not a local tidy-up.** A gate verdict
 was stated in **seven** governing documents. Three of 2026-08-31's contradictions were that prose
