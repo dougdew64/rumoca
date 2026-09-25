@@ -157,6 +157,26 @@ const SIM_T_END_RANGE: std::ops::RangeInclusive<f64> = 0.1..=20.0;
 /// comfortably above `1e-7`, `-0.500` and `21.75`, which are the widest ticks the corpus produces.
 const SIM_Y_AXIS_WIDTH: f32 = 64.0;
 
+/// Widen a plot's **auto**-bounds to a span shared with its siblings, leaving auto-bounds on.
+///
+/// The three simulation plots draw from two sources whose x extents genuinely differ — the solver
+/// steps past `t_end` and interpolates the output back, so its step records outrun the last
+/// trajectory sample (2.36 % on `SingleInertia`, measured 2026-09-25). Auto-fitting each plot to
+/// its own data then maps the same instant to different pixels, which is what made `t = 1` sit
+/// right of `t = 1` on the plot above it.
+///
+/// `include_x` is the right tool precisely because it does **not** pin the bounds: zoom, pan and
+/// double-click-to-reset all keep working, and nothing is clipped to make the axes agree.
+fn with_shared_x_span(
+    plot: egui_plot::Plot<'_>,
+    span: (Option<f64>, Option<f64>),
+) -> egui_plot::Plot<'_> {
+    match span {
+        (Some(lo), Some(hi)) => plot.include_x(lo).include_x(hi),
+        _ => plot,
+    }
+}
+
 /// How often the scratch specimen directory is re-listed. Slower than the lab poll:
 /// a specimen appearing a second late is imperceptible, and a rescan re-reads every
 /// specimen's `// purpose:` line.
@@ -3615,8 +3635,54 @@ impl App {
                 // whatever happens between them, the three rects are identical by construction.
                 let plot_width = ui.available_width();
 
+                // **And one x SPAN, because the two sources genuinely disagree about it.**
+                //
+                // Equal widths were not enough, and the reason is solver behaviour rather than
+                // layout. Measured on `SingleInertia`, 2026-09-25:
+                //
+                // ```text
+                // trajectory times : [0.000000, 1.000000]
+                // solver step t    : [0.000100, 1.023600]   <- 2.36% past t_end
+                // ```
+                //
+                // **BDF steps past the end and interpolates the output back**, so the step
+                // records run beyond the last output sample. Auto-bounds then fit each plot to
+                // its own data: the diagnostics got a 2.36% wider range, and with identical
+                // widths and a shared left edge, `t = 1` landed 2.36% further right on the
+                // trajectory. That is exactly the "slightly to the right" Doug reported, and it
+                // is why the zeros kept aligning while the ones did not.
+                //
+                // `include_x` widens each plot's auto-bounds to a common span **without**
+                // disabling auto-bounds, so zoom and double-click-to-reset still behave.
+                //
+                // **Nothing is clipped to achieve this.** Discarding the steps past `t_end` would
+                // have aligned the axes too, and would have hidden something the solver really
+                // did — which Decision 7 does not permit. The overshoot is now visible on the
+                // diagnostics plots as trailing steps beyond the trajectory's end, which is the
+                // truth.
+                let (x_lo, x_hi) = {
+                    let mut lo = f64::INFINITY;
+                    let mut hi = f64::NEG_INFINITY;
+                    for t in data.times.iter().copied() {
+                        lo = lo.min(t);
+                        hi = hi.max(t);
+                    }
+                    for s in &data.solver_steps {
+                        lo = lo.min(s.t);
+                        hi = hi.max(s.t);
+                    }
+                    // A model with neither samples nor steps leaves these non-finite; egui_plot
+                    // would take that into its bounds arithmetic, so fall back to letting each
+                    // plot auto-fit rather than handing it an infinity.
+                    if lo.is_finite() && hi.is_finite() && lo < hi {
+                        (Some(lo), Some(hi))
+                    } else {
+                        (None, None)
+                    }
+                };
+
                 let label_times: Vec<f64> = data.times.clone();
-                let mut trajectory_plot = Plot::new("sim_plot")
+                let mut trajectory_plot = with_shared_x_span(Plot::new("sim_plot"), (x_lo, x_hi))
                     .legend(Legend::default().position(Corner::LeftTop))
                     .width(plot_width)
                     .x_axis_label("time")
@@ -3713,7 +3779,7 @@ impl App {
                     // them; an axis reading `-4` beside a curve of positive step sizes would be
                     // a renamed field by another name.
                     let step_rows = label_rows.clone();
-                    Plot::new("solver_step_size")
+                    with_shared_x_span(Plot::new("solver_step_size"), (x_lo, x_hi))
                         .legend(Legend::default().position(Corner::LeftTop))
                         .width(plot_width)
                         .link_axis(link_group, [true, false])
@@ -3752,7 +3818,7 @@ impl App {
                             );
                         });
 
-                    Plot::new("solver_bdf_order")
+                    with_shared_x_span(Plot::new("solver_bdf_order"), (x_lo, x_hi))
                         .legend(Legend::default().position(Corner::LeftTop))
                         .width(plot_width)
                         .link_axis(link_group, [true, false])
