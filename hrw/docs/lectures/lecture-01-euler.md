@@ -569,12 +569,33 @@ matrix, therefore the division happened.**
 > answers a surprising share of "where does the compiler do X?" questions, and it needs no
 > knowledge of the internals — only a model you can change and a stage you can dump.
 
-### A.5 What is *not* yet reproducible this way, stated honestly
+### A.5 Reading the numbers off the plots — **hover them**
 
-**The fine-grained numeric comparisons in §4** — `phi` off by `9.801e-9` at $t = 1$ — came from a
-throwaway Rust example that read the trajectory and differenced it against $t^2/2$. HRW plots the
-trajectory but I have not established a way to get twelve significant figures out of it by hand.
+*(This section said, hours earlier, that the fine-grained numbers were not reachable by hand and
+that a feature request would be better-shaped once the need was real. Doug supplied the need the
+same afternoon, so the feature exists and this section is now instructions rather than an apology.)*
 
-So A.1–A.3 cover the *structural* claims and the solver's behaviour; the last digits of an error
-still route through a probe. **If that becomes a thing you want to do routinely, say so — it is a
-feature request, and a better-shaped one than anything invented without the need.**
+**Hover any point on either simulation plot.** The trajectory plot reports its value to **twelve
+decimal places**, and the diagnostics plot reports the step it is nearest:
+
+```
+step 0 of 34
+t = 0.000100
+h = 1.000e-4
+order = 1
+```
+
+**That is §4's first table row, readable directly.** Hover the next few points and the `order = 1`
+becomes `order = 2` and stays there — which is §4's entire explanation of the frozen offset,
+confirmed by you rather than asserted by me.
+
+On the trajectory plot, hovering `phi` near $t = 1$ gives `0.500000009801` against an exact
+$0.5$ — the `9.801e-9` of §4, at a precision that shows it.
+
+> **Why this needed building at all, because the failure is instructive.** The tooltips were
+> always there. `egui_plot`'s default formatter rounds to **three decimal places**, so a step of
+> `1e-4` rendered as `0.000` and a trajectory offset of `9.8e-9` vanished into `0.500`. **The pane
+> reported, the report was wrong, and nothing said so** — the same shape as the renamed-field
+> defect `CLAUDE.md` records, where every value was correct for three weeks and the defect lived
+> entirely in a label. The fix is `src/plot_labels.rs`, whose tests assert the *rounding* rather
+> than the text, so the default cannot creep back.

@@ -115,11 +115,11 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**69 modules, 81,419 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**70 modules, 81,653 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
-| `app.rs` | 7,641 |
+| `app.rs` | 7,694 |
 | `app/tests.rs` | 7,299 |
 | `worker/tests.rs` | 7,105 |
 | `doc_citations.rs` | 6,693 |
@@ -135,7 +135,7 @@ showing 48 equations. They are derived now, and
 | `incidence_view.rs` | 1,219 |
 | `reduction_view.rs` | 1,112 |
 | `connection_anim.rs` | 1,088 |
-| `lib.rs` | 1,081 |
+| `lib.rs` | 1,082 |
 | `matching_anim.rs` | 1,068 |
 | `playback.rs` | 962 |
 | `tarjan_anim.rs` | 934 |
@@ -182,13 +182,14 @@ showing 48 equations. They are derived now, and
 | `worker/test_msl.rs` | 226 |
 | `test_support.rs` | 223 |
 | `timing.rs` | 200 |
+| `plot_labels.rs` | 180 |
 | `main.rs` | 178 |
 | `ui_state.rs` | 170 |
 | `stage_caches.rs` | 120 |
 | `json_read.rs` | 119 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 101 |
-| **total** | **81,419** |
+| **total** | **81,653** |
 <!-- END GENERATED module-sizes -->
 
 

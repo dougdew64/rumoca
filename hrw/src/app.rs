@@ -3557,9 +3557,32 @@ impl App {
                 let has_diagnostics = !data.solver_steps.is_empty();
                 let link_group = ui.id().with("sim_time_axis");
 
+                // **Twelve decimal places, for the same reason as the diagnostics plot below.**
+                // The question a reader brings to this plot is *"is this value exactly what the
+                // closed form says?"*, and `SingleInertia` answers `0.500000009801` against an
+                // exact `0.5`. egui_plot's three-place default renders both as `0.500`.
+                let label_times: Vec<f64> = data.times.clone();
                 let mut trajectory_plot = Plot::new("sim_plot")
                     .legend(Legend::default().position(Corner::LeftTop))
-                    .x_axis_label("time");
+                    .x_axis_label("time")
+                    .label_formatter(move |hover| {
+                        let (series, index, position) = match hover {
+                            egui_plot::HoverPosition::NearDataPoint {
+                                plot_name,
+                                position,
+                                index,
+                            } => (*plot_name, Some(*index), *position),
+                            egui_plot::HoverPosition::Elsewhere { position } => {
+                                ("", None, *position)
+                            }
+                        };
+                        Some(crate::plot_labels::trajectory_label(
+                            series,
+                            &label_times,
+                            index,
+                            (position.x, position.y),
+                        ))
+                    });
                 if has_diagnostics {
                     trajectory_plot = trajectory_plot
                         .link_axis(link_group, [true, false])
@@ -3596,12 +3619,42 @@ impl App {
                     ui.separator();
                     ui.strong("Solver diagnostics");
 
+                    // **The hover label is the reason this plot is checkable** — see
+                    // `plot_labels`. egui_plot's default formats with `{:.3}`, which reports a
+                    // 1e-4 step as `0.000`, and Doug reported on 2026-09-25 that he could not
+                    // verify a single one of lecture 1's solver claims because of it. The rows
+                    // are rebuilt here rather than borrowed so the closure owns them.
+                    let label_rows: Vec<crate::plot_labels::StepRow> = data
+                        .solver_steps
+                        .iter()
+                        .map(|s| crate::plot_labels::StepRow {
+                            t: s.t,
+                            h: s.h,
+                            order: s.order,
+                        })
+                        .collect();
+
                     Plot::new("solver_diagnostics")
                         .legend(Legend::default().position(Corner::LeftTop))
                         .link_axis(link_group, [true, false])
                         .link_cursor(link_group, [true, false])
                         .x_axis_label("time")
                         .y_axis_label("step size h  /  BDF order k")
+                        .label_formatter(move |hover| {
+                            let (index, position) = match hover {
+                                egui_plot::HoverPosition::NearDataPoint {
+                                    position, index, ..
+                                } => (Some(*index), *position),
+                                egui_plot::HoverPosition::Elsewhere { position } => {
+                                    (None, *position)
+                                }
+                            };
+                            Some(crate::plot_labels::solver_step_label(
+                                &label_rows,
+                                index,
+                                (position.x, position.y),
+                            ))
+                        })
                         .show(ui, |plot_ui| {
                             let h_pts: PlotPoints =
                                 data.solver_steps.iter().map(|s| [s.t, s.h]).collect();
