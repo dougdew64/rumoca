@@ -223,6 +223,9 @@ verification loop is tight, the second says something is unwatched.
 | 09-25 | step size and BDF order shared a linear y axis; the h line got 0.06 % of the height | **Doug** | asked for zoom; zoom already existed and could not reach it |
 | 09-25 | the three plots' x axes did not align — BDF steps 2.36 % past `t_end` | **Doug** | **two wrong hypotheses first**; see below |
 | 09-25 | `experiment(Tolerance)` was never read by HRW | Claude | probing a thing Doug had correctly called a non-defect |
+| 09-25 | the BDF order series was drawn as a LINE, asserting fractional orders the solver never ran | **Doug** | asked whether he needed a step table; the answer was no, and this fell out |
+| 09-25 | `SolverStepRecord::h` is the NEXT step, not the one taken — 11 of 34 records disagree with `t_n - t_(n-1)`; its doc says *"Step size used"* | Claude | checking which interval each staircase value belongs to |
+| 09-25 | lecture 1's (4.1) `error ~ h_0^2` was **refuted by the table printed under it** — two rows share `h_0` and differ 66x | Claude | auditing section 4 to answer Doug's table question |
 
 **08-15 and 08-16: Doug 10, toolchain 5, Claude 5.** The Doug column is dominated by **things that
 are true on screen** — a pane that shows no reason, a link that does nothing, a divider in the
