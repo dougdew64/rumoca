@@ -3634,12 +3634,69 @@ impl App {
                         })
                         .collect();
 
-                    Plot::new("solver_diagnostics")
+                    // **Two plots, not one, and the step size on a LOG axis** — Doug, 2026-09-25,
+                    // asked for zoom and the measurement said zoom could not reach it.
+                    //
+                    // These shared a linear y axis until now. Measured across the corpus that
+                    // day: the step-size line got **0.06 %** of the plot height on
+                    // `BouncingBall` and **1.6 %** on `BenchActuator`, because `order` runs 1-5
+                    // while `h` runs 1e-7 to 1e-1. It was a flat line along the x axis, and no
+                    // amount of zooming fixes it — zooming y far enough to see `h` throws the
+                    // order line off screen.
+                    //
+                    // And `h` needs a log axis even alone: `BenchActuator` spans a factor of
+                    // **262,000** in one run, and the *small* steps are the interesting ones
+                    // because they are where the solver met something hard. On that specimen
+                    // they are the fast electrical transient, which is why the specimen exists.
+                    //
+                    // The transform and the tick labels are in `plot_labels`, where tests pin
+                    // them; an axis reading `-4` beside a curve of positive step sizes would be
+                    // a renamed field by another name.
+                    let step_rows = label_rows.clone();
+                    Plot::new("solver_step_size")
                         .legend(Legend::default().position(Corner::LeftTop))
                         .link_axis(link_group, [true, false])
                         .link_cursor(link_group, [true, false])
+                        .height(140.0)
                         .x_axis_label("time")
-                        .y_axis_label("step size h  /  BDF order k")
+                        .y_axis_label("step size h  (log)")
+                        .y_grid_spacer(egui_plot::log_grid_spacer(10))
+                        .y_axis_formatter(|mark, _| crate::plot_labels::log_step_tick(mark.value))
+                        .label_formatter(move |hover| {
+                            let (index, position) = match hover {
+                                egui_plot::HoverPosition::NearDataPoint {
+                                    position, index, ..
+                                } => (Some(*index), *position),
+                                egui_plot::HoverPosition::Elsewhere { position } => {
+                                    (None, *position)
+                                }
+                            };
+                            Some(crate::plot_labels::solver_step_label(
+                                &step_rows,
+                                index,
+                                // The cursor's y is a logarithm; report the step size it means.
+                                (position.x, 10_f64.powf(position.y)),
+                            ))
+                        })
+                        .show(ui, |plot_ui| {
+                            let h_pts: PlotPoints = data
+                                .solver_steps
+                                .iter()
+                                .map(|s| [s.t, crate::plot_labels::log_step(s.h)])
+                                .collect();
+                            plot_ui.line(
+                                Line::new("step size h", h_pts)
+                                    .color(crate::colors::SOLVER_STEP_SIZE),
+                            );
+                        });
+
+                    Plot::new("solver_bdf_order")
+                        .legend(Legend::default().position(Corner::LeftTop))
+                        .link_axis(link_group, [true, false])
+                        .link_cursor(link_group, [true, false])
+                        .height(110.0)
+                        .x_axis_label("time")
+                        .y_axis_label("BDF order k")
                         .label_formatter(move |hover| {
                             let (index, position) = match hover {
                                 egui_plot::HoverPosition::NearDataPoint {
@@ -3656,13 +3713,6 @@ impl App {
                             ))
                         })
                         .show(ui, |plot_ui| {
-                            let h_pts: PlotPoints =
-                                data.solver_steps.iter().map(|s| [s.t, s.h]).collect();
-                            plot_ui.line(
-                                Line::new("step size h", h_pts)
-                                    .color(crate::colors::SOLVER_STEP_SIZE),
-                            );
-
                             let order_pts: PlotPoints = data
                                 .solver_steps
                                 .iter()

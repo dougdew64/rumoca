@@ -91,6 +91,47 @@ pub(crate) fn trajectory_label(
     }
 }
 
+/// The floor applied to a step size before taking its logarithm.
+///
+/// `log10(0)` is `-inf` and `log10(negative)` is `NaN`; either poisons the plot's auto-bounds and
+/// takes the whole curve with it. A step size is positive by construction, so this guard should
+/// never fire — but *should never fire* is exactly the kind of claim this repository has been
+/// wrong about, and a silently blank plot would read as "the solver took no steps".
+const MIN_PLOTTABLE_STEP: f64 = 1e-300;
+
+/// A step size as a **log₁₀ y-coordinate**, because a linear axis cannot show one.
+///
+/// # Why the axis has to be logarithmic
+///
+/// Measured 2026-09-25 across the corpus: `BenchActuator`'s step size runs from `2.49e-7` to
+/// `6.52e-2` in a single run — a factor of **262,000** — and `BouncingBall`'s from `8.99e-6` to
+/// `3.00e-3`. On a linear axis the small steps are pinned to zero, and the small steps are the
+/// interesting ones: they are where the solver met something hard. On `BenchActuator` that is the
+/// fast electrical transient, which is the entire reason that specimen exists.
+///
+/// `egui_plot` 0.36 has no log-scaled axis — only [`log_grid_spacer`] for the gridlines — so the
+/// transform happens here and [`log_step_tick`] turns the tick values back into step sizes.
+///
+/// [`log_grid_spacer`]: https://docs.rs/egui_plot/0.36.0/egui_plot/fn.log_grid_spacer.html
+pub(crate) fn log_step(h: f64) -> f64 {
+    h.max(MIN_PLOTTABLE_STEP).log10()
+}
+
+/// A y-axis tick on the log step-size plot, rendered as **the step size it stands for**.
+///
+/// **The axis would otherwise be a lie.** A tick at `-4` means a step of `1e-4`, and an axis
+/// labelled `-4` invites the reader to believe the solver took a negative step. `CLAUDE.md`'s rule
+/// — *a renamed field is a claim* — applies to an axis as much as to a JSON key.
+pub(crate) fn log_step_tick(log_value: f64) -> String {
+    let rounded = log_value.round();
+    if (log_value - rounded).abs() < 1e-6 {
+        // A clean decade: `1e-4` reads better than `1.00e-4`.
+        format!("1e{rounded:.0}")
+    } else {
+        format!("{:.1e}", 10_f64.powf(log_value))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -176,5 +217,52 @@ mod tests {
             label.contains("0.500000009801"),
             "12 places are needed to see a 9.8e-9 offset on 0.5, got:\n{label}"
         );
+    }
+
+    /// **A decade tick reads as the step size, never as its exponent.**
+    ///
+    /// The failure this guards is an axis labelled −7 … −1 beside a curve of positive step sizes,
+    /// which invites exactly the wrong reading.
+    #[test]
+    fn a_log_tick_is_labelled_with_the_step_size_it_stands_for() {
+        assert_eq!(log_step_tick(-4.0), "1e-4");
+        assert_eq!(log_step_tick(-7.0), "1e-7");
+        assert_eq!(log_step_tick(0.0), "1e0");
+        assert!(
+            !log_step_tick(-4.0).starts_with('-'),
+            "a tick must never render as a negative number — the step size is positive",
+        );
+    }
+
+    /// A tick between decades still reports a step size rather than a fraction.
+    #[test]
+    fn a_tick_between_decades_is_still_a_step_size() {
+        let label = log_step_tick(-3.5);
+        assert!(label.contains("e-4"), "about 3.2e-4 expected, got {label}");
+    }
+
+    /// **The transform round-trips**, which is what makes the axis honest.
+    #[test]
+    fn the_log_transform_round_trips_across_the_measured_range() {
+        // The extremes measured across the corpus on 2026-09-25.
+        for h in [2.49e-7, 8.99e-6, 1.0e-4, 3.0e-3, 6.52e-2, 2.05e-1] {
+            let back = 10_f64.powf(log_step(h));
+            assert!(
+                (back - h).abs() / h < 1e-12,
+                "log_step round-trip lost {h}: got {back}",
+            );
+        }
+    }
+
+    /// **A non-positive step cannot blank the plot.**
+    ///
+    /// `log10(0)` is `-inf` and `log10(-1)` is `NaN`; either poisons auto-bounds and takes the
+    /// whole curve with it, which would read as *"the solver took no steps"* rather than as a bug.
+    #[test]
+    fn a_non_positive_step_is_floored_rather_than_poisoning_the_axis() {
+        for bad in [0.0, -1.0, -1e-9] {
+            let v = log_step(bad);
+            assert!(v.is_finite(), "log_step({bad}) must be finite, got {v}");
+        }
     }
 }
