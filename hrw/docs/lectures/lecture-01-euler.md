@@ -1,6 +1,6 @@
 # Lecture 1 — Euler, 1768: getting a number when there is no formula
 
-**Purpose:** the first rung of [`specimen-ladder.md`](specimen-ladder.md). What problem numerical
+**Purpose:** the first rung of [`specimen-ladder.md`](../specimen-ladder.md). What problem numerical
 integration solves, the single move Euler made, and what Rumoca does with it.
 **Status:** lecture — a draft to be argued with. **Ask, and this file gets revised.**
 **Read before:** any lab downstream of `Simulation`. There isn't one yet, and this lecture is
@@ -243,7 +243,7 @@ live instrument rather than from memory.
   paper that named it.
 - **The compiler enters at lecture 4**, not before. Everything above treats `f(z, t)` as given.
   Rumoca's entire job is producing `f` from a model that does not state it — and
-  [`the-pipeline`](fixture-labs/the-pipeline.md) is the lab route through that.
+  [`the-pipeline`](../fixture-labs/the-pipeline.md) is the lab route through that.
 
 ---
 
