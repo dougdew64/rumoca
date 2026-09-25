@@ -350,6 +350,14 @@ Rumoca's solver reports what it did on every step. For this model, $t_{\text{end
    ...                        (34 steps in total, none above order 2)
 ```
 
+> **A trap in that `h` column, which cost a defect in HRW before it was noticed.** The recorded `h`
+> is the size the solver has chosen for the step it is *about to take*, not the one that just
+> finished — Rumoca captures it after the step completes, when the adaptive controller has already
+> revised it. Look at row 1: `t` advanced by $10^{-4}$ while `h` reads $2\times10^{-4}$. On this run
+> 11 of the 34 rows disagree that way, every one of them where the solver doubled. **HRW's hover
+> label says `arrived by h` and `next h` separately for exactly this reason.** Where this lecture
+> writes $h_0$ it means the *first step actually taken*, which happens to equal row 0's `h`.
+
 Four things there are not in §3.
 
 **$h$ changes.** You chose $h$ once; the solver picks a new one every step, growing it while the
@@ -396,6 +404,9 @@ $h_0 = 10^{-4}$. From step 1 on the order is 2, and a second-order method *does*
 parabola exactly. So no further error is ever added, and the error already present satisfies
 $e' = 0$: it neither grows nor decays.
 
+*(That "exactly one" is a fact about **this run**, at the default tolerance, and not a property of
+the solver. Loosen the tolerance and there are five; the table below is where that matters.)*
+
 **One wrong step at the very start, frozen for the whole run.** The error is
 $9.801 \times 10^{-9}$ at $t = 0.002$ and $9.801 \times 10^{-9}$ at $t = 1$. A constant, not a
 drift — and that is the tell which says *startup*, not *accumulation*.
@@ -434,30 +445,59 @@ number. Smaller steps are the lever you already have; order is the lever you buy
 
 Tighten the tolerance, the solver takes a smaller first step, and the offset follows it:
 
-| tolerance | first step $h_0$ | `phi` error at $t = 1$ |
-|---|---|---|
-| $10^{-4}$ | $1.000 \times 10^{-4}$ | $6.44 \times 10^{-7}$ |
-| $10^{-6}$ | $1.000 \times 10^{-4}$ | $9.80 \times 10^{-9}$ |
-| $10^{-9}$ | $3.761 \times 10^{-6}$ | $1.386 \times 10^{-11}$ |
-| $10^{-12}$ | $1.189 \times 10^{-7}$ | $1.366 \times 10^{-14}$ |
+| tolerance | first step $h_0$ | order-1 steps | max order | `phi` error at $t = 1$ |
+|---|---|---|---|---|
+| $10^{-4}$ | $1.000 \times 10^{-4}$ | **5** | 2 | $6.44 \times 10^{-7}$ |
+| $10^{-6}$ | $1.000 \times 10^{-4}$ | 1 | 2 | $9.80 \times 10^{-9}$ |
+| $10^{-9}$ | $3.761 \times 10^{-6}$ | 1 | 5 | $1.386 \times 10^{-11}$ |
+| $10^{-12}$ | $1.189 \times 10^{-7}$ | 1 | 4 | $1.366 \times 10^{-14}$ |
 
-$$\text{error} \;\approx\; h_0^2 \tag{4.1}$$
+**Read the first two rows before believing anything.** They have the *same* $h_0$ and their errors
+differ by a factor of 66. So whatever governs the error, it is **not** $h_0$ alone — and an earlier
+draft of this lecture claimed exactly that, over exactly this table, without noticing that its own
+first two rows refuted it.
 
-holding across eight orders of magnitude.
+**The order-1 column is what governs it.** Order 1 cannot reproduce a parabola and order 2 can, so
+**only the order-1 steps contribute anything at all**, and the error is the sum of what each of
+them got wrong. Summing $h^2$ over just those steps:
 
-**One honest gap.** A single backward Euler step on $\varphi' = t$ predicts an error of
-$h_0^2 / 2$. Measured is consistently about $1.96\times$ that. The scaling law is solid; the factor
-of two is **not explained**, and no solver source was read for it. It is left visible rather than
-rounded away.
+$$\text{error} \;\approx\; \sum_{\text{order-1 steps}} h^2 \tag{4.1}$$
+
+| tolerance | the order-1 steps | $\sum h^2$ | measured error | ratio |
+|---|---|---|---|---|
+| $10^{-4}$ | $10^{-4},\ 10^{-4},\ 2{\times}10^{-4},\ 4{\times}10^{-4},\ 8{\times}10^{-4}$ | $8.60 \times 10^{-7}$ | $6.44 \times 10^{-7}$ | 0.75 |
+| $10^{-6}$ | $10^{-4}$ | $1.00 \times 10^{-8}$ | $9.80 \times 10^{-9}$ | 0.98 |
+
+**When exactly one step runs at order 1, (4.1) collapses to $\text{error} \approx h_0^2$** — which is
+the case in the bottom three rows, and is the whole content of "one wrong step, frozen". The
+$10^{-4}$ row is not an exception to the rule; it is the rule with five terms instead of one.
+
+**Two honest gaps, neither rounded away.**
+
+A single backward Euler step on $\varphi' = t$ predicts $h^2/2$, so (4.1) should carry a
+coefficient of $\tfrac{1}{2}$ and the measured ratios should be $0.5$. They are **0.75 and 0.98**,
+and they are not even equal to each other. The *shape* of (4.1) is confirmed — five steps predicted
+within 34 % where $h_0^2$ alone was wrong by 6600 % — but the coefficient is **not explained**, and
+no solver source was read for it.
+
+And the **max order column has its own surprise**: tightening from $10^{-9}$ to $10^{-12}$ *lowers*
+the peak order from 5 to 4. Nothing in this lecture accounts for that, and it is listed with the
+other open questions below rather than glossed.
 
 ---
 
 ## 5. What this rung cost to find out
 
-Two things in §4 did not exist this morning.
+Three things in §4 did not exist this morning, and a fourth was wrong.
 
 **The `order` column is why any of this is explicable.** Without it, "`phi` is off by a constant" is
 a curiosity. With it, the explanation is one line: one order-1 step, then order 2 forever.
+
+**And (4.1) was $\text{error} \approx h_0^2$ until Doug asked whether he needed §4's step table in
+HRW.** Answering that meant checking every claim in it against what the panes can show — which is
+when the tolerance table's first two rows turned out to have the same $h_0$ and errors 66 apart.
+**The law had been refuted by its own illustration for a day**, and nobody reading it had reason to
+multiply out the first column. The question that found it was not about the law at all.
 
 **The tolerance table did not work at all until today.** HRW built its solver options as
 `SimOptions { t_end, ..Default::default() }` and never read the model's
@@ -492,7 +532,11 @@ than from memory.
 
 *Anything here you want pursued becomes a revision, not a chat reply.*
 
-- Why $h_0^2$ and not $h_0^2/2$ — the factor of $1.96$.
+- **The coefficient in (4.1).** One backward Euler step on $\varphi' = t$ predicts $h^2/2$, so the
+  measured ratios should be $0.5$; they are $0.75$ and $0.98$, and not equal to each other. The
+  shape of the law is confirmed, the constant is not.
+- **Why tightening the tolerance from $10^{-9}$ to $10^{-12}$ *lowers* the peak BDF order**, from 5
+  to 4.
 - Why the solver starts at order 1 rather than the order it intends to use.
 - What BDF actually computes per step, which §4 only gestures at. That is lecture 3's, unless you
   want it sooner.
