@@ -48,6 +48,12 @@ half drops the prediction, which is the half that makes the reader an instrument
 more than one kind of lab, with each kind of lab having its own goal. While all kinds of labs
 have stops, each kind of lab might have different activities at its stops."*
 
+*(Quoted verbatim and not updated, per the rule that a proper noun naming something in the past
+does not move. Two words in it have since been superseded: a stop is a **station** (Decision 15),
+and the role is the **lab author** (v1.15) — renamed because "guide" was a fossil of the tour
+metaphor. The model itself — one noun, several kinds, different activities per station — is
+unchanged and is what this document builds on.)*
+
 **The corpus agrees, with one refinement Doug did not claim.** Counted across all 22 fixture labs:
 
 | kind | labs | stops | Predict | Expected |

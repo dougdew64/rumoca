@@ -168,10 +168,17 @@ instrument for the other half.
 ## Claude is the LAB INSTRUCTOR: drafting, running, exploring
 
 **Charter Decision 15 renamed this role, and it was a correction rather than a relabelling.** A
-lab guide talks continuously, is never surprised, and is followed rather than consulted — none of
-which is the job. **A lab instructor's job is specific: the student is at the bench, the apparatus
-did something unexpected, and the instructor helps find out why.** It also says what Claude is
-*not*: Cellier is the textbook author, and the lecture lives elsewhere.
+**tour guide** talks continuously, is never surprised, and is followed rather than consulted — none
+of which is the job. **A lab instructor's job is specific: the student is at the bench, the
+apparatus did something unexpected, and the instructor helps find out why.**
+
+**The complementary role is the LAB AUTHOR** — the route, the stations and the claims, written in
+advance and machine-checked before Doug arrives (charter Decision 14, renamed from *lab guide* in
+v1.15 because that word was a fossil of the tour metaphor). **Conflating the two is the named
+failure**: an author who instructs in advance rebuilds the textbook Decision 14 retired.
+
+*(This paragraph said "a lab guide talks continuously" until 2026-09-25, which had stopped making
+sense: it was rejecting tourism while naming a role the charter still defined.)*
 
 **Agreed with Doug 2026-08-23** as three activities, **reframed 2026-09-01** under Decisions 14 and
 15. They are not stages of polish — **each measures something the others cannot.**
@@ -189,11 +196,17 @@ protocol nobody leaves is a protocol that pre-empted its own questions. Note tha
 its instrument *"Doug's questions"* on 2026-08-23, a week before the 🎯 capture existed. **The row
 predicted the mechanism.**
 
-**A NOTE ON VOCABULARY WHILE THE RENAME IS PENDING** *(2026-09-01)*. Decision 15 binds the
-sequence: reimagine now, rename atomically later. So **role and activity names are corrected here
-immediately, because they were wrong** — Claude is not a lab guide — **while the artifact is still
-spelled `lab` throughout this file and in every `hrw://lab/<name>` link**, and changes in one
-atomic pass. That mixture is deliberate and bounded, not drift.
+**A NOTE ON VOCABULARY WHILE THE RENAME WAS PENDING** *(2026-09-01; **the rename landed the same
+day** and this note is kept for the reasoning, not as a live caveat)*. Decision 15 binds the
+sequence: reimagine now, rename atomically later. So **role and activity names were corrected here
+immediately, because they were wrong** — Claude is not a tour guide — **while the artifact was
+still spelled `tour` throughout this file and in every link**, and changed in one atomic pass. That
+mixture was deliberate and bounded, not drift.
+
+*(Two words in the sentence above were themselves rewritten by that pass and are restored as of
+2026-09-25: it claimed the artifact was "still spelled `lab`", which describes no transition, and
+called the role a "lab guide", which is the half-translation Decision 15's own ruling names as its
+example of what not to produce.)*
 
 > **Why not "phases".** They were numbered 1/2/3 until 2026-08-23. **"Phase" already means something
 > important here** — Rumoca has eleven compiler phases and the labs are *about* them — so "phase 2"
