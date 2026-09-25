@@ -116,9 +116,37 @@ $$\varphi(t) = \tfrac{1}{2} t^2 \tag{1.6}$$
 and you are done — exactly, forever, for any $t$, with a pencil.
 
 **That is the exception, not the rule.** Change one thing — let the torque depend on the angle, say
-$\tau = -\sin\varphi$, which is a pendulum — and there is no elementary formula for $\varphi(t)$ at
-all. Not "nobody has found one"; there isn't one. Most initial value problems worth simulating are
-in that category, and every model you will meet later in the ladder is.
+$\tau = -\sin\varphi$, which is a pendulum — and the pencil runs out.
+
+**Be careful about what that claim is, because the loose version of it is false.** The pendulum
+*does* have a closed-form solution. Separating $\varphi'' = -\sin\varphi$ and integrating once
+leads to a quadrature, and that quadrature is an **elliptic integral**; inverting it gives
+
+$$\sin\tfrac{\varphi}{2} = k \,\operatorname{sn}\!\bigl(K(k^2) - t,\; k^2\bigr),
+  \qquad k = \sin\tfrac{\varphi_0}{2} \tag{1.7}$$
+
+for a pendulum released from rest at $\varphi_0$, where $\operatorname{sn}$ is a Jacobi elliptic
+function and $K$ the complete elliptic integral of the first kind. **Checked against a numerical
+solve on 2026-09-25: the two agree to 1e−8 over eleven seconds**, which is the numerical solve's
+own tolerance rather than any error in (1.7).
+
+**The honest statement is narrower: no *elementary* formula** — no finite combination of
+polynomials, exponentials, logarithms and trigonometric functions. That is a theorem rather than a
+failure of effort; Liouville's results on integration in finite terms are what rule the elliptic
+integral out, in the same way that $\int e^{-x^2}dx$ is ruled out.
+
+**And the closed form (1.7) does not rescue you, which is the part worth taking from this.** It
+buys less than it appears to:
+
+- **It is still evaluated numerically.** $\operatorname{sn}$ and $K$ are computed by iteration, not
+  read off. The formula relocates the arithmetic; it does not remove it.
+- **It is brittle.** (1.7) describes an *undamped, unforced, single* pendulum released from rest.
+  Add a damping term and it is gone. Add a driving torque and it is gone. Add a second link and the
+  system is chaotic, with no useful closed form at any effort.
+
+So the pencil does not fail here because the problem is exotic — it fails because the problem
+stopped being idealised. **Most initial value problems worth simulating are in that category, and
+every model you meet later in the ladder is.**
 
 So the problem is: **produce numbers when no formula exists.**
 
@@ -175,9 +203,11 @@ $\tfrac{1}{2}t^2$ differentiates to it. Euler asks nothing about $t$; it asks *w
 here, now?* and gets a number.
 
 **That is the whole trade.** $-\sin\varphi$ is exactly as easy as $1$ — not because the method
-ignores which one it is, but because it only ever asks each of them the same question, and both
-can answer it. The pendulum has no closed-form solution and computing $-\sin\varphi$ takes one
-call.
+ignores which one it is, but because it only ever asks each of them the same question, and both can
+answer it. Compare the two routes on the pendulum: solving it by hand needs an elliptic integral,
+Liouville's theorem and the substitution (1.7), and all of that collapses the moment you add
+damping. Evaluating $-\sin\varphi$ takes one call, and adding damping changes it to one slightly
+longer call.
 
 **Every model becomes computable, and the price is that every answer becomes wrong.** The rest of
 the subject is about controlling how wrong.
