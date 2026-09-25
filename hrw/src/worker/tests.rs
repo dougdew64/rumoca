@@ -543,6 +543,8 @@ fn bench_actuator_simulates_stiff_spinup() {
             CompileTarget::File(path),
             "BenchActuator",
             0.5,
+            // No override: this test is about the trajectory, not the tolerance source.
+            None,
             &|_: FromWorker| {},
         )
     }
@@ -608,6 +610,7 @@ fn bouncing_ball_velocity_plots_as_discontinuous() {
             CompileTarget::File(path),
             "BouncingBall",
             3.0,
+            None,
             &|_: FromWorker| {},
         )
     }
@@ -648,6 +651,7 @@ fn worker_simulate_runs_bouncing_ball() {
             CompileTarget::File(path),
             "BouncingBall",
             3.0,
+            None,
             &|_: FromWorker| {},
         )
     }
@@ -3224,7 +3228,13 @@ fn all_healthy_specimens_simulate() {
                 "{}/specimens/{name}.mo",
                 env!("CARGO_MANIFEST_DIR")
             ));
-            w.simulate(CompileTarget::File(&path), name, 1.0, &|_: FromWorker| {})
+            w.simulate(
+                CompileTarget::File(&path),
+                name,
+                1.0,
+                None,
+                &|_: FromWorker| {},
+            )
         };
         let data = data.unwrap_or_else(|e| panic!("{name}: simulate failed: {e}"));
         assert!(!data.times.is_empty(), "{name}: no time points");
@@ -5243,6 +5253,7 @@ fn simulation_emits_log_entries() {
             CompileTarget::File(&path),
             "SingleInertia",
             1.0,
+            None,
             &|msg: FromWorker| {
                 if let FromWorker::Log(entry) = msg {
                     logs.lock().unwrap().push(entry);
@@ -5392,6 +5403,7 @@ fn simulate_nonexistent_file_reports_error() {
         CompileTarget::File(&path),
         "Model",
         1.0,
+        None,
         &|_: FromWorker| {},
     );
     assert!(
@@ -5414,6 +5426,7 @@ fn simulate_invalid_syntax_reports_error() {
         CompileTarget::File(&bad_file),
         "Model",
         1.0,
+        None,
         &|_: FromWorker| {},
     );
     assert!(
@@ -6022,6 +6035,7 @@ fn every_request_the_worker_answers_produces_exactly_one_response() {
                 path: missing.clone(),
                 model: "NoSuchModel".to_owned(),
                 t_end: 0.1,
+                tolerance: None,
                 is_library: false,
             },
         ),
@@ -7101,5 +7115,90 @@ fn an_authored_tolerance_reaches_the_solver() {
         "tightening Tolerance from 1e-6 to 1e-9 must improve accuracy by at least 100x, \
          but the error went {loose:e} -> {tight:e}. Equal values mean the annotation is \
          being ignored again \u{2014} see WorkerState::simulate's SimOptions."
+    );
+}
+
+/// **The tolerance precedence: chosen beats annotated beats default.**
+///
+/// # Why each arm is asserted separately
+///
+/// Three sources that agree most of the time is the hazard here — a run taking the wrong one
+/// looks exactly like a run taking the right one, which is what left Doug unable to tell on
+/// 2026-09-25 which tolerance produced the trajectory in front of him. A single mixed case would
+/// pass on any one arm working.
+#[test]
+fn a_chosen_tolerance_beats_the_annotation_which_beats_the_default() {
+    use crate::worker::{ToleranceSource, resolve_tolerance};
+
+    // Nothing supplied: the solver's own number, and it says so.
+    assert_eq!(
+        resolve_tolerance(None, None, 1e-6),
+        (1e-6, ToleranceSource::SolverDefault)
+    );
+    // The model declares one and HRW overrides nothing.
+    assert_eq!(
+        resolve_tolerance(None, Some(1e-9), 1e-6),
+        (1e-9, ToleranceSource::Annotation)
+    );
+    // HRW's control wins, which is how Rumoca's own --rtol/--atol behave.
+    assert_eq!(
+        resolve_tolerance(Some(1e-12), Some(1e-9), 1e-6),
+        (1e-12, ToleranceSource::Chosen)
+    );
+    // And it wins over the default too, on a model declaring nothing.
+    assert_eq!(
+        resolve_tolerance(Some(1e-12), None, 1e-6),
+        (1e-12, ToleranceSource::Chosen)
+    );
+}
+
+/// **A tolerance that would poison the solver is ignored, and the next source applies.**
+///
+/// Zero, negative and non-finite values all reach the error controller as a division or a
+/// comparison that never succeeds. *"The number I chose did nothing"* is a recoverable failure;
+/// a silent non-convergence blamed on the model is not.
+#[test]
+fn an_unusable_tolerance_falls_through_instead_of_reaching_the_solver() {
+    use crate::worker::{ToleranceSource, resolve_tolerance};
+
+    for bad in [0.0, -1e-6, f64::NAN, f64::INFINITY] {
+        assert_eq!(
+            resolve_tolerance(Some(bad), Some(1e-9), 1e-6),
+            (1e-9, ToleranceSource::Annotation),
+            "a chosen {bad} must fall through to the annotation",
+        );
+        assert_eq!(
+            resolve_tolerance(None, Some(bad), 1e-6),
+            (1e-6, ToleranceSource::SolverDefault),
+            "an annotated {bad} must fall through to the default",
+        );
+    }
+}
+
+/// **Every source describes itself differently**, or the log cannot disambiguate them.
+///
+/// The whole point of returning a source is that the log names it; three sources sharing a phrase
+/// would be the provenance gap this was built to close, wearing a label.
+#[test]
+fn each_tolerance_source_has_its_own_words() {
+    use crate::worker::ToleranceSource;
+
+    let all = [
+        ToleranceSource::Chosen,
+        ToleranceSource::Annotation,
+        ToleranceSource::SolverDefault,
+    ];
+    let mut seen: Vec<&str> = all.iter().map(|s| s.describe()).collect();
+    seen.sort_unstable();
+    let before = seen.len();
+    seen.dedup();
+    assert_eq!(
+        before,
+        seen.len(),
+        "two tolerance sources describe themselves alike"
+    );
+    assert!(
+        all.iter().all(|s| !s.describe().is_empty()),
+        "a source with no words leaves the log saying only a number",
     );
 }

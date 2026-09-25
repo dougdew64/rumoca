@@ -428,6 +428,8 @@ impl App {
         let app = App {
             // No end-of-pass callback in a bare test App, so nothing ever fills it.
             copy_sink: Default::default(),
+            // `None` is the shipped default: HRW overrides no model's tolerance.
+            sim_tolerance: None,
             last_selection: None,
             worker: Worker {
                 tx,

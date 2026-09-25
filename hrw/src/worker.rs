@@ -130,6 +130,12 @@ pub enum ToWorker {
         path: PathBuf,
         model: String,
         t_end: f64,
+        /// **A tolerance chosen in the UI, overriding whatever the model declares.**
+        ///
+        /// `None` means *do not override* — use the model's `experiment(Tolerance)` if it has
+        /// one, else the solver default. See [`resolve_tolerance`], which owns the precedence
+        /// and is where the reasoning lives.
+        tolerance: Option<f64>,
         is_library: bool,
     },
     /// Enable or disable Rumoca's internal `tracing` subscriber on this thread.
@@ -1884,6 +1890,7 @@ impl WorkerState {
                 path,
                 model,
                 t_end,
+                tolerance,
                 is_library,
             } => {
                 // `path` carries a qualified name when `is_library`; the lossy
@@ -1894,7 +1901,7 @@ impl WorkerState {
                 } else {
                     CompileTarget::File(&path)
                 };
-                let result = self.simulate(target, &model, t_end, emit);
+                let result = self.simulate(target, &model, t_end, tolerance, emit);
                 Some(FromWorker::Simulated { path, result })
             }
             // SetTracing is fire-and-forget: the UI doesn't need a response.
@@ -1954,6 +1961,7 @@ impl WorkerState {
         target: CompileTarget<'_>,
         model: &str,
         t_end: f64,
+        tolerance_override: Option<f64>,
         emit: &impl Fn(FromWorker),
     ) -> Result<SimData, String> {
         use std::time::Instant;
@@ -2142,24 +2150,16 @@ impl WorkerState {
             t_end,
             ..Default::default()
         };
-        if let Some(tolerance) = authored_tolerance {
-            opts.rtol = tolerance;
-            opts.atol = tolerance;
-            // Say so in the log: an observatory that silently obeys an annotation
-            // teaches less than one that reports which number it is using.
-            log(
-                LogLevel::Info,
-                format!("tolerance {tolerance:e} from the model's experiment annotation"),
-            );
-        } else {
-            log(
-                LogLevel::Info,
-                format!(
-                    "tolerance {:e} (solver default — the model declares none)",
-                    opts.rtol
-                ),
-            );
-        }
+        let (tolerance, source) =
+            resolve_tolerance(tolerance_override, authored_tolerance, opts.rtol);
+        opts.rtol = tolerance;
+        opts.atol = tolerance;
+        // Say so in the log: an observatory that silently obeys a setting teaches less than one
+        // that reports which number it used **and where the number came from**.
+        log(
+            LogLevel::Info,
+            format!("tolerance {tolerance:e} {}", source.describe()),
+        );
         // **On a failure that smells non-finite, name the variable — 2026-08-25.**
         //
         // `rumoca`'s CLI calls `simulate_with_diagnostics_auto_nan_trace`, which
@@ -3646,6 +3646,64 @@ pub fn compile_specimen(specimen: &Path, libraries: Vec<PathBuf>) -> Result<From
     Ok(state.compile(specimen, &|_: FromWorker| {}))
 }
 
+/// Where the tolerance a run used actually came from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ToleranceSource {
+    /// Chosen in HRW's Simulation pane, overriding whatever the model says.
+    Chosen,
+    /// Read from the model's `experiment(Tolerance = …)`.
+    Annotation,
+    /// Neither was supplied; the solver's own default applies.
+    SolverDefault,
+}
+
+impl ToleranceSource {
+    /// The phrase the log appends after the number.
+    pub fn describe(self) -> &'static str {
+        match self {
+            Self::Chosen => "chosen in HRW (overriding the model)",
+            Self::Annotation => "from the model's experiment annotation",
+            Self::SolverDefault => "(solver default — the model declares none)",
+        }
+    }
+}
+
+/// Which tolerance a run uses, and where it came from.
+///
+/// # The precedence, and why it is this way round
+///
+/// **Chosen in HRW beats the model's annotation, which beats the solver default.** That ordering
+/// is not invented here: Rumoca's own CLI documents `--atol`/`--rtol` as *overriding* the model's
+/// `experiment(Tolerance=…)`, so HRW's control behaves the way the compiler's own front end
+/// already does. A reader who learns one has learned the other.
+///
+/// # Why the source is returned rather than just the number
+///
+/// **A tolerance with no provenance is the shape of defect this pane keeps producing.** The plot
+/// tooltips showed correct numbers rounded into uselessness; the field named `h` meant a different
+/// step than the one it sat on. Here the hazard is subtler still: three plausible sources agree
+/// most of the time, so a run silently using the wrong one looks exactly like a run using the
+/// right one. Doug, 2026-09-25, could not tell which tolerance produced the trajectory in front of
+/// him, because nothing said.
+///
+/// **A non-finite or non-positive override or annotation is ignored rather than honoured** — it
+/// would poison the solver's error control, and "the number I typed did nothing" is a better
+/// failure than a silent non-convergence.
+pub fn resolve_tolerance(
+    chosen: Option<f64>,
+    annotated: Option<f64>,
+    solver_default: f64,
+) -> (f64, ToleranceSource) {
+    let usable = |v: Option<f64>| v.filter(|x| x.is_finite() && *x > 0.0);
+    if let Some(t) = usable(chosen) {
+        (t, ToleranceSource::Chosen)
+    } else if let Some(t) = usable(annotated) {
+        (t, ToleranceSource::Annotation)
+    } else {
+        (solver_default, ToleranceSource::SolverDefault)
+    }
+}
+
 /// Simulate a specimen headlessly, returning the trajectory data.
 /// Used by `examples/gen_trace` for writing simulation traces.
 /// Same as `compile_specimen` — creates a fresh WorkerState, loads libraries,
@@ -3658,10 +3716,13 @@ pub fn simulate_specimen(
 ) -> Result<SimData, String> {
     let mut state = WorkerState::new();
     state.load_libraries(libraries)?;
+    // `None`: the headless path never overrides, so a specimen's own annotation (or the solver
+    // default) decides, exactly as it did before HRW gained a control for it.
     state.simulate(
         CompileTarget::File(specimen),
         model,
         t_end,
+        None,
         &|_: FromWorker| {},
     )
 }
@@ -3687,6 +3748,8 @@ pub fn simulate_library_model(
         CompileTarget::Library(qualified),
         &simple,
         t_end,
+        // As in `simulate_specimen`: headless runs never override.
+        None,
         &|_: FromWorker| {},
     )
 }

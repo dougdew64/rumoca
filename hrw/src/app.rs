@@ -125,6 +125,14 @@ const SEEK_ATTEMPTS: u8 = 5;
 /// than a test. `the_simulate_link_and_the_slider_share_one_range` pins them together.
 const SIM_T_END_RANGE: std::ops::RangeInclusive<f64> = 0.1..=20.0;
 
+/// The tolerances the Simulation pane offers, as powers of ten.
+///
+/// **Spans the four rows of lecture 1 §4's table** — `1e-4`, `1e-6`, `1e-9`, `1e-12` — with the
+/// decades between them, so the exercise that lecture sets can be run from the pane rather than by
+/// editing copies of the specimen. Stops at `1e-3` because looser than that is not error control
+/// in any useful sense, and at `1e-14` because `f64` runs out of room to tell steps apart.
+const SIM_TOLERANCE_DECADES: [i32; 12] = [-3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14];
+
 /// The y-axis width shared by all three simulation plots, so their **x axes line up**.
 ///
 /// # The defect this fixes
@@ -906,6 +914,13 @@ pub struct App {
     sim_running: bool,
     sim_error: Option<String>,
     sim_t_end: f64,
+    /// **The tolerance chosen in the Simulation pane, or `None` for "whatever the model says".**
+    ///
+    /// Added 2026-09-25, after Doug observed that lecture 1's Appendix A.2 asks him to *copy the
+    /// specimen and edit a file* to change one number. `None` is the default and means HRW
+    /// overrides nothing: the model's `experiment(Tolerance)` decides, else the solver default.
+    /// Precedence and its justification live on `worker::resolve_tolerance`.
+    sim_tolerance: Option<f64>,
 
     // ---- 12. Cached structural views ----
     // Avoids re-parsing `from_report` JSON every frame. Invalidated when
@@ -1654,6 +1669,7 @@ impl App {
             sim_running: false,
             sim_error: None,
             sim_t_end: 2.0,
+            sim_tolerance: None,
             stage_views: StageViewCaches::default(),
             cached_equation_sheet: None,
             identifier_index: None,
@@ -3532,6 +3548,7 @@ impl App {
                 path,
                 model,
                 t_end: self.sim_t_end,
+                tolerance: self.sim_tolerance,
                 is_library: self.selected_is_library,
             });
         }
@@ -3559,6 +3576,46 @@ impl App {
                     .step_by(0.1)
                     .text("stop time"),
             );
+
+            // **The second `experiment` knob, beside the first.**
+            //
+            // Doug, 2026-09-25, after reading lecture 1 §4: the lecture asks him to vary the
+            // tolerance and watch the first step shrink, and Appendix A.2 could only tell him to
+            // *copy the specimen and edit a file* to change one number. HRW already owned one
+            // control from Modelica's `experiment` annotation — stop time — so this is the
+            // second, not a new category of thing.
+            //
+            // **Decades, not a slider.** Tolerance spans `1e-3` to `1e-12`; a linear slider
+            // would make every interesting value indistinguishable from zero, which is the
+            // defect `plot_labels` was written to fix, reintroduced as an input widget.
+            //
+            // **"from model" is the default and means HRW overrides nothing.** A control that
+            // silently imposed `1e-6` would make every specimen's own annotation dead letter and
+            // would be indistinguishable, on screen, from honouring it.
+            egui::ComboBox::from_label("tolerance")
+                .selected_text(match self.sim_tolerance {
+                    None => "from model".to_owned(),
+                    Some(t) => format!("{t:e}"),
+                })
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut self.sim_tolerance, None, "from model")
+                        .on_hover_text(
+                            "Use the model's experiment(Tolerance = …), or the solver default \
+                             when it declares none. The Log pane reports which applied.",
+                        );
+                    for exp in SIM_TOLERANCE_DECADES {
+                        let value = 10_f64.powi(exp);
+                        ui.selectable_value(
+                            &mut self.sim_tolerance,
+                            Some(value),
+                            format!("1e{exp}"),
+                        );
+                    }
+                })
+                .response
+                .on_hover_text(
+                    "Overrides the model, as Rumoca's own --rtol/--atol do. Re-run to apply.",
+                );
             // **The spinner is the tab row's; the words are this pane's** (Doug,
             // 2026-08-30, the same ruling as the two Run buttons). Both drew on
             // `sim_running`, so a run put two spinners on screen whenever this tab was
