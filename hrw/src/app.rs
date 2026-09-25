@@ -125,6 +125,38 @@ const SEEK_ATTEMPTS: u8 = 5;
 /// than a test. `the_simulate_link_and_the_slider_share_one_range` pins them together.
 const SIM_T_END_RANGE: std::ops::RangeInclusive<f64> = 0.1..=20.0;
 
+/// The y-axis width shared by all three simulation plots, so their **x axes line up**.
+///
+/// # The defect this fixes
+///
+/// Doug, 2026-09-25: *"The x-axis ticks should be aligned for all plots. For example, the 1 second
+/// tick should be at the same horizontal location for all plots so that I can better compare
+/// values for each of the plots at the same time."*
+///
+/// **`link_axis` links the data range, not the screen rectangle.** Three plots can agree exactly on
+/// which times they cover and still start at three different screen positions, because each one's
+/// drawing area begins after its own y axis — and comparing a trajectory against the step size at
+/// the same instant is the whole reason the plots are stacked.
+///
+/// **Two independent causes, and the second was the larger:**
+///
+/// 1. **Tick text width.** `1e-7` on the log step-size axis is wider than `2` on the order axis.
+/// 2. **One plot had no y-axis label at all.** `egui_plot` returns *tick thickness + label
+///    thickness*, so the trajectory plot was narrower than the other two by the height of their
+///    rotated label, whatever the ticks did. It now carries `value` for that reason alone.
+///
+/// # Why a number rather than a computation, and how it fails
+///
+/// `y_axis_min_width` is a **floor**: egui_plot widens the axis anyway if a tick label does not
+/// fit, and remembers last frame's overflow. So this aligns the plots while every tick fits, and a
+/// model whose y values need more room than this would push one plot wider and bring the
+/// misalignment back for that model.
+///
+/// **That is a real limit, not a hypothetical** — there is no "force exactly this width" in the
+/// API. The symptom is the one Doug reported, and the fix is to raise this number. 64 points is
+/// comfortably above `1e-7`, `-0.500` and `21.75`, which are the widest ticks the corpus produces.
+const SIM_Y_AXIS_WIDTH: f32 = 64.0;
+
 /// How often the scratch specimen directory is re-listed. Slower than the lab poll:
 /// a specimen appearing a second late is imperceptible, and a rescan re-reads every
 /// specimen's `// purpose:` line.
@@ -3565,6 +3597,11 @@ impl App {
                 let mut trajectory_plot = Plot::new("sim_plot")
                     .legend(Legend::default().position(Corner::LeftTop))
                     .x_axis_label("time")
+                    // **Both of these exist to align the three plots' x axes** — see
+                    // `SIM_Y_AXIS_WIDTH`. This plot had no y label at all, which alone made it
+                    // narrower than the two below by the height of their rotated label.
+                    .y_axis_label("value")
+                    .y_axis_min_width(SIM_Y_AXIS_WIDTH)
                     .label_formatter(move |hover| {
                         let (series, index, position) = match hover {
                             egui_plot::HoverPosition::NearDataPoint {
@@ -3660,6 +3697,7 @@ impl App {
                         .height(140.0)
                         .x_axis_label("time")
                         .y_axis_label("step size h  (log)")
+                        .y_axis_min_width(SIM_Y_AXIS_WIDTH)
                         .y_grid_spacer(egui_plot::log_grid_spacer(10))
                         .y_axis_formatter(|mark, _| crate::plot_labels::log_step_tick(mark.value))
                         .label_formatter(move |hover| {
@@ -3697,6 +3735,7 @@ impl App {
                         .height(110.0)
                         .x_axis_label("time")
                         .y_axis_label("BDF order k")
+                        .y_axis_min_width(SIM_Y_AXIS_WIDTH)
                         .label_formatter(move |hover| {
                             let (index, position) = match hover {
                                 egui_plot::HoverPosition::NearDataPoint {
