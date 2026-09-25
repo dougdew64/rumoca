@@ -2,8 +2,6 @@
 
 <!-- kind: concept -->
 
-[The chain overview](hrw://lab/the-concepts)
-
 **A coupled block of size *n* means handing *n* equations in *n* unknowns to a numerical solver**,
 and Newton's cost grows faster than linearly in *n*. So a smaller block is not a tidiness
 preference — it is the difference between a model that simulates and one that crawls.
@@ -174,5 +172,3 @@ compiler will find *more states than degrees of freedom*, which no amount of ord
 can fix.
 
 That is [index-reduction](hrw://lab/index-reduction).
-
-Or go back up: [The chain overview](hrw://lab/the-concepts)

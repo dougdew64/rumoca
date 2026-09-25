@@ -2262,7 +2262,7 @@ fn a_rendered_frame_publishes_the_current_view() {
 /// lab.** `App::test_default` has no lab text and `test_set_session_state` seeds one
 /// short line of source, so every width in the LHS was small and every drag worked.
 /// **A fixture narrow enough to pass is a fixture that tests nothing here** — so the
-/// lab case now loads `the-concepts.md` from disk, the real document with the
+/// lab case now loads `the-pipeline.md` from disk, the real document with the
 /// widest table in the set, and asserts the panel *opens at the default width* rather
 /// than at its content's.
 #[allow(
@@ -2321,9 +2321,9 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
     // and it carries the route table; a synthetic short document is exactly what let
     // the 899pt freeze through unnoticed.
     let real_lab = std::fs::read_to_string(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs/the-concepts.md"),
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs/the-pipeline.md"),
     )
-    .expect("the-concepts.md must be readable — it is the widest lab");
+    .expect("the-pipeline.md must be readable — it is the widest lab");
 
     // **640×360 no longer expects movement, and that is a cost accepted rather than a
     // bug tolerated** *(2026-08-19)*. Un-wrapping the lab transport bar makes its
@@ -3023,7 +3023,7 @@ fn a_lab_renders_none_of_its_html_markers() {
 /// `lab_panel` renders into `ScrollArea::both()`, and inside a scroll area with the
 /// horizontal axis enabled **a child that allocates beyond the `Ui`'s `max_rect` expands
 /// it** — for every later sibling. So a paragraph before the first table wraps to the
-/// panel, and the identical paragraph after it wraps to the table. `the-concepts` has two
+/// panel, and the identical paragraph after it wraps to the table. `the-pipeline` has two
 /// wide tables and shows it; `connect-expansion` has none and does not.
 ///
 /// Measured here: 590pt / 3 lines before, **839pt / 2 lines after**, in a panel ~590pt wide.
@@ -3048,9 +3048,9 @@ fn a_lab_renders_none_of_its_html_markers() {
 fn lab_prose_after_a_table_wraps_to_the_panel_not_the_table() {
     let real = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/docs/fixture-labs/the-concepts.md"
+        "/docs/fixture-labs/the-pipeline.md"
     ))
-    .expect("the-concepts.md is the document that exhibits this");
+    .expect("the-pipeline.md is the document that exhibits this");
     // Up to the end of the hub table -- the real one, because a synthetic table narrow
     // enough to fit the panel does not reproduce it, and three earlier drafts passed
     // vacuously for exactly that reason.

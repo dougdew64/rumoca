@@ -2,8 +2,6 @@
 
 <!-- kind: concept -->
 
-[The chain overview](hrw://lab/the-concepts)
-
 **Every phase so far treated the model as one system of equations, true for all time.** Ordering,
 tearing and index reduction all rest on that: a permutation computed once is valid forever.
 
@@ -134,5 +132,3 @@ The compiler now knows everything: states, order, tears, initial values, and wha
 mid-run. All of it is still expressed in *your names*.
 
 Turning those into memory addresses is [solve-lowering](hrw://lab/solve-lowering).
-
-Or go back up: [The chain overview](hrw://lab/the-concepts)

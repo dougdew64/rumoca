@@ -354,22 +354,6 @@ A coupled block of size *n* means handing *n* equations in *n* unknowns to a num
   - `what-this-lab-cannot-check` — What this lab cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
 
-## `the-concepts`
-
-**The concepts — a week's run through the pipeline**
-
-Start here. This is the map for the labs of the compiler phases, in the order
-
-- **Stations:**
-  - `the-concepts-a-week-s-run-through-the-pipeline` — The concepts — a week's run through the pipeline
-  - `the-route` — The route
-  - `the-one-structural-idea-the-whole-pipeline-turns-on` — The one structural idea the whole pipeline turns on
-  - `three-graphs-three-classical-questions` — Three graphs, three classical questions
-  - `three-things-worth-knowing-before-you-start` — Three things worth knowing before you start
-  - `two-open-questions-you-may-hit` — Two open questions you may hit
-  - `after-the-run-the-four-numbers-that-should-agree` — After the run — the four numbers that should agree
-  - `what-to-tell-me-afterwards` — What to tell me afterwards
-
 ## `the-oracle`
 
 **The oracle — when Rumoca and System Modeler disagree**
@@ -386,4 +370,20 @@ A lab that leaves HRW to settle a question HRW cannot settle. Rumoca accepts a m
   - `station-4-why-this-could-not-be-settled-inside-hrw` — 📐 Station 4 — Why this could not be settled inside HRW
   - `the-rule-this-lab-exists-to-make-concrete` — The rule this lab exists to make concrete
   - `what-this-cannot-check` — What this cannot check
+
+## `the-pipeline`
+
+**The pipeline — a week's run through the compiler**
+
+Start here. This is the map for the labs of the compiler phases, in the order
+
+- **Stations:**
+  - `the-pipeline-a-week-s-run-through-the-compiler` — The pipeline — a week's run through the compiler
+  - `the-route` — The route
+  - `the-one-structural-idea-the-whole-pipeline-turns-on` — The one structural idea the whole pipeline turns on
+  - `three-graphs-three-classical-questions` — Three graphs, three classical questions
+  - `three-things-worth-knowing-before-you-start` — Three things worth knowing before you start
+  - `two-open-questions-you-may-hit` — Two open questions you may hit
+  - `after-the-run-the-four-numbers-that-should-agree` — After the run — the four numbers that should agree
+  - `what-to-tell-me-afterwards` — What to tell me afterwards
 

@@ -2,8 +2,6 @@
 
 <!-- kind: concept -->
 
-[The chain overview](hrw://lab/the-concepts)
-
 **A numerical integrator never sees your model.** At each instant it is told where the system
 currently is, and it must be told how fast everything is changing, so that it can step forward and
 repeat. That is only possible once every variable has been sorted by **role** — carried forward
@@ -295,5 +293,3 @@ square system does not come with an assignment.
 
 That is matching and BLT ordering: [matching](hrw://lab/matching), then
 [blt-ordering](hrw://lab/blt-ordering).
-
-Or go back up: [The chain overview](hrw://lab/the-concepts)

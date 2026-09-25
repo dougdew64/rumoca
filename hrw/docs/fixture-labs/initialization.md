@@ -2,8 +2,6 @@
 
 <!-- kind: concept -->
 
-[The chain overview](hrw://lab/the-concepts)
-
 **The system is square, ordered and index-1 — and the integrator still cannot take its first
 step**, because it does not have a starting point.
 
@@ -164,5 +162,3 @@ Everything is now decided: which variables are states, what order to solve in, w
 what the values are at *t* = 0. What remains is turning names into memory.
 
 That is [solve-lowering](hrw://lab/solve-lowering).
-
-Or go back up: [The chain overview](hrw://lab/the-concepts)

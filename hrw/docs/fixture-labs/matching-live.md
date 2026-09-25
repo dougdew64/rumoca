@@ -2,8 +2,6 @@
 
 <!-- kind: concept -->
 
-[The chain overview](hrw://lab/the-concepts)
-
 **This is the only lab that stops Rumoca mid-algorithm and reads its state in a debugger.**
 [matching](hrw://lab/matching) taught the idea; this one is about the code that implements it.
 Run the pass-one lab first — the stations below assume you know what a matching is and what a
@@ -176,5 +174,3 @@ says.
 
 This is the first pass-two lab. The rest of the pipeline has pass-one labs only, and the same
 treatment — read the phase's code while it runs — is available for every one of them.
-
-Or go back up: [The chain overview](hrw://lab/the-concepts)

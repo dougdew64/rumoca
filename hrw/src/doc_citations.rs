@@ -4518,125 +4518,36 @@ Some prose.
         println!("equation strings checked against the traces: {checked}");
     }
 
-    /// **Every lab the chain overview sends you into must link back to it.**
-    ///
-    /// # The friction this closes
-    ///
-    /// Doug, 2026-08-17: *"I encountered yet again an annoying bit of friction which
-    /// happens when there's a top-level lab which links to subordinate labs. I really
-    /// want to be able to navigate backward from a subordinate lab to the top-level lab
-    /// so that I can then navigate downward to another subordinate lab."*
-    ///
-    /// `the-concepts.md` is a hub: ten rows, each an `hrw://lab/<name>` link into a
-    /// phase lab. **The links ran one way only.** Walking the chain therefore meant
-    /// opening the picker between every pair of labs — with the hub sitting alphabetically
-    /// in the middle of the list, indistinguishable from its own children.
-    ///
-    /// # Why a checker rather than just the ten edits
-    ///
-    /// **A missing back-link is invisible from inside the lab that lacks it.** Every
-    /// other lab checker asks *"is what this document says true?"*, and a document with
-    /// no way back says nothing false — the ten labs were internally perfect and the
-    /// chain was still a dead end at every stop. Same shape as the Context Bar's missing
-    /// background and the notebook's absent specimens: **a partial report leaves no gap
-    /// where the missing part was.**
-    ///
-    /// So the property has to be stated across *two* files, which is exactly what nothing
-    /// checked before. It is also the property most likely to rot: the eleventh lab added
-    /// to the overview's table is one line in one file, and remembering the second edit is
-    /// the part that fails.
-    ///
-    /// # What it checks
-    ///
-    /// For every `hrw://lab/<name>` the overview links to, `<name>.md` must contain
-    /// `hrw://lab/the-concepts` — an **`hrw://` link, not a markdown one**. That
-    /// distinction is the defect it was written against: `solve-lowering.md` and
-    /// `matching-live.md` both referenced the overview as `[the-concepts.md](…)`, which
-    /// HRW's commonmark renderer hands to the *operating system* as a relative file URL.
-    /// It opens nothing, or opens a text editor. Only the `hrw://` form is a lab link.
-    #[test]
-    fn every_lab_the_overview_links_to_links_back() {
-        let labs = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/fixture-labs");
-        let overview = labs.join(format!("{}.md", crate::lab::OVERVIEW_LAB));
-        let text = std::fs::read_to_string(&overview).unwrap_or_else(|e| {
-            panic!(
-                "{} is the entry point every phase lab hangs off: {e}",
-                overview.display()
-            )
-        });
-
-        // The rows the overview sends the reader into, in order, deduplicated. Derived
-        // from the links rather than from a list here, so adding a row to the table is the
-        // only edit needed to bring a new lab under this check.
-        let mut referenced: Vec<String> = Vec::new();
-        for tail in text.split("hrw://lab/").skip(1) {
-            let name: String = tail
-                .chars()
-                .take_while(|c| c.is_alphanumeric() || *c == '-' || *c == '_')
-                .collect();
-            if name.is_empty() || name == crate::lab::OVERVIEW_LAB {
-                continue;
-            }
-            if !referenced.contains(&name) {
-                referenced.push(name);
-            }
-        }
-
-        // **Non-vacuity.** An extraction that finds nothing would report a chain of
-        // perfect back-links across zero labs — the failure mode this file has hit four
-        // times, most recently with three source-text checks matching their own prose.
-        assert!(
-            referenced.len() >= 9,
-            "found only {} labs referenced by {}: {referenced:?} — the chain has nine \
-             phases plus the live variant, so the extraction is broken rather than the \
-             overview",
-            referenced.len(),
-            crate::lab::OVERVIEW_LAB,
-        );
-
-        let mut missing: Vec<String> = Vec::new();
-        let mut markdown_only: Vec<String> = Vec::new();
-        for name in &referenced {
-            let path = labs.join(format!("{name}.md"));
-            let Ok(body) = std::fs::read_to_string(&path) else {
-                // A dangling row is `fixture_lab_links_all_resolve`'s business, not this
-                // test's; reporting it twice would give one defect two names.
-                continue;
-            };
-            if body.contains("hrw://lab/the-concepts") {
-                continue;
-            }
-            // Distinguish "no way back at all" from "a way back that goes to the OS",
-            // because they read identically in a diff and only one of them looks done.
-            if body.contains(&format!("]({}.md)", crate::lab::OVERVIEW_LAB)) {
-                markdown_only.push(name.clone());
-            } else {
-                missing.push(name.clone());
-            }
-        }
-
-        assert!(
-            markdown_only.is_empty(),
-            "{} lab(s) reference the overview as a plain markdown file link, which HRW \
-             hands to the operating system rather than opening as a lab — it looks like a \
-             back-link in the source and does nothing when clicked. Use \
-             `[▲ The chain overview](hrw://lab/{})`: {:?}",
-            markdown_only.len(),
-            crate::lab::OVERVIEW_LAB,
-            markdown_only,
-        );
-        assert!(
-            missing.is_empty(),
-            "{} lab(s) the overview links into offer no way back to it, so running the \
-             chain means reopening the picker at every stop. Add \
-             `[▲ The chain overview](hrw://lab/{})` after the H1 and in the closing \
-             section: {:?}",
-            missing.len(),
-            crate::lab::OVERVIEW_LAB,
-            missing,
-        );
-        println!("labs linked back to the overview: {}", referenced.len());
-    }
+    // **RETIRED 2026-09-24: `every_lab_the_overview_links_to_links_back`.**
+    //
+    // It required every lab the hub links into to carry `hrw://lab/the-concepts`
+    // back. Doug removed those links so the phase labs can be reused by the
+    // specimen ladder's rungs (`docs/specimen-ladder.md`) without being hard-wired
+    // to one parent, and renamed the hub to `the-pipeline`. The property is now
+    // false by design, so the checker had to go rather than be adjusted.
+    //
+    // **What it protected is delivered by a feature instead, and already was.** It
+    // was written for Doug's 2026-08-17 report — *"I really want to be able to
+    // navigate backward from a subordinate lab to the top-level lab"* — and on
+    // **2026-08-19, two days later**, he reported the same friction in its general
+    // form: *"while in the index reduction lab, I can click a link to navigate to
+    // the blt-ordering lab, but then I cannot navigate back."* That produced the
+    // lab panel's **Back button** (`lab_panel.rs`, `TransportRequest::Back`), which
+    // pops `lab.history` for *any* cross-lab link and restores the scroll offset —
+    // covered by `app::tests::back_returns_to_the_previous_lab_where_it_was_left`.
+    //
+    // **So the ten hard-coded links had been redundant for five weeks** and nobody
+    // removed them: the mechanism superseded the prose copy and the copy stayed.
+    // That is this repository's most frequent failure shape, recorded in
+    // `CLAUDE.md` as *a duplicate is most often born while removing one* — here it
+    // simply outlived its reason.
+    //
+    // **The account is kept and not merely deleted** because the checker's
+    // reasoning is still true about a real class of defect: a missing back-link is
+    // invisible from inside the lab that lacks it, so the property had to be stated
+    // across two files, which is what nothing checked before. Should the rungs ever
+    // want an "up" link again, it should be generated from the rung rather than
+    // written into the lab, and the checker's shape is the one to copy.
 
     /// The kinds a lab may declare, and whether that kind predicts.
     ///
@@ -6035,7 +5946,7 @@ mod tests_lab_link_form {
                 .and_then(|s| s.to_str())
                 .unwrap_or_default()
                 .to_owned();
-            if name == "CATALOGUE" || name == "README" || name == "the-concepts" {
+            if name == "CATALOGUE" || name == "README" || name == "the-pipeline" {
                 continue;
             }
             let text = std::fs::read_to_string(&path).expect("readable");

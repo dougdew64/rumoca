@@ -623,7 +623,7 @@ mod tests {
             kind: PointKind::Selection {
                 in_source: true,
                 origin: crate::pointing::PointOrigin::LabProse {
-                    lab: "the-concepts".to_owned(),
+                    lab: "the-pipeline".to_owned(),
                 },
             },
             stage: None,
@@ -637,7 +637,7 @@ mod tests {
             PointKind::Selection { origin, .. } => assert_eq!(
                 origin,
                 &crate::pointing::PointOrigin::LabProse {
-                    lab: "the-concepts".to_owned()
+                    lab: "the-pipeline".to_owned()
                 }
             ),
             _ => panic!("expected a lab passage"),

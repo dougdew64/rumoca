@@ -56,7 +56,7 @@ have stops, each kind of lab might have different activities at its stops."*
 | **Feature** | 3 | 20 | 0 | 1/stop |
 | **Failure** | 6 | 24 | 0 | 1/stop |
 | **Adjudication** | 2 | 8 | 0 | 1/stop |
-| **Hub** | 1 (`the-concepts`) | 0 | 0 | 0 |
+| **Hub** | 1 (`the-pipeline`) | 0 | 0 | 0 |
 | **Ad hoc** | `.hrw-bridge/answer.md` | any | any | any |
 | **Bug report** | none yet | — | — | — |
 
@@ -91,7 +91,7 @@ HRW *cannot* settle, using System Modeler or Wolfram. These already mark every s
 instrument it uses (📐 HRW, ⚙ System Modeler, 🧮 Wolfram), a convention invented ad hoc and never
 written down. **They demonstrate that activity varies per *stop*, not only per kind.**
 
-**Hub** (`the-concepts`) — no stops at all; a table of links into the concept labs. Whether
+**Hub** (`the-pipeline`) — no stops at all; a table of links into the concept labs. Whether
 this is a kind or simply "not a lab" is Doug's ruling to make.
 
 ---

@@ -3167,7 +3167,7 @@ fn a_verb_that_opens_another_application_gets_a_longer_beat() {
     }
     for link in [
         HrwLink::OpenLab {
-            lab: "the-concepts".to_owned(),
+            lab: "the-pipeline".to_owned(),
             stop: None,
         },
         HrwLink::LoadSpecimen("RcCircuit".to_owned()),
@@ -4103,7 +4103,7 @@ fn the_lab_list_offers_fixtures_with_ad_hoc_first() {
 /// slip in above the overview: the check is *position relative to everything else*.
 ///
 /// **And the non-vacuity guard matters here more than usual.** Alphabetically
-/// `the-concepts` already sorts after most labs, so a test that merely looked for
+/// `the-pipeline` already sorts after most labs, so a test that merely looked for
 /// it in the list would pass with the hoist deleted. This asserts index 0 *and* that
 /// there is something below it to be above.
 #[test]
@@ -4122,7 +4122,7 @@ fn the_chain_overview_sorts_first_in_the_picker() {
     );
     assert!(
         ordered[0].is_overview(),
-        "the-concepts.md is the hub the nine phase labs hang off and must be the \
+        "the-pipeline.md is the hub the nine phase labs hang off and must be the \
              first row in the picker; it was {:?}",
         labels.first(),
     );

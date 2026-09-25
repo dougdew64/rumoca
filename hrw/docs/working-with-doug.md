@@ -184,7 +184,7 @@ project"*, and he will say when that changes.
 them.** `blt-ordering.md` can say *"a connection set is a set of variables of one kind, from
 `connect-expansion`"* and build from there. That turns the nine labs from independent documents
 into a **sequence**, in the route order
-[`the-concepts.md`](fixture-labs/the-concepts.md) already defines — so a lab that assumes
+[`the-pipeline.md`](fixture-labs/the-pipeline.md) already defines — so a lab that assumes
 a predecessor must **say which one at the top**, or a reader entering mid-route is stranded with
 no way to know why.
 

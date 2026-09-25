@@ -2,8 +2,6 @@
 
 <!-- kind: concept -->
 
-[The chain overview](hrw://lab/the-concepts)
-
 **A solver does not look variables up by name.** It is handed arrays and a function: *here is the
 current state vector, fill in the derivatives*.
 
@@ -160,5 +158,3 @@ whole lab.
 
 Nothing — this is the last compiler phase. What follows is Simulation: the solver stepping the
 vector through time, which is the Plot tab rather than a stage.
-
-Or go back up: [The chain overview](hrw://lab/the-concepts)

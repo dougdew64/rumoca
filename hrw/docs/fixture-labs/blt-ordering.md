@@ -2,8 +2,6 @@
 
 <!-- kind: concept -->
 
-[The chain overview](hrw://lab/the-concepts)
-
 **Giving every equation a job is not yet a recipe.** To evaluate `f_x[9]` — Ohm's law, which
 determines `R.v` — you need `R.R_actual` and `R.i`, and those come from other equations. So the
 equations have dependencies, and a dependency graph either lays out in a line or it does not.
@@ -149,5 +147,3 @@ A coupled block of 3 is not the end of the story: the compiler will try to make 
 handing it to a numerical solver, by guessing one variable and computing the rest.
 
 That is [tearing](hrw://lab/tearing).
-
-Or go back up: [The chain overview](hrw://lab/the-concepts)

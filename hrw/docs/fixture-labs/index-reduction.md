@@ -2,8 +2,6 @@
 
 <!-- kind: concept -->
 
-[The chain overview](hrw://lab/the-concepts)
-
 **Counting a model's states can give you the wrong number — not miscounted, but wrong as a
 description of the machine.** Connect two rotating bodies with an ideal gear: each has an angle
 and a velocity, so the compiler sees four states, but the gear ratio fixes the second angle as a
@@ -314,5 +312,3 @@ like. What remains is starting it: the integrator needs consistent values at *t*
 states' `start` attributes are not automatically consistent with the algebraic equations.
 
 That is [initialization](hrw://lab/initialization).
-
-Or go back up: [The chain overview](hrw://lab/the-concepts)

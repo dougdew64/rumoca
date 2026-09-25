@@ -113,5 +113,5 @@ node-pointing.md                | blurb | This is a test, not an explanation.
 solve-lowering.md               | blurb | A solver does not look variables up by name.
 structural-vs-numerical-rank.md | blurb | The first cross-platform lab.
 tearing.md                      | blurb | A coupled block of size
-the-concepts.md                 | blurb | Start here.
+the-pipeline.md                 | blurb | Start here.
 the-oracle.md                   | blurb | A lab that leaves HRW

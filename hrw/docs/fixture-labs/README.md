@@ -383,7 +383,7 @@ not go in. If the station would be *better* without it, it definitely does not.
 boilerplate**, and it never looks like one — it reads as a useful abstraction. Four found:
 `tearing` said a 3×3 solve becomes 1×1, which is Station 1's prediction; `index-reduction` printed
 Station 5's `unmatched equations: f_x[4]; unmatched unknowns: lambda` verbatim; `connect-expansion`
-explained the scope asymmetry Station 6 asks you to derive; and `the-concepts` carried a section of
+explained the scope asymmetry Station 6 asks you to derive; and `the-pipeline` carried a section of
 cross-lab numbers that pre-announced the `Expected` of **at least four stations across four labs**
 — it is now below the route, headed *"do not read this before the labs"*. **A hub is the worst
 place for this**, because everything it spoils is a lab it is sending you to.

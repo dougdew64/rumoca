@@ -2,8 +2,6 @@
 
 <!-- kind: concept -->
 
-[The chain overview](hrw://lab/the-concepts)
-
 **A connector is a bundle of variables that two components meet at.** `RcCircuit` wires four
 components together and never names a variable; it names `src.p`, `R.p`, `C.n` — and each of
 those is a `Pin`, which the standard library declares like this:
@@ -436,5 +434,3 @@ solves which unknown.
   unknown. Every specimen here is fully wired, so none of it is on screen. `DanglingPin` and
   `OrphanConnector` exist and are oracle-validated — ideas #89b is the station that would show it.
 - Stream connectors. Named in Station 2 and exercised by no specimen here.
-
-Or go back up: [The chain overview](hrw://lab/the-concepts)

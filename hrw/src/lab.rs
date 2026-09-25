@@ -255,7 +255,7 @@ impl LabState {
         // per id, and the lab panel's id (`id_salt("lab")`) is deliberately stable.
         //
         // So the offset survived the document. Doug, 2026-08-17: *"When I click a
-        // subordinate lab link in the-concepts hub lab, the subordinate lab opens
+        // subordinate lab link in the-pipeline hub lab, the subordinate lab opens
         // partially scrolled down instead of fully scrolled to the top."* Exactly the
         // hub's shape — its links live in a table you scroll down to reach, and the
         // lab that opened inherited however far down that was.
@@ -438,7 +438,7 @@ fn strip_html_comments(text: &str) -> String {
 ///
 /// The stem, not the filename: `LabSource::Fixture` holds a full path and every
 /// comparison in the codebase goes through `file_stem`.
-pub(crate) const OVERVIEW_LAB: &str = "the-concepts";
+pub(crate) const OVERVIEW_LAB: &str = "the-pipeline";
 
 impl LabSource {
     pub(crate) fn path(&self) -> PathBuf {

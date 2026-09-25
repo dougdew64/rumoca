@@ -14,28 +14,29 @@ go: procedure lives in a procedure document. Nothing here was rewritten in the m
 
 ---
 
-## A lab the overview links into must link back — with `hrw://`, twice
+## RETIRED — a lab does NOT link back to the hub
 
-**Doug, 2026-08-17:** *"There's a top-level lab which links to subordinate labs. I really want
-to be able to navigate backward from a subordinate lab to the top-level lab so that I can then
-navigate downward to another subordinate lab."*
+**Doug, 2026-09-24:** *"if we are going to reuse any of the labs such as `connect-expansion` for
+our rungs, then labs such as `connect-expansion` should not be hard-coded with links to
+`the-concepts`. So, remove those links to `the-concepts` from the other labs."*
 
-[`the-concepts.md`](fixture-labs/the-concepts.md) is a **hub**: ten rows, each an `hrw://lab/<name>`
-link into a phase lab. Those links ran one way only, so running the chain meant reopening the
-picker between every pair — with the hub sitting alphabetically among its own children, at
-position 21 of 23.
+**Do not add an "up" link to a new lab.** The convention here was two per lab — one after the H1,
+one in the closing section — pointing at the hub, then named `the-concepts` and now
+[`the-pipeline.md`](fixture-labs/the-pipeline.md). All twenty were removed on 2026-09-24 and the
+checker that enforced them was retired.
 
-**The convention is two back-links per lab**, and each placement answers a different moment:
+**Why it was right, and why it stopped being needed.** It answered Doug's 2026-08-17 report that a
+subordinate lab gave no way back to the hub, so running the chain meant reopening the picker between
+every pair. **On 2026-08-19 — two days later — he reported the same friction generally**
+(*"I can click a link to navigate to the blt-ordering lab, but then I cannot navigate back"*), and
+that produced the lab panel's **Back button**, which pops the history for *any* cross-lab link and
+restores the scroll offset. **The links had been redundant for five weeks.** Nothing removed them,
+because a mechanism superseding a prose copy leaves the copy looking load-bearing.
 
-```markdown
-# Fixture lab — <phase>: <the idea>
-
-[The chain overview](hrw://lab/the-concepts)
-```
-
-- **After the H1** — for *"wrong lab, take me back"*, before any reading has happened.
-- **In the closing section** — `Or go back up: [The chain overview](hrw://lab/the-concepts)`
-  — for the reader who finished and wants the next phase.
+**What made removing them necessary rather than merely tidy**: the specimen ladder
+([`specimen-ladder.md`](specimen-ladder.md)) reuses these labs from ten rungs, and a lab that names
+one parent in its own text cannot belong to a different one. **If a rung ever wants an up link, it
+is generated from the rung, never written into the lab.**
 
 **AND THAT GOVERNS EVERY LINK IN A LAB, NOT ONLY LINKS TO LABS** — a rule stated three times
 about whichever file type was in front of us, and evaded three times by the next one:
@@ -48,7 +49,7 @@ The other four verbs are unaffected.
 
 | to reach | write |
 |---|---|
-| another lab | `hrw://lab/the-concepts` → **`hrw://lab/the-concepts`** at the rename |
+| another lab | `hrw://lab/the-pipeline` — the **stem**, not the filename |
 | a doc under `hrw/docs/` | `hrw://doc/upstream-issues.md` — nesting allowed |
 | **a source file, at a symbol** | `hrw://src/hrw/src/bridge.rs#resolve_source` |
 | a Wolfram notebook | `hrw://notebook/structural-vs-numerical-rank.nb` |

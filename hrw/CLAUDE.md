@@ -768,7 +768,7 @@ the next phase touches — is procedure and lives there.
 >
 > **Doug runs labs in compiler-phase order** *(2026-08-22)*: **dae-construction → matching (→
 > matching-live) → blt-ordering → tearing → index-reduction → initialization → solve-lowering →
-> events**, which is `the-concepts.md`'s own numbering. **That is a rule about sequence, not a
+> events**, which is `the-pipeline.md`'s own numbering. **That is a rule about sequence, not a
 > report on position.**
 >
 > **The iteration loop, the gate traps and the one-lab-at-a-time rule are in

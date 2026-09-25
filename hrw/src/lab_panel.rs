@@ -549,7 +549,7 @@ pub(crate) fn lab_prose_ui(
     //
     // A vertical-only scroll area reports its content's **full width** as
     // the width it wants, and `egui_commonmark` does not wrap tables or
-    // code blocks — `the-concepts.md` has a 178-character line. So the
+    // code blocks — `the-pipeline.md` has a 178-character line. So the
     // lab panel's intrinsic minimum width became the widest table in the
     // document, egui sized the panel to it, and the divider had nothing
     // left to give:
@@ -574,7 +574,7 @@ pub(crate) fn lab_prose_ui(
     // `id_salt("lab")` is stable on purpose — it is what lets a reader's
     // scroll position survive a repaint — and the cost is that it survives
     // the *document* too. Doug, 2026-08-17: *"When I click a subordinate
-    // lab link in the-concepts hub lab, the subordinate lab opens
+    // lab link in the-pipeline hub lab, the subordinate lab opens
     // partially scrolled down instead of fully scrolled to the top."*
     //
     // The hub is the worst case and the reason it surfaced now: its links

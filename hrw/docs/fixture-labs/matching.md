@@ -2,8 +2,6 @@
 
 <!-- kind: concept -->
 
-[The chain overview](hrw://lab/the-concepts)
-
 **A Modelica equation is not an assignment.** `R.v - R.R_actual * R.i` relates three quantities
 and privileges none of them; which one it is *for* depends on what the rest of the model already
 determines. So you cannot read a system's recipe off the page.
@@ -179,5 +177,3 @@ is true and it is unsettling; the lab states it and does not explore it.
 Each equation now has a job. It still is not known what order to do them in — and in
 `ProportionalLoop` no order exists at all, which is the discovery
 [blt-ordering](hrw://lab/blt-ordering) is built on.
-
-Or go back up: [The chain overview](hrw://lab/the-concepts)

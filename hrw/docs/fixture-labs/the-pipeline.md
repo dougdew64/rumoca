@@ -1,4 +1,4 @@
-# The concepts — a week's run through the pipeline
+# The pipeline — a week's run through the compiler
 
 <!-- kind: hub -->
 
