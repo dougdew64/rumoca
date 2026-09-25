@@ -3807,11 +3807,22 @@ impl App {
                             ))
                         })
                         .show(ui, |plot_ui| {
-                            let h_pts: PlotPoints = data
+                            // **A staircase, and it leads.** `h` is the size chosen for the
+                            // step about to be taken, so it is held from its own time forward
+                            // to the next step's time — not backward. A `Line` through the raw
+                            // points would draw a ramp between two step sizes, describing a
+                            // gradual change that never happened.
+                            let h_edges: Vec<(f64, f64)> = data
                                 .solver_steps
                                 .iter()
-                                .map(|s| [s.t, crate::plot_labels::log_step(s.h)])
+                                .map(|s| (s.t, crate::plot_labels::log_step(s.h)))
                                 .collect();
+                            let run_end = x_hi
+                                .unwrap_or_else(|| data.solver_steps.last().map_or(0.0, |s| s.t));
+                            let h_pts: PlotPoints =
+                                crate::plot_labels::staircase_leading(&h_edges, run_end)
+                                    .into_iter()
+                                    .collect();
                             plot_ui.line(
                                 Line::new("step size h", h_pts)
                                     .color(crate::colors::SOLVER_STEP_SIZE),
@@ -3843,11 +3854,20 @@ impl App {
                             ))
                         })
                         .show(ui, |plot_ui| {
-                            let order_pts: PlotPoints = data
+                            // **A staircase, and it trails.** The order belongs to the step
+                            // that ENDED at this time, so it is held backward to the previous
+                            // step. Doug, 2026-09-25: a line between order 1 and order 2 draws
+                            // 1.3, 1.6, 1.8 — orders no solver ever ran.
+                            let order_edges: Vec<(f64, f64)> = data
                                 .solver_steps
                                 .iter()
-                                .map(|s| [s.t, s.order as f64])
+                                .map(|s| (s.t, s.order as f64))
                                 .collect();
+                            let run_start = x_lo.unwrap_or(0.0);
+                            let order_pts: PlotPoints =
+                                crate::plot_labels::staircase_trailing(&order_edges, run_start)
+                                    .into_iter()
+                                    .collect();
                             plot_ui.line(
                                 Line::new("BDF order k", order_pts)
                                     .color(crate::colors::SOLVER_BDF_ORDER),

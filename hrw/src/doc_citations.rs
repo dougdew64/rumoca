@@ -6139,6 +6139,19 @@ mod tests_orphaned_docs {
             ("matching_anim.rs", 2),
             ("matching_ledger.rs", 1),
             ("model_list.rs", 1),
+            // 0 -> 1 on 2026-09-25, with the reasoning this ratchet requires. The hit is inside
+            // `staircase_trailing`'s doc block, on the second bullet of the pair contrasting the
+            // two staircase builders — *"`h` is the size selected for the step about to be
+            // taken…"*. It opens like a summary because it states the semantic distinction the
+            // whole block exists to prevent getting backwards.
+            //
+            // Triaged by the documented shortcut: `plot_labels.rs` has **no undocumented item**
+            // for an orphan to belong to. Every item in the file — `StepRow`, both staircase
+            // builders, both label functions, `log_step`, `log_step_tick` and
+            // `MIN_PLOTTABLE_STEP` — carries its own summary, so there is nothing the flagged
+            // paragraph could have been detached from. Ordinary prose in a prose-heavy module,
+            // which this test's own docs say to raise the number for rather than reword.
+            ("plot_labels.rs", 1),
             ("source_view.rs", 1),
             ("spyplot.rs", 2),
             ("stage_view.rs", 1),

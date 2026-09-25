@@ -62,16 +62,79 @@ pub(crate) fn solver_step_label(
     cursor: (f64, f64),
 ) -> String {
     match index.and_then(|i| steps.get(i).map(|s| (i, s))) {
-        Some((i, s)) => format!(
-            "step {} of {}\nt = {:.6}\nh = {:.3e}\norder = {}",
-            i,
-            steps.len(),
-            s.t,
-            s.h,
-            s.order,
-        ),
+        Some((i, s)) => {
+            // **Two different step sizes, and calling either one "h" would be a claim.**
+            //
+            // `SolverStepRecord::h` is captured *after* the step completes, from diffsol's
+            // current step size — which by then is the size chosen for the step **about to be
+            // taken**. Its field doc says "Step size used", and the data disagrees: on
+            // `SingleInertia` 11 of 34 records have `h != t_n - t_{n-1}`, every mismatch at a
+            // point where the solver doubled. So the recorded `h` spans `[t_n, t_{n+1}]`, not
+            // `[t_{n-1}, t_n}`.
+            //
+            // The label therefore reports the arrival step separately and says which is which.
+            // Anything less would attribute a size to a step that did not use it — the same
+            // defect class as the rounding this module was written for, one level subtler.
+            let arrived_by = i
+                .checked_sub(1)
+                .and_then(|p| steps.get(p))
+                .map_or(s.t, |prev| s.t - prev.t);
+            format!(
+                "step {} of {}\nt = {:.6}\norder = {}\narrived by h = {:.3e}\nnext h = {:.3e}",
+                i,
+                steps.len(),
+                s.t,
+                s.order,
+                arrived_by,
+                s.h,
+            )
+        }
         None => format!("t = {:.6}\ny = {:.3e}", cursor.0, cursor.1),
     }
+}
+
+/// Staircase for a value describing the interval that **ended** at its point — the BDF order.
+///
+/// # Why a line chart of these series was a false statement
+///
+/// Doug, 2026-09-25, on the BDF order series: a `Line` interpolates between its points, so between
+/// a step at order 1 and the next at order 2 it draws 1.3, 1.6, 1.8 — **orders the solver never
+/// used**. Order is an integer that changes discontinuously. The same is true of the step size:
+/// `h` is constant across a step and jumps, and a diagonal between two step sizes describes a ramp
+/// that never happened.
+///
+/// **The two series hold their value over *different* intervals**, which is why there are two
+/// functions here rather than one with a flag — and why each takes the boundary it actually needs:
+///
+/// - **order** belongs to the step that *ended* at `t_n`, so it spans `[t_{n-1}, t_n]` and needs
+///   the **run start** for its first segment. That is this function.
+/// - **`h`** is the size selected for the step *about to be taken*, so it spans `[t_n, t_{n+1}]`
+///   and needs the **run end** for its last. That is [`staircase_leading`].
+///
+/// **Getting that backwards would draw a truthful-looking staircase offset by one step**, which no
+/// amount of looking at it would reveal.
+pub(crate) fn staircase_trailing(points: &[(f64, f64)], run_start: f64) -> Vec<[f64; 2]> {
+    let mut out: Vec<[f64; 2]> = Vec::with_capacity(points.len() * 2);
+    let mut from = run_start;
+    for &(t, v) in points {
+        out.push([from, v]);
+        out.push([t, v]);
+        from = t;
+    }
+    out
+}
+
+/// Staircase for a value describing the interval that **starts** at its point — the step size.
+///
+/// The counterpart of [`staircase_trailing`], which carries the reasoning for both.
+pub(crate) fn staircase_leading(points: &[(f64, f64)], run_end: f64) -> Vec<[f64; 2]> {
+    let mut out: Vec<[f64; 2]> = Vec::with_capacity(points.len() * 2);
+    for (i, &(t, v)) in points.iter().enumerate() {
+        let to = points.get(i + 1).map_or(run_end, |&(nt, _)| nt);
+        out.push([t, v]);
+        out.push([to.max(t), v]);
+    }
+    out
 }
 
 /// The hover label for a **trajectory** series.
@@ -216,6 +279,78 @@ mod tests {
         assert!(
             label.contains("0.500000009801"),
             "12 places are needed to see a 9.8e-9 offset on 0.5, got:\n{label}"
+        );
+    }
+
+    /// **The order staircase holds each value to the step that ENDED at its time.**
+    ///
+    /// A `Line` through the raw points draws a diagonal from order 1 to order 2, asserting
+    /// fractional orders the solver never used. The staircase asserts only what happened.
+    #[test]
+    fn the_order_staircase_holds_a_value_across_the_step_that_ended_at_it() {
+        // Two steps: order 1 reaching t = 0.1, then order 2 reaching t = 0.3.
+        let pts = staircase_trailing(&[(0.1, 1.0), (0.3, 2.0)], 0.0);
+        assert_eq!(
+            pts,
+            vec![[0.0, 1.0], [0.1, 1.0], [0.1, 2.0], [0.3, 2.0]],
+            "expected a flat-then-jump staircase anchored at the run start",
+        );
+        // The jump is vertical: two points share an x and differ in y.
+        assert_eq!(pts[1][0], pts[2][0]);
+        assert_ne!(pts[1][1], pts[2][1]);
+        // **No interpolated order exists anywhere in the series.**
+        assert!(
+            pts.iter().all(|p| p[1] == 1.0 || p[1] == 2.0),
+            "a fractional order appeared: {pts:?}",
+        );
+    }
+
+    /// **The step-size staircase holds each value FORWARD**, because `h` is the size selected for
+    /// the step about to be taken. Offsetting this by one would look equally plausible and be
+    /// wrong by exactly one step.
+    #[test]
+    fn the_step_size_staircase_holds_a_value_forward_to_the_next_point() {
+        let pts = staircase_leading(&[(0.1, 1e-3), (0.3, 2e-3)], 0.5);
+        assert_eq!(
+            pts,
+            vec![[0.1, 1e-3], [0.3, 1e-3], [0.3, 2e-3], [0.5, 2e-3]],
+            "expected each h held from its own time to the next, ending at the run end",
+        );
+    }
+
+    /// Neither builder panics or inverts on a single point or none at all.
+    #[test]
+    fn a_staircase_of_one_point_or_none_is_well_formed() {
+        assert!(staircase_trailing(&[], 0.0).is_empty());
+        assert!(staircase_leading(&[], 1.0).is_empty());
+        assert_eq!(
+            staircase_trailing(&[(0.2, 3.0)], 0.0),
+            vec![[0.0, 3.0], [0.2, 3.0]]
+        );
+        assert_eq!(
+            staircase_leading(&[(0.2, 3.0)], 1.0),
+            vec![[0.2, 3.0], [1.0, 3.0]]
+        );
+        // A run end before the last point must not draw backwards.
+        let pts = staircase_leading(&[(0.9, 3.0)], 0.5);
+        assert!(pts[1][0] >= pts[0][0], "segment ran backwards: {pts:?}");
+    }
+
+    /// **The label must not call the recorded `h` the step that was taken.**
+    ///
+    /// `SolverStepRecord::h` is captured after the step and is diffsol's *next* size; its field
+    /// doc says "Step size used". On `SingleInertia`, 11 of 34 records disagree with
+    /// `t_n - t_{n-1}`. A label saying plain "h" would attribute a size to a step that did not
+    /// use it.
+    #[test]
+    fn the_label_separates_the_arrival_step_from_the_next_one() {
+        // Step 1 arrived by 1e-4 (0.0002 - 0.0001) while its recorded h is 2e-4.
+        let label = solver_step_label(&rows(), Some(1), (0.0, 0.0));
+        assert!(label.contains("arrived by h = 1.000e-4"), "got:\n{label}");
+        assert!(label.contains("next h = 2.000e-4"), "got:\n{label}");
+        assert!(
+            !label.contains("\nh = "),
+            "a bare `h` claims to be the step taken, which the record does not say:\n{label}",
         );
     }
 
