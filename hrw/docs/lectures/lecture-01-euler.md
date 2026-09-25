@@ -97,9 +97,44 @@ and $z'(t)$ is the one thing the model hands you — it is $f(z, t)$. So:
 That's the whole method. It is not an approximation *of* an algorithm; it **is** the algorithm, and
 everything in lectures 2 and 3 is about the damage the word "pretend" does.
 
-**What was actually purchased.** You gave up exactness and bought *generality*. The formula above
-never asks what $f$ is — $-\sin\varphi$ is as easy as $1$. **Every model becomes computable, and the
-price is that every answer becomes wrong.** The rest of the subject is about controlling how wrong.
+### What was actually purchased
+
+You gave up exactness and bought *generality*. But it is worth being exact about which demand on
+$f$ was dropped, because it is not the obvious one.
+
+**The method must evaluate $f$.** Plainly — $f(z_n, t_n)$ is right there in the formula, and
+without a way to compute it there is nothing to multiply by $h$. What Euler drops is the
+requirement to **understand** $f$:
+
+| | needs | fails when |
+|---|---|---|
+| **solving by hand** (§1) | a *formula* you can manipulate — an antiderivative you can name | $f$ has no elementary antiderivative, which is most of the time |
+| **Euler** | a *procedure* you can call: hand it numbers, get numbers back | you cannot evaluate $f$ at all |
+
+To integrate $\varphi' = t$ with a pencil you must know something **about** $t$ — that
+$\tfrac{1}{2}t^2$ differentiates to it. Euler asks nothing about $t$; it asks *what is the rate,
+here, now?* and gets a number.
+
+**That is the whole trade.** $-\sin\varphi$ is exactly as easy as $1$ — not because the method
+ignores which one it is, but because it only ever asks each of them the same question, and both
+can answer it. The pendulum has no closed-form solution and computing $-\sin\varphi$ takes one
+call.
+
+**Every model becomes computable, and the price is that every answer becomes wrong.** The rest of
+the subject is about controlling how wrong.
+
+> **This is the hinge the later lectures turn on, in both directions.**
+>
+> **Forward, into lecture 3:** evaluation is the *weakest* thing a method can demand, and forward
+> Euler is the only one that gets away with it. Backward Euler puts the unknown on both sides —
+> $z_{n+1} = z_n + h f(z_{n+1}, t_{n+1})$ — so each step is an *equation to solve*, not a formula to
+> apply, and solving it efficiently wants $\partial f / \partial z$. **A method that needs the
+> Jacobian is asking about $f$'s structure again**, which is why lecture 3 costs more than this one.
+>
+> **Backward, into lecture 4:** if all a solver needs is something it can call, then somebody has to
+> *build* that callable thing. A Modelica model is not it — `J * der(w) = tau` is an equation, not a
+> procedure, and it does not even say which symbol to solve for. **Producing an evaluable $f$ from a
+> model that never states one is Rumoca's entire job.**
 
 ---
 
@@ -256,9 +291,11 @@ than from memory.
 - **Lecture 3 — stiffness.** There are systems where you cannot shrink $h$ for accuracy, because
   *stability* has already forced it far smaller. `StiffDecay`, and Curtiss & Hirschfelder's 1952
   paper that named it.
-- **The compiler enters at lecture 4**, not before. Everything above treats $f(z, t)$ as **given**.
-  Rumoca's entire job is producing $f$ from a model that never states it — and
-  [`the-pipeline`](../fixture-labs/the-pipeline.md) is the lab route through that.
+- **The compiler enters at lecture 4**, not before. Everything above treats $f(z, t)$ as
+  **already evaluable** — §2's trade assumes something exists that you can hand numbers to. A
+  Modelica model is not that thing, and Rumoca's entire job is building one from a model that
+  never states it. [`the-pipeline`](../fixture-labs/the-pipeline.md) is the lab route through
+  that.
 
 ---
 
