@@ -13,8 +13,11 @@ explanations** — that distinction governs everything below.
 > pre-empt every question.
 >
 > **The lab now supplies the route, the checkpoints and the machine-checked claims; Claude
-> supplies the explanation on demand.** Claude holds two distinct roles: **lab guide** before the
-> run, **lab instructor** during it.
+> supplies the explanation on demand.** Claude holds two distinct roles **within a lab**: **lab
+> guide** before the run, **lab instructor** during it. *(Scoped 2026-09-25. Charter Decision 18
+> adds a third role outside labs — lecturer — and this sentence read as a global count. The
+> lecture is not a lab concern and nothing here needs to know about it; the bound is on the claim,
+> not a reference to the other role.)*
 >
 > **Fifteen sections below carry rulings older than 2026-08-30 and assume the retired model.**
 > Until this file is revised, **read any rule requiring self-sufficient prose as superseded** —
