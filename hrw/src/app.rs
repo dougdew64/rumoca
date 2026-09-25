@@ -3593,9 +3593,32 @@ impl App {
                 // The question a reader brings to this plot is *"is this value exactly what the
                 // closed form says?"*, and `SingleInertia` answers `0.500000009801` against an
                 // exact `0.5`. egui_plot's three-place default renders both as `0.500`.
+                // **One width, measured once, handed to all three plots.**
+                //
+                // Doug, 2026-09-25, after the y-axis floor below fixed the left edges: *"The
+                // 1-second tick for the trajectory plot is slightly to the right of the 1-second
+                // ticks for the solver diagnostics. Interestingly, the 0-second ticks for all
+                // three plots are aligned."*
+                //
+                // **That pair of facts is the diagnosis.** Aligned zeros mean the drawing areas
+                // start at the same x, so `SIM_Y_AXIS_WIDTH` did its job. A 1-second tick that
+                // does not align therefore means the areas are different *widths*, not different
+                // positions — the same data range mapped across a different number of pixels.
+                //
+                // egui_plot carves its plot rect out of the space it is given by taking the y
+                // axes off the left and the x axes off the bottom; **nothing is reserved on the
+                // right**. So the three were being *allocated* different widths by the
+                // surrounding layout, between one `show` and the next.
+                //
+                // Rather than chase which intervening widget did it, the width is measured before
+                // the first plot and passed to all three explicitly. That is cause-independent:
+                // whatever happens between them, the three rects are identical by construction.
+                let plot_width = ui.available_width();
+
                 let label_times: Vec<f64> = data.times.clone();
                 let mut trajectory_plot = Plot::new("sim_plot")
                     .legend(Legend::default().position(Corner::LeftTop))
+                    .width(plot_width)
                     .x_axis_label("time")
                     // **Both of these exist to align the three plots' x axes** — see
                     // `SIM_Y_AXIS_WIDTH`. This plot had no y label at all, which alone made it
@@ -3692,6 +3715,7 @@ impl App {
                     let step_rows = label_rows.clone();
                     Plot::new("solver_step_size")
                         .legend(Legend::default().position(Corner::LeftTop))
+                        .width(plot_width)
                         .link_axis(link_group, [true, false])
                         .link_cursor(link_group, [true, false])
                         .height(140.0)
@@ -3730,6 +3754,7 @@ impl App {
 
                     Plot::new("solver_bdf_order")
                         .legend(Legend::default().position(Corner::LeftTop))
+                        .width(plot_width)
                         .link_axis(link_group, [true, false])
                         .link_cursor(link_group, [true, false])
                         .height(110.0)
