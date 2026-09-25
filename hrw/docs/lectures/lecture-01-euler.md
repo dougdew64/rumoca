@@ -36,9 +36,22 @@ You have a wheel. You know how hard you are pushing it, and you know it is sitti
 now. **Where is it in one second?**
 
 Write down what you actually know. A torque $\tau$ applied to an inertia $J$ produces an angular
-acceleration — Newton's second law for rotation. And angle is what velocity accumulates:
+acceleration — Newton's second law for rotation. And angle is what angular velocity accumulates:
 
-$$\varphi' = \omega, \qquad J\,\omega' = \tau \tag{1.1}$$
+$$\varphi(t) = \varphi(0) + \int_{0}^{t}\!\omega(s)\,ds \tag{1.1}$$
+
+**That is the answer, and you cannot use it.** To evaluate the integral you need $\omega$ across
+the whole interval — and $\omega$ is one of the things you are trying to find. The formula is
+true, complete, and circular.
+
+The **differential** form says the same thing, but locally — not *what has accumulated by $t$*, but
+*how fast it is accumulating right now* — and that is what a model states:
+
+$$\varphi' = \omega, \qquad J\,\omega' = \tau \tag{1.2}$$
+
+**Hold on to the pairing, because the whole lecture turns on it.** (1.1) is what you want and
+cannot compute. (1.2) is computable and is not what you want. Everything from §2 onward is about
+getting from the second to the first.
 
 So:
 
@@ -60,14 +73,14 @@ $t = 1$; it says how fast $\varphi$ is changing, in terms of a quantity that is 
 
 That is the general situation, and it has a name — an **initial value problem**:
 
-$$z' = f(z, t), \qquad z(0) \ \text{given} \tag{1.2}$$
+$$z' = f(z, t), \qquad z(0) \ \text{given} \tag{1.3}$$
 
 $z$ is the vector of things that carry the past. Here $z = (\varphi, \omega)$, and $f$ is the
 right-hand side the model spells out:
 
 $$z' = \begin{pmatrix} \varphi' \\ \omega' \end{pmatrix}
      = f(z,t) = \begin{pmatrix} \omega \\ \tau / J \end{pmatrix}
-     = \begin{pmatrix} \omega \\ 1 \end{pmatrix} \tag{1.3}$$
+     = \begin{pmatrix} \omega \\ 1 \end{pmatrix} \tag{1.4}$$
 
 **Every simulation in this project is this problem**, possibly with complications piled on top; the
 rungs above this one are those complications, one at a time.
@@ -77,7 +90,7 @@ rungs above this one are those complications, one at a time.
 For this particular wheel it isn't. Integrate $\omega' = 1$ to get $\omega = t$, integrate
 $\varphi' = t$ to get
 
-$$\varphi(t) = \tfrac{1}{2} t^2 \tag{1.4}$$
+$$\varphi(t) = \tfrac{1}{2} t^2 \tag{1.5}$$
 
 and you are done — exactly, forever, for any $t$, with a pencil.
 
@@ -95,7 +108,13 @@ So the problem is: **produce numbers when no formula exists.**
 Leonhard Euler published the answer in *Institutiones calculi integralis* (1768–70), and it is one
 idea.
 
-The derivative is *defined* as a limit:
+§1 left you holding both halves of a trade: an integral (1.1) that is the answer but cannot be
+evaluated, and a derivative (1.2) that can be evaluated but is not the answer. **Euler's move is to
+make that trade, repeatedly, over intervals short enough that the derivative barely changes across
+one.**
+
+Here is the same move from the other side, which is how it is usually taught. The derivative is
+*defined* as a limit:
 
 $$z'(t) = \lim_{h \to 0} \frac{z(t + h) - z(t)}{h} \tag{2.1}$$
 
@@ -189,6 +208,19 @@ rate at the *start* of each step while $\omega$ grew throughout it, so every ste
 at step 1: Euler moved $\varphi$ by $0.25 \times 0$ — not at all — while the true $\varphi$ had
 already reached $\tfrac{1}{2}(0.25)^2 = 0.03125$.
 
+**Read that against (1.1) and it stops being a quirk of the method.** Over one step, the truth is
+an integral and Euler substitutes a rectangle:
+
+$$\int_{t}^{t+h}\!\omega(s)\,ds \;\approx\; h\,\omega(t) \tag{3.1}$$
+
+A rectangle whose height is the value at the *left* edge. For an $\omega$ that is rising, that
+rectangle always falls short, and by an amount you can see: $\omega$ climbs by exactly $h$ across
+the step, so the piece Euler misses is a triangle of base $h$ and height $h$ — area $h^2/2$, every
+step, without fail. Over $n$ steps that is $n h^2 / 2$, which is (3.3) below, derived a second way.
+
+**So "first-order" is not a property of Euler so much as of rectangles.** Lecture 2's better deal
+comes from picking a smarter height than the left edge.
+
 **That is the entire error mechanism, visible in one hand-worked table.** The method is exact when
 the rate is constant across a step, and wrong in proportion to how much the rate moves.
 
@@ -211,11 +243,11 @@ work. Lecture 2 is about buying accuracy on better terms.
 size $h$, forward Euler gives
 
 $$\varphi_n = h^2\,\frac{n(n-1)}{2}, \qquad\text{against the true}\qquad
-  \varphi(nh) = \frac{(nh)^2}{2} \tag{3.1}$$
+  \varphi(nh) = \frac{(nh)^2}{2} \tag{3.2}$$
 
 so the error is exactly
 
-$$\varphi(nh) - \varphi_n = \frac{n h^2}{2} = \frac{h\,t}{2} \tag{3.2}$$
+$$\varphi(nh) - \varphi_n = \frac{n h^2}{2} = \frac{h\,t}{2} \tag{3.3}$$
 
 — linear in $h$ as claimed, and growing linearly in $t$.
 
