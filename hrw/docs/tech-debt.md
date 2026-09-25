@@ -219,6 +219,10 @@ verification loop is tight, the second says something is unwatched.
 | 09-24 | HRW ignored the model's `experiment(Tolerance)`; three other in-tree consumers honour it | **Claude** | probing a thing Doug correctly said was not a defect |
 | 09-24 | four false greens in one UI test — a vacuous assertion, plus two helpers that panic on 2+ and on 0 matches | **Claude** | verified each by swapping the defaults |
 | 09-24 | `tech-debt.md` cited `hrw/CLAUDE.md`'s "fixability decay"; the 09-01 compression cut it | **Doug** | correcting Claude's framing of his own preference |
+| 09-25 | plot tooltips rounded every solver value to `0.000` — egui_plot's `{:.3}` default | **Doug** | could not verify one claim in lecture 1 |
+| 09-25 | step size and BDF order shared a linear y axis; the h line got 0.06 % of the height | **Doug** | asked for zoom; zoom already existed and could not reach it |
+| 09-25 | the three plots' x axes did not align — BDF steps 2.36 % past `t_end` | **Doug** | **two wrong hypotheses first**; see below |
+| 09-25 | `experiment(Tolerance)` was never read by HRW | Claude | probing a thing Doug had correctly called a non-defect |
 
 **08-15 and 08-16: Doug 10, toolchain 5, Claude 5.** The Doug column is dominated by **things that
 are true on screen** — a pane that shows no reason, a link that does nothing, a divider in the
@@ -237,7 +241,39 @@ around a wrong constant and nothing resolves a prose citation to a named rule in
 own preference*, which is not a review activity at all. It is the second instance of a defect
 surfacing from a conversation about something else.
 
-<!-- ledger-through: 2026-09-24 -->
+
+### 09-25, the x-axis misalignment — **the detail Doug volunteered was the whole diagnosis**
+
+**Three hypotheses, and his one extra sentence killed the first two.** He reported that the
+1-second ticks did not line up, and added, unasked: *"Interestingly, the 0-second ticks for all
+three plots are aligned."*
+
+| # | hypothesis | what it predicted | outcome |
+|---|---|---|---|
+| 1 | differing y-axis widths | left edges differ | **excluded by his sentence** — aligned zeros mean the left edges already matched |
+| 2 | differing allocated widths | same left edge, different pixel spans | plausible; fixed it anyway, **and the ticks still did not align** |
+| 3 | differing x DATA ranges | same left edge, same span, different mapping | **correct** — solver steps reach `t = 1.0236` against a trajectory ending at `1` |
+
+**Aligned zeros were the constraint that mattered**, because both ranges start at zero and only the
+far end could diverge. Claude used it to exclude (1) and then failed to see that it equally
+*implied* (3); it took the second fix failing to force the reading.
+
+**And the cause was not a layout bug at all.** BDF steps past `t_end` and interpolates the output
+back, so the step records outrun the last trajectory sample by one step — 2.36 % on
+`SingleInertia`, 0 % on `BouncingBall`, whose steps never exceed `3e-3`. **A UI symptom whose cause
+was solver behaviour**, which is why reading egui_plot's rect derivation — it reserves nothing on
+the right — was the step that made further layout hypotheses pointless.
+
+**What it cost and what it bought.** Two commits that did not fix the reported defect, both kept:
+the equal-width change is a latent version of the same bug, and the y-axis floor was genuinely
+needed. **And the overshoot is now a sentence in lecture 1 §4**, which had listed three ways
+Rumoca differs from hand-worked Euler and should have listed four.
+
+**The rule this sharpens** — `CLAUDE.md`'s *mine the report for its constraining noun*: Doug's
+volunteered details are not colour. Here one clause eliminated a hypothesis and pointed at the
+answer, and the cost of half-using it was two wrong fixes.
+
+<!-- ledger-through: 2026-09-25 -->
 
 ### 08-17 → 08-22, backfilled 2026-08-23 — and the ledger had gone dark
 
