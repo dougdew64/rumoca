@@ -40,9 +40,10 @@ acceleration — Newton's second law for rotation. And angle is what angular vel
 
 $$\varphi(t) = \varphi(0) + \int_{0}^{t}\!\omega(s)\,ds \tag{1.1}$$
 
-**That is the answer, and you cannot use it.** To evaluate the integral you need $\omega$ across
-the whole interval — and $\omega$ is one of the things you are trying to find. The formula is
-true, complete, and circular.
+**That is what $\varphi$ *is*, and it is not a way of finding it.** To evaluate the integral you
+need $\omega$ as a function of time across the whole interval — and all you have been given about
+$\omega$ is *its* rate. (1.1) does not answer the question; it **defers** it to the same question
+about $\omega$.
 
 The **differential** form says the same thing, but locally — not *what has accumulated by $t$*, but
 *how fast it is accumulating right now* — and that is what a model states:
@@ -50,8 +51,13 @@ The **differential** form says the same thing, but locally — not *what has acc
 $$\varphi' = \omega, \qquad J\,\omega' = \tau \tag{1.2}$$
 
 **Hold on to the pairing, because the whole lecture turns on it.** (1.1) is what you want and
-cannot compute. (1.2) is computable and is not what you want. Everything from §2 onward is about
+cannot evaluate. (1.2) is evaluable and is not what you want. Everything from §2 onward is about
 getting from the second to the first.
+
+*(For this wheel the deferral does terminate — $\omega$'s rate is a constant, so you can solve
+$\omega$ first and then $\varphi$, which is what §1's next part does with a pencil. It terminates
+because these two equations happen not to be tangled. Below, the general form shows what happens
+when they are.)*
 
 So:
 
@@ -85,12 +91,27 @@ $$z' = \begin{pmatrix} \varphi' \\ \omega' \end{pmatrix}
 **Every simulation in this project is this problem**, possibly with complications piled on top; the
 rungs above this one are those complications, one at a time.
 
+**And now (1.1) can be stated in general, which is where it gets genuinely circular:**
+
+$$z(t) = z(0) + \int_{0}^{t}\!f\bigl(z(s),\, s\bigr)\,ds \tag{1.5}$$
+
+**Look at where $z$ appears.** On the left, and again *inside its own integrand*. This is no longer
+a deferral to some other quantity that might be solvable first — it is the unknown defined in terms
+of itself. `SingleInertia` escapes it only because its $f$ ignores $\varphi$ entirely: the second
+row of (1.4) is $\tau/J$, a constant, with no $\varphi$ and no $\omega$ in it. **Couple the
+equations and the escape closes** — let the torque depend on the angle, $\tau = -\sin\varphi$, and
+$\varphi$ is inside the integral that defines $\varphi$.
+
+*(This is not a dead end in the mathematics — (1.5) is a Volterra integral equation and iterating
+it is Picard's proof that a solution exists at all. It is a dead end for **computing**, which is
+the subject here.)*
+
 ### Why this is hard
 
 For this particular wheel it isn't. Integrate $\omega' = 1$ to get $\omega = t$, integrate
 $\varphi' = t$ to get
 
-$$\varphi(t) = \tfrac{1}{2} t^2 \tag{1.5}$$
+$$\varphi(t) = \tfrac{1}{2} t^2 \tag{1.6}$$
 
 and you are done — exactly, forever, for any $t$, with a pencil.
 
