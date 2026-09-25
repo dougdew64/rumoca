@@ -160,6 +160,59 @@ pub fn touched_rumoca_crates<'a>(changed: impl IntoIterator<Item = &'a str>) -> 
     out
 }
 
+/// Is this change **inert to the Rust build** — documents and nothing else?
+///
+/// # Why a fourth verdict: the gate made Doug close HRW to edit markdown
+///
+/// Doug, 2026-09-24, on why he was reluctant to keep lectures in the repository at
+/// all: *"having those lectures be part of HRW means having to run tests every time
+/// that I ask you to make a change to those lectures."* He was describing a real
+/// cost, and it was **this function's absence**.
+///
+/// `examples/gate.rs` checked whether `hrw.exe` was locked **before** it read the
+/// diff, and the FAST tier includes `clippy -p hrw --all-targets`, which builds the
+/// bin. So editing `tech-debt.md` demanded a relink of the binary for a lint that
+/// cannot be affected by editing markdown — and HRW had to be closed twice in one
+/// session to commit prose. It is the argument this module's own header makes about
+/// FULL (*"paying 225 s for it is ritual rather than evidence"*) one tier further
+/// down, unapplied.
+///
+/// **`clippy hrw` is the only gate step that builds `hrw.exe`.** `cargo fmt`, the
+/// three generators (`cargo run --example`) and `cargo test --lib` all build the lib
+/// or an example and never the bin — measured 2026-09-24, when `cargo test -p hrw
+/// --lib` ran all 885 tests with HRW open.
+///
+/// # Why `hrw/` AND an extension, rather than either alone
+///
+/// **A markdown file is not automatically inert.**
+/// `crates/rumoca/tests/examples_smoke/solve_tensor_smoke_tests.rs` pulls
+/// `docs/user-guide/src/language/arrays-pde.md` in with `include_str!`, eight times —
+/// so a `.md` under `crates/` **is** compiled, and a predicate keyed on the extension
+/// alone would call a real source change inert. HRW itself has no `include_str!` of a
+/// `.md` or `.txt`; its only embedded asset is `src/field_help.json`, which lives
+/// under `hrw/src/` and is excluded here twice over.
+///
+/// # The failure asymmetry, which is why this is allow-list shaped
+///
+/// Same as [`needs_full_gate`]: calling a change docs-only when it was not is
+/// **silent**, while the reverse costs seconds and is obvious. So **every** path must
+/// be recognised, an unknown extension disqualifies the whole diff, and an empty
+/// change is not docs-only — there is nothing to gate.
+pub fn is_docs_only<'a>(changed: impl IntoIterator<Item = &'a str>) -> bool {
+    let mut any = false;
+    for p in changed {
+        any = true;
+        let under_hrw_docs = p.starts_with("hrw/docs/")
+            // The governing documents at `hrw/`'s root: CLAUDE.md, DECISIONS.md, README.md.
+            || (p.starts_with("hrw/") && !p["hrw/".len()..].contains('/'));
+        let inert_kind = p.ends_with(".md") || p.ends_with(".txt");
+        if !(under_hrw_docs && inert_kind) {
+            return false;
+        }
+    }
+    any
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -369,5 +422,73 @@ mod tests {
             "two files in one crate are one crate, and hrw/ is not under crates/",
         );
         assert!(touched_rumoca_crates(["hrw/src/app.rs"]).is_empty());
+    }
+
+    /// **Documents are inert to the Rust build; almost nothing else is.**
+    ///
+    /// The dangerous direction is a false *positive* — calling a source change inert
+    /// skips `clippy` silently — so the negative cases outnumber the positive ones and
+    /// each is listed for its own reason.
+    #[test]
+    fn only_hrw_documents_count_as_docs_only() {
+        // The case this was written for.
+        assert!(is_docs_only(["hrw/docs/dae-pendulum.md"]));
+        assert!(is_docs_only(["hrw/docs/fixture-labs/tearing.md"]));
+        assert!(is_docs_only(["hrw/docs/fixture-labs/pinned-claims.txt"]));
+        // Governing documents at hrw/'s root.
+        assert!(is_docs_only(["hrw/CLAUDE.md", "hrw/DECISIONS.md"]));
+        assert!(is_docs_only(["hrw/docs/tech-debt.md", "hrw/CLAUDE.md"]));
+
+        // **A markdown file under `crates/` is COMPILED**, via `include_str!` in
+        // `solve_tensor_smoke_tests.rs`. Keying on the extension alone would call this
+        // inert, which is the silent failure.
+        assert!(!is_docs_only([
+            "crates/rumoca/docs/user-guide/src/language/arrays-pde.md"
+        ]));
+        // Rust, always.
+        assert!(!is_docs_only(["hrw/src/worker.rs"]));
+        assert!(!is_docs_only(["hrw/examples/gate.rs"]));
+        // A specimen changes what the compiler produces and needs the corpus baseline.
+        assert!(!is_docs_only(["hrw/specimens/SingleInertia.mo"]));
+        // A committed trace is a measurement, not prose.
+        assert!(!is_docs_only([
+            "hrw/docs/specimen-notebook/SingleInertia/trace/dae.json"
+        ]));
+        // An embedded asset, and it is under `hrw/src/` besides.
+        assert!(!is_docs_only(["hrw/src/field_help.json"]));
+        // A Cargo.toml is never docs, wherever it sits.
+        assert!(!is_docs_only(["hrw/Cargo.toml"]));
+
+        // **Mixed diffs take the expensive verdict.** One source file disqualifies the
+        // whole change, however much prose accompanies it.
+        assert!(!is_docs_only([
+            "hrw/docs/tech-debt.md",
+            "hrw/src/worker.rs"
+        ]));
+
+        // Empty means nothing to gate, matching `needs_full_gate`'s convention.
+        assert!(!is_docs_only(std::iter::empty()));
+    }
+
+    /// **Docs-only and full-gate are mutually exclusive**, or the runner's ordering
+    /// would decide which one wins.
+    ///
+    /// Asserted rather than assumed: the two predicates were written six weeks apart
+    /// and share no code, so nothing structural keeps them disjoint.
+    #[test]
+    fn docs_only_and_needs_full_gate_never_both_fire() {
+        for change in [
+            vec!["hrw/docs/dae-pendulum.md"],
+            vec!["hrw/CLAUDE.md"],
+            vec!["hrw/src/worker.rs"],
+            vec!["crates/rumoca-solver/src/solver.rs"],
+            vec!["hrw/docs/tech-debt.md", "hrw/src/worker.rs"],
+            vec!["hrw/Cargo.toml"],
+        ] {
+            assert!(
+                !(is_docs_only(change.iter().copied()) && needs_full_gate(change.iter().copied())),
+                "{change:?} classified as BOTH docs-only and needing the full gate",
+            );
+        }
     }
 }

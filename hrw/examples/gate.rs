@@ -116,18 +116,37 @@ fn main() {
     let forced_fast = flags.iter().any(|f| f == "--fast");
     let forced_full = flags.iter().any(|f| f == "--full");
 
-    let exe = repo.join("target/debug/hrw.exe");
-    if binary_is_locked(&exe) {
-        eprintln!(
-            "HRW is running, so the gate cannot relink hrw.exe.\n\
-             Close it and re-run \u{2014} after a clippy --all-targets that failure is \
-             permanent, not transient."
-        );
-        std::process::exit(1);
-    }
-
     let changed = changed_paths(&repo);
     let refs: Vec<&str> = changed.iter().map(String::as_str).collect();
+
+    // **DOCS: a diff inert to the Rust build skips clippy, and therefore needs no
+    // relink — added 2026-09-24.**
+    //
+    // The lock check used to sit ABOVE this line, before the diff had even been read,
+    // so editing markdown demanded that HRW be closed. Doug had to close it twice in
+    // one session to commit prose, and cited that cost as a reason to keep lectures
+    // out of the repository altogether. `gate_policy::is_docs_only` carries the
+    // measurement and the `include_str!` trap; the short version is that **`clippy
+    // -p hrw --all-targets` is the only step here that builds `hrw.exe`**, and a
+    // document cannot change what it lints.
+    //
+    // `--fast` does not imply this. FAST is about which *test suite* runs and still
+    // lints; DOCS is about whether the Rust build is involved at all, which is a
+    // property of the diff and never of a flag.
+    let docs_only = hrw::gate_policy::is_docs_only(refs.iter().copied());
+
+    if !docs_only {
+        let exe = repo.join("target/debug/hrw.exe");
+        if binary_is_locked(&exe) {
+            eprintln!(
+                "HRW is running, so the gate cannot relink hrw.exe.\n\
+                 Close it and re-run \u{2014} after a clippy --all-targets that failure is \
+                 permanent, not transient."
+            );
+            std::process::exit(1);
+        }
+    }
+
     let crates = hrw::gate_policy::touched_rumoca_crates(refs.iter().copied());
     let detected_full = hrw::gate_policy::needs_full_gate(refs.iter().copied());
     let full = if forced_fast {
@@ -204,11 +223,18 @@ fn main() {
         ));
     }
 
-    steps.push(step(
-        "clippy hrw",
-        &["clippy", "-p", "hrw", "--all-targets"],
-        "--all-targets covers the bin, which `cargo test` never builds",
-    ));
+    // **Skipped for a docs-only diff, and it is the ONLY step that builds `hrw.exe`.**
+    // Everything else here builds the lib or an example. Skipping it is what lets the
+    // gate run with HRW open, which is the whole point of the DOCS verdict; the
+    // document checkers that actually read the changed files live in `--lib` and still
+    // run below.
+    if !docs_only {
+        steps.push(step(
+            "clippy hrw",
+            &["clippy", "-p", "hrw", "--all-targets"],
+            "--all-targets covers the bin, which `cargo test` never builds",
+        ));
+    }
 
     // **The notebook check, when the change can move what HRW reports.**
     //
@@ -296,6 +322,11 @@ fn main() {
             "FULL"
         } else if lab {
             "LAB"
+        } else if docs_only {
+            // Named separately from FAST because the difference is visible to the
+            // reader: DOCS leaves `hrw.exe` alone, so it is the one verdict that runs
+            // with HRW open.
+            "DOCS \u{2014} clippy skipped, HRW may stay open"
         } else {
             "FAST"
         },
