@@ -251,6 +251,42 @@ is the strongest single statement this project can make about a release.
   - `emit_matching_frame` / `TracedTarjanState::record` call sites
 - Update the affected labs to match the new code — line numbers, code excerpts, and locals tables.
 
+## 6b. Re-measure the lectures — the ONLY time they are checked
+
+**`docs/lectures/` is exempt from the gate by design and re-measured here instead.** Doug,
+2026-09-24: *"Add lectures to the rebase checklist so that the lectures are checked only during
+rebase. Otherwise, there does not seem to be a need to test lectures after edits."* He reads them in
+**VS Code**, not in HRW, and no test can judge whether a lecture teaches — so the one checkable
+property is whether its **numbers are still true**, and that can only change when Rumoca does.
+
+**The split to hold in mind while working down a lecture:**
+
+- **Hand-worked arithmetic is permanent.** Lecture 1's four forward Euler steps give
+  $\varphi(1) = 0.375$ against a true $0.5$ for reasons no compiler can affect. Do not re-measure
+  it; do not "verify" it against Rumoca, which is not running that method.
+- **Anything Rumoca reported must be re-measured.** Step records, orders, step counts, errors
+  against a closed form, tolerance tables, stage readouts, and every *"Rumoca stops here"* claim.
+  **These are the rot.**
+
+**The reliable way to find them: each lecture's header names the version it was measured against**
+(*"Measured against Rumoca 0.9.20 on 2026-09-24"*). Grep `docs/lectures/` for the old version
+string; every hit is a claim to re-take, and updating the header is how the next rebase knows what
+it is looking at.
+
+**Known to change at 0.10.0**, from `specimen-ladder.md`'s own rot list — so expect lecture edits
+wherever a lecture leans on one of these:
+
+- the initialization defect is fixed, so `RcCircuit`, `OverInitRc`, `Drivetrain` and
+  `GearWithBrake` come back, and **rung 4's `LoopWithInertia` may stop being flat**
+- `LoopWithInertia` and `BenchActuator`'s `L.i` were both recorded healthy while flat-lined
+  (2026-09-24) — **a lecture citing either as working is suspect even before the rebase**
+- `StabilizedPendulum`'s open question resolves either way: does IC planning match `lambda`?
+
+**And a lecture may become WRONG IN ITS ARGUMENT, not merely in a digit.** Lecture 1's §4 explains a
+constant `phi` offset by *"exactly one step ran at order 1"*. If the rebase changes startup order
+selection, the numbers and the explanation both move, and only the explanation will look fine.
+**Re-read the reasoning around any number that changed**, rather than substituting the new value.
+
 ## 7. Refresh `docs/compiler-phases/` — if phases changed
 - **Claude maintains these and commits them.** *(Corrected 2026-08-01. This step said they were
   "Doug's authored explanations" that "Claude does not rewrite automatically" — a framing
