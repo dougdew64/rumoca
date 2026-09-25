@@ -389,6 +389,38 @@ $e' = 0$: it neither grows nor decays.
 $9.801 \times 10^{-9}$ at $t = 0.002$ and $9.801 \times 10^{-9}$ at $t = 1$. A constant, not a
 drift — and that is the tell which says *startup*, not *accumulation*.
 
+### Why §3's errors were a hundred million times bigger
+
+**Put the two tables side by side and the gap is startling**, so it is worth reconciling rather
+than leaving the reader to assume one of them is wrong. §3's hand-worked Euler was off by $0.125$.
+Rumoca is off by $9.8 \times 10^{-9}$ — seven orders of magnitude better on the same model.
+
+**Two separate things account for it, and it is worth separating them.**
+
+**First, step size.** §3 used $h = 0.25$; Rumoca's first step is $h_0 = 10^{-4}$. By (3.3) the
+hand method's error is $ht/2$, so shrinking $h$ to $10^{-4}$ would bring $0.125$ down to
+$5 \times 10^{-5}$. **A factor of 2500, bought purely by taking smaller steps** — and paid for with
+2500× as many of them.
+
+**Second, and this is the one that matters: order.** Even at the *same* step size, the two methods
+do not compare:
+
+| method at $h = 10^{-4}$, to $t = 1$ | error at $t = 1$ |
+|---|---|
+| forward Euler, §3's method, from (3.3) | $5 \times 10^{-5}$ |
+| Rumoca — order 1 for one step, then order 2 | $9.8 \times 10^{-9}$ |
+| **ratio** | **≈ 5100×** |
+
+**And 5100× understates it**, because the two errors are not even the same kind of thing. Forward
+Euler's grows with $t$ — every step adds $h^2/2$, forever. Rumoca's does not grow at all: order 2
+integrates this parabola exactly, so after the first step it adds nothing. Run to $t = 100$ and the
+hand method's error is a hundred times larger while Rumoca's is unchanged.
+
+**So the gap is not evidence that §3's arithmetic was wrong.** §3 is forward Euler, exactly as
+Euler wrote it in 1768, measured honestly. **The gap is 250 years of improvement**, and almost all
+of it is the second factor rather than the first — which is the argument for lecture 2 in one
+number. Smaller steps are the lever you already have; order is the lever you buy.
+
 Tighten the tolerance, the solver takes a smaller first step, and the offset follows it:
 
 | tolerance | first step $h_0$ | `phi` error at $t = 1$ |
