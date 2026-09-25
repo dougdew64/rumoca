@@ -5181,3 +5181,48 @@ would be work in service of a premise Doug has now closed.
   lecture: the two live in different applications, so there is no navigation to keep bidirectional
   and nothing to enforce. That is the same coupling that produced twenty hard-coded back-links to
   `the-concepts`, removed the same day.
+
+---
+
+## 2026-09-25 — the evidence behind Decision 18: what a lecture did to the instrument
+
+**Charter Decision 18 states the principle** — a lecture drives HRW because a measured claim Doug
+cannot check is trust rather than knowledge. **Decision 13 keeps the instances out of the charter**,
+so they are here. All of them landed in a single day of Doug reading lecture 1.
+
+### Three HRW changes, none of which a backlog would have contained
+
+| what changed | what asked for it |
+|---|---|
+| `experiment(Tolerance)` is honoured (`worker.rs`) | §4 wanted to show the offset tracking the first step size; all four tolerance rows came back identical |
+| plot hover labels at real precision (`plot_labels.rs`) | Doug could not verify a single solver claim — `egui_plot`'s `{:.3}` default rendered a `1e-4` step as `0.000` |
+| diagnostics split, step size on a log axis | zoom was already enabled and could not reach it: the step-size line had **0.06 %** of the height on `BouncingBall` |
+
+**The common shape: each was invisible until a specific claim needed a specific verification.** None
+was a feature anyone was missing. The tolerance defect had stood since HRW could simulate at all;
+the rounding was a library default nobody had reason to question; the shared axis looked reasonable
+until something needed reading off it.
+
+### Why the lecture found them and three months of lab work did not
+
+**A lab checks the reader against a specimen; a lecture checks *Claude* against the instrument.**
+A station asks Doug to predict and then look — and the looking is qualitative, so a pane that is
+merely *legible* passes. A lecture's third part asserts **numbers**, and Appendix A commits to Doug
+being able to reproduce them. That is a far stricter demand on the instrument than any lab makes,
+and it is why the gaps surfaced in a day.
+
+### The correction this makes to an earlier framing
+
+`CLAUDE.md` says *treat an hour of HRW polish during a session as a cost*, and that stands. **But
+none of these three was polish.** Each was the difference between a claim Doug could verify and one
+he had to take on trust, which Decision 7 does not permit. **The test is not "does this improve
+HRW?" but "can Doug check what I just told him?"** — and where the answer is no, the instrument is
+what changes, not the claim.
+
+### What was NOT built, which is the guard working
+
+Doug asked for **zoom**. Zoom already existed — `egui_plot` enables scroll-zoom, drag-pan and
+right-drag boxed zoom by default and HRW disables none of them. **Building a zoom control would
+have been polish, and would not have fixed the problem**, which the measurement showed to be a
+shared axis. The report named a symptom; the fix belonged elsewhere. That is `CLAUDE.md`'s
+*mine the report for its constraining noun* rule paying for itself.
