@@ -350,7 +350,7 @@ Rumoca's solver reports what it did on every step. For this model, $t_{\text{end
    ...                        (34 steps in total, none above order 2)
 ```
 
-Three things there are not in §3.
+Four things there are not in §3.
 
 **$h$ changes.** You chose $h$ once; the solver picks a new one every step, growing it while the
 answer stays smooth. It went from $10^{-4}$ to $3.2 \times 10^{-3}$ within fifteen steps.
@@ -363,6 +363,17 @@ lecture 2's subject arriving in the readout.
 step. That is why it can take large steps on models where §3's method cannot, and it is lecture 3's
 subject. For this wheel the distinction does not bite, which is part of why this is the right first
 specimen.
+
+**It runs past the end.** §3 stopped exactly at $t = 1$ because you chose $h$ to divide the
+interval. The solver does not get that choice — it takes the step its error control asks for, and
+the last one lands wherever it lands. **On this model the step records reach $t = 1.0236$ while the
+trajectory stops at $1$**, so the answer at $t = 1$ is interpolated back from a step that went
+2.36 % too far. The overshoot cannot exceed one step, which is why it is visible here (the final
+steps are ~0.2 long) and not on `BouncingBall`, whose steps never exceed $3\times10^{-3}$. *Why
+`BouncingBall` lands on $t_{\text{end}}$ exactly, rather than merely close, is not established.*
+
+You can see this: on the diagnostics plots the step markers continue a little past where the
+trajectory ends. **That is not a rendering artefact** — it is the last thing the solver did.
 
 ### The measurement, and the thing worth seeing
 
@@ -485,6 +496,8 @@ than from memory.
 - Why the solver starts at order 1 rather than the order it intends to use.
 - What BDF actually computes per step, which §4 only gestures at. That is lecture 3's, unless you
   want it sooner.
+- Why `BouncingBall`'s last step lands on $t_{\text{end}}$ exactly while `SingleInertia`'s overruns
+  it by 2.36 %. Small steps explain *little* overshoot, not *none*.
 
 ---
 
