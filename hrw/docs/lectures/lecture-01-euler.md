@@ -17,6 +17,16 @@ as `markdown.math.enabled`). If the formulas below appear as literal `$` signs, 
 > because KaTeX builds each formula from nested spans and the copy takes the visual layout. Say
 > *"(2.3)"* and I will find it. The numbering is per section so that inserting an equation in §1
 > never renumbers §4.
+>
+> **So inline math names a SYMBOL; a relation you might point at is displayed and numbered.** That
+> is ordinary mathematical typesetting, and here it is also what keeps the document quotable: an
+> equation buried mid-sentence can be neither numbered nor copied cleanly. Short values stay inline
+> — $h = 0.25$, $t = 1$ — because naming them is never the problem. **If you find yourself wanting
+> to quote a relation that is inline, that is a bug in the lecture, not in your copy-paste.**
+>
+> **And when you do need to quote prose containing inline math, drop the math.** *"And angle is what
+> velocity accumulates"* is unique in this document; the symbols after it add nothing to the search
+> and paste as a dozen lines.
 
 ---
 
@@ -26,8 +36,11 @@ You have a wheel. You know how hard you are pushing it, and you know it is sitti
 now. **Where is it in one second?**
 
 Write down what you actually know. A torque $\tau$ applied to an inertia $J$ produces an angular
-acceleration — Newton's second law for rotation, $J\,\omega' = \tau$. And angle is what velocity
-accumulates, $\varphi' = \omega$. So:
+acceleration — Newton's second law for rotation. And angle is what velocity accumulates:
+
+$$\varphi' = \omega, \qquad J\,\omega' = \tau \tag{1.1}$$
+
+So:
 
 ```modelica
 model SingleInertia
@@ -47,14 +60,14 @@ $t = 1$; it says how fast $\varphi$ is changing, in terms of a quantity that is 
 
 That is the general situation, and it has a name — an **initial value problem**:
 
-$$z' = f(z, t), \qquad z(0) \ \text{given} \tag{1.1}$$
+$$z' = f(z, t), \qquad z(0) \ \text{given} \tag{1.2}$$
 
 $z$ is the vector of things that carry the past. Here $z = (\varphi, \omega)$, and $f$ is the
 right-hand side the model spells out:
 
 $$z' = \begin{pmatrix} \varphi' \\ \omega' \end{pmatrix}
      = f(z,t) = \begin{pmatrix} \omega \\ \tau / J \end{pmatrix}
-     = \begin{pmatrix} \omega \\ 1 \end{pmatrix} \tag{1.2}$$
+     = \begin{pmatrix} \omega \\ 1 \end{pmatrix} \tag{1.3}$$
 
 **Every simulation in this project is this problem**, possibly with complications piled on top; the
 rungs above this one are those complications, one at a time.
@@ -64,7 +77,7 @@ rungs above this one are those complications, one at a time.
 For this particular wheel it isn't. Integrate $\omega' = 1$ to get $\omega = t$, integrate
 $\varphi' = t$ to get
 
-$$\varphi(t) = \tfrac{1}{2} t^2 \tag{1.3}$$
+$$\varphi(t) = \tfrac{1}{2} t^2 \tag{1.4}$$
 
 and you are done — exactly, forever, for any $t$, with a pencil.
 
@@ -132,10 +145,14 @@ the subject is about controlling how wrong.
 > **This is the hinge the later lectures turn on, in both directions.**
 >
 > **Forward, into lecture 3:** evaluation is the *weakest* thing a method can demand, and forward
-> Euler is the only one that gets away with it. Backward Euler puts the unknown on both sides —
-> $z_{n+1} = z_n + h f(z_{n+1}, t_{n+1})$ — so each step is an *equation to solve*, not a formula to
-> apply, and solving it efficiently wants $\partial f / \partial z$. **A method that needs the
-> Jacobian is asking about $f$'s structure again**, which is why lecture 3 costs more than this one.
+> Euler is the only one that gets away with it. Backward Euler puts the unknown on both sides:
+>
+> $$z_{n+1} = z_n + h\, f(z_{n+1}, t_{n+1}) \tag{2.4}$$
+>
+> Compare (2.3): the argument of $f$ changed, and that is the entire difference. But it turns each
+> step into an *equation to solve* rather than a formula to apply, and solving it efficiently wants
+> $\partial f / \partial z$. **A method that needs the Jacobian is asking about $f$'s structure
+> again**, which is why lecture 3 costs more than this one.
 >
 > **Backward, into lecture 4:** if all a solver needs is something it can call, then somebody has to
 > *build* that callable thing. A Modelica model is not it — `J * der(w) = tau` is an equation, not a
@@ -190,10 +207,17 @@ $0.125$; now it is $0.0625$.
 method. It is a poor deal: work is $\propto 1/h$, so ten times the accuracy costs ten times the
 work. Lecture 2 is about buying accuracy on better terms.
 
-*(Closed form for this case, if you want to check the table without stepping: after $n$ steps of
-size $h$, forward Euler gives $\varphi_n = h^2\,\tfrac{n(n-1)}{2}$, against the true
-$\tfrac{1}{2}(nh)^2$ — so the error is exactly $\tfrac{1}{2} n h^2 = \tfrac{1}{2} h t$, linear in
-$h$ as claimed and growing linearly in $t$.)*
+*Closed form for this case, if you want to check the table without stepping.* After $n$ steps of
+size $h$, forward Euler gives
+
+$$\varphi_n = h^2\,\frac{n(n-1)}{2}, \qquad\text{against the true}\qquad
+  \varphi(nh) = \frac{(nh)^2}{2} \tag{3.1}$$
+
+so the error is exactly
+
+$$\varphi(nh) - \varphi_n = \frac{n h^2}{2} = \frac{h\,t}{2} \tag{3.2}$$
+
+— linear in $h$ as claimed, and growing linearly in $t$.
 
 ---
 
