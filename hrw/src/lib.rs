@@ -53,10 +53,10 @@ pub mod colors;
 pub mod compile_caches;
 pub mod connection_anim;
 pub mod context_bar;
-pub mod diagnostics;
-pub mod doc_citations;
 pub mod dae_counts;
 pub mod dae_expr_format;
+pub mod diagnostics;
+pub mod doc_citations;
 pub mod doc_sizes;
 pub mod equation_sheet;
 pub mod equation_sheet_view;
@@ -146,12 +146,93 @@ pub const NODE_LABEL_ZOOM_THRESHOLD: f32 = 10.0;
 /// `worker::test_msl` and six examples, and the procedure doc had to tell a
 /// rebaser to "grep for it rather than fixing the first one". A fact with seven
 /// copies is a fact that will be half-fixed next time.
+///
+/// **It was eight, and the eighth proved the point** *(2026-11-03)*. Three more
+/// copies survived the first sweep — two in `equation_sheet.rs`'s tests and one in
+/// `examples/repro_stale_resolve.rs` — and, worst of all, `app.rs`'s
+/// `DEFAULT_LIBRARIES`, which is **what the running app starts with**. The tests
+/// failed loudly (`expected all 44 equations linked, got 1`); the app's default
+/// would simply have failed to resolve the MSL on Doug's next launch, with nothing
+/// to say why. **The sweep that consolidated seven copies was itself half-finished**,
+/// which is the failure mode this doc comment had already named.
+/// [`tests_one_home::no_second_copy_of_the_msl_root_list`] now makes it countable.
 #[must_use]
 pub fn msl_roots() -> Vec<std::path::PathBuf> {
     vec![std::path::PathBuf::from(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/vendor/msl"
     ))]
+}
+
+#[cfg(test)]
+mod tests_one_home {
+    /// **Nothing outside [`super::msl_roots`] spells the MSL root list.**
+    ///
+    /// A ninth copy cannot be added without this failing by name. Scans `src/` and
+    /// `examples/` for the versioned directory names a split root list has to
+    /// mention; `msl_roots`' own doc comment is allowed to name them, because
+    /// explaining the wrong shape is how a reader learns not to write it.
+    ///
+    /// **Why a text scan rather than a types-level fix.** The right fix would make
+    /// the split shape unrepresentable, but the roots are `PathBuf`s handed to a
+    /// Rumoca API that takes paths, so there is no type to narrow. A scan is the
+    /// available mechanism, and the alternative — remembering — has now failed
+    /// twice.
+    #[test]
+    fn no_second_copy_of_the_msl_root_list() {
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let mut offenders: Vec<String> = Vec::new();
+        let mut scanned = 0usize;
+
+        let mut dirs = vec![root.join("src"), root.join("examples")];
+        while let Some(dir) = dirs.pop() {
+            let Ok(entries) = std::fs::read_dir(&dir) else {
+                continue;
+            };
+            for e in entries.flatten() {
+                let p = e.path();
+                if p.is_dir() {
+                    dirs.push(p);
+                    continue;
+                }
+                if p.extension().and_then(|x| x.to_str()) != Some("rs") {
+                    continue;
+                }
+                let Ok(text) = std::fs::read_to_string(&p) else {
+                    continue;
+                };
+                scanned += 1;
+                let is_msl_roots_home = p.file_name().and_then(|n| n.to_str()) == Some("lib.rs");
+                for (i, line) in text.lines().enumerate() {
+                    // The doc comment on `msl_roots` names the old shape on purpose.
+                    if line.trim_start().starts_with("//") {
+                        continue;
+                    }
+                    if line.contains("ModelicaServices 4.1.0") && !is_msl_roots_home {
+                        offenders.push(format!(
+                            "{}:{}",
+                            p.strip_prefix(&root).unwrap_or(&p).display(),
+                            i + 1
+                        ));
+                    }
+                }
+            }
+        }
+
+        assert!(
+            scanned > 20,
+            "only {scanned} files scanned \u{2014} the walk stopped finding sources, \
+             which would make this check pass by not looking",
+        );
+        assert!(
+            offenders.is_empty(),
+            "the MSL root list is spelled outside `msl_roots()`. On v0.10.0 the \
+             split three-root shape does not resolve, and a copy of it fails \
+             silently in the app and loudly in tests. Call `crate::msl_roots()`:\
+             \n  {}",
+            offenders.join("\n  "),
+        );
+    }
 }
 
 pub fn truncate_label(s: &str, max: usize) -> &str {
