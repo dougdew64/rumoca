@@ -20,6 +20,27 @@ mod cost_tests;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
+use crate::observation::{
+    StructuralEvent, StructuralObserver, TearPriorityKind, TearingStep,
+};
+
+/// Hand one tearing step and the plan it left behind to the observer.
+///
+/// `()` compiles this to nothing, so the untraced path pays only the borrows
+/// of the plan vectors that it already holds.
+fn emit(
+    observer: &mut impl StructuralObserver,
+    step: TearingStep,
+    tears_so_far: &[usize],
+    causal_so_far: &[(usize, usize)],
+) {
+    observer.observe(StructuralEvent::Tearing {
+        step,
+        tears_so_far,
+        causal_so_far,
+    });
+}
+
 /// Result of tearing an algebraic loop.
 #[derive(Debug, Clone)]
 pub struct TearingResult {
@@ -42,6 +63,8 @@ fn resolve_causal_equations(
     causal_sequence: &mut Vec<(usize, usize)>,
     eq_unknowns: &[HashSet<usize>],
     causal_candidates: &[HashSet<usize>],
+    tears_so_far: &[usize],
+    observer: &mut impl StructuralObserver,
 ) {
     let mut changed = true;
     while changed {
@@ -72,6 +95,18 @@ fn resolve_causal_equations(
             remaining_eqs.remove(&best_eq);
             remaining_unknowns.remove(&var);
             changed = true;
+            // `candidates.len()` is the tie this choice broke -- already
+            // computed above to make the choice, not for the report.
+            emit(
+                observer,
+                TearingStep::Causal {
+                    equation: best_eq,
+                    variable: var,
+                    competitors: candidates.len(),
+                },
+                tears_so_far,
+                causal_sequence,
+            );
         }
     }
 }
@@ -225,6 +260,22 @@ pub fn tear_algebraic_loop_with_causal_candidates(
     eq_unknowns: &[HashSet<usize>],
     causal_candidates: &[HashSet<usize>],
 ) -> Option<TearingResult> {
+    tear_algebraic_loop_with_observer(n, eq_unknowns, causal_candidates, &mut ())
+}
+
+/// [`tear_algebraic_loop_with_causal_candidates`], reporting every pass and
+/// the plan finally adopted to `observer`.
+///
+/// One loop runs the greedy search under *both* priorities and keeps the
+/// smaller tear set, so a consumer that read the first pass as the plan would
+/// describe a tear sequence the compiler discarded.
+/// [`TearingStep::PlanSelected`] names the priority that won.
+pub(crate) fn tear_algebraic_loop_with_observer(
+    n: usize,
+    eq_unknowns: &[HashSet<usize>],
+    causal_candidates: &[HashSet<usize>],
+    observer: &mut impl StructuralObserver,
+) -> Option<TearingResult> {
     if n == 0 {
         return None;
     }
@@ -237,28 +288,59 @@ pub fn tear_algebraic_loop_with_causal_candidates(
         eq_unknowns,
         causal_candidates,
         TearPriority::CausalUnlocks,
+        observer,
     );
     if primary
         .as_ref()
         .is_some_and(|plan| plan.tear_var_local_indices.len() == 1)
     {
-        return primary;
+        // A single tear is already minimal, so the alternative pass never
+        // runs. Reporting a selection here is what tells a consumer that the
+        // one pass it saw is the whole story.
+        return announce_selection(primary, TearPriority::CausalUnlocks, observer);
     }
     let alternative = tear_with_priority(
         n,
         eq_unknowns,
         causal_candidates,
         TearPriority::VariableDegree,
+        observer,
     );
-    match (primary, alternative) {
+    let (chosen, priority) = match (primary, alternative) {
         (Some(primary), Some(alternative))
             if alternative.tear_var_local_indices.len() < primary.tear_var_local_indices.len() =>
         {
-            Some(alternative)
+            (Some(alternative), TearPriority::VariableDegree)
         }
-        (Some(primary), _) => Some(primary),
-        (None, alternative) => alternative,
+        (Some(primary), _) => (Some(primary), TearPriority::CausalUnlocks),
+        (None, alternative) => (alternative, TearPriority::VariableDegree),
+    };
+    announce_selection(chosen, priority, observer)
+}
+
+/// Report which pass's plan was adopted, then hand the plan back unchanged.
+///
+/// Nothing is reported when no pass produced a plan: each pass has already
+/// said so with [`TearingStep::NoProgress`], and claiming a selection that did
+/// not happen would be worse than saying nothing.
+fn announce_selection(
+    plan: Option<TearingResult>,
+    priority: TearPriority,
+    observer: &mut impl StructuralObserver,
+) -> Option<TearingResult> {
+    if let Some(ref chosen) = plan {
+        emit(
+            observer,
+            TearingStep::PlanSelected {
+                priority: priority.kind(),
+                tears: chosen.tear_var_local_indices.len(),
+                residuals: chosen.residual_eq_local_indices.len(),
+            },
+            &chosen.tear_var_local_indices,
+            &chosen.causal_sequence,
+        );
     }
+    plan
 }
 
 #[derive(Clone, Copy)]
@@ -268,6 +350,15 @@ enum TearPriority {
 }
 
 impl TearPriority {
+    /// The reportable twin of this priority. The crate-private enum stays
+    /// private; only this projection of it crosses the crate boundary.
+    fn kind(self) -> TearPriorityKind {
+        match self {
+            Self::CausalUnlocks => TearPriorityKind::CausalUnlocks,
+            Self::VariableDegree => TearPriorityKind::VariableDegree,
+        }
+    }
+
     fn score(
         self,
         unlocked: usize,
@@ -287,11 +378,22 @@ fn tear_with_priority(
     eq_unknowns: &[HashSet<usize>],
     causal_candidates: &[HashSet<usize>],
     priority: TearPriority,
+    observer: &mut impl StructuralObserver,
 ) -> Option<TearingResult> {
     let mut remaining_eqs: BTreeSet<usize> = (0..n).collect();
     let mut remaining_unknowns: BTreeSet<usize> = (0..n).collect();
     let mut causal_sequence: Vec<(usize, usize)> = Vec::new();
     let mut tear_vars: Vec<usize> = Vec::new();
+
+    emit(
+        observer,
+        TearingStep::PassStart {
+            priority: priority.kind(),
+            n,
+        },
+        &tear_vars,
+        &causal_sequence,
+    );
 
     loop {
         resolve_causal_equations(
@@ -300,6 +402,8 @@ fn tear_with_priority(
             &mut causal_sequence,
             eq_unknowns,
             causal_candidates,
+            &tear_vars,
+            observer,
         );
 
         if remaining_eqs.is_empty() {
@@ -316,6 +420,12 @@ fn tear_with_priority(
 
         if var_count.is_empty() {
             // No progress possible
+            emit(
+                observer,
+                TearingStep::NoProgress,
+                &tear_vars,
+                &causal_sequence,
+            );
             break;
         }
 
@@ -325,25 +435,66 @@ fn tear_with_priority(
             .map(|(v, _)| v)
             .unwrap();
 
+        let appearances = var_count.get(&tear_var).copied().unwrap_or_default();
+        let remaining_equations = remaining_eqs.len();
         tear_vars.push(tear_var);
         remaining_unknowns.remove(&tear_var);
         // Don't remove any equation — they become potential causal or residual
+        emit(
+            observer,
+            TearingStep::Torn {
+                variable: tear_var,
+                appearances,
+                remaining_equations,
+            },
+            &tear_vars,
+            &causal_sequence,
+        );
     }
 
+    finish_pass(n, remaining_eqs, tear_vars, causal_sequence, observer)
+}
+
+/// Turn one finished pass's state into its plan, or report that it produced
+/// none.
+///
+/// Split out of [`tear_with_priority`] only to keep that function inside the
+/// workspace line limit; it is the same tail, with the two rejection paths now
+/// saying so through [`TearingStep::NoProgress`] rather than by returning a
+/// bare `None` nobody can see.
+fn finish_pass(
+    n: usize,
+    remaining_eqs: BTreeSet<usize>,
+    tear_vars: Vec<usize>,
+    causal_sequence: Vec<(usize, usize)>,
+    observer: &mut impl StructuralObserver,
+) -> Option<TearingResult> {
     // The remaining equations are the residual equations (driven by LM)
     let mut residual_eqs: Vec<usize> = remaining_eqs.into_iter().collect();
     residual_eqs.sort_unstable();
 
-    // Only useful if we actually reduced the dimension
-    if tear_vars.is_empty() || tear_vars.len() >= n {
+    // Only useful if we actually reduced the dimension, and the residual count
+    // must equal the tear count for the reduced system to be square.
+    let reduced = !tear_vars.is_empty() && tear_vars.len() < n;
+    if !reduced || residual_eqs.len() != tear_vars.len() {
+        emit(
+            observer,
+            TearingStep::NoProgress,
+            &tear_vars,
+            &causal_sequence,
+        );
         return None;
     }
 
-    // Sanity: residual count should equal tear var count
-    if residual_eqs.len() != tear_vars.len() {
-        return None;
-    }
-
+    emit(
+        observer,
+        TearingStep::Complete {
+            tears: tear_vars.len(),
+            residuals: residual_eqs.len(),
+        },
+        &tear_vars,
+        &causal_sequence,
+    );
     Some(TearingResult {
         tear_var_local_indices: tear_vars,
         residual_eq_local_indices: residual_eqs,
