@@ -1,0 +1,972 @@
+{
+  "n_equations": 9,
+  "n_unknowns": 9,
+  "coupled_block_count": 1,
+  "matching": [
+    {
+      "equation": "f_x[0] (equation from seg1.R)",
+      "id": "f_x[0]",
+      "unknown": "seg1.R.n.i"
+    },
+    {
+      "equation": "f_x[1] (equation from seg1.R)",
+      "id": "f_x[1]",
+      "unknown": "seg1.R.p.i"
+    },
+    {
+      "equation": "f_x[2] (equation from seg2.R)",
+      "id": "f_x[2]",
+      "unknown": "seg2.p.v"
+    },
+    {
+      "equation": "f_x[3] (flow sum equation: -seg1.p.i + seg1.R.p.i = 0)",
+      "id": "f_x[3]",
+      "unknown": "seg1.p.i"
+    },
+    {
+      "equation": "f_x[4] (flow sum equation: seg1.R.n.i + -seg1.n.i = 0)",
+      "id": "f_x[4]",
+      "unknown": "seg1.n.i"
+    },
+    {
+      "equation": "f_x[5] (flow sum equation: -seg2.p.i + seg2.R.p.i = 0)",
+      "id": "f_x[5]",
+      "unknown": "seg2.R.p.i"
+    },
+    {
+      "equation": "f_x[6] (flow sum equation: seg2.R.n.i + -seg2.n.i = 0)",
+      "id": "f_x[6]",
+      "unknown": "seg2.n.i"
+    },
+    {
+      "equation": "f_x[7] (flow sum equation: seg1.n.i + seg2.p.i = 0)",
+      "id": "f_x[7]",
+      "unknown": "seg2.p.i"
+    },
+    {
+      "equation": "f_x[8] (connection equation: src.n.v = gnd.p.v)",
+      "id": "f_x[8]",
+      "unknown": "src.n.v"
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[8] (connection equation: src.n.v = gnd.p.v)",
+      "id": "f_x[8]",
+      "unknown": "src.n.v"
+    },
+    {
+      "kind": "coupled",
+      "size": 6,
+      "equations": [
+        "f_x[4] (flow sum equation: seg1.R.n.i + -seg1.n.i = 0)",
+        "f_x[7] (flow sum equation: seg1.n.i + seg2.p.i = 0)",
+        "f_x[5] (flow sum equation: -seg2.p.i + seg2.R.p.i = 0)",
+        "f_x[2] (equation from seg2.R)",
+        "f_x[1] (equation from seg1.R)",
+        "f_x[0] (equation from seg1.R)"
+      ],
+      "ids": [
+        "f_x[4]",
+        "f_x[7]",
+        "f_x[5]",
+        "f_x[2]",
+        "f_x[1]",
+        "f_x[0]"
+      ],
+      "unknowns": [
+        "seg1.n.i",
+        "seg2.p.i",
+        "seg2.R.p.i",
+        "seg2.p.v",
+        "seg1.R.p.i",
+        "seg1.R.n.i"
+      ],
+      "tearing": {
+        "tear_vars": [
+          "seg1.n.i"
+        ],
+        "residual_equations": [
+          "f_x[1] (equation from seg1.R)"
+        ],
+        "residual_equation_ids": [
+          "f_x[1]"
+        ],
+        "causal_sequence": [
+          {
+            "equation": "f_x[7] (flow sum equation: seg1.n.i + seg2.p.i = 0)",
+            "id": "f_x[7]",
+            "variable": "seg2.p.i"
+          },
+          {
+            "equation": "f_x[4] (flow sum equation: seg1.R.n.i + -seg1.n.i = 0)",
+            "id": "f_x[4]",
+            "variable": "seg1.R.n.i"
+          },
+          {
+            "equation": "f_x[5] (flow sum equation: -seg2.p.i + seg2.R.p.i = 0)",
+            "id": "f_x[5]",
+            "variable": "seg2.R.p.i"
+          },
+          {
+            "equation": "f_x[0] (equation from seg1.R)",
+            "id": "f_x[0]",
+            "variable": "seg1.R.p.i"
+          },
+          {
+            "equation": "f_x[2] (equation from seg2.R)",
+            "id": "f_x[2]",
+            "variable": "seg2.p.v"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[3] (flow sum equation: -seg1.p.i + seg1.R.p.i = 0)",
+      "id": "f_x[3]",
+      "unknown": "seg1.p.i"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[6] (flow sum equation: seg2.R.n.i + -seg2.n.i = 0)",
+      "id": "f_x[6]",
+      "unknown": "seg2.n.i"
+    }
+  ],
+  "incidence": {
+    "n_eq": 9,
+    "n_var": 9,
+    "unknown_names": [
+      "src.n.v",
+      "seg1.p.i",
+      "seg1.n.i",
+      "seg1.R.p.i",
+      "seg1.R.n.i",
+      "seg2.p.v",
+      "seg2.p.i",
+      "seg2.n.i",
+      "seg2.R.p.i"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0] (equation from seg1.R)",
+        "id": "f_x[0]",
+        "unknowns": [
+          3,
+          4
+        ],
+        "equation_text": "-(seg1.R.p.i + seg1.R.n.i)"
+      },
+      {
+        "equation": "f_x[1] (equation from seg1.R)",
+        "id": "f_x[1]",
+        "unknowns": [
+          0,
+          3,
+          5
+        ],
+        "equation_text": "src.V - -src.n.v - seg2.p.v - seg1.R.R * (1 + seg1.R.alpha * (seg1.R.T - seg1.R.T_ref)) * seg1.R.p.i"
+      },
+      {
+        "equation": "f_x[2] (equation from seg2.R)",
+        "id": "f_x[2]",
+        "unknowns": [
+          0,
+          5,
+          8
+        ],
+        "equation_text": "seg2.p.v - src.n.v - seg2.R.R * (1 + seg2.R.alpha * (seg2.R.T - seg2.R.T_ref)) * seg2.R.p.i"
+      },
+      {
+        "equation": "f_x[3] (flow sum equation: -seg1.p.i + seg1.R.p.i = 0)",
+        "id": "f_x[3]",
+        "unknowns": [
+          1,
+          3
+        ],
+        "equation_text": "-seg1.p.i + seg1.R.p.i"
+      },
+      {
+        "equation": "f_x[4] (flow sum equation: seg1.R.n.i + -seg1.n.i = 0)",
+        "id": "f_x[4]",
+        "unknowns": [
+          2,
+          4
+        ],
+        "equation_text": "seg1.R.n.i + -seg1.n.i"
+      },
+      {
+        "equation": "f_x[5] (flow sum equation: -seg2.p.i + seg2.R.p.i = 0)",
+        "id": "f_x[5]",
+        "unknowns": [
+          6,
+          8
+        ],
+        "equation_text": "-seg2.p.i + seg2.R.p.i"
+      },
+      {
+        "equation": "f_x[6] (flow sum equation: seg2.R.n.i + -seg2.n.i = 0)",
+        "id": "f_x[6]",
+        "unknowns": [
+          7,
+          8
+        ],
+        "equation_text": "-seg2.R.p.i + -seg2.n.i"
+      },
+      {
+        "equation": "f_x[7] (flow sum equation: seg1.n.i + seg2.p.i = 0)",
+        "id": "f_x[7]",
+        "unknowns": [
+          2,
+          6
+        ],
+        "equation_text": "seg1.n.i + seg2.p.i"
+      },
+      {
+        "equation": "f_x[8] (connection equation: src.n.v = gnd.p.v)",
+        "id": "f_x[8]",
+        "unknowns": [
+          0
+        ],
+        "equation_text": "src.n.v"
+      }
+    ]
+  },
+  "before": {
+    "n_equations": 34,
+    "n_unknowns": 34,
+    "n_matched": 34,
+    "matching": [
+      {
+        "equation": "f_x[0] (equation from src)",
+        "id": "f_x[0]",
+        "unknown": "src.n.i"
+      },
+      {
+        "equation": "f_x[1] (equation from src)",
+        "id": "f_x[1]",
+        "unknown": "src.i"
+      },
+      {
+        "equation": "f_x[2] (equation from src)",
+        "id": "f_x[2]",
+        "unknown": "src.p.v"
+      },
+      {
+        "equation": "f_x[3] (equation from src)",
+        "id": "f_x[3]",
+        "unknown": "src.v"
+      },
+      {
+        "equation": "f_x[4] (equation from seg1.R)",
+        "id": "f_x[4]",
+        "unknown": "seg1.R.n.i"
+      },
+      {
+        "equation": "f_x[5] (equation from seg1.R)",
+        "id": "f_x[5]",
+        "unknown": "seg1.R.p.i"
+      },
+      {
+        "equation": "f_x[6] (equation from seg1.R)",
+        "id": "f_x[6]",
+        "unknown": "seg1.R.v"
+      },
+      {
+        "equation": "f_x[7] (equation from seg1.R)",
+        "id": "f_x[7]",
+        "unknown": "seg1.R.T_heatPort"
+      },
+      {
+        "equation": "f_x[8] (equation from seg1.R)",
+        "id": "f_x[8]",
+        "unknown": "seg1.R.R_actual"
+      },
+      {
+        "equation": "f_x[9] (equation from seg1.R)",
+        "id": "f_x[9]",
+        "unknown": "seg1.R.i"
+      },
+      {
+        "equation": "f_x[10] (equation from seg1.R)",
+        "id": "f_x[10]",
+        "unknown": "seg1.R.LossPower"
+      },
+      {
+        "equation": "f_x[11] (equation from seg2.R)",
+        "id": "f_x[11]",
+        "unknown": "seg2.R.n.i"
+      },
+      {
+        "equation": "f_x[12] (equation from seg2.R)",
+        "id": "f_x[12]",
+        "unknown": "seg2.R.i"
+      },
+      {
+        "equation": "f_x[13] (equation from seg2.R)",
+        "id": "f_x[13]",
+        "unknown": "seg2.R.p.v"
+      },
+      {
+        "equation": "f_x[14] (equation from seg2.R)",
+        "id": "f_x[14]",
+        "unknown": "seg2.R.T_heatPort"
+      },
+      {
+        "equation": "f_x[15] (equation from seg2.R)",
+        "id": "f_x[15]",
+        "unknown": "seg2.R.R_actual"
+      },
+      {
+        "equation": "f_x[16] (equation from seg2.R)",
+        "id": "f_x[16]",
+        "unknown": "seg2.R.v"
+      },
+      {
+        "equation": "f_x[17] (equation from seg2.R)",
+        "id": "f_x[17]",
+        "unknown": "seg2.R.LossPower"
+      },
+      {
+        "equation": "f_x[18] (equation from gnd)",
+        "id": "f_x[18]",
+        "unknown": "gnd.p.v"
+      },
+      {
+        "equation": "f_x[19] (flow sum equation: -seg1.p.i + seg1.R.p.i = 0)",
+        "id": "f_x[19]",
+        "unknown": "seg1.p.i"
+      },
+      {
+        "equation": "f_x[20] (flow sum equation: seg1.R.n.i + -seg1.n.i = 0)",
+        "id": "f_x[20]",
+        "unknown": "seg1.n.i"
+      },
+      {
+        "equation": "f_x[21] (flow sum equation: -seg2.p.i + seg2.R.p.i = 0)",
+        "id": "f_x[21]",
+        "unknown": "seg2.R.p.i"
+      },
+      {
+        "equation": "f_x[22] (flow sum equation: seg2.R.n.i + -seg2.n.i = 0)",
+        "id": "f_x[22]",
+        "unknown": "seg2.n.i"
+      },
+      {
+        "equation": "f_x[23] (flow sum equation: src.p.i + seg1.p.i = 0)",
+        "id": "f_x[23]",
+        "unknown": "src.p.i"
+      },
+      {
+        "equation": "f_x[24] (flow sum equation: seg1.n.i + seg2.p.i = 0)",
+        "id": "f_x[24]",
+        "unknown": "seg2.p.i"
+      },
+      {
+        "equation": "f_x[25] (flow sum equation: seg2.n.i + src.n.i + gnd.p.i = 0)",
+        "id": "f_x[25]",
+        "unknown": "gnd.p.i"
+      },
+      {
+        "equation": "f_x[26] (connection equation: seg1.p.v = seg1.R.p.v)",
+        "id": "f_x[26]",
+        "unknown": "seg1.p.v"
+      },
+      {
+        "equation": "f_x[27] (connection equation: seg1.R.p.v = src.p.v)",
+        "id": "f_x[27]",
+        "unknown": "seg1.R.p.v"
+      },
+      {
+        "equation": "f_x[28] (connection equation: seg1.R.n.v = seg1.n.v)",
+        "id": "f_x[28]",
+        "unknown": "seg1.R.n.v"
+      },
+      {
+        "equation": "f_x[29] (connection equation: seg1.n.v = seg2.p.v)",
+        "id": "f_x[29]",
+        "unknown": "seg1.n.v"
+      },
+      {
+        "equation": "f_x[30] (connection equation: seg2.p.v = seg2.R.p.v)",
+        "id": "f_x[30]",
+        "unknown": "seg2.p.v"
+      },
+      {
+        "equation": "f_x[31] (connection equation: seg2.R.n.v = seg2.n.v)",
+        "id": "f_x[31]",
+        "unknown": "seg2.R.n.v"
+      },
+      {
+        "equation": "f_x[32] (connection equation: seg2.n.v = src.n.v)",
+        "id": "f_x[32]",
+        "unknown": "seg2.n.v"
+      },
+      {
+        "equation": "f_x[33] (connection equation: src.n.v = gnd.p.v)",
+        "id": "f_x[33]",
+        "unknown": "src.n.v"
+      }
+    ],
+    "incidence": {
+      "n_eq": 34,
+      "n_var": 34,
+      "unknown_names": [
+        "src.v",
+        "seg1.R.T_heatPort",
+        "seg2.R.T_heatPort",
+        "seg1.R.R_actual",
+        "seg2.R.R_actual",
+        "src.i",
+        "src.p.v",
+        "src.p.i",
+        "src.n.v",
+        "src.n.i",
+        "seg1.p.v",
+        "seg1.p.i",
+        "seg1.n.v",
+        "seg1.n.i",
+        "seg1.R.i",
+        "seg1.R.v",
+        "seg1.R.p.v",
+        "seg1.R.p.i",
+        "seg1.R.n.v",
+        "seg1.R.n.i",
+        "seg1.R.LossPower",
+        "seg2.p.v",
+        "seg2.p.i",
+        "seg2.n.v",
+        "seg2.n.i",
+        "seg2.R.i",
+        "seg2.R.v",
+        "seg2.R.p.v",
+        "seg2.R.p.i",
+        "seg2.R.n.v",
+        "seg2.R.n.i",
+        "seg2.R.LossPower",
+        "gnd.p.v",
+        "gnd.p.i"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (equation from src)",
+          "id": "f_x[0]",
+          "unknowns": [
+            7,
+            9
+          ],
+          "equation_text": "0 - (src.p.i + src.n.i)"
+        },
+        {
+          "equation": "f_x[1] (equation from src)",
+          "id": "f_x[1]",
+          "unknowns": [
+            5,
+            7
+          ],
+          "equation_text": "src.i - src.p.i"
+        },
+        {
+          "equation": "f_x[2] (equation from src)",
+          "id": "f_x[2]",
+          "unknowns": [
+            0,
+            6,
+            8
+          ],
+          "equation_text": "src.v - (src.p.v - src.n.v)"
+        },
+        {
+          "equation": "f_x[3] (equation from src)",
+          "id": "f_x[3]",
+          "unknowns": [
+            0
+          ],
+          "equation_text": "src.v - src.V"
+        },
+        {
+          "equation": "f_x[4] (equation from seg1.R)",
+          "id": "f_x[4]",
+          "unknowns": [
+            17,
+            19
+          ],
+          "equation_text": "0 - (seg1.R.p.i + seg1.R.n.i)"
+        },
+        {
+          "equation": "f_x[5] (equation from seg1.R)",
+          "id": "f_x[5]",
+          "unknowns": [
+            14,
+            17
+          ],
+          "equation_text": "seg1.R.i - seg1.R.p.i"
+        },
+        {
+          "equation": "f_x[6] (equation from seg1.R)",
+          "id": "f_x[6]",
+          "unknowns": [
+            15,
+            16,
+            18
+          ],
+          "equation_text": "seg1.R.v - (seg1.R.p.v - seg1.R.n.v)"
+        },
+        {
+          "equation": "f_x[7] (equation from seg1.R)",
+          "id": "f_x[7]",
+          "unknowns": [
+            1
+          ],
+          "equation_text": "seg1.R.T_heatPort - seg1.R.T"
+        },
+        {
+          "equation": "f_x[8] (equation from seg1.R)",
+          "id": "f_x[8]",
+          "unknowns": [
+            1,
+            3
+          ],
+          "equation_text": "seg1.R.R_actual - seg1.R.R * (1 + seg1.R.alpha * (seg1.R.T_heatPort - seg1.R.T_ref))"
+        },
+        {
+          "equation": "f_x[9] (equation from seg1.R)",
+          "id": "f_x[9]",
+          "unknowns": [
+            3,
+            14,
+            15
+          ],
+          "equation_text": "seg1.R.v - seg1.R.R_actual * seg1.R.i"
+        },
+        {
+          "equation": "f_x[10] (equation from seg1.R)",
+          "id": "f_x[10]",
+          "unknowns": [
+            14,
+            15,
+            20
+          ],
+          "equation_text": "seg1.R.LossPower - seg1.R.v * seg1.R.i"
+        },
+        {
+          "equation": "f_x[11] (equation from seg2.R)",
+          "id": "f_x[11]",
+          "unknowns": [
+            28,
+            30
+          ],
+          "equation_text": "0 - (seg2.R.p.i + seg2.R.n.i)"
+        },
+        {
+          "equation": "f_x[12] (equation from seg2.R)",
+          "id": "f_x[12]",
+          "unknowns": [
+            25,
+            28
+          ],
+          "equation_text": "seg2.R.i - seg2.R.p.i"
+        },
+        {
+          "equation": "f_x[13] (equation from seg2.R)",
+          "id": "f_x[13]",
+          "unknowns": [
+            26,
+            27,
+            29
+          ],
+          "equation_text": "seg2.R.v - (seg2.R.p.v - seg2.R.n.v)"
+        },
+        {
+          "equation": "f_x[14] (equation from seg2.R)",
+          "id": "f_x[14]",
+          "unknowns": [
+            2
+          ],
+          "equation_text": "seg2.R.T_heatPort - seg2.R.T"
+        },
+        {
+          "equation": "f_x[15] (equation from seg2.R)",
+          "id": "f_x[15]",
+          "unknowns": [
+            2,
+            4
+          ],
+          "equation_text": "seg2.R.R_actual - seg2.R.R * (1 + seg2.R.alpha * (seg2.R.T_heatPort - seg2.R.T_ref))"
+        },
+        {
+          "equation": "f_x[16] (equation from seg2.R)",
+          "id": "f_x[16]",
+          "unknowns": [
+            4,
+            25,
+            26
+          ],
+          "equation_text": "seg2.R.v - seg2.R.R_actual * seg2.R.i"
+        },
+        {
+          "equation": "f_x[17] (equation from seg2.R)",
+          "id": "f_x[17]",
+          "unknowns": [
+            25,
+            26,
+            31
+          ],
+          "equation_text": "seg2.R.LossPower - seg2.R.v * seg2.R.i"
+        },
+        {
+          "equation": "f_x[18] (equation from gnd)",
+          "id": "f_x[18]",
+          "unknowns": [
+            32
+          ],
+          "equation_text": "gnd.p.v - 0"
+        },
+        {
+          "equation": "f_x[19] (flow sum equation: -seg1.p.i + seg1.R.p.i = 0)",
+          "id": "f_x[19]",
+          "unknowns": [
+            11,
+            17
+          ],
+          "equation_text": "-seg1.p.i + seg1.R.p.i"
+        },
+        {
+          "equation": "f_x[20] (flow sum equation: seg1.R.n.i + -seg1.n.i = 0)",
+          "id": "f_x[20]",
+          "unknowns": [
+            13,
+            19
+          ],
+          "equation_text": "seg1.R.n.i + -seg1.n.i"
+        },
+        {
+          "equation": "f_x[21] (flow sum equation: -seg2.p.i + seg2.R.p.i = 0)",
+          "id": "f_x[21]",
+          "unknowns": [
+            22,
+            28
+          ],
+          "equation_text": "-seg2.p.i + seg2.R.p.i"
+        },
+        {
+          "equation": "f_x[22] (flow sum equation: seg2.R.n.i + -seg2.n.i = 0)",
+          "id": "f_x[22]",
+          "unknowns": [
+            24,
+            30
+          ],
+          "equation_text": "seg2.R.n.i + -seg2.n.i"
+        },
+        {
+          "equation": "f_x[23] (flow sum equation: src.p.i + seg1.p.i = 0)",
+          "id": "f_x[23]",
+          "unknowns": [
+            7,
+            11
+          ],
+          "equation_text": "src.p.i + seg1.p.i"
+        },
+        {
+          "equation": "f_x[24] (flow sum equation: seg1.n.i + seg2.p.i = 0)",
+          "id": "f_x[24]",
+          "unknowns": [
+            13,
+            22
+          ],
+          "equation_text": "seg1.n.i + seg2.p.i"
+        },
+        {
+          "equation": "f_x[25] (flow sum equation: seg2.n.i + src.n.i + gnd.p.i = 0)",
+          "id": "f_x[25]",
+          "unknowns": [
+            9,
+            24,
+            33
+          ],
+          "equation_text": "seg2.n.i + src.n.i + gnd.p.i"
+        },
+        {
+          "equation": "f_x[26] (connection equation: seg1.p.v = seg1.R.p.v)",
+          "id": "f_x[26]",
+          "unknowns": [
+            10,
+            16
+          ],
+          "equation_text": "seg1.p.v - seg1.R.p.v"
+        },
+        {
+          "equation": "f_x[27] (connection equation: seg1.R.p.v = src.p.v)",
+          "id": "f_x[27]",
+          "unknowns": [
+            6,
+            16
+          ],
+          "equation_text": "seg1.R.p.v - src.p.v"
+        },
+        {
+          "equation": "f_x[28] (connection equation: seg1.R.n.v = seg1.n.v)",
+          "id": "f_x[28]",
+          "unknowns": [
+            12,
+            18
+          ],
+          "equation_text": "seg1.R.n.v - seg1.n.v"
+        },
+        {
+          "equation": "f_x[29] (connection equation: seg1.n.v = seg2.p.v)",
+          "id": "f_x[29]",
+          "unknowns": [
+            12,
+            21
+          ],
+          "equation_text": "seg1.n.v - seg2.p.v"
+        },
+        {
+          "equation": "f_x[30] (connection equation: seg2.p.v = seg2.R.p.v)",
+          "id": "f_x[30]",
+          "unknowns": [
+            21,
+            27
+          ],
+          "equation_text": "seg2.p.v - seg2.R.p.v"
+        },
+        {
+          "equation": "f_x[31] (connection equation: seg2.R.n.v = seg2.n.v)",
+          "id": "f_x[31]",
+          "unknowns": [
+            23,
+            29
+          ],
+          "equation_text": "seg2.R.n.v - seg2.n.v"
+        },
+        {
+          "equation": "f_x[32] (connection equation: seg2.n.v = src.n.v)",
+          "id": "f_x[32]",
+          "unknowns": [
+            8,
+            23
+          ],
+          "equation_text": "seg2.n.v - src.n.v"
+        },
+        {
+          "equation": "f_x[33] (connection equation: src.n.v = gnd.p.v)",
+          "id": "f_x[33]",
+          "unknowns": [
+            8,
+            32
+          ],
+          "equation_text": "src.n.v - gnd.p.v"
+        }
+      ]
+    }
+  },
+  "reduction": {
+    "states_before": [],
+    "states_after": [],
+    "demoted_states": [],
+    "n_states_before": 0,
+    "n_states_after": 0,
+    "steps": [
+      {
+        "step": "scalarize_equations",
+        "outcome": "ok",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 34,
+        "equations_after": 34
+      },
+      {
+        "step": "demote_exact_alias_component_states",
+        "outcome": "0 demoted",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 34,
+        "equations_after": 34
+      },
+      {
+        "step": "demote_direct_assigned_states",
+        "outcome": "0 demoted",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 34,
+        "equations_after": 34
+      },
+      {
+        "step": "reduce_constrained_dummy_derivatives",
+        "outcome": "0 demoted",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 34,
+        "equations_after": 34
+      },
+      {
+        "step": "index_reduce_missing_state_derivatives",
+        "outcome": "0 demoted",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 34,
+        "equations_after": 34
+      },
+      {
+        "step": "demote_states_without_assignable_derivative_rows",
+        "outcome": "0 demoted",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 34,
+        "equations_after": 34
+      },
+      {
+        "step": "eliminate_derivative_aliases",
+        "outcome": "ok",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 34,
+        "equations_after": 34
+      },
+      {
+        "step": "demote_states_without_retained_derivative_rows",
+        "outcome": "0 demoted",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 34,
+        "equations_after": 34
+      },
+      {
+        "step": "expand_compound_derivatives",
+        "outcome": "ok",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 34,
+        "equations_after": 34
+      },
+      {
+        "step": "substitute_standalone_state_derivatives_in_non_ode_rows",
+        "outcome": "0 rewritten",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 34,
+        "equations_after": 34
+      },
+      {
+        "step": "eliminate_trivial",
+        "outcome": "25 eliminated",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 34,
+        "equations_after": 9
+      }
+    ],
+    "differentiated_rows": [],
+    "eliminations": [
+      {
+        "variable": "src.v",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"src.V\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"subs\":[]},{\"ident\":\"V\",\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"subs\":[]}],\"def_id\":39477}},\"subscripts\":[],\"span\":{\"source\":2471142840645193943,\"start\":261,\"end\":262}}}"
+      },
+      {
+        "variable": "seg1.R.T_heatPort",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"seg1.R.T\",\"component_ref\":{\"local\":false,\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"parts\":[{\"ident\":\"seg1\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]},{\"ident\":\"T\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]}],\"def_id\":39501}},\"subscripts\":[],\"span\":{\"source\":18355245647093129072,\"start\":925,\"end\":926}}}"
+      },
+      {
+        "variable": "seg2.R.T_heatPort",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"seg2.R.T\",\"component_ref\":{\"local\":false,\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"parts\":[{\"ident\":\"seg2\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]},{\"ident\":\"T\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]}],\"def_id\":39531}},\"subscripts\":[],\"span\":{\"source\":18355245647093129072,\"start\":925,\"end\":926}}}"
+      },
+      {
+        "variable": "gnd.p.v",
+        "replacement": "{\"Literal\":{\"value\":{\"Real\":0.0},\"span\":{\"source\":3863566413367295742,\"start\":222,\"end\":225}}}"
+      },
+      {
+        "variable": "src.i",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"src.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39472}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":245,\"end\":248}}}"
+      },
+      {
+        "variable": "seg1.R.i",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"seg1.R.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"seg1\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39495}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":245,\"end\":248}}}"
+      },
+      {
+        "variable": "seg1.R.R_actual",
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"seg1.R.R\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17631980999968599698,\"start\":103,\"end\":118},\"parts\":[{\"ident\":\"seg1\",\"span\":{\"source\":17631980999968599698,\"start\":103,\"end\":118},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":17631980999968599698,\"start\":103,\"end\":118},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":17631980999968599698,\"start\":103,\"end\":118},\"subs\":[]}],\"def_id\":39504}},\"subscripts\":[],\"span\":{\"source\":17631980999968599698,\"start\":735,\"end\":736}}},\"rhs\":{\"Binary\":{\"op\":\"Add\",\"lhs\":{\"Literal\":{\"value\":{\"Integer\":1},\"span\":{\"source\":17631980999968599698,\"start\":738,\"end\":739}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"seg1.R.alpha\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17631980999968599698,\"start\":244,\"end\":281},\"parts\":[{\"ident\":\"seg1\",\"span\":{\"source\":17631980999968599698,\"start\":244,\"end\":281},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":17631980999968599698,\"start\":244,\"end\":281},\"subs\":[]},{\"ident\":\"alpha\",\"span\":{\"source\":17631980999968599698,\"start\":244,\"end\":281},\"subs\":[]}],\"def_id\":39506}},\"subscripts\":[],\"span\":{\"source\":17631980999968599698,\"start\":742,\"end\":747}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"seg1.R.T\",\"component_ref\":{\"local\":false,\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"parts\":[{\"ident\":\"seg1\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]},{\"ident\":\"T\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]}],\"def_id\":39501}},\"subscripts\":[],\"span\":{\"source\":18355245647093129072,\"start\":925,\"end\":926}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"seg1.R.T_ref\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17631980999968599698,\"start\":179,\"end\":199},\"parts\":[{\"ident\":\"seg1\",\"span\":{\"source\":17631980999968599698,\"start\":179,\"end\":199},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":17631980999968599698,\"start\":179,\"end\":199},\"subs\":[]},{\"ident\":\"T_ref\",\"span\":{\"source\":17631980999968599698,\"start\":179,\"end\":199},\"subs\":[]}],\"def_id\":39505}},\"subscripts\":[],\"span\":{\"source\":17631980999968599698,\"start\":762,\"end\":767}}},\"span\":{\"source\":17631980999968599698,\"start\":749,\"end\":767}}},\"span\":{\"source\":17631980999968599698,\"start\":742,\"end\":767}}},\"span\":{\"source\":17631980999968599698,\"start\":738,\"end\":767}}},\"span\":{\"source\":17631980999968599698,\"start\":735,\"end\":767}}}"
+      },
+      {
+        "variable": "seg2.R.i",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"seg2.R.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"seg2\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39525}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":245,\"end\":248}}}"
+      },
+      {
+        "variable": "seg2.R.R_actual",
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"seg2.R.R\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17631980999968599698,\"start\":103,\"end\":118},\"parts\":[{\"ident\":\"seg2\",\"span\":{\"source\":17631980999968599698,\"start\":103,\"end\":118},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":17631980999968599698,\"start\":103,\"end\":118},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":17631980999968599698,\"start\":103,\"end\":118},\"subs\":[]}],\"def_id\":39534}},\"subscripts\":[],\"span\":{\"source\":17631980999968599698,\"start\":735,\"end\":736}}},\"rhs\":{\"Binary\":{\"op\":\"Add\",\"lhs\":{\"Literal\":{\"value\":{\"Integer\":1},\"span\":{\"source\":17631980999968599698,\"start\":738,\"end\":739}}},\"rhs\":{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"seg2.R.alpha\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17631980999968599698,\"start\":244,\"end\":281},\"parts\":[{\"ident\":\"seg2\",\"span\":{\"source\":17631980999968599698,\"start\":244,\"end\":281},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":17631980999968599698,\"start\":244,\"end\":281},\"subs\":[]},{\"ident\":\"alpha\",\"span\":{\"source\":17631980999968599698,\"start\":244,\"end\":281},\"subs\":[]}],\"def_id\":39536}},\"subscripts\":[],\"span\":{\"source\":17631980999968599698,\"start\":742,\"end\":747}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"seg2.R.T\",\"component_ref\":{\"local\":false,\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"parts\":[{\"ident\":\"seg2\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]},{\"ident\":\"T\",\"span\":{\"source\":18355245647093129072,\"start\":346,\"end\":362},\"subs\":[]}],\"def_id\":39531}},\"subscripts\":[],\"span\":{\"source\":18355245647093129072,\"start\":925,\"end\":926}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"seg2.R.T_ref\",\"component_ref\":{\"local\":false,\"span\":{\"source\":17631980999968599698,\"start\":179,\"end\":199},\"parts\":[{\"ident\":\"seg2\",\"span\":{\"source\":17631980999968599698,\"start\":179,\"end\":199},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":17631980999968599698,\"start\":179,\"end\":199},\"subs\":[]},{\"ident\":\"T_ref\",\"span\":{\"source\":17631980999968599698,\"start\":179,\"end\":199},\"subs\":[]}],\"def_id\":39535}},\"subscripts\":[],\"span\":{\"source\":17631980999968599698,\"start\":762,\"end\":767}}},\"span\":{\"source\":17631980999968599698,\"start\":749,\"end\":767}}},\"span\":{\"source\":17631980999968599698,\"start\":742,\"end\":767}}},\"span\":{\"source\":17631980999968599698,\"start\":738,\"end\":767}}},\"span\":{\"source\":17631980999968599698,\"start\":735,\"end\":767}}}"
+      },
+      {
+        "variable": "seg1.p.v",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"seg1.R.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"seg1\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39494}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}}"
+      },
+      {
+        "variable": "src.p.v",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"seg1.R.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"seg1\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39494}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}}"
+      },
+      {
+        "variable": "seg1.R.n.v",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"seg1.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"parts\":[{\"ident\":\"seg1\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]}],\"def_id\":39486}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}}"
+      },
+      {
+        "variable": "seg1.n.v",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"seg2.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"parts\":[{\"ident\":\"seg2\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]}],\"def_id\":39512}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}}"
+      },
+      {
+        "variable": "seg2.R.p.v",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"seg2.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"parts\":[{\"ident\":\"seg2\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]}],\"def_id\":39512}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}}"
+      },
+      {
+        "variable": "seg2.R.n.v",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"seg2.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"parts\":[{\"ident\":\"seg2\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]}],\"def_id\":39516}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}}"
+      },
+      {
+        "variable": "seg2.n.v",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"src.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39475}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}}"
+      },
+      {
+        "variable": "seg1.R.v",
+        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"seg1.R.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"seg1\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39494}},\"subscripts\":[],\"span\":{\"source\":9396140468567088194,\"start\":411,\"end\":414}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"seg2.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"parts\":[{\"ident\":\"seg2\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]}],\"def_id\":39512}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}},\"span\":{\"source\":9396140468567088194,\"start\":411,\"end\":420}}}"
+      },
+      {
+        "variable": "seg1.R.LossPower",
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"seg1.R.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"seg1\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13756986950433633865,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39494}},\"subscripts\":[],\"span\":{\"source\":9396140468567088194,\"start\":411,\"end\":414}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"seg2.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"parts\":[{\"ident\":\"seg2\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]}],\"def_id\":39512}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}},\"span\":{\"source\":9396140468567088194,\"start\":411,\"end\":420}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"seg1.R.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"seg1\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39495}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":245,\"end\":248}}},\"span\":{\"source\":17631980999968599698,\"start\":803,\"end\":806}}}"
+      },
+      {
+        "variable": "seg2.R.v",
+        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"seg2.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"parts\":[{\"ident\":\"seg2\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]}],\"def_id\":39512}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"src.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39475}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}},\"span\":{\"source\":9396140468567088194,\"start\":411,\"end\":420}}}"
+      },
+      {
+        "variable": "seg2.R.LossPower",
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"seg2.p.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"parts\":[{\"ident\":\"seg2\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117},\"subs\":[]}],\"def_id\":39512}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"src.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39475}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":95,\"end\":117}}},\"span\":{\"source\":9396140468567088194,\"start\":411,\"end\":420}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"seg2.R.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"seg2\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39525}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":245,\"end\":248}}},\"span\":{\"source\":17631980999968599698,\"start\":803,\"end\":806}}}"
+      },
+      {
+        "variable": "seg1.R.p.v",
+        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"src.V\",\"component_ref\":{\"local\":false,\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"subs\":[]},{\"ident\":\"V\",\"span\":{\"source\":2471142840645193943,\"start\":107,\"end\":119},\"subs\":[]}],\"def_id\":39477}},\"subscripts\":[],\"span\":{\"source\":2471142840645193943,\"start\":261,\"end\":262}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"Literal\":{\"value\":{\"Real\":0.0},\"span\":{\"source\":9396140468567088194,\"start\":407,\"end\":408}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"src.n.v\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"parts\":[{\"ident\":\"src\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]},{\"ident\":\"v\",\"span\":{\"source\":13894313153045674889,\"start\":112,\"end\":134},\"subs\":[]}],\"def_id\":39475}},\"subscripts\":[],\"span\":{\"source\":9396140468567088194,\"start\":417,\"end\":420}}},\"span\":{\"source\":9396140468567088194,\"start\":407,\"end\":408}}},\"span\":{\"source\":9396140468567088194,\"start\":407,\"end\":408}}}"
+      },
+      {
+        "variable": "src.p.i",
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"seg1.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472},\"parts\":[{\"ident\":\"seg1\",\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472},\"subs\":[]}],\"def_id\":39483}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472}}},\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472}}}"
+      },
+      {
+        "variable": "src.n.i",
+        "replacement": "{\"VarRef\":{\"name\":{\"name\":\"seg1.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472},\"parts\":[{\"ident\":\"seg1\",\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472},\"subs\":[]}],\"def_id\":39483}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472}}}"
+      },
+      {
+        "variable": "seg2.R.n.i",
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"seg2.R.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"parts\":[{\"ident\":\"seg2\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"R\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":13756986950433633865,\"start\":477,\"end\":489},\"subs\":[]}],\"def_id\":39525}},\"subscripts\":[],\"span\":{\"source\":2336715272576324994,\"start\":228,\"end\":231}}},\"span\":{\"source\":2336715272576324994,\"start\":228,\"end\":237}}}"
+      },
+      {
+        "variable": "gnd.p.i",
+        "replacement": "{\"Unary\":{\"op\":\"Minus\",\"rhs\":{\"Binary\":{\"op\":\"Add\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"seg2.n.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472},\"parts\":[{\"ident\":\"seg2\",\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472},\"subs\":[]},{\"ident\":\"n\",\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472},\"subs\":[]}],\"def_id\":39517}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"seg1.p.i\",\"component_ref\":{\"local\":false,\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472},\"parts\":[{\"ident\":\"seg1\",\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472},\"subs\":[]},{\"ident\":\"p\",\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472},\"subs\":[]},{\"ident\":\"i\",\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472},\"subs\":[]}],\"def_id\":39483}},\"subscripts\":[],\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472}}},\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472}}},\"span\":{\"source\":10712131675900935278,\"start\":460,\"end\":472}}}"
+      }
+    ],
+    "n_differentiations": 0,
+    "stopped_at": null,
+    "funnel_completed": true
+  }
+}

@@ -74,6 +74,8 @@ members = [
     "crates/rumoca-exec-mlir",
     "crates/rumoca-exec-wasm",
     "crates/rumoca-runtime-fmi-ls",
+    # HRW observatory (studies this workspace via path deps; instrumentation host)
+    "hrw",
 ]
 
 [workspace.package]
@@ -298,6 +300,54 @@ opt-level = 2
 opt-level = 3
 [profile.dev.package.scnr2]
 opt-level = 3
+
+# **egui's debug-only Id diagnostics cost O(2^depth) memory, so they are off here.**
+#
+# In debug builds egui keeps a process-global map from `Id` to a human-readable
+# description, and builds each entry by embedding its parent's ENTIRE string
+# (`egui-0.35.0/src/id.rs`, `id_source::insert_child`). Nested `CollapsingHeader`s
+# therefore double the string per level: measured in pure egui at 5 MB (depth 10),
+# 79 MB (14), 1,260 MB (18). HRW's stage trees nest one level per JSON level and
+# reach depth 24, which aborted the app with a 94 GB commit on 2026-09-02.
+#
+# `debug-assertions = false` compiles that map out for egui alone. Debug INFO is
+# untouched, so egui stays steppable; HRW and every Rumoca crate keep their
+# assertions. Release builds were never affected — the map is `cfg(debug_assertions)`.
+[profile.dev.package.egui]
+debug-assertions = false
+
+# Unoptimized debug builds for the phase crates under study. Unlike the
+# overrides above (which *raise* opt-level for speed), these *lower* it for
+# debuggability: `[profile.dev] opt-level = 1` applies to every workspace crate,
+# and at that level LLVM drops line-table entries and reports locals as
+# `<optimized out>` — which makes single-stepping these phases in the debugger,
+# an explicit goal of this fork, unreliable.
+#
+# The failure is quiet and misleading: a breakpoint on a line with no
+# line-table entry still *binds*, so VS Code shows it as an ordinary verified
+# breakpoint, and it simply never fires. Nothing distinguishes it from a line
+# that was never reached. Add a crate here the first time you try to set a
+# breakpoint in it, not after losing an hour to that.
+#
+# See hrw/docs/architecture.md § Live trace debugging on Windows.
+
+# Carries the live-trace breakpoint anchor.
+[profile.dev.package.rumoca-phase-structural]
+opt-level = 0
+
+# DAE construction: pre() lowering, when-equation lowering, event structure.
+[profile.dev.package.rumoca-phase-dae]
+opt-level = 0
+
+# Connection expansion: the union-find that groups connector variables into sets,
+# and the equation generation that turns each set into equalities or a flow sum.
+[profile.dev.package.rumoca-phase-flatten]
+opt-level = 0
+
+# HRW itself. Doug: "This project is for learning, not for production
+# performance. Debuggability is of the highest priority."
+[profile.dev.package.hrw]
+opt-level = 0
 
 [patch.crates-io]
 # Correct the accepted BDF state at its owner; see the provenance and patch

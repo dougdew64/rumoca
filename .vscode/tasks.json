@@ -1,0 +1,20 @@
+{
+  // Build task backing the cppvsdbg launch config. CodeLLDB has built-in Cargo
+  // integration (the `cargo:` block in launch.json); cppvsdbg does not, so it
+  // needs an explicit build step plus an explicit `program` path.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "cargo build -p hrw",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["build", "-p", "hrw", "--bin", "hrw"],
+      "group": "build",
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    }
+  ]
+}

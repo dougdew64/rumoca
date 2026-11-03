@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(timeout 570 cargo test -p hrw --lib -- --test-threads=1 --report-time)",
+      "Bash(timeout 570 cargo test -p hrw --lib -- --test-threads=1 -Z unstable-options --report-time)",
+      "Bash(awk '{s+=$1} END {printf \"sum of reported: %.1fs across %d tests\\\\n\", s, NR}' /tmp/times.txt)",
+      "Bash(awk '$1>1.0 {s+=$1; n++} END {printf \"tests over 1s: %d, totalling %.1fs\\\\n\", n, s}' /tmp/times.txt)",
+      "Bash(awk -F'::' '{print $1}' /tmp/times.txt)",
+      "Bash(timeout 400 cargo test -p hrw --lib -- --test-threads=1 round_trip parity sub_view)",
+      "Bash(timeout 400 cargo test -p hrw --lib -- --test-threads=1)",
+      "Bash(timeout 570 cargo test -p hrw --lib --features slow-tests -- --test-threads=1)",
+      "Bash(python -c ' *)"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/hrw/scripts/hrw-context.ps1\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

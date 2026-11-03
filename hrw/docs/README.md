@@ -1,0 +1,159 @@
+# Document index
+
+**Purpose:** the map of every HRW document — what it is for, whether it is live, and the
+moment that should send you to it.
+**Status:** index. Update it whenever a document is added, retired, or changes status.
+**Read when:** you are looking for something and do not know where it lives; or you are about
+to add a document and should check whether one already covers it.
+
+Every document states its own purpose, status and reading moment in a three-line header, and
+this index is the sorted view of those.
+
+## Two audiences — check this before writing
+
+**Most documents here are written for Claude.** The exception is READMEs and their *further
+reading*, which are written for **Doug and for Rumoca maintainers**, and whose test is
+whether a reader can finish the job **without asking Claude** (`../DECISIONS.md`,
+2026-08-01).
+
+| Marked | Audience | Standard |
+|---|---|---|
+| 👤 | Doug and Rumoca maintainers | self-sufficient — a reader must never need Claude |
+| — | Claude | raw, detailed, nothing summarised away |
+
+**Being listed in this index does not make a document human-facing.** This page links to
+nearly everything so Doug can audit what exists; the 👤 mark is what carries the promise. A
+README must let its reader finish **without following any link into an unmarked document**.
+
+**And a 👤 document states facts it does not own by *reference*, never by transcription** —
+counts and outcomes point at the generated artifact rather than repeating its numbers, because
+human-facing prose is exactly what rots here. `end_to_end_tour.md` died asserting a 7×7 matrix
+on a tab showing 48 equations.
+
+## Status vocabulary
+
+| Status | Means |
+|---|---|
+| **authority** | a decision or constraint that binds future work. Consult before designing; do not re-litigate. |
+| **procedure** | how to perform a specific operation. Follow it; do not re-derive it. |
+| **reference** | how something works. Look up; do not read end to end. |
+| **live plan** | current work in flight. **Delete when its work lands.** |
+| **record** | append-only history. Rarely rewritten, occasionally consulted. |
+| **historical** | superseded. Kept for reasoning only — **do not follow its plan.** |
+
+---
+
+## Read first
+
+| Document | Purpose |
+|---|---|
+| [`../CLAUDE.md`](../CLAUDE.md) | The rules, the current sequence, and pointers. **The one file to read at session start.** |
+| 👤 [`../README.md`](../README.md) | The project README — **the only document written for a human arriving cold**, including Doug on a new machine. |
+
+## Authorities — consult before designing
+
+| Document | Binds |
+|---|---|
+| 👤 [`CHARTER.md`](CHARTER.md) | Purpose, scope, method, and the binding decisions. The most binding document here. |
+| 👤 [`vision.md`](vision.md) | The north star, and the platform HRW is becoming. |
+| [`fidelity-plan.md`](fidelity-plan.md) | What F1-F9 check, when they run, and the standing boundary against optimising HRW for test scope. |
+| 👤 [`reports.md`](reports.md) | How the survey, fidelity and oracle reports compose. **Design authority for Test mode (#52) and the oracle test (#43).** |
+| [`upstream-strategy.md`](upstream-strategy.md) | How engaging Rumoca's maintainers serves Doug's education, and the planning rules that follow. |
+| [`vvuq-programme.md`](vvuq-programme.md) | **The destination.** The three gaps a senior VVUQ role needs and this project does not serve — uncertainty quantification, coverage assessment, safety-case argumentation — the five-stage plan that closes them, and the standards roster (ASME VVUQ/V&V 10/20/40, NASA-STD-7009, IEEE 1012; ISO 26262/21448/34502, IEEE 2846, ISO/TR 4804, UL 4600). Serves CHARTER §1 and Decision 17. |
+| [`diagnosing-models.md`](diagnosing-models.md) | **Phase two.** The four classes of model failure and the instrument each needs, across **two axes** — one model with somebody looking, and a V&V campaign with nobody looking. Why an oracle *agreeing* is the trap for a model that is simply wrong, and why at scale the binding constraint becomes the false-positive rate. **A draft taxonomy that does not yet prescribe a method**, being iterated with Doug until it does. |
+| [`working-with-doug.md`](working-with-doug.md) | Who Doug is, how he learns, and the standing working agreements. **All of it lived only in Claude's memory until 2026-08-01**, and memory does not survive a clone. |
+| [`identity-and-provenance.md`](identity-and-provenance.md) | No heuristic name-matching; identity vs membership; what provenance Rumoca preserves. **Cited by six source files.** |
+| [`tech-debt.md`](tech-debt.md) | The two sweep triggers, the lab-holes table, and the outstanding debt. |
+| [`reading-budgets.txt`](reading-budgets.txt) | **THE one home for reading-path limits** — the character ceilings, the unit, the derivation, and what crossing one means. `doc_citations::the_mandatory_reading_path_stays_small` enforces them and `examples/doc_report` watches them nightly; nothing else states them. |
+| [`fixture-labs/pinned-claims.txt`](fixture-labs/pinned-claims.txt) | **Data, not prose.** Sentences a lab must or must not contain, because another guard depends on them. Moved out of `src/` the same day and for the same reason — and the move made the check *stronger*, since it needs no compile and now runs in the fast suite. |
+| [`unattended-run-log.md`](unattended-run-log.md) | **Record, not authority.** What each unattended night did, kept so a lens is not pointed twice at a region already established as clean. Split out of `unattended-runs.md` on 2026-08-31, when 57 % of that file was this log and Doug reported he could no longer understand the rules. |
+| [`app-split-plan.md`](app-split-plan.md) | **Live (2026-08-20).** Splitting `app.rs` (14,437 lines at the outset) into ~1,500-line modules, the seam order from the generated field-group map, and the tech-debt queued behind it. The size target is derived from the nine existing modules that have never produced these failures, not asserted. |
+| [`sweep-2026-08-19.md`](sweep-2026-08-19.md) | **The first scheduled comprehensive sweep.** Discovery only, deliberately scoped — one verified finding (absence tags naming prose can never fire, and one was already false), two leads, and an explicit list of what was *not* looked at. Read before the next scheduled sweep. |
+| [`lab-kinds-plan.md`](lab-kinds-plan.md) | **Live (2026-08-17).** The five lab kinds and what varies between them, why the unit is a **stop** and not an act, the four `stop` name collisions, and the rule that settles them. Read before writing or converting a lab. |
+| [`ui-pause-plan.md`](ui-pause-plan.md) | The UI pause (2026-08-02): what gets tested and refactored, in what order, with the evidence for each and a ratcheted field-count target. |
+| [`format-and-app-plan.md`](format-and-app-plan.md) | Proposed (2026-08-05): `cargo fmt` for the Rumoca crates then `hrw/`, then `app.rs` extraction — with the measurement that the Rumoca formatting drift is ours and blocks upstream CI. |
+| [`ui-findings.md`](ui-findings.md) | Running log of what the pause turned up in passing — harness facts that change how a test is written, and code findings with their disposition. |
+| [`provenance.md`](provenance.md) | How Claude marks what it verified from what it inferred. |
+
+## Procedures — how to do a specific thing
+
+| Document | For |
+|---|---|
+| [`running-things.md`](running-things.md) | **Procedure, not rules.** Gate commands and what each suite protects, the notebook content check, long-run safety, and the diagnostic tells for a hung or slept run. Split out of `CLAUDE.md` on 2026-09-01 under charter Decision 11. |
+| 👤 [`setup-windows.md`](setup-windows.md) | A fresh Windows machine → running HRW → live-trace debugging. |
+| 👤 [`long-runs.md`](long-runs.md) | The MSL survey and the fidelity sweep, including the retry pass. **Never run the sweep unbounded.** |
+| 👤 [`updating-rumoca.md`](updating-rumoca.md) | Rebasing the `hrw` branch on upstream. |
+| [`writing-a-lab.md`](writing-a-lab.md) | The keyboard-level mechanics of producing a lab — per-kind templates, the `hrw://` wiring a hub lab requires, and the edit/gate loop with its two traps. Split out of [`fixture-labs/README.md`](fixture-labs/README.md) on 2026-09-22 when that file hit its reading ceiling; **what a lab may *claim* stayed there.** |
+
+## Live plans — delete when their work lands
+
+| Document | Covers |
+|---|---|
+| [`verification-plan.md`](verification-plan.md) | The six-item pause: must-fire tests, the stale-negative test, clearing clippy, a faster suite, headless UI testing, Rust drivers. |
+| [`source-tooling-plan.md`](source-tooling-plan.md) | **Part live.** Phases 1-5 delivered; **Phases 6 (tree rework) and 7 (canvas views) are unbuilt design work.** Read before touching the IR tree or a canvas view. |
+
+## Reference — look things up
+
+| Document | Describes |
+|---|---|
+| 👤 [`architecture.md`](architecture.md) | How HRW works, including §11 the testing architecture and the scale/safety rules. |
+| [`context-assembly.md`](context-assembly.md) | The capture design — how a question carries its context to Claude. **Delivered**; kept for the reasoning. |
+| [`debug-set-sites.md`](debug-set-sites.md) | IR field → the Rumoca line that assigns it, for arming a breakpoint. |
+| 👤 [`specimen-ladder.md`](specimen-ladder.md) | **Which specimen to study next**, in discovery order — each rung adds one new difficulty, from `SingleInertia` (a genuinely plain ODE) to `CartesianPendulum` (index 3, where Rumoca stops). Measured against 0.9.20 on 2026-09-24 and **it rots**: the 0.10.0 rebase changes four rows. Also names which flat-lines are the initialization defect rather than anything conceptual. |
+| 👤 [`lectures/`](lectures/) | **The lectures — prerequisites for the labs, not a replacement for them.** One per rung of [`specimen-ladder.md`](specimen-ladder.md), in the shape `dae-pendulum.md` arrived at: the problem as the field met it, the solution **worked by hand** so the reader can redo the arithmetic, then what Rumoca does with it *including where it stops*. Doug, 2026-09-24: *"in a university, lectures prepare students for labs"* — the labs were written for a reader who already has the mathematics, and these build that reader. **References run one way: a lecture cites a lab; a lab never cites a lecture.** **Read in VS Code, not HRW** — the reason is rendered math, and a lecture therefore uses `$…$` freely and `hrw://` links never (VS Code cannot follow them; cite the lab and station by name instead). **Checked only at a rebase**, [`updating-rumoca.md`](updating-rumoca.md) step 6b. Start at 👤 [`lecture-01-euler.md`](lectures/lecture-01-euler.md). |
+| 👤 [`dae-pendulum.md`](dae-pendulum.md) | **The curriculum document.** What a DAE is, why the Cartesian pendulum is one, and what a solver does with it — fourteen steps from the physical system to a Newton step worked by hand, then index, tearing and BLT arriving as things the arithmetic forces rather than names to memorise. **The repo is the source of truth**; the claude.ai artifact is published from it. Incomplete by intent — the coursework-connections section grows as Doug's courses reach the material. |
+| [`pointing-plan.md`](pointing-plan.md) | **How pointing at selected text works, and the four egui facts it rests on** — re-check them at an egui bump, since each is load-bearing and says how it fails. Also the record of the build: eight runs, seven broken links, and three tests that passed while the code they vouched for was broken. |
+| 👤 [`rust-for-cpp-readers.md`](rust-for-cpp-readers.md) | Rust → contemporary C++ (17/20/23/26), every row version-tagged with its one point of divergence, anchored to real declarations in this workspace. For **reading** the code, not writing it. The four idioms that do not transliterate — enum-with-data + `match`, destructive moves, `Result` + `?`, lifetimes — and where the effort goes. |
+| 👤 [`compiler-phases/`](compiler-phases/) | **The closest thing that exists to Rumoca documentation** — 23 files, ~8,950 lines, written by Claude for Doug *before HRW existed* and copied in; upstream has no equivalent. **Reference, refreshed at the Rumoca version bump** ([`updating-rumoca.md`](updating-rumoca.md) steps 6-7), not per change. Start at 👤 [`the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md) — cited from six places in `src/`, so do not move it. No provenance tags: between refreshes, a map rather than a verified claim. |
+
+## Records — append-only
+
+| Document | Holds |
+|---|---|
+| [`ideas.md`](ideas.md) | The numbered backlog, #1-#57. Candidates, not commitments; numbers are permanent. |
+| [`../DECISIONS.md`](../DECISIONS.md) | Every nontrivial implementation choice, plus the closed-arc record. |
+| [`question-ledger.md`](question-ledger.md) | Doug's questions verbatim, and what made each click. **The only artifact whose value grows with time.** |
+| [`upstream-issues.md`](upstream-issues.md) | Bugs in code we do not own — Rumoca and egui — written ready to file. **Claude never files them.** |
+| 👤 [`fixture-labs/`](fixture-labs/) | Labs that are *tests*. One per capability, narrow, with violable expectations. |
+| 👤 [`specimen-notebook/`](specimen-notebook/) | Per specimen: a generated `trace/` and a hand-written `purpose.md`. |
+| 👤 [`reports/`](reports/) | **Generated data, not prose** — the survey, the corpus fidelity artifact and its profile, the specimen report. Explained by [`reports.md`](reports.md); inventoried by [`reports/README.md`](reports/README.md). |
+
+## Data HRW reads at runtime — do not move
+
+Load-bearing paths, not documents. Moving any of them breaks the app or its tests.
+
+| Path | Used by |
+|---|---|
+| `fixture-labs/*.md` | the lab picker, and `fixture_lab_links_all_resolve` |
+| `fixture-labs/notebooks/` | cross-platform lab stops |
+| `specimen-notebook/<Model>/purpose.md` | the Purpose tab |
+| `specimen-notebook/<Model>/trace/` | the durable per-stage IR |
+| **`reports/msl-survey.csv`** | `fidelity_msl::corpus()` and `survey_msl` — **the corpus definition** |
+| **`reports/specimen-fidelity-report.csv`** | written by the pre-commit test in `src/fidelity.rs` |
+| `reports/msl-fidelity-*` | written by `examples/promote_run.rs`; the committed artifact |
+
+**Three of those are compiled-in paths**, so moving a report means editing code. See
+[`reports/README.md`](reports/README.md).
+
+`src/doc_citations.rs` scans `../CLAUDE.md`, `../README.md`, `../DECISIONS.md` and **all of
+`docs/` recursively**, so a document moved into a subdirectory is still checked.
+
+## Historical — reasoning only, do not follow
+
+| Document | Status |
+|---|---|
+| [`history/answer-platform-plan.md`](history/answer-platform-plan.md) | Retired 2026-08-01. Its live items were moved out first — the file lists where each went. Kept for the "features are experimentable, stored prose is not" correction. |
+
+**Deleted 2026-08-01: `current-work.md`** — a live plan whose work finished. Its own header
+said to delete it once the sweep's findings had landed; they have. Its two unique sections were
+ported first: the three triage categories to [`fidelity-plan.md`](fidelity-plan.md), and the
+reading-path / `app.rs` reasoning to [`ideas.md`](ideas.md) **#58**. The sequence it carried now
+lives in [`../CLAUDE.md`](../CLAUDE.md).
+
+**Deleted 2026-08-01: `compiler-phases/end_to_end_tour.md`** (1,071 lines). HRW stopped showing
+it on 2026-07-29, but it stayed inside the teaching database where a later session would read
+it as authoritative — and its twelve stop-by-stop walkthroughs had rotted (Station 8 described a
+7×7 incidence matrix on a tab that shows 48 equations). Its conceptual sections, which make no
+claim about what is on screen, are now
+[`compiler-phases/the-chain-of-problems.md`](compiler-phases/the-chain-of-problems.md).
+Recoverable from git history.

@@ -1,0 +1,146 @@
+{
+  "n_equations": 4,
+  "n_unknowns": 4,
+  "coupled_block_count": 2,
+  "matching": [
+    {
+      "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
+      "unknown": "commandA"
+    },
+    {
+      "equation": "f_x[1] (top-level model equation)",
+      "id": "f_x[1]",
+      "unknown": "errorA"
+    },
+    {
+      "equation": "f_x[2] (top-level model equation)",
+      "id": "f_x[2]",
+      "unknown": "commandB"
+    },
+    {
+      "equation": "f_x[3] (top-level model equation)",
+      "id": "f_x[3]",
+      "unknown": "errorB"
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "coupled",
+      "size": 2,
+      "equations": [
+        "f_x[1] (top-level model equation)",
+        "f_x[0] (top-level model equation)"
+      ],
+      "ids": [
+        "f_x[1]",
+        "f_x[0]"
+      ],
+      "unknowns": [
+        "errorA",
+        "commandA"
+      ],
+      "tearing": {
+        "tear_vars": [
+          "errorA"
+        ],
+        "residual_equations": [
+          "f_x[0] (top-level model equation)"
+        ],
+        "residual_equation_ids": [
+          "f_x[0]"
+        ],
+        "causal_sequence": [
+          {
+            "equation": "f_x[1] (top-level model equation)",
+            "id": "f_x[1]",
+            "variable": "commandA"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "coupled",
+      "size": 2,
+      "equations": [
+        "f_x[3] (top-level model equation)",
+        "f_x[2] (top-level model equation)"
+      ],
+      "ids": [
+        "f_x[3]",
+        "f_x[2]"
+      ],
+      "unknowns": [
+        "errorB",
+        "commandB"
+      ],
+      "tearing": {
+        "tear_vars": [
+          "errorB"
+        ],
+        "residual_equations": [
+          "f_x[2] (top-level model equation)"
+        ],
+        "residual_equation_ids": [
+          "f_x[2]"
+        ],
+        "causal_sequence": [
+          {
+            "equation": "f_x[3] (top-level model equation)",
+            "id": "f_x[3]",
+            "variable": "commandB"
+          }
+        ]
+      }
+    }
+  ],
+  "incidence": {
+    "n_eq": 4,
+    "n_var": 4,
+    "unknown_names": [
+      "errorA",
+      "commandA",
+      "errorB",
+      "commandB"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
+        "unknowns": [
+          0,
+          1
+        ],
+        "equation_text": "errorA - (reference - plantA * commandA)"
+      },
+      {
+        "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
+        "unknowns": [
+          0,
+          1
+        ],
+        "equation_text": "commandA - gainA * errorA"
+      },
+      {
+        "equation": "f_x[2] (top-level model equation)",
+        "id": "f_x[2]",
+        "unknowns": [
+          1,
+          2,
+          3
+        ],
+        "equation_text": "errorB - (commandA - plantB * commandB)"
+      },
+      {
+        "equation": "f_x[3] (top-level model equation)",
+        "id": "f_x[3]",
+        "unknowns": [
+          2,
+          3
+        ],
+        "equation_text": "commandB - gainB * errorB"
+      }
+    ]
+  }
+}

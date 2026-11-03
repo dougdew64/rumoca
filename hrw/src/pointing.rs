@@ -1,0 +1,395 @@
+//! Right-click *"Point at"* on selected text, from any region that opts in.
+//!
+//! Steps 1 and 2 of [`docs/pointing-plan.md`](../docs/pointing-plan.md). They land together
+//! because a [`PointOrigin`] nobody constructs is dead code.
+//!
+//! # What this is for, and it is not the gesture
+//!
+//! Doug, 2026-09-22, choosing this over a menu attached to each panel's background: *"I want to
+//! go the shared helper route because it is explicit and seems most likely to be accurate about
+//! the source of the text which has been selected."*
+//!
+//! **A region wrapper knows what region it is.** So a selection's origin is a fact *declared at
+//! the call site*, not one inferred afterwards from whichever stage tab happened to be showing —
+//! which is what `view.stage_view` gives, and which `tech-debt.md` records as an open defect.
+//!
+//! # The one non-obvious constraint
+//!
+//! **The text must be grabbed when the menu OPENS, never when the item is chosen.** egui clears a
+//! label selection on `any_pressed() && !any_hovered`; clicking a menu item is a press on the
+//! menu, so the selection dies at that press — before the item's `clicked()` fires at release.
+//! `Popup::context_menu` opens on `secondary_clicked()` (mouse-up), and nothing is pressed
+//! between the right-click and the menu appearing, so the selection is still live there.
+//!
+//! All of that is pinned by
+//! `app::tests::a_right_click_on_a_selection_keeps_it_alive_and_copy_yields_the_text`, negative
+//! control included. **Re-run it at any egui bump**; the button this replaces exists in its
+//! awkward mouse-down form precisely because an assumption of this kind was wrong once.
+//!
+//! # Render and report
+//!
+//! This module never touches `App` state. It reports what the reader did and `App` performs it —
+//! the fourth instance of that pattern here, and the reason the copy plumbing can stay in one
+//! place instead of being spread across every pane that wants to be pointed at.
+
+use eframe::egui;
+
+use crate::worker::StageKind;
+
+/// Where a selection came from, declared by the region that rendered it.
+///
+/// **Every variant must be constructed somewhere**, which
+/// `doc_citations::every_point_origin_is_reachable` enforces: a pane added without a wrapper
+/// would otherwise be silently unpointable, and nothing would say so.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PointOrigin {
+    /// A lab's own prose, in the lab panel.
+    ///
+    /// **The only origin with a file**, and the only one where the claim can be checked rather
+    /// than trusted — see [`Self::source_file`].
+    LabProse {
+        /// The lab's label, which is also its file stem.
+        lab: String,
+    },
+    /// Claude's answer document, rendered in the same panel as lab prose.
+    ///
+    /// **Distinct from `LabProse` because it has no file.** `LabSource::label` returns
+    /// `✨ Answer` for it, so treating the two alike emitted
+    /// `file: hrw/docs/fixture-labs/✨ Answer.md` — a path that has never existed. The
+    /// containment check added on 2026-09-22 cannot catch that one, because the text really is
+    /// in the document that was open; it is the *file* claim that is false.
+    Answer,
+    /// A compile stage's pane — a tree, an animation, a sheet.
+    StagePane {
+        stage: StageKind,
+        /// The sub-view drawing when the selection was made, where the stage has several.
+        sub_view: Option<String>,
+    },
+    /// The Modelica source of the loaded specimen.
+    ///
+    /// **No file is named**, although one plainly exists: the capture's top-level `specimen`
+    /// field already carries the path, and repeating it here would be a second claim to keep
+    /// true. Reading `.mo` text is also the one case where the origin alone is enough — the
+    /// text *is* the source.
+    SpecimenSource,
+    /// The specimen's purpose note, `docs/specimen-notebook/<model>/purpose.md`.
+    ///
+    /// **No file either, and this one is a deliberate restraint.** The path is derivable from
+    /// the `model` the capture already carries, but nothing here verifies the text is in it —
+    /// the containment check runs against the lab panel's document. Naming an unverified file
+    /// is exactly the defect this whole enum exists to prevent, so the origin says which pane
+    /// and lets the reader derive the rest.
+    SpecimenPurpose,
+    /// The specimen list.
+    ModelList,
+    /// The compile log.
+    Log,
+}
+
+impl PointOrigin {
+    /// One line naming the origin, for the Context Bar and the emitted context.
+    pub fn describe(&self) -> String {
+        match self {
+            Self::LabProse { lab } => format!("prose in {lab}"),
+            Self::Answer => "Claude's answer".to_owned(),
+            Self::StagePane {
+                stage,
+                sub_view: Some(v),
+            } => format!("{} \u{2192} {v}", stage.name()),
+            Self::StagePane {
+                stage,
+                sub_view: None,
+            } => stage.name().to_owned(),
+            Self::SpecimenSource => "the specimen's Modelica source".to_owned(),
+            Self::SpecimenPurpose => "the specimen's purpose note".to_owned(),
+            Self::ModelList => "the specimen list".to_owned(),
+            Self::Log => "the compile log".to_owned(),
+        }
+    }
+
+    /// The repository file this text can be found in, if any.
+    ///
+    /// **`None` for everything but lab prose, and that is the point.** A capture that names a
+    /// file instructs the reader to go and edit it; naming one for rendered compiler output sent
+    /// Claude hunting through `connect-expansion.md` for a string generated by
+    /// `connection_anim`. Absence here is what stops that.
+    pub fn source_file(&self) -> Option<String> {
+        match self {
+            Self::LabProse { lab } => Some(format!("hrw/docs/fixture-labs/{lab}.md")),
+            _ => None,
+        }
+    }
+}
+
+/// What the reader did in a region's context menu, for `App` to perform.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PointingEvent {
+    /// The menu just opened over this region.
+    ///
+    /// **`App` must clear its copy slot and push `egui::Event::Copy` on this frame**, because
+    /// this is the last moment the selection is guaranteed alive. Clearing first is what stops a
+    /// stale Ctrl+C from being mistaken for this gesture's text.
+    MenuOpened(PointOrigin),
+    /// The reader chose *"Point at"*. The text was already fetched at `MenuOpened`.
+    PointAt(PointOrigin),
+}
+
+/// Wrap a region so its text can be pointed at.
+///
+/// Renders `add`, then attaches the menu to the rect it occupied. Returns what the reader did,
+/// or `None`.
+///
+/// `can_point` is **whether HRW is holding text**, not whether egui reports a selection. The two
+/// differ exactly when it matters: a right-click collapses the selection to a caret, and
+/// `has_selection()` is `true` for a caret — so an item enabled from it would offer to point at
+/// nothing. `App` captures the text when the drag ends and passes `last_selection.is_some()`.
+pub fn region<R>(
+    ui: &mut egui::Ui,
+    origin: PointOrigin,
+    can_point: bool,
+    add: impl FnOnce(&mut egui::Ui) -> R,
+) -> (R, Option<PointingEvent>) {
+    // **A scope, so the rect is what the CLOSURE drew.** `ui.min_rect()` is everything this
+    // `Ui` has placed, which in the lab panel includes the transport bar drawn above — so the
+    // region would have claimed right-clicks on the picker and the buttons too, and reported
+    // them as coming from the prose. An origin that can be wrong about its own extent is the
+    // thing this helper exists to prevent.
+    let scope = ui.scope(add);
+    let inner = scope.inner;
+    let rect = scope.response.rect;
+
+    // **`Sense::hover()`, and the reason is a bug this caught on the day it was written.**
+    // With `Sense::click()` the region is registered *after* its children and therefore sits on
+    // top of them, so it swallowed every primary click in the lab panel — six UI tests went red
+    // at once, and clicking an `hrw://` link in a lab did nothing. A region must be pointable
+    // **without becoming a lid over what it wraps**, so it senses hover only and the secondary
+    // click is detected by hand.
+    //
+    // A fresh id, interacted exactly once: `tree.rs` records that interacting one Response
+    // twice in a frame makes egui lose track of the widget id and click detection stops.
+    let id = ui.make_persistent_id(("pointing", origin.describe()));
+    let resp = ui.interact(rect, id, egui::Sense::hover());
+
+    let mut event = None;
+    // **`rect_contains_pointer`, not `resp.hovered()`.** A hover-sense response does not report
+    // itself hovered, so asking it produced a menu that never opened — caught by this module's
+    // own test, which is why that test drives real pointer buttons instead of activating a
+    // widget.
+    let over = ui.rect_contains_pointer(rect);
+    let opened = over && ui.input(|i| i.pointer.secondary_clicked());
+    if opened {
+        // **Recorded at the OPEN, not only at the point**, for the reason the button's own
+        // comment gives: without it, "nothing happened" is indistinguishable from "the gesture
+        // never arrived", and it was the latter for a whole evening. `session.json` is written
+        // only when an action is recorded, so a menu that opened and was dismissed otherwise
+        // leaves the file describing HRW's state at startup — which is exactly what it did the
+        // first time Doug tried this path, 2026-09-22.
+        crate::diagnostics::record_action("point-menu-opened", origin.describe());
+        event = Some(PointingEvent::MenuOpened(origin.clone()));
+    }
+
+    // Opened by hand rather than through `Response::context_menu`, which keys on
+    // `secondary_clicked()` — a click sense we deliberately do not have.
+    egui::Popup::menu(&resp)
+        .open_memory(opened.then_some(egui::SetOpenCommand::Bool(true)))
+        .at_pointer_fixed()
+        .show(|ui| {
+            ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+            // **Always present, greyed when there is nothing to point at.** The button this
+            // replaces appeared only when a selection existed, which taught the gesture by
+            // being there; a context menu teaches nothing until it is opened. An item that is
+            // visible and disabled says both that the gesture exists and why it is
+            // unavailable.
+            let item = ui.add_enabled(
+                can_point,
+                egui::Button::new(format!(
+                    "\u{1f3af} Point at selection ({})",
+                    origin.describe()
+                )),
+            );
+            let item = if can_point {
+                item.on_hover_text(crate::POINT_AT_HOVER)
+            } else {
+                item.on_disabled_hover_text(
+                    "Drag across some text first, then right-click it — a caret is not a \
+                     selection.",
+                )
+            };
+            // **Instrumented, because six runs of this gesture have each failed at a
+            // different link and reading the trail has settled every one of them.** A
+            // scratch probe of this popup in a synthetic context turned out to be testing
+            // its own click coordinates rather than the app, so the answer has to come from
+            // the running program.
+            let primary_click =
+                ui.input(|i| i.pointer.button_clicked(egui::PointerButton::Primary));
+            // **Records exactly one thing: an ENABLED item, hit, that does not report a
+            // click.** That is the shape which named the last defect in this arc, after six
+            // runs in which the trail could not distinguish it from a click landing elsewhere.
+            //
+            // The two narrower conditions each stop a false alarm. A click *outside* the item
+            // is the reader dismissing the menu, and logging it made a normal gesture look
+            // like two failures. A click on a *greyed* item does nothing by design — that is
+            // step 3's check 2 — so recording it would report correct behaviour as a fault.
+            let hit_and_ignored = primary_click
+                && can_point
+                && !item.clicked()
+                && ui
+                    .ctx()
+                    .pointer_interact_pos()
+                    .is_some_and(|p| item.rect.contains(p));
+            if hit_and_ignored {
+                crate::diagnostics::record_action(
+                    "point-menu-click-ignored",
+                    "enabled, hit, and not honoured".to_owned(),
+                );
+            }
+            if item.clicked() {
+                event = Some(PointingEvent::PointAt(origin.clone()));
+                ui.close();
+            }
+        });
+    (inner, event)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// **Only lab prose names a file, and the Answer must not.**
+    ///
+    /// `LabSource::label` returns `✨ Answer` for the answer document, so a capture made in it
+    /// used to emit `file: hrw/docs/fixture-labs/✨ Answer.md`. **The containment check cannot
+    /// catch that**, because the selected text genuinely is in the document that was open — it
+    /// is the file claim that is false, and only the origin can tell the two apart. That is the
+    /// case this whole enum exists for.
+    #[test]
+    fn only_lab_prose_claims_a_file() {
+        assert_eq!(
+            PointOrigin::LabProse {
+                lab: "connect-expansion".to_owned()
+            }
+            .source_file()
+            .as_deref(),
+            Some("hrw/docs/fixture-labs/connect-expansion.md"),
+        );
+        for origin in [
+            PointOrigin::Answer,
+            PointOrigin::StagePane {
+                stage: StageKind::Flatten,
+                sub_view: Some("Connections".to_owned()),
+            },
+            PointOrigin::ModelList,
+            PointOrigin::Log,
+        ] {
+            assert_eq!(
+                origin.source_file(),
+                None,
+                "{origin:?} is not in a repository file, and naming one sends the reader to \
+                 edit something that does not contain the text",
+            );
+        }
+    }
+
+    /// **The description names the sub-view when there is one.**
+    ///
+    /// This is the string that replaces `view.stage_view` as the answer to *"where did this come
+    /// from?"*, so a stage with several panes must not collapse to the stage's name alone.
+    #[test]
+    fn a_stage_pane_describes_its_sub_view() {
+        assert_eq!(
+            PointOrigin::StagePane {
+                stage: StageKind::Flatten,
+                sub_view: Some("Connections".to_owned()),
+            }
+            .describe(),
+            "Flatten \u{2192} Connections",
+        );
+        assert_eq!(
+            PointOrigin::StagePane {
+                stage: StageKind::Parse,
+                sub_view: None,
+            }
+            .describe(),
+            StageKind::Parse.name(),
+        );
+    }
+
+    /// **A right-click over a region reports that its menu opened; a left-click reports
+    /// nothing.**
+    ///
+    /// `MenuOpened` is the event `App` acts on to fetch the text, and it must fire on the
+    /// *secondary* click alone. If an ordinary click also fired it, every left-click in a pane
+    /// would clear the copy slot and push a `Copy` — clobbering the clipboard on a gesture that
+    /// has nothing to do with pointing.
+    ///
+    /// Driven through a raw `egui::Context` rather than a kittest harness because the gesture
+    /// under test is a pointer button, not a widget activation.
+    #[test]
+    fn a_secondary_click_reports_the_menu_opening_and_a_primary_click_does_not() {
+        let ctx = egui::Context::default();
+        let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(400.0, 200.0));
+        let origin = PointOrigin::StagePane {
+            stage: StageKind::Flatten,
+            sub_view: Some("Connections".to_owned()),
+        };
+
+        let run = |events: Vec<egui::Event>| -> Option<PointingEvent> {
+            let mut seen = None;
+            let input = egui::RawInput {
+                screen_rect: Some(screen),
+                events,
+                ..Default::default()
+            };
+            let origin = origin.clone();
+            let _ = ctx.run_ui(input, |ui| {
+                let (_, event) = region(ui, origin.clone(), true, |ui| {
+                    ui.label("flow \u{b7} 1 set(s)");
+                });
+                seen = event;
+            });
+            seen
+        };
+
+        let modifiers = egui::Modifiers::default();
+        let at = egui::pos2(20.0, 12.0);
+
+        // One pass to lay the region out, so the rect the menu attaches to exists.
+        run(vec![]);
+
+        let press = |button| {
+            vec![
+                egui::Event::PointerMoved(at),
+                egui::Event::PointerButton {
+                    pos: at,
+                    button,
+                    pressed: true,
+                    modifiers,
+                },
+            ]
+        };
+        let release = |button| {
+            vec![egui::Event::PointerButton {
+                pos: at,
+                button,
+                pressed: false,
+                modifiers,
+            }]
+        };
+
+        run(press(egui::PointerButton::Primary));
+        assert_eq!(
+            run(release(egui::PointerButton::Primary)),
+            None,
+            "an ordinary click must report nothing -- otherwise every left-click in a pane \
+             would push a Copy and overwrite the reader's clipboard",
+        );
+
+        run(press(egui::PointerButton::Secondary));
+        assert_eq!(
+            run(release(egui::PointerButton::Secondary)),
+            Some(PointingEvent::MenuOpened(origin.clone())),
+            "the secondary click is what opens the menu, and it is the last moment the \
+             selection is guaranteed alive -- so it is where App must fetch the text",
+        );
+    }
+}

@@ -1,0 +1,787 @@
+{
+  "t_end": 2.0,
+  "n_time_points": 501,
+  "n_variables": 97,
+  "n_states": 9,
+  "has_discontinuities": false,
+  "t_start": 0.0,
+  "t_final": 2.0,
+  "variables": [
+    {
+      "name": "L.i",
+      "is_state": true,
+      "initial": 24.0,
+      "final": 24.0,
+      "min": 24.0,
+      "max": 24.0
+    },
+    {
+      "name": "emf.phi",
+      "is_state": true,
+      "initial": 2400.0000000000005,
+      "final": 2400.0000000000005,
+      "min": 2400.0000000000005,
+      "max": 2400.0000000000005
+    },
+    {
+      "name": "rotor.phi",
+      "is_state": true,
+      "initial": 2400.0000000000005,
+      "final": 2400.0000000000005,
+      "min": 2400.0000000000005,
+      "max": 2400.0000000000005
+    },
+    {
+      "name": "rotor.w",
+      "is_state": true,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "shaft.phi",
+      "is_state": true,
+      "initial": 480.00000000000006,
+      "final": 480.00000000000006,
+      "min": 480.00000000000006,
+      "max": 480.00000000000006
+    },
+    {
+      "name": "shaft.w",
+      "is_state": true,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "load.s",
+      "is_state": true,
+      "initial": 2.4000000000000004,
+      "final": 2.4000000000000004,
+      "min": 2.4000000000000004,
+      "max": 2.4000000000000004
+    },
+    {
+      "name": "load.v",
+      "is_state": true,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "mount.s_rel",
+      "is_state": true,
+      "initial": -2.4000000000000004,
+      "final": -2.4000000000000004,
+      "min": -2.4000000000000004,
+      "max": -2.4000000000000004
+    },
+    {
+      "name": "src.v",
+      "is_state": false,
+      "initial": 12.0,
+      "final": 12.0,
+      "min": 12.0,
+      "max": 12.0
+    },
+    {
+      "name": "R.T_heatPort",
+      "is_state": false,
+      "initial": 300.15,
+      "final": 300.15,
+      "min": 300.15,
+      "max": 300.15
+    },
+    {
+      "name": "L.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "emf.w",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "rotor.a",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "gear.phi_support",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "shaft.a",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "load.a",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "mount.v_rel",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "mount.f_c",
+      "is_state": false,
+      "initial": -2400.0000000000005,
+      "final": -2400.0000000000005,
+      "min": -2400.0000000000005,
+      "max": -2400.0000000000005
+    },
+    {
+      "name": "R.R_actual",
+      "is_state": false,
+      "initial": 0.5,
+      "final": 0.5,
+      "min": 0.5,
+      "max": 0.5
+    },
+    {
+      "name": "emf.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "mount.f_d",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "mount.f",
+      "is_state": false,
+      "initial": -2400.0000000000005,
+      "final": -2400.0000000000005,
+      "min": -2400.0000000000005,
+      "max": -2400.0000000000005
+    },
+    {
+      "name": "mount.lossPower",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "src.i",
+      "is_state": false,
+      "initial": -24.0,
+      "final": -24.0,
+      "min": -24.0,
+      "max": -24.0
+    },
+    {
+      "name": "src.p.v",
+      "is_state": false,
+      "initial": 12.0,
+      "final": 12.0,
+      "min": 12.0,
+      "max": 12.0
+    },
+    {
+      "name": "src.p.i",
+      "is_state": false,
+      "initial": -24.0,
+      "final": -24.0,
+      "min": -24.0,
+      "max": -24.0
+    },
+    {
+      "name": "src.n.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "src.n.i",
+      "is_state": false,
+      "initial": 24.0,
+      "final": 24.0,
+      "min": 24.0,
+      "max": 24.0
+    },
+    {
+      "name": "R.i",
+      "is_state": false,
+      "initial": 24.0,
+      "final": 24.0,
+      "min": 24.0,
+      "max": 24.0
+    },
+    {
+      "name": "R.v",
+      "is_state": false,
+      "initial": 12.0,
+      "final": 12.0,
+      "min": 12.0,
+      "max": 12.0
+    },
+    {
+      "name": "R.p.v",
+      "is_state": false,
+      "initial": 12.0,
+      "final": 12.0,
+      "min": 12.0,
+      "max": 12.0
+    },
+    {
+      "name": "R.p.i",
+      "is_state": false,
+      "initial": 24.0,
+      "final": 24.0,
+      "min": 24.0,
+      "max": 24.0
+    },
+    {
+      "name": "R.n.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "R.n.i",
+      "is_state": false,
+      "initial": -24.0,
+      "final": -24.0,
+      "min": -24.0,
+      "max": -24.0
+    },
+    {
+      "name": "R.LossPower",
+      "is_state": false,
+      "initial": 288.0,
+      "final": 288.0,
+      "min": 288.0,
+      "max": 288.0
+    },
+    {
+      "name": "L.p.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "L.p.i",
+      "is_state": false,
+      "initial": 24.0,
+      "final": 24.0,
+      "min": 24.0,
+      "max": 24.0
+    },
+    {
+      "name": "L.n.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "L.n.i",
+      "is_state": false,
+      "initial": -24.0,
+      "final": -24.0,
+      "min": -24.0,
+      "max": -24.0
+    },
+    {
+      "name": "emf.i",
+      "is_state": false,
+      "initial": 24.0,
+      "final": 24.0,
+      "min": 24.0,
+      "max": 24.0
+    },
+    {
+      "name": "emf.tau",
+      "is_state": false,
+      "initial": -2.4000000000000004,
+      "final": -2.4000000000000004,
+      "min": -2.4000000000000004,
+      "max": -2.4000000000000004
+    },
+    {
+      "name": "emf.tauElectrical",
+      "is_state": false,
+      "initial": 2.4000000000000004,
+      "final": 2.4000000000000004,
+      "min": 2.4000000000000004,
+      "max": 2.4000000000000004
+    },
+    {
+      "name": "emf.p.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "emf.p.i",
+      "is_state": false,
+      "initial": 24.0,
+      "final": 24.0,
+      "min": 24.0,
+      "max": 24.0
+    },
+    {
+      "name": "emf.n.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "emf.n.i",
+      "is_state": false,
+      "initial": -24.0,
+      "final": -24.0,
+      "min": -24.0,
+      "max": -24.0
+    },
+    {
+      "name": "emf.flange.phi",
+      "is_state": false,
+      "initial": 2400.0000000000005,
+      "final": 2400.0000000000005,
+      "min": 2400.0000000000005,
+      "max": 2400.0000000000005
+    },
+    {
+      "name": "emf.flange.tau",
+      "is_state": false,
+      "initial": -2.4000000000000004,
+      "final": -2.4000000000000004,
+      "min": -2.4000000000000004,
+      "max": -2.4000000000000004
+    },
+    {
+      "name": "emf.fixed.flange.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "emf.fixed.flange.tau",
+      "is_state": false,
+      "initial": -2.4000000000000004,
+      "final": -2.4000000000000004,
+      "min": -2.4000000000000004,
+      "max": -2.4000000000000004
+    },
+    {
+      "name": "emf.internalSupport.tau",
+      "is_state": false,
+      "initial": 2.4000000000000004,
+      "final": 2.4000000000000004,
+      "min": 2.4000000000000004,
+      "max": 2.4000000000000004
+    },
+    {
+      "name": "emf.internalSupport.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "emf.internalSupport.flange.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "emf.internalSupport.flange.tau",
+      "is_state": false,
+      "initial": 2.4000000000000004,
+      "final": 2.4000000000000004,
+      "min": 2.4000000000000004,
+      "max": 2.4000000000000004
+    },
+    {
+      "name": "gnd.p.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "gnd.p.i",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "rotor.flange_a.phi",
+      "is_state": false,
+      "initial": 2400.0000000000005,
+      "final": 2400.0000000000005,
+      "min": 2400.0000000000005,
+      "max": 2400.0000000000005
+    },
+    {
+      "name": "rotor.flange_a.tau",
+      "is_state": false,
+      "initial": 2.4000000000000004,
+      "final": 2.4000000000000004,
+      "min": 2.4000000000000004,
+      "max": 2.4000000000000004
+    },
+    {
+      "name": "rotor.flange_b.phi",
+      "is_state": false,
+      "initial": 2400.0000000000005,
+      "final": 2400.0000000000005,
+      "min": 2400.0000000000005,
+      "max": 2400.0000000000005
+    },
+    {
+      "name": "rotor.flange_b.tau",
+      "is_state": false,
+      "initial": -2.4000000000000004,
+      "final": -2.4000000000000004,
+      "min": -2.4000000000000004,
+      "max": -2.4000000000000004
+    },
+    {
+      "name": "gear.flange_a.phi",
+      "is_state": false,
+      "initial": 2400.0000000000005,
+      "final": 2400.0000000000005,
+      "min": 2400.0000000000005,
+      "max": 2400.0000000000005
+    },
+    {
+      "name": "gear.flange_a.tau",
+      "is_state": false,
+      "initial": 2.4000000000000004,
+      "final": 2.4000000000000004,
+      "min": 2.4000000000000004,
+      "max": 2.4000000000000004
+    },
+    {
+      "name": "gear.flange_b.phi",
+      "is_state": false,
+      "initial": 480.00000000000006,
+      "final": 480.00000000000006,
+      "min": 480.00000000000006,
+      "max": 480.00000000000006
+    },
+    {
+      "name": "gear.flange_b.tau",
+      "is_state": false,
+      "initial": -12.000000000000002,
+      "final": -12.000000000000002,
+      "min": -12.000000000000002,
+      "max": -12.000000000000002
+    },
+    {
+      "name": "gear.phi_a",
+      "is_state": false,
+      "initial": 2400.0000000000005,
+      "final": 2400.0000000000005,
+      "min": 2400.0000000000005,
+      "max": 2400.0000000000005
+    },
+    {
+      "name": "gear.phi_b",
+      "is_state": false,
+      "initial": 480.00000000000006,
+      "final": 480.00000000000006,
+      "min": 480.00000000000006,
+      "max": 480.00000000000006
+    },
+    {
+      "name": "shaft.flange_a.phi",
+      "is_state": false,
+      "initial": 480.00000000000006,
+      "final": 480.00000000000006,
+      "min": 480.00000000000006,
+      "max": 480.00000000000006
+    },
+    {
+      "name": "shaft.flange_a.tau",
+      "is_state": false,
+      "initial": 12.000000000000002,
+      "final": 12.000000000000002,
+      "min": 12.000000000000002,
+      "max": 12.000000000000002
+    },
+    {
+      "name": "shaft.flange_b.phi",
+      "is_state": false,
+      "initial": 480.00000000000006,
+      "final": 480.00000000000006,
+      "min": 480.00000000000006,
+      "max": 480.00000000000006
+    },
+    {
+      "name": "shaft.flange_b.tau",
+      "is_state": false,
+      "initial": -12.000000000000002,
+      "final": -12.000000000000002,
+      "min": -12.000000000000002,
+      "max": -12.000000000000002
+    },
+    {
+      "name": "r2t.flangeR.phi",
+      "is_state": false,
+      "initial": 480.00000000000006,
+      "final": 480.00000000000006,
+      "min": 480.00000000000006,
+      "max": 480.00000000000006
+    },
+    {
+      "name": "r2t.flangeR.tau",
+      "is_state": false,
+      "initial": 12.000000000000002,
+      "final": 12.000000000000002,
+      "min": 12.000000000000002,
+      "max": 12.000000000000002
+    },
+    {
+      "name": "r2t.flangeT.s",
+      "is_state": false,
+      "initial": 2.4000000000000004,
+      "final": 2.4000000000000004,
+      "min": 2.4000000000000004,
+      "max": 2.4000000000000004
+    },
+    {
+      "name": "r2t.flangeT.f",
+      "is_state": false,
+      "initial": -2400.0000000000005,
+      "final": -2400.0000000000005,
+      "min": -2400.0000000000005,
+      "max": -2400.0000000000005
+    },
+    {
+      "name": "r2t.internalSupportR.tau",
+      "is_state": false,
+      "initial": -12.000000000000002,
+      "final": -12.000000000000002,
+      "min": -12.000000000000002,
+      "max": -12.000000000000002
+    },
+    {
+      "name": "r2t.internalSupportR.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "r2t.internalSupportR.flange.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "r2t.internalSupportR.flange.tau",
+      "is_state": false,
+      "initial": -12.000000000000002,
+      "final": -12.000000000000002,
+      "min": -12.000000000000002,
+      "max": -12.000000000000002
+    },
+    {
+      "name": "r2t.internalSupportT.f",
+      "is_state": false,
+      "initial": 2400.0000000000005,
+      "final": 2400.0000000000005,
+      "min": 2400.0000000000005,
+      "max": 2400.0000000000005
+    },
+    {
+      "name": "r2t.internalSupportT.s",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "r2t.internalSupportT.flange.s",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "r2t.internalSupportT.flange.f",
+      "is_state": false,
+      "initial": 2400.0000000000005,
+      "final": 2400.0000000000005,
+      "min": 2400.0000000000005,
+      "max": 2400.0000000000005
+    },
+    {
+      "name": "r2t.fixedR.flange.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "r2t.fixedR.flange.tau",
+      "is_state": false,
+      "initial": 12.000000000000002,
+      "final": 12.000000000000002,
+      "min": 12.000000000000002,
+      "max": 12.000000000000002
+    },
+    {
+      "name": "r2t.fixedT.flange.s",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "r2t.fixedT.flange.f",
+      "is_state": false,
+      "initial": -2400.0000000000005,
+      "final": -2400.0000000000005,
+      "min": -2400.0000000000005,
+      "max": -2400.0000000000005
+    },
+    {
+      "name": "load.flange_a.s",
+      "is_state": false,
+      "initial": 2.4000000000000004,
+      "final": 2.4000000000000004,
+      "min": 2.4000000000000004,
+      "max": 2.4000000000000004
+    },
+    {
+      "name": "load.flange_a.f",
+      "is_state": false,
+      "initial": 2400.0000000000005,
+      "final": 2400.0000000000005,
+      "min": 2400.0000000000005,
+      "max": 2400.0000000000005
+    },
+    {
+      "name": "load.flange_b.s",
+      "is_state": false,
+      "initial": 2.4000000000000004,
+      "final": 2.4000000000000004,
+      "min": 2.4000000000000004,
+      "max": 2.4000000000000004
+    },
+    {
+      "name": "load.flange_b.f",
+      "is_state": false,
+      "initial": -2400.0000000000005,
+      "final": -2400.0000000000005,
+      "min": -2400.0000000000005,
+      "max": -2400.0000000000005
+    },
+    {
+      "name": "mount.flange_a.s",
+      "is_state": false,
+      "initial": 2.4000000000000004,
+      "final": 2.4000000000000004,
+      "min": 2.4000000000000004,
+      "max": 2.4000000000000004
+    },
+    {
+      "name": "mount.flange_a.f",
+      "is_state": false,
+      "initial": 2400.0000000000005,
+      "final": 2400.0000000000005,
+      "min": 2400.0000000000005,
+      "max": 2400.0000000000005
+    },
+    {
+      "name": "mount.flange_b.s",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "mount.flange_b.f",
+      "is_state": false,
+      "initial": -2400.0000000000005,
+      "final": -2400.0000000000005,
+      "min": -2400.0000000000005,
+      "max": -2400.0000000000005
+    },
+    {
+      "name": "wall.flange.s",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "wall.flange.f",
+      "is_state": false,
+      "initial": 2400.0000000000005,
+      "final": 2400.0000000000005,
+      "min": 2400.0000000000005,
+      "max": 2400.0000000000005
+    }
+  ]
+}
