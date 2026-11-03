@@ -5226,3 +5226,57 @@ right-drag boxed zoom by default and HRW disables none of them. **Building a zoo
 have been polish, and would not have fixed the problem**, which the measurement showed to be a
 shared axis. The report named a symptom; the fix belonged elsewhere. That is `CLAUDE.md`'s
 *mine the report for its constraining noun* rule paying for itself.
+
+## 2026-11-02 — the v0.10.0 rebase separates a PORT from a RE-MODEL, and only ports reach milestone 1
+
+**Doug's ruling, twice: Option B, then "apply Option B logic uniformly."**
+
+The rebase began as a mechanical job — `Dae`'s fields went private on 0.10.0, so HRW's reads move
+inside `inspect(|view| …)`. Triage counted error codes and sized it accordingly. **That reading was
+wrong, and the reason matters: 0.10.0 did not merely hide the DAE's fields, it re-shaped most
+stages' data models.** Three found in one session:
+
+| stage | 0.9.20 | 0.10.0 |
+|---|---|---|
+| equations | `Equation { lhs: Option<ComponentReference>, rhs }`, a tree | one residual `ExprId` into an arena |
+| index reduction | a ten-step dummy-derivative funnel over `&mut Dae` | two lanes, with a candidate / attempt / selection protocol |
+| events | a condition was an equation | a `ConditionOperation` algebra: `Initial`, `Always`, `Relation`, `Discrete`, `Clock`, `Not`, `And`, `Or`, `AnyRise` |
+| initialization | `ic_plan::IcBlock` | `initial_pins::InitialValuePin`, `PinTerm` |
+
+**So the work splits in two, and the split is the decision.**
+
+- **A PORT is truth-preserving** — the same claim, read through a new accessor.
+  `view.continuous_equation_count()` for `dae.continuous.equations.len()` is a port.
+- **A RE-MODEL is a different model of the same phenomenon.** HRW's index-reduction panes speak the
+  funnel's vocabulary; nothing in them survives contact with two lanes and an attempt protocol.
+
+**Ports reach milestone 1. Re-models are disabled, labelled, and tagged `unbuilt:`, then landed one
+at a time afterwards.** Milestone 1 stays exactly what Doug defined it as — *"it builds and the full
+gate is green"* — rather than quietly growing to include three redesigns.
+
+**The reason is not scheduling, it is that a re-model cannot be done blind.** Nothing compiles during
+the rebase, so a surface re-modelled now gets no reader until every other file is finished. These
+panes are lab- and lecture-facing: a vocabulary chosen from reading `dae_transform/observation.rs`
+and never watched running is exactly how a pane ends up **correct-looking and wrong**, which
+Decision 7 forbids and which no gate detects. Disabled-and-labelled loses nothing true; a hasty
+re-model risks teaching something false.
+
+**A disabled surface must recruit its own replacement.** Each carries an `unbuilt:` tag naming the
+symbol that will resolve when it is built, so `doc_citations::claims_of_absence_are_still_true`
+fails once the work lands and the claim of absence stops being true. That is the mechanism that
+keeps "temporarily disabled" from becoming permanent silently.
+
+### Two things this ruling is NOT
+
+**It is not a licence to approximate.** The ports are exact or they do not land. Where HRW could not
+observe something at all the answer stayed what `CLAUDE.md` says it is — instrument Rumoca — and the
+one place that looked necessary turned out not to be: `DaeView` hands out an accessor *and* an
+ordered walk for every events arena (`conditions()`, `relations()`, `roots()`, `time_events()`,
+`event_actions()`, …), each tagged with its MLS section. **0.10.0 is more observable than 0.9.20,
+not less.**
+
+**It is not a judgement that the re-models are losses.** Events is the clear case: 0.10.0's
+condition algebra carries a distinction HRW never showed — MLS §8.3.5.1 activates on
+`edge(b1) or … or edge(bn)`, which is not the edge of the disjunction, so `when {u, not u}` fires at
+every switch of `u` while `u or not u` is a tautology that never rises. That is lecture material,
+and it only exists to be re-modelled onto because upstream made the semantics explicit.
