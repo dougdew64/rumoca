@@ -230,16 +230,20 @@ const LIVE_DEBUG_ACK_TIMEOUT: std::time::Duration = std::time::Duration::from_se
 /// Default specimen directory: `specimens/` next to this crate's manifest.
 pub(crate) const DEFAULT_SPECIMEN_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/specimens");
 
-/// Default library source roots: the staged reference MSL 4.1.0, one path per
-/// line. Editable at runtime.
-const DEFAULT_LIBRARIES: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/vendor/msl/Modelica 4.1.0\n",
-    env!("CARGO_MANIFEST_DIR"),
-    "/vendor/msl/ModelicaServices 4.1.0\n",
-    env!("CARGO_MANIFEST_DIR"),
-    "/vendor/msl/Complex.mo",
-);
+/// Default library source roots, one path per line. Editable at runtime.
+///
+/// **One root, the directory holding all three, and v0.10.0 requires it.** This
+/// listed `Modelica 4.1.0`, `ModelicaServices 4.1.0` and `Complex.mo` separately
+/// until 2026-11-03; on 0.10.0 that shape fails with an unresolved reference to
+/// `Integer_inf`, because the three are resolved against one another and splitting
+/// them hides `ModelicaServices` from `Modelica`.
+///
+/// **This was the last and worst of eight copies of that list** — the others were
+/// in tests and examples, where a wrong value fails loudly. This one is what the
+/// *running app* starts with, so a stale value here means Doug's HRW cannot resolve
+/// the MSL at all, with nothing failing to say so.
+/// `no_second_copy_of_the_msl_root_list` now keeps the count at one.
+const DEFAULT_LIBRARIES: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
 
 // ---- Layout constants ----
 // Named fractions for panel sizes and splits, replacing inline magic numbers.

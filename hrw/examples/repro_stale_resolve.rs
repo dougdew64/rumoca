@@ -195,12 +195,11 @@ fn run_at_msl_scale(strict: bool) -> bool {
     use rumoca_compile::compile::SourceRootKind;
     use rumoca_compile::source_roots::{parse_source_root_with_cache, source_root_source_set_key};
 
-    let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
-    let roots = [
-        format!("{base}/Modelica 4.1.0"),
-        format!("{base}/ModelicaServices 4.1.0"),
-        format!("{base}/Complex.mo"),
-    ];
+    // One root, the directory holding all three — the v0.10.0 shape. See
+    // `hrw::msl_roots`, which this deliberately mirrors rather than calls: this
+    // example reproduces a *session-level* behaviour and builds its roots as
+    // strings for `parse_source_root_with_cache`.
+    let roots = [hrw::msl_roots()[0].to_string_lossy().into_owned()];
 
     let mut session = Session::new(SessionConfig::default());
     for root in &roots {
