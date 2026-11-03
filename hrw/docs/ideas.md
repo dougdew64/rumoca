@@ -9,6 +9,29 @@ are never reused**, because 55 references outside this file depend on them resol
 **Read when:** planning new work, or before proposing something that may already be here with
 a decision attached. **Candidates, not commitments.**
 
+> **FIVE ENTRIES NAME A FILE v0.10.0 REMOVED, AND THAT IS A FACT ABOUT THE ENTRY, NOT A TYPO.**
+> Each of these proposals says *where* to instrument, and the site is gone:
+>
+> <!-- historical: crates/rumoca-eval-solve/src/jacobian.rs -->
+> <!-- historical: rumoca-eval-solve/src/jacobian.rs -->
+> <!-- historical: rumoca-eval-solve/src/sim_driver.rs -->
+> <!-- historical: crates/rumoca-phase-dae/src/pre_lowering.rs -->
+> <!-- historical: rumoca-phase-dae/src/pre_lowering.rs -->
+> <!-- historical: rumoca-phase-solve/src/dummy_derivative.rs -->
+> <!-- historical: rumoca-phase-structural/src/dae_prepare/symbolic.rs -->
+>
+> | names | the entry is about | what it needs first |
+> |---|---|---|
+> | `rumoca-eval-solve/src/jacobian.rs` | a `jacobian` CLI output with named rows/columns | re-locate exact-AD Jacobian assembly; `rumoca-exec-cranelift/src/emit/projection_jacobian.rs` is the candidate |
+> | `rumoca-eval-solve/src/sim_driver.rs` | per-solver-step frames for a live simulation animation | re-site the step loop; this is the solver-diagnostics `unbuilt:` item |
+> | `rumoca-phase-dae/src/pre_lowering.rs` | animating `pre()` lowering's four beats | `rumoca-phase-dae` collapsed into `construction/`; find where `pre()` is lowered now |
+> | `rumoca-phase-solve/src/dummy_derivative.rs` | a capability-map row claiming it is **built** | the name appears nowhere in the tree; re-measure before trusting the row |
+> | `rumoca-phase-structural/src/dae_prepare/symbolic.rs` | a capability-map row, symbolic rewriting **partly built** | `dae_transform/differentiation/` is the successor family; re-read before restating |
+>
+> **The capability map's last two rows are the ones to distrust most**, because a row saying
+> "built" is load-bearing for deciding what to work on, and both were measured against a module
+> that no longer exists. **Do not promote an entry from this list without re-siting it first.**
+
 Captured ideas not yet scheduled. **These are candidates, not commitments** — no
 arc depends on them, and settled decisions live in [`DECISIONS.md`](../DECISIONS.md),
 current work in [`CLAUDE.md`](../CLAUDE.md). Promote an item here into an arc /

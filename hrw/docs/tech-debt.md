@@ -402,7 +402,58 @@ Rumoca differs from hand-worked Euler and should have listed four.
 volunteered details are not colour. Here one clause eliminated a hypothesis and pointed at the
 answer, and the cost of half-using it was two wrong fixes.
 
-<!-- ledger-through: 2026-09-25 -->
+### 09-25 → 11-03, the v0.10.0 rebase — **the ratio inverts when the subject is documents**
+
+**Appended 2026-11-03.** One long arc rather than a run of days, and it splits cleanly by *what
+was wrong*. Against code, the checkers did their job. Against **prose**, almost nothing was caught
+by a test, because what broke was a claim's truth rather than its form.
+
+**Caught by the toolchain or by a test (code):**
+
+| what | what caught it |
+|---|---|
+| `worker.rs` produced `tearing_passes()` where every consumer expects block segments | my own `a_real_algebraic_loop_is_traced_end_to_end` |
+| a test written against `Underdetermined`, which balance checking rejects before structural analysis ever runs — **it would have passed vacuously forever** | probing the early-return paths with deliberate panics |
+| seven observation tests that would all still pass with **every `emit` deleted** | mutation testing, three mutations, each failing exactly one test |
+| `inspect_sort` published with no caller inside `crates/` | `public_api_surface` |
+| a helper inserted between `#[test]` and its `fn` | a `Termination` trait error — the documented anchor hazard, again |
+| `ClaimedPreference` / `PreferenceUnavailable` emitted through a variable, so the generated reference silently omitted both | the generator's own output, read back |
+| the Station 2 rewrite dropping the live lab from five cited source lines to three | `every_line_the_live_lab_cites_is_a_real_anchor`'s non-vacuity guard |
+| `"walked"` in brand-new lab prose | `no_lab_uses_retired_vocabulary`, within a minute of writing it |
+| a **second opening summary** in `derivative_evidence`, whose live summary still named a parameter the 0.10.0 port had removed | `no_doc_block_gains_a_second_summary` |
+
+**Caught by reading, because nothing could check it (documents):**
+
+| what | why no check existed |
+|---|---|
+| `matching-live.md` Station 2 asserting *"the main thread's 8 MB stack"* and *"a 500,000-node chain is a real MSL shape"* — **both invented**; the source names no size and no length, and the figure is 1 MB on Doug's platform | nothing compares a number in prose against a source that carries no number |
+| `debug-set-sites.md`'s entire breakpoint table naming `emit_matching_frame` and `TracedTarjanState::record` — **the duplicate traced implementations this rebase deleted** | the paths resolved; the function names were never checked |
+| `architecture.md` explaining *why HRW replicates the index-reduction funnel*, work HRW no longer does at all | a section can describe a removed capability and stay well-formed |
+| `flatten.md`'s thesis — *"only one of the two connection graphs is confined to this phase"* — **inverted** by the overconstrained check moving into Flatten | the claim is about where a check runs, which no citation encodes |
+| `rust-for-cpp-readers.md` reporting `unsafe` in three `dae_prepare/` files; the read path now has **none at all**, across nine crates | a stale measurement reads exactly like a current one |
+| CJK characters written into the doc comment of the very test that forbids them | caught by running that test — the one case where the mechanism did reach prose |
+
+**And one gap in the instrument itself, found by reading its output rather than by its failing:**
+`every_documented_source_path_exists` recognised `crates/<crate>/src/…` but **not** the shorter
+`<crate>/src/…`, which these documents use just as often. **Eight dead paths were invisible**,
+including `dae_construction.md`'s entire module table. Widening the extractor took the run from 11
+dead citations to 49. *Who caught it: reading, which is the trigger — the second spelling lived
+somewhere nothing resolved.*
+
+**The entry worth keeping, though, is Doug's, and it was not a bug report.** Told that whether a
+rewritten lab station *reads* was his to judge, he asked: *"So am I supposed to run HRW now to
+verify that a lab station works?"* The answer was no twice over — it is a live-debugger lab on a
+tree with failing tests, and the sentence was the lab-progress pestering `CLAUDE.md` forbids,
+wearing humility as a disguise. **Checking why it was wrong is what found the two invented numbers
+above.** A push-back on *process* located a defect in *content*, which no amount of running HRW
+would have surfaced.
+
+**So the ratio, honestly stated:** nine code defects caught by mechanisms, six prose defects caught
+only by someone reading, and one checker gap that hid eight more. **The instrument is in good
+shape where it points at code and is nearly blind where it points at claims** — which is the same
+boundary as *effectiveness is Doug's*, reached from the maintenance side.
+
+<!-- ledger-through: 2026-11-03 -->
 
 ### 08-17 → 08-22, backfilled 2026-08-23 — and the ledger had gone dark
 
@@ -2312,7 +2363,30 @@ reported that the lab *felt thin*. The wrong number was three steps down from th
 found by aesthetic dissatisfaction is one nothing else was looking for**, which is exactly the
 signal this file says should fire a sweep.
 
-## The Index Reduction tab is a re-run, and nothing on screen says so
+## ~~The Index Reduction tab is a re-run, and nothing on screen says so~~
+
+**RESOLVED 2026-11-03 by the v0.10.0 rebase, and by removal rather than by either planned fix.**
+HRW's mirror funnel is gone: `index_reduce_for_structural_analysis` no longer exists, no stage
+carries a reduced DAE, and the pane is listed in `playback::DISABLED_VIEWS` behind a placeholder
+that says it has nothing to show. **Nothing re-executes the pass and nothing claims to observe
+it**, so there is no longer a label to owe.
+
+**The reason is not that fix 1 was chosen: v0.10.0 deleted the steps.** `dae_prepare/` became
+`dae_transform/` and the functions HRW called by hand are absent under any name, so the mirror
+could not have survived. **The ordering risk the entry was really about is therefore gone at the
+root** — there is no HRW-maintained order left to drift.
+
+**Fix 2 is still the live ask, and it got closer.** Upstream grew a `ReductionObserver` /
+`ReductionEvent` seam in `crates/rumoca-phase-structural/src/dae_transform/observation.rs` — the
+observation hook this entry asked for — but both are `pub(super)`. **Widening those two is now a
+much smaller request than the old one**: it exposes what the pass reports about itself rather
+than a way to drive it step by step. The re-model of the pane waits on it and is tracked as the
+reduction `unbuilt:` row.
+
+*The original entry follows, unedited — including the doc comment it quotes, whose path named
+0.9.20.*
+
+<!-- historical: rumoca-sim/src/solve_lowering/structural_lowering.rs -->
 
 **Logged 2026-08-17**, found while investigating the above.
 
