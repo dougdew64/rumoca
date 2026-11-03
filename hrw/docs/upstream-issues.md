@@ -23,6 +23,11 @@ the Rumoca entries changed.
 | **Rumoca** | [CogniPilot/rumoca](https://github.com/CogniPilot/rumoca) | `0.9.20`, `hrw` branch cut from upstream `8cdc7419` |
 | **egui** | [emilk/egui](https://github.com/emilk/egui) | `0.35.0`, as pinned by `hrw/Cargo.toml` |
 
+**Entries added from 2026-11-03 carry their own baseline, because the rebase moved it.** The
+`W*` entries were found on `v0.10.0` (branch `hrw-rebase-0.10.0`) rather than `0.9.20`, so the
+Rumoca row above no longer describes the whole file. Check an entry's own stated baseline
+before verifying it against upstream.
+
 Each entry is written to be **filable with a copy-paste plus a sentence** — reproduction,
 expected vs actual, evidence, and where the suspect code lives — so nothing has to be
 re-investigated months later. That is the whole point of the file: an investigation
@@ -1733,6 +1738,143 @@ It means Rumoca's wall on constrained mechanics is **not only** the missing Pant
 implementation. A user who does the index reduction by hand — the standard workaround, and the
 way the field worked from 1972 until 1988 — still cannot simulate. See
 [`specimen-ladder.md`](specimen-ladder.md) rung 5.
+
+---
+
+## W1. **Rumoca** — `.cargo/config.toml` pins `PYO3_PYTHON` to a Linux absolute path, so `rumoca-bind-python` cannot build off a fresh clone anywhere else
+
+**Baseline:** `v0.10.0`, found on the `hrw-rebase-0.10.0` branch, 2026-11-03.
+**Severity:** low, but it is a first-five-minutes bug — it breaks a `cargo build -p` that a
+new contributor would plausibly try, on a workspace member, with an error that names a path
+nobody set.
+
+**Found:** triaging workspace test failures during the 0.9.20 → v0.10.0 rebase.
+
+### Reproduction
+
+On Windows or macOS (anything without `/usr/bin/python3`), from a clean clone:
+
+```
+cargo build -p rumoca-bind-python
+```
+
+### Actual
+
+```
+error: failed to run custom build command for `pyo3-build-config v0.22.6`
+  --- stderr
+  error: failed to run the Python interpreter at /usr/bin/python3:
+  The system cannot find the path specified. (os error 3)
+```
+
+The path comes from the repository's own `.cargo/config.toml`:
+
+```toml
+[env]
+# Use python3 for pyo3 bindings (some systems don't have /usr/bin/python)
+PYO3_PYTHON = "/usr/bin/python3"
+```
+
+A working Python 3.13 on `PATH` makes no difference: Cargo's `[env]` supplies the variable
+whenever the environment does not already set it, so the hardcoded path wins over
+`pyo3-build-config`'s own interpreter discovery.
+
+### Expected
+
+`pyo3-build-config` finds an interpreter on `PATH` by itself. Removing the two lines is
+very likely sufficient on Linux and macOS; see the caveat below before doing only that.
+
+### Evidence that the value is already known to be wrong
+
+**Upstream CI overrides this exact variable rather than relying on it** —
+`.github/workflows/ci.yml:2215`:
+
+```yaml
+export PYO3_PYTHON="$(command -v python)"
+```
+
+So the committed value is not what any green build actually uses. The comment above the
+setting ("some systems don't have `/usr/bin/python`") describes the problem the line was
+meant to fix while substituting a path that is equally absent elsewhere.
+
+### Workaround
+
+Setting the variable in the environment is enough, because Cargo's `[env]` does not force:
+
+```
+PYO3_PYTHON='C:\Python313\python.exe' cargo build -p rumoca-bind-python   # succeeds
+```
+
+### One caveat worth including in the report, because deleting the line is not a complete fix
+
+On a default Windows install, `python3` on `PATH` is the **Microsoft Store App Execution
+Alias**, which is not an interpreter:
+
+```
+$ python3 --version
+Python was not found; run without arguments to install from the Microsoft Store, or
+disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
+```
+
+`pyo3-build-config` tries `python3` before `python`, so simply removing the pin can still
+fail on Windows — for a different reason. A fix that works on all three platforms probably
+has to prefer `python` on Windows, or let CI's `command -v` logic be the committed
+behaviour. **This is reasoning about pyo3's probe order, not something verified by patching
+it — mark it as unverified if filed.**
+
+### Not a gate blocker, which is why it went unnoticed
+
+`crates/xtask/src/test_cmd.rs`'s `WORKSPACE_TEST_EXCLUDES` excludes `rumoca-bind-python`
+from `cargo xtask verify workspace`, with the comment that the binding crates "need special
+targets (wasm32 / a Python interpreter) and are covered by the dedicated playground/python
+jobs". So the workspace gate never builds this crate, and the dedicated job sets
+`PYO3_PYTHON` itself.
+
+---
+
+## W2. **Rumoca** — a `rumoca-bind-wasm` test compares a native path against a `/`-separated literal, so it fails on Windows
+
+**Baseline:** `v0.10.0`, found on the `hrw-rebase-0.10.0` branch, 2026-11-03.
+**Severity:** low. A test-only defect, but it makes `cargo test -p rumoca-bind-wasm` red on
+Windows for a reason unrelated to anything the test is about.
+
+### Reproduction
+
+On Windows:
+
+```
+cargo test -p rumoca-bind-wasm default_scenario_config_creates_minimal_scenario_toml
+```
+
+### Actual
+
+```
+assertion `left == right` failed
+  left: String("models\\rumoca-scenario.rover.toml")
+ right: "models/rumoca-scenario.rover.toml"
+```
+
+`crates/rumoca-bind-wasm/src/tests/scenario_config_tests.rs:161`.
+
+### Expected
+
+The assertion passes on every platform. The value under test is a path the code builds with
+the platform separator; the expectation is written with a forward slash.
+
+### Suspected fix — unverified
+
+Compare path components, or normalise separators before comparing, rather than asserting on
+a rendered string. **Which of those matches the intent depends on whether the emitted
+`scenario.toml` is supposed to contain a portable `/` path or a native one — that is a
+question for a maintainer, and the answer changes whether the test or the code is wrong.**
+If the TOML is consumed by a WASM/browser target, the forward slash may be the correct
+*output* and the production code the actual bug; this entry deliberately does not guess.
+
+### Also not a gate blocker
+
+As with W1, `WORKSPACE_TEST_EXCLUDES` keeps `rumoca-bind-wasm` out of
+`cargo xtask verify workspace`, so neither of these reaches the workspace lane. The second
+failing test in that file on Windows was not investigated.
 
 ---
 
