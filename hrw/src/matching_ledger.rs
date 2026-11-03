@@ -48,8 +48,12 @@ const MATCHING_SOURCE: &str = include_str!("../../crates/rumoca-phase-structural
 
 /// The anchor's source, for the three lines a live lab tells the reader to
 /// stop at.
-const LIVE_TRACE_SOURCE: &str =
-    include_str!("../../crates/rumoca-phase-structural/src/live_trace.rs");
+///
+/// A sibling file since the v0.10.0 rebase, rather than one in the structural
+/// crate — see `live_trace.rs`'s header for why it moved. Still `include_str!`
+/// for the same reason as `MATCHING_SOURCE`: the table describes the source
+/// this binary was compiled against.
+const LIVE_TRACE_SOURCE: &str = include_str!("live_trace.rs");
 
 /// The lab whose line citations are checked against [`anchors`].
 pub const LIVE_LAB_PATH: &str = "docs/fixture-labs/matching-live.md";

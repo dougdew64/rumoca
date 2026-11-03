@@ -20,7 +20,7 @@ use std::thread;
 
 use eframe::egui;
 
-use rumoca_phase_structural::LiveTrace;
+use crate::live_trace::LiveTrace;
 use rumoca_phase_structural::matching::maximum_matching_with_trace;
 use rumoca_phase_structural::tarjan::{TarjanFrame, TarjanStep, tarjan_scc_with_trace};
 
