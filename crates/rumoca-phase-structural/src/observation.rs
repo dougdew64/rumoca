@@ -202,6 +202,20 @@ impl From<TarjanStep<'_>> for TarjanStepRecord {
 /// reason, not just the outcome.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TearingStep {
+    /// A coupled BLT block is about to be considered for tearing.
+    ///
+    /// **Emitted for every coupled block, including ones tearing never runs
+    /// on**, which is what makes it the block identity rather than a
+    /// convenience. A block whose SCC is not square is rejected before the
+    /// greedy search starts and so contributes no [`Self::PassStart`] at all;
+    /// a consumer inferring the block from the *position* of a pass group
+    /// would then attribute every later block's tears to the wrong rows.
+    /// `ordinal` counts coupled blocks in BLT order from zero.
+    BlockStart {
+        ordinal: usize,
+        equations: usize,
+        unknowns: usize,
+    },
     /// One pass begins, under `priority`, over a loop of `n` equations.
     PassStart { priority: TearPriorityKind, n: usize },
     /// An equation had exactly one unknown left, so it can be solved directly
@@ -399,13 +413,40 @@ impl StructuralTrace {
     /// [`TearingStep::PlanSelected`], which lands in the pass it follows.
     /// Compare that record's priority against each pass's `PassStart` to find
     /// the pass describing the plan the compiler adopted.
+    ///
+    /// Use [`Self::tearing_blocks`] instead when the steps have to be
+    /// attributed to a particular block's rows.
     pub fn tearing_passes(&self) -> Vec<Vec<&TearingRecord>> {
         group_by_start(
-            self.records.iter().filter_map(|record| match record {
-                StructuralRecord::Tearing(tearing) => Some(tearing),
-                StructuralRecord::Matching(_) | StructuralRecord::Tarjan(_) => None,
-            }),
+            self.tearing(),
             |record| matches!(record.step, TearingStep::PassStart { .. }),
+        )
+    }
+
+    /// Every tearing step, in order.
+    pub fn tearing(&self) -> impl Iterator<Item = &TearingRecord> {
+        self.records.iter().filter_map(|record| match record {
+            StructuralRecord::Tearing(tearing) => Some(tearing),
+            StructuralRecord::Matching(_) | StructuralRecord::Tarjan(_) => None,
+        })
+    }
+
+    /// Tearing steps grouped by coupled block, split on
+    /// [`TearingStep::BlockStart`].
+    ///
+    /// **This is the grouping a consumer needs to draw tears on a block's own
+    /// rows**, because the block identity is stated rather than inferred from
+    /// position. A coupled block whose SCC is not square is rejected before
+    /// the greedy search starts, so it contributes a `BlockStart` and no
+    /// passes at all — positional grouping would hand its successor's tears to
+    /// it and shift every later block by one.
+    ///
+    /// Each group's opening `BlockStart` carries the `ordinal` to match
+    /// against the coupled blocks of the structural report, in BLT order.
+    pub fn tearing_blocks(&self) -> Vec<Vec<&TearingRecord>> {
+        group_by_start(
+            self.tearing(),
+            |record| matches!(record.step, TearingStep::BlockStart { .. }),
         )
     }
 }
@@ -640,6 +681,55 @@ mod tests {
             passes[1].len(),
             3,
             "PlanSelected lands in the pass it follows"
+        );
+    }
+
+    /// **A coupled block that is never torn must still occupy its own
+    /// group.** `tear_scc` rejects a non-square SCC before the greedy search
+    /// starts, so such a block contributes a `BlockStart` and no passes. If
+    /// grouping lost it, every later block's tears would shift onto the wrong
+    /// rows — which is the whole reason `BlockStart` exists.
+    #[test]
+    fn a_block_with_no_passes_keeps_its_own_group() {
+        let trace = StructuralTrace {
+            records: vec![
+                tearing(TearingStep::BlockStart {
+                    ordinal: 0,
+                    equations: 3,
+                    unknowns: 2,
+                }),
+                // Not square: rejected, no pass ran.
+                tearing(TearingStep::BlockStart {
+                    ordinal: 1,
+                    equations: 2,
+                    unknowns: 2,
+                }),
+                tearing(TearingStep::PassStart {
+                    priority: TearPriorityKind::CausalUnlocks,
+                    n: 2,
+                }),
+                tearing(TearingStep::Complete {
+                    tears: 1,
+                    residuals: 1,
+                }),
+            ],
+        };
+        let blocks = trace.tearing_blocks();
+        assert_eq!(blocks.len(), 2, "both coupled blocks must be represented");
+        assert_eq!(
+            blocks[0].len(),
+            1,
+            "the untorn block keeps its own group rather than vanishing"
+        );
+        assert_eq!(blocks[1].len(), 3, "the torn block keeps all of its steps");
+        // And the ordinal, not the position, is what a consumer matches on.
+        assert_eq!(
+            blocks[1].first().map(|record| &record.step),
+            Some(&TearingStep::BlockStart {
+                ordinal: 1,
+                equations: 2,
+                unknowns: 2
+            })
         );
     }
 
