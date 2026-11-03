@@ -106,6 +106,31 @@ mod tests {
         matches!(c, ' ' | '\n' | '\t' | '`' | '(' | '[' | '*' | '"')
     }
 
+    /// `prefix` is `<crate>/` for a crate that really exists in this workspace.
+    ///
+    /// **This form was invisible to the extractor until 2026-11-03, and that is how
+    /// eight dead paths survived the v0.10.0 rebase unreported.** The documents write
+    /// a path both ways — `crates/rumoca-phase-structural/src/matching.rs` and the
+    /// shorter `rumoca-phase-structural/src/matching.rs` — and only the first was
+    /// recognised, so `dae_construction.md`'s whole table of `dae_prepare/` files read
+    /// as prose. **Found by reading rather than by a check**, which is the
+    /// *who caught it* trigger: the second spelling lived somewhere nothing resolved.
+    ///
+    /// Membership is decided by the filesystem, never by the shape of the name, so a
+    /// renamed crate stops matching instead of being guessed at.
+    fn names_a_crate(prefix: &str) -> bool {
+        let Some(name) = prefix.strip_suffix('/') else {
+            return false;
+        };
+        // `..` would otherwise qualify: `crates/..` is a directory, so a relative
+        // link like `[app.rs](../src/app.rs)` read as a crate citation and was
+        // reported as a dead path. Those links are the markdown checker's job.
+        !name.is_empty()
+            && !name.contains('/')
+            && !name.starts_with('.')
+            && workspace_root().join("crates").join(name).is_dir()
+    }
+
     /// Pull Rust source citations out of a document.
     ///
     /// **Boundary-sensitive**, which is the whole difficulty. Without it `src/renderer.rs`
@@ -123,7 +148,8 @@ mod tests {
             let prefix = &text[start..idx];
             if !(prefix.is_empty()
                 || prefix == "hrw/"
-                || (prefix.starts_with("crates/") && prefix.ends_with('/')))
+                || (prefix.starts_with("crates/") && prefix.ends_with('/'))
+                || names_a_crate(prefix))
             {
                 continue; // `src/` is embedded in something longer
             }
@@ -156,6 +182,12 @@ mod tests {
         if cite.starts_with("crates/") || cite.starts_with("hrw/") {
             return root.join(cite).exists();
         }
+        // A `<crate>/src/...` citation is the same path with `crates/` left off.
+        if cite.split('/').next().is_some_and(|c| {
+            names_a_crate(&format!("{c}/")) && root.join("crates").join(cite).exists()
+        }) {
+            return true;
+        }
         let mut bases: Vec<PathBuf> = std::fs::read_dir(root.join("crates"))
             .map(|d| {
                 d.flatten()
@@ -166,6 +198,27 @@ mod tests {
             .unwrap_or_default();
         bases.push(PathBuf::from(env!("CARGO_MANIFEST_DIR")));
         bases.iter().any(|b| b.join(cite).exists())
+    }
+
+    /// The paths one document has tagged `<!-- historical: PATH -->`.
+    ///
+    /// **A reference document may legitimately cite a file that is gone**, because
+    /// `docs/compiler-phases/` describes how Rumoca worked and a version bump can
+    /// *rewrite* a pass rather than move it. The v0.10.0 rebase did exactly that:
+    /// `dae_prepare/` became `dae_transform/`, and six of the seven functions those
+    /// documents name do not exist anywhere in the new tree. **Repointing those
+    /// citations at the nearest new filename would have been the worst outcome** —
+    /// every path would resolve, the checker would go green, and the prose beside
+    /// each one would still describe an algorithm that is gone.
+    ///
+    /// So the tag says *this names 0.9.20*, and [`historical_citations_are_really_gone`]
+    /// fails if the path comes back. **Same inversion as `unbuilt:`**: the claim is
+    /// falsifiable in the direction it can rot.
+    fn historical_paths(text: &str, file: &str) -> std::collections::HashSet<String> {
+        tags_named(text, file, "historical")
+            .into_iter()
+            .map(|t| t.target)
+            .collect()
     }
 
     /// Every source file the documentation cites still exists.
@@ -179,7 +232,16 @@ mod tests {
 
         for doc in doc_files() {
             let text = std::fs::read_to_string(&doc).unwrap_or_default();
+            let name = doc
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("")
+                .to_owned();
+            let historical = historical_paths(&text, &name);
             for cite in citations(&text) {
+                if historical.contains(&cite) {
+                    continue; // tagged as naming a version that is gone
+                }
                 checked += 1;
                 if !resolves(&cite) {
                     broken.push(format!("{}: {cite}", doc.display()));
@@ -825,6 +887,7 @@ mod tests {
     ///
     /// ```markdown
     /// *Verified 2026-07-30 against `crates/rumoca-phase-structural/src/tearing.rs`.*
+    /// *Expired — verified against `crates/gone/src/old.rs`, which v0.10.0 removed.*
     /// *Inference — not checked against the source.*
     /// *Cellier & Kofman, CSM §9.3.*
     /// ```
@@ -847,6 +910,13 @@ mod tests {
             };
             let kind = if inner.starts_with("Verified") {
                 "verified"
+            } else if inner.starts_with("Expired") {
+                // A verification that HAPPENED and has stopped being evidence,
+                // because the file it was checked against is gone. Distinct from
+                // `Verified` on purpose: a reader must not treat it as current, and
+                // distinct from deleting the tag, because "this was checked once,
+                // against a version you can name" is worth more than silence.
+                "expired"
             } else if inner.starts_with("Inference") {
                 "inference"
             } else if inner.starts_with("Cellier")
@@ -879,9 +949,17 @@ mod tests {
     ///
     /// A `Verified` path is also checked by `every_documented_source_path_exists`, so a
     /// tag cannot outlive the thing it points at.
+    ///
+    /// **`Expired` is the same claim inverted, and it exists because of the v0.10.0
+    /// rebase.** When a pass is *rewritten* rather than moved, a verification that
+    /// really happened stops being evidence about the current tree — and the two wrong
+    /// answers are to leave the tag claiming `Verified` (a false trust claim) or to
+    /// delete it (losing that the passage was once checked, and against what). The tag
+    /// says which, and fails if the file returns.
     #[test]
     fn provenance_tags_are_well_formed() {
         let mut verified = 0usize;
+        let mut expired = 0usize;
         let mut inference = 0usize;
         let mut citation = 0usize;
         let mut tagged_docs = 0usize;
@@ -912,6 +990,27 @@ mod tests {
                             Some(_) => {}
                         }
                     }
+                    "expired" => {
+                        expired += 1;
+                        // Inverted on purpose: an `Expired` tag claims the file is
+                        // GONE, so it fails when the path comes back — at which point
+                        // the verification may be revivable and the passage needs a
+                        // reader either way.
+                        match path {
+                            Some(p) if resolves(&p) => problems.push(format!(
+                                "{}: Expired against {p}, which exists — either the \
+                                 file is back and the tag should be re-verified, or \
+                                 the tag names the wrong path",
+                                doc.display(),
+                            )),
+                            None => problems.push(format!(
+                                "{}: an Expired tag must name the file whose loss \
+                                 expired it, in backticks",
+                                doc.display(),
+                            )),
+                            Some(_) => {}
+                        }
+                    }
                     "inference" => inference += 1,
                     _ => citation += 1,
                 }
@@ -920,7 +1019,8 @@ mod tests {
 
         println!(
             "provenance: {tagged_docs}/{total_docs} docs tagged \
-             ({verified} verified, {citation} citations, {inference} inference)",
+             ({verified} verified, {expired} expired, {citation} citations, \
+             {inference} inference)",
         );
         assert!(
             problems.is_empty(),
@@ -941,6 +1041,10 @@ Some prose.
 
 ## Another
 
+*Expired — verified against `crates/rumoca-phase-structural/src/dae_prepare/mod.rs`.*
+
+## Another still
+
 *Inference — not checked against the source.*
 
 ## A third
@@ -952,8 +1056,8 @@ Some prose.
         let tags = provenance_tags(md);
         assert_eq!(
             tags.len(),
-            3,
-            "three tags, and the plain italics is not one: {tags:?}"
+            4,
+            "four tags, and the plain italics is not one: {tags:?}"
         );
         assert_eq!(tags[0].0, "verified");
         assert_eq!(
@@ -961,9 +1065,16 @@ Some prose.
             Some("crates/rumoca-phase-structural/src/tearing.rs"),
             "a Verified tag yields the path it names, so the citation checker can validate it",
         );
-        assert_eq!(tags[1].0, "inference");
-        assert_eq!(tags[1].1, None);
-        assert_eq!(tags[2].0, "citation");
+        assert_eq!(tags[1].0, "expired");
+        assert_eq!(
+            tags[1].1.as_deref(),
+            Some("crates/rumoca-phase-structural/src/dae_prepare/mod.rs"),
+            "an Expired tag yields its path too, so the inverted check can confirm it \
+             really is gone",
+        );
+        assert_eq!(tags[2].0, "inference");
+        assert_eq!(tags[2].1, None);
+        assert_eq!(tags[3].0, "citation");
     }
 
     /// A citation that does not exist is caught.
@@ -1116,6 +1227,32 @@ Some prose.
     /// Measured over every `.md` and `.rs` in `hrw/` before the check was written:
     /// **zero occurrences.** A checker that needs an exemption list on day one is a
     /// checker someone will switch off; this one does not.
+    ///
+    /// # Scope, narrowed on the v0.10.0 rebase — and it was the SCOPE that broke
+    ///
+    /// The rebase made this fail on sixteen hits in `rumoca-tool-lsp`: a two-character
+    /// CJK identifier (U+6E29 U+5EA6, "temperature") in completion, semantic-token and
+    /// helper tests. **That is upstream's deliberate test data** — Modelica permits
+    /// non-ASCII identifiers, and exercising one is the whole point of those tests.
+    /// The message below says "not something anyone typed", and for that code it is
+    /// false. **The rule was right and its reach was wrong.**
+    ///
+    /// **So the scan is HRW's tree only**: every `.md` under `hrw/docs`, the three
+    /// governing files, and every `.rs` under `hrw/src`.
+    ///
+    /// ## What this deliberately does NOT cover
+    ///
+    /// **The instrumentation Claude writes into `crates/rumoca-*` is not scanned.**
+    /// Comment-only scanning of those crates was tried first and does not work:
+    /// upstream writes the same identifier in the *comments* explaining its tests
+    /// (`semantic_tokens.rs`, `helpers.rs`), so there is no part of a Rumoca crate
+    /// where a foreign-script character is reliably a defect.
+    ///
+    /// Naming the instrumentation files instead would be an exemption list wearing
+    /// the opposite coat, and it would rot the first time one is renamed. What
+    /// covers that code instead: it is written in-session and read back, it is small
+    /// per commit, and `cargo clippy -p <crate>` runs on it. **Weaker than a check,
+    /// and stated rather than implied.**
     #[test]
     fn no_document_carries_a_foreign_script_character() {
         let mut bad: Vec<String> = Vec::new();
@@ -1130,8 +1267,16 @@ Some prose.
                 bad.push(format!("{}:{line}: U+{:04X} {c}", path.display(), c as u32));
             }
         }
+        // HRW's tree only — a Rumoca crate has no part where a foreign-script
+        // character is reliably a defect. See the doc comment above.
+        let hrw_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let mut hrw_rust = 0usize;
         for (path, text) in rust_source_texts() {
+            if !path.starts_with(&hrw_root) {
+                continue;
+            }
             scanned += 1;
+            hrw_rust += 1;
             for (line, c) in foreign_script_chars(text) {
                 bad.push(format!("{}:{line}: U+{:04X} {c}", path.display(), c as u32));
             }
@@ -1140,6 +1285,11 @@ Some prose.
         assert!(
             scanned > 100,
             "only {scanned} files scanned — the run is broken"
+        );
+        assert!(
+            hrw_rust > 20,
+            "only {hrw_rust} of HRW's own Rust files were scanned — narrowing this \
+             check to `hrw/` must not become narrowing it to nothing",
         );
         assert!(
             bad.is_empty(),
@@ -1645,6 +1795,18 @@ Some prose.
     /// first run reported the *documentation of the mechanism* as a defect. An
     /// example is not an assertion.
     fn unbuilt_tags(text: &str, file: &str) -> Vec<Unbuilt> {
+        tags_named(text, file, "unbuilt")
+    }
+
+    /// Every `<!-- KEYWORD: TARGET -->` tag in `text`, skipping fenced blocks.
+    ///
+    /// **Shared by `unbuilt:` and `historical:` because the two tags are the same
+    /// inversion aimed at different things** — one claims a symbol does not exist
+    /// yet, the other that a file no longer does, and both fail when the target
+    /// *resolves*. A second copy of this loop would have been a second place for
+    /// the fence rule to be forgotten.
+    fn tags_named(text: &str, file: &str, keyword: &str) -> Vec<Unbuilt> {
+        let open = format!("<!-- {keyword}:");
         let mut out = Vec::new();
         let mut in_fence = false;
         for (i, line) in text.lines().enumerate() {
@@ -1656,8 +1818,8 @@ Some prose.
                 continue;
             }
             let mut rest = line;
-            while let Some(at) = rest.find("<!-- unbuilt:") {
-                let after = &rest[at + "<!-- unbuilt:".len()..];
+            while let Some(at) = rest.find(&open) {
+                let after = &rest[at + open.len()..];
                 let Some(close) = after.find("-->") else {
                     break;
                 };
@@ -2073,6 +2235,96 @@ Some prose.
         );
     }
 
+    /// Every `<!-- historical: PATH -->` names a file that is really gone, and is
+    /// really cited by the document that exempts it.
+    ///
+    /// **Two ways the exemption can rot, and this fails on both.** The path can come
+    /// back — an upstream rebase restores a module, and prose describing the old one
+    /// silently becomes a current-sounding claim again. Or the citation can be fixed
+    /// while the tag stays, leaving a licence attached to nothing, which is how the
+    /// next stale path gets waved through.
+    ///
+    /// **The second half is the must-fire rule applied to an exemption**: a tag that
+    /// exempts nothing has to be a failure, because an unused one is indistinguishable
+    /// from a used one by reading the file.
+    #[test]
+    fn historical_citations_are_really_gone() {
+        let mut back: Vec<String> = Vec::new();
+        let mut unused: Vec<String> = Vec::new();
+        let mut tagged = 0usize;
+
+        for doc in doc_files() {
+            let text = std::fs::read_to_string(&doc).unwrap_or_default();
+            let name = doc
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("")
+                .to_owned();
+            let cited = citations(&text);
+            for tag in tags_named(&text, &name, "historical") {
+                tagged += 1;
+                if resolves(&tag.target) {
+                    back.push(format!("{}:{} {}", name, tag.line, tag.target));
+                } else if !cited.contains(&tag.target) {
+                    unused.push(format!("{}:{} {}", name, tag.line, tag.target));
+                }
+            }
+        }
+
+        assert!(
+            tagged > 0,
+            "no `historical:` tag was parsed at all — the extractor stopped matching \
+             rather than the documents stopping their historical citations, and every \
+             stale path would now be exempt silently",
+        );
+        assert!(
+            back.is_empty(),
+            "a path tagged as historical EXISTS again — the prose beside it describes \
+             the version that is gone, so it now reads as a claim about the current \
+             tree. Refresh the passage and drop the tag:\n  {}",
+            back.join("\n  "),
+        );
+        assert!(
+            unused.is_empty(),
+            "a `historical:` tag exempts a path its document does not cite — the \
+             citation was fixed and the licence left behind. Drop the tag:\n  {}",
+            unused.join("\n  "),
+        );
+        eprintln!("historical citations: {tagged} tag(s) verified still gone");
+    }
+
+    /// The `historical:` parser matches, and **both verdicts are reachable**.
+    ///
+    /// Without this, a parser that silently matched nothing would make
+    /// [`historical_citations_are_really_gone`] vacuous *and* turn
+    /// [`every_documented_source_path_exists`] back into the unexempted check —
+    /// which fails loudly, so only the first half is the real hazard.
+    #[test]
+    fn the_historical_tag_is_parsed_and_both_verdicts_fire() {
+        let md = "Gone in 0.10.0: `crates/rumoca-phase-structural/src/dae_prepare/mod.rs`\n\
+                  <!-- historical: crates/rumoca-phase-structural/src/dae_prepare/mod.rs -->\n\
+                  Nothing tagged on this line.\n\
+                  <!-- historical: crates/rumoca-phase-structural/src/matching.rs -->\n";
+        let tags = tags_named(md, "test.md", "historical");
+        assert_eq!(
+            tags.len(),
+            2,
+            "two tags, and the untagged line is not one: {:?}",
+            tags.iter().map(|t| &t.target).collect::<Vec<_>>()
+        );
+        assert_eq!(tags[0].line, 2);
+
+        assert!(
+            !resolves("crates/rumoca-phase-structural/src/dae_prepare/mod.rs"),
+            "`dae_prepare/` is gone on v0.10.0; if it is back, this mechanism is \
+             exempting a path that resolves",
+        );
+        assert!(
+            resolves("crates/rumoca-phase-structural/src/matching.rs"),
+            "a live path must read as present, or the check cannot tell the two apart",
+        );
+    }
+
     /// **A lint, not a test** — prints untagged claims of absence and never fails.
     ///
     /// The tagged check above catches what someone chose to tag; it cannot read
@@ -2243,6 +2495,32 @@ Some prose.
     ///
     /// **Lower it as those are covered; never raise it.** A new absence message with no
     /// test raises the count and fails here, which is the whole point.
+    ///
+    /// # The set CHANGED on the v0.10.0 rebase while the number barely moved
+    ///
+    /// *2026-11-03.* The count went 5 → 6, which looks like one new message and is
+    /// not. **Two left the uncovered set and three joined it.** `reduction_anim` and
+    /// `pre_lowering_anim` left because their panes are disabled pending a re-model
+    /// (`playback::DISABLED_VIEWS`), so their strings are no longer rendered at all.
+    /// `matching_anim`, and two in `tearing_anim`, joined.
+    ///
+    /// **A count moving by one while three of its members change is exactly the shape
+    /// this file keeps warning about** — a true number that answers the wrong
+    /// question. Had the composition not been read, the obvious action would have
+    /// been to raise the budget by one for "a new message", and the three real
+    /// changes would have gone unexamined.
+    ///
+    /// What examining them found: `matching_anim`'s *"No matching trace available."*
+    /// is **unreachable**, by the same argument C17 makes about the other three — and
+    /// that argument is now *checked* rather than asserted, by
+    /// `matching_anim::tests::the_no_trace_label_stays_unreachable`, which is what
+    /// brought the count back to 5. **The C17 reasoning was only ever prose; one
+    /// instance of it is now a test**, and the other three are candidates for the
+    /// same treatment.
+    ///
+    /// `tearing_anim`'s two are **not** unreachable and are genuinely uncovered —
+    /// logged in `docs/tech-debt.md` rather than budgeted here, because the budget is
+    /// already spent on the five above.
     #[test]
     fn every_absence_message_a_pane_shows_is_named_by_a_test() {
         /// 6 on 2026-08-24, the day this was built: three unreachable (C17) and two
@@ -3522,9 +3800,21 @@ Some prose.
                     checked += 1;
                     let actual = real_origins.get(origin.as_str()).copied().unwrap_or(0);
                     if actual.to_string() != *n {
+                        // **Say what the pane DOES produce.** A bare "has 0" reads as
+                        // a count that moved, when the usual cause is that the origin
+                        // vocabulary changed underneath — v0.10.0 replaced
+                        // `origin: String` with a typed `DaeGeneration`, and every
+                        // `equation from <component>` label in the labs went to 0 at
+                        // once. Without the alternatives in the message, fixing that
+                        // means hunting for the new spelling by hand.
+                        let available = real_origins
+                            .iter()
+                            .map(|(o, c)| format!("`{o}` x{c}"))
+                            .collect::<Vec<_>>()
+                            .join(", ");
                         bad.push(format!(
                             "{lab} ({specimen}): claims {n} rows with origin `{origin}`; \
-                             the pane has {actual}"
+                             the pane has {actual}. The pane's origins are: {available}"
                         ));
                     }
                 }
@@ -5856,6 +6146,22 @@ Some prose.
         );
     }
 
+    /// A residual with any `0 = ` prefix removed, so the two sides of the
+    /// comparison below are normalised the same way.
+    ///
+    /// **The normalisation used to be one-sided, and v0.10.0 exposed it.** The lab
+    /// side stripped `0 = ` from a fenced line while the trace side was stored
+    /// whole; that matched only because 0.9.20's `equation_text` was bare. v0.10.0
+    /// renders `0 = src.p.i + R.p.i`, so every residual quote in
+    /// `connect-expansion.md` reported as matching nothing — **fourteen of them,
+    /// all of which were correct.**
+    ///
+    /// A checker that normalises one side of an equality is a checker that can only
+    /// be right by luck about the other.
+    fn residual_body(s: &str) -> &str {
+        s.strip_prefix("0 = ").unwrap_or(s)
+    }
+
     /// Recursively harvest `equation` labels and `equation_text` residuals.
     fn collect_equation_strings(
         v: &serde_json::Value,
@@ -5871,7 +6177,7 @@ Some prose.
                                 labels.insert(s.to_owned());
                             }
                             "equation_text" => {
-                                residuals.insert(s.to_owned());
+                                residuals.insert(residual_body(s).to_owned());
                             }
                             _ => {}
                         }
@@ -6093,7 +6399,13 @@ mod tests_orphaned_docs {
             // block exists for. Ordinary prose in a prose-heavy module, which is the case
             // this test's own docs say to raise the number for rather than reword.
             ("answer_check.rs", 1),
-            ("app.rs", 9),
+            // 9 → 10 on 2026-11-03, on the v0.10.0 rebase. The new hit is at
+            // `app.rs:7839`, in the click-hook drain's doc: *"**\"Drain\" is the whole
+            // contract: a fired hook is consumed, not merely read.**"* — a bold
+            // second sentence of the summary, which the scanner cannot tell from a
+            // second summary. Triaged by the documented shortcut: no undocumented
+            // item in the file for an orphan to belong to.
+            ("app.rs", 10),
             // 4 -> 5 on 2026-09-22, with the reasoning this ratchet requires. The hit is the
             // closing paragraph of `a_copy_pushed_after_the_label_draws_is_lost` — *"`App` now
             // defers the push to the top of the next frame"* — which opens like a summary
@@ -6133,9 +6445,45 @@ mod tests_orphaned_docs {
             // there is no undocumented item for an orphan to belong to. Ordinary prose in a
             // prose-heavy module, which this test's own docs say to raise the number for rather
             // than reword.
-            ("doc_citations.rs", 7),
+            // 7 -> 8 on 2026-11-03, with the reasoning this ratchet requires. The new hit is
+            // at line 2506, the `# The set CHANGED on the v0.10.0 rebase while the number
+            // barely moved` section of `every_absence_message_a_pane_shows_is_named_by_a_test`
+            // — a `#` heading inside a doc block whose summary is several paragraphs above
+            // it, which is this file's ordinary style and reads to the scanner as a second
+            // opening summary.
+            //
+            // Triaged by the documented shortcut: the only items added in this commit are
+            // `historical_paths`, `names_a_crate` and three tests, and each carries its own
+            // summary, so there is no undocumented item for an orphan to belong to.
+            ("doc_citations.rs", 8),
+            // equation_sheet.rs stays at 1 **because the second hit was a real orphan
+            // and was fixed, not budgeted** — 2026-11-03, on the v0.10.0 rebase.
+            // `derivative_evidence`'s doc block had gained a SECOND summary line,
+            // *"Find the equation that differentiates `state`, if any."*, written
+            // mid-block when the function moved to a branded `dae::StateId`; the
+            // original summary two paragraphs above still said `var_name`. So the
+            // block opened twice and the live summary named a parameter that no
+            // longer existed. The first line was corrected and the duplicate removed.
+            // **This is the one hit in this run that the ratchet was built for**, and
+            // it is worth noting that the other four were ordinary prose: the ratchet
+            // earns its keep at roughly one in five.
             ("equation_sheet.rs", 1),
-            ("lib.rs", 2),
+            // 2 → 3 on 2026-11-03. The new hit is at `lib.rs:598`, in the doc block
+            // above the stepped-session frame budget: *"**A stepped session must give
+            // egui several frame periods, not one** (`docs/ideas.md` #73)"*, which
+            // opens like a summary because it states the rule the constant exists to
+            // enforce. Triaged by the documented shortcut — the file has no
+            // undocumented item for an orphan to belong to — and
+            // `no_item_loses_its_doc_comment` is green, which is the structural half.
+            ("lib.rs", 3),
+            // Added on 2026-11-03 at 1: `live_trace.rs` is **new to `hrw/src` on this
+            // rebase**, moved out of `rumoca-phase-structural` whose own header
+            // admitted no phase used it. Its one hit is `live_trace_breakpoint`'s
+            // *"## Why the body looks over-engineered for one store"* heading — a
+            // section inside a block whose summary is the line above it. The file
+            // arrived with the hit; the budget records where it started rather than
+            // pretending a moved file is new code.
+            ("live_trace.rs", 1),
             ("matching_anim.rs", 2),
             ("matching_ledger.rs", 1),
             ("model_list.rs", 1),
@@ -6179,8 +6527,37 @@ mod tests_orphaned_docs {
             // — which is this file's ordinary style and reads to the scanner as a second
             // opening summary. Ordinary prose, so the budget rises with the reasoning
             // rather than the prose being flattened to satisfy a counter.
-            ("worker.rs", 16),
-            ("worker/tests.rs", 5),
+            // 16 → 17 on 2026-11-03. The new hit is at `worker.rs:5516`, in the
+            // uninstrumented-phase list's doc: *"**Two different reasons for silence**,
+            // and they are not the same finding."* That paragraph was rewritten on
+            // this rebase because v0.10.0 changed which phases carry tracing calls, and
+            // it opens with the distinction the list exists to keep straight. Ordinary
+            // prose in the file this repository writes the most prose in; triaged by
+            // the documented shortcut.
+            // 17 -> 19 on 2026-11-03, both inside `parse_unbalanced`'s doc comment:
+            // the `# The suffix stopped being the end of the message on v0.10.0`
+            // heading, and the line after the fenced example of the new message.
+            // Two hits for one block because a fenced block's closing line followed
+            // by a blank `///` reads to the scanner like a fresh summary opening —
+            // the continuation-line shape this budget's earlier entries describe.
+            //
+            // Triaged by the documented shortcut: the items added in that commit are
+            // `diagnostic_source` and `model_resolve_errors`, and both carry their
+            // own summaries, so there is no undocumented item for an orphan to
+            // belong to.
+            ("worker.rs", 19),
+            // 5 -> 6 on 2026-11-03. The new hit is at `worker/tests.rs:6239`, the
+            // `# The failure this prevents` section of
+            // `the_tests_blocked_on_a_remodel_are_still_blocked` — a `#` heading
+            // inside a doc block whose summary is four paragraphs above it, which is
+            // this repository's ordinary style for a test that has to argue for its
+            // own existence.
+            //
+            // Triaged by the documented shortcut: the items added in this commit are
+            // the two re-model guards and the resolve-attribution test, and each
+            // carries its own summary, so there is no undocumented item for an
+            // orphan to belong to.
+            ("worker/tests.rs", 6),
         ];
 
         let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");
