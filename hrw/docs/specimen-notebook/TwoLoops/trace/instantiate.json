@@ -1,7 +1,8 @@
 {
   "components": {
-    "1": {
-      "instance_id": 1,
+    "2": {
+      "instance_id": 2,
+      "owner_class_id": 1,
       "component_ref": {
         "local": false,
         "span": {
@@ -17,10 +18,10 @@
               "start": 751,
               "end": 765
             },
-            "subs": []
+            "subs": [],
+            "def_id": 99
           }
-        ],
-        "def_id": 89
+        ]
       },
       "qualified_name": {
         "parts": [
@@ -37,13 +38,14 @@
         "end_column": 27,
         "start": 751,
         "end": 765,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+        "source": 7235249937028297655
       },
       "dims": [],
       "dims_expr": [],
       "type_id": 0,
       "type_name": "Real",
       "type_def_id": 1,
+      "type_reference_root_def_id": null,
       "declaration_source_scope": {
         "parts": [
           [
@@ -54,6 +56,7 @@
       },
       "class_overrides": {},
       "has_forwarding_class_redeclare": false,
+      "has_unapplied_redeclare": false,
       "variability": {
         "Parameter": {
           "text": "parameter",
@@ -64,7 +67,7 @@
             "end_column": 12,
             "start": 741,
             "end": 750,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+            "source": 7235249937028297655
           },
           "token_number": 11,
           "token_type": 48
@@ -85,7 +88,7 @@
               "end_column": 33,
               "start": 768,
               "end": 771,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+              "source": 7235249937028297655
             },
             "token_number": 15,
             "token_type": 68
@@ -118,7 +121,7 @@
               "end_column": 33,
               "start": 768,
               "end": 771,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+              "source": 7235249937028297655
             },
             "token_number": 15,
             "token_type": 68
@@ -142,11 +145,13 @@
       "is_overconstrained": false,
       "is_protected": false,
       "is_connector_type": false,
+      "is_expandable_connector_type": false,
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     },
-    "2": {
-      "instance_id": 2,
+    "3": {
+      "instance_id": 3,
+      "owner_class_id": 1,
       "component_ref": {
         "local": false,
         "span": {
@@ -162,10 +167,10 @@
               "start": 807,
               "end": 817
             },
-            "subs": []
+            "subs": [],
+            "def_id": 100
           }
-        ],
-        "def_id": 90
+        ]
       },
       "qualified_name": {
         "parts": [
@@ -182,13 +187,14 @@
         "end_column": 23,
         "start": 807,
         "end": 817,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+        "source": 7235249937028297655
       },
       "dims": [],
       "dims_expr": [],
       "type_id": 0,
       "type_name": "Real",
       "type_def_id": 1,
+      "type_reference_root_def_id": null,
       "declaration_source_scope": {
         "parts": [
           [
@@ -199,6 +205,7 @@
       },
       "class_overrides": {},
       "has_forwarding_class_redeclare": false,
+      "has_unapplied_redeclare": false,
       "variability": {
         "Parameter": {
           "text": "parameter",
@@ -209,7 +216,7 @@
             "end_column": 12,
             "start": 797,
             "end": 806,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+            "source": 7235249937028297655
           },
           "token_number": 18,
           "token_type": 48
@@ -230,7 +237,7 @@
               "end_column": 30,
               "start": 820,
               "end": 824,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+              "source": 7235249937028297655
             },
             "token_number": 22,
             "token_type": 68
@@ -263,7 +270,7 @@
               "end_column": 30,
               "start": 820,
               "end": 824,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+              "source": 7235249937028297655
             },
             "token_number": 22,
             "token_type": 68
@@ -287,11 +294,13 @@
       "is_overconstrained": false,
       "is_protected": false,
       "is_connector_type": false,
+      "is_expandable_connector_type": false,
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     },
-    "3": {
-      "instance_id": 3,
+    "4": {
+      "instance_id": 4,
+      "owner_class_id": 1,
       "component_ref": {
         "local": false,
         "span": {
@@ -307,10 +316,10 @@
               "start": 865,
               "end": 876
             },
-            "subs": []
+            "subs": [],
+            "def_id": 101
           }
-        ],
-        "def_id": 91
+        ]
       },
       "qualified_name": {
         "parts": [
@@ -327,13 +336,14 @@
         "end_column": 24,
         "start": 865,
         "end": 876,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+        "source": 7235249937028297655
       },
       "dims": [],
       "dims_expr": [],
       "type_id": 0,
       "type_name": "Real",
       "type_def_id": 1,
+      "type_reference_root_def_id": null,
       "declaration_source_scope": {
         "parts": [
           [
@@ -344,6 +354,7 @@
       },
       "class_overrides": {},
       "has_forwarding_class_redeclare": false,
+      "has_unapplied_redeclare": false,
       "variability": {
         "Parameter": {
           "text": "parameter",
@@ -354,7 +365,7 @@
             "end_column": 12,
             "start": 855,
             "end": 864,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+            "source": 7235249937028297655
           },
           "token_number": 25,
           "token_type": 48
@@ -375,7 +386,7 @@
               "end_column": 30,
               "start": 879,
               "end": 882,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+              "source": 7235249937028297655
             },
             "token_number": 29,
             "token_type": 68
@@ -408,7 +419,7 @@
               "end_column": 30,
               "start": 879,
               "end": 882,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+              "source": 7235249937028297655
             },
             "token_number": 29,
             "token_type": 68
@@ -432,11 +443,13 @@
       "is_overconstrained": false,
       "is_protected": false,
       "is_connector_type": false,
+      "is_expandable_connector_type": false,
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     },
-    "4": {
-      "instance_id": 4,
+    "5": {
+      "instance_id": 5,
+      "owner_class_id": 1,
       "component_ref": {
         "local": false,
         "span": {
@@ -452,10 +465,10 @@
               "start": 923,
               "end": 933
             },
-            "subs": []
+            "subs": [],
+            "def_id": 102
           }
-        ],
-        "def_id": 92
+        ]
       },
       "qualified_name": {
         "parts": [
@@ -472,13 +485,14 @@
         "end_column": 23,
         "start": 923,
         "end": 933,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+        "source": 7235249937028297655
       },
       "dims": [],
       "dims_expr": [],
       "type_id": 0,
       "type_name": "Real",
       "type_def_id": 1,
+      "type_reference_root_def_id": null,
       "declaration_source_scope": {
         "parts": [
           [
@@ -489,6 +503,7 @@
       },
       "class_overrides": {},
       "has_forwarding_class_redeclare": false,
+      "has_unapplied_redeclare": false,
       "variability": {
         "Parameter": {
           "text": "parameter",
@@ -499,7 +514,7 @@
             "end_column": 12,
             "start": 913,
             "end": 922,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+            "source": 7235249937028297655
           },
           "token_number": 32,
           "token_type": 48
@@ -520,7 +535,7 @@
               "end_column": 29,
               "start": 936,
               "end": 939,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+              "source": 7235249937028297655
             },
             "token_number": 36,
             "token_type": 68
@@ -553,7 +568,7 @@
               "end_column": 29,
               "start": 936,
               "end": 939,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+              "source": 7235249937028297655
             },
             "token_number": 36,
             "token_type": 68
@@ -577,11 +592,13 @@
       "is_overconstrained": false,
       "is_protected": false,
       "is_connector_type": false,
+      "is_expandable_connector_type": false,
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     },
-    "5": {
-      "instance_id": 5,
+    "6": {
+      "instance_id": 6,
+      "owner_class_id": 1,
       "component_ref": {
         "local": false,
         "span": {
@@ -597,10 +614,10 @@
               "start": 980,
               "end": 991
             },
-            "subs": []
+            "subs": [],
+            "def_id": 103
           }
-        ],
-        "def_id": 93
+        ]
       },
       "qualified_name": {
         "parts": [
@@ -617,13 +634,14 @@
         "end_column": 24,
         "start": 980,
         "end": 991,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+        "source": 7235249937028297655
       },
       "dims": [],
       "dims_expr": [],
       "type_id": 0,
       "type_name": "Real",
       "type_def_id": 1,
+      "type_reference_root_def_id": null,
       "declaration_source_scope": {
         "parts": [
           [
@@ -634,6 +652,7 @@
       },
       "class_overrides": {},
       "has_forwarding_class_redeclare": false,
+      "has_unapplied_redeclare": false,
       "variability": {
         "Parameter": {
           "text": "parameter",
@@ -644,7 +663,7 @@
             "end_column": 12,
             "start": 970,
             "end": 979,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+            "source": 7235249937028297655
           },
           "token_number": 39,
           "token_type": 48
@@ -665,7 +684,7 @@
               "end_column": 30,
               "start": 994,
               "end": 997,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+              "source": 7235249937028297655
             },
             "token_number": 43,
             "token_type": 68
@@ -698,7 +717,7 @@
               "end_column": 30,
               "start": 994,
               "end": 997,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+              "source": 7235249937028297655
             },
             "token_number": 43,
             "token_type": 68
@@ -722,11 +741,13 @@
       "is_overconstrained": false,
       "is_protected": false,
       "is_connector_type": false,
+      "is_expandable_connector_type": false,
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     },
-    "6": {
-      "instance_id": 6,
+    "7": {
+      "instance_id": 7,
+      "owner_class_id": 1,
       "component_ref": {
         "local": false,
         "span": {
@@ -742,10 +763,10 @@
               "start": 1028,
               "end": 1039
             },
-            "subs": []
+            "subs": [],
+            "def_id": 104
           }
-        ],
-        "def_id": 94
+        ]
       },
       "qualified_name": {
         "parts": [
@@ -762,13 +783,14 @@
         "end_column": 14,
         "start": 1028,
         "end": 1039,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+        "source": 7235249937028297655
       },
       "dims": [],
       "dims_expr": [],
       "type_id": 0,
       "type_name": "Real",
       "type_def_id": 1,
+      "type_reference_root_def_id": null,
       "declaration_source_scope": {
         "parts": [
           [
@@ -779,6 +801,7 @@
       },
       "class_overrides": {},
       "has_forwarding_class_redeclare": false,
+      "has_unapplied_redeclare": false,
       "variability": "Empty",
       "causality": "Empty",
       "flow": false,
@@ -795,7 +818,7 @@
               "end_column": 0,
               "start": 0,
               "end": 0,
-              "file_name": ""
+              "source": 0
             },
             "token_number": 0,
             "token_type": 0
@@ -829,11 +852,13 @@
       "is_overconstrained": false,
       "is_protected": false,
       "is_connector_type": false,
+      "is_expandable_connector_type": false,
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     },
-    "7": {
-      "instance_id": 7,
+    "8": {
+      "instance_id": 8,
+      "owner_class_id": 1,
       "component_ref": {
         "local": false,
         "span": {
@@ -849,10 +874,10 @@
               "start": 1058,
               "end": 1071
             },
-            "subs": []
+            "subs": [],
+            "def_id": 105
           }
-        ],
-        "def_id": 95
+        ]
       },
       "qualified_name": {
         "parts": [
@@ -869,13 +894,14 @@
         "end_column": 16,
         "start": 1058,
         "end": 1071,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+        "source": 7235249937028297655
       },
       "dims": [],
       "dims_expr": [],
       "type_id": 0,
       "type_name": "Real",
       "type_def_id": 1,
+      "type_reference_root_def_id": null,
       "declaration_source_scope": {
         "parts": [
           [
@@ -886,6 +912,7 @@
       },
       "class_overrides": {},
       "has_forwarding_class_redeclare": false,
+      "has_unapplied_redeclare": false,
       "variability": "Empty",
       "causality": "Empty",
       "flow": false,
@@ -902,7 +929,7 @@
               "end_column": 0,
               "start": 0,
               "end": 0,
-              "file_name": ""
+              "source": 0
             },
             "token_number": 0,
             "token_type": 0
@@ -936,11 +963,13 @@
       "is_overconstrained": false,
       "is_protected": false,
       "is_connector_type": false,
+      "is_expandable_connector_type": false,
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     },
-    "8": {
-      "instance_id": 8,
+    "9": {
+      "instance_id": 9,
+      "owner_class_id": 1,
       "component_ref": {
         "local": false,
         "span": {
@@ -956,10 +985,10 @@
               "start": 1127,
               "end": 1138
             },
-            "subs": []
+            "subs": [],
+            "def_id": 106
           }
-        ],
-        "def_id": 96
+        ]
       },
       "qualified_name": {
         "parts": [
@@ -976,13 +1005,14 @@
         "end_column": 14,
         "start": 1127,
         "end": 1138,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+        "source": 7235249937028297655
       },
       "dims": [],
       "dims_expr": [],
       "type_id": 0,
       "type_name": "Real",
       "type_def_id": 1,
+      "type_reference_root_def_id": null,
       "declaration_source_scope": {
         "parts": [
           [
@@ -993,6 +1023,7 @@
       },
       "class_overrides": {},
       "has_forwarding_class_redeclare": false,
+      "has_unapplied_redeclare": false,
       "variability": "Empty",
       "causality": "Empty",
       "flow": false,
@@ -1009,7 +1040,7 @@
               "end_column": 0,
               "start": 0,
               "end": 0,
-              "file_name": ""
+              "source": 0
             },
             "token_number": 0,
             "token_type": 0
@@ -1043,11 +1074,13 @@
       "is_overconstrained": false,
       "is_protected": false,
       "is_connector_type": false,
+      "is_expandable_connector_type": false,
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     },
-    "9": {
-      "instance_id": 9,
+    "10": {
+      "instance_id": 10,
+      "owner_class_id": 1,
       "component_ref": {
         "local": false,
         "span": {
@@ -1063,10 +1096,10 @@
               "start": 1157,
               "end": 1170
             },
-            "subs": []
+            "subs": [],
+            "def_id": 107
           }
-        ],
-        "def_id": 97
+        ]
       },
       "qualified_name": {
         "parts": [
@@ -1083,13 +1116,14 @@
         "end_column": 16,
         "start": 1157,
         "end": 1170,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+        "source": 7235249937028297655
       },
       "dims": [],
       "dims_expr": [],
       "type_id": 0,
       "type_name": "Real",
       "type_def_id": 1,
+      "type_reference_root_def_id": null,
       "declaration_source_scope": {
         "parts": [
           [
@@ -1100,6 +1134,7 @@
       },
       "class_overrides": {},
       "has_forwarding_class_redeclare": false,
+      "has_unapplied_redeclare": false,
       "variability": "Empty",
       "causality": "Empty",
       "flow": false,
@@ -1116,7 +1151,7 @@
               "end_column": 0,
               "start": 0,
               "end": 0,
-              "file_name": ""
+              "source": 0
             },
             "token_number": 0,
             "token_type": 0
@@ -1150,14 +1185,16 @@
       "is_overconstrained": false,
       "is_protected": false,
       "is_connector_type": false,
+      "is_expandable_connector_type": false,
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     }
   },
   "classes": {
-    "0": {
-      "instance_id": 0,
-      "class_def_id": 85,
+    "1": {
+      "instance_id": 1,
+      "owner_component_id": null,
+      "class_def_id": 98,
       "qualified_name": {
         "parts": []
       },
@@ -1188,7 +1225,7 @@
                           "end_column": 9,
                           "start": 1210,
                           "end": 1216,
-                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+                          "source": 7235249937028297655
                         },
                         "token_number": 63,
                         "token_type": 64
@@ -1220,7 +1257,7 @@
                               "end_column": 21,
                               "start": 1219,
                               "end": 1228,
-                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+                              "source": 7235249937028297655
                             },
                             "token_number": 65,
                             "token_type": 64
@@ -1252,7 +1289,7 @@
                                   "end_column": 30,
                                   "start": 1231,
                                   "end": 1237,
-                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+                                  "source": 7235249937028297655
                                 },
                                 "token_number": 67,
                                 "token_type": 64
@@ -1281,7 +1318,7 @@
                                   "end_column": 41,
                                   "start": 1240,
                                   "end": 1248,
-                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+                                  "source": 7235249937028297655
                                 },
                                 "token_number": 69,
                                 "token_type": 64
@@ -1327,7 +1364,7 @@
           "span": {
             "source": 7235249937028297655,
             "start": 1210,
-            "end": 1216
+            "end": 1248
           }
         },
         {
@@ -1347,7 +1384,7 @@
                           "end_column": 11,
                           "start": 1284,
                           "end": 1292,
-                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+                          "source": 7235249937028297655
                         },
                         "token_number": 72,
                         "token_type": 64
@@ -1379,7 +1416,7 @@
                               "end_column": 19,
                               "start": 1295,
                               "end": 1300,
-                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+                              "source": 7235249937028297655
                             },
                             "token_number": 74,
                             "token_type": 64
@@ -1408,7 +1445,7 @@
                               "end_column": 28,
                               "start": 1303,
                               "end": 1309,
-                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+                              "source": 7235249937028297655
                             },
                             "token_number": 76,
                             "token_type": 64
@@ -1447,7 +1484,7 @@
           "span": {
             "source": 7235249937028297655,
             "start": 1284,
-            "end": 1292
+            "end": 1309
           }
         },
         {
@@ -1467,7 +1504,7 @@
                           "end_column": 9,
                           "start": 1335,
                           "end": 1341,
-                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+                          "source": 7235249937028297655
                         },
                         "token_number": 79,
                         "token_type": 64
@@ -1499,7 +1536,7 @@
                               "end_column": 20,
                               "start": 1344,
                               "end": 1352,
-                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+                              "source": 7235249937028297655
                             },
                             "token_number": 81,
                             "token_type": 64
@@ -1531,7 +1568,7 @@
                                   "end_column": 29,
                                   "start": 1355,
                                   "end": 1361,
-                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+                                  "source": 7235249937028297655
                                 },
                                 "token_number": 83,
                                 "token_type": 64
@@ -1560,7 +1597,7 @@
                                   "end_column": 40,
                                   "start": 1364,
                                   "end": 1372,
-                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+                                  "source": 7235249937028297655
                                 },
                                 "token_number": 85,
                                 "token_type": 64
@@ -1606,7 +1643,7 @@
           "span": {
             "source": 7235249937028297655,
             "start": 1335,
-            "end": 1341
+            "end": 1372
           }
         },
         {
@@ -1626,7 +1663,7 @@
                           "end_column": 11,
                           "start": 1429,
                           "end": 1437,
-                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+                          "source": 7235249937028297655
                         },
                         "token_number": 88,
                         "token_type": 64
@@ -1658,7 +1695,7 @@
                               "end_column": 19,
                               "start": 1440,
                               "end": 1445,
-                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+                              "source": 7235249937028297655
                             },
                             "token_number": 90,
                             "token_type": 64
@@ -1687,7 +1724,7 @@
                               "end_column": 28,
                               "start": 1448,
                               "end": 1454,
-                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwoLoops.mo"
+                              "source": 7235249937028297655
                             },
                             "token_number": 92,
                             "token_type": 64
@@ -1726,7 +1763,7 @@
           "span": {
             "source": 7235249937028297655,
             "start": 1429,
-            "end": 1437
+            "end": 1454
           }
         }
       ],
@@ -1741,10 +1778,16 @@
   "class_type": "Model",
   "root_description": "Two algebraic feedback loops in series — two separate coupled blocks",
   "disabled_components": [],
+  "each_modifier_bindings": [],
   "array_parent_dims": {},
+  "array_component_declarations": [],
   "outer_prefix_to_inner": {},
   "inner_outer_to_parent_inner": {},
   "synthesized_inners": [],
   "type_roots": {},
+  "type_ids_by_def_id": {},
+  "enumeration_type_roots": [],
+  "effective_types": {},
+  "enumeration_types": [],
   "next_id": 10
 }

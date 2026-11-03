@@ -4,117 +4,117 @@
   "coupled_block_count": 0,
   "matching": [
     {
-      "equation": "f_x[0] (equation from src)",
+      "equation": "f_x[0] (0 = p.i + n.i)",
       "id": "f_x[0]",
       "unknown": "src.n.i"
     },
     {
-      "equation": "f_x[1] (equation from src)",
+      "equation": "f_x[1] (i = p.i)",
       "id": "f_x[1]",
       "unknown": "src.i"
     },
     {
-      "equation": "f_x[2] (equation from src)",
+      "equation": "f_x[2] (v = p.v - n.v)",
       "id": "f_x[2]",
       "unknown": "src.p.v"
     },
     {
-      "equation": "f_x[3] (equation from src)",
+      "equation": "f_x[3] (v = V)",
       "id": "f_x[3]",
       "unknown": "src.v"
     },
     {
-      "equation": "f_x[4] (equation from R)",
+      "equation": "f_x[4] (0 = p.i + n.i)",
       "id": "f_x[4]",
       "unknown": "R.n.i"
     },
     {
-      "equation": "f_x[5] (equation from R)",
+      "equation": "f_x[5] (i = p.i)",
       "id": "f_x[5]",
       "unknown": "R.p.i"
     },
     {
-      "equation": "f_x[6] (equation from R)",
+      "equation": "f_x[6] (v = p.v - n.v)",
       "id": "f_x[6]",
       "unknown": "R.v"
     },
     {
-      "equation": "f_x[7] (equation from R)",
+      "equation": "f_x[7] (T_heatPort = T)",
       "id": "f_x[7]",
       "unknown": "R.T_heatPort"
     },
     {
-      "equation": "f_x[8] (equation from R)",
+      "equation": "f_x[8] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
       "id": "f_x[8]",
       "unknown": "R.R_actual"
     },
     {
-      "equation": "f_x[9] (equation from R)",
+      "equation": "f_x[9] (v = R_actual*i)",
       "id": "f_x[9]",
       "unknown": "R.i"
     },
     {
-      "equation": "f_x[10] (equation from R)",
+      "equation": "f_x[10] (LossPower = v*i)",
       "id": "f_x[10]",
       "unknown": "R.LossPower"
     },
     {
-      "equation": "f_x[11] (equation from C)",
+      "equation": "f_x[11] (0 = p.i + n.i)",
       "id": "f_x[11]",
       "unknown": "C.n.i"
     },
     {
-      "equation": "f_x[12] (equation from C)",
+      "equation": "f_x[12] (i = p.i)",
       "id": "f_x[12]",
       "unknown": "C.i"
     },
     {
-      "equation": "f_x[13] (equation from C)",
+      "equation": "f_x[13] (v = p.v - n.v)",
       "id": "f_x[13]",
       "unknown": "C.p.v"
     },
     {
-      "equation": "f_x[14] (equation from C)",
+      "equation": "f_x[14] (i = C*der(v))",
       "id": "f_x[14]",
       "unknown": "der(C.v)"
     },
     {
-      "equation": "f_x[15] (equation from gnd)",
+      "equation": "f_x[15] (p.v = 0)",
       "id": "f_x[15]",
       "unknown": "gnd.p.v"
     },
     {
-      "equation": "f_x[16] (flow sum equation: src.p.i + R.p.i = 0)",
+      "equation": "f_x[16] (SI.Current i)",
       "id": "f_x[16]",
       "unknown": "src.p.i"
     },
     {
-      "equation": "f_x[17] (flow sum equation: R.n.i + C.p.i = 0)",
+      "equation": "f_x[17] (SI.Current i)",
       "id": "f_x[17]",
       "unknown": "C.p.i"
     },
     {
-      "equation": "f_x[18] (flow sum equation: C.n.i + src.n.i + gnd.p.i = 0)",
+      "equation": "f_x[18] (SI.Current i)",
       "id": "f_x[18]",
       "unknown": "gnd.p.i"
     },
     {
-      "equation": "f_x[19] (connection equation: src.p.v = R.p.v)",
+      "equation": "f_x[19] (SI.ElectricPotential v)",
       "id": "f_x[19]",
       "unknown": "R.p.v"
     },
     {
-      "equation": "f_x[20] (connection equation: R.n.v = C.p.v)",
+      "equation": "f_x[20] (SI.ElectricPotential v)",
       "id": "f_x[20]",
       "unknown": "R.n.v"
     },
     {
-      "equation": "f_x[21] (connection equation: C.n.v = src.n.v)",
+      "equation": "f_x[21] (SI.ElectricPotential v)",
       "id": "f_x[21]",
       "unknown": "C.n.v"
     },
     {
-      "equation": "f_x[22] (connection equation: src.n.v = gnd.p.v)",
+      "equation": "f_x[22] (SI.ElectricPotential v)",
       "id": "f_x[22]",
       "unknown": "src.n.v"
     }
@@ -123,161 +123,161 @@
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[3] (equation from src)",
+      "equation": "f_x[3] (v = V)",
       "id": "f_x[3]",
       "unknown": "src.v"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[15] (equation from gnd)",
+      "equation": "f_x[15] (p.v = 0)",
       "id": "f_x[15]",
       "unknown": "gnd.p.v"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[22] (connection equation: src.n.v = gnd.p.v)",
+      "equation": "f_x[22] (SI.ElectricPotential v)",
       "id": "f_x[22]",
       "unknown": "src.n.v"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[2] (equation from src)",
+      "equation": "f_x[2] (v = p.v - n.v)",
       "id": "f_x[2]",
       "unknown": "src.p.v"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[19] (connection equation: src.p.v = R.p.v)",
+      "equation": "f_x[19] (SI.ElectricPotential v)",
       "id": "f_x[19]",
       "unknown": "R.p.v"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[21] (connection equation: C.n.v = src.n.v)",
+      "equation": "f_x[21] (SI.ElectricPotential v)",
       "id": "f_x[21]",
       "unknown": "C.n.v"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[13] (equation from C)",
+      "equation": "f_x[13] (v = p.v - n.v)",
       "id": "f_x[13]",
       "unknown": "C.p.v"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[20] (connection equation: R.n.v = C.p.v)",
+      "equation": "f_x[20] (SI.ElectricPotential v)",
       "id": "f_x[20]",
       "unknown": "R.n.v"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[6] (equation from R)",
+      "equation": "f_x[6] (v = p.v - n.v)",
       "id": "f_x[6]",
       "unknown": "R.v"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[7] (equation from R)",
+      "equation": "f_x[7] (T_heatPort = T)",
       "id": "f_x[7]",
       "unknown": "R.T_heatPort"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[8] (equation from R)",
+      "equation": "f_x[8] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
       "id": "f_x[8]",
       "unknown": "R.R_actual"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[9] (equation from R)",
+      "equation": "f_x[9] (v = R_actual*i)",
       "id": "f_x[9]",
       "unknown": "R.i"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[5] (equation from R)",
+      "equation": "f_x[5] (i = p.i)",
       "id": "f_x[5]",
       "unknown": "R.p.i"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[16] (flow sum equation: src.p.i + R.p.i = 0)",
+      "equation": "f_x[16] (SI.Current i)",
       "id": "f_x[16]",
       "unknown": "src.p.i"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[0] (equation from src)",
+      "equation": "f_x[0] (0 = p.i + n.i)",
       "id": "f_x[0]",
       "unknown": "src.n.i"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[1] (equation from src)",
+      "equation": "f_x[1] (i = p.i)",
       "id": "f_x[1]",
       "unknown": "src.i"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[4] (equation from R)",
+      "equation": "f_x[4] (0 = p.i + n.i)",
       "id": "f_x[4]",
       "unknown": "R.n.i"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[10] (equation from R)",
+      "equation": "f_x[10] (LossPower = v*i)",
       "id": "f_x[10]",
       "unknown": "R.LossPower"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[17] (flow sum equation: R.n.i + C.p.i = 0)",
+      "equation": "f_x[17] (SI.Current i)",
       "id": "f_x[17]",
       "unknown": "C.p.i"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[11] (equation from C)",
+      "equation": "f_x[11] (0 = p.i + n.i)",
       "id": "f_x[11]",
       "unknown": "C.n.i"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[12] (equation from C)",
+      "equation": "f_x[12] (i = p.i)",
       "id": "f_x[12]",
       "unknown": "C.i"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[14] (equation from C)",
+      "equation": "f_x[14] (i = C*der(v))",
       "id": "f_x[14]",
       "unknown": "der(C.v)"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[18] (flow sum equation: C.n.i + src.n.i + gnd.p.i = 0)",
+      "equation": "f_x[18] (SI.Current i)",
       "id": "f_x[18]",
       "unknown": "gnd.p.i"
     }
@@ -286,12 +286,8 @@
     "n_eq": 23,
     "n_var": 23,
     "unknown_names": [
-      "der(C.v)",
-      "src.v",
-      "R.T_heatPort",
-      "C.i",
-      "R.R_actual",
       "src.i",
+      "src.v",
       "src.p.v",
       "src.p.i",
       "src.n.v",
@@ -303,6 +299,10 @@
       "R.n.v",
       "R.n.i",
       "R.LossPower",
+      "R.T_heatPort",
+      "R.R_actual",
+      "C.i",
+      "der(C.v)",
       "C.p.v",
       "C.p.i",
       "C.n.v",
@@ -312,212 +312,213 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0] (equation from src)",
+        "equation": "f_x[0] (0 = p.i + n.i)",
         "id": "f_x[0]",
         "unknowns": [
-          7,
-          9
+          3,
+          5
         ],
-        "equation_text": "0 - (src.p.i + src.n.i)"
+        "equation_text": "0 = 0 - (src.p.i + src.n.i)"
       },
       {
-        "equation": "f_x[1] (equation from src)",
+        "equation": "f_x[1] (i = p.i)",
         "id": "f_x[1]",
         "unknowns": [
-          5,
-          7
+          0,
+          3
         ],
-        "equation_text": "src.i - src.p.i"
+        "equation_text": "0 = src.i - src.p.i"
       },
       {
-        "equation": "f_x[2] (equation from src)",
+        "equation": "f_x[2] (v = p.v - n.v)",
         "id": "f_x[2]",
         "unknowns": [
           1,
-          6,
-          8
+          2,
+          4
         ],
-        "equation_text": "src.v - (src.p.v - src.n.v)"
+        "equation_text": "0 = src.v - (src.p.v - src.n.v)"
       },
       {
-        "equation": "f_x[3] (equation from src)",
+        "equation": "f_x[3] (v = V)",
         "id": "f_x[3]",
         "unknowns": [
           1
         ],
-        "equation_text": "src.v - src.V"
+        "equation_text": "0 = src.v - src.V"
       },
       {
-        "equation": "f_x[4] (equation from R)",
+        "equation": "f_x[4] (0 = p.i + n.i)",
         "id": "f_x[4]",
         "unknowns": [
-          13,
-          15
-        ],
-        "equation_text": "0 - (R.p.i + R.n.i)"
-      },
-      {
-        "equation": "f_x[5] (equation from R)",
-        "id": "f_x[5]",
-        "unknowns": [
-          10,
-          13
-        ],
-        "equation_text": "R.i - R.p.i"
-      },
-      {
-        "equation": "f_x[6] (equation from R)",
-        "id": "f_x[6]",
-        "unknowns": [
-          11,
-          12,
-          14
-        ],
-        "equation_text": "R.v - (R.p.v - R.n.v)"
-      },
-      {
-        "equation": "f_x[7] (equation from R)",
-        "id": "f_x[7]",
-        "unknowns": [
-          2
-        ],
-        "equation_text": "R.T_heatPort - R.T"
-      },
-      {
-        "equation": "f_x[8] (equation from R)",
-        "id": "f_x[8]",
-        "unknowns": [
-          2,
-          4
-        ],
-        "equation_text": "R.R_actual - R.R * (1 + R.alpha * (R.T_heatPort - R.T_ref))"
-      },
-      {
-        "equation": "f_x[9] (equation from R)",
-        "id": "f_x[9]",
-        "unknowns": [
-          4,
-          10,
+          9,
           11
         ],
-        "equation_text": "R.v - R.R_actual * R.i"
+        "equation_text": "0 = 0 - (R.p.i + R.n.i)"
       },
       {
-        "equation": "f_x[10] (equation from R)",
+        "equation": "f_x[5] (i = p.i)",
+        "id": "f_x[5]",
+        "unknowns": [
+          6,
+          9
+        ],
+        "equation_text": "0 = R.i - R.p.i"
+      },
+      {
+        "equation": "f_x[6] (v = p.v - n.v)",
+        "id": "f_x[6]",
+        "unknowns": [
+          7,
+          8,
+          10
+        ],
+        "equation_text": "0 = R.v - (R.p.v - R.n.v)"
+      },
+      {
+        "equation": "f_x[7] (T_heatPort = T)",
+        "id": "f_x[7]",
+        "unknowns": [
+          13
+        ],
+        "equation_text": "0 = R.T_heatPort - R.T"
+      },
+      {
+        "equation": "f_x[8] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+        "id": "f_x[8]",
+        "unknowns": [
+          13,
+          14
+        ],
+        "equation_text": "0 = R.R_actual - R.R*(1 + R.alpha*(R.T_heatPort - R.T_ref))"
+      },
+      {
+        "equation": "f_x[9] (v = R_actual*i)",
+        "id": "f_x[9]",
+        "unknowns": [
+          6,
+          7,
+          14
+        ],
+        "equation_text": "0 = R.v - R.R_actual*R.i"
+      },
+      {
+        "equation": "f_x[10] (LossPower = v*i)",
         "id": "f_x[10]",
         "unknowns": [
-          10,
-          11,
-          16
+          6,
+          7,
+          12
         ],
-        "equation_text": "R.LossPower - R.v * R.i"
+        "equation_text": "0 = R.LossPower - R.v*R.i"
       },
       {
-        "equation": "f_x[11] (equation from C)",
+        "equation": "f_x[11] (0 = p.i + n.i)",
         "id": "f_x[11]",
         "unknowns": [
           18,
           20
         ],
-        "equation_text": "0 - (C.p.i + C.n.i)"
+        "equation_text": "0 = 0 - (C.p.i + C.n.i)"
       },
       {
-        "equation": "f_x[12] (equation from C)",
+        "equation": "f_x[12] (i = p.i)",
         "id": "f_x[12]",
         "unknowns": [
-          3,
+          15,
           18
         ],
-        "equation_text": "C.i - C.p.i"
+        "equation_text": "0 = C.i - C.p.i"
       },
       {
-        "equation": "f_x[13] (equation from C)",
+        "equation": "f_x[13] (v = p.v - n.v)",
         "id": "f_x[13]",
         "unknowns": [
           17,
           19
         ],
-        "equation_text": "C.v - (C.p.v - C.n.v)"
+        "equation_text": "0 = C.v - (C.p.v - C.n.v)"
       },
       {
-        "equation": "f_x[14] (equation from C)",
+        "equation": "f_x[14] (i = C*der(v))",
         "id": "f_x[14]",
         "unknowns": [
-          0
+          15,
+          16
         ],
-        "equation_text": "C.i - C.C * der(C.v)"
+        "equation_text": "0 = C.i - C.C*der(C.v)"
       },
       {
-        "equation": "f_x[15] (equation from gnd)",
+        "equation": "f_x[15] (p.v = 0)",
         "id": "f_x[15]",
         "unknowns": [
           21
         ],
-        "equation_text": "gnd.p.v - 0"
+        "equation_text": "0 = gnd.p.v - 0"
       },
       {
-        "equation": "f_x[16] (flow sum equation: src.p.i + R.p.i = 0)",
+        "equation": "f_x[16] (SI.Current i)",
         "id": "f_x[16]",
         "unknowns": [
-          7,
-          13
+          3,
+          9
         ],
-        "equation_text": "src.p.i + R.p.i"
+        "equation_text": "0 = src.p.i + R.p.i"
       },
       {
-        "equation": "f_x[17] (flow sum equation: R.n.i + C.p.i = 0)",
+        "equation": "f_x[17] (SI.Current i)",
         "id": "f_x[17]",
         "unknowns": [
-          15,
+          11,
           18
         ],
-        "equation_text": "R.n.i + C.p.i"
+        "equation_text": "0 = R.n.i + C.p.i"
       },
       {
-        "equation": "f_x[18] (flow sum equation: C.n.i + src.n.i + gnd.p.i = 0)",
+        "equation": "f_x[18] (SI.Current i)",
         "id": "f_x[18]",
         "unknowns": [
-          9,
+          5,
           20,
           22
         ],
-        "equation_text": "C.n.i + src.n.i + gnd.p.i"
+        "equation_text": "0 = C.n.i + src.n.i + gnd.p.i"
       },
       {
-        "equation": "f_x[19] (connection equation: src.p.v = R.p.v)",
+        "equation": "f_x[19] (SI.ElectricPotential v)",
         "id": "f_x[19]",
         "unknowns": [
-          6,
-          12
+          2,
+          8
         ],
-        "equation_text": "src.p.v - R.p.v"
+        "equation_text": "0 = src.p.v - R.p.v"
       },
       {
-        "equation": "f_x[20] (connection equation: R.n.v = C.p.v)",
+        "equation": "f_x[20] (SI.ElectricPotential v)",
         "id": "f_x[20]",
         "unknowns": [
-          14,
+          10,
           17
         ],
-        "equation_text": "R.n.v - C.p.v"
+        "equation_text": "0 = R.n.v - C.p.v"
       },
       {
-        "equation": "f_x[21] (connection equation: C.n.v = src.n.v)",
+        "equation": "f_x[21] (SI.ElectricPotential v)",
         "id": "f_x[21]",
         "unknowns": [
-          8,
+          4,
           19
         ],
-        "equation_text": "C.n.v - src.n.v"
+        "equation_text": "0 = C.n.v - src.n.v"
       },
       {
-        "equation": "f_x[22] (connection equation: src.n.v = gnd.p.v)",
+        "equation": "f_x[22] (SI.ElectricPotential v)",
         "id": "f_x[22]",
         "unknowns": [
-          8,
+          4,
           21
         ],
-        "equation_text": "src.n.v - gnd.p.v"
+        "equation_text": "0 = src.n.v - gnd.p.v"
       }
     ]
   }

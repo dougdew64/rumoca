@@ -4,27 +4,27 @@
   "coupled_block_count": 1,
   "matching": [
     {
-      "equation": "f_x[0] (top-level model equation)",
+      "equation": "f_x[0] (der(x) = vx)",
       "id": "f_x[0]",
       "unknown": "der(x)"
     },
     {
-      "equation": "f_x[1] (top-level model equation)",
+      "equation": "f_x[1] (der(y) = vy)",
       "id": "f_x[1]",
       "unknown": "der(y)"
     },
     {
-      "equation": "f_x[2] (top-level model equation)",
+      "equation": "f_x[2] (m * der(vx) = -lambda * x)",
       "id": "f_x[2]",
       "unknown": "lambda"
     },
     {
-      "equation": "f_x[3] (top-level model equation)",
+      "equation": "f_x[3] (m * der(vy) = -lambda * y - m * g)",
       "id": "f_x[3]",
       "unknown": "der(vy)"
     },
     {
-      "equation": "f_x[4] (top-level model equation)",
+      "equation": "f_x[4] (2 * (vx ^ 2 + vy ^ 2) + 2 * (x * der(vx) + y * der(vy)) + 4 * alpha * (x * vx + y * vy) + beta ^ 2 * (x ^ 2 + y ^ 2 - L ^ 2) = 0)",
       "id": "f_x[4]",
       "unknown": "der(vx)"
     }
@@ -33,14 +33,14 @@
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[0] (top-level model equation)",
+      "equation": "f_x[0] (der(x) = vx)",
       "id": "f_x[0]",
       "unknown": "der(x)"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[1] (top-level model equation)",
+      "equation": "f_x[1] (der(y) = vy)",
       "id": "f_x[1]",
       "unknown": "der(y)"
     },
@@ -48,9 +48,9 @@
       "kind": "coupled",
       "size": 3,
       "equations": [
-        "f_x[3] (top-level model equation)",
-        "f_x[4] (top-level model equation)",
-        "f_x[2] (top-level model equation)"
+        "f_x[3] (m * der(vy) = -lambda * y - m * g)",
+        "f_x[4] (2 * (vx ^ 2 + vy ^ 2) + 2 * (x * der(vx) + y * der(vy)) + 4 * alpha * (x * vx + y * vy) + beta ^ 2 * (x ^ 2 + y ^ 2 - L ^ 2) = 0)",
+        "f_x[2] (m * der(vx) = -lambda * x)"
       ],
       "ids": [
         "f_x[3]",
@@ -67,19 +67,19 @@
           "der(vy)"
         ],
         "residual_equations": [
-          "f_x[2] (top-level model equation)"
+          "f_x[2] (m * der(vx) = -lambda * x)"
         ],
         "residual_equation_ids": [
           "f_x[2]"
         ],
         "causal_sequence": [
           {
-            "equation": "f_x[4] (top-level model equation)",
+            "equation": "f_x[4] (2 * (vx ^ 2 + vy ^ 2) + 2 * (x * der(vx) + y * der(vy)) + 4 * alpha * (x * vx + y * vy) + beta ^ 2 * (x ^ 2 + y ^ 2 - L ^ 2) = 0)",
             "id": "f_x[4]",
             "variable": "der(vx)"
           },
           {
-            "equation": "f_x[3] (top-level model equation)",
+            "equation": "f_x[3] (m * der(vy) = -lambda * y - m * g)",
             "id": "f_x[3]",
             "variable": "lambda"
           }
@@ -99,47 +99,47 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0] (top-level model equation)",
+        "equation": "f_x[0] (der(x) = vx)",
         "id": "f_x[0]",
         "unknowns": [
           0
         ],
-        "equation_text": "der(x) - vx"
+        "equation_text": "0 = der(x) - vx"
       },
       {
-        "equation": "f_x[1] (top-level model equation)",
+        "equation": "f_x[1] (der(y) = vy)",
         "id": "f_x[1]",
         "unknowns": [
           1
         ],
-        "equation_text": "der(y) - vy"
+        "equation_text": "0 = der(y) - vy"
       },
       {
-        "equation": "f_x[2] (top-level model equation)",
+        "equation": "f_x[2] (m * der(vx) = -lambda * x)",
         "id": "f_x[2]",
         "unknowns": [
           2,
           4
         ],
-        "equation_text": "m * der(vx) - -(lambda * x)"
+        "equation_text": "0 = m*der(vx) - -(lambda*x)"
       },
       {
-        "equation": "f_x[3] (top-level model equation)",
+        "equation": "f_x[3] (m * der(vy) = -lambda * y - m * g)",
         "id": "f_x[3]",
         "unknowns": [
           3,
           4
         ],
-        "equation_text": "m * der(vy) - (-(lambda * y) - m * g)"
+        "equation_text": "0 = m*der(vy) - (-(lambda*y) - m*g)"
       },
       {
-        "equation": "f_x[4] (top-level model equation)",
+        "equation": "f_x[4] (2 * (vx ^ 2 + vy ^ 2) + 2 * (x * der(vx) + y * der(vy)) + 4 * alpha * (x * vx + y * vy) + beta ^ 2 * (x ^ 2 + y ^ 2 - L ^ 2) = 0)",
         "id": "f_x[4]",
         "unknowns": [
           2,
           3
         ],
-        "equation_text": "2 * (vx ^ 2 + vy ^ 2) + 2 * (x * der(vx) + y * der(vy)) + 4 * alpha * (x * vx + y * vy) + beta ^ 2 * (x ^ 2 + y ^ 2 - L ^ 2) - 0"
+        "equation_text": "0 = 2*(vx^2 + vy^2) + 2*(x*der(vx) + y*der(vy)) + 4*alpha*(x*vx + y*vy) + beta^2*(x^2 + y^2 - L^2) - 0"
       }
     ]
   }

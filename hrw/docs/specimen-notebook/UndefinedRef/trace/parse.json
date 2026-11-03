@@ -12,7 +12,7 @@
           "end_column": 19,
           "start": 6,
           "end": 18,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UndefinedRef.mo"
+          "source": 12350020026861824823
         },
         "token_number": 1,
         "token_type": 64
@@ -27,7 +27,7 @@
           "end_column": 6,
           "start": 0,
           "end": 5,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UndefinedRef.mo"
+          "source": 12350020026861824823
         },
         "token_number": 0,
         "token_type": 41
@@ -49,7 +49,7 @@
             "end_column": 81,
             "start": 19,
             "end": 82,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UndefinedRef.mo"
+            "source": 12350020026861824823
           },
           "token_number": 2,
           "token_type": 66
@@ -62,7 +62,7 @@
         "end_column": 17,
         "start": 6,
         "end": 434,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UndefinedRef.mo"
+        "source": 12350020026861824823
       },
       "extends": [],
       "imports": [],
@@ -82,7 +82,7 @@
               "end_column": 9,
               "start": 380,
               "end": 381,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UndefinedRef.mo"
+              "source": 12350020026861824823
             },
             "token_number": 9,
             "token_type": 64
@@ -98,7 +98,7 @@
                   "end_column": 7,
                   "start": 375,
                   "end": 379,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UndefinedRef.mo"
+                  "source": 12350020026861824823
                 },
                 "token_number": 8,
                 "token_type": 64
@@ -121,7 +121,7 @@
                   "end_column": 0,
                   "start": 0,
                   "end": 0,
-                  "file_name": ""
+                  "source": 0
                 },
                 "token_number": 0,
                 "token_type": 0
@@ -153,7 +153,7 @@
             "end_column": 9,
             "start": 375,
             "end": 381,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UndefinedRef.mo"
+            "source": 12350020026861824823
           },
           "condition": null,
           "inner": false,
@@ -164,6 +164,8 @@
           "is_final": false,
           "is_replaceable": false,
           "is_redeclare": false,
+          "redeclared_by_modification": false,
+          "has_unapplied_redeclare": false,
           "constrainedby": null,
           "is_structural": false
         }
@@ -185,7 +187,7 @@
                         "end_column": 4,
                         "start": 394,
                         "end": 395,
-                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UndefinedRef.mo"
+                        "source": 12350020026861824823
                       },
                       "token_number": 12,
                       "token_type": 64
@@ -217,7 +219,7 @@
                             "end_column": 18,
                             "start": 398,
                             "end": 409,
-                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UndefinedRef.mo"
+                            "source": 12350020026861824823
                           },
                           "token_number": 14,
                           "token_type": 64
@@ -246,7 +248,7 @@
                             "end_column": 25,
                             "start": 412,
                             "end": 416,
-                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UndefinedRef.mo"
+                            "source": 12350020026861824823
                           },
                           "token_number": 16,
                           "token_type": 64
@@ -283,7 +285,7 @@
           "end_column": 9,
           "start": 383,
           "end": 391,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UndefinedRef.mo"
+          "source": 12350020026861824823
         },
         "token_number": 11,
         "token_type": 24
@@ -300,7 +302,7 @@
           "end_column": 17,
           "start": 422,
           "end": 434,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UndefinedRef.mo"
+          "source": 12350020026861824823
         },
         "token_number": 19,
         "token_type": 64
@@ -313,6 +315,7 @@
       "is_outer": false,
       "is_replaceable": false,
       "is_redeclare": false,
+      "redeclare_target_def_id": null,
       "constrainedby": null,
       "array_subscripts": [],
       "external": null

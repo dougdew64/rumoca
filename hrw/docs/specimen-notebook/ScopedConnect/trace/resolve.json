@@ -1,5 +1,5 @@
 {
-  "def_id": 85,
+  "def_id": 98,
   "scope_id": 1,
   "name": {
     "text": "ScopedConnect",
@@ -10,7 +10,7 @@
       "end_column": 20,
       "start": 6,
       "end": 19,
-      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+      "source": 8829391048709494866
     },
     "token_number": 1,
     "token_type": 64
@@ -25,7 +25,7 @@
       "end_column": 6,
       "start": 0,
       "end": 5,
-      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+      "source": 8829391048709494866
     },
     "token_number": 0,
     "token_type": 41
@@ -47,7 +47,7 @@
         "end_column": 77,
         "start": 20,
         "end": 76,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+        "source": 8829391048709494866
       },
       "token_number": 2,
       "token_type": 66
@@ -60,13 +60,13 @@
     "end_column": 18,
     "start": 6,
     "end": 1921,
-    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+    "source": 8829391048709494866
   },
   "extends": [],
   "imports": [],
   "classes": {
     "Segment": {
-      "def_id": 93,
+      "def_id": 108,
       "scope_id": 2,
       "name": {
         "text": "Segment",
@@ -77,7 +77,7 @@
           "end_column": 16,
           "start": 1176,
           "end": 1183,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+          "source": 8829391048709494866
         },
         "token_number": 19,
         "token_type": 64
@@ -92,7 +92,7 @@
           "end_column": 8,
           "start": 1170,
           "end": 1175,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+          "source": 8829391048709494866
         },
         "token_number": 18,
         "token_type": 41
@@ -114,7 +114,7 @@
             "end_column": 77,
             "start": 1184,
             "end": 1244,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+            "source": 8829391048709494866
           },
           "token_number": 20,
           "token_type": 66
@@ -127,16 +127,16 @@
         "end_column": 14,
         "start": 1176,
         "end": 1524,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+        "source": 8829391048709494866
       },
       "extends": [],
       "imports": [],
       "classes": {},
       "components": {
         "p": {
-          "def_id": 94,
+          "def_id": 109,
           "type_id": null,
-          "type_def_id": 5521,
+          "type_def_id": 5536,
           "name": "p",
           "name_token": {
             "text": "p",
@@ -147,7 +147,7 @@
               "end_column": 48,
               "start": 1291,
               "end": 1292,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+              "source": 8829391048709494866
             },
             "token_number": 30,
             "token_type": 64
@@ -163,7 +163,7 @@
                   "end_column": 13,
                   "start": 1249,
                   "end": 1257,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 21,
                 "token_type": 64
@@ -177,7 +177,7 @@
                   "end_column": 24,
                   "start": 1258,
                   "end": 1268,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 23,
                 "token_type": 64
@@ -191,7 +191,7 @@
                   "end_column": 31,
                   "start": 1269,
                   "end": 1275,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 25,
                 "token_type": 64
@@ -205,7 +205,7 @@
                   "end_column": 42,
                   "start": 1276,
                   "end": 1286,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 27,
                 "token_type": 64
@@ -219,7 +219,7 @@
                   "end_column": 46,
                   "start": 1287,
                   "end": 1290,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 29,
                 "token_type": 64
@@ -259,7 +259,7 @@
             "end_column": 48,
             "start": 1249,
             "end": 1292,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+            "source": 8829391048709494866
           },
           "condition": null,
           "inner": false,
@@ -270,13 +270,15 @@
           "is_final": false,
           "is_replaceable": false,
           "is_redeclare": false,
+          "redeclared_by_modification": false,
+          "has_unapplied_redeclare": false,
           "constrainedby": null,
           "is_structural": false
         },
         "n": {
-          "def_id": 95,
+          "def_id": 110,
           "type_id": null,
-          "type_def_id": 5521,
+          "type_def_id": 5536,
           "name": "n",
           "name_token": {
             "text": "n",
@@ -287,7 +289,7 @@
               "end_column": 48,
               "start": 1340,
               "end": 1341,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+              "source": 8829391048709494866
             },
             "token_number": 41,
             "token_type": 64
@@ -303,7 +305,7 @@
                   "end_column": 13,
                   "start": 1298,
                   "end": 1306,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 32,
                 "token_type": 64
@@ -317,7 +319,7 @@
                   "end_column": 24,
                   "start": 1307,
                   "end": 1317,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 34,
                 "token_type": 64
@@ -331,7 +333,7 @@
                   "end_column": 31,
                   "start": 1318,
                   "end": 1324,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 36,
                 "token_type": 64
@@ -345,7 +347,7 @@
                   "end_column": 42,
                   "start": 1325,
                   "end": 1335,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 38,
                 "token_type": 64
@@ -359,7 +361,7 @@
                   "end_column": 46,
                   "start": 1336,
                   "end": 1339,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 40,
                 "token_type": 64
@@ -399,7 +401,7 @@
             "end_column": 48,
             "start": 1298,
             "end": 1341,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+            "source": 8829391048709494866
           },
           "condition": null,
           "inner": false,
@@ -410,13 +412,15 @@
           "is_final": false,
           "is_replaceable": false,
           "is_redeclare": false,
+          "redeclared_by_modification": false,
+          "has_unapplied_redeclare": false,
           "constrainedby": null,
           "is_structural": false
         },
         "R": {
-          "def_id": 96,
+          "def_id": 111,
           "type_id": null,
-          "type_def_id": 4051,
+          "type_def_id": 4066,
           "name": "R",
           "name_token": {
             "text": "R",
@@ -427,7 +431,7 @@
               "end_column": 48,
               "start": 1389,
               "end": 1390,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+              "source": 8829391048709494866
             },
             "token_number": 52,
             "token_type": 64
@@ -443,7 +447,7 @@
                   "end_column": 13,
                   "start": 1347,
                   "end": 1355,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 43,
                 "token_type": 64
@@ -457,7 +461,7 @@
                   "end_column": 24,
                   "start": 1356,
                   "end": 1366,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 45,
                 "token_type": 64
@@ -471,7 +475,7 @@
                   "end_column": 31,
                   "start": 1367,
                   "end": 1373,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 47,
                 "token_type": 64
@@ -485,7 +489,7 @@
                   "end_column": 37,
                   "start": 1374,
                   "end": 1379,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 49,
                 "token_type": 64
@@ -499,7 +503,7 @@
                   "end_column": 46,
                   "start": 1380,
                   "end": 1388,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 51,
                 "token_type": 64
@@ -543,7 +547,7 @@
                           "end_column": 50,
                           "start": 1391,
                           "end": 1392,
-                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                          "source": 8829391048709494866
                         },
                         "token_number": 54,
                         "token_type": 64
@@ -569,7 +573,7 @@
                         "end_column": 55,
                         "start": 1395,
                         "end": 1397,
-                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                        "source": 8829391048709494866
                       },
                       "token_number": 56,
                       "token_type": 67
@@ -611,7 +615,7 @@
                     "end_column": 55,
                     "start": 1395,
                     "end": 1397,
-                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                    "source": 8829391048709494866
                   },
                   "token_number": 56,
                   "token_type": 67
@@ -631,7 +635,7 @@
             "end_column": 48,
             "start": 1347,
             "end": 1390,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+            "source": 8829391048709494866
           },
           "condition": null,
           "inner": false,
@@ -642,6 +646,8 @@
           "is_final": false,
           "is_replaceable": false,
           "is_redeclare": false,
+          "redeclared_by_modification": false,
+          "has_unapplied_redeclare": false,
           "constrainedby": null,
           "is_structural": false
         }
@@ -662,7 +668,7 @@
                       "end_column": 14,
                       "start": 1481,
                       "end": 1482,
-                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                      "source": 8829391048709494866
                     },
                     "token_number": 63,
                     "token_type": 64
@@ -689,7 +695,7 @@
                       "end_column": 17,
                       "start": 1484,
                       "end": 1485,
-                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                      "source": 8829391048709494866
                     },
                     "token_number": 65,
                     "token_type": 64
@@ -706,7 +712,7 @@
                       "end_column": 19,
                       "start": 1486,
                       "end": 1487,
-                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                      "source": 8829391048709494866
                     },
                     "token_number": 67,
                     "token_type": 64
@@ -737,7 +743,7 @@
                       "end_column": 14,
                       "start": 1502,
                       "end": 1503,
-                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                      "source": 8829391048709494866
                     },
                     "token_number": 72,
                     "token_type": 64
@@ -754,7 +760,7 @@
                       "end_column": 16,
                       "start": 1504,
                       "end": 1505,
-                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                      "source": 8829391048709494866
                     },
                     "token_number": 74,
                     "token_type": 64
@@ -781,7 +787,7 @@
                       "end_column": 19,
                       "start": 1507,
                       "end": 1508,
-                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                      "source": 8829391048709494866
                     },
                     "token_number": 76,
                     "token_type": 64
@@ -810,7 +816,7 @@
           "end_column": 11,
           "start": 1402,
           "end": 1410,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+          "source": 8829391048709494866
         },
         "token_number": 59,
         "token_type": 24
@@ -827,7 +833,7 @@
           "end_column": 14,
           "start": 1517,
           "end": 1524,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+          "source": 8829391048709494866
         },
         "token_number": 80,
         "token_type": 64
@@ -840,6 +846,7 @@
       "is_outer": false,
       "is_replaceable": false,
       "is_redeclare": false,
+      "redeclare_target_def_id": null,
       "constrainedby": null,
       "array_subscripts": [],
       "external": null
@@ -847,9 +854,9 @@
   },
   "components": {
     "src": {
-      "def_id": 89,
+      "def_id": 104,
       "type_id": null,
-      "type_def_id": 6009,
+      "type_def_id": 6024,
       "name": "src",
       "name_token": {
         "text": "src",
@@ -860,7 +867,7 @@
           "end_column": 57,
           "start": 1580,
           "end": 1583,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+          "source": 8829391048709494866
         },
         "token_number": 91,
         "token_type": 64
@@ -876,7 +883,7 @@
               "end_column": 11,
               "start": 1529,
               "end": 1537,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+              "source": 8829391048709494866
             },
             "token_number": 82,
             "token_type": 64
@@ -890,7 +897,7 @@
               "end_column": 22,
               "start": 1538,
               "end": 1548,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+              "source": 8829391048709494866
             },
             "token_number": 84,
             "token_type": 64
@@ -904,7 +911,7 @@
               "end_column": 29,
               "start": 1549,
               "end": 1555,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+              "source": 8829391048709494866
             },
             "token_number": 86,
             "token_type": 64
@@ -918,7 +925,7 @@
               "end_column": 37,
               "start": 1556,
               "end": 1563,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+              "source": 8829391048709494866
             },
             "token_number": 88,
             "token_type": 64
@@ -932,7 +939,7 @@
               "end_column": 53,
               "start": 1564,
               "end": 1579,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+              "source": 8829391048709494866
             },
             "token_number": 90,
             "token_type": 64
@@ -976,7 +983,7 @@
                       "end_column": 59,
                       "start": 1584,
                       "end": 1585,
-                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                      "source": 8829391048709494866
                     },
                     "token_number": 93,
                     "token_type": 64
@@ -1002,7 +1009,7 @@
                     "end_column": 63,
                     "start": 1588,
                     "end": 1589,
-                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                    "source": 8829391048709494866
                   },
                   "token_number": 95,
                   "token_type": 67
@@ -1044,7 +1051,7 @@
                 "end_column": 63,
                 "start": 1588,
                 "end": 1589,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                "source": 8829391048709494866
               },
               "token_number": 95,
               "token_type": 67
@@ -1064,7 +1071,7 @@
         "end_column": 57,
         "start": 1529,
         "end": 1583,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+        "source": 8829391048709494866
       },
       "condition": null,
       "inner": false,
@@ -1075,13 +1082,15 @@
       "is_final": false,
       "is_replaceable": false,
       "is_redeclare": false,
+      "redeclared_by_modification": false,
+      "has_unapplied_redeclare": false,
       "constrainedby": null,
       "is_structural": false
     },
     "seg1": {
-      "def_id": 90,
+      "def_id": 105,
       "type_id": null,
-      "type_def_id": 93,
+      "type_def_id": 108,
       "name": "seg1",
       "name_token": {
         "text": "seg1",
@@ -1092,7 +1101,7 @@
           "end_column": 15,
           "start": 1602,
           "end": 1606,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+          "source": 8829391048709494866
         },
         "token_number": 99,
         "token_type": 64
@@ -1108,7 +1117,7 @@
               "end_column": 10,
               "start": 1594,
               "end": 1601,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+              "source": 8829391048709494866
             },
             "token_number": 98,
             "token_type": 64
@@ -1148,7 +1157,7 @@
         "end_column": 15,
         "start": 1594,
         "end": 1606,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+        "source": 8829391048709494866
       },
       "condition": null,
       "inner": false,
@@ -1159,13 +1168,15 @@
       "is_final": false,
       "is_replaceable": false,
       "is_redeclare": false,
+      "redeclared_by_modification": false,
+      "has_unapplied_redeclare": false,
       "constrainedby": null,
       "is_structural": false
     },
     "seg2": {
-      "def_id": 91,
+      "def_id": 106,
       "type_id": null,
-      "type_def_id": 93,
+      "type_def_id": 108,
       "name": "seg2",
       "name_token": {
         "text": "seg2",
@@ -1176,7 +1187,7 @@
           "end_column": 15,
           "start": 1618,
           "end": 1622,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+          "source": 8829391048709494866
         },
         "token_number": 102,
         "token_type": 64
@@ -1192,7 +1203,7 @@
               "end_column": 10,
               "start": 1610,
               "end": 1617,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+              "source": 8829391048709494866
             },
             "token_number": 101,
             "token_type": 64
@@ -1232,7 +1243,7 @@
         "end_column": 15,
         "start": 1610,
         "end": 1622,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+        "source": 8829391048709494866
       },
       "condition": null,
       "inner": false,
@@ -1243,13 +1254,15 @@
       "is_final": false,
       "is_replaceable": false,
       "is_redeclare": false,
+      "redeclared_by_modification": false,
+      "has_unapplied_redeclare": false,
       "constrainedby": null,
       "is_structural": false
     },
     "gnd": {
-      "def_id": 92,
+      "def_id": 107,
       "type_id": null,
-      "type_def_id": 4044,
+      "type_def_id": 4059,
       "name": "gnd",
       "name_token": {
         "text": "gnd",
@@ -1260,7 +1273,7 @@
           "end_column": 46,
           "start": 1666,
           "end": 1669,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+          "source": 8829391048709494866
         },
         "token_number": 113,
         "token_type": 64
@@ -1276,7 +1289,7 @@
               "end_column": 11,
               "start": 1626,
               "end": 1634,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+              "source": 8829391048709494866
             },
             "token_number": 104,
             "token_type": 64
@@ -1290,7 +1303,7 @@
               "end_column": 22,
               "start": 1635,
               "end": 1645,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+              "source": 8829391048709494866
             },
             "token_number": 106,
             "token_type": 64
@@ -1304,7 +1317,7 @@
               "end_column": 29,
               "start": 1646,
               "end": 1652,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+              "source": 8829391048709494866
             },
             "token_number": 108,
             "token_type": 64
@@ -1318,7 +1331,7 @@
               "end_column": 35,
               "start": 1653,
               "end": 1658,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+              "source": 8829391048709494866
             },
             "token_number": 110,
             "token_type": 64
@@ -1332,7 +1345,7 @@
               "end_column": 42,
               "start": 1659,
               "end": 1665,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+              "source": 8829391048709494866
             },
             "token_number": 112,
             "token_type": 64
@@ -1372,7 +1385,7 @@
         "end_column": 46,
         "start": 1626,
         "end": 1669,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+        "source": 8829391048709494866
       },
       "condition": null,
       "inner": false,
@@ -1383,6 +1396,8 @@
       "is_final": false,
       "is_replaceable": false,
       "is_redeclare": false,
+      "redeclared_by_modification": false,
+      "has_unapplied_redeclare": false,
       "constrainedby": null,
       "is_structural": false
     }
@@ -1403,7 +1418,7 @@
                   "end_column": 14,
                   "start": 1719,
                   "end": 1722,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 119,
                 "token_type": 64
@@ -1420,7 +1435,7 @@
                   "end_column": 16,
                   "start": 1723,
                   "end": 1724,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 121,
                 "token_type": 64
@@ -1447,7 +1462,7 @@
                   "end_column": 22,
                   "start": 1726,
                   "end": 1730,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 123,
                 "token_type": 64
@@ -1464,7 +1479,7 @@
                   "end_column": 24,
                   "start": 1731,
                   "end": 1732,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 125,
                 "token_type": 64
@@ -1495,7 +1510,7 @@
                   "end_column": 15,
                   "start": 1745,
                   "end": 1749,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 130,
                 "token_type": 64
@@ -1512,7 +1527,7 @@
                   "end_column": 17,
                   "start": 1750,
                   "end": 1751,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 132,
                 "token_type": 64
@@ -1539,7 +1554,7 @@
                   "end_column": 23,
                   "start": 1753,
                   "end": 1757,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 134,
                 "token_type": 64
@@ -1556,7 +1571,7 @@
                   "end_column": 25,
                   "start": 1758,
                   "end": 1759,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 136,
                 "token_type": 64
@@ -1587,7 +1602,7 @@
                   "end_column": 15,
                   "start": 1772,
                   "end": 1776,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 141,
                 "token_type": 64
@@ -1604,7 +1619,7 @@
                   "end_column": 17,
                   "start": 1777,
                   "end": 1778,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 143,
                 "token_type": 64
@@ -1631,7 +1646,7 @@
                   "end_column": 22,
                   "start": 1780,
                   "end": 1783,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 145,
                 "token_type": 64
@@ -1648,7 +1663,7 @@
                   "end_column": 24,
                   "start": 1784,
                   "end": 1785,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 147,
                 "token_type": 64
@@ -1679,7 +1694,7 @@
                   "end_column": 14,
                   "start": 1798,
                   "end": 1801,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 152,
                 "token_type": 64
@@ -1696,7 +1711,7 @@
                   "end_column": 16,
                   "start": 1802,
                   "end": 1803,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 154,
                 "token_type": 64
@@ -1723,7 +1738,7 @@
                   "end_column": 21,
                   "start": 1805,
                   "end": 1808,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 156,
                 "token_type": 64
@@ -1740,7 +1755,7 @@
                   "end_column": 23,
                   "start": 1809,
                   "end": 1810,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 158,
                 "token_type": 64
@@ -1769,7 +1784,7 @@
       "end_column": 9,
       "start": 1671,
       "end": 1679,
-      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+      "source": 8829391048709494866
     },
     "token_number": 115,
     "token_type": 24
@@ -1786,7 +1801,7 @@
       "end_column": 18,
       "start": 1908,
       "end": 1921,
-      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+      "source": 8829391048709494866
     },
     "token_number": 184,
     "token_type": 64
@@ -1808,7 +1823,7 @@
                   "end_column": 24,
                   "start": 1826,
                   "end": 1836,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                  "source": 8829391048709494866
                 },
                 "token_number": 163,
                 "token_type": 64
@@ -1838,7 +1853,7 @@
                         "end_column": 34,
                         "start": 1837,
                         "end": 1846,
-                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                        "source": 8829391048709494866
                       },
                       "token_number": 165,
                       "token_type": 64
@@ -1864,7 +1879,7 @@
                       "end_column": 38,
                       "start": 1849,
                       "end": 1850,
-                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                      "source": 8829391048709494866
                     },
                     "token_number": 167,
                     "token_type": 67
@@ -1898,7 +1913,7 @@
                         "end_column": 48,
                         "start": 1852,
                         "end": 1860,
-                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                        "source": 8829391048709494866
                       },
                       "token_number": 169,
                       "token_type": 64
@@ -1924,7 +1939,7 @@
                       "end_column": 52,
                       "start": 1863,
                       "end": 1864,
-                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                      "source": 8829391048709494866
                     },
                     "token_number": 171,
                     "token_type": 67
@@ -1958,7 +1973,7 @@
                         "end_column": 62,
                         "start": 1866,
                         "end": 1874,
-                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                        "source": 8829391048709494866
                       },
                       "token_number": 173,
                       "token_type": 64
@@ -1984,7 +1999,7 @@
                       "end_column": 70,
                       "start": 1877,
                       "end": 1882,
-                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                      "source": 8829391048709494866
                     },
                     "token_number": 175,
                     "token_type": 68
@@ -2018,7 +2033,7 @@
                         "end_column": 81,
                         "start": 1884,
                         "end": 1893,
-                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                        "source": 8829391048709494866
                       },
                       "token_number": 177,
                       "token_type": 64
@@ -2044,7 +2059,7 @@
                       "end_column": 88,
                       "start": 1896,
                       "end": 1900,
-                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/ScopedConnect.mo"
+                      "source": 8829391048709494866
                     },
                     "token_number": 179,
                     "token_type": 71
@@ -2096,6 +2111,7 @@
   "is_outer": false,
   "is_replaceable": false,
   "is_redeclare": false,
+  "redeclare_target_def_id": null,
   "constrainedby": null,
   "array_subscripts": [],
   "external": null

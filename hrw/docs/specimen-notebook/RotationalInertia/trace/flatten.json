@@ -1,6 +1,143 @@
 {
+  "predefined_string_declaration": 4,
+  "predefined_types": {
+    "real": 0,
+    "integer": 1,
+    "boolean": 2,
+    "string": 3,
+    "clock": 4
+  },
+  "effective_types": {
+    "44": {
+      "nominal_type": 29,
+      "canonical_type": 29,
+      "dimensions": []
+    },
+    "45": {
+      "nominal_type": 31,
+      "canonical_type": 30,
+      "dimensions": []
+    },
+    "46": {
+      "nominal_type": 38,
+      "canonical_type": 0,
+      "dimensions": []
+    },
+    "47": {
+      "nominal_type": 43,
+      "canonical_type": 0,
+      "dimensions": []
+    },
+    "48": {
+      "nominal_type": 32,
+      "canonical_type": 30,
+      "dimensions": []
+    },
+    "49": {
+      "nominal_type": 42,
+      "canonical_type": 0,
+      "dimensions": []
+    },
+    "50": {
+      "nominal_type": 5,
+      "canonical_type": 5,
+      "dimensions": []
+    },
+    "51": {
+      "nominal_type": 39,
+      "canonical_type": 0,
+      "dimensions": []
+    },
+    "52": {
+      "nominal_type": 40,
+      "canonical_type": 0,
+      "dimensions": []
+    },
+    "53": {
+      "nominal_type": 36,
+      "canonical_type": 36,
+      "dimensions": []
+    },
+    "54": {
+      "nominal_type": 2,
+      "canonical_type": 2,
+      "dimensions": []
+    },
+    "55": {
+      "nominal_type": 17,
+      "canonical_type": 0,
+      "dimensions": []
+    },
+    "56": {
+      "nominal_type": 20,
+      "canonical_type": 20,
+      "dimensions": []
+    },
+    "57": {
+      "nominal_type": 18,
+      "canonical_type": 0,
+      "dimensions": []
+    },
+    "58": {
+      "nominal_type": 0,
+      "canonical_type": 0,
+      "dimensions": []
+    }
+  },
+  "enumeration_types": [
+    50
+  ],
+  "type_ids_by_def_id": {
+    "1": 0,
+    "2": 1,
+    "3": 2,
+    "4": 3,
+    "6": 4,
+    "98": 7,
+    "99": 8,
+    "103": 9,
+    "104": 10,
+    "105": 11,
+    "106": 12,
+    "107": 13,
+    "108": 14,
+    "109": 15,
+    "110": 16,
+    "111": 17,
+    "112": 18,
+    "113": 19,
+    "115": 20,
+    "117": 21,
+    "118": 22,
+    "119": 23,
+    "120": 24,
+    "121": 25,
+    "122": 26,
+    "123": 27,
+    "124": 28,
+    "125": 29,
+    "131": 30,
+    "132": 31,
+    "133": 32,
+    "134": 33,
+    "135": 34,
+    "136": 35,
+    "145": 36,
+    "147": 37,
+    "148": 38,
+    "149": 39,
+    "150": 40,
+    "151": 41,
+    "152": 42,
+    "153": 43
+  },
+  "enumeration_type_roots": [
+    5,
+    6
+  ],
   "variables": {
     "inertia.flange_a.phi": {
+      "instance_id": 6,
       "name": "inertia.flange_a.phi",
       "component_ref": {
         "local": false,
@@ -17,7 +154,8 @@
               "start": 105,
               "end": 117
             },
-            "subs": []
+            "subs": [],
+            "def_id": 100
           },
           {
             "ident": "flange_a",
@@ -26,7 +164,8 @@
               "start": 105,
               "end": 117
             },
-            "subs": []
+            "subs": [],
+            "def_id": 143
           },
           {
             "ident": "phi",
@@ -35,17 +174,17 @@
               "start": 105,
               "end": 117
             },
-            "subs": []
+            "subs": [],
+            "def_id": 137
           }
-        ],
-        "def_id": 39464
+        ]
       },
       "source_span": {
         "source": 12345605953554932806,
         "start": 105,
         "end": 117
       },
-      "type_id": 5993,
+      "type_id": 46,
       "variability": "Empty",
       "causality": "Empty",
       "flow": false,
@@ -74,6 +213,7 @@
       "oc_eq_constraint_size": null
     },
     "inertia.flange_a.tau": {
+      "instance_id": 7,
       "name": "inertia.flange_a.tau",
       "component_ref": {
         "local": false,
@@ -90,7 +230,8 @@
               "start": 162,
               "end": 175
             },
-            "subs": []
+            "subs": [],
+            "def_id": 100
           },
           {
             "ident": "flange_a",
@@ -99,7 +240,8 @@
               "start": 162,
               "end": 175
             },
-            "subs": []
+            "subs": [],
+            "def_id": 143
           },
           {
             "ident": "tau",
@@ -108,17 +250,17 @@
               "start": 162,
               "end": 175
             },
-            "subs": []
+            "subs": [],
+            "def_id": 138
           }
-        ],
-        "def_id": 39465
+        ]
       },
       "source_span": {
         "source": 12345605953554932806,
         "start": 162,
         "end": 175
       },
-      "type_id": 6044,
+      "type_id": 47,
       "variability": "Empty",
       "causality": "Empty",
       "flow": true,
@@ -147,6 +289,7 @@
       "oc_eq_constraint_size": null
     },
     "inertia.flange_b.phi": {
+      "instance_id": 10,
       "name": "inertia.flange_b.phi",
       "component_ref": {
         "local": false,
@@ -163,7 +306,8 @@
               "start": 105,
               "end": 117
             },
-            "subs": []
+            "subs": [],
+            "def_id": 100
           },
           {
             "ident": "flange_b",
@@ -172,7 +316,8 @@
               "start": 105,
               "end": 117
             },
-            "subs": []
+            "subs": [],
+            "def_id": 144
           },
           {
             "ident": "phi",
@@ -181,17 +326,17 @@
               "start": 105,
               "end": 117
             },
-            "subs": []
+            "subs": [],
+            "def_id": 137
           }
-        ],
-        "def_id": 39468
+        ]
       },
       "source_span": {
         "source": 12345605953554932806,
         "start": 105,
         "end": 117
       },
-      "type_id": 5993,
+      "type_id": 46,
       "variability": "Empty",
       "causality": "Empty",
       "flow": false,
@@ -220,6 +365,7 @@
       "oc_eq_constraint_size": null
     },
     "inertia.flange_b.tau": {
+      "instance_id": 11,
       "name": "inertia.flange_b.tau",
       "component_ref": {
         "local": false,
@@ -236,7 +382,8 @@
               "start": 162,
               "end": 175
             },
-            "subs": []
+            "subs": [],
+            "def_id": 100
           },
           {
             "ident": "flange_b",
@@ -245,7 +392,8 @@
               "start": 162,
               "end": 175
             },
-            "subs": []
+            "subs": [],
+            "def_id": 144
           },
           {
             "ident": "tau",
@@ -254,17 +402,17 @@
               "start": 162,
               "end": 175
             },
-            "subs": []
+            "subs": [],
+            "def_id": 138
           }
-        ],
-        "def_id": 39469
+        ]
       },
       "source_span": {
         "source": 12345605953554932806,
         "start": 162,
         "end": 175
       },
-      "type_id": 6044,
+      "type_id": 47,
       "variability": "Empty",
       "causality": "Empty",
       "flow": true,
@@ -293,6 +441,7 @@
       "oc_eq_constraint_size": null
     },
     "inertia.J": {
+      "instance_id": 12,
       "name": "inertia.J",
       "component_ref": {
         "local": false,
@@ -309,7 +458,8 @@
               "start": 165,
               "end": 177
             },
-            "subs": []
+            "subs": [],
+            "def_id": 100
           },
           {
             "ident": "J",
@@ -318,17 +468,17 @@
               "start": 165,
               "end": 177
             },
-            "subs": []
+            "subs": [],
+            "def_id": 126
           }
-        ],
-        "def_id": 39470
+        ]
       },
       "source_span": {
         "source": 9505113861025472581,
         "start": 165,
         "end": 177
       },
-      "type_id": 6039,
+      "type_id": 49,
       "variability": {
         "Parameter": {
           "text": "parameter",
@@ -339,7 +489,7 @@
             "end_column": 12,
             "start": 155,
             "end": 164,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/vendor/msl/Modelica 4.1.0\\Mechanics\\Rotational\\Components\\Inertia.mo"
+            "source": 9505113861025472581
           },
           "token_number": 19,
           "token_type": 48
@@ -405,6 +555,7 @@
       "oc_eq_constraint_size": null
     },
     "inertia.phi": {
+      "instance_id": 14,
       "name": "inertia.phi",
       "component_ref": {
         "local": false,
@@ -421,7 +572,8 @@
               "start": 373,
               "end": 385
             },
-            "subs": []
+            "subs": [],
+            "def_id": 100
           },
           {
             "ident": "phi",
@@ -430,17 +582,17 @@
               "start": 373,
               "end": 385
             },
-            "subs": []
+            "subs": [],
+            "def_id": 128
           }
-        ],
-        "def_id": 39472
+        ]
       },
       "source_span": {
         "source": 9505113861025472581,
         "start": 373,
         "end": 385
       },
-      "type_id": 5993,
+      "type_id": 46,
       "variability": "Empty",
       "causality": "Empty",
       "flow": false,
@@ -469,6 +621,7 @@
       "oc_eq_constraint_size": null
     },
     "inertia.w": {
+      "instance_id": 15,
       "name": "inertia.w",
       "component_ref": {
         "local": false,
@@ -485,7 +638,8 @@
               "start": 530,
               "end": 550
             },
-            "subs": []
+            "subs": [],
+            "def_id": 100
           },
           {
             "ident": "w",
@@ -494,17 +648,17 @@
               "start": 530,
               "end": 550
             },
-            "subs": []
+            "subs": [],
+            "def_id": 129
           }
-        ],
-        "def_id": 39473
+        ]
       },
       "source_span": {
         "source": 9505113861025472581,
         "start": 530,
         "end": 550
       },
-      "type_id": 6008,
+      "type_id": 51,
       "variability": "Empty",
       "causality": "Empty",
       "flow": false,
@@ -533,6 +687,7 @@
       "oc_eq_constraint_size": null
     },
     "inertia.a": {
+      "instance_id": 16,
       "name": "inertia.a",
       "component_ref": {
         "local": false,
@@ -549,7 +704,8 @@
               "start": 710,
               "end": 734
             },
-            "subs": []
+            "subs": [],
+            "def_id": 100
           },
           {
             "ident": "a",
@@ -558,17 +714,17 @@
               "start": 710,
               "end": 734
             },
-            "subs": []
+            "subs": [],
+            "def_id": 130
           }
-        ],
-        "def_id": 39474
+        ]
       },
       "source_span": {
         "source": 9505113861025472581,
         "start": 710,
         "end": 734
       },
-      "type_id": 6009,
+      "type_id": 52,
       "variability": "Empty",
       "causality": "Empty",
       "flow": false,
@@ -597,6 +753,7 @@
       "oc_eq_constraint_size": null
     },
     "torque.useSupport": {
+      "instance_id": 19,
       "name": "torque.useSupport",
       "component_ref": {
         "local": false,
@@ -613,7 +770,8 @@
               "start": 256,
               "end": 274
             },
-            "subs": []
+            "subs": [],
+            "def_id": 101
           },
           {
             "ident": "useSupport",
@@ -622,17 +780,17 @@
               "start": 256,
               "end": 274
             },
-            "subs": []
+            "subs": [],
+            "def_id": 139
           }
-        ],
-        "def_id": 39477
+        ]
       },
       "source_span": {
         "source": 4979990776833295005,
         "start": 256,
         "end": 274
       },
-      "type_id": 2,
+      "type_id": 54,
       "variability": {
         "Parameter": {
           "text": "parameter",
@@ -643,7 +801,7 @@
             "end_column": 12,
             "start": 246,
             "end": 255,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/vendor/msl/Modelica 4.1.0\\Mechanics\\Rotational\\Interfaces\\PartialElementaryOneFlangeAndSupport2.mo"
+            "source": 4979990776833295005
           },
           "token_number": 13,
           "token_type": 48
@@ -698,6 +856,7 @@
       "oc_eq_constraint_size": null
     },
     "torque.flange.phi": {
+      "instance_id": 22,
       "name": "torque.flange.phi",
       "component_ref": {
         "local": false,
@@ -714,7 +873,8 @@
               "start": 105,
               "end": 117
             },
-            "subs": []
+            "subs": [],
+            "def_id": 101
           },
           {
             "ident": "flange",
@@ -723,7 +883,8 @@
               "start": 105,
               "end": 117
             },
-            "subs": []
+            "subs": [],
+            "def_id": 140
           },
           {
             "ident": "phi",
@@ -732,17 +893,17 @@
               "start": 105,
               "end": 117
             },
-            "subs": []
+            "subs": [],
+            "def_id": 137
           }
-        ],
-        "def_id": 39480
+        ]
       },
       "source_span": {
         "source": 12345605953554932806,
         "start": 105,
         "end": 117
       },
-      "type_id": 5993,
+      "type_id": 46,
       "variability": "Empty",
       "causality": "Empty",
       "flow": false,
@@ -771,6 +932,7 @@
       "oc_eq_constraint_size": null
     },
     "torque.flange.tau": {
+      "instance_id": 23,
       "name": "torque.flange.tau",
       "component_ref": {
         "local": false,
@@ -787,7 +949,8 @@
               "start": 162,
               "end": 175
             },
-            "subs": []
+            "subs": [],
+            "def_id": 101
           },
           {
             "ident": "flange",
@@ -796,7 +959,8 @@
               "start": 162,
               "end": 175
             },
-            "subs": []
+            "subs": [],
+            "def_id": 140
           },
           {
             "ident": "tau",
@@ -805,17 +969,17 @@
               "start": 162,
               "end": 175
             },
-            "subs": []
+            "subs": [],
+            "def_id": 138
           }
-        ],
-        "def_id": 39481
+        ]
       },
       "source_span": {
         "source": 12345605953554932806,
         "start": 162,
         "end": 175
       },
-      "type_id": 6044,
+      "type_id": 47,
       "variability": "Empty",
       "causality": "Empty",
       "flow": true,
@@ -844,6 +1008,7 @@
       "oc_eq_constraint_size": null
     },
     "torque.phi_support": {
+      "instance_id": 24,
       "name": "torque.phi_support",
       "component_ref": {
         "local": false,
@@ -860,7 +1025,8 @@
               "start": 815,
               "end": 835
             },
-            "subs": []
+            "subs": [],
+            "def_id": 101
           },
           {
             "ident": "phi_support",
@@ -869,17 +1035,17 @@
               "start": 815,
               "end": 835
             },
-            "subs": []
+            "subs": [],
+            "def_id": 142
           }
-        ],
-        "def_id": 39482
+        ]
       },
       "source_span": {
         "source": 4979990776833295005,
         "start": 815,
         "end": 835
       },
-      "type_id": 5993,
+      "type_id": 46,
       "variability": "Empty",
       "causality": "Empty",
       "flow": false,
@@ -908,6 +1074,7 @@
       "oc_eq_constraint_size": null
     },
     "torque.tau": {
+      "instance_id": 25,
       "name": "torque.tau",
       "component_ref": {
         "local": false,
@@ -924,7 +1091,8 @@
               "start": 204,
               "end": 244
             },
-            "subs": []
+            "subs": [],
+            "def_id": 101
           },
           {
             "ident": "tau",
@@ -933,17 +1101,17 @@
               "start": 204,
               "end": 244
             },
-            "subs": []
+            "subs": [],
+            "def_id": 146
           }
-        ],
-        "def_id": 39483
+        ]
       },
       "source_span": {
         "source": 16723039542342503701,
         "start": 204,
         "end": 244
       },
-      "type_id": 164,
+      "type_id": 55,
       "variability": "Empty",
       "causality": {
         "Input": {
@@ -955,7 +1123,7 @@
             "end_column": 30,
             "start": 182,
             "end": 187,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/vendor/msl/Modelica 4.1.0\\Blocks\\Interfaces.mo"
+            "source": 10719673149012819167
           },
           "token_number": 18,
           "token_type": 39
@@ -987,6 +1155,7 @@
       "oc_eq_constraint_size": null
     },
     "tau.y": {
+      "instance_id": 28,
       "name": "tau.y",
       "component_ref": {
         "local": false,
@@ -1003,7 +1172,8 @@
               "start": 10427,
               "end": 10439
             },
-            "subs": []
+            "subs": [],
+            "def_id": 102
           },
           {
             "ident": "y",
@@ -1012,17 +1182,17 @@
               "start": 10427,
               "end": 10439
             },
-            "subs": []
+            "subs": [],
+            "def_id": 114
           }
-        ],
-        "def_id": 39486
+        ]
       },
       "source_span": {
         "source": 10719673149012819167,
         "start": 10427,
         "end": 10439
       },
-      "type_id": 165,
+      "type_id": 57,
       "variability": "Empty",
       "causality": {
         "Output": {
@@ -1034,7 +1204,7 @@
             "end_column": 32,
             "start": 1157,
             "end": 1163,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/vendor/msl/Modelica 4.1.0\\Blocks\\Interfaces.mo"
+            "source": 10719673149012819167
           },
           "token_number": 257,
           "token_type": 46
@@ -1066,6 +1236,7 @@
       "oc_eq_constraint_size": null
     },
     "tau.k": {
+      "instance_id": 29,
       "name": "tau.k",
       "component_ref": {
         "local": false,
@@ -1082,7 +1253,8 @@
               "start": 6707,
               "end": 6713
             },
-            "subs": []
+            "subs": [],
+            "def_id": 102
           },
           {
             "ident": "k",
@@ -1091,17 +1263,17 @@
               "start": 6707,
               "end": 6713
             },
-            "subs": []
+            "subs": [],
+            "def_id": 116
           }
-        ],
-        "def_id": 39487
+        ]
       },
       "source_span": {
         "source": 10262452240642484419,
         "start": 6707,
         "end": 6713
       },
-      "type_id": 0,
+      "type_id": 58,
       "variability": {
         "Parameter": {
           "text": "parameter",
@@ -1112,7 +1284,7 @@
             "end_column": 14,
             "start": 6697,
             "end": 6706,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/vendor/msl/Modelica 4.1.0\\Blocks\\Sources.mo"
+            "source": 10262452240642484419
           },
           "token_number": 1257,
           "token_type": 48
@@ -1167,21 +1339,23 @@
       "oc_eq_constraint_size": null
     }
   },
+  "record_instances": {},
+  "record_types": {},
   "variable_type_names": {
-    "inertia.flange_a.phi": "SI.Angle",
-    "inertia.flange_a.tau": "SI.Torque",
-    "inertia.flange_b.phi": "SI.Angle",
-    "inertia.flange_b.tau": "SI.Torque",
-    "inertia.J": "SI.Inertia",
-    "inertia.phi": "SI.Angle",
-    "inertia.w": "SI.AngularVelocity",
-    "inertia.a": "SI.AngularAcceleration",
+    "inertia.flange_a.phi": "Real",
+    "inertia.flange_a.tau": "Real",
+    "inertia.flange_b.phi": "Real",
+    "inertia.flange_b.tau": "Real",
+    "inertia.J": "Real",
+    "inertia.phi": "Real",
+    "inertia.w": "Real",
+    "inertia.a": "Real",
     "torque.useSupport": "Boolean",
-    "torque.flange.phi": "SI.Angle",
-    "torque.flange.tau": "SI.Torque",
-    "torque.phi_support": "SI.Angle",
-    "torque.tau": "Modelica.Blocks.Interfaces.RealInput",
-    "tau.y": "RealOutput",
+    "torque.flange.phi": "Real",
+    "torque.flange.tau": "Real",
+    "torque.phi_support": "Real",
+    "torque.tau": "Real",
+    "tau.y": "Real",
     "tau.k": "Real"
   },
   "variable_final_flags": {},
@@ -1198,31 +1372,35 @@
                   "local": false,
                   "span": {
                     "source": 9505113861025472581,
-                    "start": 881,
-                    "end": 884
+                    "start": 373,
+                    "end": 385
                   },
                   "parts": [
                     {
                       "ident": "inertia",
                       "span": {
                         "source": 9505113861025472581,
-                        "start": 881,
-                        "end": 884
+                        "start": 373,
+                        "end": 385
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 100
                     },
                     {
                       "ident": "phi",
                       "span": {
                         "source": 9505113861025472581,
-                        "start": 881,
-                        "end": 884
+                        "start": 373,
+                        "end": 385
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 128
                     }
-                  ],
-                  "def_id": 27698
-                }
+                  ]
+                },
+                "resolved_function": null,
+                "instance_id": 14,
+                "generated": false
               },
               "subscripts": [],
               "span": {
@@ -1239,41 +1417,46 @@
                 "component_ref": {
                   "local": false,
                   "span": {
-                    "source": 9505113861025472581,
-                    "start": 887,
-                    "end": 899
+                    "source": 12345605953554932806,
+                    "start": 105,
+                    "end": 117
                   },
                   "parts": [
                     {
                       "ident": "inertia",
                       "span": {
-                        "source": 9505113861025472581,
-                        "start": 887,
-                        "end": 899
+                        "source": 12345605953554932806,
+                        "start": 105,
+                        "end": 117
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 100
                     },
                     {
                       "ident": "flange_a",
                       "span": {
-                        "source": 9505113861025472581,
-                        "start": 887,
-                        "end": 899
+                        "source": 12345605953554932806,
+                        "start": 105,
+                        "end": 117
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 143
                     },
                     {
                       "ident": "phi",
                       "span": {
-                        "source": 9505113861025472581,
-                        "start": 887,
-                        "end": 899
+                        "source": 12345605953554932806,
+                        "start": 105,
+                        "end": 117
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 137
                     }
-                  ],
-                  "def_id": null
-                }
+                  ]
+                },
+                "resolved_function": null,
+                "instance_id": 6,
+                "generated": false
               },
               "subscripts": [],
               "span": {
@@ -1293,7 +1476,7 @@
       "span": {
         "source": 9505113861025472581,
         "start": 881,
-        "end": 884
+        "end": 899
       },
       "origin": {
         "ComponentEquation": {
@@ -1314,31 +1497,35 @@
                   "local": false,
                   "span": {
                     "source": 9505113861025472581,
-                    "start": 903,
-                    "end": 906
+                    "start": 373,
+                    "end": 385
                   },
                   "parts": [
                     {
                       "ident": "inertia",
                       "span": {
                         "source": 9505113861025472581,
-                        "start": 903,
-                        "end": 906
+                        "start": 373,
+                        "end": 385
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 100
                     },
                     {
                       "ident": "phi",
                       "span": {
                         "source": 9505113861025472581,
-                        "start": 903,
-                        "end": 906
+                        "start": 373,
+                        "end": 385
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 128
                     }
-                  ],
-                  "def_id": 27698
-                }
+                  ]
+                },
+                "resolved_function": null,
+                "instance_id": 14,
+                "generated": false
               },
               "subscripts": [],
               "span": {
@@ -1355,41 +1542,46 @@
                 "component_ref": {
                   "local": false,
                   "span": {
-                    "source": 9505113861025472581,
-                    "start": 909,
-                    "end": 921
+                    "source": 12345605953554932806,
+                    "start": 105,
+                    "end": 117
                   },
                   "parts": [
                     {
                       "ident": "inertia",
                       "span": {
-                        "source": 9505113861025472581,
-                        "start": 909,
-                        "end": 921
+                        "source": 12345605953554932806,
+                        "start": 105,
+                        "end": 117
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 100
                     },
                     {
                       "ident": "flange_b",
                       "span": {
-                        "source": 9505113861025472581,
-                        "start": 909,
-                        "end": 921
+                        "source": 12345605953554932806,
+                        "start": 105,
+                        "end": 117
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 144
                     },
                     {
                       "ident": "phi",
                       "span": {
-                        "source": 9505113861025472581,
-                        "start": 909,
-                        "end": 921
+                        "source": 12345605953554932806,
+                        "start": 105,
+                        "end": 117
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 137
                     }
-                  ],
-                  "def_id": null
-                }
+                  ]
+                },
+                "resolved_function": null,
+                "instance_id": 10,
+                "generated": false
               },
               "subscripts": [],
               "span": {
@@ -1409,7 +1601,7 @@
       "span": {
         "source": 9505113861025472581,
         "start": 903,
-        "end": 906
+        "end": 921
       },
       "origin": {
         "ComponentEquation": {
@@ -1430,31 +1622,35 @@
                   "local": false,
                   "span": {
                     "source": 9505113861025472581,
-                    "start": 925,
-                    "end": 926
+                    "start": 530,
+                    "end": 550
                   },
                   "parts": [
                     {
                       "ident": "inertia",
                       "span": {
                         "source": 9505113861025472581,
-                        "start": 925,
-                        "end": 926
+                        "start": 530,
+                        "end": 550
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 100
                     },
                     {
                       "ident": "w",
                       "span": {
                         "source": 9505113861025472581,
-                        "start": 925,
-                        "end": 926
+                        "start": 530,
+                        "end": 550
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 129
                     }
-                  ],
-                  "def_id": 27699
-                }
+                  ]
+                },
+                "resolved_function": null,
+                "instance_id": 15,
+                "generated": false
               },
               "subscripts": [],
               "span": {
@@ -1476,31 +1672,35 @@
                         "local": false,
                         "span": {
                           "source": 9505113861025472581,
-                          "start": 933,
-                          "end": 936
+                          "start": 373,
+                          "end": 385
                         },
                         "parts": [
                           {
                             "ident": "inertia",
                             "span": {
                               "source": 9505113861025472581,
-                              "start": 933,
-                              "end": 936
+                              "start": 373,
+                              "end": 385
                             },
-                            "subs": []
+                            "subs": [],
+                            "def_id": 100
                           },
                           {
                             "ident": "phi",
                             "span": {
                               "source": 9505113861025472581,
-                              "start": 933,
-                              "end": 936
+                              "start": 373,
+                              "end": 385
                             },
-                            "subs": []
+                            "subs": [],
+                            "def_id": 128
                           }
-                        ],
-                        "def_id": 27698
-                      }
+                        ]
+                      },
+                      "resolved_function": null,
+                      "instance_id": 14,
+                      "generated": false
                     },
                     "subscripts": [],
                     "span": {
@@ -1514,7 +1714,7 @@
               "span": {
                 "source": 9505113861025472581,
                 "start": 929,
-                "end": 932
+                "end": 937
               }
             }
           },
@@ -1528,7 +1728,7 @@
       "span": {
         "source": 9505113861025472581,
         "start": 925,
-        "end": 926
+        "end": 937
       },
       "origin": {
         "ComponentEquation": {
@@ -1549,31 +1749,35 @@
                   "local": false,
                   "span": {
                     "source": 9505113861025472581,
-                    "start": 941,
-                    "end": 942
+                    "start": 710,
+                    "end": 734
                   },
                   "parts": [
                     {
                       "ident": "inertia",
                       "span": {
                         "source": 9505113861025472581,
-                        "start": 941,
-                        "end": 942
+                        "start": 710,
+                        "end": 734
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 100
                     },
                     {
                       "ident": "a",
                       "span": {
                         "source": 9505113861025472581,
-                        "start": 941,
-                        "end": 942
+                        "start": 710,
+                        "end": 734
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 130
                     }
-                  ],
-                  "def_id": 27700
-                }
+                  ]
+                },
+                "resolved_function": null,
+                "instance_id": 16,
+                "generated": false
               },
               "subscripts": [],
               "span": {
@@ -1595,31 +1799,35 @@
                         "local": false,
                         "span": {
                           "source": 9505113861025472581,
-                          "start": 949,
-                          "end": 950
+                          "start": 530,
+                          "end": 550
                         },
                         "parts": [
                           {
                             "ident": "inertia",
                             "span": {
                               "source": 9505113861025472581,
-                              "start": 949,
-                              "end": 950
+                              "start": 530,
+                              "end": 550
                             },
-                            "subs": []
+                            "subs": [],
+                            "def_id": 100
                           },
                           {
                             "ident": "w",
                             "span": {
                               "source": 9505113861025472581,
-                              "start": 949,
-                              "end": 950
+                              "start": 530,
+                              "end": 550
                             },
-                            "subs": []
+                            "subs": [],
+                            "def_id": 129
                           }
-                        ],
-                        "def_id": 27699
-                      }
+                        ]
+                      },
+                      "resolved_function": null,
+                      "instance_id": 15,
+                      "generated": false
                     },
                     "subscripts": [],
                     "span": {
@@ -1633,7 +1841,7 @@
               "span": {
                 "source": 9505113861025472581,
                 "start": 945,
-                "end": 948
+                "end": 951
               }
             }
           },
@@ -1647,7 +1855,7 @@
       "span": {
         "source": 9505113861025472581,
         "start": 941,
-        "end": 942
+        "end": 951
       },
       "origin": {
         "ComponentEquation": {
@@ -1671,31 +1879,35 @@
                       "local": false,
                       "span": {
                         "source": 9505113861025472581,
-                        "start": 955,
-                        "end": 956
+                        "start": 165,
+                        "end": 177
                       },
                       "parts": [
                         {
                           "ident": "inertia",
                           "span": {
                             "source": 9505113861025472581,
-                            "start": 955,
-                            "end": 956
+                            "start": 165,
+                            "end": 177
                           },
-                          "subs": []
+                          "subs": [],
+                          "def_id": 100
                         },
                         {
                           "ident": "J",
                           "span": {
                             "source": 9505113861025472581,
-                            "start": 955,
-                            "end": 956
+                            "start": 165,
+                            "end": 177
                           },
-                          "subs": []
+                          "subs": [],
+                          "def_id": 126
                         }
-                      ],
-                      "def_id": 27696
-                    }
+                      ]
+                    },
+                    "resolved_function": null,
+                    "instance_id": 12,
+                    "generated": false
                   },
                   "subscripts": [],
                   "span": {
@@ -1713,31 +1925,35 @@
                       "local": false,
                       "span": {
                         "source": 9505113861025472581,
-                        "start": 957,
-                        "end": 958
+                        "start": 710,
+                        "end": 734
                       },
                       "parts": [
                         {
                           "ident": "inertia",
                           "span": {
                             "source": 9505113861025472581,
-                            "start": 957,
-                            "end": 958
+                            "start": 710,
+                            "end": 734
                           },
-                          "subs": []
+                          "subs": [],
+                          "def_id": 100
                         },
                         {
                           "ident": "a",
                           "span": {
                             "source": 9505113861025472581,
-                            "start": 957,
-                            "end": 958
+                            "start": 710,
+                            "end": 734
                           },
-                          "subs": []
+                          "subs": [],
+                          "def_id": 130
                         }
-                      ],
-                      "def_id": 27700
-                    }
+                      ]
+                    },
+                    "resolved_function": null,
+                    "instance_id": 16,
+                    "generated": false
                   },
                   "subscripts": [],
                   "span": {
@@ -1764,41 +1980,46 @@
                     "component_ref": {
                       "local": false,
                       "span": {
-                        "source": 9505113861025472581,
-                        "start": 961,
-                        "end": 973
+                        "source": 12345605953554932806,
+                        "start": 162,
+                        "end": 175
                       },
                       "parts": [
                         {
                           "ident": "inertia",
                           "span": {
-                            "source": 9505113861025472581,
-                            "start": 961,
-                            "end": 973
+                            "source": 12345605953554932806,
+                            "start": 162,
+                            "end": 175
                           },
-                          "subs": []
+                          "subs": [],
+                          "def_id": 100
                         },
                         {
                           "ident": "flange_a",
                           "span": {
-                            "source": 9505113861025472581,
-                            "start": 961,
-                            "end": 973
+                            "source": 12345605953554932806,
+                            "start": 162,
+                            "end": 175
                           },
-                          "subs": []
+                          "subs": [],
+                          "def_id": 143
                         },
                         {
                           "ident": "tau",
                           "span": {
-                            "source": 9505113861025472581,
-                            "start": 961,
-                            "end": 973
+                            "source": 12345605953554932806,
+                            "start": 162,
+                            "end": 175
                           },
-                          "subs": []
+                          "subs": [],
+                          "def_id": 138
                         }
-                      ],
-                      "def_id": null
-                    }
+                      ]
+                    },
+                    "resolved_function": null,
+                    "instance_id": 7,
+                    "generated": false
                   },
                   "subscripts": [],
                   "span": {
@@ -1815,41 +2036,46 @@
                     "component_ref": {
                       "local": false,
                       "span": {
-                        "source": 9505113861025472581,
-                        "start": 976,
-                        "end": 988
+                        "source": 12345605953554932806,
+                        "start": 162,
+                        "end": 175
                       },
                       "parts": [
                         {
                           "ident": "inertia",
                           "span": {
-                            "source": 9505113861025472581,
-                            "start": 976,
-                            "end": 988
+                            "source": 12345605953554932806,
+                            "start": 162,
+                            "end": 175
                           },
-                          "subs": []
+                          "subs": [],
+                          "def_id": 100
                         },
                         {
                           "ident": "flange_b",
                           "span": {
-                            "source": 9505113861025472581,
-                            "start": 976,
-                            "end": 988
+                            "source": 12345605953554932806,
+                            "start": 162,
+                            "end": 175
                           },
-                          "subs": []
+                          "subs": [],
+                          "def_id": 144
                         },
                         {
                           "ident": "tau",
                           "span": {
-                            "source": 9505113861025472581,
-                            "start": 976,
-                            "end": 988
+                            "source": 12345605953554932806,
+                            "start": 162,
+                            "end": 175
                           },
-                          "subs": []
+                          "subs": [],
+                          "def_id": 138
                         }
-                      ],
-                      "def_id": null
-                    }
+                      ]
+                    },
+                    "resolved_function": null,
+                    "instance_id": 11,
+                    "generated": false
                   },
                   "subscripts": [],
                   "span": {
@@ -1876,7 +2102,7 @@
       "span": {
         "source": 9505113861025472581,
         "start": 955,
-        "end": 956
+        "end": 988
       },
       "origin": {
         "ComponentEquation": {
@@ -1897,31 +2123,35 @@
                   "local": false,
                   "span": {
                     "source": 4979990776833295005,
-                    "start": 910,
-                    "end": 921
+                    "start": 815,
+                    "end": 835
                   },
                   "parts": [
                     {
                       "ident": "torque",
                       "span": {
                         "source": 4979990776833295005,
-                        "start": 910,
-                        "end": 921
+                        "start": 815,
+                        "end": 835
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 101
                     },
                     {
                       "ident": "phi_support",
                       "span": {
                         "source": 4979990776833295005,
-                        "start": 910,
-                        "end": 921
+                        "start": 815,
+                        "end": 835
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 142
                     }
-                  ],
-                  "def_id": 28123
-                }
+                  ]
+                },
+                "resolved_function": null,
+                "instance_id": 24,
+                "generated": false
               },
               "subscripts": [],
               "span": {
@@ -1952,8 +2182,8 @@
       },
       "span": {
         "source": 4979990776833295005,
-        "start": 890,
-        "end": 900
+        "start": 910,
+        "end": 925
       },
       "origin": {
         "ComponentEquation": {
@@ -1973,41 +2203,46 @@
                 "component_ref": {
                   "local": false,
                   "span": {
-                    "source": 16723039542342503701,
-                    "start": 406,
-                    "end": 416
+                    "source": 12345605953554932806,
+                    "start": 162,
+                    "end": 175
                   },
                   "parts": [
                     {
                       "ident": "torque",
                       "span": {
-                        "source": 16723039542342503701,
-                        "start": 406,
-                        "end": 416
+                        "source": 12345605953554932806,
+                        "start": 162,
+                        "end": 175
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 101
                     },
                     {
                       "ident": "flange",
                       "span": {
-                        "source": 16723039542342503701,
-                        "start": 406,
-                        "end": 416
+                        "source": 12345605953554932806,
+                        "start": 162,
+                        "end": 175
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 140
                     },
                     {
                       "ident": "tau",
                       "span": {
-                        "source": 16723039542342503701,
-                        "start": 406,
-                        "end": 416
+                        "source": 12345605953554932806,
+                        "start": 162,
+                        "end": 175
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 138
                     }
-                  ],
-                  "def_id": null
-                }
+                  ]
+                },
+                "resolved_function": null,
+                "instance_id": 23,
+                "generated": false
               },
               "subscripts": [],
               "span": {
@@ -2028,31 +2263,35 @@
                       "local": false,
                       "span": {
                         "source": 16723039542342503701,
-                        "start": 420,
-                        "end": 423
+                        "start": 204,
+                        "end": 244
                       },
                       "parts": [
                         {
                           "ident": "torque",
                           "span": {
                             "source": 16723039542342503701,
-                            "start": 420,
-                            "end": 423
+                            "start": 204,
+                            "end": 244
                           },
-                          "subs": []
+                          "subs": [],
+                          "def_id": 101
                         },
                         {
                           "ident": "tau",
                           "span": {
                             "source": 16723039542342503701,
-                            "start": 420,
-                            "end": 423
+                            "start": 204,
+                            "end": 244
                           },
-                          "subs": []
+                          "subs": [],
+                          "def_id": 146
                         }
-                      ],
-                      "def_id": 28285
-                    }
+                      ]
+                    },
+                    "resolved_function": null,
+                    "instance_id": 25,
+                    "generated": false
                   },
                   "subscripts": [],
                   "span": {
@@ -2079,7 +2318,7 @@
       "span": {
         "source": 16723039542342503701,
         "start": 406,
-        "end": 412
+        "end": 423
       },
       "origin": {
         "ComponentEquation": {
@@ -2099,32 +2338,36 @@
                 "component_ref": {
                   "local": false,
                   "span": {
-                    "source": 10262452240642484419,
-                    "start": 6893,
-                    "end": 6894
+                    "source": 10719673149012819167,
+                    "start": 10427,
+                    "end": 10439
                   },
                   "parts": [
                     {
                       "ident": "tau",
                       "span": {
-                        "source": 10262452240642484419,
-                        "start": 6893,
-                        "end": 6894
+                        "source": 10719673149012819167,
+                        "start": 10427,
+                        "end": 10439
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 102
                     },
                     {
                       "ident": "y",
                       "span": {
-                        "source": 10262452240642484419,
-                        "start": 6893,
-                        "end": 6894
+                        "source": 10719673149012819167,
+                        "start": 10427,
+                        "end": 10439
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 114
                     }
-                  ],
-                  "def_id": null
-                }
+                  ]
+                },
+                "resolved_function": null,
+                "instance_id": 28,
+                "generated": false
               },
               "subscripts": [],
               "span": {
@@ -2142,31 +2385,35 @@
                   "local": false,
                   "span": {
                     "source": 10262452240642484419,
-                    "start": 6897,
-                    "end": 6898
+                    "start": 6707,
+                    "end": 6713
                   },
                   "parts": [
                     {
                       "ident": "tau",
                       "span": {
                         "source": 10262452240642484419,
-                        "start": 6897,
-                        "end": 6898
+                        "start": 6707,
+                        "end": 6713
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 102
                     },
                     {
                       "ident": "k",
                       "span": {
                         "source": 10262452240642484419,
-                        "start": 6897,
-                        "end": 6898
+                        "start": 6707,
+                        "end": 6713
                       },
-                      "subs": []
+                      "subs": [],
+                      "def_id": 116
                     }
-                  ],
-                  "def_id": 1973
-                }
+                  ]
+                },
+                "resolved_function": null,
+                "instance_id": 29,
+                "generated": false
               },
               "subscripts": [],
               "span": {
@@ -2186,7 +2433,7 @@
       "span": {
         "source": 10262452240642484419,
         "start": 6893,
-        "end": 6894
+        "end": 6898
       },
       "origin": {
         "ComponentEquation": {
@@ -2203,44 +2450,10 @@
             "VarRef": {
               "name": {
                 "name": "torque.flange.tau",
-                "component_ref": {
-                  "local": false,
-                  "span": {
-                    "source": 12345605953554932806,
-                    "start": 162,
-                    "end": 175
-                  },
-                  "parts": [
-                    {
-                      "ident": "torque",
-                      "span": {
-                        "source": 12345605953554932806,
-                        "start": 162,
-                        "end": 175
-                      },
-                      "subs": []
-                    },
-                    {
-                      "ident": "flange",
-                      "span": {
-                        "source": 12345605953554932806,
-                        "start": 162,
-                        "end": 175
-                      },
-                      "subs": []
-                    },
-                    {
-                      "ident": "tau",
-                      "span": {
-                        "source": 12345605953554932806,
-                        "start": 162,
-                        "end": 175
-                      },
-                      "subs": []
-                    }
-                  ],
-                  "def_id": 39481
-                }
+                "component_ref": null,
+                "resolved_function": null,
+                "instance_id": null,
+                "generated": false
               },
               "subscripts": [],
               "span": {
@@ -2254,44 +2467,10 @@
             "VarRef": {
               "name": {
                 "name": "inertia.flange_a.tau",
-                "component_ref": {
-                  "local": false,
-                  "span": {
-                    "source": 12345605953554932806,
-                    "start": 162,
-                    "end": 175
-                  },
-                  "parts": [
-                    {
-                      "ident": "inertia",
-                      "span": {
-                        "source": 12345605953554932806,
-                        "start": 162,
-                        "end": 175
-                      },
-                      "subs": []
-                    },
-                    {
-                      "ident": "flange_a",
-                      "span": {
-                        "source": 12345605953554932806,
-                        "start": 162,
-                        "end": 175
-                      },
-                      "subs": []
-                    },
-                    {
-                      "ident": "tau",
-                      "span": {
-                        "source": 12345605953554932806,
-                        "start": 162,
-                        "end": 175
-                      },
-                      "subs": []
-                    }
-                  ],
-                  "def_id": 39465
-                }
+                "component_ref": null,
+                "resolved_function": null,
+                "instance_id": null,
+                "generated": false
               },
               "subscripts": [],
               "span": {
@@ -2328,35 +2507,10 @@
             "VarRef": {
               "name": {
                 "name": "tau.y",
-                "component_ref": {
-                  "local": false,
-                  "span": {
-                    "source": 10719673149012819167,
-                    "start": 10427,
-                    "end": 10439
-                  },
-                  "parts": [
-                    {
-                      "ident": "tau",
-                      "span": {
-                        "source": 10719673149012819167,
-                        "start": 10427,
-                        "end": 10439
-                      },
-                      "subs": []
-                    },
-                    {
-                      "ident": "y",
-                      "span": {
-                        "source": 10719673149012819167,
-                        "start": 10427,
-                        "end": 10439
-                      },
-                      "subs": []
-                    }
-                  ],
-                  "def_id": 39486
-                }
+                "component_ref": null,
+                "resolved_function": null,
+                "instance_id": null,
+                "generated": false
               },
               "subscripts": [],
               "span": {
@@ -2370,35 +2524,10 @@
             "VarRef": {
               "name": {
                 "name": "torque.tau",
-                "component_ref": {
-                  "local": false,
-                  "span": {
-                    "source": 16723039542342503701,
-                    "start": 204,
-                    "end": 244
-                  },
-                  "parts": [
-                    {
-                      "ident": "torque",
-                      "span": {
-                        "source": 16723039542342503701,
-                        "start": 204,
-                        "end": 244
-                      },
-                      "subs": []
-                    },
-                    {
-                      "ident": "tau",
-                      "span": {
-                        "source": 16723039542342503701,
-                        "start": 204,
-                        "end": 244
-                      },
-                      "subs": []
-                    }
-                  ],
-                  "def_id": 39483
-                }
+                "component_ref": null,
+                "resolved_function": null,
+                "instance_id": null,
+                "generated": false
               },
               "subscripts": [],
               "span": {
@@ -2436,44 +2565,10 @@
             "VarRef": {
               "name": {
                 "name": "torque.flange.phi",
-                "component_ref": {
-                  "local": false,
-                  "span": {
-                    "source": 12345605953554932806,
-                    "start": 105,
-                    "end": 117
-                  },
-                  "parts": [
-                    {
-                      "ident": "torque",
-                      "span": {
-                        "source": 12345605953554932806,
-                        "start": 105,
-                        "end": 117
-                      },
-                      "subs": []
-                    },
-                    {
-                      "ident": "flange",
-                      "span": {
-                        "source": 12345605953554932806,
-                        "start": 105,
-                        "end": 117
-                      },
-                      "subs": []
-                    },
-                    {
-                      "ident": "phi",
-                      "span": {
-                        "source": 12345605953554932806,
-                        "start": 105,
-                        "end": 117
-                      },
-                      "subs": []
-                    }
-                  ],
-                  "def_id": 39480
-                }
+                "component_ref": null,
+                "resolved_function": null,
+                "instance_id": null,
+                "generated": false
               },
               "subscripts": [],
               "span": {
@@ -2487,44 +2582,10 @@
             "VarRef": {
               "name": {
                 "name": "inertia.flange_a.phi",
-                "component_ref": {
-                  "local": false,
-                  "span": {
-                    "source": 12345605953554932806,
-                    "start": 105,
-                    "end": 117
-                  },
-                  "parts": [
-                    {
-                      "ident": "inertia",
-                      "span": {
-                        "source": 12345605953554932806,
-                        "start": 105,
-                        "end": 117
-                      },
-                      "subs": []
-                    },
-                    {
-                      "ident": "flange_a",
-                      "span": {
-                        "source": 12345605953554932806,
-                        "start": 105,
-                        "end": 117
-                      },
-                      "subs": []
-                    },
-                    {
-                      "ident": "phi",
-                      "span": {
-                        "source": 12345605953554932806,
-                        "start": 105,
-                        "end": 117
-                      },
-                      "subs": []
-                    }
-                  ],
-                  "def_id": 39464
-                }
+                "component_ref": null,
+                "resolved_function": null,
+                "instance_id": null,
+                "generated": false
               },
               "subscripts": [],
               "span": {
@@ -2559,44 +2620,10 @@
         "VarRef": {
           "name": {
             "name": "inertia.flange_b.tau",
-            "component_ref": {
-              "local": false,
-              "span": {
-                "source": 12345605953554932806,
-                "start": 162,
-                "end": 175
-              },
-              "parts": [
-                {
-                  "ident": "inertia",
-                  "span": {
-                    "source": 12345605953554932806,
-                    "start": 162,
-                    "end": 175
-                  },
-                  "subs": []
-                },
-                {
-                  "ident": "flange_b",
-                  "span": {
-                    "source": 12345605953554932806,
-                    "start": 162,
-                    "end": 175
-                  },
-                  "subs": []
-                },
-                {
-                  "ident": "tau",
-                  "span": {
-                    "source": 12345605953554932806,
-                    "start": 162,
-                    "end": 175
-                  },
-                  "subs": []
-                }
-              ],
-              "def_id": 39469
-            }
+            "component_ref": null,
+            "resolved_function": null,
+            "instance_id": null,
+            "generated": false
           },
           "subscripts": [],
           "span": {
@@ -2626,7 +2653,7 @@
   "initial_assert_equations": [],
   "algorithms": [],
   "initial_algorithms": [],
-  "when_clauses": [],
+  "when_chains": [],
   "functions": {},
   "is_partial": false,
   "class_type": "Model",
@@ -2652,1114 +2679,182 @@
     "AssertionLevel.warning": 1,
     "AssertionLevel.'warning'": 1,
     "AssertionLevel.error": 2,
-    "AssertionLevel.'error'": 2,
-    "Modelica.Blocks.Types.Smoothness.LinearSegments": 1,
-    "Smoothness.LinearSegments": 1,
-    "Modelica.Blocks.Types.Smoothness.'LinearSegments'": 1,
-    "Smoothness.'LinearSegments'": 1,
-    "Modelica.Blocks.Types.Smoothness.ContinuousDerivative": 2,
-    "Smoothness.ContinuousDerivative": 2,
-    "Modelica.Blocks.Types.Smoothness.'ContinuousDerivative'": 2,
-    "Smoothness.'ContinuousDerivative'": 2,
-    "Modelica.Blocks.Types.Smoothness.ConstantSegments": 3,
-    "Smoothness.ConstantSegments": 3,
-    "Modelica.Blocks.Types.Smoothness.'ConstantSegments'": 3,
-    "Smoothness.'ConstantSegments'": 3,
-    "Modelica.Blocks.Types.Smoothness.MonotoneContinuousDerivative1": 4,
-    "Smoothness.MonotoneContinuousDerivative1": 4,
-    "Modelica.Blocks.Types.Smoothness.'MonotoneContinuousDerivative1'": 4,
-    "Smoothness.'MonotoneContinuousDerivative1'": 4,
-    "Modelica.Blocks.Types.Smoothness.MonotoneContinuousDerivative2": 5,
-    "Smoothness.MonotoneContinuousDerivative2": 5,
-    "Modelica.Blocks.Types.Smoothness.'MonotoneContinuousDerivative2'": 5,
-    "Smoothness.'MonotoneContinuousDerivative2'": 5,
-    "Modelica.Blocks.Types.Smoothness.ModifiedContinuousDerivative": 6,
-    "Smoothness.ModifiedContinuousDerivative": 6,
-    "Modelica.Blocks.Types.Smoothness.'ModifiedContinuousDerivative'": 6,
-    "Smoothness.'ModifiedContinuousDerivative'": 6,
-    "Modelica.Blocks.Types.Extrapolation.HoldLastPoint": 1,
-    "Extrapolation.HoldLastPoint": 1,
-    "Modelica.Blocks.Types.Extrapolation.'HoldLastPoint'": 1,
-    "Extrapolation.'HoldLastPoint'": 1,
-    "Modelica.Blocks.Types.Extrapolation.LastTwoPoints": 2,
-    "Extrapolation.LastTwoPoints": 2,
-    "Modelica.Blocks.Types.Extrapolation.'LastTwoPoints'": 2,
-    "Extrapolation.'LastTwoPoints'": 2,
-    "Modelica.Blocks.Types.Extrapolation.Periodic": 3,
-    "Extrapolation.Periodic": 3,
-    "Modelica.Blocks.Types.Extrapolation.'Periodic'": 3,
-    "Extrapolation.'Periodic'": 3,
-    "Modelica.Blocks.Types.Extrapolation.NoExtrapolation": 4,
-    "Extrapolation.NoExtrapolation": 4,
-    "Modelica.Blocks.Types.Extrapolation.'NoExtrapolation'": 4,
-    "Extrapolation.'NoExtrapolation'": 4,
-    "Modelica.Blocks.Types.TimeEvents.Always": 1,
-    "TimeEvents.Always": 1,
-    "Modelica.Blocks.Types.TimeEvents.'Always'": 1,
-    "TimeEvents.'Always'": 1,
-    "Modelica.Blocks.Types.TimeEvents.AtDiscontinuities": 2,
-    "TimeEvents.AtDiscontinuities": 2,
-    "Modelica.Blocks.Types.TimeEvents.'AtDiscontinuities'": 2,
-    "TimeEvents.'AtDiscontinuities'": 2,
-    "Modelica.Blocks.Types.TimeEvents.NoTimeEvents": 3,
-    "TimeEvents.NoTimeEvents": 3,
-    "Modelica.Blocks.Types.TimeEvents.'NoTimeEvents'": 3,
-    "TimeEvents.'NoTimeEvents'": 3,
-    "Modelica.Blocks.Types.Init.NoInit": 1,
-    "Init.NoInit": 1,
-    "Modelica.Blocks.Types.Init.'NoInit'": 1,
-    "Init.'NoInit'": 1,
-    "Modelica.Blocks.Types.Init.SteadyState": 2,
-    "Init.SteadyState": 2,
-    "Modelica.Blocks.Types.Init.'SteadyState'": 2,
-    "Init.'SteadyState'": 2,
-    "Modelica.Blocks.Types.Init.InitialState": 3,
-    "Init.InitialState": 3,
-    "Modelica.Blocks.Types.Init.'InitialState'": 3,
-    "Init.'InitialState'": 3,
-    "Modelica.Blocks.Types.Init.InitialOutput": 4,
-    "Init.InitialOutput": 4,
-    "Modelica.Blocks.Types.Init.'InitialOutput'": 4,
-    "Init.'InitialOutput'": 4,
-    "Modelica.Blocks.Types.SimpleController.P": 1,
-    "SimpleController.P": 1,
-    "Modelica.Blocks.Types.SimpleController.'P'": 1,
-    "SimpleController.'P'": 1,
-    "Modelica.Blocks.Types.SimpleController.PI": 2,
-    "SimpleController.PI": 2,
-    "Modelica.Blocks.Types.SimpleController.'PI'": 2,
-    "SimpleController.'PI'": 2,
-    "Modelica.Blocks.Types.SimpleController.PD": 3,
-    "SimpleController.PD": 3,
-    "Modelica.Blocks.Types.SimpleController.'PD'": 3,
-    "SimpleController.'PD'": 3,
-    "Modelica.Blocks.Types.SimpleController.PID": 4,
-    "SimpleController.PID": 4,
-    "Modelica.Blocks.Types.SimpleController.'PID'": 4,
-    "SimpleController.'PID'": 4,
-    "Modelica.Blocks.Types.AnalogFilter.CriticalDamping": 1,
-    "AnalogFilter.CriticalDamping": 1,
-    "Modelica.Blocks.Types.AnalogFilter.'CriticalDamping'": 1,
-    "AnalogFilter.'CriticalDamping'": 1,
-    "Modelica.Blocks.Types.AnalogFilter.Bessel": 2,
-    "AnalogFilter.Bessel": 2,
-    "Modelica.Blocks.Types.AnalogFilter.'Bessel'": 2,
-    "AnalogFilter.'Bessel'": 2,
-    "Modelica.Blocks.Types.AnalogFilter.Butterworth": 3,
-    "AnalogFilter.Butterworth": 3,
-    "Modelica.Blocks.Types.AnalogFilter.'Butterworth'": 3,
-    "AnalogFilter.'Butterworth'": 3,
-    "Modelica.Blocks.Types.AnalogFilter.ChebyshevI": 4,
-    "AnalogFilter.ChebyshevI": 4,
-    "Modelica.Blocks.Types.AnalogFilter.'ChebyshevI'": 4,
-    "AnalogFilter.'ChebyshevI'": 4,
-    "Modelica.Blocks.Types.FilterType.LowPass": 1,
-    "FilterType.LowPass": 1,
-    "Modelica.Blocks.Types.FilterType.'LowPass'": 1,
-    "FilterType.'LowPass'": 1,
-    "Modelica.Blocks.Types.FilterType.HighPass": 2,
-    "FilterType.HighPass": 2,
-    "Modelica.Blocks.Types.FilterType.'HighPass'": 2,
-    "FilterType.'HighPass'": 2,
-    "Modelica.Blocks.Types.FilterType.BandPass": 3,
-    "FilterType.BandPass": 3,
-    "Modelica.Blocks.Types.FilterType.'BandPass'": 3,
-    "FilterType.'BandPass'": 3,
-    "Modelica.Blocks.Types.FilterType.BandStop": 4,
-    "FilterType.BandStop": 4,
-    "Modelica.Blocks.Types.FilterType.'BandStop'": 4,
-    "FilterType.'BandStop'": 4,
-    "Modelica.Blocks.Types.Regularization.Exp": 1,
-    "Regularization.Exp": 1,
-    "Modelica.Blocks.Types.Regularization.'Exp'": 1,
-    "Regularization.'Exp'": 1,
-    "Modelica.Blocks.Types.Regularization.Sine": 2,
-    "Regularization.Sine": 2,
-    "Modelica.Blocks.Types.Regularization.'Sine'": 2,
-    "Regularization.'Sine'": 2,
-    "Modelica.Blocks.Types.Regularization.Linear": 3,
-    "Regularization.Linear": 3,
-    "Modelica.Blocks.Types.Regularization.'Linear'": 3,
-    "Regularization.'Linear'": 3,
-    "Modelica.Blocks.Types.Regularization.Cosine": 4,
-    "Regularization.Cosine": 4,
-    "Modelica.Blocks.Types.Regularization.'Cosine'": 4,
-    "Regularization.'Cosine'": 4,
-    "Modelica.Blocks.Types.LimiterHomotopy.NoHomotopy": 1,
-    "LimiterHomotopy.NoHomotopy": 1,
-    "Modelica.Blocks.Types.LimiterHomotopy.'NoHomotopy'": 1,
-    "LimiterHomotopy.'NoHomotopy'": 1,
-    "Modelica.Blocks.Types.LimiterHomotopy.Linear": 2,
-    "LimiterHomotopy.Linear": 2,
-    "Modelica.Blocks.Types.LimiterHomotopy.'Linear'": 2,
-    "LimiterHomotopy.'Linear'": 2,
-    "Modelica.Blocks.Types.LimiterHomotopy.UpperLimit": 3,
-    "LimiterHomotopy.UpperLimit": 3,
-    "Modelica.Blocks.Types.LimiterHomotopy.'UpperLimit'": 3,
-    "LimiterHomotopy.'UpperLimit'": 3,
-    "Modelica.Blocks.Types.LimiterHomotopy.LowerLimit": 4,
-    "LimiterHomotopy.LowerLimit": 4,
-    "Modelica.Blocks.Types.LimiterHomotopy.'LowerLimit'": 4,
-    "LimiterHomotopy.'LowerLimit'": 4,
-    "Modelica.Blocks.Types.VariableLimiterHomotopy.NoHomotopy": 1,
-    "VariableLimiterHomotopy.NoHomotopy": 1,
-    "Modelica.Blocks.Types.VariableLimiterHomotopy.'NoHomotopy'": 1,
-    "VariableLimiterHomotopy.'NoHomotopy'": 1,
-    "Modelica.Blocks.Types.VariableLimiterHomotopy.Linear": 2,
-    "VariableLimiterHomotopy.Linear": 2,
-    "Modelica.Blocks.Types.VariableLimiterHomotopy.'Linear'": 2,
-    "VariableLimiterHomotopy.'Linear'": 2,
-    "Modelica.Blocks.Types.VariableLimiterHomotopy.Fixed": 3,
-    "VariableLimiterHomotopy.Fixed": 3,
-    "Modelica.Blocks.Types.VariableLimiterHomotopy.'Fixed'": 3,
-    "VariableLimiterHomotopy.'Fixed'": 3,
-    "Modelica.Clocked.Types.Resolution.y": 1,
-    "Resolution.y": 1,
-    "Modelica.Clocked.Types.Resolution.'y'": 1,
-    "Resolution.'y'": 1,
-    "Modelica.Clocked.Types.Resolution.d": 2,
-    "Resolution.d": 2,
-    "Modelica.Clocked.Types.Resolution.'d'": 2,
-    "Resolution.'d'": 2,
-    "Modelica.Clocked.Types.Resolution.h": 3,
-    "Resolution.h": 3,
-    "Modelica.Clocked.Types.Resolution.'h'": 3,
-    "Resolution.'h'": 3,
-    "Modelica.Clocked.Types.Resolution.m": 4,
-    "Resolution.m": 4,
-    "Modelica.Clocked.Types.Resolution.'m'": 4,
-    "Resolution.'m'": 4,
-    "Modelica.Clocked.Types.Resolution.s": 5,
-    "Resolution.s": 5,
-    "Modelica.Clocked.Types.Resolution.'s'": 5,
-    "Resolution.'s'": 5,
-    "Modelica.Clocked.Types.Resolution.ms": 6,
-    "Resolution.ms": 6,
-    "Modelica.Clocked.Types.Resolution.'ms'": 6,
-    "Resolution.'ms'": 6,
-    "Modelica.Clocked.Types.Resolution.us": 7,
-    "Resolution.us": 7,
-    "Modelica.Clocked.Types.Resolution.'us'": 7,
-    "Resolution.'us'": 7,
-    "Modelica.Clocked.Types.Resolution.ns": 8,
-    "Resolution.ns": 8,
-    "Modelica.Clocked.Types.Resolution.'ns'": 8,
-    "Resolution.'ns'": 8,
-    "Modelica.Electrical.Analog.Types.ImpulseApproximation.DoubleExp": 1,
-    "ImpulseApproximation.DoubleExp": 1,
-    "Modelica.Electrical.Analog.Types.ImpulseApproximation.'DoubleExp'": 1,
-    "ImpulseApproximation.'DoubleExp'": 1,
-    "Modelica.Electrical.Analog.Types.ImpulseApproximation.Heidler": 2,
-    "ImpulseApproximation.Heidler": 2,
-    "Modelica.Electrical.Analog.Types.ImpulseApproximation.'Heidler'": 2,
-    "ImpulseApproximation.'Heidler'": 2,
-    "Modelica.Electrical.Digital.Interfaces.Logic.'U'": 1,
-    "Logic.'U'": 1,
-    "Modelica.Electrical.Digital.Interfaces.Logic.U": 1,
-    "Logic.U": 1,
-    "Modelica.Electrical.Digital.Interfaces.Logic.'X'": 2,
-    "Logic.'X'": 2,
-    "Modelica.Electrical.Digital.Interfaces.Logic.X": 2,
-    "Logic.X": 2,
-    "Modelica.Electrical.Digital.Interfaces.Logic.'0'": 3,
-    "Logic.'0'": 3,
-    "Modelica.Electrical.Digital.Interfaces.Logic.0": 3,
-    "Logic.0": 3,
-    "Modelica.Electrical.Digital.Interfaces.Logic.'1'": 4,
-    "Logic.'1'": 4,
-    "Modelica.Electrical.Digital.Interfaces.Logic.1": 4,
-    "Logic.1": 4,
-    "Modelica.Electrical.Digital.Interfaces.Logic.'Z'": 5,
-    "Logic.'Z'": 5,
-    "Modelica.Electrical.Digital.Interfaces.Logic.Z": 5,
-    "Logic.Z": 5,
-    "Modelica.Electrical.Digital.Interfaces.Logic.'W'": 6,
-    "Logic.'W'": 6,
-    "Modelica.Electrical.Digital.Interfaces.Logic.W": 6,
-    "Logic.W": 6,
-    "Modelica.Electrical.Digital.Interfaces.Logic.'L'": 7,
-    "Logic.'L'": 7,
-    "Modelica.Electrical.Digital.Interfaces.Logic.L": 7,
-    "Logic.L": 7,
-    "Modelica.Electrical.Digital.Interfaces.Logic.'H'": 8,
-    "Logic.'H'": 8,
-    "Modelica.Electrical.Digital.Interfaces.Logic.H": 8,
-    "Logic.H": 8,
-    "Modelica.Electrical.Digital.Interfaces.Logic.'-'": 9,
-    "Logic.'-'": 9,
-    "Modelica.Electrical.Digital.Interfaces.Logic.-": 9,
-    "Logic.-": 9,
-    "Modelica.Electrical.Digital.Interfaces.UX01.'U'": 1,
-    "UX01.'U'": 1,
-    "Modelica.Electrical.Digital.Interfaces.UX01.U": 1,
-    "UX01.U": 1,
-    "Modelica.Electrical.Digital.Interfaces.UX01.'X'": 2,
-    "UX01.'X'": 2,
-    "Modelica.Electrical.Digital.Interfaces.UX01.X": 2,
-    "UX01.X": 2,
-    "Modelica.Electrical.Digital.Interfaces.UX01.'0'": 3,
-    "UX01.'0'": 3,
-    "Modelica.Electrical.Digital.Interfaces.UX01.0": 3,
-    "UX01.0": 3,
-    "Modelica.Electrical.Digital.Interfaces.UX01.'1'": 4,
-    "UX01.'1'": 4,
-    "Modelica.Electrical.Digital.Interfaces.UX01.1": 4,
-    "UX01.1": 4,
-    "Modelica.Electrical.Digital.Interfaces.Strength.'S_X01'": 1,
-    "Strength.'S_X01'": 1,
-    "Modelica.Electrical.Digital.Interfaces.Strength.S_X01": 1,
-    "Strength.S_X01": 1,
-    "Modelica.Electrical.Digital.Interfaces.Strength.'S_X0H'": 2,
-    "Strength.'S_X0H'": 2,
-    "Modelica.Electrical.Digital.Interfaces.Strength.S_X0H": 2,
-    "Strength.S_X0H": 2,
-    "Modelica.Electrical.Digital.Interfaces.Strength.'S_XL1'": 3,
-    "Strength.'S_XL1'": 3,
-    "Modelica.Electrical.Digital.Interfaces.Strength.S_XL1": 3,
-    "Strength.S_XL1": 3,
-    "Modelica.Electrical.Digital.Interfaces.Strength.'S_X0Z'": 4,
-    "Strength.'S_X0Z'": 4,
-    "Modelica.Electrical.Digital.Interfaces.Strength.S_X0Z": 4,
-    "Strength.S_X0Z": 4,
-    "Modelica.Electrical.Digital.Interfaces.Strength.'S_XZ1'": 5,
-    "Strength.'S_XZ1'": 5,
-    "Modelica.Electrical.Digital.Interfaces.Strength.S_XZ1": 5,
-    "Strength.S_XZ1": 5,
-    "Modelica.Electrical.Digital.Interfaces.Strength.'S_WLH'": 6,
-    "Strength.'S_WLH'": 6,
-    "Modelica.Electrical.Digital.Interfaces.Strength.S_WLH": 6,
-    "Strength.S_WLH": 6,
-    "Modelica.Electrical.Digital.Interfaces.Strength.'S_WLZ'": 7,
-    "Strength.'S_WLZ'": 7,
-    "Modelica.Electrical.Digital.Interfaces.Strength.S_WLZ": 7,
-    "Strength.S_WLZ": 7,
-    "Modelica.Electrical.Digital.Interfaces.Strength.'S_WZH'": 8,
-    "Strength.'S_WZH'": 8,
-    "Modelica.Electrical.Digital.Interfaces.Strength.S_WZH": 8,
-    "Strength.S_WZH": 8,
-    "Modelica.Electrical.Digital.Interfaces.Strength.'S_W0H'": 9,
-    "Strength.'S_W0H'": 9,
-    "Modelica.Electrical.Digital.Interfaces.Strength.S_W0H": 9,
-    "Strength.S_W0H": 9,
-    "Modelica.Electrical.Digital.Interfaces.Strength.'S_WL1'": 10,
-    "Strength.'S_WL1'": 10,
-    "Modelica.Electrical.Digital.Interfaces.Strength.S_WL1": 10,
-    "Strength.S_WL1": 10,
-    "Modelica.Electrical.PowerConverters.Types.PWMType.SVPWM": 1,
-    "PWMType.SVPWM": 1,
-    "Modelica.Electrical.PowerConverters.Types.PWMType.'SVPWM'": 1,
-    "PWMType.'SVPWM'": 1,
-    "Modelica.Electrical.PowerConverters.Types.PWMType.Intersective": 2,
-    "PWMType.Intersective": 2,
-    "Modelica.Electrical.PowerConverters.Types.PWMType.'Intersective'": 2,
-    "PWMType.'Intersective'": 2,
-    "Modelica.Electrical.PowerConverters.Types.ReferenceType.Sawtooth1": 1,
-    "ReferenceType.Sawtooth1": 1,
-    "Modelica.Electrical.PowerConverters.Types.ReferenceType.'Sawtooth1'": 1,
-    "ReferenceType.'Sawtooth1'": 1,
-    "Modelica.Electrical.PowerConverters.Types.ReferenceType.Sawtooth3": 2,
-    "ReferenceType.Sawtooth3": 2,
-    "Modelica.Electrical.PowerConverters.Types.ReferenceType.'Sawtooth3'": 2,
-    "ReferenceType.'Sawtooth3'": 2,
-    "Modelica.Electrical.PowerConverters.Types.ReferenceType.Triangle1": 3,
-    "ReferenceType.Triangle1": 3,
-    "Modelica.Electrical.PowerConverters.Types.ReferenceType.'Triangle1'": 3,
-    "ReferenceType.'Triangle1'": 3,
-    "Modelica.Electrical.PowerConverters.Types.ReferenceType.Triangle3": 4,
-    "ReferenceType.Triangle3": 4,
-    "Modelica.Electrical.PowerConverters.Types.ReferenceType.'Triangle3'": 4,
-    "ReferenceType.'Triangle3'": 4,
-    "Modelica.Electrical.PowerConverters.Types.SingleReferenceType.Sawtooth": 1,
-    "SingleReferenceType.Sawtooth": 1,
-    "Modelica.Electrical.PowerConverters.Types.SingleReferenceType.'Sawtooth'": 1,
-    "SingleReferenceType.'Sawtooth'": 1,
-    "Modelica.Electrical.PowerConverters.Types.SingleReferenceType.Triangle": 2,
-    "SingleReferenceType.Triangle": 2,
-    "Modelica.Electrical.PowerConverters.Types.SingleReferenceType.'Triangle'": 2,
-    "SingleReferenceType.'Triangle'": 2,
-    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.Off": 1,
-    "SoftStarterModeOfOperation.Off": 1,
-    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.'Off'": 1,
-    "SoftStarterModeOfOperation.'Off'": 1,
-    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.Up": 2,
-    "SoftStarterModeOfOperation.Up": 2,
-    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.'Up'": 2,
-    "SoftStarterModeOfOperation.'Up'": 2,
-    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.On": 3,
-    "SoftStarterModeOfOperation.On": 3,
-    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.'On'": 3,
-    "SoftStarterModeOfOperation.'On'": 3,
-    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.Down": 4,
-    "SoftStarterModeOfOperation.Down": 4,
-    "Modelica.Electrical.PowerConverters.Types.SoftStarterModeOfOperation.'Down'": 4,
-    "SoftStarterModeOfOperation.'Down'": 4,
-    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.Lin": 1,
-    "Voltage2AngleType.Lin": 1,
-    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.'Lin'": 1,
-    "Voltage2AngleType.'Lin'": 1,
-    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.H01": 2,
-    "Voltage2AngleType.H01": 2,
-    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.'H01'": 2,
-    "Voltage2AngleType.'H01'": 2,
-    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.RMS": 3,
-    "Voltage2AngleType.RMS": 3,
-    "Modelica.Electrical.PowerConverters.Types.Voltage2AngleType.'RMS'": 3,
-    "Voltage2AngleType.'RMS'": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseFrictionalPressureLoss.Friedel": 1,
-    "TwoPhaseFrictionalPressureLoss.Friedel": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseFrictionalPressureLoss.'Friedel'": 1,
-    "TwoPhaseFrictionalPressureLoss.'Friedel'": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseFrictionalPressureLoss.Chisholm": 2,
-    "TwoPhaseFrictionalPressureLoss.Chisholm": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseFrictionalPressureLoss.'Chisholm'": 2,
-    "TwoPhaseFrictionalPressureLoss.'Chisholm'": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.Roughness.Neglected": 1,
-    "Roughness.Neglected": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.Roughness.'Neglected'": 1,
-    "Roughness.'Neglected'": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.Roughness.Considered": 2,
-    "Roughness.Considered": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.Roughness.'Considered'": 2,
-    "Roughness.'Considered'": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.BoilHor": 1,
-    "TwoPhaseHeatTransferTarget.BoilHor": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.'BoilHor'": 1,
-    "TwoPhaseHeatTransferTarget.'BoilHor'": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.BoilVer": 2,
-    "TwoPhaseHeatTransferTarget.BoilVer": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.'BoilVer'": 2,
-    "TwoPhaseHeatTransferTarget.'BoilVer'": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.CondHor": 3,
-    "TwoPhaseHeatTransferTarget.CondHor": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.TwoPhaseHeatTransferTarget.'CondHor'": 3,
-    "TwoPhaseHeatTransferTarget.'CondHor'": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.PressureLossTarget.PressureLoss": 1,
-    "PressureLossTarget.PressureLoss": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.PressureLossTarget.'PressureLoss'": 1,
-    "PressureLossTarget.'PressureLoss'": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.PressureLossTarget.MassFlowRate": 2,
-    "PressureLossTarget.MassFlowRate": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.PressureLossTarget.'MassFlowRate'": 2,
-    "PressureLossTarget.'MassFlowRate'": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.Annular": 1,
-    "GeometryOfInternalFlow.Annular": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.'Annular'": 1,
-    "GeometryOfInternalFlow.'Annular'": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.Circular": 2,
-    "GeometryOfInternalFlow.Circular": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.'Circular'": 2,
-    "GeometryOfInternalFlow.'Circular'": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.Elliptical": 3,
-    "GeometryOfInternalFlow.Elliptical": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.'Elliptical'": 3,
-    "GeometryOfInternalFlow.'Elliptical'": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.Rectangular": 4,
-    "GeometryOfInternalFlow.Rectangular": 4,
-    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.'Rectangular'": 4,
-    "GeometryOfInternalFlow.'Rectangular'": 4,
-    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.Isosceles": 5,
-    "GeometryOfInternalFlow.Isosceles": 5,
-    "Modelica.Fluid.Dissipation.Utilities.Types.GeometryOfInternalFlow.'Isosceles'": 5,
-    "GeometryOfInternalFlow.'Isosceles'": 5,
-    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevOne": 1,
-    "kc_evenGap.DevOne": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.'DevOne'": 1,
-    "kc_evenGap.'DevOne'": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth": 2,
-    "kc_evenGap.DevBoth": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.'DevBoth'": 2,
-    "kc_evenGap.'DevBoth'": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevOne": 3,
-    "kc_evenGap.UndevOne": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.'UndevOne'": 3,
-    "kc_evenGap.'UndevOne'": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevBoth": 4,
-    "kc_evenGap.UndevBoth": 4,
-    "Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.'UndevBoth'": 4,
-    "kc_evenGap.'UndevBoth'": 4,
-    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.Rough": 1,
-    "kc_general.Rough": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.'Rough'": 1,
-    "kc_general.'Rough'": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.Middle": 2,
-    "kc_general.Middle": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.'Middle'": 2,
-    "kc_general.'Middle'": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.Finest": 3,
-    "kc_general.Finest": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.kc_general.'Finest'": 3,
-    "kc_general.'Finest'": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.UWTuDFF": 1,
-    "HeatTransferBoundary.UWTuDFF": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.'UWTuDFF'": 1,
-    "HeatTransferBoundary.'UWTuDFF'": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.UHFuDFF": 2,
-    "HeatTransferBoundary.UHFuDFF": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.'UHFuDFF'": 2,
-    "HeatTransferBoundary.'UHFuDFF'": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.UWTuUFF": 3,
-    "HeatTransferBoundary.UWTuUFF": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.'UWTuUFF'": 3,
-    "HeatTransferBoundary.'UWTuUFF'": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.UHFuUFF": 4,
-    "HeatTransferBoundary.UHFuUFF": 4,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HeatTransferBoundary.'UHFuUFF'": 4,
-    "HeatTransferBoundary.'UHFuUFF'": 4,
-    "Modelica.Fluid.Dissipation.Utilities.Types.MassOrVolumeFlowRate.MassFlowRate": 1,
-    "MassOrVolumeFlowRate.MassFlowRate": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.MassOrVolumeFlowRate.'MassFlowRate'": 1,
-    "MassOrVolumeFlowRate.'MassFlowRate'": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.MassOrVolumeFlowRate.VolumeFlowRate": 2,
-    "MassOrVolumeFlowRate.VolumeFlowRate": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.MassOrVolumeFlowRate.'VolumeFlowRate'": 2,
-    "MassOrVolumeFlowRate.'VolumeFlowRate'": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.Homogeneous": 1,
-    "VoidFractionApproach.Homogeneous": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.'Homogeneous'": 1,
-    "VoidFractionApproach.'Homogeneous'": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.Momentum": 2,
-    "VoidFractionApproach.Momentum": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.'Momentum'": 2,
-    "VoidFractionApproach.'Momentum'": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.Energy": 3,
-    "VoidFractionApproach.Energy": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.'Energy'": 3,
-    "VoidFractionApproach.'Energy'": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.Chisholm": 4,
-    "VoidFractionApproach.Chisholm": 4,
-    "Modelica.Fluid.Dissipation.Utilities.Types.VoidFractionApproach.'Chisholm'": 4,
-    "VoidFractionApproach.'Chisholm'": 4,
-    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.SharpEdged": 1,
-    "OrificeGeometry.SharpEdged": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.'SharpEdged'": 1,
-    "OrificeGeometry.'SharpEdged'": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.ThickEdged": 2,
-    "OrificeGeometry.ThickEdged": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.'ThickEdged'": 2,
-    "OrificeGeometry.'ThickEdged'": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.TiltedEdged": 3,
-    "OrificeGeometry.TiltedEdged": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.'TiltedEdged'": 3,
-    "OrificeGeometry.'TiltedEdged'": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.RoundedEdged": 4,
-    "OrificeGeometry.RoundedEdged": 4,
-    "Modelica.Fluid.Dissipation.Utilities.Types.OrificeGeometry.'RoundedEdged'": 4,
-    "OrificeGeometry.'RoundedEdged'": 4,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.Ball": 1,
-    "ValveGeometry.Ball": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.'Ball'": 1,
-    "ValveGeometry.'Ball'": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.Diaphragm": 2,
-    "ValveGeometry.Diaphragm": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.'Diaphragm'": 2,
-    "ValveGeometry.'Diaphragm'": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.Butterfly": 3,
-    "ValveGeometry.Butterfly": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.'Butterfly'": 3,
-    "ValveGeometry.'Butterfly'": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.Gate": 4,
-    "ValveGeometry.Gate": 4,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.'Gate'": 4,
-    "ValveGeometry.'Gate'": 4,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.Sluice": 5,
-    "ValveGeometry.Sluice": 5,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveGeometry.'Sluice'": 5,
-    "ValveGeometry.'Sluice'": 5,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.AV": 1,
-    "ValveCoefficient.AV": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.'AV'": 1,
-    "ValveCoefficient.'AV'": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.KV": 2,
-    "ValveCoefficient.KV": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.'KV'": 2,
-    "ValveCoefficient.'KV'": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.CV": 3,
-    "ValveCoefficient.CV": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.'CV'": 3,
-    "ValveCoefficient.'CV'": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.OP": 4,
-    "ValveCoefficient.OP": 4,
-    "Modelica.Fluid.Dissipation.Utilities.Types.ValveCoefficient.'OP'": 4,
-    "ValveCoefficient.'OP'": 4,
-    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.Laminar": 1,
-    "FluidFlowRegime.Laminar": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.'Laminar'": 1,
-    "FluidFlowRegime.'Laminar'": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.Overall": 2,
-    "FluidFlowRegime.Overall": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.'Overall'": 2,
-    "FluidFlowRegime.'Overall'": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.Turbulent": 3,
-    "FluidFlowRegime.Turbulent": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.FluidFlowRegime.'Turbulent'": 3,
-    "FluidFlowRegime.'Turbulent'": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_flatTubes.LouverFin": 1,
-    "HTXGeometry_flatTubes.LouverFin": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_flatTubes.'LouverFin'": 1,
-    "HTXGeometry_flatTubes.'LouverFin'": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_flatTubes.RectangularFin": 2,
-    "HTXGeometry_flatTubes.RectangularFin": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_flatTubes.'RectangularFin'": 2,
-    "HTXGeometry_flatTubes.'RectangularFin'": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.PlainFin": 1,
-    "HTXGeometry_roundTubes.PlainFin": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.'PlainFin'": 1,
-    "HTXGeometry_roundTubes.'PlainFin'": 1,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.LouverFin": 2,
-    "HTXGeometry_roundTubes.LouverFin": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.'LouverFin'": 2,
-    "HTXGeometry_roundTubes.'LouverFin'": 2,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.SlitFin": 3,
-    "HTXGeometry_roundTubes.SlitFin": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.'SlitFin'": 3,
-    "HTXGeometry_roundTubes.'SlitFin'": 3,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.WavyFin": 4,
-    "HTXGeometry_roundTubes.WavyFin": 4,
-    "Modelica.Fluid.Dissipation.Utilities.Types.HTXGeometry_roundTubes.'WavyFin'": 4,
-    "HTXGeometry_roundTubes.'WavyFin'": 4,
-    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.GuessValues": 1,
-    "Init.GuessValues": 1,
-    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.'GuessValues'": 1,
-    "Init.'GuessValues'": 1,
-    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.InitialValues": 2,
-    "Init.InitialValues": 2,
-    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.'InitialValues'": 2,
-    "Init.'InitialValues'": 2,
-    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.SteadyStateMomentum": 3,
-    "Init.SteadyStateMomentum": 3,
-    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.'SteadyStateMomentum'": 3,
-    "Init.'SteadyStateMomentum'": 3,
-    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.SteadyStateHydraulic": 4,
-    "Init.SteadyStateHydraulic": 4,
-    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.'SteadyStateHydraulic'": 4,
-    "Init.'SteadyStateHydraulic'": 4,
-    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.SteadyState": 5,
-    "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Init.'SteadyState'": 5,
-    "Modelica.Fluid.Types.Dynamics.DynamicFreeInitial": 1,
-    "Dynamics.DynamicFreeInitial": 1,
-    "Modelica.Fluid.Types.Dynamics.'DynamicFreeInitial'": 1,
-    "Dynamics.'DynamicFreeInitial'": 1,
-    "Modelica.Fluid.Types.Dynamics.FixedInitial": 2,
-    "Dynamics.FixedInitial": 2,
-    "Modelica.Fluid.Types.Dynamics.'FixedInitial'": 2,
-    "Dynamics.'FixedInitial'": 2,
-    "Modelica.Fluid.Types.Dynamics.SteadyStateInitial": 3,
-    "Dynamics.SteadyStateInitial": 3,
-    "Modelica.Fluid.Types.Dynamics.'SteadyStateInitial'": 3,
-    "Dynamics.'SteadyStateInitial'": 3,
-    "Modelica.Fluid.Types.Dynamics.SteadyState": 4,
-    "Dynamics.SteadyState": 4,
-    "Modelica.Fluid.Types.Dynamics.'SteadyState'": 4,
-    "Dynamics.'SteadyState'": 4,
-    "Modelica.Fluid.Types.CvTypes.Av": 1,
-    "CvTypes.Av": 1,
-    "Modelica.Fluid.Types.CvTypes.'Av'": 1,
-    "CvTypes.'Av'": 1,
-    "Modelica.Fluid.Types.CvTypes.Kv": 2,
-    "CvTypes.Kv": 2,
-    "Modelica.Fluid.Types.CvTypes.'Kv'": 2,
-    "CvTypes.'Kv'": 2,
-    "Modelica.Fluid.Types.CvTypes.Cv": 3,
-    "CvTypes.Cv": 3,
-    "Modelica.Fluid.Types.CvTypes.'Cv'": 3,
-    "CvTypes.'Cv'": 3,
-    "Modelica.Fluid.Types.CvTypes.OpPoint": 4,
-    "CvTypes.OpPoint": 4,
-    "Modelica.Fluid.Types.CvTypes.'OpPoint'": 4,
-    "CvTypes.'OpPoint'": 4,
-    "Modelica.Fluid.Types.PortFlowDirection.Entering": 1,
-    "PortFlowDirection.Entering": 1,
-    "Modelica.Fluid.Types.PortFlowDirection.'Entering'": 1,
-    "PortFlowDirection.'Entering'": 1,
-    "Modelica.Fluid.Types.PortFlowDirection.Leaving": 2,
-    "PortFlowDirection.Leaving": 2,
-    "Modelica.Fluid.Types.PortFlowDirection.'Leaving'": 2,
-    "PortFlowDirection.'Leaving'": 2,
-    "Modelica.Fluid.Types.PortFlowDirection.Bidirectional": 3,
-    "PortFlowDirection.Bidirectional": 3,
-    "Modelica.Fluid.Types.PortFlowDirection.'Bidirectional'": 3,
-    "PortFlowDirection.'Bidirectional'": 3,
-    "Modelica.Fluid.Types.ModelStructure.av_vb": 1,
-    "ModelStructure.av_vb": 1,
-    "Modelica.Fluid.Types.ModelStructure.'av_vb'": 1,
-    "ModelStructure.'av_vb'": 1,
-    "Modelica.Fluid.Types.ModelStructure.a_v_b": 2,
-    "ModelStructure.a_v_b": 2,
-    "Modelica.Fluid.Types.ModelStructure.'a_v_b'": 2,
-    "ModelStructure.'a_v_b'": 2,
-    "Modelica.Fluid.Types.ModelStructure.av_b": 3,
-    "ModelStructure.av_b": 3,
-    "Modelica.Fluid.Types.ModelStructure.'av_b'": 3,
-    "ModelStructure.'av_b'": 3,
-    "Modelica.Fluid.Types.ModelStructure.a_vb": 4,
-    "ModelStructure.a_vb": 4,
-    "Modelica.Fluid.Types.ModelStructure.'a_vb'": 4,
-    "ModelStructure.'a_vb'": 4,
-    "Modelica.Fluid.Types.CheckValveHomotopyType.Open": 1,
-    "CheckValveHomotopyType.Open": 1,
-    "Modelica.Fluid.Types.CheckValveHomotopyType.'Open'": 1,
-    "CheckValveHomotopyType.'Open'": 1,
-    "Modelica.Fluid.Types.CheckValveHomotopyType.Closed": 2,
-    "CheckValveHomotopyType.Closed": 2,
-    "Modelica.Fluid.Types.CheckValveHomotopyType.'Closed'": 2,
-    "CheckValveHomotopyType.'Closed'": 2,
-    "Modelica.Fluid.Types.CheckValveHomotopyType.NoHomotopy": 3,
-    "CheckValveHomotopyType.NoHomotopy": 3,
-    "Modelica.Fluid.Types.CheckValveHomotopyType.'NoHomotopy'": 3,
-    "CheckValveHomotopyType.'NoHomotopy'": 3,
-    "Modelica.Mechanics.MultiBody.Types.GravityTypes.NoGravity": 1,
-    "GravityTypes.NoGravity": 1,
-    "Modelica.Mechanics.MultiBody.Types.GravityTypes.'NoGravity'": 1,
-    "GravityTypes.'NoGravity'": 1,
-    "Modelica.Mechanics.MultiBody.Types.GravityTypes.UniformGravity": 2,
-    "GravityTypes.UniformGravity": 2,
-    "Modelica.Mechanics.MultiBody.Types.GravityTypes.'UniformGravity'": 2,
-    "GravityTypes.'UniformGravity'": 2,
-    "Modelica.Mechanics.MultiBody.Types.GravityTypes.PointGravity": 3,
-    "GravityTypes.PointGravity": 3,
-    "Modelica.Mechanics.MultiBody.Types.GravityTypes.'PointGravity'": 3,
-    "GravityTypes.'PointGravity'": 3,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.world": 1,
-    "ResolveInFrameA.world": 1,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.'world'": 1,
-    "ResolveInFrameA.'world'": 1,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.frame_a": 2,
-    "ResolveInFrameA.frame_a": 2,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.'frame_a'": 2,
-    "ResolveInFrameA.'frame_a'": 2,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.frame_resolve": 3,
-    "ResolveInFrameA.frame_resolve": 3,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameA.'frame_resolve'": 3,
-    "ResolveInFrameA.'frame_resolve'": 3,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.world": 1,
-    "ResolveInFrameAB.world": 1,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.'world'": 1,
-    "ResolveInFrameAB.'world'": 1,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.frame_a": 2,
-    "ResolveInFrameAB.frame_a": 2,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.'frame_a'": 2,
-    "ResolveInFrameAB.'frame_a'": 2,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.frame_b": 3,
-    "ResolveInFrameAB.frame_b": 3,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.'frame_b'": 3,
-    "ResolveInFrameAB.'frame_b'": 3,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.frame_resolve": 4,
-    "ResolveInFrameAB.frame_resolve": 4,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameAB.'frame_resolve'": 4,
-    "ResolveInFrameAB.'frame_resolve'": 4,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.world": 1,
-    "ResolveInFrameB.world": 1,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.'world'": 1,
-    "ResolveInFrameB.'world'": 1,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.frame_b": 2,
-    "ResolveInFrameB.frame_b": 2,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.'frame_b'": 2,
-    "ResolveInFrameB.'frame_b'": 2,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.frame_resolve": 3,
-    "ResolveInFrameB.frame_resolve": 3,
-    "Modelica.Mechanics.MultiBody.Types.ResolveInFrameB.'frame_resolve'": 3,
-    "ResolveInFrameB.'frame_resolve'": 3,
-    "Modelica.Mechanics.MultiBody.Types.RotationTypes.RotationAxis": 1,
-    "RotationTypes.RotationAxis": 1,
-    "Modelica.Mechanics.MultiBody.Types.RotationTypes.'RotationAxis'": 1,
-    "RotationTypes.'RotationAxis'": 1,
-    "Modelica.Mechanics.MultiBody.Types.RotationTypes.TwoAxesVectors": 2,
-    "RotationTypes.TwoAxesVectors": 2,
-    "Modelica.Mechanics.MultiBody.Types.RotationTypes.'TwoAxesVectors'": 2,
-    "RotationTypes.'TwoAxesVectors'": 2,
-    "Modelica.Mechanics.MultiBody.Types.RotationTypes.PlanarRotationSequence": 3,
-    "RotationTypes.PlanarRotationSequence": 3,
-    "Modelica.Mechanics.MultiBody.Types.RotationTypes.'PlanarRotationSequence'": 3,
-    "RotationTypes.'PlanarRotationSequence'": 3,
-    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.Force": 1,
-    "VectorQuantity.Force": 1,
-    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'Force'": 1,
-    "VectorQuantity.'Force'": 1,
-    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.Torque": 2,
-    "VectorQuantity.Torque": 2,
-    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'Torque'": 2,
-    "VectorQuantity.'Torque'": 2,
-    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.Velocity": 3,
-    "VectorQuantity.Velocity": 3,
-    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'Velocity'": 3,
-    "VectorQuantity.'Velocity'": 3,
-    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.Acceleration": 4,
-    "VectorQuantity.Acceleration": 4,
-    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'Acceleration'": 4,
-    "VectorQuantity.'Acceleration'": 4,
-    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.AngularVelocity": 5,
-    "VectorQuantity.AngularVelocity": 5,
-    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'AngularVelocity'": 5,
-    "VectorQuantity.'AngularVelocity'": 5,
-    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.AngularAcceleration": 6,
-    "VectorQuantity.AngularAcceleration": 6,
-    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'AngularAcceleration'": 6,
-    "VectorQuantity.'AngularAcceleration'": 6,
-    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.RelativePosition": 7,
-    "VectorQuantity.RelativePosition": 7,
-    "Modelica.Mechanics.MultiBody.Types.VectorQuantity.'RelativePosition'": 7,
-    "VectorQuantity.'RelativePosition'": 7,
-    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.svgBeginAndEnd": 1,
-    "HeaderType.svgBeginAndEnd": 1,
-    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.'svgBeginAndEnd'": 1,
-    "HeaderType.'svgBeginAndEnd'": 1,
-    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.svgBegin": 2,
-    "HeaderType.svgBegin": 2,
-    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.'svgBegin'": 2,
-    "HeaderType.'svgBegin'": 2,
-    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.svgEnd": 3,
-    "HeaderType.svgEnd": 3,
-    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.'svgEnd'": 3,
-    "HeaderType.'svgEnd'": 3,
-    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.noHeader": 4,
-    "HeaderType.noHeader": 4,
-    "Modelica.Mechanics.MultiBody.Visualizers.Colors.colorMapToSvg.HeaderType.'noHeader'": 4,
-    "HeaderType.'noHeader'": 4,
-    "Modelica.Media.Interfaces.Choices.IndependentVariables.T": 1,
-    "IndependentVariables.T": 1,
-    "Modelica.Media.Interfaces.Choices.IndependentVariables.'T'": 1,
-    "IndependentVariables.'T'": 1,
-    "Modelica.Media.Interfaces.Choices.IndependentVariables.pT": 2,
-    "IndependentVariables.pT": 2,
-    "Modelica.Media.Interfaces.Choices.IndependentVariables.'pT'": 2,
-    "IndependentVariables.'pT'": 2,
-    "Modelica.Media.Interfaces.Choices.IndependentVariables.ph": 3,
-    "IndependentVariables.ph": 3,
-    "Modelica.Media.Interfaces.Choices.IndependentVariables.'ph'": 3,
-    "IndependentVariables.'ph'": 3,
-    "Modelica.Media.Interfaces.Choices.IndependentVariables.phX": 4,
-    "IndependentVariables.phX": 4,
-    "Modelica.Media.Interfaces.Choices.IndependentVariables.'phX'": 4,
-    "IndependentVariables.'phX'": 4,
-    "Modelica.Media.Interfaces.Choices.IndependentVariables.pTX": 5,
-    "IndependentVariables.pTX": 5,
-    "Modelica.Media.Interfaces.Choices.IndependentVariables.'pTX'": 5,
-    "IndependentVariables.'pTX'": 5,
-    "Modelica.Media.Interfaces.Choices.IndependentVariables.dTX": 6,
-    "IndependentVariables.dTX": 6,
-    "Modelica.Media.Interfaces.Choices.IndependentVariables.'dTX'": 6,
-    "IndependentVariables.'dTX'": 6,
-    "Modelica.Media.Interfaces.Choices.Init.NoInit": 1,
-    "Modelica.Media.Interfaces.Choices.Init.'NoInit'": 1,
-    "Modelica.Media.Interfaces.Choices.Init.InitialStates": 2,
-    "Init.InitialStates": 2,
-    "Modelica.Media.Interfaces.Choices.Init.'InitialStates'": 2,
-    "Init.'InitialStates'": 2,
-    "Modelica.Media.Interfaces.Choices.Init.SteadyState": 3,
-    "Modelica.Media.Interfaces.Choices.Init.'SteadyState'": 3,
-    "Modelica.Media.Interfaces.Choices.Init.SteadyMass": 4,
-    "Init.SteadyMass": 4,
-    "Modelica.Media.Interfaces.Choices.Init.'SteadyMass'": 4,
-    "Init.'SteadyMass'": 4,
-    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.ZeroAt0K": 1,
-    "ReferenceEnthalpy.ZeroAt0K": 1,
-    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.'ZeroAt0K'": 1,
-    "ReferenceEnthalpy.'ZeroAt0K'": 1,
-    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.ZeroAt25C": 2,
-    "ReferenceEnthalpy.ZeroAt25C": 2,
-    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.'ZeroAt25C'": 2,
-    "ReferenceEnthalpy.'ZeroAt25C'": 2,
-    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined": 3,
-    "ReferenceEnthalpy.UserDefined": 3,
-    "Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.'UserDefined'": 3,
-    "ReferenceEnthalpy.'UserDefined'": 3,
-    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.ZeroAt0K": 1,
-    "ReferenceEntropy.ZeroAt0K": 1,
-    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.'ZeroAt0K'": 1,
-    "ReferenceEntropy.'ZeroAt0K'": 1,
-    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.ZeroAt0C": 2,
-    "ReferenceEntropy.ZeroAt0C": 2,
-    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.'ZeroAt0C'": 2,
-    "ReferenceEntropy.'ZeroAt0C'": 2,
-    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.UserDefined": 3,
-    "ReferenceEntropy.UserDefined": 3,
-    "Modelica.Media.Interfaces.Choices.ReferenceEntropy.'UserDefined'": 3,
-    "ReferenceEntropy.'UserDefined'": 3,
-    "Modelica.Media.Interfaces.Choices.pd.default": 1,
-    "pd.default": 1,
-    "Modelica.Media.Interfaces.Choices.pd.'default'": 1,
-    "pd.'default'": 1,
-    "Modelica.Media.Interfaces.Choices.pd.p_known": 2,
-    "pd.p_known": 2,
-    "Modelica.Media.Interfaces.Choices.pd.'p_known'": 2,
-    "pd.'p_known'": 2,
-    "Modelica.Media.Interfaces.Choices.pd.d_known": 3,
-    "pd.d_known": 3,
-    "Modelica.Media.Interfaces.Choices.pd.'d_known'": 3,
-    "pd.'d_known'": 3,
-    "Modelica.Media.Interfaces.Choices.Th.default": 1,
-    "Th.default": 1,
-    "Modelica.Media.Interfaces.Choices.Th.'default'": 1,
-    "Th.'default'": 1,
-    "Modelica.Media.Interfaces.Choices.Th.T_known": 2,
-    "Th.T_known": 2,
-    "Modelica.Media.Interfaces.Choices.Th.'T_known'": 2,
-    "Th.'T_known'": 2,
-    "Modelica.Media.Interfaces.Choices.Th.h_known": 3,
-    "Th.h_known": 3,
-    "Modelica.Media.Interfaces.Choices.Th.'h_known'": 3,
-    "Th.'h_known'": 3,
-    "Modelica.Utilities.Types.Compare.Less": 1,
-    "Compare.Less": 1,
-    "Modelica.Utilities.Types.Compare.'Less'": 1,
-    "Compare.'Less'": 1,
-    "Modelica.Utilities.Types.Compare.Equal": 2,
-    "Compare.Equal": 2,
-    "Modelica.Utilities.Types.Compare.'Equal'": 2,
-    "Compare.'Equal'": 2,
-    "Modelica.Utilities.Types.Compare.Greater": 3,
-    "Compare.Greater": 3,
-    "Modelica.Utilities.Types.Compare.'Greater'": 3,
-    "Compare.'Greater'": 3,
-    "Modelica.Utilities.Types.FileType.NoFile": 1,
-    "FileType.NoFile": 1,
-    "Modelica.Utilities.Types.FileType.'NoFile'": 1,
-    "FileType.'NoFile'": 1,
-    "Modelica.Utilities.Types.FileType.RegularFile": 2,
-    "FileType.RegularFile": 2,
-    "Modelica.Utilities.Types.FileType.'RegularFile'": 2,
-    "FileType.'RegularFile'": 2,
-    "Modelica.Utilities.Types.FileType.Directory": 3,
-    "FileType.Directory": 3,
-    "Modelica.Utilities.Types.FileType.'Directory'": 3,
-    "FileType.'Directory'": 3,
-    "Modelica.Utilities.Types.FileType.SpecialFile": 4,
-    "FileType.SpecialFile": 4,
-    "Modelica.Utilities.Types.FileType.'SpecialFile'": 4,
-    "FileType.'SpecialFile'": 4,
-    "Modelica.Utilities.Types.TokenType.RealToken": 1,
-    "TokenType.RealToken": 1,
-    "Modelica.Utilities.Types.TokenType.'RealToken'": 1,
-    "TokenType.'RealToken'": 1,
-    "Modelica.Utilities.Types.TokenType.IntegerToken": 2,
-    "TokenType.IntegerToken": 2,
-    "Modelica.Utilities.Types.TokenType.'IntegerToken'": 2,
-    "TokenType.'IntegerToken'": 2,
-    "Modelica.Utilities.Types.TokenType.BooleanToken": 3,
-    "TokenType.BooleanToken": 3,
-    "Modelica.Utilities.Types.TokenType.'BooleanToken'": 3,
-    "TokenType.'BooleanToken'": 3,
-    "Modelica.Utilities.Types.TokenType.StringToken": 4,
-    "TokenType.StringToken": 4,
-    "Modelica.Utilities.Types.TokenType.'StringToken'": 4,
-    "TokenType.'StringToken'": 4,
-    "Modelica.Utilities.Types.TokenType.IdentifierToken": 5,
-    "TokenType.IdentifierToken": 5,
-    "Modelica.Utilities.Types.TokenType.'IdentifierToken'": 5,
-    "TokenType.'IdentifierToken'": 5,
-    "Modelica.Utilities.Types.TokenType.DelimiterToken": 6,
-    "TokenType.DelimiterToken": 6,
-    "Modelica.Utilities.Types.TokenType.'DelimiterToken'": 6,
-    "TokenType.'DelimiterToken'": 6,
-    "Modelica.Utilities.Types.TokenType.NoToken": 7,
-    "TokenType.NoToken": 7,
-    "Modelica.Utilities.Types.TokenType.'NoToken'": 7,
-    "TokenType.'NoToken'": 7
+    "AssertionLevel.'error'": 2
   },
-  "symbol_ancestry": {
-    "28102": [
-      87,
-      162,
-      24164,
-      27559,
-      28085,
-      28102
-    ],
-    "39464": [
-      87,
-      162,
-      24164,
-      27559,
-      28085,
-      28102
-    ],
-    "28103": [
-      87,
-      162,
-      24164,
-      27559,
-      28085,
-      28103
-    ],
-    "39465": [
-      87,
-      162,
-      24164,
-      27559,
-      28085,
-      28103
-    ],
-    "39468": [
-      87,
-      162,
-      24164,
-      27559,
-      28085,
-      28102
-    ],
-    "39469": [
-      87,
-      162,
-      24164,
-      27559,
-      28085,
-      28103
-    ],
-    "27696": [
-      87,
-      162,
-      24164,
-      27556,
-      27579,
-      27696
-    ],
-    "39470": [
-      87,
-      162,
-      24164,
-      27556,
-      27579,
-      27696
-    ],
-    "27698": [
-      87,
-      162,
-      24164,
-      27556,
-      27579,
-      27698
-    ],
-    "39472": [
-      87,
-      162,
-      24164,
-      27556,
-      27579,
-      27698
-    ],
-    "27699": [
-      87,
-      162,
-      24164,
-      27556,
-      27579,
-      27699
-    ],
-    "39473": [
-      87,
-      162,
-      24164,
-      27556,
-      27579,
-      27699
-    ],
-    "27700": [
-      87,
-      162,
-      24164,
-      27556,
-      27579,
-      27700
-    ],
-    "39474": [
-      87,
-      162,
-      24164,
-      27556,
-      27579,
-      27700
-    ],
-    "28120": [
-      87,
-      162,
-      24164,
-      27559,
-      28092,
-      28120
-    ],
-    "39477": [
-      87,
-      162,
-      24164,
-      27559,
-      28092,
-      28120
-    ],
-    "39480": [
-      87,
-      162,
-      24164,
-      27559,
-      28085,
-      28102
-    ],
-    "39481": [
-      87,
-      162,
-      24164,
-      27559,
-      28085,
-      28103
-    ],
-    "28123": [
-      87,
-      162,
-      24164,
-      27559,
-      28092,
-      28123
-    ],
-    "39482": [
-      87,
-      162,
-      24164,
-      27559,
-      28092,
-      28123
-    ],
-    "28285": [
-      87,
-      162,
-      24164,
-      27561,
-      28208,
-      28285
-    ],
-    "39483": [
-      87,
-      162,
-      24164,
-      27561,
-      28208,
-      28285
-    ],
-    "1152": [
-      87,
-      152,
-      174,
-      1108,
-      1152
-    ],
-    "39486": [
-      87,
-      152,
-      174,
-      1108,
-      1152
-    ],
-    "1973": [
-      87,
-      152,
-      182,
-      1943,
-      1973
-    ],
-    "39487": [
-      87,
-      152,
-      182,
-      1943,
-      1973
-    ]
+  "instance_relations": {
+    "5": {
+      "owner": 4,
+      "declaration": 132,
+      "indices": [],
+      "kind": "Class"
+    },
+    "9": {
+      "owner": 8,
+      "declaration": 133,
+      "indices": [],
+      "kind": "Class"
+    },
+    "3": {
+      "owner": 2,
+      "declaration": 125,
+      "indices": [],
+      "kind": "Class"
+    },
+    "21": {
+      "owner": 20,
+      "declaration": 133,
+      "indices": [],
+      "kind": "Class"
+    },
+    "18": {
+      "owner": 17,
+      "declaration": 145,
+      "indices": [],
+      "kind": "Class"
+    },
+    "27": {
+      "owner": 26,
+      "declaration": 115,
+      "indices": [],
+      "kind": "Class"
+    },
+    "1": {
+      "owner": null,
+      "declaration": 98,
+      "indices": [],
+      "kind": "Class"
+    },
+    "2": {
+      "owner": 1,
+      "declaration": 100,
+      "indices": [],
+      "kind": "Aggregate"
+    },
+    "4": {
+      "owner": 3,
+      "declaration": 143,
+      "indices": [],
+      "kind": "Aggregate"
+    },
+    "6": {
+      "owner": 5,
+      "declaration": 137,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "7": {
+      "owner": 5,
+      "declaration": 138,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "8": {
+      "owner": 3,
+      "declaration": 144,
+      "indices": [],
+      "kind": "Aggregate"
+    },
+    "10": {
+      "owner": 9,
+      "declaration": 137,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "11": {
+      "owner": 9,
+      "declaration": 138,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "12": {
+      "owner": 3,
+      "declaration": 126,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "13": {
+      "owner": 3,
+      "declaration": 127,
+      "indices": [],
+      "kind": "Aggregate"
+    },
+    "14": {
+      "owner": 3,
+      "declaration": 128,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "15": {
+      "owner": 3,
+      "declaration": 129,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "16": {
+      "owner": 3,
+      "declaration": 130,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "17": {
+      "owner": 1,
+      "declaration": 101,
+      "indices": [],
+      "kind": "Aggregate"
+    },
+    "19": {
+      "owner": 18,
+      "declaration": 139,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "20": {
+      "owner": 18,
+      "declaration": 140,
+      "indices": [],
+      "kind": "Aggregate"
+    },
+    "22": {
+      "owner": 21,
+      "declaration": 137,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "23": {
+      "owner": 21,
+      "declaration": 138,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "24": {
+      "owner": 18,
+      "declaration": 142,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "25": {
+      "owner": 18,
+      "declaration": 146,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "26": {
+      "owner": 1,
+      "declaration": 102,
+      "indices": [],
+      "kind": "Aggregate"
+    },
+    "28": {
+      "owner": 27,
+      "declaration": 114,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "29": {
+      "owner": 27,
+      "declaration": 116,
+      "indices": [],
+      "kind": "Materialized"
+    }
   }
 }

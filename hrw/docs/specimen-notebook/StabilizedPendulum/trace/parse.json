@@ -12,7 +12,7 @@
           "end_column": 25,
           "start": 6,
           "end": 24,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+          "source": 17646367609561022627
         },
         "token_number": 1,
         "token_type": 64
@@ -27,7 +27,7 @@
           "end_column": 6,
           "start": 0,
           "end": 5,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+          "source": 17646367609561022627
         },
         "token_number": 0,
         "token_type": 41
@@ -49,7 +49,7 @@
             "end_column": 122,
             "start": 25,
             "end": 121,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            "source": 17646367609561022627
           },
           "token_number": 2,
           "token_type": 66
@@ -62,7 +62,7 @@
         "end_column": 23,
         "start": 6,
         "end": 1219,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+        "source": 17646367609561022627
       },
       "extends": [],
       "imports": [],
@@ -82,7 +82,7 @@
               "end_column": 19,
               "start": 291,
               "end": 292,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+              "source": 17646367609561022627
             },
             "token_number": 6,
             "token_type": 64
@@ -98,7 +98,7 @@
                   "end_column": 17,
                   "start": 286,
                   "end": 290,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 5,
                 "token_type": 64
@@ -115,7 +115,7 @@
                 "end_column": 12,
                 "start": 276,
                 "end": 285,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                "source": 17646367609561022627
               },
               "token_number": 4,
               "token_type": 48
@@ -133,7 +133,7 @@
                 "end_column": 38,
                 "start": 299,
                 "end": 311,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                "source": 17646367609561022627
               },
               "token_number": 9,
               "token_type": 66
@@ -151,7 +151,7 @@
                   "end_column": 0,
                   "start": 0,
                   "end": 0,
-                  "file_name": ""
+                  "source": 0
                 },
                 "token_number": 0,
                 "token_type": 0
@@ -178,7 +178,7 @@
                   "end_column": 25,
                   "start": 295,
                   "end": 298,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 8,
                 "token_type": 68
@@ -206,7 +206,7 @@
             "end_column": 19,
             "start": 286,
             "end": 292,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            "source": 17646367609561022627
           },
           "condition": null,
           "inner": false,
@@ -217,6 +217,8 @@
           "is_final": false,
           "is_replaceable": false,
           "is_redeclare": false,
+          "redeclared_by_modification": false,
+          "has_unapplied_redeclare": false,
           "constrainedby": null,
           "is_structural": false
         },
@@ -234,7 +236,7 @@
               "end_column": 19,
               "start": 330,
               "end": 331,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+              "source": 17646367609561022627
             },
             "token_number": 13,
             "token_type": 64
@@ -250,7 +252,7 @@
                   "end_column": 17,
                   "start": 325,
                   "end": 329,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 12,
                 "token_type": 64
@@ -267,7 +269,7 @@
                 "end_column": 12,
                 "start": 315,
                 "end": 324,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                "source": 17646367609561022627
               },
               "token_number": 11,
               "token_type": 48
@@ -285,7 +287,7 @@
                 "end_column": 38,
                 "start": 338,
                 "end": 350,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                "source": 17646367609561022627
               },
               "token_number": 16,
               "token_type": 66
@@ -303,7 +305,7 @@
                   "end_column": 0,
                   "start": 0,
                   "end": 0,
-                  "file_name": ""
+                  "source": 0
                 },
                 "token_number": 0,
                 "token_type": 0
@@ -330,7 +332,7 @@
                   "end_column": 25,
                   "start": 334,
                   "end": 337,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 15,
                 "token_type": 68
@@ -358,7 +360,7 @@
             "end_column": 19,
             "start": 325,
             "end": 331,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            "source": 17646367609561022627
           },
           "condition": null,
           "inner": false,
@@ -369,6 +371,8 @@
           "is_final": false,
           "is_replaceable": false,
           "is_redeclare": false,
+          "redeclared_by_modification": false,
+          "has_unapplied_redeclare": false,
           "constrainedby": null,
           "is_structural": false
         },
@@ -386,7 +390,7 @@
               "end_column": 19,
               "start": 369,
               "end": 370,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+              "source": 17646367609561022627
             },
             "token_number": 20,
             "token_type": 64
@@ -402,7 +406,7 @@
                   "end_column": 17,
                   "start": 364,
                   "end": 368,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 19,
                 "token_type": 64
@@ -419,7 +423,7 @@
                 "end_column": 12,
                 "start": 354,
                 "end": 363,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                "source": 17646367609561022627
               },
               "token_number": 18,
               "token_type": 48
@@ -437,7 +441,7 @@
                 "end_column": 55,
                 "start": 378,
                 "end": 406,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                "source": 17646367609561022627
               },
               "token_number": 23,
               "token_type": 66
@@ -455,7 +459,7 @@
                   "end_column": 0,
                   "start": 0,
                   "end": 0,
-                  "file_name": ""
+                  "source": 0
                 },
                 "token_number": 0,
                 "token_type": 0
@@ -482,7 +486,7 @@
                   "end_column": 26,
                   "start": 373,
                   "end": 377,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 22,
                 "token_type": 68
@@ -510,7 +514,7 @@
             "end_column": 19,
             "start": 364,
             "end": 370,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            "source": 17646367609561022627
           },
           "condition": null,
           "inner": false,
@@ -521,6 +525,8 @@
           "is_final": false,
           "is_replaceable": false,
           "is_redeclare": false,
+          "redeclared_by_modification": false,
+          "has_unapplied_redeclare": false,
           "constrainedby": null,
           "is_structural": false
         },
@@ -538,7 +544,7 @@
               "end_column": 23,
               "start": 425,
               "end": 430,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+              "source": 17646367609561022627
             },
             "token_number": 27,
             "token_type": 64
@@ -554,7 +560,7 @@
                   "end_column": 17,
                   "start": 420,
                   "end": 424,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 26,
                 "token_type": 64
@@ -571,7 +577,7 @@
                 "end_column": 12,
                 "start": 410,
                 "end": 419,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                "source": 17646367609561022627
               },
               "token_number": 25,
               "token_type": 48
@@ -589,7 +595,7 @@
                 "end_column": 73,
                 "start": 438,
                 "end": 480,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                "source": 17646367609561022627
               },
               "token_number": 30,
               "token_type": 66
@@ -607,7 +613,7 @@
                   "end_column": 0,
                   "start": 0,
                   "end": 0,
-                  "file_name": ""
+                  "source": 0
                 },
                 "token_number": 0,
                 "token_type": 0
@@ -634,7 +640,7 @@
                   "end_column": 30,
                   "start": 433,
                   "end": 437,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 29,
                 "token_type": 68
@@ -662,7 +668,7 @@
             "end_column": 23,
             "start": 420,
             "end": 430,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            "source": 17646367609561022627
           },
           "condition": null,
           "inner": false,
@@ -673,6 +679,8 @@
           "is_final": false,
           "is_replaceable": false,
           "is_redeclare": false,
+          "redeclared_by_modification": false,
+          "has_unapplied_redeclare": false,
           "constrainedby": null,
           "is_structural": false
         },
@@ -690,7 +698,7 @@
               "end_column": 22,
               "start": 499,
               "end": 503,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+              "source": 17646367609561022627
             },
             "token_number": 34,
             "token_type": 64
@@ -706,7 +714,7 @@
                   "end_column": 17,
                   "start": 494,
                   "end": 498,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 33,
                 "token_type": 64
@@ -723,7 +731,7 @@
                 "end_column": 12,
                 "start": 484,
                 "end": 493,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                "source": 17646367609561022627
               },
               "token_number": 32,
               "token_type": 48
@@ -741,7 +749,7 @@
                 "end_column": 74,
                 "start": 511,
                 "end": 555,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                "source": 17646367609561022627
               },
               "token_number": 37,
               "token_type": 66
@@ -759,7 +767,7 @@
                   "end_column": 0,
                   "start": 0,
                   "end": 0,
-                  "file_name": ""
+                  "source": 0
                 },
                 "token_number": 0,
                 "token_type": 0
@@ -786,7 +794,7 @@
                   "end_column": 29,
                   "start": 506,
                   "end": 510,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 36,
                 "token_type": 68
@@ -814,7 +822,7 @@
             "end_column": 22,
             "start": 494,
             "end": 503,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            "source": 17646367609561022627
           },
           "condition": null,
           "inner": false,
@@ -825,6 +833,8 @@
           "is_final": false,
           "is_replaceable": false,
           "is_redeclare": false,
+          "redeclared_by_modification": false,
+          "has_unapplied_redeclare": false,
           "constrainedby": null,
           "is_structural": false
         },
@@ -842,7 +852,7 @@
               "end_column": 9,
               "start": 564,
               "end": 565,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+              "source": 17646367609561022627
             },
             "token_number": 40,
             "token_type": 64
@@ -858,7 +868,7 @@
                   "end_column": 7,
                   "start": 559,
                   "end": 563,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 39,
                 "token_type": 64
@@ -878,7 +888,7 @@
                 "end_column": 44,
                 "start": 579,
                 "end": 600,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                "source": 17646367609561022627
               },
               "token_number": 46,
               "token_type": 66
@@ -896,7 +906,7 @@
                   "end_column": 21,
                   "start": 574,
                   "end": 577,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 44,
                 "token_type": 68
@@ -932,7 +942,7 @@
                           "end_column": 15,
                           "start": 566,
                           "end": 571,
-                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                          "source": 17646367609561022627
                         },
                         "token_number": 42,
                         "token_type": 64
@@ -958,7 +968,7 @@
                         "end_column": 21,
                         "start": 574,
                         "end": 577,
-                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                        "source": 17646367609561022627
                       },
                       "token_number": 44,
                       "token_type": 68
@@ -995,7 +1005,7 @@
             "end_column": 9,
             "start": 559,
             "end": 565,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            "source": 17646367609561022627
           },
           "condition": null,
           "inner": false,
@@ -1006,6 +1016,8 @@
           "is_final": false,
           "is_replaceable": false,
           "is_redeclare": false,
+          "redeclared_by_modification": false,
+          "has_unapplied_redeclare": false,
           "constrainedby": null,
           "is_structural": false
         },
@@ -1023,7 +1035,7 @@
               "end_column": 9,
               "start": 609,
               "end": 610,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+              "source": 17646367609561022627
             },
             "token_number": 49,
             "token_type": 64
@@ -1039,7 +1051,7 @@
                   "end_column": 7,
                   "start": 604,
                   "end": 608,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 48,
                 "token_type": 64
@@ -1059,7 +1071,7 @@
                 "end_column": 42,
                 "start": 624,
                 "end": 643,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                "source": 17646367609561022627
               },
               "token_number": 55,
               "token_type": 66
@@ -1077,7 +1089,7 @@
                   "end_column": 21,
                   "start": 619,
                   "end": 622,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 53,
                 "token_type": 68
@@ -1113,7 +1125,7 @@
                           "end_column": 15,
                           "start": 611,
                           "end": 616,
-                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                          "source": 17646367609561022627
                         },
                         "token_number": 51,
                         "token_type": 64
@@ -1139,7 +1151,7 @@
                         "end_column": 21,
                         "start": 619,
                         "end": 622,
-                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                        "source": 17646367609561022627
                       },
                       "token_number": 53,
                       "token_type": 68
@@ -1176,7 +1188,7 @@
             "end_column": 9,
             "start": 604,
             "end": 610,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            "source": 17646367609561022627
           },
           "condition": null,
           "inner": false,
@@ -1187,6 +1199,8 @@
           "is_final": false,
           "is_replaceable": false,
           "is_redeclare": false,
+          "redeclared_by_modification": false,
+          "has_unapplied_redeclare": false,
           "constrainedby": null,
           "is_structural": false
         },
@@ -1204,7 +1218,7 @@
               "end_column": 10,
               "start": 652,
               "end": 654,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+              "source": 17646367609561022627
             },
             "token_number": 58,
             "token_type": 64
@@ -1220,7 +1234,7 @@
                   "end_column": 7,
                   "start": 647,
                   "end": 651,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 57,
                 "token_type": 64
@@ -1240,7 +1254,7 @@
                 "end_column": 45,
                 "start": 668,
                 "end": 689,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                "source": 17646367609561022627
               },
               "token_number": 64,
               "token_type": 66
@@ -1258,7 +1272,7 @@
                   "end_column": 22,
                   "start": 663,
                   "end": 666,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 62,
                 "token_type": 68
@@ -1294,7 +1308,7 @@
                           "end_column": 16,
                           "start": 655,
                           "end": 660,
-                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                          "source": 17646367609561022627
                         },
                         "token_number": 60,
                         "token_type": 64
@@ -1320,7 +1334,7 @@
                         "end_column": 22,
                         "start": 663,
                         "end": 666,
-                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                        "source": 17646367609561022627
                       },
                       "token_number": 62,
                       "token_type": 68
@@ -1357,7 +1371,7 @@
             "end_column": 10,
             "start": 647,
             "end": 654,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            "source": 17646367609561022627
           },
           "condition": null,
           "inner": false,
@@ -1368,6 +1382,8 @@
           "is_final": false,
           "is_replaceable": false,
           "is_redeclare": false,
+          "redeclared_by_modification": false,
+          "has_unapplied_redeclare": false,
           "constrainedby": null,
           "is_structural": false
         },
@@ -1385,7 +1401,7 @@
               "end_column": 10,
               "start": 698,
               "end": 700,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+              "source": 17646367609561022627
             },
             "token_number": 67,
             "token_type": 64
@@ -1401,7 +1417,7 @@
                   "end_column": 7,
                   "start": 693,
                   "end": 697,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 66,
                 "token_type": 64
@@ -1421,7 +1437,7 @@
                 "end_column": 43,
                 "start": 714,
                 "end": 733,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                "source": 17646367609561022627
               },
               "token_number": 73,
               "token_type": 66
@@ -1439,7 +1455,7 @@
                   "end_column": 22,
                   "start": 709,
                   "end": 712,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 71,
                 "token_type": 68
@@ -1475,7 +1491,7 @@
                           "end_column": 16,
                           "start": 701,
                           "end": 706,
-                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                          "source": 17646367609561022627
                         },
                         "token_number": 69,
                         "token_type": 64
@@ -1501,7 +1517,7 @@
                         "end_column": 22,
                         "start": 709,
                         "end": 712,
-                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                        "source": 17646367609561022627
                       },
                       "token_number": 71,
                       "token_type": 68
@@ -1538,7 +1554,7 @@
             "end_column": 10,
             "start": 693,
             "end": 700,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            "source": 17646367609561022627
           },
           "condition": null,
           "inner": false,
@@ -1549,6 +1565,8 @@
           "is_final": false,
           "is_replaceable": false,
           "is_redeclare": false,
+          "redeclared_by_modification": false,
+          "has_unapplied_redeclare": false,
           "constrainedby": null,
           "is_structural": false
         },
@@ -1566,7 +1584,7 @@
               "end_column": 14,
               "start": 742,
               "end": 748,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+              "source": 17646367609561022627
             },
             "token_number": 76,
             "token_type": 64
@@ -1582,7 +1600,7 @@
                   "end_column": 7,
                   "start": 737,
                   "end": 741,
-                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                  "source": 17646367609561022627
                 },
                 "token_number": 75,
                 "token_type": 64
@@ -1602,7 +1620,7 @@
                 "end_column": 67,
                 "start": 749,
                 "end": 803,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                "source": 17646367609561022627
               },
               "token_number": 77,
               "token_type": 66
@@ -1620,7 +1638,7 @@
                   "end_column": 0,
                   "start": 0,
                   "end": 0,
-                  "file_name": ""
+                  "source": 0
                 },
                 "token_number": 0,
                 "token_type": 0
@@ -1652,7 +1670,7 @@
             "end_column": 14,
             "start": 737,
             "end": 748,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+            "source": 17646367609561022627
           },
           "condition": null,
           "inner": false,
@@ -1663,6 +1681,8 @@
           "is_final": false,
           "is_replaceable": false,
           "is_redeclare": false,
+          "redeclared_by_modification": false,
+          "has_unapplied_redeclare": false,
           "constrainedby": null,
           "is_structural": false
         }
@@ -1685,7 +1705,7 @@
                           "end_column": 6,
                           "start": 816,
                           "end": 819,
-                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                          "source": 17646367609561022627
                         },
                         "token_number": 80,
                         "token_type": 15
@@ -1714,7 +1734,7 @@
                               "end_column": 8,
                               "start": 820,
                               "end": 821,
-                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                              "source": 17646367609561022627
                             },
                             "token_number": 82,
                             "token_type": 64
@@ -1730,10 +1750,11 @@
                     }
                   }
                 ],
+                "is_partial_application": false,
                 "span": {
                   "source": 17646367609561022627,
                   "start": 816,
-                  "end": 821
+                  "end": 822
                 }
               }
             },
@@ -1751,7 +1772,7 @@
                         "end_column": 14,
                         "start": 825,
                         "end": 827,
-                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                        "source": 17646367609561022627
                       },
                       "token_number": 85,
                       "token_type": 64
@@ -1785,7 +1806,7 @@
                           "end_column": 6,
                           "start": 831,
                           "end": 834,
-                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                          "source": 17646367609561022627
                         },
                         "token_number": 87,
                         "token_type": 15
@@ -1814,7 +1835,7 @@
                               "end_column": 8,
                               "start": 835,
                               "end": 836,
-                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                              "source": 17646367609561022627
                             },
                             "token_number": 89,
                             "token_type": 64
@@ -1830,10 +1851,11 @@
                     }
                   }
                 ],
+                "is_partial_application": false,
                 "span": {
                   "source": 17646367609561022627,
                   "start": 831,
-                  "end": 836
+                  "end": 837
                 }
               }
             },
@@ -1851,7 +1873,7 @@
                         "end_column": 14,
                         "start": 840,
                         "end": 842,
-                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                        "source": 17646367609561022627
                       },
                       "token_number": 92,
                       "token_type": 64
@@ -1887,7 +1909,7 @@
                             "end_column": 4,
                             "start": 846,
                             "end": 847,
-                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                            "source": 17646367609561022627
                           },
                           "token_number": 94,
                           "token_type": 64
@@ -1917,7 +1939,7 @@
                               "end_column": 10,
                               "start": 850,
                               "end": 853,
-                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                              "source": 17646367609561022627
                             },
                             "token_number": 96,
                             "token_type": 15
@@ -1946,7 +1968,7 @@
                                   "end_column": 13,
                                   "start": 854,
                                   "end": 856,
-                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                  "source": 17646367609561022627
                                 },
                                 "token_number": 98,
                                 "token_type": 64
@@ -1962,17 +1984,18 @@
                         }
                       }
                     ],
+                    "is_partial_application": false,
                     "span": {
                       "source": 17646367609561022627,
                       "start": 850,
-                      "end": 856
+                      "end": 857
                     }
                   }
                 },
                 "span": {
                   "source": 17646367609561022627,
                   "start": 846,
-                  "end": 856
+                  "end": 857
                 }
               }
             },
@@ -1996,7 +2019,7 @@
                                 "end_column": 24,
                                 "start": 861,
                                 "end": 867,
-                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                "source": 17646367609561022627
                               },
                               "token_number": 102,
                               "token_type": 64
@@ -2025,7 +2048,7 @@
                                 "end_column": 28,
                                 "start": 870,
                                 "end": 871,
-                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                "source": 17646367609561022627
                               },
                               "token_number": 104,
                               "token_type": 64
@@ -2075,7 +2098,7 @@
                             "end_column": 4,
                             "start": 875,
                             "end": 876,
-                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                            "source": 17646367609561022627
                           },
                           "token_number": 106,
                           "token_type": 64
@@ -2105,7 +2128,7 @@
                               "end_column": 10,
                               "start": 879,
                               "end": 882,
-                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                              "source": 17646367609561022627
                             },
                             "token_number": 108,
                             "token_type": 15
@@ -2134,7 +2157,7 @@
                                   "end_column": 13,
                                   "start": 883,
                                   "end": 885,
-                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                  "source": 17646367609561022627
                                 },
                                 "token_number": 110,
                                 "token_type": 64
@@ -2150,17 +2173,18 @@
                         }
                       }
                     ],
+                    "is_partial_application": false,
                     "span": {
                       "source": 17646367609561022627,
                       "start": 879,
-                      "end": 885
+                      "end": 886
                     }
                   }
                 },
                 "span": {
                   "source": 17646367609561022627,
                   "start": 875,
-                  "end": 885
+                  "end": 886
                 }
               }
             },
@@ -2187,7 +2211,7 @@
                                     "end_column": 24,
                                     "start": 890,
                                     "end": 896,
-                                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                    "source": 17646367609561022627
                                   },
                                   "token_number": 114,
                                   "token_type": 64
@@ -2216,7 +2240,7 @@
                                     "end_column": 28,
                                     "start": 899,
                                     "end": 900,
-                                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                    "source": 17646367609561022627
                                   },
                                   "token_number": 116,
                                   "token_type": 64
@@ -2262,7 +2286,7 @@
                                 "end_column": 32,
                                 "start": 903,
                                 "end": 904,
-                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                "source": 17646367609561022627
                               },
                               "token_number": 118,
                               "token_type": 64
@@ -2291,7 +2315,7 @@
                                 "end_column": 36,
                                 "start": 907,
                                 "end": 908,
-                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                "source": 17646367609561022627
                               },
                               "token_number": 120,
                               "token_type": 64
@@ -2348,7 +2372,7 @@
                                     "end_column": 4,
                                     "start": 1067,
                                     "end": 1068,
-                                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                    "source": 17646367609561022627
                                   },
                                   "token_number": 124,
                                   "token_type": 67
@@ -2382,7 +2406,7 @@
                                                     "end_column": 10,
                                                     "start": 1072,
                                                     "end": 1074,
-                                                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                    "source": 17646367609561022627
                                                   },
                                                   "token_number": 127,
                                                   "token_type": 64
@@ -2409,7 +2433,7 @@
                                                 "end_column": 14,
                                                 "start": 1077,
                                                 "end": 1078,
-                                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                "source": 17646367609561022627
                                               },
                                               "token_number": 129,
                                               "token_type": 67
@@ -2445,7 +2469,7 @@
                                                     "end_column": 19,
                                                     "start": 1081,
                                                     "end": 1083,
-                                                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                    "source": 17646367609561022627
                                                   },
                                                   "token_number": 131,
                                                   "token_type": 64
@@ -2472,7 +2496,7 @@
                                                 "end_column": 23,
                                                 "start": 1086,
                                                 "end": 1087,
-                                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                "source": 17646367609561022627
                                               },
                                               "token_number": 133,
                                               "token_type": 67
@@ -2527,7 +2551,7 @@
                                     "end_column": 28,
                                     "start": 1091,
                                     "end": 1092,
-                                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                    "source": 17646367609561022627
                                   },
                                   "token_number": 136,
                                   "token_type": 67
@@ -2561,7 +2585,7 @@
                                                     "end_column": 33,
                                                     "start": 1096,
                                                     "end": 1097,
-                                                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                    "source": 17646367609561022627
                                                   },
                                                   "token_number": 139,
                                                   "token_type": 64
@@ -2591,7 +2615,7 @@
                                                       "end_column": 39,
                                                       "start": 1100,
                                                       "end": 1103,
-                                                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                      "source": 17646367609561022627
                                                     },
                                                     "token_number": 141,
                                                     "token_type": 15
@@ -2620,7 +2644,7 @@
                                                           "end_column": 42,
                                                           "start": 1104,
                                                           "end": 1106,
-                                                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                          "source": 17646367609561022627
                                                         },
                                                         "token_number": 143,
                                                         "token_type": 64
@@ -2636,17 +2660,18 @@
                                                 }
                                               }
                                             ],
+                                            "is_partial_application": false,
                                             "span": {
                                               "source": 17646367609561022627,
                                               "start": 1100,
-                                              "end": 1106
+                                              "end": 1107
                                             }
                                           }
                                         },
                                         "span": {
                                           "source": 17646367609561022627,
                                           "start": 1096,
-                                          "end": 1106
+                                          "end": 1107
                                         }
                                       }
                                     },
@@ -2667,7 +2692,7 @@
                                                     "end_column": 47,
                                                     "start": 1110,
                                                     "end": 1111,
-                                                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                    "source": 17646367609561022627
                                                   },
                                                   "token_number": 146,
                                                   "token_type": 64
@@ -2697,7 +2722,7 @@
                                                       "end_column": 53,
                                                       "start": 1114,
                                                       "end": 1117,
-                                                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                      "source": 17646367609561022627
                                                     },
                                                     "token_number": 148,
                                                     "token_type": 15
@@ -2726,7 +2751,7 @@
                                                           "end_column": 56,
                                                           "start": 1118,
                                                           "end": 1120,
-                                                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                          "source": 17646367609561022627
                                                         },
                                                         "token_number": 150,
                                                         "token_type": 64
@@ -2742,45 +2767,46 @@
                                                 }
                                               }
                                             ],
+                                            "is_partial_application": false,
                                             "span": {
                                               "source": 17646367609561022627,
                                               "start": 1114,
-                                              "end": 1120
+                                              "end": 1121
                                             }
                                           }
                                         },
                                         "span": {
                                           "source": 17646367609561022627,
                                           "start": 1110,
-                                          "end": 1120
+                                          "end": 1121
                                         }
                                       }
                                     },
                                     "span": {
                                       "source": 17646367609561022627,
                                       "start": 1096,
-                                      "end": 1120
+                                      "end": 1121
                                     }
                                   }
                                 },
                                 "span": {
                                   "source": 17646367609561022627,
                                   "start": 1096,
-                                  "end": 1120
+                                  "end": 1121
                                 }
                               }
                             },
                             "span": {
                               "source": 17646367609561022627,
                               "start": 1091,
-                              "end": 1120
+                              "end": 1121
                             }
                           }
                         },
                         "span": {
                           "source": 17646367609561022627,
                           "start": 1067,
-                          "end": 1120
+                          "end": 1121
                         }
                       }
                     },
@@ -2802,7 +2828,7 @@
                                     "end_column": 62,
                                     "start": 1125,
                                     "end": 1126,
-                                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                    "source": 17646367609561022627
                                   },
                                   "token_number": 154,
                                   "token_type": 67
@@ -2828,7 +2854,7 @@
                                         "end_column": 70,
                                         "start": 1129,
                                         "end": 1134,
-                                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                        "source": 17646367609561022627
                                       },
                                       "token_number": 156,
                                       "token_type": 64
@@ -2872,7 +2898,7 @@
                                                 "end_column": 75,
                                                 "start": 1138,
                                                 "end": 1139,
-                                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                "source": 17646367609561022627
                                               },
                                               "token_number": 159,
                                               "token_type": 64
@@ -2901,7 +2927,7 @@
                                                 "end_column": 80,
                                                 "start": 1142,
                                                 "end": 1144,
-                                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                "source": 17646367609561022627
                                               },
                                               "token_number": 161,
                                               "token_type": 64
@@ -2940,7 +2966,7 @@
                                                 "end_column": 84,
                                                 "start": 1147,
                                                 "end": 1148,
-                                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                "source": 17646367609561022627
                                               },
                                               "token_number": 163,
                                               "token_type": 64
@@ -2969,7 +2995,7 @@
                                                 "end_column": 89,
                                                 "start": 1151,
                                                 "end": 1153,
-                                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                "source": 17646367609561022627
                                               },
                                               "token_number": 165,
                                               "token_type": 64
@@ -3039,7 +3065,7 @@
                                     "end_column": 97,
                                     "start": 1157,
                                     "end": 1161,
-                                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                    "source": 17646367609561022627
                                   },
                                   "token_number": 168,
                                   "token_type": 64
@@ -3066,7 +3092,7 @@
                                 "end_column": 101,
                                 "start": 1164,
                                 "end": 1165,
-                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                "source": 17646367609561022627
                               },
                               "token_number": 170,
                               "token_type": 67
@@ -3110,7 +3136,7 @@
                                                 "end_column": 106,
                                                 "start": 1169,
                                                 "end": 1170,
-                                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                "source": 17646367609561022627
                                               },
                                               "token_number": 173,
                                               "token_type": 64
@@ -3137,7 +3163,7 @@
                                             "end_column": 110,
                                             "start": 1173,
                                             "end": 1174,
-                                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                            "source": 17646367609561022627
                                           },
                                           "token_number": 175,
                                           "token_type": 67
@@ -3173,7 +3199,7 @@
                                                 "end_column": 114,
                                                 "start": 1177,
                                                 "end": 1178,
-                                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                                "source": 17646367609561022627
                                               },
                                               "token_number": 177,
                                               "token_type": 64
@@ -3200,7 +3226,7 @@
                                             "end_column": 118,
                                             "start": 1181,
                                             "end": 1182,
-                                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                            "source": 17646367609561022627
                                           },
                                           "token_number": 179,
                                           "token_type": 67
@@ -3243,7 +3269,7 @@
                                             "end_column": 122,
                                             "start": 1185,
                                             "end": 1186,
-                                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                            "source": 17646367609561022627
                                           },
                                           "token_number": 181,
                                           "token_type": 64
@@ -3270,7 +3296,7 @@
                                         "end_column": 126,
                                         "start": 1189,
                                         "end": 1190,
-                                        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                                        "source": 17646367609561022627
                                       },
                                       "token_number": 183,
                                       "token_type": 67
@@ -3329,7 +3355,7 @@
                     "end_column": 131,
                     "start": 1194,
                     "end": 1195,
-                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+                    "source": 17646367609561022627
                   },
                   "token_number": 186,
                   "token_type": 67
@@ -3356,7 +3382,7 @@
           "end_column": 9,
           "start": 805,
           "end": 813,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+          "source": 17646367609561022627
         },
         "token_number": 79,
         "token_type": 24
@@ -3373,7 +3399,7 @@
           "end_column": 23,
           "start": 1201,
           "end": 1219,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StabilizedPendulum.mo"
+          "source": 17646367609561022627
         },
         "token_number": 189,
         "token_type": 64
@@ -3386,6 +3412,7 @@
       "is_outer": false,
       "is_replaceable": false,
       "is_redeclare": false,
+      "redeclare_target_def_id": null,
       "constrainedby": null,
       "array_subscripts": [],
       "external": null

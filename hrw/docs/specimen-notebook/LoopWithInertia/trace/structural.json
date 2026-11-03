@@ -4,22 +4,22 @@
   "coupled_block_count": 1,
   "matching": [
     {
-      "equation": "f_x[0] (top-level model equation)",
+      "equation": "f_x[0] (inertia * der(w) = command)",
       "id": "f_x[0]",
       "unknown": "der(w)"
     },
     {
-      "equation": "f_x[1] (top-level model equation)",
+      "equation": "f_x[1] (measurement = w + sensorFeedthrough * command)",
       "id": "f_x[1]",
       "unknown": "command"
     },
     {
-      "equation": "f_x[2] (top-level model equation)",
+      "equation": "f_x[2] (error = reference - measurement)",
       "id": "f_x[2]",
       "unknown": "measurement"
     },
     {
-      "equation": "f_x[3] (top-level model equation)",
+      "equation": "f_x[3] (command = controllerGain * error)",
       "id": "f_x[3]",
       "unknown": "error"
     }
@@ -29,9 +29,9 @@
       "kind": "coupled",
       "size": 3,
       "equations": [
-        "f_x[3] (top-level model equation)",
-        "f_x[2] (top-level model equation)",
-        "f_x[1] (top-level model equation)"
+        "f_x[3] (command = controllerGain * error)",
+        "f_x[2] (error = reference - measurement)",
+        "f_x[1] (measurement = w + sensorFeedthrough * command)"
       ],
       "ids": [
         "f_x[3]",
@@ -48,19 +48,19 @@
           "error"
         ],
         "residual_equations": [
-          "f_x[1] (top-level model equation)"
+          "f_x[1] (measurement = w + sensorFeedthrough * command)"
         ],
         "residual_equation_ids": [
           "f_x[1]"
         ],
         "causal_sequence": [
           {
-            "equation": "f_x[2] (top-level model equation)",
+            "equation": "f_x[2] (error = reference - measurement)",
             "id": "f_x[2]",
             "variable": "measurement"
           },
           {
-            "equation": "f_x[3] (top-level model equation)",
+            "equation": "f_x[3] (command = controllerGain * error)",
             "id": "f_x[3]",
             "variable": "command"
           }
@@ -70,7 +70,7 @@
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[0] (top-level model equation)",
+      "equation": "f_x[0] (inertia * der(w) = command)",
       "id": "f_x[0]",
       "unknown": "der(w)"
     }
@@ -86,40 +86,40 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0] (top-level model equation)",
+        "equation": "f_x[0] (inertia * der(w) = command)",
         "id": "f_x[0]",
         "unknowns": [
           0,
           2
         ],
-        "equation_text": "inertia * der(w) - command"
+        "equation_text": "0 = inertia*der(w) - command"
       },
       {
-        "equation": "f_x[1] (top-level model equation)",
+        "equation": "f_x[1] (measurement = w + sensorFeedthrough * command)",
         "id": "f_x[1]",
         "unknowns": [
           2,
           3
         ],
-        "equation_text": "measurement - (w + sensorFeedthrough * command)"
+        "equation_text": "0 = measurement - (w + sensorFeedthrough*command)"
       },
       {
-        "equation": "f_x[2] (top-level model equation)",
+        "equation": "f_x[2] (error = reference - measurement)",
         "id": "f_x[2]",
         "unknowns": [
           1,
           3
         ],
-        "equation_text": "error - (reference - measurement)"
+        "equation_text": "0 = error - (reference - measurement)"
       },
       {
-        "equation": "f_x[3] (top-level model equation)",
+        "equation": "f_x[3] (command = controllerGain * error)",
         "id": "f_x[3]",
         "unknowns": [
           1,
           2
         ],
-        "equation_text": "command - controllerGain * error"
+        "equation_text": "0 = command - controllerGain*error"
       }
     ]
   }

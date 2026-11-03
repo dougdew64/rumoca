@@ -1,0 +1,67 @@
+{
+  "t_end": 2.0,
+  "n_time_points": 501,
+  "n_variables": 7,
+  "n_states": 4,
+  "has_discontinuities": false,
+  "t_start": 0.0,
+  "t_final": 2.0,
+  "variables": [
+    {
+      "name": "x",
+      "is_state": true,
+      "initial": 1.0,
+      "final": 0.7935739866960232,
+      "min": -1.0000000854433562,
+      "max": 1.0
+    },
+    {
+      "name": "y",
+      "is_state": true,
+      "initial": 0.0,
+      "final": -0.6084714238668705,
+      "min": -0.9999996408894715,
+      "max": 0.0
+    },
+    {
+      "name": "vx",
+      "is_state": true,
+      "initial": 0.0,
+      "final": 2.102386868651634,
+      "min": -4.429445144272344,
+      "max": 4.429475037005109
+    },
+    {
+      "name": "vy",
+      "is_state": true,
+      "initial": 0.0,
+      "final": 2.7419290622101693,
+      "min": -2.748052275653963,
+      "max": 2.7480189803373922
+    },
+    {
+      "name": "lambda",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 17.9074995707192,
+      "min": 0.0,
+      "max": 29.430087576494802
+    },
+    {
+      "name": "$derivative.vx",
+      "is_state": false,
+      "initial": 0.0,
+      "final": -14.210925826092959,
+      "min": -14.714973626484648,
+      "max": 14.715113668671249
+    },
+    {
+      "name": "$derivative.vy",
+      "is_state": false,
+      "initial": -9.81,
+      "final": 1.0862017616908826,
+      "min": -9.81,
+      "max": 19.6200642835233
+    }
+  ]
+}

@@ -3,58 +3,61 @@
     "n_eq": 3,
     "n_var": 3,
     "unknown_names": [
-      "a.i",
       "a.v",
+      "a.i",
       "b.v"
     ],
     "rows": [
       {
-        "equation": "f_x[0] (connection equation: a.v = b.v)",
+        "equation": "f_x[0] (Real v)",
         "id": "f_x[0]",
         "unknowns": [
-          1,
+          0,
           2
         ],
-        "equation_text": "a.v - b.v"
+        "equation_text": "0 = a.v - b.v"
       },
       {
-        "equation": "f_x[1] (unconnected flow: a.i = 0)",
+        "equation": "f_x[1] (Real i)",
         "id": "f_x[1]",
         "unknowns": [
-          0
+          1
         ],
-        "equation_text": "a.i"
+        "equation_text": "0 = a.i"
       },
       {
-        "equation": "f_x[2] (unconnected flow: a.i = 0)",
+        "equation": "f_x[2] (Real i)",
         "id": "f_x[2]",
         "unknowns": [
-          0
+          1
         ],
-        "equation_text": "a.i"
+        "equation_text": "0 = a.i"
       }
     ]
   },
   "matching": [
     {
-      "equation": "f_x[0] (connection equation: a.v = b.v)",
+      "equation": "f_x[0] (Real v)",
       "id": "f_x[0]",
       "unknown": "a.v"
     },
     {
-      "equation": "f_x[1] (unconnected flow: a.i = 0)",
+      "equation": "f_x[1] (Real i)",
       "id": "f_x[1]",
       "unknown": "a.i"
     }
   ],
   "error": {
     "kind": "singular",
-    "message": "structurally singular system: 2 matched out of 3 equations and 3 unknowns; unmatched equations: f_x[2]; unmatched unknowns: b.v",
+    "message": "structurally singular system: 2 matched out of 3 equations and 3 unknowns",
     "n_equations": 3,
     "n_unknowns": 3,
     "n_matched": 2,
     "rank_deficiency": 1,
     "unmatched_equations": [
+      "f_x[2] (Real i)"
+    ],
+    "unmatched_equation_ids": [
       "f_x[2]"
     ],
     "unmatched_unknowns": [
@@ -73,6 +76,14 @@
         }
       }
     ],
+    "over_determined_block": {
+      "equations": 2,
+      "unknowns": 1,
+      "sample": [
+        "f_x[1]",
+        "f_x[2]"
+      ]
+    },
     "guidance": "The maximum matching could not pair every equation with a unique unknown. Each unmatched unknown is a variable no equation determines; `unmatched_unknown_locations` gives the source line that declares it. If the Index Reduction stage also reports singular, the model is genuinely ill-posed rather than merely high-index."
   }
 }
