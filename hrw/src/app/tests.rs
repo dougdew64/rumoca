@@ -2251,10 +2251,20 @@ fn every_animation_pane_reports_having_nothing_to_show() {
             |a, ui| a.connection_anim_ui(ui),
             "no connections in this model",
         ),
+        // **The disabled pane says something different, and more**, since the
+        // v0.10.0 rebase. `pre_lowering_anim_ui` now always installs
+        // `PreLoweringAnimation::disabled()`, so the `(no pre() lowering in this
+        // model)` branch — which claimed the *model* used no `pre()` — is
+        // unreachable, and the placeholder explains that **HRW** cannot show the
+        // pass instead. That is the distinction `awaiting_remodel_note` exists for:
+        // a reader must not read an HRW gap as a fact about their model.
+        //
+        // The assertion is kept rather than dropped because the property is the
+        // same one: this pane must say something when it has nothing.
         (
             "pre_lowering",
             |a, ui| a.pre_lowering_anim_ui(ui),
-            "no pre() lowering in this model",
+            "pre() lowering stepping is being rebuilt",
         ),
     ];
 
