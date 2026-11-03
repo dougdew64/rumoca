@@ -12,7 +12,7 @@ teaching: it has an expectation to check, but nothing to predict.
 
 A vocabulary note, because this lab needs three words other labs do not. A station is a
 place in *this document*. A break is where the *debugger* halts execution. An anchor is
-the named location a break is armed at — `decision`, `recurse`, `give_up`, `push`, `gate`. Keeping
+the named location a break is armed at — `decision`, `descend`, `give_up`, `push`, `gate`. Keeping
 them apart matters here more than anywhere else in the corpus, because all three are in play at
 once.
 
@@ -45,10 +45,11 @@ silently. That notice is the feature; a silent successful-looking run is what it
 > **Predict.** The link above names `decision`, not a file and a line. Why would a lab refuse to
 > name the line?
 
-**Expected:** a red dot appears at `matching.rs:224`, the `match match_var[var]` expression inside
-`augment_traced`. HRW's status bar names the line it asked for.
+**Expected:** a red dot appears at `matching.rs:730`, the
+`let Some(owner) = matching.match_var[variable]` expression inside `next_augment_step`. HRW's
+status bar names the line it asked for.
 
-Falsified if: nothing arms, or the dot lands outside `augment_traced`.
+Falsified if: nothing arms, or the dot lands outside `next_augment_step`.
 
 *What just happened.* The link names the anchor; the anchor finds the line. `decision` is
 declared in `matching_ledger.rs` and resolved by *searching the source* at click time, so editing
@@ -61,41 +62,64 @@ So why does this lab print `189` at all? Because something checks it.
 when a test resolves it — which is the same rule as the equation ids in the pass-one labs, and the
 reason this document may name a line while the *link* may not.
 
-The anchors that exist are `decision`, `recurse`, `give_up`, `push`, `gate` and `anchor` — each
+The anchors that exist are `decision`, `descend`, `give_up`, `push`, `gate` and `anchor` — each
 naming a decision the algorithm makes, not a place in a file.
 
 So the anchors are declared in `matching_ledger.rs` and resolved at click time. `decision`,
-`give_up`, `recurse`, `push` and `gate` are the ones that exist, and each names a *decision the
+`give_up`, `descend`, `push` and `gate` are the ones that exist, and each names a *decision the
 algorithm makes* rather than a place in a file.
 
 ---
 
-## Station 2 — The call stack is the augmenting path
+## Station 2 — The augmenting path is a vector you can read at once
 
-Continue (F5) until you stop at the decision anchor a few times, then look at the call stack
-rather than at the variables.
+[⬤ Break where a displacement is pushed](hrw://breakpoint/descend)
 
-> **Predict.** `augment` is recursive. What does the depth of the stack correspond to, in the
-> graph?
+Continue (F5) until you stop at the decision anchor a few times, then look at the
+`stack` local in `run_augment_search` rather than at the call stack.
 
-**Expected:** the stack shows two `augment_traced` frames — the inner one at `matching.rs:216`,
-the outer at `matching.rs:245`, which is the recursive call site. Each frame's `eq` local is a
-different equation. N nested frames is an N-edge alternating path.
+Then arm `descend` as well. It sits at `matching.rs:683`, the
+`stack.push(AugmentFrame::new(owner))` that extends the path — **the line that used
+to be the recursive call.** Every stop there is one more equation asked to move, and
+`stack.len()` immediately afterwards is the path's new length.
 
-Falsified if: the stack is flat at every break, or two frames report the same `eq`.
+> **Predict.** The search explores one alternating path at a time. Where is that path
+> held, and how long is it?
 
-*What just happened.* This is the station the lab exists for, and it is not visible from the
-animation. The augmenting-path search runs alternately along unmatched and matched edges, looking
-for an unmatched unknown. That run is implemented as recursion — so the *path* the algorithm is
-currently exploring is literally the sequence of frames on the stack, and its length is the depth.
+**Expected:** `stack` holds one `AugmentFrame` per equation on the current path, each
+with its own `eq`. The top is the equation being explored now; everything below it is an
+equation that was asked to move. N entries is an N-edge alternating path. The *call* stack
+is flat — two or three frames, the same ones every time.
 
-Read the stack bottom-up and you are reading the path from its start. Step until it deepens and you
-are watching the path extend; step until it returns and you are watching a dead end abandoned.
+Falsified if: `stack` holds one entry at every break, or two entries report the same `eq`.
 
-Claude cannot see any of this, which is worth knowing while you work: a break yields no
-location, no stack and no values to a tool. If you want to ask about a break, the extension publishes
-it to `.hrw-bridge/debug-state.json` — stack frames, the innermost location, and the locals of the
-most local scope.
+*What just happened.* This is the station the lab exists for, and it is not visible from
+the animation. The augmenting-path search runs alternately along unmatched and matched
+edges, looking for an unmatched unknown. That run is implemented as an **explicit stack**
+— so the path the algorithm is currently exploring is literally the contents of `stack`,
+and its length is the depth.
+
+Read `stack` from index 0 upward and you are reading the path from its start. Step until it
+grows and you are watching the path extend; step until an entry is popped and you are
+watching a dead end abandoned.
+
+> **This station changed shape in Rumoca 0.10.0, and the change is worth a minute.**
+>
+> The search used to be recursive, and this station used to say *"the call stack is the
+> augmenting path"* — you walked up the debugger's frames, one `augment_traced` per
+> displaced equation, and the depth was the path length.
+>
+> It is iterative now, and `matching.rs` says why at the top: an array-shaped model can
+> produce alternating chains hundreds of thousands of equations long, and the recursive
+> form overflows the main thread's 8 MB stack on those. A 500,000-node chain is a real
+> MSL shape, not a contrived one.
+>
+> **So the algorithm did not change — its representation of "where am I" did**, from the
+> machine's stack to a `Vec` the code owns. That is a common move when a recursive
+> algorithm meets real input sizes, and it is worth recognising: the recursion is still
+> there in the *structure* of the search, just not in the call stack. Watching one local
+> instead of scrolling frames is arguably the better view, since you see the whole path
+> at once.
 
 ---
 
@@ -111,8 +135,9 @@ most local scope.
 > **Predict.** With two anchors armed and a system that cannot be matched, which one stops first,
 > and how many times does each fire?
 
-**Expected:** red dots at `matching.rs:224` and `matching.rs:278`, the latter on the bare `false`
-that ends `augment_traced`. The decision anchor fires while the search explores; `give_up` fires
+**Expected:** red dots at `matching.rs:730` and `matching.rs:707`, the latter on the bare `false`
+that ends `run_augment_search`. The decision anchor fires while the search explores; `give_up`
+fires
 when it exhausts the alternatives for the unmatchable equation — reporting `f_x[1]` unmatched and
 `b` as the unmatched unknown.
 
