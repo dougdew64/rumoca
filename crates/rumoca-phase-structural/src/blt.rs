@@ -52,12 +52,19 @@ pub(crate) fn build_blt_blocks<'dae>(
         .into_iter()
         .map(BltBlock::StructuredScalar)
         .collect();
+    let mut coupled_ordinal = 0usize;
     for scc in sccs {
         let global: Vec<usize> = scc
             .iter()
             .filter_map(|&local| node_of_local.get(local).copied())
             .collect();
-        blocks.push(scc_to_block(&global, incidence, match_eq, observer));
+        blocks.push(scc_to_block(
+            &global,
+            incidence,
+            match_eq,
+            &mut coupled_ordinal,
+            observer,
+        ));
     }
     blocks
 }
@@ -68,8 +75,9 @@ fn sccs_to_blocks<'dae>(
     match_eq: &[Option<usize>],
     observer: &mut impl StructuralObserver,
 ) -> Vec<BltBlock<'dae>> {
+    let mut coupled_ordinal = 0usize;
     sccs.into_iter()
-        .map(|scc| scc_to_block(&scc, incidence, match_eq, observer))
+        .map(|scc| scc_to_block(&scc, incidence, match_eq, &mut coupled_ordinal, observer))
         .collect()
 }
 
@@ -233,6 +241,7 @@ fn scc_to_block<'dae>(
     scc: &[usize],
     incidence: &Incidence<'dae>,
     match_eq: &[Option<usize>],
+    coupled_ordinal: &mut usize,
     observer: &mut impl StructuralObserver,
 ) -> BltBlock<'dae> {
     if let [eq_idx] = scc {
@@ -252,6 +261,20 @@ fn scc_to_block<'dae>(
         .iter()
         .filter_map(|&i| match_eq[i].map(|v| incidence.unknowns[v]))
         .collect();
+    // Announced before `tear_scc`, which can reject a non-square SCC without
+    // running the greedy search at all. A consumer attributing passes to
+    // blocks by position would then shift every later block by one; see
+    // `TearingStep::BlockStart`.
+    observer.observe(crate::observation::StructuralEvent::Tearing {
+        step: crate::observation::TearingStep::BlockStart {
+            ordinal: *coupled_ordinal,
+            equations: equations.len(),
+            unknowns: unknowns.len(),
+        },
+        tears_so_far: &[],
+        causal_so_far: &[],
+    });
+    *coupled_ordinal += 1;
     let tearing = tear_scc(scc, incidence, match_eq, observer);
     BltBlock::AlgebraicLoop {
         equations,
