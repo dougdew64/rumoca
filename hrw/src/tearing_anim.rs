@@ -40,7 +40,8 @@ use std::thread;
 
 use eframe::egui;
 
-use rumoca_phase_structural::{LiveTrace, TearingFrame, TearingStep};
+use crate::live_trace::LiveTrace;
+use rumoca_phase_structural::{TearingRecord, TearingStep};
 
 use crate::playback::{Animated, Playback};
 

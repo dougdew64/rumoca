@@ -74,6 +74,7 @@ pub mod incidence_view;
 pub mod json_read;
 pub mod lab;
 pub mod lab_panel;
+pub mod live_trace;
 pub mod log_view;
 pub mod machine_policy;
 pub mod matching_anim;

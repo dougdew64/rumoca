@@ -168,7 +168,7 @@ pub enum ToWorker {
         path: PathBuf,
         /// Simple model name, so the worker need not re-parse to qualify it.
         model: String,
-        trace: rumoca_phase_structural::live_trace::LiveTrace<
+        trace: crate::live_trace::LiveTrace<
             rumoca_phase_flatten::connections::trace::ConnectionFrame,
         >,
         done: std::sync::Arc<std::sync::atomic::AtomicBool>,
@@ -1250,27 +1250,44 @@ pub enum FromWorker {
         identifier_index: Option<crate::identifier_index::IdentifierIndex>,
         /// Every step of the matching search, **from the run that produced the
         /// blocks above** — not a re-derivation performed when the tab opens.
-        matching_frames: Vec<rumoca_phase_structural::matching::MatchingFrame>,
-        /// The SCC search, from the same run.
-        tarjan_frames: Vec<rumoca_phase_structural::tarjan::TarjanFrame>,
-        /// Tearing decisions, one segment per coupled block.
-        tearing_frames: Vec<Vec<rumoca_phase_structural::tearing::TearingFrame>>,
+        ///
+        /// On 0.10.0 that is true by construction rather than by care:
+        /// `inspect_structural_report` returns the report and these steps from
+        /// one call, through one observer threaded into the real search. There
+        /// is no second traced implementation that could drift.
+        matching_frames: Vec<rumoca_phase_structural::MatchingRecord>,
+        /// The SCC search, from the same run, **one segment per traversal**.
+        ///
+        /// Segmented because node indices do not mean the same thing across
+        /// traversals: `build_blt_blocks` may condense compact equation
+        /// families out of the node set and run over a renumbered graph. Each
+        /// segment opens with the `Start` carrying its `equation_of_node` map.
+        tarjan_frames: Vec<Vec<rumoca_phase_structural::TarjanRecord>>,
+        /// Tearing decisions, **one segment per pass** — up to two per coupled
+        /// block, since the planner tries both tear priorities and keeps the
+        /// smaller set. The `PlanSelected` step names the pass that was
+        /// adopted; the other describes a plan the compiler discarded.
+        tearing_frames: Vec<Vec<rumoca_phase_structural::TearingRecord>>,
         // **The index-reduced system's own three searches are gone with the
         // funnel.** They came from re-running reduction on a cloned DAE, which
         // 0.10.0 makes impossible (`Dae` is immutable and not `Clone`) and
         // unnecessary (`inspect_prepare_for_solve` observes the real one). The
         // re-model will supply them from that seam; see `index_reduction_stage`.
-        /// `pre()`-lowering frames (idea #40), **captured during the compile above**
-        /// by `rumoca_phase_dae`'s capture scope. The pass runs *inside* DAE
-        /// construction, so the finished DAE cannot be re-run to recover them —
-        /// which is why the scope exists rather than a second pass.
-        ///
-        /// *(Comment corrected 2026-08-04: it read "replay frames … recorded by
-        /// re-running DAE construction", describing the mechanism this replaced
-        /// earlier the same day.)*
-        pre_lowering_frames: Vec<rumoca_phase_dae::PreLoweringFrame>,
-        /// The flat model, for a live-debug replay of `pre()` lowering. It is the
-        /// last artifact from *before* that pass runs.
+        // **`pre()`-lowering frames are gone, because the pass they described
+        // is gone.** On 0.9.20 `lower_pre_operator(&mut Dae)` was a distinct
+        // pass over a mutable DAE, and `PreLoweringStep` named its rewrites.
+        // On 0.10.0 `pre()` is lowered *during construction*, as one arm of
+        // `construction::expression`'s builtin dispatch beside `der`, `edge`
+        // and `previous` — there is no pass, no `lower_pre_operator`, and no
+        // `PreLoweringStep`.
+        //
+        // So this is a re-model rather than a port, and it follows the same
+        // rule as index reduction: disabled and labelled now, re-modelled
+        // afterwards where it can be watched running (`DECISIONS.md`,
+        // 2026-11-02). The field is removed rather than left empty for the
+        // reason stated on `index_reduction_stage` — an always-empty `Vec`
+        // leaves the plumbing looking alive.
+        /// The flat model, the last artifact from before DAE construction runs.
         flat: Option<rumoca_ir_flat::Model>,
         /// The raw DAE, for the views that read it after the compile.
         ///
@@ -2498,7 +2515,7 @@ impl WorkerState {
         &mut self,
         path: &Path,
         model: &str,
-        trace: &rumoca_phase_structural::live_trace::LiveTrace<
+        trace: &crate::live_trace::LiveTrace<
             rumoca_phase_flatten::connections::trace::ConnectionFrame,
         >,
     ) {
@@ -4137,11 +4154,22 @@ fn unmatched_unknown_locations(
 /// against 20, so frames from one would address rows the other does not have.
 #[derive(Default, Clone)]
 pub struct StructuralFrames {
-    pub matching: Vec<rumoca_phase_structural::matching::MatchingFrame>,
-    pub tarjan: Vec<rumoca_phase_structural::tarjan::TarjanFrame>,
-    /// Tearing decisions, **one segment per coupled block**, in the order the
-    /// blocks were torn — a flat list would splice several loops into one replay.
-    pub tearing: Vec<Vec<rumoca_phase_structural::tearing::TearingFrame>>,
+    pub matching: Vec<rumoca_phase_structural::MatchingRecord>,
+    /// Tarjan steps, **one segment per traversal**, because node indices mean
+    /// nothing across traversals. `build_blt_blocks` may condense compact
+    /// equation families out of the node set and run over a renumbered graph,
+    /// so each segment's opening `Start` carries the `equation_of_node` map
+    /// that makes its indices readable — see `tarjan_runs()`.
+    pub tarjan: Vec<Vec<rumoca_phase_structural::TarjanRecord>>,
+    /// Tearing decisions, **one segment per pass**, in the order the passes
+    /// ran — a flat list would splice several loops into one replay.
+    ///
+    /// One coupled block contributes *up to two* passes, because the planner
+    /// runs the greedy search under both tear priorities and keeps the smaller
+    /// tear set. The `PlanSelected` step closing a block names the priority
+    /// whose pass was adopted; the other pass describes a plan the compiler
+    /// discarded.
+    pub tearing: Vec<Vec<rumoca_phase_structural::TearingRecord>>,
 }
 
 /// Structural analysis of the model's DAE: maximum matching, BLT blocks,
@@ -4177,57 +4205,82 @@ fn structural_stage(result: Option<&PhaseResult>, source: &str) -> (Stage, Struc
     }
     let cr = unwrap_success(result);
 
-    // **The animation's frames come from this run.** Until 2026-08-04 the matching
-    // animation re-ran `maximum_matching` on the incidence matrix when its tab was
-    // opened — deterministic, so it agreed, but it agreed by luck of the algorithm
-    // and described an execution that produced nothing. The frames now come from
-    // the matching that produced the blocks below.
+    // **The animation's steps come from this run, and from only this run.**
+    // Until 2026-08-04 the matching animation re-ran `maximum_matching` when
+    // its tab was opened — deterministic, so it agreed, but it agreed by luck
+    // of the algorithm and described an execution that produced nothing.
     //
-    // Opened around the *singular* path too, deliberately: a model that fails to
-    // match is the one whose search is most worth watching, and
-    // `build_structural_report` runs matching before it decides to fail.
-    rumoca_phase_structural::matching::start_capture();
-    rumoca_phase_structural::tarjan::start_capture();
-    rumoca_phase_structural::tearing::start_capture();
-    let report = rumoca_phase_structural::build_structural_report(&cr.dae);
+    // `inspect_structural_report` is what makes that structurally impossible
+    // rather than merely true today: it returns the report and the steps from
+    // one call, over one observer threaded through the real searches. There is
+    // no second implementation that could drift, and nothing here chooses a
+    // "traced" code path.
+    //
+    // Observed around the *singular* path too, deliberately: a model that
+    // fails to match is the one whose search is most worth watching, and the
+    // matching that proved it singular is already recorded by the time the
+    // error comes back.
+    let (report, trace) = cr
+        .dae
+        .inspect(rumoca_phase_structural::inspect_structural_report);
     let frames = StructuralFrames {
-        matching: rumoca_phase_structural::matching::take_capture(),
-        tarjan: rumoca_phase_structural::tarjan::take_capture(),
-        tearing: rumoca_phase_structural::tearing::take_capture(),
+        matching: trace.matching().cloned().collect(),
+        tarjan: trace
+            .tarjan_runs()
+            .into_iter()
+            .map(|run| run.into_iter().cloned().collect())
+            .collect(),
+        tearing: trace
+            .tearing_passes()
+            .into_iter()
+            .map(|pass| pass.into_iter().cloned().collect())
+            .collect(),
     };
-    let stage = match report {
-        Ok(rep) => {
-            let inc = rumoca_phase_structural::build_incidence(&cr.dae);
-            let mut json = structural_to_json(&rep);
-            json.as_object_mut().unwrap().insert(
-                "incidence".to_owned(),
-                incidence_to_json(&inc, Some(&cr.dae)),
-            );
-            Stage::ok(json)
+    let stage = cr.dae.inspect(|view| {
+        // Built once and shared by both arms. `build_incidence` can itself
+        // fail; when it does the incidence and matching keys are *absent*
+        // rather than empty, because an empty matrix is a claim that the
+        // system has no entries, which is a different statement from "the
+        // matrix could not be built".
+        let incidence = rumoca_phase_structural::build_incidence(view).ok();
+        let mut json = match &report {
+            Ok(rep) => structural_to_json(rep),
+            Err(_) => serde_json::json!({}),
+        };
+        let obj = json
+            .as_object_mut()
+            .expect("both arms above construct a JSON object");
+        if let Some(inc) = incidence.as_ref() {
+            obj.insert("incidence".to_owned(), incidence_to_json(inc, Some(view)));
         }
-        Err(e) => {
-            let inc = rumoca_phase_structural::build_incidence(&cr.dae);
-            let (match_eq, _) = rumoca_phase_structural::matching::maximum_matching(
-                inc.n_eq,
-                inc.n_var,
-                &inc.eq_unknowns,
-            );
-            let matching_json = partial_matching_to_json(&inc, &match_eq, &cr.dae);
-            let mut json = serde_json::json!({});
-            let obj = json.as_object_mut().unwrap();
-            obj.insert(
-                "incidence".to_owned(),
-                incidence_to_json(&inc, Some(&cr.dae)),
-            );
-            obj.insert("matching".to_owned(), matching_json);
-            obj.insert("error".to_owned(), structural_error_to_json(&e, source));
-            let note = match &e {
-                rumoca_phase_structural::StructuralError::Singular { .. } => "singular".to_owned(),
-                _ => format!("{e}"),
-            };
-            Stage::recovered(json, note)
+        match &report {
+            Ok(_) => Stage::ok(json),
+            Err(e) => {
+                // **The partial matching is read from the trace, not
+                // re-derived.** The old code re-ran `maximum_matching` here
+                // purely to have something to draw, which described an
+                // execution that produced nothing — and `maximum_matching` is
+                // not public on 0.10.0 anyway. The last recorded step carries
+                // the matching that actually failed.
+                if let Some(inc) = incidence.as_ref()
+                    && let Some(last) = trace.matching().last()
+                {
+                    obj.insert(
+                        "matching".to_owned(),
+                        partial_matching_to_json(inc, &last.match_eq, view),
+                    );
+                }
+                obj.insert("error".to_owned(), structural_error_to_json(e, source));
+                let note = match e {
+                    rumoca_phase_structural::StructuralError::Singular { .. } => {
+                        "singular".to_owned()
+                    }
+                    _ => format!("{e}"),
+                };
+                Stage::recovered(json, note)
+            }
         }
-    };
+    });
     (stage, frames)
 }
 
@@ -4464,18 +4517,16 @@ fn incidence_to_json<'dae>(
     // the equation had been solved for `x`. A 0.10.0 equation *is* a residual
     // and records no solved-for variable, so there are no longer two forms to
     // choose between; every row reads `0 = …`.
-    let eq_texts: Vec<String> = dae
-        .map(|d| {
-            d.inspect(|view| {
-                (0..view.continuous_equation_count())
-                    .map(|index| {
-                        view.continuous_equation(index).map_or_else(
-                            || format!("f_x[{index}]"),
-                            |equation| crate::dae_expr_format::format_equation(view, equation),
-                        )
-                    })
-                    .collect()
-            })
+    let eq_texts: Vec<String> = view
+        .map(|view| {
+            (0..view.continuous_equation_count())
+                .map(|index| {
+                    view.continuous_equation(index).map_or_else(
+                        || format!("f_x[{index}]"),
+                        |equation| crate::dae_expr_format::format_equation(view, equation),
+                    )
+                })
+                .collect()
         })
         .unwrap_or_default();
     let rows: Vec<serde_json::Value> = inc
@@ -4549,31 +4600,17 @@ fn incidence_to_json<'dae>(
     })
 }
 
-/// Build a self-contained "before" report for the raw (pre-reduction) DAE.
-///
-/// The raw system is typically structurally singular (high-index), so there's
-/// no full structural report (no BLT blocks). We include the incidence matrix
-/// and partial matching so the UI can show a Before pane with rank deficiency
-/// highlighted. The returned JSON has the same shape as a structural report
-/// (`"matching"`, `"incidence"`) so `IncidenceMatrix::from_report` can parse it.
-fn before_report_json(
-    inc: &rumoca_phase_structural::Incidence,
-    match_eq: &[Option<usize>],
-    dae: Option<&rumoca_ir_dae::Dae>,
-) -> serde_json::Value {
-    let matching = match dae {
-        Some(d) => partial_matching_to_json(inc, match_eq, d),
-        None => serde_json::Value::Array(Vec::new()),
-    };
-    let n_matched = matching.as_array().map_or(0, Vec::len);
-    serde_json::json!({
-        "n_equations": inc.n_eq,
-        "n_unknowns": inc.n_var,
-        "n_matched": n_matched,
-        "matching": matching,
-        "incidence": incidence_to_json(inc, dae),
-    })
-}
+// `before_report_json` was deleted in the v0.10.0 rebase rather than ported.
+//
+// It built the Index Reduction tab's "before" pane — the raw, pre-reduction
+// system with its rank deficiency highlighted — and that tab is disabled
+// awaiting a re-model against `inspect_prepare_for_solve` (see
+// `index_reduction_stage`). Porting it would have produced a function nothing
+// calls, and the same reasoning that removed the empty frame vectors from that
+// stage's return type applies here: live-looking plumbing with no caller sends
+// the next session hunting for why it never runs. `git show` has it, and
+// `docs/tech-debt.md`'s `unbuilt: worker::index_reduction_from_observation`
+// already recruits the replacement.
 
 /// Build a JSON array of matched (equation, unknown) pairs from a partial
 /// matching result — the same shape as the structural report's `"matching"`
@@ -4597,7 +4634,7 @@ fn partial_matching_to_json<'dae>(
             var_idx.map(|v| {
                 serde_json::json!({
                     "equation": rumoca_phase_structural::equation_label(
-                        dae, &inc.equation_refs[eq_idx],
+                        view, &inc.equation_refs[eq_idx],
                     ),
                     // The AUTHORITATIVE identity, not a derivation: the reference
                     // Rumoca kept is in hand here, unlike in `structural_to_json`
