@@ -239,10 +239,54 @@ is the strongest single statement this project can make about a release.
   demand, and `purpose.md` makes no claim a rebase can invalidate. The trace is generated, so it
   cannot go stale either.
 
+## 5b. Regenerate the OTHER generated documents — three were missing from this list
+
+**There are five generators and only two were named here** (`gen_field_help`, step 4;
+`gen_trace`, step 5). Found 2026-11-03, during the 0.10.0 rebase, by noticing that a change to
+the matching ledger necessarily invalidated a committed document no step mentioned:
+
+```text
+cargo run -p hrw --example gen_matching_reference    # docs/.../matching-live-reference.md
+cargo run -p hrw --example gen_architecture          # docs/architecture.md's pipeline table
+cargo run -p hrw --example gen_lab_catalogue         # the lab catalogue
+```
+
+**`gen_matching_reference` is the rebase-sensitive one.** It reads `matching.rs` for the emit-site
+line of every `MatchingStep` variant *and* runs the real matching over a specimen, so a rebase
+that moves a line, adds a step variant, or changes the matching API stales it on both axes. The
+0.10.0 rebase did all three.
+
+**Each is caught by a test, so this step is about ordering rather than safety.**
+`matching_ledger::tests::the_generated_reference_is_current` and
+`arch_doc::the_stage_roster_matches_stagekind` fail when their document is stale. Running the
+generators here means the gate confirms the work; skipping it means the gate *reports* the work,
+after you thought you were finished.
+
+**Regenerating `matching-live-reference.md` moves line numbers that `matching-live.md` cites**, so
+step 6 below follows directly from this one.
+
 ## 6. Update guided labs
 - Guided labs (`docs/compiler-phases/*/guided-lab.md`) contain **line numbers, code snippets,
   and local-variable names** from the Rumoca crates. A rebase that moves code, renames locals, or
   changes trace-step variants will silently stale the lab without any compiler error.
+- **KNOWN STALE FOR 0.10.0: every `equation from X` label in lab prose** *(confirmed
+  2026-11-03 by reading the renderer, not by inference)*. `equation_label` now returns
+  `"{equation} ({source_text})"` — the equation's own Modelica source line — where 0.9.20
+  returned `"f_x[4] (equation from R)"`, naming the component it came from. So a lab table of
+  `equation from R` / `equation from src` rows with counts beside them describes labels HRW no
+  longer renders.
+
+  Affected: `docs/fixture-labs/connect-expansion.md` (a counted table),
+  `docs/fixture-labs/matching.md`, and
+  `docs/compiler-phases/phase6_dae_construction/dae_construction.md`. **Nothing catches this** —
+  `fixture_lab_links_all_resolve` checks links, not prose, and the numbers beside the labels are
+  still arithmetically consistent. It needs a real compile to correct against, so it is gated on
+  the build being green.
+
+  **`src/doc_citations.rs`'s `"f_x[4] (equation from R)"` must NOT be changed.** It is inside a
+  test comment recording what Doug's capture actually read on 2026-08-15 — a true statement about
+  that day, in the same category as `DECISIONS.md`'s pre-rename vocabulary. Correcting it would
+  falsify the history the comment exists to carry.
 - After fixing compile breakage (step 2), grep the lab files for any function, type, or variable
   name that changed. Pay special attention to:
   - `LiveTrace::push` line number (the breakpoint site)
