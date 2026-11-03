@@ -749,18 +749,17 @@ pub(crate) fn hrw_font_definitions() -> egui::FontDefinitions {
 /// so this type, which holds the good kind, avoids it.)*
 #[derive(Default)]
 struct CompileFrames {
-    /// Index reduction's demotions and differentiations.
-    index_reduction: Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
     /// Matching, Tarjan and tearing over the **raw** DAE — the Structural tab.
     structural: crate::worker::StructuralFrames,
-    /// The same three over the **index-reduced** DAE — the Index Reduction tab.
-    ///
-    /// Two sets because they are two systems: on `Drivetrain` the reduced one has
-    /// 20 equations to the raw one's 97, so frames from either address rows the
-    /// other does not have. `structural_frames_for_stage` picks between them, in
-    /// one place, because choosing at each call site is the mistake already made
-    /// once here.
-    reduced: crate::worker::StructuralFrames,
+    // **The index-reduced system's three searches are gone for the v0.10.0
+    // rebase.** There used to be two sets, because they are two systems: on
+    // `Drivetrain` the reduced one has 20 equations to the raw one's 97, so
+    // frames from either address rows the other does not have. They came from
+    // re-running the reduction funnel on a cloned DAE, which 0.10.0 makes
+    // impossible — `Dae` is immutable and no longer `Clone` — and which was a
+    // re-derivation rather than an observation of the compile. The re-model will
+    // take them from `inspect_prepare_for_solve`; see
+    // `worker::index_reduction_stage`.
     /// `pre()` lowering, on the Events stage (idea #40).
     pre_lowering: Vec<rumoca_phase_dae::PreLoweringFrame>,
     /// Connection expansion (MLS §9).
@@ -2002,11 +2001,9 @@ impl App {
                     def_index,
                     equation_sheet,
                     identifier_index,
-                    index_reduction_frames,
                     matching_frames,
                     tarjan_frames,
                     tearing_frames,
-                    reduced_frames,
                     dae,
                     pre_lowering_frames,
                     connection_frames,
@@ -2036,13 +2033,11 @@ impl App {
                     self.cached_equation_sheet = equation_sheet;
                     self.identifier_index = identifier_index;
                     self.frames = CompileFrames {
-                        index_reduction: index_reduction_frames,
                         structural: crate::worker::StructuralFrames {
                             matching: matching_frames,
                             tarjan: tarjan_frames,
                             tearing: tearing_frames,
                         },
-                        reduced: reduced_frames,
                         pre_lowering: pre_lowering_frames,
                         connection: connection_frames,
                     };
@@ -2212,12 +2207,17 @@ impl App {
     /// One accessor rather than the choice repeated at three call sites: this is
     /// exactly the decision I got wrong once already by fixing it for tearing and
     /// not carrying the reasoning to the other two.
+    /// **Temporarily one set, while index reduction awaits its re-model.**
+    ///
+    /// The choice above is the whole reason this accessor exists, and the
+    /// reasoning still holds — it is the reduced system's frames that are
+    /// unavailable, not the need to pick between them. The `IndexReduction`
+    /// branch returns the raw system's frames only because that stage now shows
+    /// an explanation rather than a matrix, so nothing indexes into them from
+    /// there. **Restore the branch with the re-model**; do not conclude from
+    /// this body that one set is sufficient.
     fn structural_frames_for_stage(&self) -> &crate::worker::StructuralFrames {
-        if self.stage == StageKind::IndexReduction {
-            &self.frames.reduced
-        } else {
-            &self.frames.structural
-        }
+        &self.frames.structural
     }
 
     /// **Why an algorithm view has nothing to show** — stated, never filled in.
@@ -2637,9 +2637,13 @@ impl App {
             // *captured* rather than on which stage it is and whether the system
             // was singular. Everything else defers to the pure predicate below,
             // so a checker can reach it without running a compile.
-            StructuralView::Animate => {
-                is_index_reduction && !self.frames.index_reduction.is_empty()
-            }
+            // **Unavailable while index reduction awaits its re-model.** This
+            // read `is_index_reduction && !self.frames.index_reduction.is_empty()`
+            // — the frames no longer exist, so the condition is now vacuously
+            // false. Kept as an arm rather than folded into the pure predicate
+            // below so the re-model restores one line here, and so the `expect`
+            // on that predicate keeps describing the set it actually covers.
+            StructuralView::Animate => false,
             StructuralView::AliasAnim => is_index_reduction && self.has_alias_eliminations(),
             other => Self::structural_view_available_from_stage(
                 other,
@@ -4402,23 +4406,22 @@ impl App {
             }
             self.compile_views.reduction_anim = Some(live);
         }
+        // **Always present, and it explains itself.** The old code built the
+        // animation from captured frames and fell back to
+        // "(no index-reduction trace for this model)" — a sentence that is now
+        // misleading in two ways: it reads as a property of the model, and it
+        // implies the compiler produced nothing. Rumoca reduces fine on 0.10.0;
+        // it is this display that awaits a re-model, which is what the
+        // placeholder's own `ui` says.
         if self.compile_views.reduction_anim.is_none() {
-            let frames = &self.frames.index_reduction;
-            self.compile_views.reduction_anim = Some(if frames.is_empty() {
-                None
-            } else {
-                Some(reduction_anim::ReductionAnimation::from_frames(
-                    frames.clone(),
-                ))
-            });
+            self.compile_views.reduction_anim =
+                Some(Some(reduction_anim::ReductionAnimation::disabled()));
         }
         if let Some(Some(anim)) = &mut self.compile_views.reduction_anim {
             debug_clicked = egui::ScrollArea::vertical()
                 .auto_shrink(false)
                 .show(ui, |ui| anim.ui(ui, gate.arming, gate.debug_enabled))
                 .inner;
-        } else {
-            ui.weak("(no index-reduction trace for this model)");
         }
         if debug_clicked {
             self.start_live_debug(PendingLiveDebug::Reduction);
@@ -4498,18 +4501,26 @@ impl App {
 
     /// The DAE the current stage tab should tear -- see [`Self::tearing_anim_ui`].
     ///
-    /// Index reduction is re-run here rather than carried from the worker
-    /// because it is a pure function of the DAE, and re-running it keeps the
-    /// two tabs from having to agree about a second cached artifact.
-    fn tearing_dae(&self) -> Option<rumoca_ir_dae::Dae> {
-        let dae = self.cached_dae.as_ref()?;
-        if self.stage == StageKind::IndexReduction {
-            let mut reduced = dae.clone();
-            crate::worker::index_reduce_in_place(&mut reduced);
-            Some(reduced)
-        } else {
-            Some(dae.clone())
-        }
+    /// # It borrows now, and the reduced branch is gone
+    ///
+    /// This used to clone the DAE and, on the Index Reduction tab, re-run the
+    /// reduction funnel over the copy — *"a pure function of the DAE"*, which it
+    /// was, and still a re-derivation rather than an observation of the compile.
+    /// 0.10.0 ends both halves of that: `Dae` is immutable and no longer
+    /// `Clone`, so there is nothing to copy, and `dae_prepare` does not exist,
+    /// so there is no funnel to re-run.
+    ///
+    /// So it hands back a borrow of the cached DAE. Everything downstream reads
+    /// it through `inspect`, which borrows anyway, so the clone was buying
+    /// nothing even before it became impossible.
+    ///
+    /// **The Index Reduction tab is not special-cased any more**, because that
+    /// tab now shows an explanation rather than a torn matrix. Restore the
+    /// branch with the re-model, taking the reduced DAE from
+    /// `inspect_prepare_for_solve`'s `PreparedDae` instead of re-running
+    /// anything.
+    fn tearing_dae(&self) -> Option<&rumoca_ir_dae::Dae> {
+        self.cached_dae.as_ref()
     }
 
     /// The connection-expansion replay, with live debug driven by the **worker**.

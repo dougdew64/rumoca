@@ -10,6 +10,68 @@ than by the toolchain. Every sweep starts from the lab holes, then re-measures.
 Quality improvements identified by code review, grouped by theme and ordered by severity within
 each group.
 
+## The v0.10.0 rebase disabled three surfaces, and each one is owed a re-model
+
+**This is the largest outstanding item and it is not ordinary debt** — it is work Doug ruled into a
+specific order (`DECISIONS.md`, 2026-11-02). 0.10.0 re-shaped these phases' data models, so HRW's
+panes could not be ported; they need re-modelling onto the new vocabulary. Ports reached the build;
+these land afterwards, **one at a time, where each can be watched running** — because a pane
+re-modelled blind is how one ends up correct-looking and wrong.
+
+Each row's tag names the symbol its re-model will introduce, so
+`doc_citations::claims_of_absence_are_still_true` **fails the moment that symbol exists** and forces
+the row to be retired. That is what keeps "temporarily disabled" from becoming permanent quietly.
+
+### Index reduction — the funnel is gone, and the replacement is richer
+
+Index-reduction stepping is not built. <!-- unbuilt: worker::index_reduction_from_observation -->
+
+HRW animated a **ten-step dummy-derivative funnel** mutating a `&mut Dae` in place. 0.10.0 deleted
+`dae_prepare`, made `Dae` immutable and non-`Clone`, and reduces in **two fixed-point lanes** —
+Direct and Holonomic — through a candidate / attempt / selection protocol. Nothing survived the
+change, and the pane was *also* re-running reduction on a cloned DAE rather than observing the
+compile.
+
+**The replacement is `rumoca_phase_structural::inspect_prepare_for_solve`**, which returns the real
+reduction plus an owned `ReductionReport`: per-round residue, unmatched equations and unknowns,
+candidate counts per proof boundary, every attempt with its outcome **including why it was
+rejected**, each selection with residue before and after, pristine retries, the stop reason, and a
+snapshot of the stalled DAE when preparation fails. Strictly more than the funnel frames carried.
+
+Three things go with it: `app::structural_frames_for_stage` loses its `IndexReduction` branch and
+must get it back; `StructuralView::Animate` is hard-coded `false`; and `app::tearing_dae` no longer
+special-cases the reduced system. All three carry comments saying so.
+
+### Events — a condition is an algebra now, not an equation
+
+The Events stage is not built. <!-- unbuilt: worker::events_from_condition_algebra -->
+
+An event condition used to be an equation. 0.10.0 makes it a `ConditionOperation`: `Initial`,
+`Always`, `Relation`, `Discrete`, `Clock`, `Not`, `And`, `Or`, `AnyRise`. A root is no longer a bare
+expression but `{relation, activation}`, and HRW's `synthetic_root_conditions` maps onto nothing
+one-to-one.
+
+**This re-model gains something worth a lecture.** MLS §8.3.5.1 activates on
+`edge(b1) or … or edge(bn)`, which is *not* the edge of the disjunction — so `when {u, not u}` fires
+at every switch of `u` while `u or not u` is a tautology that never rises at all. 0.10.0's `AnyRise`
+variant exists precisely to keep those apart, and HRW never showed the distinction.
+
+Everything needed is public: `DaeView` hands out both an accessor and an ordered walk for each
+arena — `conditions()`, `relations()`, `roots()`, `structured_roots()`, `time_events()`,
+`event_actions()`, `clocks()`, `previous_values()`, `terminals()` — each documented with its MLS
+section. **No instrumentation required.**
+
+### Initialization — `ic_plan` became `initial_pins`
+
+The initialization plan is not built. <!-- unbuilt: worker::initialization_from_initial_pins -->
+
+`ic_plan::{IcBlock, build_ic_plan, build_ic_relaxation_hint}` are gone, replaced by
+`initial_pins::{InitialValuePin, InitialValueRole, PinTerm}`. The determinacy check HRW computed
+alongside the plan read `v.fixed == Some(true)` over a partition that no longer exists;
+`VariableView::fixed_uniform()` and `fixed_scalar()` are its 0.10.0 equivalents, and they are
+richer — MLS §4.8 allows `fixed` to differ per element, which the old single `Option<bool>` could
+not express.
+
 **A closed item is cut down to one line in *Closed debt*, not left checked in place**
 *(2026-08-01, matching `ideas.md`)*. A debt file is for what has not been paid; a list of
 ticked boxes reads like outstanding work and hides the items that are.

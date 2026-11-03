@@ -1248,8 +1248,6 @@ pub enum FromWorker {
         /// Pre-formatted equation sheet built from the typed DAE.
         equation_sheet: Option<crate::equation_sheet::EquationSheet>,
         identifier_index: Option<crate::identifier_index::IdentifierIndex>,
-        /// Index-reduction animation frames (empty if no reduction occurred).
-        index_reduction_frames: Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
         /// Every step of the matching search, **from the run that produced the
         /// blocks above** — not a re-derivation performed when the tab opens.
         matching_frames: Vec<rumoca_phase_structural::matching::MatchingFrame>,
@@ -1257,9 +1255,11 @@ pub enum FromWorker {
         tarjan_frames: Vec<rumoca_phase_structural::tarjan::TarjanFrame>,
         /// Tearing decisions, one segment per coupled block.
         tearing_frames: Vec<Vec<rumoca_phase_structural::tearing::TearingFrame>>,
-        /// The same three searches over the **index-reduced** system, which is a
-        /// different DAE — see `StructuralFrames`.
-        reduced_frames: StructuralFrames,
+        // **The index-reduced system's own three searches are gone with the
+        // funnel.** They came from re-running reduction on a cloned DAE, which
+        // 0.10.0 makes impossible (`Dae` is immutable and not `Clone`) and
+        // unnecessary (`inspect_prepare_for_solve` observes the real one). The
+        // re-model will supply them from that seam; see `index_reduction_stage`.
         /// `pre()`-lowering frames (idea #40), **captured during the compile above**
         /// by `rumoca_phase_dae`'s capture scope. The pass runs *inside* DAE
         /// construction, so the finished DAE cannot be re-run to recover them —
@@ -1385,11 +1385,9 @@ fn panicked_compile(path: PathBuf, note: &str) -> FromWorker {
         def_index: BTreeMap::new(),
         equation_sheet: None,
         identifier_index: None,
-        index_reduction_frames: Vec::new(),
         matching_frames: Vec::new(),
         tarjan_frames: Vec::new(),
         tearing_frames: Vec::new(),
-        reduced_frames: StructuralFrames::default(),
         pre_lowering_frames: Vec::new(),
         connection_frames: Vec::new(),
         flat: None,
@@ -2096,10 +2094,10 @@ impl WorkerState {
         // whether the plot breaks its polylines at jumps (via
         // `discontinuity_segments`). A bare zero-crossing without an update
         // does NOT count — the trajectory is still continuous.
-        let has_discontinuities =
-            !cr.dae.discrete.real_updates.is_empty() || !cr.dae.discrete.valued_updates.is_empty();
-        let n_states = cr.dae.variables.states.len();
-        let n_eq = cr.dae.continuous.equations.len();
+        let counts = crate::dae_counts::DaeCounts::of(&cr.dae);
+        let has_discontinuities = counts.has_discontinuities();
+        let n_states = counts.states;
+        let n_eq = counts.continuous_equations;
         log(
             LogLevel::Info,
             format!("{n_eq} equations, {n_states} states, hybrid={has_discontinuities}"),
@@ -2267,12 +2265,15 @@ impl WorkerState {
                 };
             }
         };
-        let result = match rt.0.get_class_by_qualified_name(name) {
+        // `ResolvedTree`'s newtype field is private on 0.10.0; `inner()` is the
+        // accessor. (It also `Deref`s to `ClassTree`, but naming the accessor
+        // keeps the indirection visible at each site.)
+        let result = match rt.inner().get_class_by_qualified_name(name) {
             Some(class) => {
                 let value = ser_value(class);
                 // Build a DefId→DefInfo map for all DefIds referenced in this
                 // class's IR, so navigation can continue from here.
-                let def_index = build_def_index(&rt.0, &value);
+                let def_index = build_def_index(rt.inner(), &value);
                 Ok((value, def_index))
             }
             None => Err(format!("`{name}` not found in resolved tree")),
@@ -2398,7 +2399,7 @@ impl WorkerState {
             .resolved()
             .map_err(|e| format!("cannot resolve the library to find `{qualified}`: {e:#}"))?;
         let class = tree
-            .0
+            .inner()
             .get_class_by_qualified_name(qualified)
             .ok_or_else(|| format!("`{qualified}` is not a class in the loaded libraries"))?;
         let uri = class.location.file_name.clone();
@@ -2636,11 +2637,9 @@ impl WorkerState {
                     def_index: BTreeMap::new(),
                     equation_sheet: None,
                     identifier_index: None,
-                    index_reduction_frames: Vec::new(),
                     matching_frames: Vec::new(),
                     tarjan_frames: Vec::new(),
                     tearing_frames: Vec::new(),
-                    reduced_frames: StructuralFrames::default(),
                     pre_lowering_frames: Vec::new(),
                     connection_frames: Vec::new(),
                     flat: None,
@@ -3009,11 +3008,11 @@ impl WorkerState {
                             })
                         };
                         match self.session.resolved_cached() {
-                            Some(rt) => match extract_class(&rt.0, &qualified) {
+                            Some(rt) => match extract_class(rt.inner(), &qualified) {
                                 Stage {
                                     value: Some(mut v), ..
                                 } => {
-                                    def_index = build_def_index(&rt.0, &v);
+                                    def_index = build_def_index(rt.inner(), &v);
                                     // **Both the recovered tree and the error.**
                                     //
                                     // This branch used to return `Stage::recovered(v,
@@ -3090,12 +3089,10 @@ impl WorkerState {
             solve_lowering,
             equation_sheet,
             identifier_index,
-            ir_frames,
             compiled_dae,
             pre_frames,
             compiled_flat,
             structural_frames,
-            reduced_frames,
         ) = match &model {
             None => {
                 // **Seven `Stage::err`s until 2026-08-25, which is seven claims that
@@ -3471,9 +3468,10 @@ impl WorkerState {
                     "DAE construction",
                     match &dae {
                         Some(d) => {
-                            let n_x = d.variables.states.len();
-                            let n_y = d.variables.algebraics.len();
-                            let n_eq = d.continuous.equations.len();
+                            let counts = crate::dae_counts::DaeCounts::of(d);
+                            let n_x = counts.states;
+                            let n_y = counts.algebraics;
+                            let n_eq = counts.continuous_equations;
                             let mut s = Stage::from_ser(d);
                             s.note = Some(format!(
                                 "{n_x} state(s), {n_y} algebraic(s), {n_eq} continuous equation(s)",
@@ -3524,25 +3522,15 @@ impl WorkerState {
                     });
                     (stage, frames)
                 };
-                let (index_reduction, ir_frames, reduced_frames) = {
-                    log(LogLevel::StageStart, "Index reduction".to_owned());
-                    let t = Instant::now();
-                    let (stage, frames, reduced) = index_reduction_stage(result, &source);
-                    drain_traces(&log);
-                    log(
-                        LogLevel::StageEnd,
-                        format!(
-                            "Index reduction ({:.1}ms)",
-                            t.elapsed().as_secs_f64() * 1000.0
-                        ),
-                    );
-                    bundle.index_reduction = stage.clone();
-                    emit(FromWorker::CompileProgress {
-                        path: report_path.clone(),
-                        stages: bundle.clone(),
-                    });
-                    (stage, frames, reduced)
-                };
+                // Back to the ordinary `run_stage!` shape. This block was spelled
+                // out by hand only because the stage returned a three-tuple —
+                // its own frames plus the reduced system's structural captures.
+                // Both are gone with the funnel; see `index_reduction_stage`.
+                let index_reduction = run_stage!(
+                    "Index reduction",
+                    index_reduction_stage(result),
+                    index_reduction
+                );
                 let initialization = run_stage!(
                     "Initialization",
                     initialization_stage(result),
@@ -3576,12 +3564,10 @@ impl WorkerState {
                     solve_lowering,
                     eq_sheet,
                     id_index,
-                    ir_frames,
                     dae,
                     pre_frames,
                     flat,
                     structural_frames,
-                    reduced_frames,
                 )
             }
         };
@@ -3616,11 +3602,9 @@ impl WorkerState {
             def_index,
             equation_sheet,
             identifier_index,
-            index_reduction_frames: ir_frames,
             matching_frames: structural_frames.matching,
             tarjan_frames: structural_frames.tarjan,
             tearing_frames: structural_frames.tearing,
-            reduced_frames,
             pre_lowering_frames: pre_frames,
             connection_frames,
             library_source,
@@ -3798,6 +3782,49 @@ fn not_reached_stage(result: Option<&PhaseResult>) -> Option<Stage> {
 /// facts. What must not differ is the words that say *it did not run*.
 fn not_reached_note(because: &str) -> String {
     format!("not reached ({because})")
+}
+
+/// **"Rumoca ran this phase; HRW cannot read it yet"** — worded once, for the
+/// three surfaces the v0.10.0 rebase disables.
+///
+/// # Why a stage says this instead of showing something
+///
+/// 0.10.0 did not merely rename the fields these panes read — it re-shaped the
+/// phases' data models. Index reduction became two lanes with a
+/// candidate/attempt/selection protocol in place of a ten-step funnel; an event
+/// condition became a `ConditionOperation` algebra in place of an equation;
+/// initialization moved from `ic_plan::IcBlock` to `initial_pins`. HRW's panes
+/// speak the old vocabulary, and nothing in them survives contact with the new
+/// one, so each needs re-modelling rather than porting. Doug ruled that ports
+/// reach the build and re-models land afterwards, one at a time, where they can
+/// be watched running — see `DECISIONS.md`, 2026-11-02.
+///
+/// # Why the outcome is `Ok` and not `Failed` or `Flagged`
+///
+/// [`Outcome`] is a claim about **control flow**, which is the same reasoning
+/// [`no_result_note`] carries. `Failed` means *the pipeline stopped here* and at
+/// most one stage per compile may say it; `Flagged` means Rumoca reported
+/// something about usable IR. Neither happened: the compiler ran this phase
+/// perfectly and produced its IR. The gap is on HRW's side, so the stage
+/// reports no IR with a neutral outcome and says whose gap it is.
+///
+/// **Saying nothing was the alternative, and it is worse.** An empty pane is
+/// indistinguishable from a phase that produced nothing, which is a false claim
+/// about the compiler — the exact confusion `not_reached_note` exists to
+/// prevent. This sentence puts the absence where a reader can see it.
+///
+/// Each disabled surface also carries an `unbuilt:` tag in
+/// `docs/tech-debt.md` naming the symbol its re-model will introduce, so
+/// `doc_citations::claims_of_absence_are_still_true` fails once the work lands
+/// and the claim stops being true. That is what keeps "temporarily disabled"
+/// from becoming permanent quietly.
+fn awaiting_remodel_note(phase: &str, what_changed: &str) -> String {
+    format!(
+        "Rumoca ran {phase} successfully; HRW cannot display it yet. \
+         On Rumoca 0.10.0 {what_changed}, so this pane is being rebuilt against \
+         the new model rather than shown in the old vocabulary. \
+         This is an HRW gap, not a compiler problem."
+    )
 }
 
 /// **The pipeline returned nothing at all** — worded once, for the same reason.
@@ -4161,110 +4188,58 @@ fn structural_stage(result: Option<&PhaseResult>, source: &str) -> (Stage, Struc
     (stage, frames)
 }
 
-/// Structural analysis of the DAE **after** index reduction. Runs the
-/// dummy-derivative funnel (`index_reduce_for_structural_analysis`) on a copy of
-/// the raw DAE, then `build_structural_report` on the result — so a high-index
-/// system that `structural_stage` reports singular becomes solvable here. The
-/// note says whether reduction was actually needed.
+/// Index reduction — **disabled for the v0.10.0 rebase**, awaiting a re-model
+/// against Rumoca's own observation seam.
 ///
-/// The two Structural and Index-Reduction tabs show the before/after of index
-/// reduction side by side. For an already-index-1 system (like SingleInertia),
-/// both tabs show the same thing. For a high-index system (like Drivetrain),
-/// the Structural tab shows "singular" while the Index-Reduction tab shows
-/// the successfully reduced system.
+/// # What this did, and why it could not be ported
 ///
-/// `cr.dae.clone()` — we clone the DAE because `index_reduce_for_structural_analysis`
-/// mutates it in place, and we don't want to modify the original.
-fn index_reduction_stage(
-    result: Option<&PhaseResult>,
-    source: &str,
-) -> (
-    Stage,
-    Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
-    StructuralFrames,
-) {
+/// It cloned the DAE, re-ran a **ten-step dummy-derivative funnel** over the
+/// copy (`index_reduce_for_structural_analysis`), then ran
+/// `build_structural_report` on the result so the tab could show the reduced
+/// system beside the raw one.
+///
+/// Two independent reasons that is gone on 0.10.0, and either alone is fatal to
+/// the port:
+///
+/// - **`Dae` is immutable and no longer `Clone`.** The funnel mutated a `&mut
+///   Dae` in place; there is nothing to clone and nothing to mutate.
+/// - **The funnel is not the algorithm any more.** `dae_prepare` does not
+///   exist. Reduction is two fixed-point lanes, Direct and Holonomic, driven by
+///   a candidate / attempt / selection protocol.
+///
+/// **It was also a re-run presented as the compile**, which this repository
+/// treats as a fiction whatever the word on the pane says. On 0.9.20 that may
+/// have been the only way to see reduction at all; 0.10.0 removes the excuse,
+/// because `inspect_prepare_for_solve` observes the reduction the compiler
+/// actually performed and returns an owned `ReductionReport` of every round,
+/// candidate, attempt and rejection. So the replacement is not merely a
+/// translation — it stops HRW re-deriving this phase.
+///
+/// Doug ruled that ports reach the build and re-models land afterwards, one at
+/// a time, where each can be watched running (`DECISIONS.md`, 2026-11-02). The
+/// `unbuilt:` tag in `docs/tech-debt.md` names
+/// `worker::index_reduction_from_observation`, so
+/// `doc_citations::claims_of_absence_are_still_true` fails once that exists.
+///
+/// # What the caller loses
+///
+/// The frame vector and the reduced system's `StructuralFrames` are both gone
+/// from the return type rather than returned empty. An always-empty `Vec` leaves
+/// the plumbing looking alive, and the next session to read it would reasonably
+/// go hunting for why frames never arrive — a bug hunt with no bug in it.
+fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
+    // Still answers the earlier-failure question, so a model that stopped at
+    // parse reports *that* here rather than this message. The distinction
+    // matters: one says the compiler never got here, the other says it did and
+    // HRW cannot show the result.
     if let Some(stage) = not_reached_stage(result) {
-        return (stage, Vec::new(), StructuralFrames::default());
+        return stage;
     }
-    let cr = unwrap_success(result);
-    let raw_ok = rumoca_phase_structural::build_structural_report(&cr.dae).is_ok();
-    let before_inc = rumoca_phase_structural::build_incidence(&cr.dae);
-    let (before_match_eq, _) = rumoca_phase_structural::matching::maximum_matching(
-        before_inc.n_eq,
-        before_inc.n_var,
-        &before_inc.eq_unknowns,
-    );
-    let mut reduced = cr.dae.clone();
-    let (reduction, frames) = index_reduce_for_structural_analysis(&mut reduced);
-
-    // **Capture the reduced system's own structural run.**
-    //
-    // This tab shows matching, Tarjan and tearing over the *reduced* DAE — a
-    // different system from the Structural tab's, by 97 equations against 20 on
-    // `Drivetrain`. Its animations were the last place still re-deriving, and the
-    // reason the captured-frames constructors needed a fallback at all: there was
-    // simply no capture for this system to offer them.
-    //
-    // Opened **here**, after the `raw_ok` probe above, and not before: that probe
-    // runs a full `build_structural_report` on the *raw* DAE, and tearing's capture
-    // appends a segment per loop rather than overwriting — so an earlier scope would
-    // splice the raw system's loops into this one's.
-    rumoca_phase_structural::matching::start_capture();
-    rumoca_phase_structural::tarjan::start_capture();
-    rumoca_phase_structural::tearing::start_capture();
-    let report = rumoca_phase_structural::build_structural_report(&reduced);
-    let reduced_frames = StructuralFrames {
-        matching: rumoca_phase_structural::matching::take_capture(),
-        tarjan: rumoca_phase_structural::tarjan::take_capture(),
-        tearing: rumoca_phase_structural::tearing::take_capture(),
-    };
-    match report {
-        Ok(rep) => {
-            let inc = rumoca_phase_structural::build_incidence(&reduced);
-            let note = if raw_ok {
-                "already index-1 — the reduction funnel is a no-op here (same as the Structural tab)"
-            } else {
-                "index-reduced from a structurally singular (high-index) system — now solvable"
-            };
-            let mut json = structural_to_json(&rep);
-            let obj = json
-                .as_object_mut()
-                .expect("structural_to_json returns an object");
-            obj.insert(
-                "incidence".to_owned(),
-                incidence_to_json(&inc, Some(&reduced)),
-            );
-            obj.insert(
-                "before".to_owned(),
-                before_report_json(&before_inc, &before_match_eq, Some(&cr.dae)),
-            );
-            obj.insert("reduction".to_owned(), reduction.to_json());
-            (Stage::ok_with_note(json, note), frames, reduced_frames)
-        }
-        Err(e) => {
-            let msg = format!("{e}");
-            let mut json = serde_json::json!({});
-            let obj = json.as_object_mut().unwrap();
-            obj.insert(
-                "incidence".to_owned(),
-                incidence_to_json(
-                    &rumoca_phase_structural::build_incidence(&reduced),
-                    Some(&reduced),
-                ),
-            );
-            obj.insert(
-                "before".to_owned(),
-                before_report_json(&before_inc, &before_match_eq, Some(&cr.dae)),
-            );
-            obj.insert("reduction".to_owned(), reduction.to_json());
-            obj.insert("error".to_owned(), structural_error_to_json(&e, source));
-            (
-                Stage::recovered(json, format!("still singular after index reduction: {msg}")),
-                frames,
-                reduced_frames,
-            )
-        }
-    }
+    Stage::info(awaiting_remodel_note(
+        "index reduction",
+        "the ten-step dummy-derivative funnel became two fixed-point lanes with a \
+         candidate/attempt/selection protocol, and the DAE became immutable",
+    ))
 }
 
 /// The initial-condition solve plan — how Rumoca computes a consistent
@@ -5272,340 +5247,6 @@ pub(crate) mod test_msl;
 
 #[cfg(test)]
 mod tests;
-
-/// One funnel step, with the system's shape on either side of it.
-///
-/// **The shapes are the part that was missing.** The pane used to show a step's name
-/// and an outcome string, and an outcome of `"ok"` says a step *ran* while saying
-/// nothing about what it *did*. Ten steps reporting "ok" with one of them changing the
-/// counts is a different picture from ten that all moved something, and the pane could
-/// not tell those apart — which is how a funnel that did nothing at all
-/// (`CartesianPendulum`) looked the same as one doing quiet work.
-struct StepRow {
-    name: &'static str,
-    outcome: String,
-    states_before: usize,
-    states_after: usize,
-    equations_before: usize,
-    equations_after: usize,
-}
-
-/// Record of what the index-reduction funnel did, step by step.
-///
-/// This is HRW's observability layer over the index-reduction process: it
-/// records which states were demoted, which equations were manufactured by
-/// differentiation, and which variables were eliminated — the narrative the
-/// Index Reduction tab tells.
-struct ReductionReport {
-    /// State variable names present in the raw DAE before reduction.
-    states_before: Vec<String>,
-    /// State variable names remaining after reduction.
-    states_after: Vec<String>,
-    /// Per-step log, one row per funnel step.
-    steps: Vec<StepRow>,
-    /// Equations manufactured by differentiation (origin contains
-    /// `"index_reduction:d_dt_for_"`), with the state they were created for.
-    differentiated_rows: Vec<(String, String)>,
-    /// Trivial-elimination substitutions (variable → replacement expression).
-    eliminations: Vec<(String, String)>,
-    /// The step at which the funnel stopped (if it bailed early on error).
-    stopped_at: Option<&'static str>,
-    /// **How many differentiations the funnel actually performed**, counted from the
-    /// frames captured on this run.
-    ///
-    /// Distinct from [`Self::differentiated_rows`], which scans the FINAL DAE for
-    /// surviving origin markers and is therefore a count of *survivors*. The two
-    /// disagree whenever a later step removes a differentiated row, which on this
-    /// corpus is always: `Drivetrain` differentiates six times and retains none.
-    ///
-    /// **The gap between them taught a lab the opposite of the truth for its whole
-    /// existence** (`DECISIONS.md`, 2026-08-17). Publishing both is what makes the
-    /// pane unable to repeat that: a reader seeing an empty list beside "6 performed"
-    /// asks the right question instead of concluding zero.
-    n_differentiations: usize,
-}
-
-/// Index-reduce a DAE in place, discarding the report.
-///
-/// The Structural and Index Reduction tabs describe *different systems*: the
-/// raw DAE and the reduced one. A view that reconstructs compiler state from a
-/// DAE (the tearing replay) therefore needs the reduced DAE when it is showing
-/// the Index Reduction tab. Re-running the funnel is cheap and pure, which
-/// beats caching a second DAE that the two tabs would have to keep in sync.
-/// `pub` rather than `pub(crate)` so `examples/survey_msl.rs` runs the **same**
-/// funnel HRW does. A second copy in the survey would drift from this one, and
-/// the funnel's step ORDER mirrors rumoca-sim's internals — `docs/updating-rumoca.md`
-/// step 3 exists because a reordering upstream is invisible to the compiler.
-pub fn index_reduce_in_place(dae: &mut rumoca_ir_dae::Dae) {
-    let _ = index_reduce_for_structural_analysis(dae);
-}
-
-/// Apply Rumoca's index-reduction / dummy-derivative funnel to a DAE in place,
-/// returning a structured report of what each step did.
-///
-/// # What is index reduction?
-///
-/// A DAE (Differential-Algebraic Equation system) has an "index" — roughly,
-/// the number of times you need to differentiate constraint equations to
-/// reduce the system to an ODE. High-index systems (index > 1) are
-/// structurally singular: the maximum matching can't pair every equation
-/// with a unique unknown. The "dummy derivative" method repeatedly
-/// differentiates constraints and demotes states to algebraic variables
-/// until the system is index-1 (solvable).
-///
-/// # The funnel steps (in order)
-///
-/// Each step targets a specific pattern of redundant/constrained states:
-/// 1. `demote_exact_alias_component_states` — states that are exact copies
-///    of other states (e.g. connector aliasing)
-/// 2. `demote_direct_assigned_states` — states directly assigned by equations
-/// 3. `reduce_constrained_dummy_derivatives` — dummy derivatives from prior
-///    index reduction that are now constrained
-/// 4. `index_reduce_missing_state_derivatives` — states whose derivatives
-///    don't appear in any equation
-/// 5. `demote_states_without_assignable_derivative_rows` — states whose
-///    derivative rows can't be assigned
-/// 6. `eliminate_derivative_aliases` — simplify derivative alias chains
-/// 7. `demote_states_without_retained_derivative_rows` — final demotion pass
-/// 8. `expand_compound_derivatives` — expand `der(der(x))` etc.
-/// 9. `substitute_standalone_state_derivatives_in_non_ode_rows` — substitute
-///    standalone `der(x)` in algebraic equations
-/// 10. `eliminate_trivial` — trivial substitutions (x = expr)
-///
-/// HRW mirrors Rumoca's funnel *order*; re-verify it against
-/// `rumoca-sim/src/solve_lowering/structural_lowering.rs` on a Rumoca pin bump
-/// (see `docs/updating-rumoca.md`).
-///
-/// # Rumoca API surface
-///
-/// All funnel steps come from `rumoca_phase_structural::dae_prepare` (aliased
-/// as `dp`). They mutate the DAE in place (`&mut Dae`) and return either
-/// `Result<usize, Error>` (count of states demoted) or `Result<(), Error>`.
-fn index_reduce_for_structural_analysis(
-    dae: &mut rumoca_ir_dae::Dae,
-) -> (
-    ReductionReport,
-    Vec<rumoca_phase_structural::dae_prepare::IndexReductionFrame>,
-) {
-    use rumoca_phase_structural::dae_prepare as dp;
-    use rumoca_phase_structural::eliminate;
-
-    let states_before: Vec<String> = dae.variables.states.keys().map(|k| k.to_string()).collect();
-
-    // **The compile's own options.** `scalarize` defaults to true and the simulation
-    // path takes the default, so the real funnel scalarizes first — a step HRW's
-    // mirror never had. Passing anything else here would put the tab back to
-    // describing a funnel the compiler does not run.
-    let opts = rumoca_sim::SimOptions::default();
-
-    // Both levels, from one run. `RefCell` because the two observers are `Fn`
-    // closures called from inside the funnel, and the frames they collect outlive
-    // each call.
-    let steps: std::cell::RefCell<Vec<StepRow>> = std::cell::RefCell::new(Vec::new());
-    let ir_frames: std::cell::RefCell<Vec<dp::IndexReductionFrame>> =
-        std::cell::RefCell::new(Vec::new());
-
-    let outcome = {
-        let on_step = |f: &rumoca_sim::FunnelStepFrame| {
-            let text = match &f.outcome {
-                rumoca_sim::FunnelStepOutcome::Demoted(n) => format!("{n} demoted"),
-                rumoca_sim::FunnelStepOutcome::Rewrote(n) => format!("{n} rewritten"),
-                rumoca_sim::FunnelStepOutcome::Completed => "ok".to_owned(),
-                rumoca_sim::FunnelStepOutcome::Failed(why) => format!("stopped: {why}"),
-            };
-            // **The sizes either side, not just the outcome text.** An outcome of
-            // "ok" says a step ran and nothing about what it did; the pair of
-            // shapes says whether the system actually changed under it. Ten steps
-            // reporting "ok" and one changing the counts is a very different
-            // picture from ten steps that all moved something, and until now the
-            // pane could not tell those apart.
-            steps.borrow_mut().push(StepRow {
-                name: f.step,
-                outcome: text,
-                states_before: f.states_before,
-                states_after: f.states_after,
-                equations_before: f.equations_before,
-                equations_after: f.equations_after,
-            });
-        };
-        let on_frame = |f: &dp::IndexReductionFrame| ir_frames.borrow_mut().push(f.clone());
-        rumoca_sim::prepare_dae_for_structural_analysis_fully_observed(
-            dae,
-            &opts,
-            Some(&on_step),
-            Some(&on_frame),
-        )
-    };
-
-    let mut steps = steps.into_inner();
-    let mut ir_frames = ir_frames.into_inner();
-
-    // A failing funnel names the step it stopped at, which the observer already
-    // reported — so the report's `stopped_at` is read off the frames rather than
-    // tracked separately.
-    let mut stopped_at: Option<&'static str> = None;
-    if outcome.is_err() {
-        stopped_at = steps
-            .iter()
-            .rev()
-            .find(|row| row.outcome.starts_with("stopped:"))
-            .map(|row| row.name);
-        let n_differentiations = count_differentiations(&ir_frames);
-        return (
-            finish_report(dae, states_before, steps, stopped_at, n_differentiations),
-            ir_frames,
-        );
-    }
-    // Nothing below can set it; kept so the shape of the report is unchanged.
-    let _ = &mut stopped_at;
-    let _ = &mut ir_frames;
-
-    // **`eliminate_trivial` is NOT part of the preparation funnel**, and this is where
-    // the mirror was most misleading: it listed the step as though it were, so the
-    // tab attributed 77 eliminations to index reduction. In `rumoca-sim` it belongs
-    // to the next phase (`structural.eliminate_trivial`). HRW applies it here because
-    // the Index Reduction tab shows the system the *later* views are computed over —
-    // but it is now visibly a separate act rather than step 10 of a funnel.
-    let mut eliminations = Vec::new();
-    // Its own before/after, measured here rather than reported by the funnel — this
-    // step is not in the funnel, so nothing upstream can supply them.
-    let (states_before_elim, equations_before_elim) =
-        (dae.variables.states.len(), dae.continuous.equations.len());
-    if let Ok(elim) = eliminate::eliminate_trivial(dae) {
-        for sub in &elim.substitutions {
-            let expr_json = serde_json::to_string(&sub.expr).unwrap_or_default();
-            eliminations.push((sub.var_name.to_string(), expr_json));
-        }
-        let _ = eliminate::apply_elimination_substitutions_to_dae(dae, &elim.substitutions);
-        steps.push(StepRow {
-            name: "eliminate_trivial",
-            outcome: format!("{} eliminated", elim.n_eliminated),
-            states_before: states_before_elim,
-            states_after: dae.variables.states.len(),
-            equations_before: equations_before_elim,
-            equations_after: dae.continuous.equations.len(),
-        });
-    } else {
-        steps.push(StepRow {
-            name: "eliminate_trivial",
-            outcome: "failed (system may still be singular)".to_owned(),
-            states_before: states_before_elim,
-            states_after: dae.variables.states.len(),
-            equations_before: equations_before_elim,
-            equations_after: dae.continuous.equations.len(),
-        });
-    }
-
-    let n_differentiations = count_differentiations(&ir_frames);
-    (
-        finish_report(dae, states_before, steps, stopped_at, n_differentiations)
-            .with_eliminations(eliminations),
-        ir_frames,
-    )
-}
-
-/// Count the differentiations the funnel actually performed, from its own frames.
-///
-/// **The one number the Index Reduction stage could not previously report.** Its
-/// `differentiated_rows` scans the *final* DAE for surviving origin markers, so it
-/// reports zero whenever a later step removes them — which on this corpus is always.
-/// A lab read that zero as *"the compiler did not differentiate"* and taught the
-/// opposite of the truth for its whole existence.
-fn count_differentiations(
-    frames: &[rumoca_phase_structural::dae_prepare::IndexReductionFrame],
-) -> usize {
-    use rumoca_phase_structural::dae_prepare::IndexReductionStep;
-    frames
-        .iter()
-        .filter(|f| matches!(&f.step, IndexReductionStep::Differentiated { .. }))
-        .count()
-}
-
-/// Build a `ReductionReport` from the post-reduction DAE state. Called at
-/// every exit point from `index_reduce_for_structural_analysis` (both
-/// early-bail and normal completion). Scans the DAE's equations for
-/// differentiated rows (manufactured by the index-reduction process) by
-/// looking for the `"index_reduction:d_dt_for_"` marker in equation origins.
-fn finish_report(
-    dae: &rumoca_ir_dae::Dae,
-    states_before: Vec<String>,
-    steps: Vec<StepRow>,
-    stopped_at: Option<&'static str>,
-    n_differentiations: usize,
-) -> ReductionReport {
-    let states_after: Vec<String> = dae.variables.states.keys().map(|k| k.to_string()).collect();
-    const DIFF_ROW_MARKER: &str = "index_reduction:d_dt_for_";
-    let differentiated_rows: Vec<(String, String)> = dae
-        .continuous
-        .equations
-        .iter()
-        .filter_map(|eq| {
-            eq.origin.find(DIFF_ROW_MARKER).map(|pos| {
-                let state = eq.origin[pos + DIFF_ROW_MARKER.len()..].to_owned();
-                (eq.origin.clone(), state)
-            })
-        })
-        .collect();
-    ReductionReport {
-        states_before,
-        states_after,
-        steps,
-        differentiated_rows,
-        eliminations: Vec::new(),
-        stopped_at,
-        n_differentiations,
-    }
-}
-
-impl ReductionReport {
-    /// Builder method: attach trivial-elimination substitutions to the report.
-    /// `mut self` takes ownership (not `&mut self`) — this is the "builder
-    /// pattern" where you chain `.with_eliminations(...)` on the return value.
-    fn with_eliminations(mut self, eliminations: Vec<(String, String)>) -> Self {
-        self.eliminations = eliminations;
-        self
-    }
-
-    /// Serialize the report to JSON for the Index Reduction tab.
-    /// Computes `demoted_states` as the set difference (before - after).
-    fn to_json(&self) -> serde_json::Value {
-        // Which states were demoted? Filter states_before for those NOT in
-        // states_after. This is O(n*m) but both lists are tiny (< 20 states).
-        let demoted: Vec<&String> = self
-            .states_before
-            .iter()
-            .filter(|s| !self.states_after.contains(s))
-            .collect();
-        serde_json::json!({
-            "states_before": self.states_before,
-            "states_after": self.states_after,
-            "demoted_states": demoted,
-            "n_states_before": self.states_before.len(),
-            "n_states_after": self.states_after.len(),
-            // **The shapes travel with the step**, so a reader can see which steps
-            // moved the system rather than only that each one ran.
-            "steps": self.steps.iter().map(|row| {
-                serde_json::json!({
-                    "step": row.name,
-                    "outcome": row.outcome,
-                    "states_before": row.states_before,
-                    "states_after": row.states_after,
-                    "equations_before": row.equations_before,
-                    "equations_after": row.equations_after,
-                })
-            }).collect::<Vec<_>>(),
-            "differentiated_rows": self.differentiated_rows.iter().map(|(origin, state)| {
-                serde_json::json!({ "equation_origin": origin, "for_state": state })
-            }).collect::<Vec<_>>(),
-            "eliminations": self.eliminations.iter().map(|(var, expr)| {
-                serde_json::json!({ "variable": var, "replacement": expr })
-            }).collect::<Vec<_>>(),
-            "n_differentiations": self.n_differentiations,
-            "stopped_at": self.stopped_at,
-            "funnel_completed": self.stopped_at.is_none(),
-        })
-    }
-}
 
 /// Serialize a single class from a class tree by its qualified name.
 ///
