@@ -43,7 +43,7 @@ pub use differential_structure::{
     DifferentialCoordinate, DifferentialStructure, TensorDifferentialOffsets,
     analyze_differential_structure,
 };
-pub use incidence::{Incidence, solver_incidence};
+pub use incidence::{Incidence, build_incidence, solver_incidence};
 pub use report::{BlockReport, StructuralReport, TearingReport};
 pub use runtime_defined::{
     runtime_defined_continuous_unknown_names, runtime_defined_unknown_names,
@@ -519,7 +519,20 @@ fn unmatched_span(
         })
 }
 
-pub(crate) fn equation_label(view: dae::DaeView<'_>, equation: &EquationRef) -> String {
+/// Name one scalar equation row, for a diagnostic or a display.
+///
+/// # Public alongside [`build_incidence`], and for the same reason
+///
+/// An [`Incidence`] names its rows and columns by [`EquationRef`] and
+/// [`UnknownId`], which are opaque identities. A caller that can build the
+/// incidence but cannot label it has a matrix of anonymous indices — and the
+/// alternative, deriving a name from the ids by hand, would duplicate this
+/// logic and drift from the labels the crate's own reports carry.
+///
+/// Exposing these two makes the labels in a consumer's view the **same
+/// strings** `StructuralReport` uses, which is what lets the two be correlated
+/// at all.
+pub fn equation_label(view: dae::DaeView<'_>, equation: &EquationRef) -> String {
     let Some(owner) = view.continuous_owner_for_scalar_row(equation.0) else {
         return equation.to_string();
     };
@@ -533,7 +546,8 @@ pub(crate) fn equation_label(view: dae::DaeView<'_>, equation: &EquationRef) -> 
     }
 }
 
-pub(crate) fn unknown_label<'dae>(view: dae::DaeView<'dae>, unknown: UnknownId<'dae>) -> String {
+/// Name one unknown column. See [`equation_label`] for why this is public.
+pub fn unknown_label<'dae>(view: dae::DaeView<'dae>, unknown: UnknownId<'dae>) -> String {
     match unknown {
         UnknownId::Derivative { state, scalar } => {
             let variable = view

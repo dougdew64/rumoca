@@ -140,7 +140,21 @@ enum UnknownKey {
     Algebraic { variable: u32, scalar: u32 },
 }
 
-pub(crate) fn build_incidence<'dae>(
+/// Project one inspected DAE onto its scalar equation-by-unknown incidence.
+///
+/// # Public as an observation entry point
+///
+/// [`Incidence`] is already public with public fields, and
+/// [`solver_incidence`] is already a public constructor for non-DAE
+/// projections — but nothing outside this crate could build the incidence of a
+/// *DAE*, which is the one a tool wants in order to show a model's structure
+/// before any matching or sorting decision is made.
+///
+/// Nothing is weakened by exposing it. The result is branded to the inspected
+/// root by `'dae`, so an incidence still cannot be mixed with another model's,
+/// and the projection is a pure read: it computes what the sorter would have
+/// computed and mutates nothing.
+pub fn build_incidence<'dae>(
     view: dae::DaeView<'dae>,
 ) -> Result<Incidence<'dae>, StructuralError> {
     build_incidence_inner(view, None)
