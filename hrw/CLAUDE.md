@@ -902,7 +902,14 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
   therefore correct by construction — any number about a specimen is read from here**) and
   `purpose.md` (why it exists; rendered as the Purpose tab).
 - Architectural invariants are in Rumoca's numbered SPEC files; comments cite Modelica Language
-  Specification sections. **Respect phase boundaries** — IR crates are pure data.
+  Specification sections. **Respect phase boundaries.**
+- **"IR crates are pure data" WAS part of that sentence and v0.10.0 falsifies it** *(corrected
+  2026-11-03)*. `rumoca-ir-dae` is now behaviour: `Dae`'s fields are private, it is not `Clone`,
+  it has no `default()`, and it is reachable only through `dae.inspect(|view| …)` under a
+  higher-ranked lifetime so nothing borrowed escapes. Construction goes through
+  `Dae::construct(sources, |model| …)`. **Read a `Dae` as an object with an API, not a struct with
+  fields** — and expect the same of the other IR crates before assuming otherwise. Phase
+  boundaries still hold; it is the *pure data* half that stopped being true.
 
 ## Architecture craft
 
