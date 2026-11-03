@@ -33,7 +33,10 @@ mod alias_paths;
 mod array_comprehension;
 mod ast_lower;
 mod boolean_eval;
-mod connections;
+// **Public for its `trace` submodule only.** Every other item inside is
+// `pub(crate)` or private, so widening the path exposes the observation hooks
+// and nothing else; `unreachable_pub` would deny them otherwise.
+pub mod connections;
 mod connections_builtin;
 mod constant_extraction;
 #[cfg(test)]

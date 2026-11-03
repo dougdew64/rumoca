@@ -1543,5 +1543,181 @@ fn test_validate_type_compatibility_alias_root_allowed() {
     assert!(result.is_ok());
 }
 
+/// Three connectors wired `connect(a, b)` and `connect(b, c)`.
+///
+/// Each carries a potential member `.v` and a flow member `.i`, so the chain
+/// produces one potential set and one flow set, each of three members.
+fn three_connector_chain() -> (flat::Model, ast::InstanceOverlay) {
+    let mut flat = flat::Model::new();
+    for name in ["a", "b", "c"] {
+        flat.add_variable(
+            rumoca_core::VarName::new(name),
+            flat::Variable {
+                name: rumoca_core::VarName::new(name),
+                is_primitive: false,
+                source_span: test_span(),
+                ..flat::Variable::empty_with_span(test_span())
+            },
+        );
+        flat.add_variable(
+            rumoca_core::VarName::new(format!("{name}.v")),
+            flat::Variable {
+                name: rumoca_core::VarName::new(format!("{name}.v")),
+                is_primitive: true,
+                source_span: test_span(),
+                ..flat::Variable::empty_with_span(test_span())
+            },
+        );
+        flat.add_variable(
+            rumoca_core::VarName::new(format!("{name}.i")),
+            flat::Variable {
+                name: rumoca_core::VarName::new(format!("{name}.i")),
+                flow: true,
+                is_primitive: true,
+                source_span: test_span(),
+                ..flat::Variable::empty_with_span(test_span())
+            },
+        );
+    }
+
+    let connect = |a: &str, b: &str| ast::InstanceConnection {
+        a: ast::QualifiedName::from_ident(a),
+        b: ast::QualifiedName::from_ident(b),
+        connector_type: None,
+        span: Span::DUMMY,
+        scope: String::new(),
+        family: None,
+    };
+    let mut overlay = ast::InstanceOverlay::new();
+    overlay.add_class(ast::ClassInstanceData {
+        instance_id: rumoca_core::InstanceId(0),
+        qualified_name: ast::QualifiedName::from_ident("Root"),
+        connections: vec![connect("a", "b"), connect("b", "c")],
+        ..Default::default()
+    });
+
+    (flat, overlay)
+}
+
+/// **The must-fire test for the observation hooks**: the real pass must report,
+/// and it must report the thing the trace exists to show.
+///
+/// `super::trace`'s own unit tests build frames by hand, so they pass with
+/// every `emit` call in `equation_generation` deleted — an observer that
+/// reports nothing is indistinguishable from a pass that did nothing. This one
+/// drives `process_connections`.
+///
+/// The fixture is three connectors wired `connect(a, b)` and `connect(b, c)`,
+/// which pins both claims the module doc makes:
+///
+/// - **Transitivity**: one set of three, not two sets of two, because the sets
+///   are built by union-find.
+/// - **The flow/potential asymmetry (MLS §9.2)**: three potential variables
+///   become *two* equality equations, while three flow variables become
+///   *one* sum-to-zero. At two endpoints both kinds yield one equation and the
+///   asymmetry is invisible, which is why this needs three.
+#[test]
+fn connection_expansion_reports_the_sets_it_built_and_what_each_produced() {
+    let (mut flat, overlay) = three_connector_chain();
+    let mut oc_forest = crate::vcg::OverconstrainedEquationForest::empty();
+    super::trace::start_capture();
+    let outcome = process_connections(&mut flat, &overlay, false, &mut oc_forest);
+    let frames = super::trace::take_capture();
+    outcome.expect("three-connector chain processing");
+
+    assert!(
+        !frames.is_empty(),
+        "the pass ran, so it must have reported something"
+    );
+    assert!(
+        matches!(
+            frames.first().map(|f| &f.step),
+            Some(super::trace::ConnectionStep::Start {
+                connect_statements: 2
+            })
+        ),
+        "the opening step must state the two connect() statements it collected: {frames:#?}"
+    );
+
+    // Transitivity: one set per kind over three members, not two sets of two.
+    let formed: Vec<(&str, usize)> = frames
+        .iter()
+        .filter_map(|f| match &f.step {
+            super::trace::ConnectionStep::SetFormed {
+                kind, variables, ..
+            } => Some((*kind, variables.len())),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        formed.contains(&("potential", 3)),
+        "a.v, b.v and c.v form ONE set of three: {formed:?}"
+    );
+    assert!(
+        formed.contains(&("flow", 3)),
+        "a.i, b.i and c.i form ONE set of three: {formed:?}"
+    );
+
+    // The asymmetry, measured rather than predicted.
+    let generated: Vec<(&str, usize, usize)> = frames
+        .iter()
+        .filter_map(|f| match &f.step {
+            super::trace::ConnectionStep::EquationsGenerated {
+                kind,
+                set_size,
+                equations_added,
+                ..
+            } => Some((*kind, *set_size, *equations_added)),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        generated.contains(&("potential", 3, 2)),
+        "three potential variables must yield n-1 = 2 equality equations: {generated:?}"
+    );
+    assert!(
+        generated.contains(&("flow", 3, 1)),
+        "three flow variables must yield exactly one sum-to-zero: {generated:?}"
+    );
+
+    // And the equations themselves, not merely their count — Kirchhoff's law
+    // is the content of the flow row.
+    let flow_equations: Vec<&String> = frames
+        .iter()
+        .filter_map(|f| match &f.step {
+            super::trace::ConnectionStep::EquationsGenerated {
+                kind: "flow",
+                equations,
+                ..
+            } => Some(equations),
+            _ => None,
+        })
+        .flatten()
+        .collect();
+    assert_eq!(
+        flow_equations.len(),
+        1,
+        "the flow set's one equation must be rendered, not just counted: {flow_equations:?}"
+    );
+
+    let complete = frames
+        .iter()
+        .filter_map(|f| match f.step {
+            super::trace::ConnectionStep::Complete {
+                sets,
+                equations_added,
+            } => Some((sets, equations_added)),
+            _ => None,
+        })
+        .next_back()
+        .expect("the pass must report finishing");
+    assert_eq!(complete.0, 2, "two connection sets were built");
+    assert_eq!(
+        complete.1,
+        flat.equations.len(),
+        "the total it reports must be the equations the model actually gained"
+    );
+}
+
 mod member_pairing_tests;
 mod path_matching_tests;

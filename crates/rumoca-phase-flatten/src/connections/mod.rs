@@ -91,6 +91,8 @@ use rustc_hash::FxHashMap;
 use crate::errors::FlattenError;
 use crate::path_utils::{segments as path_segments_of, strip_array_index};
 
+pub mod trace;
+
 mod endpoint_subscripts;
 mod equation_generation;
 mod member_pairing;
