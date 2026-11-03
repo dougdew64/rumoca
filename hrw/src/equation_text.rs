@@ -102,84 +102,95 @@ impl Rendered {
             }
         }
     }
+
+    /// Insert already-rendered text, keyed `base[i]` by position in the iterator.
+    ///
+    /// **For a 0.10.0 arena, where [`Self::extend_indexed`] cannot be used.**
+    /// That method borrows a slice and renders each element, which needs the
+    /// element to carry everything the rendering requires. An arena element does
+    /// not: rendering one needs the `DaeView` as well, and the view only exists
+    /// inside `inspect`, so the text has to be produced there and handed over
+    /// finished.
+    ///
+    /// A `None` means *this index did not resolve* and is skipped rather than
+    /// stored as an empty string — the same treatment an empty rendering already
+    /// got, so a tooltip is absent rather than blank. The position is still
+    /// consumed, so every later index keeps the ordinal serde wrote for it.
+    fn extend_rendered(&mut self, base: &str, items: impl Iterator<Item = Option<String>>) {
+        for (i, text) in items.enumerate() {
+            if let Some(text) = text
+                && !text.is_empty()
+            {
+                self.0.insert(format!("{base}[{i}]"), text);
+            }
+        }
+    }
 }
 
-/// Renderings for the Events stage, from the DAE the stage was built from.
-///
-/// The four collections `events_to_json` publishes, and **the keys here must match the
-/// keys it emits** — `equations_f_c`, `relations`, `real_updates_f_z`,
-/// `synthetic_root_conditions`. `every_events_rendering_lands_on_a_real_node` holds the
-/// two together against a real compile, because a path typo is invisible: the tooltip
-/// simply never appears.
-pub fn for_events(d: &dae::Dae) -> Rendered {
-    let mut out = Rendered::default();
-    out.extend_indexed(
-        "conditions.equations_f_c",
-        &d.conditions.equations,
-        expr_format::format_equation,
-    );
-    out.extend_indexed(
-        "conditions.relations",
-        &d.conditions.relations,
-        expr_format::format_expr,
-    );
-    out.extend_indexed(
-        "discrete_updates.real_updates_f_z",
-        &d.discrete.real_updates,
-        expr_format::format_equation,
-    );
-    out.extend_indexed(
-        "events.synthetic_root_conditions",
-        &d.events.synthetic_root_conditions,
-        expr_format::format_expr,
-    );
-    out
-}
 
 /// Renderings for the DAE stage, whose tree is the whole `Dae` serialized.
 ///
-/// # The keys are serde's, not the Rust field names, and they are not nested
+/// # The keys are serde's, and on v0.10.0 every one of them changed
 ///
 /// `dae_stage` publishes `Stage::from_ser(d)`, so the paths are whatever `Dae`'s
-/// `Serialize` produces — and that is **flat**, using Rumoca's mathematical names rather
-/// than the Rust partitions: `f_x`, `f_z`, `f_m`, `f_c`, `relation`,
-/// `initial_equations`, `synthetic_root_conditions`. There is no `continuous.` or
-/// `conditions.` prefix here, unlike Events, whose `events_to_json` builds its own object
-/// and chooses its own key names.
+/// `Serialize` produces. Until 0.10.0 that was **flat**, using Rumoca's
+/// mathematical names: `f_x`, `f_z`, `f_m`, `f_c`, `relation`,
+/// `initial_equations`, `synthetic_root_conditions`.
 ///
-/// **Assuming the Events shape would have produced a map that silently never matched** —
-/// every key wrong, no tooltip anywhere, indistinguishable from a stage with nothing
-/// renderable. The paths above were read off a committed trace rather than inferred from
-/// the struct, and `every_dae_rendering_lands_on_a_real_node` keeps them honest.
+/// **None of those keys exists now.** A 0.10.0 `Dae` serializes as
+/// `{schema_version, source_map, storage}`, with one arena per kind under
+/// `storage` — `continuous_equation_operations`,
+/// `initialization_equation_operations`, `discrete_real_equations`, `relations`,
+/// `conditions`, `roots`, and twenty more. So every base below gained a
+/// `storage.` prefix and most were renamed outright.
+///
+/// **The key names here were read off an actual serialization, not inferred
+/// from the struct.** That is the same discipline the previous version of this
+/// comment recorded, and for the same reason: a wrong key produces a map that
+/// silently never matches — no tooltip anywhere, indistinguishable from a stage
+/// with nothing renderable. `every_dae_rendering_lands_on_a_real_node` keeps
+/// them honest against a real compile.
+///
+/// # What is rendered, and what is deliberately not
+///
+/// Residual equations and relations render, because they are expressions and
+/// [`crate::dae_expr_format`] renders expressions faithfully.
+///
+/// **`storage.conditions` and `storage.roots` are left alone.** A 0.10.0
+/// condition is not an expression at all — it is a `ConditionOperation` algebra
+/// (`And`, `Or`, `Not`, `AnyRise`, …) over relations and clocks, and a root is a
+/// relation paired with an activation. Rendering either as an equation would be
+/// a category error. They are the Events re-model's business; see
+/// `worker::events_stage` and the `unbuilt:` tag in `docs/tech-debt.md`.
 pub fn for_dae(d: &dae::Dae) -> Rendered {
     let mut out = Rendered::default();
-    out.extend_indexed("f_x", &d.continuous.equations, expr_format::format_equation);
-    out.extend_indexed(
-        "initial_equations",
-        &d.initialization.equations,
-        expr_format::format_equation,
-    );
-    out.extend_indexed(
-        "f_z",
-        &d.discrete.real_updates,
-        expr_format::format_equation,
-    );
-    out.extend_indexed(
-        "f_m",
-        &d.discrete.valued_updates,
-        expr_format::format_equation,
-    );
-    out.extend_indexed("f_c", &d.conditions.equations, expr_format::format_equation);
-    out.extend_indexed(
-        "relation",
-        &d.conditions.relations,
-        expr_format::format_expr,
-    );
-    out.extend_indexed(
-        "synthetic_root_conditions",
-        &d.events.synthetic_root_conditions,
-        expr_format::format_expr,
-    );
+    d.inspect(|view| {
+        // Each arena is walked by index so the `[i]` in the path is the same
+        // ordinal serde wrote, which is what makes the two sides line up.
+        out.extend_rendered(
+            "storage.continuous_equation_operations",
+            (0..view.continuous_equation_count()).map(|i| {
+                view.continuous_equation(i)
+                    .map(|equation| crate::dae_expr_format::format_equation(view, equation))
+            }),
+        );
+        out.extend_rendered(
+            "storage.initialization_equation_operations",
+            (0..view.initialization_equation_count()).map(|i| {
+                view.initialization_equation(i)
+                    .map(|equation| crate::dae_expr_format::format_equation(view, equation))
+            }),
+        );
+        out.extend_rendered(
+            "storage.relations",
+            view.relations().map(|(_id, relation)| {
+                Some(crate::dae_expr_format::format_expr(
+                    view,
+                    relation.expression(),
+                ))
+            }),
+        );
+    });
     out
 }
 
@@ -217,62 +228,28 @@ pub fn for_flatten(m: &rumoca_ir_flat::Model) -> Rendered {
     out
 }
 
-/// Renderings for the Initialization stage, whose tree is an **IC plan**, not equations.
-///
-/// # Initialization was in group 1 by assumption and is not
-///
-/// The 2026-09-04 plan put it beside DAE and Events on the grounds that it shows
-/// `dae.initialization.equations`. It does not: `initialization_stage` publishes
-/// `ic_plan_to_json(&build_ic_plan(..))` — a **solve sequence** from
-/// `rumoca-phase-structural`. The DAE's initial equations appear in the *DAE* tree, as
-/// `initial_equations`, and are rendered there by [`for_dae`].
-///
-/// What is renderable here is `IcBlock::ScalarDirect`, which carries a `var_name` and a
-/// typed `solution_expr` — so the step renders as the assignment it performs, `v = R*i`.
-///
-/// # What is deliberately left unrendered
-///
-/// - **`ScalarNewton`** holds no expression, only `eq_idx` — it says *solve `f_x[3]` for
-///   `v`*. Restating that would be a **description**, not a rendering of an expression,
-///   and the tooltip's label promises the latter.
-/// - **`TornBlock`** and the coupled block nest a causal sequence. Renderable in
-///   principle, and not attempted without a verified case.
-///
-/// **BouncingBall cannot verify any of this** — `n_eq <= n_x`, so `build_ic_plan` returns
-/// empty and its Initialization tree has `blocks: []`. `RcCircuit` has 21 blocks, and is
-/// what `every_stage_rendering_lands_on_a_real_node` uses for this stage. Writing a
-/// renderer with no specimen able to exercise it is how a mis-keyed map ships green.
-pub fn for_ic_plan(blocks: &[rumoca_phase_structural::IcBlock]) -> Rendered {
-    use rumoca_phase_structural::IcBlock;
-
-    let mut out = Rendered::default();
-    out.extend_indexed("blocks", blocks, |b| match b {
-        IcBlock::ScalarDirect {
-            var_name,
-            solution_expr,
-            ..
-        } => format!("{var_name} = {}", expr_format::format_expr(solution_expr)),
-        // Empty means no tooltip line, which is the honest report for a block whose
-        // content is an index rather than an expression.
-        _ => String::new(),
-    });
-    out
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    /// An empty DAE renders nothing, and that is a report rather than a gap.
+    /// A DAE with no equations renders nothing, and that is a report rather than a gap.
     ///
     /// **The non-vacuity guard for every other test here.** A `Rendered` that was always
     /// empty would satisfy any assertion about a *missing* tooltip, which is the silent
     /// success this module's whole point is to avoid.
+    ///
+    /// *(Rewritten for v0.10.0. It used `for_events`, whose stage is disabled
+    /// pending the Events re-model, over `Dae::default()`, which no longer
+    /// exists — a `Dae` is valid-by-construction now. An empty `SourceMap` is
+    /// the smallest well-formed model, so the subject moved to `for_dae`.)*
     #[test]
     fn nothing_renderable_produces_no_entries() {
-        let r = for_events(&dae::Dae::default());
+        let empty = dae::Dae::construct(rumoca_core::SourceMap::new(), |_model| Ok(()))
+            .expect("an empty model is well-formed");
+        let r = for_dae(&empty);
         assert!(r.is_empty(), "got {} entries: {r:?}", r.len());
-        assert_eq!(r.get("conditions.equations_f_c[0]"), None);
+        assert_eq!(r.get("storage.continuous_equation_operations[0]"), None);
     }
 
     /// The index in a path is the collection index, and only present items are keyed.

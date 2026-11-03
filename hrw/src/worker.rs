@@ -4242,324 +4242,113 @@ fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
     ))
 }
 
-/// The initial-condition solve plan — how Rumoca computes a consistent
-/// initial state at t=0.
+/// Initialization — **disabled for the v0.10.0 rebase**, awaiting a re-model
+/// onto `initial_pins`.
 ///
-/// Rumoca API:
-/// - `build_ic_plan(dae, n_states)` — plans how to solve the initial algebraic
-///   system. Returns an ordered list of `IcBlock`s: direct symbolic solves
-///   (explicit formula), scalar Newton iterations (implicit scalar), torn blocks
-///   (a large coupled system reduced by tearing), and coupled LM blocks
-///   (Levenberg-Marquardt for fully coupled systems).
-/// - `build_ic_relaxation_hint` — names the equations dropped / unknowns pinned
-///   when the initial algebraic subsystem is structurally singular.
+/// # What this did
 ///
-/// The IC types carry `rumoca_core::Expression`, which doesn't implement
-/// `Serialize`, so we build JSON manually via `ic_plan_to_json`.
+/// It published `ic_plan_to_json(&build_ic_plan(..))` — an ordered **solve
+/// sequence** of `IcBlock`s: direct symbolic solves, scalar Newton steps, torn
+/// blocks, and coupled Levenberg-Marquardt blocks — plus a determinacy check
+/// comparing explicit initial conditions against the state count.
 ///
-/// This stage also computes a "determinacy check" — comparing the number of
-/// explicit initial conditions (initial equations + fixed-start states) against
-/// the number of states. A surplus means over-determined initialization
-/// (conflicting/redundant conditions), which `build_ic_plan` alone doesn't catch.
+/// # Why it is a re-model
+///
+/// `rumoca_phase_structural::ic_plan` is gone, with `IcBlock`, `build_ic_plan`
+/// and `build_ic_relaxation_hint`. 0.10.0 expresses initialization as
+/// `initial_pins::{InitialValuePin, InitialValueRole, PinTerm}` — a different
+/// formulation, described in its own docs as *"a runtime that seeds one value
+/// per state and then projects the algebraic unknowns"*. That is not the same
+/// object under a new name, so the pane cannot be re-keyed onto it.
+///
+/// The determinacy check needs rebuilding too, and **gains precision**. It
+/// counted states whose `fixed` attribute was `Some(true)` over a partition
+/// that no longer exists. `VariableView::fixed_uniform()` and `fixed_scalar()`
+/// replace it, and they are richer: MLS §4.8 lets `fixed` differ per array
+/// element, which a single `Option<bool>` could not express — so the old count
+/// had to treat a partly-fixed array as all-or-nothing.
+///
+/// # This is the stage whose defect motivated the rebase
+///
+/// `docs/upstream-issues.md` carries the initialization defect where several
+/// models take the value that zeroes a state's derivative instead of its
+/// `start`, with System Modeler's adjudication. **0.10.0 fixes it** — measured
+/// 2026-09-19: `ConnRc` goes from 0 of 16 series moving to 10 of 16, `RcCircuit`
+/// from 0 of 24 to 15 of 24, both landing on `C.v(1) = 4.999773` and matching
+/// the closed form. So this pane is the one most worth re-modelling: it now has
+/// something correct to show.
+///
+/// `docs/tech-debt.md` carries the `unbuilt:` tag naming
+/// `worker::initialization_from_initial_pins`.
 fn initialization_stage(result: Option<&PhaseResult>) -> Stage {
     if let Some(stage) = not_reached_stage(result) {
         return stage;
     }
-    let cr = unwrap_success(result);
-    let n_x = cr.dae.variables.states.len();
-    let n_eq = cr.dae.continuous.equations.len();
-    let n_initial_eq = cr.dae.initialization.equations.len();
-    let n_fixed_start_states = cr
-        .dae
-        .variables
-        .states
-        .values()
-        .filter(|v| v.fixed == Some(true))
-        .count();
-    let explicit = n_initial_eq + n_fixed_start_states;
-    let surplus = explicit as i64 - n_x as i64;
-    let determinacy = serde_json::json!({
-        "states": n_x,
-        "initial_equations": n_initial_eq,
-        "fixed_start_states": n_fixed_start_states,
-        "explicit_initial_conditions": explicit,
-        "surplus_over_states": surplus,
-        "verdict": if surplus > 0 {
-            "over-determined"
-        } else {
-            "well-posed (remaining states initialize from their start attributes)"
-        },
-    });
-    match rumoca_phase_structural::build_ic_plan(&cr.dae, n_x) {
-        Ok(plan) => {
-            let hint = rumoca_phase_structural::build_ic_relaxation_hint(&cr.dae, n_x);
-            let mut json = ic_plan_to_json(&plan, hint.as_ref(), n_x, n_eq);
-            if let Some(obj) = json.as_object_mut() {
-                obj.insert("determinacy".to_owned(), determinacy);
-            }
-            // From the same `plan` the JSON above was built from. Only `ScalarDirect`
-            // blocks render; see `equation_text::for_ic_plan` for what is left alone
-            // and why this stage is not the equation stage it looked like.
-            let rendered = crate::equation_text::for_ic_plan(&plan);
-            // Bound rather than returned, for the reason `events_stage` is: three arms,
-            // and the one that got missed would render no tooltips while looking exactly
-            // like a plan with nothing renderable.
-            let mut stage = if surplus > 0 {
-                Stage::recovered(
-                    json,
-                    format!(
-                        "OVER-DETERMINED initialization: {explicit} explicit initial condition(s) \
-                         ({n_initial_eq} initial equation(s) + {n_fixed_start_states} fixed start(s)) \
-                         for {n_x} state(s) — {surplus} too many; conflicting / redundant ICs"
-                    ),
-                )
-            } else if plan.is_empty() {
-                Stage::ok_with_note(
-                    json,
-                    "no algebraic initialization subsystem (equations ≤ states)",
-                )
-            } else {
-                Stage::ok(json)
-            };
-            stage.rendered = rendered;
-            stage
-        }
-        Err(e) => {
-            let msg = format!("{e}");
-            let mut error_json = match &e {
-                rumoca_phase_structural::StructuralError::Singular {
-                    n_equations,
-                    n_unknowns,
-                    n_matched,
-                    unmatched_equations,
-                    unmatched_unknowns,
-                    ..
-                } => serde_json::json!({
-                    "kind": "singular",
-                    "message": msg,
-                    "n_equations": n_equations,
-                    "n_unknowns": n_unknowns,
-                    "n_matched": n_matched,
-                    "rank_deficiency": (*n_equations).max(*n_unknowns) - n_matched,
-                    "unmatched_equations": unmatched_equations,
-                    "unmatched_unknowns": unmatched_unknowns,
-                    "guidance": "The initialization subsystem is structurally singular: the algebraic \
-                        equations (beyond the state derivatives) cannot be fully matched to unknowns. \
-                        Check for missing or redundant initial equations, and verify that start values \
-                        are specified for the right variables.",
-                }),
-                _ => serde_json::json!({
-                    "kind": "initialization",
-                    "message": msg,
-                    "guidance": "Initialization planning builds the algebraic system that determines \
-                        consistent initial conditions.",
-                }),
-            };
-            error_json
-                .as_object_mut()
-                .unwrap()
-                .insert("determinacy".to_owned(), determinacy.clone());
-            let mut json = serde_json::json!({ "error": error_json });
-            json.as_object_mut()
-                .unwrap()
-                .insert("determinacy".to_owned(), determinacy);
-            Stage::recovered(json, format!("IC planning failed: {msg}"))
-        }
-    }
+    Stage::info(awaiting_remodel_note(
+        "initialization",
+        "the IC plan's ordered IcBlock solve sequence was replaced by initial_pins, \
+         which seeds one value per state and projects the algebraic unknowns",
+    ))
 }
 
-/// Convert the IC plan (a slice of `IcBlock` enums) to a JSON value.
+/// Events — **disabled for the v0.10.0 rebase**, awaiting a re-model onto
+/// Rumoca's condition algebra.
 ///
-/// Each `IcBlock` variant maps to a different JSON "kind":
-/// - `ScalarDirect` — a variable solved by a closed-form expression
-/// - `ScalarNewton` — a variable solved by scalar Newton iteration
-/// - `TornBlock` — a coupled system reduced by tearing (pick "tear" variables,
-///   solve the rest causally, iterate on the tear variables)
-/// - `CoupledLM` — a fully coupled system solved by Levenberg-Marquardt
-pub(crate) fn ic_plan_to_json(
-    plan: &[rumoca_phase_structural::IcBlock],
-    hint: Option<&rumoca_phase_structural::IcRelaxationHint>,
-    n_x: usize,
-    n_eq: usize,
-) -> serde_json::Value {
-    use rumoca_phase_structural::IcBlock;
-    let blocks: Vec<serde_json::Value> = plan
-        .iter()
-        .map(|b| match b {
-            IcBlock::ScalarDirect {
-                var_name,
-                solution_expr,
-                ..
-            } => serde_json::json!({
-                "kind": "scalar_direct",
-                "var": var_name,
-                "solution": ser_value(solution_expr),
-            }),
-            IcBlock::ScalarNewton {
-                var_name, eq_idx, ..
-            } => serde_json::json!({
-                "kind": "scalar_newton",
-                "var": var_name,
-                "equation": eq_idx,
-            }),
-            IcBlock::TornBlock {
-                tear_var_names,
-                causal_sequence,
-                residual_eq_indices,
-                ..
-            } => {
-                serde_json::json!({
-                    "kind": "torn_block",
-                    "tear_vars": tear_var_names,
-                    "residual_equations": residual_eq_indices,
-                    "causal_steps": causal_sequence.iter().map(|s| serde_json::json!({
-                        "var": s.var_name,
-                        "equation": s.eq_idx,
-                        "newton": s.solution_expr.is_none(),
-                    })).collect::<Vec<_>>(),
-                })
-            }
-            IcBlock::CoupledLM {
-                eq_indices,
-                var_names,
-                ..
-            } => serde_json::json!({
-                "kind": "coupled_lm",
-                "vars": var_names,
-                "equations": eq_indices,
-            }),
-        })
-        .collect();
-    serde_json::json!({
-        "n_states": n_x,
-        "n_equations": n_eq,
-        "block_count": blocks.len(),
-        "blocks": blocks,
-        "relaxation_hint": hint.map(|h| serde_json::json!({
-            "dropped_equations": h.dropped_eq_global,
-            "pinned_unknowns": h.dropped_unknown_names,
-        })),
-    })
-}
-
-/// The DAE's hybrid / event structure — where the equation set changes at
-/// discrete events. Read directly from the public `rumoca-ir-dae` partitions:
-/// `conditions` (the `f_c` equations + the `relation` expressions that trigger
-/// events), `discrete` (the `f_z`/`f_m` update equations lowered from `when`
-/// clauses), and `events` (zero-crossing root conditions + scheduled time events).
+/// # Why this is a re-model and not a port
+///
+/// HRW read four flat collections — `conditions.equations` (`f_c`),
+/// `conditions.relations`, `discrete.real_updates`/`valued_updates`
+/// (`f_z`/`f_m`), and `events.synthetic_root_conditions` — counted them into a
+/// summary, and rendered each as an equation.
+///
+/// **On 0.10.0 a condition is not an equation.** It is a
+/// [`dae::ConditionOperation`]: `Initial`, `Always`, `Relation(id)`,
+/// `Discrete(expr)`, `Clock(id)`, `Not`, `And`, `Or`, `AnyRise` — a boolean
+/// algebra over relations and clocks. And a root is no longer a bare expression
+/// but `{relation, activation}`. Rendering an algebra term as an equation would
+/// be a category error, and HRW's `synthetic_root_conditions` key maps onto
+/// nothing here one-to-one.
+///
+/// # The re-model gains a distinction HRW never showed
+///
+/// `AnyRise` exists because MLS §8.3.5.1 activates a vector `when` on
+/// `edge(b1) or … or edge(bn)`, which is **not** the edge of the disjunction:
+/// `when {u, not u}` has an element rising at every switch of `u`, while
+/// `u or not u` is a tautology that never rises at all. 0.10.0 keeps those
+/// apart in the IR. That is worth a lecture, and it is only available to show
+/// because upstream made the semantics explicit.
+///
+/// # Nothing is blocking it but the ruling
+///
+/// Every arena is publicly readable, with a single-entry accessor *and* an
+/// ordered walk: `conditions()`, `relations()`, `roots()`,
+/// `structured_roots()`, `time_events()`, `event_actions()`, `clocks()`,
+/// `previous_values()`, `terminals()`, each documented with its MLS section. No
+/// instrumentation is required — this waits only because a re-model done while
+/// nothing compiles gets no reader (`DECISIONS.md`, 2026-11-02).
+///
+/// `docs/tech-debt.md` carries the `unbuilt:` tag naming
+/// `worker::events_from_condition_algebra`.
+///
+/// # One defect this retires on the way out
+///
+/// The old summary published Rumoca's `synthetic_root_conditions` under the key
+/// `zero_crossing_conditions`, which reads as a claim about *all* zero
+/// crossings — so `BouncingBall` showed **0**, a bouncing ball apparently
+/// detecting no contact. Every value was correct for three weeks; the defect
+/// lived entirely in a renamed field. The re-model publishes Rumoca's own names,
+/// and `the_events_summary_uses_rumocas_own_names` is the check that will hold
+/// it to that.
 fn events_stage(result: Option<&PhaseResult>) -> Stage {
     if let Some(stage) = not_reached_stage(result) {
         return stage;
     }
-    let cr = unwrap_success(result);
-    let json = events_to_json(&cr.dae);
-    // **"Smooth" is a claim about the model, so it is only made when it was read.**
-    //
-    // Found by the 2026-08-04 sweep. This was `.unwrap_or(0)` followed by
-    // `if total == 0 { "no events — this model is a smooth (continuous)
-    // system" }` — so a summary that could not be read as an object produced the
-    // number zero, and zero produced a **positive physical assertion about Doug's
-    // model**. A model full of `when` clauses would have been labelled smooth, and
-    // nothing on screen would have hinted that the label came from a failure to read
-    // rather than from the compiler.
-    //
-    // The three cases are now distinct: countable and zero (smooth), countable and
-    // non-zero (events), and *not countable* (say so). See the accuracy rule at the
-    // top of `CLAUDE.md` — absence is stated, never filled.
-    // Counted before the `match` so the borrow of `json` ends here — the arms below
-    // move it into a `Stage`.
-    // **The entries have to be countable too, not just the summary.**
-    //
-    // The first version of this fix (earlier the same day) replaced `.unwrap_or(0)`
-    // on the *object* but left `filter_map(as_u64)` on its *values* — so a summary
-    // that was present but held a non-numeric count still summed to zero, and zero
-    // still produced the smoothness claim. The sweep's own audit of `filter_map`
-    // sites caught it, three commits after the fix that was supposed to close this.
-    let counted: Option<(u64, usize, usize)> = json["summary"].as_object().map(|s| {
-        let mut total: u64 = 0;
-        let mut uncountable = 0usize;
-        for v in s.values() {
-            match v.as_u64() {
-                Some(n) => total += n,
-                None => uncountable += 1,
-            }
-        }
-        (total, uncountable, s.len())
-    });
-
-    // **Bound rather than returned, so all four arms carry the renderings.** Attaching
-    // them per arm would mean four sites, and the one that got missed would show a stage
-    // whose nodes silently have no tooltips — indistinguishable from a stage with nothing
-    // renderable. See `equation_text`.
-    let mut stage = match counted {
-        Some((_, uncountable, n)) if uncountable > 0 => Stage::recovered(
-            json,
-            format!(
-                "{uncountable} of {n} event counts could not be read, so HRW cannot \
-                 say whether this model has events \u{2014} the tree below is the raw \
-                 event IR",
-            ),
-        ),
-        Some((0, _, _)) => Stage::ok_with_note(
-            json,
-            "no events \u{2014} this model is a smooth (continuous) system",
-        ),
-        Some(_) => Stage::ok(json),
-        None => Stage::recovered(
-            json,
-            "the event summary could not be read, so HRW cannot say whether this \
-             model has events \u{2014} the tree below is the raw event IR",
-        ),
-    };
-    stage.rendered = crate::equation_text::for_events(&cr.dae);
-    stage
-}
-
-/// Convert the DAE's hybrid/event structure to JSON. Reads directly from the
-/// public `rumoca-ir-dae` partitions:
-/// - `conditions` — the `f_c` equations + `relation` expressions that trigger events
-/// - `discrete` — the `f_z` (real updates) / `f_m` (valued updates) from `when` clauses
-/// - `events` — zero-crossing root conditions + scheduled time events
-///
-/// The `summary` object counts each category — the Events tab uses this to
-/// show "no events" for smooth models vs a detailed breakdown for hybrid ones.
-/// **Every key here is Rumoca's own name** *(corrected 2026-09-02)*, because a renamed field
-/// is a claim: this published `synthetic_root_conditions` as `zero_crossing_conditions`, so
-/// `BouncingBall` showed `0` and read as *"the compiler does not detect the contact"*. It
-/// detects it. The field is narrower than that label — it counts roots Rumoca had to
-/// *synthesise* because no relation supplied one, since
-/// `runtime_precompute::remove_relation_duplicate_synthetic_roots` removes any that a
-/// relation already covers and `clock::relation_root_expression` turns `h <= 0` into the root
-/// `h - 0`. `codegen_target` chains both collections into root-finding, so the bounce is
-/// tracked through `relations: 1` and `0` here is correct. A learner reads the label rather
-/// than the source, and no fidelity check compares the two — the *value* was right for three
-/// weeks while the name was not. `the_events_summary_uses_rumocas_own_names` pins the keys.
-fn events_to_json(dae: &rumoca_ir_dae::Dae) -> serde_json::Value {
-    let conditions = &dae.conditions;
-    let discrete = &dae.discrete;
-    let events = &dae.events;
-    serde_json::json!({
-        "summary": {
-            "condition_equations": conditions.equations.len(),
-            "relations": conditions.relations.len(),
-            "discrete_real_updates": discrete.real_updates.len(),
-            "discrete_valued_updates": discrete.valued_updates.len(),
-            "synthetic_root_conditions": events.synthetic_root_conditions.len(),
-            "scheduled_time_events": events.scheduled_time_events.len(),
-        },
-        "conditions": {
-            "equations_f_c": ser_value(&conditions.equations),
-            "relations": ser_value(&conditions.relations),
-        },
-        "discrete_updates": {
-            "real_updates_f_z": ser_value(&discrete.real_updates),
-            "valued_updates_f_m": ser_value(&discrete.valued_updates),
-        },
-        "events": {
-            "synthetic_root_conditions": ser_value(&events.synthetic_root_conditions),
-            "scheduled_time_events": ser_value(&events.scheduled_time_events),
-        },
-    })
+    Stage::info(awaiting_remodel_note(
+        "the events phase",
+        "an event condition became a boolean algebra (Initial, Always, Relation, \
+         Discrete, Clock, Not, And, Or, AnyRise) rather than an equation, and a root \
+         became a relation paired with its activation",
+    ))
 }
 
 /// Solve lowering (phase 8) — the DAE lowered to a `SolveModel`, the
