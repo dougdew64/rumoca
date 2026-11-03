@@ -129,7 +129,7 @@ step in lockstep.
 2. In the running HRW, load **ProportionalLoop**. Navigate to Structural →
    Matching sub-view. You should see the recorded animation (tier 2) and the
    **"Debug"** button.
-3. **Now** open `crates/rumoca-phase-structural/src/live_trace.rs` in VS Code.
+3. **Now** open `hrw/src/live_trace.rs` in VS Code.
    Find the function `live_trace_breakpoint` (near the bottom of the file) and
    set a breakpoint on the `black_box` line inside it. This dedicated
    `#[inline(never)]` function is the unambiguous breakpoint site — do **not**
@@ -311,7 +311,7 @@ This tier connects each line of Tarjan's DFS to its textbook description.
 2. In the running HRW, load **MixedLoop**. Navigate to Structural → BLT
    sub-view.
 3. **Now** set a breakpoint on the `live_trace_breakpoint` function in
-   `crates/rumoca-phase-structural/src/live_trace.rs` (same site as matching).
+   `hrw/src/live_trace.rs` (same site as matching).
 4. Click **"Debug"**. The algorithm thread spawns, and after the inter-frame
    delay, hits your breakpoint.
 5. **Continue** (F5) to advance one frame at a time. HRW updates between

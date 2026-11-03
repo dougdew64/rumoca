@@ -114,7 +114,7 @@ Grep the symbol. Each is a short declaration that carries the idiom in a form yo
 | exhaustive `match` on it | `expr_format`'s main `match expr` | [`hrw/src/expr_format.rs`](../src/expr_format.rs) | twenty `Expression::` arms and no `_ =>`, deliberately: adding a variant to the enum breaks this function's build, which is the point |
 | `if let` on one arm | `if let Expression::Binary { op: child_op, .. } = child` | same file | the `..` is "ignore the other fields" |
 | generic bound + `match` on `Result` + macro | `fn from_ser<T: serde::Serialize>(v: &T) -> Self` | [`hrw/src/worker.rs`](../src/worker.rs) | five lines that use six rows. See § 3 |
-| `?` | `let zero = self.emit_const_at(0.0, span)?;` | [`rumoca-phase-solve/src/lower/array_values/builtins.rs`](../../crates/rumoca-phase-solve/src/lower/array_values/builtins.rs) | every `?` in that function is an early return of the error to the caller; the function's own `-> Result<…>` is what permits it |
+| `?` | `let value_start = self.constant(0.0, span)?;` | [`rumoca-phase-solve/src/lower/scalar/builtins.rs`](../../crates/rumoca-phase-solve/src/lower/scalar/builtins.rs) | every `?` in that function is an early return of the error to the caller; the function's own `-> Result<…>` is what permits it |
 | `pub(crate)` | `pub(crate) fn record_cache_file_access` | [`rumoca-compile/src/cache.rs`](../../crates/rumoca-compile/src/cache.rs) | callable from anywhere inside `rumoca-compile`, invisible to `hrw` |
 | `Arc<Mutex<…>>` | `type CopySink = std::sync::Arc<std::sync::Mutex<Option<String>>>;` | [`hrw/src/app.rs`](../src/app.rs) | shared across threads, data reachable only through the lock |
 | `Arc<AtomicBool>` | `live_done: Arc<AtomicBool>` | [`hrw/src/playback.rs`](../src/playback.rs) | the C++ `std::atomic<bool>` behind a `shared_ptr` |
@@ -197,13 +197,21 @@ instrumentation where one appears, and it says the observer outlives the phase.
 
 ## 4. How much `unsafe` there is, and where
 
-A C++ reader expects `unsafe` to be everywhere. It is not. Across `crates/*/src` there are 72
-occurrences, and they cluster at the edges where Rust meets something it cannot see the contract
-of: the CUDA driver (`rumoca-exec-mlir/src/cuda_driver.rs`, 31), Cranelift code emission
-(`rumoca-exec-cranelift/src/emit.rs`, 12), and the MLIR compile path. In the phases you will
-actually read — parse through solve, `rumoca-compile`, `rumoca-core` — it appears in **three
-files**, all in `rumoca-phase-structural`'s `dae_prepare/`. HRW's own eighteen are all one thing:
-the `libc` pipe and `dup2` calls that capture a compile's stderr in `worker.rs`.
+A C++ reader expects `unsafe` to be everywhere. It is not. *Re-measured 2026-11-03 on v0.10.0:*
+across `crates/*/src` there are 96 occurrences, and they cluster at the edges where Rust meets
+something it cannot see the contract of — the CUDA driver (`rumoca-exec-mlir/src/cuda_driver.rs`,
+31), Cranelift code emission (`rumoca-exec-cranelift/src/emit.rs`, 17), and the MLIR compile path
+(`rumoca-exec-mlir/src/compile.rs`, 12).
+
+**In the phases you will actually read — parse, instantiate, typecheck, flatten, DAE
+construction, structural analysis, solve lowering, plus `rumoca-compile` and `rumoca-core` —
+there is now NONE AT ALL.** Nine crates, zero occurrences. On 0.9.20 there were three files, all
+in `rumoca-phase-structural`'s `dae_prepare/`, and the rewrite that replaced that module took the
+last of it with them. So the stance below is stronger than it was: on the reading path, the
+compiler's guarantees are not merely mostly intact, they are unbroken.
+
+HRW's own eighteen are all one thing: the `libc` pipe and `dup2` calls that capture a compile's
+stderr in `worker.rs`.
 
 So the reading stance is: the compiler's guarantees hold on every line you are likely to be
 looking at, and where they are suspended, a doc comment says why.

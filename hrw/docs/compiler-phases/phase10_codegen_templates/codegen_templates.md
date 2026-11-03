@@ -1,5 +1,14 @@
 # Phase 10: Code Generation and Templates
 
+<!-- historical: rumoca-phase-codegen/src/codegen/render_c.rs -->
+
+> ## ⚠ PATHS IN THIS DOCUMENT NAME RUMOCA 0.9.20
+>
+> `rumoca-phase-codegen/src/codegen/render_c.rs` is gone. Codegen is the phase HRW observes least, so this document has had the least attention on this rebase; treat all of it as 0.9.20 rather than only the path.
+>
+> **Kept rather than repointed at the nearest surviving filename**, which would make the document *look* verified while its mechanism prose stayed wrong.
+> `doc_citations::historical_citations_are_really_gone` fails if any path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
+
 ## Overview
 
 Rumoca's code generation is **template-driven**: a Jinja2-compatible template

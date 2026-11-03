@@ -304,11 +304,11 @@ classifies these variables and equations into the MLS Appendix B partition.
 
 ## Two different "connection graphs", and only one is confined to this phase
 
-*Verified 2026-08-12 against `crates/rumoca-phase-flatten/src/connections/mod.rs` and
-`crates/rumoca-phase-dae/src/overconstrained_interface.rs`* — read while answering Doug's question
-*"is the connection graph something which exists only in the Flatten stage?"* The private types, the
-two union-finds and the DAE phase's separate spanning-tree check were all read directly; §3 below is
-explicitly marked as not verified.
+*Verified 2026-11-03 against `crates/rumoca-phase-flatten/src/connections/mod.rs` and
+`crates/rumoca-phase-flatten/src/vcg.rs`* — read while answering Doug's question *"is the connection
+graph something which exists only in the Flatten stage?"*, and re-read on the v0.10.0 rebase, which
+**moved the overconstrained check into Flatten** and so changed part of the answer (§2). The private
+types and the union-finds were read directly; §3 below is explicitly marked as not verified.
 
 **Held here rather than in `fixture-labs/connect-expansion.md` — Doug's call:** *"past the level of
 useful detail for this lab."* It is the right answer for a later, deeper pass.
@@ -363,16 +363,33 @@ have been read as fact.
 + flatten with an observer to show this graph, because the frames exist only while the pass runs.
 A labelled derived view, permitted precisely because it is labelled.
 
-**2. The overconstrained-connector graph (MLS §9.4) — outlives Flatten.**
+**2. The overconstrained-connector graph (MLS §9.4) — its inputs outlive Flatten; its check no
+longer does.**
 
 A different question: *is the user's declared spanning tree legal?* Driven by
-`Connections.branch/root/potentialRoot`. The flat model **retains** `branches` and `definite_roots`,
-and `crates/rumoca-phase-dae/src/overconstrained_interface.rs` runs its **own** union-find over
-`flat.branches` to reject a required edge that closes a cycle (CONN-014) and two definite roots in
-one tree (CONN-015), via `ToDaeError::InvalidConnectionGraph`.
+`Connections.branch/root/potentialRoot`. The flat model still **retains** `branches` and
+`definite_roots` (`crates/rumoca-ir-flat/src/lib.rs`), so the declared edges are readable
+downstream.
 
-So "does the connection graph survive Flatten?" has opposite answers for the two graphs, and the
-curated specimens exercise only the first — `RcCircuit` has no `Connections.branch` at all.
+**But v0.10.0 moved the validation into Flatten, and that inverts half of this section's
+answer.** `crates/rumoca-phase-flatten/src/vcg.rs` now implements the VCG algorithm itself: it
+pre-scans equations for `Connections.branch/root/potentialRoot`, derives optional edges from
+`connect()` statements on overconstrained connectors, builds a spanning tree per connected
+component, and rejects a required edge closing a cycle (CONN-014) or two definite roots in one tree
+(CONN-015) — as **`FlattenError::InvalidConnectionGraph`**, not the DAE phase's `ToDaeError`.
+`crates/rumoca-phase-dae` no longer contains the word *overconstrained*.
+
+**And the spanning tree is not only validated here, it is USED here.** `VcgResult` carries
+`is_root` and `rooted` maps, which answer MLS §9.4's `Connections.isRoot(N)` and
+`Connections.rooted(a, b)` during boolean evaluation — so the tree Rumoca selects decides which
+conditional equations survive flattening. That is a load-bearing result produced inside the phase,
+not a check deferred past it.
+
+So "does the connection graph survive Flatten?" now splits three ways rather than two: the
+`connect`-expansion graph is **destroyed** and recoverable only from the equations it generated; the
+overconstrained graph's **inputs** are retained in the flat model; and its **spanning tree** is
+built, consumed and discarded inside the phase. The curated specimens exercise only the first —
+`RcCircuit` has no `Connections.branch` at all.
 
 **3. Unverified, and a candidate for `upstream-issues.md` rather than a claim.**
 
