@@ -10,14 +10,39 @@
 //! so the emitted SCC sequence is byte-identical to the recursive form's --
 //! `build_blt_blocks` depends on that order being the BLT evaluation order.
 
+use crate::observation::{StructuralEvent, StructuralObserver, TarjanStep};
+
 /// Find all strongly connected components using Tarjan's algorithm.
 ///
 /// Returns SCCs in reverse topological order. Each SCC is a `Vec` of node indices.
 pub(crate) fn tarjan_scc(n: usize, adj: &[Vec<usize>]) -> Vec<Vec<usize>> {
+    tarjan_scc_with_observer(n, adj, None, &mut ())
+}
+
+/// [`tarjan_scc`], reporting each traversal step to `observer`.
+///
+/// `equation_of_node` states this traversal's numbering: `Some` when the node
+/// set was condensed, so node `i` is equation `equation_of_node[i]`; `None`
+/// when nodes are equation indices directly. A caller that condensed its graph
+/// and passed `None` would have every reported index name the wrong row, so
+/// the parameter is required rather than defaulted.
+pub(crate) fn tarjan_scc_with_observer(
+    n: usize,
+    adj: &[Vec<usize>],
+    equation_of_node: Option<&[usize]>,
+    observer: &mut impl StructuralObserver,
+) -> Vec<Vec<usize>> {
     let mut state = TarjanState::new(n);
+    state.emit(
+        observer,
+        TarjanStep::Start {
+            n_nodes: n,
+            equation_of_node,
+        },
+    );
     for v in 0..n {
         if state.index[v].is_none() {
-            state.strongconnect(v, adj);
+            state.strongconnect(v, adj, observer);
         }
     }
     state.sccs
@@ -54,37 +79,65 @@ impl TarjanState {
         }
     }
 
-    fn strongconnect(&mut self, root: usize, adj: &[Vec<usize>]) {
-        self.enter(root);
+    /// Hand one traversal step and the state it left behind to the observer.
+    ///
+    /// `()` compiles this to nothing, so the untraced path pays only the
+    /// borrows of `stack` and `sccs` that it already holds.
+    fn emit(&self, observer: &mut impl StructuralObserver, step: TarjanStep<'_>) {
+        observer.observe(StructuralEvent::Tarjan {
+            step,
+            stack: &self.stack,
+            sccs_so_far: &self.sccs,
+        });
+    }
+
+    fn strongconnect(
+        &mut self,
+        root: usize,
+        adj: &[Vec<usize>],
+        observer: &mut impl StructuralObserver,
+    ) {
+        self.enter(root, observer);
         self.frames.push(TarjanFrame {
             node: root,
             cursor: 0,
         });
         while let Some(frame) = self.frames.last().copied() {
-            match self.next_child(frame, adj) {
-                Some(child) => self.descend(child),
-                None => self.finish_node(frame.node),
+            match self.next_child(frame, adj, observer) {
+                Some(child) => self.descend(child, observer),
+                None => self.finish_node(frame.node, observer),
             }
         }
     }
 
-    fn enter(&mut self, node: usize) {
+    fn enter(&mut self, node: usize, observer: &mut impl StructuralObserver) {
         self.index[node] = Some(self.index_counter);
         self.lowlink[node] = self.index_counter;
         self.index_counter += 1;
         self.stack.push(node);
         self.on_stack[node] = true;
+        // Emitted after the state update, so the reported stack already
+        // contains the node the step announces.
+        self.emit(observer, TarjanStep::Visit(node));
     }
 
     /// Scan `frame.node`'s adjacency from its cursor, folding already-visited
     /// on-stack neighbours into the lowlink, and return the first unvisited
     /// child to descend into.
-    fn next_child(&mut self, frame: TarjanFrame, adj: &[Vec<usize>]) -> Option<usize> {
+    fn next_child(
+        &mut self,
+        frame: TarjanFrame,
+        adj: &[Vec<usize>],
+        observer: &mut impl StructuralObserver,
+    ) -> Option<usize> {
         let neighbors = adj.get(frame.node)?;
         let mut cursor = frame.cursor;
         while let Some(&w) = neighbors.get(cursor) {
             cursor += 1;
+            let from = frame.node;
+            self.emit(observer, TarjanStep::ExploreEdge { from, to: w });
             if self.index[w].is_none() {
+                self.emit(observer, TarjanStep::TreeEdge { from, to: w });
                 self.set_cursor(cursor);
                 return Some(w);
             }
@@ -92,6 +145,7 @@ impl TarjanState {
                 let child_index =
                     self.index[w].expect("tarjan invariant: on-stack node must have index");
                 self.lowlink[frame.node] = self.lowlink[frame.node].min(child_index);
+                self.emit(observer, TarjanStep::BackEdge { from, to: w });
             }
         }
         self.set_cursor(cursor);
@@ -104,8 +158,8 @@ impl TarjanState {
         }
     }
 
-    fn descend(&mut self, child: usize) {
-        self.enter(child);
+    fn descend(&mut self, child: usize, observer: &mut impl StructuralObserver) {
+        self.enter(child, observer);
         self.frames.push(TarjanFrame {
             node: child,
             cursor: 0,
@@ -114,19 +168,28 @@ impl TarjanState {
 
     /// Pop `node`, propagating its lowlink to its parent -- the recursive
     /// form's post-call `lowlink[v] = min(lowlink[v], lowlink[w])`.
-    fn finish_node(&mut self, node: usize) {
+    fn finish_node(&mut self, node: usize, observer: &mut impl StructuralObserver) {
         self.frames.pop();
         if self.lowlink[node]
             == self.index[node].expect("tarjan invariant: visited node must have index")
         {
-            self.pop_scc(node);
+            self.pop_scc(node, observer);
         }
         if let Some(parent) = self.frames.last().copied() {
             self.lowlink[parent.node] = self.lowlink[parent.node].min(self.lowlink[node]);
+            // The recursive form's post-call lowlink fold, which is what
+            // `Return` names. A root pop has no parent and so no `Return`.
+            self.emit(
+                observer,
+                TarjanStep::Return {
+                    from: parent.node,
+                    to: node,
+                },
+            );
         }
     }
 
-    fn pop_scc(&mut self, root: usize) {
+    fn pop_scc(&mut self, root: usize, observer: &mut impl StructuralObserver) {
         let mut scc = Vec::new();
         loop {
             let w = self
@@ -140,6 +203,19 @@ impl TarjanState {
             }
         }
         self.sccs.push(scc);
+        // Emitted after the push, so `sccs_so_far` includes the component the
+        // step announces; `members` borrows that same entry rather than a
+        // clone of it.
+        let members = self
+            .sccs
+            .last()
+            .map(Vec::as_slice)
+            .expect("just pushed this component");
+        observer.observe(StructuralEvent::Tarjan {
+            step: TarjanStep::SccFound { root, members },
+            stack: &self.stack,
+            sccs_so_far: &self.sccs,
+        });
     }
 }
 
