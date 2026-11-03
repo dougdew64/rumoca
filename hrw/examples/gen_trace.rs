@@ -52,14 +52,6 @@ fn uppercase_drive_letter(path: &str) -> String {
     }
 }
 
-fn msl_roots() -> Vec<PathBuf> {
-    let base = format!("{}/vendor/msl", env!("CARGO_MANIFEST_DIR"));
-    vec![
-        PathBuf::from(format!("{base}/Modelica 4.1.0")),
-        PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-        PathBuf::from(format!("{base}/Complex.mo")),
-    ]
-}
 
 fn main() {
     let arg = std::env::args().nth(1).unwrap_or_else(|| {
@@ -134,7 +126,7 @@ fn generate_trace(name: &str) -> Result<(), String> {
         .map_err(|e| format!("read {}: {e}", specimen.display()))?;
 
     let FromWorker::Compiled { model, stages, .. } =
-        compile_specimen(&specimen, msl_roots()).map_err(|e| format!("compile: {e}"))?
+        compile_specimen(&specimen, hrw::msl_roots()).map_err(|e| format!("compile: {e}"))?
     else {
         return Err("expected a Compiled result".into());
     };
@@ -190,7 +182,7 @@ fn generate_trace(name: &str) -> Result<(), String> {
     // --- Simulation trace ---
     let can_simulate = stages.solve_lowering.value.is_some();
     let sim_result = if can_simulate {
-        match simulate_specimen(&specimen, &model, SIM_T_END, msl_roots()) {
+        match simulate_specimen(&specimen, &model, SIM_T_END, hrw::msl_roots()) {
             Ok(data) => {
                 // **The library's writer, shared with the live bridge since
                 // 2026-09-04.** A second copy here would make the committed baseline

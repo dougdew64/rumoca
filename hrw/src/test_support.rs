@@ -30,7 +30,12 @@ fn specimen_dir() -> PathBuf {
 /// Uses the **uncached** entry point for the same reason the worker does: the
 /// cached one returns a previous `PhaseResult` without running the phases, and
 /// a test whose subject is "the phase produced this" must actually run it.
-pub fn dae_for(model: &str) -> Option<rumoca_ir_dae::Dae> {
+/// **Returns the `Arc`, because 0.10.0's `Dae` is not `Clone`.**
+/// `CompilationResult::dae` is an `Arc<Dae>`; upstream made the type
+/// immutable and valid-by-construction, and declining `Clone` is part of
+/// that. Every caller reads through `inspect`, which borrows, so sharing is
+/// what they wanted anyway.
+pub fn dae_for(model: &str) -> Option<std::sync::Arc<rumoca_ir_dae::Dae>> {
     let path = specimen_dir().join(format!("{model}.mo"));
     let source = std::fs::read_to_string(&path).ok()?;
 
@@ -55,7 +60,13 @@ mod tests {
     fn a_known_specimen_compiles_to_a_dae() {
         let dae = super::dae_for("ProportionalLoop")
             .expect("ProportionalLoop is a checked-in specimen and must compile");
-        assert!(!dae.continuous.equations.is_empty());
+        // `Dae`'s fields are private on 0.10.0; `inspect` is the way in.
+        dae.inspect(|view| {
+            assert!(
+                view.continuous_equation_count() > 0,
+                "ProportionalLoop must produce continuous equations"
+            );
+        });
     }
 }
 
