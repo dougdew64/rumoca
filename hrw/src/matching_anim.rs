@@ -1104,15 +1104,33 @@ mod tests {
             "frame 0 must be the starting point; found {:?}",
             steps[0],
         );
-        // Frame 4 is the one a lab would cite for "der(phi) gets matched".
+        // **The equations are processed 1 then 0, and that is 0.10.0 being
+        // deliberate rather than arbitrary.** `kuhn_equation_order` runs
+        // *untargeted* equations first and *targeted* ones last, so a targeted
+        // equation gets the final augmenting-path opportunity to reclaim its
+        // causal target. `explicit_derivative_preferences` gives equation 0 a
+        // preference here, so it goes second.
+        //
+        // The old pinned sequence had 0 first, because it came from re-running
+        // matching over the published matrix with no preferences supplied. Same
+        // nine frames, different transversal order — which is exactly the
+        // divergence between a re-run and the compile that this test now
+        // cannot miss.
+        //
+        // **Every lab citing a frame number here has moved**, and that is the
+        // mechanical response this test's doc prescribes: re-run
+        // `examples/frame_index` and update the citations. See
+        // `docs/updating-rumoca.md` step 6.
         assert!(
-            matches!(steps[4], MatchingStep::Assign { eq: 0, var: 0 }),
-            "frame 4 must be the assignment of the first unknown; found {:?}",
+            matches!(steps[4], MatchingStep::Assign { eq: 1, var: 1 }),
+            "frame 4 must be the assignment of the untargeted equation, which runs \
+             first; found {:?}",
             steps[4],
         );
         assert!(
-            matches!(steps[8], MatchingStep::Assign { eq: 1, var: 1 }),
-            "frame 8 must be the assignment of the second; found {:?}",
+            matches!(steps[8], MatchingStep::Assign { eq: 0, var: 0 }),
+            "frame 8 must be the assignment of the equation holding a causal \
+             preference, which runs last; found {:?}",
             steps[8],
         );
     }

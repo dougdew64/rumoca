@@ -1281,10 +1281,14 @@ pub enum FromWorker {
         /// families out of the node set and run over a renumbered graph. Each
         /// segment opens with the `Start` carrying its `equation_of_node` map.
         tarjan_frames: Vec<Vec<rumoca_phase_structural::TarjanRecord>>,
-        /// Tearing decisions, **one segment per pass** — up to two per coupled
-        /// block, since the planner tries both tear priorities and keeps the
-        /// smaller set. The `PlanSelected` step names the pass that was
-        /// adopted; the other describes a plan the compiler discarded.
+        /// Tearing decisions, **one segment per coupled block**, opening with
+        /// the `BlockStart` that declares the block's ordinal.
+        ///
+        /// A block holds up to two passes inside its segment, since the
+        /// planner tries both tear priorities and keeps the smaller set; the
+        /// `PlanSelected` step names the one adopted and the other describes a
+        /// plan the compiler discarded. Segmenting by *pass* instead would cut
+        /// a block in two, which is what every consumer addresses.
         tearing_frames: Vec<Vec<rumoca_phase_structural::TearingRecord>>,
         // **The index-reduced system's own three searches are gone with the
         // funnel.** They came from re-running reduction on a cloned DAE, which
@@ -4194,14 +4198,14 @@ pub struct StructuralFrames {
     /// so each segment's opening `Start` carries the `equation_of_node` map
     /// that makes its indices readable — see `tarjan_runs()`.
     pub tarjan: Vec<Vec<rumoca_phase_structural::TarjanRecord>>,
-    /// Tearing decisions, **one segment per pass**, in the order the passes
-    /// ran — a flat list would splice several loops into one replay.
+    /// Tearing decisions, **one segment per coupled block**, in BLT order - a
+    /// flat list would splice several loops into one replay.
     ///
-    /// One coupled block contributes *up to two* passes, because the planner
-    /// runs the greedy search under both tear priorities and keeps the smaller
-    /// tear set. The `PlanSelected` step closing a block names the priority
-    /// whose pass was adopted; the other pass describes a plan the compiler
-    /// discarded.
+    /// Each segment opens with the `BlockStart` declaring its ordinal, which
+    /// is what lets a consumer match it against the report's coupled blocks
+    /// rather than counting. Inside, a block holds up to two passes under
+    /// different tear priorities, closed by the `PlanSelected` naming the one
+    /// adopted.
     pub tearing: Vec<Vec<rumoca_phase_structural::TearingRecord>>,
 }
 
@@ -4263,10 +4267,20 @@ fn structural_stage(result: Option<&PhaseResult>, source: &str) -> (Stage, Struc
             .into_iter()
             .map(|run| run.into_iter().cloned().collect())
             .collect(),
+        // **`tearing_blocks`, not `tearing_passes`.** Every consumer addresses
+        // a *block* — `TearingAnimation::from_captured` matches each segment's
+        // opening `BlockStart` ordinal against the report's coupled blocks, and
+        // the view draws block-local indices against that block's rows.
+        //
+        // Splitting by pass produced two segments for one coupled block: the
+        // `BlockStart` alone, then the pass. `from_captured` then refused, and
+        // `a_real_algebraic_loop_is_traced_end_to_end` caught it — a producer
+        // and a consumer disagreeing about the unit, which is the exact
+        // mismatch `BlockStart` was added to make impossible.
         tearing: trace
-            .tearing_passes()
+            .tearing_blocks()
             .into_iter()
-            .map(|pass| pass.into_iter().cloned().collect())
+            .map(|block| block.into_iter().cloned().collect())
             .collect(),
     };
     let stage = cr.dae.inspect(|view| {
