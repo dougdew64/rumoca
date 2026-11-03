@@ -3344,6 +3344,12 @@ What the stop still cannot do is **show** the differentiations. They are in the 
 maintains**. Its own doc comment is candid: *"HRW mirrors Rumoca's funnel order… re-verify it
 against `rumoca-sim/src/solve_lowering/structural_lowering.rs` on a Rumoca pin bump."*
 
+<!-- historical: rumoca-sim/src/solve_lowering/structural_lowering.rs -->
+
+*(The quoted path named 0.9.20 and is kept verbatim: this file is history, and the pin bump the
+comment anticipated turned out to be the v0.10.0 rebase, which deleted both the funnel and HRW's
+mirror of it. The tag keeps that checkable without editing the record.)*
+
 **The steps are Rumoca's and the data is Rumoca's; the ORDER is HRW's.** Under `CLAUDE.md` that is
 a legitimate derived view — *"re-running a phase to observe it is sometimes the only way to see
 inside it, and that is legitimate when labelled."*
