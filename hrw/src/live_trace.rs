@@ -187,6 +187,73 @@ pub fn live_trace_breakpoint(frame_index: usize) {
     std::hint::black_box(LAST_FRAME_INDEX.load(Ordering::Acquire));
 }
 
+/// Spawn a live-debug thread that runs **the real structural analysis** over
+/// `dae` and streams the steps `select` accepts into a [`LiveTrace`].
+///
+/// Returns the receiver the animation drains and the flag it polls for
+/// completion, or `None` if the thread could not be spawned.
+///
+/// # Why this runs `sort` rather than the one algorithm being animated
+///
+/// Each animation used to re-run its own algorithm on data reconstructed from
+/// the pane — `maximum_matching` over the incidence rows the matrix widget was
+/// showing, and for tearing a hand-rolled block-local incidence plus its own
+/// matching and BLT. Two problems with that, and the second is the serious one:
+///
+/// - It needed `maximum_matching`, `build_dependency_graph` and `blt`, none of
+///   which are public on 0.10.0 — reconstruction is no longer even possible
+///   from outside the crate.
+/// - **The pane's rows are a projection, not the system.** Re-running an
+///   algorithm over them steps something adjacent to what the compiler did,
+///   and nothing would report the difference.
+///
+/// `observe_sort` runs the analysis Rumoca runs, over the DAE itself, and
+/// streams owned steps out as they happen. A live session is a genuine re-run
+/// — that is what was asked for, and `CLAUDE.md` is explicit that this is the
+/// legitimate kind — but it is now a re-run of **the same code over the same
+/// input**, which is the most a re-run can honestly be.
+///
+/// The analysis continues past the steps `select` wants (matching finishes,
+/// then Tarjan, then tearing). That costs a little work after the last frame
+/// and is why `done` is set when `observe_sort` *returns*, not when the last
+/// accepted record is pushed.
+pub fn spawn_structural_live<F, S>(
+    dae: std::sync::Arc<rumoca_ir_dae::Dae>,
+    frame_delay: Duration,
+    thread_name: &str,
+    select: S,
+) -> Option<(mpsc::Receiver<F>, Arc<std::sync::atomic::AtomicBool>)>
+where
+    F: Send + 'static,
+    S: Fn(rumoca_phase_structural::StructuralRecord) -> Option<F> + Send + 'static,
+{
+    let (lt, rx) = LiveTrace::new();
+    let lt = lt.with_frame_delay(frame_delay);
+    let done = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let done_for_thread = Arc::clone(&done);
+
+    std::thread::Builder::new()
+        .name(thread_name.to_owned())
+        .spawn(move || {
+            lt.wait_for_debugger();
+            // Where HRW's `LiveTrace` meets the phase's sink. The phase crate
+            // never learns `LiveTrace` exists: `observe_sort` takes
+            // `impl FnMut(StructuralRecord)`, so the observation seam stays
+            // free of any HRW type.
+            dae.inspect(|view| {
+                let _ = rumoca_phase_structural::observe_sort(view, |record| {
+                    if let Some(frame) = select(record) {
+                        lt.push(frame);
+                    }
+                });
+            });
+            done_for_thread.store(true, std::sync::atomic::Ordering::Release);
+        })
+        .ok()?;
+
+    Some((rx, done))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

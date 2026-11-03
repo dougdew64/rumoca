@@ -21,8 +21,7 @@ use std::thread;
 
 use eframe::egui;
 
-use crate::live_trace::LiveTrace;
-use rumoca_phase_structural::matching::{MatchingFrame, MatchingStep, maximum_matching_with_trace};
+use rumoca_phase_structural::{MatchingRecord, MatchingStep, StructuralRecord};
 
 use crate::canvas::Canvas;
 use crate::incidence_view::IncidenceMatrix;
@@ -39,7 +38,7 @@ pub struct MatchingAnimation {
     /// Cursor, timing and live-session state — see [`Playback`]. The three
     /// animation views used to declare those seven fields each; now only the
     /// matrix geometry below is this view's own.
-    playback: Playback<MatchingFrame>,
+    playback: Playback<MatchingRecord>,
     n_eq: usize,
     n_var: usize,
     equation_names: Vec<String>,
@@ -143,7 +142,7 @@ impl MatchingAnimation {
     /// artifact here, so it is held to the rule too.)*
     pub fn from_captured_frames(
         mat: &IncidenceMatrix,
-        frames: &[rumoca_phase_structural::matching::MatchingFrame],
+        frames: &[rumoca_phase_structural::MatchingRecord],
     ) -> Option<Self> {
         // **The frames must describe THIS matrix.**
         //
@@ -253,32 +252,26 @@ impl MatchingAnimation {
     /// fail to stop (`docs/ideas.md` #74). The anchor now clears only on the
     /// three events that end its reason to exist: a failed spawn, a specimen
     /// change, and app exit.
-    pub fn start_live(mat: &IncidenceMatrix, frame_delay: std::time::Duration) -> Option<Self> {
-        let (lt, rx) = LiveTrace::new();
-        let lt = lt.with_frame_delay(frame_delay);
-        let done = Arc::new(AtomicBool::new(false));
-        let done_for_thread = Arc::clone(&done);
-
-        let eq_vars: Vec<HashSet<usize>> = mat
-            .rows()
-            .iter()
-            .map(|cols| cols.iter().copied().collect())
-            .collect();
-        let n_eq = mat.n_eq();
-        let n_var = mat.n_var();
-
-        thread::Builder::new()
-            .name("matching-debug".to_owned())
-            .spawn(move || {
-                lt.wait_for_debugger();
-                // Where HRW's `LiveTrace` meets the phase's observer callback.
-                // The phase crate never learns `LiveTrace` exists — see
-                // `rumoca_core::FrameObserver`.
-                let observe = |f: &MatchingFrame| lt.push(f.clone());
-                maximum_matching_with_trace(n_eq, n_var, &eq_vars, Some(&observe));
-                done_for_thread.store(true, Ordering::Release);
-            })
-            .ok()?;
+    /// **Takes the DAE, not just the matrix, since the v0.10.0 rebase.** It
+    /// used to rebuild `eq_vars` from `mat.rows()` and re-run
+    /// `maximum_matching` over that — stepping a projection of the system
+    /// rather than the system. `spawn_structural_live` runs the analysis
+    /// Rumoca runs, over the DAE itself; the matrix is still needed for the
+    /// labels and geometry the pane draws.
+    pub fn start_live(
+        mat: &IncidenceMatrix,
+        dae: std::sync::Arc<rumoca_ir_dae::Dae>,
+        frame_delay: std::time::Duration,
+    ) -> Option<Self> {
+        let (rx, done) = crate::live_trace::spawn_structural_live(
+            dae,
+            frame_delay,
+            "matching-debug",
+            |record| match record {
+                StructuralRecord::Matching(matching) => Some(matching),
+                StructuralRecord::Tarjan(_) | StructuralRecord::Tearing(_) => None,
+            },
+        )?;
 
         Some(Self {
             playback: Playback::live(rx, done, FRAME_INTERVAL),
@@ -409,7 +402,7 @@ impl MatchingAnimation {
     /// state *at this frame*, not the final result. Watching "3 of 8" climb is
     /// the content of an augmenting-path algorithm; the final number says
     /// nothing about how it got there.
-    fn render_running_state(&self, ui: &mut egui::Ui, frame: &MatchingFrame) {
+    fn render_running_state(&self, ui: &mut egui::Ui, frame: &MatchingRecord) {
         let matched = frame.match_eq.iter().filter(|m| m.is_some()).count();
         ui.add_space(2.0);
         ui.horizontal_wrapped(|ui| {
@@ -619,6 +612,37 @@ impl MatchingAnimation {
                     crate::colors::ANIM_FAIL.gamma_multiply(0.2),
                 );
             }
+            // **Two phases that bracket Kuhn's, new on 0.10.0.** A seeded row
+            // was matched from a regular-family descriptor before the
+            // augmenting search began; a claimed preference was moved onto its
+            // causal target after the search finished. Both are drawn as a
+            // settled assignment rather than as exploration, because that is
+            // what they are — no path was searched for either.
+            MatchingStep::SeedStructured { eq, var }
+            | MatchingStep::ClaimedPreference { eq, var } => {
+                let rect = view.cell_rect(*var, *eq);
+                painter.rect_filled(
+                    rect,
+                    egui::CornerRadius::ZERO,
+                    crate::colors::ANIM_PATH_FOUND.gamma_multiply(0.6),
+                );
+                let center = rect.center();
+                let r = view.zoom() * 0.25;
+                painter.circle_filled(center, r, crate::colors::MATCHED_MARKER);
+            }
+            // The preference could not be taken without reducing the
+            // matching's cardinality, so the matching is **unchanged**. Drawn
+            // on the cell that was refused, not on a row: nothing about the
+            // equation failed, only this one target was unavailable.
+            MatchingStep::PreferenceUnavailable { eq, var } => {
+                let rect = view.cell_rect(*var, *eq);
+                painter.rect_stroke(
+                    rect,
+                    egui::CornerRadius::ZERO,
+                    egui::Stroke::new(2.0, crate::colors::ANIM_FAIL),
+                    egui::StrokeKind::Inside,
+                );
+            }
         }
 
         // A let-chain: both conditions in one `if`, which is the shape rustc
@@ -775,6 +799,46 @@ fn step_description(
                 eq_name(*eq),
             ),
         ),
+        // **Seeded before the augmenting search runs at all**, straight from a
+        // regular equation family's descriptor. Said plainly, because a reader
+        // watching Kuhn's would otherwise see rows already matched and have no
+        // account of why.
+        MatchingStep::SeedStructured { eq, var } => (
+            "\u{1f9f1}",
+            format!(
+                "Seeded from a regular family before the search begins: equation {} ({}) \
+                 \u{2194} variable {} ({})",
+                eq,
+                eq_name(*eq),
+                var,
+                var_name(*var),
+            ),
+        ),
+        // **After the search, not during it.** Rumoca prefers an equation to
+        // own its causal target where that costs no matching cardinality, so
+        // this phase can move an already-matched row.
+        MatchingStep::ClaimedPreference { eq, var } => (
+            "\u{1f3af}",
+            format!(
+                "Equation {} ({}) takes its causal target {} ({}) — the matching stayed \
+                 maximum, so the preference was free",
+                eq,
+                eq_name(*eq),
+                var,
+                var_name(*var),
+            ),
+        ),
+        MatchingStep::PreferenceUnavailable { eq, var } => (
+            "\u{1f6ab}",
+            format!(
+                "Equation {} ({}) cannot take its causal target {} ({}) without shrinking \
+                 the matching — left as it was",
+                eq,
+                eq_name(*eq),
+                var,
+                var_name(*var),
+            ),
+        ),
     }
 }
 
@@ -822,11 +886,11 @@ mod tests {
     /// produced the frame.
     #[test]
     fn frames_from_a_different_system_fall_back_instead_of_misaddressing() {
-        use rumoca_phase_structural::matching::{MatchingFrame, MatchingStep};
+        use rumoca_phase_structural::{MatchingRecord, MatchingStep};
 
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
         let wrong_size = mat.n_eq() + 5;
-        let alien = vec![MatchingFrame {
+        let alien = vec![MatchingRecord {
             step: MatchingStep::TryEquation(0),
             match_eq: vec![None; wrong_size],
         }];
@@ -842,7 +906,7 @@ mod tests {
 
         // Non-vacuity: a correctly sized capture IS used, so the check above is not
         // passing because the capture path never works.
-        let fitting = vec![MatchingFrame {
+        let fitting = vec![MatchingRecord {
             step: MatchingStep::TryEquation(0),
             match_eq: vec![None; mat.n_eq()],
         }];
@@ -869,14 +933,14 @@ mod tests {
     /// about it. Still a proxy rather than an identity, and strictly stronger.
     #[test]
     fn frames_that_match_in_size_but_address_missing_columns_are_refused() {
-        use rumoca_phase_structural::matching::{MatchingFrame, MatchingStep};
+        use rumoca_phase_structural::{MatchingRecord, MatchingStep};
 
         let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
         // Right number of equations, but matched to a column beyond this matrix —
         // the shape of a capture from a wider system of the same height.
         let mut match_eq = vec![None; mat.n_eq()];
         match_eq[0] = Some(mat.n_var() + 3);
-        let same_size_different_system = vec![MatchingFrame {
+        let same_size_different_system = vec![MatchingRecord {
             step: MatchingStep::TryEquation(0),
             match_eq,
         }];
