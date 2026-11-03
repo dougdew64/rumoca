@@ -317,6 +317,42 @@ pub enum StructuralRecord {
     Tearing(TearingRecord),
 }
 
+impl StructuralRecord {
+    /// Resolve every borrow in one event into owned values.
+    ///
+    /// Both observers that do real work go through here rather than each
+    /// owning a copy of the conversion. Two copies is precisely the defect
+    /// this module was written to remove: they agree only while both are
+    /// maintained, and a live view disagreeing with a replay of the same model
+    /// is exactly the kind of divergence nothing would catch.
+    fn from_event(event: StructuralEvent<'_>) -> Self {
+        match event {
+            StructuralEvent::Matching { step, match_eq } => Self::Matching(MatchingRecord {
+                step,
+                match_eq: match_eq.to_vec(),
+            }),
+            StructuralEvent::Tarjan {
+                step,
+                stack,
+                sccs_so_far,
+            } => Self::Tarjan(TarjanRecord {
+                step: step.into(),
+                stack: stack.to_vec(),
+                sccs_so_far: sccs_so_far.to_vec(),
+            }),
+            StructuralEvent::Tearing {
+                step,
+                tears_so_far,
+                causal_so_far,
+            } => Self::Tearing(TearingRecord {
+                step,
+                tears_so_far: tears_so_far.to_vec(),
+                causal_so_far: causal_so_far.to_vec(),
+            }),
+        }
+    }
+}
+
 /// The owned report [`crate::inspect_sort`] returns: every step the traced
 /// call actually observed, in the order it observed them.
 ///
@@ -395,6 +431,35 @@ fn group_by_start<T>(
     groups
 }
 
+/// An observer that hands each step to a sink the moment it happens, instead
+/// of accumulating them.
+///
+/// [`StructuralRecorder`] cannot serve a caller that is *watching* a search
+/// rather than reading it afterwards: with a breakpoint set inside matching,
+/// a batch report delivers nothing until the whole analysis has finished, so
+/// there is no step to show while the search is stopped. This delivers one
+/// owned record per step as it is observed.
+///
+/// It records exactly what the recorder records --
+/// `streaming_sees_the_same_records_the_batch_report_collects` pins that --
+/// so a live view and a replay of the same model cannot disagree about what
+/// happened.
+pub(crate) struct StructuralStreamer<F> {
+    sink: F,
+}
+
+impl<F: FnMut(StructuralRecord)> StructuralStreamer<F> {
+    pub(crate) const fn new(sink: F) -> Self {
+        Self { sink }
+    }
+}
+
+impl<F: FnMut(StructuralRecord)> StructuralObserver for StructuralStreamer<F> {
+    fn observe(&mut self, event: StructuralEvent<'_>) {
+        (self.sink)(StructuralRecord::from_event(event));
+    }
+}
+
 /// The one [`StructuralObserver`] outside `()` this crate builds: it clones
 /// each borrowed event into an owned [`StructuralRecord`], which is exactly
 /// the work `()` skips on every other call.
@@ -413,33 +478,7 @@ impl StructuralRecorder {
 
 impl StructuralObserver for StructuralRecorder {
     fn observe(&mut self, event: StructuralEvent<'_>) {
-        let record = match event {
-            StructuralEvent::Matching { step, match_eq } => {
-                StructuralRecord::Matching(MatchingRecord {
-                    step,
-                    match_eq: match_eq.to_vec(),
-                })
-            }
-            StructuralEvent::Tarjan {
-                step,
-                stack,
-                sccs_so_far,
-            } => StructuralRecord::Tarjan(TarjanRecord {
-                step: step.into(),
-                stack: stack.to_vec(),
-                sccs_so_far: sccs_so_far.to_vec(),
-            }),
-            StructuralEvent::Tearing {
-                step,
-                tears_so_far,
-                causal_so_far,
-            } => StructuralRecord::Tearing(TearingRecord {
-                step,
-                tears_so_far: tears_so_far.to_vec(),
-                causal_so_far: causal_so_far.to_vec(),
-            }),
-        };
-        self.records.push(record);
+        self.records.push(StructuralRecord::from_event(event));
     }
 }
 
