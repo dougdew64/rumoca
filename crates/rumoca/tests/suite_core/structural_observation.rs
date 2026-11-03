@@ -187,6 +187,70 @@ fn a_torn_block_reports_the_plan_it_actually_adopted() {
     });
 }
 
+/// The owned report and the trace must describe the same single run.
+///
+/// A consumer that wants both cannot assemble them from `inspect_sort`,
+/// because `SortedDae` is branded to the inspected root and cannot leave the
+/// closure — it would have to sort twice, and two sorts are two runs. So this
+/// pins the two halves against each other: the matching the trace ends on must
+/// have exactly as many matched equations as the report names pairs.
+#[test]
+fn the_report_and_the_trace_describe_one_run() {
+    let compiled = compile(COUPLED_LOOP, "CoupledLoop");
+    let (report, trace) = compiled
+        .dae
+        .inspect(|view| structural::inspect_structural_report(view));
+    let report = report.expect("CoupledLoop is a well-posed square system");
+
+    let final_matching = trace
+        .matching()
+        .last()
+        .map(|record| record.match_eq.clone())
+        .expect("matching reported at least one step");
+    assert_eq!(
+        final_matching.iter().filter(|entry| entry.is_some()).count(),
+        report.matching.len(),
+        "the trace's last matching and the report's pair list must count the \
+         same assignments"
+    );
+    assert_eq!(
+        report.n_equations,
+        final_matching.len(),
+        "the report's system size must be the one the trace was recorded over"
+    );
+    // Both halves are owned, so they outlive the view. That is the whole
+    // reason the borrowed events have owned twins.
+    assert!(!trace.records.is_empty());
+}
+
+/// On the singular path the trace comes back beside the error, so a caller
+/// needs no second unobserved matching run to show what failed.
+///
+/// This is what let HRW stop re-running `maximum_matching` to render the
+/// partial matching of a system that did not sort — a re-run that described an
+/// execution which produced nothing.
+#[test]
+fn a_failed_report_still_carries_the_matching_that_failed() {
+    let compiled = compile(INDEX_TWO, "IndexTwo");
+    let (report, trace) = compiled
+        .dae
+        .inspect(|view| structural::inspect_structural_report(view));
+    assert!(
+        report.is_err(),
+        "an index-2 system has no perfect matching as written"
+    );
+    let final_matching = trace
+        .matching()
+        .last()
+        .map(|record| record.match_eq.clone())
+        .expect("the matching that proved the failure must be recorded");
+    assert!(
+        final_matching.iter().any(Option::is_none),
+        "the recorded matching must show the unmatched row that caused the \
+         failure: {final_matching:?}"
+    );
+}
+
 /// Watching a search and reading it afterwards must report the same thing.
 ///
 /// `observe_sort` exists because a batch report delivers nothing while a
