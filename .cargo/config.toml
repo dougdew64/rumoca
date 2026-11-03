@@ -29,6 +29,30 @@ RUMOCA_MSL_CACHE_DIR = "target/msl"
 # tests too, making them serial. Drop it when preparing an upstream cherry-pick.
 RUST_TEST_THREADS = "1"
 
+# **A bigger test stack, because HRW's debuggability profile needs one.**
+#
+# `[profile.dev.package.rumoca-phase-dae] opt-level = 0` exists so breakpoints
+# inside DAE construction bind reliably (see the comment on that override).
+# Unoptimized frames are much larger, and `rumoca-phase-dae`'s
+# `value_recursion_without_a_fixed_point_is_bounded` deliberately recurses until
+# a depth limit stops it — at `opt-level = 0` the 2 MiB default test stack runs
+# out first and the process dies with STATUS_STACK_OVERFLOW instead of the test
+# passing.
+#
+# Measured 2026-11-02 on v0.10.0: the test passes at `opt-level = 1` and
+# overflows at `0`, with the instrumentation reverted both times, so the profile
+# is the cause and not anything HRW changed in the crates.
+#
+# **This is the fix that keeps both properties.** Raising the crate's opt-level
+# would trade away reliable breakpoints in exactly the phase this fork exists to
+# study; the recursion is bounded by design, so it needs stack rather than
+# optimization.
+#
+# NOTE FOR UPSTREAM: HRW-motivated, like `RUST_TEST_THREADS` above. Upstream
+# builds that phase at `opt-level = 1` and does not need this. Drop it when
+# preparing a cherry-pick.
+RUST_MIN_STACK = "16777216"
+
 # Enable getrandom wasm_js backend for WASM builds (required by rand/diffsol)
 [target.wasm32-unknown-unknown]
 rustflags = ['--cfg', 'getrandom_backend="wasm_js"']
