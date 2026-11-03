@@ -760,8 +760,11 @@ struct CompileFrames {
     // re-derivation rather than an observation of the compile. The re-model will
     // take them from `inspect_prepare_for_solve`; see
     // `worker::index_reduction_stage`.
-    /// `pre()` lowering, on the Events stage (idea #40).
-    pre_lowering: Vec<rumoca_phase_dae::PreLoweringFrame>,
+    // **`pre()` lowering frames are gone too, and for a different reason.**
+    // Index reduction's frames were a re-derivation; these were a genuine
+    // capture of a pass that no longer exists. 0.10.0 lowers `pre()` inside
+    // DAE construction, as one arm of the builtin dispatch, so there is no
+    // pass to capture. See `docs/tech-debt.md`'s `pre_lowering_from_construction`.
     /// Connection expansion (MLS §9).
     connection: Vec<rumoca_phase_flatten::connections::trace::ConnectionFrame>,
 }
@@ -2005,7 +2008,6 @@ impl App {
                     tarjan_frames,
                     tearing_frames,
                     dae,
-                    pre_lowering_frames,
                     connection_frames,
                     flat,
                     library_source,
@@ -2038,7 +2040,6 @@ impl App {
                             tarjan: tarjan_frames,
                             tearing: tearing_frames,
                         },
-                        pre_lowering: pre_lowering_frames,
                         connection: connection_frames,
                     };
                     self.cached_flat = flat;
@@ -4254,7 +4255,12 @@ impl App {
             // a stepped session needs egui to finish painting inside the sleep,
             // a free-running one must not crawl. See `crate::live_frame_delay`.
             let delay = crate::live_frame_delay(self.live_breakpoint_armed);
-            let live = matching_anim::MatchingAnimation::start_live(mat, delay);
+            // The DAE, not just the matrix: `start_live` steps `sort`'s own
+            // matching now rather than re-running one over the pane's rows.
+            let live = self
+                .tearing_dae()
+                .cloned()
+                .and_then(|dae| matching_anim::MatchingAnimation::start_live(mat, dae, delay));
             if live.is_none() {
                 let _ = bridge::remove_live_trace_breakpoint();
                 self.live_breakpoint_armed = false;
@@ -4326,7 +4332,16 @@ impl App {
             && let Some(Some(mat)) = &self.stage_views.incidence
         {
             let delay = crate::live_frame_delay(self.live_breakpoint_armed);
-            let live = tarjan_anim::TarjanAnimation::start_live(mat, delay);
+            // The compile's own matching supplies the dependency graph's
+            // geometry; the SCC search being stepped is `sort`'s own.
+            let live = self.tearing_dae().cloned().and_then(|dae| {
+                tarjan_anim::TarjanAnimation::start_live(
+                    mat,
+                    &self.frames.structural.matching,
+                    dae,
+                    delay,
+                )
+            });
             if live.is_none() {
                 let _ = bridge::remove_live_trace_breakpoint();
                 self.live_breakpoint_armed = false;
@@ -4399,7 +4414,7 @@ impl App {
             && let Some(dae) = &self.cached_dae
         {
             let delay = crate::live_frame_delay(self.live_breakpoint_armed);
-            let live = reduction_anim::ReductionAnimation::start_live(dae.clone(), delay);
+            let live = reduction_anim::ReductionAnimation::start_live(dae, delay);
             if live.is_none() {
                 let _ = bridge::remove_live_trace_breakpoint();
                 self.live_breakpoint_armed = false;
@@ -4449,7 +4464,17 @@ impl App {
             && let Some(dae) = self.tearing_dae()
         {
             let delay = crate::live_frame_delay(self.live_breakpoint_armed);
-            let live = tearing_anim::TearingAnimation::start_live(dae, delay);
+            // The report supplies the block names the renderer needs from the
+            // first step onward; they are no longer recoverable by rebuilding
+            // the BLT here.
+            let live = self
+                .stages
+                .get(self.stage)
+                .value
+                .as_ref()
+                .and_then(|report| {
+                    tearing_anim::TearingAnimation::start_live(report, dae.clone(), delay)
+                });
             if live.is_none() {
                 let _ = bridge::remove_live_trace_breakpoint();
                 self.live_breakpoint_armed = false;
@@ -4539,7 +4564,7 @@ impl App {
         {
             // The UI owns the consumer; the worker gets the producer. Reversed from
             // every other view, because the data this pass needs cannot come here.
-            let (trace, rx) = rumoca_phase_structural::live_trace::LiveTrace::new();
+            let (trace, rx) = crate::live_trace::LiveTrace::new();
             let trace = trace.with_frame_delay(crate::live_frame_delay(self.live_breakpoint_armed));
             let done = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
             self.worker.send(ToWorker::LiveDebugConnections {
@@ -4649,8 +4674,13 @@ impl App {
     /// reason [`Self::flatten_content`] exists: **the sub-view row and the `hrw://` link
     /// guard must ask the same question**, and two spellings of it are two places to
     /// change.
+    /// **Always `false` for the v0.10.0 rebase.** The pass this asked about
+    /// does not exist on 0.10.0 — `pre()` is lowered inside DAE construction —
+    /// so there is no trace to have. Kept as a method rather than inlined
+    /// because the guard and the sub-view row must ask the same question, and
+    /// the re-model will give it a real answer again.
     fn has_pre_lowering_trace(&self) -> bool {
-        !self.frames.pre_lowering.is_empty()
+        false
     }
 
     /// What the Flatten compile produced, in the form its sub-view row and its link guard
@@ -4700,14 +4730,12 @@ impl App {
             self.compile_views.pre_lowering_anim = Some(live);
         }
         if self.compile_views.pre_lowering_anim.is_none() {
-            let frames = &self.frames.pre_lowering;
-            self.compile_views.pre_lowering_anim = Some(if frames.is_empty() {
-                None
-            } else {
-                Some(pre_lowering_anim::PreLoweringAnimation::from_frames(
-                    frames.clone(),
-                ))
-            });
+            // **`Some(Some(..))`, not `Some(None)`**: the placeholder's whole
+            // job is to draw the explanation of its own absence, so the pane
+            // must exist. `Some(None)` is how this view reports "no trace for
+            // this model", which would read as a model that uses no `pre()`.
+            self.compile_views.pre_lowering_anim =
+                Some(Some(pre_lowering_anim::PreLoweringAnimation::disabled()));
         }
         if let Some(Some(anim)) = &mut self.compile_views.pre_lowering_anim {
             debug_clicked = egui::ScrollArea::vertical()
