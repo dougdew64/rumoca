@@ -106,13 +106,12 @@ watching a dead end abandoned.
 > **This station changed shape in Rumoca 0.10.0, and the change is worth a minute.**
 >
 > The search used to be recursive, and this station used to say *"the call stack is the
-> augmenting path"* — you walked up the debugger's frames, one `augment_traced` per
+> augmenting path"* — you climbed the debugger's frames, one `augment_traced` per
 > displaced equation, and the depth was the path length.
 >
-> It is iterative now, and `matching.rs` says why at the top: an array-shaped model can
-> produce alternating chains hundreds of thousands of equations long, and the recursive
-> form overflows the main thread's 8 MB stack on those. A 500,000-node chain is a real
-> MSL shape, not a contrived one.
+> It is iterative now, and `matching.rs` says why — at the top of the file and again on
+> `augment`: an array-shaped model can produce alternating chains hundreds of thousands of
+> equations long, and the recursive form overflows the thread stack on those.
 >
 > **So the algorithm did not change — its representation of "where am I" did**, from the
 > machine's stack to a `Vec` the code owns. That is a common move when a recursive

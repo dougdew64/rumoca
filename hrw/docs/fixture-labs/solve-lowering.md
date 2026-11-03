@@ -26,7 +26,7 @@ disagrees with your screen, the lab is wrong and I want to know.
 
 [Look — BouncingBall → Solve lowering](hrw://load/BouncingBall/SolveLowering)
 
-[Point at `problem.layout.bindings`](hrw://stage/SolveLowering/node/problem.layout.bindings)
+[Point at `layout.bindings`](hrw://stage/SolveLowering/node/layout.bindings)
 
 **Expected:** each name binds to a slot in the continuous vector `Y`:
 
@@ -56,27 +56,54 @@ array: it is a distinguished binding, because the solver supplies it rather than
 
 [Look — BouncingBall → Solve lowering](hrw://load/BouncingBall/SolveLowering)
 
-[Point at `parameters`](hrw://stage/SolveLowering/node/parameters)
+[Point at `solve_layout`](hrw://stage/SolveLowering/node/solve_layout)
 
-**Expected:** seven, not two. Alongside `g` at `P[0]` and `e` at `P[1]`:
+**Expected:** two counts that disagree, and the disagreement is the answer.
 
-| name | slot | what it is |
+| field | value | what it means |
 |---|---|---|
-| `__pre__.c` | `P[2]` | the previous value of `c` |
-| `__pre__.h` | `P[3]` | the previous value of `h` |
-| `__pre__.v` | `P[4]` | the previous value of `v` |
-| `c` | `P[5]` | the discrete variable itself |
-| `__rumoca.initial_event` | `P[6]` | whether this is the initial event |
+| `parameter_count` | `2` | the parameters *the model declares* — `g` and `e` |
+| `compiled_parameter_len` | `5` | the length of the vector the solver is handed |
 
-Falsified if `P` has exactly two slots, or no `__pre__` name appears.
+**Three slots exist that `BouncingBall` never declared**, and v0.10.0 says what two of them
+are for, in the same node:
+
+- **`pre_param_bindings`** reads `dest_p_index: 2` with source `Y[1]`. So `P[2]` holds the
+  previous value of `Y[1]`, which `layout.bindings` names `v` — this is `pre(v)`.
+- **`relation_memory_parameter_indices`** reads `[4]`. So `P[4]` is where a relation
+  remembers itself: the `h <= 0` crossing.
+
+**`P[3]` is not named by either field, and this lab does not know what it is.** Said plainly
+rather than guessed at: three fields account for four of the five slots, and the fifth is
+an open question worth asking.
+
+Falsified if `compiled_parameter_len` equals `parameter_count`, or if `pre_param_bindings`
+is empty.
 
 *What just happened.* The event machinery needs storage, and it gets it here. `events.md`
 established that a `when` clause reverses `v` at the bounce; doing that requires knowing what `v`
 *was*, so `pre(v)` needs somewhere to live. It lives in a parameter slot — a value that is constant
 *between* events and updated *at* them, which is exactly what a parameter slot is for.
 
-So the phases compose visibly: the discrete update found in `events.md` is the reason three of
-these seven slots exist.
+So the phases compose visibly: the discrete update found in `events.md` is the reason `P` is
+longer than the model's parameter list.
+
+> **This station's numbers changed in Rumoca 0.10.0, and so did how it reads them.**
+>
+> It pointed at a node called `parameters` and expected **seven** slots, listing each by
+> name — `__pre__.c`, `__pre__.h`, `__pre__.v`, `c`, `__rumoca.initial_event`. There is
+> no `parameters` node now, the total is **five**, and the compiler-introduced slots are
+> no longer given `__pre__`-style names to read off.
+>
+> **What replaced the names is better: the layout states the relationships.** The old
+> table was a list of strings a reader had to trust; `pre_param_bindings` says *which
+> slot* holds the previous value of *which variable*, by index, and
+> `relation_memory_parameter_indices` says which slot a relation remembers itself in.
+> Naming a slot `__pre__.v` and *binding* `P[2]` to `Y[1]` are not the same quality of
+> evidence.
+>
+> The teaching point is untouched: the parameter vector is longer than the model's
+> parameter list, and the event machinery is why.
 
 And `__rumoca.initial_event` is a compiler-manufactured variable — nothing in the model
 mentions it. The first event is special (it fires at *t* = 0 during initialization), and the
