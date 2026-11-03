@@ -97,6 +97,24 @@ pub fn inspect_sort<'dae>(
     (result, recorder.finish())
 }
 
+/// [`sort`], handing each matching, Tarjan and tearing step to `sink` the
+/// moment it happens.
+///
+/// [`inspect_sort`] is the right entry point for reading a finished analysis.
+/// This one is for *watching* one: with a breakpoint set inside a search, a
+/// batch report delivers nothing until the whole analysis has finished, so
+/// there is no step to show while the search is stopped.
+///
+/// `sink` receives the same owned records [`inspect_sort`] collects, in the
+/// same order — both observers share one conversion, so a live view and a
+/// replay of the same model cannot disagree about what happened.
+pub fn observe_sort<'dae>(
+    view: dae::DaeView<'dae>,
+    sink: impl FnMut(StructuralRecord),
+) -> Result<SortedDae<'dae>, StructuralError> {
+    sort_with_observer(view, &mut observation::StructuralStreamer::new(sink))
+}
+
 fn sort_with_observer<'dae>(
     view: dae::DaeView<'dae>,
     observer: &mut impl observation::StructuralObserver,
