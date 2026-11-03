@@ -55,6 +55,7 @@ pub mod connection_anim;
 pub mod context_bar;
 pub mod diagnostics;
 pub mod doc_citations;
+pub mod dae_expr_format;
 pub mod doc_sizes;
 pub mod equation_sheet;
 pub mod equation_sheet_view;
