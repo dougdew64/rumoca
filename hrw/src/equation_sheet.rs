@@ -569,7 +569,7 @@ pub fn flat_node_lines(
 /// means "from the model itself", so the fallback would have begun asserting
 /// that Rumoca's synthesised residuals and index-reduction equations were
 /// hand-written. Those go to [`EquationCategory::Generated`].
-fn categorize_origin(origin: dae::DaeProvenanceOrigin) -> EquationCategory {
+pub fn categorize_origin(origin: dae::DaeProvenanceOrigin) -> EquationCategory {
     use dae::DaeGeneration as G;
 
     let generation = match origin {

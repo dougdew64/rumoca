@@ -172,6 +172,34 @@ fn main() {
                 format!("ASSIGN {} := {}", name(vars, *var), name(eqs, *eq)),
             ),
             MatchingStep::EquationFailed(e) => (None, format!("equation FAILED {}", name(eqs, *e))),
+            // **The two phases that bracket Kuhn's, new on 0.10.0.** A lab
+            // can point at these, so they get the same treatment as any
+            // other step: the variable a reader would look for, and a line
+            // saying what happened.
+            MatchingStep::SeedStructured { eq, var } => (
+                Some(*var),
+                format!(
+                    "seeded from a regular family: {} <-> {}",
+                    name(eqs, *eq),
+                    name(vars, *var)
+                ),
+            ),
+            MatchingStep::ClaimedPreference { eq, var } => (
+                Some(*var),
+                format!(
+                    "{} takes its causal target {}",
+                    name(eqs, *eq),
+                    name(vars, *var)
+                ),
+            ),
+            MatchingStep::PreferenceUnavailable { eq, var } => (
+                Some(*var),
+                format!(
+                    "{} cannot take its causal target {}",
+                    name(eqs, *eq),
+                    name(vars, *var)
+                ),
+            ),
         };
 
         if let Some(f) = &filter {
