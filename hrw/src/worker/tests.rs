@@ -225,49 +225,6 @@ fn nonlinear_loop_has_a_coupled_block() {
     assert_eq!(v["coupled_block_count"], serde_json::json!(1));
 }
 
-/// The `dae_prepare` funnel (mirroring rumoca-sim's internal
-/// `prepare_dae_for_structural_analysis` — the shared prep the simulator and
-/// `--inspect structure` both run) reduces Drivetrain's **singular, high-index**
-/// DAE to a non-singular, structurally analyzable one. This confirms Rumoca can
-/// index-reduce (not blocked-on-upstream) and pins the exact public API the
-/// observatory stage will call. NOTE: HRW mirrors Rumoca's funnel *order*;
-/// re-verify it against `rumoca-sim/src/solve_lowering/structural_lowering.rs`
-/// on a pin bump.
-#[test]
-fn drivetrain_index_reduces_from_singular_to_solvable() {
-    let report = {
-        let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
-        let path = Path::new(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/specimens/Drivetrain.mo"
-        ));
-        let source = std::fs::read_to_string(path).unwrap();
-        let uri = path.to_string_lossy().to_string();
-        w.session.update_document(&uri, &source);
-        let qualified = w.session.qualify_model_name(&uri, "Drivetrain");
-        w.session
-            .compile_model_strict_reachable_with_recovery(&qualified)
-    };
-    let cr = match report.requested_result.as_ref() {
-        Some(PhaseResult::Success(cr)) => cr,
-        _ => panic!("expected a Success result for Drivetrain"),
-    };
-    // Before: the raw DAE is structurally singular (high index).
-    let before = rumoca_phase_structural::build_structural_report(&cr.dae);
-    assert!(
-        before.is_err(),
-        "expected Drivetrain to start singular, got {before:?}"
-    );
-
-    // Apply the index-reduction funnel, then re-analyze.
-    let mut reduced = cr.dae.clone();
-    index_reduce_for_structural_analysis(&mut reduced);
-    let after = rumoca_phase_structural::build_structural_report(&reduced);
-    assert!(
-        after.is_ok(),
-        "index reduction should make Drivetrain structurally analyzable, got {after:?}"
-    );
-}
 
 /// Blow-up: a capacitor directly across an ideal source can't be
 /// consistently initialized — its state voltage is pinned to the source. Unlike
@@ -404,13 +361,17 @@ fn single_inertia_simulates_to_a_correct_trajectory() {
         Some(PhaseResult::Success(cr)) => cr,
         _ => panic!("expected Success for SingleInertia"),
     };
-    let sm =
-        rumoca_phase_solve::lower_dae_to_solve_model(&cr.dae).expect("lower DAE -> SolveModel");
+    // **Lowering is still exercised, separately from simulating.** 0.10.0's
+    // `simulate_with_diagnostics` takes the `Dae` and lowers internally, so
+    // the two-step is gone — but dropping the explicit `lower_solve_problem`
+    // call would quietly stop testing that lowering succeeds at all, since a
+    // simulate failure cannot say which half failed.
+    rumoca_phase_solve::lower_solve_problem(&cr.dae).expect("lower DAE -> solve problem");
     let opts = rumoca_sim::SimOptions {
         t_end: 2.0,
         ..Default::default()
     };
-    let result = rumoca_sim::simulate_solve_model(&sm, &opts).expect("simulate");
+    let result = rumoca_sim::simulate_with_diagnostics(&cr.dae, &opts).expect("simulate");
 
     assert!(
         result.times.last().copied().unwrap_or(0.0) >= 1.99,
@@ -1043,11 +1004,9 @@ fn each_constructor_reaches_one_outcome_and_colour_is_unchanged() {
     let v = || serde_json::json!({ "ir": true });
     let cases = [
         (Stage::ok(v()), Outcome::Ok, false),
-        (
-            Stage::ok_with_note(v(), "already index-1"),
-            Outcome::Ok,
-            false,
-        ),
+        // `Stage::ok_with_note` is deleted with the stages that used it; see
+        // the note on `Stage` for why a re-model must re-add it rather than
+        // reach for `recovered`, which claims `Flagged`.
         (Stage::info("not reached"), Outcome::Ok, false),
         (Stage::recovered(v(), "singular"), Outcome::Flagged, true),
         (Stage::err("boom"), Outcome::Failed, true),
@@ -1159,214 +1118,8 @@ fn singular_structural_carries_summary_data() {
     assert!(mat.n_eq() > 0);
 }
 
-/// Drivetrain's index-reduction trace produces animation frames — the
-/// constrained-dummy reduction finds multiple demotions, each emitting
-/// **A stage's summary may not claim more than the frames from the same run
-/// recorded, and the corpus must differentiate somewhere.**
-///
-/// # The defect this is built from
-///
-/// `index-reduction.md` taught, for its whole existence, that `Drivetrain`
-/// performs **zero** differentiations — *"the textbook mechanism was not
-/// needed"* — in the lab named for the algorithm that differentiates. The
-/// compiler differentiates at least four times on that model.
-///
-/// **Both halves of HRW were telling the truth.** `differentiated_rows` is
-/// built by scanning the *final* DAE for surviving `index_reduction:d_dt_for_`
-/// origin markers, and step 10 (`eliminate_trivial`) removes 77 equations,
-/// taking them with it. The frames record what *happened*; the summary reports
-/// what *survived*. Nothing said so, and nothing compared them.
-///
-/// **Every other checker in this repository compares a document to a trace,
-/// and the trace said zero.** So the lab was consistent with the artefact and
-/// wrong about the compiler, and no amount of document-versus-trace checking
-/// could have found it. This is the first check that holds two views of the
-/// *same run* against each other.
-///
-/// # What it asserts, and why not equality
-///
-/// **`survivors <= events`** — the summary cannot report more differentiated
-/// rows than differentiations that occurred. That is a real invariant and the
-/// gap between the two is legitimate, being exactly the elimination above.
-///
-/// **And at least one specimen must differentiate.** That clause is the one
-/// that matters most, because it encodes the thing Claude got wrong: reading
-/// `differentiated_rows: []` across all 17 specimens produced the confident
-/// conclusion that *Rumoca never differentiates*, and a lab was written on it.
-/// **A green corpus-wide zero is indistinguishable from a feature that never
-/// runs** — the same shape as `fidelity-plan.md`'s F10, whose absence clause
-/// had nothing to act on.
-#[test]
-#[cfg_attr(
-    not(feature = "slow-tests"),
-    ignore = "compile-heavy; run with --features slow-tests"
-)]
-fn a_reduction_summary_never_claims_more_than_its_frames_recorded() {
-    use rumoca_phase_structural::dae_prepare::IndexReductionStep;
 
-    // Specimens that reach index reduction with something to reduce. Named
-    // rather than globbed: a glob that silently matched nothing would make
-    // every assertion below vacuous, which is this file's recurring failure.
-    const SPECIMENS: &[&str] = &[
-        "Drivetrain",
-        "GearWithBrake",
-        "BouncingBall",
-        "RcCircuit",
-        "BenchActuator",
-    ];
 
-    let mut total_events = 0usize;
-    let mut checked = 0usize;
-    let mut rows: Vec<String> = Vec::new();
-
-    for name in SPECIMENS {
-        let FromWorker::Compiled {
-            stages,
-            index_reduction_frames,
-            ..
-        } = compile_specimen_shared(name)
-        else {
-            panic!("expected {name} to compile");
-        };
-
-        let events = index_reduction_frames
-            .iter()
-            .filter(|f| matches!(&f.step, IndexReductionStep::Differentiated { .. }))
-            .count();
-
-        // Absent is not zero: a stage that never produced a report is a
-        // different fact from one reporting an empty list, and conflating them
-        // is how a silent failure reads as a passing check.
-        let Some(value) = stages.index_reduction.value.as_ref() else {
-            rows.push(format!("{name}: no index-reduction stage"));
-            continue;
-        };
-        let Some(survivors) = value
-            .get("reduction")
-            .and_then(|r| r.get("differentiated_rows"))
-            .and_then(|d| d.as_array())
-            .map(Vec::len)
-        else {
-            rows.push(format!("{name}: no differentiated_rows field"));
-            continue;
-        };
-
-        checked += 1;
-        total_events += events;
-        rows.push(format!(
-            "{name}: {events} differentiated, {survivors} survived"
-        ));
-
-        assert!(
-            survivors <= events,
-            "{name}: the summary reports {survivors} differentiated row(s) but the \
-             frames from the same run recorded only {events} differentiation(s). A \
-             summary may report FEWER than happened — later steps eliminate rows — \
-             but never more, and more means the two are describing different runs",
-        );
-    }
-
-    assert!(
-        checked >= 3,
-        "only {checked} specimen(s) yielded both a summary and frames — the \
-         extraction is broken, not the compiler:\n  {}",
-        rows.join("\n  "),
-    );
-    assert!(
-        total_events > 0,
-        "no specimen in this set differentiates anything, so the comparison above \
-         ran against nothing on the side that matters. **This clause exists because \
-         the corpus-wide zero in `differentiated_rows` was once read as proof that \
-         Rumoca never differentiates, and a lab was written on it.** If this fires, \
-         either the specimens changed or index reduction stopped differentiating — \
-         and the second is a finding, not a test to relax:\n  {}",
-        rows.join("\n  "),
-    );
-    println!(
-        "reduction summaries checked against their frames:\n  {}",
-        rows.join("\n  ")
-    );
-}
-
-/// BeginState, Differentiated, and Demoted frames.
-#[test]
-#[cfg_attr(
-    not(feature = "slow-tests"),
-    ignore = "compile-heavy; run with --features slow-tests"
-)]
-fn drivetrain_index_reduction_produces_trace_frames() {
-    let FromWorker::Compiled {
-        index_reduction_frames,
-        ..
-    } = compile_specimen_shared("Drivetrain")
-    else {
-        panic!("expected Compiled");
-    };
-    assert!(
-        !index_reduction_frames.is_empty(),
-        "Drivetrain should produce index-reduction animation frames"
-    );
-    use rumoca_phase_structural::dae_prepare::IndexReductionStep;
-    let n_demoted = index_reduction_frames
-        .iter()
-        .filter(|f| matches!(&f.step, IndexReductionStep::Demoted { .. }))
-        .count();
-    assert!(
-        n_demoted >= 4,
-        "expected at least 4 demotions, got {n_demoted}"
-    );
-    let n_differentiated = index_reduction_frames
-        .iter()
-        .filter(|f| matches!(&f.step, IndexReductionStep::Differentiated { .. }))
-        .count();
-    assert!(
-        n_differentiated >= 4,
-        "expected at least 4 differentiations, got {n_differentiated}"
-    );
-}
-
-/// The trace opens on `Start`, so the animation has a visible "before".
-///
-/// Without it the replay begins on the first `BeginState` — which announces
-/// an intention and reads as though reduction had already happened — and no
-/// frame anywhere shows the unreduced system.
-#[test]
-#[cfg_attr(
-    not(feature = "slow-tests"),
-    ignore = "compile-heavy; run with --features slow-tests"
-)]
-fn index_reduction_trace_opens_on_the_starting_system() {
-    let FromWorker::Compiled {
-        index_reduction_frames,
-        ..
-    } = compile_specimen_shared("Drivetrain")
-    else {
-        panic!("expected Compiled");
-    };
-    use rumoca_phase_structural::dae_prepare::IndexReductionStep;
-    let first = index_reduction_frames.first().expect("frames");
-    let IndexReductionStep::Start { states, equations } = &first.step else {
-        panic!("first frame should be Start, got {:?}", first.step);
-    };
-    assert!(
-        !states.is_empty(),
-        "Drivetrain has states entering reduction"
-    );
-    assert!(
-        *equations > 0,
-        "Drivetrain has equations entering reduction"
-    );
-    assert!(
-        first.demoted_so_far.is_empty(),
-        "nothing is demoted by the traced passes before they begin"
-    );
-    // Exactly one — the two traced passes must not each contribute a start.
-    let n_start = index_reduction_frames
-        .iter()
-        .filter(|f| matches!(&f.step, IndexReductionStep::Start { .. }))
-        .count();
-    assert_eq!(n_start, 1, "expected a single opening frame, got {n_start}");
-}
 
 /// The index reduction stage embeds a "before" report with the raw
 /// (pre-reduction) DAE's incidence matrix and partial matching.
@@ -1472,26 +1225,6 @@ fn single_inertia_index_reduction_note_says_index_1() {
     );
 }
 
-/// MotorWithBrake produces trace frames from the missing-derivative path
-/// (index_reduce_missing_state_derivatives) — 1 EMF demotion.
-#[test]
-#[cfg_attr(
-    not(feature = "slow-tests"),
-    ignore = "compile-heavy; run with --features slow-tests"
-)]
-fn motor_with_brake_index_reduction_produces_trace_frames() {
-    let FromWorker::Compiled {
-        index_reduction_frames,
-        ..
-    } = compile_specimen_shared("MotorWithBrake")
-    else {
-        panic!("expected Compiled");
-    };
-    assert!(
-        !index_reduction_frames.is_empty(),
-        "MotorWithBrake should produce index-reduction animation frames"
-    );
-}
 
 /// A scratch specimen compiles like any other (ideas #42).
 ///
@@ -1529,99 +1262,6 @@ fn a_scratch_specimen_compiles_end_to_end() {
     assert_eq!(n_states, Some(1), "the probe has exactly one state");
 }
 
-/// **HRW's re-derived tearing matches Rumoca's own report.**
-///
-/// `docs/fidelity-plan.md` F1, and the first test of the question Doug raised: does
-/// HRW represent what Rumoca *decided*, or something of its own?
-///
-/// The tearing animation does not read the compiler's result — it **re-runs the
-/// algorithm** on each coupled block to produce frames. Until 2026-07-30 nothing
-/// compared the two, so they agreed by assumption. A divergence here would mean an
-/// animation teaching a decision the compiler never made, which is the worst failure
-/// available to a tool whose purpose is explanation.
-///
-/// The non-vacuity guard is not decoration: a model with no coupled block reports
-/// `[]` and derives `[]` — agreement on nothing. Without the guard a corpus of such
-/// models would pass while testing nothing at all.
-///
-/// **Compared per tab, against the DAE that tab animates.** The Structural and Index
-/// Reduction tabs describe *different systems* (`App::tearing_dae` re-runs the
-/// reduction funnel for the latter), so comparing one tab's re-derivation against the
-/// other's report tests nothing and fails on models that are singular before
-/// reduction. Singular stages are skipped because `structural_view_available` hides
-/// the tearing view there — a re-derivation the UI never shows is not a
-/// misrepresentation.
-#[test]
-#[cfg_attr(
-    not(feature = "slow-tests"),
-    ignore = "compile-heavy; run with --features slow-tests"
-)]
-fn hrw_rederived_tearing_matches_rumocas_report() {
-    /// The tear variables Rumoca's report lists, flattened across blocks in
-    /// report order — the same order `tear_variable_names` runs.
-    fn reported_tears(report: &serde_json::Value) -> Vec<String> {
-        report
-            .get("blocks")
-            .and_then(serde_json::Value::as_array)
-            .map(|blocks| {
-                blocks
-                    .iter()
-                    .filter_map(|b| b.get("tearing")?.get("tear_vars")?.as_array())
-                    .flatten()
-                    .filter_map(serde_json::Value::as_str)
-                    .map(str::to_owned)
-                    .collect()
-            })
-            .unwrap_or_default()
-    }
-
-    let mut tabs_with_tears = 0usize;
-
-    for name in F1_MODELS {
-        let FromWorker::Compiled { stages, dae, .. } = compile_specimen_shared(name) else {
-            panic!("{name}: expected Compiled");
-        };
-        let dae = dae.unwrap_or_else(|| panic!("{name}: no DAE"));
-
-        // (tab, the DAE HRW animates there, the report it shows beside it)
-        let mut reduced = dae.clone();
-        index_reduce_in_place(&mut reduced);
-        let cases: [(&str, &rumoca_ir_dae::Dae, &Stage); 2] = [
-            ("Structural", &dae, &stages.structural),
-            ("IndexReduction", &reduced, &stages.index_reduction),
-        ];
-
-        for (tab, tab_dae, stage) in cases {
-            // Singular stages hide the tearing view entirely.
-            if stage.outcome != Outcome::Ok {
-                continue;
-            }
-            let Some(report) = stage.value.as_ref() else {
-                continue;
-            };
-
-            let reported = reported_tears(report);
-            let derived =
-                crate::tearing_anim::TearingAnimation::record(tab_dae).tear_variable_names();
-
-            assert_eq!(
-                derived, reported,
-                "{name} / {tab}: the tearing animation re-derives a different answer \
-                 than the compiler reported — it would be teaching a decision Rumoca \
-                 never made",
-            );
-            if !reported.is_empty() {
-                tabs_with_tears += 1;
-            }
-        }
-    }
-
-    assert!(
-        tabs_with_tears >= 4,
-        "only {tabs_with_tears} tabs actually tore anything; the rest agreed on an \
-         empty list, which tests nothing",
-    );
-}
 
 /// **A library model compiles by name, all the way through.**
 ///
@@ -1659,10 +1299,12 @@ fn a_library_model_compiles_by_qualified_name() {
         "the requested model, not the first class in a file of many",
     );
     let dae = dae.expect("a library model should reach a DAE");
-    assert!(
-        !dae.continuous.equations.is_empty(),
-        "CriticalDamping is a real block; an empty DAE means the wrong class was compiled",
-    );
+    dae.inspect(|view| {
+        assert!(
+            view.continuous_equation_count() > 0,
+            "CriticalDamping is a real block; an empty DAE means the wrong class was compiled",
+        );
+    });
 
     // Every compilation stage produced something — the by-name path is the
     // whole pipeline, not a shortcut to one phase.
@@ -1768,6 +1410,42 @@ const F1_MODELS: &[&str] = &[
     "BouncingBall",
     "MotorWithBrake",
 ];
+
+// **Eight tests are retired here, and each lost its subject rather than its
+// value.** Recorded together because the pattern matters more than any one of
+// them: a test whose subject no longer exists does not fail, it *passes* — and
+// a passing test reports a guarantee it is not providing.
+//
+// Five were about index reduction as a ten-step dummy-derivative funnel over a
+// mutable `Dae`: `drivetrain_index_reduces_from_singular_to_solvable`,
+// `drivetrain_index_reduction_produces_trace_frames`,
+// `index_reduction_trace_opens_on_the_starting_system`,
+// `motor_with_brake_index_reduction_produces_trace_frames` and
+// `a_reduction_summary_never_claims_more_than_its_frames_recorded`. 0.10.0
+// deleted `dae_prepare`, made `Dae` immutable and non-`Clone`, and reduces in
+// two fixed-point lanes through a candidate/attempt/selection protocol. Not one
+// name they referenced survives. `docs/tech-debt.md`'s
+// `index_reduction_from_observation` recruits their replacements, which should
+// read `inspect_prepare_for_solve` — strictly richer than these frames were.
+//
+// `the_reduced_system_has_its_own_captured_frames` pinned the raw/reduced split
+// that `StructuralFrames` kept apart (97 equations against 20 on `Drivetrain`),
+// which is exactly the hazard worth a test — and it cannot be written until
+// there is a reduced system again.
+//
+// `pre_lowering_frames_reach_hrw_from_the_real_compile` watched a pass that is
+// now one arm of DAE construction; see `pre_lowering_from_construction`.
+//
+// `hrw_rederived_tearing_matches_rumocas_report` is F1's first check, joining
+// the matching and BLT ones above it. All three compared HRW's own
+// re-derivation against Rumoca's report, and there is no re-derivation left to
+// compare: the animations read the compile's own steps.
+//
+// **What is NOT retired, and must not be:** the raw-vs-reduced distinction
+// itself, and the rule that a summary may not claim more than its frames
+// recorded. Both are live properties of the re-models, and the notes in
+// `docs/tech-debt.md` name them so the replacements inherit the obligation
+// rather than starting from nothing.
 
 // **`docs/fidelity-plan.md` F1's second and third checks are retired, and the
 // redesign is why.**
@@ -2739,9 +2417,14 @@ fn rank_deficiency_is_consistent_with_its_own_counts() {
     ignore = "compile-heavy; run with --features slow-tests"
 )]
 fn a_singular_report_still_animates_and_ends_on_the_failure() {
-    use rumoca_phase_structural::matching::MatchingStep;
+    use rumoca_phase_structural::MatchingStep;
 
-    let FromWorker::Compiled { stages, .. } = compile_specimen_shared("MotorWithBrake") else {
+    let FromWorker::Compiled {
+        stages,
+        matching_frames,
+        ..
+    } = compile_specimen_shared("MotorWithBrake")
+    else {
         panic!("expected Compiled");
     };
     let report = stages
@@ -2756,7 +2439,16 @@ fn a_singular_report_still_animates_and_ends_on_the_failure() {
 
     let mat = crate::incidence_view::IncidenceMatrix::from_report(report)
         .expect("a singular report still carries an incidence matrix");
-    let anim = crate::matching_anim::MatchingAnimation::from_incidence(&mat);
+    // **The compile's own steps, which is the point of the test.** This
+    // re-derived the matching from the published matrix; the pane shows the
+    // matching that *failed*, and whether that reaches the animation on the
+    // singular path is exactly what is being checked. A re-derivation could
+    // have agreed while the real path delivered nothing.
+    let anim = crate::matching_anim::MatchingAnimation::from_captured_frames(
+        &mat,
+        &matching_frames,
+    )
+    .expect("the singular run's steps address its own incidence matrix");
 
     let failures = anim.failed_equations();
     assert_eq!(
@@ -2904,70 +2596,6 @@ fn connection_frames_reach_hrw_from_the_real_compile() {
     );
 }
 
-/// The `pre()` lowering replay reaches HRW with real frames (idea #40).
-///
-/// End to end through the worker, because the interesting part is *where the
-/// frames come from*: the pass runs inside DAE construction, so the compiled
-/// DAE is already past it and the worker has to re-run construction over
-/// `cr.flat` to see anything. A unit test on the animation type would not
-/// have caught getting that wrong — it would just have shown zero frames.
-#[test]
-#[cfg_attr(
-    not(feature = "slow-tests"),
-    ignore = "compile-heavy; run with --features slow-tests"
-)]
-fn pre_lowering_frames_reach_hrw_from_the_real_compile() {
-    use rumoca_phase_dae::PreLoweringStep;
-
-    let FromWorker::Compiled {
-        pre_lowering_frames,
-        flat,
-        ..
-    } = compile_specimen_shared("MotorWithBrake")
-    else {
-        panic!("expected Compiled");
-    };
-    assert!(
-        flat.is_some(),
-        "the flat model must be carried for live replay"
-    );
-    assert!(
-        !pre_lowering_frames.is_empty(),
-        "MotorWithBrake uses pre() via its when-equation"
-    );
-
-    let named: Vec<(String, String)> = pre_lowering_frames
-        .iter()
-        .filter_map(|f| match &f.step {
-            PreLoweringStep::Named { base, slot } => Some((base.clone(), slot.clone())),
-            _ => None,
-        })
-        .collect();
-    assert!(
-        named
-            .iter()
-            .any(|(b, s)| b == "overSpeed" && s == "__pre__.overSpeed"),
-        "the slot the Events IR references must be seen being named: {named:?}",
-    );
-
-    // The pass runs twice per compile, and the second run creates nothing.
-    // That was *mis*-stated as the opposite until the instrumentation showed
-    // otherwise, so it is pinned here rather than left to memory.
-    let completions: Vec<usize> = pre_lowering_frames
-        .iter()
-        .filter_map(|f| match &f.step {
-            PreLoweringStep::Complete { slots_created } => Some(*slots_created),
-            _ => None,
-        })
-        .collect();
-    assert_eq!(
-        completions.len(),
-        2,
-        "the pass runs twice per compile: {completions:?}"
-    );
-    assert!(completions[0] > 0, "the first pass creates the slots");
-    assert_eq!(completions[1], 0, "the second finds nothing left to lower");
-}
 
 /// Following an identifier must survive **real** IR, whatever is in it.
 ///
@@ -4828,7 +4456,7 @@ fn a_library_warning_is_not_a_resolve_failure() {
     ignore = "compile-heavy; run with --features slow-tests"
 )]
 fn the_matching_animation_is_fed_by_the_compile() {
-    use rumoca_phase_structural::matching::MatchingStep;
+    use rumoca_phase_structural::MatchingStep;
 
     let FromWorker::Compiled {
         matching_frames,
@@ -4983,73 +4611,21 @@ fn tearing_frames_are_captured_per_coupled_block() {
 
     // Each segment must open with its own Start — that is what delimits them,
     // so a flat capture spliced into one list would fail here.
-    use rumoca_phase_structural::tearing::TearingStep;
+    // **`BlockStart`, and the segmentation is per block rather than per pass.**
+    // One coupled block yields up to two passes under different tear
+    // priorities, so splitting on `PassStart` would cut a block in half; the
+    // ordinal `BlockStart` carries is what keeps a block's tears off another
+    // block's rows, so the assertion checks it rather than just the variant.
+    use rumoca_phase_structural::TearingStep;
     for (i, seg) in tearing_frames.iter().enumerate() {
         assert!(
-            matches!(seg[0].step, TearingStep::Start { .. }),
-            "segment {i} does not begin at a Start; the segmenting is not \
-             tracking loop boundaries",
+            matches!(seg[0].step, TearingStep::BlockStart { ordinal, .. } if ordinal == i),
+            "segment {i} does not begin at the BlockStart declaring ordinal {i}; \
+             the segmenting is not tracking block boundaries",
         );
     }
 }
 
-/// **Two systems, two captures, and they do not fit each other.**
-///
-/// The matching, Tarjan and tearing views render under Structural *and* Index
-/// Reduction, over two different DAEs. `Drivetrain` is the specimen where that
-/// gap is unmistakable: **97 equations raw, 20 after reduction.**
-///
-/// Until 2026-08-04 the Index Reduction tab had no capture of its own, which is
-/// why the captured constructors needed a re-deriving fallback at all — and, for
-/// a few hours, why they were briefly handed the *raw* system's frames to draw
-/// over the reduced matrix. Doug's question about those fallbacks is what
-/// surfaced it.
-///
-/// **Asserts they are genuinely different**, not merely both present: two
-/// captures of the same system would be the bug wearing a second field.
-#[test]
-#[cfg_attr(
-    not(feature = "slow-tests"),
-    ignore = "compile-heavy; run with --features slow-tests"
-)]
-fn the_reduced_system_has_its_own_captured_frames() {
-    let FromWorker::Compiled {
-        matching_frames,
-        reduced_frames,
-        ..
-    } = compile_specimen_shared("Drivetrain")
-    else {
-        panic!("expected Compiled");
-    };
-
-    let raw_n = matching_frames
-        .first()
-        .map(|f| f.match_eq.len())
-        .expect("the raw system was matched");
-    let reduced_n = reduced_frames
-        .matching
-        .first()
-        .map(|f| f.match_eq.len())
-        .expect(
-            "the reduced system was matched \u{2014} without this the Index \
-                 Reduction tab has nothing to animate and falls back to re-deriving",
-        );
-
-    assert!(
-        raw_n > reduced_n,
-        "index reduction should shrink Drivetrain's system; raw {raw_n}, reduced \
-         {reduced_n}. If they are equal, both captures describe the same run and \
-         the second is not being taken where I think it is.",
-    );
-
-    // The size check inside the animation constructors keys on exactly this, so
-    // state the invariant the UI depends on: neither frame set fits the other's
-    // matrix, which is why picking by stage is not optional.
-    assert_ne!(
-        raw_n, reduced_n,
-        "the two frame sets must not be interchangeable",
-    );
-}
 
 /// **A singular system produces no BLT frames, and none are invented.**
 ///
