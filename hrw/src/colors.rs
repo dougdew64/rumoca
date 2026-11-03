@@ -172,6 +172,9 @@ pub const EQ_CAT_CONNECTION: Color32 = Color32::from_rgb(255, 180, 80);
 pub const EQ_CAT_FLOW_SUM: Color32 = Color32::from_rgb(255, 120, 80);
 pub const EQ_CAT_BINDING: Color32 = Color32::from_rgb(160, 200, 120);
 pub const EQ_CAT_EVENT: Color32 = Color32::from_rgb(200, 140, 220);
+// Deliberately the dimmest of the category colours: a compiler-generated
+// equation is real and must be visible, but it is not what the model says.
+pub const EQ_CAT_GENERATED: Color32 = Color32::from_rgb(150, 150, 150);
 
 /// Solver diagnostics plot — step size (h) line.
 pub const SOLVER_STEP_SIZE: Color32 = Color32::from_rgb(70, 130, 230);
