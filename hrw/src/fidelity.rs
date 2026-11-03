@@ -147,19 +147,23 @@ impl CheckTiming {
 
 /// Run every subject-based and view-based check on one compiled model.
 ///
-/// `reduced` is `Option` and that is the point: **index reduction is capped by
-/// system size**, exactly as the survey caps it, because the cost is the same
-/// cost. Passing `None` omits the `IndexReduction` subjects and the checks skip
-/// them — which they already do for singular models — so a 10,175-equation model
-/// still contributes F2, F3, F5, F6 and F7 on its `Structural` subject rather
-/// than being excluded from the corpus entirely.
+/// **The `reduced` parameter is gone for the v0.10.0 rebase, and the reason it
+/// existed is worth keeping.** It was `Option` because index reduction is
+/// capped by system size, exactly as the survey caps it: passing `None` omitted
+/// the `IndexReduction` subjects so a 10,175-equation model still contributed
+/// F2, F3, F5, F6 and F7 on its `Structural` subject rather than dropping out of
+/// the corpus. **That cap must come back with the re-model** — it is the
+/// difference between a corpus sweep that covers the large models and one that
+/// silently excludes them.
+///
+/// There is nothing to pass today: the reduced DAE came from re-running
+/// reduction over a clone, and 0.10.0's `Dae` is immutable and not `Clone`.
 ///
 /// F8 (sizes) and F9 (failure faithfulness) are the runner's business, not this
 /// function's: they need the whole bundle rather than a subject.
 pub fn check_model(
     stages: &StageBundle,
     dae: &rumoca_ir_dae::Dae,
-    reduced: Option<&rumoca_ir_dae::Dae>,
     sheet: Option<&crate::equation_sheet::EquationSheet>,
     index: Option<&crate::identifier_index::IdentifierIndex>,
     coverage: &mut Coverage,
@@ -180,13 +184,11 @@ pub fn check_model(
         v.into_iter().map(move |detail| Violation { check, detail })
     };
 
-    for s in subjects(stages, dae, reduced.unwrap_or(dae)) {
-        // Without a reduced DAE the IndexReduction subjects would describe the
-        // raw system while claiming to be the reduced one — the raw-vs-reduced
-        // confusion that broke F1's first draft. Skip them instead.
-        if reduced.is_none() && s.label.starts_with("IndexReduction") {
-            continue;
-        }
+    // `subjects` yields only the `Structural` subject now, so the
+    // raw-vs-reduced skip that used to live here has nothing to skip — see
+    // its own note for why passing the raw DAE as the reduced one would be
+    // worse than omitting the subject.
+    for s in subjects(stages, dae) {
         coverage.subjects += 1;
         if s.report["blocks"].as_array().is_some_and(|b| !b.is_empty()) {
             coverage.with_blocks += 1;
@@ -374,16 +376,28 @@ pub fn group_by_check(
     out
 }
 
-/// Every incidence-bearing report in the bundle, with the DAE it describes.
+//// Every incidence-bearing report in the bundle, with the DAE it describes.
 ///
-/// The Structural stage describes the **raw** system and Index Reduction the
-/// **reduced** one — the distinction that made F1's first tearing check fail
-/// for the wrong reason. `before` is the raw system again, published inside
-/// the reduced stage.
+/// **One DAE, not two, for the v0.10.0 rebase.** This took the raw system *and*
+/// the index-reduced one, because the Structural stage describes the raw system
+/// and Index Reduction the reduced one — a distinction that made F1's first
+/// tearing check fail for the wrong reason, and which still matters.
+///
+/// It is one now because the reduced DAE cannot be had: it came from
+/// `worker::index_reduce_in_place` re-running reduction over a *clone*, and
+/// 0.10.0's `Dae` is immutable and not `Clone`. The Index Reduction stage is
+/// disabled accordingly (`docs/tech-debt.md`), so it publishes no incidence and
+/// would yield no subject even if a DAE were passed for it.
+///
+/// **The parameter is removed rather than passed the raw DAE twice**, which
+/// would have compiled and been a lie: the `IndexReduction` subject would then
+/// claim the raw system's incidence was the reduced one's, and every F2
+/// comparison under that label would pass by describing the wrong system. When
+/// the re-model lands it will supply a real reduced DAE and this signature
+/// grows back.
 pub fn subjects<'a>(
     stages: &'a StageBundle,
     dae: &'a rumoca_ir_dae::Dae,
-    reduced: &'a rumoca_ir_dae::Dae,
 ) -> Vec<Subject<'a>> {
     let mut out = Vec::new();
     let mut push = |label: &str, report: Option<&'a Value>, d: &'a rumoca_ir_dae::Dae| {
@@ -398,20 +412,9 @@ pub fn subjects<'a>(
         }
     };
     push("Structural", stages.structural.value.as_ref(), dae);
-    push(
-        "IndexReduction",
-        stages.index_reduction.value.as_ref(),
-        reduced,
-    );
-    push(
-        "IndexReduction.before",
-        stages
-            .index_reduction
-            .value
-            .as_ref()
-            .and_then(|v| v.get("before")),
-        dae,
-    );
+    // `IndexReduction` and `IndexReduction.before` are not pushed. Both
+    // described systems only the disabled stage produced; see the note above
+    // for why passing `dae` for them would be worse than omitting them.
     out
 }
 
@@ -960,7 +963,7 @@ mod tests {
     use super::*;
 
     use crate::worker::test_msl::compile_specimen_shared;
-    use crate::worker::{FromWorker, index_reduce_in_place};
+    use crate::worker::FromWorker;
 
     /// The specimens the invariants run over.
     ///
@@ -1100,8 +1103,6 @@ mod tests {
                 panic!("{name}: expected Compiled");
             };
             let dae = dae.unwrap_or_else(|| panic!("{name}: no DAE"));
-            let mut reduced = dae.clone();
-            index_reduce_in_place(&mut reduced);
 
             // F6 — the views rebuilt from the DAE, against the DAE.
             violations.extend(
@@ -1122,7 +1123,7 @@ mod tests {
                 }
             }
 
-            for s in subjects(&stages, &dae, &reduced) {
+            for s in subjects(&stages, &dae) {
                 subjects_checked += 1;
                 if s.report["blocks"].as_array().is_some_and(|b| !b.is_empty()) {
                     with_blocks += 1;

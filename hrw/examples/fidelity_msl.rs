@@ -51,7 +51,8 @@
 //! **Never run this unbounded.** The cost of being wrong is not a slow run, it
 //! is someone's machine.
 //!
-//! `--max-reduce-eq` mirrors the survey, for the same reason: reduction cost
+//! `--max-reduce-eq` is accepted and ignored while index reduction is
+//! disabled; it mirrored the survey, for the same reason: reduction cost
 //! explodes on large systems. Above the cap the `IndexReduction` subjects are
 //! absent and their checks skip — so a 10,175-equation model still contributes
 //! F2, F3, F5, F6 and F7 rather than being dropped. **F8 explicitly wants the
@@ -66,21 +67,12 @@
 use std::collections::BTreeMap;
 use std::fs::{File, OpenOptions};
 use std::io::{BufWriter, Write};
-use std::path::PathBuf;
 use std::time::Instant;
 
 use hrw::fidelity::{CheckTiming, Coverage, Violation, check_model, group_by_check};
 use hrw::survey::{SurveyRow, classify};
-use hrw::worker::{FromWorker, Outcome, StageKind, WorkerState, index_reduce_in_place};
+use hrw::worker::{FromWorker, Outcome, StageKind, WorkerState};
 
-fn msl_roots() -> Vec<PathBuf> {
-    let base = format!("{}/vendor/msl", env!("CARGO_MANIFEST_DIR"));
-    vec![
-        PathBuf::from(format!("{base}/Modelica 4.1.0")),
-        PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-        PathBuf::from(format!("{base}/Complex.mo")),
-    ]
-}
 
 /// Candidate models, read from the survey rather than re-derived.
 ///
@@ -109,9 +101,10 @@ fn main() {
         );
         std::process::exit(2);
     };
-    let max_reduce_eq: usize = arg(&args, "--max-reduce-eq")
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(800);
+    // `--max-reduce-eq` is accepted and ignored for the v0.10.0 rebase: index
+    // reduction is not checked, so there is no reduction cost to cap. Left
+    // accepted rather than rejected so a saved command line keeps working;
+    // `check_model`'s note records that the cap returns with the re-model.
     let resume = args.iter().any(|a| a == "--resume");
     // `--only-checks F2` runs one check, so the same model profiled once per
     // check yields per-check time AND peak memory from the existing watchdog.
@@ -215,13 +208,12 @@ fn main() {
     eprintln!("loading MSL…");
     let t0 = Instant::now();
     let mut w = WorkerState::new();
-    w.load_libraries(msl_roots()).expect("load MSL");
+    w.load_libraries(hrw::msl_roots()).expect("load MSL");
     eprintln!("loaded in {:.1}s", t0.elapsed().as_secs_f64());
 
     let mut sink = open_sink(&out, done.is_empty()).expect("open the report");
     let mut all: Vec<Violation> = Vec::new();
     let mut checked = 0usize;
-    let mut skipped_reduction = 0usize;
     let mut no_dae = 0usize;
     let mut sizes: Vec<(usize, String)> = Vec::new();
     let mut cov = Coverage::default();
@@ -231,7 +223,7 @@ fn main() {
     for (i, row) in rows.iter().enumerate() {
         if i > 0 && i % rebuild_every == 0 {
             w = WorkerState::new();
-            w.load_libraries(msl_roots()).expect("reload MSL");
+            w.load_libraries(hrw::msl_roots()).expect("reload MSL");
             eprintln!("  [rebuild] fresh session after {i} models");
         }
 
@@ -323,19 +315,15 @@ fn main() {
 
         let mut violations = Vec::new();
         if let Some(dae) = dae.as_ref() {
-            let n_eq = dae.continuous.equations.len();
-            let reduced = if n_eq > max_reduce_eq {
-                skipped_reduction += 1;
-                None
-            } else {
-                let mut r = dae.clone();
-                index_reduce_in_place(&mut r);
-                Some(r)
-            };
+            // **No reduced DAE, and so no reduction cap.** Both are gone with
+            // the index-reduction instrumentation: there is nothing to reduce
+            // over (0.10.0's `Dae` is immutable and not `Clone`), so
+            // `--max-reduce-eq` has nothing to cap. `check_model`'s own note
+            // records that the cap must return with the re-model, because it
+            // is what keeps the largest models in the corpus.
             violations = check_model(
                 &stages,
                 dae,
-                reduced.as_ref(),
                 equation_sheet.as_ref(),
                 identifier_index.as_ref(),
                 &mut cov,
@@ -411,7 +399,7 @@ fn main() {
     sizes.sort_by_key(|(b, _)| std::cmp::Reverse(*b));
     eprintln!(
         "\n[done] {} models in {:.0}s; {checked} with a DAE, {no_dae} without, \
-         {skipped_reduction} with reduction capped",
+         reduction not checked (see check_model)",
         rows.len(),
         t_run.elapsed().as_secs_f64(),
     );

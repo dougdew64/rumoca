@@ -10,13 +10,15 @@ use rumoca_compile::compile::SourceRootKind;
 use rumoca_compile::source_roots::{parse_source_root_with_cache, source_root_source_set_key};
 use rumoca_compile::{Session, SessionConfig};
 
+/// The MSL roots as strings, from the one home in `hrw::msl_roots`.
+///
+/// This held its own three-root copy, which 0.10.0 rejects — see
+/// `hrw::msl_roots` for the measurement and why there is now one home.
 fn msl_roots() -> Vec<String> {
-    let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
-    vec![
-        format!("{base}/Modelica 4.1.0"),
-        format!("{base}/ModelicaServices 4.1.0"),
-        format!("{base}/Complex.mo"),
-    ]
+    hrw::msl_roots()
+        .into_iter()
+        .map(|path| path.to_string_lossy().into_owned())
+        .collect()
 }
 
 fn session_with_msl() -> Session {
@@ -54,7 +56,7 @@ fn rotational_inertia_specimen_resolves_against_msl() {
 
     let qualified = session.qualify_model_name(&uri, "RotationalInertia");
     let class = resolved
-        .0
+        .inner()
         .get_class_by_qualified_name(&qualified)
         .expect("RotationalInertia present in resolved tree");
 

@@ -32,14 +32,6 @@ use std::path::PathBuf;
 
 use hrw::worker::{FromWorker, StageKind, compile_specimen};
 
-fn msl_roots() -> Vec<PathBuf> {
-    let base = format!("{}/vendor/msl", env!("CARGO_MANIFEST_DIR"));
-    vec![
-        PathBuf::from(format!("{base}/Modelica 4.1.0")),
-        PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-        PathBuf::from(format!("{base}/Complex.mo")),
-    ]
-}
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -53,7 +45,7 @@ fn main() {
     for arg in args {
         let path = PathBuf::from(&arg);
         println!("\n================ {} ================", path.display());
-        match compile_specimen(&path, msl_roots()) {
+        match compile_specimen(&path, hrw::msl_roots()) {
             Ok(FromWorker::Compiled { stages, .. }) => {
                 for kind in StageKind::COMPILATION {
                     let stage = stages.get(*kind);

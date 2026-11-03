@@ -48,14 +48,6 @@ use std::path::PathBuf;
 
 use hrw::worker::{FromWorker, StageKind, compile_specimen};
 
-fn msl_roots() -> Vec<PathBuf> {
-    let base = format!("{}/vendor/msl", env!("CARGO_MANIFEST_DIR"));
-    vec![
-        PathBuf::from(format!("{base}/Modelica 4.1.0")),
-        PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-        PathBuf::from(format!("{base}/Complex.mo")),
-    ]
-}
 
 fn main() {
     let mut args = std::env::args().skip(1);
@@ -76,7 +68,7 @@ fn main() {
             .file_stem()
             .map(|s| s.to_string_lossy().to_string())
             .unwrap_or_else(|| "unknown".to_owned());
-        match compile_specimen(&path, msl_roots()) {
+        match compile_specimen(&path, hrw::msl_roots()) {
             Ok(FromWorker::Compiled { stages, .. }) => {
                 // **Every stage, not a chosen pair.** The first version dumped only the two
                 // the hour's question needed, which is exactly the shape that makes a tool

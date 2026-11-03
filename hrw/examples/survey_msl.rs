@@ -92,18 +92,10 @@ use hrw::worker::index_reduce_in_place;
 /// Marks a reduction the cap declined to attempt. Part 2 looks for exactly this.
 const SKIPPED: &str = "skipped:too-large";
 
-fn msl_roots() -> Vec<PathBuf> {
-    let base = format!("{}/vendor/msl", env!("CARGO_MANIFEST_DIR"));
-    vec![
-        PathBuf::from(format!("{base}/Modelica 4.1.0")),
-        PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-        PathBuf::from(format!("{base}/Complex.mo")),
-    ]
-}
 
 fn load_msl() -> Session {
     let mut session = Session::new(SessionConfig::default());
-    for root in msl_roots() {
+    for root in hrw::msl_roots() {
         let parsed = parse_source_root_with_cache(&root)
             .unwrap_or_else(|e| panic!("parse {}: {e:#}", root.display()));
         let key = source_root_source_set_key(&root.to_string_lossy());
@@ -668,7 +660,7 @@ fn write_meta(
          \"seconds\": {},\n  \"generated_unix\": {},\n  \"outcomes\": {{{}}}\n}}\n",
         env!("HRW_RUMOCA_VERSION"),
         env!("CARGO_PKG_VERSION"),
-        msl_roots()
+        hrw::msl_roots()
             .iter()
             .map(|r| format!(
                 "\"{}\"",

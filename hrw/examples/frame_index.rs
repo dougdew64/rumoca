@@ -43,7 +43,7 @@ use std::path::PathBuf;
 
 use hrw::incidence_view::IncidenceMatrix;
 use hrw::matching_anim::MatchingAnimation;
-use rumoca_phase_structural::matching::MatchingStep;
+use rumoca_phase_structural::MatchingStep;
 
 fn main() {
     let mut args = std::env::args().skip(1);
