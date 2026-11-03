@@ -1,5 +1,40 @@
 # Phase 6: DAE Construction
 
+<!-- historical: rumoca-ir-dae/src/event_threshold.rs -->
+<!-- historical: rumoca-ir-dae/src/types.rs -->
+<!-- historical: rumoca-ir-dae/src/visitor.rs -->
+<!-- historical: rumoca-phase-dae/src/algorithm_lowering.rs -->
+<!-- historical: rumoca-phase-dae/src/analysis/classification.rs -->
+<!-- historical: rumoca-phase-dae/src/analysis/definition_analysis.rs -->
+<!-- historical: rumoca-phase-dae/src/analysis/discrete_partition.rs -->
+<!-- historical: rumoca-phase-dae/src/analysis/variable_analysis.rs -->
+<!-- historical: rumoca-phase-dae/src/assertion_actions.rs -->
+<!-- historical: rumoca-phase-dae/src/binding_conversion.rs -->
+<!-- historical: rumoca-phase-dae/src/condition_lowering.rs -->
+<!-- historical: rumoca-phase-dae/src/convert.rs -->
+<!-- historical: rumoca-phase-dae/src/dae_lowering.rs -->
+<!-- historical: rumoca-phase-dae/src/equation_conversion.rs -->
+<!-- historical: rumoca-phase-dae/src/fold_start_values.rs -->
+<!-- historical: rumoca-phase-dae/src/initial.rs -->
+<!-- historical: rumoca-phase-dae/src/pre_lowering.rs -->
+<!-- historical: rumoca-phase-dae/src/promote_parameter_variable.rs -->
+<!-- historical: rumoca-phase-dae/src/when_conversion.rs -->
+<!-- historical: rumoca-phase-structural/src/dae_prepare/connection_alias.rs -->
+<!-- historical: rumoca-phase-structural/src/dae_prepare/direct_demotion.rs -->
+<!-- historical: rumoca-phase-structural/src/dae_prepare/dummy_state_metadata.rs -->
+<!-- historical: rumoca-phase-structural/src/dae_prepare/mod.rs -->
+<!-- historical: rumoca-phase-structural/src/dae_prepare/row_shape.rs -->
+<!-- historical: rumoca-phase-structural/src/dae_prepare/state_row_reduction.rs -->
+<!-- historical: rumoca-phase-structural/src/dae_prepare/symbolic.rs -->
+<!-- historical: rumoca-sim/src/solve_lowering/structural_lowering.rs -->
+
+> ## ⚠ PATHS IN THIS DOCUMENT NAME RUMOCA 0.9.20
+>
+> `rumoca-phase-dae` was reorganised: the twenty-odd single-purpose modules this document tabulates (`convert.rs`, `equation_conversion.rs`, `when_conversion.rs`, the `analysis/` family, …) collapsed into `construction/`, and the `dae_prepare/` steps moved to `dae_transform/` and were rewritten. The phase's **job** is unchanged — this is where variables and equations are partitioned per MLS Appendix B — so read the partition, the classification rules and the worked examples as current, and every file path and module table as 0.9.20.
+>
+> **Kept rather than repointed at the nearest surviving filename**, which would make the document *look* verified while its mechanism prose stayed wrong.
+> `doc_citations::historical_citations_are_really_gone` fails if any path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
+
 ## Overview
 
 The DAE construction phase converts the flat equation model into the canonical

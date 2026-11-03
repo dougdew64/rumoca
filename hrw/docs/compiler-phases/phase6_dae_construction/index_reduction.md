@@ -5,6 +5,39 @@
 *Symbolic differentiator: `crates/rumoca-phase-structural/src/dae_prepare/symbolic.rs`*
 *Pipeline driver: `crates/rumoca-sim/src/solve_lowering/structural_lowering.rs` (`prepare_dae_for_structural_analysis`)*
 
+<!-- historical: crates/rumoca-phase-structural/src/dae_prepare/state_row_reduction.rs -->
+<!-- historical: crates/rumoca-phase-structural/src/dae_prepare/symbolic.rs -->
+<!-- historical: crates/rumoca-phase-structural/src/dae_prepare/mod.rs -->
+<!-- historical: crates/rumoca-sim/src/solve_lowering/structural_lowering.rs -->
+<!-- historical: rumoca-phase-dae/src/dae_lowering.rs -->
+
+> ## ⚠ THE MECHANISM HALF OF THIS DOCUMENT DESCRIBES RUMOCA 0.9.20
+>
+> **The three files named above no longer exist.** v0.10.0 renamed `dae_prepare/` to
+> `dae_transform/` and rewrote the pass: of the seven functions this document names —
+> `prepare_dae_for_structural_analysis`, `index_reduce_missing_state_derivatives`,
+> `reduce_constrained_dummy_derivatives`, `demote_exact_alias_component_states` among them —
+> **none is in the tree under any name.** Reduction now runs in two fixed-point lanes, and
+> `Dae` is immutable and non-`Clone`, so the old "call the steps in order" shape could not
+> survive even if the steps had.
+>
+> **Read "What Problem Does This Step Solve?" and the mathematics as current.** Why an
+> integrator needs a derivative for every state, what makes a system higher-index, why
+> differentiating a constraint and then demoting a state is the move, and the worked
+> `MotorWithBrake` arithmetic — none of that is version-specific, and it is the half of this
+> document that was hard to write.
+>
+> **Read every file path, function name and funnel ordering as 0.9.20.** They are kept rather
+> than repointed at the nearest new filename, which would have made the whole document *look*
+> verified while its mechanism prose stayed wrong.
+> `doc_citations::historical_citations_are_really_gone` fails if any of these paths returns.
+>
+> **The refresh is queued, and it has a seam waiting.** Upstream grew a
+> `ReductionObserver` / `ReductionEvent` pair in
+> `crates/rumoca-phase-structural/src/dae_transform/observation.rs`, which names the lanes,
+> the candidate groups and each attempt's outcome — the vocabulary this document will be
+> rewritten against. Both are `pub(super)` today.
+
 ---
 
 ## What Problem Does This Step Solve?
@@ -377,7 +410,7 @@ separate "analysis" of an already-finished one.
 
 ## The Index-Reduction Algorithm
 
-*Verified 2026-07-30 against `crates/rumoca-phase-structural/src/dae_prepare/mod.rs`* and against a live reduction report: on `MotorWithBrake` the funnel demotes `emf.phi` (4 states to 3) via `reduce_constrained_dummy_derivatives`, with **no** rows differentiated. Textbook Pantelides differentiates a constraint; this path does not, and the difference matters when reading a report.
+*Expired — verified 2026-07-30 against `crates/rumoca-phase-structural/src/dae_prepare/mod.rs`, which v0.10.0 removed.* The verification was real and the observation it recorded is worth keeping: on `MotorWithBrake` the 0.9.20 funnel demoted `emf.phi` (4 states to 3) via `reduce_constrained_dummy_derivatives`, with **no** rows differentiated. Textbook Pantelides differentiates a constraint; that path did not, and the difference mattered when reading a report. **Whether v0.10.0's two-lane reduction still declines to differentiate here is UNMEASURED** — it is the first question the refresh should put to a live report.
 
 ### The outer driver
 
