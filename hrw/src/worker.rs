@@ -636,17 +636,17 @@ impl Stage {
             rendered: crate::equation_text::Rendered::default(),
         }
     }
-    /// A successful IR plus an informational (non-error) note — e.g. the
-    /// index-reduction stage's "already index-1" / "reduced from singular".
-    pub(crate) fn ok_with_note(value: serde_json::Value, note: impl Into<String>) -> Self {
-        Stage {
-            value: Some(value),
-            note: Some(note.into()),
-            outcome: Outcome::Ok,
-            provenance: Provenance::Compiler,
-            rendered: crate::equation_text::Rendered::default(),
-        }
-    }
+    // `ok_with_note` — a successful IR plus an informational, non-error note —
+    // is deleted rather than kept behind an `#[expect(dead_code)]`. Its only
+    // callers were the index-reduction, Events and Initialization stages, all
+    // disabled for this rebase, and `dead_code = deny` is the signal saying so
+    // rather than a nuisance to suppress.
+    //
+    // **The re-models will want it back, and should re-add it rather than
+    // reach for `recovered`.** `recovered` claims `Outcome::Flagged`, which
+    // says the compiler flagged a problem; "already index-1" is a successful
+    // outcome that merely has something to say. `Outcome` is a claim
+    // (`CLAUDE.md`), so the distinction is not cosmetic.
 
     /// Serialize a value to JSON and wrap in a successful Stage, or return an
     /// error Stage if serialization fails (instead of silently producing Null).
@@ -2995,9 +2995,13 @@ impl WorkerState {
                     Ok((rt, _)) => Ok(rt),
                     Err(e) => Err(e),
                 };
-                match strict.as_deref() {
-                    Ok(rt) => {
-                        let rt = rt.inner();
+                match strict.as_ref() {
+                    Ok(strict) => {
+                        // `StrictCompileTree::tree()` borrows the `Arc` the
+                        // session already holds, so this is the whole resolved
+                        // tree without a copy of it. On 0.9.20 the same thing
+                        // was spelled `Arc<ResolvedTree>::inner()`.
+                        let rt = strict.tree();
                         // Extract just this model's class definition from the
                         // full resolved tree (which includes the entire MSL).
                         let stage = extract_class(rt, &qualified);

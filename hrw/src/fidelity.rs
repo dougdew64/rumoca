@@ -485,70 +485,102 @@ fn index_of(names: &[String]) -> (BTreeMap<&str, usize>, Vec<String>) {
 /// Order matters and is checked as order. Every downstream view indexes into
 /// these arrays, so a permutation would leave the matrix looking entirely
 /// plausible while every label sat against the wrong row.
+///
+/// # Two v0.10.0 changes, and one of them is a finding rather than a port
+///
+/// `build_incidence` takes a `DaeView` and returns a `Result`, so the whole
+/// check runs inside `Dae::inspect`. **A derivation failure is reported, not
+/// skipped**: `subjects()` only yields a subject when a report actually
+/// published an incidence, so a DAE whose incidence cannot be built while HRW
+/// published one for it is a genuine discrepancy. Returning no findings there
+/// would be a fidelity check passing vacuously, which is the exact failure this
+/// suite exists to catch.
+///
+/// `Incidence::unknown_names` is gone; the unknowns are `UnknownId`s now and
+/// are rendered through `unknown_label`, the same function the published view
+/// uses. That is the stronger comparison — the old one compared against
+/// whatever `unknown_names` happened to hold, while this compares against the
+/// renderer the publisher itself calls.
 pub fn check_f2(s: &Subject) -> Vec<String> {
     let Some(dae) = s.dae else { return Vec::new() };
-    let mut v = Vec::new();
-    let inc = rumoca_phase_structural::build_incidence(dae);
+    dae.inspect(|view| {
+        let mut v = Vec::new();
+        let inc = match rumoca_phase_structural::build_incidence(view) {
+            Ok(inc) => inc,
+            Err(e) => {
+                v.push(format!(
+                    "{}: build_incidence failed ({e}), but an incidence was published for \
+                     this DAE — the published matrix cannot have come from this analysis",
+                    s.label,
+                ));
+                return v;
+            }
+        };
 
-    let (n_eq, n_var) = (
-        s.report["incidence"]["n_eq"].as_u64().unwrap_or(u64::MAX) as usize,
-        s.report["incidence"]["n_var"].as_u64().unwrap_or(u64::MAX) as usize,
-    );
-    if n_eq != inc.n_eq {
-        v.push(format!(
-            "{}: n_eq {n_eq} published, {} from build_incidence",
-            s.label, inc.n_eq
-        ));
-    }
-    if n_var != inc.n_var {
-        v.push(format!(
-            "{}: n_var {n_var} published, {} from build_incidence",
-            s.label, inc.n_var
-        ));
-    }
-
-    let published_unknowns = unknown_names(s.report);
-    let real_unknowns: Vec<String> = inc.unknown_names.iter().map(ToString::to_string).collect();
-    if published_unknowns != real_unknowns {
-        v.push(format!(
-            "{}: unknown_names differ from build_incidence (first difference at {:?})",
-            s.label,
-            published_unknowns
-                .iter()
-                .zip(&real_unknowns)
-                .position(|(a, b)| a != b)
-                .map_or_else(|| "length".to_owned(), |i| i.to_string()),
-        ));
-    }
-
-    let published_labels = row_labels(s.report);
-    let real_labels: Vec<String> = (0..inc.n_eq)
-        .map(|i| rumoca_phase_structural::equation_label(dae, &inc.equation_refs[i]))
-        .collect();
-    if published_labels != real_labels {
-        v.push(format!(
-            "{}: row equation labels differ from equation_label",
-            s.label
-        ));
-    }
-
-    let published_rows = row_sets(s.report);
-    for (i, real) in inc.eq_unknowns.iter().enumerate() {
-        let real: BTreeSet<usize> = real.iter().copied().collect();
-        match published_rows.get(i) {
-            Some(pub_row) if *pub_row == real => {}
-            Some(pub_row) => v.push(format!(
-                "{}: row {i} publishes {pub_row:?}, build_incidence says {real:?}",
-                s.label,
-            )),
-            None => v.push(format!(
-                "{}: row {i} missing; only {} published",
-                s.label,
-                published_rows.len()
-            )),
+        let (n_eq, n_var) = (
+            s.report["incidence"]["n_eq"].as_u64().unwrap_or(u64::MAX) as usize,
+            s.report["incidence"]["n_var"].as_u64().unwrap_or(u64::MAX) as usize,
+        );
+        if n_eq != inc.n_eq {
+            v.push(format!(
+                "{}: n_eq {n_eq} published, {} from build_incidence",
+                s.label, inc.n_eq
+            ));
         }
-    }
-    v
+        if n_var != inc.n_var {
+            v.push(format!(
+                "{}: n_var {n_var} published, {} from build_incidence",
+                s.label, inc.n_var
+            ));
+        }
+
+        let published_unknowns = unknown_names(s.report);
+        let real_unknowns: Vec<String> = inc
+            .unknowns
+            .iter()
+            .map(|unknown| rumoca_phase_structural::unknown_label(view, *unknown))
+            .collect();
+        if published_unknowns != real_unknowns {
+            v.push(format!(
+                "{}: unknown_names differ from build_incidence (first difference at {:?})",
+                s.label,
+                published_unknowns
+                    .iter()
+                    .zip(&real_unknowns)
+                    .position(|(a, b)| a != b)
+                    .map_or_else(|| "length".to_owned(), |i| i.to_string()),
+            ));
+        }
+
+        let published_labels = row_labels(s.report);
+        let real_labels: Vec<String> = (0..inc.n_eq)
+            .map(|i| rumoca_phase_structural::equation_label(view, &inc.equation_refs[i]))
+            .collect();
+        if published_labels != real_labels {
+            v.push(format!(
+                "{}: row equation labels differ from equation_label",
+                s.label
+            ));
+        }
+
+        let published_rows = row_sets(s.report);
+        for (i, real) in inc.eq_unknowns.iter().enumerate() {
+            let real: BTreeSet<usize> = real.iter().copied().collect();
+            match published_rows.get(i) {
+                Some(pub_row) if *pub_row == real => {}
+                Some(pub_row) => v.push(format!(
+                    "{}: row {i} publishes {pub_row:?}, build_incidence says {real:?}",
+                    s.label,
+                )),
+                None => v.push(format!(
+                    "{}: row {i} missing; only {} published",
+                    s.label,
+                    published_rows.len()
+                )),
+            }
+        }
+        v
+    })
 }
 
 // ---------------------------------------------------------------- F3
