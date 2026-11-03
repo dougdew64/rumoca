@@ -286,6 +286,27 @@ pub fn build_structural_report(
     Ok(structural_report_from_sorted(view, &sorted))
 }
 
+/// [`build_structural_report`], with every matching, Tarjan and tearing step
+/// the same run took.
+///
+/// Both halves describe one execution. [`SortedDae`] is branded to the
+/// inspected root and cannot leave an `inspect` closure, so a consumer that
+/// wants the *owned* report alongside the trace cannot assemble this from
+/// [`inspect_sort`] — it would have to sort twice, and two sorts are two runs.
+///
+/// The trace is returned on the error path too, where it is most useful: the
+/// matching that proved a system singular is already recorded by the time
+/// [`StructuralError::Singular`] is returned, so a caller needs no second,
+/// unobserved matching run to show what failed.
+pub fn inspect_structural_report(
+    view: dae::DaeView<'_>,
+) -> (Result<StructuralReport, StructuralError>, StructuralTrace) {
+    let mut recorder = observation::StructuralRecorder::default();
+    let report = sort_with_observer(view, &mut recorder)
+        .map(|sorted| structural_report_from_sorted(view, &sorted));
+    (report, recorder.finish())
+}
+
 fn structural_report_from_sorted<'dae>(
     view: dae::DaeView<'dae>,
     sorted: &SortedDae<'dae>,
