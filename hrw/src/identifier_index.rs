@@ -39,6 +39,32 @@ pub struct IdentifierIndex {
     pub line_to_variables: HashMap<u32, Vec<String>>,
 }
 
+/// HRW's display label for one DAE variable role.
+///
+/// **This is the single home for the mapping**, and it has to be, because two places compare
+/// against it: [`IdentifierIndex::build`] records the label on every entry, and
+/// `fidelity::check_f6` looks the label back up to decide which role's name set an entry must
+/// appear in. A second copy of this `match` would let the index file a variable under one spelling
+/// while the check looked for another, and the symptom would be a fidelity violation reported
+/// against a perfectly correct index.
+///
+/// The labels are the eight names HRW used for `Dae`'s pre-partitioned vectors before the v0.10.0
+/// rebase, so nothing a reader sees changed when those partitions became [`dae::VariableRole`].
+/// The `match` is exhaustive on purpose: a role added upstream fails to compile here, which is
+/// where the decision about what to call it belongs.
+pub(crate) fn role_label(role: dae::VariableRole) -> &'static str {
+    match role {
+        dae::VariableRole::State => "state",
+        dae::VariableRole::Algebraic => "algebraic",
+        dae::VariableRole::Input => "input",
+        dae::VariableRole::Output => "output",
+        dae::VariableRole::Parameter => "parameter",
+        dae::VariableRole::Constant => "constant",
+        dae::VariableRole::DiscreteReal => "discrete real",
+        dae::VariableRole::DiscreteValue => "discrete valued",
+    }
+}
+
 impl IdentifierIndex {
     /// Build the index from a DAE and its source text.
     ///
@@ -53,9 +79,8 @@ impl IdentifierIndex {
     ///
     /// **The eight partitions became one iteration filtered on [`dae::VariableRole`]**, whose
     /// variants map one-to-one onto the names HRW already used — nothing renamed, nothing
-    /// invented, nothing dropped. The `match` below is that mapping, written out rather than
-    /// derived, so a future variant added upstream fails to compile here instead of silently
-    /// becoming some default.
+    /// invented, nothing dropped. [`role_label`] is that mapping, and it lives at module scope
+    /// rather than inline here because `fidelity::check_f6` has to agree with it exactly.
     ///
     /// **One behaviour change, and it is not a pure refactor:** entries used to arrive partition
     /// by partition and now arrive in DAE index order. The `variables` map cannot collide (a
@@ -69,17 +94,7 @@ impl IdentifierIndex {
 
         dae.inspect(|view| {
             for (_id, var) in view.variables() {
-                let kind = match var.role() {
-                    dae::VariableRole::State => "state",
-                    dae::VariableRole::Algebraic => "algebraic",
-                    dae::VariableRole::Input => "input",
-                    dae::VariableRole::Output => "output",
-                    dae::VariableRole::Parameter => "parameter",
-                    dae::VariableRole::Constant => "constant",
-                    dae::VariableRole::DiscreteReal => "discrete real",
-                    dae::VariableRole::DiscreteValue => "discrete valued",
-                };
-                idx.add_variable(kind, var, specimen_sid, source_text);
+                idx.add_variable(role_label(var.role()), var, specimen_sid, source_text);
             }
         });
 
