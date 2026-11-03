@@ -760,7 +760,9 @@ pub fn check_f6(
     dae: &rumoca_ir_dae::Dae,
 ) -> Vec<String> {
     let mut v = Vec::new();
-    let n_eq = dae.continuous.equations.len();
+    // `continuous_equation_count()` is the 0.10.0 spelling of the old
+    // `dae.continuous.equations.len()`; both count scalar residual rows.
+    let n_eq = dae.inspect(|view| view.continuous_equation_count());
 
     if let Some(sheet) = sheet {
         if sheet.n_equations != n_eq {
@@ -793,57 +795,30 @@ pub fn check_f6(
 
     if let Some(index) = index {
         // Keyed by the `kind` the index itself recorded, so this check does
-        // not merely re-list the DAE's partitions and drift. The first draft
-        // did exactly that — it omitted the two discrete partitions and
-        // reported `BouncingBall`'s `c` as a phantom variable. A partition
-        // added later lands in the `_` arm and says so, instead of
-        // masquerading as a fidelity violation.
-        let vars = &dae.variables;
-        let set = |ks: Vec<String>| -> BTreeSet<String> { ks.into_iter().collect() };
-        let partitions: BTreeMap<&str, BTreeSet<String>> = [
-            (
-                "state",
-                set(vars.states.keys().map(ToString::to_string).collect()),
-            ),
-            (
-                "algebraic",
-                set(vars.algebraics.keys().map(ToString::to_string).collect()),
-            ),
-            (
-                "input",
-                set(vars.inputs.keys().map(ToString::to_string).collect()),
-            ),
-            (
-                "output",
-                set(vars.outputs.keys().map(ToString::to_string).collect()),
-            ),
-            (
-                "parameter",
-                set(vars.parameters.keys().map(ToString::to_string).collect()),
-            ),
-            (
-                "constant",
-                set(vars.constants.keys().map(ToString::to_string).collect()),
-            ),
-            (
-                "discrete real",
-                set(vars
-                    .discrete_reals
-                    .keys()
-                    .map(ToString::to_string)
-                    .collect()),
-            ),
-            (
-                "discrete valued",
-                set(vars
-                    .discrete_valued
-                    .keys()
-                    .map(ToString::to_string)
-                    .collect()),
-            ),
-        ]
-        .into_iter()
-        .collect();
+        // not merely re-list the DAE's roles and drift. The first draft did
+        // exactly that — it omitted the two discrete partitions and reported
+        // `BouncingBall`'s `c` as a phantom variable.
+        //
+        // The label comes from `identifier_index::role_label`, the single home
+        // for the role → label mapping, so this check and the index cannot
+        // disagree about a spelling. That makes the unknown-kind arm below
+        // *narrower* than it was: a role added upstream now fails to compile in
+        // `role_label` rather than arriving here, so the arm fires only for an
+        // index entry carrying a kind string `role_label` never produces.
+        //
+        // Every DAE variable is counted, not just the specimen's — the index is
+        // deliberately a subset (it filters on declaration source), and the
+        // checks below ask only whether each indexed name is present under the
+        // role it was filed as.
+        let mut partitions: BTreeMap<&'static str, BTreeSet<String>> = BTreeMap::new();
+        dae.inspect(|view| {
+            for (_id, var) in view.variables() {
+                partitions
+                    .entry(crate::identifier_index::role_label(var.role()))
+                    .or_default()
+                    .insert(var.name().to_string());
+            }
+        });
 
         for (name, iv) in &index.variables {
             let Some(partition) = partitions.get(iv.kind) else {
