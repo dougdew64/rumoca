@@ -42,6 +42,25 @@ Three things go with it: `app::structural_frames_for_stage` loses its `IndexRedu
 must get it back; `StructuralView::Animate` is hard-coded `false`; and `app::tearing_dae` no longer
 special-cases the reduced system. All three carry comments saying so.
 
+### Resolve failure is inferred from diagnostic severities where 0.10.0 states it structurally
+
+`worker.rs` decides whether a strict compile's resolve actually succeeded with
+`resolve_diagnostics_indicate_failure`, which scans `CommonDiagnostics` for any
+`DiagnosticSeverity::Error`. It exists because recovery **succeeds past errors `Standard` treats
+as fatal**, so an `Ok` return does not mean the model resolved.
+
+**0.10.0 answers the same question at the type level.** The session's planning tree is
+`Complete(Arc<ResolvedTree>)` or `Incomplete(Arc<ClassTree>)` — a completed Resolve proof against
+a recovery tree — and `rumoca_compile::StrictCompileTree::is_complete()` exposes it. A structural
+answer cannot drift if the severity taxonomy changes, which a predicate over severities can.
+
+**Not switched during the rebase, deliberately.** That call sits in `worker.rs`'s compile path,
+which charter Decision 12(a) says is extracted *around*, never restructured — so this is a change
+to propose and watch, not one to fold into a rebase whose job was to make the old behaviour
+compile. The two should also be **compared before one replaces the other**: if they ever disagree
+on a corpus model, the disagreement is the interesting finding, and whichever way it goes one of
+them is currently wrong about a model Doug can load.
+
 ### Solver per-step diagnostics — our instrumentation, not an upstream API
 
 The step-size and BDF-order plots have no data. <!-- unbuilt: worker::solver_steps_from_integrator -->
