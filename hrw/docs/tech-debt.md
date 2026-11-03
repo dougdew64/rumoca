@@ -42,6 +42,26 @@ Three things go with it: `app::structural_frames_for_stage` loses its `IndexRedu
 must get it back; `StructuralView::Animate` is hard-coded `false`; and `app::tearing_dae` no longer
 special-cases the reduced system. All three carry comments saying so.
 
+### `pre()` lowering — the pass became one arm of construction
+
+`pre()`-lowering stepping is not built. <!-- unbuilt: worker::pre_lowering_from_construction -->
+
+HRW animated `lower_pre_operator(&mut dae::Dae)`, a pass that walked a finished DAE and rewrote
+every `pre(x)`, with live stepping re-running `to_dae_with_options_traced`. **0.10.0 has no such
+pass.** `pre()` is lowered *while the expression arena is being built*, as one arm of
+`construction::expression`'s builtin dispatch (`lower_pre`), beside `der`, `edge`, `change`,
+`previous` and `hold`. Neither `lower_pre_operator`, `to_dae_with_options_traced` nor
+`PreLoweringStep` exists, and an immutable `Dae` could not host an in-place rewriting pass anyway.
+
+**The replacement reads construction, and is richer than the pass was.** Because `lower_pre` sits
+beside the other history operators, one seam there can show `pre`, `edge`, `change` and `previous`
+being lowered *together* — which is the comparison that explains MLS §3.7.5's discrete-time
+semantics. The old pass could only ever show `pre` alone.
+
+`pre_lowering_anim.rs` is a placeholder keeping the surface `app.rs` drives, and
+`FromWorker::Compiled` lost its `pre_lowering_frames` field rather than carrying an always-empty
+`Vec` that leaves the plumbing looking alive.
+
 ### Events — a condition is an algebra now, not an equation
 
 The Events stage is not built. <!-- unbuilt: worker::events_from_condition_algebra -->
