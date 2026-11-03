@@ -5411,3 +5411,26 @@ rephrasing would trade real information for a green light on a false positive. B
 commits.** A carve-out is a claim with a scope: it does not license a third offender, and it does
 not apply to any `crates/`-only commit, which must stay clean because those are the ones upstream
 actually receives.
+
+### ⟶ CORRECTION, 2026-11-03: THE COUNT WAS NEVER TWO. IT IS SIX.
+
+**Measured by running the test**, which the paragraph above never did —
+`cargo test -p rumoca --test architecture_hardening_test` is not part of the hrw gate, so the
+figure above was reasoned from the commits that *looked* likely rather than read off the failure.
+The offenders are `ea7c44e4`, `cfaa060c`, `d11714df`, `fc9e525b`, `71dafa88` and `fa23db73` — all
+`hrw`-side, all from this rebase.
+
+**The scope sentence held, and it is what caught this.** Two commits in this session's batch cited
+the governing document by filename and so would have become a seventh and eighth. *"A carve-out is
+a claim with a scope: it does not license a third offender"* ruled that out, so both were reworded
+instead — the rules they quote are quotable without the filename — and the content was verified
+byte-identical against `backup/pre-msg-reword-2`. Nothing had been pushed, which is what made that
+free, exactly as it was for the original fifteen.
+
+**Two lessons, and the second is the larger one.** A number in a record that nobody ran a command
+to get is a guess wearing a figure's clothes. And **a rule with a stated scope did the work a
+count could not**: the count was wrong, the scope was right, and the scope is what stopped the
+list growing.
+
+*Still Doug's to rule on:* whether six is acceptable, or whether the six should be reworded the
+way these two were. They are the same false positive, just more of it.
