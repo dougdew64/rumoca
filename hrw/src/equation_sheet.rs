@@ -9,10 +9,25 @@
 use std::collections::HashMap;
 
 use eframe::egui;
-use rumoca_core::{SourceId, VarName};
+use rumoca_core::{SourceId, Span};
 use rumoca_ir_dae as dae;
 
-use crate::expr_format;
+
+/// Per-role variable totals plus the equation count, tallied in one pass.
+///
+/// Replaces eight `dae.variables.<partition>.len()` reads with one iteration, so
+/// these can no longer disagree with the variable rows the sheet lists.
+#[derive(Debug, Default)]
+struct RoleCounts {
+    n_equations: usize,
+    n_states: usize,
+    n_algebraics: usize,
+    n_parameters: usize,
+    n_constants: usize,
+    n_discrete: usize,
+    n_inputs: usize,
+    n_outputs: usize,
+}
 
 /// A single formatted equation with its origin and index.
 #[derive(Debug, Clone)]
@@ -224,6 +239,23 @@ pub enum EquationCategory {
     UnconnectedFlow,
     Binding,
     Event,
+    /// An equation Rumoca synthesised whose kind has no group of its own here.
+    ///
+    /// **Added for the v0.10.0 port, and it exists to avoid a false claim.**
+    /// Before 0.10.0 an equation carried `origin: String` and anything HRW did
+    /// not recognise fell into [`Self::Component`] as a stated fallback. 0.10.0
+    /// replaces that string with a typed [`dae::DaeGeneration`] of 24 variants,
+    /// and most of them are *not* model equations —
+    /// `IndexReduction`, `AliasElimination`, `SyntheticResidual`,
+    /// `ArrayEquationProjection` and the rest are things the compiler made.
+    /// Routing those to `Component`, whose heading says "Component equations"
+    /// and whose description says *from component instances*, would assert the
+    /// model's author wrote them.
+    ///
+    /// The group is deliberately coarse: the per-equation `origin` field carries
+    /// Rumoca's own phrasing for the exact kind, so nothing is lost by not
+    /// inventing a heading per variant.
+    Generated,
 }
 
 impl EquationCategory {
@@ -254,6 +286,7 @@ impl EquationCategory {
             Self::UnconnectedFlow => "Unconnected flow",
             Self::Binding => "Bindings",
             Self::Event => "Event equations",
+            Self::Generated => "Compiler-generated equations",
         }
     }
 
@@ -285,6 +318,9 @@ impl EquationCategory {
             }
             Self::Binding => "Variable bindings from declarations (parameter values, fixed starts)",
             Self::Event => "Discrete assignments from when/elsewhen clauses and reinit",
+            Self::Generated => {
+                "Equations Rumoca synthesised; each row's origin names the exact kind"
+            }
         }
     }
 
@@ -297,6 +333,7 @@ impl EquationCategory {
             Self::FlowSum | Self::UnconnectedFlow => crate::colors::EQ_CAT_FLOW_SUM,
             Self::Binding => crate::colors::EQ_CAT_BINDING,
             Self::Event => crate::colors::EQ_CAT_EVENT,
+            Self::Generated => crate::colors::EQ_CAT_GENERATED,
         }
     }
 }
@@ -502,38 +539,79 @@ pub fn flat_node_lines(
 
 /// Classify an equation by the **kind Rumoca gave it**, not by reading its prose.
 ///
-/// # What this replaced, and why it was wrong
+/// # No text is parsed any more, and that closes a three-year workaround
 ///
 /// Until 2026-08-13 this function tested prefixes itself —
-/// `origin.starts_with("connection equation")`, `origin.contains("when")`, and so on.
-/// That is **substring search deciding a classification**, which
-/// `docs/identity-and-provenance.md` forbids outright, and it was a private guess at
-/// what `rumoca_ir_flat::EquationOrigin`'s `Display` produces, linked to it by nothing.
+/// `origin.starts_with("connection equation")`, `origin.contains("when")` — which is
+/// **substring search deciding a classification**, forbidden outright by
+/// `docs/identity-and-provenance.md`. That became a checked inverse of Rumoca's
+/// `Display` (`EquationOriginKind::from_rendered`), which was better but still a
+/// round-trip through rendered English.
 ///
-/// [`EquationOriginKind::from_rendered`] is now the one inverse of that `Display`, lives
-/// beside it in `rumoca-ir-flat`, and is proven against **every variant** by
-/// `rendered_origins_round_trip_to_their_kind`. The guess became a checked mapping.
+/// **The reason it had to parse at all is gone.** The note below is kept verbatim
+/// because it states the constraint exactly, and v0.10.0 removes it:
+/// `DaeProvenance::origin()` carries a typed [`dae::DaeProvenanceOrigin`] —
+/// `Source`, or `Generated` with one of 24 [`dae::DaeGeneration`] kinds — so the
+/// typed origin now *does* survive the DAE boundary and this is a plain match.
+/// The 532-site problem it describes was solved upstream by moving the
+/// classification onto provenance rather than onto the equation.
 ///
-/// **Why parsing at all:** the typed origin does not survive the DAE boundary —
-/// `rumoca_ir_dae::Equation::origin` is a `String` — so a consumer downstream of DAE
-/// construction has only the rendered text. Carrying the type across would mean adding a
-/// field to a struct built at **532 sites across ten crates**, which is not the additive
-/// change the instrumentation rules require.
+/// > **Why parsing at all:** the typed origin does not survive the DAE boundary —
+/// > `rumoca_ir_dae::Equation::origin` is a `String` — so a consumer downstream of DAE
+/// > construction has only the rendered text. Carrying the type across would mean adding a
+/// > field to a struct built at **532 sites across ten crates**, which is not the additive
+/// > change the instrumentation rules require.
 ///
-/// `Unknown` maps to `Component` **as a stated fallback, not a guess**: an unrecognised
-/// origin is some equation the model produced, and `Component equations` is the group
-/// that means "from the model itself".
-fn categorize_origin(origin: &str) -> EquationCategory {
-    match rumoca_ir_flat::EquationOriginKind::from_rendered(origin) {
-        rumoca_ir_flat::EquationOriginKind::Connection => EquationCategory::Connection,
-        rumoca_ir_flat::EquationOriginKind::FlowSum => EquationCategory::FlowSum,
-        rumoca_ir_flat::EquationOriginKind::UnconnectedFlow => EquationCategory::UnconnectedFlow,
-        rumoca_ir_flat::EquationOriginKind::Binding => EquationCategory::Binding,
-        rumoca_ir_flat::EquationOriginKind::Reinit
-        | rumoca_ir_flat::EquationOriginKind::WhenAssignment => EquationCategory::Event,
-        rumoca_ir_flat::EquationOriginKind::ComponentEquation
-        | rumoca_ir_flat::EquationOriginKind::Algorithm
-        | rumoca_ir_flat::EquationOriginKind::Unknown => EquationCategory::Component,
+/// **There is no fallback arm now, and that is the point.** Every one of the 24
+/// generations is named, so a kind added upstream fails to compile here and gets
+/// a decision. The old `Unknown => Component` fallback could not have stayed
+/// anyway: most generations are *not* model equations, and `Component equations`
+/// means "from the model itself", so the fallback would have begun asserting
+/// that Rumoca's synthesised residuals and index-reduction equations were
+/// hand-written. Those go to [`EquationCategory::Generated`].
+fn categorize_origin(origin: dae::DaeProvenanceOrigin) -> EquationCategory {
+    use dae::DaeGeneration as G;
+
+    let generation = match origin {
+        // Not generated at all: the model's author wrote this equation.
+        dae::DaeProvenanceOrigin::Source => return EquationCategory::Component,
+        dae::DaeProvenanceOrigin::Generated(generation) => generation,
+    };
+    match generation {
+        G::ConnectionEquation => EquationCategory::Connection,
+        G::FlowBalanceEquation => EquationCategory::FlowSum,
+        G::UnconnectedFlowEquation => EquationCategory::UnconnectedFlow,
+        G::BindingEquation => EquationCategory::Binding,
+        // The three ways a model's event behaviour becomes an equation: a
+        // `when` body's assignment, a `reinit`, and the lowering of the
+        // condition that guards them.
+        G::DiscreteUpdate | G::EventActionLowering | G::ConditionLowering => {
+            EquationCategory::Event
+        }
+        // An algorithm section is written by the author even though construction
+        // marks it generated, so it groups with the model's own equations --
+        // which is where the old string-based mapping put it too.
+        G::AlgorithmEquation => EquationCategory::Component,
+        // Everything else is the compiler's own work. Listed rather than left to
+        // a wildcard so a generation added upstream fails to compile here and
+        // gets a decision, instead of silently joining this group.
+        G::SyntheticResidual
+        | G::PreValueLowering
+        | G::ClockLowering
+        | G::DelayLowering
+        | G::SemiLinearLowering
+        | G::TerminalLowering
+        | G::InitializationEquation
+        | G::DefaultStart
+        | G::ArrayEquationProjection
+        | G::RecordEquationProjection
+        | G::FunctionLoopLowering
+        | G::FunctionConditionLowering
+        | G::FunctionAggregateLowering
+        | G::DerivedParameterLowering
+        | G::IndexReduction
+        | G::AliasElimination
+        | G::RuntimeDiscontinuity => EquationCategory::Generated,
     }
 }
 
@@ -624,15 +702,37 @@ pub fn build(dae: &dae::Dae, source_info: Option<(&str, &str)>) -> EquationSheet
     // Flat list for building the reverse mapping (line → equations).
     let mut all_equations: Vec<(usize, EquationCategory, Vec<u32>)> = Vec::new();
 
-    for (i, eq) in dae.continuous.equations.iter().enumerate() {
-        let text = expr_format::format_equation(eq);
-        let origin = eq.origin.clone();
-        let category = categorize_origin(&origin);
+    // **One `inspect` for the whole sheet.** A 0.10.0 `Dae` is reachable only
+    // through a `DaeView` under a higher-ranked lifetime, so nothing borrowed
+    // from it escapes this closure — which is why the loop collects owned
+    // `FormattedEquation`s rather than returning views.
+    let equations: Vec<(usize, String, String, dae::DaeProvenanceOrigin, Span)> =
+        dae.inspect(|view| {
+            (0..view.continuous_equation_count())
+                .filter_map(|index| {
+                    let equation = view.continuous_equation(index)?;
+                    let provenance = equation.provenance();
+                    Some((
+                        index,
+                        crate::dae_expr_format::format_equation(view, equation),
+                        // Rumoca's own phrasing for the kind, published rather
+                        // than relabelled: "connection equation",
+                        // "unconnected-flow equation", "source DAE object".
+                        provenance.origin().to_string(),
+                        provenance.origin(),
+                        provenance.span(),
+                    ))
+                })
+                .collect()
+        });
+
+    for (i, text, origin, provenance_origin, span) in equations {
+        let category = categorize_origin(provenance_origin);
 
         // Try span-based matching first (direct specimen equations).
         let mut source_lines: Vec<u32> = match (specimen_sid, source_text) {
-            (Some(sid), Some(src)) if eq.span.source == sid => {
-                vec![byte_offset_to_line(src, eq.span.start.0)]
+            (Some(sid), Some(src)) if span.source == sid => {
+                vec![byte_offset_to_line(src, span.start.0)]
             }
             _ => Vec::new(),
         };
@@ -748,62 +848,94 @@ pub fn build(dae: &dae::Dae, source_info: Option<(&str, &str)>) -> EquationSheet
     /// Returns the **first** match. A variable can be differentiated in more than
     /// one equation; one real citation answers *why it is a state* better than a
     /// summary of several.
-    fn derivative_evidence(dae: &dae::Dae, var_name: &VarName) -> Option<DerivativeEvidence> {
-        dae.continuous
-            .equations
-            .iter()
-            .enumerate()
-            .find(|(_, eq)| rumoca_ir_dae::expr_contains_der_of(&eq.rhs, var_name))
+    /// Find the equation that differentiates `state`, if any.
+    ///
+    /// **Now an identity comparison rather than a name one.** 0.10.0's
+    /// `expr_contains_der_of` takes a branded [`dae::StateId`] and matches
+    /// `CoordinateView::Derivative(candidate) if candidate == state`, so the
+    /// question "does this equation differentiate *this* variable" is answered
+    /// by the arena's own identity instead of by asking whether a reference
+    /// *refers to* a name. That removes the last way the `der(C.v1)` /
+    /// `der(C.v)` confusion described above could ever have come back.
+    fn derivative_evidence<'dae>(
+        view: dae::DaeView<'dae>,
+        state: dae::StateId<'dae>,
+    ) -> Option<DerivativeEvidence> {
+        (0..view.continuous_equation_count())
+            .filter_map(|index| view.continuous_equation(index).map(|eq| (index, eq)))
+            .find(|(_, eq)| {
+                rumoca_ir_dae::expr_contains_der_of(view, eq.residual(), state)
+            })
             .map(|(index, eq)| DerivativeEvidence {
                 // Spelled exactly as this sheet spells it above, so the hover names
                 // a row Doug can navigate to rather than a number he must trust.
                 equation_id: format!("f_x[{index}]"),
-                equation_text: expr_format::format_equation(eq),
+                equation_text: crate::dae_expr_format::format_equation(view, eq),
             })
     }
 
-    fn collect_vars(
-        vars: &mut Vec<ClassifiedVariable>,
-        iter: impl Iterator<Item = (VarName, dae::Variable)>,
-        kind: &'static str,
-        dae: &dae::Dae,
-    ) {
-        for (var_name, v) in iter {
-            vars.push(ClassifiedVariable {
-                name: var_name.to_string(),
+    // **One iteration over roles, replacing eight partition reads.** The kind
+    // strings are `identifier_index::role_label`'s, the single home for that
+    // mapping — except that this sheet has always collapsed both discrete roles
+    // to one `"discrete"` bucket, which is preserved below rather than silently
+    // split by the shared labels.
+    dae.inspect(|view| {
+        for (_id, var) in view.variables() {
+            let kind = match var.role() {
+                dae::VariableRole::DiscreteReal | dae::VariableRole::DiscreteValue => "discrete",
+                role => crate::identifier_index::role_label(role),
+            };
+            variables.push(ClassifiedVariable {
+                name: var.name().to_string(),
                 kind,
-                unit: v.unit.clone().filter(|u| !u.is_empty()),
-                description: v.description.clone().filter(|d| !d.is_empty()),
-                start: v.start.as_ref().map(expr_format::format_expr),
+                unit: var
+                    .unit()
+                    .filter(|u| !u.is_empty())
+                    .map(str::to_owned),
+                description: var
+                    .description()
+                    .filter(|d| !d.is_empty())
+                    .map(str::to_owned),
+                start: var
+                    .start()
+                    .map(|start| crate::dae_expr_format::format_expr(view, start)),
                 // Only states are searched: for every other kind the scan would
                 // cost a run of `f_x` to learn nothing, since their reason is
                 // either the absence of a match or the declaration itself.
-                derivative_evidence: (kind == "state")
-                    .then(|| derivative_evidence(dae, &var_name))
-                    .flatten(),
+                derivative_evidence: match var.identity() {
+                    dae::VariableIdentity::State(state) => derivative_evidence(view, state),
+                    _ => None,
+                },
             });
         }
-    }
+    });
 
-    macro_rules! collect_from {
-        ($map:expr, $kind:expr) => {
-            collect_vars(
-                &mut variables,
-                $map.iter().map(|(n, v)| (n.clone(), v.clone())),
-                $kind,
-                dae,
-            )
+    // **The per-role totals, tallied from the same iteration the sheet reports.**
+    // These were eight `dae.variables.<partition>.len()` reads. Counting by role
+    // here keeps them from being able to disagree with `variables` above: a role
+    // this sheet buckets differently still lands in exactly one counter.
+    let counts = dae.inspect(|view| {
+        let mut counts = RoleCounts {
+            n_equations: view.continuous_equation_count(),
+            ..RoleCounts::default()
         };
-    }
-
-    collect_from!(dae.variables.states, "state");
-    collect_from!(dae.variables.algebraics, "algebraic");
-    collect_from!(dae.variables.inputs, "input");
-    collect_from!(dae.variables.outputs, "output");
-    collect_from!(dae.variables.parameters, "parameter");
-    collect_from!(dae.variables.constants, "constant");
-    collect_from!(dae.variables.discrete_reals, "discrete");
-    collect_from!(dae.variables.discrete_valued, "discrete");
+        for (_id, var) in view.variables() {
+            let counter = match var.role() {
+                dae::VariableRole::State => &mut counts.n_states,
+                dae::VariableRole::Algebraic => &mut counts.n_algebraics,
+                dae::VariableRole::Parameter => &mut counts.n_parameters,
+                dae::VariableRole::Constant => &mut counts.n_constants,
+                dae::VariableRole::Input => &mut counts.n_inputs,
+                dae::VariableRole::Output => &mut counts.n_outputs,
+                // One bucket for both, as this sheet has always reported them.
+                dae::VariableRole::DiscreteReal | dae::VariableRole::DiscreteValue => {
+                    &mut counts.n_discrete
+                }
+            };
+            *counter += 1;
+        }
+        counts
+    });
 
     // **Path -> line, for the stage tree.** Built from the same `source_lines` the
     // sheet already resolved, so the tree and the sheet cannot disagree about where
@@ -825,15 +957,15 @@ pub fn build(dae: &dae::Dae, source_info: Option<(&str, &str)>) -> EquationSheet
         node_lines,
         // Filled by the caller, which has the flat model; `build` only sees the DAE.
         flat_node_lines: HashMap::new(),
-        n_equations: dae.continuous.equations.len(),
+        n_equations: counts.n_equations,
         groups,
-        n_states: dae.variables.states.len(),
-        n_algebraics: dae.variables.algebraics.len(),
-        n_parameters: dae.variables.parameters.len(),
-        n_constants: dae.variables.constants.len(),
-        n_discrete: dae.variables.discrete_reals.len() + dae.variables.discrete_valued.len(),
-        n_inputs: dae.variables.inputs.len(),
-        n_outputs: dae.variables.outputs.len(),
+        n_states: counts.n_states,
+        n_algebraics: counts.n_algebraics,
+        n_parameters: counts.n_parameters,
+        n_constants: counts.n_constants,
+        n_discrete: counts.n_discrete,
+        n_inputs: counts.n_inputs,
+        n_outputs: counts.n_outputs,
         variables,
         source_lines,
     }
@@ -850,6 +982,7 @@ impl EquationCategory {
             Self::UnconnectedFlow => 3,
             Self::Binding => 4,
             Self::Event => 5,
+            Self::Generated => 6,
         }
     }
 }
@@ -870,76 +1003,103 @@ impl PartialOrd for EquationCategory {
 mod tests {
     use super::*;
 
+    /// Each generation lands in the group that states what it is.
+    ///
+    /// **No strings any more, and that is the change.** This test used to render
+    /// `rumoca_ir_flat::EquationOrigin` through `Display` and feed the text to a
+    /// parser — itself a repair of a worse version that asserted on invented
+    /// strings `Display` never produces, and so validated the parser against
+    /// fiction. v0.10.0 carries a typed [`dae::DaeProvenanceOrigin`] across the
+    /// DAE boundary, so there is no text in the path at all.
+    ///
+    /// The flat-origin half of the mapping is now pinned where it belongs, in
+    /// the crate that owns it: `rumoca-phase-dae`'s
+    /// `an_unconnected_flow_is_distinct_from_a_flow_balance`. This half only has
+    /// to get the generations into the right groups.
     #[test]
-    fn categorize_origin_covers_all_variants() {
-        // **Every input here is RENDERED BY RUMOCA, not written by hand.**
-        //
-        // The previous version of this test asserted on invented strings —
-        // `"flow sum: ..."`, `"unconnected flow x"`, `"binding for p"` — none of which
-        // `EquationOrigin`'s `Display` ever produces. It passed because the old
-        // hand-rolled prefixes (`starts_with("flow sum")`) were loose enough to catch
-        // them, so **the parser was being validated against fiction**: it proved the
-        // categoriser handled strings that cannot occur, and proved nothing about the
-        // ones that do. Found 2026-08-13 when the categoriser was tightened to Rumoca's
-        // real vocabulary and this test failed on three rows.
-        use rumoca_ir_flat::EquationOrigin;
-        let rendered = |o: &EquationOrigin| o.to_string();
+    fn each_generation_lands_in_the_group_that_states_what_it_is() {
+        use dae::DaeGeneration as G;
+        use dae::DaeProvenanceOrigin::{Generated, Source};
 
-        assert_eq!(
-            categorize_origin(&rendered(&EquationOrigin::ComponentEquation {
-                component: "motor".into()
-            })),
-            EquationCategory::Component
-        );
-        assert_eq!(
-            categorize_origin(&rendered(&EquationOrigin::ComponentEquation {
-                component: String::new()
-            })),
-            EquationCategory::Component
-        );
-        assert_eq!(
-            categorize_origin(&rendered(&EquationOrigin::Connection {
-                lhs: "a".into(),
-                rhs: "b".into()
-            })),
-            EquationCategory::Connection
-        );
-        assert_eq!(
-            categorize_origin(&rendered(&EquationOrigin::FlowSum {
-                description: "a + b = 0".into()
-            })),
-            EquationCategory::FlowSum
-        );
-        // **Its own category now**, not folded into FlowSum: "no junction at all" is a
-        // different statement from "these flows cancel at a junction".
-        assert_eq!(
-            categorize_origin(&rendered(&EquationOrigin::UnconnectedFlow {
-                variable: "c.n.i".into()
-            })),
-            EquationCategory::UnconnectedFlow
-        );
-        assert_eq!(
-            categorize_origin(&rendered(&EquationOrigin::Binding {
-                variable: "p".into()
-            })),
-            EquationCategory::Binding
-        );
-        assert_eq!(
-            categorize_origin(&rendered(&EquationOrigin::Reinit { state: "v".into() })),
-            EquationCategory::Event
-        );
-        assert_eq!(
-            categorize_origin(&rendered(&EquationOrigin::WhenAssignment {
-                target: "x".into()
-            })),
-            EquationCategory::Event
-        );
-        // An origin Rumoca does not produce is not silently binned as something
-        // plausible; it lands in the group that means "from the model itself".
-        assert_eq!(
-            categorize_origin("something nobody writes"),
-            EquationCategory::Component
-        );
+        // An equation the author wrote.
+        assert_eq!(categorize_origin(Source), EquationCategory::Component);
+
+        for (generation, expected) in [
+            (G::ConnectionEquation, EquationCategory::Connection),
+            (G::FlowBalanceEquation, EquationCategory::FlowSum),
+            // Its own group, not folded into the flow sum: "no junction at all"
+            // is a different statement from "these flows cancel at a junction".
+            (G::UnconnectedFlowEquation, EquationCategory::UnconnectedFlow),
+            (G::BindingEquation, EquationCategory::Binding),
+            (G::DiscreteUpdate, EquationCategory::Event),
+            (G::EventActionLowering, EquationCategory::Event),
+            (G::ConditionLowering, EquationCategory::Event),
+            // Written by the author, even though construction marks it generated.
+            (G::AlgorithmEquation, EquationCategory::Component),
+            (G::IndexReduction, EquationCategory::Generated),
+            (G::SyntheticResidual, EquationCategory::Generated),
+            (G::AliasElimination, EquationCategory::Generated),
+            (G::InitializationEquation, EquationCategory::Generated),
+        ] {
+            assert_eq!(
+                categorize_origin(Generated(generation)),
+                expected,
+                "{generation} landed in the wrong group",
+            );
+        }
+    }
+
+    /// Only an algorithm section may be grouped with the model's own equations.
+    ///
+    /// `Component`'s heading reads "Component equations" and its description
+    /// says *from component instances*, so putting a compiler-made equation
+    /// there asserts the author wrote it. The old mapping had a
+    /// `Unknown => Component` fallback that would do exactly that once the
+    /// origin became a 24-variant enum, most of whose members are the
+    /// compiler's own work.
+    ///
+    /// The list is written out, so it can go stale if upstream adds a
+    /// generation — but the exhaustive `match` in [`categorize_origin`] fails to
+    /// compile in that case, which is the guard that cannot rot. This test
+    /// catches the other direction: a careless edit re-routing one of these into
+    /// `Component`.
+    #[test]
+    fn no_compiler_generation_claims_to_be_a_model_equation() {
+        use dae::DaeGeneration as G;
+        use dae::DaeProvenanceOrigin::Generated;
+
+        for generation in [
+            G::SyntheticResidual,
+            G::BindingEquation,
+            G::ConnectionEquation,
+            G::FlowBalanceEquation,
+            G::UnconnectedFlowEquation,
+            G::DiscreteUpdate,
+            G::ConditionLowering,
+            G::PreValueLowering,
+            G::ClockLowering,
+            G::DelayLowering,
+            G::SemiLinearLowering,
+            G::TerminalLowering,
+            G::EventActionLowering,
+            G::InitializationEquation,
+            G::DefaultStart,
+            G::ArrayEquationProjection,
+            G::RecordEquationProjection,
+            G::FunctionLoopLowering,
+            G::FunctionConditionLowering,
+            G::FunctionAggregateLowering,
+            G::DerivedParameterLowering,
+            G::IndexReduction,
+            G::AliasElimination,
+            G::RuntimeDiscontinuity,
+        ] {
+            assert_ne!(
+                categorize_origin(Generated(generation)),
+                EquationCategory::Component,
+                "{generation} would be presented as an equation the model's author wrote",
+            );
+        }
     }
 
     #[test]
