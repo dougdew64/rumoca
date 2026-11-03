@@ -132,6 +132,28 @@ pub const NODE_LABEL_ZOOM_THRESHOLD: f32 = 10.0;
 
 /// Truncate a label to at most `max` bytes, returning a sub-slice.
 /// Falls back to the full string if the boundary isn't char-aligned.
+/// The source roots needed to compile a specimen that uses the MSL.
+///
+/// **One root — the parent directory — and that is the v0.10.0 fix.** HRW
+/// handed over three (`Modelica 4.1.0`, `ModelicaServices 4.1.0`,
+/// `Complex.mo`), which 0.10.0 rejects: resolve fails with an unresolved
+/// component reference on `Integer_inf`. Measured 2026-09-19 against `853791b`
+/// and recorded in `docs/updating-rumoca.md` step 2, which also warns that it
+/// **does not surface as a compile error** — `cargo build` stays green and
+/// every MSL-dependent test fails instead.
+///
+/// **One home, because there were seven.** This fact was copied into
+/// `worker::test_msl` and six examples, and the procedure doc had to tell a
+/// rebaser to "grep for it rather than fixing the first one". A fact with seven
+/// copies is a fact that will be half-fixed next time.
+#[must_use]
+pub fn msl_roots() -> Vec<std::path::PathBuf> {
+    vec![std::path::PathBuf::from(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/vendor/msl"
+    ))]
+}
+
 pub fn truncate_label(s: &str, max: usize) -> &str {
     if s.len() <= max {
         s

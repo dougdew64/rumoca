@@ -2,16 +2,11 @@ use super::{FromWorker, WorkerState};
 use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};
 
-/// Returns the three MSL (Modelica Standard Library) root paths needed
-/// to compile any specimen that uses standard components.
-pub(crate) fn msl_roots() -> Vec<PathBuf> {
-    let base = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/msl");
-    vec![
-        PathBuf::from(format!("{base}/Modelica 4.1.0")),
-        PathBuf::from(format!("{base}/ModelicaServices 4.1.0")),
-        PathBuf::from(format!("{base}/Complex.mo")),
-    ]
-}
+/// The MSL source roots, from the one home in `crate::msl_roots`.
+///
+/// Kept as a re-export rather than a second copy: this used to hold its own
+/// three-root list, one of seven copies of the same fact.
+pub(crate) use crate::msl_roots;
 
 /// One MSL-loaded worker, built once and shared across the worker tests behind
 /// a mutex. Each test needs the full MSL (~430MB resolved); loading it per-test
