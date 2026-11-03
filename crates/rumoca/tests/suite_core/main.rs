@@ -164,4 +164,5 @@ mod time_event_when_activation;
 mod verification_surface_wiring;
 
 mod structural_binding_functions;
+mod structural_observation;
 mod zero_coefficient_incidence;

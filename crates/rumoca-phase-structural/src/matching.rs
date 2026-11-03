@@ -12,6 +12,15 @@
 //! on long alternating chains, which array-shaped models produce routinely.
 
 use crate::incidence::rows::IncidenceRows;
+use crate::observation::{MatchingStep, StructuralEvent, StructuralObserver};
+
+/// Hand one matching step and the matching it left behind to the observer.
+///
+/// `()` compiles this to nothing, so the untraced path pays only the borrow of
+/// `match_eq` that it already holds.
+fn emit(observer: &mut impl StructuralObserver, step: MatchingStep, match_eq: &[Option<usize>]) {
+    observer.observe(StructuralEvent::Matching { step, match_eq });
+}
 
 pub(crate) fn maximum_matching_with_structured(
     n_eq: usize,
@@ -19,9 +28,18 @@ pub(crate) fn maximum_matching_with_structured(
     eq_vars: &IncidenceRows,
     preferred_vars: &[Option<usize>],
     structured_families: &[crate::incidence::StructuredMatchingFamily],
+    observer: &mut impl StructuralObserver,
 ) -> (Vec<Option<usize>>, Vec<Option<usize>>) {
     let mut match_eq: Vec<Option<usize>> = vec![None; n_eq];
     let mut match_var: Vec<Option<usize>> = vec![None; n_var];
+    emit(
+        observer,
+        MatchingStep::Start {
+            n_equations: n_eq,
+            n_unknowns: n_var,
+        },
+        &match_eq,
+    );
     let seeded = seed_structured_family_matches(
         &mut Matching {
             match_eq: &mut match_eq,
@@ -29,6 +47,7 @@ pub(crate) fn maximum_matching_with_structured(
         },
         eq_vars,
         structured_families,
+        observer,
     );
 
     let context = MatchContext {
@@ -39,7 +58,8 @@ pub(crate) fn maximum_matching_with_structured(
     let mut scratch = AugmentScratch::new(n_var);
     for eq in equation_order {
         scratch.begin_search();
-        augment(
+        emit(observer, MatchingStep::TryEquation(eq), &match_eq);
+        let found = augment(
             eq,
             &mut Matching {
                 match_eq: &mut match_eq,
@@ -47,7 +67,11 @@ pub(crate) fn maximum_matching_with_structured(
             },
             &context,
             &mut scratch,
+            observer,
         );
+        if !found {
+            emit(observer, MatchingStep::EquationFailed(eq), &match_eq);
+        }
     }
 
     maximize_preserved_preferences(
@@ -56,6 +80,7 @@ pub(crate) fn maximum_matching_with_structured(
             match_var: &mut match_var,
         },
         &context,
+        observer,
     );
 
     (match_eq, match_var)
@@ -170,10 +195,11 @@ fn seed_structured_family_matches(
     matching: &mut Matching<'_>,
     eq_vars: &IncidenceRows,
     structured_families: &[crate::incidence::StructuredMatchingFamily],
+    observer: &mut impl StructuralObserver,
 ) -> StructuredSeedOutcome {
     let mut fully_seeded_ranges = Vec::new();
     for family in structured_families {
-        if seed_one_family(matching, eq_vars, family)
+        if seed_one_family(matching, eq_vars, family, observer)
             && let Some(range) = family.row_range()
         {
             fully_seeded_ranges.push(range);
@@ -194,13 +220,14 @@ fn seed_one_family(
     matching: &mut Matching<'_>,
     eq_vars: &IncidenceRows,
     family: &crate::incidence::StructuredMatchingFamily,
+    observer: &mut impl StructuralObserver,
 ) -> bool {
     let mut odometer = DomainOdometer::new(&family.extents);
     let mut fully_seeded = true;
     for point in 0..family.point_count {
         for equation_position in 0..family.equations_per_point {
             let candidate = odometer.candidate(family, point, equation_position);
-            fully_seeded &= seed_structured_candidate(matching, eq_vars, candidate);
+            fully_seeded &= seed_structured_candidate(matching, eq_vars, candidate, observer);
         }
         odometer.advance();
     }
@@ -272,6 +299,7 @@ fn seed_structured_candidate(
     matching: &mut Matching<'_>,
     eq_vars: &IncidenceRows,
     candidate: Option<(usize, usize)>,
+    observer: &mut impl StructuralObserver,
 ) -> bool {
     let Some((equation, variable)) = candidate else {
         return false;
@@ -287,6 +315,14 @@ fn seed_structured_candidate(
     }
     matching.match_eq[equation] = Some(variable);
     matching.match_var[variable] = Some(equation);
+    emit(
+        observer,
+        MatchingStep::SeedStructured {
+            eq: equation,
+            var: variable,
+        },
+        matching.match_eq,
+    );
     true
 }
 
@@ -348,7 +384,11 @@ fn next_visit_epoch(current: usize, visited_epoch: &mut [usize]) -> usize {
 /// maximum matching cardinality. This is the incremental form of testing each
 /// preference as a constrained maximum matching, but reuses the current
 /// matching instead of recomputing it from scratch.
-fn maximize_preserved_preferences(matching: &mut Matching<'_>, context: &MatchContext<'_>) {
+fn maximize_preserved_preferences(
+    matching: &mut Matching<'_>,
+    context: &MatchContext<'_>,
+    observer: &mut impl StructuralObserver,
+) {
     let n_eq = matching.match_eq.len();
     let n_var = matching.match_var.len();
     let mut locked_preferences = vec![false; n_eq];
@@ -367,15 +407,25 @@ fn maximize_preserved_preferences(matching: &mut Matching<'_>, context: &MatchCo
             locked_preferences[eq] = true;
             continue;
         }
-        if try_claim_preferred(
+        // Reported per preferred edge rather than per explored edge: the
+        // relocation search below is a second depth-first search, and its
+        // interior is not observed. The `match_eq` travelling with each step
+        // is exact, so a consumer sees this phase advance in larger jumps
+        // than Kuhn's -- never a matching that did not exist.
+        let claimed = try_claim_preferred(
             ClaimRequest { eq, preferred },
             matching,
             context,
             &mut visits,
             &locked_preferences,
-        ) {
+        );
+        let step = if claimed {
             locked_preferences[eq] = true;
-        }
+            MatchingStep::ClaimedPreference { eq, var: preferred }
+        } else {
+            MatchingStep::PreferenceUnavailable { eq, var: preferred }
+        };
+        emit(observer, step, matching.match_eq);
     }
 }
 
@@ -565,11 +615,12 @@ fn augment(
     matching: &mut Matching<'_>,
     context: &MatchContext<'_>,
     scratch: &mut AugmentScratch,
+    observer: &mut impl StructuralObserver,
 ) -> bool {
     let mut stack = std::mem::take(&mut scratch.stack);
     stack.clear();
     stack.push(AugmentFrame::new(start));
-    let found = run_augment_search(&mut stack, matching, context, scratch);
+    let found = run_augment_search(&mut stack, matching, context, scratch, observer);
     scratch.stack = stack;
     found
 }
@@ -579,10 +630,11 @@ fn run_augment_search(
     matching: &mut Matching<'_>,
     context: &MatchContext<'_>,
     scratch: &mut AugmentScratch,
+    observer: &mut impl StructuralObserver,
 ) -> bool {
     while let Some(top) = stack.last().copied() {
         let mut cursor = top.cursor;
-        let step = next_augment_step(top.eq, &mut cursor, matching, context, scratch);
+        let step = next_augment_step(top.eq, &mut cursor, matching, context, scratch, observer);
         let Some(frame) = stack.last_mut() else {
             return false;
         };
@@ -590,15 +642,52 @@ fn run_augment_search(
         match step {
             AugmentStep::Claim(variable) => {
                 frame.chosen = Some(variable);
-                commit_augment(stack, matching);
+                // `top` is a copy of this same frame, so reading `top.eq`
+                // keeps the mutable borrow of `stack` from outliving the
+                // assignment above -- `commit_augment` needs it back.
+                emit(
+                    observer,
+                    MatchingStep::FoundFree {
+                        eq: top.eq,
+                        var: variable,
+                    },
+                    matching.match_eq,
+                );
+                commit_augment(stack, matching, observer);
                 return true;
             }
             AugmentStep::Descend { variable, owner } => {
                 frame.chosen = Some(variable);
+                emit(
+                    observer,
+                    MatchingStep::TryDisplace {
+                        eq: top.eq,
+                        var: variable,
+                        holder: owner,
+                    },
+                    matching.match_eq,
+                );
                 stack.push(AugmentFrame::new(owner));
             }
             AugmentStep::Exhausted => {
                 stack.pop();
+                // The popped equation found no alternative, so the parent's
+                // attempt to displace it has failed. The recursive form
+                // emitted this on the `false` return from its nested call;
+                // `chosen` is still the variable the parent was reaching for,
+                // because it is only overwritten on the parent's next step.
+                if let Some(parent) = stack.last().copied()
+                    && let Some(variable) = parent.chosen
+                {
+                    emit(
+                        observer,
+                        MatchingStep::DisplaceFail {
+                            eq: parent.eq,
+                            var: variable,
+                        },
+                        matching.match_eq,
+                    );
+                }
             }
         }
     }
@@ -611,6 +700,7 @@ fn next_augment_step(
     matching: &Matching<'_>,
     context: &MatchContext<'_>,
     scratch: &mut AugmentScratch,
+    observer: &mut impl StructuralObserver,
 ) -> AugmentStep {
     let order = RowOrder::new(context, eq);
     while let Some(variable) = order.get(*cursor) {
@@ -619,6 +709,11 @@ fn next_augment_step(
             continue;
         }
         scratch.visited_epoch[variable] = scratch.epoch;
+        emit(
+            observer,
+            MatchingStep::Explore { eq, var: variable },
+            matching.match_eq,
+        );
         let Some(owner) = matching.match_var[variable] else {
             return AugmentStep::Claim(variable);
         };
@@ -629,12 +724,40 @@ fn next_augment_step(
 
 /// Assign the alternating path innermost-first, reproducing the assignment
 /// order of the recursive form's unwind exactly.
-fn commit_augment(stack: &[AugmentFrame], matching: &mut Matching<'_>) {
-    for frame in stack.iter().rev() {
+///
+/// Every frame below the innermost one reached its variable by displacing the
+/// frame beneath it, which has just been re-matched -- so each of those is a
+/// [`MatchingStep::DisplaceOk`], the step the recursive form emitted when its
+/// nested call returned `true`. The innermost frame took a free variable and
+/// has already reported [`MatchingStep::FoundFree`].
+fn commit_augment(
+    stack: &[AugmentFrame],
+    matching: &mut Matching<'_>,
+    observer: &mut impl StructuralObserver,
+) {
+    for (depth, frame) in stack.iter().rev().enumerate() {
         let Some(variable) = frame.chosen else {
             continue;
         };
+        if depth > 0 {
+            emit(
+                observer,
+                MatchingStep::DisplaceOk {
+                    eq: frame.eq,
+                    var: variable,
+                },
+                matching.match_eq,
+            );
+        }
         matching.match_eq[frame.eq] = Some(variable);
         matching.match_var[variable] = Some(frame.eq);
+        emit(
+            observer,
+            MatchingStep::Assign {
+                eq: frame.eq,
+                var: variable,
+            },
+            matching.match_eq,
+        );
     }
 }

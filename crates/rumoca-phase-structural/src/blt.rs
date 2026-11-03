@@ -6,7 +6,8 @@
 //! one cloned [`UnknownId`]) per array element.
 
 use crate::incidence::{Incidence, StructuredMatchingFamily};
-use crate::tarjan::tarjan_scc;
+use crate::observation::StructuralObserver;
+use crate::tarjan::tarjan_scc_with_observer;
 use crate::types::{BltBlock, EquationRef, StructuredScalarBlock, UnknownId};
 
 /// Build BLT blocks from the incidence data, matching, and dependency graph.
@@ -18,10 +19,17 @@ pub(crate) fn build_blt_blocks<'dae>(
     incidence: &Incidence<'dae>,
     match_eq: &[Option<usize>],
     adj: &[Vec<usize>],
+    observer: &mut impl StructuralObserver,
 ) -> Vec<BltBlock<'dae>> {
     let (structured, condensed) = split_self_contained_families(incidence, match_eq);
     let Some(condensed) = condensed else {
-        return sccs_to_blocks(tarjan_scc(incidence.n_eq, adj), incidence, match_eq);
+        // Nodes are equation indices here, so the traversal needs no mapping.
+        return sccs_to_blocks(
+            tarjan_scc_with_observer(incidence.n_eq, adj, None, observer),
+            incidence,
+            match_eq,
+            observer,
+        );
     };
 
     // Every condensed row was *checked* (not extrapolated) to reference exactly
@@ -31,18 +39,26 @@ pub(crate) fn build_blt_blocks<'dae>(
     // family out of `condensed` entirely, so no dependency can be scheduled
     // after a row that needs it.
     let (sub_adj, node_of_local) = condense_nodes(adj, &condensed.keep);
-    let sccs = tarjan_scc(node_of_local.len(), &sub_adj);
+    // This traversal runs over a renumbered graph, so it must state the
+    // mapping: reading its node indices as equation indices would name rows
+    // belonging to the condensed-out families.
+    let sccs = tarjan_scc_with_observer(
+        node_of_local.len(),
+        &sub_adj,
+        Some(&node_of_local),
+        observer,
+    );
     let mut blocks: Vec<BltBlock<'dae>> = structured
         .into_iter()
         .map(BltBlock::StructuredScalar)
         .collect();
-    blocks.extend(sccs.into_iter().map(|scc| {
+    for scc in sccs {
         let global: Vec<usize> = scc
             .iter()
             .filter_map(|&local| node_of_local.get(local).copied())
             .collect();
-        scc_to_block(&global, incidence, match_eq)
-    }));
+        blocks.push(scc_to_block(&global, incidence, match_eq, observer));
+    }
     blocks
 }
 
@@ -50,9 +66,10 @@ fn sccs_to_blocks<'dae>(
     sccs: Vec<Vec<usize>>,
     incidence: &Incidence<'dae>,
     match_eq: &[Option<usize>],
+    observer: &mut impl StructuralObserver,
 ) -> Vec<BltBlock<'dae>> {
     sccs.into_iter()
-        .map(|scc| scc_to_block(&scc, incidence, match_eq))
+        .map(|scc| scc_to_block(&scc, incidence, match_eq, observer))
         .collect()
 }
 
@@ -216,6 +233,7 @@ fn scc_to_block<'dae>(
     scc: &[usize],
     incidence: &Incidence<'dae>,
     match_eq: &[Option<usize>],
+    observer: &mut impl StructuralObserver,
 ) -> BltBlock<'dae> {
     if let [eq_idx] = scc {
         let eq_idx = *eq_idx;
@@ -234,7 +252,7 @@ fn scc_to_block<'dae>(
         .iter()
         .filter_map(|&i| match_eq[i].map(|v| incidence.unknowns[v]))
         .collect();
-    let tearing = tear_scc(scc, incidence, match_eq);
+    let tearing = tear_scc(scc, incidence, match_eq, observer);
     BltBlock::AlgebraicLoop {
         equations,
         unknowns,
@@ -250,6 +268,7 @@ fn tear_scc(
     scc: &[usize],
     incidence: &Incidence<'_>,
     match_eq: &[Option<usize>],
+    observer: &mut impl StructuralObserver,
 ) -> Option<crate::tearing::TearingResult> {
     // Local position of each SCC unknown, keyed by its global unknown index.
     // Only equations that are themselves matched contribute an unknown, so a
@@ -279,5 +298,5 @@ fn tear_scc(
                 .collect()
         })
         .collect();
-    crate::tearing::tear_algebraic_loop(scc.len(), &eq_unknowns)
+    crate::tearing::tear_algebraic_loop_with_observer(scc.len(), &eq_unknowns, &eq_unknowns, observer)
 }

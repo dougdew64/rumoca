@@ -13,6 +13,7 @@ mod diagnostics;
 mod differential_structure;
 pub mod incidence;
 mod matching;
+mod observation;
 pub mod report;
 mod residual_normalization;
 pub mod runtime_defined;
@@ -44,6 +45,10 @@ pub use differential_structure::{
     analyze_differential_structure,
 };
 pub use incidence::{Incidence, build_incidence, solver_incidence};
+pub use observation::{
+    MatchingRecord, MatchingStep, StructuralRecord, StructuralTrace, TarjanRecord,
+    TarjanStepRecord, TearPriorityKind, TearingRecord, TearingStep,
+};
 pub use report::{BlockReport, StructuralReport, TearingReport};
 pub use runtime_defined::{
     runtime_defined_continuous_unknown_names, runtime_defined_unknown_names,
@@ -61,6 +66,33 @@ pub use types::{
 
 /// Analyze and BLT-sort a checked DAE view.
 pub fn sort<'dae>(view: dae::DaeView<'dae>) -> Result<SortedDae<'dae>, StructuralError> {
+    sort_with_observer(view, &mut ())
+}
+
+/// [`sort`], additionally reporting every matching, Tarjan and tearing step to
+/// an owned [`StructuralTrace`].
+///
+/// This is the sole crate-external surface of the `observation` module, whose
+/// trait and borrowed event types stay private: the observer type is erased
+/// from both the argument and the return, so no caller can supply one. A
+/// traced call runs
+/// exactly the code an untraced call runs -- the trace therefore always
+/// describes the run that produced the `Result` beside it, including when that
+/// result is a [`StructuralError::Singular`]. A system that fails to match is
+/// the one whose search is most worth watching, and the matching steps that
+/// proved it singular are already recorded by the time the error is returned.
+pub fn inspect_sort<'dae>(
+    view: dae::DaeView<'dae>,
+) -> (Result<SortedDae<'dae>, StructuralError>, StructuralTrace) {
+    let mut recorder = observation::StructuralRecorder::default();
+    let result = sort_with_observer(view, &mut recorder);
+    (result, recorder.finish())
+}
+
+fn sort_with_observer<'dae>(
+    view: dae::DaeView<'dae>,
+    observer: &mut impl observation::StructuralObserver,
+) -> Result<SortedDae<'dae>, StructuralError> {
     #[cfg(feature = "tracing")]
     let stage_start = std::time::Instant::now();
     let incidence = incidence::build_incidence(view)?;
@@ -72,7 +104,7 @@ pub fn sort<'dae>(view: dae::DaeView<'dae>) -> Result<SortedDae<'dae>, Structura
         unknowns = incidence.n_var,
         "built scalar incidence"
     );
-    sort_from_incidence(view, &incidence)
+    sort_from_incidence_with_observer(view, &incidence, observer)
 }
 
 /// BLT-sort a DAE whose scalar incidence is already built.
@@ -86,16 +118,25 @@ pub(crate) fn sort_from_incidence<'dae>(
     view: dae::DaeView<'dae>,
     incidence: &Incidence<'dae>,
 ) -> Result<SortedDae<'dae>, StructuralError> {
+    sort_from_incidence_with_observer(view, incidence, &mut ())
+}
+
+/// [`sort_from_incidence`], reporting each search step to `observer`.
+fn sort_from_incidence_with_observer<'dae>(
+    view: dae::DaeView<'dae>,
+    incidence: &Incidence<'dae>,
+    observer: &mut impl observation::StructuralObserver,
+) -> Result<SortedDae<'dae>, StructuralError> {
     if incidence.n_eq == 0 && incidence.n_var == 0 {
         return Err(StructuralError::EmptySystem);
     }
     let preferences = explicit_derivative_preferences(view, incidence);
-    let (match_eq, match_var) = maximum_matching(incidence, &preferences);
+    let (match_eq, match_var) = maximum_matching_with_observer(incidence, &preferences, observer);
     require_perfect_matching(view, incidence, &match_eq, &match_var)?;
     let adjacency =
         incidence::build_dependency_graph(&incidence.eq_unknowns, &match_var, incidence.n_eq);
     let diagnostics = diagnostics::collect_warnings(view, incidence, &match_eq, &adjacency);
-    let blocks = blt::build_blt_blocks(incidence, &match_eq, &adjacency);
+    let blocks = blt::build_blt_blocks(incidence, &match_eq, &adjacency, observer);
     let matching = match_eq
         .iter()
         .enumerate()
@@ -320,12 +361,25 @@ pub fn build_blt_from_incidence<'dae>(
     }
     let adjacency =
         incidence::build_dependency_graph(&incidence.eq_unknowns, &match_var, incidence.n_eq);
-    Ok(blt::build_blt_blocks(incidence, &match_eq, &adjacency))
+    Ok(blt::build_blt_blocks(
+        incidence,
+        &match_eq,
+        &adjacency,
+        &mut (),
+    ))
 }
 
 fn maximum_matching(
     incidence: &Incidence<'_>,
     preferred_unknowns: &[Option<usize>],
+) -> (Vec<Option<usize>>, Vec<Option<usize>>) {
+    maximum_matching_with_observer(incidence, preferred_unknowns, &mut ())
+}
+
+fn maximum_matching_with_observer(
+    incidence: &Incidence<'_>,
+    preferred_unknowns: &[Option<usize>],
+    observer: &mut impl observation::StructuralObserver,
 ) -> (Vec<Option<usize>>, Vec<Option<usize>>) {
     matching::maximum_matching_with_structured(
         incidence.n_eq,
@@ -333,6 +387,7 @@ fn maximum_matching(
         &incidence.eq_unknowns,
         preferred_unknowns,
         &incidence.structured_matching,
+        observer,
     )
 }
 
