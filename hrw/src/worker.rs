@@ -1417,7 +1417,6 @@ fn panicked_compile(path: PathBuf, note: &str) -> FromWorker {
         matching_frames: Vec::new(),
         tarjan_frames: Vec::new(),
         tearing_frames: Vec::new(),
-        pre_lowering_frames: Vec::new(),
         connection_frames: Vec::new(),
         flat: None,
         dae: None,
@@ -2688,7 +2687,6 @@ impl WorkerState {
                     matching_frames: Vec::new(),
                     tarjan_frames: Vec::new(),
                     tearing_frames: Vec::new(),
-                    pre_lowering_frames: Vec::new(),
                     connection_frames: Vec::new(),
                     flat: None,
                     dae: None,
@@ -3146,7 +3144,6 @@ impl WorkerState {
             equation_sheet,
             identifier_index,
             compiled_dae,
-            pre_frames,
             compiled_flat,
             structural_frames,
         ) = match &model {
@@ -3167,13 +3164,18 @@ impl WorkerState {
                     Stage::info(e.clone()),
                     Stage::info(e.clone()),
                     Stage::info(e),
+                    // equation_sheet, identifier_index, compiled_dae,
+                    // compiled_flat — nothing compiled, so there is nothing to
+                    // carry.
                     None,
                     None,
-                    Vec::new(),
                     None,
-                    Vec::new(),
                     None,
-                    StructuralFrames::default(),
+                    // **One `StructuralFrames`, not two.** This arm still had
+                    // the 0.9.20 shape: two frame sets (raw and index-reduced)
+                    // plus two `Vec`s for frame kinds that no longer exist. It
+                    // only compiled because nothing had re-counted it since the
+                    // reduced system's frames were removed.
                     StructuralFrames::default(),
                 )
             }
@@ -3226,7 +3228,6 @@ impl WorkerState {
                 // the Connections and pre()-lowering views now show the compilation
                 // below, not a second one configured to look like it.
                 rumoca_phase_flatten::connections::trace::start_capture();
-                rumoca_phase_dae::start_pre_lowering_capture();
                 // And the two overlays, so the Instantiate and Typecheck tabs show
                 // this compile rather than a separate one HRW ran for them.
                 rumoca_compile::observe::start_typed_model_capture();
@@ -3240,7 +3241,6 @@ impl WorkerState {
                 // closes the scope, so this both collects the frames and guarantees
                 // no later work can add to them.
                 connection_frames = rumoca_phase_flatten::connections::trace::take_capture();
-                let pre_frames = rumoca_phase_dae::take_pre_lowering_capture();
                 let typed = rumoca_compile::observe::take_typed_model_capture();
 
                 // **Route each trace to the phase that emitted it.**
@@ -3621,7 +3621,6 @@ impl WorkerState {
                     eq_sheet,
                     id_index,
                     dae,
-                    pre_frames,
                     flat,
                     structural_frames,
                 )
@@ -3661,7 +3660,6 @@ impl WorkerState {
             matching_frames: structural_frames.matching,
             tarjan_frames: structural_frames.tarjan,
             tearing_frames: structural_frames.tearing,
-            pre_lowering_frames: pre_frames,
             connection_frames,
             library_source,
             flat: compiled_flat,
