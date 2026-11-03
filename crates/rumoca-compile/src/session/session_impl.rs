@@ -945,6 +945,46 @@ impl Session {
             .map(|resolved| resolved.as_ref().clone())
     }
 
+    /// The resolved tree a strict compile is about to use, with its
+    /// diagnostics.
+    ///
+    /// # Why this is not [`Session::resolved`]
+    ///
+    /// `resolved()` builds under `ResolveBuildMode::Standard`. A strict compile
+    /// builds under `StrictCompileRecovery`, and the two are **deliberately
+    /// different trees** — recovery keeps going past errors Standard treats as
+    /// fatal. Both are cached, but *separately*, so a caller that inspects the
+    /// tree and then compiles resolves the whole library twice. Measured on a
+    /// Modelica Standard Library workspace: ~374 ms of redundant resolution per
+    /// compile, over 38,855 definitions.
+    ///
+    /// This warms the same session-wide build the compile will consult, so a
+    /// caller that inspects and then compiles pays for one resolution.
+    ///
+    /// # Why it is not [`Session::resolved_for_semantic_navigation`] either
+    ///
+    /// That one caches per model in a *separate* semantic-navigation cache and
+    /// deliberately exposes no Resolve phase proof, which suits hover and goto.
+    /// It therefore does not warm the compile's build, and a caller using it to
+    /// avoid double resolution would still pay twice.
+    ///
+    /// # The diagnostics come with it, and must
+    ///
+    /// Recovery **succeeds past errors that would fail `Standard`**, so `Ok`
+    /// here does not mean the model resolved cleanly, and a caller using an
+    /// `Err` as its only failure signal would silently stop detecting
+    /// failures. Returning the diagnostics makes ignoring them a visible
+    /// choice rather than an accident; [`StrictCompileTree::is_complete`] is
+    /// the same question answered structurally.
+    pub fn strict_compile_resolved(
+        &mut self,
+    ) -> Result<(StrictCompileTree, CommonDiagnostics)> {
+        let (plan, diagnostics) = self
+            .build_resolution_plan_for_strict_compile()
+            .map_err(|diags| diagnostics_to_anyhow(&diags))?;
+        Ok((StrictCompileTree(plan), diagnostics))
+    }
+
     /// Get a strict-recovery planning tree for an active editor target.
     ///
     /// This supports syntax-aware hover/goto planning when unrelated parse or

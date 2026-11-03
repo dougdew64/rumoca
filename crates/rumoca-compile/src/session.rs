@@ -656,6 +656,34 @@ pub(in crate::session) struct StrictTargetResolutionFailure {
     source_map: Box<SourceMap>,
 }
 
+/// The class tree a strict compile will use, however it was produced.
+///
+/// A thin owner around the session's internal planning tree, so
+/// [`Session::strict_compile_resolved`] can hand out the tree without either
+/// deep-cloning the largest artifact the session holds or exposing the
+/// planning enum. The tree is borrowed from the `Arc` inside, so holding this
+/// keeps that one resolution alive and costs nothing more.
+pub struct StrictCompileTree(ResolutionPlanningTree);
+
+impl StrictCompileTree {
+    /// The resolved class tree.
+    #[must_use]
+    pub fn tree(&self) -> &ast::ClassTree {
+        self.0.tree()
+    }
+
+    /// Whether Resolve **completed**, as opposed to recovery producing a
+    /// usable tree past errors `Standard` treats as fatal.
+    ///
+    /// This is the structural form of the question a caller would otherwise
+    /// answer by scanning the diagnostics for an error severity. Both are
+    /// legitimate; this one cannot drift if the severity taxonomy changes.
+    #[must_use]
+    pub fn is_complete(&self) -> bool {
+        matches!(self.0, ResolutionPlanningTree::Complete(_))
+    }
+}
+
 impl ResolutionPlanningTree {
     fn tree(&self) -> &ast::ClassTree {
         match self {
