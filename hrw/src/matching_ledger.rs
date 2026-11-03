@@ -35,9 +35,9 @@
 //! `emit_matching_frame(` call the stack reports. Read by hand from the wrong
 //! line of the same call, in the one row never observed.
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 
-use rumoca_phase_structural::matching::{MatchingStep, maximum_matching_with_trace};
+use rumoca_phase_structural::MatchingStep;
 
 /// The traced algorithm's source, read at build time from the sibling crate.
 ///
@@ -335,43 +335,49 @@ pub fn derive_depths(steps: &[MatchingStep]) -> Vec<usize> {
     out
 }
 
-/// A specimen's incidence, read from its generated notebook trace.
+/// The matching steps a specimen's compile actually produced.
 ///
-/// `CLAUDE.md`: the notebook trace is "generated and therefore correct by
-/// construction — any number about a specimen is read from here". Reading it
-/// avoids compiling against the MSL, so this stays in the fast suite.
-fn incidence_of(model: &str) -> Option<(usize, usize, Vec<HashSet<usize>>)> {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("docs/specimen-notebook")
-        .join(model)
-        .join("trace/structural.json");
-    let text = std::fs::read_to_string(path).ok()?;
-    let doc: serde_json::Value = serde_json::from_str(&text).ok()?;
-    let inc = doc.get("incidence")?;
-    let n_var = usize::try_from(inc.get("n_var")?.as_u64()?).ok()?;
-    let rows = inc.get("rows")?.as_array()?;
-    let eq_vars: Vec<HashSet<usize>> = rows
-        .iter()
-        .map(|r| {
-            r.get("unknowns")
-                .and_then(|u| u.as_array())
-                .map(|a| {
-                    a.iter()
-                        .filter_map(|v| v.as_u64())
-                        .map(|v| v as usize)
-                        .collect()
-                })
-                .unwrap_or_default()
-        })
-        .collect();
-    Some((eq_vars.len(), n_var, eq_vars))
+/// **This used to read the specimen's incidence out of its notebook trace and
+/// re-run `maximum_matching_with_trace` over it.** That entry point does not
+/// exist on 0.10.0, and `maximum_matching` is private — so the choice was
+/// between a new public API existing only to serve a documentation generator,
+/// which upstream would rightly question, or reading the real analysis. This
+/// reads the real analysis: `compile_specimen` runs the pipeline and
+/// `structural_stage` fills `matching_frames` from
+/// `inspect_structural_report`, so the ledger describes the compile rather than
+/// a re-derivation over a stored matrix.
+///
+/// **It is also still in the fast suite**, which was the stated reason for
+/// reading the trace. Both `LEDGER_SPECIMENS` are MSL-free, so no library
+/// roots are loaded and no MSL parse is paid for. Adding an MSL-dependent
+/// specimen to that list would change this, and the comment is here so that
+/// trade is visible at the point where it would be made.
+fn matching_steps_of(model: &str) -> Option<Vec<MatchingStep>> {
+    let specimen = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("specimens")
+        .join(format!("{model}.mo"));
+    // No library roots: see the note above.
+    let compiled = crate::worker::compile_specimen(&specimen, Vec::new()).ok()?;
+    match compiled {
+        crate::worker::FromWorker::Compiled {
+            matching_frames, ..
+        } => Some(
+            matching_frames
+                .into_iter()
+                .map(|record| record.step)
+                .collect(),
+        ),
+        // A specimen that does not reach structural analysis has no steps to
+        // report, which the caller renders as a stated absence rather than an
+        // empty table.
+        _ => None,
+    }
 }
+
 
 /// One row per frame: index, step, emit line, depth.
 fn ledger_rows(model: &str) -> Option<Vec<(usize, String, String, usize)>> {
-    let (n_eq, n_var, eq_vars) = incidence_of(model)?;
-    let result = maximum_matching_with_trace(n_eq, n_var, &eq_vars, None);
-    let steps: Vec<MatchingStep> = result.frames.iter().map(|f| f.step.clone()).collect();
+    let steps = matching_steps_of(model)?;
     let depths = derive_depths(&steps);
     let sites = emit_sites(MATCHING_SOURCE);
 
@@ -412,6 +418,9 @@ fn variant_name(step: &MatchingStep) -> &'static str {
         MatchingStep::DisplaceFail { .. } => "DisplaceFail",
         MatchingStep::Assign { .. } => "Assign",
         MatchingStep::EquationFailed(_) => "EquationFailed",
+        MatchingStep::SeedStructured { .. } => "SeedStructured",
+        MatchingStep::ClaimedPreference { .. } => "ClaimedPreference",
+        MatchingStep::PreferenceUnavailable { .. } => "PreferenceUnavailable",
     }
 }
 
@@ -435,6 +444,15 @@ fn describe(step: &MatchingStep) -> String {
         }
         MatchingStep::Assign { eq, var } => format!("`Assign {{ eq: {eq}, var: {var} }}`"),
         MatchingStep::EquationFailed(eq) => format!("`EquationFailed({eq})`"),
+        MatchingStep::SeedStructured { eq, var } => {
+            format!("`SeedStructured {{ eq: {eq}, var: {var} }}`")
+        }
+        MatchingStep::ClaimedPreference { eq, var } => {
+            format!("`ClaimedPreference {{ eq: {eq}, var: {var} }}`")
+        }
+        MatchingStep::PreferenceUnavailable { eq, var } => {
+            format!("`PreferenceUnavailable {{ eq: {eq}, var: {var} }}`")
+        }
     }
 }
 
