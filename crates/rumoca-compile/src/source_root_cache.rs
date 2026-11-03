@@ -406,6 +406,28 @@ fn load_source_root_documents_from_artifact_cache(
     ))
 }
 
+/// The content fingerprint of a source root's inputs — **the same key
+/// [`parse_source_root_with_cache`] will use for its artifact cache**, computed
+/// without parsing anything.
+///
+/// It covers the root's directory layout and every `.mo` file's bytes, plus the
+/// cache schema and compiler version, so it changes when any of those change.
+/// That is what makes it usable as a memo key by a caller that wants to skip
+/// work the disk cache would have served: a hit means the cache would have hit
+/// too, on this same key.
+///
+/// **A path-derived key is not a substitute**, which is why this exists rather
+/// than a caller reusing [`crate::source_roots::source_root_source_set_key`] —
+/// that one is the canonicalized path, so editing a library file would not
+/// change it and a memo keyed on it would serve a stale parse.
+pub fn source_root_input_cache_key(path: &Path) -> Result<String> {
+    let files = collect_modelica_files(path)
+        .with_context(|| format!("collect .mo files under {}", path.display()))?;
+    Ok(hash_source_root_inputs(path, &files)
+        .with_context(|| format!("fingerprint {}", path.display()))?
+        .cache_key)
+}
+
 pub fn parse_source_root_with_cache_in(
     path: &Path,
     cache_dir: Option<&Path>,
@@ -490,6 +512,48 @@ mod tests {
     use super::*;
     use crate::parse::parse_files_parallel_with_cache_statuses;
     use crate::source_roots::PackageLayoutError;
+
+    /// **The key must follow the bytes.** A consumer memoising on it — HRW's
+    /// parsed-source-root memo does — is relying on an edit to any `.mo` file
+    /// changing the key, because otherwise it serves a parse of source that no
+    /// longer exists.
+    ///
+    /// That property is the entire reason this function exists instead of
+    /// callers reusing `source_root_source_set_key`, which is the canonicalized
+    /// path and would not move. Asserting it here is what stops a future
+    /// simplification from quietly substituting one for the other.
+    #[test]
+    fn the_input_cache_key_changes_when_a_file_changes() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let root = temp.path();
+        let model = root.join("Lib.mo");
+        fs::write(&model, "package Lib\n  model A\n  end A;\nend Lib;\n").expect("write");
+
+        let first = source_root_input_cache_key(root).expect("fingerprint the root");
+        let again = source_root_input_cache_key(root).expect("fingerprint the root again");
+        assert_eq!(
+            first, again,
+            "the same bytes must produce the same key, or a memo never hits"
+        );
+
+        fs::write(&model, "package Lib\n  model A\n    Real x;\n  end A;\nend Lib;\n")
+            .expect("rewrite");
+        let edited = source_root_input_cache_key(root).expect("fingerprint after the edit");
+        assert_ne!(
+            first, edited,
+            "editing a file must change the key, or a memo keyed on it serves a \
+             parse of source that is gone"
+        );
+
+        // A new file is an edit to the root's layout, and must move it too.
+        fs::write(root.join("Other.mo"), "model Other\nend Other;\n").expect("write second");
+        let added = source_root_input_cache_key(root).expect("fingerprint after the addition");
+        assert_ne!(
+            edited, added,
+            "adding a file must change the key: the root's document set is part \
+             of what a cached parse produced"
+        );
+    }
 
     #[test]
     fn compiler_timestamp_rejects_pre_epoch_time() {
