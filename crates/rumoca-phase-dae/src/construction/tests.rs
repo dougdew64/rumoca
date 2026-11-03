@@ -3,6 +3,7 @@ mod boundary;
 mod clocks_temporal;
 mod conditional_fold;
 mod discrete;
+mod equation_generation;
 mod event_algorithms;
 mod events;
 mod functions;

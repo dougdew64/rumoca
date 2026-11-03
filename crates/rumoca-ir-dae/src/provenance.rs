@@ -12,6 +12,17 @@ pub enum DaeGeneration {
     BindingEquation,
     ConnectionEquation,
     FlowBalanceEquation,
+    /// A flow variable with nothing connected to it, constrained to zero per
+    /// MLS §9.2.
+    ///
+    /// Distinct from [`Self::FlowBalanceEquation`] because the two state
+    /// different things: a flow balance says several flows cancel at a
+    /// junction, while this says one flow has no junction at all. The flat IR
+    /// already separates them (`EquationOrigin::UnconnectedFlow` carries the
+    /// variable), and DAE construction previously mapped both onto
+    /// `FlowBalanceEquation`, so the distinction did not survive the boundary
+    /// and no consumer of a `Dae` could recover it.
+    UnconnectedFlowEquation,
     AlgorithmEquation,
     DiscreteUpdate,
     ConditionLowering,
@@ -41,6 +52,7 @@ impl std::fmt::Display for DaeGeneration {
             Self::SyntheticResidual => "synthetic residual",
             Self::ConnectionEquation => "connection equation",
             Self::FlowBalanceEquation => "flow-balance equation",
+            Self::UnconnectedFlowEquation => "unconnected-flow equation",
             Self::AlgorithmEquation => "algorithm equation",
             Self::DiscreteUpdate => "discrete update",
             Self::ConditionLowering => "condition lowering",
