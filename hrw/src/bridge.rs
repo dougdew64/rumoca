@@ -384,13 +384,16 @@ pub fn read_lab() -> Option<(String, std::time::SystemTime)> {
     Some((text, mtime))
 }
 
-/// Absolute path to `live_trace_breakpoint` in the structural crate, resolved
-/// at compile time so the VS Code extension can set breakpoints without path
-/// resolution.
-const LIVE_TRACE_FILE: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../crates/rumoca-phase-structural/src/live_trace.rs"
-);
+/// Absolute path to `live_trace_breakpoint`, resolved at compile time so the
+/// VS Code extension can set breakpoints without path resolution.
+///
+/// **Moved out of `crates/rumoca-phase-structural/` in the v0.10.0 rebase.**
+/// No Rumoca phase ever named `LiveTrace`, so a file of HRW plumbing inside a
+/// crate meant for a clean upstream cherry-pick was the wrong place for it;
+/// see `live_trace.rs`'s own header. The anchor is still on the algorithm
+/// thread and still inside the algorithm's call stack, so stepping is
+/// unchanged — only the file differs.
+const LIVE_TRACE_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/live_trace.rs");
 
 /// The traced matching algorithm, for `hrw://breakpoint/<anchor>` links.
 const MATCHING_FILE: &str = concat!(

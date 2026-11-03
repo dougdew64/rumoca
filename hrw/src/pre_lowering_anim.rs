@@ -41,7 +41,7 @@ use std::thread;
 use eframe::egui;
 
 use rumoca_phase_dae::{PreLoweringFrame, PreLoweringStep};
-use rumoca_phase_structural::LiveTrace;
+use crate::live_trace::LiveTrace;
 
 use crate::playback::{Animated, Playback};
 

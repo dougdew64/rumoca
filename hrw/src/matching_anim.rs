@@ -21,7 +21,7 @@ use std::thread;
 
 use eframe::egui;
 
-use rumoca_phase_structural::LiveTrace;
+use crate::live_trace::LiveTrace;
 use rumoca_phase_structural::matching::{MatchingFrame, MatchingStep, maximum_matching_with_trace};
 
 use crate::canvas::Canvas;
