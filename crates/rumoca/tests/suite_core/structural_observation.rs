@@ -199,7 +199,7 @@ fn the_report_and_the_trace_describe_one_run() {
     let compiled = compile(COUPLED_LOOP, "CoupledLoop");
     let (report, trace) = compiled
         .dae
-        .inspect(|view| structural::inspect_structural_report(view));
+        .inspect(structural::inspect_structural_report);
     let report = report.expect("CoupledLoop is a well-posed square system");
 
     let final_matching = trace
@@ -234,7 +234,7 @@ fn a_failed_report_still_carries_the_matching_that_failed() {
     let compiled = compile(INDEX_TWO, "IndexTwo");
     let (report, trace) = compiled
         .dae
-        .inspect(|view| structural::inspect_structural_report(view));
+        .inspect(structural::inspect_structural_report);
     assert!(
         report.is_err(),
         "an index-2 system has no perfect matching as written"
@@ -372,9 +372,9 @@ fn a_singular_system_still_reports_the_search_that_proved_it() {
     let compiled = compile(INDEX_TWO, "IndexTwo");
     compiled.dae.inspect(|view| {
         let (sorted, trace) = structural::inspect_sort(view);
-        let error = sorted
-            .err()
-            .expect("an index-2 system has no perfect matching as written");
+        let Err(error) = sorted else {
+            panic!("an index-2 system has no perfect matching as written");
+        };
         assert!(
             matches!(error, structural::StructuralError::Singular { .. }),
             "the failure must be the singularity, not something incidental: \
