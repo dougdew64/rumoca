@@ -448,9 +448,38 @@ fn generate_connection_set_equations(
     connection_sets: Vec<ConnectionSet>,
     interface_flow_vars_by_scope: &IndexMap<String, FlowVarSet>,
     oc_forest: &mut crate::vcg::OverconstrainedEquationForest,
+    trace_baseline: usize,
 ) -> Result<(), FlattenError> {
+    use super::trace::{ConnectionStep, emit, equations_added_since, observing};
+
     let referenced_outside_connections = variables_referenced_outside_connections(flat);
+    let mut sets_so_far = 0usize;
     for set in connection_sets {
+        // **The asymmetry this whole trace exists to show**: n potential
+        // variables become n-1 equality equations, while n flow variables
+        // become exactly one sum-to-zero (MLS section 9.2).
+        let kind = match set.kind {
+            ConnectionKind::Flow => "flow",
+            ConnectionKind::Potential => "potential",
+        };
+        let set_size = set.variables.len();
+        if observing() {
+            emit(
+                ConnectionStep::SetFormed {
+                    kind,
+                    scope: set.scope.clone(),
+                    variables: set
+                        .variables
+                        .iter()
+                        .map(|name| name.as_str().to_owned())
+                        .collect(),
+                },
+                sets_so_far,
+                flat.equations.len().saturating_sub(trace_baseline),
+            );
+        }
+        let before = flat.equations.len();
+        let mut skipped = false;
         match set.kind {
             ConnectionKind::Flow => generate_flow_equation(
                 flat,
@@ -468,10 +497,35 @@ fn generate_connection_set_equations(
                     &referenced_outside_connections,
                     &set.variables,
                 ) {
-                    continue;
+                    skipped = true;
+                } else {
+                    generate_equality_equations(flat, &set.variables, set.span, oc_forest)?;
                 }
-                generate_equality_equations(flat, &set.variables, set.span, oc_forest)?;
             }
+        }
+        sets_so_far += 1;
+        let equations_so_far = flat.equations.len().saturating_sub(trace_baseline);
+        if skipped {
+            // Said outright rather than left as a zero: zero equations with no
+            // stated reason reads as a compiler that lost them.
+            emit(
+                ConnectionStep::PotentialSetSkipped { set_size },
+                sets_so_far,
+                equations_so_far,
+            );
+            continue;
+        }
+        if observing() {
+            emit(
+                ConnectionStep::EquationsGenerated {
+                    kind,
+                    set_size,
+                    equations_added: flat.equations.len().saturating_sub(before),
+                    equations: equations_added_since(flat, before),
+                },
+                sets_so_far,
+                equations_so_far,
+            );
         }
     }
     Ok(())
@@ -881,6 +935,8 @@ pub(crate) fn process_connections(
     }
 
     let all_connections: Vec<&ast::InstanceConnection> = owned_connections.iter().collect();
+    // Observation only; see `super::trace`.
+    let trace_baseline = begin_expansion_trace(flat, all_connections.len());
     let var_index = ConnectionVarIndex::new(flat);
     let endpoint_index = ConnectionEndpointIndex::new(overlay);
 
@@ -948,11 +1004,14 @@ pub(crate) fn process_connections(
     let (connection_sets, stream_sets) =
         build_connection_sets(&all_connections, flat, &prefix_children, &var_index)?;
 
+    // Captured before the vector moves into the generator below.
+    let set_count = connection_sets.len();
     generate_connection_set_equations(
         flat,
         connection_sets,
         &interface_flow_vars_by_scope,
         oc_forest,
+        trace_baseline,
     )?;
 
     for stream_set in &stream_sets {
@@ -975,6 +1034,7 @@ pub(crate) fn process_connections(
 
     // MLS §9.2: Generate equations for unconnected flow variables.
     // Flow variables not in any connection set get `flow_var = 0` equations.
+    let before_unconnected_flows = flat.equations.len();
     generate_unconnected_flow_equations(flat)?;
 
     // MLS §9.2: Generate flow=0 for interface flow variables not connected
@@ -988,7 +1048,65 @@ pub(crate) fn process_connections(
         &interface_connector_roots_by_scope,
     )?;
 
+    report_expansion_finished(flat, trace_baseline, before_unconnected_flows, set_count);
+
     Ok(())
+}
+
+/// Report the opening observation step, and return the equation count every
+/// later `equations_added` is measured against. Observation only; see
+/// [`super::trace`].
+///
+/// The baseline is what makes those counts *measurements* rather than
+/// predictions: array scalarization can turn one logical connection equation
+/// into several, and a predicted count would then be wrong in exactly the case
+/// a reader most wants explained.
+fn begin_expansion_trace(flat: &flat::Model, connect_statements: usize) -> usize {
+    super::trace::emit(
+        super::trace::ConnectionStep::Start { connect_statements },
+        0,
+        0,
+    );
+    flat.equations.len()
+}
+
+/// Report the two terminal observation steps. Observation only; see
+/// [`super::trace`].
+///
+/// Split out of [`process_connections`] to keep that function inside the
+/// workspace line limit, which the added observation pushed it past.
+/// `baseline` is the equation count before any connection equation was
+/// generated; `before_unconnected_flows` the count before the two MLS §9.2
+/// unconnected-flow helpers ran; `set_count` the connection sets this pass
+/// built.
+fn report_expansion_finished(
+    flat: &flat::Model,
+    baseline: usize,
+    before_unconnected_flows: usize,
+    set_count: usize,
+) {
+    // Both unconnected-flow helpers are reported as one step: MLS §9.2 is one
+    // rule, and splitting it by which internal helper emitted a row would
+    // describe Rumoca's code rather than the rule.
+    let added = flat.equations.len().saturating_sub(baseline);
+    super::trace::emit(
+        super::trace::ConnectionStep::UnconnectedFlow {
+            equations_added: flat
+                .equations
+                .len()
+                .saturating_sub(before_unconnected_flows),
+        },
+        set_count,
+        added,
+    );
+    super::trace::emit(
+        super::trace::ConnectionStep::Complete {
+            sets: set_count,
+            equations_added: added,
+        },
+        set_count,
+        added,
+    );
 }
 
 /// Generate `flow_var = 0` equations for unconnected flow variables.
