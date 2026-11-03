@@ -610,6 +610,63 @@ mod tests_animated_contract {
         impl_body: String,
     }
 
+    /// Views whose phase display is **disabled for the v0.10.0 rebase**, and
+    /// which therefore cannot satisfy the contracts below.
+    ///
+    /// A placeholder has no step enum, builds no frame context, and reports
+    /// `LiveState::Idle` without consulting a `Playback` it does not own — so
+    /// the three checks in this module would each fail on it for a true reason.
+    /// Exempting them by name keeps those checks meaningful for the eight views
+    /// that do render frames.
+    ///
+    /// **The exemption expires by itself.** `the_disabled_view_list_matches_the
+    /// _placeholders` asserts this list and the `_awaiting_remodel` marker agree
+    /// in *both* directions, so when a re-model lands and the marker goes, the
+    /// list fails and the view rejoins the contracts. An exemption that outlives
+    /// its reason is how a disabled pane becomes a permanently unchecked one.
+    const DISABLED_VIEWS: &[&str] = &["pre_lowering_anim", "reduction_anim"];
+
+    /// The marker every placeholder carries, named once.
+    ///
+    /// Assembled rather than written whole for the reason `tests_layout` gives:
+    /// this file is itself scanned by some of these checks, and a literal would
+    /// self-match.
+    fn placeholder_marker() -> String {
+        format!("_awaiting_{}", "remodel")
+    }
+
+    /// **The disabled list and the placeholders must be the same set.**
+    ///
+    /// Both directions matter and for different reasons. A listed view that is
+    /// no longer a placeholder is an exemption outliving its reason — the pane
+    /// is back and nothing is checking it. An unlisted placeholder is the
+    /// opposite: a pane that silently drops out of three contracts because they
+    /// happen to pass vacuously on it.
+    #[test]
+    fn the_disabled_view_list_matches_the_placeholders() {
+        let views = animated_views();
+        let marker = placeholder_marker();
+        let placeholders: BTreeSet<String> = views
+            .iter()
+            .filter(|v| v.source.contains(marker.as_str()))
+            .map(|v| v.module.clone())
+            .collect();
+        let listed: BTreeSet<String> = DISABLED_VIEWS.iter().map(|m| (*m).to_owned()).collect();
+        assert_eq!(
+            placeholders, listed,
+            "\nthe disabled-view exemption and the placeholders have diverged.\n  \
+             placeholders in the tree: {placeholders:?}\n  exempted by name: \
+             {listed:?}\n\nA listed view that is no longer a placeholder means its \
+             re-model landed and three contracts stopped checking it. An unlisted \
+             placeholder means a pane dropped out of them unnoticed.",
+        );
+        assert!(
+            !listed.is_empty(),
+            "the list is empty, so this check and the exemptions it guards are \
+             reading nothing"
+        );
+    }
+
     /// Each `impl Animated for` in `src/`.
     ///
     /// Discovered rather than listed, for the reason `tests_layout` gives: a
@@ -726,6 +783,16 @@ mod tests_animated_contract {
             gated.len(),
         );
 
+        // **A disabled pane's `start_live` returns `None` unconditionally**, so
+        // `app.rs` naming it counts as a gate while the pane can never have a
+        // session. Removing the call site instead would delete the fallback
+        // path that makes the Debug button a no-op rather than a panic, so the
+        // exemption belongs here; see `DISABLED_VIEWS`.
+        let gated: BTreeSet<String> = gated
+            .into_iter()
+            .filter(|m| !DISABLED_VIEWS.contains(&m.as_str()))
+            .collect();
+
         let delegates = format!("self.playback.{}(", "live_state");
         let delegating: BTreeSet<String> = views
             .iter()
@@ -788,10 +855,22 @@ mod tests_animated_contract {
 
         // Assembled, because this file is not scanned but the habit is what
         // stops the fourth self-match — see `tests_layout`.
-        let opening = format!("::{}", "Start");
+        //
+        // **Two spellings, because tearing's unit is a block.** Most views
+        // open on `Step::Start`, the whole system before the search. Tearing
+        // opens on `TearingStep::BlockStart`: it runs per coupled block, so
+        // the state a reader needs first is that block as the algorithm was
+        // handed it. `PassStart` is deliberately NOT accepted — it opens one
+        // of up to two passes *within* a block, so a view whose first frame
+        // were a `PassStart` would still be starting mid-block.
+        let openings = [format!("::{}", "Start"), format!("::Block{}", "Start")];
 
         let mut missing = Vec::new();
         for view in &views {
+            // A disabled pane has no step enum to scan; see `DISABLED_VIEWS`.
+            if DISABLED_VIEWS.contains(&view.module.as_str()) {
+                continue;
+            }
             // The step enums a view names, e.g. `MatchingStep::` — a view may
             // reference more than one (`tarjan_anim` also drives matching), so
             // ONE of them carrying an opening frame is the honest bar.
@@ -801,7 +880,10 @@ mod tests_animated_contract {
                  cannot see what it renders",
                 view.module,
             );
-            if !view.source.contains(opening.as_str()) {
+            if !openings
+                .iter()
+                .any(|opening| view.source.contains(opening.as_str()))
+            {
                 missing.push(view.module.clone());
             }
         }
@@ -914,6 +996,10 @@ mod tests_animated_contract {
 
         let missing: Vec<&String> = views
             .iter()
+            // A disabled pane returns `None` rather than a context with no
+            // `step` key, which is the honest answer and not the defect this
+            // guards; see `DISABLED_VIEWS`.
+            .filter(|v| !DISABLED_VIEWS.contains(&v.module.as_str()))
             .filter(|v| !v.impl_body.contains(key.as_str()))
             .map(|v| &v.module)
             .collect();
