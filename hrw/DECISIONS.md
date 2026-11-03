@@ -5354,3 +5354,54 @@ usual costume — an observer that reports nothing looks exactly like an algorit
 (a dropped `DisplaceFail`, a swapped `Return`, a dropped `PlanSelected`) each failed exactly one
 test and nothing else. `dead_code = "deny"` refused a fourth mutation outright, which is a weaker
 guard worth knowing about: a step variant that stops being constructed will not compile.
+
+## 2026-11-03 — what "the full gate is green" means for milestone 1, and the one carve-out in it
+
+Two rulings, both Doug's, both prompted by the v0.10.0 rebase surfacing upstream checks that did
+not exist on 0.9.20.
+
+### The gate is `cargo xtask verify workspace`, and it already excludes less than we assumed
+
+**Doug ruled: install the missing tooling rather than scope the milestone down.** So the bar for
+milestone 1 is upstream's own entry point, not an ad-hoc `cargo test --workspace`.
+
+**That distinction mattered more than expected.** Triage had counted about 41 failures needing
+tooling this machine lacks, and three of them were never in scope:
+`crates/xtask/src/test_cmd.rs`'s `WORKSPACE_TEST_EXCLUDES` keeps **`rumoca-bind-python` and
+`rumoca-bind-wasm` out of the workspace lane entirely** — they "need special targets (wasm32 / a
+Python interpreter) and are covered by the dedicated playground/python jobs". So the `pyo3` build
+failure and the Windows path-separator test failure are real bugs (`upstream-issues.md` W1 and W2)
+but not gate blockers, and chasing them as such was measuring the wrong unit.
+
+**Read the gate's own definition before deciding what it requires.** Its prerequisites are
+`cargo-nextest`, a staged MSL cache at `target/msl/ModelicaStandardLibrary-4.1.0`, `xmllint`, and
+a `cc` — and `xmllint` installs only through an elevated `choco install xsltproc -y`, which is
+upstream's own documented Windows command (`ci.yml`, "Windows runner images have no xmllint
+contract"). Note the tests shell out to **`cc`**, a name Windows does not provide at all; MSVC
+supplies `cl`, and the CUDA smoke test needs `cl` plus a full `vcvars64` environment.
+
+### The AI-attribution test: 13 commits fixed, 2 carved out deliberately
+
+v0.10.0 added `architecture_hardening_test`'s
+`commit_messages::test_reachable_commit_messages_have_no_ai_attribution`, enforcing SPEC_0025 §6:
+*"Commit messages contain no named AI assistant or AI-session references and no `Co-Authored-By`
+for AI assistants — the human author owns the code; tooling provenance does not belong in project
+history."* **The test did not exist on the 0.9.20 branch**, so every commit of this rebase failed
+it.
+
+All 15 were rewritten: attribution trailers removed, `Signed-off-by` added for the §6 DCO rule,
+and the content verified byte-identical — an empty diff against the `backup/pre-msg-rewrite` tag
+plus per-patch hash equality on all 15. Nothing had been pushed, which is what made the rewrite
+free.
+
+**Two still fail, and Doug ruled they stay that way.** The check is a blunt
+`lowercase.contains("claude")`, so it also fires on commit bodies that name `.claude/` and
+`CLAUDE.md` as *repository paths*. For the initial port commit those filenames **are** the
+subject — it records which paths came across wholesale, which a later session needs — so
+rephrasing would trade real information for a green light on a false positive. Both are
+`hrw`-side commits that will never be cherry-picked upstream.
+
+**So milestone 1's "full gate is green" explicitly excludes that one test, and only for those two
+commits.** A carve-out is a claim with a scope: it does not license a third offender, and it does
+not apply to any `crates/`-only commit, which must stay clean because those are the ones upstream
+actually receives.
