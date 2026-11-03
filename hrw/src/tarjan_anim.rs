@@ -20,9 +20,9 @@ use std::thread;
 
 use eframe::egui;
 
-use crate::live_trace::LiveTrace;
-use rumoca_phase_structural::matching::maximum_matching_with_trace;
-use rumoca_phase_structural::tarjan::{TarjanFrame, TarjanStep, tarjan_scc_with_trace};
+use rumoca_phase_structural::{
+    MatchingRecord, StructuralRecord, TarjanRecord, TarjanStepRecord as TarjanStep,
+};
 
 use crate::canvas::Canvas;
 use crate::incidence_view::IncidenceMatrix;
@@ -85,7 +85,7 @@ const FRAME_INTERVAL: f64 = 0.5;
 /// Animation state for Tarjan SCC discovery — supports recorded and live modes.
 pub struct TarjanAnimation {
     /// Cursor, timing and live-session state — see [`Playback`].
-    playback: Playback<TarjanFrame>,
+    playback: Playback<TarjanRecord>,
     n_nodes: usize,
     node_names: Vec<String>,
     /// Which unknown columns each equation touches, and the column names.
@@ -108,6 +108,55 @@ pub struct TarjanAnimation {
 /// *(Reattached here 2026-08-21 from a stale `from_incidence` summary that the
 /// capture scopes had superseded — it was the only statement of the edge rule
 /// in this file.)*
+/// Pick the traversal whose node indices address `mat`'s rows.
+///
+/// **A compile can run Tarjan more than once**, and the runs do not share a
+/// numbering: `build_blt_blocks` may condense compact equation families out of
+/// the node set and traverse a renumbered graph, where node `i` is equation
+/// `equation_of_node[i]`. The old capture was one flat `Vec`, which silently
+/// assumed a single traversal over equation indices.
+///
+/// So the segment is *selected* rather than assumed: it must declare `None` for
+/// its numbering — meaning nodes are equation indices — and span exactly this
+/// matrix's equation count. **Returning `None` is the right answer when no
+/// segment qualifies**: a condensed traversal's indices name rows belonging to
+/// the families that were condensed away, so drawing it on this matrix would
+/// label the wrong equations.
+/// The unknown-to-equation half of a matching, from the equation-to-unknown
+/// half the trace records.
+///
+/// Exact rather than approximate: a matching is a one-to-one correspondence, so
+/// `match_var[v] = Some(eq)` exactly when `match_eq[eq] == Some(v)`. The trace
+/// carries only one direction because that is the direction the algorithm
+/// mutates; `build_dep_graph` needs both.
+fn invert_matching(record: &MatchingRecord, n_var: usize) -> Vec<Option<usize>> {
+    let mut match_var: Vec<Option<usize>> = vec![None; n_var];
+    for (eq, var) in record.match_eq.iter().enumerate() {
+        if let Some(v) = var
+            && *v < match_var.len()
+        {
+            match_var[*v] = Some(eq);
+        }
+    }
+    match_var
+}
+
+fn traversal_addressing(
+    segments: &[Vec<TarjanRecord>],
+    n_eq: usize,
+) -> Option<&[TarjanRecord]> {
+    segments.iter().find_map(|segment| {
+        matches!(
+            segment.first().map(|record| &record.step),
+            Some(TarjanStep::Start {
+                n_nodes,
+                equation_of_node: None,
+            }) if *n_nodes == n_eq
+        )
+        .then_some(segment.as_slice())
+    })
+}
+
 fn build_dep_graph(
     mat: &IncidenceMatrix,
     match_eq: &[Option<usize>],
@@ -153,15 +202,21 @@ impl TarjanAnimation {
     /// The caller states the absence instead.)*
     pub fn from_captured_frames(
         mat: &IncidenceMatrix,
-        matching_frames: &[rumoca_phase_structural::matching::MatchingFrame],
-        tarjan_frames: &[rumoca_phase_structural::tarjan::TarjanFrame],
+        matching_frames: &[MatchingRecord],
+        tarjan_segments: &[Vec<TarjanRecord>],
     ) -> Option<Self> {
         let n_eq = mat.n_eq();
         if n_eq == 0 {
             return None;
         }
-        let (Some(last), false) = (matching_frames.last(), tarjan_frames.is_empty()) else {
-            // No SCC search was captured — say so rather than running one now.
+        // One segment per traversal, and only the one numbered in equation
+        // indices can be drawn on this matrix — see `traversal_addressing`.
+        let (Some(last), Some(tarjan_frames)) = (
+            matching_frames.last(),
+            traversal_addressing(tarjan_segments, n_eq),
+        ) else {
+            // No usable SCC search was captured — say so rather than running
+            // one now.
             return None;
         };
         // **The frames must describe this matrix.** Same hazard as
@@ -177,16 +232,7 @@ impl TarjanAnimation {
             return None;
         }
 
-        let match_eq = &last.match_eq;
-        let mut match_var: Vec<Option<usize>> = vec![None; mat.n_var()];
-        for (eq, var) in match_eq.iter().enumerate() {
-            if let Some(v) = var
-                && *v < match_var.len()
-            {
-                match_var[*v] = Some(eq);
-            }
-        }
-        let adj = build_dep_graph(mat, match_eq, &match_var);
+        let adj = build_dep_graph(mat, &last.match_eq, &invert_matching(last, mat.n_var()));
         Some(Self {
             playback: Playback::recorded(tarjan_frames.to_vec(), FRAME_INTERVAL),
             n_nodes: n_eq,
@@ -229,48 +275,49 @@ impl TarjanAnimation {
         })
     }
 
-    /// Start a live debug session for Tarjan's algorithm. Runs matching
-    /// first (non-live) to build the dependency graph, then spawns a thread
-    /// for Tarjan's SCC with a `LiveTrace` producer.
+    /// Start a live debug session for Tarjan's algorithm.
+    ///
+    /// **Takes the compile's matching steps and the DAE since the v0.10.0
+    /// rebase.** It used to re-run matching over the pane's rows purely to
+    /// build the dependency graph, then run Tarjan over that — two
+    /// reconstructions from a projection of the system. The graph now comes
+    /// from the matching the compile actually produced, and the SCC search
+    /// being stepped is `sort`'s own, over the DAE itself.
     ///
     /// **No completion callback**, and deliberately — see
     /// [`crate::matching_anim::MatchingAnimation::start_live`]. The
     /// `on_complete` that used to release the anchor breakpoint here was an
     /// LLDB SIGSTOP workaround, and releasing it is what broke every Debug
     /// press after the first (`docs/ideas.md` #74).
-    pub fn start_live(mat: &IncidenceMatrix, frame_delay: std::time::Duration) -> Option<Self> {
+    pub fn start_live(
+        mat: &IncidenceMatrix,
+        matching_frames: &[MatchingRecord],
+        dae: std::sync::Arc<rumoca_ir_dae::Dae>,
+        frame_delay: std::time::Duration,
+    ) -> Option<Self> {
         let n_eq = mat.n_eq();
-        let n_var = mat.n_var();
         if n_eq == 0 {
             return None;
         }
+        // Same addressing check as `from_captured_frames`: the graph is drawn
+        // on this matrix, so the matching it is built from must describe this
+        // matrix's system.
+        let last = matching_frames.last()?;
+        if last.match_eq.len() != n_eq || last.match_eq.iter().flatten().any(|&v| v >= mat.n_var())
+        {
+            return None;
+        }
+        let adj = build_dep_graph(mat, &last.match_eq, &invert_matching(last, mat.n_var()));
 
-        let eq_vars: Vec<HashSet<usize>> = mat
-            .rows()
-            .iter()
-            .map(|cols| cols.iter().copied().collect())
-            .collect();
-        let trace = maximum_matching_with_trace(n_eq, n_var, &eq_vars, None);
-        let adj = build_dep_graph(mat, &trace.match_eq, &trace.match_var);
-
-        let (lt, rx) = LiveTrace::new();
-        let lt = lt.with_frame_delay(frame_delay);
-        let done = Arc::new(AtomicBool::new(false));
-        let done_for_thread = Arc::clone(&done);
-        let adj_for_thread = adj.clone();
-
-        thread::Builder::new()
-            .name("tarjan-debug".to_owned())
-            .spawn(move || {
-                lt.wait_for_debugger();
-                // Where HRW's `LiveTrace` meets the phase's observer callback.
-                // The phase crate never learns `LiveTrace` exists — see
-                // `rumoca_core::FrameObserver`.
-                let observe = |f: &TarjanFrame| lt.push(f.clone());
-                tarjan_scc_with_trace(n_eq, &adj_for_thread, Some(&observe));
-                done_for_thread.store(true, Ordering::Release);
-            })
-            .ok()?;
+        let (rx, done) = crate::live_trace::spawn_structural_live(
+            dae,
+            frame_delay,
+            "tarjan-debug",
+            |record| match record {
+                StructuralRecord::Tarjan(tarjan) => Some(tarjan),
+                StructuralRecord::Matching(_) | StructuralRecord::Tearing(_) => None,
+            },
+        )?;
 
         Some(Self {
             playback: Playback::live(rx, done, FRAME_INTERVAL),
@@ -382,7 +429,7 @@ impl TarjanAnimation {
     /// the one worth watching: Tarjan closes a component only when the stack
     /// unwinds back to a node whose lowlink never fell below its own index, so
     /// a deep stack means "still inside something that might be one big block".
-    fn render_running_state(&self, ui: &mut egui::Ui, frame: &TarjanFrame) {
+    fn render_running_state(&self, ui: &mut egui::Ui, frame: &TarjanRecord) {
         ui.add_space(2.0);
         ui.horizontal_wrapped(|ui| {
             ui.weak("Goal:");
@@ -610,7 +657,13 @@ fn step_description(step: &TarjanStep, names: &[String]) -> (&'static str, Strin
     let name = |i: usize| names.get(i).map(String::as_str).unwrap_or("?");
     match step {
         // Clapper board, as on every other opening frame — `34c22d56`.
-        TarjanStep::Start { n_nodes } => (
+        //
+        // `equation_of_node` is deliberately not rendered: this animation only
+        // ever draws a traversal whose nodes *are* equation indices
+        // (`traversal_addressing` refuses the others), so for anything shown
+        // here the map is `None` and saying so would be noise. A condensed
+        // traversal never reaches this pane.
+        TarjanStep::Start { n_nodes, .. } => (
             "\u{1f3ac}",
             format!("Starting point: {n_nodes} nodes, nothing visited and no component closed yet"),
         ),
