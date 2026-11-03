@@ -1272,8 +1272,20 @@ pub enum FromWorker {
         /// The flat model, for a live-debug replay of `pre()` lowering. It is the
         /// last artifact from *before* that pass runs.
         flat: Option<rumoca_ir_flat::Model>,
-        /// The raw DAE for live-debug replay of index reduction.
-        dae: Option<rumoca_ir_dae::Dae>,
+        /// The raw DAE, for the views that read it after the compile.
+        ///
+        /// **`Arc` because 0.10.0's `Dae` is not `Clone`**, and this message is.
+        /// A `Dae` owns its arenas and its `SourceMap`; upstream made it
+        /// immutable and valid-by-construction, and declining `Clone` is part of
+        /// that — there is no legitimate reason to duplicate one. Sharing it is
+        /// what the consumers actually wanted anyway: every reader goes through
+        /// `inspect`, which borrows.
+        ///
+        /// *(The old comment said "for live-debug replay of index reduction".
+        /// That consumer is gone — see `index_reduction_stage` — but the field
+        /// is not: `app::tearing_dae` and the simulation path both still read
+        /// it.)*
+        dae: Option<std::sync::Arc<rumoca_ir_dae::Dae>>,
         /// Connection-expansion frames (MLS §9), **captured during the compile
         /// above**; empty for a model with no `connect()`. *(Comment corrected
         /// 2026-08-04: it read "replay frames … recorded by re-running flatten".
@@ -2273,7 +2285,11 @@ impl WorkerState {
                 let value = ser_value(class);
                 // Build a DefId→DefInfo map for all DefIds referenced in this
                 // class's IR, so navigation can continue from here.
-                let def_index = build_def_index(rt.inner(), &value);
+                let def_index = build_def_index(
+                    rt.inner(),
+                    &value,
+                    &source_names(&self.session.document_uris()),
+                );
                 Ok((value, def_index))
             }
             None => Err(format!("`{name}` not found in resolved tree")),
@@ -2402,7 +2418,22 @@ impl WorkerState {
             .inner()
             .get_class_by_qualified_name(qualified)
             .ok_or_else(|| format!("`{qualified}` is not a class in the loaded libraries"))?;
-        let uri = class.location.file_name.clone();
+        // **`Location` names a `SourceId` on 0.10.0, not a file.** The id is
+        // derived from the URI by `source_id_for_name`, so hashing the session's
+        // own document URIs recovers the name by identity rather than by
+        // matching text. A class whose declaring document the session does not
+        // hold falls through to the same error the missing-document case below
+        // reports, which is the honest outcome either way.
+        let uri = source_names(&self.session.document_uris())
+            .get(&class.location.source)
+            .cloned()
+            .ok_or_else(|| {
+                format!(
+                    "`{qualified}` is declared in a document the session does not hold \
+                     (source id {:?})",
+                    class.location.source,
+                )
+            })?;
         // Reported rather than shrugged off: a class whose declaring document the
         // session cannot produce is a broken assumption, not an empty pane.
         let source = self
@@ -2901,6 +2932,9 @@ impl WorkerState {
                 // `Ok` no longer means the model resolved. The diagnostics carry
                 // that now — see `resolve_diagnostics_indicate_failure`, whose
                 // predicate was measured rather than assumed.
+                // Built before the `match` below borrows the session's tree, so
+                // the URI index and that borrow do not overlap.
+                let names = source_names(&self.session.document_uris());
                 let strict = self.session.strict_compile_resolved();
                 let strict = match strict {
                     Ok((rt, diags)) if resolve_diagnostics_indicate_failure(&diags) => {
@@ -2922,14 +2956,15 @@ impl WorkerState {
                 };
                 match strict.as_deref() {
                     Ok(rt) => {
-                        let rt = &rt.0;
+                        let rt = rt.inner();
                         // Extract just this model's class definition from the
                         // full resolved tree (which includes the entire MSL).
                         let stage = extract_class(rt, &qualified);
                         if let Some(v) = &stage.value {
                             // Build the DefId→DefInfo lookup for all DefIds
                             // referenced in this model's IR.
-                            def_index = build_def_index(rt, v);
+                            def_index =
+                                build_def_index(rt, v, &names);
                         }
                         // **Resolve ends here**, before the phases that merely use
                         // its output. Its bracket used to close after Instantiate,
@@ -3012,7 +3047,11 @@ impl WorkerState {
                                 Stage {
                                     value: Some(mut v), ..
                                 } => {
-                                    def_index = build_def_index(rt.inner(), &v);
+                                    def_index = build_def_index(
+                                        rt.inner(),
+                                        &v,
+                                        &source_names(&self.session.document_uris()),
+                                    );
                                     // **Both the recovered tree and the error.**
                                     //
                                     // This branch used to return `Stage::recovered(v,
@@ -4069,17 +4108,21 @@ fn span_to_location(source: &str, span: &rumoca_core::Span) -> Option<serde_json
 fn unmatched_unknown_locations(
     source: &str,
     names: &[String],
-    spans: &[Option<rumoca_core::Span>],
+    // **Every unmatched unknown now HAS a span.** 0.10.0 reports
+    // `Vec<Span>` where 0.9.20 reported `Vec<Option<Span>>`, because the error
+    // is built from the incidence, which carries a span per unknown. The
+    // positional `get(i)` stays — a shorter span list than name list would
+    // still leave later unknowns unlocated rather than mispaired — but the
+    // inner `Option` is gone, so a `None` location now means only "this span
+    // does not resolve into the specimen source", never "no span was recorded".
+    spans: &[rumoca_core::Span],
 ) -> serde_json::Value {
     serde_json::Value::Array(
         names
             .iter()
             .enumerate()
             .map(|(i, name)| {
-                let loc = spans
-                    .get(i)
-                    .and_then(|s| s.as_ref())
-                    .and_then(|s| span_to_location(source, s));
+                let loc = spans.get(i).and_then(|s| span_to_location(source, s));
                 serde_json::json!({ "unknown": name, "location": loc })
             })
             .collect(),
@@ -4574,6 +4617,7 @@ fn structural_error_to_json(
             unmatched_equations,
             unmatched_unknowns,
             unmatched_unknown_spans,
+            over_determined_block,
         } => serde_json::json!({
             "kind": "singular",
             "message": format!("{e}"),
@@ -4595,6 +4639,17 @@ fn structural_error_to_json(
             // described.
             "unmatched_unknown_locations":
                 unmatched_unknown_locations(source, unmatched_unknowns, unmatched_unknown_spans),
+            // **New in v0.10.0, and it answers the question the counts raise.**
+            // `n_equations > n_unknowns` says the system is over-determined
+            // somewhere; this says *where*, as the witness block's own shape
+            // plus a sample of its equations. Published because a singular
+            // report is the one place a reader most needs to stop guessing, and
+            // `sample` is Rumoca's own selection rather than HRW's.
+            "over_determined_block": {
+                "equations": over_determined_block.equations,
+                "unknowns": over_determined_block.unknowns,
+                "sample": over_determined_block.sample,
+            },
             "guidance": "The maximum matching could not pair every equation with a unique \
                 unknown. Each unmatched unknown is a variable no equation determines; \
                 `unmatched_unknown_locations` gives the source line that declares it. \
@@ -4724,6 +4779,32 @@ fn block_to_json(b: &rumoca_phase_structural::BlockReport) -> serde_json::Value 
                 .collect::<Vec<_>>(),
             "unknowns": unknowns,
             "tearing": tearing.as_ref().map(tearing_to_json),
+        }),
+        // **New in v0.10.0, and it is a compaction rather than a third kind of
+        // block.** A regular equation family whose rows are each their own
+        // scalar block is reported once with its point count, instead of
+        // expanded into one line per element — upstream's own doc gives the
+        // reason: a 2048-element array would otherwise bury the rest of the
+        // dump.
+        //
+        // **No `id` field, deliberately.** Every other arm carries one because a
+        // click on a spy-plot block captures it, and `equation_id_from_label`
+        // derives that id from a label naming *one* equation. This arm names a
+        // family covering `point_count` domain points, so there is no single
+        // equation for an id to mean. Emitting one would make a capture resolve
+        // to whichever row the derivation happened to land on — the kind of
+        // confident wrong answer `identity-and-provenance.md` forbids. The
+        // counts are published instead, so a reader can see what the row covers.
+        BlockReport::StructuredScalar {
+            origin,
+            point_count,
+            equations_per_point,
+        } => serde_json::json!({
+            "kind": "structured_scalar",
+            "size": point_count * equations_per_point,
+            "origin": origin,
+            "point_count": point_count,
+            "equations_per_point": equations_per_point,
         }),
     }
 }
@@ -4982,9 +5063,33 @@ fn collect_def_ids(v: &serde_json::Value, out: &mut BTreeSet<u64>) {
 /// and for test stability. The key is `u64` (the DefId as a JSON number)
 /// rather than Rumoca's `DefId` type, so we keep `rumoca-core` out of our
 /// direct dependencies.
+/// Map every document the session holds to the `SourceId` its URI hashes to.
+///
+/// **Needed because 0.10.0's `Location` carries a `SourceId` rather than a file
+/// name**, and HRW wants the name — it is what `get_document` takes and what a
+/// "jump to declaration" has to open.
+///
+/// **This is an identity index, not a name search.** `SourceId`s are derived
+/// from the URI by `source_id_for_name`, the same function `SourceMap::add`
+/// uses, so hashing each known URI reproduces exactly the ids the IR carries.
+/// Nothing here compares or matches text, which is what
+/// `docs/identity-and-provenance.md` forbids; a URI the session does not hold
+/// simply has no entry.
+fn source_names(uris: &[&str]) -> std::collections::HashMap<rumoca_core::SourceId, String> {
+    uris.iter()
+        .map(|uri| {
+            (
+                rumoca_core::source_id_for_name(uri),
+                (*uri).to_owned(),
+            )
+        })
+        .collect()
+}
+
 fn build_def_index(
     tree: &rumoca_ir_ast::ClassTree,
     value: &serde_json::Value,
+    source_names: &std::collections::HashMap<rumoca_core::SourceId, String>,
 ) -> BTreeMap<u64, DefInfo> {
     let name_by_id: std::collections::HashMap<u32, &str> = tree
         .def_map
@@ -5013,7 +5118,13 @@ fn build_def_index(
                 name,
                 kind: DefKind::Class,
                 class_type: Some(class.class_type.as_str().to_owned()),
-                file_name: Some(class.location.file_name.clone()),
+                // `Location` carries a `SourceId` on 0.10.0 where it used to
+                // carry the file name itself. The map is keyed by the id the
+                // session's own document URIs hash to, so this is an identity
+                // lookup rather than a name match — and `None` when the
+                // declaring document is not one the session holds, which is a
+                // real state rather than a reason to invent a path.
+                file_name: source_names.get(&class.location.source).cloned(),
                 line: Some(class.location.start_line),
             },
             None => DefInfo {

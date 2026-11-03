@@ -957,7 +957,7 @@ pub struct App {
     /// was entered. See [`CompileViewCaches`] for what that did and why nobody designed
     /// it.
     compile_views: CompileViewCaches,
-    cached_dae: Option<rumoca_ir_dae::Dae>,
+    cached_dae: Option<std::sync::Arc<rumoca_ir_dae::Dae>>,
 
     // ---- 13. Markdown rendering ----
     // Caches parsed markdown for `egui_commonmark`. Shared across lab and
@@ -4519,7 +4519,7 @@ impl App {
     /// branch with the re-model, taking the reduced DAE from
     /// `inspect_prepare_for_solve`'s `PreparedDae` instead of re-running
     /// anything.
-    fn tearing_dae(&self) -> Option<&rumoca_ir_dae::Dae> {
+    fn tearing_dae(&self) -> Option<&std::sync::Arc<rumoca_ir_dae::Dae>> {
         self.cached_dae.as_ref()
     }
 
