@@ -110,6 +110,35 @@ across four, including `UnbalancedShaft` (stops at DAE construction) and `Capaci
 (structurally singular). **Corpus scale buys F10 almost nothing; the failing specimens are what
 test it.** A future `#46` failure specimen per phase would change that.
 
+### ⟶ CLAUSE 3 HAS CORPUS COVERAGE AS OF RUMOCA v0.10.0 — and from the source predicted above
+
+**Measured 2026-11-03 on the rebase.** Two of the five MSL models now stop before Flatten, leaving
+Flatten, Structural and Solve lowering empty:
+
+| model | why |
+|---|---|
+| `Modelica.Electrical.Batteries.BaseClasses.BaseCellStack` | `partial` base class |
+| `Modelica.Blocks.Tables.Internal.CombiTable2DBase` | `partial` base class |
+
+**Both are partial classes, which is what the paragraph above said could not happen** — *"Even a
+`partial block` compiles through."* That was true of 0.9.20 and is not true now, and **declining is
+the better answer**: an incomplete class has no complete model to flatten, so flattening one
+produced a result that described nothing.
+
+So `f10s_absence_clause_is_exercised_by_a_partial_class` has stopped being a watchful zero and
+become an assertion of 2 — **pinned by name as well as by count**, because a count of two would
+also be satisfied by two *complete* models silently failing to flatten, which would be a far
+larger finding than this one.
+
+**What it does NOT change:** the sentence above it still holds. The failing specimens remain what
+actually test F10, because two partial classes exercise clause 3 at exactly one point in the
+pipeline — the flatten boundary — while the specimens exercise it at DAE construction, structural
+analysis and now solve lowering.
+
+*One exclusion is load-bearing here.* The count ignores index reduction, initialization and events
+(`worker::AWAITING_REMODEL`): HRW publishes no IR for those on this rebase, so counting them put
+this at 5 of 5 and would have recorded an HRW gap as a fact about the MSL.
+
 **Verdicts also shifted, and the prediction about them was wrong.** 12 models were not checked
 before and 12 after — but the composition changed: **3 free-RAM → 0**, **2 proc-ceiling → 5**,
 timeouts unchanged at 7. The prediction that unconditional frame capture would grow the

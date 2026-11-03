@@ -1203,6 +1203,20 @@ whole 25-specimen corpus.** Not filed.
 
 > ## ⟶ DO NOT FILE — FIXED ON THE 0.10.0 BRANCH, MEASURED 2026-09-19
 >
+> **CONFIRMED IN THE TREE 2026-11-03, on the rebase itself.** The instruction this entry
+> located is not merely changed, it is **absent**: `BuiltinFunction::Der` no longer appears
+> anywhere in `rumoca-phase-solve`, and `emit_const_at` does not exist anywhere in the
+> workspace. What replaced it is the formulation this project derived independently and
+> wrote up below — `crates/rumoca-phase-structural/src/dae_transform/initial_pins.rs`, which
+> seeds one value per state and projects the algebraic unknowns.
+>
+> **So the two source paths cited further down name 0.9.20** and are tagged accordingly; they
+> are kept because the located instruction is the evidence for the diagnosis, and an entry
+> that drops its evidence cannot be re-checked.
+>
+> <!-- historical: crates/rumoca-phase-solve/src/lower/scalar_ops.rs -->
+> <!-- historical: rumoca-phase-structural/src/ic_plan.rs -->
+>
 > **Built `msl-trace-parity-50` (commit `853791b`) and ran the reproducers. The flat-lining is
 > gone.** Same files, two compilers, no edits:
 >
@@ -1875,6 +1889,66 @@ If the TOML is consumed by a WASM/browser target, the forward slash may be the c
 As with W1, `WORKSPACE_TEST_EXCLUDES` keeps `rumoca-bind-wasm` out of
 `cargo xtask verify workspace`, so neither of these reaches the workspace lane. The second
 failing test in that file on Windows was not investigated.
+
+---
+
+## E3. **Rumoca** — `DaeProvenance` records *that* an equation came from source, not *which component instance* brought it in
+
+**Not a bug — a capability request, and the smallest one this project has found.** Raised
+2026-11-03 while rebasing onto v0.10.0. **Not filed.**
+
+### What the type carries
+
+`rumoca-ir-dae/src/provenance.rs`:
+
+```rust
+pub struct DaeProvenance {
+    origin: DaeProvenanceOrigin,   // Source | Generated(DaeGeneration)
+    span: ProvenanceSpan,          // guaranteed non-dummy, source-backed
+}
+```
+
+The span is the equation's **declaring** location. For an equation of
+`Modelica.Mechanics.Rotational.Components.Inertia`, that is a line in the MSL file, which is
+correct and useful. What is absent is the **instance path** — that this particular copy of
+the equation arrived through `inertia1` in the model being compiled.
+
+### Why a consumer wants it, with two measured cases
+
+**1. Linking an equation to the declaration that caused it.** HRW's equation sheet shows a
+specimen beside its equations and links each equation to a source line. On `GearWithBrake`
+(44 equations, assembled from MSL components) it can link **1**: the one equation the
+specimen writes itself. The other 43 are declared in the library, so their spans point
+there. With an instance path, each could be linked to the line declaring `inertia1` —
+by identity rather than by searching the source text for the string `inertia1`, which is
+what HRW used to do and has now deleted.
+
+**2. Grouping equations by the component that contributed them.** 0.9.20's `origin: String`
+read `equation from R`, and a reader could see that the resistor contributed 7 of
+`RcCircuit`'s 16 component equations, the source 4, the capacitor 4, the ground 1. The typed
+replacement reports all 16 as `source DAE object`. The *counts* are unchanged — nothing was
+recounted — but the attribution is no longer carried, and a teaching document built on it had
+to be rewritten.
+
+### What is being asked, and what is not
+
+**Asked:** an optional instance path on `DaeProvenance`, or any accessor that answers *which
+component instance contributed this object*. A string path (`"inertia1"`,
+`"gearbox.inertia"`) would serve both cases above.
+
+**Not asked:** restoring the old `origin: String`. **The typed provenance is better and this
+entry should say so.** The old form was uniform — a connection equation and a resistor's
+constitutive law both read `equation from <something>` — whereas `DaeGeneration`'s 24
+variants state outright which equations the compiler manufactured and why. The loss is
+orthogonal to the improvement, and a field is the natural place for it rather than a return
+to strings.
+
+### Honestly bounded
+
+**Whether the information is available at construction time is not verified.** If an
+instance path is not in scope where `DaeProvenance::source` is called, this is a larger
+change than it looks and the ask should be treated as a question rather than a proposal.
+That is the one thing a maintainer would know immediately and this project does not.
 
 ---
 
