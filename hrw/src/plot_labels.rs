@@ -44,10 +44,10 @@
 /// compile of the solver crate, and so this module cannot drift into depending on solver
 /// internals it has no business reading.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) struct StepRow {
-    pub(crate) t: f64,
-    pub(crate) h: f64,
-    pub(crate) order: usize,
+pub struct StepRow {
+    pub t: f64,
+    pub h: f64,
+    pub order: usize,
 }
 
 /// The hover label for the **solver diagnostics** plot.

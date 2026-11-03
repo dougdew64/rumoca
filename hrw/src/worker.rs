@@ -202,7 +202,25 @@ pub struct SimData {
     /// current spike) must never be mistaken for jumps. See [`discontinuity_segments`].
     pub has_discontinuities: bool,
     /// Per-step solver diagnostics (t, h, order) from the BDF integrator.
-    pub solver_steps: Vec<rumoca_solver::SolverStepRecord>,
+    ///
+    /// **Always empty on v0.10.0, and the pane says so** — see
+    /// `app::sim_ui`'s absence note. `rumoca_solver::SolverStepRecord` was
+    /// *HRW's own instrumentation* of the integrator, not an upstream API, so
+    /// there is nothing to follow: 0.10.0's `SimResult` carries `times`,
+    /// `names`, `data`, `n_states`, `variable_meta` and `termination`, and no
+    /// per-step record of any kind.
+    ///
+    /// **The field and the plots it feeds are kept rather than deleted.** The
+    /// step-size-on-a-log-axis and BDF-order plots were built for a specific
+    /// reported failure — Doug, 2026-09-25, could not verify a single one of
+    /// lecture 1's solver claims because egui_plot's three-place default
+    /// rendered a 1e-4 step as `0.000`. Deleting that would cost real
+    /// pedagogical work to save a type parameter, and re-instrumenting the
+    /// integrator is the re-model `docs/tech-debt.md` recruits.
+    ///
+    /// Typed as HRW's own `plot_labels::StepRow` now, which is what the plots
+    /// consumed anyway, so re-instrumentation only has to fill it.
+    pub solver_steps: Vec<crate::plot_labels::StepRow>,
 }
 
 impl SimData {
@@ -2098,13 +2116,18 @@ impl WorkerState {
             }
         };
 
-        // --- Phase 2: Lower the DAE to a SolveModel ---
-        // Rumoca API: `lower_dae_to_solve_model` transforms the mathematical DAE
+        // --- Phase 2: Lower the DAE to a solve problem ---
+        // Rumoca API: `lower_solve_problem` transforms the mathematical DAE
         // (equations + variables) into the solver's executable form: residual
         // programs, mass matrix structure, Jacobian sparsity pattern, etc.
+        //
+        // **Lowered here only to report it.** Simulation no longer consumes the
+        // result: `simulate_with_diagnostics` takes the `Dae` directly on
+        // 0.10.0, so this stage exists to be *shown*, and the simulate call
+        // below does its own lowering internally.
         log(LogLevel::StageStart, "Solve lowering".to_owned());
         let t_stage = Instant::now();
-        let sm = rumoca_phase_solve::lower_dae_to_solve_model(&cr.dae).map_err(|e| {
+        let sm = rumoca_phase_solve::lower_solve_problem(&cr.dae).map_err(|e| {
             log(LogLevel::Error, format!("solve lowering failed: {e}"));
             format!("solve lowering failed: {e}")
         })?;
@@ -2202,7 +2225,7 @@ impl WorkerState {
         // `OutputCapture` — so without one the trace lands in a terminal Doug is not
         // watching. It is started only for the retry, which happens only on a failure
         // already headed for the error path.
-        let res = match rumoca_sim::simulate_solve_model(&sm, &opts) {
+        let res = match rumoca_sim::simulate_with_diagnostics(&cr.dae, &opts) {
             Ok(res) => res,
             Err(e) => {
                 let msg = format!("{e}");
@@ -2217,7 +2240,7 @@ impl WorkerState {
                     );
                     let mut capture = OutputCapture::start();
                     rumoca_sim::nan_trace::set_nan_trace(true);
-                    let _ = rumoca_sim::simulate_solve_model(&sm, &opts);
+                    let _ = rumoca_sim::simulate_with_diagnostics(&cr.dae, &opts);
                     rumoca_sim::nan_trace::set_nan_trace(false);
                     match capture.as_mut() {
                         Some(cap) => {
@@ -2266,7 +2289,10 @@ impl WorkerState {
             data: res.data,
             n_states: res.n_states,
             has_discontinuities,
-            solver_steps: res.solver_steps,
+            // Empty because 0.10.0's `SimResult` carries no per-step record —
+            // see the field's own note. Written out rather than defaulted so
+            // the absence is visible at the one place that would fill it.
+            solver_steps: Vec::new(),
         })
     }
 
@@ -4453,14 +4479,14 @@ fn events_stage(result: Option<&PhaseResult>) -> Stage {
 /// can use `serde_json::to_value(&sm)` directly instead of building JSON
 /// manually. This is the simplest stage extractor — just serialize and wrap.
 ///
-/// Rumoca API: `lower_dae_to_solve_model(&dae)` transforms the mathematical
-/// DAE into the solver's executable form.
+/// Rumoca API: `lower_solve_problem(&dae)` transforms the mathematical DAE
+/// into the solver's executable form.
 fn solve_lowering_stage(result: Option<&PhaseResult>) -> Stage {
     if let Some(stage) = not_reached_stage(result) {
         return stage;
     }
     let cr = unwrap_success(result);
-    match rumoca_phase_solve::lower_dae_to_solve_model(&cr.dae) {
+    match rumoca_phase_solve::lower_solve_problem(&cr.dae) {
         Ok(sm) => match serde_json::to_value(&sm) {
             Ok(v) => Stage::ok(v),
             Err(e) => Stage::err(format!("serialize SolveModel: {e}")),
@@ -4713,85 +4739,67 @@ fn structural_error_to_json(
         }),
     }
 }
-/// Convert a `SolveModelLowerError` into structured JSON for UI rendering.
-fn solve_lower_error_to_json(e: &rumoca_phase_solve::SolveModelLowerError) -> serde_json::Value {
-    use rumoca_phase_solve::SolveModelLowerError;
+/// Convert a [`rumoca_phase_solve::LowerError`] into structured JSON for UI
+/// rendering.
+///
+/// **Much thinner than its 0.9.20 predecessor, and that is faithful rather than
+/// lazy.** `SolveModelLowerError::Structural` carried the
+/// `rumoca_phase_structural::StructuralError` itself, so this could publish
+/// `n_equations`, `n_unknowns`, `n_matched` and the unmatched equation and
+/// unknown lists. 0.10.0's `LowerError::Structural` carries `reason: String` —
+/// the structured failure is rendered before it reaches here, and the numbers
+/// are not recoverable from the error.
+///
+/// So the counts are **absent rather than reconstructed**. Re-deriving them by
+/// running structural analysis again would produce numbers from a second
+/// execution and present them as this failure's, which is the one thing this
+/// repository will not do. The Structural stage still reports them, for the run
+/// that actually failed.
+fn solve_lower_error_to_json(e: &rumoca_phase_solve::LowerError) -> serde_json::Value {
+    use rumoca_phase_solve::LowerError;
     let msg = format!("{e}");
-    match e {
-        SolveModelLowerError::Structural { source } => {
-            let mut json = serde_json::json!({
-                "kind": "singular",
-                "message": msg,
-                "guidance": "The BLT decomposition during solve lowering encountered a structural \
-                    singularity. The reduced system may still have unresolvable dependencies.",
-            });
-            if let rumoca_phase_structural::StructuralError::Singular {
-                n_equations,
-                n_unknowns,
-                n_matched,
-                unmatched_equations,
-                unmatched_unknowns,
-                ..
-            } = source
-            {
-                let obj = json.as_object_mut().unwrap();
-                obj.insert("n_equations".to_owned(), (*n_equations).into());
-                obj.insert("n_unknowns".to_owned(), (*n_unknowns).into());
-                obj.insert("n_matched".to_owned(), (*n_matched).into());
-                obj.insert(
-                    "rank_deficiency".to_owned(),
-                    ((*n_equations).max(*n_unknowns) - n_matched).into(),
-                );
-                obj.insert(
-                    "unmatched_equations".to_owned(),
-                    serde_json::json!(unmatched_equations),
-                );
-                obj.insert(
-                    "unmatched_unknowns".to_owned(),
-                    serde_json::json!(unmatched_unknowns),
-                );
-            }
-            json
+    // Rumoca's own variant name, published rather than renamed: a friendlier
+    // label here would be a claim about the failure that the compiler did not
+    // make.
+    let (kind, reason, span) = match e {
+        LowerError::Unsupported { reason, span } => ("Unsupported", reason, Some(span)),
+        LowerError::NonComputable { reason, span } => ("NonComputable", reason, Some(span)),
+        LowerError::Structural { reason, span } => ("Structural", reason, span.as_ref()),
+        LowerError::ContractViolation { reason, span } => ("ContractViolation", reason, Some(span)),
+        LowerError::UnspannedContractViolation { reason } => {
+            ("UnspannedContractViolation", reason, None)
         }
-        SolveModelLowerError::MassMatrix {
-            row,
-            state_name,
-            reason,
-            ..
-        } => {
-            serde_json::json!({
-                "kind": "mass_matrix",
-                "message": msg,
-                "detail": format!("Mass matrix row {row} for state `{state_name}` could not be derived."),
-                "reason": reason,
-                "state_name": state_name,
-                "row": row,
-                "guidance": "The mass matrix entry for this state variable could not be \
-                    computed. This often indicates a higher-index problem or a \
-                    variable that should not be a state.",
-            })
+    };
+    let guidance = match e {
+        LowerError::Structural { .. } => {
+            "Solve lowering could not order the system. The Structural stage shows the \
+             matching and blocks for the run that failed."
         }
-        SolveModelLowerError::Evaluation {
-            context, source, ..
-        } => {
-            serde_json::json!({
-                "kind": "evaluation",
-                "message": msg,
-                "detail": format!("Failed to evaluate {context}: {source}"),
-                "context": context,
-                "guidance": "An expression could not be evaluated during solve lowering. \
-                    Check for division by zero, undefined variables, or unsupported functions.",
-            })
+        LowerError::NonComputable { .. } => {
+            "An equation reached solve lowering in a form with no computable program."
         }
-        SolveModelLowerError::Lower(lower_err) => {
-            serde_json::json!({
-                "kind": "solve_lowering",
-                "message": msg,
-                "detail": format!("{lower_err}"),
-                "guidance": "Solve lowering transforms the DAE into a solver-ready form.",
-            })
+        LowerError::Unsupported { .. } => {
+            "The model uses a construct solve lowering does not implement yet."
         }
+        LowerError::ContractViolation { .. } | LowerError::UnspannedContractViolation { .. } => {
+            "Solve lowering detected a violated internal contract \u{2014} a compiler defect \
+             rather than a model error, and worth an upstream-issues entry."
+        }
+    };
+    let mut json = serde_json::json!({
+        "kind": kind,
+        "message": msg,
+        "reason": reason,
+        "guidance": guidance,
+    });
+    if let Some(span) = span {
+        let obj = json
+            .as_object_mut()
+            .expect("the literal above constructs an object");
+        obj.insert("span_start".to_owned(), span.start.0.into());
+        obj.insert("span_end".to_owned(), span.end.0.into());
     }
+    json
 }
 
 /// Convert a single BLT block to JSON. A "scalar" block is a single
