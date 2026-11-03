@@ -1,5 +1,14 @@
 # Phase 3: Type Checking and Dimension Evaluation
 
+<!-- historical: rumoca-phase-typecheck/src/typechecker/equation_shape.rs -->
+
+> ## ⚠ PATHS IN THIS DOCUMENT NAME RUMOCA 0.9.20
+>
+> `rumoca-phase-typecheck/src/typechecker/equation_shape.rs` is gone. The typechecker was reorganised; the **rules** it applies are language rules (MLS §4.7, §10.3) and do not move with a release.
+>
+> **Kept rather than repointed at the nearest surviving filename**, which would make the document *look* verified while its mechanism prose stayed wrong.
+> `doc_citations::historical_citations_are_really_gone` fails if any path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
+
 ## Overview
 
 The type-checking phase assigns a **TypeId** to every expression and component,

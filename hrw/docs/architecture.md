@@ -115,81 +115,84 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**70 modules, 82,310 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**73 modules, 84,717 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
-| `app.rs` | 7,951 |
-| `app/tests.rs` | 7,301 |
-| `worker/tests.rs` | 7,204 |
-| `doc_citations.rs` | 6,706 |
-| `worker.rs` | 6,173 |
-| `bridge.rs` | 4,351 |
+| `app.rs` | 8,013 |
+| `app/tests.rs` | 7,306 |
+| `worker/tests.rs` | 7,270 |
+| `doc_citations.rs` | 7,083 |
+| `worker.rs` | 6,057 |
+| `bridge.rs` | 4,386 |
 | `ui_tests.rs` | 3,094 |
-| `fidelity.rs` | 1,849 |
-| `equation_sheet.rs` | 1,540 |
+| `fidelity.rs` | 1,948 |
+| `equation_sheet.rs` | 1,569 |
 | `tree.rs` | 1,432 |
 | `diagnostics.rs` | 1,397 |
 | `autoplay.rs` | 1,317 |
 | `lab_panel.rs` | 1,259 |
+| `matching_anim.rs` | 1,243 |
 | `incidence_view.rs` | 1,219 |
+| `lib.rs` | 1,188 |
 | `reduction_view.rs` | 1,112 |
-| `connection_anim.rs` | 1,088 |
-| `lib.rs` | 1,082 |
-| `matching_anim.rs` | 1,068 |
-| `playback.rs` | 962 |
-| `tarjan_anim.rs` | 934 |
+| `connection_anim.rs` | 1,106 |
+| `playback.rs` | 1,048 |
+| `tarjan_anim.rs` | 988 |
+| `matching_ledger.rs` | 916 |
 | `context_bar.rs` | 890 |
-| `ic_plan_anim.rs` | 876 |
+| `dae_expr_format.rs` | 881 |
+| `ic_plan_anim.rs` | 871 |
 | `model_list.rs` | 842 |
-| `matching_ledger.rs` | 830 |
+| `tearing_anim.rs` | 826 |
 | `survey.rs` | 769 |
 | `stage_tabs.rs` | 766 |
 | `arch_doc.rs` | 758 |
 | `lab.rs` | 736 |
 | `sub_view_rows.rs` | 719 |
 | `answer_check.rs` | 700 |
-| `tearing_anim.rs` | 699 |
+| `identifier_index.rs` | 688 |
 | `canvas.rs` | 681 |
 | `report_sub_view.rs` | 650 |
-| `expr_format.rs` | 621 |
+| `expr_format.rs` | 645 |
 | `modelica_lex.rs` | 595 |
 | `spyplot.rs` | 594 |
-| `identifier_index.rs` | 592 |
 | `source_view.rs` | 576 |
-| `alias_anim.rs` | 566 |
+| `alias_anim.rs` | 563 |
 | `artifact_pane.rs` | 514 |
-| `pantelides_ladder.rs` | 499 |
+| `pantelides_ladder.rs` | 496 |
 | `gate_policy.rs` | 494 |
 | `matrix_panes.rs` | 490 |
 | `nav_view.rs` | 483 |
 | `equation_sheet_view.rs` | 446 |
-| `reduction_anim.rs` | 442 |
 | `error_summary.rs` | 440 |
+| `live_trace.rs` | 421 |
 | `plot_labels.rs` | 403 |
 | `field_help.rs` | 397 |
 | `specimen_source.rs` | 397 |
 | `pointing.rs` | 395 |
-| `pre_lowering_anim.rs` | 379 |
 | `promote.rs` | 342 |
+| `dae_counts.rs` | 330 |
 | `specimen_purpose.rs` | 316 |
 | `machine_policy.rs` | 311 |
-| `equation_text.rs` | 301 |
 | `source_map.rs` | 281 |
+| `equation_text.rs` | 276 |
 | `stage_view.rs` | 272 |
+| `colors.rs` | 266 |
 | `report.rs` | 265 |
-| `colors.rs` | 263 |
+| `test_support.rs` | 234 |
 | `log_view.rs` | 229 |
-| `worker/test_msl.rs` | 226 |
-| `test_support.rs` | 223 |
+| `worker/test_msl.rs` | 221 |
 | `timing.rs` | 200 |
 | `main.rs` | 178 |
 | `ui_state.rs` | 170 |
+| `pre_lowering_anim.rs` | 147 |
+| `reduction_anim.rs` | 147 |
 | `stage_caches.rs` | 120 |
 | `json_read.rs` | 119 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 101 |
-| **total** | **82,310** |
+| **total** | **84,717** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -873,7 +876,7 @@ All three support two animation modes:
    Three releases remain, each ending the breakpoint's reason to exist —
    a `start_live` that failed to spawn, a specimen change, and app exit.
 
-The `LiveTrace<F>` type (in `rumoca-phase-structural/src/live_trace.rs`) is the
+The `LiveTrace<F>` type (in `hrw/src/live_trace.rs`) is the
 producer half of an `mpsc` channel. `LiveTrace::new()` returns
 `(LiveTrace<F>, mpsc::Receiver<F>)` — the producer moves into the algorithm
 thread, the receiver stays in the animation struct. The producer stores a bare
@@ -1613,10 +1616,10 @@ HRW depends on these Rumoca crates (all via path deps on `../crates/`):
 | `rumoca-ir-ast` | IR types (indirectly, via serde serialization) |
 | `rumoca-phase-instantiate` | `instantiate_model()` — InstanceOverlay |
 | `rumoca-phase-typecheck` | `typecheck_instanced()` — type assignment |
-| `rumoca-phase-structural` | `build_structural_report()`, `build_incidence()`, `build_ic_plan()`, `dae_prepare::*`, matching/tarjan trace types, `LiveTrace<F>` |
-| `rumoca-ir-dae` | `Dae`, `Equation` types for the index-reduction funnel and expression formatting |
-| `rumoca-phase-solve` | `lower_dae_to_solve_model()` — SolveModel |
-| `rumoca-sim` | `simulate_solve_model()` — simulation runner |
+| `rumoca-phase-structural` | `build_structural_report()` / `inspect_structural_report()`, `sort()` / `inspect_sort()`, `build_incidence()`, the `StructuralTrace` record types |
+| `rumoca-ir-dae` | `Dae` and `DaeView`, reached only through `dae.inspect(…)`; `Equation` types for expression formatting |
+| `rumoca-phase-solve` | `lower_solve_problem()` — SolveModel |
+| `rumoca-sim` | `simulate_with_diagnostics()` — simulation runner |
 
 **Instrumentation discipline:** any modification to the Rumoca crates must be:
 
@@ -2050,14 +2053,26 @@ both the `CompileResult` and the `SolveModel` that references it simultaneously 
 a way that survives across the channel send. So `simulate()` runs its own fresh
 compilation. This is fast (~0.3s) because the MSL is already loaded.
 
-### Why replicate the index-reduction funnel?
+### Why HRW no longer replicates the index-reduction funnel
 
-Rumoca's `prepare_dae_for_structural_analysis` (the full reduction funnel) is
-`pub(super)` — not reachable from outside `rumoca-sim`. But the individual steps
-(`dae_prepare::demote_exact_alias_component_states`, etc.) are all public. HRW
-calls them in the same order. This is guarded by a test that asserts the funnel
-still works; if an upstream change reorders or renames the steps, the test fails
-loudly. This is a candidate for upstream visibility widening.
+**It used to, and that was the clearest instance of the one forbidden kind of replay.**
+Rumoca's reduction funnel was `pub(super)` while its individual steps were public, so HRW
+called them by hand in an order it maintained itself, and showed the result as the
+compilation's reduced DAE. It was not: it was a second run of a pass, assembled by HRW, which
+could agree with the real one or not with nothing to say which.
+
+**v0.10.0 removed the question rather than answering it.** `dae_prepare/` became
+`dae_transform/`, and the steps HRW called no longer exist under any name — six of the seven
+functions the reference documents named are gone from the tree. There is nothing left to call
+in an order of HRW's choosing.
+
+**The current state is an honest absence.** The reduction pane is listed in
+`playback::DISABLED_VIEWS` and shows a placeholder, and `worker.rs` carries no reduced-DAE
+stage. Upstream grew its own observer seam for the pass — `ReductionObserver` and
+`ReductionEvent` in `dae_transform/observation.rs` — but both are `pub(super)`, so a reduction
+still cannot be watched from outside that module. **Widening those two is the upstream ask**,
+and it is a much smaller one than the old funnel-visibility request: it exposes what the pass
+reports about itself, not a way to drive the pass by hand.
 
 ### Why the "thin emitter, thick reasoner" bridge?
 

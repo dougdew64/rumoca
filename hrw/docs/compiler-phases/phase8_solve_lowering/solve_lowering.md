@@ -1,5 +1,16 @@
 # Phase 8: Solve Lowering
 
+<!-- historical: rumoca-phase-solve/src/dummy_derivative.rs -->
+<!-- historical: rumoca-phase-solve/src/event_actions.rs -->
+<!-- historical: rumoca-phase-solve/src/residual_compute_block.rs -->
+
+> ## ⚠ PATHS IN THIS DOCUMENT NAME RUMOCA 0.9.20
+>
+> Three cited modules are gone (`dummy_derivative.rs`, `event_actions.rs`, `residual_compute_block.rs`); solve lowering was reorganised under `rumoca-phase-solve/src/lower/`. The **shape** of what lowering produces — a straight-line instruction program over numbered registers, not an expression tree — is current and is the thing to take from this document.
+>
+> **Kept rather than repointed at the nearest surviving filename**, which would make the document *look* verified while its mechanism prose stayed wrong.
+> `doc_citations::historical_citations_are_really_gone` fails if any path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
+
 ## Overview
 
 The solve-lowering phase takes the structurally-analysed DAE (an Appendix B

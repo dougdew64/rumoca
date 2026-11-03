@@ -161,8 +161,8 @@ current state. When the user continues (F5), the next frame is pushed and the UI
    UI render, then the breakpoint fires again. Each subsequent Continue (F5) advances one step.
 5. **Inspect locals**: at the breakpoint, `frame_index` tells you which step you're on
    (`usize::MAX` on the startup gate, then 0, 1, 2, …). Step up one frame to reach the
-   algorithm code (`augment_traced`, `strongconnect`, or
-   `reduce_constrained_dummy_derivatives_with_trace`) where the full local state is in scope.
+   algorithm code (`run_augment_search`, `strongconnect`, or `tear_with_priority`) where the
+   full local state is in scope.
 6. **Re-run**: after the session finishes, the Debug button reappears — click it to start a new
    live session.
 
@@ -170,21 +170,44 @@ current state. When the user continues (F5), the next frame is pushed and the UI
 
 | Algorithm | File | Function | Line to break on |
 |---|---|---|---|
-| **All** (recommended) | `crates/rumoca-phase-structural/src/live_trace.rs` | `live_trace_breakpoint` | the `LAST_FRAME_INDEX.store` line |
-| **Matching** (per-frame) | `crates/rumoca-phase-structural/src/matching.rs` | `emit_matching_frame` | `frames.push(frame)` (after the `lt.push` call) |
-| **Tarjan** (SCC discovery) | `crates/rumoca-phase-structural/src/tarjan.rs` | `TracedTarjanState::record` | `self.frames.push(frame)` (after the `lt.push` call) |
-| **Reduction** (per-step) | `crates/rumoca-phase-structural/src/dae_prepare/mod.rs` | reduction trace call sites | after each `lt.push` call |
+| **All** (recommended) | `hrw/src/live_trace.rs` | `live_trace_breakpoint` | the `LAST_FRAME_INDEX.store` line |
+| **Matching** (per-step) | `crates/rumoca-phase-structural/src/matching.rs` | `emit` | the `observer.observe(…)` line |
+| **Tarjan** (traversal) | `crates/rumoca-phase-structural/src/tarjan.rs` | `TarjanState::emit` | the `observer.observe(…)` line |
+| **Tearing** (per-pass) | `crates/rumoca-phase-structural/src/tearing.rs` | `emit` | the `observer.observe(…)` line |
 
 The recommended site is `live_trace_breakpoint` — it is `#[inline(never)]` and non-generic, so the
-debugger resolves it to a single unambiguous address (unlike `Vec::push` calls that can share
-monomorphized code at higher opt-levels). It fires for all three algorithms (matching, Tarjan, and
-reduction). The `frame_index` parameter tells you which step you're on — `usize::MAX` on the
-startup gate (before the algorithm starts), then 0, 1, 2, … for real frames.
+debugger resolves it to a single unambiguous address. The `frame_index` parameter tells you which
+step you're on — `usize::MAX` on the startup gate (before the algorithm starts), then 0, 1, 2, …
+for real frames.
+
+**Prefer it over the three per-algorithm rows, and the reason changed on v0.10.0.** Those `emit`
+functions are **generic over the observer** (`observer: &mut impl StructuralObserver`), so each is
+monomorphized twice: once for the recorder HRW passes, and once for `()`, whose `observe` body is
+empty and costs an untraced compile nothing. A breakpoint placed by line number can bind to either
+instantiation, and the one that matters is whichever the live session happens to use. **The
+non-generic anchor has no such ambiguity**, which is why it exists.
+
+**But those `emit` sites are worth knowing anyway, because of what replaced what.** Before
+v0.10.0, HRW stepped `maximum_matching_with_trace` and `tarjan_scc_with_trace` — *second
+implementations* kept beside the real ones for the sake of being watchable. Breaking in one of
+them showed you a faithful copy of the algorithm, not the algorithm. **Now there is one
+implementation and the observer is a seam through it**, so a breakpoint at `emit` is on the path a
+production compile takes, with tracing contributing an empty function body. Stepping **up** one
+frame from `emit` lands in the real algorithm: `next_augment_step` or `run_augment_search` for
+matching, `strongconnect` and its `enter`/`descend`/`pop_scc` helpers for Tarjan, `tear_with_priority`
+for tearing.
+
+**Index reduction has no row, and that is current rather than an omission.** Its HRW pane is
+disabled on this rebase pending a re-model (`playback::DISABLED_VIEWS`). Upstream grew its own
+seam for it — `ReductionObserver` and `ReductionEvent` in
+`crates/rumoca-phase-structural/src/dae_transform/observation.rs` — but both are `pub(super)`, so
+nothing outside that module can observe a reduction yet. That seam is the surface the re-model
+will use.
 
 ### Thread model
 
 ```
-UI thread                     Algorithm thread (matching-debug / tarjan-debug / reduction-debug)
+UI thread                     Algorithm thread (matching-debug / tarjan-debug / tearing-debug)
 ──────────                    ─────────────────────────────────────────────────────────────────
 clicks "Debug"  ──►           spawns thread with LiveTrace producer (owns Sender)
                                calls wait_for_debugger() → breakpoint fires

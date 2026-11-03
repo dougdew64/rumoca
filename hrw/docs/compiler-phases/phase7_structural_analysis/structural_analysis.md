@@ -1,5 +1,17 @@
 # Phase 7: Structural Analysis
 
+<!-- historical: crates/rumoca-phase-structural/src/ic_plan.rs -->
+<!-- historical: rumoca-phase-structural/src/ic_plan.rs -->
+<!-- historical: rumoca-phase-structural/src/projection_maps.rs -->
+<!-- historical: rumoca-phase-structural/src/variable_scope.rs -->
+
+> ## ⚠ PATHS IN THIS DOCUMENT NAME RUMOCA 0.9.20
+>
+> `ic_plan.rs` is gone — initial-condition planning moved out of this phase entirely and now appears as runtime projection (`crates/rumoca-solver/src/runtime/projection.rs`), and `projection_maps.rs` and `variable_scope.rs` went with the reorganisation. **Matching, BLT and tearing are current and were re-read on this rebase** — they are observable through `inspect_structural_report` and `inspect_sort`. The IC-plan passages are 0.9.20.
+>
+> **Kept rather than repointed at the nearest surviving filename**, which would make the document *look* verified while its mechanism prose stayed wrong.
+> `doc_citations::historical_citations_are_really_gone` fails if any path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
+
 ## Overview
 
 The structural analysis phase takes the `Dae` and determines a **solution order**

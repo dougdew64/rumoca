@@ -1,5 +1,14 @@
 # Phase 9: Simulation
 
+<!-- historical: rumoca-solver-diffsol/src/init_projection.rs -->
+
+> ## ⚠ PATHS IN THIS DOCUMENT NAME RUMOCA 0.9.20
+>
+> `rumoca-solver-diffsol/src/init_projection.rs` is gone. v0.10.0 reworked initialization — this is the release that fixed the `fixed = true` defect `upstream-issues.md` records — so the initialization passages here describe the **old, defective** behaviour and are the first thing a refresh should rewrite.
+>
+> **Kept rather than repointed at the nearest surviving filename**, which would make the document *look* verified while its mechanism prose stayed wrong.
+> `doc_citations::historical_citations_are_really_gone` fails if any path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
+
 ## Overview
 
 The simulation subsystem takes a `Dae` (or, increasingly, a pre-lowered
