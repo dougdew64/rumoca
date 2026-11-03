@@ -54,8 +54,17 @@ pub struct DaeCounts {
     pub structured_roots: usize,
     /// MLS §8.3.6 time events.
     pub time_events: usize,
-    /// MLS §8.3.4 event actions.
+    /// MLS §8.3.4 event actions, of every kind.
     pub event_actions: usize,
+    /// Event actions that are a `reinit` — the subset that moves a trajectory.
+    ///
+    /// Kept beside [`Self::event_actions`] rather than replacing it, because the
+    /// two answer different questions and the pane shows both: how much event
+    /// machinery a model has, and how much of it makes a value jump.
+    /// `BenchActuator` is the case that distinguishes them — one event action, an
+    /// `assert`, and zero reinitializations. See
+    /// [`DaeCounts::has_discontinuities`].
+    pub reinitializations: usize,
 }
 
 impl DaeCounts {
@@ -74,6 +83,17 @@ impl DaeCounts {
                 structured_roots: view.structured_root_count(),
                 time_events: view.time_event_count(),
                 event_actions: view.event_action_count(),
+                // **By kind, not by count.** `Reinitialize` is the only operation
+                // that moves a trajectory; `Assert` and `Terminate` do not.
+                reinitializations: view
+                    .event_actions()
+                    .filter(|(_, action)| {
+                        matches!(
+                            action.operation(),
+                            dae::EventActionOperation::Reinitialize { .. }
+                        )
+                    })
+                    .count(),
                 ..Self::default()
             };
             for (_id, variable) in view.variables() {
@@ -113,9 +133,45 @@ impl DaeCounts {
     /// a `when` body or a `reinit`. Plot code uses this to decide whether to
     /// split its polylines, so including zero crossings here would cut a
     /// perfectly continuous curve at every crossing.
+    ///
+    /// # `reinitializations` joined the test on v0.10.0, and the omission was silent
+    ///
+    /// *Measured 2026-11-03 on `BouncingBall`'s regenerated trace:*
+    /// `discrete_real_equations` **0**, `event_actions` **1**, `roots` **1**. Its
+    /// `when h <= 0 then reinit(v, -e * pre(v))` is now modelled as an **event
+    /// action** rather than as a discrete-real equation, so the two counters this
+    /// predicate used to read were both zero — and the archetypal hybrid model
+    /// reported itself continuous.
+    ///
+    /// **The visible consequence was a plot drawn straight through every bounce.**
+    /// A velocity that reverses sign instantaneously would have been joined by a
+    /// line across the jump, which is the picture of a ball passing through the
+    /// floor. Nothing would have looked broken: the curve is smooth, the data is
+    /// right, and only the segmentation is wrong.
+    ///
+    /// # Why it is `reinitializations` and NOT `event_actions`
+    ///
+    /// The first fix counted *any* event action, and
+    /// `worker::tests::bench_actuator_simulates_stiff_spinup` rejected it
+    /// immediately: `BenchActuator` has one event action and **no** `when` or
+    /// `reinit` anywhere in its source. Reading the entry settled it — its action is
+    /// an `assert`, which changes no value, while `BouncingBall`'s is a
+    /// `reinitialize`. `GearWithBrake` makes the same point from the other side:
+    /// three roots, zero event actions.
+    ///
+    /// **So the kind decides, not the count** — `EventActionOperation` is public
+    /// (`Assert | Terminate | Reinitialize`) and `Reinitialize` is the only one that
+    /// moves a trajectory. `Terminate` ends the run rather than jumping within it.
+    /// Inferring the meaning from the field *name* was the mistake, and it is the
+    /// same mistake as the `zero_crossing_conditions` episode.
+    ///
+    /// `roots` stays out, and `a_zero_crossing_alone_is_not_a_discontinuity` pins
+    /// both edges: a crossing alone is continuous, a reinitialization is not.
     #[must_use]
     pub const fn has_discontinuities(self) -> bool {
-        self.discrete_real_equations > 0 || self.discrete_value_definitions > 0
+        self.discrete_real_equations > 0
+            || self.discrete_value_definitions > 0
+            || self.reinitializations > 0
     }
 }
 
@@ -127,7 +183,10 @@ mod tests {
     /// A DAE with one variable in each of four roles and one equation.
     fn fixture() -> dae::Dae {
         let mut sources = SourceMap::new();
-        let sid = sources.add("test://counts.mo", "Real x; Real a; parameter Real p; Real u;");
+        let sid = sources.add(
+            "test://counts.mo",
+            "Real x; Real a; parameter Real p; Real u;",
+        );
         let at = dae::DaeProvenance::source(Span::from_offsets(sid, 0, 7))
             .expect("fixture span lies inside the fixture source");
 
@@ -209,6 +268,63 @@ mod tests {
         let counts = DaeCounts::of(&fixture());
         assert_eq!(counts.discrete_real_equations, 0);
         assert_eq!(counts.discrete_value_definitions, 0);
+        assert_eq!(counts.event_actions, 0);
+        assert_eq!(counts.reinitializations, 0);
         assert!(!counts.has_discontinuities());
+    }
+
+    /// **A zero crossing with no assignment is still continuous**, and an event
+    /// action alone is enough to make it not.
+    ///
+    /// Both halves of [`DaeCounts::has_discontinuities`] in one place, because the
+    /// predicate has now been wrong in each direction. It read only
+    /// `discrete_real_equations` and `discrete_value_definitions` until
+    /// 2026-11-03, which made `BouncingBall` — whose `reinit` v0.10.0 records as an
+    /// **event action** — report itself smooth; adding `roots` instead would have
+    /// been the opposite error, cutting every continuous curve at each sign change.
+    ///
+    /// Built from counts directly rather than from a compiled model: the point is
+    /// the predicate, and a fixture with a `reinit` would also drag in whatever
+    /// Rumoca decides to call it next.
+    #[test]
+    fn a_zero_crossing_alone_is_not_a_discontinuity() {
+        let crossing_only = DaeCounts {
+            roots: 1,
+            relations: 1,
+            conditions: 1,
+            ..DaeCounts::default()
+        };
+        assert!(
+            !crossing_only.has_discontinuities(),
+            "a relation changing sign leaves the trajectory continuous \u{2014} \
+             counting it would break every smooth curve into segments",
+        );
+
+        // **BenchActuator's measured shape**: one event action, which is an
+        // `assert`, and no `when` or `reinit` anywhere in its source. This is the
+        // case that rejected counting `event_actions` outright.
+        let assert_only = DaeCounts {
+            roots: 1,
+            event_actions: 1,
+            reinitializations: 0,
+            ..DaeCounts::default()
+        };
+        assert!(
+            !assert_only.has_discontinuities(),
+            "an `assert` event action changes no value, so it cannot break a curve",
+        );
+
+        let bouncing_ball = DaeCounts {
+            roots: 1,
+            event_actions: 1,
+            reinitializations: 1,
+            ..DaeCounts::default()
+        };
+        assert!(
+            bouncing_ball.has_discontinuities(),
+            "a `reinit` IS the assignment that makes a trajectory jump \u{2014} this \
+             is BouncingBall's measured shape on v0.10.0: 0 discrete-real equations, \
+             1 event action, and that action is a Reinitialize",
+        );
     }
 }
