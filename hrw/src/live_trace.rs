@@ -354,8 +354,8 @@ mod tests {
     /// `SingleInertia` is MSL-free, so no library roots are loaded.
     #[test]
     fn a_live_session_runs_the_real_analysis_and_delivers_its_steps() {
-        let specimen = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("specimens/SingleInertia.mo");
+        let specimen =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specimens/SingleInertia.mo");
         let Ok(crate::worker::FromWorker::Compiled { dae: Some(dae), .. }) =
             crate::worker::compile_specimen(&specimen, Vec::new())
         else {
@@ -364,12 +364,15 @@ mod tests {
 
         // No frame delay: the stepped delay exists to let egui paint between
         // frames, and there is no debugger here to hold the thread.
-        let (rx, done) = spawn_structural_live(dae, Duration::from_millis(0), "test-live", |record| {
-            match record {
+        let (rx, done) = spawn_structural_live(
+            dae,
+            Duration::from_millis(0),
+            "test-live",
+            |record| match record {
                 rumoca_phase_structural::StructuralRecord::Matching(matching) => Some(matching),
                 _ => None,
-            }
-        })
+            },
+        )
         .expect("the thread must spawn");
 
         // `wait_for_debugger` sleeps 500 ms before the first step, so this

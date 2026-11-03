@@ -49,8 +49,8 @@
 use eframe::egui;
 use serde_json::Value;
 
-use crate::playback::Animated;
 use crate::LiveState;
+use crate::playback::Animated;
 
 /// A placeholder that reports its own absence.
 ///
@@ -101,10 +101,7 @@ impl ReductionAnimation {
 
     /// Draw the explanation. Returns `false`: nothing here can be armed.
     pub fn ui(&mut self, ui: &mut egui::Ui, _arming: bool, _debug_enabled: bool) -> bool {
-        ui.label(
-            egui::RichText::new("Index-reduction stepping is being rebuilt")
-                .strong(),
-        );
+        ui.label(egui::RichText::new("Index-reduction stepping is being rebuilt").strong());
         ui.add_space(4.0);
         ui.label(
             "Rumoca 0.10.0 replaced the ten-step dummy-derivative funnel this view \

@@ -49,7 +49,6 @@
 //! yields **up to two passes** under different tear priorities, only one of
 //! which is adopted, which `TearingStep::PlanSelected` names.
 
-
 use eframe::egui;
 
 use rumoca_phase_structural::{StructuralRecord, TearingRecord, TearingStep};
@@ -767,8 +766,8 @@ mod tests {
     /// `ProportionalLoop` is MSL-free, so no library roots are loaded.
     #[test]
     fn a_real_algebraic_loop_is_traced_end_to_end() {
-        let specimen = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("specimens/ProportionalLoop.mo");
+        let specimen =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specimens/ProportionalLoop.mo");
         let Ok(compiled) = crate::worker::compile_specimen(&specimen, Vec::new()) else {
             return; // specimen unavailable in this checkout
         };
