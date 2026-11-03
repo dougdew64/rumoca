@@ -2645,12 +2645,9 @@ fn drain_worker_compiled_clears_caches_and_updates_state() {
         def_index: BTreeMap::new(),
         equation_sheet: None,
         identifier_index: None,
-        index_reduction_frames: Vec::new(),
         matching_frames: Vec::new(),
         tarjan_frames: Vec::new(),
         tearing_frames: Vec::new(),
-        reduced_frames: crate::worker::StructuralFrames::default(),
-        pre_lowering_frames: Vec::new(),
         connection_frames: Vec::new(),
         flat: None,
         dae: None,
@@ -2684,12 +2681,9 @@ fn drain_worker_compiled_stale_path_ignored() {
         def_index: BTreeMap::new(),
         equation_sheet: None,
         identifier_index: None,
-        index_reduction_frames: Vec::new(),
         matching_frames: Vec::new(),
         tarjan_frames: Vec::new(),
         tearing_frames: Vec::new(),
-        reduced_frames: crate::worker::StructuralFrames::default(),
-        pre_lowering_frames: Vec::new(),
         connection_frames: Vec::new(),
         flat: None,
         dae: None,
@@ -2726,12 +2720,9 @@ fn drain_worker_compiled_applies_pending_stage() {
         def_index: BTreeMap::new(),
         equation_sheet: None,
         identifier_index: None,
-        index_reduction_frames: Vec::new(),
         matching_frames: Vec::new(),
         tarjan_frames: Vec::new(),
         tearing_frames: Vec::new(),
-        reduced_frames: crate::worker::StructuralFrames::default(),
-        pre_lowering_frames: Vec::new(),
         connection_frames: Vec::new(),
         flat: None,
         dae: None,
@@ -2779,12 +2770,9 @@ fn drain_worker_compiled_falls_back_without_pending_stage() {
         def_index: BTreeMap::new(),
         equation_sheet: None,
         identifier_index: None,
-        index_reduction_frames: Vec::new(),
         matching_frames: Vec::new(),
         tarjan_frames: Vec::new(),
         tearing_frames: Vec::new(),
-        reduced_frames: crate::worker::StructuralFrames::default(),
-        pre_lowering_frames: Vec::new(),
         connection_frames: Vec::new(),
         flat: None,
         dae: None,
@@ -2824,12 +2812,9 @@ fn drain_worker_compiled_preserves_log_view() {
         def_index: BTreeMap::new(),
         equation_sheet: None,
         identifier_index: None,
-        index_reduction_frames: Vec::new(),
         matching_frames: Vec::new(),
         tarjan_frames: Vec::new(),
         tearing_frames: Vec::new(),
-        reduced_frames: crate::worker::StructuralFrames::default(),
-        pre_lowering_frames: Vec::new(),
         connection_frames: Vec::new(),
         flat: None,
         dae: None,
@@ -5115,13 +5100,28 @@ fn a_frame_link_into_flatten_connections_navigates() {
 /// `a_link_to_a_flatten_sub_view_this_model_lacks_is_refused`'s siblings below.
 #[test]
 fn links_into_events_and_initialization_apply_their_sub_views() {
+    // **The Events half now asserts the refusal, because the refusal is
+    // correct.** `pre()` lowering has no trace on v0.10.0 — the pass became one
+    // arm of DAE construction — so `has_pre_lowering_trace` is `false` and the
+    // link guard declines. Leaving this asserting that the sub-view *applies*
+    // would have required faking a trace, which is the one thing the guard
+    // exists to prevent: a pane reached by link and then empty, with nothing
+    // saying why.
+    //
+    // The property under test survives intact: a link into a sub-view this
+    // model lacks must be refused rather than half-applied. See
+    // `docs/tech-debt.md`'s `pre_lowering_from_construction`.
     let (mut app, _tx) = App::test_with_sender();
     app.stage = StageKind::Events;
     app.viewport.events = EventsView::Tree;
-    give_pre_lowering_trace(&mut app);
     app.pending_sub_view = Some(SubView::Events(EventsView::PreLowering));
     app.apply_pending_view_and_seek();
-    assert_eq!(app.viewport.events, EventsView::PreLowering);
+    assert_eq!(
+        app.viewport.events,
+        EventsView::Tree,
+        "with no pre()-lowering trace the link must be refused, leaving the view \
+         where it was rather than landing on an empty pane",
+    );
 
     let (mut app, _tx) = App::test_with_sender();
     app.stage = StageKind::Initialization;
@@ -5157,16 +5157,11 @@ fn give_flatten_every_tab(app: &mut App) {
     }];
 }
 
-/// Give `app` a captured `pre()`-lowering trace, so the Events row has its tab.
-fn give_pre_lowering_trace(app: &mut App) {
-    app.frames.pre_lowering = vec![rumoca_phase_dae::PreLoweringFrame {
-        step: rumoca_phase_dae::PreLoweringStep::Start {
-            pass: 1,
-            equations: 1,
-        },
-        slots_so_far: Vec::new(),
-    }];
-}
+// `give_pre_lowering_trace` is deleted: there is no trace to give. The pass it
+// faked frames for is one arm of DAE construction on v0.10.0, and
+// `CompileFrames` no longer has the field. A helper that manufactured frames
+// for a disabled pane would let a test assert a link lands somewhere the app
+// cannot actually show anything.
 
 /// Give `app` an initial-condition plan, so the Initialization row has its tab.
 ///

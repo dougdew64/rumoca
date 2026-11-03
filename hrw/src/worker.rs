@@ -2127,10 +2127,15 @@ impl WorkerState {
         // below does its own lowering internally.
         log(LogLevel::StageStart, "Solve lowering".to_owned());
         let t_stage = Instant::now();
-        let sm = rumoca_phase_solve::lower_solve_problem(&cr.dae).map_err(|e| {
+        // The result is discarded: this call is here to **run** solve
+        // lowering, so a failure is reported under its own stage and the
+        // timing below measures it. The Solve Lowering tab is filled
+        // separately by `solve_lowering_stage`, and simulation lowers
+        // internally, so nothing downstream needs this value.
+        drop(rumoca_phase_solve::lower_solve_problem(&cr.dae).map_err(|e| {
             log(LogLevel::Error, format!("solve lowering failed: {e}"));
             format!("solve lowering failed: {e}")
-        })?;
+        })?);
         drain_traces(&log);
         log(
             LogLevel::StageEnd,
