@@ -47,6 +47,7 @@ mod instrumentation;
 #[cfg(test)]
 mod instrumentation_tests;
 mod merge;
+pub mod observe;
 mod package_layout;
 pub mod parallelism;
 mod parse;
