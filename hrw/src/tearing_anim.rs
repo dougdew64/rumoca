@@ -612,7 +612,32 @@ mod tests {
         assert!(s.contains("command"), "{s}");
         assert!(s.contains('3'), "the appearance count is the reason: {s}");
 
-        let causal = bf(
+        // **`competitors` counts EQUATIONS that could have solved for the
+        // variable**, not unknowns in the equation. This asserted `competitors
+        // + 1` behind the words "the crowd before the tears knocked them out",
+        // which described the equation's unknown count — a different quantity,
+        // so the number shown was unrelated to the sentence containing it.
+        //
+        // Both cases are pinned, because the pair is the claim: a contest is
+        // reported with its size, and no contest is reported at all rather
+        // than as a contest of one.
+        let contested = bf(
+            TearingStep::Causal {
+                equation: 1,
+                variable: 1,
+                competitors: 3,
+            },
+            &[0],
+            &[(1, 1)],
+        );
+        let s = step_summary(&contested, &names());
+        assert!(s.contains("f_x[1]") && s.contains("error"), "{s}");
+        assert!(
+            s.contains('3'),
+            "three equations could have solved for it, and that is the reason: {s}"
+        );
+
+        let uncontested = bf(
             TearingStep::Causal {
                 equation: 1,
                 variable: 1,
@@ -621,10 +646,12 @@ mod tests {
             &[0],
             &[(1, 1)],
         );
-        let s = step_summary(&causal, &names());
-        assert!(s.contains("f_x[1]") && s.contains("error"), "{s}");
-        // competitors + 1 = the crowd before the tears knocked them out.
-        assert!(s.contains('2'), "the competitor count is the reason: {s}");
+        let s = step_summary(&uncontested, &names());
+        assert!(
+            !s.contains("could have solved"),
+            "one candidate is not a contest, and reporting it as one would invent \
+             a tie that was never broken: {s}"
+        );
     }
 
     /// Every step renders something, including the give-up path.
