@@ -1380,8 +1380,14 @@ fn equation_generation(origin: &flat::EquationOrigin) -> Option<dae::DaeGenerati
     match origin {
         flat::EquationOrigin::ComponentEquation { .. } => None,
         flat::EquationOrigin::Connection { .. } => Some(dae::DaeGeneration::ConnectionEquation),
-        flat::EquationOrigin::FlowSum { .. } | flat::EquationOrigin::UnconnectedFlow { .. } => {
-            Some(dae::DaeGeneration::FlowBalanceEquation)
+        flat::EquationOrigin::FlowSum { .. } => Some(dae::DaeGeneration::FlowBalanceEquation),
+        // Kept apart from a flow balance: MLS §9.2 constrains an unconnected
+        // flow to zero, which says this flow has no junction, where a balance
+        // says several flows cancel at one. The flat origin already separates
+        // them; mapping both onto `FlowBalanceEquation` was what stopped the
+        // distinction surviving into the DAE.
+        flat::EquationOrigin::UnconnectedFlow { .. } => {
+            Some(dae::DaeGeneration::UnconnectedFlowEquation)
         }
         flat::EquationOrigin::Algorithm { .. } => Some(dae::DaeGeneration::AlgorithmEquation),
         flat::EquationOrigin::Reinit { .. } => Some(dae::DaeGeneration::EventActionLowering),
