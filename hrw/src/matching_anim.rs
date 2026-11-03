@@ -14,10 +14,6 @@
 //!
 //! Controls: play/pause, step forward/back, reset, speed slider.
 
-use std::collections::HashSet;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::thread;
 
 use eframe::egui;
 
@@ -192,50 +188,23 @@ impl MatchingAnimation {
         })
     }
 
-    /// **Re-runs matching from scratch. Test-only, and enforced by the compiler.**
-    ///
-    /// Gated `#[cfg(test)]` on 2026-08-04. It has had no production caller since the
-    /// capture scopes landed, and what *guarded* that was
-    /// `doc_citations::no_animation_re_runs_a_phase_by_default` — a **grep of
-    /// `app.rs` for the string `from_incidence`**. That guard works and is fragile in
-    /// the specific way this project forbids elsewhere: a re-export, an alias, a
-    /// wrapper, or moving the call into any other module defeats it silently, and
-    /// nothing decides identity by substring here (`docs/identity-and-provenance.md`).
-    ///
-    /// Compiling it out of the binary makes the claim structural instead: the UI
-    /// cannot call this, because in a non-test build **it does not exist.** The
-    /// remaining value of the grep is that it also asserts the capture path *is*
-    /// reached, which a `cfg` cannot say.
-    ///
-    /// Kept rather than deleted because
-    /// `worker::tests::hrw_rederived_matching_matches_rumocas_report` cross-checks
-    /// HRW's own matching against Rumoca's report — a genuine fidelity test that
-    /// needs an independent implementation to compare against.
-    #[cfg(test)]
-    pub fn from_incidence(mat: &IncidenceMatrix) -> Self {
-        let eq_vars: Vec<HashSet<usize>> = mat
-            .rows()
-            .iter()
-            .map(|cols| cols.iter().copied().collect())
-            .collect();
-        let result = maximum_matching_with_trace(mat.n_eq(), mat.n_var(), &eq_vars, None);
-        Self {
-            // `Playback::recorded` sets `live_done` true, which is the honest
-            // answer to "is a live session still running?" for a recorded
-            // animation. **The second half of this comment was wrong and is
-            // corrected here**: it said `live_debug_lifecycle` relies on the
-            // flag to release a breakpoint armed for a session that is never
-            // coming. That function is gone, that safety net was deliberately
-            // deleted (`docs/ideas.md` #74), and nothing reads the flag on a
-            // recorded playback at all — see `Playback::recorded`.
-            playback: Playback::recorded(result.frames, FRAME_INTERVAL),
-            n_eq: mat.n_eq(),
-            n_var: mat.n_var(),
-            equation_names: mat.equation_texts().to_vec(),
-            unknown_names: mat.unknown_names().to_vec(),
-            rows: mat.rows().to_vec(),
-        }
-    }
+    // `from_incidence` is deleted. It re-ran the algorithm from scratch over
+    // the pane's rows, and it survived as test-only because one fidelity test
+    // wanted an *independent* implementation to cross-check Rumoca's report
+    // against.
+    //
+    // **Both halves of that purpose are gone.** On 0.10.0 there is no
+    // independent implementation to be had — `maximum_matching` is private and
+    // the `*_with_trace` entry points do not exist — and more to the point
+    // there is nothing left to cross-check: the animation reads the compile's
+    // own steps through `inspect_structural_report`, so there is one matching
+    // rather than two that might disagree.
+    //
+    // The test's other stated purpose, that the report's JSON round trip
+    // preserves row and column order, is covered by `fidelity::check_f2`,
+    // which compares the published unknown names, row labels and per-row
+    // column sets against a fresh `build_incidence` **as ordered sequences**.
+
 
     /// Start a live debug session: spawn a thread that runs the matching
     /// algorithm with a `LiveTrace` producer, then return an animation that
@@ -847,6 +816,59 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    /// A recorded animation over [`sample_report`]'s 3x3 system, from
+    /// hand-built steps.
+    ///
+    /// **Replaces `MatchingAnimation::from_incidence`, which ran the algorithm.**
+    /// Every test below asserts *playback* behaviour — not empty, starts paused
+    /// at frame zero, reports no live session — and none of them cares where the
+    /// steps came from. Running a real search to obtain them made these tests
+    /// depend on the algorithm's output, so a change to Kuhn's tie-breaking
+    /// could fail a test about a pause button.
+    ///
+    /// The steps are a plausible run over that matrix rather than the exact one
+    /// Rumoca produces, and that is the point: a fixture is allowed to be a
+    /// fixture. What they must satisfy is `from_captured_frames`' addressing
+    /// check — `match_eq` as long as the matrix has rows, no column beyond its
+    /// width — because that check is what stops frames from one system being
+    /// drawn on another.
+    fn recorded_animation() -> MatchingAnimation {
+        let mat = IncidenceMatrix::from_report(&sample_report()).expect("3x3 sample matrix");
+        let frame = |step: MatchingStep, match_eq: Vec<Option<usize>>| MatchingRecord {
+            step,
+            match_eq,
+        };
+        let frames = vec![
+            frame(
+                MatchingStep::Start {
+                    n_equations: 3,
+                    n_unknowns: 3,
+                },
+                vec![None, None, None],
+            ),
+            frame(MatchingStep::TryEquation(0), vec![None, None, None]),
+            frame(
+                MatchingStep::Assign { eq: 0, var: 0 },
+                vec![Some(0), None, None],
+            ),
+            frame(MatchingStep::TryEquation(1), vec![Some(0), None, None]),
+            frame(
+                MatchingStep::Assign { eq: 1, var: 1 },
+                vec![Some(0), Some(1), None],
+            ),
+            frame(
+                MatchingStep::TryEquation(2),
+                vec![Some(0), Some(1), None],
+            ),
+            frame(
+                MatchingStep::Assign { eq: 2, var: 2 },
+                vec![Some(0), Some(1), Some(2)],
+            ),
+        ];
+        MatchingAnimation::from_captured_frames(&mat, &frames)
+            .expect("the fixture steps address this matrix")
+    }
+
     fn sample_report() -> serde_json::Value {
         json!({
             "matching": [
@@ -955,8 +977,7 @@ mod tests {
 
     #[test]
     fn animation_from_incidence_produces_frames() {
-        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
-        let anim = MatchingAnimation::from_incidence(&mat);
+        let anim = recorded_animation();
         assert!(!anim.is_empty());
         assert!(anim.position().1 > 3); // at least TryEquation + Explore + Assign per eq
     }
@@ -980,15 +1001,13 @@ mod tests {
     /// is `playback::tests::a_recorded_animation_reports_no_running_session`.
     #[test]
     fn recorded_animation_reports_no_live_session() {
-        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
-        let anim = MatchingAnimation::from_incidence(&mat);
+        let anim = recorded_animation();
         assert_eq!(anim.live_state(false), crate::LiveState::Idle);
     }
 
     #[test]
     fn animation_starts_paused_at_frame_zero() {
-        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
-        let anim = MatchingAnimation::from_incidence(&mat);
+        let anim = recorded_animation();
         assert_eq!(anim.position().0, 0);
     }
 
@@ -1003,33 +1022,29 @@ mod tests {
 
     #[test]
     fn final_frame_has_complete_matching() {
-        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
-        let anim = MatchingAnimation::from_incidence(&mat);
+        let anim = recorded_animation();
         let last = anim.playback.frames().last().unwrap();
         let matched = last.match_eq.iter().filter(|m| m.is_some()).count();
         assert_eq!(matched, 3, "3x3 system should have perfect matching");
     }
 
-    #[test]
-    fn live_mode_receives_all_frames() {
-        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
-        // The unarmed delay deliberately: no breakpoint exists in a test, and
-        // the stepped delay would make this sleep for seconds.
-        let mut anim = MatchingAnimation::start_live(&mat, crate::live_frame_delay(false))
-            .expect("spawn thread");
-        for _ in 0..100 {
-            if anim.live_state(false) == crate::LiveState::Finished {
-                break;
-            }
-            std::thread::sleep(std::time::Duration::from_millis(20));
-        }
-        anim.playback.sync_live();
-        assert!(!anim.playback.frames().is_empty());
-        assert_eq!(anim.live_state(false), crate::LiveState::Finished);
-        let last = anim.playback.frames().last().unwrap();
-        let matched = last.match_eq.iter().filter(|m| m.is_some()).count();
-        assert_eq!(matched, 3, "live mode should reach same final matching");
-    }
+    // `live_mode_receives_all_frames` is retired rather than ported, and it
+    // was testing two things that now live elsewhere.
+    //
+    // **Channel draining and live-cursor behaviour** are `Playback`'s, and
+    // `playback::tests` covers them directly without a thread —
+    // `live_frames_pull_the_cursor_to_the_newest_arrival` and
+    // `a_busy_live_session_stops_playback_rather_than_pausing_it`.
+    //
+    // **Spawning and delivery** are no longer this type's at all: all three
+    // animations go through `live_trace::spawn_structural_live`, so one test of
+    // that helper covers what three animation-level tests used to, and covers
+    // it where the code is. See `live_trace::tests`.
+    //
+    // Porting it would also have meant a real compile here, because
+    // `start_live` takes a `Dae` now — the point of the redesign being that a
+    // live session steps `sort` over the real system rather than re-running an
+    // algorithm over the pane's rows.
 
     /// **Frame numbering is a contract that labs depend on.**
     ///
@@ -1045,14 +1060,28 @@ mod tests {
     /// which is `CLAUDE.md`'s guided-lab rule made mechanical.
     #[test]
     fn the_frame_sequence_labs_cite_is_pinned() {
-        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("docs/specimen-notebook/SingleInertia/trace/structural.json");
-        let text = std::fs::read_to_string(&path).expect("SingleInertia has a committed trace");
-        let report: serde_json::Value = serde_json::from_str(&text).expect("valid JSON");
-        let mat = crate::incidence_view::IncidenceMatrix::from_report(&report)
-            .expect("SingleInertia's report carries an incidence matrix");
-        let anim = MatchingAnimation::from_incidence(&mat);
-        let steps = anim.steps();
+        // **The real compile's steps, not a re-derivation over a stored
+        // matrix.** This read the committed trace's incidence and re-ran
+        // matching over it; the labs cite what HRW *shows*, which since the
+        // v0.10.0 rebase is `inspect_structural_report`'s own sequence. Pinning
+        // the re-run pinned something no reader ever saw.
+        //
+        // `SingleInertia` is MSL-free, so no library roots are loaded and this
+        // stays out of the slow lane.
+        let specimen = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("specimens/SingleInertia.mo");
+        let compiled = crate::worker::compile_specimen(&specimen, Vec::new())
+            .expect("SingleInertia compiles");
+        let crate::worker::FromWorker::Compiled {
+            matching_frames, ..
+        } = compiled
+        else {
+            panic!("SingleInertia must reach structural analysis");
+        };
+        let steps: Vec<MatchingStep> = matching_frames
+            .iter()
+            .map(|record| record.step.clone())
+            .collect();
 
         assert_eq!(
             steps.len(),
@@ -1100,17 +1129,29 @@ mod tests {
     /// a highlighted column looks equally deliberate whichever one it is.
     #[test]
     fn the_tracked_column_is_decided_by_identity_not_by_substring() {
-        let anim = MatchingAnimation::from_incidence(
-            &IncidenceMatrix::from_report(&serde_json::json!({
-                "incidence": {
-                    "n_eq": 2,
-                    "n_var": 2,
-                    "unknown_names": ["inertia.w", "w"],
-                    "rows": [[0], [1]],
+        // Only the column *names* matter here, so the steps are a single
+        // opening frame — enough to construct the animation, and nothing the
+        // assertions below read.
+        let mat = IncidenceMatrix::from_report(&serde_json::json!({
+            "incidence": {
+                "n_eq": 2,
+                "n_var": 2,
+                "unknown_names": ["inertia.w", "w"],
+                "rows": [[0], [1]],
+            },
+        }))
+        .expect("a two-by-two report parses");
+        let anim = MatchingAnimation::from_captured_frames(
+            &mat,
+            &[MatchingRecord {
+                step: MatchingStep::Start {
+                    n_equations: 2,
+                    n_unknowns: 2,
                 },
-            }))
-            .expect("a two-by-two report parses"),
-        );
+                match_eq: vec![None, None],
+            }],
+        )
+        .expect("one opening frame addresses this matrix");
 
         assert_eq!(anim.tracked_column("inertia.w"), Some(0));
         assert_eq!(
