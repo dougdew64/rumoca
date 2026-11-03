@@ -79,7 +79,6 @@
 use std::collections::{BTreeSet, HashMap};
 use std::fs::{File, OpenOptions};
 use std::io::{BufWriter, Write};
-use std::path::PathBuf;
 use std::time::Instant;
 
 use rumoca_compile::compile::{PhaseResult, SourceRootKind};
@@ -87,7 +86,7 @@ use rumoca_compile::source_roots::{parse_source_root_with_cache, source_root_sou
 use rumoca_compile::{Session, SessionConfig};
 
 use hrw::survey::{Summary, SurveyRow, classify, package_of};
-use hrw::worker::index_reduce_in_place;
+use rumoca_ir_dae as dae;
 
 /// Marks a reduction the cap declined to attempt. Part 2 looks for exactly this.
 const SKIPPED: &str = "skipped:too-large";
@@ -454,7 +453,11 @@ impl Health {
 }
 
 /// Survey one model: compile it, then measure its shape.
-fn survey_one(session: &mut Session, name: &str, max_reduce_eq: usize) -> SurveyRow {
+/// `max_reduce_eq` is accepted and unused while index reduction is not
+/// measured; see the note at the index-reduction column below. Kept in the
+/// signature so the caller and the CLI flag need no change when the
+/// re-model restores the column.
+fn survey_one(session: &mut Session, name: &str, _max_reduce_eq: usize) -> SurveyRow {
     let mut row = SurveyRow {
         name: name.to_owned(),
         kind: classify(name),
@@ -489,59 +492,76 @@ fn survey_one(session: &mut Session, name: &str, max_reduce_eq: usize) -> Survey
         }
     };
 
-    let v = &cr.dae.variables;
-    let n_eq = cr.dae.continuous.equations.len();
-    row.n_equations = Some(n_eq);
-    row.n_states = Some(v.states.len());
-    row.n_algebraic = Some(v.algebraics.len());
-    row.n_discrete = Some(v.discrete_reals.len() + v.discrete_valued.len());
-    row.n_parameters = Some(v.parameters.len());
-    row.n_functions = Some(cr.dae.symbols.functions.len());
+    // **Counts through `DaeCounts`, not field reads.** 0.10.0's `Dae` has
+    // private fields and is reached only through `inspect`; `DaeCounts::of`
+    // already tallies all of this in one pass, so the survey shares that one
+    // home rather than opening a second `inspect` with its own arithmetic.
+    let counts = hrw::dae_counts::DaeCounts::of(&cr.dae);
+    row.n_equations = Some(counts.continuous_equations);
+    row.n_states = Some(counts.states);
+    row.n_algebraic = Some(counts.algebraics);
+    row.n_discrete = Some(counts.discrete_reals + counts.discrete_values);
+    row.n_parameters = Some(counts.parameters);
+    // **Absent, not zero.** `DaeView` exposes `function(id)` lookups but no
+    // walk or count over the function arena, so there is no honest number to
+    // put here. A `0` would read as "this model declares no functions", which
+    // is false for most of the MSL.
+    row.n_functions = None;
 
-    // Phenomena HRW has views for, from each equation's recorded `origin` — the
-    // field `equation_sheet::categorize_origin` reads. Free, where re-running
-    // flatten to trace connection expansion would need the resolved MSL again.
-    let (mut connect, mut flow) = (0usize, 0usize);
-    for eq in &cr.dae.continuous.equations {
-        let o = eq.origin.trim();
-        if o.starts_with("connection equation") {
-            connect += 1;
-        } else if o.starts_with("flow sum") || o.starts_with("unconnected flow") {
-            flow += 1;
+    // Phenomena HRW has views for, from each equation's **typed** provenance.
+    //
+    // This read `eq.origin` and matched string prefixes — `starts_with(
+    // "connection equation")` — which `docs/identity-and-provenance.md` bars
+    // from deciding anything. 0.10.0 removed the field and replaced it with
+    // `DaeProvenance`, so the classification now goes through
+    // `equation_sheet::categorize_origin`: the same function the equation
+    // sheet uses, so a survey column and a pane cannot disagree about what a
+    // row is.
+    let (connect, flow) = cr.dae.inspect(|view| {
+        let mut connect = 0usize;
+        let mut flow = 0usize;
+        for owner in view.continuous_owners() {
+            let provenance = match owner {
+                dae::ContinuousOwnerView::Residual { equation, .. } => equation.provenance(),
+                dae::ContinuousOwnerView::Structured { family, .. } => family.provenance(),
+            };
+            match hrw::equation_sheet::categorize_origin(provenance.origin()) {
+                hrw::equation_sheet::EquationCategory::Connection => connect += 1,
+                hrw::equation_sheet::EquationCategory::FlowSum
+                | hrw::equation_sheet::EquationCategory::UnconnectedFlow => flow += 1,
+                _ => {}
+            }
         }
-    }
+        (connect, flow)
+    });
     row.n_connect_eq = Some(connect);
     row.n_flow_eq = Some(flow);
 
-    // **Events do not live in `continuous.equations`.** They live in three
-    // separate structures, which `events_to_json` reads and the first version of
-    // this counter did not — so `n_event_eq` was zero for all 2,237 successes
-    // while 1,089 models had discrete variables.
-    row.n_event_conditions = Some(
-        cr.dae.conditions.equations.len()
-            + cr.dae.conditions.relations.len()
-            + cr.dae.events.synthetic_root_conditions.len()
-            + cr.dae.events.scheduled_time_events.len(),
-    );
+    // **Events do not live with the continuous equations.** They live in
+    // several arenas, which the first version of this counter did not read —
+    // so `n_event_eq` was zero for all 2,237 successes while 1,089 models had
+    // discrete variables.
+    row.n_event_conditions =
+        Some(counts.conditions + counts.relations + counts.roots + counts.time_events);
     row.n_discrete_updates =
-        Some(cr.dae.discrete.real_updates.len() + cr.dae.discrete.valued_updates.len());
+        Some(counts.discrete_real_equations + counts.discrete_value_definitions);
 
-    let all_names = || {
-        v.states
-            .keys()
-            .chain(v.algebraics.keys())
-            .chain(v.parameters.keys())
-            .chain(v.discrete_reals.keys())
-            .chain(v.discrete_valued.keys())
-            .map(ToString::to_string)
-    };
-    row.has_arrays = all_names().any(|n| n.contains('['));
-    row.max_depth = all_names()
+    let names: Vec<String> = cr.dae.inspect(|view| {
+        view.variables()
+            .map(|(_, variable)| variable.name().to_string())
+            .collect()
+    });
+    row.has_arrays = names.iter().any(|n| n.contains('['));
+    row.max_depth = names
+        .iter()
         .map(|n| n.matches('.').count())
         .max()
         .unwrap_or(0);
 
-    match rumoca_phase_structural::build_structural_report(&cr.dae) {
+    match cr
+        .dae
+        .inspect(rumoca_phase_structural::build_structural_report)
+    {
         Ok(rep) => {
             row.structural = "ok".to_owned();
             fill_blocks(&mut row, &rep);
@@ -551,30 +571,17 @@ fn survey_one(session: &mut Session, name: &str, max_reduce_eq: usize) -> Survey
                 rumoca_phase_structural::StructuralError::Singular { .. } => "singular".to_owned(),
                 other => format!("error:{}", first_line(&other.to_string())),
             };
-            if row.structural == "singular" {
-                // **The cap.** Four Spice3 benchmark models at 2,477-10,175
-                // equations consumed 97 of the first full run's 127 minutes.
-                // Recorded as skipped rather than omitted, so the report states
-                // its own bound and `--only-skipped` can come back for them.
-                if n_eq > max_reduce_eq {
-                    row.index_reduced = SKIPPED.to_owned();
-                } else {
-                    let mut reduced = cr.dae.clone();
-                    index_reduce_in_place(&mut reduced);
-                    match rumoca_phase_structural::build_structural_report(&reduced) {
-                        Ok(rep) => {
-                            row.index_reduced = "ok".to_owned();
-                            fill_blocks(&mut row, &rep);
-                        }
-                        Err(rumoca_phase_structural::StructuralError::Singular { .. }) => {
-                            row.index_reduced = "singular".to_owned();
-                        }
-                        Err(other) => {
-                            row.index_reduced = format!("error:{}", first_line(&other.to_string()));
-                        }
-                    }
-                }
-            }
+            // **The index-reduction column is not filled for the v0.10.0
+            // rebase.** It re-ran reduction over a clone of the DAE, which
+            // 0.10.0 makes impossible — `Dae` is immutable and not `Clone` —
+            // so there is no reduced system to report a structural result
+            // for. `row.index_reduced` keeps its seeded value rather than
+            // being set to "ok" or "singular", because either would be a
+            // claim about an analysis that did not run.
+            //
+            // The `--max-reduce-eq` cap went with it; `check_model`'s note in
+            // `fidelity.rs` records why that cap has to return with the
+            // re-model.
         }
     }
     row.secs = t.elapsed().as_secs_f64();
@@ -589,6 +596,13 @@ fn fill_blocks(row: &mut SurveyRow, rep: &rumoca_phase_structural::StructuralRep
         .iter()
         .filter_map(|b| match b {
             rumoca_phase_structural::BlockReport::Coupled { unknowns, .. } => Some(unknowns.len()),
+            // **A structured-scalar family is not a coupled block.** 0.10.0
+            // reports a whole regular equation family as one compact block
+            // rather than one block per array element, and every row in it is
+            // its own scalar block — nothing is simultaneous, so it
+            // contributes no coupling. Counting it as coupled would report an
+            // algebraic loop on a model that has none.
+            rumoca_phase_structural::BlockReport::StructuredScalar { .. } => None,
             rumoca_phase_structural::BlockReport::Scalar { .. } => None,
         })
         .collect();
