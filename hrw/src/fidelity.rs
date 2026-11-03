@@ -376,7 +376,7 @@ pub fn group_by_check(
     out
 }
 
-//// Every incidence-bearing report in the bundle, with the DAE it describes.
+/// Every incidence-bearing report in the bundle, with the DAE it describes.
 ///
 /// **One DAE, not two, for the v0.10.0 rebase.** This took the raw system *and*
 /// the index-reduced one, because the Structural stage describes the raw system
@@ -395,10 +395,7 @@ pub fn group_by_check(
 /// comparison under that label would pass by describing the wrong system. When
 /// the re-model lands it will supply a real reduced DAE and this signature
 /// grows back.
-pub fn subjects<'a>(
-    stages: &'a StageBundle,
-    dae: &'a rumoca_ir_dae::Dae,
-) -> Vec<Subject<'a>> {
+pub fn subjects<'a>(stages: &'a StageBundle, dae: &'a rumoca_ir_dae::Dae) -> Vec<Subject<'a>> {
     let mut out = Vec::new();
     let mut push = |label: &str, report: Option<&'a Value>, d: &'a rumoca_ir_dae::Dae| {
         if let Some(r) = report
@@ -962,8 +959,8 @@ pub fn check_f7(label: &str, root: &Value) -> Vec<String> {
 mod tests {
     use super::*;
 
-    use crate::worker::test_msl::compile_specimen_shared;
     use crate::worker::FromWorker;
+    use crate::worker::test_msl::compile_specimen_shared;
 
     /// The specimens the invariants run over.
     ///
@@ -1193,9 +1190,24 @@ mod tests {
 
         // Each check silently skips what it does not apply to, so prove each one
         // had something to look at.
-        assert!(
-            subjects_checked >= 20,
-            "only {subjects_checked} incidence-bearing reports (F2, F3)"
+        // **One subject per model, exactly — and that is stronger than the floor it
+        // replaces.**
+        //
+        // This read `>= 20` for ten models, because `subjects` yielded **two**
+        // incidence-bearing reports each: the raw system and the index-reduced one.
+        // v0.10.0's reduced DAE is not a surface HRW holds, so `subjects` lost that
+        // parameter and there is one report per model.
+        //
+        // Pinned as equality rather than lowered to `>= 10`. A floor of ten would
+        // pass if one model stopped producing a report while another started
+        // producing two; equality against `MODELS.len()` cannot, and *"a corpus that
+        // quietly stopped producing subjects reads as a clean bill"* is the hazard
+        // this guard exists for. **When the reduced DAE is re-modelled this becomes
+        // 2x and must be rewritten deliberately** rather than nudged.
+        assert_eq!(
+            subjects_checked,
+            MODELS.len(),
+            "F2/F3 must see exactly one incidence-bearing report per model",
         );
         assert!(stage_values >= 50, "only {stage_values} stage IRs run (F7)");
         assert!(
@@ -1335,6 +1347,12 @@ mod tests {
         let mut abnormal_stages = 0usize;
         let mut with_payload = 0usize;
         let mut locations_checked = 0usize;
+        // Which abnormal stages carried a located entry and which did not. The
+        // count alone cannot distinguish "a span was dropped" from "this failure
+        // has no line to point at", and the assertion below needs that distinction
+        // to be readable rather than guessed.
+        let mut located: Vec<String> = Vec::new();
+        let mut unlocated: Vec<String> = Vec::new();
 
         for name in FAILING_MODELS {
             let source = std::fs::read_to_string(format!(
@@ -1394,6 +1412,7 @@ mod tests {
                 // *this* specimen — not only inside `error`, since a determinacy
                 // verdict or a diagnostic label carries them too.
                 let lines: Vec<&str> = source.lines().collect();
+                let before_locations = locations_checked;
                 let mut stack = vec![value];
                 while let Some(node) = stack.pop() {
                     match node {
@@ -1424,6 +1443,11 @@ mod tests {
                         }
                         _ => {}
                     }
+                }
+                if locations_checked > before_locations {
+                    located.push(at.clone());
+                } else {
+                    unlocated.push(at.clone());
                 }
             }
         }
@@ -1466,9 +1490,33 @@ mod tests {
             "only {with_payload} abnormal stages carried structure; the payload checks \
              had almost nothing to inspect",
         );
+        // **4 since 2026-11-03, and the drop from 5 was traced before it was
+        // accepted.** This assertion's own message names the risk — *"spans have
+        // been dropped again, which is the ideas #45 regression"* — so lowering it
+        // without an account would be exactly the move it exists to prevent.
+        //
+        // What the breakdown showed: the four located stages are unchanged
+        // (`UndefinedRef / Resolve`, `DimensionMismatch / Typecheck`, and
+        // `IncompatibleConnect` and `CapacitorLoop` at `Structural`). The fifth was
+        // the **index-reduction copy** of CapacitorLoop's singular payload, and that
+        // stage is on `worker::AWAITING_REMODEL` — the same duplicate removed from
+        // `a_structural_failure_names_the_source_line`. No span was dropped; a
+        // second report of one stopped being published.
+        //
+        // The two unlocated stages are unlocated *correctly*. `UnbalancedShaft / Dae`
+        // says "2 equations, 3 unknowns" and `IncompatibleConnect / SolveLowering`
+        // says "structurally singular system: 1 matched out of 2" — both are
+        // properties of a whole system, with no one line to blame. The second is new
+        // on v0.10.0, which refuses to lower a singular system rather than lowering
+        // it anyway.
+        //
+        // **The breakdown stays in the message**, because it is what made a count
+        // diagnosable: "4, down from 5" says nothing, while naming the stages
+        // distinguishes a lost span from a failure that never had one.
         assert!(
-            locations_checked >= 5,
-            "only {locations_checked} source locations in the failure payloads — either \
+            locations_checked >= 4,
+            "located: {located:?}; unlocated: {unlocated:?}\n\
+             only {locations_checked} source locations in the failure payloads — either \
              the specimens stopped failing the way they used to, or spans have been \
              dropped again, which is the ideas #45 regression",
         );
@@ -1735,6 +1783,7 @@ mod tests {
         ];
 
         let mut with_empty = 0usize;
+        let mut empty_detail: Vec<String> = Vec::new();
         for name in CANDIDATES {
             let FromWorker::Compiled { stages, .. } =
                 crate::worker::test_msl::compile_library_shared(name)
@@ -1750,13 +1799,28 @@ mod tests {
                 check_f10(&stages),
             );
 
+            // **The rostered stages are excluded, or this count means the opposite
+            // of what it says** (2026-11-03). Index reduction, initialization and
+            // events are on `worker::AWAITING_REMODEL`: Rumoca runs them and HRW
+            // publishes no IR, so they are empty for **every** model. Counting them
+            // put `with_empty` at 5 of 5 and the assertion below announced that
+            // *"F10's absence clause has corpus coverage for the first time"* —
+            // which would have been recorded in `fidelity-plan.md` as a fact about
+            // the MSL when it is a fact about HRW's disabled panes.
+            //
+            // The clause is about a **compile stopping early**. A pane HRW cannot
+            // draw is a different thing with the same shape, which is why the
+            // exclusion is by roster rather than by the stages happening to be
+            // empty.
             let empties: Vec<&str> = crate::worker::StageKind::COMPILATION
                 .iter()
+                .filter(|k| !crate::worker::AWAITING_REMODEL.contains(k))
                 .filter(|k| stages.get(**k).value.is_none())
                 .map(|k| k.name())
                 .collect();
             if !empties.is_empty() {
                 with_empty += 1;
+                empty_detail.push(format!("{name}: {empties:?}"));
                 // The clause restated as the property, so a change that drops a note
                 // fails here as well as inside F10.
                 for kind in crate::worker::StageKind::COMPILATION {
@@ -1770,28 +1834,55 @@ mod tests {
             }
         }
 
-        // **Measured 2026-08-05: `with_empty` is 0, and that is the finding.**
+        // **Measured 2026-08-05: `with_empty` was 0, and that was the finding.**
         //
-        // None of the five produces an empty stage. Every MSL model compiles all the
-        // way through and populates all eleven, **including the partial and abstract
-        // classes** — so the corpus cannot exercise F10's absence clause, and the
-        // sweep's zero for F10 covers only the two near-tautological clauses.
+        // None of the five produced an empty stage. Every MSL model compiled all the
+        // way through and populated all eleven, **including the partial and abstract
+        // classes** — so the corpus could not exercise F10's absence clause, and the
+        // sweep's zero for F10 covered only the two near-tautological clauses. It was
+        // deliberately not asserted as `> 0`: that would demand the corpus have a
+        // property it did not have.
         //
-        // Deliberately **not** asserted as `with_empty > 0`: that would be demanding
-        // the corpus have a property it does not have. What is asserted is what is
-        // true and load-bearing — F10 stays quiet on 350 corpus entries that are
-        // ordinary rather than broken — plus the count, so the day an MSL model *does*
-        // stop early, this records that clause 3 finally has corpus coverage.
+        // # IT IS 2 SINCE v0.10.0, AND THE DAY THIS TEST WAS WRITTEN FOR HAS ARRIVED
         //
-        // **Where the clause IS exercised**: HRW's own specimens, by
-        // `no_stage_shows_content_hrw_invented`, which asserts a non-zero empty count
-        // across four including `UnbalancedShaft` and `CapacitorLoop`. Absence is a
-        // property of *failing* compiles, and the MSL corpus has none.
+        // *2026-11-03.* `Modelica.Electrical.Batteries.BaseClasses.BaseCellStack` and
+        // `Modelica.Blocks.Tables.Internal.CombiTable2DBase` now stop before Flatten —
+        // Flatten, Structural and Solve lowering are all empty. **Both are `partial`
+        // base classes**, which is what this test is named after, and declining to
+        // flatten an incomplete class is the correct answer: there is no complete
+        // model to flatten. 0.9.20 flattened them anyway.
+        //
+        // **So clause 3 has corpus coverage for the first time**, and from the source
+        // the old note guessed it would come from. `docs/fidelity-plan.md` records it.
+        //
+        // The three rostered stages are excluded above, so this 2 is about compiles
+        // stopping early rather than about HRW's disabled panes — the distinction
+        // that assertion is for.
+        //
+        // **Pinned by name as well as by count.** A count of 2 would also be
+        // satisfied by two *complete* models silently failing to flatten, which is
+        // the finding that would matter far more than this one.
+        let partials: Vec<&String> = empty_detail
+            .iter()
+            .filter(|d| d.contains("BaseClasses") || d.contains("Internal"))
+            .collect();
         assert_eq!(
-            with_empty, 0,
-            "an MSL model now produces an empty stage, which is NEW \u{2014} F10's \
-             absence clause has corpus coverage for the first time. Update the note \
-             in docs/fidelity-plan.md, which currently records that it does not.",
+            partials.len(),
+            with_empty,
+            "every MSL model that stops early must be a partial base class; a \
+             COMPLETE model failing to flatten is a different and much larger \
+             finding:\n  {}",
+            empty_detail.join("\n  "),
+        );
+        assert_eq!(
+            with_empty,
+            2,
+            "the number of MSL models stopping early has moved. Two partial base \
+             classes stop before Flatten on v0.10.0, which is what gives F10's \
+             absence clause its corpus coverage; a third \u{2014} or a second that \
+             is not partial \u{2014} is a new finding and belongs in \
+             docs/fidelity-plan.md.\n  {}",
+            empty_detail.join("\n  "),
         );
     }
 
