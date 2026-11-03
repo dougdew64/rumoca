@@ -1,0 +1,39 @@
+{
+  "n_states": 0,
+  "n_equations": 2,
+  "block_count": 1,
+  "blocks": [
+    {
+      "kind": "scalar_direct",
+      "var": "a",
+      "solution": {
+        "Literal": {
+          "value": {
+            "Real": 1.0
+          },
+          "span": {
+            "source": 9237349070360541563,
+            "start": 807,
+            "end": 810
+          }
+        }
+      }
+    }
+  ],
+  "relaxation_hint": {
+    "dropped_equations": [
+      1
+    ],
+    "pinned_unknowns": [
+      "b"
+    ]
+  },
+  "determinacy": {
+    "states": 0,
+    "initial_equations": 0,
+    "fixed_start_states": 0,
+    "explicit_initial_conditions": 0,
+    "surplus_over_states": 0,
+    "verdict": "well-posed (remaining states initialize from their start attributes)"
+  }
+}

@@ -1,0 +1,86 @@
+# Reading-path ceilings
+#
+# Size limits on the documents a session must read before acting, enforced by
+# `doc_citations::the_mandatory_reading_path_stays_small` and reported nightly by
+# `cargo run -p hrw --example doc_report`.
+#
+# ===========================================================================
+# THESE ARE CEILINGS, NOT RATCHETS -- 2026-08-31
+# ===========================================================================
+#
+# Doug: "we seem to be constantly battling budgets. Doing so has become its own source of
+# friction. We created those budgets to protect against hitting a documents wall. But, we
+# never actually predicted where that wall was or how close we are to it."
+#
+# He was right, and the measurement settles it. **Fifteen raises in one day, zero
+# rejections.** A gate that never rejects is not filtering, it is billing -- and the
+# documents grew anyway, so it was not doing the job it existed for either. Worse, the
+# rule "set at the ACHIEVED value, never with slack" meant every reclaim moved the next
+# toll CLOSER: three downward adjustments that afternoon each guaranteed sooner friction.
+#
+# **And the file enforcing it had grown to 353 lines -- longer than three of the four
+# documents it guarded.** A file that exists to keep documents short, that nobody reads
+# except when it fails, policing length. That is the whole argument.
+#
+# The per-raise history is deliberately NOT preserved here. It was the record of a
+# retired mechanism, and this file's own rule is that a retired mechanism gives its budget
+# back. What is worth keeping is in DECISIONS.md, 2026-08-31.
+#
+# ---------------------------------------------------------------------------
+# THE UNIT IS CHARACTERS, BECAUSE LINES WERE MISMEASURING BY 2.7x
+# ---------------------------------------------------------------------------
+#
+# Measured 2026-08-31, chars per line across the mandatory path:
+#
+#   CLAUDE.md         68     docs/README.md    75     docs/CHARTER.md   182
+#
+# So `CHARTER.md` at 164 lines was nearly three times the reading cost of `docs/README.md`
+# at 149, and the line budget treated them as equals. Characters are a rough proxy for
+# tokens, which is the cost that is actually paid.
+#
+# ---------------------------------------------------------------------------
+# WHERE THE WALL IS -- derived, not approved
+# ---------------------------------------------------------------------------
+#
+# The old targets (1,900 lines and 250) were **approved by Doug, never derived from
+# anything.** That is the defect this repository names everywhere else: a number treated
+# as a fact with no measurement behind it.
+#
+# The real cost is context spent reading before acting. At ~4 chars per token:
+#
+#   mandatory path today   151,725 chars  ~= 38k tokens  ~= 19% of a 200k context
+#
+# **The ceiling is set at a quarter of a 200k context** -- 200,000 chars, ~50k tokens.
+# Past that, a session is spending more on preamble than any document is worth, and the
+# answer is restructuring rather than another raise. Today's headroom is ~24%.
+#
+# **A ceiling is not a target and must not be re-tightened to the achieved value.** That
+# rule is what turned every addition into a toll. Growth is watched nightly instead; see
+# `docs/unattended-runs.md`.
+#
+# ---------------------------------------------------------------------------
+# FORMAT
+# ---------------------------------------------------------------------------
+#
+# `name = characters`. A name with no entry is a hard failure, never "no limit".
+#
+# Crossing a ceiling is not a licence to raise it. It means the documents need work, and
+# that work is Doug's call when it involves trimming an explanation -- the nightly report
+# escalates rather than deciding.
+
+# Every file a session must read before acting, summed: CLAUDE.md,
+# docs/working-with-doug.md, docs/CHARTER.md, docs/README.md.
+# 151,725 today. A quarter of a 200k context.
+mandatory = 200000
+
+# CLAUDE.md's `## Current work`, which holds only what is IN FLIGHT. 18,951 today.
+# This one is a CONTENT rule wearing a size limit: a closed arc belongs in DECISIONS.md,
+# and the size is only a symptom of restating one. Set at ~30k so it fires on a genuine
+# runaway and stays silent for ordinary in-flight churn.
+current_work = 30000
+
+# Tier 2 -- conditionally mandatory, checked per file rather than summed, because they
+# are read before different kinds of work: docs/fixture-labs/README.md before lab work
+# (56,013 today), docs/unattended-runs.md before any unattended run (31,113).
+# 80,000 is ~20k tokens: a document past that is not read before a task, it is consulted.
+conditional = 80000

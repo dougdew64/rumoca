@@ -1,0 +1,666 @@
+{
+  "components": {
+    "1": {
+      "instance_id": 1,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 10351280120072388815,
+          "start": 1687,
+          "end": 1693
+        },
+        "parts": [
+          {
+            "ident": "a",
+            "span": {
+              "source": 10351280120072388815,
+              "start": 1687,
+              "end": 1693
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 89
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "a",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 35,
+        "start_column": 3,
+        "end_line": 35,
+        "end_column": 9,
+        "start": 1687,
+        "end": 1693,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/IncompatibleConnect.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 4294967295,
+      "type_name": "PinA",
+      "type_def_id": 91,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "IncompatibleConnect",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": null,
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": null,
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": false,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": true,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "3": {
+      "instance_id": 3,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 10351280120072388815,
+          "start": 1557,
+          "end": 1563
+        },
+        "parts": [
+          {
+            "ident": "a",
+            "span": {
+              "source": 10351280120072388815,
+              "start": 1557,
+              "end": 1563
+            },
+            "subs": []
+          },
+          {
+            "ident": "v",
+            "span": {
+              "source": 10351280120072388815,
+              "start": 1557,
+              "end": 1563
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 93
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "a",
+            []
+          ],
+          [
+            "v",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 27,
+        "start_column": 5,
+        "end_line": 27,
+        "end_column": 11,
+        "start": 1557,
+        "end": 1563,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/IncompatibleConnect.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "IncompatibleConnect",
+            []
+          ],
+          [
+            "PinA",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 10351280120072388815,
+            "start": 1557,
+            "end": 1563
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": null,
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "4": {
+      "instance_id": 4,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 10351280120072388815,
+          "start": 1574,
+          "end": 1580
+        },
+        "parts": [
+          {
+            "ident": "a",
+            "span": {
+              "source": 10351280120072388815,
+              "start": 1574,
+              "end": 1580
+            },
+            "subs": []
+          },
+          {
+            "ident": "i",
+            "span": {
+              "source": 10351280120072388815,
+              "start": 1574,
+              "end": 1580
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 94
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "a",
+            []
+          ],
+          [
+            "i",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 28,
+        "start_column": 10,
+        "end_line": 28,
+        "end_column": 16,
+        "start": 1574,
+        "end": 1580,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/IncompatibleConnect.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "IncompatibleConnect",
+            []
+          ],
+          [
+            "PinA",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": true,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 10351280120072388815,
+            "start": 1574,
+            "end": 1580
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": null,
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "5": {
+      "instance_id": 5,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 10351280120072388815,
+          "start": 1697,
+          "end": 1703
+        },
+        "parts": [
+          {
+            "ident": "b",
+            "span": {
+              "source": 10351280120072388815,
+              "start": 1697,
+              "end": 1703
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 90
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "b",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 36,
+        "start_column": 3,
+        "end_line": 36,
+        "end_column": 9,
+        "start": 1697,
+        "end": 1703,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/IncompatibleConnect.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 4294967295,
+      "type_name": "PinB",
+      "type_def_id": 92,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "IncompatibleConnect",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": null,
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": null,
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": false,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": true,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "7": {
+      "instance_id": 7,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 10351280120072388815,
+          "start": 1664,
+          "end": 1670
+        },
+        "parts": [
+          {
+            "ident": "b",
+            "span": {
+              "source": 10351280120072388815,
+              "start": 1664,
+              "end": 1670
+            },
+            "subs": []
+          },
+          {
+            "ident": "v",
+            "span": {
+              "source": 10351280120072388815,
+              "start": 1664,
+              "end": 1670
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 95
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "b",
+            []
+          ],
+          [
+            "v",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 32,
+        "start_column": 5,
+        "end_line": 32,
+        "end_column": 11,
+        "start": 1664,
+        "end": 1670,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/IncompatibleConnect.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "IncompatibleConnect",
+            []
+          ],
+          [
+            "PinB",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 10351280120072388815,
+            "start": 1664,
+            "end": 1670
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": null,
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    }
+  },
+  "classes": {
+    "2": {
+      "instance_id": 2,
+      "class_def_id": 91,
+      "qualified_name": {
+        "parts": [
+          [
+            "a",
+            []
+          ]
+        ]
+      },
+      "source_scope": {
+        "parts": [
+          [
+            "IncompatibleConnect",
+            []
+          ],
+          [
+            "PinA",
+            []
+          ]
+        ]
+      },
+      "source_scope_id": 2,
+      "equations": [],
+      "initial_equations": [],
+      "algorithms": [],
+      "initial_algorithms": [],
+      "connections": [],
+      "resolved_imports": []
+    },
+    "6": {
+      "instance_id": 6,
+      "class_def_id": 92,
+      "qualified_name": {
+        "parts": [
+          [
+            "b",
+            []
+          ]
+        ]
+      },
+      "source_scope": {
+        "parts": [
+          [
+            "IncompatibleConnect",
+            []
+          ],
+          [
+            "PinB",
+            []
+          ]
+        ]
+      },
+      "source_scope_id": 3,
+      "equations": [],
+      "initial_equations": [],
+      "algorithms": [],
+      "initial_algorithms": [],
+      "connections": [],
+      "resolved_imports": []
+    },
+    "0": {
+      "instance_id": 0,
+      "class_def_id": 85,
+      "qualified_name": {
+        "parts": []
+      },
+      "source_scope": {
+        "parts": [
+          [
+            "IncompatibleConnect",
+            []
+          ]
+        ]
+      },
+      "source_scope_id": 1,
+      "equations": [],
+      "initial_equations": [],
+      "algorithms": [],
+      "initial_algorithms": [],
+      "connections": [
+        {
+          "a": {
+            "parts": [
+              [
+                "a",
+                []
+              ]
+            ]
+          },
+          "b": {
+            "parts": [
+              [
+                "b",
+                []
+              ]
+            ]
+          },
+          "connector_type": null,
+          "span": {
+            "source": 10351280120072388815,
+            "start": 1724,
+            "end": 1725
+          },
+          "scope": ""
+        }
+      ],
+      "resolved_imports": []
+    }
+  },
+  "is_partial": false,
+  "class_type": "Model",
+  "root_description": "Connects two structurally different connectors — DELIBERATELY BROKEN",
+  "disabled_components": [],
+  "array_parent_dims": {},
+  "outer_prefix_to_inner": {},
+  "inner_outer_to_parent_inner": {},
+  "synthesized_inners": [],
+  "type_roots": {},
+  "next_id": 8
+}

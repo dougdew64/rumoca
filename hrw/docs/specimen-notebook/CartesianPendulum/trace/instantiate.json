@@ -1,0 +1,1961 @@
+{
+  "components": {
+    "1": {
+      "instance_id": 1,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 1149367593561279432,
+          "start": 249,
+          "end": 255
+        },
+        "parts": [
+          {
+            "ident": "L",
+            "span": {
+              "source": 1149367593561279432,
+              "start": 249,
+              "end": 255
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 89
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "L",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 3,
+        "start_column": 13,
+        "end_line": 3,
+        "end_column": 19,
+        "start": 249,
+        "end": 255,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "CartesianPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 3,
+            "start_column": 3,
+            "end_line": 3,
+            "end_column": 12,
+            "start": 239,
+            "end": 248,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+          },
+          "token_number": 4,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 3,
+              "start_column": 22,
+              "end_line": 3,
+              "end_column": 25,
+              "start": 258,
+              "end": 261,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+            },
+            "token_number": 8,
+            "token_type": 68
+          },
+          "span": {
+            "source": 1149367593561279432,
+            "start": 258,
+            "end": 261
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "rod length",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 3,
+              "start_column": 22,
+              "end_line": 3,
+              "end_column": 25,
+              "start": 258,
+              "end": 261,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+            },
+            "token_number": 8,
+            "token_type": 68
+          },
+          "span": {
+            "source": 1149367593561279432,
+            "start": 258,
+            "end": 261
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "2": {
+      "instance_id": 2,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 1149367593561279432,
+          "start": 288,
+          "end": 294
+        },
+        "parts": [
+          {
+            "ident": "m",
+            "span": {
+              "source": 1149367593561279432,
+              "start": 288,
+              "end": 294
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 90
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "m",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 4,
+        "start_column": 13,
+        "end_line": 4,
+        "end_column": 19,
+        "start": 288,
+        "end": 294,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "CartesianPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 4,
+            "start_column": 3,
+            "end_line": 4,
+            "end_column": 12,
+            "start": 278,
+            "end": 287,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+          },
+          "token_number": 11,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 4,
+              "start_column": 22,
+              "end_line": 4,
+              "end_column": 25,
+              "start": 297,
+              "end": 300,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+            },
+            "token_number": 15,
+            "token_type": 68
+          },
+          "span": {
+            "source": 1149367593561279432,
+            "start": 297,
+            "end": 300
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "point mass",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 4,
+              "start_column": 22,
+              "end_line": 4,
+              "end_column": 25,
+              "start": 297,
+              "end": 300,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+            },
+            "token_number": 15,
+            "token_type": 68
+          },
+          "span": {
+            "source": 1149367593561279432,
+            "start": 297,
+            "end": 300
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "3": {
+      "instance_id": 3,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 1149367593561279432,
+          "start": 327,
+          "end": 333
+        },
+        "parts": [
+          {
+            "ident": "g",
+            "span": {
+              "source": 1149367593561279432,
+              "start": 327,
+              "end": 333
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 91
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "g",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 5,
+        "start_column": 13,
+        "end_line": 5,
+        "end_column": 19,
+        "start": 327,
+        "end": 333,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "CartesianPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 5,
+            "start_column": 3,
+            "end_line": 5,
+            "end_column": 12,
+            "start": 317,
+            "end": 326,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+          },
+          "token_number": 18,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "9.81",
+            "location": {
+              "start_line": 5,
+              "start_column": 22,
+              "end_line": 5,
+              "end_column": 26,
+              "start": 336,
+              "end": 340,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+            },
+            "token_number": 22,
+            "token_type": 68
+          },
+          "span": {
+            "source": 1149367593561279432,
+            "start": 336,
+            "end": 340
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "gravitational acceleration",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "9.81",
+            "location": {
+              "start_line": 5,
+              "start_column": 22,
+              "end_line": 5,
+              "end_column": 26,
+              "start": 336,
+              "end": 340,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+            },
+            "token_number": 22,
+            "token_type": 68
+          },
+          "span": {
+            "source": 1149367593561279432,
+            "start": 336,
+            "end": 340
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "4": {
+      "instance_id": 4,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 1149367593561279432,
+          "start": 373,
+          "end": 379
+        },
+        "parts": [
+          {
+            "ident": "x",
+            "span": {
+              "source": 1149367593561279432,
+              "start": 373,
+              "end": 379
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 92
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "x",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 6,
+        "start_column": 3,
+        "end_line": 6,
+        "end_column": 9,
+        "start": 373,
+        "end": 379,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "CartesianPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 6,
+              "start_column": 18,
+              "end_line": 6,
+              "end_column": 21,
+              "start": 388,
+              "end": 391,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+            },
+            "token_number": 30,
+            "token_type": 68
+          },
+          "span": {
+            "source": 1149367593561279432,
+            "start": 388,
+            "end": 391
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "horizontal position",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "5": {
+      "instance_id": 5,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 1149367593561279432,
+          "start": 418,
+          "end": 424
+        },
+        "parts": [
+          {
+            "ident": "y",
+            "span": {
+              "source": 1149367593561279432,
+              "start": 418,
+              "end": 424
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 93
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "y",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 7,
+        "start_column": 3,
+        "end_line": 7,
+        "end_column": 9,
+        "start": 418,
+        "end": 424,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "CartesianPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 7,
+              "start_column": 18,
+              "end_line": 7,
+              "end_column": 21,
+              "start": 433,
+              "end": 436,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+            },
+            "token_number": 39,
+            "token_type": 68
+          },
+          "span": {
+            "source": 1149367593561279432,
+            "start": 433,
+            "end": 436
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "vertical position",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "6": {
+      "instance_id": 6,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 1149367593561279432,
+          "start": 461,
+          "end": 468
+        },
+        "parts": [
+          {
+            "ident": "vx",
+            "span": {
+              "source": 1149367593561279432,
+              "start": 461,
+              "end": 468
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 94
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "vx",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 8,
+        "start_column": 3,
+        "end_line": 8,
+        "end_column": 10,
+        "start": 461,
+        "end": 468,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "CartesianPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 8,
+              "start_column": 19,
+              "end_line": 8,
+              "end_column": 22,
+              "start": 477,
+              "end": 480,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+            },
+            "token_number": 48,
+            "token_type": 68
+          },
+          "span": {
+            "source": 1149367593561279432,
+            "start": 477,
+            "end": 480
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "horizontal velocity",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "7": {
+      "instance_id": 7,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 1149367593561279432,
+          "start": 507,
+          "end": 514
+        },
+        "parts": [
+          {
+            "ident": "vy",
+            "span": {
+              "source": 1149367593561279432,
+              "start": 507,
+              "end": 514
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 95
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "vy",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 9,
+        "start_column": 3,
+        "end_line": 9,
+        "end_column": 10,
+        "start": 507,
+        "end": 514,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "CartesianPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 9,
+              "start_column": 19,
+              "end_line": 9,
+              "end_column": 22,
+              "start": 523,
+              "end": 526,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+            },
+            "token_number": 57,
+            "token_type": 68
+          },
+          "span": {
+            "source": 1149367593561279432,
+            "start": 523,
+            "end": 526
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "vertical velocity",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "8": {
+      "instance_id": 8,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 1149367593561279432,
+          "start": 551,
+          "end": 562
+        },
+        "parts": [
+          {
+            "ident": "lambda",
+            "span": {
+              "source": 1149367593561279432,
+              "start": 551,
+              "end": 562
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 96
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "lambda",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 10,
+        "start_column": 3,
+        "end_line": 10,
+        "end_column": 14,
+        "start": 551,
+        "end": 562,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "CartesianPendulum",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 1149367593561279432,
+            "start": 551,
+            "end": 562
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "rod tension per unit length — the constraint force",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    }
+  },
+  "classes": {
+    "0": {
+      "instance_id": 0,
+      "class_def_id": 85,
+      "qualified_name": {
+        "parts": []
+      },
+      "source_scope": {
+        "parts": [
+          [
+            "CartesianPendulum",
+            []
+          ]
+        ]
+      },
+      "source_scope_id": 1,
+      "equations": [
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "FunctionCall": {
+                  "comp": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "der",
+                          "location": {
+                            "start_line": 12,
+                            "start_column": 3,
+                            "end_line": 12,
+                            "end_column": 6,
+                            "start": 630,
+                            "end": 633,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                          },
+                          "token_number": 66,
+                          "token_type": 15
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 1149367593561279432,
+                      "start": 630,
+                      "end": 633
+                    }
+                  },
+                  "args": [
+                    {
+                      "ComponentReference": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "x",
+                              "location": {
+                                "start_line": 12,
+                                "start_column": 7,
+                                "end_line": 12,
+                                "end_column": 8,
+                                "start": 634,
+                                "end": 635,
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                              },
+                              "token_number": 68,
+                              "token_type": 64
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 1149367593561279432,
+                          "start": 634,
+                          "end": 635
+                        }
+                      }
+                    }
+                  ],
+                  "span": {
+                    "source": 1149367593561279432,
+                    "start": 630,
+                    "end": 635
+                  }
+                }
+              },
+              "rhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "vx",
+                        "location": {
+                          "start_line": 12,
+                          "start_column": 12,
+                          "end_line": 12,
+                          "end_column": 14,
+                          "start": 639,
+                          "end": 641,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                        },
+                        "token_number": 71,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 1149367593561279432,
+                    "start": 639,
+                    "end": 641
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "CartesianPendulum",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 1149367593561279432,
+            "start": 630,
+            "end": 633
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "FunctionCall": {
+                  "comp": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "der",
+                          "location": {
+                            "start_line": 13,
+                            "start_column": 3,
+                            "end_line": 13,
+                            "end_column": 6,
+                            "start": 645,
+                            "end": 648,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                          },
+                          "token_number": 73,
+                          "token_type": 15
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 1149367593561279432,
+                      "start": 645,
+                      "end": 648
+                    }
+                  },
+                  "args": [
+                    {
+                      "ComponentReference": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "y",
+                              "location": {
+                                "start_line": 13,
+                                "start_column": 7,
+                                "end_line": 13,
+                                "end_column": 8,
+                                "start": 649,
+                                "end": 650,
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                              },
+                              "token_number": 75,
+                              "token_type": 64
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 1149367593561279432,
+                          "start": 649,
+                          "end": 650
+                        }
+                      }
+                    }
+                  ],
+                  "span": {
+                    "source": 1149367593561279432,
+                    "start": 645,
+                    "end": 650
+                  }
+                }
+              },
+              "rhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "vy",
+                        "location": {
+                          "start_line": 13,
+                          "start_column": 12,
+                          "end_line": 13,
+                          "end_column": 14,
+                          "start": 654,
+                          "end": 656,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                        },
+                        "token_number": 78,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 1149367593561279432,
+                    "start": 654,
+                    "end": 656
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "CartesianPendulum",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 1149367593561279432,
+            "start": 645,
+            "end": 648
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "m",
+                            "location": {
+                              "start_line": 14,
+                              "start_column": 3,
+                              "end_line": 14,
+                              "end_column": 4,
+                              "start": 660,
+                              "end": 661,
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                            },
+                            "token_number": 80,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 1149367593561279432,
+                        "start": 660,
+                        "end": 661
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "FunctionCall": {
+                      "comp": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "der",
+                              "location": {
+                                "start_line": 14,
+                                "start_column": 7,
+                                "end_line": 14,
+                                "end_column": 10,
+                                "start": 664,
+                                "end": 667,
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                              },
+                              "token_number": 82,
+                              "token_type": 15
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 1149367593561279432,
+                          "start": 664,
+                          "end": 667
+                        }
+                      },
+                      "args": [
+                        {
+                          "ComponentReference": {
+                            "local": false,
+                            "parts": [
+                              {
+                                "ident": {
+                                  "text": "vx",
+                                  "location": {
+                                    "start_line": 14,
+                                    "start_column": 11,
+                                    "end_line": 14,
+                                    "end_column": 13,
+                                    "start": 668,
+                                    "end": 670,
+                                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                                  },
+                                  "token_number": 84,
+                                  "token_type": 64
+                                },
+                                "subs": null
+                              }
+                            ],
+                            "span": {
+                              "source": 1149367593561279432,
+                              "start": 668,
+                              "end": 670
+                            }
+                          }
+                        }
+                      ],
+                      "span": {
+                        "source": 1149367593561279432,
+                        "start": 664,
+                        "end": 670
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 1149367593561279432,
+                    "start": 660,
+                    "end": 670
+                  }
+                }
+              },
+              "rhs": {
+                "Unary": {
+                  "op": "Minus",
+                  "rhs": {
+                    "Binary": {
+                      "op": "Mul",
+                      "lhs": {
+                        "ComponentReference": {
+                          "local": false,
+                          "parts": [
+                            {
+                              "ident": {
+                                "text": "lambda",
+                                "location": {
+                                  "start_line": 14,
+                                  "start_column": 18,
+                                  "end_line": 14,
+                                  "end_column": 24,
+                                  "start": 675,
+                                  "end": 681,
+                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                                },
+                                "token_number": 88,
+                                "token_type": 64
+                              },
+                              "subs": null
+                            }
+                          ],
+                          "span": {
+                            "source": 1149367593561279432,
+                            "start": 675,
+                            "end": 681
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "ComponentReference": {
+                          "local": false,
+                          "parts": [
+                            {
+                              "ident": {
+                                "text": "x",
+                                "location": {
+                                  "start_line": 14,
+                                  "start_column": 27,
+                                  "end_line": 14,
+                                  "end_column": 28,
+                                  "start": 684,
+                                  "end": 685,
+                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                                },
+                                "token_number": 90,
+                                "token_type": 64
+                              },
+                              "subs": null
+                            }
+                          ],
+                          "span": {
+                            "source": 1149367593561279432,
+                            "start": 684,
+                            "end": 685
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 1149367593561279432,
+                        "start": 675,
+                        "end": 685
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 1149367593561279432,
+                    "start": 674,
+                    "end": 685
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "CartesianPendulum",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 1149367593561279432,
+            "start": 660,
+            "end": 661
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "m",
+                            "location": {
+                              "start_line": 15,
+                              "start_column": 3,
+                              "end_line": 15,
+                              "end_column": 4,
+                              "start": 689,
+                              "end": 690,
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                            },
+                            "token_number": 92,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 1149367593561279432,
+                        "start": 689,
+                        "end": 690
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "FunctionCall": {
+                      "comp": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "der",
+                              "location": {
+                                "start_line": 15,
+                                "start_column": 7,
+                                "end_line": 15,
+                                "end_column": 10,
+                                "start": 693,
+                                "end": 696,
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                              },
+                              "token_number": 94,
+                              "token_type": 15
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 1149367593561279432,
+                          "start": 693,
+                          "end": 696
+                        }
+                      },
+                      "args": [
+                        {
+                          "ComponentReference": {
+                            "local": false,
+                            "parts": [
+                              {
+                                "ident": {
+                                  "text": "vy",
+                                  "location": {
+                                    "start_line": 15,
+                                    "start_column": 11,
+                                    "end_line": 15,
+                                    "end_column": 13,
+                                    "start": 697,
+                                    "end": 699,
+                                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                                  },
+                                  "token_number": 96,
+                                  "token_type": 64
+                                },
+                                "subs": null
+                              }
+                            ],
+                            "span": {
+                              "source": 1149367593561279432,
+                              "start": 697,
+                              "end": 699
+                            }
+                          }
+                        }
+                      ],
+                      "span": {
+                        "source": 1149367593561279432,
+                        "start": 693,
+                        "end": 699
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 1149367593561279432,
+                    "start": 689,
+                    "end": 699
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Sub",
+                  "lhs": {
+                    "Unary": {
+                      "op": "Minus",
+                      "rhs": {
+                        "Binary": {
+                          "op": "Mul",
+                          "lhs": {
+                            "ComponentReference": {
+                              "local": false,
+                              "parts": [
+                                {
+                                  "ident": {
+                                    "text": "lambda",
+                                    "location": {
+                                      "start_line": 15,
+                                      "start_column": 18,
+                                      "end_line": 15,
+                                      "end_column": 24,
+                                      "start": 704,
+                                      "end": 710,
+                                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                                    },
+                                    "token_number": 100,
+                                    "token_type": 64
+                                  },
+                                  "subs": null
+                                }
+                              ],
+                              "span": {
+                                "source": 1149367593561279432,
+                                "start": 704,
+                                "end": 710
+                              }
+                            }
+                          },
+                          "rhs": {
+                            "ComponentReference": {
+                              "local": false,
+                              "parts": [
+                                {
+                                  "ident": {
+                                    "text": "y",
+                                    "location": {
+                                      "start_line": 15,
+                                      "start_column": 27,
+                                      "end_line": 15,
+                                      "end_column": 28,
+                                      "start": 713,
+                                      "end": 714,
+                                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                                    },
+                                    "token_number": 102,
+                                    "token_type": 64
+                                  },
+                                  "subs": null
+                                }
+                              ],
+                              "span": {
+                                "source": 1149367593561279432,
+                                "start": 713,
+                                "end": 714
+                              }
+                            }
+                          },
+                          "span": {
+                            "source": 1149367593561279432,
+                            "start": 704,
+                            "end": 714
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 1149367593561279432,
+                        "start": 703,
+                        "end": 714
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "Binary": {
+                      "op": "Mul",
+                      "lhs": {
+                        "ComponentReference": {
+                          "local": false,
+                          "parts": [
+                            {
+                              "ident": {
+                                "text": "m",
+                                "location": {
+                                  "start_line": 15,
+                                  "start_column": 31,
+                                  "end_line": 15,
+                                  "end_column": 32,
+                                  "start": 717,
+                                  "end": 718,
+                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                                },
+                                "token_number": 104,
+                                "token_type": 64
+                              },
+                              "subs": null
+                            }
+                          ],
+                          "span": {
+                            "source": 1149367593561279432,
+                            "start": 717,
+                            "end": 718
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "ComponentReference": {
+                          "local": false,
+                          "parts": [
+                            {
+                              "ident": {
+                                "text": "g",
+                                "location": {
+                                  "start_line": 15,
+                                  "start_column": 35,
+                                  "end_line": 15,
+                                  "end_column": 36,
+                                  "start": 721,
+                                  "end": 722,
+                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                                },
+                                "token_number": 106,
+                                "token_type": 64
+                              },
+                              "subs": null
+                            }
+                          ],
+                          "span": {
+                            "source": 1149367593561279432,
+                            "start": 721,
+                            "end": 722
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 1149367593561279432,
+                        "start": 717,
+                        "end": 722
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 1149367593561279432,
+                    "start": 703,
+                    "end": 722
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "CartesianPendulum",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 1149367593561279432,
+            "start": 689,
+            "end": 690
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "Binary": {
+                  "op": "Add",
+                  "lhs": {
+                    "Binary": {
+                      "op": "Exp",
+                      "lhs": {
+                        "ComponentReference": {
+                          "local": false,
+                          "parts": [
+                            {
+                              "ident": {
+                                "text": "x",
+                                "location": {
+                                  "start_line": 16,
+                                  "start_column": 3,
+                                  "end_line": 16,
+                                  "end_column": 4,
+                                  "start": 726,
+                                  "end": 727,
+                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                                },
+                                "token_number": 108,
+                                "token_type": 64
+                              },
+                              "subs": null
+                            }
+                          ],
+                          "span": {
+                            "source": 1149367593561279432,
+                            "start": 726,
+                            "end": 727
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "Terminal": {
+                          "terminal_type": "UnsignedInteger",
+                          "token": {
+                            "text": "2",
+                            "location": {
+                              "start_line": 16,
+                              "start_column": 7,
+                              "end_line": 16,
+                              "end_column": 8,
+                              "start": 730,
+                              "end": 731,
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                            },
+                            "token_number": 110,
+                            "token_type": 67
+                          },
+                          "span": {
+                            "source": 1149367593561279432,
+                            "start": 730,
+                            "end": 731
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 1149367593561279432,
+                        "start": 726,
+                        "end": 731
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "Binary": {
+                      "op": "Exp",
+                      "lhs": {
+                        "ComponentReference": {
+                          "local": false,
+                          "parts": [
+                            {
+                              "ident": {
+                                "text": "y",
+                                "location": {
+                                  "start_line": 16,
+                                  "start_column": 11,
+                                  "end_line": 16,
+                                  "end_column": 12,
+                                  "start": 734,
+                                  "end": 735,
+                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                                },
+                                "token_number": 112,
+                                "token_type": 64
+                              },
+                              "subs": null
+                            }
+                          ],
+                          "span": {
+                            "source": 1149367593561279432,
+                            "start": 734,
+                            "end": 735
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "Terminal": {
+                          "terminal_type": "UnsignedInteger",
+                          "token": {
+                            "text": "2",
+                            "location": {
+                              "start_line": 16,
+                              "start_column": 15,
+                              "end_line": 16,
+                              "end_column": 16,
+                              "start": 738,
+                              "end": 739,
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                            },
+                            "token_number": 114,
+                            "token_type": 67
+                          },
+                          "span": {
+                            "source": 1149367593561279432,
+                            "start": 738,
+                            "end": 739
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 1149367593561279432,
+                        "start": 734,
+                        "end": 739
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 1149367593561279432,
+                    "start": 726,
+                    "end": 739
+                  }
+                }
+              },
+              "rhs": {
+                "Binary": {
+                  "op": "Exp",
+                  "lhs": {
+                    "ComponentReference": {
+                      "local": false,
+                      "parts": [
+                        {
+                          "ident": {
+                            "text": "L",
+                            "location": {
+                              "start_line": 16,
+                              "start_column": 19,
+                              "end_line": 16,
+                              "end_column": 20,
+                              "start": 742,
+                              "end": 743,
+                              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                            },
+                            "token_number": 116,
+                            "token_type": 64
+                          },
+                          "subs": null
+                        }
+                      ],
+                      "span": {
+                        "source": 1149367593561279432,
+                        "start": 742,
+                        "end": 743
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "Terminal": {
+                      "terminal_type": "UnsignedInteger",
+                      "token": {
+                        "text": "2",
+                        "location": {
+                          "start_line": 16,
+                          "start_column": 23,
+                          "end_line": 16,
+                          "end_column": 24,
+                          "start": 746,
+                          "end": 747,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/CartesianPendulum.mo"
+                        },
+                        "token_number": 118,
+                        "token_type": 67
+                      },
+                      "span": {
+                        "source": 1149367593561279432,
+                        "start": 746,
+                        "end": 747
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 1149367593561279432,
+                    "start": 742,
+                    "end": 747
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "CartesianPendulum",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 1149367593561279432,
+            "start": 726,
+            "end": 727
+          }
+        }
+      ],
+      "initial_equations": [],
+      "algorithms": [],
+      "initial_algorithms": [],
+      "connections": [],
+      "resolved_imports": []
+    }
+  },
+  "is_partial": false,
+  "class_type": "Model",
+  "root_description": "A point mass on a rigid rod, written in Cartesian coordinates",
+  "disabled_components": [],
+  "array_parent_dims": {},
+  "outer_prefix_to_inner": {},
+  "inner_outer_to_parent_inner": {},
+  "synthesized_inners": [],
+  "type_roots": {},
+  "next_id": 9
+}

@@ -1,0 +1,410 @@
+{
+  "components": {
+    "1": {
+      "instance_id": 1,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 9237349070360541563,
+          "start": 774,
+          "end": 780
+        },
+        "parts": [
+          {
+            "ident": "a",
+            "span": {
+              "source": 9237349070360541563,
+              "start": 774,
+              "end": 780
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 89
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "a",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 13,
+        "start_column": 3,
+        "end_line": 13,
+        "end_column": 9,
+        "start": 774,
+        "end": 780,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "TwiceDefined",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 9237349070360541563,
+            "start": 774,
+            "end": 780
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": null,
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "2": {
+      "instance_id": 2,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 9237349070360541563,
+          "start": 784,
+          "end": 790
+        },
+        "parts": [
+          {
+            "ident": "b",
+            "span": {
+              "source": 9237349070360541563,
+              "start": 784,
+              "end": 790
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 90
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "b",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 14,
+        "start_column": 3,
+        "end_line": 14,
+        "end_column": 9,
+        "start": 784,
+        "end": 790,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "TwiceDefined",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 9237349070360541563,
+            "start": 784,
+            "end": 790
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": null,
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    }
+  },
+  "classes": {
+    "0": {
+      "instance_id": 0,
+      "class_def_id": 85,
+      "qualified_name": {
+        "parts": []
+      },
+      "source_scope": {
+        "parts": [
+          [
+            "TwiceDefined",
+            []
+          ]
+        ]
+      },
+      "source_scope_id": 1,
+      "equations": [
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "a",
+                        "location": {
+                          "start_line": 16,
+                          "start_column": 3,
+                          "end_line": 16,
+                          "end_column": 4,
+                          "start": 803,
+                          "end": 804,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+                        },
+                        "token_number": 21,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 9237349070360541563,
+                    "start": 803,
+                    "end": 804
+                  }
+                }
+              },
+              "rhs": {
+                "Terminal": {
+                  "terminal_type": "UnsignedReal",
+                  "token": {
+                    "text": "1.0",
+                    "location": {
+                      "start_line": 16,
+                      "start_column": 7,
+                      "end_line": 16,
+                      "end_column": 10,
+                      "start": 807,
+                      "end": 810,
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+                    },
+                    "token_number": 23,
+                    "token_type": 68
+                  },
+                  "span": {
+                    "source": 9237349070360541563,
+                    "start": 807,
+                    "end": 810
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "TwiceDefined",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 9237349070360541563,
+            "start": 803,
+            "end": 804
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "a",
+                        "location": {
+                          "start_line": 17,
+                          "start_column": 3,
+                          "end_line": 17,
+                          "end_column": 4,
+                          "start": 814,
+                          "end": 815,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+                        },
+                        "token_number": 25,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 9237349070360541563,
+                    "start": 814,
+                    "end": 815
+                  }
+                }
+              },
+              "rhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "time",
+                        "location": {
+                          "start_line": 17,
+                          "start_column": 7,
+                          "end_line": 17,
+                          "end_column": 11,
+                          "start": 818,
+                          "end": 822,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+                        },
+                        "token_number": 27,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 9237349070360541563,
+                    "start": 818,
+                    "end": 822
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "TwiceDefined",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 9237349070360541563,
+            "start": 814,
+            "end": 815
+          }
+        }
+      ],
+      "initial_equations": [],
+      "algorithms": [],
+      "initial_algorithms": [],
+      "connections": [],
+      "resolved_imports": []
+    }
+  },
+  "is_partial": false,
+  "class_type": "Model",
+  "root_description": "Two equations define one variable, leaving another undetermined — DELIBERATELY BROKEN",
+  "disabled_components": [],
+  "array_parent_dims": {},
+  "outer_prefix_to_inner": {},
+  "inner_outer_to_parent_inner": {},
+  "synthesized_inners": [],
+  "type_roots": {},
+  "next_id": 3
+}

@@ -1,0 +1,419 @@
+{
+  "t_end": 2.0,
+  "n_time_points": 501,
+  "n_variables": 51,
+  "n_states": 4,
+  "has_discontinuities": true,
+  "t_start": 0.0,
+  "t_final": 2.0,
+  "variables": [
+    {
+      "name": "L.i",
+      "is_state": true,
+      "initial": 12.0,
+      "final": 8.043937111201087,
+      "min": 8.043937111201087,
+      "max": 12.0
+    },
+    {
+      "name": "emf.phi",
+      "is_state": true,
+      "initial": 0.0,
+      "final": 42.19276752494294,
+      "min": 0.0,
+      "max": 42.19276752494294
+    },
+    {
+      "name": "load.phi",
+      "is_state": true,
+      "initial": 0.0,
+      "final": 42.19276752494294,
+      "min": 0.0,
+      "max": 42.19276752494294
+    },
+    {
+      "name": "load.w",
+      "is_state": true,
+      "initial": 0.0,
+      "final": 39.5622377075912,
+      "min": 0.0,
+      "max": 39.5622377075912
+    },
+    {
+      "name": "src.v",
+      "is_state": false,
+      "initial": 12.0,
+      "final": 12.0,
+      "min": 12.0,
+      "max": 12.0
+    },
+    {
+      "name": "R.T_heatPort",
+      "is_state": false,
+      "initial": 300.15,
+      "final": 300.15,
+      "min": 300.15,
+      "max": 300.15
+    },
+    {
+      "name": "L.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": -0.00016088195992214086,
+      "min": -0.00023981768244909943,
+      "max": 0.0
+    },
+    {
+      "name": "emf.w",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 39.562237707588366,
+      "min": 0.0,
+      "max": 39.562237707588366
+    },
+    {
+      "name": "load.flange_b.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 42.19276752494294,
+      "min": 0.0,
+      "max": 42.19276752494294
+    },
+    {
+      "name": "load.flange_b.tau",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "load.a",
+      "is_state": false,
+      "initial": 24.000000000000004,
+      "final": 16.087874222402174,
+      "min": 16.087874222402174,
+      "max": 24.000000000000004
+    },
+    {
+      "name": "R.R_actual",
+      "is_state": false,
+      "initial": 1.0,
+      "final": 1.0,
+      "min": 1.0,
+      "max": 1.0
+    },
+    {
+      "name": "emf.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 3.956223770758837,
+      "min": 0.0,
+      "max": 3.956223770758837
+    },
+    {
+      "name": "src.i",
+      "is_state": false,
+      "initial": -12.0,
+      "final": -8.043937111201087,
+      "min": -12.0,
+      "max": -8.043937111201087
+    },
+    {
+      "name": "src.p.v",
+      "is_state": false,
+      "initial": 12.0,
+      "final": 12.0,
+      "min": 12.0,
+      "max": 12.0
+    },
+    {
+      "name": "src.p.i",
+      "is_state": false,
+      "initial": -12.0,
+      "final": -8.043937111201087,
+      "min": -12.0,
+      "max": -8.043937111201087
+    },
+    {
+      "name": "src.n.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": -4.309887750254417e-27,
+      "max": 4.401483145585373e-42
+    },
+    {
+      "name": "src.n.i",
+      "is_state": false,
+      "initial": 12.0,
+      "final": 8.043937111201087,
+      "min": 8.043937111201087,
+      "max": 12.0
+    },
+    {
+      "name": "R.i",
+      "is_state": false,
+      "initial": 12.0,
+      "final": 8.043937111201087,
+      "min": 8.043937111201087,
+      "max": 12.0
+    },
+    {
+      "name": "R.v",
+      "is_state": false,
+      "initial": 12.0,
+      "final": 8.043937111201087,
+      "min": 8.043937111201087,
+      "max": 12.0
+    },
+    {
+      "name": "R.p.v",
+      "is_state": false,
+      "initial": 12.0,
+      "final": 12.0,
+      "min": 12.0,
+      "max": 12.0
+    },
+    {
+      "name": "R.p.i",
+      "is_state": false,
+      "initial": 12.0,
+      "final": 8.043937111201087,
+      "min": 8.043937111201087,
+      "max": 12.0
+    },
+    {
+      "name": "R.n.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 3.9560628887989147,
+      "min": 0.0,
+      "max": 3.9560628887989147
+    },
+    {
+      "name": "R.n.i",
+      "is_state": false,
+      "initial": -12.0,
+      "final": -8.043937111201087,
+      "min": -12.0,
+      "max": -8.043937111201087
+    },
+    {
+      "name": "R.LossPower",
+      "is_state": false,
+      "initial": 144.0,
+      "final": 64.70492424983405,
+      "min": 64.70492424983405,
+      "max": 144.0
+    },
+    {
+      "name": "L.p.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 3.9560628887989147,
+      "min": 0.0,
+      "max": 3.9560628887989147
+    },
+    {
+      "name": "L.p.i",
+      "is_state": false,
+      "initial": 12.0,
+      "final": 8.043937111201087,
+      "min": 8.043937111201087,
+      "max": 12.0
+    },
+    {
+      "name": "L.n.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 3.956223770758837,
+      "min": 0.0,
+      "max": 3.956223770758837
+    },
+    {
+      "name": "L.n.i",
+      "is_state": false,
+      "initial": -12.0,
+      "final": -8.043937111201087,
+      "min": -12.0,
+      "max": -8.043937111201087
+    },
+    {
+      "name": "emf.i",
+      "is_state": false,
+      "initial": 12.0,
+      "final": 8.043937111201087,
+      "min": 8.043937111201087,
+      "max": 12.0
+    },
+    {
+      "name": "emf.tau",
+      "is_state": false,
+      "initial": -1.2000000000000002,
+      "final": -0.8043937111201086,
+      "min": -1.2000000000000002,
+      "max": -0.8043937111201086
+    },
+    {
+      "name": "emf.tauElectrical",
+      "is_state": false,
+      "initial": 1.2000000000000002,
+      "final": 0.8043937111201086,
+      "min": 0.8043937111201086,
+      "max": 1.2000000000000002
+    },
+    {
+      "name": "emf.p.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 3.956223770758837,
+      "min": 0.0,
+      "max": 3.956223770758837
+    },
+    {
+      "name": "emf.p.i",
+      "is_state": false,
+      "initial": 12.0,
+      "final": 8.043937111201087,
+      "min": 8.043937111201087,
+      "max": 12.0
+    },
+    {
+      "name": "emf.n.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": -4.309887750254409e-27,
+      "max": 1.0625869891702763e-41
+    },
+    {
+      "name": "emf.n.i",
+      "is_state": false,
+      "initial": -12.0,
+      "final": -8.043937111201087,
+      "min": -12.0,
+      "max": -8.043937111201087
+    },
+    {
+      "name": "emf.flange.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 42.19276752494294,
+      "min": 0.0,
+      "max": 42.19276752494294
+    },
+    {
+      "name": "emf.flange.tau",
+      "is_state": false,
+      "initial": -1.2000000000000002,
+      "final": -0.8043937111201086,
+      "min": -1.2000000000000002,
+      "max": -0.8043937111201086
+    },
+    {
+      "name": "emf.fixed.flange.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": -1.0214995919397486e-24,
+      "max": 8.45981044423555e-25
+    },
+    {
+      "name": "emf.fixed.flange.tau",
+      "is_state": false,
+      "initial": -1.2000000000000002,
+      "final": -0.8043937111201086,
+      "min": -1.2000000000000002,
+      "max": -0.8043937111201086
+    },
+    {
+      "name": "emf.internalSupport.tau",
+      "is_state": false,
+      "initial": 1.2000000000000002,
+      "final": 0.8043937111201086,
+      "min": 0.8043937111201086,
+      "max": 1.2000000000000002
+    },
+    {
+      "name": "emf.internalSupport.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": -1.0214995919397488e-24,
+      "max": 8.45981044423555e-25
+    },
+    {
+      "name": "emf.internalSupport.flange.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": -1.0214995919397488e-24,
+      "max": 8.45981044423555e-25
+    },
+    {
+      "name": "emf.internalSupport.flange.tau",
+      "is_state": false,
+      "initial": 1.2000000000000002,
+      "final": 0.8043937111201086,
+      "min": 0.8043937111201086,
+      "max": 1.2000000000000002
+    },
+    {
+      "name": "gnd.p.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "gnd.p.i",
+      "is_state": false,
+      "initial": 0.0,
+      "final": -5.4318642793579716e-27,
+      "min": -8.703264409784541e-25,
+      "max": 4.560399015425569e-25
+    },
+    {
+      "name": "load.flange_a.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 42.19276752494294,
+      "min": 0.0,
+      "max": 42.19276752494294
+    },
+    {
+      "name": "load.flange_a.tau",
+      "is_state": false,
+      "initial": 1.2000000000000002,
+      "final": 0.8043937111201086,
+      "min": 0.8043937111201086,
+      "max": 1.2000000000000002
+    },
+    {
+      "name": "overSpeed",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 1.0,
+      "min": 0.0,
+      "max": 1.0
+    },
+    {
+      "name": "c[1]",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 1.0,
+      "min": 0.0,
+      "max": 1.0
+    },
+    {
+      "name": "c[2]",
+      "is_state": false,
+      "initial": 1.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 1.0
+    }
+  ]
+}

@@ -1,0 +1,209 @@
+{
+  "n_equations": 1,
+  "n_unknowns": 1,
+  "coupled_block_count": 0,
+  "matching": [
+    {
+      "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
+      "unknown": "measurement"
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
+      "unknown": "measurement"
+    }
+  ],
+  "incidence": {
+    "n_eq": 1,
+    "n_var": 1,
+    "unknown_names": [
+      "measurement"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
+        "unknowns": [
+          0
+        ],
+        "equation_text": "measurement - plantGain * controllerGain * (reference - measurement)"
+      }
+    ]
+  },
+  "before": {
+    "n_equations": 3,
+    "n_unknowns": 3,
+    "n_matched": 3,
+    "matching": [
+      {
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
+        "unknown": "measurement"
+      },
+      {
+        "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
+        "unknown": "error"
+      },
+      {
+        "equation": "f_x[2] (top-level model equation)",
+        "id": "f_x[2]",
+        "unknown": "command"
+      }
+    ],
+    "incidence": {
+      "n_eq": 3,
+      "n_var": 3,
+      "unknown_names": [
+        "error",
+        "command",
+        "measurement"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (top-level model equation)",
+          "id": "f_x[0]",
+          "unknowns": [
+            0,
+            2
+          ],
+          "equation_text": "error - (reference - measurement)"
+        },
+        {
+          "equation": "f_x[1] (top-level model equation)",
+          "id": "f_x[1]",
+          "unknowns": [
+            0,
+            1
+          ],
+          "equation_text": "command - controllerGain * error"
+        },
+        {
+          "equation": "f_x[2] (top-level model equation)",
+          "id": "f_x[2]",
+          "unknowns": [
+            1,
+            2
+          ],
+          "equation_text": "measurement - plantGain * command"
+        }
+      ]
+    }
+  },
+  "reduction": {
+    "states_before": [],
+    "states_after": [],
+    "demoted_states": [],
+    "n_states_before": 0,
+    "n_states_after": 0,
+    "steps": [
+      {
+        "step": "scalarize_equations",
+        "outcome": "ok",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 3,
+        "equations_after": 3
+      },
+      {
+        "step": "demote_exact_alias_component_states",
+        "outcome": "0 demoted",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 3,
+        "equations_after": 3
+      },
+      {
+        "step": "demote_direct_assigned_states",
+        "outcome": "0 demoted",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 3,
+        "equations_after": 3
+      },
+      {
+        "step": "reduce_constrained_dummy_derivatives",
+        "outcome": "0 demoted",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 3,
+        "equations_after": 3
+      },
+      {
+        "step": "index_reduce_missing_state_derivatives",
+        "outcome": "0 demoted",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 3,
+        "equations_after": 3
+      },
+      {
+        "step": "demote_states_without_assignable_derivative_rows",
+        "outcome": "0 demoted",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 3,
+        "equations_after": 3
+      },
+      {
+        "step": "eliminate_derivative_aliases",
+        "outcome": "ok",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 3,
+        "equations_after": 3
+      },
+      {
+        "step": "demote_states_without_retained_derivative_rows",
+        "outcome": "0 demoted",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 3,
+        "equations_after": 3
+      },
+      {
+        "step": "expand_compound_derivatives",
+        "outcome": "ok",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 3,
+        "equations_after": 3
+      },
+      {
+        "step": "substitute_standalone_state_derivatives_in_non_ode_rows",
+        "outcome": "0 rewritten",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 3,
+        "equations_after": 3
+      },
+      {
+        "step": "eliminate_trivial",
+        "outcome": "2 eliminated",
+        "states_before": 0,
+        "states_after": 0,
+        "equations_before": 3,
+        "equations_after": 1
+      }
+    ],
+    "differentiated_rows": [],
+    "eliminations": [
+      {
+        "variable": "error",
+        "replacement": "{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"reference\",\"component_ref\":{\"local\":false,\"span\":{\"source\":14944577168124936103,\"start\":1088,\"end\":1102},\"parts\":[{\"ident\":\"reference\",\"span\":{\"source\":14944577168124936103,\"start\":1088,\"end\":1102},\"subs\":[]}],\"def_id\":39463}},\"subscripts\":[],\"span\":{\"source\":14944577168124936103,\"start\":1444,\"end\":1453}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"measurement\",\"component_ref\":{\"local\":false,\"span\":{\"source\":14944577168124936103,\"start\":1358,\"end\":1374},\"parts\":[{\"ident\":\"measurement\",\"span\":{\"source\":14944577168124936103,\"start\":1358,\"end\":1374},\"subs\":[]}],\"def_id\":39468}},\"subscripts\":[],\"span\":{\"source\":14944577168124936103,\"start\":1456,\"end\":1467}}},\"span\":{\"source\":14944577168124936103,\"start\":1444,\"end\":1467}}}"
+      },
+      {
+        "variable": "command",
+        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"controllerGain\",\"component_ref\":{\"local\":false,\"span\":{\"source\":14944577168124936103,\"start\":1133,\"end\":1152},\"parts\":[{\"ident\":\"controllerGain\",\"span\":{\"source\":14944577168124936103,\"start\":1133,\"end\":1152},\"subs\":[]}],\"def_id\":39464}},\"subscripts\":[],\"span\":{\"source\":14944577168124936103,\"start\":1481,\"end\":1495}}},\"rhs\":{\"Binary\":{\"op\":\"Sub\",\"lhs\":{\"VarRef\":{\"name\":{\"name\":\"reference\",\"component_ref\":{\"local\":false,\"span\":{\"source\":14944577168124936103,\"start\":1088,\"end\":1102},\"parts\":[{\"ident\":\"reference\",\"span\":{\"source\":14944577168124936103,\"start\":1088,\"end\":1102},\"subs\":[]}],\"def_id\":39463}},\"subscripts\":[],\"span\":{\"source\":14944577168124936103,\"start\":1444,\"end\":1453}}},\"rhs\":{\"VarRef\":{\"name\":{\"name\":\"measurement\",\"component_ref\":{\"local\":false,\"span\":{\"source\":14944577168124936103,\"start\":1358,\"end\":1374},\"parts\":[{\"ident\":\"measurement\",\"span\":{\"source\":14944577168124936103,\"start\":1358,\"end\":1374},\"subs\":[]}],\"def_id\":39468}},\"subscripts\":[],\"span\":{\"source\":14944577168124936103,\"start\":1456,\"end\":1467}}},\"span\":{\"source\":14944577168124936103,\"start\":1444,\"end\":1467}}},\"span\":{\"source\":14944577168124936103,\"start\":1481,\"end\":1503}}}"
+      }
+    ],
+    "n_differentiations": 0,
+    "stopped_at": null,
+    "funnel_completed": true
+  }
+}

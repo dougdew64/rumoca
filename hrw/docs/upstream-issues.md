@@ -1,0 +1,1748 @@
+# Upstream issues — bugs found through HRW, in anyone's code
+
+**Purpose:** reproduced bugs in code we do not own, each written to be filable with a
+copy-paste plus a sentence.
+**Status:** record.
+**Read when:** a bug is reproduced and needs recording. **Claude adds entries and never files
+them** — filing is Doug's. Only *reproduced* bugs go in, and suspect code is marked
+unverified: a confident wrong diagnosis costs the credibility this project is building.
+
+**BROADENED 2026-09-02 FROM RUMOCA-ONLY, and the reason is the file's own purpose.** It exists
+so an investigation never has to be done twice — and that purpose knows nothing about whose
+repository the bug is in. HRW found an egui defect that aborted the app with a 94 GB commit;
+recording it *here* costs one heading, while a second file would duplicate this charter, the
+adjudication rule and the filing rule, which is the copy-that-rots shape `CLAUDE.md` names as
+this repository's most frequent failure.
+
+**Every entry names its project and its target repository**, because the baseline, the
+adjudication story and the "check it is still broken" step differ per project. Nothing about
+the Rumoca entries changed.
+
+| project | file with | baseline |
+|---|---|---|
+| **Rumoca** | [CogniPilot/rumoca](https://github.com/CogniPilot/rumoca) | `0.9.20`, `hrw` branch cut from upstream `8cdc7419` |
+| **egui** | [emilk/egui](https://github.com/emilk/egui) | `0.35.0`, as pinned by `hrw/Cargo.toml` |
+
+Each entry is written to be **filable with a copy-paste plus a sentence** — reproduction,
+expected vs actual, evidence, and where the suspect code lives — so nothing has to be
+re-investigated months later. That is the whole point of the file: an investigation
+regenerates only at the cost of doing it again.
+
+**Verify against current upstream before filing** — a bug fixed in the meantime should be
+struck out here, not reported. Each entry's baseline is in the table above.
+
+**Why this file exists:** bugs found through HRW are opportunities to build the maintainer
+relationship, not just to work around (`project-engage-rumoca-community`). The two Rumoca
+entries were found by *auditing failure paths* (`docs/ideas.md` #45), and the second was
+adjudicated by an independent Modelica implementation rather than argued from the spec. The
+egui entry came the other way — from a crash Doug hit while using HRW normally.
+
+---
+
+## Which to file first
+
+**Issue 2 (connector validation).** Doug's plan (2026-07-30) is to open one bug PR with a
+screen-capture video of a self-playing HRW lab attached — no campaigning, just something
+likely to prompt a reviewer to ask what it is.
+
+Issue 2 suits that far better than issue 1:
+
+- **The reproduction is one 20-line model**, where issue 1 needs three compiles in a
+  particular order within one session.
+- **It is independently adjudicated.** System Modeler rejects the same source, so there is
+  nothing to argue about.
+- **The narrative is visual and short**: flatten *succeeds*, structural then fails as a
+  *singularity*, System Modeler says "Incompatible types". A misleading diagnosis is
+  exactly the thing a phase-by-phase view makes obvious.
+- **HRW's usefulness is the point of the story rather than an aside**, so nobody has to
+  claim it.
+
+`docs/fixture-labs/the-oracle.md` already runs this narrative and would want tightening
+for a recording — a demo lab is a third kind after ad hoc and fixture: few stops, no
+scrolling, deterministic start, nothing needing a second read.
+
+---
+
+## 1. WITHDRAWN — not a Rumoca defect. It was HRW leaving documents in the session
+
+**Status: withdrawn 2026-08-26, before filing.** Everything below is kept because the
+reasoning is worth more than the conclusion was, and because a future recurrence should be
+recognisable. **Do not file this.**
+
+### What it actually was
+
+**HRW was not removing the previous specimen's document.** Until 2026-08-21 it registered
+each specimen and left it in the session, so by the third compile of the reproduction below
+`UndefinedRef.mo` was **still there**. A `Session` resolves every document it holds, not
+only the one the caller asked about — so it found the unresolved reference, and reported it.
+**Rumoca was right.** The error did not survive a removal; the removal never happened.
+
+The real fix landed on 2026-08-21 for unrelated reasons, recorded as *"the session holds at
+most one specimen document"*. Nobody noticed it was a fix, because
+`a_broken_specimen_does_not_poison_the_next_compile` passed on both sides of it: before, via
+the workaround; after, because the defect was gone. **A mitigation and a fix produce
+identical green**, which is how the workaround outlived its reason for five days.
+
+### The evidence, from `examples/repro_stale_resolve`
+
+| consumer shape | step 3 |
+|---|---|
+| removes the previous document (HRW today) | **clean** — in all four entry-point x scale combinations |
+| leaves it in (HRW before 2026-08-21) | **fails with the other file's error** |
+
+The four combinations are `resolved()` and `strict_compile_resolved()`, each with two tiny
+models in a bare session and with the whole MSL plus the specimens this issue named. **The
+sequence documented below does not reproduce today**, which is why it must not be filed:
+a maintainer following it would find nothing, and `upstream-strategy.md` stakes Doug's
+credibility on reports that are reproducible.
+
+### What is inferred rather than proven
+
+**That the 2026-07-29 observation had this cause.** History cannot be re-run. What is
+established is that the documented sequence does not reproduce today, that the one shape
+which does is fully explained without any Rumoca defect, and that HRW's code changed in
+exactly the relevant way in between. Strong circumstantial agreement, not a proof.
+
+**Two innocent suspects were named below** — the `query_state.resolved.builds` cache read
+and `restore_detached_source_root_document`. Both were marked unverified, which is the
+convention that stopped this from becoming a wrong accusation in public. It is the clearest
+worked example this repository has of why that convention exists.
+
+---
+
+### The original write-up, preserved
+
+**Severity as originally assessed:** high for any multi-document consumer. A model that
+resolves cleanly can be reported as failing, **with a different file's error**.
+
+**Found:** 2026-07-29, auditing HRW's front-end failure payloads.
+
+### Reproduction
+
+One `Session`, MSL loaded as a durable source root, then three compiles:
+
+```rust
+let mut session = Session::new(SessionConfig::default());
+// ... load MSL via replace_parsed_source_set(.., SourceRootKind::DurableExternal, ..) ...
+
+// 1. A model that resolves cleanly.
+compile("CapacitorLoop.mo");     // resolve: OK
+
+// 2. A model with an undefined reference.
+compile("UndefinedRef.mo");      // resolve: "unresolved component reference: 'missingGain'"
+
+// 3. The SAME clean model again.
+compile("CapacitorLoop.mo");     // resolve: FAILS, reporting 'missingGain'
+```
+
+Each `compile` does `session.remove_document(uri); session.update_document(uri, src);` for
+the file being compiled, then `session.resolved()`.
+
+`UndefinedRef.mo` is the only file containing the identifier `missingGain`.
+
+### Expected
+
+Step 3 resolves cleanly, as step 1 did.
+
+### Actual
+
+Step 3 fails, reporting `unresolved component reference: 'missingGain'` — **byte-identical
+to step 2's error**, including the ~33 accompanying MSL warnings. The identical text
+suggests a cached result is being returned rather than a fresh resolution.
+
+Removing the previous document does **not** help. Rebuilding the `Session` from scratch
+does.
+
+### Why this is surprising
+
+`remove_document` → `apply_document_removal_at_revision`
+(`crates/rumoca-compile/src/session/session_impl_inputs.rs:139`) **does** call
+`invalidate_resolved_state(CacheInvalidationCause::DocumentRemoval)`. So invalidation is
+attempted and something survives it.
+
+Suspects, unverified: the `query_state.resolved.builds` cache read in
+`build_resolved_with_diagnostics_inner`
+(`crates/rumoca-compile/src/session/session_impl.rs:373`) — the `Standard`-mode branch
+returns a cached tree and `record_standard_resolved_cache_hit()`; and
+`restore_detached_source_root_document`, called during removal, which may put back a
+document the caller meant to drop.
+
+### Impact on consumers
+
+Any tool that compiles several models in one session — an IDE, a language server, a batch
+compiler, HRW — will attribute one file's resolve error to another. There is no way for the
+consumer to tell, because the returned error looks exactly like a genuine failure of the
+model it asked about.
+
+### What the workaround costs — measured 2026-08-26
+
+**1.95 s per occurrence.** The rebuild reloads every library root into a fresh `Session`;
+it is cheaper than a cold start only because the *parse* is memoised per process, so the
+cost is re-loading ASTs and re-resolving, not re-reading `.mo` files.
+
+Measured by `worker::tests::the_stale_cache_workaround_reports_what_it_costs`, which drives
+the exact sequence the workaround fires on — healthy model, a model that fails to resolve,
+then a *different* healthy model — and reads a counter wrapped around the rebuild.
+
+**How often it fires is order-dependent and is NOT claimed here.** It triggers whenever a
+compile follows a resolve failure of a different file, so a consumer that interleaves broken
+and working models pays it repeatedly, and one that does not may never pay it at all. For a
+test suite carrying a handful of deliberately-broken specimens the total is single-digit
+seconds; for an IDE with a file open that does not resolve, it would be every compile.
+
+**A hypothesis this measurement killed — and then the hypothesis' PREMISE died too.** The
+workaround was proposed as the explanation for HRW's log tests appearing to cost 13.7 s in
+isolation and 79.3 s inside the full suite. At 1.95 s per occurrence it could not be: the
+arithmetic was an order of magnitude short.
+
+**Then the 79.3 s turned out not to be real.** It was `299.49 − 220.18`, and the 299.49 s
+was a single anomalous suite run; repeated runs give 250.84 s and 253.32 s against a
+245 s baseline. A controlled probe settled the underlying question directly — the *same*
+compile, run first and last in one process, costs **2.63 s and 2.65 s**. **Compiles do not
+degrade as a session ages**, which retires the whole family of "the session accumulates
+something" theories.
+
+**None of that touches the 1.95 s**, which was measured with a counter around the work
+itself rather than inferred from a difference of totals. It is recorded here because the
+distinction is the point: the number that survived is the one that was measured directly.
+
+### Workaround in HRW
+
+Rebuild the session when the previous compile failed to resolve. Guarded so the library
+reparse is only paid after an actual failure. See `WorkerState::last_resolve_failed` and
+the regression test `a_broken_specimen_does_not_poison_the_next_compile`.
+
+---
+
+## 2. `validate_type_compatibility` does not fire for connectors with differing member sets
+
+**Severity:** medium. An invalid model is accepted, and the resulting failure is reported
+at the wrong phase with a misleading diagnosis.
+
+**Found:** 2026-07-29, authoring a specimen to exercise the flatten failure path.
+**Adjudicated by System Modeler**, not argued from the spec.
+
+### Reproduction
+
+```modelica
+model IncompatibleConnect
+  connector PinA
+    Real v;
+    flow Real i;
+  end PinA;
+
+  connector PinB
+    Real v;
+  end PinB;
+
+  PinA a;
+  PinB b;
+equation
+  connect(a, b);
+end IncompatibleConnect;
+```
+
+Compile with `FlattenOptions { strict_connection_validation: true, .. }` — the setting
+`rumoca_compile`'s own `flatten_options_for_tree()` uses.
+
+### Expected
+
+Rejected at flatten as a connector type-compatibility error. **MLS §9.3** requires
+connected connectors to be type-compatible, and `PinA` and `PinB` have different member
+sets.
+
+### Actual
+
+Flatten **succeeds**. The model then fails at structural analysis as *structurally
+singular* — a misleading diagnosis for what is a type error at the `connect()`. A user is
+sent to look at their equations when the problem is one line of wiring.
+
+### Independent confirmation
+
+Wolfram System Modeler 15.0 **rejects** the same source:
+
+```
+SystemModelSimulate::bld:  Failed to build model "IncompatibleConnect".
+SystemModelSimulate::bldl: "Error": "Incompatible types. 'a ...  'b' has type 'PinB'."
+```
+
+So the model is genuinely invalid and Rumoca is the outlier.
+
+### Note: the check exists and did not fire
+
+`validate_type_compatibility` is at
+`crates/rumoca-phase-flatten/src/connections/mod.rs:671`, and `validate_connections`
+reaches it when `strict_connection_validation` is on. So this is **not a missing
+validation** — it is one that did not trigger for this input.
+
+### TRACED 2026-08-22 — and neither suspect was the cause
+
+**The two suspects previously recorded here — `get_validation_var_info` returning `None`, or
+`canonical_type_id` collapsing both connector types to one root — are both wrong.** The cause is
+structural and is visible in `validate_expanded_connector_connection`:
+
+```rust
+for sub_a in subs_a {
+    let Some((suffix_a, ..)) = extract_suffix(sub_a.as_str(), ctx.path_a) else { continue };
+    let Some(var_b_match) = find_matching_var_b_indexed(&suffix_a, .., &sub_match_index) else { continue };
+    validate_flow_consistency(..)?;   // and type, dimension, quantity
+}
+```
+
+**Validation runs per matched member PAIR, members are paired by NAME, and an unmatched member is
+silently `continue`d.** Nothing anywhere compares the connector *types* themselves, and nothing
+compares the member *sets*. For `PinA{v, i}` against `PinB{v}`: `v` pairs and validates cleanly,
+`i` finds no partner and is skipped, so the connection is accepted.
+
+**The same hole has a worse instance, confirmed the same day.** Connect an MSL electrical
+`Pin{v, i}` to a translational `Flange{s, f}` — **no member name matches at all**, so nothing is
+validated *and no connection equations are generated*. Flatten reports success; the model surfaces
+three phases later as `still singular after index reduction: empty system: no equations or
+unknowns`, which names nothing about the wiring. **System Modeler 15.0 rejects it**:
+*"Incompatible types. 'g … Interfaces.Flange_b'."*
+
+```modelica
+model ConnectAcrossDomains "no member name matches — accepted, and silently inert"
+  Modelica.Electrical.Analog.Basic.Ground gnd;
+  Modelica.Mechanics.Translational.Components.Fixed fixed;
+equation
+  connect(gnd.p, fixed.flange);
+end ConnectAcrossDomains;
+```
+
+**And the control that shows the validators themselves are sound.** Same member *names*, different
+quantities — every member pairs, so `validate_quantity_compatibility` fires and Flatten refuses it,
+naming both sides: `incompatible connector types in connection: e.v (quantity: ElectricPotential)
+and m.v (quantity: Force)`.
+
+```modelica
+model ConnectSameNamesDifferentQuantity "every member pairs — correctly refused"
+  connector ElectricalPort
+    Modelica.Units.SI.Voltage v;
+    flow Modelica.Units.SI.Current i;
+  end ElectricalPort;
+  connector MechanicalPort
+    Modelica.Units.SI.Force v;
+    flow Modelica.Units.SI.Velocity i;
+  end MechanicalPort;
+  ElectricalPort e;
+  MechanicalPort m;
+equation
+  connect(e, m);
+end ConnectSameNamesDifferentQuantity;
+```
+
+**Both were written as scratch specimens, which are gitignored and do not survive a machine
+change** — so the sources are inlined here. This file's own rule is that anything published must be
+reproducible, and a maintainer cannot run a model that exists only on one laptop.
+
+So the report should be framed as **a missing connector-level check, not a validator that failed to
+fire**: the per-member validators work correctly and precisely — a same-named pair with mismatched
+quantities is refused at Flatten with both quantities named — but nothing establishes that the two
+connectors are the same type before their members are paired.
+
+---
+
+## 3. Cyclic-dependency diagnostics are nondeterministic across runs
+
+**Severity:** low for a user, **real for CI**. A diagnostic whose text changes between
+identical runs breaks golden-file tests and makes log diffs noisy.
+
+**Found:** 2026-07-31, by running the full MSL survey twice and diffing. Not the kind of
+thing a single run reveals.
+
+### Reproduction
+
+Compile any of these twice, in separate processes, and compare the error text:
+
+- `Modelica.StateGraph.PartialCompositeStep`
+- `Modelica.StateGraph.Examples.Utilities.CompositeStep`
+- `Modelica.StateGraph.Examples.Utilities.CompositeStep2`
+- `Modelica.StateGraph.Examples.Utilities.MakeProduct`
+- `Modelica.Fluid.Examples.ControlledTankSystem.Utilities.NormalOperation`
+
+### Expected
+
+The same diagnostic text on every run.
+
+### Actual
+
+The **outcome is stable** (`failed:ToDae` every time, same error class) but the cycle is
+reported **starting from a different member each run**:
+
+```text
+run 1: ... cyclic dependency: outerState.subgraphStatePort.suspend -> ...
+run 2: ... cyclic dependency: stateGraphRoot.subgraphStatePort.suspend -> ...
+```
+
+```text
+run 1: ... cyclic dependency: fillTank2.outerStatePort.subgraphStatePort.suspend -> ...
+run 2: ... cyclic dependency: wait2.outerStatePort.subgraphStatePort.suspend -> ...
+```
+
+### Why it matters
+
+Only 5 of 2,626 models are affected, so the practical impact on a user is small. But a
+consumer that stores diagnostics — a golden-file test, a CI log diff, or a checked-in
+capability report like `docs/reports/msl-survey.csv` — sees spurious changes with no behaviour
+change behind them, which is exactly the noise that trains people to ignore diffs.
+
+**Suspect, unverified:** the cycle is detected over a hash-ordered collection, so the
+traversal entry point varies while the cycle's membership does not. A deterministic entry
+point — the lexicographically smallest member, say — would fix the text without changing
+the analysis.
+
+### Reproduced independently, 2026-08-01
+
+Re-running the whole survey at a **different shard count** (4 against the committed 6) and
+diffing column by column reproduced it without looking for it — which is worth stating in the
+report, because it means the variation does not need a deliberate repeat run to surface, only
+a re-run.
+
+**6 models this time, not 5**, so the count is a floor rather than a fixed set:
+
+```
+Modelica.Fluid.Examples.ControlledTankSystem.Utilities.NormalOperation
+Modelica.StateGraph.Examples.Utilities.CompositeStep
+Modelica.StateGraph.Examples.Utilities.CompositeStep1
+Modelica.StateGraph.Examples.Utilities.CompositeStep2
+Modelica.StateGraph.Examples.Utilities.MakeProduct
+Modelica.StateGraph.PartialCompositeStep
+```
+
+**Every one is `StateGraph` or a `StateGraph` user**, which narrows where to look and is
+consistent with the hash-ordering suspicion above. The `message` column was the **only**
+non-timing column to differ across the two runs — the model set, every structural metric and
+every outcome matched exactly.
+
+---
+
+## Index reduction's demoted states are still counted as states downstream
+
+**Found 2026-08-08** while writing `docs/fixture-labs/index-reduction.md` from generated
+notebook traces. **Reproduced on two specimens, same direction both times.**
+
+### Reproduction
+
+`cargo run -p hrw --example gen_trace -- Drivetrain`, then read the trace:
+
+| specimen | `index_reduction` `n_states_after` | `solve_lowering` `state_scalar_count` |
+|---|---|---|
+| `Drivetrain` | **3** | **9** |
+| `GearWithBrake` | **2** | **7** |
+
+`Drivetrain`'s index reduction demotes six states — `emf.phi`, `rotor.phi`, `rotor.w`,
+`shaft.phi`, `load.s`, `load.v` — leaving `L.i`, `shaft.w`, `mount.s_rel`. Its
+`solve_layout.solver_maps.names` nevertheless begins with all nine, the six demoted ones
+included.
+
+### Expected vs actual
+
+**Expected:** the solver layout carries the states index reduction left behind — three for
+`Drivetrain`, two for `GearWithBrake`.
+
+**Actual:** it carries the pre-reduction count.
+
+### The corroborating symptom
+
+`Drivetrain`'s **initialization is structurally singular**: *"80 matched out of 88 equations and
+88 unknowns"*, with `determinacy.states` also reading **9**. That is exactly the outcome expected
+if the reduction had not been applied — a high-index system is singular until its constraints are
+removed, which is what `index_reduction` reports having done.
+
+### Two readings, and this is where it stops being reproduced fact
+
+**Unverified.** Either
+
+1. index reduction's result is not propagated to the downstream stages, or
+2. `state_scalar_count` deliberately counts every variable that ever carried a `der`, demoted or
+   not, and the initialization singularity has an unrelated cause.
+
+**Nothing in the traces distinguishes these**, and no suspect source location is offered for the
+same reason. Reading (1) would be a real bug; reading (2) would make this a naming problem in the
+report. **Adjudicate before filing** — `docs/ideas.md` #43's System Modeler recipe applies:
+`Drivetrain` either simulates there or does not, and that answers it.
+
+---
+
+---
+
+## ~~`zero_crossing_conditions` counts a condition the event partition does not contain~~
+
+> ### ⚠ RETRACTED 2026-09-02 — NOT A RUMOCA DEFECT. IT WAS HRW'S OWN NAME.
+>
+> **Never file this.** Both of its claims are false, and the entry survives only because the
+> reasoning is worth keeping.
+>
+> **What the field means.** `events.synthetic_root_conditions` counts roots Rumoca had to
+> **synthesise** because no relation already supplied one.
+> `runtime_precompute::remove_relation_duplicate_synthetic_roots` deliberately removes any
+> synthetic root a relation covers, and `clock::relation_root_expression` turns `h <= 0` into
+> the root function `h - 0`. `codegen_target` then chains **both** `conditions.relations` and
+> `events.synthetic_root_conditions` into root-finding.
+>
+> **So the table below is evidence FOR that reading, not against it.** Models with an MSL
+> `Resistor` report 1 synthetic root and 0 relations; models with a user `when` report
+> relations and 0 synthetic roots. That is exactly what the de-duplication predicts.
+> `RcCircuit`'s one synthetic root is a `Sub` over `R.T_heatPort` — the Resistor's heat port,
+> which no user relation mentions.
+>
+> **And the counted thing IS inspectable.** The *"Actual"* block below shows only the
+> `conditions` object. The array lives under `events`, a different part of the partition. The
+> consumer looked in the wrong place.
+>
+> **HRW seeded the confusion**, which is the real defect and it was ours: `events_to_json`
+> published `synthetic_root_conditions` under the name `zero_crossing_conditions`, which reads
+> as *the zero crossings* and as something belonging with `conditions`. `BouncingBall` then
+> showed `0` — a bouncing ball apparently detecting no contact. **Rumoca detects it, through
+> `relations`.** Fixed the same day; `the_events_summary_uses_rumocas_own_names` pins the keys.
+>
+> **The rule this cost is already written here: a confident wrong diagnosis wastes a
+> maintainer's time and costs the credibility this project is building.** This one was written,
+> tabulated across seven specimens, and cited in three labs — and no fidelity check could have
+> caught it, because **every value was correct the whole time. The defect was in a label.**
+
+**Found 2026-08-16** while writing `docs/fixture-labs/events.md`, which needed to explain a
+number Doug can see on screen. Reproduced across five specimens.
+
+### Reproduction
+
+```bash
+cargo run -p hrw --example gen_trace -- RcCircuit
+```
+
+Then read `docs/specimen-notebook/RcCircuit/trace/events.json`. `RcCircuit` is a plain
+source–resistor–capacitor–ground circuit with **no `when` clause anywhere** in the specimen.
+
+### Expected
+
+A smooth continuous model reports no events, and the summary counts agree with the collections
+they summarise.
+
+### Actual
+
+```json
+"summary": { "condition_equations": 0, "relations": 0,
+             "discrete_real_updates": 0, "discrete_valued_updates": 0,
+             "zero_crossing_conditions": 1, "scheduled_time_events": 0 },
+"conditions": { "equations_f_c": [], "relations": [] }
+```
+
+**`zero_crossing_conditions` is 1 while both `equations_f_c` and `relations` are empty.** The
+count reports a condition that is not in the partition, so a consumer cannot inspect the thing
+being counted.
+
+### The pattern, across the corpus
+
+| specimen | `zero_crossing_conditions` | `equations_f_c` | `relations` | MSL `Resistor`? |
+|---|---|---|---|---|
+| `RcCircuit` | **1** | 0 | 0 | yes |
+| `OverInitRc` | **1** | 0 | 0 | yes |
+| `BenchActuator` | **1** | 0 | 0 | yes |
+| `Drivetrain` | **1** | 0 | 0 | yes |
+| `MotorWithBrake` | **1** | 2 | 2 | yes |
+| `GearWithBrake` | 0 | 4 | 4 | no |
+| `BouncingBall` | 0 | 1 | 1 | no |
+
+**Every specimen containing `Modelica.Electrical.Analog.Basic.Resistor` reports exactly 1, and no
+specimen without one reports any.** `GearWithBrake` has four real condition equations and reports
+**0**, so the field is not counting condition equations at all.
+
+### Suspect mechanism — UNVERIFIED
+
+`Resistor.mo:15` is the component's only relation, and it is inside an `assert`:
+
+```modelica
+assert((1 + alpha*(T_heatPort - T_ref)) >= Modelica.Constants.eps,
+       "Temperature outside scope of model!");
+```
+
+**Hypothesis:** the assert's relation is registered as a zero crossing — which is arguably
+*correct*, since an assert has to be monitored — but is not then emitted into `equations_f_c` or
+`relations`, so the count and the collections diverge.
+
+**Not verified.** The correlation is exact across seven specimens and the mechanism is a guess
+from reading one MSL file. Before filing, confirm by compiling a one-line model whose only
+content is an `assert` with a relation, and by checking whether Rumoca's event partitioning runs
+assert conditions.
+
+### Which bug this is
+
+Two readings, and they need different reports:
+
+1. **The count is right and the partition is incomplete** — asserts must be monitored, and the
+   condition should appear in `equations_f_c` so a consumer can see it. This is the more likely
+   reading and the more useful fix.
+2. **The count is wrong** — assert conditions are not zero crossings and should not be counted.
+
+Either way the current state is inconsistent, which is what makes it filable without settling
+which reading is intended.
+
+### Impact on consumers
+
+HRW's Events pane reports the summary counts. On a smooth model it therefore says *"1 zero
+crossing"* and can show nothing behind it — a number with no evidence, which is the one thing
+`hrw/CLAUDE.md` forbids a pane from doing. `events.md` Station 2 currently names the anomaly and
+points here rather than reasoning around it.
+
+**A one-line fix in either direction removes the need for that paragraph.**
+
+## The index-reduction funnel is not observable, so HRW mirrors its step order
+
+**This is a feature request rather than a bug**, and it is the clearest candidate in this file for
+the observability API `hrw/CLAUDE.md` describes as the intended shape of an upstream contribution.
+
+### What HRW does today, and why
+
+`rumoca-sim` index-reduces the DAE inside `solve_lowering/structural_lowering.rs`. **Nothing in the
+public surface reports what that funnel did** — which steps ran, what each demoted, which rows were
+differentiated. The result is observable; the process is not.
+
+So HRW clones the compiled DAE and **re-runs the funnel itself**, calling
+`rumoca_phase_structural::dae_prepare`'s steps in an order it maintains by hand:
+
+```text
+demote_exact_alias_component_states, demote_direct_assigned_states,
+reduce_constrained_dummy_derivatives, index_reduce_missing_state_derivatives,
+demote_states_without_assignable_derivative_rows, eliminate_derivative_aliases,
+demote_states_without_retained_derivative_rows, expand_compound_derivatives,
+substitute_standalone_state_derivatives_in_non_ode_rows, eliminate_trivial
+```
+
+**The steps and the data are Rumoca's; only the order is HRW's** — and that order is a copy of
+rumoca-sim's internals, kept in sync by a human on every rebase.
+
+### Why it matters to a maintainer
+
+**A reordering upstream is invisible to the compiler.** Nothing breaks, nothing fails to build, and
+HRW's Index Reduction tab keeps rendering a plausible funnel that no longer matches what
+`rumoca-sim` does. It is a silent divergence by construction, and the only guard is a step in a
+rebase checklist.
+
+**And the same gap produced a documented teaching error here.** HRW's summary
+(`differentiated_rows`) reported zero for a model whose captured frames recorded four
+differentiations, because the summary scans the *final* DAE while the differentiated rows are
+removed by a later elimination step. A lab taught the opposite of what the compiler did for its
+whole existence (`DECISIONS.md`, 2026-08-17).
+
+### The ask — ✅ BUILT 2026-08-18, and ready to offer
+
+An **additive, observation-only** hook on the real funnel — a callback or a returned report naming
+each step and its outcome, in the order `rumoca-sim` actually ran them. Semantics-preserving; no
+behaviour change; the existing entry point keeps working untouched.
+
+**Implemented as `prepare_dae_for_structural_analysis_observed`**, with
+`prepare_dae_for_structural_analysis` delegating to it — one implementation, so the two cannot
+drift. `FunnelStepFrame` carries the step name, the system's size on either side of it, and a
+`FunnelStepOutcome` of `Completed` / `Demoted(n)` / `Failed(_)`; delivery is
+`rumoca_core::FrameObserver`, the contract every other traced phase here already uses.
+
+**The `Failed` variant is what makes it a diagnostic rather than a report** — it is emitted before
+the error propagates, so a funnel that stops has a location instead of one error at the top naming
+none of ten steps.
+
+**And it justified itself on the first run.** The test that pins the step order was drafted from
+HRW's mirrored copy of the funnel and omitted `scalarize_equations`, which the real funnel runs
+first under default options. **HRW's mirror has never had that step.** The drift this API exists to
+remove was already there, and one run of the API found it.
+
+Commit `cc821f07`, `crates/` only, so the cherry-pick is clean.
+
+That would let HRW **delete its mirrored copy**, which is the outcome worth having on both sides:
+one fewer place for the order to drift, and a compiler that can explain its own index reduction to
+anyone, not only to HRW.
+
+**Unverified:** whether a hook is better placed on the funnel as a whole or on each
+`dae_prepare` step. That is a maintainer's call about the crate's shape, and the reason this is
+written as a request rather than a patch.
+
+## Index reduction does not reduce the canonical index-3 DAE
+
+**Reproduced 2026-08-18** with `hrw/specimens/CartesianPendulum.mo` — a point mass on a rigid rod
+in Cartesian coordinates, the example every treatment of index reduction opens with.
+
+### Reproduction
+
+```modelica
+der(x) = vx;
+der(y) = vy;
+m * der(vx) = -lambda * x;
+m * der(vy) = -lambda * y - m * g;
+x ^ 2 + y ^ 2 = L ^ 2;
+```
+
+Five equations, five unknowns (`x`, `y`, `vx`, `vy`, `lambda`).
+
+### Expected vs actual
+
+**Expected:** the constraint is differentiated twice — introducing first velocities, then
+accelerations, at which point `lambda` enters it and the system becomes index-1 and solvable.
+
+**Actual:** every step of the preparation funnel reports zero. States stay at 4, nothing is
+demoted, `differentiated_rows` is empty, and the system is left structurally singular:
+
+```text
+structurally singular system: 4 matched out of 5 equations and 5 unknowns;
+unmatched equations: f_x[4]; unmatched unknowns: lambda
+```
+
+Simulation then fails as an unreduced high-index system does, with a step-size message rather
+than an index one:
+
+```text
+BDF step: ODE solver error: Step size is too small at time = 0.00004774281227423659
+```
+
+### The reading, and it is a design observation rather than a defect claim
+
+**Rumoca's index reduction appears to be a set of pattern-based demotions rather than general
+Pantelides.** The step names say so: `demote_exact_alias_component_states`,
+`demote_direct_assigned_states`, `reduce_constrained_dummy_derivatives`,
+`index_reduce_missing_state_derivatives`. Each targets a shape.
+
+The pendulum matches none of them — all four states *have* derivative rows, and the constraint is
+nonlinear in two states at once, so no substitution removes it.
+
+**Every constraint in our 24-specimen corpus other than this one is an alias**, which is why this
+went unnoticed: `Drivetrain` reduces 9 states to 3 with 6 differentiations and never needs the
+general algorithm.
+
+**Unverified, and it is the question for a maintainer:** whether general index reduction for
+nonlinear constraints is intended and missing, intended and deferred, or deliberately out of
+scope. All three are reasonable answers and the diagnostics would differ for each — at minimum, a
+model that cannot be reduced could say so where it is diagnosed, rather than surfacing as a
+step-size failure four decimal places into the simulation.
+
+**ADJUDICATED AGAINST SYSTEM MODELER 2026-08-22 — outcome 1, the reading holds.** It simulates
+cleanly, and it reduces the system to **two** states by dynamic state selection. The reading above
+is no longer an inference; see *The adjudication* below.
+
+### How to adjudicate it — for whichever machine has System Modeler
+
+**Doug, 2026-08-18:** *"I don't have System Modeler on this machine. When I get home I will use
+my other machine to test the pendulum specimen with System Modeler."* Written here rather than
+left in a conversation, because **the memory store does not travel between machines** and this
+file does.
+
+1. Open `hrw/specimens/CartesianPendulum.mo`. It is portable Modelica with no Wolfram
+   extensions and no MSL dependency, so it should load as-is.
+2. **Simulate it**, 0 → 10 s, default solver. That is the whole test.
+
+**What each outcome means, decided in advance so the result is not read to taste:**
+
+| System Modeler | what it establishes |
+|---|---|
+| **simulates cleanly** | An independent implementation reduces this system. Rumoca's index reduction is then **narrower than a mainstream compiler's**, and the upstream entry above becomes a well-evidenced gap rather than an open question. This is the expected outcome — it is the textbook example. |
+| **fails the same way** | The reading is wrong, or the model is. Check the model first: a bad initial condition (`x=1, y=0` must satisfy `x²+y²=L²`, and it does at `L=1`) would fail in both. **This outcome retires the entry** rather than weakening it. |
+| **rejects it at compile time** | The most interesting answer. Read the diagnostic — a compiler that *declines* a model it cannot reduce, and says so, is the behaviour the entry above argues Rumoca should have. |
+
+**Record the result here**, with the version of System Modeler, and update
+[`specimen-notebook/CartesianPendulum/purpose.md`](specimen-notebook/CartesianPendulum/purpose.md),
+whose Provenance section currently says the round-trip has not been done. **`the-oracle.md` is the
+lab for this gesture** and its stop 3 is the worked example of asking the other implementation.
+
+**And it settles charter §4.3 for this specimen**, which requires *"compiles and runs equivalently
+in both"* — a bar `CartesianPendulum` currently fails on the Rumoca side, deliberately.
+
+### The adjudication — run 2026-08-22. OUTCOME 1: it simulates cleanly
+
+**Tool:** Wolfram System Modeler **15.0**, via `WSMLink` *"15.0.0 (build ID 7, installer build ID
+2) created on Wed 6 May 2026 07:49:21"*, driven from Wolfram Language 15.0.0 for Microsoft Windows
+(64-bit), 19 May 2026. Three System Modeler versions are installed on this machine (14.2, 14.3,
+15.0); **the build directory confirms 15.0 is the one that ran.**
+
+```wl
+Import["…/hrw/specimens/CartesianPendulum.mo", "MO"]
+SystemModelSimulate["CartesianPendulum", {0, 10}]
+```
+
+**It loaded as-is** — no edit, no MSL, no Wolfram extension — **and simulated the full interval.**
+`ExitCode` 0, `SimulationInterval` `{0., 10.}`, 2001 output points, no warning of any kind.
+
+**AND IT REDUCED THE SYSTEM TO TWO STATES, WHICH IS THE PART WORTH MORE THAN "IT RAN".** With
+`SystemModelSimulate::ddss` and `::dinit` enabled:
+
+```text
+At time 0. s: Dynamic state set no. 0 selection at start {vy}.
+At time 0. s: Dynamic state set no. 1 selection at start {y}.
+At time 0. s: Initialization of states:
+dollar_dynState.set0.x[1] = 0
+dollar_dynState.set1.x[1] = 0
+```
+
+**Two states, chosen at runtime, against Rumoca's four.** A planar pendulum on a rigid rod has one
+degree of freedom, so two states is the right answer and four is the unreduced count. The
+`$dynState` sets are the **dummy-derivative method with dynamic state selection** — the
+differentiated constraints are kept and, at each point, two of the four candidates are demoted to
+algebraic, the choice switching because no single pair stays non-singular through a full swing.
+
+**The physics checks out, so "it produced numbers" is not the whole claim:**
+
+| check | value |
+|---|---|
+| `lambda` peak | **29.4293** at *t* = 1.775 s, where (*x*, *y*) = (−0.0039, −0.99999) — the bottom |
+| analytic rod tension there, *m*(*g* + *v*²/*L*) | **29.43** |
+| constraint drift, max &#124;*x*² + *y*² − *L*²&#124; over 0–10 s | **1.23 × 10⁻⁴** at tolerance 1e-6 |
+
+The peak matches to four significant figures at the point the pendulum is lowest, which is where
+an independent hand calculation is available. The constraint drift is small and is the residual
+one expects from integrating a *differentiated* constraint rather than enforcing the original.
+
+### What this establishes, and what it does not
+
+**Establishes** — the outcome-1 row above, without qualification: an independent, mainstream
+implementation reduces this system, so **Rumoca's index reduction is narrower than a mainstream
+compiler's**, and the entry above is a well-evidenced gap rather than an open reading. The
+corroborating detail is stronger than the bare outcome asked for: the oracle does not merely
+succeed, it demotes exactly the two states the physics says are redundant.
+
+**Does not establish**, and these are the over-claims to avoid:
+
+- **Not that Rumoca *should* do this.** Whether general nonlinear-constraint reduction is intended
+  and missing, intended and deferred, or deliberately out of scope remains the maintainers'
+  question — which is the whole point of filing this as a question. The adjudication removes the
+  *"maybe the model is wrong"* branch, nothing more.
+- **Not that System Modeler runs Pantelides.** `$dynState` names the **dummy-derivative** method,
+  which is what consumes a differentiated system; the messages do **not** name the algorithm that
+  decided *what* to differentiate. Do not cite this run as evidence about Pantelides specifically.
+- **Nothing about Rumoca's private sim path or CasADi target**, which is `docs/ideas.md` #5's
+  separate un-park condition (b).
+- **The trace records two events, at 0 s and 10 s** — the interval endpoints. So the output does
+  **not** show a mid-run state-set switch, even though the selection mechanism is dynamic. Whether
+  switching is reported as an event was not determined.
+
+**Charter §4.3 is now settled for this specimen and still fails**: it runs in one toolchain and
+not the other, which is the disagreement the specimen was authored to hold.
+
+## PERFORMANCE QUESTIONS -- not defect claims
+
+**These two are different in kind from everything above, and the distinction is deliberate.**
+Nothing here produces a wrong answer. Both are cases where Rumoca does far more work than the
+input requires, and in both the current behaviour has an obvious correctness motivation -- so
+each is written as a **question to a maintainer**, not as a bug report. `upstream-strategy.md`
+calls this shape a zero-cost gift: a reproduction in a few lines, a measurement, and no demand.
+
+**Both were measured 2026-08-21 while working `docs/ideas.md` #48**, where 92 % of HRW's test
+gate turned out to be 72 compiles and 10 MSL loads.
+
+---
+
+## P1. A workspace-document change invalidates resolution of durable external source roots
+
+**The question:** should adding, changing or removing one workspace document discard the
+resolved tree of a `DurableExternal` source root that did not change?
+
+**Why it matters here:** it is the single largest cost in HRW's test suite. A two-equation
+specimen that references nothing from the MSL costs **3.5 s** to compile in a session with the
+MSL loaded, and **0.03 s** in a session with no libraries -- a factor of ~100, none of which is
+the model's own work.
+
+### Reproduction
+
+Six calls against one `Session` with the MSL loaded as a durable external source root:
+
+| call | time | session state |
+|---|---:|---|
+| `strict_compile_resolved()` #1 | 1.24 s | cold |
+| #2, #3 | **0.00 s** | nothing changed |
+| #4 | 1.61 s | after adding one workspace document |
+| #5 | **0.00 s** | unchanged again |
+| #6 | **1.59 s** | after `remove_document` + `update_document` of **byte-identical** text |
+
+### Expected
+
+A change to a workspace document invalidates that document, and whatever depends on it. The
+MSL's 38,855 defs do not depend on it.
+
+### Actual
+
+The whole resolved tree is rebuilt. `invalidate_resolved_state` calls
+`ResolvedArtifactState::clear()`, which clears `builds` and `dependency_fingerprints` outright
+(`crates/rumoca-compile/src/session.rs`). The per-source-set `source_set_aggregates` that
+*do* survive carry only `model_names` and `dependency_fingerprints` -- not the resolved tree --
+so `restore_resolved_inputs_from_source_root_aggregates` cannot avoid the rebuild.
+
+**Unverified:** whether a durable external root's resolved tree *can* be kept across a
+workspace mutation depends on whether workspace documents can shadow or extend library classes.
+If they can, the current behaviour may be the only correct one, and that is exactly what the
+question is asking.
+
+### Impact on consumers
+
+Any LSP-shaped consumer -- edit a file, re-resolve -- pays a full library resolution per
+keystroke-batch. HRW pays it 72 times per test run.
+
+---
+
+## P2. An artifact-cache miss costs ~21 s of pruning regardless of the input
+
+**The question:** should `maybe_prune_cache_after_write` run on every cache miss, synchronously,
+when its cost is a function of the whole cache rather than of what was just written?
+
+### Reproduction
+
+Parse a **five-line** source root that the artifact cache has not seen, three times, each with
+fresh content, and read `ParsedSourceRoot::timing`:
+
+| pass | `parse_source_root_with_cache` wall | of which the parse | cache status |
+|---|---:|---:|---|
+| 1 | **58,243 ms** | 6 ms | Miss |
+| 2 | **21,635 ms** | 2 ms | Miss |
+| 3 | **21,245 ms** | 2 ms | Miss |
+
+### Expected
+
+Parsing a five-line model costs about as long as parsing a five-line model.
+
+### Actual
+
+~21 s, about **3,500x** the work being cached. None of it appears in `SourceRootCacheTiming` --
+`collect_files_ms`, `hash_inputs_ms`, `cache_deserialize_ms`, `parse_files_ms`,
+`validate_layout_ms` and `cache_write_ms` together account for a handful of milliseconds. The
+only uninstrumented step on a miss is `maybe_prune_cache_after_write`, which runs and prunes
+the entire shared cache.
+
+**Unverified:** that the prune is the whole 21 s. It is the only uninstrumented step on the miss
+path, but the cost was measured by subtraction, not by timing the prune directly. **Time it
+before filing.**
+
+### Why this is surprising
+
+The cost is invisible in the timing struct the same call returns, so a consumer profiling with
+Rumoca's own instrumentation sees a 2 ms parse and a 21 s wall clock and has nothing to attribute
+it to. Adding a `prune_ms` field would make it self-describing whether or not the prune is
+changed.
+
+### Impact on consumers
+
+It makes **cache misses the dominant cost of a cold build**, and it falls hardest on the case a
+cache should serve best: many small roots. In HRW it made a single must-fire test cost 39 s, which
+is how it was found.
+
+---
+
+## 5. An unconnected flow variable at root scope gets `f = 0` **twice**
+
+**Found 2026-08-31**, while auditing which claims in `connect-expansion.md` had no stop to
+test them. **Not adjudicated** — Doug: *"I don't know enough yet to make a call on that."*
+Recorded now so the investigation does not have to be redone; **do not file before an
+independent implementation has ruled**, per the note at the foot of this file.
+
+### Reproduction
+
+`hrw/specimens/IncompatibleConnect.mo`, which already exists for issue 2. `PinA` has `v` and a
+flow `i`; `PinB` has only `v`; one `connect(a, b)`.
+
+### Expected
+
+MLS §9.2 gives a flow variable in no connection set the equation `f = 0`. `a.i` is in no
+connection set, so it should get **one** such equation.
+
+### Actual — read from the committed trace, not inferred
+
+`docs/specimen-notebook/IncompatibleConnect/trace/flatten.json` holds **three** equations for a
+model with three variables:
+
+```text
+{"Connection":      {"lhs": "a.v", "rhs": "b.v"}}
+{"UnconnectedFlow": {"variable": "a.i"}}
+{"UnconnectedFlow": {"variable": "a.i"}}      <- the same equation, twice
+```
+
+with `connected` true for `a.v` and `b.v`, false for `a.i`. That trace is generated by
+`cargo run -p hrw --example gen_trace -- IncompatibleConnect` and is correct by construction.
+
+### The mechanism — suspected, and the reading is UNVERIFIED
+
+Two passes in `crates/rumoca-phase-flatten/src/connections/equation_generation.rs` both emit
+`EquationOrigin::UnconnectedFlow`, and neither knows about the other:
+
+- `generate_unconnected_flow_equations` emits for every variable with `flow && !connected`.
+- `generate_external_unconnected_flow_equations` emits for whatever
+  `find_unconnected_interface_flows` returns. That helper dedups **only against itself**
+  (`if result.contains_key(var_name) { continue; }`), and at root scope it cannot exclude
+  anything: `connected_externally` is `!scope.is_empty() && …`, so an empty scope forces
+  `false`. Its comment states the intent — *"Root scope has no parent → always needs flow=0
+  for standalone checking."*
+
+So a **root-scope** flow variable that is unconnected satisfies both passes. **What is not
+established** is whether the second pass is meant to skip variables the first already handled,
+or whether the two are meant to cover disjoint sets and the root-scope clause is too broad.
+Either reading fits the code; only a maintainer or an oracle can say which was intended.
+
+### Why it matters — and it changes what issue 2 is about
+
+`IncompatibleConnect` fails at **structural analysis as "singular"**, and issue 2 attributes
+that to `validate_type_compatibility` not firing. That is the *upstream* cause, but the
+**proximate** one is this duplicate: three equations over three unknowns where `a.i` is
+determined twice and `b.v` only through `a.v`. **A fixed type check would make the model fail
+earlier and hide this**, so the two are worth separating before either is filed.
+
+### Impact
+
+Bounded and narrow, so far as this corpus shows. It needs an unconnected flow variable on a
+**root-scope** connector — a well-formed model usually connects them, and `RcCircuit` has
+none, which is why its `unconnected flow` step reports 0 equations added. It is a
+**structural over-determination**, so where it fires it is a wrong answer rather than a slow
+one.
+
+### What is needed before filing
+
+1. **An independent adjudication** — System Modeler on the same source, per `docs/ideas.md`
+   #43. Issue 2's strength is that an oracle rejected the model; this entry has no such
+   backing yet.
+2. **A specimen that isolates it**, without issue 2's type mismatch on top — a model with one
+   unconnected root-scope flow variable and nothing else wrong. `IncompatibleConnect` cannot
+   be that specimen: it is marked DO NOT FIX because its value is the type-check transition.
+
+---
+
+## E1. **egui** — nested `CollapsingHeader` costs O(2^depth) memory in debug builds
+
+**Project:** egui · **File with:** [emilk/egui](https://github.com/emilk/egui) · **Baseline:**
+`0.35.0` · **Status: NOT FILED.** Doug's call, 2026-09-02.
+
+**Found by HRW aborting.** Doug clicked the Parse stage tab while following a variable; HRW
+committed 94 GB, exhausted the machine's commit limit and called `abort()`. This is the only
+entry here found by ordinary use rather than by auditing failure paths.
+
+### Reproduction
+
+Nest `CollapsingHeader`s and render one frame, in a **debug** build:
+
+```rust
+fn nest(ui: &mut egui::Ui, depth: usize) {
+    if depth == 0 {
+        ui.label("leaf");
+        return;
+    }
+    egui::CollapsingHeader::new(format!("h{depth}"))
+        .default_open(true)
+        .show(ui, |ui| nest(ui, depth - 1));
+}
+```
+
+No HRW involved. Measured through `egui_kittest`'s `Harness`; the same recursion in an
+`eframe` app goes down the identical path, though that host was not the one run.
+
+### Expected
+
+Memory proportional to the number of widgets, as for any other container.
+
+### Actual
+
+Peak bytes for one frame, by nesting depth — and the same depths through `push_id` and
+`vertical` for contrast:
+
+| depth | `CollapsingHeader` | `push_id` | `vertical` |
+|---|---|---|---|
+| 10 | 5,303,072 | 665,551 | 665,339 |
+| 14 | 79,165,477 | 675,993 | 676,615 |
+| 18 | 1,260,553,616 | 690,563 | 690,225 |
+
+A factor of ~16 per 4 levels: **2× per level.** The other two containers are flat.
+
+Release builds are unaffected — the mechanism is `#[cfg(debug_assertions)]`.
+
+### Mechanism — two ingredients, neither wrong alone
+
+**1.** `id_source::insert_child`, in `egui-0.35.0/src/id.rs`, stores each `Id`'s description by
+embedding its parent's **entire** string:
+
+```rust
+let formatted = format!("{parent_repr}.with({salt:?})");
+```
+
+With a short salt this is linear: measured at +10 bytes per level for a `&str` salt.
+
+**2.** `Id`'s `Debug` does not print a number — it returns that id's whole stored description.
+So when an `Id` is used *as a salt*, both halves of that `format!` are full-length strings, and
+`CollapsingState::show_body_indented`, in
+`egui-0.35.0/src/containers/collapsing_header.rs`, does exactly that:
+
+```rust
+let id = self.id;
+self.show_body_unindented(ui, |ui| {
+    ui.indent(id, |ui| {          // `Ui::indent` takes `impl AsIdSalt`; `Id` satisfies it
+```
+
+So `body_repr = parent_repr + ".with(" + header_id_repr + ")"`, and `header_id_repr` is itself
+about `parent_repr`. Hence `n → 2n + 7`.
+
+**The `7` is not a fitted constant** — it is `len(".with()")`. Measured repr lengths for
+`id.with(id)` are 37, 81, 169, 345, 697, 1401, and `2n + 7` reproduces the sequence exactly.
+
+### Impact
+
+Any tree or inspector view — file browsers, scene graphs, JSON viewers — in the build type
+where all development happens. The failure is hostile to diagnose: the stack points at
+`format!` inside egui internals, and the allocation that finally fails is a small one, because
+the memory is already gone. HRW's stage tree nests one level per JSON level; at depth 24 the
+extrapolation is ~266 GB.
+
+### Suggested fix
+
+Store the parent's `Id` (8 bytes) rather than its rendered string, and resolve the chain
+lazily when something actually formats it. Nobody reads these strings unless a warning fires,
+so the readable output need not change at all.
+
+### What is inferred rather than proven
+
+**The measurements are all against `0.35.0`.** On 2026-09-02 both ingredients were confirmed
+still present on `master` by reading the source, and no matching issue was found in the
+tracker — but **the reproducer has not been run against `master`**, so "still broken today" is
+read, not executed. Do that before filing.
+
+### Workaround in HRW
+
+`[profile.dev.package.egui] debug-assertions = false` in the workspace `Cargo.toml`, which
+compiles the diagnostic out for that one package: depth 24 drops from ~266 GB to 954,537 bytes
+and the cost becomes flat in depth. Guarded by
+`doc_citations::egui_debug_id_diagnostics_stay_off_in_dev_builds`; the rationale is in
+[`DECISIONS.md`](../DECISIONS.md), 2026-09-02.
+
+---
+
+## E2. **egui** — a *secondary* click collapses a text selection, so no context menu can act on it
+
+**Project:** egui · **File with:** [emilk/egui](https://github.com/emilk/egui) · **Baseline:**
+`0.35.0`, as pinned by `hrw/Cargo.toml` · **Status: NOT FILED.** Doug's call, 2026-09-22:
+*"For now, let's not act on E2."*
+
+**Written ready, and held deliberately.** HRW works around it — the text is taken when the
+selection is made — so nothing here is blocked. The entry stays current because **the
+workaround's cost is the defect's cost**: a clipboard write per completed drag-selection, which
+is the price of not being able to read a selection at the moment of the gesture. If that ever
+starts to bite, this is the reason why.
+
+**Found by building the feature it blocks.** HRW wanted the ordinary desktop gesture: select
+text, right-click it, choose an item that acts on the selection. It cannot be built, because the
+right-click destroys the selection before any handler runs.
+
+### The defect
+
+`TextCursorState::pointer_interaction`, in `egui/src/text_selection/text_cursor_state.rs`:
+
+```rust
+} else if response.sense.senses_drag() {
+    if response.hovered() && ui.input(|i| i.pointer.any_pressed()) {
+        // The start of a drag (or a click).
+        …
+        self.set_char_range(Some(CCursorRange::one(cursor_at_pointer)));
+```
+
+**`any_pressed()` is true for the secondary button.** A right-click on a hovered selectable label
+therefore takes the "start of a drag" branch and collapses the range to a caret at the pointer.
+
+The comment says *"the start of a drag (or a click)"*, and a text drag is a **primary**-button
+gesture — so the predicate appears to mean `primary_pressed()` and to have been written before
+secondary clicks mattered here.
+
+### Why no workaround inside the frame exists
+
+In `label_text_selection.rs`, for each galley:
+
+| line | what runs |
+|---|---|
+| 562 | `cursor_state.pointer_interaction(…)` — **the collapse** |
+| 575 | `if got_copy_event(ui.ctx()) { self.copy_text(…) }` |
+
+The collapse precedes the read, so pushing `Event::Copy` in the same frame as the right-click
+still copies the caret. There is no later moment either: the selection is already gone.
+
+`LabelSelectionState` exposes only `has_selection()` and `clear_selection()`, and **`has_selection()`
+returns `true` for a caret** — so an application cannot even detect that this has happened.
+
+### Reproduction
+
+Render a selectable `Label`. Drag across it. Right-click on the selection. Push `Event::Copy`.
+The copy yields one character rather than the selected text.
+
+**Measured in HRW**, 2026-09-22, through its own diagnostics: `point-copy-landed | 1 chars`.
+
+### Expected
+
+A secondary press leaves the selection intact, as it does in every desktop toolkit and browser —
+which is what makes "right-click a selection to act on it" a universal gesture. Doug: *"None of
+[my] daily-use apps collapse a text selection when I right-click on a selection to cause a
+context menu to appear."*
+
+### Suggested fix
+
+Narrow the predicate to the button that actually starts a text drag:
+
+```rust
+if response.hovered() && ui.input(|i| i.pointer.button_pressed(PointerButton::Primary)) {
+```
+
+**Not verified against egui's test suite** — the risk is any code depending on a middle-click or
+secondary press moving the caret, which this would change.
+
+### What HRW does instead
+
+Captures the text **when the selection is made** — a `Copy` pushed at the end of the drag that
+produced it — and holds it until the reader points. The right-click's collapse becomes harmless
+because nothing needs to read the selection at that moment.
+
+**It costs a clipboard write per completed drag-selection**, which is the price of the defect:
+the natural design touches the clipboard only when the reader actually points. Doug accepted the
+cost knowingly. A caret click does not copy, and a primary press invalidates the held text, so
+what HRW holds cannot silently go stale.
+
+
+## A state's initial value comes from the derivative-zero solution, not from its `start`
+
+**Found 2026-09-04**, from Doug's report that no fixture specimen produces a simulation
+plot worth looking at. **Reproduced on two purpose-built models and correlated across the
+whole 25-specimen corpus.** Not filed.
+
+> ## ⟶ DO NOT FILE — FIXED ON THE 0.10.0 BRANCH, MEASURED 2026-09-19
+>
+> **Built `msl-trace-parity-50` (commit `853791b`) and ran the reproducers. The flat-lining is
+> gone.** Same files, two compilers, no edits:
+>
+> | model | 0.9.20 | **0.10.0** | System Modeler 15.0 | analytic |
+> |---|---|---|---|---|
+> | `ConnRc` — `C.v(1)` | **5, flat** | **4.999773** | 4.999773000 | 4.999773000 |
+> | `ConnRc` — series that move | **0 of 16** | **10 of 16** | — | — |
+> | `RcCircuit` — `C.v(1)` | **5, flat** | **4.999773** | 4.999773000 | 4.999773000 |
+> | `RcCircuit` — series that move | 0 of 24 | **15 of 24** | — | — |
+> | `BareRc` — `C.v(1)` | 4.9997713 (already right) | 4.999773 | — | 4.999773 |
+>
+> `RcCircuit`'s `R.LossPower` also goes `0.25 → 5.2e-10` on 0.10.0, and `0.25 = 0.05^2 * 100`
+> is exactly `i^2 R` at `t = 0`. The constants that remain constant are the ones that should:
+> the 5 V source, ground, and the zero-current node.
+>
+> **So the entry documents a real 0.9.20 defect that upstream has already repaired.** Keep it as
+> the record of what was wrong and how it was found; **do not send it to a maintainer**, who
+> would be asked to look at code that no longer exists. Its remaining value is (a) the account,
+> and (b) `ConnRc` as a regression fixture for after the rebase.
+>
+> **The mechanism below stays withdrawn.** Being fixed upstream does not retroactively make the
+> old causal story true, and the withdrawal is what stopped this being filed with one.
+
+The defect shows from two sides: without a `fixed` initial condition a state silently takes
+the value that makes its derivative zero, and *with* one, initialization fails to converge —
+which is what you would expect if the derivative-zero condition were already occupying the
+equation the initial condition needs. **That last clause is a plausible reading, not a
+measured one**, and it was the seed of the over-claim corrected below.
+
+### Reproduction A — the start value is discarded
+
+```modelica
+model RcStartProbe
+  Modelica.Electrical.Analog.Sources.ConstantVoltage src(V = 5);
+  Modelica.Electrical.Analog.Basic.Resistor R(R = 100);
+  Modelica.Electrical.Analog.Basic.Capacitor C(C = 1e-3, v(start = 3));
+  Modelica.Electrical.Analog.Basic.Ground gnd;
+equation
+  connect(src.p, R.p); connect(R.n, C.p); connect(C.n, src.n); connect(src.n, gnd.p);
+  annotation(experiment(StartTime = 0, StopTime = 1, Interval = 0.001, Tolerance = 1e-6));
+end RcStartProbe;
+```
+
+**Expected:** `C.v` rises from 3 toward 5 with `tau = RC = 0.1 s`.
+
+**Actual:** `C.v` is 5 at the first output sample and constant for the whole run.
+`R.v = 0`, `R.i = 0`, `C.i = 0` — the circuit sits at its DC steady state.
+
+**The start value is not lost on the way in.** It survives to the solve model:
+
+| where | `C.v` |
+|---|---|
+| `dae.metadata.variable_starts["C.v"]` | `3` |
+| `SolveModel::initial_y[0]` (`visible_names[0]` is `C.v`) | `3.0` |
+| first output sample | **`5.0`** |
+
+`initial_y`'s own doc calls itself *"the shortest check that the model's declared initial
+conditions survived lowering"*. They survive it. The value changes between there and the
+first sample, i.e. in the initialization solve.
+
+### Reproduction B — supplying the initial condition makes initialization fail
+
+The same model with the one attribute added:
+
+```modelica
+  Modelica.Electrical.Analog.Basic.Capacitor C(C = 1e-3, v(start = 3, fixed = true));
+```
+
+**The front end handles this correctly, all the way to the DAE:**
+
+- `dae.x["C.v"].fixed` is `true`
+- `dae.initial_equations` goes from **0 entries to 1**, and that entry is `C.v = 3` with
+  `origin: "fixed start initialization for C.v"`
+
+**Expected:** the same charging curve, now unambiguously starting at 3.
+
+**Actual:** the simulation fails outright.
+
+```text
+solve-IR evaluation failed: initial variable projection plan did not converge:
+max selected residual row=16 original_row=20 value=2.500000e-1 norm=2.500000e-1
+```
+
+**This is the load-bearing observation.** Adding a correct, non-redundant initial condition
+to a well-posed first-order model should make initialization *easier*, not unsolvable. A
+system that becomes inconsistent when one state is pinned is a system in which that state
+was already pinned by something else.
+
+### The corpus correlation
+
+Every state in all 25 specimens has `fixed = null`, so none of them supplies an initial
+condition and all of them are exposed to whatever the default is. Sorting them by whether
+`der(x) = 0` admits a solution predicts the measured motion in **11 of 11** traced cases:
+
+| `der(x) = 0` solvable? | specimens | max state swing |
+|---|---|---|
+| yes | `RcCircuit`, `CapacitorLoop`, `OverInitRc` | `0` |
+| yes | `Drivetrain`, `GearWithBrake` | `0` |
+| yes | `LoopWithInertia` | `5e-9` |
+| no — needs `g = 0` | `BouncingBall` | `7.93` |
+| no — constant torque | `RotationalInertia`, `SingleInertia` | `2.0` |
+| no — `i = V/R` and `k*i = 0` conflict | `BenchActuator`, `MotorWithBrake` | `42.2` |
+
+`Drivetrain` is the vivid case: its nine states are frozen at values that satisfy every
+gear ratio exactly (`rotor.phi = 2400`, `shaft.phi = 2400/5 = 480`,
+`load.s = 480/200 = 2.4`) and are physically absurd. `L.i = 24` is `V/R = 12/0.5`, the
+stalled-motor current — which is what `L*der(i) = v` gives when `der(i)` is set to zero.
+`BenchActuator`'s `L.i = 12` is `V/R = 12/1.0`, the same arithmetic.
+
+**The specimens that move are the ones the steady state could not be found for.** That is
+the correlation the mechanism below is inferred from.
+
+**BUT "COULD NOT BE FOUND" IS THE WRONG VERB, and `BouncingBall` shows why** *(corrected
+2026-09-04, when Doug asked why that one simulates correctly)*. The reading above implies the
+solver *attempted* a steady state and failed, falling back near the guess. It does not attempt
+one. The offending equation is **never in the system**:
+
+`BouncingBall` has two equations and its initialization residual has exactly **one row**, which
+disassembles to `Const 0.0 - y[1]` — that is `der(h) - v` with the derivative zeroed, so
+initialization solves `v = 0`. **The model declares `v(start = 0.0)`, so the defect's answer and
+the declared start are the same number.** It is not immune; it collides harmlessly.
+
+Its other two variables escape for reasons that are equally accidental:
+
+- **`der(v) = -g` is dropped from the residual entirely**, which is why one row covers two
+  equations. `initial_residual_equations` keeps a state-derivative row only when one side is a
+  bare `VarRef`, and `-g` is a negation. Had it been kept, the row would read `0 - (-g)` and
+  demand `g = 0` — a hard failure. **The filter is what stands between this defect and a broken
+  build, and it selects on syntax.**
+- **`h` is in no block's unknowns**, so it is never solved and keeps its seeded start.
+
+**So the rule is sharper than the correlation: a model survives when every state the
+initialization happens to solve for already equals what zeroing the derivatives assigns it.**
+`BouncingBall` satisfies that by one coincidence, in one variable.
+
+**Falsifiable, and cheap** — `ThrownBall` is `BouncingBall` with `v(start = -5.0)`. The
+prediction was written down before the run: honour the throw and it bounces at 0.171 s; reset
+`v` to zero and the ball is merely dropped and bounces at 0.452 s.
+
+**CONFIRMED 2026-09-04.** Rumoca drops it.
+
+| | System Modeler 15.0 | Rumoca 0.9.20 |
+|---|---|---|
+| `v(0)` | **-5** (as declared) | **0** |
+| peak `|v|` before first impact | 6.668 | **4.395** |
+| what that speed means | thrown: `sqrt(25 + 2*9.81)` = 6.680 | dropped: `sqrt(2*9.81)` = **4.429** |
+
+**This is the most alarming shape the defect takes, and it is why the entry leads with it.**
+`RcCircuit` at least looks obviously wrong — a flat line. `ThrownBall` exits 0 and draws a
+perfectly plausible bouncing ball, with the right restitution and a smooth trajectory. Only the
+physics is wrong, and nothing on screen says so. **A declared, non-default, non-steady-state
+initial condition was discarded in silence on a model whose sibling appears to work.**
+
+**Same symptom class as issue #343** (*"exit 0, plausible CSV"*, filed 2026-08-19 by YahorL,
+where for-loop `der()` equations freeze states past index 2). **Whether they share a root is
+UNVERIFIED** — that one is an array/indexing path and this one is the initialization residual —
+but both end with a derivative reading zero and a believable-looking result. Worth saying in a
+report only as an observation, not a claim.
+
+### LOCATED 2026-09-04 — one instruction, and it is no longer a suspicion
+
+`BuiltinFunction::Der` lowers to the literal `0.0`, unconditionally and with no
+initial-mode guard, in `crates/rumoca-phase-solve/src/lower/scalar_ops.rs`:
+
+```rust
+rumoca_core::BuiltinFunction::Der => self.emit_const_at(0.0, span),
+```
+
+The continuous system never reaches that arm — `derivative_rhs.rs` lowers derivatives as
+the outputs being computed — but **the initialization residual does**. Disassembling
+`RcCircuit`'s initialization residual row 0, which targets `C.i`:
+
+```text
+LoadY  y[3] (C.i) -> r0
+LoadP  p[5] (C.C) -> r1
+Const  0.0        -> r2      <-- this is der(C.v)
+Binary Mul r1, r2 -> r3
+Binary Sub r0, r3 -> r4      <-- C.i - C.C*0.0
+StoreOutput r4
+```
+
+That row is `C.i = 0`. Zero current forces `R.v = 0`, hence `C.p.v = 5`, hence `C.v = 5`.
+An opcode census over the entire initialization residual finds **no derivative load of any
+kind** — only `LoadY`, `LoadP` and `Const` — so the initialization problem is the DAE with
+every derivative term replaced by zero. It is square at 23x23 *only* because `der(C.v)` has
+been eliminated, and the state is one of those 23 unknowns.
+
+### THE MECHANISM IS NOT ESTABLISHED — corrected 2026-09-19, and this is the honest limit
+
+**This section previously ended *"...with nothing pinning it to `start`"*, offered as the
+cause.** A counter-example measured 2026-09-12 and written up a week later shows that cannot
+be the discriminator, so it is withdrawn rather than left standing.
+
+`BareRc` is the same physics with **no library at all** — two equations, two variables:
+
+```modelica
+model BareRc
+  parameter Real Vs = 5; parameter Real Rr = 100; parameter Real Cc = 1e-3;
+  Real v(start = 0); Real i;
+equation
+  i = (Vs - v) / Rr;
+  Cc * der(v) = i;
+end BareRc;
+```
+
+**Rumoca 0.9.20 simulates it correctly**: `v(0) = 0`, `v(1) = 4.9997713` against the analytic
+`5(1 - e^{-10}) = 4.999773`, and `i(0) = 0.05 = Vs/Rr`. Re-verified 2026-09-19.
+
+| | `BareRc` | `RcCircuit` |
+|---|---|---|
+| `der` replaced by `Const 0.0` in the residual | **yes** (row 0 is `Cc*0.0 - i`) | yes |
+| plan solves the state as an unknown | **yes** | yes |
+| `initial_y[0]` (the seed) | 0.0 | 0.0 |
+| the derivative-zero system's own solution | **`v = 5`** — also wrong | `C.v = 5` |
+| what the run reports | **`v(0) = 0`, the seed** | `C.v(0) = 5`, the solve |
+
+**Every condition the old text named as the cause holds in the model that works.** What
+differs is only whether the run *applies* the initialization solve: `RcCircuit` takes it,
+`BareRc` keeps its seeded value and is therefore right **by accident** — the same shape as
+`BouncingBall` above, and the second accident of its kind in this entry.
+
+**So what is established is narrower than a mechanism, and it is still worth filing:**
+
+- the substitution exists, is unconditional, and reaches the initialization residual — read
+  from the disassembly of **both** models;
+- the derivative-zero system has the **wrong** solution in both;
+- several models report that wrong solution, and a reference implementation disagrees with
+  every one of them;
+- supplying `fixed = true` makes initialization fail outright.
+
+**What is NOT established: why the solve is applied in one model and not the other.** That is
+the next thing to measure, and until it is, this entry should not assert a cause.
+<!-- unbuilt: worker::tests::bare_rc_and_rc_circuit_differ_only_in_projection -->
+
+### The trigger is CONNECTORS, not the MSL — isolated 2026-09-19
+
+`BareRc` differs from `RcCircuit` in two ways at once, so it could not say which mattered.
+**`ConnRc` changes one of them**: the same topology with hand-written `Pin`, `Res`, `Cap`,
+`Src` and `Gnd`, 51 lines, and **no library whatsoever**.
+
+```modelica
+connector Pin
+  Real v;
+  flow Real i;
+end Pin;
+-- Res / Cap / Src / Gnd as usual, then:
+model ConnRc
+  Src src(V = 5); Res R(R = 100); Cap C(C = 1e-3); Gnd gnd;
+equation
+  connect(src.p, R.p); connect(R.n, C.p); connect(C.n, src.n); connect(src.n, gnd.p);
+end ConnRc;
+```
+
+**On 0.9.20 it flat-lines exactly like `RcCircuit`** — all 16 series constant, voltages at 5,
+currents at 0. **System Modeler 15.0 charges it correctly**: `C.v` = 0, 3.160603, 4.999773 at
+`t` = 0, 0.1, 1, matching the analytic to nine figures, with `R.p.i(0) = 0.05`. So the model is
+valid Modelica and the flat-line is Rumoca's.
+
+**That rules the MSL out and rules connectors in.** `BareRc` has no connectors and is right;
+`ConnRc` has connectors, no library, and is wrong. Whatever decides whether the initialization
+solve is applied, it is reached by `connect` expansion and its flow equations — not by anything
+the MSL brings.
+
+> #### ⟶ CORRECTED 2026-09-24 — connectors are neither necessary nor sufficient
+>
+> The paragraph above rules the MSL out correctly. **Its second half does not survive two
+> measurements taken while checking which ladder rungs are usable on 0.9.20.**
+>
+> - **`LoopWithInertia` has no connectors and flat-lines.** It is 34 lines of hand-written
+>   Modelica with no `connect` statement anywhere. `w` is declared `start = 0.0`, its closed form
+>   is `w = 1 − exp(−10t)`, and Rumoca gives `w(0) = 1.0` — the steady state — holding to 1e−8 for
+>   the whole run. So connectors are **not necessary**.
+> - **`RotationalInertia` has connectors and is correct.** Same physics as `SingleInertia` through
+>   MSL flanges; `phi` runs 0 → 0.5 and `w` runs 0 → 1, matching the closed form. So connectors are
+>   **not sufficient**.
+>
+> **What the four models have in common is narrower.** `ConnRc`, `RcCircuit` and `LoopWithInertia`
+> each have a state that participates in a **simultaneous algebraic system** at initialization — a
+> capacitor inside a resistive network, or a state inside an algebraic loop. `BareRc`,
+> `SingleInertia` and `RotationalInertia` do not: their states are driven by sources with nothing
+> to solve alongside. Connectors were implicated because `connect` expansion is the usual *way* to
+> get such a system, not because it is the trigger.
+>
+> **This is a pattern across six models, not a mechanism**, and no suspect code has been read for
+> it. It is recorded because the "rules connectors in" sentence is stated more confidently than the
+> evidence now supports, and this file is public.
+>
+> **`BenchActuator` is affected too, and was not previously listed.** It declares
+> `L.i(start = 0)`; Rumoca starts it at **12 A**, which is `src.V / R.R`. System Modeler starts it
+> at 0 and reaches 11.998 by t = 0.001 (`L/R = 1e-4 s`). Its mechanical states initialize
+> correctly, so the model was passed over as healthy — the defect is confined to the one state
+> whose fast transient is the reason the specimen exists.
+
+**This is also the reproducer the entry should have led with**: no library setup, runs anywhere,
+and it is now the natural post-rebase regression fixture. Held at
+`.hrw-bridge/specimens/ConnRc.mo` (scratch, gitignored) — **promote it when the rebase lands.**
+
+**TWO CONSTRAINTS ON A MULTI-CLASS SPECIMEN, both found by trying it** *(2026-09-19; the note
+above was written the same morning saying "promote it" and was **not executable as written**,
+which is the unexercised-claim failure this project retracted a checker argument over eight days
+earlier)*:
+
+- **HRW compiles `ast.classes.keys().next()` — the FIRST class in the file.** `worker.rs` says so
+  outright, with the comment *"For a specimen … the file declares one."* `ConnRc.mo` declared six
+  with `connector Pin` first, so HRW compiled **`Pin`** and every stage after Resolve reported
+  *"the reachable-closure pipeline produced no result"*. **The top-level model must be declared
+  first**, which is why the committed file now is.
+- **`Import[…, "MO"]` picks the LAST class**, so System Modeler ran `Gnd` on the same file.
+  Opposite conventions: no ordering satisfies both. **Name the model** —
+  `SystemModelSimulate["ConnRc", 1]` after the import — which is now in [`ideas.md`](ideas.md) #43.
+
+A third, cosmetic: a class named `Res` drew four resolve flags, *"'Res' is a class, not a
+variable; cannot be used as a value (MLS §4.4)"*. Non-fatal — the pipeline recovers — but it put
+noise in every stage pane. Renamed to `Resistor`.
+
+**Re-measured on the corrected file**, because the file changed after the numbers above were
+taken: HRW's pipeline clean through Solve lowering (1 state, 14 algebraics, 15 equations); 0.9.20
+still flat (1 of 16 series moves, and that one is `time`); 0.10.0 10 of 16; System Modeler
+`cap.v` = 0, 3.1606037, 4.9997730 against analytic 4.9997730.
+
+**The general headline is likewise too broad.** *"A state's initial value comes from the
+derivative-zero solution"* describes what several models do, not what Rumoca does — `BareRc`
+is a state whose initial value comes from its `start`. Read the title as naming the symptom.
+
+**Why `fixed = true` then fails.** The extra initial equation takes the system to 24 rows,
+and the projection plan responds by dropping the state from the unknowns *and* orphaning
+two rows — 22 unknowns, 22 planned rows, rows 22 and 23 unassigned. One orphan is the
+initial equation itself; the other is a network equation.
+
+**A note on the horizon, measured and not explained.** `RcCircuit` freezes at `t_end = 2`
+but *fails* at `t_end = 1`, the value its own `experiment` annotation asks for:
+`"BDF step: Step size is too small at time = 0.014"`. Recorded separately rather than
+folded into the above — one symptom per claim is what keeps a report checkable.
+
+### What a fix requires — and why it is not one line
+
+Restoring the derivative means the initialization problem needs it as an **unknown**, and
+`rumoca_ir_solve::ScalarSlot` has no derivative variant: it is `Time`, `Y`, `P`,
+`Constant`, and the runtime's projection unknowns are indices into `Y`. So the complete fix
+extends the slot model across `rumoca-ir-solve`, `rumoca-phase-solve` and `rumoca-solver`.
+
+**The tractable alternative is a formulation Rumoca already contains.**
+`rumoca-phase-structural/src/ic_plan.rs:116` states it outright — *"with only
+algebraic+output variables as unknowns (states are known)"*. Applying that to solve lowering
+means holding each state at its start value and dropping the one equation per state that
+determines a derivative. **Measured across the notebook, `algebraics ==
+continuous_equations - states` holds for 19 of 19 specimens**, so that system is square
+everywhere and no new slot kind is needed.
+
+Its limitation, stated rather than hidden: it makes a state's `start` always the initial
+condition, so an explicit `fixed = false`, and a user-written `initial equation` that
+determines a state, would still not be honoured. Those need the derivative as an unknown.
+
+**Guarded by `hrw`'s `worker::tests::rc_circuit_charges_its_capacitor`**, `#[ignore]`d with
+this defect named as the reason, and failing today on `C.v(0) must be the declared start of
+0, got 5`. Un-ignore it when a fix lands.
+
+### The mechanism as first inferred, kept because the reasoning was the route in
+
+Initialization appears to impose `der(x) = 0` and treat `start` as a Newton guess only,
+rather than deriving the state's value from `start`/`fixed` or from an initial equation.
+That is *steady-state initialization*, which every Modelica tool offers as an explicit
+option and none that I know of makes the default.
+
+**At this stage no suspect source location was offered, deliberately.** The front end is
+demonstrably correct — `variable_starts`, `x[].fixed` and `initial_equations` all carry the
+right thing — and a search for a path seeding the state vector from `variable_starts` found
+only clocked-variable start guards, which is a **wrong negative waiting to happen**: "I did
+not find it" is not "it does not exist".
+
+**And that caution was right to have.** The search was aimed at the wrong thing entirely:
+nothing overwrites the state vector. The derivative is erased at *lowering*, which makes the
+steady state the only solution the system has. The located account above supersedes this
+paragraph; it is kept because the discipline of not naming a location on a failed search is
+what left room to find the real one.
+
+One structural oddity noticed and **not** interpreted: in `RcFixedProbe`'s
+`problem.initialization.row_targets`, four `Y` slots (0, 1, 3, 11) are each named by two
+rows, and `projection_indices` excludes only two rows. Two rows writing one slot can be a
+legitimate sequential plan, so this is recorded as something for a maintainer's eye rather
+than as evidence of over-determination.
+
+### Whether this also explains the two open entries above
+
+Plausibly, and unverified. `Drivetrain` and `GearWithBrake` are the two specimens in the
+state-count entry above, and both are frozen here. A third model, a DC motor driving a
+geared load through a compliant shaft, fails at `t = 0` with *"BDF step: ODE solver error:
+Step size is too small"* — a different message, same phase. If initialization is
+over-determined wherever a constraint has been differentiated, one cause would cover all
+three. **Do not state that in a report** until it is traced.
+
+### ADJUDICATED 2026-09-04 — System Modeler 15.0 disagrees, and the `fixed` defence is closed
+
+Run through the Wolfram Language, so it is reproducible rather than a screenshot:
+
+```wl
+probe = Import["<path>/RcStartProbe.mo", "MO"];
+sim = SystemModelSimulate[probe, 1];
+sim["C.v"] /@ {0., 0.1, 1.}
+```
+
+| model | `C.v(0)` | `C.v(0.1)` | `C.v(1)` | closed form | Rumoca |
+|---|---|---|---|---|---|
+| `RcStartProbe` (`start = 3`) | **3.0** | 4.264242 | 4.999909 | `3 + 2(1-e^{-t/0.1})` | **5, flat** |
+| `RcFixedProbe` (`+ fixed = true`) | **3.0** | 4.264242 | 4.999909 | identical | **fails to converge** |
+| `RcCircuit` (corpus, `start = 0`) | **0.0** | 3.160604 | 4.999773 | `5(1-e^{-t/0.1})` | **5, flat** |
+
+`R.v(0) = 2` and `R.i(0) = 0.02` in the first case — the resistor carries the drop the
+frozen solution has nowhere to put.
+
+**Three things this settles.**
+
+1. **The behaviour is wrong, not merely different.** The values match the analytic solution
+   of a first-order RC to seven figures.
+2. **The `fixed = false` reading is not a defence.** `RcStartProbe` does not declare
+   `fixed`, and System Modeler still takes `start` as the initial condition. So "the
+   attribute is only a guess, and steady state is a permitted completion" does not describe
+   what a reference implementation does with this model.
+3. **`fixed = true` is unambiguous on its own.** System Modeler simulates it identically;
+   Rumoca *fails*. A tool rejecting a model that a reference tool integrates without
+   complaint needs no argument about defaults.
+
+**`RcCircuit` is the entry point to use in the report.** It is a four-component circuit
+with no attribute set anywhere, and it is the model every Modelica introduction opens with.
+
+**Ready to file.** The remaining unverified parts — the mechanism, and the row-target
+observation — stay marked as such, and the report should lead with the measurements above
+rather than with the diagnosis.
+
+---
+
+## IC planning fails to match an algebraic unknown that structural analysis matched
+
+**Found 2026-09-24**, while building the specimen ladder's rung 5. **Reproduced on one
+purpose-built 11-line model and adjudicated against System Modeler.** Not filed. Baseline
+`0.9.20`; **whether the 0.10.0 branch fixes it has not been measured**, and that measurement
+should precede any filing.
+
+**Why this is not the flat-line entry above.** That defect is about **states** taking the
+derivative-zero value instead of their `start`. This one is about an **algebraic** unknown —
+there is no derivative to zero, no `start` to discard, and the system is one Rumoca itself
+reports as structurally sound and already index 1.
+
+### Reproduction
+
+`specimens/StabilizedPendulum.mo` — the Cartesian pendulum with its position constraint
+differentiated twice by hand and damped (Baumgarte's 1972 construction), so that no index
+reduction is required:
+
+```modelica
+model StabilizedPendulum
+  parameter Real L = 1.0; parameter Real m = 1.0; parameter Real g = 9.81;
+  parameter Real alpha = 10.0; parameter Real beta = 10.0;
+  Real x(start = 1.0); Real y(start = 0.0);
+  Real vx(start = 0.0); Real vy(start = 0.0);
+  Real lambda;
+equation
+  der(x) = vx;
+  der(y) = vy;
+  m * der(vx) = -lambda * x;
+  m * der(vy) = -lambda * y - m * g;
+  2*(vx^2 + vy^2) + 2*(x*der(vx) + y*der(vy)) + 4*alpha*(x*vx + y*vy)
+    + beta^2*(x^2 + y^2 - L^2) = 0;
+end StabilizedPendulum;
+```
+
+```
+cargo run -p hrw --example stage_outcomes -- specimens/StabilizedPendulum.mo
+```
+
+### Expected
+
+The fifth equation determines `lambda` algebraically from `x`, `y`, `vx`, `vy` (after
+substituting the two acceleration equations), so IC planning should match it.
+
+### Actual
+
+```
+Dae              Ok        4 state(s), 1 algebraic(s), 5 continuous equation(s)
+Structural       Ok
+IndexReduction   Ok        already index-1 — the reduction funnel is a no-op here
+Initialization   Flagged   IC planning failed: structurally singular system: 0 matched
+                           out of 1 equations and 1 unknowns; unmatched equations:
+                           top-level model equation; unmatched unknowns: lambda
+Events           Ok
+SolveLowering    Ok
+```
+
+and the run then dies in the solver:
+
+```
+BDF new panicked: Failed to factorise matrix:
+SymbolicSingular { index: 4 }   (diffsol-0.13.2 sparse_lu.rs:49)
+```
+
+Index 4 is `lambda`, the fifth variable.
+
+### Why this is surprising, and what makes it filable
+
+**Two phases disagree about the same system.** Structural analysis matches all five equations
+and reports `Ok`; index reduction agrees and calls itself a no-op. IC planning, looking at one
+equation and one unknown, reports *structurally singular* and matches nothing. A system cannot
+be both structurally sound and structurally singular, so at least one of the two matchings is
+wrong — and the report says which pair it failed on, which is unusually good evidence to hand a
+maintainer.
+
+### Independent confirmation
+
+**Wolfram System Modeler 15.0 simulates it**, `WSMSimulate[mdl, {0, 2}]`:
+
+| t | `x` | `y` | `lambda` | `x²+y²−1` | analytic `m(v²−g·y)/L²` |
+|---|---|---|---|---|---|
+| 0 | 1 | 0 | 0 | 0 | 0 |
+| 0.25 | 0.9536646043 | −0.3008717467 | 8.854655724 | −1.5e−8 | 8.854655449 |
+| 0.5 | 0.3910487904 | −0.920369948 | 27.08648745 | −2.4e−9 | 27.08648732 |
+| 1.0 | −0.986291749 | −0.1650108656 | 4.856269462 | −2.8e−11 | 4.856269461 |
+| 2.0 | 0.7935661992 | −0.6084839254 | 17.90768161 | −5.6e−12 | 17.90768161 |
+
+`lambda` agrees with the analytic rod tension to ~1e−9, so the model is the pendulum and not an
+artefact of the stabilisation; the constraint residual **shrinks** across the run, which is what
+the `alpha` and `beta` terms are for. **The model is correct and portable, so the failure is
+Rumoca's.**
+
+### Mechanism — NOT ESTABLISHED
+
+No suspect code has been read. The observation is confined to what the two phases report about
+the same system, and nothing here should be sent as a causal claim. The one thing worth saying
+to a maintainer is the disagreement itself.
+
+### Why it matters beyond this model
+
+It means Rumoca's wall on constrained mechanics is **not only** the missing Pantelides
+implementation. A user who does the index reduction by hand — the standard workaround, and the
+way the field worked from 1972 until 1988 — still cannot simulate. See
+[`specimen-ladder.md`](specimen-ladder.md) rung 5.
+
+---
+
+## Adding to this file
+
+One entry per bug, and only for bugs **reproduced**, not suspected. Include the
+reproduction, expected vs actual, and the suspect code location — but mark suspicions as
+unverified, because a confident wrong diagnosis in a bug report wastes a maintainer's time
+and costs credibility that this project is trying to build.
+
+Where an independent implementation can adjudicate, **use it before filing** (see
+`docs/ideas.md` #43 for the System Modeler recipe). "System Modeler rejects this and you
+accept it" is a far stronger report than "I think the spec says…".

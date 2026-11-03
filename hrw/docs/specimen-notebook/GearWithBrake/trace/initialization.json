@@ -1,0 +1,39 @@
+{
+  "error": {
+    "kind": "singular",
+    "message": "structurally singular system: 33 matched out of 37 equations and 37 unknowns; unmatched equations: equation from rotor, equation from load, equation from spring, connection equation: spring.flange_b.phi = frame.flange.phi; unmatched unknowns: motor.phi_support, motor.w, motor.tau, rotor.flange_a.phi",
+    "n_equations": 37,
+    "n_unknowns": 37,
+    "n_matched": 33,
+    "rank_deficiency": 4,
+    "unmatched_equations": [
+      "equation from rotor",
+      "equation from load",
+      "equation from spring",
+      "connection equation: spring.flange_b.phi = frame.flange.phi"
+    ],
+    "unmatched_unknowns": [
+      "motor.phi_support",
+      "motor.w",
+      "motor.tau",
+      "rotor.flange_a.phi"
+    ],
+    "guidance": "The initialization subsystem is structurally singular: the algebraic equations (beyond the state derivatives) cannot be fully matched to unknowns. Check for missing or redundant initial equations, and verify that start values are specified for the right variables.",
+    "determinacy": {
+      "states": 7,
+      "initial_equations": 0,
+      "fixed_start_states": 0,
+      "explicit_initial_conditions": 0,
+      "surplus_over_states": -7,
+      "verdict": "well-posed (remaining states initialize from their start attributes)"
+    }
+  },
+  "determinacy": {
+    "states": 7,
+    "initial_equations": 0,
+    "fixed_start_states": 0,
+    "explicit_initial_conditions": 0,
+    "surplus_over_states": -7,
+    "verdict": "well-posed (remaining states initialize from their start attributes)"
+  }
+}

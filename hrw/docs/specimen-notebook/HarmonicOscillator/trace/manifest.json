@@ -1,0 +1,61 @@
+{
+  "model": "HarmonicOscillator",
+  "specimen": "specimens/HarmonicOscillator.mo",
+  "specimen_fnv1a": "67b86c3a26b1f038",
+  "rumoca_rev": "e6f07f72",
+  "rumoca_version": "0.9.20",
+  "stages": {
+    "parse": {
+      "has_ir": true,
+      "note": null
+    },
+    "resolve": {
+      "has_ir": true,
+      "note": null
+    },
+    "instantiate": {
+      "has_ir": true,
+      "note": null
+    },
+    "typecheck": {
+      "has_ir": true,
+      "note": null
+    },
+    "flatten": {
+      "has_ir": true,
+      "note": null
+    },
+    "dae": {
+      "has_ir": true,
+      "note": "2 state(s), 0 algebraic(s), 2 continuous equation(s)"
+    },
+    "structural": {
+      "has_ir": true,
+      "note": null
+    },
+    "index_reduction": {
+      "has_ir": true,
+      "note": "already index-1 — the reduction funnel is a no-op here (same as the Structural tab)"
+    },
+    "initialization": {
+      "has_ir": true,
+      "note": "no algebraic initialization subsystem (equations ≤ states)"
+    },
+    "events": {
+      "has_ir": true,
+      "note": "no events — this model is a smooth (continuous) system"
+    },
+    "solve_lowering": {
+      "has_ir": true,
+      "note": null
+    }
+  },
+  "simulation": {
+    "simulated": true,
+    "t_end": 2.0,
+    "n_variables": 2,
+    "n_time_points": 501,
+    "n_states": 2,
+    "has_discontinuities": false
+  }
+}

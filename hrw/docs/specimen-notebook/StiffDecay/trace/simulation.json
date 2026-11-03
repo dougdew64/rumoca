@@ -1,0 +1,27 @@
+{
+  "t_end": 2.0,
+  "n_time_points": 501,
+  "n_variables": 2,
+  "n_states": 2,
+  "has_discontinuities": false,
+  "t_start": 0.0,
+  "t_final": 2.0,
+  "variables": [
+    {
+      "name": "slow",
+      "is_state": true,
+      "initial": 1.0,
+      "final": 0.13533574926271144,
+      "min": 0.13533574926271144,
+      "max": 1.0
+    },
+    {
+      "name": "fast",
+      "is_state": true,
+      "initial": 1.0,
+      "final": 4.354180794033424e-19,
+      "min": -9.092773550107576e-8,
+      "max": 1.0
+    }
+  ]
+}

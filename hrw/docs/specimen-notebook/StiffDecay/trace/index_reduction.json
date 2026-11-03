@@ -1,0 +1,210 @@
+{
+  "n_equations": 2,
+  "n_unknowns": 2,
+  "coupled_block_count": 0,
+  "matching": [
+    {
+      "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
+      "unknown": "der(slow)"
+    },
+    {
+      "equation": "f_x[1] (top-level model equation)",
+      "id": "f_x[1]",
+      "unknown": "der(fast)"
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[0] (top-level model equation)",
+      "id": "f_x[0]",
+      "unknown": "der(slow)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[1] (top-level model equation)",
+      "id": "f_x[1]",
+      "unknown": "der(fast)"
+    }
+  ],
+  "incidence": {
+    "n_eq": 2,
+    "n_var": 2,
+    "unknown_names": [
+      "der(slow)",
+      "der(fast)"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
+        "unknowns": [
+          0
+        ],
+        "equation_text": "der(slow) - -(slowRate * slow)"
+      },
+      {
+        "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
+        "unknowns": [
+          1
+        ],
+        "equation_text": "der(fast) - -(fastRate * fast)"
+      }
+    ]
+  },
+  "before": {
+    "n_equations": 2,
+    "n_unknowns": 2,
+    "n_matched": 2,
+    "matching": [
+      {
+        "equation": "f_x[0] (top-level model equation)",
+        "id": "f_x[0]",
+        "unknown": "der(slow)"
+      },
+      {
+        "equation": "f_x[1] (top-level model equation)",
+        "id": "f_x[1]",
+        "unknown": "der(fast)"
+      }
+    ],
+    "incidence": {
+      "n_eq": 2,
+      "n_var": 2,
+      "unknown_names": [
+        "der(slow)",
+        "der(fast)"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (top-level model equation)",
+          "id": "f_x[0]",
+          "unknowns": [
+            0
+          ],
+          "equation_text": "der(slow) - -(slowRate * slow)"
+        },
+        {
+          "equation": "f_x[1] (top-level model equation)",
+          "id": "f_x[1]",
+          "unknowns": [
+            1
+          ],
+          "equation_text": "der(fast) - -(fastRate * fast)"
+        }
+      ]
+    }
+  },
+  "reduction": {
+    "states_before": [
+      "slow",
+      "fast"
+    ],
+    "states_after": [
+      "slow",
+      "fast"
+    ],
+    "demoted_states": [],
+    "n_states_before": 2,
+    "n_states_after": 2,
+    "steps": [
+      {
+        "step": "scalarize_equations",
+        "outcome": "ok",
+        "states_before": 2,
+        "states_after": 2,
+        "equations_before": 2,
+        "equations_after": 2
+      },
+      {
+        "step": "demote_exact_alias_component_states",
+        "outcome": "0 demoted",
+        "states_before": 2,
+        "states_after": 2,
+        "equations_before": 2,
+        "equations_after": 2
+      },
+      {
+        "step": "demote_direct_assigned_states",
+        "outcome": "0 demoted",
+        "states_before": 2,
+        "states_after": 2,
+        "equations_before": 2,
+        "equations_after": 2
+      },
+      {
+        "step": "reduce_constrained_dummy_derivatives",
+        "outcome": "0 demoted",
+        "states_before": 2,
+        "states_after": 2,
+        "equations_before": 2,
+        "equations_after": 2
+      },
+      {
+        "step": "index_reduce_missing_state_derivatives",
+        "outcome": "0 demoted",
+        "states_before": 2,
+        "states_after": 2,
+        "equations_before": 2,
+        "equations_after": 2
+      },
+      {
+        "step": "demote_states_without_assignable_derivative_rows",
+        "outcome": "0 demoted",
+        "states_before": 2,
+        "states_after": 2,
+        "equations_before": 2,
+        "equations_after": 2
+      },
+      {
+        "step": "eliminate_derivative_aliases",
+        "outcome": "ok",
+        "states_before": 2,
+        "states_after": 2,
+        "equations_before": 2,
+        "equations_after": 2
+      },
+      {
+        "step": "demote_states_without_retained_derivative_rows",
+        "outcome": "0 demoted",
+        "states_before": 2,
+        "states_after": 2,
+        "equations_before": 2,
+        "equations_after": 2
+      },
+      {
+        "step": "expand_compound_derivatives",
+        "outcome": "ok",
+        "states_before": 2,
+        "states_after": 2,
+        "equations_before": 2,
+        "equations_after": 2
+      },
+      {
+        "step": "substitute_standalone_state_derivatives_in_non_ode_rows",
+        "outcome": "0 rewritten",
+        "states_before": 2,
+        "states_after": 2,
+        "equations_before": 2,
+        "equations_after": 2
+      },
+      {
+        "step": "eliminate_trivial",
+        "outcome": "0 eliminated",
+        "states_before": 2,
+        "states_after": 2,
+        "equations_before": 2,
+        "equations_after": 2
+      }
+    ],
+    "differentiated_rows": [],
+    "eliminations": [],
+    "n_differentiations": 0,
+    "stopped_at": null,
+    "funnel_completed": true
+  }
+}

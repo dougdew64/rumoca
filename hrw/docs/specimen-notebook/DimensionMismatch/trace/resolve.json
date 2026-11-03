@@ -1,0 +1,552 @@
+{
+  "def_id": 85,
+  "scope_id": 1,
+  "name": {
+    "text": "DimensionMismatch",
+    "location": {
+      "start_line": 1,
+      "start_column": 7,
+      "end_line": 1,
+      "end_column": 24,
+      "start": 6,
+      "end": 23,
+      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+    },
+    "token_number": 1,
+    "token_type": 64
+  },
+  "class_type": "Model",
+  "class_type_token": {
+    "text": "model",
+    "location": {
+      "start_line": 1,
+      "start_column": 1,
+      "end_line": 1,
+      "end_column": 6,
+      "start": 0,
+      "end": 5,
+      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+    },
+    "token_number": 0,
+    "token_type": 41
+  },
+  "encapsulated": false,
+  "partial": false,
+  "expandable": false,
+  "operator_record": false,
+  "pure": true,
+  "purity_declared": false,
+  "causality": "Empty",
+  "description": [
+    {
+      "text": "Assigns a 3-vector to a 2-vector — DELIBERATELY BROKEN",
+      "location": {
+        "start_line": 1,
+        "start_column": 25,
+        "end_line": 1,
+        "end_column": 81,
+        "start": 24,
+        "end": 82,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+      },
+      "token_number": 2,
+      "token_type": 66
+    }
+  ],
+  "location": {
+    "start_line": 1,
+    "start_column": 7,
+    "end_line": 13,
+    "end_column": 22,
+    "start": 6,
+    "end": 523,
+    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+  },
+  "extends": [],
+  "imports": [],
+  "classes": {},
+  "components": {
+    "small": {
+      "def_id": 89,
+      "type_id": null,
+      "type_def_id": 1,
+      "name": "small",
+      "name_token": {
+        "text": "small",
+        "location": {
+          "start_line": 8,
+          "start_column": 8,
+          "end_line": 8,
+          "end_column": 13,
+          "start": 428,
+          "end": 433,
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+        },
+        "token_number": 10,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Real",
+            "location": {
+              "start_line": 8,
+              "start_column": 3,
+              "end_line": 8,
+              "end_column": 7,
+              "start": 423,
+              "end": 427,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+            },
+            "token_number": 9,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 13759555761581312864,
+            "start": 423,
+            "end": 433
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [
+        2
+      ],
+      "shape_expr": [
+        {
+          "Expression": {
+            "Terminal": {
+              "terminal_type": "UnsignedInteger",
+              "token": {
+                "text": "2",
+                "location": {
+                  "start_line": 8,
+                  "start_column": 14,
+                  "end_line": 8,
+                  "end_column": 15,
+                  "start": 434,
+                  "end": 435,
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+                },
+                "token_number": 12,
+                "token_type": 67
+              },
+              "span": {
+                "source": 13759555761581312864,
+                "start": 434,
+                "end": 435
+              }
+            }
+          }
+        }
+      ],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [],
+      "source_modification_each_flags": [],
+      "source_modification_final_flags": [],
+      "source_modification_redeclare_flags": [],
+      "modifications": {},
+      "location": {
+        "start_line": 8,
+        "start_column": 3,
+        "end_line": 8,
+        "end_column": 13,
+        "start": 423,
+        "end": 433,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    },
+    "big": {
+      "def_id": 90,
+      "type_id": null,
+      "type_def_id": 1,
+      "name": "big",
+      "name_token": {
+        "text": "big",
+        "location": {
+          "start_line": 9,
+          "start_column": 8,
+          "end_line": 9,
+          "end_column": 11,
+          "start": 445,
+          "end": 448,
+          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+        },
+        "token_number": 16,
+        "token_type": 64
+      },
+      "type_name": {
+        "name": [
+          {
+            "text": "Real",
+            "location": {
+              "start_line": 9,
+              "start_column": 3,
+              "end_line": 9,
+              "end_column": 7,
+              "start": 440,
+              "end": 444,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+            },
+            "token_number": 15,
+            "token_type": 64
+          }
+        ]
+      },
+      "variability": "Empty",
+      "causality": "Empty",
+      "connection": "Empty",
+      "description": [],
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 0,
+              "start_column": 0,
+              "end_line": 0,
+              "end_column": 0,
+              "start": 0,
+              "end": 0,
+              "file_name": ""
+            },
+            "token_number": 0,
+            "token_type": 0
+          },
+          "span": {
+            "source": 13759555761581312864,
+            "start": 440,
+            "end": 448
+          }
+        }
+      },
+      "start_is_modification": false,
+      "start_has_each": false,
+      "has_explicit_binding": false,
+      "binding": null,
+      "shape": [
+        3
+      ],
+      "shape_expr": [
+        {
+          "Expression": {
+            "Terminal": {
+              "terminal_type": "UnsignedInteger",
+              "token": {
+                "text": "3",
+                "location": {
+                  "start_line": 9,
+                  "start_column": 12,
+                  "end_line": 9,
+                  "end_column": 13,
+                  "start": 449,
+                  "end": 450,
+                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+                },
+                "token_number": 18,
+                "token_type": 67
+              },
+              "span": {
+                "source": 13759555761581312864,
+                "start": 449,
+                "end": 450
+              }
+            }
+          }
+        }
+      ],
+      "shape_is_modification": false,
+      "annotation": [],
+      "source_modifications": [],
+      "source_modification_each_flags": [],
+      "source_modification_final_flags": [],
+      "source_modification_redeclare_flags": [],
+      "modifications": {},
+      "location": {
+        "start_line": 9,
+        "start_column": 3,
+        "end_line": 9,
+        "end_column": 11,
+        "start": 440,
+        "end": 448,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+      },
+      "condition": null,
+      "inner": false,
+      "outer": false,
+      "final_attributes": [],
+      "each_modifications": [],
+      "is_protected": false,
+      "is_final": false,
+      "is_replaceable": false,
+      "is_redeclare": false,
+      "constrainedby": null,
+      "is_structural": false
+    }
+  },
+  "equations": [
+    {
+      "Simple": {
+        "lhs": {
+          "ComponentReference": {
+            "local": false,
+            "parts": [
+              {
+                "ident": {
+                  "text": "small",
+                  "location": {
+                    "start_line": 11,
+                    "start_column": 3,
+                    "end_line": 11,
+                    "end_column": 8,
+                    "start": 464,
+                    "end": 469,
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+                  },
+                  "token_number": 22,
+                  "token_type": 64
+                },
+                "subs": null
+              }
+            ],
+            "span": {
+              "source": 13759555761581312864,
+              "start": 464,
+              "end": 469
+            }
+          }
+        },
+        "rhs": {
+          "ComponentReference": {
+            "local": false,
+            "parts": [
+              {
+                "ident": {
+                  "text": "big",
+                  "location": {
+                    "start_line": 11,
+                    "start_column": 11,
+                    "end_line": 11,
+                    "end_column": 14,
+                    "start": 472,
+                    "end": 475,
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+                  },
+                  "token_number": 24,
+                  "token_type": 64
+                },
+                "subs": null
+              }
+            ],
+            "span": {
+              "source": 13759555761581312864,
+              "start": 472,
+              "end": 475
+            }
+          }
+        }
+      }
+    },
+    {
+      "Simple": {
+        "lhs": {
+          "ComponentReference": {
+            "local": false,
+            "parts": [
+              {
+                "ident": {
+                  "text": "big",
+                  "location": {
+                    "start_line": 12,
+                    "start_column": 3,
+                    "end_line": 12,
+                    "end_column": 6,
+                    "start": 479,
+                    "end": 482,
+                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+                  },
+                  "token_number": 26,
+                  "token_type": 64
+                },
+                "subs": null
+              }
+            ],
+            "span": {
+              "source": 13759555761581312864,
+              "start": 479,
+              "end": 482
+            }
+          }
+        },
+        "rhs": {
+          "Array": {
+            "elements": [
+              {
+                "Terminal": {
+                  "terminal_type": "UnsignedReal",
+                  "token": {
+                    "text": "1.0",
+                    "location": {
+                      "start_line": 12,
+                      "start_column": 10,
+                      "end_line": 12,
+                      "end_column": 13,
+                      "start": 486,
+                      "end": 489,
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+                    },
+                    "token_number": 29,
+                    "token_type": 68
+                  },
+                  "span": {
+                    "source": 13759555761581312864,
+                    "start": 486,
+                    "end": 489
+                  }
+                }
+              },
+              {
+                "Terminal": {
+                  "terminal_type": "UnsignedReal",
+                  "token": {
+                    "text": "2.0",
+                    "location": {
+                      "start_line": 12,
+                      "start_column": 15,
+                      "end_line": 12,
+                      "end_column": 18,
+                      "start": 491,
+                      "end": 494,
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+                    },
+                    "token_number": 31,
+                    "token_type": 68
+                  },
+                  "span": {
+                    "source": 13759555761581312864,
+                    "start": 491,
+                    "end": 494
+                  }
+                }
+              },
+              {
+                "Terminal": {
+                  "terminal_type": "UnsignedReal",
+                  "token": {
+                    "text": "3.0",
+                    "location": {
+                      "start_line": 12,
+                      "start_column": 20,
+                      "end_line": 12,
+                      "end_column": 23,
+                      "start": 496,
+                      "end": 499,
+                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+                    },
+                    "token_number": 33,
+                    "token_type": 68
+                  },
+                  "span": {
+                    "source": 13759555761581312864,
+                    "start": 496,
+                    "end": 499
+                  }
+                }
+              }
+            ],
+            "is_matrix": false,
+            "span": {
+              "source": 13759555761581312864,
+              "start": 486,
+              "end": 499
+            }
+          }
+        }
+      }
+    }
+  ],
+  "initial_equations": [],
+  "algorithms": [],
+  "initial_algorithms": [],
+  "equation_keyword": {
+    "text": "equation",
+    "location": {
+      "start_line": 10,
+      "start_column": 1,
+      "end_line": 10,
+      "end_column": 9,
+      "start": 453,
+      "end": 461,
+      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+    },
+    "token_number": 21,
+    "token_type": 24
+  },
+  "initial_equation_keyword": null,
+  "algorithm_keyword": null,
+  "initial_algorithm_keyword": null,
+  "end_name_token": {
+    "text": "DimensionMismatch",
+    "location": {
+      "start_line": 13,
+      "start_column": 5,
+      "end_line": 13,
+      "end_column": 22,
+      "start": 506,
+      "end": 523,
+      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/DimensionMismatch.mo"
+    },
+    "token_number": 37,
+    "token_type": 64
+  },
+  "enum_literals": [],
+  "annotation": [],
+  "is_protected": false,
+  "is_final": false,
+  "is_inner": false,
+  "is_outer": false,
+  "is_replaceable": false,
+  "is_redeclare": false,
+  "constrainedby": null,
+  "array_subscripts": [],
+  "external": null
+}

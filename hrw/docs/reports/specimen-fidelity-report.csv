@@ -1,0 +1,11 @@
+name,kind,outcome,message,checks_failed,n_violations
+ProportionalLoop,Component,ok,,,0
+MixedLoop,Component,ok,,,0
+TwoLoops,Component,ok,,,0
+NonlinearLoop,Component,ok,,,0
+Drivetrain,Component,ok,,,0
+RcCircuit,Component,ok,,,0
+SingleInertia,Component,ok,,,0
+CapacitorLoop,Component,ok,,,0
+BouncingBall,Component,ok,,,0
+MotorWithBrake,Component,ok,,,0

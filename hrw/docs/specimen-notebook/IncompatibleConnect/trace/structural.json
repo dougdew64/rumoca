@@ -1,0 +1,78 @@
+{
+  "incidence": {
+    "n_eq": 3,
+    "n_var": 3,
+    "unknown_names": [
+      "a.i",
+      "a.v",
+      "b.v"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0] (connection equation: a.v = b.v)",
+        "id": "f_x[0]",
+        "unknowns": [
+          1,
+          2
+        ],
+        "equation_text": "a.v - b.v"
+      },
+      {
+        "equation": "f_x[1] (unconnected flow: a.i = 0)",
+        "id": "f_x[1]",
+        "unknowns": [
+          0
+        ],
+        "equation_text": "a.i"
+      },
+      {
+        "equation": "f_x[2] (unconnected flow: a.i = 0)",
+        "id": "f_x[2]",
+        "unknowns": [
+          0
+        ],
+        "equation_text": "a.i"
+      }
+    ]
+  },
+  "matching": [
+    {
+      "equation": "f_x[0] (connection equation: a.v = b.v)",
+      "id": "f_x[0]",
+      "unknown": "a.v"
+    },
+    {
+      "equation": "f_x[1] (unconnected flow: a.i = 0)",
+      "id": "f_x[1]",
+      "unknown": "a.i"
+    }
+  ],
+  "error": {
+    "kind": "singular",
+    "message": "structurally singular system: 2 matched out of 3 equations and 3 unknowns; unmatched equations: f_x[2]; unmatched unknowns: b.v",
+    "n_equations": 3,
+    "n_unknowns": 3,
+    "n_matched": 2,
+    "rank_deficiency": 1,
+    "unmatched_equations": [
+      "f_x[2]"
+    ],
+    "unmatched_unknowns": [
+      "b.v"
+    ],
+    "unmatched_unknown_locations": [
+      {
+        "unknown": "b.v",
+        "location": {
+          "line": 32,
+          "column": 5,
+          "excerpt": "Real v",
+          "line_text": "    Real v;",
+          "byte_start": 1664,
+          "byte_end": 1670
+        }
+      }
+    ],
+    "guidance": "The maximum matching could not pair every equation with a unique unknown. Each unmatched unknown is a variable no equation determines; `unmatched_unknown_locations` gives the source line that declares it. If the Index Reduction stage also reports singular, the model is genuinely ill-posed rather than merely high-index."
+  }
+}

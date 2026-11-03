@@ -1,0 +1,283 @@
+{
+  "t_end": 2.0,
+  "n_time_points": 501,
+  "n_variables": 34,
+  "n_states": 0,
+  "has_discontinuities": false,
+  "t_start": 0.0,
+  "t_final": 2.0,
+  "variables": [
+    {
+      "name": "src.v",
+      "is_state": false,
+      "initial": 5.0,
+      "final": 5.0,
+      "min": 5.0,
+      "max": 5.0
+    },
+    {
+      "name": "seg1.R.T_heatPort",
+      "is_state": false,
+      "initial": 300.15,
+      "final": 300.15,
+      "min": 300.15,
+      "max": 300.15
+    },
+    {
+      "name": "seg2.R.T_heatPort",
+      "is_state": false,
+      "initial": 300.15,
+      "final": 300.15,
+      "min": 300.15,
+      "max": 300.15
+    },
+    {
+      "name": "seg1.R.R_actual",
+      "is_state": false,
+      "initial": 50.0,
+      "final": 50.0,
+      "min": 50.0,
+      "max": 50.0
+    },
+    {
+      "name": "seg2.R.R_actual",
+      "is_state": false,
+      "initial": 50.0,
+      "final": 50.0,
+      "min": 50.0,
+      "max": 50.0
+    },
+    {
+      "name": "src.i",
+      "is_state": false,
+      "initial": -0.05,
+      "final": -0.05,
+      "min": -0.05,
+      "max": -0.05
+    },
+    {
+      "name": "src.p.v",
+      "is_state": false,
+      "initial": 5.0,
+      "final": 5.0,
+      "min": 5.0,
+      "max": 5.0
+    },
+    {
+      "name": "src.p.i",
+      "is_state": false,
+      "initial": -0.05,
+      "final": -0.05,
+      "min": -0.05,
+      "max": -0.05
+    },
+    {
+      "name": "src.n.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "src.n.i",
+      "is_state": false,
+      "initial": 0.05,
+      "final": 0.05,
+      "min": 0.05,
+      "max": 0.05
+    },
+    {
+      "name": "seg1.p.v",
+      "is_state": false,
+      "initial": 5.0,
+      "final": 5.0,
+      "min": 5.0,
+      "max": 5.0
+    },
+    {
+      "name": "seg1.p.i",
+      "is_state": false,
+      "initial": 0.05,
+      "final": 0.05,
+      "min": 0.05,
+      "max": 0.05
+    },
+    {
+      "name": "seg1.n.v",
+      "is_state": false,
+      "initial": 2.5,
+      "final": 2.5,
+      "min": 2.5,
+      "max": 2.5
+    },
+    {
+      "name": "seg1.n.i",
+      "is_state": false,
+      "initial": -0.05,
+      "final": -0.05,
+      "min": -0.05,
+      "max": -0.05
+    },
+    {
+      "name": "seg1.R.i",
+      "is_state": false,
+      "initial": 0.05,
+      "final": 0.05,
+      "min": 0.05,
+      "max": 0.05
+    },
+    {
+      "name": "seg1.R.v",
+      "is_state": false,
+      "initial": 2.5,
+      "final": 2.5,
+      "min": 2.5,
+      "max": 2.5
+    },
+    {
+      "name": "seg1.R.p.v",
+      "is_state": false,
+      "initial": 5.0,
+      "final": 5.0,
+      "min": 5.0,
+      "max": 5.0
+    },
+    {
+      "name": "seg1.R.p.i",
+      "is_state": false,
+      "initial": 0.05,
+      "final": 0.05,
+      "min": 0.05,
+      "max": 0.05
+    },
+    {
+      "name": "seg1.R.n.v",
+      "is_state": false,
+      "initial": 2.5,
+      "final": 2.5,
+      "min": 2.5,
+      "max": 2.5
+    },
+    {
+      "name": "seg1.R.n.i",
+      "is_state": false,
+      "initial": -0.05,
+      "final": -0.05,
+      "min": -0.05,
+      "max": -0.05
+    },
+    {
+      "name": "seg1.R.LossPower",
+      "is_state": false,
+      "initial": 0.125,
+      "final": 0.125,
+      "min": 0.125,
+      "max": 0.125
+    },
+    {
+      "name": "seg2.p.v",
+      "is_state": false,
+      "initial": 2.5,
+      "final": 2.5,
+      "min": 2.5,
+      "max": 2.5
+    },
+    {
+      "name": "seg2.p.i",
+      "is_state": false,
+      "initial": 0.05,
+      "final": 0.05,
+      "min": 0.05,
+      "max": 0.05
+    },
+    {
+      "name": "seg2.n.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "seg2.n.i",
+      "is_state": false,
+      "initial": -0.05,
+      "final": -0.05,
+      "min": -0.05,
+      "max": -0.05
+    },
+    {
+      "name": "seg2.R.i",
+      "is_state": false,
+      "initial": 0.05,
+      "final": 0.05,
+      "min": 0.05,
+      "max": 0.05
+    },
+    {
+      "name": "seg2.R.v",
+      "is_state": false,
+      "initial": 2.5,
+      "final": 2.5,
+      "min": 2.5,
+      "max": 2.5
+    },
+    {
+      "name": "seg2.R.p.v",
+      "is_state": false,
+      "initial": 2.5,
+      "final": 2.5,
+      "min": 2.5,
+      "max": 2.5
+    },
+    {
+      "name": "seg2.R.p.i",
+      "is_state": false,
+      "initial": 0.05,
+      "final": 0.05,
+      "min": 0.05,
+      "max": 0.05
+    },
+    {
+      "name": "seg2.R.n.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "seg2.R.n.i",
+      "is_state": false,
+      "initial": -0.05,
+      "final": -0.05,
+      "min": -0.05,
+      "max": -0.05
+    },
+    {
+      "name": "seg2.R.LossPower",
+      "is_state": false,
+      "initial": 0.125,
+      "final": 0.125,
+      "min": 0.125,
+      "max": 0.125
+    },
+    {
+      "name": "gnd.p.v",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    {
+      "name": "gnd.p.i",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    }
+  ]
+}

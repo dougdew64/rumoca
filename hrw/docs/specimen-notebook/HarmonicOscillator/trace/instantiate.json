@@ -1,0 +1,719 @@
+{
+  "components": {
+    "1": {
+      "instance_id": 1,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 14933374180376213843,
+          "start": 246,
+          "end": 256
+        },
+        "parts": [
+          {
+            "ident": "omega",
+            "span": {
+              "source": 14933374180376213843,
+              "start": 246,
+              "end": 256
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 89
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "omega",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 3,
+        "start_column": 13,
+        "end_line": 3,
+        "end_column": 23,
+        "start": 246,
+        "end": 256,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/HarmonicOscillator.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "HarmonicOscillator",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 3,
+            "start_column": 3,
+            "end_line": 3,
+            "end_column": 12,
+            "start": 236,
+            "end": 245,
+            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/HarmonicOscillator.mo"
+          },
+          "token_number": 4,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 3,
+              "start_column": 26,
+              "end_line": 3,
+              "end_column": 29,
+              "start": 259,
+              "end": 262,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/HarmonicOscillator.mo"
+            },
+            "token_number": 8,
+            "token_type": 68
+          },
+          "span": {
+            "source": 14933374180376213843,
+            "start": 259,
+            "end": 262
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "angular frequency",
+      "state_select": "Default",
+      "binding": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 3,
+              "start_column": 26,
+              "end_line": 3,
+              "end_column": 29,
+              "start": 259,
+              "end": 262,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/HarmonicOscillator.mo"
+            },
+            "token_number": 8,
+            "token_type": 68
+          },
+          "span": {
+            "source": 14933374180376213843,
+            "start": 259,
+            "end": 262
+          }
+        }
+      },
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "2": {
+      "instance_id": 2,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 14933374180376213843,
+          "start": 286,
+          "end": 292
+        },
+        "parts": [
+          {
+            "ident": "x",
+            "span": {
+              "source": 14933374180376213843,
+              "start": 286,
+              "end": 292
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 90
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "x",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 4,
+        "start_column": 3,
+        "end_line": 4,
+        "end_column": 9,
+        "start": 286,
+        "end": 292,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/HarmonicOscillator.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "HarmonicOscillator",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 4,
+              "start_column": 18,
+              "end_line": 4,
+              "end_column": 21,
+              "start": 301,
+              "end": 304,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/HarmonicOscillator.mo"
+            },
+            "token_number": 16,
+            "token_type": 68
+          },
+          "span": {
+            "source": 14933374180376213843,
+            "start": 301,
+            "end": 304
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "position",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "3": {
+      "instance_id": 3,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 14933374180376213843,
+          "start": 320,
+          "end": 326
+        },
+        "parts": [
+          {
+            "ident": "v",
+            "span": {
+              "source": 14933374180376213843,
+              "start": 320,
+              "end": 326
+            },
+            "subs": []
+          }
+        ],
+        "def_id": 91
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "v",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 5,
+        "start_column": 3,
+        "end_line": 5,
+        "end_column": 9,
+        "start": 320,
+        "end": 326,
+        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/HarmonicOscillator.mo"
+      },
+      "dims": [],
+      "dims_expr": [],
+      "type_id": 0,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "HarmonicOscillator",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 5,
+              "start_column": 18,
+              "end_line": 5,
+              "end_column": 21,
+              "start": 335,
+              "end": 338,
+              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/HarmonicOscillator.mo"
+            },
+            "token_number": 25,
+            "token_type": 68
+          },
+          "span": {
+            "source": 14933374180376213843,
+            "start": 335,
+            "end": 338
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "velocity",
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    }
+  },
+  "classes": {
+    "0": {
+      "instance_id": 0,
+      "class_def_id": 85,
+      "qualified_name": {
+        "parts": []
+      },
+      "source_scope": {
+        "parts": [
+          [
+            "HarmonicOscillator",
+            []
+          ]
+        ]
+      },
+      "source_scope_id": 1,
+      "equations": [
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "FunctionCall": {
+                  "comp": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "der",
+                          "location": {
+                            "start_line": 7,
+                            "start_column": 3,
+                            "end_line": 7,
+                            "end_column": 6,
+                            "start": 363,
+                            "end": 366,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/HarmonicOscillator.mo"
+                          },
+                          "token_number": 30,
+                          "token_type": 15
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 14933374180376213843,
+                      "start": 363,
+                      "end": 366
+                    }
+                  },
+                  "args": [
+                    {
+                      "ComponentReference": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "x",
+                              "location": {
+                                "start_line": 7,
+                                "start_column": 7,
+                                "end_line": 7,
+                                "end_column": 8,
+                                "start": 367,
+                                "end": 368,
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/HarmonicOscillator.mo"
+                              },
+                              "token_number": 32,
+                              "token_type": 64
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 14933374180376213843,
+                          "start": 367,
+                          "end": 368
+                        }
+                      }
+                    }
+                  ],
+                  "span": {
+                    "source": 14933374180376213843,
+                    "start": 363,
+                    "end": 368
+                  }
+                }
+              },
+              "rhs": {
+                "ComponentReference": {
+                  "local": false,
+                  "parts": [
+                    {
+                      "ident": {
+                        "text": "v",
+                        "location": {
+                          "start_line": 7,
+                          "start_column": 12,
+                          "end_line": 7,
+                          "end_column": 13,
+                          "start": 372,
+                          "end": 373,
+                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/HarmonicOscillator.mo"
+                        },
+                        "token_number": 35,
+                        "token_type": 64
+                      },
+                      "subs": null
+                    }
+                  ],
+                  "span": {
+                    "source": 14933374180376213843,
+                    "start": 372,
+                    "end": 373
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "HarmonicOscillator",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 14933374180376213843,
+            "start": 363,
+            "end": 366
+          }
+        },
+        {
+          "equation": {
+            "Simple": {
+              "lhs": {
+                "FunctionCall": {
+                  "comp": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "der",
+                          "location": {
+                            "start_line": 8,
+                            "start_column": 3,
+                            "end_line": 8,
+                            "end_column": 6,
+                            "start": 377,
+                            "end": 380,
+                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/HarmonicOscillator.mo"
+                          },
+                          "token_number": 37,
+                          "token_type": 15
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 14933374180376213843,
+                      "start": 377,
+                      "end": 380
+                    }
+                  },
+                  "args": [
+                    {
+                      "ComponentReference": {
+                        "local": false,
+                        "parts": [
+                          {
+                            "ident": {
+                              "text": "v",
+                              "location": {
+                                "start_line": 8,
+                                "start_column": 7,
+                                "end_line": 8,
+                                "end_column": 8,
+                                "start": 381,
+                                "end": 382,
+                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/HarmonicOscillator.mo"
+                              },
+                              "token_number": 39,
+                              "token_type": 64
+                            },
+                            "subs": null
+                          }
+                        ],
+                        "span": {
+                          "source": 14933374180376213843,
+                          "start": 381,
+                          "end": 382
+                        }
+                      }
+                    }
+                  ],
+                  "span": {
+                    "source": 14933374180376213843,
+                    "start": 377,
+                    "end": 382
+                  }
+                }
+              },
+              "rhs": {
+                "Unary": {
+                  "op": "Minus",
+                  "rhs": {
+                    "Binary": {
+                      "op": "Mul",
+                      "lhs": {
+                        "Binary": {
+                          "op": "Exp",
+                          "lhs": {
+                            "ComponentReference": {
+                              "local": false,
+                              "parts": [
+                                {
+                                  "ident": {
+                                    "text": "omega",
+                                    "location": {
+                                      "start_line": 8,
+                                      "start_column": 13,
+                                      "end_line": 8,
+                                      "end_column": 18,
+                                      "start": 387,
+                                      "end": 392,
+                                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/HarmonicOscillator.mo"
+                                    },
+                                    "token_number": 43,
+                                    "token_type": 64
+                                  },
+                                  "subs": null
+                                }
+                              ],
+                              "span": {
+                                "source": 14933374180376213843,
+                                "start": 387,
+                                "end": 392
+                              }
+                            }
+                          },
+                          "rhs": {
+                            "Terminal": {
+                              "terminal_type": "UnsignedInteger",
+                              "token": {
+                                "text": "2",
+                                "location": {
+                                  "start_line": 8,
+                                  "start_column": 21,
+                                  "end_line": 8,
+                                  "end_column": 22,
+                                  "start": 395,
+                                  "end": 396,
+                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/HarmonicOscillator.mo"
+                                },
+                                "token_number": 45,
+                                "token_type": 67
+                              },
+                              "span": {
+                                "source": 14933374180376213843,
+                                "start": 395,
+                                "end": 396
+                              }
+                            }
+                          },
+                          "span": {
+                            "source": 14933374180376213843,
+                            "start": 387,
+                            "end": 396
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "ComponentReference": {
+                          "local": false,
+                          "parts": [
+                            {
+                              "ident": {
+                                "text": "x",
+                                "location": {
+                                  "start_line": 8,
+                                  "start_column": 25,
+                                  "end_line": 8,
+                                  "end_column": 26,
+                                  "start": 399,
+                                  "end": 400,
+                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/HarmonicOscillator.mo"
+                                },
+                                "token_number": 47,
+                                "token_type": 64
+                              },
+                              "subs": null
+                            }
+                          ],
+                          "span": {
+                            "source": 14933374180376213843,
+                            "start": 399,
+                            "end": 400
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 14933374180376213843,
+                        "start": 387,
+                        "end": 400
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 14933374180376213843,
+                    "start": 386,
+                    "end": 400
+                  }
+                }
+              }
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "HarmonicOscillator",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 14933374180376213843,
+            "start": 377,
+            "end": 380
+          }
+        }
+      ],
+      "initial_equations": [],
+      "algorithms": [],
+      "initial_algorithms": [],
+      "connections": [],
+      "resolved_imports": []
+    }
+  },
+  "is_partial": false,
+  "class_type": "Model",
+  "root_description": "An undamped harmonic oscillator, whose exact solution is a cosine",
+  "disabled_components": [],
+  "array_parent_dims": {},
+  "outer_prefix_to_inner": {},
+  "inner_outer_to_parent_inner": {},
+  "synthesized_inners": [],
+  "type_roots": {},
+  "next_id": 4
+}

@@ -1,0 +1,1070 @@
+# Fixture labs — tests you run
+
+**Purpose:** what a fixture lab is, how to run one, and the rules for writing another.
+**Status:** 👤 reference, written for a human.
+**Read when:** about to run a lab, or about to write one. **These are tests, not
+explanations** — that distinction governs everything below.
+
+> ### ⚠ THIS FILE IS MID-REVISION UNDER CHARTER DECISION 14 — read that first
+>
+> **A walk is a lab session, not a reading.** Doug's 🎯 capture made the conversational loop part
+> of the run, and Decision 14 (September 1, 2026) **retires the model most of this file was
+> written for** — that a lab's prose must stand alone, explain every term before use, and
+> pre-empt every question.
+>
+> **The lab now supplies the route, the checkpoints and the machine-checked claims; Claude
+> supplies the explanation on demand.** Claude holds two distinct roles **within a lab**: **lab
+> guide** before the run, **lab instructor** during it. *(Scoped 2026-09-25. Charter Decision 18
+> adds a third role outside labs — lecturer — and this sentence read as a global count. The
+> lecture is not a lab concern and nothing here needs to know about it; the bound is on the claim,
+> not a reference to the other role.)*
+>
+> **Fifteen sections below carry rulings older than 2026-08-30 and assume the retired model.**
+> Until this file is revised, **read any rule requiring self-sufficient prose as superseded** —
+> do not attempt to reconcile it with Decision 14. Everything about *accuracy* still binds without
+> exception; Decision 14 loosens what prose must carry, never what it may claim.
+
+## What a fixture lab is
+
+**A short sequence of clickable stations through HRW's own views, each with an expectation that
+can fail.** You pick one from the row of labs at the top of Lab mode and click through it.
+
+They exist because of a gap nothing else covers: **Claude cannot see the rendered UI.** The
+test suite checks HRW's logic; a fixture lab checks that clicking the thing does the thing.
+That is the half of verification only a human can do, and these make it cheap to do.
+
+**They are versioned and kept**, unlike an *ad hoc* lab (`.hrw-bridge/answer.md`, gitignored,
+regenerated per question). The difference is not permanence for its own sake — it is that a
+fixture lab has **pass/fail criteria** and an Answer has prose, and prose rots. This
+project retired 1,632 lines of explanation for that reason, and deleted a 1,071-line lab that
+described a 7×7 matrix on a tab showing 48 equations.
+
+**Only justified because something checks them and someone runs them — and those are different
+halves.** `fixture_lab_links_all_resolve` parses every link in this directory on every test run,
+so a vocabulary change breaks the build rather than breaking a document quietly. **That guards the
+plumbing, not the claims.** The expectations are executed by **Doug running the lab**, which is
+the half of verification only a human can do. **A saved lab that is neither checked nor run is
+stored prose with extra steps.**
+
+### And what a lab *is*, which is a different question from what it looks like
+
+**A lab is a document that makes claims about what a program does**, *durably* — so they must be
+kept true. **An Answer is not a kind of lab** *(Doug's ruling, 2026-09-02)*: it makes its claims
+*about the moment*, so they need only be true when written.
+
+**That distinction was blurred by the tour → lab rename, which mechanically produced "ad hoc
+lab".** The phrase was wrong the way *"tour guide"* was wrong — it inherits a name whose properties
+the thing does not have. **A lab has a route, stations, predictions and machine-checked claims; an
+Answer has none of them by design.** The UI had it right first: `LabSource::Answer` has rendered as
+`✨ Answer` in the picker since 2026-08-19, and only the code and the prose lagged.
+
+**And an Answer earns its place** — Doug, 2026-09-02: *"HRW is intended partly as a platform for you
+to use to provide rich answers that you cannot provide with only conversation text."* That is
+[`../vision.md`](../vision.md)'s *"The platform"* section made operational, and it is **charter
+Decision 8's return path**: Doug assembles the *noun* by pointing (the 🎯 capture, inbound), and an
+Answer is Claude's reply as a route through panes rather than a paragraph. Both directions have to
+be rich or the pair does not work.
+
+**What Decision 14 changed is when one is warranted, not whether.** With the conversation part of
+the session, prose alone is an exchange — so **a route through panes is what earns a document.**
+
+*(Written 2026-08-22, after Doug noticed that `connect-expansion.md` states set sizes of 2, 2 and 3
+as static text — true or false whether or not HRW is open and whether or not `RcCircuit` has ever
+been compiled. The definition above is operational, and says nothing about this.)*
+
+**THE SECOND HALF WAS FIRST WRITTEN AS *"while the program is not running"*, AND DOUG CORRECTED IT
+THE SAME DAY:** Answers are authored *while HRW runs*, to explain what it is doing —
+`lab::poll` picks up `.hrw-bridge/answer.md` within a second and auto-selects it. **He was right,
+and the correction is worth more than the fix**, because "is the program running" was a proxy for
+the thing that actually matters.
+
+**What actually differs is the gap between when a claim is WRITTEN and when it is READ.**
+
+| | fixture lab | Answer |
+|---|---|---|
+| written | once, against a compile | now, against what is on screen |
+| read | months later, repeatedly | seconds later, once |
+| relation to the program | a **copy** of what it did | an **observation** of what it is doing |
+| failure mode | **staleness** — true when written, false later | **misreading** — wrong on arrival |
+| defended by | checkers and the gate | nothing, and nothing is needed |
+
+**Duplicated truth is what rots, and an Answer duplicates nothing.** Its lifetime is seconds:
+it is discarded before the world can move under it. That is why it is gitignored and unchecked —
+not laxness, but that there is no gap for staleness to live in.
+
+**AND THE STRONGER REASON IS PEDAGOGICAL** *(Doug, 2026-09-02)*: *"if I'm aware that they are going
+to be overwritten eventually, then I'm much more likely to think harder about your answers."* That
+is a report about **effectiveness**, which Claude cannot assess, so it outranks the staleness
+argument above rather than joining it. One `LAB_FILE` slot; a new Answer overwrites the last, and
+the loss is the point.
+
+**So if a lab book is ever built, filing must COST something.** Keeping an Answer available while
+Doug is still reading makes the scarcity counterfeit — the bookmarked-article failure, where saving
+substitutes for reading. **A Save button beside the text would destroy the effect it preserves.**
+
+**And the two failure modes are genuinely different, which is the part to keep.** A fixture lab can
+be perfectly written and *later* false. An Answer can never go stale — but it can be **wrong
+on arrival**, if Claude misreads the bridge or invents what HRW did not say. No checker catches
+that either; the difference is that Doug finds out in the next sentence rather than in three months.
+
+**Everything in this directory manages the fixture side of that split**, which is where the rot is.
+
+### Both channels are live
+
+*(This said Answers were "held in reserve" until the fixture labs were spent. Doug superseded that
+on 2026-09-02: "HRW is intended partly as a platform for you to use to provide rich answers that
+you cannot provide with only conversation text.")*
+
+- **Do not AUTHOR a second document where a fixture lab already covers the ground.** Writing a
+  whole Answer over material a fixture lab already carries trades a durable, checked artifact
+  for an ephemeral one. **The waste is the duplicate document, never the answer** — answering
+  Doug's question mid-run *is* the run (charter Decision 14), and produces no artifact to
+  duplicate.
+**So lab content sits in one of three tiers, and a writer should know which one a sentence is in:**
+
+| tier | example in `connect-expansion.md` | kept true by |
+|---|---|---|
+| **checked against a real compile** | the five `<!-- pane-* -->` tables; the `2, 2, 3` set sizes | a slow test that compiles the specimen and compares |
+| **checked structurally** | every `hrw://` link, the station catalogue | fast tests — links resolve, `CATALOGUE.md` is current |
+| **prose** | *which* members are in which set; every explanation | **nothing. Only the run.** |
+| **the conversation** | whatever Claude says when Doug presses 🎯 | **nothing. Only Doug, in the moment.** |
+
+**THE FOURTH ROW IS NEW, AND IT IS WHERE THE EXPOSURE MOVED** *(added 2026-09-01 with charter
+Decision 14)*. Decision 14 shifted the teaching out of the prose and into the conversation, which
+shrinks tier 3's volume without changing its status — and adds a tier that is **unchecked,
+unversioned, and delivered at the moment Doug is most receptive.** That is exactly the *effective
+but false* quadrant he cannot detect. **Claude being present to answer is not a substitute for a
+checker; it is the reason one is needed.**
+
+**THIS IS THE STANDING LOOP TARGET** *(Doug's ruling, 2026-09-01)*. When effort is available for a
+new feedback loop, it goes to the bottom two rows, because that is where the teaching now happens
+and where nothing currently looks. **The lever already exists and is `MATH-INSPIRED,
+CODE-GROUNDED` below**: a claim naming `generate_equality_equations` can be wired into
+`doc_citations`, and a claim about "graphs" can never be. **So the way to check prose and
+conversation is not to check prose and conversation — it is to require that they name code**, and
+then check the names. Grounding is the mechanism, not the manners.
+
+**THE COUNTS ARE THE CHEAP PART TO KEEP TRUE, AND THE ARGUMENT IS THE EXPENSIVE PART.** A number
+can be re-derived from a compile and compared. *"Nothing downstream ever groups connectors"* cannot
+be checked by anything here — **and it is the sentence that actually teaches.** So the checkers
+protect a lab's *facts* and leave its *reasoning* entirely to the run, which is why Doug's
+*"I couldn't have guessed that"* is worth more than any test in this repository.
+
+**A MARKER IS NOT THE ONLY WAY A NUMBER IS CHECKED, so do not read an unmarked table as unchecked.**
+Station 1's set sizes in `connect-expansion.md` carry no marker, yet they *are* verified —
+`lab_set_sizes_match_the_connection_replay` asserts `potential == [2, 2, 3]` and
+`flow == [2, 2, 3]` against the real connection frames, hard-coded in the test with a failure
+message naming the station. What that test does **not** check is the *mapping*: that the first set is
+`src.p.v, R.p.v` rather than some other pair. **Before trusting or editing a number, find what checks
+it** — the marker, a named test, or nothing.
+
+**AND THE LIMIT OF ALL OF IT, which the fidelity work is what makes it safe:** these checkers verify
+that the **lab agrees with the pane**, never that the **pane agrees with the compiler**. If HRW
+ever misrepresented what Rumoca did, a lab written against it would faithfully record the
+misrepresentation and every checker here would go on passing. That is why accuracy in `worker.rs`
+outranks everything, and why `--features notebook-check` — pane against a fresh compile — is the
+instrument for the other half.
+
+## Claude is the LAB INSTRUCTOR: drafting, running, exploring
+
+**Charter Decision 15 renamed this role, and it was a correction rather than a relabelling.** A
+**tour guide** talks continuously, is never surprised, and is followed rather than consulted — none
+of which is the job. **A lab instructor's job is specific: the student is at the bench, the
+apparatus did something unexpected, and the instructor helps find out why.**
+
+**The complementary role is the LAB AUTHOR** — the route, the stations and the claims, written in
+advance and machine-checked before Doug arrives (charter Decision 14, renamed from *lab guide* in
+v1.15 because that word was a fossil of the tour metaphor). **Conflating the two is the named
+failure**: an author who instructs in advance rebuilds the textbook Decision 14 retired.
+
+*(This paragraph said "a lab guide talks continuously" until 2026-09-25, which had stopped making
+sense: it was rejecting tourism while naming a role the charter still defined.)*
+
+**Agreed with Doug 2026-08-23** as three activities, **reframed 2026-09-01** under Decisions 14 and
+15. They are not stages of polish — **each measures something the others cannot.**
+
+| activity | what happens | what it measures | instrument |
+|---|---|---|---|
+| **drafting** | the instructor writes the lab | correctness, and structural discipline | **Rumoca + HRW** — a real compile, the checkers |
+| **running** | Doug works the apparatus, iterating with the instructor | **effectiveness** — does it land | **Doug, and only Doug** |
+| **exploring** | Doug asks what the protocol never asked | **coverage** *and* **the instrument** — what the instructor never wrote, and what the panes do off the route | **Doug's questions — the 🎯 capture** |
+
+**EXPLORING CHANGED STATUS, AND THAT IS THE SUBSTANTIVE EDIT HERE.** It used to mean *leaving the
+route* — a bonus, and slightly a failure of the route to be complete. **Under Decision 14 the route
+exists in order to provoke it**, so exploring is the intent rather than the departure, and a
+protocol nobody leaves is a protocol that pre-empted its own questions. Note that this row named
+its instrument *"Doug's questions"* on 2026-08-23, a week before the 🎯 capture existed. **The row
+predicted the mechanism.**
+
+**A NOTE ON VOCABULARY WHILE THE RENAME WAS PENDING** *(2026-09-01; **the rename landed the same
+day** and this note is kept for the reasoning, not as a live caveat)*. Decision 15 binds the
+sequence: reimagine now, rename atomically later. So **role and activity names were corrected here
+immediately, because they were wrong** — Claude is not a tour guide — **while the artifact was
+still spelled `tour` throughout this file and in every link**, and changed in one atomic pass. That
+mixture was deliberate and bounded, not drift.
+
+*(Two words in the sentence above were themselves rewritten by that pass and are restored as of
+2026-09-25: it claimed the artifact was "still spelled `lab`", which describes no transition, and
+called the role a "lab guide", which is the half-translation Decision 15's own ruling names as its
+example of what not to produce.)*
+
+> **Why not "phases".** They were numbered 1/2/3 until 2026-08-23. **"Phase" already means something
+> important here** — Rumoca has eleven compiler phases and the labs are *about* them — so "phase 2"
+> named two unrelated things in one sentence. The numbers also implied a sequence that does not
+> hold: a lab is run and explored at the same time, and exploring produces prose that has to be
+> run. **Drafting, running and exploring say what they are and collide with nothing.**
+
+**The run is the we-do of a textbook's I-do / we-do / you-do** — [`../vision.md`](../vision.md)
+works out which of those three HRW should try to win, and which to concede.
+
+### ⟶ RUNNING A LAB *IS* THE LEARNING — read this before anything else here
+
+**Doug, 2026-08-22:** *"Most of my conceptual learning happens when iterating with you during
+runs to improve the correctness and effectiveness of labs. Making the lab prose correct
+and personally effective during those runs is my primary learning exercise right now."*
+
+**So the lab is a byproduct, not the deliverable.** That is `working-with-doug.md`'s standing
+principle — *the conversation is the instrument; code changes are a byproduct of understanding* —
+applied to labs. **A finished lab is the residue of a learning session, not its purpose**, which
+is why the three activities are worth keeping distinct and why three consequences bind:
+
+- **A DRAFT IS NOT TRYING TO BE UNIMPROVABLE — DRAFTING IS THE INSTRUCTOR'S PREP.** A draft with
+  nothing left to iterate on would delete the exercise. **But the answer is not worse drafts** — it
+  is drafts whose remaining weaknesses are **conceptual rather than mechanical.** **This is what a
+  lab instructor does before class: check the apparatus, so the session is spent on the physics and
+  not on a broken meter.** Arguing about a wrong count, a dead link or a station in the wrong order
+  teaches Doug nothing about the compiler; arguing about *whether differentiating the constraint is
+  the natural move* is the whole point. **Drafting's job is to spend the mechanical failure modes so
+  the live iterations are all conceptual** — see *"Drafting aims at correct AND structurally
+  disciplined"* below for the line that follows from it.
+- **WHILE RUNNING ONE, ENGAGE — DO NOT PATCH.** The efficient reflex is: Doug says the prose is off, Claude
+  rewrites it, both move on. **That reflex strips out the learning.** When he pushes back, say why
+  it was written that way, what the alternative costs, and where the concept actually sits — and let
+  him push again. **Slower on purpose**, because the dialogue is the instrument and the edit is the
+  residue.
+- **AND LAB PROSE IS NOT WORKDAY WORK.** The two-mode split (`CLAUDE.md`) puts refactoring and bug
+  hunting in Doug's workdays. It now has a reason beyond scheduling: **improving an explanation
+  alone consumes the material his learning runs on.** Fixing a checker-caught number, a dead link or
+  a stale citation is fine. **Rewriting an explanation unsupervised is not Claude's to do.**
+
+  **THE LINE IS REDRAWN IN LAB TERMS** *(Doug, 2026-09-01, in light of Decision 14)*. The old
+  wording listed three permitted repairs and forbade one act, which left everything unlisted
+  undecided. **The test is now the one this repository already uses for unsupervised document work:
+  RESTORE, NEVER CHOOSE.**
+
+  | | unsupervised | why |
+  |---|---|---|
+  | a number, link, citation, table, vocabulary slip | **free** | a checker caught it or could; there is one right answer to restore |
+  | a route broken by something that moved — a dead pane, a renamed stage | **free** | restoring apparatus, not designing an experiment |
+  | **the explanation** | **Doug's** | it is the material his learning runs on |
+  | **the predictions and `Expected:` lines** | **Doug's** | **Decision 14 makes these the pedagogical core**, not the prose around them |
+  | **which specimen, which panes, in what order** | **Doug's** | that is designing the experiment |
+
+  **Decision 14 moved the explanation into the conversation, which shrinks how much of a lab is
+  prose — it does not license editing what remains.** If anything it *narrows* the free column,
+  because a prediction now carries the teaching that a paragraph used to. **When the answer is
+  "choose", it is Doug's; when it is "restore", it is Claude's.**
+
+### ⟶ WRITE TO PROVOKE QUESTIONS, NOT TO PRE-EMPT THEM — 2026-08-30
+
+**THIS IS HOW CHARTER DECISION 14 IS EXECUTED, NOT A PREFERENCE FOR SHORTER PROSE.** Written
+2026-08-30 as guidance layered on the old model; Decision 14 made it the definition of what a lab's
+prose is *for*. The prose does not teach — **it provokes the exchange that teaches**, and the six
+rules below are what that requires of a sentence.
+
+**Doug can select any sentence in the lab panel and ask about it** (the 🎯 capture). That changes
+what exposition is for. His words: *"you can be more terse in your lab prose as I can always ask
+you questions about your prose. The labs can focus more on being labs and less on being like
+textbooks."* The pedagogical argument — that this **strengthens** we-do and you-do rather than
+merely shortening the page — is in [`../vision.md`](../vision.md). The rules it produces:
+
+1. **State the claim; do not argue it.** The argument is one question away. A paragraph that
+   defends a claim nobody has yet doubted is spent attention.
+2. **Naming a term is enough.** *"Rumoca computes them with union-find"* needs no paragraph on
+   union-find. A term he does not know is a question he can now ask against the sentence that
+   used it — which is a better teaching moment than a definition he did not ask for.
+3. **Exposition serves the PREDICTION, not the concept.** Include what he needs to predict, and
+   stop. Anything further front-loads the answer and weakens the step it precedes.
+4. **Never terse in `**Expected:**`.** Terseness there destroys the falsifiability that makes a lab
+   a test — **the violability rule is stated in full under "The rules this rests on"** and is not
+   repeated here. **Decision 14 raises it rather than relaxing it:** with the explanation moved
+   into conversation, the checkpoint carries the teaching that a paragraph used to, which is also
+   why rule 7's redrawn line makes these Doug's and not Claude's.
+5. **Fewer claims, never looser ones.** *"The system is singular"* is terse and checkable;
+   *"things go wrong"* is neither. Vagueness is not brevity, and an unfalsifiable sentence fails
+   the same rule an unfalsifiable expectation does.
+6. **Depth goes to [`../compiler-phases/`](../compiler-phases/)**, which already exists for
+   *"detail that is true but premature"* and only now becomes practical, because he can pull it
+   on demand instead of meeting it uninvited.
+
+**AND THE SAFETY ARGUMENT, which is why this is not a style preference.** An omitted explanation
+costs one question; an over-reaching one costs a false belief he cannot detect. **Prose written to
+pre-empt questions is prose written past what was verified.** Less exposition is less surface for
+the failure this repository exists to prevent.
+
+**Applied one lab at a time, as he runs it** — never as a campaign, for the reason the
+conversion rule below already gives.
+
+### ⟶ MATH-INSPIRED, CODE-GROUNDED — the rules for what a lab may claim
+
+**Four rulings from 2026-08-30/31.** The rule is here; **the account of each — Doug's words, the
+evidence, what it cost — is in [`../../DECISIONS.md`](../../DECISIONS.md) under those dates.** Do
+not restate it here: this file is read before every lab edit and that one is not.
+
+**1. Ground every claim in Rumoca's code; let the textbook supply the QUESTION, not the answer.**
+An abstract claim has nothing to be wrong against, so no reading and no checker can refute it —
+only a collision months later. A grounded claim is refutable in minutes, **and Doug can refute it
+himself by opening the file.**
+
+**AND IT APPLIES TO WHAT CLAUDE SAYS, NOT ONLY TO WHAT HE WRITES** *(2026-09-01)*. Decision 14 moved
+most explanation into the conversation, which is the tier **nothing checks** — no checker can see
+what Claude says at the bench. **Grounding is the only defence that transfers there**, because Doug
+can open the file the claim named. So rule 1 is not a drafting rule that also happens to help live;
+**it is the safety mechanism for the one tier that has no other.**
+
+**2. An abstraction must pass BOTH tests before it appears at all.**
+
+1. **Does the code already have a noun for it?** If so, use the code's noun. An abstraction is
+   only ever a stand-in for something unnamed.
+2. **Does it predict something the code does?** One predicting nothing is dead weight however
+   honestly it is labelled.
+
+| abstraction | verdict |
+|---|---|
+| **the singleton set** | Out — predicts nothing. Rumoca's union-find never has one. |
+| **node** | Out — duplicates `ConnectionSet`, *and* its prediction is false at two scopes. |
+| **the graph** | Out — duplicates what union-find already computes; predict from merges. |
+
+**3. The LABEL goes in the lab; the COMPARISON goes in the conversation.** A few words stop an
+abstraction impersonating the compiler. What the code stores *instead*, and what the textbook
+version keeps that is never used, is a comparison — it pays only when he pulls it. **The tell is
+that a clause needs a conversation to land**: that is not a gap to fill with more prose, it is
+prose that should have been a name.
+
+**4. The introduction builds the mental model; the stations reinforce or break it.** So the intro's
+abstractions and the stations' predictions are **the same list seen twice** — an abstraction with no
+station is untested confidence, and a station tracing back to no abstraction is trivia. **Select for both
+jobs**: only-reinforce manufactures false confidence, only-challenge never consolidates.
+
+**In lab terms this is the PRE-LAB BRIEFING and the EXPERIMENT**, which is what makes the
+matched-lists requirement obvious rather than arbitrary: the briefing establishes what Doug expects,
+and the bench confirms or refutes it. **An abstraction with no station is a briefing for an experiment
+nobody ran**; a station with no abstraction is an experiment testing nothing anyone predicted.
+
+#### Write the stations first, and start the overview EMPTY — Doug, 2026-09-22
+
+**The sequence, and it is binding on new labs:** build the stations. Then look at the empty
+overview and ask what, if anything, a station cannot be attempted without. Add only that. *"An
+empty overview should be the starting point."*
+
+**Why the sequence and not just the triage below.** Triage starts from prose that already exists
+and asks of each sentence whether it may stay — so it can only ever *remove*, and it rationalises
+whatever survives. It never asks what is **missing**. Two rounds of triage on
+`connect-expansion` cut 72 lines to 50 and left an overview that explained union-find internals,
+the routing of a pair to its data structure, and the fields of `ConnectionSet` — **and never once
+said what a connector is**, in a lab named for what `connect` means, about a language whose
+distinguishing idea is the connector. Doug found that in one reading. Starting from empty finds it
+in one pass, because the first question an empty overview asks is *what must the reader know*,
+not *may this sentence stay*.
+
+**The second thing triage cannot see: prose that PRE-EMPTS its own station.** The same overview
+explained why potential merging is global and flow merging is per scope — which is the answer to
+Station 6's *"commit to the two counts being equal, or to a reason it breaks."* It read as a
+useful abstraction and was a spoiler, and it survived two passes because triage asks whether a
+sentence is true and stationed, never whether a station still has anything left to ask. See
+[**WRITE TO PROVOKE QUESTIONS**](#-write-to-provoke-questions-not-to-pre-empt-them--2026-08-30)
+above, which this is a special case of.
+
+**Rewriting from empty can introduce a falsehood that triage never could — check the phase's
+scope before writing the summary sentence.** An overview cut to what the stations need is about
+*the lab's slice of a phase*, and the shortest way to close that paragraph is to say the slice is
+the whole. `connect-expansion` said *"that is the whole of the phase"* of connection expansion on
+2026-09-22; flatten also flattens the hierarchy, copies in component equations and rewrites to
+residual form, and **that lab's own Station 4 already measured the contradiction** — 16 of 23
+equations are the components'. **Read the phase crate's module doc**, name what the lab does not
+cover, and let a station's numbers check you.
+
+**When an overview will not shrink, it is usually holding an ACTIVITY rather than a briefing.**
+`index-reduction`'s stayed at 112 lines through a full pass, because what remained was a
+derivation the reader performs — and a derivation is what a station is. Promoted, it became
+Station 1 (predict, open the Incidence view, find the constraint's row empty), the rest renumbered
+to 2-6, and the overview fell to 26. **The test is whether the passage could carry an
+`**Expected:**`.** If it could, it is a station that has not been written yet.
+
+**The test for a candidate sentence is therefore a question about a station, not about the
+sentence:** name the station that cannot be attempted without it. If naming one is hard, it does
+not go in. If the station would be *better* without it, it definitely does not.
+
+**Applied to all 21 labs on 2026-09-22, the spoiler was the most common defect after genre
+boilerplate**, and it never looks like one — it reads as a useful abstraction. Four found:
+`tearing` said a 3×3 solve becomes 1×1, which is Station 1's prediction; `index-reduction` printed
+Station 5's `unmatched equations: f_x[4]; unmatched unknowns: lambda` verbatim; `connect-expansion`
+explained the scope asymmetry Station 6 asks you to derive; and `the-pipeline` carried a section of
+cross-lab numbers that pre-announced the `Expected` of **at least four stations across four labs**
+— it is now below the route, headed *"do not read this before the labs"*. **A hub is the worst
+place for this**, because everything it spoils is a lab it is sending you to.
+
+**So the check is per station, not per document:** for each `**Predict.**`, is its answer stated
+anywhere the reader passes first — this overview, or the hub that routed them here?
+
+#### The remedy is redistribution, not deletion — Doug, 2026-09-22
+
+Rule 4 names the defect and stops there, so for eight weeks the only thing it could produce was a
+verdict. Doug supplied the missing half after reading Station 1 of `connect-expansion` against the
+overview that introduces it: *"the lab overview should contain only as much as necessary to
+introduce the stations… some of the statements which are currently in the lab overview could be
+redistributed to the stations, because in the stations, those same statements could be checked. We
+don't want lab overviews which are attempting to be mini textbooks."*
+
+**The sharp form: if a sentence commits to something a specimen could settle, it belongs in a
+station.** Not because overviews must be short — because in an overview that sentence is unpinned
+by any test *and* unperformed by the reader, and those turn out to be one property
+([`../question-ledger.md`](../question-ledger.md), 2026-09-22).
+
+| the overview sentence | do this |
+|---|---|
+| orients, or previews a number a station settles | **keep** — this is the briefing |
+| commits to something a station already reaches | **move it into that station**, where an `**Expected:**` pins it |
+| commits to something **no station in this lab can reach** | **neither keep nor delete — it needs a specimen.** File the station the lab owes, and move the claim to the lab's **"What this lab cannot check"** section |
+
+**The third row is where a textbook accumulates**, because those claims are precisely the ones with
+nowhere else to go — which is exactly why the row names a destination. **Filing the station and
+leaving the prose in the overview is half the disposition and changes nothing**: it was done on the
+first application of this rule, and the overview came out five lines shorter than it went in. A true
+claim the lab cannot demonstrate belongs in the section that exists to say so, where the reader meets
+it as a stated limit rather than as briefing for an experiment that never comes. An overview carrying several has quietly become a textbook with an appendix of
+experiments. The tell is explicit when a lab admits it: `connect-expansion`'s overview said *"`RcCircuit`
+cannot show you why"* about a claim it kept anyway.
+
+**No line budget guards this, deliberately.** [`../reading-budgets.txt`](../reading-budgets.txt)
+records what happened last time a length limit policed prose — fifteen raises in one day, zero
+rejections. **Count unstationed abstractions, not lines.** Measured 2026-09-22 for scope: across 21
+labs the median overview is 21 lines and 16% of its file; the outliers were `connect-expansion` (72)
+and `index-reduction` (137 lines, 40%), and both were redistributed under this rule the same day.
+
+**Two failure modes worth naming, because both look like knowledge.** *True, checkable and
+useless* — naming a type teaches nothing; the contrast and the rationale are what land. And *the
+textbook model of a data structure is not that structure's behaviour in a given program* —
+recognising the algorithm is not reading it. **Read the callers.**
+
+**The mechanical payoff, which is why this outranks style.** `doc_citations` already checks that
+cited paths exist and symbols resolve, so a claim naming `generate_equality_equations` can be
+wired into the gate. A claim about "graphs" can never be. This is
+[`../../CLAUDE.md`](../../CLAUDE.md)'s *bias to checkable output*, applied to prose.
+
+### Correctness is Claude's job. Effectiveness is Doug's, and Claude cannot do it at all
+
+**This corrects something Claude wrote on 2026-08-22** — that Doug is the instrument for whether
+lab prose is *correct*. He is not, or not mainly. **Most prose claims are verifiable by reading
+source**: *"nothing downstream ever groups connectors"* is checkable against
+`rumoca-phase-flatten`, and a claim about phase order is checkable against the log. Slow for
+Claude, but possible.
+
+**What Claude is structurally unable to judge is whether prose works.** He knows what he meant and
+cannot un-know it. That is not a care problem — it is the same shape as this repository's standing
+finding that *Claude is a poor sensor for his own comprehension failures*. **Effectiveness is only
+measurable by someone meeting the idea for the first time.**
+
+**THE OPERATIONAL CONSEQUENCE IS A RELEASE, NOT A DUTY: Doug should not fact-check.** Whether a
+number is right is Claude's problem and the checkers'. **The things only he can see** are *"I
+couldn't have guessed that"*, *"I had to read this twice"*, *"this arrived before I needed it"*,
+*"I don't know why you're telling me this yet."*
+
+*(This read "those are unrecoverable if unsaid", which made a duty roster of it. Reworded
+2026-09-01 with the running discipline Doug removed: **it is a description of what is useful, not a
+list of reports he owes.** Nobody learns well while filing observations.)*
+
+**AND IT GOVERNS THE CONVERSATION, NOT ONLY THE PROSE** *(2026-09-01)*. This was written about
+drafted paragraphs, but Decision 14 moved most explanation to the bench — where **both halves of
+the asymmetry get worse.** Claude still cannot judge whether a live answer landed, *and* nothing
+checks it. So the four reports above are owed for an answer exactly as for a paragraph: **"I had to
+read that twice" is as useful said out loud at a station as it is written against a draft.**
+
+**First encounter is somewhat renewable**, so it is a mild reason to make drafts good, **not a
+resource to ration a run around** — Doug, 2026-08-22: *"I often re-read articles and books, and
+sometimes treat re-reads as first encounters."*
+
+### Tune to Doug's DURABLE profile, never to his transient state
+
+*(Why a textbook is correct and ineffective — HRW's whole positioning against textbooks — is in
+[`../vision.md`](../vision.md). This is the rule it produces.)*
+
+**The danger in "personally effective", and it cuts against Doug's own goal for
+`index-reduction.md`** — that it be *"the best demonstration of the value of this HRW project"* and
+convince a PhD friend. Tune hard enough to one reader and nobody else can use the result.
+
+- **Tune to the durable profile, which generalises.** Decades of C/C++/Java, new to Rust idiom and
+  to Modelica compilers, basic calculus, top-down, problem before mechanism
+  ([`../working-with-doug.md`](../working-with-doug.md)). That is a real archetype, not an
+  idiosyncrasy, and a lab tuned to it works for a large class of engineers.
+- **Never tune to transient state** — what he asked yesterday, what is on his screen now. That is
+  genuinely personal and does not generalise.
+
+**THE SPLIT IS BY ARTIFACT LIFETIME, AND THERE ARE NOW THREE CHANNELS** *(corrected 2026-09-01)*.
+It read *"durable profile → fixture lab; transient state → Answer"*, which was a clean
+mapping while those were the only two. Decision 14 added a third — **the conversation** — and it
+lands on the side this rule says never to tune to.
+
+| channel | lifetime | tune to |
+|---|---|---|
+| a fixture lab — its route, checkpoints and claims | months, re-read | **the durable profile** |
+| an Answer | seconds, discarded | the moment |
+| **an answer at the bench, after 🎯** | the exchange | **the moment — and that is the point** |
+
+**So the rule governs what OUTLIVES the moment, not what Claude may say in it.** What is on Doug's
+screen is precisely what a captured passage is *for*; tuning an answer to it is correct. **What must
+never absorb transient state is the artifact**, because it is read months later by someone — Doug
+included — who no longer has that screen.
+
+### Drafting aims at "correct AND structurally disciplined", not at "correct"
+
+**Doug predicts drafts will be mostly correct and mostly ineffective. Treat that as a
+prediction to fight, not a plan** — because an avoidable weakness spends a run on something a
+checker could have caught, and the run is the scarce resource.
+
+*(This said "first encounter is non-renewable", which Doug overturned the same day and which the
+section above now records correctly: he often treats re-reads as first encounters. Corrected
+2026-09-01 — the two paragraphs were one section apart and said opposite things.)*
+
+Claude cannot measure effectiveness, but three **structural proxies** are available without Doug:
+
+- **`Predict` → look → `Expected`** forces a falsifiable expectation rather than an assertion.
+- **Prose to the first prediction** bounds how much may be said before the reader tests something.
+- **The tier discipline** names which sentences nothing will ever check — so they get the care.
+
+**VERIFY THE ASSERTIONS; DO NOT PRE-EMPT THE OMISSIONS** *(2026-08-22, from what the connections
+lab actually cost)*. The expensive part of that lab was never the iteration — it was **reading
+Rumoca to check a claim**, writing two specimens, and running System Modeler. Those are Claude's
+hours, not Doug's, which makes them the cheapest available lever on every remaining lab: **every
+claim a draft makes should be checked against the source before Doug ever sees it.**
+
+**AND UNDER DECISION 14 IT BUYS A SECOND THING: THE ANSWER AT THE BENCH.** A claim verified while
+drafting is a claim Claude can *answer from* when Doug captures the sentence and asks — grounded,
+rather than reconstructed on the spot in front of him. **Pre-draft verification is therefore the
+only preparation the conversation gets**, since nothing checks it live.
+
+**The line, and it is easy to cross in the name of thoroughness:** verification targets *claims the
+lab makes*, never *questions the lab does not raise*. Doug's connector-type question — **can a
+voltage potential be connected to a mechanical one?** — was a real omission, and answering it in the
+draft would have prevented him from asking it. This file already says a lab that answers a question
+pre-emptively **spends his attention before he has a reason to want it.** Check what is written;
+leave the gaps to be found.
+
+### Exploring finds omissions, and its answers do NOT automatically become lab content
+
+**Running a lab asks whether what is written lands. Exploring asks what was never written** — a question
+the lab did not prompt is a gap the lab did not cover. It is the only one of the three that finds
+omissions, which is why [`../question-ledger.md`](../question-ledger.md) says the real measure is
+*the nature of the questions Doug asks*, and why **no questions at all is ambiguous and must not be
+read as success.**
+
+**Doug, 2026-08-22: *"we might or might not choose to improve lab content as the result of
+[exploring] questions."*** Defend that. Such an answer routes one of three ways, and only one of
+them edits the lab:
+
+| the question is… | route |
+|---|---|
+| a gap at the lab's own depth | **into the lab** |
+| anything else — premature, or simply answered | **nowhere.** Not every answer is lab content |
+| *and separately:* it revealed something about **how Doug learns** | the **question** to [`../question-ledger.md`](../question-ledger.md) — never the answer |
+
+**THE MIDDLE ROW USED TO SAY `../compiler-phases/`, AND THAT HOME NO LONGER ACCEPTS THE DELIVERY**
+*(corrected 2026-09-01)*. That directory was described as a store for detail deferred from a lab;
+it is not. **It is the closest thing that exists to Rumoca documentation** — written before HRW
+existed and refreshed at the version bump — and posting lab overflow into it would corrupt the one
+job it does. **Decision 14 removed the need for the deferral store anyway:** premature detail
+arrives on demand when Doug asks, so it does not have to be written down first. Three routes became
+two, and the ledger takes the *question*, not the explanation.
+
+**Doug drew that line himself:** *"That distinction is past the level of useful detail for this
+lab."* Routing everything into the lab is how a lab drifts to reference depth one good question
+at a time.
+
+#### The three INTERLEAVE — they describe a question, not a stage a lab is in
+
+*(2026-08-22, from watching it happen. It is also why the numbering was dropped a day later.)*
+Doug's connector-type question arrived during what looked like a run, but it was **exploring**: a
+detail the lab had never covered, asked by someone the lab had already worked on. Its answer
+routed *into the lab*, which then needed ratifying on a run — given five exchanges later.
+
+**So `connect-expansion.md` is run and still open to exploring at the same time**, and every
+other lab will be too. There is no sequence of stages a lab passes through and finishes.
+
+**The rule that falls out:** when an answer found by exploring routes *into the lab*, **it is
+Claude's draft until Doug has read it** — whatever else in the file he has already run. Nothing
+records that distinction since the `run:` markers were retired on 2026-08-31, so **judge it from
+the conversation.**
+
+**The failure it guards against is one no checker can catch:** prose written by Claude, sitting
+inside a lab Doug has run, carrying a standing it never earned.
+
+### The dangerous quadrant is EFFECTIVE BUT FALSE
+
+Correctness and effectiveness come apart in both directions, and the two failures are not
+symmetric:
+
+- **True but ineffective** — the failure Doug has already corrected in Claude: accurate answers
+  carrying three-graph comparison tables. It wastes a run.
+- **False but effective** — a clean analogy that lands beautifully and teaches something untrue.
+  **Doug has no way to detect it precisely because it landed**, and everything he builds on it
+  inherits the error.
+
+**That is why accuracy outranks effectiveness when they conflict** (`CLAUDE.md`, and charter
+Decision 7): an ineffective truth costs a run; an effective falsehood corrupts what comes after.
+**Decision 7 states the ranking; this states why it holds** — the two failures differ in
+*detectability*, not just in cost. An ineffective truth announces itself, because Doug notices he
+is lost or bored. An effective falsehood is silent by construction.
+
+**AND IT IS WORSE AT THE BENCH THAN ON THE PAGE** *(2026-09-01)*. Charter Decision 14 records this
+quadrant as its binding hazard, and this section is its description: a live answer is **more
+fluent, tailored to the question just asked, and arrives with no checker between it and Doug.**
+Every property that makes conversation good teaching also makes a wrong answer land better. **So
+the rule that governs drafted prose governs an answer at a station, and more strictly.**
+
+**One consequence for any EXPERT reader** — the PhD friend is the standing example, but this holds
+for every credentialed reader of any lab: **he judges whether the claim is credible; he cannot
+measure whether it is effective.** He reads *"understandable with only basic calculus"* through a
+mind that already has the machinery and cannot un-install it either. **He is the person to convince.
+He is not the instrument.**
+
+## Running one
+
+**Run HRW (`cargo run -p hrw`), open Lab mode, pick one.** That is the whole of it.
+
+**THERE IS NO SESSION DISCIPLINE, AND THERE ARE NO OBLIGATIONS ON DOUG HERE** *(his ruling,
+2026-09-01)*: *"that discipline was turning education into a chore, including frequent pesters from
+you about the need to walk labs."* **This section used to prescribe an order to click in and
+require him to report every mismatch however minor.** Both are gone. **He runs a lab when he wants
+to, in whatever order he likes.**
+
+**What he reports is unowed, not unimportant** — and the distinction matters, because the first
+version of this paragraph said he *"reports whatever he feels like reporting"*, which is looser
+than what Doug ruled. He removed the **obligation**. He did not say the reports stop mattering:
+*"I couldn't have guessed that"* and *"I had to read that twice"* remain **the one signal Claude
+cannot generate**, and nothing replaces them.
+
+**The one thing worth knowing is apparatus, not procedure: notices appear in the STATUS BAR** along
+the bottom of the window. A reader who does not know where the readout is cannot read it — a real
+defect this suite has already produced. **That is the lab instructor's job, not a rule for Doug:
+point at the readout before asking anyone to read it.**
+
+**And nothing tracks or reports what has been run.** The `run:` markers were retired
+2026-08-31 because *"that bookkeeping doesn't yield enough value"*, and the practice survived in
+prose anyway — hand-maintained backlogs of which stations had no reader yet. **Do not reintroduce it in
+either form**; judge from the conversation.
+
+## The vocabulary — `lab`, `station`, `observation`
+
+**SETTLED 2026-09-01 under charter Decision 15.** The old vocabulary was `lab` / `stop` /
+`observation` / `guide`. **Two of those four were already lab words and did not move**, which is
+the strongest evidence the metaphor fits rather than being imposed on it.
+
+| word | what it is | whose it is | changed? |
+|---|---|---|---|
+| **lab** | a sequence of stations with one goal | the repository's | was `lab` |
+| **station** | a question, and something to look at | the document's | was `stop` |
+| **observation** | what was found, and whether it matched | **Doug's** | **already lab-native** |
+| **instructor** | who answers what the document cannot | Claude's role | was `guide` |
+
+`Predict` and `Expected` were already lab-native too. The full reasoning behind the original
+choice, and the four name collisions it uncovered, are in
+[`../lab-kinds-plan.md`](../lab-kinds-plan.md).
+
+**THE VERB IS `run`, AND THE SESSION IS A `session`** *(Doug's ruling, 2026-09-01, completing the
+table above)*. **`run` was a tour word and the first rename missed it** — Decision 15 settled the
+nouns and never touched the verb, leaving ~350 occurrences in `docs/` and ~230 in `src/`. Charter
+Decision 14 had already named the replacement: *"a walk is a **lab session**, not a reading."*
+
+| was | is |
+|---|---|
+| *run a tour* | **run a lab** |
+| *a run* | **a lab session** |
+| `a_finished_session_returns_to_the_mode_it_started_in` | `a_finished_session_…` |
+
+**`walk` collided exactly as `stop` did**, so the rename was surgical: the traversal sense
+(`walk_modules()`, `fn walk(dir: &Path)`) survives untouched in `src/`.
+
+**WHY `station` AND NOT `step`, so nobody re-proposes it.** This section exists because `stop`
+*collided*: a compile stops and a debugger stops. Any replacement had to survive that test, and
+**`step` fails it far worse — 346 uses in `src/` alone**, including `fn step`, `match step`, and
+single-stepping in the debugger. `run` fails the same way (586). **`station` was the only
+lab-native candidate genuinely unused here: 0 in `src/`, 1 in `docs/`.**
+
+**And the rename retires the collision rather than managing it.** With the unit called a
+`station`, **`stop` becomes free for its natural senses** — a compile halting, a debugger
+breaking — so `matching-live.md` no longer needs the opening note that disambiguated three
+meanings. That is a gain the rename buys beyond the metaphor.
+
+**The artifact is still spelled `lab` in this file, in `hrw://lab/<name>` links and in `src/`.**
+Decision 15 binds the sequence — reimagine first, rename **atomically** afterwards — and forbids a
+mechanical substitution. **This table is the target vocabulary, not a description of the tree.**
+
+## The kinds
+
+**Every kind has stations. What varies is the activity at them** — Doug's model, 2026-08-17.
+
+**ONLY ONE KIND IS RENAMED UNDER DECISION 15: `adjudication` → `calibration`.** It is the one whose
+old name explained nothing, and *calibration against a reference standard* is exactly what asking
+System Modeler is. **`concept`, `feature` and `failure` keep their names**, because Decision 15
+requires renaming what carries the *lab* metaphor and those three never did — they read correctly
+in a lab already. Three lab-native alternatives were proposed and **all three collided**:
+`experiment` is a **Modelica annotation**, `orientation` is rotational mechanics (184 in `crates/`),
+and `diagnosis` is Rumoca's compiler diagnostics (804). The charter carries the account under
+Decision 15. **Collision-check any candidate against `src/`, `crates/` and `specimens/` before
+proposing it.**
+
+| kind | the activity at a station | goal |
+|---|---|---|
+| **concept** | prose → **Predict** → Look → confirm or reject | teach one step of the chain |
+| **feature** | **do** the action → check what happened | verify one HRW capability |
+| **failure** | **read** the diagnosis → check what it says | show what a broken model looks like |
+| **calibration** *(was `adjudication`)* | **ask a reference implementation** | settle what HRW cannot settle |
+| **hub** | none — a table of links | route into the concept labs |
+| **ad hoc** | anything | answer the question just asked |
+| **bug report** | narrate a failure for a recording | hand a maintainer a reproduction <!-- unbuilt: bug_report_lab --> |
+
+*(The per-kind lab counts were dropped on 2026-09-01. They were hand-maintained beside the labs
+they counted, and `concept` had already drifted from 10 to 11 with nothing to notice — the failure
+`CLAUDE.md` names as the cheapest in this repository to leave stale. `CATALOGUE.md` is generated
+and carries the current membership.)*
+
+**Each lab declares its kind machine-readably**, immediately under the H1:
+
+```markdown
+<!-- kind: concept -->
+```
+
+Greppable by a checker, and invisible in the pane — **but not because markdown hides it.**
+`egui_commonmark` renders an HTML comment as *literal text*, so `LabState::poll` strips every
+`<!-- … -->` span out of the lab before anything sees it, and the file on disk keeps the marker
+for the checkers that read it there.
+
+**That distinction is load-bearing**, and it is written here because the opposite was asserted
+first: this line used to read *"invisible in the pane"* as though it were a property of the
+format. It was an assumption, never checked, and Doug found the tag sitting under the title of
+every lab. The pre-existing markers — `pane-groups`, `pane-origins`, `unbuilt:` — had been
+rendering for weeks; they went unnoticed only because they sit beside tables mid-document.
+`ui_tests::a_lab_renders_none_of_its_html_markers` now fails if any marker reaches the pane.
+Without it, no check can tell *"a concept lab missing its predictions"* from *"a feature lab
+correctly having none."*
+
+### The invariant is `Expected`, not `Predict`
+
+**Counted on every test run, not asserted here:**
+`doc_citations::a_lab_predicts_if_and_only_if_its_kind_says_so` enforces it — `Predict` appears
+once per station in a concept lab and nowhere else. No gradient, no partial cases.
+
+*(This paragraph used to quote the counts by hand — "all 12 non-concept labs … all 10 concept
+labs". There are **11** concept labs, and the section above already explains that per-kind counts
+were dropped on 2026-09-01 because `concept` drifted 10 → 11 with nothing to notice. The stale
+number was sitting twenty lines below the note describing it. **A checker retires the prose it
+replaces**; the reasoning lives on the test.)*
+
+So **`Expected` — a violable claim — is what every station of every kind owes**, and it is what
+makes a lab a *test* rather than an explanation. `Predict` is merely how a **concept** lab
+earns its Expected. A feature lab earns the same claim by having you *do* the action; a failure
+lab by having you *read* the diagnosis.
+
+**This corrects a framing that was steering work.** The template below used to be presented as
+the shape of *every* lab, "applied as labs are touched" — which read as *"the other twelve are
+unconverted."* They are **differently designed**, and conversions stop at the concept labs.
+
+**WHICH LABS EXIST IS IN [`CATALOGUE.md`](CATALOGUE.md), WHICH IS GENERATED** by
+`cargo run -p hrw --example gen_lab_catalogue` and kept honest by
+`app::tests::lab_catalogue_is_current`. *(Three per-kind rosters lived here until 2026-09-01 and
+were deleted rather than corrected: the concept one listed **2** labs when there were **11**,
+omitting `connect-expansion` — the lab in active use. A generated roster already existed. What
+follows is what each kind **is**, which is a rule; membership is data.)*
+
+### Feature labs — the subject is HRW
+
+**Each verifies one feature. A failed station implicates exactly one thing.**
+
+### Calibration labs *(was: adjudication)* — the subject is a question HRW cannot settle
+
+**These mark every station with the instrument it uses** — 📐 HRW, ⚙ System Modeler, 🧮 Wolfram —
+so the activity varies *within* the lab, not only between labs. The convention was invented ad hoc
+and is written down because it turned out to be the clearest thing in the corpus. **Decision 15
+makes it obviously right rather than merely useful:** a calibration lab moves between instruments,
+so saying which one you are standing at is the point of the kind.
+
+### Concept labs — the subject is the compiler, and HRW is the instrument
+
+Each teaches one step of
+[`the-chain-of-problems.md`](../compiler-phases/the-chain-of-problems.md). **The prose is
+load-bearing** (Doug, 2026-08-03): a station is the explanation, and the pane is the evidence for
+it. These are longer than a feature lab on purpose.
+
+**DECISION 14 QUALIFIES THAT, and the qualification is narrow.** The prose is load-bearing **for
+the prediction** — it must carry enough that Doug can commit to an answer before looking. The
+*explanation* now arrives at the bench when he asks. So "longer on purpose" survives as a
+statement about what a prediction costs to set up, **not as licence to explain in advance**;
+rules 8 and 12 govern the difference.
+
+**An animation-based lab pauses on algorithm *steps*, not panes.** Its links are
+`hrw://stage/<Stage>/<View>/frame/<n>`, and the frame numbers come from
+`cargo run -p hrw --example frame_index -- <Model>`, which prints the ready-made link under each
+step. **Do not transcribe the frame number by hand** — links are 1-based and the internal step
+list is 0-based, and that tool spent a day telling authors otherwise.
+
+**Why the "keep it narrow" rule below does not bind these.** That rule protects *attention per
+expectation*, because a feature lab spends your surplus attention on finding off-station bugs
+in HRW. A concept lab is spending it on the concept instead. The rule it does keep is the
+one that matters for both: **claims stay austere and trace-sourced, however long the prose
+gets.** Length is bought with explanation, never with hedging.
+
+#### A lab's job is to make the reader able to ask the next question, not to answer it
+
+**Doug, 2026-08-16**, re-running `connect-expansion.md` and then asking three detailed questions
+from the panes: *"Now, I'm going back through the lab, am using HRW's panes to think of more
+detailed (not-so-basic) questions."*
+
+**THE OPERATIONAL TEST FOR "NOT TOO LITTLE, NOT TOO MUCH": could this question have been asked
+BEFORE the lab?** One of his three — *why must an unconnected flow variable get an equation when
+an unconnected potential need not?* — is only **askable** by someone already holding the *n* − 1
+versus exactly-1 rule, because the asymmetry it asks about **is** that rule. A lab that answered
+it pre-emptively would have spent his attention before he had a reason to want it.
+
+**So write to the point where the reader can generate the question, and stop.** The answer belongs
+in the conversation, where it can be shaped by what he actually noticed.
+
+**RUNNING AND EXPLORING STRESS DIFFERENT SURFACES.** On a run he follows the route, so **the
+prose** is what fails. Exploring, he leaves it — clicking links out of order, reading panes the
+prose never mentions — so **the lab's coverage and HRW's instrument** both fail, and that day
+produced three teaching answers alongside a bridge that had stopped publishing what a pane drew,
+three dead scroll areas, links that worked once per session, and a divider that misremembered its
+width. **None of those were connection-specific**, so the expectation for the next lab is that
+exploring finds fewer — and if it does not, the finding is that exploring reaches something the
+tests still cannot, which is worth more than the individual bugs.
+
+**Do not read the absence of questions as success** — `question-ledger.md` states it as standing:
+*"No questions at all is ambiguous."* What counts is an **explicit** report that a lab landed, as
+`dae-construction.md` got on 2026-08-17 with zero corrections — the first evidence that the
+template transfers to a lab written by an author who had already run one.
+
+
+#### `matching-live.md` is a DEBUGGER lab, and that is an instrument, not a stage
+
+*(This replaced a two-pass model on 2026-09-01. Doug had agreed on 2026-08-15 to run each subject
+twice — concepts first, Rumoca's code second — and then ruled the split away: **"Let us eliminate
+entirely the notion of passes through the labs. What matters most for labs is that their content
+is math-inspired, code grounded."** Code-grounding applies from the first sentence of every lab,
+so there is no first pass to defer code out of, and no second pass to defer it into.)*
+
+**Stepping is the sharpest instrument for reading an algorithm's *behaviour*, and useless for
+everything else** — why a phase is organised as it is, why a type sits at one IR boundary and not
+another, why an origin is a `String` on one side of DAE construction and an enum on the other.
+Those are read, not stepped. **So `-live` in a filename names the instrument**; leave
+`matching-live.md` alone rather than break its links, and do not read the suffix as a stage.
+
+**The template is unchanged when the lab is the debugger.** *Predict → look → falsified if →
+explanation after.* Predict what a function returns, which branch runs, what the union-find holds
+at this step — then step, and check. **A lab that merely narrates source is prose competing with
+the reader's own editor.**
+
+**THAT OPEN QUESTION WAS CLOSED 2026-09-01, AND BOTH HALVES OF IT DISSOLVED.** It read: the depth
+rule exiles premature detail to `../compiler-phases/`, two passes made that material the source for
+a later lab, and without passes the exile is disposal — so what becomes of the directory is an open
+question for Doug.
+
+**Neither premise survived.** Doug ruled that `compiler-phases/` is **Rumoca reference
+documentation** — written before HRW existed, refreshed at the version bump, and kept — so it was
+never the deferral store this paragraph assumed. And **Decision 14 removed the need for one**:
+premature detail is not exiled, it is simply not said yet, and Doug pulls it by asking. **Nothing
+is disposed of, because nothing is stored.**
+
+
+Cross-platform labs may route through Wolfram Desktop or System Modeler when the point cannot
+be made in HRW. Their notebooks are versioned in [`notebooks/`](notebooks/) — a *fixture*
+notebook is kept for the same reason a fixture lab is, while an ad hoc notebook is ephemeral.
+Claude evaluates every cell through the kernel first, then ships them for **you** to evaluate:
+the station that lands is the one you check yourself.
+
+## Rules for writing one
+
+### Emphasis is nearly gone, and what remains is structure — Doug, 2026-09-01
+
+*"The labs are difficult to read … there's a lot in the labs which is competing for my visual
+attention."* Measured in `connect-expansion.md` at the time: **98 bold spans and 166 inline code
+spans across 288 lines of prose** — roughly one styled fragment per line. **Emphasis is
+differential**, so at that density nothing reads as emphasised and the texture has to be parsed
+before the sentence can be read. Across all 22 labs the sweep took **667 bold spans to 153**.
+
+**Write plain prose. Three things carry bold, and each is machine-read or structural:**
+
+| kept | why |
+|---|---|
+| the `#` title and `##` station headers | headings; they never carried `**` at all |
+| `**Predict.**` and `**Expected:**` | checked by `a_lab_predicts_if_and_only_if_its_kind_says_so` and `every_station_of_every_lab_owes_an_expected`, **and** they are the checkpoint grammar charter Decision 14 makes the pedagogical core |
+| the lab's **first bolded line** | `LabSource::blurb_of` reads it to build the catalogue; pinned by the `blurb` verb in `pinned-claims.txt` |
+
+**Do not re-bold a sentence to satisfy a checker.** `matching-live.md`'s vocabulary note was pinned
+as *"A **break** is where…"*; when the bold went, **the pin was updated, not the prose**. A pin
+guards a sentence, not its emphasis.
+
+### Tag a Modelica fence `modelica`, and tag nothing else that way
+
+HRW draws fenced blocks itself (`lab_panel::code_block_ui`) and lexes **`modelica` fences only**,
+with `source_view::SourceHighlight` and `colors::syntax_color` — the same pair the specimen source
+pane uses, so the same `connect(src.p, R.p)` looks identical in both places.
+
+**Everything else stays flat, and that is not laziness.** Most fences in these labs hold compiler
+*output* — `f_x[0]   0 = der(h) - v`, `structurally singular system: 13 matched out of 14`. Running
+those through a Modelica lexer would colour `equations` and `model` as keywords, which is worse than
+no colour. Inline `code` spans take a green-tinted background rather than green text, because
+`egui_commonmark` renders them as `RichText::code()` and exposes no hook for their colour; Doug ruled
+that *"good enough given all of the constraints"* on 2026-09-01.
+
+### `index-reduction.md` CARRIES A HARDER BAR THAN THE OTHERS — Doug, 2026-08-21
+
+**His words:** *"amongst all of the labs, my hope is for the index reduction lab to be the best.
+Incredible, actually. That lab will serve as the best demonstration of the value of this HRW
+project."* And the standard, which he has staked in public: *"I mentioned to a PhD Modelica friend
+of mine that I am working with you to create an explanation of index reduction that anybody with
+an understanding of only basic calculus can understand. I intend to prove to him that we can
+accomplish that."*
+
+**Treat "basic calculus only" as a CONSTRAINT, not an aspiration, because it is checkable.** It
+names precisely what the lab may assume — derivatives, the chain rule, what integrating means —
+and therefore what it may **not** assume without building it first:
+
+- **DAE index as a formal object.** It is *defined* in the lab, as a distance, from what an
+  integrator can be asked for.
+- **Jacobian singularity, Newton iteration, structural rank.** The 2026-08-18 run rebuilt the
+  central argument on **matching**, which Doug had already run — the same fact reached by
+  counting rather than by linear algebra.
+- **Pantelides by name**, or any algorithm invoked as an authority rather than shown.
+
+**The bar is PREDICTION, not comprehension, and this is where a correct lab can still fail.** A
+PhD reader will accept the current text as true. The test is harder: a reader who has never met a
+DAE must be able to predict what the next pane shows *and be right*. Accuracy does not imply that,
+and no checker in this repository can measure it — **only running the lab can.**
+
+**AND DECISION 14 PUT THAT MEASUREMENT AT RISK, WHICH IS WORTH NAMING HERE** *(2026-09-01)*. With
+the instructor present, **a failed prediction can be rescued in conversation and neither party
+notices the lab is broken.** Doug cannot predict, asks, gets a good answer, understands — and the
+station that should have carried him is still defective. The explanation patched the gap
+invisibly.
+
+**So: a station whose prediction only worked after Claude explained it is a DEFECT in the lab, not
+a successful exchange.** It is the one place where the conversation, which Decision 14 makes the
+teaching, actively hides the measurement this bar depends on. **Say so at the bench when it
+happens** — that report is the instrument, and it costs nothing to make.
+
+**The three corrections the last run produced are this constraint firing**, and they are the
+worked examples of it: *solver* used where *integrator* was meant (wrong difficulty named); a
+replacement that assumed Newton and Jacobians (rebuilt on matching); and backward references that
+**retold** earlier results in prose, including a hand-written table duplicating the Incidence view.
+Doug: *"HRW is your platform. Use it."*
+
+### The rule the others now serve: prose to the first PREDICTION, then the pane
+
+**Agreed with Doug 2026-08-12, and concept labs are to be written on this assumption.**
+It came out of his own account of running the first two: the labs felt like **books** —
+gaps, and a struggle to read — while the conversation was unlike a **lecture**, because
+questions get answered *and the lab gets fixed*. See
+[`../vision.md`](../vision.md), "Why this beats books and lectures".
+
+**The RHS is a laboratory, not an illustration.** Doug: *"the RHS will be partly helpful for
+you to demonstrate what your lab prose attempts to explain, and the RHS will be mostly
+helpful as a kind of lab for me to explore and test my expectations."*
+
+**THAT SENTENCE IS WHERE CHARTER DECISION 15 CAME FROM, AND IT IS DATED 2026-08-12** — three weeks
+before the decision was written. **Doug called it a lab first**, the word reached
+[`../vision.md`](../vision.md), and the only thing that happened on 2026-09-01 is that it finally
+reached the labs themselves. The metaphor was never imposed on this project; it had been sitting in
+one half of it, unapplied to the other.
+
+**So the unit of a curriculum station is a prediction the reader commits to before looking**, and
+the prose before it exists only to make that prediction possible:
+
+1. **Explain to the first point where a prediction is possible — then stop.** Not to
+   comprehension. *"There should be three groups"* is crude, falsifiable and available after
+   two sentences, and checking it is the fastest way to find out those two sentences were
+   misread. **Prose that continues past the first prediction is prose competing with the
+   lab.**
+2. **State what would FALSIFY it, not only what to see.** A description invites agreement; a
+   prediction invites a look. This is the existing violability rule with its purpose widened —
+   it was written so a lab could **test HRW**, and it turns out to be how Doug learns, so it
+   is now doing two jobs and gets stricter rather than looser.
+3. **Explanation comes AFTER the look**, not before. Explaining first leaves nothing to be
+   wrong about, which is comfortable and teaches less. **Decision 14 MECHANISED this rather than
+   changing it** — the 🎯 capture makes look-then-ask the default path, where it used to be a
+   discipline Claude had to remember. The rule and the mechanism now agree, which is a reason to
+   keep the rule stated, not to drop it as handled.
+4. **A station whose pane cannot falsify anything does not belong in a lab.** **It needs no other
+   home: leave it out, and let Doug ask.** *(This said "move it to `../compiler-phases/` as
+   prose". That directory is Rumoca reference documentation, not an overflow store — and under
+   Decision 14 unfalsifiable material does not need storing anywhere, because it arrives on demand.
+   Corrected 2026-09-01; see the routing table under "Exploring finds omissions".)* A lab is for
+   claims a pane can refute.
+
+**And the reader audits the prose, which is the half Claude cannot do.** Every *count* in
+these labs is read from a generated trace and is sound. Doug: *"if ever during that
+learning process I find that the RHS does not agree with the prose, I will report that to
+you."* So a station should make disagreement easy to notice, which is the same demand as
+rule 2.
+
+**Rendering claims are no longer wholly unverified — as of 2026-08-13, for published
+panes** *(this paragraph used to say every one of them was, and that is now false)*. HRW
+publishes the pane on screen to `.hrw-bridge/view.json` as **the renderer's own input**,
+and because that value is a pure function of a headless compile, a test can check a lab
+against it. So:
+
+- **A pane with a `to_bridge_json` gets a group table**, marked `<!-- pane-groups -->`, and
+  `doc_citations::lab_group_tables_match_the_real_equation_sheet` verifies every label and
+  count against a real compile. Today that is **Flatten → Equations** only.
+- **Everything else is still unverified**, and so is everything about *pixels* on any pane —
+  whether a `category` is drawn as a heading, whether rows are legible, whether something is
+  scrolled out of view. The checker verifies **content, never rendering**.
+
+**What this cost to learn:** Doug ran `connect-expansion.md` against the real pane on
+2026-08-13 and found **six** disagreements in one sitting — wrong group headings, a layout
+implied by a table that had no counterpart, and a claim that two renderings of an equation
+lived in different panes when both are columns of the same row. Four of the six are now the
+kind a test catches.
+
+### A lab the overview links into must link back, and each kind has a template
+
+**Moved to [`../writing-a-lab.md`](../writing-a-lab.md) on 2026-09-22** — the `hrw://` wiring a hub
+lab requires, the per-kind templates, and the edit/gate loop. They are mechanics, consulted at the
+keyboard; what a lab may *claim* stays here. The move is what made room for the overview rule below.
+
+### The rules this rests on
+
+**One capability per lab, and keep it narrow.** The scarce resource is **attention per
+expectation**, not the number of runs. A wide lab consumes the surplus that produces
+off-station findings rather than multiplying them, and a station failure in a narrow lab implicates
+exactly one feature.
+
+**Every `**Expected:**` line must be violable** — write what would be *different* if the feature
+broke: a number, a named field, "nothing moves", "the counter goes down". *"Mostly collapsed"*
+where the truth is **fully** collapsed tests nothing, and hedged expectations teach the reader to
+skim, which defeats the point. **This is the one home for that rule**; the provoke-questions
+section's fourth point cites it rather than restating it.
+
+**An expectation must say WHERE to look**, not only what to look for. A station was once
+correctly refused with the reason on screen, and reported as "nothing happened", because the
+lab never said notices live in the status bar.
+
+**Write the lab while you still know what should happen.** Both the worst expectations ever
+shipped here described behaviour Claude had *not* just built.
+
+**A GAP STATED HONESTLY, WITH NO WORK QUEUED BEHIND IT: nothing catches a lab whose EXPECTATIONS
+rot — only its links.** A renamed symbol fails a test; an expectation that quietly stopped being
+true does not. Grounding (rule 9) narrows this, because a claim naming code can be checked, but it
+does not close it.
+
+*(Until 2026-09-01 this paragraph also prescribed a selection principle — "run whatever just
+changed, plus one stale one" — and queued a `last_walked` feature derived from the action trail.
+**Both were removed as running discipline**, which Doug eliminated that day: the `run:` markers
+had already gone on 2026-08-31, and this was a plan to rebuild the same tracking from a different
+source. The `unbuilt:` tag went with it, since an absence tag on work that must not be done reads
+as a to-do a later session may pick up in good faith.)*
+
+## Further reading
+
+- 👤 [`../architecture.md`](../architecture.md) — how lab mode and the `hrw://` link
+  vocabulary work
+- 👤 [`../../README.md`](../../README.md) — what HRW is, and the capture plan that keeps
+  screenshots honest by taking them at these stations

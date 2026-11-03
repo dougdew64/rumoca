@@ -7,6 +7,28 @@ PYO3_PYTHON = "/usr/bin/python3"
 # Default MSL cache directory at workspace root for all Cargo invocations.
 RUMOCA_MSL_CACHE_DIR = "target/msl"
 
+# **Single-threaded test harness, and it is a correctness setting rather than a
+# preference.** Two hrw tests race on process-global state — `OutputCapture`
+# hijacks fd 1/2 for the whole process, and `focus.json` is a fixed path — so the
+# default parallel harness can DEADLOCK: the test binary sits at ~1-2 GB with
+# frozen CPU time and never returns. Because fd 1 is hijacked, libtest's own
+# output goes into the capture pipe, so the run also stops reporting where it got
+# to. Observed 2026-08-19 (twice) and 2026-08-20 (cost ~90 minutes).
+#
+# It was documented as "always pass `--test-threads=1`" in two places and that did
+# not prevent a third occurrence, because prose cannot stop a bare `cargo test`.
+# Setting it here makes the FORGETFUL invocation correct.
+#
+# Cost is near zero: hrw's 47 worker tests already serialize on a global
+# `Mutex<WorkerState>` (Rumoca's `Session` is not thread-safe), so they ignore
+# `--test-threads` anyway — see `hrw/docs/ideas.md` #48, which measured the
+# parallel saving at about two seconds.
+#
+# NOTE FOR UPSTREAM: this line is HRW-motivated and is NOT part of the
+# instrumentation intended for a CogniPilot PR. It applies to `crates/rumoca-*`
+# tests too, making them serial. Drop it when preparing an upstream cherry-pick.
+RUST_TEST_THREADS = "1"
+
 # Enable getrandom wasm_js backend for WASM builds (required by rand/diffsol)
 [target.wasm32-unknown-unknown]
 rustflags = ['--cfg', 'getrandom_backend="wasm_js"']

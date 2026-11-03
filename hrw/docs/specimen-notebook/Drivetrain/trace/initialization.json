@@ -1,0 +1,47 @@
+{
+  "error": {
+    "kind": "singular",
+    "message": "structurally singular system: 80 matched out of 88 equations and 88 unknowns; unmatched equations: equation from rotor, equation from shaft, equation from load, flow sum equation: load.flange_b.f + mount.flange_a.f = 0, connection equation: emf.flange.phi = rotor.flange_a.phi, connection equation: gear.flange_b.phi = shaft.flange_a.phi, connection equation: r2t.flangeT.s = load.flange_a.s, connection equation: mount.flange_b.s = wall.flange.s; unmatched unknowns: src.v, src.i, R.p.i, R.LossPower, emf.internalSupport.flange.tau, gnd.p.i, r2t.fixedR.flange.tau, r2t.fixedT.flange.f",
+    "n_equations": 88,
+    "n_unknowns": 88,
+    "n_matched": 80,
+    "rank_deficiency": 8,
+    "unmatched_equations": [
+      "equation from rotor",
+      "equation from shaft",
+      "equation from load",
+      "flow sum equation: load.flange_b.f + mount.flange_a.f = 0",
+      "connection equation: emf.flange.phi = rotor.flange_a.phi",
+      "connection equation: gear.flange_b.phi = shaft.flange_a.phi",
+      "connection equation: r2t.flangeT.s = load.flange_a.s",
+      "connection equation: mount.flange_b.s = wall.flange.s"
+    ],
+    "unmatched_unknowns": [
+      "src.v",
+      "src.i",
+      "R.p.i",
+      "R.LossPower",
+      "emf.internalSupport.flange.tau",
+      "gnd.p.i",
+      "r2t.fixedR.flange.tau",
+      "r2t.fixedT.flange.f"
+    ],
+    "guidance": "The initialization subsystem is structurally singular: the algebraic equations (beyond the state derivatives) cannot be fully matched to unknowns. Check for missing or redundant initial equations, and verify that start values are specified for the right variables.",
+    "determinacy": {
+      "states": 9,
+      "initial_equations": 0,
+      "fixed_start_states": 0,
+      "explicit_initial_conditions": 0,
+      "surplus_over_states": -9,
+      "verdict": "well-posed (remaining states initialize from their start attributes)"
+    }
+  },
+  "determinacy": {
+    "states": 9,
+    "initial_equations": 0,
+    "fixed_start_states": 0,
+    "explicit_initial_conditions": 0,
+    "surplus_over_states": -9,
+    "verdict": "well-posed (remaining states initialize from their start attributes)"
+  }
+}

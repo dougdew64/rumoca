@@ -1,0 +1,164 @@
+[package]
+name = "hrw"
+version = "0.1.0"
+edition = "2024"
+
+# **Clippy is DENIED here as of 2026-08-01**, after clearing 75 warnings
+# (`docs/verification-plan.md` item 0c).
+#
+# The count was the danger, not any single warning. It had drifted 63 → 67 → 75
+# unwatched, and `cargo clippy --all-targets` is the ONLY check that covers the
+# binary — `cargo test` does not build it. A warning nobody reads is where a real
+# one hides, and one was: `items_after_test_module` was firing on the exact shape
+# of the bug that broke the debugger launch on 2026-07-31, invisible in the noise.
+#
+# Denying makes a new warning a build failure, which is the point: it can no
+# longer accumulate.
+#
+# **A lint that is genuinely wrong for this crate gets an allow WITH A WRITTEN
+# REASON** — crate-level below when the judgement is crate-wide, item-level when
+# it is about one item (see `large_enum_variant` on `FromWorker` in `worker.rs`).
+# What is not acceptable is an undocumented `#[allow]`, which is indistinguishable
+# from the noise this exists to remove.
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+
+# HRW is an egui UI crate: deeply-nested builder/handler closures and multi-arg
+# widget fns are idiomatic. It deliberately does NOT inherit Rumoca's internal
+# complexity budget (SPEC_0021 clippy.toml / workspace.lints) — those govern the
+# compiler crates, not a UI.
+excessive_nesting = "allow"
+too_many_arguments = "allow"
+
+# Compile-heavy integration tests, gated so the inner loop stays fast.
+#
+# Measured 2026-07-29: 49 of 402 tests account for 180 of the suite's 183 seconds
+# — nearly all of them compiling a specimen against the MSL. The other 352 finish
+# in 2.7s. Gating the 49 gives a 3-second check between edits and keeps the full
+# run for pre-commit.
+#
+#   cargo test -p hrw --lib                          # ~3s   (between edits)
+#   cargo test -p hrw --lib --features slow-tests    # ~3min (before committing)
+#
+# **Both lines are correct as written since 2026-08-20.** They omit
+# `-- --test-threads=1`, which used to make them a trap: the default parallel
+# harness DEADLOCKS this suite (two tests race on process-global stdout and on
+# `focus.json`). `.cargo/config.toml` at the workspace root now sets
+# `RUST_TEST_THREADS = "1"`, so the omission is safe — see `DECISIONS.md`.
+#
+# NOT a parallelism fix. Those 49 hold a global `Mutex<WorkerState>` (Rumoca's
+# `Session` is not thread-safe), so they serialize whatever `--test-threads` says;
+# removing `--test-threads=1` would save about two seconds. See `docs/ideas.md` #48
+# for the fix that actually shortens them.
+[features]
+slow-tests = []
+# The notebook content-currency check, on its own gate.
+#
+# It cannot join `slow-tests`, for two reasons measured 2026-08-15. It must give
+# every specimen a **fresh** `WorkerState` to be faithful to `gen_trace` (which
+# runs one process per specimen), so it reloads the MSL 21 times; and against the
+# shared worker it is **order-dependent** — `GearWithBrake` and
+# `MissingComponentClass` emit different JSON depending on what else the session
+# has already compiled, the open `tech-debt.md` item "a stage's emitted JSON
+# depends on what else the session holds". A gate that passes alone and fails in
+# company is worse than no gate.
+#
+# Triggers are named in `docs/tech-debt.md`: after touching a `*_to_json` writer,
+# and after rebasing on upstream Rumoca.
+notebook-check = []
+
+[dependencies]
+libc = "0.2"
+anyhow = "1.0.103"
+eframe = "0.35.0"
+egui_commonmark = { version = "0.24", default-features = false }  # Markdown rendering for tour/narrative panels
+egui_plot = "0.36"  # Arc 7: plot sim trajectories (0.36 targets egui 0.35; egui_plot versions are offset)
+# Rumoca, in-workspace via PATH deps (HRW now lives in the Rumoca fork as a
+# workspace member — `hrw/`). Path deps track the checked-out tree, enabling
+# atomic phase+render changes and instrumentation. The former upstream pin was
+# rev 8cdc7419 (v0.9.20); the `hrw` branch is cut from that commit.
+rumoca-core = { workspace = true }
+rumoca-compile = { path = "../crates/rumoca-compile", features = ["tracing"] }
+rumoca-ir-ast = { path = "../crates/rumoca-ir-ast" }
+rumoca-phase-parse = { path = "../crates/rumoca-phase-parse" }
+# Arc 2 increment 2: instantiate + instanced-typecheck the model directly, to
+# render the InstancedTree overlay (which the high-level pipeline doesn't expose).
+rumoca-phase-instantiate = { path = "../crates/rumoca-phase-instantiate" }
+rumoca-phase-typecheck = { path = "../crates/rumoca-phase-typecheck" }
+rumoca-phase-flatten = { path = "../crates/rumoca-phase-flatten" }
+# Arc 3: structural analysis (matching / BLT / tearing) via build_structural_report.
+rumoca-phase-structural = { path = "../crates/rumoca-phase-structural" }
+# Idea #40: replay `pre()` lowering. HRW already depended on this transitively
+# through rumoca-compile; naming it directly gives access to the observability
+# types (`PreLoweringFrame`, `to_dae_with_options_traced`).
+rumoca-phase-dae = { path = "../crates/rumoca-phase-dae" }
+# The flat model is the last artifact from *before* pre() lowering runs, so a
+# live replay of that pass re-runs DAE construction from it. See
+# `pre_lowering_anim::start_live`.
+rumoca-ir-flat = { path = "../crates/rumoca-ir-flat" }
+rumoca-ir-dae = { path = "../crates/rumoca-ir-dae" }  # Arc 4: name the DAE type for the index-reduction funnel
+rumoca-phase-solve = { path = "../crates/rumoca-phase-solve" }  # Arc 7: DAE -> SolveModel (solve lowering)
+rumoca-solver = { path = "../crates/rumoca-solver" }  # Phase 3: SolverStepRecord for diagnostics plot
+rumoca-sim = { path = "../crates/rumoca-sim" }  # Arc 7: simulate a SolveModel (Auto: RK45 + BDF/diffsol)
+serde = "1"
+serde_json = "1.0.150"
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[dev-dependencies]
+# **Headless UI testing** (`docs/verification-plan.md` item 2, approved by Doug
+# 2026-08-01). egui's official harness: renders without a window and lets a test
+# query the widget tree by label and role, then assert.
+#
+# It attacks the project's standing asymmetry — ~12,000 lines of UI verified
+# almost entirely by Doug walking fixture tours, which makes his attention the
+# scarce resource. This converts the *mechanical* half of that (did the click
+# select the node? is the panel empty after a mode switch?) so his attention
+# goes only where judgement is required.
+#
+# **Dev-dependency only; nothing ships in the binary.** `accesskit` was already
+# in the lock file via eframe, so the groundwork was present.
+#
+# **Default features only — `snapshot` and `wgpu` are deliberately NOT enabled.**
+# Image snapshot testing asserts on pixels, needs a GPU in the test path, and is
+# brittle; the plan rules it out explicitly. Note the consequence: the
+# painter-drawn views (incidence matrix, spy plot, Tarjan graph, matching
+# animation) are invisible to an accessibility-tree harness, so they remain the
+# fixture tours' job.
+egui_kittest = { version = "0.35", default-features = false }
+
+# **HRW inherits no workspace lints, and that was invisible until 2026-08-05.**
+#
+# `[workspace.lints]` denies seven things, and the Rumoca crates are held to all of
+# them. `hrw` has never had a `[lints]` section, so it is held to none — discovered
+# while formatting, when a `too_many_lines` failure hit the Rumoca crates and could
+# not hit this one.
+#
+# **Adopted here: the five that cost nothing.** Measured before adding, not after:
+# each produces **zero** errors across `--all-targets`, so HRW already complies and
+# these only guard against regression.
+#
+# **Deliberately NOT adopted, with reasons, so the gap is a decision rather than an
+# oversight:**
+#
+# - `too_many_lines`, `excessive_nesting`, `too_many_arguments` — the three
+#   complexity lints. **56 functions here exceed 100 lines**, so adopting them means
+#   56 errors or 56 `#[allow]`s, and a lint suppressed everywhere it applies reads as
+#   compliance to a later reader. Worse, a deny-level length gate rewards splitting a
+#   function *to satisfy the lint* — extraction with no new seam and no new test,
+#   which is precisely what `docs/format-and-app-plan.md` rules out. And formatting
+#   would be able to break the build: rustfmt pushed a Rumoca function 99 -> 102
+#   lines the same day. The evidence also runs the other way — this week's defects
+#   were silent substitution and identity-by-substring, found in 4-line helpers as
+#   readily as in 1,000-line functions.
+#
+# - `unsafe_code` — **13 genuine violations**, all in `OutputCapture`'s fd-level pipe
+#   handling, where unsafe is required rather than incidental. Adoptable, but only
+#   with scoped `#[allow(unsafe_code, reason = "...")]` at each site, and writing
+#   those reasons is the actual work. Logged in `docs/tech-debt.md`.
+[lints.rust]
+unreachable_pub = "deny"
+unnameable_types = "deny"
+private_interfaces = "deny"
+private_bounds = "deny"
+dead_code = "deny"
