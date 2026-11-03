@@ -844,33 +844,28 @@ mod tests {
         assert_eq!(anim.live_state(true), crate::LiveState::Idle);
     }
 
-    /// End to end on a real specimen: the plan Rumoca actually produces must be
-    /// one this view can run. Guards against a Rumoca rename silently emptying
-    /// the view — the shape tests above would all still pass.
-    ///
-    /// `MixedLoop` rather than the IC-focused `RcCircuit` because
-    /// `test_support::dae_for` loads no libraries, and `RcCircuit` is built from
-    /// MSL components; it would skip, and a silently skipping end-to-end test is
-    /// worse than none. `MixedLoop` is standalone and has both algebraic and
-    /// state variables, so it has a real plan.
-    #[test]
-    fn a_real_specimen_produces_a_walkable_plan() {
-        let dae = crate::test_support::dae_for("MixedLoop")
-            .expect("MixedLoop is standalone and must compile");
-        let n_x = dae.variables.states.len();
-        let Ok(plan) = rumoca_phase_structural::build_ic_plan(&dae, n_x) else {
-            return; // planning failed; there is no plan to run
-        };
-        let hint = rumoca_phase_structural::build_ic_relaxation_hint(&dae, n_x);
-        let json = crate::worker::ic_plan_to_json(
-            &plan,
-            hint.as_ref(),
-            n_x,
-            dae.continuous.equations.len(),
-        );
-        let anim = IcPlanAnimation::from_report(&json)
-            .expect("a successful plan always carries a blocks array");
-        let (_, total) = anim.position();
-        assert!(total > 0, "RcCircuit has an initial-condition plan to run");
-    }
+    // **The end-to-end test is gone with the plan it ran, and it is OWED BACK.**
+    //
+    // `a_real_specimen_produces_a_walkable_plan` compiled `MixedLoop`, called
+    // `build_ic_plan` + `build_ic_relaxation_hint`, fed the result through
+    // `worker::ic_plan_to_json`, and checked this view could walk it. All three
+    // of those are gone on 0.10.0 — `ic_plan` is replaced by `initial_pins` —
+    // so there is no plan to produce and nothing to run.
+    //
+    // **Its reason for existing survives the change and is worth restating**,
+    // because it is exactly the kind of test a rebase quietly loses: it guarded
+    // against *a Rumoca rename silently emptying the view*, which every shape
+    // test above would still pass, because they build their JSON by hand. This
+    // module is driven by `from_report(&Value)`, so it cannot tell a plan that
+    // changed shape from a plan that is absent.
+    //
+    // It belongs with the initialization re-model, not before it: written now
+    // it would assert against JSON no stage emits. The `unbuilt:` tag in
+    // `docs/tech-debt.md` names `worker::initialization_from_initial_pins`, and
+    // this test is part of that work.
+    //
+    // (The specimen choice is worth keeping too: `MixedLoop` rather than the
+    // IC-focused `RcCircuit`, because `test_support::dae_for` loads no libraries
+    // and `RcCircuit` is built from MSL components — it would skip, and a
+    // silently skipping end-to-end test is worse than none.)
 }

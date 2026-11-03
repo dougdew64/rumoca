@@ -12,7 +12,6 @@
 use std::fmt::Write as _;
 
 use rumoca_core::{ArrayConstructor, Expression, OpBinary, StringConversionFormat, Subscript};
-use rumoca_ir_dae as dae;
 
 fn precedence(op: &OpBinary) -> u8 {
     match op {
@@ -311,35 +310,6 @@ pub fn format_expr(expr: &Expression) -> String {
     s
 }
 
-/// Render a DAE equation as `lhs = rhs` (explicit) or `0 = rhs` (residual).
-pub fn format_equation(eq: &dae::Equation) -> String {
-    let rhs = format_expr(&eq.rhs);
-    match &eq.lhs {
-        Some(lhs_ref) => format!("{lhs_ref} = {rhs}"),
-        None => format!("0 = {rhs}"),
-    }
-}
-
-/// Render an equation in short form for labels (just the rhs, no `0 =` prefix).
-pub fn format_equation_short(eq: &dae::Equation) -> String {
-    match &eq.lhs {
-        Some(lhs_ref) => {
-            let rhs = format_expr(&eq.rhs);
-            format!("{lhs_ref} = {rhs}")
-        }
-        None => format_expr(&eq.rhs),
-    }
-}
-
-/// Build a vec of human-readable equation labels from DAE equations.
-///
-/// For each equation index in the incidence matrix, produces a string like
-/// `der(w) = tau / J` or `der(phi) - w` (for residual-form equations).
-/// Falls back to the EquationRef index label if the DAE equation list is
-/// shorter than expected (should not happen in practice).
-pub fn equation_labels(equations: &[dae::Equation]) -> Vec<String> {
-    equations.iter().map(format_equation_short).collect()
-}
 
 #[cfg(test)]
 mod tests {
@@ -512,74 +482,6 @@ mod tests {
             vec![binary(OpBinary::Mul, var("omega"), var("t"))],
         );
         assert_eq!(format_expr(&e), "sin(omega * t)");
-    }
-
-    // --- DAE equations ---
-
-    #[test]
-    fn explicit_equation() {
-        let eq = dae::Equation {
-            lhs: Some(Reference::new("x")),
-            rhs: binary(OpBinary::Add, var("a"), var("b")),
-            span: span(),
-            origin: String::new(),
-            scalar_count: 1,
-        };
-        assert_eq!(format_equation(&eq), "x = a + b");
-    }
-
-    #[test]
-    fn residual_equation() {
-        let eq = dae::Equation {
-            lhs: None,
-            rhs: binary(
-                OpBinary::Sub,
-                der(var("w")),
-                binary(OpBinary::Div, var("tau"), var("J")),
-            ),
-            span: span(),
-            origin: String::new(),
-            scalar_count: 1,
-        };
-        assert_eq!(format_equation(&eq), "0 = der(w) - tau / J");
-    }
-
-    #[test]
-    fn short_form_residual_omits_zero_prefix() {
-        let eq = dae::Equation {
-            lhs: None,
-            rhs: binary(
-                OpBinary::Sub,
-                der(var("w")),
-                binary(OpBinary::Div, var("tau"), var("J")),
-            ),
-            span: span(),
-            origin: String::new(),
-            scalar_count: 1,
-        };
-        assert_eq!(format_equation_short(&eq), "der(w) - tau / J");
-    }
-
-    #[test]
-    fn equation_labels_from_dae() {
-        let eqs = vec![
-            dae::Equation {
-                lhs: Some(Reference::new("x")),
-                rhs: var("y"),
-                span: span(),
-                origin: String::new(),
-                scalar_count: 1,
-            },
-            dae::Equation {
-                lhs: None,
-                rhs: binary(OpBinary::Sub, der(var("phi")), var("w")),
-                span: span(),
-                origin: String::new(),
-                scalar_count: 1,
-            },
-        ];
-        let labels = equation_labels(&eqs);
-        assert_eq!(labels, vec!["x = y", "der(phi) - w"]);
     }
 
     // --- edge cases ---
