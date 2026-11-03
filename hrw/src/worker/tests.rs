@@ -1769,138 +1769,29 @@ const F1_MODELS: &[&str] = &[
     "MotorWithBrake",
 ];
 
-/// **HRW's re-derived matching matches Rumoca's own report.**
-///
-/// `docs/fidelity-plan.md` F1, second of three. The incidence view renders the
-/// matching overlay from the report, but [`MatchingAnimation`] **re-runs Kuhn's
-/// algorithm** on the parsed matrix to produce its frames — so the green circles
-/// the animation runs through could in principle end somewhere the compiler
-/// never went.
-///
-/// The comparison is exact rather than by size, because a maximum matching is
-/// not unique: two matchings of equal cardinality are equally *valid* and still
-/// mean the animation is narrating a different transversal than the one the
-/// solve order was built from. `match_progress` cannot see that difference,
-/// which is why `final_matching` exists.
-///
-/// What this really exercises is the **JSON round trip** — report → names →
-/// indices → re-run. Both sides call the same Rumoca function, so a divergence
-/// means the row or column order did not survive it.
-#[test]
-#[cfg_attr(
-    not(feature = "slow-tests"),
-    ignore = "compile-heavy; run with --features slow-tests"
-)]
-fn hrw_rederived_matching_matches_rumocas_report() {
-    let mut compared = 0usize;
-
-    for name in F1_MODELS {
-        let FromWorker::Compiled { stages, .. } = compile_specimen_shared(name) else {
-            panic!("{name}: expected Compiled");
-        };
-        let Some(report) = stages.structural.value.as_ref() else {
-            continue;
-        };
-        let Some(mat) = crate::incidence_view::IncidenceMatrix::from_report(report) else {
-            continue;
-        };
-        if mat.n_eq() == 0 {
-            continue;
-        }
-
-        let derived =
-            crate::matching_anim::MatchingAnimation::from_incidence(&mat).final_matching();
-        let reported = mat.reported_matching();
-
-        assert_eq!(
-            derived.len(),
-            reported.len(),
-            "{name}: re-derived matching covers {} equations, the report {}",
-            derived.len(),
-            reported.len(),
-        );
-        assert_eq!(
-            derived, reported,
-            "{name}: the matching animation ends on a different transversal than \
-             Rumoca reported — the overlay and the animation would disagree",
-        );
-        compared += 1;
-    }
-
-    assert!(
-        compared >= 5,
-        "only {compared} models produced an incidence matrix to compare; F1's matching \
-         check is testing almost nothing",
-    );
-}
-
-/// **HRW's re-derived BLT blocks match Rumoca's own report.**
-///
-/// `docs/fidelity-plan.md` F1, third of three. [`TarjanAnimation`] re-runs
-/// matching *and* Tarjan to build its graph, so it is the furthest-removed
-/// re-derivation in HRW — two algorithms deep from anything the compiler said.
-///
-/// Compared as a **partition**, not a sequence: Tarjan emits components in
-/// reverse topological order while the report lists them in solve order, so
-/// requiring equal ordering would fail on a difference that means nothing.
-/// Requiring equal *sets* still catches the thing that matters — an equation
-/// placed in the wrong block, which is a different solve order and a different
-/// algebraic loop.
-#[test]
-#[cfg_attr(
-    not(feature = "slow-tests"),
-    ignore = "compile-heavy; run with --features slow-tests"
-)]
-fn hrw_rederived_blocks_match_rumocas_report() {
-    use std::collections::BTreeSet;
-
-    let mut compared = 0usize;
-    let mut saw_a_coupled_block = false;
-
-    for name in F1_MODELS {
-        let FromWorker::Compiled { stages, .. } = compile_specimen_shared(name) else {
-            panic!("{name}: expected Compiled");
-        };
-        let Some(report) = stages.structural.value.as_ref() else {
-            continue;
-        };
-        let Some(mat) = crate::incidence_view::IncidenceMatrix::from_report(report) else {
-            continue;
-        };
-        let reported = mat.reported_blocks();
-        if reported.is_empty() {
-            continue;
-        }
-        let Some(anim) = crate::tarjan_anim::TarjanAnimation::from_incidence(&mat) else {
-            continue;
-        };
-
-        let as_sets = |bs: Vec<Vec<usize>>| -> BTreeSet<BTreeSet<usize>> {
-            bs.into_iter().map(|b| b.into_iter().collect()).collect()
-        };
-        if reported.iter().any(|b| b.len() > 1) {
-            saw_a_coupled_block = true;
-        }
-
-        assert_eq!(
-            as_sets(anim.final_sccs()),
-            as_sets(reported),
-            "{name}: Tarjan re-derives a different block partition than Rumoca \
-             reported — the animation would show the wrong solve order",
-        );
-        compared += 1;
-    }
-
-    assert!(
-        compared >= 5,
-        "only {compared} models had blocks to compare"
-    );
-    assert!(
-        saw_a_coupled_block,
-        "every model compared had only singleton blocks; the partition check never \
-         had a chance to be wrong",
-    );
-}
+// **`docs/fidelity-plan.md` F1's second and third checks are retired, and the
+// redesign is why.**
+//
+// `hrw_rederived_matching_matches_rumocas_report` and
+// `hrw_rederived_blt_blocks_match_rumocas_report` compared HRW's *own*
+// re-derivation against Rumoca's report. Their own docs named the risk:
+// `MatchingAnimation` "re-runs Kuhn's algorithm … so the green circles could
+// end somewhere the compiler never went", and `TarjanAnimation` was "the
+// furthest-removed re-derivation in HRW — two algorithms deep from anything
+// the compiler said".
+//
+// **Neither re-derivation exists any more.** The animations read the compile's
+// own steps through `inspect_structural_report`, so there is one matching and
+// one BLT rather than two that might disagree. A test comparing a thing
+// against itself passes for no reason, which is worse than no test: it reports
+// a guarantee it is not providing.
+//
+// What F1 called "the JSON round trip — report → names → indices" is the half
+// worth keeping, and `fidelity::check_f2` covers it against a fresh
+// `build_incidence`, comparing unknown names, row labels and per-row column
+// sets **as ordered sequences**. That is the stronger check: it compares
+// against the renderer the publisher itself calls, where these compared
+// against whatever a second implementation happened to produce.
 
 /// A resolve failure names the offending reference **and its line**, with the
 /// library noise separated out.

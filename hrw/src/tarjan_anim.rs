@@ -14,9 +14,6 @@
 //! Controls: play/pause, step forward/back, reset, speed slider.
 
 use std::collections::HashSet;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::thread;
 
 use eframe::egui;
 
@@ -243,37 +240,6 @@ impl TarjanAnimation {
         })
     }
 
-    /// **Re-runs matching AND Tarjan from scratch. Test-only, enforced by the
-    /// compiler** — see [`crate::matching_anim::MatchingAnimation::from_incidence`]
-    /// for why a `cfg` replaced a source-text grep on 2026-08-04.
-    ///
-    /// This is the constructor that drew a non-empty SCC animation for `CapacitorLoop`,
-    /// a system whose compile produced no blocks at all.
-    #[cfg(test)]
-    pub fn from_incidence(mat: &IncidenceMatrix) -> Option<Self> {
-        let n_eq = mat.n_eq();
-        let n_var = mat.n_var();
-        if n_eq == 0 {
-            return None;
-        }
-
-        let eq_vars: Vec<HashSet<usize>> = mat
-            .rows()
-            .iter()
-            .map(|cols| cols.iter().copied().collect())
-            .collect();
-        let trace = maximum_matching_with_trace(n_eq, n_var, &eq_vars, None);
-        let adj = build_dep_graph(mat, &trace.match_eq, &trace.match_var);
-        let result = tarjan_scc_with_trace(n_eq, &adj, None);
-        Some(Self {
-            playback: Playback::recorded(result.frames, FRAME_INTERVAL),
-            n_nodes: n_eq,
-            node_names: mat.equation_texts().to_vec(),
-            rows: mat.rows().to_vec(),
-            unknown_names: mat.unknown_names().to_vec(),
-            adj,
-        })
-    }
 
     /// Start a live debug session for Tarjan's algorithm.
     ///
@@ -805,10 +771,62 @@ mod tests {
         })
     }
 
+    /// A recorded animation over [`sample_report`]'s system, from hand-built
+    /// steps.
+    ///
+    /// **Replaces `TarjanAnimation::from_incidence`**, which ran matching and
+    /// then Tarjan from scratch. The tests below assert playback behaviour —
+    /// not empty, starts paused, reports no live session — and none cares where
+    /// the steps came from, so running two real algorithms to get them made
+    /// tests about a pause button depend on both.
+    ///
+    /// The steps must satisfy `traversal_addressing`: the opening `Start` has
+    /// to declare `equation_of_node: None` and span this matrix's equation
+    /// count, because that is the check stopping a condensed traversal's
+    /// renumbered indices from being drawn on these rows.
+    fn recorded_animation() -> TarjanAnimation {
+        let mat = IncidenceMatrix::from_report(&sample_report()).expect("sample matrix");
+        let n_eq = mat.n_eq();
+        let matching = vec![MatchingRecord {
+            step: rumoca_phase_structural::MatchingStep::Start {
+                n_equations: n_eq,
+                n_unknowns: mat.n_var(),
+            },
+            match_eq: (0..n_eq).map(Some).collect(),
+        }];
+        let record = |step: TarjanStep, stack: Vec<usize>, sccs: Vec<Vec<usize>>| TarjanRecord {
+            step,
+            stack,
+            sccs_so_far: sccs,
+        };
+        let mut segment = vec![record(
+            TarjanStep::Start {
+                n_nodes: n_eq,
+                equation_of_node: None,
+            },
+            Vec::new(),
+            Vec::new(),
+        )];
+        // One singleton component per row: the smallest traversal that is a
+        // real traversal.
+        for node in 0..n_eq {
+            segment.push(record(TarjanStep::Visit(node), vec![node], Vec::new()));
+            segment.push(record(
+                TarjanStep::SccFound {
+                    root: node,
+                    members: vec![node],
+                },
+                Vec::new(),
+                (0..=node).map(|n| vec![n]).collect(),
+            ));
+        }
+        TarjanAnimation::from_captured_frames(&mat, &matching, &[segment])
+            .expect("the fixture steps address this matrix")
+    }
+
     #[test]
-    fn tarjan_animation_from_incidence_produces_frames() {
-        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
-        let anim = TarjanAnimation::from_incidence(&mat).unwrap();
+    fn tarjan_animation_from_captured_frames_produces_frames() {
+        let anim = recorded_animation();
         assert!(!anim.is_empty());
     }
 
@@ -819,8 +837,7 @@ mod tests {
     /// `live_debug_lifecycle` depends on it, and that function no longer exists.
     #[test]
     fn recorded_animation_reports_no_live_session() {
-        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
-        let anim = TarjanAnimation::from_incidence(&mat).unwrap();
+        let anim = recorded_animation();
         assert_eq!(
             anim.live_state(false),
             crate::LiveState::Idle,
@@ -830,8 +847,7 @@ mod tests {
 
     #[test]
     fn tarjan_animation_starts_paused() {
-        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
-        let anim = TarjanAnimation::from_incidence(&mat).unwrap();
+        let anim = recorded_animation();
         assert_eq!(anim.position().0, 0);
     }
 
@@ -856,20 +872,11 @@ mod tests {
         }
     }
 
-    #[test]
-    fn live_mode_receives_all_frames() {
-        let mat = IncidenceMatrix::from_report(&sample_report()).unwrap();
-        let mut anim = TarjanAnimation::start_live(&mat, crate::live_frame_delay(false)).unwrap();
-        for _ in 0..100 {
-            if anim.live_state(false) == crate::LiveState::Finished {
-                break;
-            }
-            std::thread::sleep(std::time::Duration::from_millis(20));
-        }
-        anim.playback.sync_live();
-        assert!(!anim.playback.frames().is_empty());
-        assert_eq!(anim.live_state(false), crate::LiveState::Finished);
-    }
+    // `live_mode_receives_all_frames` is retired here for the same reasons it
+    // was in `matching_anim`: channel draining is `Playback`'s and tested in
+    // `playback::tests`, and spawning is `live_trace::spawn_structural_live`'s,
+    // which all three animations now share. One test of the helper covers what
+    // three animation-level tests did, where the code actually is.
 
     #[test]
     fn build_dep_graph_constructs_adjacency() {
