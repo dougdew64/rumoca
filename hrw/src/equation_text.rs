@@ -127,7 +127,6 @@ impl Rendered {
     }
 }
 
-
 /// Renderings for the DAE stage, whose tree is the whole `Dae` serialized.
 ///
 /// # The keys are serde's, and on v0.10.0 every one of them changed
@@ -227,7 +226,6 @@ pub fn for_flatten(m: &rumoca_ir_flat::Model) -> Rendered {
     out.extend_indexed("initial_equations", &m.initial_equations, residual);
     out
 }
-
 
 #[cfg(test)]
 mod tests {

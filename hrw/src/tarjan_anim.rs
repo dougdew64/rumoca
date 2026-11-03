@@ -138,10 +138,7 @@ fn invert_matching(record: &MatchingRecord, n_var: usize) -> Vec<Option<usize>> 
     match_var
 }
 
-fn traversal_addressing(
-    segments: &[Vec<TarjanRecord>],
-    n_eq: usize,
-) -> Option<&[TarjanRecord]> {
+fn traversal_addressing(segments: &[Vec<TarjanRecord>], n_eq: usize) -> Option<&[TarjanRecord]> {
     segments.iter().find_map(|segment| {
         matches!(
             segment.first().map(|record| &record.step),
@@ -240,7 +237,6 @@ impl TarjanAnimation {
         })
     }
 
-
     /// Start a live debug session for Tarjan's algorithm.
     ///
     /// **Takes the compile's matching steps and the DAE since the v0.10.0
@@ -275,15 +271,13 @@ impl TarjanAnimation {
         }
         let adj = build_dep_graph(mat, &last.match_eq, &invert_matching(last, mat.n_var()));
 
-        let (rx, done) = crate::live_trace::spawn_structural_live(
-            dae,
-            frame_delay,
-            "tarjan-debug",
-            |record| match record {
-                StructuralRecord::Tarjan(tarjan) => Some(tarjan),
-                StructuralRecord::Matching(_) | StructuralRecord::Tearing(_) => None,
-            },
-        )?;
+        let (rx, done) =
+            crate::live_trace::spawn_structural_live(dae, frame_delay, "tarjan-debug", |record| {
+                match record {
+                    StructuralRecord::Tarjan(tarjan) => Some(tarjan),
+                    StructuralRecord::Matching(_) | StructuralRecord::Tearing(_) => None,
+                }
+            })?;
 
         Some(Self {
             playback: Playback::live(rx, done, FRAME_INTERVAL),

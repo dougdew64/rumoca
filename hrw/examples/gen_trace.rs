@@ -52,7 +52,6 @@ fn uppercase_drive_letter(path: &str) -> String {
     }
 }
 
-
 fn main() {
     let arg = std::env::args().nth(1).unwrap_or_else(|| {
         eprintln!("usage: cargo run --example gen_trace -- <SpecimenName>");
