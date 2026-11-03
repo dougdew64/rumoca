@@ -114,38 +114,63 @@ fn line_where(source: &str, from: usize, pred: impl Fn(&str) -> bool) -> Option<
 pub fn anchors() -> Vec<Anchor> {
     let mut out = Vec::new();
 
-    let fn_start =
-        line_where(MATCHING_SOURCE, 0, |l| l.contains("fn augment_traced(")).unwrap_or(0);
+    // **The search is iterative on v0.10.0, and the anchors moved with it.**
+    // `augment_traced` is gone; `augment` sets up an explicit stack and
+    // `run_augment_search` drives it, with `next_augment_step` scanning one
+    // equation's candidates.
+    let fn_start = line_where(MATCHING_SOURCE, 0, |l| l.contains("fn next_augment_step("))
+        .unwrap_or(0);
 
+    // The free-versus-displace branch, now a `let ... else` inside
+    // `next_augment_step` rather than a `match` on the matching.
     if let Some(line) = line_where(MATCHING_SOURCE, fn_start, |l| {
-        l.contains("match match_var[var]")
+        l.contains("let Some(owner) = matching.match_var[variable]")
     }) {
         out.push(Anchor {
             name: "decision",
             file: "matching.rs",
             line,
-            what: "the free-versus-displace branch — the whole decision, in one expression",
+            what: "the free-versus-displace branch \u{2014} the whole decision, in one expression",
         });
     }
-    // The recursive call, not the signature: the frame every non-innermost
-    // `augment_traced` is parked on while it waits for an answer.
-    if let Some(line) = line_where(MATCHING_SOURCE, fn_start, |l| {
-        l.contains("augment_traced(") && !l.trim_start().starts_with("fn ")
+
+    // **`recurse` is replaced by `descend`, and the difference is the lesson.**
+    //
+    // On 0.9.20 this anchored the recursive `augment_traced(` call, and a
+    // reader walked *up the debugger stack* to see how deep a displacement
+    // chain had gone: one `augment_traced` frame per displaced equation.
+    //
+    // 0.10.0 recurses nowhere. It pushes onto an explicit `Vec<AugmentFrame>`,
+    // because the recursive form overflowed the thread stack on array-shaped
+    // models with chains hundreds of thousands long — `matching.rs` says so at
+    // the top. So the chain is **data, not stack**: a reader inspects `stack`
+    // rather than counting frames, and a breakpoint here fires once per
+    // displacement with the whole chain visible in one local.
+    //
+    // `derive_depths` is unaffected: it reads depth from the step sequence, not
+    // from the debugger, which is what makes the ledger a generated artifact.
+    // The live lab's *prose* is affected and must say stack-the-vector rather
+    // than stack-the-frames.
+    let push_start = line_where(MATCHING_SOURCE, 0, |l| l.contains("fn run_augment_search("))
+        .unwrap_or(fn_start);
+    if let Some(line) = line_where(MATCHING_SOURCE, push_start, |l| {
+        l.contains("stack.push(AugmentFrame::new(owner))")
     }) {
         out.push(Anchor {
-            name: "recurse",
+            name: "descend",
             file: "matching.rs",
             line,
-            what: "the recursive call — an outer frame sitting here is an equation asked to move",
+            what: "the displacement being pushed \u{2014} the stack below the top is the chain of equations asked to move",
         });
     }
+
     // The bare `false` closing the search: a give-up that emits no frame.
-    if let Some(line) = line_where(MATCHING_SOURCE, fn_start, |l| l.trim_end() == "    false") {
+    if let Some(line) = line_where(MATCHING_SOURCE, push_start, |l| l.trim_end() == "    false") {
         out.push(Anchor {
             name: "give_up",
             file: "matching.rs",
             line,
-            what: "the search giving up — reached only by falling out of the loop",
+            what: "the search giving up \u{2014} reached only by falling out of the loop",
         });
     }
 
@@ -235,8 +260,15 @@ fn variants_in(seg: &str) -> Vec<String> {
     out
 }
 
-/// Map each `MatchingStep` variant to the 1-based line of the
-/// `emit_matching_frame(` call that emits it.
+/// Map each `MatchingStep` variant to the 1-based line of the `emit(` call
+/// that emits it.
+///
+/// **The helper is `emit` on v0.10.0, not `emit_matching_frame`.** The
+/// observation seam gave every algorithm a module-local `emit` taking the
+/// observer, the step and the running state, so the old name is gone. The
+/// scanner skips the `fn emit(` definition line, because `emit(` alone would
+/// otherwise open a call region at the helper itself and attribute the first
+/// variant it then saw to the wrong line.
 ///
 /// **The call line, not the line naming the variant.** A stack frame reports
 /// where the call was made, so that is the number a debugger shows and the only
@@ -263,11 +295,12 @@ pub fn emit_sites(source: &str) -> BTreeMap<String, Vec<usize>> {
         // Start of a call: begin counting from its opening paren.
         let mut from = 0;
         if call_line.is_none()
-            && let Some(pos) = line.find("emit_matching_frame(")
+            && !line.contains("fn emit(")
+            && let Some(pos) = line.find("emit(")
         {
             call_line = Some(idx + 1);
             balance = 0;
-            from = pos + "emit_matching_frame".len();
+            from = pos + "emit".len();
         }
 
         let Some(line_of_call) = call_line else {
@@ -496,9 +529,13 @@ pub fn reference() -> String {
         out.push_str(&format!("| `{variant}` | {joined} |\n"));
     }
     out.push_str(
-        "\n**`DisplaceOk` and `DisplaceFail` share one line**, because a single \
-         emit chooses between them with an `if`. The site identifies *where*, \
-         never *which* — only the frame itself distinguishes the outcome.\n\n",
+        "\n**Every step has its own line, including the two displacement \
+         outcomes.** On Rumoca 0.9.20 one emit chose between `DisplaceOk` and \
+         `DisplaceFail` with an `if`, so the site said *where* and never \
+         *which* — only the frame distinguished the outcome. 0.10.0's iterative \
+         search reaches them at different points: `DisplaceFail` on an exhausted \
+         pop, `DisplaceOk` during the commit. **So a stop at either line now \
+         tells you which branch you are in**, without inspecting a local.\n\n",
     );
 
     out.push_str("## Breakpoint anchors\n\n");
@@ -589,24 +626,49 @@ mod tests {
             .lines()
             .nth(failed[0] - 1)
             .expect("the recorded line must exist in the source");
+        // `emit(` since the v0.10.0 observation seam renamed the helper; see
+        // `emit_sites`.
         assert!(
-            src_line.contains("emit_matching_frame("),
+            src_line.contains("emit(") && !src_line.contains("fn emit("),
             "EquationFailed's site must be the emit CALL line, got line {} = {src_line:?}",
             failed[0]
         );
     }
 
-    /// **`DisplaceOk` and `DisplaceFail` share a line, and that must survive.**
+    /// **The two displacement outcomes now have their own emit sites, and that
+    /// is a change a lab reader can feel.**
     ///
-    /// Collapsing the site list to one entry would hide that the emit site does
-    /// not determine the outcome — the thing a lab would otherwise get wrong
-    /// by assuming a line number names a step.
+    /// On 0.9.20 one `emit` carried an `if` choosing between `DisplaceOk` and
+    /// `DisplaceFail`, so both reported the same line. This test asserted that
+    /// equality, and its reason was sound: collapsing the list to one entry
+    /// would have hidden that **the emit site did not determine the outcome** —
+    /// a lab assuming a line number names a step would have been wrong.
+    ///
+    /// 0.10.0's iterative augmenting search reaches them at genuinely different
+    /// points. `DisplaceFail` fires when a frame is popped as exhausted, which
+    /// the recursive form signalled by a `false` return; `DisplaceOk` fires
+    /// during `commit_augment`, for every frame below the innermost. So the
+    /// line *does* determine the outcome now.
+    ///
+    /// **Which makes the lab's job easier, not harder**, and is why this test
+    /// inverts rather than retires: a reader stopped at either line knows which
+    /// branch they are in without inspecting a local. The assertion keeps the
+    /// property checkable in the new direction, so a future change that merged
+    /// them back would have to say so here.
     #[test]
-    fn the_two_displacement_outcomes_share_one_emit_site() {
+    fn the_two_displacement_outcomes_have_distinct_emit_sites() {
         let sites = emit_sites(MATCHING_SOURCE);
-        assert_eq!(
-            sites["DisplaceOk"], sites["DisplaceFail"],
-            "these are emitted by one call with an `if` for the step"
+        let ok = &sites["DisplaceOk"];
+        let fail = &sites["DisplaceFail"];
+        assert_eq!(ok.len(), 1, "DisplaceOk is emitted once: {ok:?}");
+        assert_eq!(fail.len(), 1, "DisplaceFail is emitted once: {fail:?}");
+        assert_ne!(
+            ok, fail,
+            "the iterative search reaches these at different points \u{2014} \
+             `DisplaceFail` on an exhausted pop, `DisplaceOk` during the commit \
+             \u{2014} so each line determines its outcome. If they share a line \
+             again, a lab citing either must stop claiming the line names the \
+             step."
         );
     }
 
@@ -711,7 +773,10 @@ mod tests {
     #[test]
     fn every_anchor_resolves() {
         let found: Vec<&str> = anchors().iter().map(|a| a.name).collect();
-        for name in ["decision", "recurse", "give_up", "gate", "push", "anchor"] {
+        // `descend` replaced `recurse` when the search became iterative; see
+        // `anchors`. Named here rather than discovered, so a renamed anchor
+        // fails loudly instead of a lab citation quietly resolving to nothing.
+        for name in ["decision", "descend", "give_up", "gate", "push", "anchor"] {
             assert!(
                 found.contains(&name),
                 "anchor `{name}` was not located in the source \u{2014} its \
