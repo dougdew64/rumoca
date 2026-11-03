@@ -187,6 +187,51 @@ fn a_torn_block_reports_the_plan_it_actually_adopted() {
     });
 }
 
+/// Watching a search and reading it afterwards must report the same thing.
+///
+/// `observe_sort` exists because a batch report delivers nothing while a
+/// search is stopped at a breakpoint, which is the one moment a live view
+/// needs a step to show. Having two entry points reintroduces the risk the
+/// whole seam was built to remove, so this pins them against each other: a
+/// live view and a replay of the same model cannot disagree about what
+/// happened.
+#[test]
+fn streaming_sees_the_same_records_the_batch_report_collects() {
+    let compiled = compile(COUPLED_LOOP, "CoupledLoop");
+    compiled.dae.inspect(|view| {
+        let (batch_sorted, batch) = structural::inspect_sort(view);
+        let mut streamed = Vec::new();
+        let streamed_sorted = structural::observe_sort(view, |record| streamed.push(record));
+
+        assert_eq!(
+            batch_sorted.is_ok(),
+            streamed_sorted.is_ok(),
+            "the two entry points must agree on the analysis itself"
+        );
+        assert!(
+            !streamed.is_empty(),
+            "the sink must receive the steps, not merely be offered them"
+        );
+        assert_eq!(
+            streamed.len(),
+            batch.records.len(),
+            "neither entry point may drop or invent a step"
+        );
+        let rendered = |records: &[structural::StructuralRecord]| {
+            records
+                .iter()
+                .map(|record| format!("{record:?}"))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            rendered(&streamed),
+            rendered(&batch.records),
+            "the streamed and collected records must be identical in content \
+             and order"
+        );
+    });
+}
+
 /// The canonical index-2 system, which is *balanced* but structurally
 /// singular as written.
 ///
