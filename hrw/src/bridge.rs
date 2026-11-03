@@ -2232,8 +2232,12 @@ pub fn navigate<'a>(root: &'a Value, path: &[Seg]) -> Option<&'a Value> {
 //
 // The loop iterates `depth` from `path.len()` (the leaf) down to 0 (the root).
 // At each depth, it navigates to `path[..depth]` and checks for a `location`
-// or `span` field. `location` is preferred (it includes a `file_name`);
-// `span` is a fallback (it has an opaque `source` id instead of a filename).
+// or `span` field. `location` is still preferred, but **not for the reason this
+// comment used to give**: it said `location` "includes a `file_name`" while
+// `span` has "an opaque `source` id instead of a filename". On v0.10.0
+// `Location` carries `source: SourceId` too, so neither can name its own file
+// and both rely on the specimen path. `location` is preferred now because it
+// additionally carries line and column.
 fn ascend_provenance(root: &Value, path: &[Seg], specimen: Option<&Path>) -> Value {
     for depth in (0..=path.len()).rev() {
         let Some(Value::Object(map)) = navigate(root, &path[..depth]) else {
@@ -2249,13 +2253,25 @@ fn ascend_provenance(root: &Value, path: &[Seg], specimen: Option<&Path>) -> Val
     json!({ "found": false, "note": "no location/span on this node or its ancestors" })
 }
 
-// Check if a JSON value is a `rumoca_core::Location` (byte offsets + file_name).
-// A Location is the preferred provenance type because it includes the source
-// filename, enabling direct file reads for the excerpt.
+// Check if a JSON value is a `rumoca_core::Location`.
+//
+// **`file_name` is gone on v0.10.0**, and with it the one advantage `Location`
+// had over `Span`: it identified the source by filename, so an excerpt could be
+// read without being told which file to look in. `Location` now carries
+// `source: SourceId`, the same opaque id `Span` does, so **both** provenance
+// types need the specimen path handed to them. The old comment claiming
+// `location` is "preferred (it includes a `file_name`)" stopped being true.
+//
+// It is still worth distinguishing, for a different reason: a `Location` also
+// carries line and column, which a `Span` does not, and those are what the
+// distinction now rests on. Testing them rather than `file_name` is also what
+// keeps this from matching a `Span` by accident, since the two otherwise agree
+// on every field this checks.
 fn is_location(v: &Value) -> bool {
     v.get("start").and_then(Value::as_u64).is_some()
         && v.get("end").and_then(Value::as_u64).is_some()
-        && v.get("file_name").and_then(Value::as_str).is_some()
+        && v.get("start_line").and_then(Value::as_u64).is_some()
+        && v.get("start_column").and_then(Value::as_u64).is_some()
 }
 
 // Check if a JSON value is a `rumoca_core::Span` (byte offsets + opaque source id).
