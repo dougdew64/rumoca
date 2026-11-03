@@ -4454,9 +4454,9 @@ fn structural_to_json(rep: &rumoca_phase_structural::StructuralReport) -> serde_
 /// When `equations` is provided (the DAE's continuous equation list), each row
 /// also carries an `"equation_text"` field with the pretty-printed Modelica
 /// expression (e.g. `der(w) - tau / J`), for human-readable labels.
-fn incidence_to_json(
-    inc: &rumoca_phase_structural::Incidence,
-    dae: Option<&rumoca_ir_dae::Dae>,
+fn incidence_to_json<'dae>(
+    inc: &rumoca_phase_structural::Incidence<'dae>,
+    view: Option<rumoca_ir_dae::DaeView<'dae>>,
 ) -> serde_json::Value {
     // **No short form any more, and that is faithful rather than lazy.**
     // This used `expr_format::equation_labels`, which rendered each equation in
@@ -4492,8 +4492,10 @@ fn incidence_to_json(
             // `partial_matching_to_json`). Without a DAE there is no origin to
             // look up, and the bare ref is what `equation_label` would return
             // anyway.
-            let eq_name = match dae {
-                Some(d) => rumoca_phase_structural::equation_label(d, &inc.equation_refs[i]),
+            let eq_name = match view {
+                Some(view) => {
+                    rumoca_phase_structural::equation_label(view, &inc.equation_refs[i])
+                }
                 None => inc.equation_refs[i].to_string(),
             };
             let mut row = serde_json::json!({
@@ -4525,7 +4527,20 @@ fn incidence_to_json(
             row
         })
         .collect();
-    let unknown_names: Vec<String> = inc.unknown_names.iter().map(|u| u.to_string()).collect();
+    // **`Incidence::unknown_names` is gone; the names are derived.** 0.10.0
+    // carries `unknowns: Vec<UnknownId>` -- identities, not strings -- and
+    // `unknown_label` is the crate's own way to name one. That is the point of
+    // using it rather than formatting the id: these strings have to be the ones
+    // `StructuralReport` uses, or the two panes cannot be correlated.
+    let unknown_names: Vec<String> = inc
+        .unknowns
+        .iter()
+        .enumerate()
+        .map(|(i, unknown)| match view {
+            Some(view) => rumoca_phase_structural::unknown_label(view, *unknown),
+            None => format!("unknown[{i}]"),
+        })
+        .collect();
     serde_json::json!({
         "n_eq": inc.n_eq,
         "n_var": inc.n_var,
@@ -4570,10 +4585,10 @@ fn before_report_json(
 /// incidence view showed *nothing* as matched — `Drivetrain` rendering 0 of 97
 /// when Rumoca had matched 93. Found by `docs/fidelity-plan.md` F1 on
 /// 2026-07-31; see that file for why re-derivation checks catch this class.
-fn partial_matching_to_json(
-    inc: &rumoca_phase_structural::Incidence,
+fn partial_matching_to_json<'dae>(
+    inc: &rumoca_phase_structural::Incidence<'dae>,
     match_eq: &[Option<usize>],
-    dae: &rumoca_ir_dae::Dae,
+    view: rumoca_ir_dae::DaeView<'dae>,
 ) -> serde_json::Value {
     let pairs: Vec<serde_json::Value> = match_eq
         .iter()
@@ -4591,7 +4606,7 @@ fn partial_matching_to_json(
                     // resolved to nothing — the pane names 321 equations across the
                     // notebook and could identify none of them.
                     "id": inc.equation_refs[eq_idx].to_string(),
-                    "unknown": inc.unknown_names[v].to_string(),
+                    "unknown": rumoca_phase_structural::unknown_label(view, inc.unknowns[v]),
                 })
             })
         })
