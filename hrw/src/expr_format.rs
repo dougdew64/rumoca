@@ -310,7 +310,6 @@ pub fn format_expr(expr: &Expression) -> String {
     s
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

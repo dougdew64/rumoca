@@ -48,7 +48,6 @@ use std::path::PathBuf;
 
 use hrw::worker::{FromWorker, StageKind, compile_specimen};
 
-
 fn main() {
     let mut args = std::env::args().skip(1);
     let Some(out) = args.next().map(PathBuf::from) else {

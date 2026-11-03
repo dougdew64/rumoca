@@ -118,8 +118,8 @@ pub fn anchors() -> Vec<Anchor> {
     // `augment_traced` is gone; `augment` sets up an explicit stack and
     // `run_augment_search` drives it, with `next_augment_step` scanning one
     // equation's candidates.
-    let fn_start = line_where(MATCHING_SOURCE, 0, |l| l.contains("fn next_augment_step("))
-        .unwrap_or(0);
+    let fn_start =
+        line_where(MATCHING_SOURCE, 0, |l| l.contains("fn next_augment_step(")).unwrap_or(0);
 
     // The free-versus-displace branch, now a `let ... else` inside
     // `next_augment_step` rather than a `match` on the matching.
@@ -406,7 +406,6 @@ fn matching_steps_of(model: &str) -> Option<Vec<MatchingStep>> {
         _ => None,
     }
 }
-
 
 /// One row per frame: index, step, emit line, depth.
 fn ledger_rows(model: &str) -> Option<Vec<(usize, String, String, usize)>> {

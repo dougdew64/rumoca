@@ -164,7 +164,11 @@ fn write_expr<'dae>(view: dae::DaeView<'dae>, id: dae::ExprId<'dae>, floor: u8, 
             out.push_str(binary_spelling(operator));
             // A non-associative operator's right operand needs brackets even at
             // equal precedence: `a - (b - c)`.
-            let right_floor = if is_associative(operator) { own } else { own + 1 };
+            let right_floor = if is_associative(operator) {
+                own
+            } else {
+                own + 1
+            };
             write_expr(view, rhs, right_floor, out);
             if bracket {
                 out.push(')');
@@ -327,7 +331,10 @@ fn write_expr<'dae>(view: dae::DaeView<'dae>, id: dae::ExprId<'dae>, floor: u8, 
             arguments,
             ..
         } => {
-            match view.function(function).map(|function| function.name().to_string()) {
+            match view
+                .function(function)
+                .map(|function| function.name().to_string())
+            {
                 Some(name) => out.push_str(&name),
                 None => out.push_str("<unresolved function>"),
             }
@@ -519,7 +526,12 @@ fn write_coordinate<'dae>(
         // Owner-local ids again: an iteration binder belongs to a domain and a
         // function parameter to a function, so both halves are printed.
         C::Binder(id) => {
-            let _ = write!(out, "<domain {} binder {}>", id.domain().index(), id.ordinal());
+            let _ = write!(
+                out,
+                "<domain {} binder {}>",
+                id.domain().index(),
+                id.ordinal()
+            );
         }
         C::FunctionParameter(id) => {
             let _ = write!(
@@ -778,10 +790,7 @@ mod tests {
             let previous = b.coordinate(dae::CoordinateInput::PreState(b.w));
             b.residuals.push(previous);
         });
-        assert_eq!(
-            out,
-            vec!["0 = sin(tau)", "0 = noEvent(time)", "0 = pre(w)"]
-        );
+        assert_eq!(out, vec!["0 = sin(tau)", "0 = noEvent(time)", "0 = pre(w)"]);
     }
 
     /// A conditional's operands are packed `[cond, value, …, fallback]`, and an

@@ -91,7 +91,6 @@ use rumoca_ir_dae as dae;
 /// Marks a reduction the cap declined to attempt. Part 2 looks for exactly this.
 const SKIPPED: &str = "skipped:too-large";
 
-
 fn load_msl() -> Session {
     let mut session = Session::new(SessionConfig::default());
     for root in hrw::msl_roots() {

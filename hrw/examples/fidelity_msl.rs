@@ -73,7 +73,6 @@ use hrw::fidelity::{CheckTiming, Coverage, Violation, check_model, group_by_chec
 use hrw::survey::{SurveyRow, classify};
 use hrw::worker::{FromWorker, Outcome, StageKind, WorkerState};
 
-
 /// Candidate models, read from the survey rather than re-derived.
 ///
 /// **The survey is the corpus definition.** Re-enumerating from a session here
