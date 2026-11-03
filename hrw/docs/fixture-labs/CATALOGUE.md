@@ -259,7 +259,7 @@ This is the only lab that stops Rumoca mid-algorithm and reads its state in a de
   - `fixture-lab-matching-live-the-call-stack-is-the-augmenting-path` — Fixture lab — Matching, live: the call stack is the augmenting path
   - `station-0-two-things-must-be-true-before-any-of-this-works` — Station 0 — Two things must be true before any of this works
   - `station-1-arm-an-anchor-and-learn-what-an-anchor-is-named` — Station 1 — Arm an anchor, and learn what an anchor is named
-  - `station-2-the-call-stack-is-the-augmenting-path` — Station 2 — The call stack is the augmenting path
+  - `station-2-the-augmenting-path-is-a-vector-you-can-read-at-once` — Station 2 — The augmenting path is a vector you can read at once
   - `station-3-the-same-machinery-refusing` — Station 3 — The same machinery, refusing
   - `station-4-what-this-instrument-can-and-cannot-show-you` — Station 4 — What this instrument can and cannot show you
   - `what-this-lab-cannot-check` — What this lab cannot check

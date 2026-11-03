@@ -33,19 +33,37 @@ Real phi(start = 0.0);
 Real w(start = 0.0);
 ```
 
-The DAE tab shows Rumoca's own partition, under the names the Modelica specification uses in
-Appendix B: `x` for states, `y` for algebraics, `p` for parameters.
+The DAE tab shows Rumoca's own partition. The Modelica specification names the groups in
+Appendix B — `x` for states, `y` for algebraics, `p` for parameters — and **Rumoca records the
+same partition one variable at a time**, as a `role` on each, rather than as three lists.
 
-> **Predict.** How many of those four end up in `x`, and which?
+> **Predict.** How many of those four are states, and which?
 
 [Look — SingleInertia → DAE](hrw://load/SingleInertia/Dae)
 
-[Point at `x`](hrw://stage/Dae/node/x)
+[Point at `storage.variables`](hrw://stage/Dae/node/storage.variables)
 
-**Expected:** `x` holds exactly two — `phi` and `w`. `p` holds `J` and `tau`. `y` is
-empty.
+**Expected:** four entries, each with a `role`. Exactly two read `state` — `phi` and `w`.
+`J` and `tau` read `parameter`. **No entry reads `algebraic`.**
 
-Falsified if: `tau` appears in `x`, or `y` has any member at all.
+Falsified if: `tau` reads `state`, or any entry reads `algebraic`.
+
+> **This station changed shape in Rumoca 0.10.0, and the change is the lesson.**
+>
+> It used to point at a node called `x` and count its members, because the DAE tab
+> published three lists named for Appendix B. v0.10.0 publishes **one list of variables,
+> each carrying its own `role`** — so there is no `x` to point at, and the question
+> "how many are states" is answered by reading a field four times rather than by
+> counting a list once.
+>
+> **The partition is unchanged; only its representation moved** — from a grouping *of*
+> variables to a property *on* each one. Which is the more honest shape: a variable's
+> role is a fact about that variable, and a variable cannot now appear in two groups or
+> in none. The old form could express both.
+>
+> Appendix B's names have not gone anywhere. They are still what the specification says
+> and still what the solver uses — `solve-lowering.md` watches `phi` and `w` land in a
+> vector called `Y` and `J` and `tau` in one called `P`.
 
 *What just happened.* Two different mechanisms produced that split, and only one of them read
 your declarations.
