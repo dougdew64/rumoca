@@ -42,6 +42,31 @@ Three things go with it: `app::structural_frames_for_stage` loses its `IndexRedu
 must get it back; `StructuralView::Animate` is hard-coded `false`; and `app::tearing_dae` no longer
 special-cases the reduced system. All three carry comments saying so.
 
+### Solver per-step diagnostics — our instrumentation, not an upstream API
+
+The step-size and BDF-order plots have no data. <!-- unbuilt: worker::solver_steps_from_integrator -->
+
+`rumoca_solver::SolverStepRecord` was **HRW's own instrumentation** of the integrator rather than
+an upstream type, so there is nothing to follow to: 0.10.0's `SimResult` carries `times`, `names`,
+`data`, `n_states`, `variable_meta` and `termination`, and no per-step record of any kind. This is
+the only place in the rebase where HRW loses an observation Rumoca never exposed.
+
+**The plots are kept, not deleted**, and `SimData::solver_steps` keeps its shape — retyped to HRW's
+own `plot_labels::StepRow`, which is what they consumed anyway, so re-instrumentation only has to
+fill the vector. They were built for a reported failure (Doug, 2026-09-25: he could not verify one
+of lecture 1's solver claims, because egui_plot's three-place default rendered a 1e-4 step as
+`0.000`), and the step size is on a log axis because measurement showed zoom could not reach it.
+Deleting that to save a type parameter would cost real pedagogical work.
+
+**The Simulation pane states the absence** rather than omitting the section, because a missing
+"Solver diagnostics" heading reads as a run that took no steps worth reporting — a false claim
+about a solver that integrated normally.
+
+The re-model is a solver observation seam, and the shape is already settled by precedent:
+`rumoca-phase-structural`'s `observation.rs` threads an observer through one implementation with
+`()` as the production observer. A BDF integrator reporting `(t, h, order)` per accepted step is
+that pattern applied to a loop rather than a search.
+
 ### `pre()` lowering — the pass became one arm of construction
 
 `pre()`-lowering stepping is not built. <!-- unbuilt: worker::pre_lowering_from_construction -->

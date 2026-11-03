@@ -3803,6 +3803,25 @@ impl App {
                     }
                 });
 
+                // **The absence is stated, not left blank.** `solver_steps` is
+                // always empty on v0.10.0 — the per-step record it read was
+                // HRW's own instrumentation of the integrator, and 0.10.0's
+                // `SimResult` carries nothing equivalent. Without this note the
+                // missing section reads as a run that took no steps worth
+                // reporting, which is a false claim about the solver: it
+                // integrated normally, and only the per-step view is gone. See
+                // `worker::SimData::solver_steps`.
+                if !has_diagnostics {
+                    ui.separator();
+                    ui.strong("Solver diagnostics");
+                    ui.label(
+                        "Not available on this Rumoca version. The step-size and BDF-order \
+                         plots read a per-step record that HRW added to the integrator; \
+                         v0.10.0's SimResult carries no equivalent, so re-instrumenting it \
+                         is pending. The trajectory above is unaffected.",
+                    );
+                }
+
                 if has_diagnostics {
                     ui.separator();
                     ui.strong("Solver diagnostics");
