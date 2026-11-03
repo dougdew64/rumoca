@@ -5280,3 +5280,77 @@ condition algebra carries a distinction HRW never showed — MLS §8.3.5.1 activ
 `edge(b1) or … or edge(bn)`, which is not the edge of the disjunction, so `when {u, not u}` fires at
 every switch of `u` while `u or not u` is a tautology that never rises. That is lecture material,
 and it only exists to be re-modelled onto because upstream made the semantics explicit.
+
+## 2026-11-03 — the capture scopes re-land in UPSTREAM's observer shape, not ours
+
+**The three structural capture scopes could not be ported, and the reason is worth keeping: ours
+duplicated the algorithm and upstream's does not.** `maximum_matching_with_trace` and
+`tarjan_scc_with_trace` were each a *second* implementation of their algorithm with frame emission
+interleaved, selected by an ambient `thread_local! { static CAPTURE }`. On 0.9.20 that cost ~100
+duplicated lines of Kuhn's; 0.10.0 restructured matching into `Matching` / `MatchContext` /
+`RowOrder` / `AugmentScratch` with structured-family seeding and a preference-relocation phase, so
+the same approach would have meant maintaining a second copy of all of it.
+
+**The duplication was never only a cost — it was an accuracy hazard, and the old design knew it.**
+Two implementations agree only while both are maintained, which is why `start_capture` /
+`deposit_capture` existed at all: they forced the *real* run down the traced path so at least one
+execution produced both the frames and the result. That is a workaround for a seam in the wrong
+place.
+
+**Upstream had already built the right one.** `dae_transform/observation.rs` threads an observer
+trait through the single implementation, with `()` as the production observer whose `observe` body
+is empty, and one public `inspect_prepare_for_solve`. Its header states the property plainly:
+*"an observer cannot feed anything back into the reduction it is watching — that is a type-level
+guarantee, not a promise."* So `observation.rs` mirrors it for matching, Tarjan and tearing, and
+`inspect_sort` is the single public entry. No duplicated algorithm, no ambient state, nothing added
+to `rumoca-core` — and `observing_a_search_does_not_change_what_it_returns` pins agreement across
+300 random systems, a property the old design could not state.
+
+**Doug's ruling, after the trade was priced: "Do as you recommended: Re-land the capture scopes."**
+Read it as the observer seam; "capture scopes" is the task's name, not its mechanism.
+
+### Three places 0.10.0 made the OLD vocabulary a false claim
+
+These are re-models inside a port, and each would have taught something false if carried over
+unchanged — the reason the honest answer was a redesign rather than a transcription.
+
+- **Tarjan's node indices are no longer equation indices.** `build_blt_blocks` may condense compact
+  equation families out of the node set and run over a renumbered graph, so `TarjanStep::Start` now
+  carries `equation_of_node`. A replay reading those indices as rows would name equations belonging
+  to the condensed-out families.
+- **Tearing runs twice.** `tear_algebraic_loop_with_causal_candidates` runs the greedy search under
+  both `CausalUnlocks` and `VariableDegree` priorities and keeps the smaller tear set, so a trace
+  must say which pass was adopted (`TearingStep::PlanSelected`). Reading the first pass as the plan
+  would describe a tear sequence the compiler discarded.
+- **Matching no longer starts empty.** Regular families are seeded before Kuhn runs, so without
+  `MatchingStep::SeedStructured` a replay would open on equations already matched for no visible
+  reason, and `maximize_preserved_preferences` would then move them for none either.
+
+**The preference phase is reported at DECISION granularity, and that is stated rather than
+hidden.** Its relocation search is a second depth-first search whose interior is not observed; the
+`match_eq` travelling with each step is exact, so a consumer sees the phase advance in larger jumps
+than Kuhn's — never a matching that did not exist. Coarseness that is documented is not an
+inaccuracy; coarseness mistaken for completeness is.
+
+### What was dropped, and the one thing that was observed before and is not now
+
+**The index-reduction instrumentation is not re-landed at all** — `IndexReductionFrame`,
+`emit_index_reduction_start`, `reduce_constrained_dummy_derivatives_with_trace` and the rest.
+Upstream's `inspect_prepare_for_solve` replaces it with a better seam we get for free, and the
+ten-step dummy-derivative funnel those types described no longer exists.
+
+**Scope is unchanged otherwise, deliberately.** The old thread-local observed exactly one Tarjan run
+— the top-level BLT one, via `deposit_capture`'s overwrite — while `diagnostics::collect_warnings`
+and the sub-block traversal used the untraced entry point and contributed nothing. The observer
+makes that choice explicit at each call site instead of implicit in which variant was called:
+`build_blt_blocks` observes, `diagnostics` passes `&mut ()`.
+
+### A note on where the must-fire rule actually bit
+
+**The first seventeen tests written for this seam would all have passed with every `emit` deleted**,
+because they built records by hand and tested the recorder. That is the must-fire failure in its
+usual costume — an observer that reports nothing looks exactly like an algorithm that did nothing.
+`observation::algorithms` drives the real algorithms instead, and the three mutations that prove it
+(a dropped `DisplaceFail`, a swapped `Return`, a dropped `PlanSelected`) each failed exactly one
+test and nothing else. `dead_code = "deny"` refused a fourth mutation outright, which is a weaker
+guard worth knowing about: a step variant that stops being constructed will not compile.
