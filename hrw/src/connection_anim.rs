@@ -282,6 +282,10 @@ impl ConnectionAnimation {
                         // replay exists to show.
                         "equations": equations,
                     }),
+                    ConnectionStep::PotentialSetSkipped { set_size } => serde_json::json!({
+                        "step": "PotentialSetSkipped",
+                        "set_size": set_size,
+                    }),
                     ConnectionStep::UnconnectedFlow { equations_added } => serde_json::json!({
                         "step": "UnconnectedFlow",
                         "equations_added": equations_added,
@@ -647,6 +651,20 @@ fn step_style(frame: &ConnectionFrame) -> (&'static str, egui::Color32, String) 
                 ),
             )
         }
+        // **A set that produced nothing, with the reason.** Rumoca reports this
+        // separately from an `EquationsGenerated` of zero, because zero
+        // equations with no account reads as a compiler that lost them. The
+        // members belong to an expandable connector branch nothing outside the
+        // connection references, so model-role planning is free to remove them
+        // — and equality equations would leave them structurally unbalanced.
+        ConnectionStep::PotentialSetSkipped { set_size } => (
+            "\u{1f6ab}",
+            crate::colors::ANIM_EXPLORE,
+            format!(
+                "No equations for this set of {set_size} \u{2014} it is an unused expandable \
+                 branch, so its members are removed rather than equated"
+            ),
+        ),
         ConnectionStep::UnconnectedFlow { equations_added } => (
             "\u{2b07}",
             crate::colors::MATCHED_MARKER,
