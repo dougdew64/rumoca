@@ -2,8 +2,8 @@
   "model": "RotationalInertia",
   "specimen": "specimens/RotationalInertia.mo",
   "specimen_fnv1a": "9c66d89dd6c12dbd",
-  "rumoca_rev": "fdcfc248",
-  "rumoca_version": "0.9.20",
+  "rumoca_rev": "739d724e",
+  "rumoca_version": "0.10.0",
   "stages": {
     "parse": {
       "has_ir": true,
@@ -34,16 +34,16 @@
       "note": null
     },
     "index_reduction": {
-      "has_ir": true,
-      "note": "already index-1 — the reduction funnel is a no-op here (same as the Structural tab)"
+      "has_ir": false,
+      "note": "Rumoca ran index reduction successfully; HRW cannot display it yet. On Rumoca 0.10.0 the ten-step dummy-derivative funnel became two fixed-point lanes with a candidate/attempt/selection protocol, and the DAE became immutable, so this pane is being rebuilt against the new model rather than shown in the old vocabulary. This is an HRW gap, not a compiler problem."
     },
     "initialization": {
-      "has_ir": true,
-      "note": "IC planning failed: structurally singular system: 8 matched out of 10 equations and 10 unknowns; unmatched equations: equation from inertia, unconnected flow: inertia.flange_b.tau = 0; unmatched unknowns: inertia.flange_b.phi, torque.flange.phi"
+      "has_ir": false,
+      "note": "Rumoca ran initialization successfully; HRW cannot display it yet. On Rumoca 0.10.0 the IC plan's ordered IcBlock solve sequence was replaced by initial_pins, which seeds one value per state and projects the algebraic unknowns, so this pane is being rebuilt against the new model rather than shown in the old vocabulary. This is an HRW gap, not a compiler problem."
     },
     "events": {
-      "has_ir": true,
-      "note": "no events — this model is a smooth (continuous) system"
+      "has_ir": false,
+      "note": "Rumoca ran the events phase successfully; HRW cannot display it yet. On Rumoca 0.10.0 an event condition became a boolean algebra (Initial, Always, Relation, Discrete, Clock, Not, And, Or, AnyRise) rather than an equation, and a root became a relation paired with its activation, so this pane is being rebuilt against the new model rather than shown in the old vocabulary. This is an HRW gap, not a compiler problem."
     },
     "solve_lowering": {
       "has_ir": true,

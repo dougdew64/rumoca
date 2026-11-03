@@ -1,8 +1,8 @@
 {
   "t_end": 2.0,
-  "n_time_points": 501,
-  "n_variables": 49,
-  "n_states": 7,
+  "n_time_points": 516,
+  "n_variables": 45,
+  "n_states": 2,
   "has_discontinuities": true,
   "t_start": 0.0,
   "t_final": 2.0,
@@ -10,58 +10,26 @@
     {
       "name": "motor.phi",
       "is_state": true,
-      "initial": 0.5,
-      "final": 0.5,
-      "min": 0.5,
-      "max": 0.5
+      "initial": 0.0,
+      "final": 0.5235207571134146,
+      "min": 0.0,
+      "max": 0.8470190047162239
     },
     {
-      "name": "rotor.phi",
-      "is_state": true,
-      "initial": 0.5,
-      "final": 0.5,
-      "min": 0.5,
-      "max": 0.5
-    },
-    {
-      "name": "rotor.w",
+      "name": "motor.flange.phi",
       "is_state": true,
       "initial": 0.0,
-      "final": 0.0,
+      "final": 0.5235207571134146,
       "min": 0.0,
-      "max": 0.0
+      "max": 0.8470190047162239
     },
     {
-      "name": "load.phi",
-      "is_state": true,
-      "initial": 0.1,
-      "final": 0.1,
-      "min": 0.1,
-      "max": 0.1
-    },
-    {
-      "name": "load.w",
-      "is_state": true,
-      "initial": 0.0,
-      "final": 0.0,
-      "min": 0.0,
-      "max": 0.0
-    },
-    {
-      "name": "spring.phi_rel",
-      "is_state": true,
-      "initial": -0.1,
-      "final": -0.1,
-      "min": -0.1,
-      "max": -0.1
-    },
-    {
-      "name": "spring.w_rel",
-      "is_state": true,
-      "initial": 0.0,
-      "final": 0.0,
-      "min": 0.0,
-      "max": 0.0
+      "name": "motor.flange.tau",
+      "is_state": false,
+      "initial": -2.0,
+      "final": -2.0,
+      "min": -2.0,
+      "max": -2.0
     },
     {
       "name": "motor.phi_support",
@@ -74,10 +42,10 @@
     {
       "name": "motor.w",
       "is_state": false,
-      "initial": 0.0,
-      "final": 0.0,
-      "min": 0.0,
-      "max": 0.0
+      "initial": -0.0,
+      "final": -0.32809618269619645,
+      "min": -3.3833232763930803,
+      "max": 4.8746042201386315
     },
     {
       "name": "motor.tau",
@@ -88,12 +56,92 @@
       "max": 2.0
     },
     {
-      "name": "rotor.a",
+      "name": "rotor.flange_a.phi",
       "is_state": false,
       "initial": 0.0,
-      "final": 0.0,
+      "final": 0.5235207571134146,
       "min": 0.0,
-      "max": 0.0
+      "max": 0.8470190047162239
+    },
+    {
+      "name": "rotor.flange_a.tau",
+      "is_state": false,
+      "initial": 2.0,
+      "final": 2.0,
+      "min": 2.0,
+      "max": 2.0
+    },
+    {
+      "name": "rotor.flange_b.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.5235207571134146,
+      "min": 0.0,
+      "max": 0.8470190047162239
+    },
+    {
+      "name": "rotor.flange_b.tau",
+      "is_state": false,
+      "initial": -1.3333333333333333,
+      "final": -2.0226117779459876,
+      "min": -2.475218714292917,
+      "max": -1.3333333333333333
+    },
+    {
+      "name": "rotor.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.5235207571134146,
+      "min": 0.0,
+      "max": 0.8470190047162239
+    },
+    {
+      "name": "rotor.w",
+      "is_state": false,
+      "initial": -0.0,
+      "final": -0.32809618269619645,
+      "min": -3.3833232763930803,
+      "max": 4.8746042201386315
+    },
+    {
+      "name": "rotor.a",
+      "is_state": false,
+      "initial": 66.66666666666666,
+      "final": -2.2611777945987503,
+      "min": -47.52187142929171,
+      "max": 66.66666666666666
+    },
+    {
+      "name": "gear.flange_a.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.5235207571134146,
+      "min": 0.0,
+      "max": 0.8470190047162239
+    },
+    {
+      "name": "gear.flange_a.tau",
+      "is_state": false,
+      "initial": 1.3333333333333333,
+      "final": 2.0226117779459876,
+      "min": 1.3333333333333333,
+      "max": 2.475218714292917
+    },
+    {
+      "name": "gear.flange_b.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.10470415142268293,
+      "min": 0.0,
+      "max": 0.16940380094324478
+    },
+    {
+      "name": "gear.flange_b.tau",
+      "is_state": false,
+      "initial": -6.666666666666666,
+      "final": -10.113058889729938,
+      "min": -12.376093571464587,
+      "max": -6.666666666666666
     },
     {
       "name": "gear.phi_support",
@@ -104,36 +152,196 @@
       "max": 0.0
     },
     {
-      "name": "load.a",
+      "name": "gear.phi_a",
       "is_state": false,
       "initial": 0.0,
-      "final": 0.0,
+      "final": 0.5235207571134146,
       "min": 0.0,
+      "max": 0.8470190047162239
+    },
+    {
+      "name": "gear.phi_b",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.10470415142268293,
+      "min": 0.0,
+      "max": 0.16940380094324478
+    },
+    {
+      "name": "load.flange_a.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.10470415142268293,
+      "min": 0.0,
+      "max": 0.16940380094324478
+    },
+    {
+      "name": "load.flange_a.tau",
+      "is_state": false,
+      "initial": 6.666666666666666,
+      "final": 10.113058889729938,
+      "min": 6.666666666666666,
+      "max": 12.376093571464587
+    },
+    {
+      "name": "load.flange_b.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.10470415142268293,
+      "min": 0.0,
+      "max": 0.16940380094324478
+    },
+    {
+      "name": "load.flange_b.tau",
+      "is_state": false,
+      "initial": -0.0,
+      "final": -10.339176669189813,
+      "min": -17.128280714393757,
+      "max": -0.0
+    },
+    {
+      "name": "load.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.10470415142268293,
+      "min": 0.0,
+      "max": 0.16940380094324478
+    },
+    {
+      "name": "load.w",
+      "is_state": false,
+      "initial": -0.0,
+      "final": -0.06561923653923929,
+      "min": -0.6766646552786161,
+      "max": 0.9749208440277263
+    },
+    {
+      "name": "load.a",
+      "is_state": false,
+      "initial": 13.333333333333332,
+      "final": -0.45223555891975015,
+      "min": -9.504374285858342,
+      "max": 13.333333333333332
+    },
+    {
+      "name": "spring.phi_rel",
+      "is_state": false,
+      "initial": 0.0,
+      "final": -0.10470415142268293,
+      "min": -0.16940380094324478,
       "max": 0.0
+    },
+    {
+      "name": "spring.w_rel",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.06561923653923929,
+      "min": -0.9749208440277263,
+      "max": 0.6766646552786161
     },
     {
       "name": "spring.a_rel",
       "is_state": false,
+      "initial": -13.333333333333332,
+      "final": 0.45223555891975015,
+      "min": -13.333333333333332,
+      "max": 9.504374285858342
+    },
+    {
+      "name": "spring.tau",
+      "is_state": false,
+      "initial": 0.0,
+      "final": -10.339176669189813,
+      "min": -17.128280714393757,
+      "max": 0.0
+    },
+    {
+      "name": "spring.flange_a.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.10470415142268293,
+      "min": 0.0,
+      "max": 0.16940380094324478
+    },
+    {
+      "name": "spring.flange_a.tau",
+      "is_state": false,
+      "initial": -0.0,
+      "final": 10.339176669189813,
+      "min": -0.0,
+      "max": 17.128280714393757
+    },
+    {
+      "name": "spring.flange_b.phi",
+      "is_state": false,
       "initial": 0.0,
       "final": 0.0,
       "min": 0.0,
       "max": 0.0
     },
     {
+      "name": "spring.flange_b.tau",
+      "is_state": false,
+      "initial": 0.0,
+      "final": -10.339176669189813,
+      "min": -17.128280714393757,
+      "max": 0.0
+    },
+    {
+      "name": "spring.lossPower",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.008611768407985273,
+      "min": 0.0,
+      "max": 1.9009413042394683
+    },
+    {
       "name": "spring.tau_c",
       "is_state": false,
-      "initial": -10.0,
-      "final": -10.0,
-      "min": -10.0,
-      "max": -10.0
+      "initial": 0.0,
+      "final": -10.470415142268292,
+      "min": -16.940380094324478,
+      "max": 0.0
     },
     {
       "name": "spring.tau_d",
       "is_state": false,
       "initial": 0.0,
+      "final": 0.13123847307847858,
+      "min": -1.9498416880554525,
+      "max": 1.3533293105572322
+    },
+    {
+      "name": "frame.flange.phi",
+      "is_state": false,
+      "initial": 0.0,
       "final": 0.0,
       "min": 0.0,
       "max": 0.0
+    },
+    {
+      "name": "frame.flange.tau",
+      "is_state": false,
+      "initial": -0.0,
+      "final": 10.339176669189813,
+      "min": -0.0,
+      "max": 17.128280714393757
+    },
+    {
+      "name": "brakeTorque.flange.phi",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.10470415142268293,
+      "min": 0.0,
+      "max": 0.16940380094324478
+    },
+    {
+      "name": "brakeTorque.flange.tau",
+      "is_state": false,
+      "initial": -0.0,
+      "final": -0.0,
+      "min": -0.0,
+      "max": -0.0
     },
     {
       "name": "brakeTorque.phi_support",
@@ -152,252 +360,12 @@
       "max": 0.0
     },
     {
-      "name": "spring.tau",
-      "is_state": false,
-      "initial": -10.0,
-      "final": -10.0,
-      "min": -10.0,
-      "max": -10.0
-    },
-    {
-      "name": "spring.lossPower",
-      "is_state": false,
-      "initial": 0.0,
-      "final": 0.0,
-      "min": 0.0,
-      "max": 0.0
-    },
-    {
-      "name": "motor.flange.phi",
-      "is_state": false,
-      "initial": 0.5,
-      "final": 0.5,
-      "min": 0.5,
-      "max": 0.5
-    },
-    {
-      "name": "motor.flange.tau",
-      "is_state": false,
-      "initial": -2.0,
-      "final": -2.0,
-      "min": -2.0,
-      "max": -2.0
-    },
-    {
-      "name": "rotor.flange_a.phi",
-      "is_state": false,
-      "initial": 0.5,
-      "final": 0.5,
-      "min": 0.5,
-      "max": 0.5
-    },
-    {
-      "name": "rotor.flange_a.tau",
-      "is_state": false,
-      "initial": 2.0,
-      "final": 2.0,
-      "min": 2.0,
-      "max": 2.0
-    },
-    {
-      "name": "rotor.flange_b.phi",
-      "is_state": false,
-      "initial": 0.5,
-      "final": 0.5,
-      "min": 0.5,
-      "max": 0.5
-    },
-    {
-      "name": "rotor.flange_b.tau",
-      "is_state": false,
-      "initial": -2.0,
-      "final": -2.0,
-      "min": -2.0,
-      "max": -2.0
-    },
-    {
-      "name": "gear.flange_a.phi",
-      "is_state": false,
-      "initial": 0.5,
-      "final": 0.5,
-      "min": 0.5,
-      "max": 0.5
-    },
-    {
-      "name": "gear.flange_a.tau",
-      "is_state": false,
-      "initial": 2.0,
-      "final": 2.0,
-      "min": 2.0,
-      "max": 2.0
-    },
-    {
-      "name": "gear.flange_b.phi",
-      "is_state": false,
-      "initial": 0.1,
-      "final": 0.1,
-      "min": 0.1,
-      "max": 0.1
-    },
-    {
-      "name": "gear.flange_b.tau",
-      "is_state": false,
-      "initial": -10.0,
-      "final": -10.0,
-      "min": -10.0,
-      "max": -10.0
-    },
-    {
-      "name": "gear.phi_a",
-      "is_state": false,
-      "initial": 0.5,
-      "final": 0.5,
-      "min": 0.5,
-      "max": 0.5
-    },
-    {
-      "name": "gear.phi_b",
-      "is_state": false,
-      "initial": 0.1,
-      "final": 0.1,
-      "min": 0.1,
-      "max": 0.1
-    },
-    {
-      "name": "load.flange_a.phi",
-      "is_state": false,
-      "initial": 0.1,
-      "final": 0.1,
-      "min": 0.1,
-      "max": 0.1
-    },
-    {
-      "name": "load.flange_a.tau",
-      "is_state": false,
-      "initial": 10.0,
-      "final": 10.0,
-      "min": 10.0,
-      "max": 10.0
-    },
-    {
-      "name": "load.flange_b.phi",
-      "is_state": false,
-      "initial": 0.1,
-      "final": 0.1,
-      "min": 0.1,
-      "max": 0.1
-    },
-    {
-      "name": "load.flange_b.tau",
-      "is_state": false,
-      "initial": -10.0,
-      "final": -10.0,
-      "min": -10.0,
-      "max": -10.0
-    },
-    {
-      "name": "spring.flange_a.phi",
-      "is_state": false,
-      "initial": 0.1,
-      "final": 0.1,
-      "min": 0.1,
-      "max": 0.1
-    },
-    {
-      "name": "spring.flange_a.tau",
-      "is_state": false,
-      "initial": 10.0,
-      "final": 10.0,
-      "min": 10.0,
-      "max": 10.0
-    },
-    {
-      "name": "spring.flange_b.phi",
-      "is_state": false,
-      "initial": 0.0,
-      "final": 0.0,
-      "min": 0.0,
-      "max": 0.0
-    },
-    {
-      "name": "spring.flange_b.tau",
-      "is_state": false,
-      "initial": -10.0,
-      "final": -10.0,
-      "min": -10.0,
-      "max": -10.0
-    },
-    {
-      "name": "frame.flange.phi",
-      "is_state": false,
-      "initial": 0.0,
-      "final": 0.0,
-      "min": 0.0,
-      "max": 0.0
-    },
-    {
-      "name": "frame.flange.tau",
-      "is_state": false,
-      "initial": 10.0,
-      "final": 10.0,
-      "min": 10.0,
-      "max": 10.0
-    },
-    {
-      "name": "brakeTorque.flange.phi",
-      "is_state": false,
-      "initial": 0.1,
-      "final": 0.1,
-      "min": 0.1,
-      "max": 0.1
-    },
-    {
-      "name": "brakeTorque.flange.tau",
-      "is_state": false,
-      "initial": -0.0,
-      "final": 0.0,
-      "min": -0.0,
-      "max": -0.0
-    },
-    {
       "name": "braking",
       "is_state": false,
       "initial": 0.0,
       "final": 0.0,
       "min": 0.0,
       "max": 0.0
-    },
-    {
-      "name": "c[1]",
-      "is_state": false,
-      "initial": 0.0,
-      "final": 0.0,
-      "min": 0.0,
-      "max": 0.0
-    },
-    {
-      "name": "c[2]",
-      "is_state": false,
-      "initial": 0.0,
-      "final": 0.0,
-      "min": 0.0,
-      "max": 0.0
-    },
-    {
-      "name": "c[3]",
-      "is_state": false,
-      "initial": 0.0,
-      "final": 0.0,
-      "min": 0.0,
-      "max": 0.0
-    },
-    {
-      "name": "c[4]",
-      "is_state": false,
-      "initial": 1.0,
-      "final": 1.0,
-      "min": 1.0,
-      "max": 1.0
     }
   ]
 }

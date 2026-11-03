@@ -8,38 +8,41 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0] (top-level model equation)",
+        "equation": "f_x[0] (a = 1.0)",
         "id": "f_x[0]",
         "unknowns": [
           0
         ],
-        "equation_text": "a - 1"
+        "equation_text": "0 = a - 1"
       },
       {
-        "equation": "f_x[1] (top-level model equation)",
+        "equation": "f_x[1] (a = time)",
         "id": "f_x[1]",
         "unknowns": [
           0
         ],
-        "equation_text": "a - time"
+        "equation_text": "0 = a - time"
       }
     ]
   },
   "matching": [
     {
-      "equation": "f_x[0] (top-level model equation)",
+      "equation": "f_x[0] (a = 1.0)",
       "id": "f_x[0]",
       "unknown": "a"
     }
   ],
   "error": {
     "kind": "singular",
-    "message": "structurally singular system: 1 matched out of 2 equations and 2 unknowns; unmatched equations: f_x[1]; unmatched unknowns: b",
+    "message": "structurally singular system: 1 matched out of 2 equations and 2 unknowns",
     "n_equations": 2,
     "n_unknowns": 2,
     "n_matched": 1,
     "rank_deficiency": 1,
     "unmatched_equations": [
+      "f_x[1] (a = time)"
+    ],
+    "unmatched_equation_ids": [
       "f_x[1]"
     ],
     "unmatched_unknowns": [
@@ -58,6 +61,14 @@
         }
       }
     ],
+    "over_determined_block": {
+      "equations": 2,
+      "unknowns": 1,
+      "sample": [
+        "f_x[0]",
+        "f_x[1]"
+      ]
+    },
     "guidance": "The maximum matching could not pair every equation with a unique unknown. Each unmatched unknown is a variable no equation determines; `unmatched_unknown_locations` gives the source line that declares it. If the Index Reduction stage also reports singular, the model is genuinely ill-posed rather than merely high-index."
   }
 }

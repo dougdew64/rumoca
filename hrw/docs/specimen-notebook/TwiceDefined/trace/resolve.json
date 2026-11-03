@@ -1,5 +1,5 @@
 {
-  "def_id": 85,
+  "def_id": 98,
   "scope_id": 1,
   "name": {
     "text": "TwiceDefined",
@@ -10,7 +10,7 @@
       "end_column": 19,
       "start": 6,
       "end": 18,
-      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+      "source": 9237349070360541563
     },
     "token_number": 1,
     "token_type": 64
@@ -25,7 +25,7 @@
       "end_column": 6,
       "start": 0,
       "end": 5,
-      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+      "source": 9237349070360541563
     },
     "token_number": 0,
     "token_type": 41
@@ -47,7 +47,7 @@
         "end_column": 107,
         "start": 19,
         "end": 108,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+        "source": 9237349070360541563
       },
       "token_number": 2,
       "token_type": 66
@@ -60,14 +60,14 @@
     "end_column": 17,
     "start": 6,
     "end": 840,
-    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+    "source": 9237349070360541563
   },
   "extends": [],
   "imports": [],
   "classes": {},
   "components": {
     "a": {
-      "def_id": 89,
+      "def_id": 104,
       "type_id": null,
       "type_def_id": 1,
       "name": "a",
@@ -80,7 +80,7 @@
           "end_column": 9,
           "start": 779,
           "end": 780,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+          "source": 9237349070360541563
         },
         "token_number": 15,
         "token_type": 64
@@ -96,7 +96,7 @@
               "end_column": 7,
               "start": 774,
               "end": 778,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+              "source": 9237349070360541563
             },
             "token_number": 14,
             "token_type": 64
@@ -119,7 +119,7 @@
               "end_column": 0,
               "start": 0,
               "end": 0,
-              "file_name": ""
+              "source": 0
             },
             "token_number": 0,
             "token_type": 0
@@ -151,7 +151,7 @@
         "end_column": 9,
         "start": 774,
         "end": 780,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+        "source": 9237349070360541563
       },
       "condition": null,
       "inner": false,
@@ -162,11 +162,13 @@
       "is_final": false,
       "is_replaceable": false,
       "is_redeclare": false,
+      "redeclared_by_modification": false,
+      "has_unapplied_redeclare": false,
       "constrainedby": null,
       "is_structural": false
     },
     "b": {
-      "def_id": 90,
+      "def_id": 105,
       "type_id": null,
       "type_def_id": 1,
       "name": "b",
@@ -179,7 +181,7 @@
           "end_column": 9,
           "start": 789,
           "end": 790,
-          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+          "source": 9237349070360541563
         },
         "token_number": 18,
         "token_type": 64
@@ -195,7 +197,7 @@
               "end_column": 7,
               "start": 784,
               "end": 788,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+              "source": 9237349070360541563
             },
             "token_number": 17,
             "token_type": 64
@@ -218,7 +220,7 @@
               "end_column": 0,
               "start": 0,
               "end": 0,
-              "file_name": ""
+              "source": 0
             },
             "token_number": 0,
             "token_type": 0
@@ -250,7 +252,7 @@
         "end_column": 9,
         "start": 784,
         "end": 790,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+        "source": 9237349070360541563
       },
       "condition": null,
       "inner": false,
@@ -261,6 +263,8 @@
       "is_final": false,
       "is_replaceable": false,
       "is_redeclare": false,
+      "redeclared_by_modification": false,
+      "has_unapplied_redeclare": false,
       "constrainedby": null,
       "is_structural": false
     }
@@ -282,7 +286,7 @@
                     "end_column": 4,
                     "start": 803,
                     "end": 804,
-                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+                    "source": 9237349070360541563
                   },
                   "token_number": 21,
                   "token_type": 64
@@ -309,7 +313,7 @@
                 "end_column": 10,
                 "start": 807,
                 "end": 810,
-                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+                "source": 9237349070360541563
               },
               "token_number": 23,
               "token_type": 68
@@ -339,7 +343,7 @@
                     "end_column": 4,
                     "start": 814,
                     "end": 815,
-                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+                    "source": 9237349070360541563
                   },
                   "token_number": 25,
                   "token_type": 64
@@ -368,7 +372,7 @@
                     "end_column": 11,
                     "start": 818,
                     "end": 822,
-                    "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+                    "source": 9237349070360541563
                   },
                   "token_number": 27,
                   "token_type": 64
@@ -398,7 +402,7 @@
       "end_column": 9,
       "start": 792,
       "end": 800,
-      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+      "source": 9237349070360541563
     },
     "token_number": 20,
     "token_type": 24
@@ -415,7 +419,7 @@
       "end_column": 17,
       "start": 828,
       "end": 840,
-      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+      "source": 9237349070360541563
     },
     "token_number": 30,
     "token_type": 64
@@ -428,6 +432,7 @@
   "is_outer": false,
   "is_replaceable": false,
   "is_redeclare": false,
+  "redeclare_target_def_id": null,
   "constrainedby": null,
   "array_subscripts": [],
   "external": null

@@ -4,659 +4,668 @@
     "n_var": 44,
     "unknown_names": [
       "der(motor.phi)",
-      "der(rotor.phi)",
-      "der(rotor.w)",
-      "der(load.phi)",
-      "der(load.w)",
-      "der(spring.phi_rel)",
-      "der(spring.w_rel)",
+      "motor.flange.phi",
+      "motor.flange.tau",
       "motor.phi_support",
       "motor.w",
       "motor.tau",
-      "rotor.a",
-      "gear.phi_support",
-      "load.a",
-      "spring.a_rel",
-      "spring.tau_c",
-      "spring.tau_d",
-      "brakeTorque.phi_support",
-      "brakeTorque.tau",
-      "spring.tau",
-      "spring.lossPower",
-      "motor.flange.phi",
-      "motor.flange.tau",
       "rotor.flange_a.phi",
       "rotor.flange_a.tau",
       "rotor.flange_b.phi",
       "rotor.flange_b.tau",
+      "der(rotor.phi)",
+      "der(rotor.w)",
+      "rotor.a",
       "gear.flange_a.phi",
       "gear.flange_a.tau",
       "gear.flange_b.phi",
       "gear.flange_b.tau",
+      "gear.phi_support",
       "gear.phi_a",
       "gear.phi_b",
       "load.flange_a.phi",
       "load.flange_a.tau",
       "load.flange_b.phi",
       "load.flange_b.tau",
+      "der(load.phi)",
+      "der(load.w)",
+      "load.a",
+      "der(spring.phi_rel)",
+      "der(spring.w_rel)",
+      "spring.a_rel",
+      "spring.tau",
       "spring.flange_a.phi",
       "spring.flange_a.tau",
       "spring.flange_b.phi",
       "spring.flange_b.tau",
+      "spring.lossPower",
+      "spring.tau_c",
+      "spring.tau_d",
       "frame.flange.phi",
       "frame.flange.tau",
       "brakeTorque.flange.phi",
-      "brakeTorque.flange.tau"
+      "brakeTorque.flange.tau",
+      "brakeTorque.phi_support",
+      "brakeTorque.tau"
     ],
     "rows": [
       {
-        "equation": "f_x[0] (equation from motor)",
+        "equation": "f_x[0] (phi = flange.phi - phi_support)",
         "id": "f_x[0]",
         "unknowns": [
-          7,
-          20
+          1,
+          3
         ],
-        "equation_text": "motor.phi - (motor.flange.phi - motor.phi_support)"
+        "equation_text": "0 = motor.phi - (motor.flange.phi - motor.phi_support)"
       },
       {
-        "equation": "f_x[1] (equation from motor)",
+        "equation": "f_x[1] (phi_support = 0)",
         "id": "f_x[1]",
-        "unknowns": [
-          7
-        ],
-        "equation_text": "motor.phi_support - 0"
-      },
-      {
-        "equation": "f_x[2] (equation from motor)",
-        "id": "f_x[2]",
-        "unknowns": [
-          0
-        ],
-        "equation_text": "motor.w - der(motor.phi)"
-      },
-      {
-        "equation": "f_x[3] (equation from motor)",
-        "id": "f_x[3]",
-        "unknowns": [
-          9,
-          21
-        ],
-        "equation_text": "motor.tau - -motor.flange.tau"
-      },
-      {
-        "equation": "f_x[4] (equation from motor)",
-        "id": "f_x[4]",
-        "unknowns": [
-          9
-        ],
-        "equation_text": "motor.tau - motor.tau_constant"
-      },
-      {
-        "equation": "f_x[5] (equation from rotor)",
-        "id": "f_x[5]",
-        "unknowns": [
-          22
-        ],
-        "equation_text": "rotor.phi - rotor.flange_a.phi"
-      },
-      {
-        "equation": "f_x[6] (equation from rotor)",
-        "id": "f_x[6]",
-        "unknowns": [
-          24
-        ],
-        "equation_text": "rotor.phi - rotor.flange_b.phi"
-      },
-      {
-        "equation": "f_x[7] (equation from rotor)",
-        "id": "f_x[7]",
-        "unknowns": [
-          1
-        ],
-        "equation_text": "rotor.w - der(rotor.phi)"
-      },
-      {
-        "equation": "f_x[8] (equation from rotor)",
-        "id": "f_x[8]",
-        "unknowns": [
-          2
-        ],
-        "equation_text": "rotor.a - der(rotor.w)"
-      },
-      {
-        "equation": "f_x[9] (equation from rotor)",
-        "id": "f_x[9]",
-        "unknowns": [
-          10,
-          23,
-          25
-        ],
-        "equation_text": "rotor.J * rotor.a - (rotor.flange_a.tau + rotor.flange_b.tau)"
-      },
-      {
-        "equation": "f_x[10] (equation from gear)",
-        "id": "f_x[10]",
-        "unknowns": [
-          11
-        ],
-        "equation_text": "gear.phi_support - 0"
-      },
-      {
-        "equation": "f_x[11] (equation from gear)",
-        "id": "f_x[11]",
-        "unknowns": [
-          11,
-          26,
-          30
-        ],
-        "equation_text": "gear.phi_a - (gear.flange_a.phi - gear.phi_support)"
-      },
-      {
-        "equation": "f_x[12] (equation from gear)",
-        "id": "f_x[12]",
-        "unknowns": [
-          11,
-          28,
-          31
-        ],
-        "equation_text": "gear.phi_b - (gear.flange_b.phi - gear.phi_support)"
-      },
-      {
-        "equation": "f_x[13] (equation from gear)",
-        "id": "f_x[13]",
-        "unknowns": [
-          30,
-          31
-        ],
-        "equation_text": "gear.phi_a - gear.ratio * gear.phi_b"
-      },
-      {
-        "equation": "f_x[14] (equation from gear)",
-        "id": "f_x[14]",
-        "unknowns": [
-          27,
-          29
-        ],
-        "equation_text": "0 - (gear.ratio * gear.flange_a.tau + gear.flange_b.tau)"
-      },
-      {
-        "equation": "f_x[15] (equation from load)",
-        "id": "f_x[15]",
-        "unknowns": [
-          32
-        ],
-        "equation_text": "load.phi - load.flange_a.phi"
-      },
-      {
-        "equation": "f_x[16] (equation from load)",
-        "id": "f_x[16]",
-        "unknowns": [
-          34
-        ],
-        "equation_text": "load.phi - load.flange_b.phi"
-      },
-      {
-        "equation": "f_x[17] (equation from load)",
-        "id": "f_x[17]",
         "unknowns": [
           3
         ],
-        "equation_text": "load.w - der(load.phi)"
+        "equation_text": "0 = motor.phi_support - 0"
       },
       {
-        "equation": "f_x[18] (equation from load)",
-        "id": "f_x[18]",
+        "equation": "f_x[2] (w = der(phi))",
+        "id": "f_x[2]",
         "unknowns": [
+          0,
           4
         ],
-        "equation_text": "load.a - der(load.w)"
+        "equation_text": "0 = motor.w - der(motor.phi)"
       },
       {
-        "equation": "f_x[19] (equation from load)",
-        "id": "f_x[19]",
+        "equation": "f_x[3] (tau = -flange.tau)",
+        "id": "f_x[3]",
         "unknowns": [
-          12,
-          33,
-          35
+          2,
+          5
         ],
-        "equation_text": "load.J * load.a - (load.flange_a.tau + load.flange_b.tau)"
+        "equation_text": "0 = motor.tau - -motor.flange.tau"
       },
       {
-        "equation": "f_x[20] (equation from spring)",
-        "id": "f_x[20]",
-        "unknowns": [
-          36,
-          38
-        ],
-        "equation_text": "spring.phi_rel - (spring.flange_b.phi - spring.flange_a.phi)"
-      },
-      {
-        "equation": "f_x[21] (equation from spring)",
-        "id": "f_x[21]",
+        "equation": "f_x[4] (tau = tau_constant)",
+        "id": "f_x[4]",
         "unknowns": [
           5
         ],
-        "equation_text": "spring.w_rel - der(spring.phi_rel)"
+        "equation_text": "0 = motor.tau - motor.tau_constant"
       },
       {
-        "equation": "f_x[22] (equation from spring)",
-        "id": "f_x[22]",
+        "equation": "f_x[5] (phi = flange_a.phi)",
+        "id": "f_x[5]",
         "unknowns": [
           6
         ],
-        "equation_text": "spring.a_rel - der(spring.w_rel)"
+        "equation_text": "0 = rotor.phi - rotor.flange_a.phi"
       },
       {
-        "equation": "f_x[23] (equation from spring)",
-        "id": "f_x[23]",
+        "equation": "f_x[6] (phi = flange_b.phi)",
+        "id": "f_x[6]",
         "unknowns": [
-          18,
-          39
+          8
         ],
-        "equation_text": "spring.flange_b.tau - spring.tau"
+        "equation_text": "0 = rotor.phi - rotor.flange_b.phi"
       },
       {
-        "equation": "f_x[24] (equation from spring)",
-        "id": "f_x[24]",
+        "equation": "f_x[7] (w = der(phi))",
+        "id": "f_x[7]",
         "unknowns": [
-          18,
-          37
+          10
         ],
-        "equation_text": "spring.flange_a.tau - -spring.tau"
+        "equation_text": "0 = rotor.w - der(rotor.phi)"
       },
       {
-        "equation": "f_x[25] (equation from spring)",
-        "id": "f_x[25]",
+        "equation": "f_x[8] (a = der(w))",
+        "id": "f_x[8]",
         "unknowns": [
-          14
+          11,
+          12
         ],
-        "equation_text": "spring.tau_c - spring.c * (spring.phi_rel - spring.phi_rel0)"
+        "equation_text": "0 = rotor.a - der(rotor.w)"
       },
       {
-        "equation": "f_x[26] (equation from spring)",
-        "id": "f_x[26]",
+        "equation": "f_x[9] (J*a = flange_a.tau + flange_b.tau)",
+        "id": "f_x[9]",
         "unknowns": [
-          15
+          7,
+          9,
+          12
         ],
-        "equation_text": "spring.tau_d - spring.d * spring.w_rel"
+        "equation_text": "0 = rotor.J*rotor.a - (rotor.flange_a.tau + rotor.flange_b.tau)"
       },
       {
-        "equation": "f_x[27] (equation from spring)",
-        "id": "f_x[27]",
-        "unknowns": [
-          14,
-          15,
-          18
-        ],
-        "equation_text": "spring.tau - (spring.tau_c + spring.tau_d)"
-      },
-      {
-        "equation": "f_x[28] (equation from spring)",
-        "id": "f_x[28]",
-        "unknowns": [
-          15,
-          19
-        ],
-        "equation_text": "spring.lossPower - spring.tau_d * spring.w_rel"
-      },
-      {
-        "equation": "f_x[29] (equation from frame)",
-        "id": "f_x[29]",
-        "unknowns": [
-          40
-        ],
-        "equation_text": "frame.flange.phi - frame.phi0"
-      },
-      {
-        "equation": "f_x[30] (equation from brakeTorque)",
-        "id": "f_x[30]",
-        "unknowns": [
-          16
-        ],
-        "equation_text": "brakeTorque.phi_support - 0"
-      },
-      {
-        "equation": "f_x[31] (equation from brakeTorque)",
-        "id": "f_x[31]",
-        "unknowns": [
-          17,
-          43
-        ],
-        "equation_text": "brakeTorque.flange.tau - -brakeTorque.tau"
-      },
-      {
-        "equation": "f_x[32] (top-level model equation)",
-        "id": "f_x[32]",
+        "equation": "f_x[10] (phi_support = 0)",
+        "id": "f_x[10]",
         "unknowns": [
           17
         ],
-        "equation_text": "brakeTorque.tau - if braking then if c[2] then -brakeForce else brakeForce else 0"
+        "equation_text": "0 = gear.phi_support - 0"
       },
       {
-        "equation": "f_x[33] (flow sum equation: motor.flange.tau + rotor.flange_a.tau = 0)",
-        "id": "f_x[33]",
+        "equation": "f_x[11] (phi_a = flange_a.phi - phi_support)",
+        "id": "f_x[11]",
         "unknowns": [
-          21,
-          23
+          13,
+          17,
+          18
         ],
-        "equation_text": "motor.flange.tau + rotor.flange_a.tau"
+        "equation_text": "0 = gear.phi_a - (gear.flange_a.phi - gear.phi_support)"
       },
       {
-        "equation": "f_x[34] (flow sum equation: rotor.flange_b.tau + gear.flange_a.tau = 0)",
-        "id": "f_x[34]",
+        "equation": "f_x[12] (phi_b = flange_b.phi - phi_support)",
+        "id": "f_x[12]",
         "unknowns": [
-          25,
-          27
+          15,
+          17,
+          19
         ],
-        "equation_text": "rotor.flange_b.tau + gear.flange_a.tau"
+        "equation_text": "0 = gear.phi_b - (gear.flange_b.phi - gear.phi_support)"
       },
       {
-        "equation": "f_x[35] (flow sum equation: gear.flange_b.tau + load.flange_a.tau = 0)",
-        "id": "f_x[35]",
+        "equation": "f_x[13] (phi_a = ratio*phi_b)",
+        "id": "f_x[13]",
         "unknowns": [
-          29,
-          33
+          18,
+          19
         ],
-        "equation_text": "gear.flange_b.tau + load.flange_a.tau"
+        "equation_text": "0 = gear.phi_a - gear.ratio*gear.phi_b"
       },
       {
-        "equation": "f_x[36] (flow sum equation: load.flange_b.tau + spring.flange_a.tau + brakeTorque.flange.tau = 0)",
-        "id": "f_x[36]",
+        "equation": "f_x[14] (0 = ratio*flange_a.tau + flange_b.tau)",
+        "id": "f_x[14]",
         "unknowns": [
-          35,
-          37,
-          43
+          14,
+          16
         ],
-        "equation_text": "load.flange_b.tau + spring.flange_a.tau + brakeTorque.flange.tau"
+        "equation_text": "0 = 0 - (gear.ratio*gear.flange_a.tau + gear.flange_b.tau)"
       },
       {
-        "equation": "f_x[37] (flow sum equation: spring.flange_b.tau + frame.flange.tau = 0)",
-        "id": "f_x[37]",
+        "equation": "f_x[15] (phi = flange_a.phi)",
+        "id": "f_x[15]",
         "unknowns": [
-          39,
-          41
+          20
         ],
-        "equation_text": "spring.flange_b.tau + frame.flange.tau"
+        "equation_text": "0 = load.phi - load.flange_a.phi"
       },
       {
-        "equation": "f_x[38] (connection equation: motor.flange.phi = rotor.flange_a.phi)",
-        "id": "f_x[38]",
+        "equation": "f_x[16] (phi = flange_b.phi)",
+        "id": "f_x[16]",
         "unknowns": [
-          20,
           22
         ],
-        "equation_text": "motor.flange.phi - rotor.flange_a.phi"
+        "equation_text": "0 = load.phi - load.flange_b.phi"
       },
       {
-        "equation": "f_x[39] (connection equation: rotor.flange_b.phi = gear.flange_a.phi)",
-        "id": "f_x[39]",
+        "equation": "f_x[17] (w = der(phi))",
+        "id": "f_x[17]",
         "unknowns": [
-          24,
+          24
+        ],
+        "equation_text": "0 = load.w - der(load.phi)"
+      },
+      {
+        "equation": "f_x[18] (a = der(w))",
+        "id": "f_x[18]",
+        "unknowns": [
+          25,
           26
         ],
-        "equation_text": "rotor.flange_b.phi - gear.flange_a.phi"
+        "equation_text": "0 = load.a - der(load.w)"
       },
       {
-        "equation": "f_x[40] (connection equation: gear.flange_b.phi = load.flange_a.phi)",
-        "id": "f_x[40]",
+        "equation": "f_x[19] (J*a = flange_a.tau + flange_b.tau)",
+        "id": "f_x[19]",
+        "unknowns": [
+          21,
+          23,
+          26
+        ],
+        "equation_text": "0 = load.J*load.a - (load.flange_a.tau + load.flange_b.tau)"
+      },
+      {
+        "equation": "f_x[20] (phi_rel = flange_b.phi - flange_a.phi)",
+        "id": "f_x[20]",
+        "unknowns": [
+          31,
+          33
+        ],
+        "equation_text": "0 = spring.phi_rel - (spring.flange_b.phi - spring.flange_a.phi)"
+      },
+      {
+        "equation": "f_x[21] (w_rel = der(phi_rel))",
+        "id": "f_x[21]",
+        "unknowns": [
+          27
+        ],
+        "equation_text": "0 = spring.w_rel - der(spring.phi_rel)"
+      },
+      {
+        "equation": "f_x[22] (a_rel = der(w_rel))",
+        "id": "f_x[22]",
         "unknowns": [
           28,
+          29
+        ],
+        "equation_text": "0 = spring.a_rel - der(spring.w_rel)"
+      },
+      {
+        "equation": "f_x[23] (flange_b.tau = tau)",
+        "id": "f_x[23]",
+        "unknowns": [
+          30,
+          34
+        ],
+        "equation_text": "0 = spring.flange_b.tau - spring.tau"
+      },
+      {
+        "equation": "f_x[24] (flange_a.tau = -tau)",
+        "id": "f_x[24]",
+        "unknowns": [
+          30,
           32
         ],
-        "equation_text": "gear.flange_b.phi - load.flange_a.phi"
+        "equation_text": "0 = spring.flange_a.tau - -spring.tau"
       },
       {
-        "equation": "f_x[41] (connection equation: load.flange_b.phi = spring.flange_a.phi)",
-        "id": "f_x[41]",
+        "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0)",
+        "id": "f_x[25]",
         "unknowns": [
-          34,
           36
         ],
-        "equation_text": "load.flange_b.phi - spring.flange_a.phi"
+        "equation_text": "0 = spring.tau_c - spring.c*(spring.phi_rel - spring.phi_rel0)"
       },
       {
-        "equation": "f_x[42] (connection equation: spring.flange_a.phi = brakeTorque.flange.phi)",
-        "id": "f_x[42]",
+        "equation": "f_x[26] (tau_d = d*w_rel)",
+        "id": "f_x[26]",
         "unknowns": [
+          37
+        ],
+        "equation_text": "0 = spring.tau_d - spring.d*spring.w_rel"
+      },
+      {
+        "equation": "f_x[27] (tau = tau_c + tau_d)",
+        "id": "f_x[27]",
+        "unknowns": [
+          30,
           36,
+          37
+        ],
+        "equation_text": "0 = spring.tau - (spring.tau_c + spring.tau_d)"
+      },
+      {
+        "equation": "f_x[28] (lossPower = tau_d*w_rel)",
+        "id": "f_x[28]",
+        "unknowns": [
+          35,
+          37
+        ],
+        "equation_text": "0 = spring.lossPower - spring.tau_d*spring.w_rel"
+      },
+      {
+        "equation": "f_x[29] (flange.phi = phi0)",
+        "id": "f_x[29]",
+        "unknowns": [
+          38
+        ],
+        "equation_text": "0 = frame.flange.phi - frame.phi0"
+      },
+      {
+        "equation": "f_x[30] (phi_support = 0)",
+        "id": "f_x[30]",
+        "unknowns": [
           42
         ],
-        "equation_text": "spring.flange_a.phi - brakeTorque.flange.phi"
+        "equation_text": "0 = brakeTorque.phi_support - 0"
       },
       {
-        "equation": "f_x[43] (connection equation: spring.flange_b.phi = frame.flange.phi)",
-        "id": "f_x[43]",
+        "equation": "f_x[31] (flange.tau = -tau)",
+        "id": "f_x[31]",
         "unknowns": [
-          38,
+          41,
+          43
+        ],
+        "equation_text": "0 = brakeTorque.flange.tau - -brakeTorque.tau"
+      },
+      {
+        "equation": "f_x[32] (brakeTorque.tau = if braking then\n    (if load.w > 0 then -brakeForce else brakeForce)\n  else 0)",
+        "id": "f_x[32]",
+        "unknowns": [
+          43
+        ],
+        "equation_text": "0 = brakeTorque.tau - if braking then if load.w > 0 then -brakeForce else brakeForce else 0"
+      },
+      {
+        "equation": "f_x[33] (SI.Torque tau)",
+        "id": "f_x[33]",
+        "unknowns": [
+          2,
+          7
+        ],
+        "equation_text": "0 = motor.flange.tau + rotor.flange_a.tau"
+      },
+      {
+        "equation": "f_x[34] (SI.Torque tau)",
+        "id": "f_x[34]",
+        "unknowns": [
+          9,
+          14
+        ],
+        "equation_text": "0 = rotor.flange_b.tau + gear.flange_a.tau"
+      },
+      {
+        "equation": "f_x[35] (SI.Torque tau)",
+        "id": "f_x[35]",
+        "unknowns": [
+          16,
+          21
+        ],
+        "equation_text": "0 = gear.flange_b.tau + load.flange_a.tau"
+      },
+      {
+        "equation": "f_x[36] (SI.Torque tau)",
+        "id": "f_x[36]",
+        "unknowns": [
+          23,
+          32,
+          41
+        ],
+        "equation_text": "0 = load.flange_b.tau + spring.flange_a.tau + brakeTorque.flange.tau"
+      },
+      {
+        "equation": "f_x[37] (SI.Torque tau)",
+        "id": "f_x[37]",
+        "unknowns": [
+          34,
+          39
+        ],
+        "equation_text": "0 = spring.flange_b.tau + frame.flange.tau"
+      },
+      {
+        "equation": "f_x[38] (SI.Angle phi)",
+        "id": "f_x[38]",
+        "unknowns": [
+          1,
+          6
+        ],
+        "equation_text": "0 = motor.flange.phi - rotor.flange_a.phi"
+      },
+      {
+        "equation": "f_x[39] (SI.Angle phi)",
+        "id": "f_x[39]",
+        "unknowns": [
+          8,
+          13
+        ],
+        "equation_text": "0 = rotor.flange_b.phi - gear.flange_a.phi"
+      },
+      {
+        "equation": "f_x[40] (SI.Angle phi)",
+        "id": "f_x[40]",
+        "unknowns": [
+          15,
+          20
+        ],
+        "equation_text": "0 = gear.flange_b.phi - load.flange_a.phi"
+      },
+      {
+        "equation": "f_x[41] (SI.Angle phi)",
+        "id": "f_x[41]",
+        "unknowns": [
+          22,
+          31
+        ],
+        "equation_text": "0 = load.flange_b.phi - spring.flange_a.phi"
+      },
+      {
+        "equation": "f_x[42] (SI.Angle phi)",
+        "id": "f_x[42]",
+        "unknowns": [
+          31,
           40
         ],
-        "equation_text": "spring.flange_b.phi - frame.flange.phi"
+        "equation_text": "0 = spring.flange_a.phi - brakeTorque.flange.phi"
+      },
+      {
+        "equation": "f_x[43] (SI.Angle phi)",
+        "id": "f_x[43]",
+        "unknowns": [
+          33,
+          38
+        ],
+        "equation_text": "0 = spring.flange_b.phi - frame.flange.phi"
       }
     ]
   },
   "matching": [
     {
-      "equation": "f_x[0] (equation from motor)",
+      "equation": "f_x[0] (phi = flange.phi - phi_support)",
       "id": "f_x[0]",
       "unknown": "motor.flange.phi"
     },
     {
-      "equation": "f_x[1] (equation from motor)",
+      "equation": "f_x[1] (phi_support = 0)",
       "id": "f_x[1]",
       "unknown": "motor.phi_support"
     },
     {
-      "equation": "f_x[2] (equation from motor)",
+      "equation": "f_x[2] (w = der(phi))",
       "id": "f_x[2]",
       "unknown": "der(motor.phi)"
     },
     {
-      "equation": "f_x[3] (equation from motor)",
+      "equation": "f_x[3] (tau = -flange.tau)",
       "id": "f_x[3]",
       "unknown": "motor.flange.tau"
     },
     {
-      "equation": "f_x[4] (equation from motor)",
+      "equation": "f_x[4] (tau = tau_constant)",
       "id": "f_x[4]",
       "unknown": "motor.tau"
     },
     {
-      "equation": "f_x[5] (equation from rotor)",
+      "equation": "f_x[5] (phi = flange_a.phi)",
       "id": "f_x[5]",
       "unknown": "rotor.flange_a.phi"
     },
     {
-      "equation": "f_x[6] (equation from rotor)",
+      "equation": "f_x[6] (phi = flange_b.phi)",
       "id": "f_x[6]",
       "unknown": "rotor.flange_b.phi"
     },
     {
-      "equation": "f_x[7] (equation from rotor)",
+      "equation": "f_x[7] (w = der(phi))",
       "id": "f_x[7]",
       "unknown": "der(rotor.phi)"
     },
     {
-      "equation": "f_x[8] (equation from rotor)",
+      "equation": "f_x[8] (a = der(w))",
       "id": "f_x[8]",
       "unknown": "der(rotor.w)"
     },
     {
-      "equation": "f_x[9] (equation from rotor)",
+      "equation": "f_x[9] (J*a = flange_a.tau + flange_b.tau)",
       "id": "f_x[9]",
       "unknown": "rotor.a"
     },
     {
-      "equation": "f_x[10] (equation from gear)",
+      "equation": "f_x[10] (phi_support = 0)",
       "id": "f_x[10]",
       "unknown": "gear.phi_support"
     },
     {
-      "equation": "f_x[11] (equation from gear)",
+      "equation": "f_x[11] (phi_a = flange_a.phi - phi_support)",
       "id": "f_x[11]",
       "unknown": "gear.phi_a"
     },
     {
-      "equation": "f_x[12] (equation from gear)",
+      "equation": "f_x[12] (phi_b = flange_b.phi - phi_support)",
       "id": "f_x[12]",
       "unknown": "gear.flange_b.phi"
     },
     {
-      "equation": "f_x[13] (equation from gear)",
+      "equation": "f_x[13] (phi_a = ratio*phi_b)",
       "id": "f_x[13]",
       "unknown": "gear.phi_b"
     },
     {
-      "equation": "f_x[14] (equation from gear)",
+      "equation": "f_x[14] (0 = ratio*flange_a.tau + flange_b.tau)",
       "id": "f_x[14]",
       "unknown": "gear.flange_a.tau"
     },
     {
-      "equation": "f_x[15] (equation from load)",
+      "equation": "f_x[15] (phi = flange_a.phi)",
       "id": "f_x[15]",
       "unknown": "load.flange_a.phi"
     },
     {
-      "equation": "f_x[16] (equation from load)",
+      "equation": "f_x[16] (phi = flange_b.phi)",
       "id": "f_x[16]",
       "unknown": "load.flange_b.phi"
     },
     {
-      "equation": "f_x[17] (equation from load)",
+      "equation": "f_x[17] (w = der(phi))",
       "id": "f_x[17]",
       "unknown": "der(load.phi)"
     },
     {
-      "equation": "f_x[18] (equation from load)",
+      "equation": "f_x[18] (a = der(w))",
       "id": "f_x[18]",
       "unknown": "der(load.w)"
     },
     {
-      "equation": "f_x[19] (equation from load)",
+      "equation": "f_x[19] (J*a = flange_a.tau + flange_b.tau)",
       "id": "f_x[19]",
-      "unknown": "load.a"
+      "unknown": "load.flange_a.tau"
     },
     {
-      "equation": "f_x[20] (equation from spring)",
+      "equation": "f_x[20] (phi_rel = flange_b.phi - flange_a.phi)",
       "id": "f_x[20]",
       "unknown": "spring.flange_b.phi"
     },
     {
-      "equation": "f_x[21] (equation from spring)",
+      "equation": "f_x[21] (w_rel = der(phi_rel))",
       "id": "f_x[21]",
       "unknown": "der(spring.phi_rel)"
     },
     {
-      "equation": "f_x[22] (equation from spring)",
+      "equation": "f_x[22] (a_rel = der(w_rel))",
       "id": "f_x[22]",
       "unknown": "der(spring.w_rel)"
     },
     {
-      "equation": "f_x[23] (equation from spring)",
+      "equation": "f_x[23] (flange_b.tau = tau)",
       "id": "f_x[23]",
       "unknown": "spring.flange_b.tau"
     },
     {
-      "equation": "f_x[24] (equation from spring)",
+      "equation": "f_x[24] (flange_a.tau = -tau)",
       "id": "f_x[24]",
       "unknown": "spring.flange_a.tau"
     },
     {
-      "equation": "f_x[25] (equation from spring)",
+      "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0)",
       "id": "f_x[25]",
       "unknown": "spring.tau_c"
     },
     {
-      "equation": "f_x[26] (equation from spring)",
+      "equation": "f_x[26] (tau_d = d*w_rel)",
       "id": "f_x[26]",
       "unknown": "spring.tau_d"
     },
     {
-      "equation": "f_x[27] (equation from spring)",
+      "equation": "f_x[27] (tau = tau_c + tau_d)",
       "id": "f_x[27]",
       "unknown": "spring.tau"
     },
     {
-      "equation": "f_x[28] (equation from spring)",
+      "equation": "f_x[28] (lossPower = tau_d*w_rel)",
       "id": "f_x[28]",
       "unknown": "spring.lossPower"
     },
     {
-      "equation": "f_x[29] (equation from frame)",
+      "equation": "f_x[29] (flange.phi = phi0)",
       "id": "f_x[29]",
       "unknown": "frame.flange.phi"
     },
     {
-      "equation": "f_x[30] (equation from brakeTorque)",
+      "equation": "f_x[30] (phi_support = 0)",
       "id": "f_x[30]",
       "unknown": "brakeTorque.phi_support"
     },
     {
-      "equation": "f_x[31] (equation from brakeTorque)",
+      "equation": "f_x[31] (flange.tau = -tau)",
       "id": "f_x[31]",
       "unknown": "brakeTorque.flange.tau"
     },
     {
-      "equation": "f_x[32] (top-level model equation)",
+      "equation": "f_x[32] (brakeTorque.tau = if braking then\n    (if load.w > 0 then -brakeForce else brakeForce)\n  else 0)",
       "id": "f_x[32]",
       "unknown": "brakeTorque.tau"
     },
     {
-      "equation": "f_x[33] (flow sum equation: motor.flange.tau + rotor.flange_a.tau = 0)",
+      "equation": "f_x[33] (SI.Torque tau)",
       "id": "f_x[33]",
       "unknown": "rotor.flange_a.tau"
     },
     {
-      "equation": "f_x[34] (flow sum equation: rotor.flange_b.tau + gear.flange_a.tau = 0)",
+      "equation": "f_x[34] (SI.Torque tau)",
       "id": "f_x[34]",
       "unknown": "rotor.flange_b.tau"
     },
     {
-      "equation": "f_x[35] (flow sum equation: gear.flange_b.tau + load.flange_a.tau = 0)",
+      "equation": "f_x[35] (SI.Torque tau)",
       "id": "f_x[35]",
       "unknown": "gear.flange_b.tau"
     },
     {
-      "equation": "f_x[36] (flow sum equation: load.flange_b.tau + spring.flange_a.tau + brakeTorque.flange.tau = 0)",
+      "equation": "f_x[36] (SI.Torque tau)",
       "id": "f_x[36]",
       "unknown": "load.flange_b.tau"
     },
     {
-      "equation": "f_x[37] (flow sum equation: spring.flange_b.tau + frame.flange.tau = 0)",
+      "equation": "f_x[37] (SI.Torque tau)",
       "id": "f_x[37]",
       "unknown": "frame.flange.tau"
     },
     {
-      "equation": "f_x[39] (connection equation: rotor.flange_b.phi = gear.flange_a.phi)",
+      "equation": "f_x[39] (SI.Angle phi)",
       "id": "f_x[39]",
       "unknown": "gear.flange_a.phi"
     },
     {
-      "equation": "f_x[41] (connection equation: load.flange_b.phi = spring.flange_a.phi)",
+      "equation": "f_x[41] (SI.Angle phi)",
       "id": "f_x[41]",
       "unknown": "spring.flange_a.phi"
     },
     {
-      "equation": "f_x[42] (connection equation: spring.flange_a.phi = brakeTorque.flange.phi)",
+      "equation": "f_x[42] (SI.Angle phi)",
       "id": "f_x[42]",
       "unknown": "brakeTorque.flange.phi"
     }
   ],
   "error": {
     "kind": "singular",
-    "message": "structurally singular system: 41 matched out of 44 equations and 44 unknowns; unmatched equations: f_x[38], f_x[40], f_x[43]; unmatched unknowns: motor.w, spring.a_rel, load.flange_a.tau",
+    "message": "structurally singular system: 41 matched out of 44 equations and 44 unknowns",
     "n_equations": 44,
     "n_unknowns": 44,
     "n_matched": 41,
     "rank_deficiency": 3,
     "unmatched_equations": [
+      "f_x[38] (SI.Angle phi)",
+      "f_x[40] (SI.Angle phi)",
+      "f_x[43] (SI.Angle phi)"
+    ],
+    "unmatched_equation_ids": [
       "f_x[38]",
       "f_x[40]",
       "f_x[43]"
     ],
     "unmatched_unknowns": [
       "motor.w",
-      "spring.a_rel",
-      "load.flange_a.tau"
+      "load.a",
+      "spring.a_rel"
     ],
     "unmatched_unknown_locations": [
       {
@@ -671,6 +680,17 @@
         }
       },
       {
+        "unknown": "load.a",
+        "location": {
+          "line": 12,
+          "column": 1,
+          "excerpt": "  //   Parse/Resolve    ",
+          "line_text": "  //   Parse/Resolve    — MSL component types, connectors, parameters",
+          "byte_start": 710,
+          "byte_end": 734
+        }
+      },
+      {
         "unknown": "spring.a_rel",
         "location": {
           "line": 8,
@@ -680,19 +700,31 @@
           "byte_start": 569,
           "byte_end": 597
         }
-      },
-      {
-        "unknown": "load.flange_a.tau",
-        "location": {
-          "line": 2,
-          "column": 87,
-          "excerpt": "ors, index re",
-          "line_text": "  // purpose: end-to-end tour specimen — exercises every compiler phase: MSL connectors, index reduction, events, stiff dynamics.",
-          "byte_start": 162,
-          "byte_end": 175
-        }
       }
     ],
+    "over_determined_block": {
+      "equations": 17,
+      "unknowns": 14,
+      "sample": [
+        "f_x[0]",
+        "f_x[1]",
+        "f_x[5]",
+        "f_x[6]",
+        "f_x[10]",
+        "f_x[11]",
+        "f_x[12]",
+        "f_x[13]",
+        "f_x[15]",
+        "f_x[16]",
+        "f_x[20]",
+        "f_x[29]",
+        "f_x[38]",
+        "f_x[39]",
+        "f_x[40]",
+        "f_x[41]",
+        "f_x[43]"
+      ]
+    },
     "guidance": "The maximum matching could not pair every equation with a unique unknown. Each unmatched unknown is a variable no equation determines; `unmatched_unknown_locations` gives the source line that declares it. If the Index Reduction stage also reports singular, the model is genuinely ill-posed rather than merely high-index."
   }
 }

@@ -1,7 +1,8 @@
 {
   "components": {
-    "1": {
-      "instance_id": 1,
+    "2": {
+      "instance_id": 2,
+      "owner_class_id": 1,
       "component_ref": {
         "local": false,
         "span": {
@@ -17,10 +18,10 @@
               "start": 774,
               "end": 780
             },
-            "subs": []
+            "subs": [],
+            "def_id": 99
           }
-        ],
-        "def_id": 89
+        ]
       },
       "qualified_name": {
         "parts": [
@@ -37,13 +38,14 @@
         "end_column": 9,
         "start": 774,
         "end": 780,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+        "source": 9237349070360541563
       },
       "dims": [],
       "dims_expr": [],
       "type_id": 0,
       "type_name": "Real",
       "type_def_id": 1,
+      "type_reference_root_def_id": null,
       "declaration_source_scope": {
         "parts": [
           [
@@ -54,6 +56,7 @@
       },
       "class_overrides": {},
       "has_forwarding_class_redeclare": false,
+      "has_unapplied_redeclare": false,
       "variability": "Empty",
       "causality": "Empty",
       "flow": false,
@@ -70,7 +73,7 @@
               "end_column": 0,
               "start": 0,
               "end": 0,
-              "file_name": ""
+              "source": 0
             },
             "token_number": 0,
             "token_type": 0
@@ -104,11 +107,13 @@
       "is_overconstrained": false,
       "is_protected": false,
       "is_connector_type": false,
+      "is_expandable_connector_type": false,
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     },
-    "2": {
-      "instance_id": 2,
+    "3": {
+      "instance_id": 3,
+      "owner_class_id": 1,
       "component_ref": {
         "local": false,
         "span": {
@@ -124,10 +129,10 @@
               "start": 784,
               "end": 790
             },
-            "subs": []
+            "subs": [],
+            "def_id": 100
           }
-        ],
-        "def_id": 90
+        ]
       },
       "qualified_name": {
         "parts": [
@@ -144,13 +149,14 @@
         "end_column": 9,
         "start": 784,
         "end": 790,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+        "source": 9237349070360541563
       },
       "dims": [],
       "dims_expr": [],
       "type_id": 0,
       "type_name": "Real",
       "type_def_id": 1,
+      "type_reference_root_def_id": null,
       "declaration_source_scope": {
         "parts": [
           [
@@ -161,6 +167,7 @@
       },
       "class_overrides": {},
       "has_forwarding_class_redeclare": false,
+      "has_unapplied_redeclare": false,
       "variability": "Empty",
       "causality": "Empty",
       "flow": false,
@@ -177,7 +184,7 @@
               "end_column": 0,
               "start": 0,
               "end": 0,
-              "file_name": ""
+              "source": 0
             },
             "token_number": 0,
             "token_type": 0
@@ -211,14 +218,16 @@
       "is_overconstrained": false,
       "is_protected": false,
       "is_connector_type": false,
+      "is_expandable_connector_type": false,
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     }
   },
   "classes": {
-    "0": {
-      "instance_id": 0,
-      "class_def_id": 85,
+    "1": {
+      "instance_id": 1,
+      "owner_component_id": null,
+      "class_def_id": 98,
       "qualified_name": {
         "parts": []
       },
@@ -249,7 +258,7 @@
                           "end_column": 4,
                           "start": 803,
                           "end": 804,
-                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+                          "source": 9237349070360541563
                         },
                         "token_number": 21,
                         "token_type": 64
@@ -276,7 +285,7 @@
                       "end_column": 10,
                       "start": 807,
                       "end": 810,
-                      "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+                      "source": 9237349070360541563
                     },
                     "token_number": 23,
                     "token_type": 68
@@ -305,7 +314,7 @@
           "span": {
             "source": 9237349070360541563,
             "start": 803,
-            "end": 804
+            "end": 810
           }
         },
         {
@@ -325,7 +334,7 @@
                           "end_column": 4,
                           "start": 814,
                           "end": 815,
-                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+                          "source": 9237349070360541563
                         },
                         "token_number": 25,
                         "token_type": 64
@@ -354,7 +363,7 @@
                           "end_column": 11,
                           "start": 818,
                           "end": 822,
-                          "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/TwiceDefined.mo"
+                          "source": 9237349070360541563
                         },
                         "token_number": 27,
                         "token_type": 64
@@ -386,7 +395,7 @@
           "span": {
             "source": 9237349070360541563,
             "start": 814,
-            "end": 815
+            "end": 822
           }
         }
       ],
@@ -401,10 +410,16 @@
   "class_type": "Model",
   "root_description": "Two equations define one variable, leaving another undetermined — DELIBERATELY BROKEN",
   "disabled_components": [],
+  "each_modifier_bindings": [],
   "array_parent_dims": {},
+  "array_component_declarations": [],
   "outer_prefix_to_inner": {},
   "inner_outer_to_parent_inner": {},
   "synthesized_inners": [],
   "type_roots": {},
+  "type_ids_by_def_id": {},
+  "enumeration_type_roots": [],
+  "effective_types": {},
+  "enumeration_types": [],
   "next_id": 3
 }

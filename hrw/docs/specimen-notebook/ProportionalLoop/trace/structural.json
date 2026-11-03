@@ -4,17 +4,17 @@
   "coupled_block_count": 1,
   "matching": [
     {
-      "equation": "f_x[0] (top-level model equation)",
+      "equation": "f_x[0] (error = reference - measurement)",
       "id": "f_x[0]",
       "unknown": "measurement"
     },
     {
-      "equation": "f_x[1] (top-level model equation)",
+      "equation": "f_x[1] (command = controllerGain * error)",
       "id": "f_x[1]",
       "unknown": "error"
     },
     {
-      "equation": "f_x[2] (top-level model equation)",
+      "equation": "f_x[2] (measurement = plantGain * command)",
       "id": "f_x[2]",
       "unknown": "command"
     }
@@ -24,9 +24,9 @@
       "kind": "coupled",
       "size": 3,
       "equations": [
-        "f_x[2] (top-level model equation)",
-        "f_x[1] (top-level model equation)",
-        "f_x[0] (top-level model equation)"
+        "f_x[2] (measurement = plantGain * command)",
+        "f_x[1] (command = controllerGain * error)",
+        "f_x[0] (error = reference - measurement)"
       ],
       "ids": [
         "f_x[2]",
@@ -43,19 +43,19 @@
           "command"
         ],
         "residual_equations": [
-          "f_x[0] (top-level model equation)"
+          "f_x[0] (error = reference - measurement)"
         ],
         "residual_equation_ids": [
           "f_x[0]"
         ],
         "causal_sequence": [
           {
-            "equation": "f_x[1] (top-level model equation)",
+            "equation": "f_x[1] (command = controllerGain * error)",
             "id": "f_x[1]",
             "variable": "error"
           },
           {
-            "equation": "f_x[2] (top-level model equation)",
+            "equation": "f_x[2] (measurement = plantGain * command)",
             "id": "f_x[2]",
             "variable": "measurement"
           }
@@ -73,31 +73,31 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0] (top-level model equation)",
+        "equation": "f_x[0] (error = reference - measurement)",
         "id": "f_x[0]",
         "unknowns": [
           0,
           2
         ],
-        "equation_text": "error - (reference - measurement)"
+        "equation_text": "0 = error - (reference - measurement)"
       },
       {
-        "equation": "f_x[1] (top-level model equation)",
+        "equation": "f_x[1] (command = controllerGain * error)",
         "id": "f_x[1]",
         "unknowns": [
           0,
           1
         ],
-        "equation_text": "command - controllerGain * error"
+        "equation_text": "0 = command - controllerGain*error"
       },
       {
-        "equation": "f_x[2] (top-level model equation)",
+        "equation": "f_x[2] (measurement = plantGain * command)",
         "id": "f_x[2]",
         "unknowns": [
           1,
           2
         ],
-        "equation_text": "measurement - plantGain * command"
+        "equation_text": "0 = measurement - plantGain*command"
       }
     ]
   }

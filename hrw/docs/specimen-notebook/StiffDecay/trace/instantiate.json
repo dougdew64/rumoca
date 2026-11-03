@@ -1,7 +1,8 @@
 {
   "components": {
-    "1": {
-      "instance_id": 1,
+    "2": {
+      "instance_id": 2,
+      "owner_class_id": 1,
       "component_ref": {
         "local": false,
         "span": {
@@ -17,10 +18,10 @@
               "start": 253,
               "end": 266
             },
-            "subs": []
+            "subs": [],
+            "def_id": 99
           }
-        ],
-        "def_id": 89
+        ]
       },
       "qualified_name": {
         "parts": [
@@ -37,13 +38,14 @@
         "end_column": 26,
         "start": 253,
         "end": 266,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+        "source": 6074338200736126576
       },
       "dims": [],
       "dims_expr": [],
       "type_id": 0,
       "type_name": "Real",
       "type_def_id": 1,
+      "type_reference_root_def_id": null,
       "declaration_source_scope": {
         "parts": [
           [
@@ -54,6 +56,7 @@
       },
       "class_overrides": {},
       "has_forwarding_class_redeclare": false,
+      "has_unapplied_redeclare": false,
       "variability": {
         "Parameter": {
           "text": "parameter",
@@ -64,7 +67,7 @@
             "end_column": 12,
             "start": 243,
             "end": 252,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+            "source": 6074338200736126576
           },
           "token_number": 4,
           "token_type": 48
@@ -85,7 +88,7 @@
               "end_column": 32,
               "start": 269,
               "end": 272,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+              "source": 6074338200736126576
             },
             "token_number": 8,
             "token_type": 68
@@ -118,7 +121,7 @@
               "end_column": 32,
               "start": 269,
               "end": 272,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+              "source": 6074338200736126576
             },
             "token_number": 8,
             "token_type": 68
@@ -142,11 +145,13 @@
       "is_overconstrained": false,
       "is_protected": false,
       "is_connector_type": false,
+      "is_expandable_connector_type": false,
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     },
-    "2": {
-      "instance_id": 2,
+    "3": {
+      "instance_id": 3,
+      "owner_class_id": 1,
       "component_ref": {
         "local": false,
         "span": {
@@ -162,10 +167,10 @@
               "start": 335,
               "end": 348
             },
-            "subs": []
+            "subs": [],
+            "def_id": 100
           }
-        ],
-        "def_id": 90
+        ]
       },
       "qualified_name": {
         "parts": [
@@ -182,13 +187,14 @@
         "end_column": 26,
         "start": 335,
         "end": 348,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+        "source": 6074338200736126576
       },
       "dims": [],
       "dims_expr": [],
       "type_id": 0,
       "type_name": "Real",
       "type_def_id": 1,
+      "type_reference_root_def_id": null,
       "declaration_source_scope": {
         "parts": [
           [
@@ -199,6 +205,7 @@
       },
       "class_overrides": {},
       "has_forwarding_class_redeclare": false,
+      "has_unapplied_redeclare": false,
       "variability": {
         "Parameter": {
           "text": "parameter",
@@ -209,7 +216,7 @@
             "end_column": 12,
             "start": 325,
             "end": 334,
-            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+            "source": 6074338200736126576
           },
           "token_number": 11,
           "token_type": 48
@@ -230,7 +237,7 @@
               "end_column": 35,
               "start": 351,
               "end": 357,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+              "source": 6074338200736126576
             },
             "token_number": 15,
             "token_type": 68
@@ -263,7 +270,7 @@
               "end_column": 35,
               "start": 351,
               "end": 357,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+              "source": 6074338200736126576
             },
             "token_number": 15,
             "token_type": 68
@@ -287,11 +294,13 @@
       "is_overconstrained": false,
       "is_protected": false,
       "is_connector_type": false,
+      "is_expandable_connector_type": false,
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     },
-    "3": {
-      "instance_id": 3,
+    "4": {
+      "instance_id": 4,
+      "owner_class_id": 1,
       "component_ref": {
         "local": false,
         "span": {
@@ -307,10 +316,10 @@
               "start": 415,
               "end": 424
             },
-            "subs": []
+            "subs": [],
+            "def_id": 101
           }
-        ],
-        "def_id": 91
+        ]
       },
       "qualified_name": {
         "parts": [
@@ -327,13 +336,14 @@
         "end_column": 12,
         "start": 415,
         "end": 424,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+        "source": 6074338200736126576
       },
       "dims": [],
       "dims_expr": [],
       "type_id": 0,
       "type_name": "Real",
       "type_def_id": 1,
+      "type_reference_root_def_id": null,
       "declaration_source_scope": {
         "parts": [
           [
@@ -344,6 +354,7 @@
       },
       "class_overrides": {},
       "has_forwarding_class_redeclare": false,
+      "has_unapplied_redeclare": false,
       "variability": "Empty",
       "causality": "Empty",
       "flow": false,
@@ -360,7 +371,7 @@
               "end_column": 24,
               "start": 433,
               "end": 436,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+              "source": 6074338200736126576
             },
             "token_number": 23,
             "token_type": 68
@@ -394,11 +405,13 @@
       "is_overconstrained": false,
       "is_protected": false,
       "is_connector_type": false,
+      "is_expandable_connector_type": false,
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     },
-    "4": {
-      "instance_id": 4,
+    "5": {
+      "instance_id": 5,
+      "owner_class_id": 1,
       "component_ref": {
         "local": false,
         "span": {
@@ -414,10 +427,10 @@
               "start": 476,
               "end": 485
             },
-            "subs": []
+            "subs": [],
+            "def_id": 102
           }
-        ],
-        "def_id": 92
+        ]
       },
       "qualified_name": {
         "parts": [
@@ -434,13 +447,14 @@
         "end_column": 12,
         "start": 476,
         "end": 485,
-        "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+        "source": 6074338200736126576
       },
       "dims": [],
       "dims_expr": [],
       "type_id": 0,
       "type_name": "Real",
       "type_def_id": 1,
+      "type_reference_root_def_id": null,
       "declaration_source_scope": {
         "parts": [
           [
@@ -451,6 +465,7 @@
       },
       "class_overrides": {},
       "has_forwarding_class_redeclare": false,
+      "has_unapplied_redeclare": false,
       "variability": "Empty",
       "causality": "Empty",
       "flow": false,
@@ -467,7 +482,7 @@
               "end_column": 24,
               "start": 494,
               "end": 497,
-              "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+              "source": 6074338200736126576
             },
             "token_number": 32,
             "token_type": 68
@@ -501,14 +516,16 @@
       "is_overconstrained": false,
       "is_protected": false,
       "is_connector_type": false,
+      "is_expandable_connector_type": false,
       "oc_record_path": null,
       "oc_eq_constraint_size": null
     }
   },
   "classes": {
-    "0": {
-      "instance_id": 0,
-      "class_def_id": 85,
+    "1": {
+      "instance_id": 1,
+      "owner_component_id": null,
+      "class_def_id": 98,
       "qualified_name": {
         "parts": []
       },
@@ -540,7 +557,7 @@
                             "end_column": 6,
                             "start": 554,
                             "end": 557,
-                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+                            "source": 6074338200736126576
                           },
                           "token_number": 37,
                           "token_type": 15
@@ -569,7 +586,7 @@
                                 "end_column": 11,
                                 "start": 558,
                                 "end": 562,
-                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+                                "source": 6074338200736126576
                               },
                               "token_number": 39,
                               "token_type": 64
@@ -585,10 +602,11 @@
                       }
                     }
                   ],
+                  "is_partial_application": false,
                   "span": {
                     "source": 6074338200736126576,
                     "start": 554,
-                    "end": 562
+                    "end": 563
                   }
                 }
               },
@@ -612,7 +630,7 @@
                                   "end_column": 24,
                                   "start": 567,
                                   "end": 575,
-                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+                                  "source": 6074338200736126576
                                 },
                                 "token_number": 43,
                                 "token_type": 64
@@ -641,7 +659,7 @@
                                   "end_column": 31,
                                   "start": 578,
                                   "end": 582,
-                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+                                  "source": 6074338200736126576
                                 },
                                 "token_number": 45,
                                 "token_type": 64
@@ -687,7 +705,7 @@
           "span": {
             "source": 6074338200736126576,
             "start": 554,
-            "end": 557
+            "end": 582
           }
         },
         {
@@ -708,7 +726,7 @@
                             "end_column": 6,
                             "start": 586,
                             "end": 589,
-                            "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+                            "source": 6074338200736126576
                           },
                           "token_number": 47,
                           "token_type": 15
@@ -737,7 +755,7 @@
                                 "end_column": 11,
                                 "start": 590,
                                 "end": 594,
-                                "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+                                "source": 6074338200736126576
                               },
                               "token_number": 49,
                               "token_type": 64
@@ -753,10 +771,11 @@
                       }
                     }
                   ],
+                  "is_partial_application": false,
                   "span": {
                     "source": 6074338200736126576,
                     "start": 586,
-                    "end": 594
+                    "end": 595
                   }
                 }
               },
@@ -780,7 +799,7 @@
                                   "end_column": 24,
                                   "start": 599,
                                   "end": 607,
-                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+                                  "source": 6074338200736126576
                                 },
                                 "token_number": 53,
                                 "token_type": 64
@@ -809,7 +828,7 @@
                                   "end_column": 31,
                                   "start": 610,
                                   "end": 614,
-                                  "file_name": "C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/StiffDecay.mo"
+                                  "source": 6074338200736126576
                                 },
                                 "token_number": 55,
                                 "token_type": 64
@@ -855,7 +874,7 @@
           "span": {
             "source": 6074338200736126576,
             "start": 586,
-            "end": 589
+            "end": 614
           }
         }
       ],
@@ -870,10 +889,16 @@
   "class_type": "Model",
   "root_description": "Two decaying modes whose rates differ by a factor of a thousand",
   "disabled_components": [],
+  "each_modifier_bindings": [],
   "array_parent_dims": {},
+  "array_component_declarations": [],
   "outer_prefix_to_inner": {},
   "inner_outer_to_parent_inner": {},
   "synthesized_inners": [],
   "type_roots": {},
+  "type_ids_by_def_id": {},
+  "enumeration_type_roots": [],
+  "effective_types": {},
+  "enumeration_types": [],
   "next_id": 5
 }
