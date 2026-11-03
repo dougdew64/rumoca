@@ -217,15 +217,18 @@ pub fn live_trace_breakpoint(frame_index: usize) {
 /// then Tarjan, then tearing). That costs a little work after the last frame
 /// and is why `done` is set when `observe_sort` *returns*, not when the last
 /// accepted record is pushed.
+/// `select` is `FnMut` so a caller can carry state across steps — the tearing
+/// view needs this, because it tags each step with the block whose
+/// `BlockStart` most recently went past.
 pub fn spawn_structural_live<F, S>(
     dae: std::sync::Arc<rumoca_ir_dae::Dae>,
     frame_delay: Duration,
     thread_name: &str,
-    select: S,
+    mut select: S,
 ) -> Option<(mpsc::Receiver<F>, Arc<std::sync::atomic::AtomicBool>)>
 where
     F: Send + 'static,
-    S: Fn(rumoca_phase_structural::StructuralRecord) -> Option<F> + Send + 'static,
+    S: FnMut(rumoca_phase_structural::StructuralRecord) -> Option<F> + Send + 'static,
 {
     let (lt, rx) = LiveTrace::new();
     let lt = lt.with_frame_delay(frame_delay);
