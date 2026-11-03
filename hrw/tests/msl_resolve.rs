@@ -1,8 +1,11 @@
 //! End-to-end verification of the dependency-loading path, mirroring the
 //! worker: load the staged reference MSL 4.1.0 as source roots, then resolve a
-//! specimen that references MSL. A clean `Ok` from `resolved()` on an all-MSL
-//! model IS the proof the `Modelica.*` references resolved — an unloaded
-//! library would instead yield "unresolved type reference" errors.
+//! specimen that references MSL. The proof the `Modelica.*` references resolved is
+//! that **no diagnostic reports anything unresolved** — an unloaded library would
+//! yield "unresolved type reference" errors.
+//!
+//! *Until 2026-11-03 the proof was a clean `Ok` from `resolved()`, which stopped
+//! being a proxy for it on Rumoca v0.10.0; the test body says why.*
 
 use std::path::Path;
 
@@ -50,13 +53,39 @@ fn rotational_inertia_specimen_resolves_against_msl() {
     let uri = path.to_string();
     session.update_document(&uri, &source);
 
-    let resolved = session
-        .resolved()
-        .unwrap_or_else(|e| panic!("resolve failed (MSL references unresolved?):\n{e:#}"));
+    // **Recovery mode, and the proof is now asserted rather than inferred.**
+    //
+    // This called `session.resolved()` — `ResolveBuildMode::Standard` — and took a
+    // clean `Ok` as proof that the `Modelica.*` references bound, on the reasoning
+    // in this file's header: an unloaded library would yield "unresolved type
+    // reference" instead. **v0.10.0 breaks the proxy, not the proof.** Standard mode
+    // treats as fatal the ~75 resolve errors the 0.10.0 MSL emits about its own
+    // `Modelica.Mechanics` friction classes (MLS §5.3.1), so `Ok` is unreachable for
+    // any model that loads the library, however well its own references resolve.
+    //
+    // So this now builds the tree the compile itself uses, and asserts the
+    // discriminating property directly: **no diagnostic says anything is
+    // unresolved.** That is strictly closer to what the header always claimed the
+    // test proved.
+    let (resolved, diagnostics) = session
+        .strict_compile_resolved()
+        .unwrap_or_else(|e| panic!("the library could not be resolved at all:\n{e:#}"));
+
+    let unresolved: Vec<&str> = diagnostics
+        .iter()
+        .filter(|d| d.message.contains("unresolved"))
+        .map(|d| d.message.as_str())
+        .collect();
+    assert!(
+        unresolved.is_empty(),
+        "an unresolved reference means the MSL did not load, which is what this test \
+         exists to catch:\n  {}",
+        unresolved.join("\n  "),
+    );
 
     let qualified = session.qualify_model_name(&uri, "RotationalInertia");
     let class = resolved
-        .inner()
+        .tree()
         .get_class_by_qualified_name(&qualified)
         .expect("RotationalInertia present in resolved tree");
 

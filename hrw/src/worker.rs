@@ -168,9 +168,8 @@ pub enum ToWorker {
         path: PathBuf,
         /// Simple model name, so the worker need not re-parse to qualify it.
         model: String,
-        trace: crate::live_trace::LiveTrace<
-            rumoca_phase_flatten::connections::trace::ConnectionFrame,
-        >,
+        trace:
+            crate::live_trace::LiveTrace<rumoca_phase_flatten::connections::trace::ConnectionFrame>,
         done: std::sync::Arc<std::sync::atomic::AtomicBool>,
     },
 }
@@ -2136,10 +2135,12 @@ impl WorkerState {
         // timing below measures it. The Solve Lowering tab is filled
         // separately by `solve_lowering_stage`, and simulation lowers
         // internally, so nothing downstream needs this value.
-        drop(rumoca_phase_solve::lower_solve_problem(&cr.dae).map_err(|e| {
-            log(LogLevel::Error, format!("solve lowering failed: {e}"));
-            format!("solve lowering failed: {e}")
-        })?);
+        drop(
+            rumoca_phase_solve::lower_solve_problem(&cr.dae).map_err(|e| {
+                log(LogLevel::Error, format!("solve lowering failed: {e}"));
+                format!("solve lowering failed: {e}")
+            })?,
+        );
         drain_traces(&log);
         log(
             LogLevel::StageEnd,
@@ -2313,14 +2314,26 @@ impl WorkerState {
     /// its IR + a fresh `DefIndex` so navigation can continue recursively from
     /// the opened class.
     ///
-    /// Rumoca API: `session.resolved()` returns the full resolved `ClassTree`.
-    /// `rt.0` is the tree itself (the `.0` accesses the first field of a tuple
-    /// struct / tuple). `get_class_by_qualified_name` does a name-based lookup.
-    /// The `{e:#}` format uses Rust's "alternate" `Display` which includes the
-    /// full error chain (like Python's chained exceptions).
+    /// Rumoca API: `strict_compile_resolved()` returns the planning tree the
+    /// compile itself uses, and `tree()` borrows the `ClassTree` out of it.
+    /// `get_class_by_qualified_name` does a name-based lookup. The `{e:#}` format
+    /// uses Rust's "alternate" `Display`, which includes the full error chain
+    /// (like Python's chained exceptions).
+    ///
+    /// **Recovery mode, not `session.resolved()`** — changed 2026-11-03 for the same
+    /// reason as [`Self::locate_library_model`]. `resolved()` builds
+    /// `ResolveBuildMode::Standard`, which treats the 0.10.0 MSL's ~75 resolve
+    /// errors as fatal, so **navigating to any library class failed**: the test
+    /// asking for `Modelica.Mechanics.Rotational.Components.Inertia` got back the
+    /// whole stringified diagnostic chain instead of a class. Clicking a
+    /// `type_def_id` in the tree inspector would have done the same thing.
+    ///
+    /// Navigation is also the case where refusing is least defensible: the reader
+    /// has asked to look at a declaration, and whether some other file in the
+    /// library has an error has nothing to do with whether this class can be shown.
     fn open_def(&mut self, name: &str) -> FromWorker {
-        let rt = match self.session.resolved() {
-            Ok(rt) => rt,
+        let rt = match self.session.strict_compile_resolved() {
+            Ok((rt, _)) => rt,
             Err(e) => {
                 return FromWorker::DefTree {
                     name: name.to_owned(),
@@ -2328,16 +2341,13 @@ impl WorkerState {
                 };
             }
         };
-        // `ResolvedTree`'s newtype field is private on 0.10.0; `inner()` is the
-        // accessor. (It also `Deref`s to `ClassTree`, but naming the accessor
-        // keeps the indirection visible at each site.)
-        let result = match rt.inner().get_class_by_qualified_name(name) {
+        let result = match rt.tree().get_class_by_qualified_name(name) {
             Some(class) => {
                 let value = ser_value(class);
                 // Build a DefId→DefInfo map for all DefIds referenced in this
                 // class's IR, so navigation can continue from here.
                 let def_index = build_def_index(
-                    rt.inner(),
+                    rt.tree(),
                     &value,
                     &source_names(&self.session.document_uris()),
                 );
@@ -2461,12 +2471,34 @@ impl WorkerState {
     /// heuristic name matching (which `docs/identity-and-provenance.md` rules out
     /// anyway).
     fn locate_library_model(&mut self, qualified: &str) -> Result<Located, String> {
-        let tree = self
+        // **Recovery mode, not `resolved()`, and v0.10.0 forces the choice.**
+        //
+        // `Session::resolved()` builds `ResolveBuildMode::Standard`, which treats as
+        // fatal exactly the errors `StrictCompileRecovery` tolerates. The 0.10.0 MSL
+        // emits about 75 resolve errors over the `Modelica.Mechanics` friction state
+        // machines, so `Standard` fails on the library as a whole — and **every
+        // library-model lookup failed with it**, whatever the model. `CriticalDamping`
+        // lives in `Modelica/Blocks/Continuous.mo` and has nothing to do with
+        // friction, but it was unreachable all the same.
+        //
+        // Recovery is also the mode the compile below actually runs in, so this is
+        // the tree the lookup should have consulted regardless: locating a class in
+        // one tree and compiling it in another is how the two could disagree about
+        // where it is declared. And it is cheaper — `resolved()` ends in a deep clone
+        // of the whole resolved tree (~487ms here, 38,855 defs), where this borrows
+        // the `Arc` the session already holds.
+        //
+        // **The diagnostics are deliberately dropped here.** This function locates a
+        // class; whether the model *resolves* is the Resolve stage's claim to make,
+        // and it makes it per model — see `resolve_diagnostics_indicate_failure`. A
+        // lookup that refused on a library-wide error would be the same attribution
+        // bug one layer down.
+        let (tree, _) = self
             .session
-            .resolved()
+            .strict_compile_resolved()
             .map_err(|e| format!("cannot resolve the library to find `{qualified}`: {e:#}"))?;
         let class = tree
-            .inner()
+            .tree()
             .get_class_by_qualified_name(qualified)
             .ok_or_else(|| format!("`{qualified}` is not a class in the loaded libraries"))?;
         // **`Location` names a `SourceId` on 0.10.0, not a file.** The id is
@@ -2987,16 +3019,19 @@ impl WorkerState {
                 let names = source_names(&self.session.document_uris());
                 let strict = self.session.strict_compile_resolved();
                 let strict = match strict {
-                    Ok((rt, diags)) if resolve_diagnostics_indicate_failure(&diags) => {
+                    Ok((rt, diags)) if resolve_diagnostics_indicate_failure(&diags, &uri) => {
                         // Recovered a tree, but this model did not resolve. Take the
                         // failure path, exactly as `tree()`'s `Err` used to.
                         let _ = rt;
+                        // **The note lists this model's errors only.** It used to join
+                        // every error in the session, so a one-line mistake in a
+                        // specimen arrived buried in ~75 MSL diagnostics about friction
+                        // state machines the reader never mentioned.
                         Err(anyhow::anyhow!(
                             "Resolve errors: {}",
-                            diags
+                            model_resolve_errors(&diags, &uri)
                                 .iter()
-                                .filter(|d| d.severity == rumoca_core::DiagnosticSeverity::Error)
-                                .map(|d| d.message.clone())
+                                .map(|d| d.message.as_str())
                                 .collect::<Vec<_>>()
                                 .join("; "),
                         ))
@@ -3017,8 +3052,7 @@ impl WorkerState {
                         if let Some(v) = &stage.value {
                             // Build the DefId→DefInfo lookup for all DefIds
                             // referenced in this model's IR.
-                            def_index =
-                                build_def_index(rt, v, &names);
+                            def_index = build_def_index(rt, v, &names);
                         }
                         // **Resolve ends here**, before the phases that merely use
                         // its output. Its bracket used to close after Instantiate,
@@ -3087,6 +3121,7 @@ impl WorkerState {
                                 .compile_model_diagnostics(&qualified)
                                 .diagnostics,
                             &source,
+                            &uri,
                         );
                         let resolve_err = |note: &str| {
                             serde_json::json!({
@@ -3920,6 +3955,49 @@ fn awaiting_remodel_note(phase: &str, what_changed: &str) -> String {
     )
 }
 
+/// The sentence fragment every [`awaiting_remodel_note`] contains.
+///
+/// Matched on rather than reconstructed, so a test can find these stages by what
+/// they *say* instead of being told which they are — see
+/// [`AWAITING_REMODEL`], whose roster is checked against this in both directions.
+///
+/// **`#[cfg(test)]`, because production has no use for it.** The three stage
+/// functions each state their own absence in their own words through
+/// [`awaiting_remodel_note`]; this constant exists so the *tests* can find those
+/// stages by what they say rather than being told which they are. A production
+/// reader would be a second place for the list to drift.
+#[cfg(test)]
+pub(crate) const AWAITING_REMODEL_MARKER: &str = "HRW cannot display it yet";
+
+/// **The stages Rumoca runs and HRW cannot yet show, as of the v0.10.0 rebase.**
+///
+/// Each produces `Outcome::Ok` with no IR and an [`awaiting_remodel_note`]; the
+/// reasoning for that outcome class is on that function.
+///
+/// # Why a roster exists at all
+///
+/// Three things need to agree: the code that emits the notes, the tests that cover
+/// the old IR shape (now `#[ignore]`d, because their bodies are the specification
+/// the re-model has to satisfy), and the documents that claim the absence. **A list
+/// nothing checks would rot in the usual direction** — a stage comes back, and the
+/// tests that would have proved it correct stay switched off, silently.
+///
+/// So `worker::tests::the_remodel_roster_matches_what_the_pipeline_shows` checks
+/// this against real compiled output **in both directions**, and
+/// `the_tests_blocked_on_a_remodel_are_still_blocked` fails the moment a stage
+/// leaves this list while its tests are still ignored — which is what turns
+/// re-enabling a stage into a list of work rather than a thing to remember.
+/// **`#[cfg(test)]` for the same reason as [`AWAITING_REMODEL_MARKER`]**: nothing
+/// in production branches on this list, and a production reader would be one more
+/// copy to keep true. Its whole job is to let two tests disagree with reality
+/// loudly.
+#[cfg(test)]
+pub(crate) const AWAITING_REMODEL: &[StageKind] = &[
+    StageKind::IndexReduction,
+    StageKind::Initialization,
+    StageKind::Events,
+];
+
 /// **The pipeline returned nothing at all** — worded once, for the same reason.
 ///
 /// Distinct from [`not_reached_note`]: that one says a phase was skipped because
@@ -4006,28 +4084,63 @@ fn diagnostics_to_json(diags: &[rumoca_core::Diagnostic], source: &str) -> serde
 ///
 /// Warnings are kept but **deduplicated and counted** rather than listed: the same MSL
 /// deprecation repeats dozens of times and repeating it dozens of times helps nobody.
-fn model_diagnostics_to_json(diags: &[rumoca_core::Diagnostic], source: &str) -> serde_json::Value {
-    let (errors, warnings): (Vec<_>, Vec<_>) = diags
+/// **`errors` is split by source as of 2026-11-03, and the old shape made its own
+/// `guidance` false.**
+///
+/// This function already separated library *warnings* from the model's problems,
+/// on the premise that errors are always the model's — true on 0.9.20, where the
+/// MSL emitted none. v0.10.0's MSL emits about 75 resolve errors, so `errors`
+/// carried them, while the Resolve stage's `guidance` told the reader *"those are
+/// this model's problems"*. **`UndefinedRef` reported its one real mistake behind
+/// 75 messages about friction state machines**, and the text beside them said to
+/// read those first.
+///
+/// So the library's errors move to `library_errors`, deduplicated and counted the
+/// way the warnings already are — **kept, not dropped**, because this JSON is read
+/// by Claude and an error the compiler reported is evidence even when it is not
+/// this model's. The split is by [`diagnostic_source`], which is identity.
+fn model_diagnostics_to_json(
+    diags: &[rumoca_core::Diagnostic],
+    source: &str,
+    uri: &str,
+) -> serde_json::Value {
+    let own = rumoca_core::source_id_for_name(uri);
+
+    let (all_errors, warnings): (Vec<_>, Vec<_>) = diags
         .iter()
         .cloned()
         .partition(|d| matches!(d.severity, rumoca_core::DiagnosticSeverity::Error));
-
-    let mut seen = std::collections::BTreeMap::<String, usize>::new();
-    for w in &warnings {
-        *seen.entry(w.message.clone()).or_insert(0) += 1;
-    }
-    let distinct: Vec<serde_json::Value> = seen
+    let (errors, library_errors): (Vec<_>, Vec<_>) = all_errors
         .into_iter()
-        .map(|(message, count)| serde_json::json!({ "message": message, "occurrences": count }))
-        .collect();
+        .partition(|d| diagnostic_source(d) == Some(own));
+
+    /// Collapse repeats to one row with a count: the same MSL complaint arrives
+    /// dozens of times and repeating it dozens of times helps nobody.
+    fn distinct(of: &[rumoca_core::Diagnostic]) -> Vec<serde_json::Value> {
+        let mut seen = std::collections::BTreeMap::<String, usize>::new();
+        for d in of {
+            *seen.entry(d.message.clone()).or_insert(0) += 1;
+        }
+        seen.into_iter()
+            .map(|(message, count)| serde_json::json!({ "message": message, "occurrences": count }))
+            .collect()
+    }
 
     serde_json::json!({
         "errors": diagnostics_to_json(&errors, source),
+        "library_errors": {
+            "note": "errors the compiler reported against LIBRARY sources, deduplicated. \
+                     Not this model's problems and not why this compile failed \u{2014} \
+                     v0.10.0 rejects some MSL code that 0.9.20 accepted, which is a \
+                     question for upstream rather than a fault in the model above.",
+            "total": library_errors.len(),
+            "distinct": distinct(&library_errors),
+        },
         "warnings": {
             "note": "library-level warnings, deduplicated. Almost always about the MSL rather \
                      than the model, and not the reason the compile failed.",
             "total": warnings.len(),
-            "distinct": distinct,
+            "distinct": distinct(&warnings),
         },
     })
 }
@@ -4092,13 +4205,36 @@ fn dae_construction_error_to_json(
 
 /// Pull `(equations, unknowns, balance)` out of Rumoca's unbalanced-model message.
 ///
-/// Matches `"unbalanced model: {e} equations, {u} unknowns (balance = {b})"`. Returns
-/// `None` on any deviation — see the caller on why absent beats wrong.
+/// Matches `"unbalanced model: {e} equations, {u} unknowns (balance = {b})"`, and
+/// tolerates anything Rumoca appends after the closing parenthesis. Returns `None`
+/// on any other deviation — see the caller on why absent beats wrong.
+///
+/// # The suffix stopped being the end of the message on v0.10.0
+///
+/// This read the balance with `strip_suffix(')')`, which requires the parenthesis to
+/// be the **last character**. v0.10.0 continues past it with a role breakdown:
+///
+/// ```text
+/// unbalanced model: 2 equations, 3 unknowns (balance = -1); unknowns[state=2
+/// algebraic=1 output=0 discrete_real=0 discrete_value=0] equations[continuous=2
+/// discrete_real=0 b1c_definition=0]
+/// ```
+///
+/// So the parse declined on every unbalanced model and the pane lost `n_equations`,
+/// `n_unknowns`, `balance` and the `reading` sentence. **It failed in the designed
+/// direction** — absent, never wrong — which is why this is a one-line correction
+/// rather than an incident.
+///
+/// **The breakdown is deliberately not parsed.** `message` is emitted verbatim, so
+/// the counts are already there for a reader, and a second parse is a second thing
+/// to rot. It is also the better information: on a failed DAE construction there is
+/// no `Dae` for `dae_counts` to count, so this sentence is the only account of what
+/// the unknowns *were*.
 fn parse_unbalanced(message: &str) -> Option<(usize, usize, i64)> {
     let rest = message.strip_prefix("unbalanced model: ")?;
     let (eq, rest) = rest.split_once(" equations, ")?;
     let (unk, rest) = rest.split_once(" unknowns (balance = ")?;
-    let bal = rest.strip_suffix(')')?;
+    let (bal, _after) = rest.split_once(')')?;
     Some((
         eq.trim().parse().ok()?,
         unk.trim().parse().ok()?,
@@ -4581,7 +4717,7 @@ fn incidence_to_json<'dae>(
         .iter()
         .enumerate()
         .map(|(i, cols)| {
-            let mut sorted: Vec<usize> = cols.iter().copied().collect();
+            let mut sorted: Vec<usize> = cols.to_vec();
             sorted.sort_unstable();
             // **Rumoca's own labelling function**, not a copy of it. Matching
             // lookups in `IncidenceMatrix::from_report` correlate by this exact
@@ -4591,9 +4727,7 @@ fn incidence_to_json<'dae>(
             // look up, and the bare ref is what `equation_label` would return
             // anyway.
             let eq_name = match view {
-                Some(view) => {
-                    rumoca_phase_structural::equation_label(view, &inc.equation_refs[i])
-                }
+                Some(view) => rumoca_phase_structural::equation_label(view, &inc.equation_refs[i]),
                 None => inc.equation_refs[i].to_string(),
             };
             let mut row = serde_json::json!({
@@ -4732,6 +4866,26 @@ fn structural_error_to_json(
             // have repeated it.
             "rank_deficiency": (*n_equations).max(*n_unknowns) - n_matched,
             "unmatched_equations": unmatched_equations,
+            // **The identities beside the labels, added 2026-11-03.**
+            //
+            // v0.10.0 decorates these strings: `unmatched_equations` now reads
+            // `"f_x[46] (SI.Angle phi)"` where 0.9.20 gave a bare id. HRW publishes
+            // Rumoca's own string unchanged — that is the rule — but a *decorated*
+            // label is not an identity, and pointing at one resolves to nothing.
+            // Thirteen labels across the notebook were in that state, which
+            // `tests_equation_identity::every_committed_trace_identifies_every_equation_it_names`
+            // found by walking the published trees rather than by anyone checking
+            // this site.
+            //
+            // So the bare ids go beside them, which is one of the two shapes that
+            // checker documents (`{"equations": [label…], "ids": [id…]}`). **Derived
+            // from the labels, not recomputed** — a second derivation could disagree
+            // with the string it is supposed to identify, and an id that names a
+            // different equation than the label beside it is worse than no id.
+            "unmatched_equation_ids": unmatched_equations
+                .iter()
+                .map(|l| crate::equation_id_from_label(l))
+                .collect::<Vec<_>>(),
             "unmatched_unknowns": unmatched_unknowns,
             // The point of ideas #45: where in *Doug's source* each untethered
             // unknown is declared, so a failure can be diagnosed rather than merely
@@ -5158,12 +5312,7 @@ fn collect_def_ids(v: &serde_json::Value, out: &mut BTreeSet<u64>) {
 /// simply has no entry.
 fn source_names(uris: &[&str]) -> std::collections::HashMap<rumoca_core::SourceId, String> {
     uris.iter()
-        .map(|uri| {
-            (
-                rumoca_core::source_id_for_name(uri),
-                (*uri).to_owned(),
-            )
-        })
+        .map(|uri| (rumoca_core::source_id_for_name(uri), (*uri).to_owned()))
         .collect()
 }
 
@@ -5555,6 +5704,37 @@ const UNINSTRUMENTED_PHASES: &[(&str, Option<&str>, &str)] = &[
         None,
         "HRW renders this tab from `dae.events`; no Rumoca function is called",
     ),
+    // **Three phases went silent on v0.10.0, and the numbers are measured.**
+    //
+    // *2026-11-03, `tracing::`/`*_trace!(` call sites per phase crate:*
+    // flatten 10, instantiate 4, structural **2**, resolve 1, and
+    // **typecheck 0, dae 0, solve 0**. The release cut tracing sharply — the
+    // `structural_trace!` wrapper that accounted for 27 sites is gone, and the three
+    // below emit nothing at all.
+    //
+    // **Typecheck is a re-entry, which is the mechanism working.** It was on this
+    // list until 2026-08-04, when the crate gained tracing and the test below
+    // removed it by failing with "now has 8 tracing call site(s)". The same test
+    // will force all three off again the moment they speak, so these entries are
+    // version facts that cannot quietly become permanent.
+    (
+        "Typecheck",
+        Some("rumoca-phase-typecheck"),
+        "the v0.10.0 crate emits no tracing at all; it had 8 call sites on 0.9.20, \
+         so this is a regression in observability rather than a property of the phase",
+    ),
+    (
+        "DAE",
+        Some("rumoca-phase-dae"),
+        "the v0.10.0 crate emits no tracing; the twenty-odd single-purpose modules \
+         that carried it collapsed into `construction/` and the calls did not survive",
+    ),
+    (
+        "Solve Lowering",
+        Some("rumoca-phase-solve"),
+        "the v0.10.0 crate emits no tracing; lowering was reorganised under \
+         `src/lower/` without it",
+    ),
 ];
 
 /// The one-line notice a traced compile opens with.
@@ -5600,10 +5780,75 @@ fn uninstrumented_notice() -> String {
 /// **This preserves `tree()`'s behaviour rather than improving on it.** A library-wide
 /// *error* fails the model here, exactly as it did before — replacing a signal should
 /// change nothing, and any improvement belongs in its own change with its own evidence.
-fn resolve_diagnostics_indicate_failure(diags: &rumoca_core::Diagnostics) -> bool {
+///
+/// # v0.10.0 FALSIFIED THE PREMISE, AND THIS IS THAT CHANGE
+///
+/// *2026-11-03.* The measurement above is still accurate about 0.9.20 and the reasoning
+/// built on it was sound. What it rested on is the row reading **0 errors** for a good
+/// model: the library produced warnings and notes, never errors, so "any error is this
+/// model's error" was safe.
+///
+/// **On v0.10.0 the MSL produces about 75 error-severity resolve diagnostics** — all of
+/// the form *"reference to non-constant variable `X` from a lexically nested class is
+/// not allowed (MLS §5.3.1)"*, over the `Modelica.Mechanics` friction and brake state
+/// machines (`startForward`, `v_relfric`, `locked`, `a_relfric`, `f0_max`). Whether
+/// Rumoca is right to reject that code is a question for upstream and is recorded as
+/// one; **it is not this function's business either way.**
+///
+/// What it did to HRW was total: **every specimen's Resolve stage read `Failed`**,
+/// including `TwoLoops`, which contains no `Modelica.` reference at all. Nine stages
+/// after it still read `Ok` with IR, so the pane asserted the pipeline stopped at a
+/// stage it demonstrably ran past — breaking the one-`Failed`-per-compile invariant
+/// `the_corpus_outcome_matrix_is_unchanged` pins, in 25 rows at once.
+///
+/// **So the fix is the model-scoped subset that was not available in 2026-08.** The
+/// note above rejected `global_resolution_failure` because it returned the same
+/// library-wide set; the subset is now built from the diagnostics themselves, by
+/// [`diagnostic_source`], which is identity rather than name matching.
+///
+/// **The failure direction is the dangerous one, which is why two tests bracket it.**
+/// If the source comparison matched nothing — a path spelled differently from the name
+/// the session registered — every model's Resolve would read clean and HRW would
+/// silently stop reporting resolve failures, which is exactly the hazard
+/// `Session::strict_compile_resolved`'s own doc comment warns about. So
+/// `a_broken_model_still_reports_its_own_resolve_error` requires a genuinely broken
+/// specimen to still fail, and the corpus matrix requires all 25 rows to be right.
+fn resolve_diagnostics_indicate_failure(diags: &rumoca_core::Diagnostics, uri: &str) -> bool {
+    !model_resolve_errors(diags, uri).is_empty()
+}
+
+/// The `SourceId` a diagnostic is *about*, using Rumoca's own precedence.
+///
+/// Primary label, then the first label — the order
+/// `rumoca_core::Diagnostic::to_miette_with_source_map` uses to decide which file to
+/// render a diagnostic against. **Agreeing with Rumoca about where a diagnostic lives
+/// is the point**: a second opinion here would be HRW re-deriving an attribution the
+/// compiler already makes, which is the pattern this project keeps having to undo.
+///
+/// `None` for a diagnostic with no labels at all. Those are counted as **not** this
+/// model's, because the alternative — treating an unplaceable error as local — is how
+/// the library's errors became every specimen's in the first place.
+fn diagnostic_source(d: &rumoca_core::Diagnostic) -> Option<rumoca_core::SourceId> {
+    d.labels
+        .iter()
+        .find(|l| l.primary)
+        .or_else(|| d.labels.first())
+        .map(|l| l.span.source)
+}
+
+/// Error diagnostics that belong to `uri`'s own source, not to the library.
+///
+/// `source_id_for_name` derives the id from the name deterministically, so no source
+/// map is needed and no lookup can go stale.
+fn model_resolve_errors<'a>(
+    diags: &'a rumoca_core::Diagnostics,
+    uri: &str,
+) -> Vec<&'a rumoca_core::Diagnostic> {
+    let own = rumoca_core::source_id_for_name(uri);
     diags
         .iter()
-        .any(|d| d.severity == rumoca_core::DiagnosticSeverity::Error)
+        .filter(|d| d.is_error() && diagnostic_source(d) == Some(own))
+        .collect()
 }
 
 /// Discard buffered tracing events without reporting them.
