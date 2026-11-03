@@ -1,0 +1,314 @@
+# The UI Pause — plan
+
+**Purpose:** what gets tested, what gets refactored, in what order, and the evidence for each.
+**Status:** authority for this pause. **Claude's plan**, per `DECISIONS.md` *"Claude is the
+primary consumer of HRW's code"* — Doug set the goal and the ordering, Claude picks the work.
+**Read when:** starting or resuming the UI pause (2026-08-02).
+
+Doug's goal, verbatim: *"My primary testing goal for this project is to provide the
+verification which you declared earlier that you need to be effective."* His ordering: **tests
+before any refactoring**, so regressions have something to hit.
+
+---
+
+**Findings go in [`ui-findings.md`](ui-findings.md) as they appear**, not at the end of a
+chunk. Chunk 1 produced three before its first green — the ones worth having are exactly the
+ones that feel too small to write down, and a commit message records them where nobody browses.
+
+## The evidence
+
+Measured 2026-08-01/02. **Refactor where there is evidence of friction, never where code
+merely looks large** — so each target below cites what it actually cost.
+
+| Target | Size | Evidence it costs something |
+|---|---|---|
+| **Cache layer** | 20 `cached_*` fields, **40 invalidation sites**, `clear_specimen_state` hand-lists 24 in 54 lines, **no completeness test** | A missed invalidation renders **stale plausible data** — silently wrong and confident. Same disease as the "wire every new stage" rule. |
+| **Left panel** (labs + model list, inline in `frame_ui`) | ~450 lines | Edited **three times on 2026-08-01** (corpus list, filter, dividers). Two of those edits shipped defects Doug caught: the corpus hidden, then vacuous tests. |
+| **`central_panel_ui`** | 771 lines | The stage tabs and every stage view in one function. |
+| **`App`** | **105 fields**, 53 `&mut self` methods | Blast radius is unpredictable: threading one field through `Compiled` meant hunting every construction site by hand. |
+| **`app.rs` as a file** | 9,562 lines | **Caused defects directly.** Too large for targeted edits, so Claude fell back on generated scripts with string anchors — which produced attribute theft twice in one day (silently disabling a regression guard), leaked Rust escapes into comment text, and one blind global replace Doug rightly rejected. |
+
+**The last row is the strongest and the least obvious.** It is not an aesthetic complaint: the
+file's size is already manufacturing bugs through the mechanics of editing it.
+
+---
+
+## The ordering, and why it is not "all tests, then all refactoring"
+
+Doug's rule is tests first, and it stands. But writing fifty tests up front has a failure mode
+proven twice on 2026-08-01: **a test written against current code encodes current behaviour,
+defects included.** The corpus test asserted the very hiding Doug then reported as a bug.
+
+So the pause runs in two tiers:
+
+1. **A baseline suite across the whole UI surface**, written once, up front. Its job is to
+   catch *anything* that changes anywhere during the refactor. Broad and shallow.
+2. **Per-region pinning tests written immediately before that region is touched.** Narrow and
+   deep, and written while the region's behaviour is freshly understood.
+
+**Every test earns its place by being seen to fail against a deliberately broken version.**
+Twice on 2026-08-01 a UI test passed while checking nothing. At a hundred tests, vacuous ones
+are *worse* than none — they manufacture the confidence that licenses the refactor.
+
+---
+
+## The success criterion: `App`'s field count, ratcheted
+
+Doug asked whether the 105 fields get their own later round. **They do not — reducing them is
+the mechanism of this one.** "Extract state, not just functions" is otherwise an unfalsifiable
+claim, and a refactor that ends with 105 fields on `App` moved lines and nothing else.
+
+**Measured 2026-08-02, per field, by how often `App` touches it:**
+
+| Uses | Fields | What it means |
+|---|---|---|
+| 1–3 | **37** | Pane-local. They merely *live* on `App`. |
+| 4–10 | **54** | Pane-local plus a reset site or two. |
+| 11–25 | 10 | Moderately shared. |
+| **26+** | **4** | `stage` (66), `stages` (64), `tracked_identifier` (31), `selected` (30) |
+
+**91 of 105 fields are touched ten times or fewer.** The coupling is far shallower than the
+raw count suggests, and the irreducible core is *four* fields: the current stage, its results,
+what is being followed, and what is loaded. That is a real architecture rather than a pile —
+which is why extraction, not redesign, is the right instrument.
+
+**So each step below carries a field-count target**, and a test ratchets it:
+
+```
+App has at most N fields   →   lower N as each extraction lands
+```
+
+**A ratchet, deliberately.** It fails the moment a field is added to `App` without asking
+whether it belongs there — which is exactly the question nobody asked 105 times. It is the
+must-fire rule aimed at the refactor itself: *"extract state"* is a claim, and a claim with
+nothing checking it rots like any other.
+
+| After | Target | From |
+|---|---|---|
+| Step 2 (caches) | ~~≤ 86~~ **94, landed** | 12 stage-view fields → 1 |
+| Step 3 (left panel) | **85, landed** | specimen list, filter, corpus, scratch polling |
+| Step 4 (central panel) | ≤ 60; **57 landed** — `Viewport`, then the three panes below | per-stage view state, then each pane's own |
+| Eventually | **~30** | with the 4-field core documented as irreducible |
+
+Steps beyond today continue the same ratchet; there is no separate "field problem" phase.
+
+## Step 1 — The baseline suite
+
+**Goal: no pane changes what it renders without a test noticing.** Not coverage for its own
+sake; a net under the refactor.
+
+Per pane, the same three questions, which is what makes this writable at speed:
+
+- **Given state X, is the expected content on screen?** (the reporting-pane rule)
+- **Given empty state, does it say so** rather than rendering blank? "Nothing here" and
+  "broken" must not look alike.
+- **Does clicking it change what it should, and nothing it should not?**
+
+**Layout is part of the baseline, added 2026-08-02 at Doug's prompting.** He flagged that the
+draggable divider (`ideas.md` #59) *"could seriously break our UI code"* and asked that it be
+considered while the tests are being written. Checking it exposed a hole in everything written
+so far:
+
+> **Every baseline test asserts presence in the accessibility tree, and presence is
+> width-independent.** A widget squeezed to nothing, or pushed off-screen, is still in the tree
+> with its label intact. All 24 tests would pass on a layout that is completely broken.
+
+That is harness fact H3 — off-screen widgets are queryable but not clickable — turned into a
+systemic blind spot. Today it is latent because the split is a fixed 40/60. **#59 makes width a
+variable, and turns it live.**
+
+So the baseline gains **layout invariants**, and `Node::rect()` (H10) makes them writable
+without recording anything app-side. Two constraints on how, both measured rather than assumed:
+
+- **Name the chrome that must always be visible** — menu bar, stage tab row, status bar, mode
+  buttons. **Not** a sweep over every node: at a healthy 1600×1200, 153 of 232 widgets already
+  lie outside the viewport, because scroll content extends past the clip rect by design (H12).
+- **Run them at several widths**, since a single width cannot distinguish a layout that works
+  from one that happens to fit.
+
+Panes with no headless test today, in the priority order from `tech-debt.md`:
+
+1. **Reporting panes first** — the status bar's notices, the log view, the equation sheet.
+   Same shape as the Context Bar defect: they exist to say something, so a partial report is
+   both plausible and unnoticeable.
+2. **Panes whose emptiness is legitimate** — `specimen_source_ui`, the Purpose tab, the source
+   map. `specimen_source_ui` was silently empty for library models until 2026-08-01.
+3. **Cross-pane effects** — the stage tab row, the mode switch. A human checks the pane they
+   clicked in; a test can check the other one.
+
+**Known-correct behaviours to pin, from 2026-08-01's fixes** — these are not guesses about
+intent, they are decisions Doug already made: the corpus visible unfiltered; HRW specimens
+collapsed with MSL expanded; the background naming specimen *and* stage; a source scroll
+landing at the left margin; an MSL model's source and clickable identifiers.
+
+## Step 2 — The cache layer ✅ *(landed 2026-08-02, and the premise was wrong)*
+
+**The plan said "20 cache fields → 1". They do not share a lifetime.** Measured before
+writing any code, which is the only reason this did not ship as a behaviour change wearing a
+refactor's clothes:
+
+| Family | Fields | Invalidated |
+|---|---|---|
+| **Stage-view caches** | 11 + key | On stage change *and* on every compile — **listed by hand in both places** |
+| **Compile outputs** | `cached_flat`, `cached_dae`, `cached_equation_sheet` | Never — they are *results*, assigned from a finished compile |
+| **Self-keying memos** | `cached_purpose_notes` (by model), `cached_lab` (by mtime), `cached_source` (per specimen) | Each already carries what tells it it is stale |
+
+Folding all twenty into one `Default` reset would have **cleared the memos on every stage
+change** — a behaviour change, not a refactor. Only the first family was extracted, into
+`StageViewCaches`, whose `reset_for` assigns a whole `Self` so a view added tomorrow is
+covered by construction. Verified by adding a cache field mentioned in **no** invalidation
+site and watching it be cleared anyway.
+
+**So: 105 → 94, not 86.** The remaining caches are not orphans — they belong to the panes that
+own them, and they move in steps 3 and 4 rather than into a bag they do not fit.
+
+The two hand-written lists also had a **test that re-implemented them inline**, asserting its
+own copy worked rather than the app's; the real block could have been deleted with the test
+still green. It now calls `reset_for`.
+
+<details><summary>The original plan for this step, kept because the reasoning was sound and the premise was not</summary>
+
+**Do not test the invalidation. Make it unnecessary.**
+
+Twenty `cached_*` fields move into one struct. Resetting becomes
+`self.caches = StageCaches::default()`, which clears every field **by construction** — a new
+cache field cannot be forgotten, because there is no list to forget it from. That removes the
+bug class rather than detecting it, which is worth more than any test of the 54-line reset.
+
+Guards that still earn their place:
+
+- **After loading specimen B, nothing from A survives** — the property the 40 sites exist to
+  maintain, asserted once at the level that matters.
+- **A cache field count check**, so a field added *outside* the struct is caught. The must-fire
+  rule applied to the mechanism itself.
+
+Sequenced second because it removes 20 of 105 fields, which every later extraction would
+otherwise have to thread.
+
+</details>
+
+## Step 3 — The left panel
+
+The labs picker and the model list, ~450 lines lifted out of `frame_ui` into a new pane
+module. **Highest edit frequency in the file**, and the region whose defects Doug caught three
+times yesterday.
+
+*(No path is named here on purpose. `doc_citations::every_documented_source_path_exists`
+rejected the first draft for citing a file that does not exist yet — correctly: a plan that
+writes proposals in the same form as facts is how a later session reads intent as history.)*
+
+**Extract state, not just functions.** A function that still takes `&mut self` can reach any
+of 105 fields, so nothing becomes independently testable and the next defect hides just as
+well. The pane takes what it owns — the specimen list fields, the filter, the corpus — and
+returns an action for the caller to apply.
+
+**And a pane receives its width; it does not read `available_width()` deep inside.** This is
+the shape `ideas.md` #59 needs, and the reason to adopt it now rather than retrofit it. Today
+the split is `ui.available_width() * LEFT_PANEL_WIDTH_FRACTION` evaluated at two call sites,
+recomputed every frame from a constant — so there is nowhere for a dragged width to live, and
+no way to render a pane at a width of the test's choosing. **A pane that takes its width is
+testable at any width**, which is what makes the divider safe to build rather than a rewrite
+waiting to happen. Doug, 2026-08-02: *"implementing support for that draggable vertical
+divider could seriously break our UI code."*
+
+## Step 4 — `central_panel_ui`
+
+771 lines: the stage tab row and every stage view. Split by stage view, each taking its own
+state. Likely the point where the day runs out, and a fine place to stop — the pause's value
+does not depend on finishing it.
+
+---
+
+## The `&mut self` audit — which signatures are finished
+
+**Measured 2026-08-02, at the end of the pause.** Every `*_ui` method takes
+`&mut self`, and that is *sometimes correct and sometimes unfinished*. A future
+session should not have to guess which, so here is the classification and the
+evidence behind it: the `App` fields each method touches, minus the nine the
+census found genuinely shared (`stage`, `stages`, `selected`,
+`tracked_identifier`, `model`, `compiling`, `viewing_log`, plus the two extracted
+groupings `viewport` and `stage_views`).
+
+**The test is simple: does the pane touch state that is nobody else's business?**
+If not, `&mut self` is the answer and narrowing it would mean passing five
+references to gain nothing.
+
+### Finished — touch only shared state
+
+`matching_anim_ui`, `tarjan_anim_ui`, `alias_anim_ui`, `ic_plan_anim_ui`,
+`background_ui`, `no_lab_ui`. **Leave these alone.**
+
+### Finished in practice — one or two fields, cohesive with the shared set
+
+`connection_anim_ui` (`connection_frames`), `tearing_anim_ui`
+(`live_breakpoint_armed`), `report_sub_view_row_ui` (`pending_sub_view`),
+`source_map_ui`, `stage_tab_bar_ui`, `menu_bar_ui`. Their extras are compile
+outputs or one-frame flags, not a pane's private world.
+
+### Unfinished — a `ModelListState` waiting to be written
+
+**All three landed 2026-08-02**, at Doug's direction: *"That is an important negative
+characterization."*
+
+| Method | Became | Fields |
+|---|---|---|
+| `context_bar_ui` | `ContextBarState` | 10 → 1 |
+| `specimen_source_ui` | `SourceViewState` | 7 → 1 |
+| `lab_panel_ui` | `LabState` | 4 → 1 |
+
+**`App`: 75 → 57**, past step 4's ≤ 60 target.
+
+**One field was excluded on inspection.** `identifier_index` looked like source-view
+state and is not: it is a **compile output**, built by the worker and read by
+`source_map_ui` too. The membership test is not *"does this pane use it"* but
+***"is it nobody else's business"*** — the same question that kept `tracked_identifier`
+on `App` while the Context Bar's other nine fields moved.
+
+### Aggregators — expected to touch everything
+
+`frame_ui` and `central_panel_ui` exist to orchestrate. Their field counts are a
+consequence of the job, not a defect, and they shrink when the three above are
+extracted rather than by being split further.
+
+## The file split — what the extraction made possible
+
+**2026-08-02, after the pause's four steps.** Measuring the result exposed the
+one thing the pause had *not* delivered: **`app.rs` grew**, 9,619 to 10,087
+lines. Everything moved *within* the file; nothing moved *out* of it. And the
+plan's own strongest evidence — that the file's size manufactures editing
+defects — produced five more instances that day (`ui-findings.md` R1–R4, plus a
+bare `{}` replacement that landed in an unrelated format string).
+
+| Module | Lines | Why it could move |
+|---|---|---|
+| `model_list.rs` | 533 | Owns its state, **returns an outcome** instead of acting |
+| `lab.rs` | 166 | Same: `select`/`poll` report *whether the selection changed* |
+
+`app.rs`: **10,087 → 9,434.**
+
+**The rule the split follows is "narrow first, move second", and it is not
+optional.** A module boundary is free only once a pane has stopped reaching into
+`App`; moving one that still takes `&mut App` would mean widening `App`'s fields,
+which undoes exactly the encapsulation the extraction bought. `lab_panel_ui`'s
+*rendering* stayed behind for that reason even though its state moved.
+
+**Stopping here, deliberately.** `context_bar_ui` and `specimen_source_ui` have
+their state extracted but still render through `&mut App`. Narrowing them is real
+work with its own risk, and the pause has already delivered its targets. The
+honest measure of whether this split worked is not the line count but **whether
+the R-series of editing defects stops recurring** — which only the next
+substantial edit can show.
+
+## What this pause will not do
+
+- **No new features.** The corpus list with a filter (`ideas.md` #52) resumes after.
+- **No change to what any stage means** — `DECISIONS.md`, Parse's meaning is not a
+  performance knob.
+- **No optimising HRW to widen test scope** — Doug's standing boundary, untouched.
+- **No refactor without a test in front of it**, and no test kept without seeing it fail.
+
+## Tonight
+
+**Doug runs the owed large-scale fidelity sweep.** It exercises the compile path, not the UI,
+so this pause does not disturb it — but **do not rebuild an example while the run holds its
+binary**, and the standing long-run precautions in `CLAUDE.md` apply.

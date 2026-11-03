@@ -1,0 +1,580 @@
+# Plan — does HRW faithfully represent Rumoca?
+
+**Purpose:** what F1-F9 check, the reasoning behind each, when the two scales run, and Doug's
+standing boundary against optimising HRW to widen test scope.
+**Status:** authority. The run-frequency policy and the boundary both bind.
+**Read when:** before changing anything that emits or reads stage JSON; before running the
+large suite; before proposing a performance change to the compile path.
+
+Written 2026-07-30, from Doug's concern:
+
+> We have not sufficiently tested that the HRW code correctly represents Rumoca's
+> understanding or decisions about the specimens which it compiles.
+
+He is right, and nothing in the 444 tests addresses it. They check HRW's **own** logic
+(link parsing, playback, layout) and that specimens **compile**. Neither asks whether what
+HRW *shows* is what Rumoca *decided*.
+
+## The goal, stated exactly
+
+Doug, 2026-07-30:
+
+> I want us to gain confidence that HRW tells the truth about Rumoca, **even if Rumoca is
+> wrong.**
+
+That last clause is the whole scope. **A Rumoca bug faithfully rendered is a PASS here.**
+
+## What this programme does NOT check, stated because it was read as checking it
+
+*Added 2026-08-04, after a day spent removing fictions from HRW's log and UI that had stood
+while this suite reported 2,614 green rows and zero violations.*
+
+**F1-F9 verify NOUNS. Every fiction removed that day was a VERB.**
+
+The checks ask: *is this structure what Rumoca produced?* They do not ask, and cannot ask:
+
+| Question | Checked by F1-F9 |
+|---|---|
+| Is this IR what Rumoca produced? | ✅ yes, at corpus scale |
+| Did the phase this pane names actually run? | ❌ no |
+| Did HRW compute this itself when the compiler produced nothing? | ❌ no |
+| Is this view the compilation, or a re-run of the algorithm? | ❌ no |
+| Do the log's order, nesting and attribution describe what happened? | ❌ no |
+
+**A fabricated BLT block passes every one of these checks** — it is well-formed, it round-trips
+through JSON, every path in it resolves. **A replay passes by construction**, because producing
+output indistinguishable from the compiler's is what makes a replay good.
+
+So the green result is real and its scope is narrow, and **the danger is not the gap but the
+confidence.** A corpus-scale zero makes *"is HRW faithful?"* feel answered when what was
+answered is *"is HRW's IR faithful?"* — a strict subset. Cite this suite only with its scope
+attached; see the accuracy rule at the top of [`../CLAUDE.md`](../CLAUDE.md).
+
+## F10 — the first verb check *(added 2026-08-04)*
+
+**`check_f10` asks whether a pane's claim about the compiler is honest**, and it is the first
+check in this programme that is not about a structure. It runs on the whole `StageBundle` (like
+F8 and F9, not on a subject) and tests the three things Charter Decision 7 asserts about every
+pane:
+
+1. **Nothing HRW invented is on screen** — no stage is `Provenance::Hrw`. That variant is
+   reachable only through `Stage::computed`, which demands a written reason, and no production
+   pane calls it. A violation is not automatically a defect: it means a pane started deriving
+   its own content, and the same commit must say how the UI declares that.
+2. **Provenance and content agree** — `Empty` exactly when there is no value, so *"this pane is
+   showing nothing"* stops being a judgement made by reading the pane.
+3. **Absence is stated, never silent** — a pane with no content must say why.
+
+**Clause 3 is the one that needed the corpus.** A blank pane and a pane whose phase never ran
+look identical, and the reader cannot tell which they are seeing. Four specimens reach four
+shapes of early stop; **2,626 models reach every way a compile can end**, which is precisely
+when a pane has nothing to show.
+
+**It is not a duplicate of F9.** F9 inspects only stages whose outcome is *abnormal*, and
+requires those to carry a real note. Clause 3 covers what F9 skips: outcome `Ok`, no value, no
+note — a pane that says nothing while claiming nothing went wrong. **The pane that misleads most
+is the one that looks fine.**
+
+**Both halves of the must-fire pair exist**: `f10_catches_each_way_a_pane_can_mislead` builds
+each rejected state, and `f10_is_quiet_on_specimens_that_behave` runs it against four real
+compiles — two of which fail — with a non-vacuity assertion that some stage really was empty.
+
+**What F10 still does not do**, and it is the honest limit: it checks that a pane *claims*
+`Compiler`, not that its values *appear in* the compiler's artifact. A pane calling `Stage::ok`
+with synthesised JSON passes. Closing that needs a value-level comparison against the artifact
+and is not built.
+<!-- unbuilt: fidelity::check_f11 -->
+
+### F10's first corpus run: green, and its headline clause never fired
+
+**Run 2026-08-04/05: 2,626 attempted, 2,614 ok, 0 violations, 0 checks failed** — F10 included
+(no `--only-checks`, so every check ran).
+
+**The zero is real and its coverage is narrow.** Investigating on 2026-08-05 found that **no MSL
+model produces an empty stage** — five partial/abstract classes were tested, one from each kind
+the corpus contains (`Interfaces`, `Icons`, `Types`, `BaseClasses`, `Internal`), and **every one
+populated all eleven stages.** Even a `partial block` compiles through.
+
+So F10's clauses 1 and 2 were exercised 2,614 times and its **third clause, the only one that is
+not near-tautological, had nothing to act on.**
+
+**This is the exact failure `Coverage`'s doc comment describes** — *"a corpus that produced no
+blocks and no matchings would pass in silence"* — and **F10 shipped without a coverage counter**,
+one level over from where that warning is written. `Coverage::empty_stages` now exists and the
+runner prints it, with an explicit note when it is zero, so the next run states this rather than
+leaving it to be rediscovered.
+
+**Absence is a property of failing compiles, and this corpus has none.** The clause is exercised
+by HRW's own specimens — `no_stage_shows_content_hrw_invented` asserts a non-zero empty count
+across four, including `UnbalancedShaft` (stops at DAE construction) and `CapacitorLoop`
+(structurally singular). **Corpus scale buys F10 almost nothing; the failing specimens are what
+test it.** A future `#46` failure specimen per phase would change that.
+
+**Verdicts also shifted, and the prediction about them was wrong.** 12 models were not checked
+before and 12 after — but the composition changed: **3 free-RAM → 0**, **2 proc-ceiling → 5**,
+timeouts unchanged at 7. The prediction that unconditional frame capture would grow the
+not-checked count was **not borne out in total**; what it appears to have done is move models
+from the free-RAM guard to the per-process ceiling, with the machine quieter this time
+(rust-analyzer stopped) accounting for the free-RAM aborts disappearing. **Two changes moving in
+opposite directions cancelled in the total**, which is why the composition matters more than the
+count.
+
+**The rest of the verbs** — which phase ran, in what order, nested inside what — are checked by
+roughly a dozen assertions in `worker.rs` (bracket balance, bracket naming and pairing, trace
+containment, no-replay, attribution counts), which is thin and is logged as such in
+[`tech-debt.md`](tech-debt.md).
+Finding compiler bugs is a different effort with a different instrument (#43's oracle), and
+mixing them would make every failure ambiguous again — which is the cost #51 could not pay.
+
+Two consequences that changed this plan after it was first written:
+
+- **Stratify by IR shape, not by physics domain.** The first draft said "cover every MSL
+  top-level package". But if the question is fidelity, the domain is a *proxy* — a `Fluid`
+  model and an `Electrical` model with the same IR shape test HRW identically. What
+  stresses the representation is **arrays, function calls, records, deep hierarchies, huge
+  incidence matrices, many small blocks vs one large one**.
+- **Failures are in scope.** F1–F7 as first written all assume a *successful* compile. But
+  "even if Rumoca is wrong" means a Rumoca **failure** must be faithfully represented too:
+  the error payload, the unmatched equation and unknown lists, the blamed source spans.
+  Several of those were fixed by hand on 2026-07-29–30 and nothing checks them at scale.
+  See **F9**.
+
+## Why the bar is higher than "correct enough for Doug"
+
+Doug, 2026-07-30, on what this is ultimately for:
+
+> I need HRW to provide a lab of the Rumoca malfunction which I can capture as a video or
+> screenshot to link in the PR description [...] to demonstrate to Rumoca PR reviewers that
+> HRW is useful and therefore worthy of being merged. [...] I need HRW to faithfully
+> represent Rumoca so that the Rumoca PR reviewers don't dismiss HRW as junk.
+
+**The audience changes the bar.** Until now HRW's reader has been Doug, who trusts it. A
+Rumoca maintainer knows the compiler better than Claude does, will spot a wrong number in a
+screenshot instantly, and has no investment in HRW succeeding while being asked to take on
+maintenance burden. **One visible misrepresentation does not merely fail to persuade — it
+discredits.**
+
+That re-ranks the checks by *what a maintainer would catch in a demo*, which is not the
+same as what would most mislead Doug:
+
+| Noticed in a demo? | Checks |
+|---|---|
+| **Immediately** | F1 (they know what tearing should decide), F2 (a transposed matrix is obvious), F3 (a wrong count is checkable at a glance) |
+| **It is the demo path** | **F9** — a bug PR demo shows Rumoca *failing* |
+| Invisible | F6, F7 — internal quality only |
+
+**The convergence worth noticing:** a bug-PR demo runs entirely through the
+failure-representation path, which is exactly where every hand-found bug of 2026-07-29–30
+clustered. **F9 protects the thing HRW would be judged on**, and has the demonstrated bug
+density. Start there.
+
+### A note on how to use the demo
+
+Let the lab **be** the bug report rather than accompany it. A report that doubles as a
+pitch can read as using a maintainer's review time for promotion; "here is the malfunction,
+run stop by stop" is simply the clearest explanation they will receive, and HRW's
+usefulness is then demonstrated **implicitly**. `docs/fixture-labs/the-oracle.md` is
+already this shape — it explains a real Rumoca defect and never argues that HRW is good.
+
+## The one-sentence property
+
+**HRW must invent nothing and omit nothing.** Every value it displays should be traceable
+to Rumoca's output, and every decision Rumoca made should be recoverable from what HRW
+shows. The checks below are that property, made checkable one piece at a time.
+
+## Why this is the dangerous gap
+
+HRW does two different things with Rumoca's output, and only one of them is safe:
+
+| | Risk |
+|---|---|
+| **Reads** a phase result and renders it | distortion — a dropped field, a transposed index, a mislabelled column |
+| **Re-derives** a result by re-running the algorithm | **divergence** — HRW computes a *different answer* and presents it as the compiler's |
+
+The second is the one that can teach Doug something false. `tearing_anim::walk_blocks`
+re-runs tearing on every coupled block to produce its animation; `matching_anim` and
+`tarjan_anim` re-run matching and Tarjan from the incidence JSON. **None of these has ever
+been compared against what Rumoca's own report says.**
+
+They agree on the 18 hand-picked specimens by assumption, not by test.
+
+## The design idea: invariants, not expected answers
+
+The obstacle raised by `docs/ideas.md` #51 is **triage cost** — with 1,656 unfamiliar
+models, every failure is an investigation, and Claude has already twice reported a finding
+that was not there.
+
+**Invariant checks dodge that entirely.** They do not require knowing the right answer for
+a given model; they assert a property that must hold for *every* model. A violation is
+definitionally a bug, with nothing to adjudicate. That is what makes this affordable at
+scale where a compile-census is not.
+
+## The checks
+
+Ordered by how much they would hurt if they failed.
+
+### The checks mirror the algorithm chain
+
+The organising idea, and the fastest way to hold all nine: **structural analysis is a
+pipeline where each step consumes the last, and each check guards one link.**
+
+```text
+DAE  ->  incidence matrix  ->  matching  ->  SCCs (Tarjan)  ->  BLT blocks  ->  tearing
+```
+
+- **Incidence** is the bipartite graph: rows are equations, columns are unknowns, an edge
+  where that equation mentions that unknown. Everything downstream is derived from it.
+- **Matching** pairs each equation with the one unknown it will be *solved for* — a perfect
+  matching in that graph. When none exists the system is **structurally singular**
+  (Dulmage-Mendelsohn), which for a high-index model is normal and index reduction repairs.
+- The matching orients the graph; **Tarjan's SCCs** on the result are the equation sets that
+  must be solved *simultaneously*.
+- Those SCCs in topological order are the **BLT blocks** — the solve order.
+- Inside a coupled block, **tearing** chooses variables to guess so the rest solve explicitly.
+
+Drill-downs for each algorithm live in
+[`compiler-phases/phase7_structural_analysis/`](compiler-phases/phase7_structural_analysis/).
+
+| Check | Link it guards | The failure it makes impossible to hide |
+|---|---|---|
+| **F2** | the incidence itself | every downstream view indexes into these arrays, so a transposition or off-by-one leaves the matrix looking entirely plausible while every label sits against the wrong row |
+| **F5** | the matching | a pair whose equation does not *contain* its unknown is not a poor choice — it is **not a matching at all**, and every solve order built on it is meaningless |
+| **F4** | the BLT decomposition | a partition is impossible to satisfy by accident, so a gap or an overlap is definitionally a defect |
+| **F3** | the counts across all of it | `rank_deficiency: 7` when the truth was 1 — the error described the *reduced* system while the matrix beside it described the *raw* one |
+| **F1** | the **re-derivation** of all of the above | an animation teaching a decision Rumoca never made |
+
+F6, F7, F8 and F9 sit outside this chain: they guard the *derived views*, the *capture
+vocabulary*, *scale*, and *failure reporting* respectively.
+
+**Why the chain framing matters for reading a violation.** A break in an early link
+manifests as violations in every later one. If F2 fails, F5 and F4 will almost certainly fail
+too — not because the matching and the blocks are separately wrong, but because they were
+computed from a matrix that was already wrong. **Triage the earliest failing link first**, and
+expect the rest to resolve with it.
+
+### F1. Re-derivation matches the report  *(the centrepiece)*
+
+For every model with a coupled block: run `tearing_anim::walk_blocks` and compare its
+result against the `tearing` field of the structural report — same tear variables, same
+residual equations, same causal sequence, in the same order.
+
+Both sides exist today. The report says
+`{tear_vars, residual_equations, causal_sequence}`; the animation produces `TearingFrame`s
+plus `BlockNames` to resolve local indices back to names.
+
+Same shape for `matching_anim` (final matching vs the report's `matching`) and
+`tarjan_anim` (its SCCs vs the report's `blocks`).
+
+**If this fails, an animation is teaching a decision the compiler did not make.**
+
+**Status 2026-07-31: all three halves built and passing** over ten specimens
+(`worker::tests::F1_MODELS`). Compared per *tab*, against the DAE that tab animates —
+Structural shows the raw system and Index Reduction the reduced one, so a single
+comparison against "the report" tests nothing and fails on models that are singular
+before reduction.
+
+**F1 found one real bug on its first run**, of exactly the class it was built for.
+`partial_matching_to_json` labelled equations with the bare `EquationRef` while
+`incidence_to_json` used the labelled form Rumoca's report uses, so on any model whose
+equations carry origins the two never correlated and the singular incidence view showed
+**nothing** as matched — `Drivetrain` rendering 0 of 97 when Rumoca had matched 93. The
+cause was a reimplementation of `equation_label`; the fix made that function `pub`
+upstream and deleted both copies. `before_report_json` had the same defect.
+
+Two other F1 failures on that run were **the test's fault, not HRW's**, and both are worth
+recording because they are the shape of a false finding:
+
+- Tarjan's `sccs_so_far` lags by one — `tarjan.rs` records the frame *before* pushing the
+  component — so reading the last frame yields an empty partition on a graph that is a
+  single SCC. `final_sccs` collects `SccFound` steps instead.
+- The tearing check compared the raw DAE's re-derivation against whichever report existed,
+  and singular stages hide the tearing view anyway (`structural_view_available`). A
+  re-derivation the UI never shows is not a misrepresentation.
+
+### F2. Incidence is faithful
+
+HRW's `incidence` JSON against a fresh `build_incidence(&dae)`: same `n_eq`, same `n_var`,
+same `unknown_names` in the same order, and every row's index set identical. Catches a
+transposition or an off-by-one that would make every downstream view subtly wrong while
+looking plausible.
+
+### F3. Structural counts agree with themselves
+
+`n_equations`, `n_unknowns`, `matching.len()`, `rank_deficiency` — mutually consistent, and
+consistent with `incidence`. The `rank_deficiency: 7` bug (2026-07-29, true value 1) is
+exactly this class and was found by eye.
+
+### F4. BLT blocks partition the equations
+
+Every equation appears in exactly one block; block sizes sum to `n_equations`. A
+partition is easy to check and impossible to satisfy accidentally.
+
+### F5. Matching is a matching
+
+Injective: no equation matched to two unknowns, no unknown claimed twice, every index in
+range.
+
+**Status 2026-07-31: F2-F5 built and passing** as one harness in `src/fidelity.rs` —
+30 incidence-bearing reports across 10 models (16 with blocks, 29 with a matching, 4
+singular), 0 violations.
+
+Three things the build settled that the plan had not:
+
+- **A "subject" is not "the structural report".** It is *every* report HRW publishes that
+  carries an incidence — today Structural, Index Reduction, and the `before` report nested
+  inside the latter, so three per model. Walking them generically matters: `before`
+  carried the same labelling bug F1 found in the singular matching, and a check written
+  against "structural" alone would have missed it.
+- **F5's teeth are the incidence-nonzero check**, not injectivity. An equation matched to
+  a variable it does not reference is not a wrong choice among valid ones — it is not a
+  matching at all. That check would have caught F1's bug independently.
+- **Non-vacuity guards are load-bearing here**, more than in F1. Every check skips
+  subjects it does not apply to (no blocks, no matching, no error), so without the guards a
+  corpus that stopped producing them would pass in silence. The harness prints its
+  coverage for the same reason: "0 violations" means nothing without "over how much".
+
+Cost: **32s for 10 models**, against 148s for F1's three checks over the same 10 — the
+harness shape (compile once, apply every invariant, drop) rather than any optimisation.
+See `docs/ideas.md` #48 for why memoization is the wrong lever at sample scale.
+
+### F6. Derived views cover their source
+
+The equation sheet names every continuous equation; the identifier index's variables are a
+subset of the DAE's; every `def_id` referenced in a stage resolves in `def_index`.
+
+### F7. Every capture noun works on real IR
+
+For a sample of node paths from each stage: `describe_path` → `parse_path` → `navigate`
+returns the same subtree. The capture vocabulary has only ever been exercised on 18
+models, and it is the thing every question depends on.
+
+### F8. No stage panics, and sizes are recorded
+
+The stress test, as a **byproduct** rather than the goal. `Media.Examples.WaterIF97`
+produced a 3.2 MB flatten stage without panicking; that was previously unknown. Record
+size and time per stage per model so a regression in either is visible.
+
+### F9. Failures are represented faithfully too
+
+For every model where a phase **fails**, the error payload must carry what Rumoca actually
+reported — not a paraphrase, and not less:
+
+- the counts in a structural singularity match `StructuralError::Singular`'s own fields
+- `unmatched_equations` / `unmatched_unknowns` match the error's lists, in order
+- a blamed source span resolves to a real line in the specimen, and to *that* variable
+- a diagnostic's `labels` survive into the JSON with their spans intact
+- the message is emitted **verbatim** somewhere, so nothing is lost to summarising
+
+This is where 2026-07-29–30's hand-found bugs clustered: `rank_deficiency` computed as 7
+when the truth was 1, spans that Rumoca supplied and HRW dropped, labels dropped by every
+emitter, a `ToDae` failure reduced to a bare informational note. **Every one was HRW
+failing to tell the truth about a Rumoca failure** — exactly the case Doug's clause is
+about, and the one the first draft omitted.
+
+## Status — F1-F9 all built, 2026-07-31
+
+`src/fidelity.rs` (F2-F9) and `worker.rs` (F1). Coverage on the current corpus:
+
+| | |
+|---|---|
+| F2-F7 | 10 models, 30 incidence-bearing reports, 100 stage IRs run, **0 violations** |
+| F8 | 16 models serialized; largest total 1.88 MB (`Drivetrain`), largest single stage 536 KB |
+| F9 | 6 failing specimens, 14 abnormal stages, 8 with structure, 6 source locations verified |
+
+**F7 found the second real bug**, and a large one: JSON object keys containing `.`
+were written bare into node paths, so `parse_path` split them and landed on nothing.
+`enum_literal_ordinals` is keyed by qualified names like `StateSelect.never`, so this hit
+**every model in the corpus — 6,169 broken paths**. Every `hrw://` link and every
+`focus.json` naming such a node pointed Claude at a subtree that does not exist. Fixed by
+quoting keys that carry the grammar's own separators (`a["b.c"]`), additively: a key that
+never needed escaping still renders byte-identically, so existing links keep working.
+
+### What the false alarms taught, which is most of the value
+
+Of 12 violations across F6-F9's first runs, **9 were the check's fault**. Recording the
+pattern because it is the same failure mode as HRW inventing a decision, one level up:
+
+- **F6** re-listed the DAE's variable partitions by hand, omitted the two discrete ones,
+  and reported `BouncingBall`'s `c` as a phantom. Now keyed by the `kind` the index itself
+  recorded, so an unrecognised partition says so instead of masquerading as a violation.
+- **F9** demanded structure from stages where Rumoca supplied none (`UndefinedRef`'s six
+  downstream "no result" stages). Carrying nothing is *faithful* there — the property is
+  that HRW must not **lose** structure, which is only checkable where there was some.
+- **F9** looked for that structure under `"error"` alone, and `OverInitRc` publishes a
+  full IC plan with a `determinacy` verdict and no `error` key.
+- **F1's** Tarjan accessor read `sccs_so_far`, which lags by one component.
+
+The recurring shape: **a check that knows one form of the truth reports every other form
+as a defect.** Cheap to write, expensive to trust. Hence the discipline of reading the
+data before believing an assertion message.
+
+### The "no result" bucket, triaged
+
+`not_reached_stage` has three branches, and they are **not** equivalent. `Failed { phase }`
+and `NeedsInner` produce `Stage::info` — neutral, correct, since a stage that never ran is
+not a failed stage. `None` produces `Stage::err`, which renders six tabs red for one
+resolve failure. That is not a *fidelity* violation (Rumoca really did supply nothing, and
+HRW says so) but it is a **legibility** one, and it is Doug's call because it changes what
+he sees. Left as-is, recorded here.
+
+## When these run — policy, agreed with Doug 2026-07-31
+
+Fidelity checks are **not** a thing to run constantly. But they split in two, because they
+answer different questions, and the split is not by cost.
+
+| Tier | Cost | Question it answers | When |
+|---|---|---|---|
+| Fast loop | 7s | did I break the code | every edit |
+| Pre-commit, **incl. small-scale fidelity** | ~6 min | **did HRW drift from itself** | every commit |
+| **Large scale**, own feature gate | minutes | **did Rumoca change; does an unseen IR shape break us** | on the triggers below |
+
+### Why small-scale stays in the pre-commit run
+
+Doug's first framing was that fidelity tests detect *changes in Rumoca*. That is the large
+suite's job, but it is not where the evidence points. **Neither bug found on 2026-07-31 came
+from Rumoca:**
+
+- F1's — the singular matching resolving 0 of 97 — was HRW's `partial_matching_to_json`
+  reimplementing `equation_label` and drifting from it.
+- F7's — 6,169 broken node paths — was HRW's path grammar meeting real IR keys containing `.`.
+
+Both were **HRW-internal drift**, present for weeks, introduced by ordinary HRW work. Neither
+would have been caught by a trigger, because neither was suspected. So the ~90s the 16-specimen
+checks cost inside the pre-commit run is buying the failure mode that actually occurs.
+
+### Triggers for the large suite
+
+1. **After rebasing on upstream Rumoca** — a step in `docs/updating-rumoca.md`, not something
+   to remember. "Remembered" is the property that has failed every time here.
+2. **Before submitting a PR to CogniPilot/rumoca.**
+3. **When HRW changes how it emits or reads stage JSON** — the `*_to_json` functions in
+   `worker.rs`, the path grammar in `bridge.rs`, `IncidenceMatrix::from_report`, or any
+   animation's re-derivation.
+
+Trigger 3 is deliberately **code-shaped rather than judgement-shaped**. Doug's original list
+had "if code changes give reason to doubt HRW's fidelity", and that is precisely the judgement
+that failed twice already — Claude would not have flagged either bug's originating change.
+A diff can be checked; a suspicion has to occur to someone.
+
+## The sample
+
+**Not all 1,656.** A stratified sample of **40–60**, chosen to cover:
+
+- **IR shapes** that stress the representation: array variables, function calls, records
+  and nested types, deep component hierarchies, very large incidence matrices, many small
+  BLT blocks versus one enormous coupled block
+- the phenomena HRW has **views** for: high index, algebraic loops, events, alias
+  elimination, connection expansion, `pre()` lowering
+- **models that fail**, in each phase that can fail — F9 has no data otherwise
+- the extremes: the largest models available, and the smallest
+
+Package coverage is worth *sampling* for variety, but it is not the criterion. Two models
+from different packages with identical IR shape test HRW once, not twice.
+
+Stratification matters more than count: 50 models spread across packages will find more
+than 500 from one.
+
+## Sequencing
+
+1. ~~**Fix outcome classification first.**~~ **Done 2026-07-31** —
+   `Outcome::{Ok, Flagged, Failed}`, with `note_is_error()` derived from it so no
+   colour or branch changed. `Stage::note_is_error` was set by three
+   constructors meaning "nothing produced", "failed with a diagnosis", and **"singular but
+   perfectly usable"**. Anything counting outcomes on that boolean will miscount, and it
+   already produced one false finding (see #51). A three-way `Stage::outcome()` comes
+   before any harness reads it.
+2. ~~**F1 on the existing 18 specimens.**~~ **Done 2026-07-31**, on ten of them. If the re-derivations already disagree with the
+   report on models we know, that is the bug of the day and the MSL work can wait.
+3. **The sample list**, checked in, with why each model was chosen.
+4. ~~**F2-F5 as invariants.**~~ **Done 2026-07-31** on the F1 corpus; the harness takes any list of model names, so pointing it at the sample is a one-line change. **F6-F7** remain.
+5. ~~**F8 recorded.**~~ **Done 2026-07-31** — printed per model, with a loose ceiling that catches a runaway rather than a tight bound that would fail on a legitimately large model.
+
+Step 2 is deliberately first and deliberately small: it is the cheapest possible test of
+the plan's central hypothesis, and if it passes on 18 models the same harness runs on 50
+with no new code.
+
+## Cost, and where it runs
+
+Each model is a full uncached compile against MSL — seconds. 50 models is minutes, not the
+hour a full census would take, which is why the sample is stratified rather than
+exhaustive. **Behind `slow-tests`**, not in the 7-second loop.
+
+## Do NOT optimise HRW to widen test scope
+
+**A standing boundary, set by Doug 2026-07-31**, after measurement showed HRW's compile path
+— not the fidelity checks — is what costs 30 s and 3.5 GB on a 4,193-equation model, and
+7.7 GB on a 10,175-equation one.
+
+> **First, I very much agree that we should not redesign worker.rs's compile path. Perhaps
+> ever, even if some models cannot be opened quickly in the HRW UI. HRW is an education
+> project, not a production tool. We are creating HRW to teach me and to possibly serve as a
+> convenient test tool for rumoca maintainers. I do not want to optimize, let alone
+> fundamentally redesign, HRW in order to run tests of extreme models. If some models cannot
+> be fidelity-tested within our limits, so be it.**
+
+### What this rules out
+
+- **Redesigning `WorkerState::compile_model_by_name` or the stage-IR construction it drives**
+  — laziness, streaming, or bounded materialisation — *for the purpose of widening test
+  coverage*.
+- Trading away the thing HRW exists for. The ten stage JSON trees, `def_index`, the equation
+  sheet, the identifier index and three sets of animation frames **are the product**. They
+  are why HRW can show what a compiler decided. Making them lazy to fit a benchmark would be
+  optimising away the observatory.
+
+### What it does not rule out
+
+- **Raising the run guards** when measurement says the cost is legitimate. `-TimeoutSec` and
+  `-MaxProcGB` were guesses made before anything was measured; adjusting them to fit what
+  models actually need is not optimisation, it is calibration.
+- A UX change *if a real session makes one necessary* — for instance a progress indicator, or
+  a warning before opening a very large model. That would be driven by Doug hitting it while
+  learning, which is this project's normal trigger for anything.
+- Fixing a genuine defect. The F8 `to_string()` materialisation was a **bug** — it built the
+  entire IR as a `String` purely to measure its length — and fixing it was correct. The line
+  is between *removing waste* and *redesigning the product*.
+
+### Why the boundary is worth writing down
+
+The pull toward optimisation here is strong and looks reasonable at every step: 10 of 53
+stage-C models aborted, the checks are clean, the cost is in HRW — so *make HRW faster*. Each
+step follows, and the conclusion is still wrong, because **the goal is not maximum test
+coverage. The goal is Doug's education**, and HRW's job is to make a compiler's decisions
+visible rather than to process the largest model in the MSL quickly.
+
+**A model that cannot be fidelity-tested within the limits is recorded as such and left.**
+That is a stated bound, and stating a bound honestly is a thing this project already values
+over pretending it is not there (`docs/upstream-strategy.md` planning rule 3).
+
+## What this does not establish
+
+That Rumoca is *correct*. Every check here asks whether HRW agrees with Rumoca, so a
+compiler bug faithfully rendered passes every one of them. Correctness needs the
+independent implementation — `docs/ideas.md` #43 and the differential test in #4, on the
+same corpus.
+
+**Two different questions, and this plan answers only the first:**
+
+- *Does HRW tell the truth about Rumoca?* — this plan.
+- *Does Rumoca tell the truth about Modelica?* — System Modeler.
+
+
+## Triaging a violation — three categories, not one
+
+**Ported from `current-work.md` 2026-08-01**, whose work finished. This is the part of a
+sweep that is *not* "fixing bugs", and it is the part most easily skipped.
+
+**Nine of the twelve violations F6-F9 produced on their first run were the CHECK's fault, not
+HRW's.** So triage precedes fixing, and a violation means *something disagrees* — never
+*HRW is wrong*:
+
+| Category | Response |
+|---|---|
+| HRW misrepresents Rumoca | **a real bug** — fix HRW |
+| The check is wrong | fix the check; **the instrument is lying, not the subject** |
+| **Rumoca is odd, HRW rendered it faithfully** | **not a bug** — possibly an upstream finding |
+
+**Misclassifying either way is expensive**, and the third row is the one that needs care: it
+is the row where a real upstream finding gets "fixed" out of HRW, or where an HRW bug gets
+filed against Rumoca. Neither is recoverable cheaply — see `docs/upstream-strategy.md` on what
+a wrong report costs.

@@ -1,0 +1,822 @@
+# Question Ledger
+
+**Purpose:** what Doug asked, verbatim, and the specific thing that made it click.
+**Status:** record — append-only, never rewritten.
+**Read when:** before answering a question in an area that has come up before. A repeat is a
+signal, and it branches two ways demanding opposite responses.
+
+Stage A of `docs/ideas.md` #41. Doug reads this only if he wants to; its audience is Claude.
+
+---
+
+## Always in flight
+
+**Every phase of work appends here, and this is the only artifact whose value depends on
+elapsed time.** *(Carried forward 2026-08-01 from the retired answer-platform plan, whose
+closing section this was.)*
+
+If experimenting with features is what teaches — the project's strongest evidence to date —
+then **the record of which experiment taught what is the irreplaceable artifact.** A stretch
+of work that ends with no entries here is not necessarily wasted (the animations produced none
+while being built), but it does mean the learning went unrecorded, and **that is the one loss
+this project cannot absorb.**
+
+---
+
+## This is how the curriculum labs get graded
+
+**Doug, 2026-08-03, on finishing the first two:** *"The real measure of whether the labs are
+good enough will be the nature of the questions which I ask you while and after I work through
+the labs. If it seems that I have learned what you attempted to explain, then the labs will
+have been at least partly successful."*
+
+That criterion has no other instrument. A lab's link checker proves its links resolve and its
+`**Expected:**` lines prove its claims are violable — **neither can tell whether the lesson
+landed.** This file can, because it already records the one thing that reveals it.
+
+**So a question arriving during or after a curriculum lab gets logged with the stop it traces
+back to.** The mapping is the whole point: without it there is a pile of questions and a pile
+of labs and no way to connect them.
+
+Four shapes to watch for, because they call for opposite responses:
+
+- **A question the lab set up and did not answer** — the lab worked. It built enough
+  scaffolding for the next question to be askable. This is the target.
+- **A question the lab already answered** — the explanation did not land. Note *which stop*,
+  and try a different angle rather than repeating the prose louder.
+- **A question revealing a misconception the lab created** — the most valuable signal here and
+  the most expensive to miss. A wrong idea installed confidently is worse than no idea, and
+  only Doug can surface it. Fix the lab, and record what the wrong wording was.
+- **No questions at all** — ambiguous, and **do not read it as success.** It means either the
+  lab was complete or it provoked nothing, and those are opposite outcomes. Ask.
+
+**The labs are regenerable; this record is not.** Same rule as the rest of the file — which is
+why a lab rewritten in response to a question should say so in its own text, as
+`dae-construction.md` does.
+
+---
+
+## Why this file exists
+
+Everything else in `docs/` is regenerable. Claude can re-derive what Pantelides
+does, what a coupled block is, how tearing picks a variable — which is exactly
+why the specimen narratives and the end-to-end lab's prose were retired
+(`docs/ideas.md` #42).
+
+**Doug's questions are not regenerable.** Neither is the confusion behind one, nor
+the specific thing that finally resolved it. That is the whole content of this
+file, and it is the only artifact here that gets more valuable with time.
+
+## How to use it
+
+**Before answering**, scan for the concept. If it appears already:
+
+- **Asked before, and the earlier explanation is recorded as having worked** —
+  don't repeat it verbatim; check whether the question is actually a different
+  question wearing the same words.
+- **Asked before and the answer evidently did not stick** — the earlier
+  explanation *failed*. Try a different angle, do not restate it louder. Two
+  branches, and they call for opposite responses:
+  - the **concept** is hard → a different explanation, probably a more concrete one
+  - the **thing is not visible in HRW** → this is a feature request, and a better
+    one than Claude would invent. Log it in `docs/ideas.md` and say so.
+- **Asked again to RE-TEST a capability that just landed** — added 2026-07-29, because
+  the two branches above did not cover it and a naive reading of them gives the *wrong*
+  response. Doug re-asked "why did the structural phase fail for CapacitorLoop?"
+  immediately after source-line highlighting shipped, having asked it before source
+  spans existed at all. The explanation had not failed; the *answer channel* had
+  changed.
+
+  **Tell it apart by what shipped between the two askings.** If a relevant capability
+  landed in between, the question is a re-test. Then: **keep the explanation, lead with
+  what is newly possible, and be shorter** — Doug has heard the reasoning and is
+  checking the delivery. Hunting for a fresh angle would waste the turn and imply he
+  had failed to understand something he understood the first time.
+
+**If composing a lab hits an HRW gap** — you cannot get somewhere, or you work
+around it with prose ("same tab → now click X") — record it in the **lab holes**
+table at the top of [`tech-debt.md`](tech-debt.md), not only here. Doug's ruling:
+those outrank all other tech debt, because they degrade the deliverable rather than
+costing future effort. **Prose workarounds count**: the first lab logged its loud
+hole (#44) and silently accepted a quiet one at four separate stops, which went
+unnoticed until Doug asked whether holes were being tracked.
+
+**After answering**, append an entry if something durable happened. Not every
+turn — every-turn capture produces a log nobody can retrieve from. Say out loud
+in the conversation when writing here, so Doug can veto an entry before it
+calcifies.
+
+## Entry format
+
+- **Date** and the question **verbatim**. Not paraphrased: the wording is evidence.
+- **Context** — what was on screen, from `.hrw-bridge/focus.json` when there is
+  one. "Conversational" when Doug was not pointing at anything. Over months this
+  answers a question Claude cannot otherwise ask: *what was he looking at when he
+  got stuck?*
+- **Medium** — text, HRW lab, animation, Wolfram notebook, System Modeler
+  (`docs/ideas.md` #43). "The tearing animation" and "the rank computation" are
+  different facts about how Doug learns.
+- **What unlocked it** — the specific thing, not a summary of the answer.
+- **Repeat?** — how many times this concept has come up.
+- **Medium feedback** — when Doug comments on the *medium* rather than the answer.
+  He committed on 2026-07-29 to saying so when a lab arrives where text would have
+  done, and asked that it be recorded as a signal. Record it here, and treat two
+  instances of the same kind as a standing correction, not two isolated notes.
+
+## The medium rule (Doug, 2026-07-29)
+
+**Lead with text, always. Write a lab only when Doug asks for one.**
+
+His solution to a problem Claude had raised: the failure mode is asymmetric. Text
+that should have been a lab costs one follow-up; a lab that should have been text
+costs minutes of running stops to reach a two-sentence answer. Leaving the choice to
+Claude's judgement means Claude polices a bias it cannot feel — composing a lab will
+always be the more interesting work.
+
+One refinement Claude added and Doug accepted: **text first is not text silent.**
+When a lab would genuinely add something, say so at the end of the text answer, so
+Doug is accepting an offer rather than guessing which answers have a lab behind
+them. Doug also expects to request follow-up labs on his own initiative.
+
+---
+
+## Entries
+
+### 2026-07-29 (second asking) — "Why did the structural phase fail for the CapacitorLoop specimen?"
+
+- **Context:** `focus.json` seq 1, stage `Structural`, `stage_view: Summary`,
+  `specimen_detail: Source`, specimen `CapacitorLoop.mo` — **he had the source view
+  open**, which is itself the evidence for the re-test reading.
+- **Medium:** text, short. No lab: one already exists for this question and nothing
+  about it needed regenerating.
+- **Repeat?** **Third asking of this concept, and a *re-test*** — the first was before
+  source spans existed, the second produced the contrast lab, this one followed
+  source-line highlighting shipping.
+- **Concepts:** structural singularity; high-index vs ill-posed; where blame belongs.
+
+**What made the difference this time:** nothing about the explanation. The answer that
+had been *"reported at line 9"* became *"line 9 should be tinted right now."* Same
+diagnosis, delivered by pointing instead of quoting.
+
+**The ledger gained a category because of this entry.** "Repeat" had two branches —
+concept-is-hard and not-visible-in-HRW — and neither fits. Following either would have
+had Claude change an explanation that worked. See the third bullet under *How to use it*.
+
+**Still worth saying every time these witnesses come up:** `gnd.p.i` is the visible
+casualty, not the cause. The cause is lines 7–8 pinning the capacitor voltage; the
+shortage surfaces at `gnd.p.i` because it has the least slack in the matching. Claude
+got this wrong once already (called it "a single point of failure") and had to correct
+it after checking `RcCircuit`, where the same one-mark column matches fine.
+
+### 2026-07-29 — "Remind me again, what is the replay/reveal test?"
+
+- **Context:** conversational — no HRW capture. Mid-discussion about which
+  compiler phases deserve animations.
+- **Medium:** text.
+- **Repeat?** **Yes — second asking, roughly two exchanges after the first.**
+- **Concepts:** replay vs reveal; which phases hide a search.
+
+**What unlocked it:** a table with one row per animated phase and a single column
+— *"what running it produces that the output doesn't."* Matching: the paths that
+were tried and failed. Tearing: the appearance and competitor counts. Alias
+elimination: *nothing*. IC planning: *nothing*.
+
+**The lesson, and it is about Claude, not Doug.** Claude coined "the replay/reveal
+test", used it as established shorthand two messages later, and it had not stuck.
+Naming an abstraction is not teaching it. What worked was not a better definition
+— it was **enumerating the instances** so the rule could be read off them.
+
+- This is the *concept-is-hard* branch, not the *not-visible-in-HRW* branch. No
+  feature request follows. Correctly diagnosing which branch a repeat belongs to
+  is the skill this ledger is meant to build.
+- **Standing correction for Claude:** do not introduce a coined term and then rely
+  on it as shorthand. Either re-ground it at each use, or write it where it can be
+  retrieved. It is now in `docs/ideas.md` #9 and `hrw/CLAUDE.md`, so the third
+  asking should be answerable by pointing.
+
+### 2026-07-29 — "So the Solve Lowering phase is not supposed to have an animation, is that correct?"
+
+- **Context:** conversational, immediately after four new animations were
+  delivered and Solve Lowering was visibly not among them.
+- **Medium:** text, after reading `crates/rumoca-phase-solve/src/`.
+- **Repeat?** First asking.
+- **Concepts:** which phases hide a search; forward-mode AD; where the Jacobian
+  comes from.
+
+**What unlocked it:** splitting the phase into its three jobs and testing each
+separately, rather than answering about "the phase". `layout.rs` packs variables
+into solver slots — a run, and its result is *already on screen* as
+`problem.layout`. `lower.rs` compiles equations to a register machine —
+mechanical. **`ad.rs` is the exception**: forward-mode AD applies the chain rule
+per operation, which *is* a rule-driven transformation with a reason at every
+step, and it is where the Jacobian comes from.
+
+**Worth noting:** the question was framed as a yes/no scope check, and the honest
+answer was "yes, but one third of that phase is a real candidate." Answering only
+the yes/no would have been correct and useless. Logged as a candidate in
+`docs/ideas.md` #9 rather than proposed as work, because whether watching a JVP
+tape assemble beats a breakpoint in `ad.rs` is a question for Doug's reading.
+
+### 2026-07-29 — "The Structural phase summary claims that the rank has a deficiency of 1. What does that mean?"
+
+- **Context:** **first entry with a real HRW capture.** `focus.json` seq 1, `kind:
+  stage`, `request: explain`, stage `Structural`, `stage_view: Summary`, specimen
+  `MotorWithBrake.mo`, `ui_mode: Specimen`.
+- **Medium:** text first (per the medium rule), then **the first Answer**, at
+  Doug's request — "Write it."
+- **Repeat?** First asking.
+- **Concepts:** structural vs numerical rank; maximum matching as structural rank;
+  hidden constraints; dummy-derivative demotion; degrees of freedom.
+
+**What the answer rested on** — read from the bridge rather than recalled: 48
+equations, 48 unknowns, 47 matched. Unmatched witnesses `f_x[46]`
+(`emf.flange.phi - load.flange_a.phi`) and `emf.p.v`. Then the index-reduction
+report: `reduce_constrained_dummy_derivatives` → 1 demoted, `emf.phi`, states 4 → 3,
+`eliminate_trivial` → 41 eliminated.
+
+**The framing that carried it:**
+
+> The model was written with 4 independent states. The constraints permit only 3.
+> The deficiency is the compiler discovering that, before any number is computed.
+
+Reaching that required going *past* the definition to the cause: the unmatched
+equation contains **no derivatives**, so it constrains positions directly, which is
+the textbook hidden constraint. A rigid coupling removes a degree of freedom — which
+lands on the robotics mathematics Doug is aiming at rather than staying a compiler
+fact.
+
+**Two things worth carrying forward:**
+
+- **The unmatched pair is not a matched pair.** `f_x[46]` never mentions `emf.p.v`.
+  Which equation and which unknown get stranded is *not unique* — a different
+  maximum matching strands a different pair; only the count is invariant. Left
+  unexplained this reads as a bug, so say it every time these witnesses come up.
+- **Verification over assertion worked.** Every number above came from
+  `.hrw-bridge/stages/*.json`, and the "no rows differentiated, it took the
+  dummy-derivative path instead" detail would have been guessed wrong — the obvious
+  assumption for a hidden constraint is that it gets differentiated.
+
+**Outcome — the lab delivered.** Doug ran it and reported: *"I found row 46 and
+have concluded that the Answer feature is working brilliantly."*
+
+**So what unlocked it was Station 2** — finding the one row in a 48x48 matrix with no
+matching marker on it. Everything else in the lab is Claude asserting things; that
+stop is Doug verifying one himself, which is why it was the stop that had to work.
+**Generalise this when composing labs: at least one stop should be something Doug
+can check rather than be told.**
+
+Also a small confirmed data point about the rendered surface, which Claude had
+flagged as the risk in this lab: **the incidence view's matching markers are legible
+enough at 48x48 to spot a single missing one.** That was not obvious in advance.
+
+**Two lab holes, not one — and only the loud one got logged at first.**
+
+1. **Loud:** `Matching ▶` hidden when Structural is singular → `docs/ideas.md` #44.
+   Noticed immediately because it forced an admission into the lab.
+2. **Quiet:** `hrw://` cannot address a sub-tab, so Stops 2, 5 and 6 degrade to
+   "same tab → click **Incidence** / **Reduction ▶** / **Aliases ▶** / **Matching ▶**
+   yourself." The lab has **2 working links and 4 prose hand-offs.** This one went
+   unrecorded until Doug asked whether lab holes were being tracked — which is
+   exactly why quiet holes need the same discipline as loud ones. Both are now rows
+   in `tech-debt.md`'s lab-holes table.
+
+**Feature request produced → `docs/ideas.md` #44.** Writing the lab surfaced that
+`Matching ▶` is **hidden when Structural is singular**, so the one view that would
+let Doug *watch* the deficiency happen is unavailable exactly when it matters. This
+is the **not-visible-in-HRW** branch of the repeat signal, arriving without needing a
+repeat — the first requirement the #42 mechanism produced, on its first use.
+
+---
+
+## Open observations
+
+Not entries — patterns across too few data points to trust yet, kept so they can
+be confirmed or killed later.
+
+- ~~Both entries are conversational, with no HRW context.~~ **Retired 2026-07-29**
+  by the rank-deficiency entry, which carried a full capture (stage, sub-view,
+  specimen). #41's claim that the context field would matter is no longer untested:
+  knowing Doug was on *Structural → Summary* for *MotorWithBrake* is what made the
+  answer specific rather than a definition of rank deficiency in general.
+- **The first lab produced a feature request immediately** (#44). One data point,
+  but it is the data point the whole #42 argument predicted, so note whether it
+  keeps happening — a mechanism that surfaces a real gap per use is worth far more
+  than one that produces labs.
+- **n = 3.** Still nothing that supports a generalisation. Resist reading trends
+  into it.
+
+---
+
+## 2026-08-12 — `connect-expansion.md`, the lab's own opening sentence
+
+**The first question from the nine-lab run, and it is about wording rather than about a count.**
+
+**Doug, verbatim:** *"In the connection lab, you wrote: 'it is one edge in a graph, and the graph is
+solved before any equation exists.' Which graph are you referencing?"*
+
+**Traces back to:** the lab's lead paragraph, before Station 1 — so the very first sentence of prose in
+the lab, not a stop.
+
+### Which shape of question this is
+
+**A question revealing imprecise wording, not a misconception.** Doug did not misunderstand the
+phase; he correctly detected that the sentence names neither the graph nor the operation and asked
+which one was meant. That is the cheapest of the four shapes to fix and the easiest to have missed —
+**nothing checks prose for underspecification**, and the sentence reads fluently, which is exactly
+what let it ship.
+
+**Two things were wrong with it:**
+
+1. **"a graph" was ambiguous** across the lab set. Three graphs appear in the nine labs, and this
+   sentence sits in the first of them — so the ambiguity is worst exactly where the reader has the
+   least context to resolve it.
+2. **"solved" is not an operation on a graph.** What happens is that the **connected components** are
+   computed. The word was doing rhetorical work and carrying no meaning, which is the failure mode
+   `CLAUDE.md` names for log lines — *"a claim that reads nicely is still a claim"* — pointed at
+   prose.
+
+### What the answer had to contain
+
+The useful answer was not just "the connection graph" but the **disambiguation his question
+implies**, because the distinction is load-bearing for the two labs he runs next:
+
+| graph | where | vertices | edges | question asked | algorithm |
+|---|---|---|---|---|---|
+| connection graph | Flatten | connector variables | the `connect` statements | connected components | union-find |
+| incidence graph | Structural | equations ∪ unknowns (bipartite) | "this equation mentions this unknown" | maximum matching | augmenting paths |
+| dependency digraph | Structural | equations | derived from the matching, **directed** | strongly connected components | Tarjan |
+
+**The insight worth keeping from this exchange:** rows 1 and 3 are both *"find the components"*, and
+the only difference is **undirected versus directed** — which is precisely why one is union-find and
+the other is Tarjan. That single contrast connects Flatten to BLT across four labs, and it existed
+nowhere in the lab set before this question.
+
+### Verified against the source, not against prose
+
+`crates/rumoca-phase-flatten/src/connections/mod.rs` — `struct UnionFind` with path compression and
+union-by-rank, over `VarName` indices. **Two of them**, `potential_uf` and `stream_uf`
+(`connections/mod.rs`, the builder's parameters), and `ConnectionSet` carries
+`kind: {Flow, Potential, Stream}`. *Inferred, not traced: that a Flow set shares its membership with
+the Potential set rather than having a union-find of its own. The per-set arithmetic (n−1 potential +
+1 flow) is trace-verified; that implementation detail is not.*
+
+### What was changed
+
+The lead paragraph now names the graph, its vertices and its edges, says **components are computed**
+rather than "solved", and adds the three-graph note so the ambiguity cannot recur for the next
+reader. Per this file's standing rule, the lab says it was reworded and why.
+
+**What this says about the labs' grading criterion:** the question is evidence the lab is *being
+read closely* — it came from the lead paragraph, which a skimmer skips entirely. That is a better
+signal than agreement would have been.
+
+---
+
+## 2026-08-16 — three questions from a *re-run*, and a fifth question shape
+
+**Doug, verbatim, in one morning:**
+
+1. *"There's no hint provided in the HRW UI as to why this is a state instead of an algebraic."*
+2. *"When creating connection equations, why is a zero-flow equation attempted?"*
+3. *"Why is it ok for no equation to be created for an unconnected potential variable, yet an
+   equation must be created for an unconnected flow variable?"*
+
+**Traces back to:** none of them to a stop. All three came from **panes**, during a second pass
+through `connect-expansion.md` — the variable grid, the connections replay's `frame[14]`, and the
+asymmetry between two frame kinds.
+
+### The new shape, and why it needed its own entry
+
+The four shapes recorded above are all ways a lab can be **deficient** — imprecise wording, a
+missing definition, a concept with no counterpart on screen, a hidden feature. These three are
+none of those. **They are questions the lab deliberately does not answer, asked by someone the
+lab has already succeeded on.**
+
+Question 3 is the clearest case. It is only *askable* by someone who already holds the *n*−1
+versus exactly-1 rule, because the asymmetry it asks about **is** that rule. The lab taught the
+premise; the question is the reader operating on it.
+
+**So the grading criterion gains a positive signal it did not have.** `CLAUDE.md` records that
+*"no questions at all is ambiguous and must not be read as success"*. The converse was never
+specified. It now is: **detailed questions arriving from the panes after a completed run are the
+success signal**, and they are distinguishable from the deficiency shapes by a test — *could this
+question have been asked before the lab?* If no, the lab worked.
+
+### What made each click
+
+1. **The state question:** naming the *mechanism* rather than the category — a variable is a state
+   exactly when some equation differentiates it — and then citing `f_x[14]` so he could go read it.
+   The physical gloss did the rest: energy storage is what puts a derivative in an equation.
+2. **Zero-flow:** the counting argument. A connector costs two unknowns; connection equations pay
+   for them; an unconnected one still costs and must be paid another way.
+3. **The asymmetry:** two answers, and the second was the one that landed. First, that the
+   potential *already has* an equation — from the component's own physics — verified by showing the
+   matching, `inertia.flange_b.phi ← f_x[1] (equation from inertia)`. Second, that the rule is not
+   special at all: **(n−1) + 1 evaluated at n = 1 gives 0 potential equations and 1 flow equation.**
+   The thing he was asking about was the rule he already knew, at its smallest case.
+
+### Doug's own account of the loop, which is the reason this entry exists
+
+> *"You created a first draft of the connections lab, with the assumption that I knew nothing
+> about connections. Then, I began running the lab and iterating with you to improve that lab.
+> And during those iterations, I gained the basic understanding of connections which was the goal
+> of the lab. Now, I'm going back through the lab, am using HRW's panes to think of more detailed
+> (not-so-basic) questions, and am asking those questions here."*
+
+**Three phases, and the third had not been described before.** The repair loop as teaching was
+recorded 2026-08-15 (`vision.md`); this adds what comes *after* a lab is finished, and it is the
+phase that justifies the labs being short. A lab that answered question 3 pre-emptively would
+have spent his attention before he had a reason to want it.
+
+**The transferable rule for lab authoring:** *a lab's job is to make the reader able to ask the
+next question, not to answer it.* That is the operational meaning of "not too little, not too
+much", and it gives the boundary a test rather than a feeling.
+
+---
+
+## 2026-08-22 — the SAME sentence as 2026-08-12, because the repair did not survive a rewrite
+
+**Doug, verbatim:** *"In the overview, there's an assertion that the connect statement is an edge in
+a graph. That seems wrong. Are the number of graphs which are involved determined by the number of
+the types of connector variables which are involved? In other words, for this example, isn't there a
+graph of voltage variables and a graph of current variables?"*
+
+**Traces back to:** `connect-expansion.md`'s lead paragraph — **the same sentence as the 2026-08-12
+entry above** — and to `the-concepts.md`'s three-graphs table, which carried the same flaw in its
+*edges* column. **Medium:** HRW lab, first question of the re-run. **Repeat: second asking of one
+sentence, ten days apart.**
+
+### This is the repeat case, and the cause is NOT that the concept is hard
+
+`CLAUDE.md` says a repeat branches two ways — the concept is hard, or the thing is not visible.
+**Neither applies.** Doug did not merely detect the imprecision this time; he proposed the correct
+model himself and was essentially right. The concept landed. **The prose regressed.**
+
+**The regression is in the commit history, not inferred:**
+
+| commit | date | the lead paragraph |
+|---|---|---|
+| `bd84defb` | 08-08 | *"one edge in a graph, and the graph is **solved** before any equation exists"* |
+| `21f7cbb0` | 08-12 | **the repair** — a block quote naming the graph, its vertices *"one per member of every connector instance"*, its edges, and its undirectedness |
+| `2dfbb504` | **08-13** | **the repair is gone.** Back to *"one edge in a graph … until that graph has been **solved**"* |
+
+**The 2026-08-12 fix survived one day.** The rewrite that made this lab "the template for all other
+labs" reintroduced almost the original sentence, *including* the word "solved" that the fix had
+specifically removed. Nothing failed, because **no checker reads prose for meaning** — the link
+checker, the group-table checkers and the catalogue check were all green across that rewrite.
+
+**The rule this buys, and it generalises past labs:** *a repair with no checker is undone by the
+next rewrite of the file it lives in, and the loss is silent.* The repo already knows this shape for
+code (the must-fire rule) and for claims of absence (the `<!-- unbuilt: -->` tag). **Prose repairs
+have no such mechanism**, and this is the first measured instance of one being lost.
+
+### What the answer had to contain — and where Doug's model needed one adjustment
+
+**He was right that there is more than one graph, and right about which two, for this example.** The
+adjustment: the count is the number of connector **members**, not the number of **kinds**. Give a
+connector two potential members and a flow member and there are **three** graphs, two of them
+potential-kind. The kind never splits a graph — it decides *what equation the finished component
+generates*: *n* − 1 equalities for potential, exactly 1 sum for flow.
+
+`Pin` has two members, one of each kind, so **"members" and "kinds" coincide in `RcCircuit` and the
+example cannot discriminate them.** That is why the imprecise sentence survived two readings.
+
+### Verified against the source — and it SETTLES the inference flagged on 2026-08-12
+
+The 2026-08-12 entry closed with an explicit *"Inferred, not traced: that a Flow set shares its
+membership with the Potential set rather than having a union-find of its own."* **That inference was
+wrong, and it is now traced.** This file is append-only, so the correction is recorded here rather
+than in that entry.
+
+`crates/rumoca-phase-flatten/src/connections/mod.rs` builds **three** independent union-finds, one
+per kind, and the flow one is *not* derived from the potential one:
+
+- `potential_uf` — **global**, with the comment that merging or splitting scopes is equivalent
+  because *"N-1 for N variables either way"*.
+- `stream_uf` — global.
+- **flow** — `connect_primitive_vars` pushes flow pairs into a `flow_pairs` vector rather than
+  unioning them, and each **scope** then builds a fresh `scope_uf` from its own pairs. **Flow sets
+  get their own connected-components run, under a different scoping rule from potential.**
+
+And the reason no graph ever mixes members: `connect(a, b)` enumerates `a`'s sub-variables, takes
+each one's **suffix**, and pairs it with the variable in `b` having the matching suffix
+(`find_matching_var_b_indexed`). **No operation in the phase can produce a `.v — .i` edge.**
+
+### What was changed
+
+The lead paragraph now says *"an edge in each of several graphs, one per member of the connector"*
+and restores **connected components are computed** in place of "solved". `the-concepts.md`'s table
+row now says *"one edge per connector member, per `connect`"* — the vertices column was already
+right, and only the edges column undercounted.
+
+`connect-expansion.md` Act 1 has stated the correct version throughout, including on 2026-08-13
+while the intro contradicted it — **so the lab disagreed with itself for nine days and nothing
+could say so.**
+
+### Doug reclassified it, and the reclassification is the reason the rest of this entry exists
+
+**Doug, verbatim, 2026-08-22:** *"My biggest learning investment during the early stages of this
+project is my phase 2 runs of labs. During those phase 2 runs, my learnings are captured in the
+form of corrected prose in the labs. That corrected prose serves two purposes: 1. You are able to
+use that as a measurement of what I've learned and know. 2. I'm able to use the lab as a trusted
+reference during phase 3 runs. Losing the phase 2 prose is a seriously bad regression."*
+
+*(Quoted verbatim. The phase numbering was retired 2026-08-23 for colliding with Rumoca's own
+compiler phases — "phase 2" here is **running**, "phase 3" is **exploring**.)*
+
+**Claude had filed this as imprecise wording — the cheapest of the four shapes.** It is not. Corrected
+lab prose **is the artifact a run produces**, and it is load-bearing twice over: it is the
+only measurement of what Doug knows, and it is what exploring treats as trustworthy. **A lost correction
+is lost learning, not a lost sentence.**
+
+### The audit that reclassification prompted — one confirmed loss, not a systemic one
+
+**The dangerous pattern is specific: a whole-document rewrite landing *after* a run.** Found by
+listing every lab commit deleting ≥ 20 lines. Four labs had that exposure:
+
+| lab | rewrite | run before it? | verdict |
+|---|---|---|---|
+| **connect-expansion** | `2dfbb504` **−213** (08-13) | corrected **08-12** | **LOST** — this entry |
+| index-reduction | `404779ee` −139, `3bb69db0` −131 | corrections landed **08-18, after** | safe |
+| dae-construction | `41f90923` **−286** (08-16) | run 08-03 | substance survived |
+| matching | `117effa0` **−390** (08-17) | earlier run | substance survived |
+
+**Both large conversions are clean.** `dae-construction` lost the *wording* of its states passage and
+kept the mechanism — *"a variable is a state exactly when some equation **differentiates** it"*.
+`matching` went **466 → 195** lines and still teaches both threads that looked dropped:
+equations-are-not-assignments in five places, and *"a rank deficiency of 1 means exactly one such
+pair"* — the answer to the 2026-07-29 rank question, intact. **The template conversions compressed;
+they did not delete.**
+
+### The audit's own weakness IS the finding
+
+Verdicts above were reached by grepping distinctive phrases and judging "substance survived" by eye.
+**Nothing in the repository marks which prose came out of a run**, so Claude cannot reliably separate
+his own draft from Doug's correction on a run — and a rewrite sees uniform prose and treats it
+as uniformly Claude's to replace. That is exactly what happened on 08-13.
+
+**Both of Doug's stated purposes rest on that missing mark:**
+
+- **Measurement** is not merely at risk, it has **never been available**. Reading the labs today
+  measures Claude's drafts back to himself.
+- **Trusted reference** needs the page to say which sentences Doug validated, and no page says.
+
+**So marking a run's prose is not only protection — it is the missing index of the learning**, and it
+is the prerequisite for purpose 1 rather than an improvement to it.
+
+### What was done about it
+
+**Doug authorised the checker the same day.** `<!-- run: -->` regions, over the existing
+`tests_guarded_regions` machinery, which already diffs a marked region against `HEAD` and fails by
+name in the FAST suite. **It does not forbid changing run prose** — Doug rewrites his own prose
+constantly and that must stay cheap. It forbids changing it *silently*, the
+`app_does_not_regrow_its_field_count` shape.
+
+**Which passages get marked is Doug's ruling, not Claude's.** Marking a draft as run would defeat
+purpose 1 quietly, which is the failure this whole entry is about. Agreed approach: **mark during the
+run, when a correction is made**, and backfill only the ledger-recorded ones.
+
+## 2026-08-30 — the ten run regions of `connect-expansion` are superseded, on Doug's instruction
+
+**Recorded here because `walked_prose_never_changes_silently` requires it.** That check treats a
+deleted `run:` region as a regression — *"that prose is a record of what Doug learned"* — and
+allows exactly one alternative: **agree with Doug that it is superseded, and say so here.**
+
+**His instruction, the day lab prose became pointable:** *"I want you to disregard the edits that
+I made to the connections lab and re-write the lab using our new pedagogical agreement. The edits
+which I made no longer make sense."*
+
+### Why they no longer make sense, which is the part worth keeping
+
+The 2026-08-22 run produced corrections to prose written under the **old** constraint: a lab
+could not be asked questions, so exposition had to pre-empt them. **Most of those corrections were
+improvements to explanation** — a clearer account of nodes versus connection sets, a fuller
+statement of the type-compatibility gap, the residual form spelled out. Under
+[`../DECISIONS.md`](../DECISIONS.md), 2026-08-30, that whole category of prose is now written to
+**provoke** questions instead. Corrections that made an explanation *more complete* are corrections
+to a thing the lab no longer tries to be.
+
+### What was NOT superseded, and was preserved verbatim
+
+- every `**Predict.**`, `**Expected:**` and `**Falsified if**` — the run's tests;
+- all five guarded tables (`pane-frames`, two `pane-groups`, two `pane-origins`), which are
+  machine-checked against a real compile;
+- the factual corrections his run produced, as opposed to the expository ones — notably that
+  **"node" is the reader's bookkeeping and appears nowhere in Rumoca or HRW**, which the old prose
+  originally got wrong and which survives in the rewrite as three sentences rather than a section.
+
+### The ten regions retired, named individually because that is what licenses each one
+
+`walked_prose_never_changes_silently` accepts a deletion only when the slug appears here — **the
+slug, not the lab**. A blanket *"I rewrote this lab"* must not license removing regions nobody
+noticed were there, so naming each forces the author to look at what is being retired. That
+mechanism was added the same day, having been promised by the check's own message and never built.
+
+- `opening-what-connect-is`
+- `the-type-claim`
+- `node-is-the-readers-bookkeeping`
+- `stop1-nodes-versus-sets`
+- `stop2-potential-versus-flow`
+- `stop2-what-the-two-kinds-produce`
+- `stop3-the-same-asymmetry-other-side`
+- `stop4-a-resistor-is-seven-equations`
+- `stop4-the-why-column-is-the-definition`
+- `stop5-no-connect-no-expansion`
+
+### The markers came off rather than being re-dated
+
+**Re-dating would have asserted he had run prose he has never seen.** A `run:` marker means
+*this passage was run and corrected*; the rewrite has been neither. New markers get added when
+he runs it. That is the honest reading of the mechanism, and the alternative — a marker carrying
+today's date on text written today by Claude — is precisely the false claim the marker exists to
+prevent.
+
+**451 lines to 341.** The lab is first because he asked for it first: *"I've been focused on that
+lab, trying to get this lab format right."*
+
+---
+
+## 2026-09-12 — "If a potential variable is not mentioned in any connect statement, which compiler phase fails?"
+
+Asked while reading `connect-expansion`, pointing at *"A variable no `connect` touches is not a
+set of one — it is absent"*. **The lab had answered the flow half and left the potential half
+hanging**, which is what the question found: the passage names
+`generate_unconnected_flow_equations` as the pass that rescues an untouched *flow* variable, and
+there is no counterpart for potentials. A reader who follows that carefully arrives exactly here.
+
+**The answer has two halves, and the second is the one worth teaching.**
+
+*Which phase:* none **fails** — every stage reports `Ok` or `Flagged` and the pipeline runs to
+Solve lowering, per Rumoca's recovery design. **Matching, inside structural analysis, is the first
+to flag it**, and index reduction restates it naming the variable: *"1 matched out of 1 equations
+and 2 unknowns; unmatched unknowns: `p.v`"*.
+
+*But usually nothing complains at all*, and that is the part the question exposes. Measured with
+two scratch specimens:
+
+| specimen | DAE | structural |
+|---|---|---|
+| `DanglingPin` — resistor, `R.n` unconnected | 17 algebraic, 17 equations | clean |
+| `OrphanConnector` — a bare `Pin` in the model | 10 algebraic, 9 equations | `singular`, names `p.v` |
+
+**The absent equality is not a hole, because the component was always what supplied that
+equation.** `R.n.i = 0` from the flow pass, plus the resistor's own `R.v = R.R * R.i` and
+`R.v = R.p.v - R.n.v`, gives `R.n.v = R.p.v`. **That is MLS's local-balance requirement showing
+through** — a component is written so its own equations plus `flow = 0` determine its connector
+potentials. Singularity needs a connector with *no component behind it*.
+
+**Oracle agreed, which is worth recording because most of 2026-09-04 it did not.** System
+Modeler 15.0 simulates `DanglingPin` (`R.i = 0`, `R.n.v = R.p.v = 5`) and refuses
+`OrphanConnector` with *"Unbalanced model"* and *"Variables not solvable in any equation:
+'p.v'"* — the same variable, the same class of check. **Rumoca's message carries more detail than
+the oracle's**, since it gives the matched/unknown counts.
+
+**Owed to the lab:** the passage is correct and incomplete. It should say why the absence is
+normally harmless, or a reader does the right reasoning and reaches the wrong conclusion. **Doug's
+to rewrite, not Claude's** — tour prose is his primary learning exercise.
+
+**Candidate specimen:** `OrphanConnector` fills a real gap. `OverDeterminedShaft` covers the
+over-determined half of the balance check (3 equations, 2 unknowns) and **nothing covers the
+under-determined half caught by matching**. `docs/ideas.md` #46 wants a failure specimen per
+phase. It is already oracle-validated, and unlike the plot work it is **blocked by nothing** —
+a structural question, so the initialization defect is irrelevant to it.
+
+---
+
+## What makes a station land, and it is the same property a test can pin — 2026-09-22
+
+**Doug, on a Station 1 passage he had just captured:** *"Your stations are good. For example,
+the part of the station which I captured is more effective for me than the overview."* He had
+selected this, from `connect-expansion`:
+
+> Here is every `connect` in `RcCircuit`: […the four statements…] A `Pin` has two variables, so
+> each statement pairs by name into two merges — one joining `.v` to `.v`, one joining `.i` to
+> `.i`. Four statements, eight merges.
+
+**The overview states the same rule** — *"one merge per connector variable the two sides
+share"* — and he had just read it. So the information is not what differs. Four things are:
+
+1. **The specimen's own source is on the page**, all four statements, not described.
+2. **The rule becomes arithmetic he performs**: two variables, four statements, eight merges.
+   The overview asks him to hold a rule; the station asks him to apply it.
+3. **The number he just computed is then wrong in the interesting way** — eight merges, six
+   sets — and the station breaks it deliberately in the next paragraph.
+4. **The break has one named cause he can look at**: `src.n` appears in two `connect`s.
+
+**The finding, and it is what makes this entry worth keeping:** every one of those four is a
+*concrete count tied to a named specimen*, which is exactly the property that lets a test pin
+it. `lab_set_sizes_match_the_connection_replay` compiles `RcCircuit` and checks 6 and 7 against
+the real replay. **The station is machine-checkable and learnable for the same reason** — it
+committed to a number about a model that exists.
+
+**So the overview gap diagnosed the same day is not primarily a missing guard.** Prose that no
+test can pin is usually prose that states a rule without instantiating it, and that is the same
+prose Doug reads past. Adding pinned claims to an overview treats the symptom. The question to
+ask of an overview paragraph is whether it could name a specimen and a number — and if it
+could, it probably belongs in a station.
+
+**Standing consequence for writing labs:** prefer the count over the rule. A rule that never
+meets a specimen is the stored prose this project already retired 1,632 lines of.
+
+### And the rule that follows, which supplies what rule 4 was missing — same day
+
+**Doug, after reading the overview against the station:** *"It seems to me that the lab overview
+is trying to accomplish too much and is failing. Perhaps a rule for the lab overview is that it
+should contain only as much as necessary to introduce the stations. Perhaps some of the statements
+which are currently in the lab overview could be redistributed to the stations, because in the
+stations, those same statements could be checked. We don't want lab overviews which are attempting
+to be mini textbooks."*
+
+**`fixture-labs/README.md` rule 4 already said the defect** — *"an abstraction with no station is
+untested confidence"* — and has said it since 2026-08. It is **unguarded**, and naming a defect is
+all it could do. Doug supplies the remedy: **redistribute, do not delete.**
+
+**The sharp form: if a sentence commits to something a specimen could settle, it belongs in a
+station.** Three dispositions:
+
+| the overview sentence | do this |
+|---|---|
+| orients, or previews a number a station settles | **keep** — this is the briefing |
+| commits to something a station already reaches | **move it there**, where an `**Expected:**` pins it |
+| commits to something **no station in this lab can reach** | **neither keep nor delete — file the station the lab owes** |
+
+The third row is where a textbook accumulates, because those claims have nowhere else to go.
+
+**Measured across 21 labs, so the scope is known.** Median overview: 21 lines, 16% of the file.
+Two outliers — `connect-expansion` at 72 lines, `index-reduction` at **137 lines, 40%**. The rest
+sit between 11 and 38. So this is two labs, not a corpus rewrite.
+
+**`connect-expansion`'s overview audited against its six stations:** three abstractions have no
+station. (1) *order cannot change which variables end up together, and a `connect` whose ends are
+already in one set does nothing* — Station 1 counts sets but never predicts this. (2) *the MLS §4.7
+unconnected-potential paragraph* — needs `DanglingPin`/`OrphanConnector`, which this lab does not
+load, and both are already oracle-validated in this ledger. (3) *a connector variable with no
+counterpart is routed nowhere; wire a `Pin` to a `Flange` and nothing is checked* — and **the
+overview itself admits no station can reach it**: *"RcCircuit cannot show you why."* That admission
+is the disease stating its own name.
+
+**No line budget is being added.** `reading-budgets.txt` records what happened last time a length
+limit policed prose: fifteen raises in one day, zero rejections. Count unstationed abstractions.
+
+**Where this rule is NOT yet recorded, and why — 2026-09-22.** It belongs in
+`fixture-labs/README.md` beside rule 4. That file is **79,934 bytes against a ceiling of 80,000**:
+66 bytes of headroom, so the shortest honest statement of the rule does not fit. The ceiling's own
+message says what that means — *"past this it is not read before a task, it is consulted — which
+means it wants splitting, not a bigger number"* — and `unattended-runs.md` forbids raising a
+ceiling to fit new content. **So this reports and waits.** The lab authority is one rule short
+until that file is split, and the disease is the same one Doug just diagnosed, one level up: a
+README that has become a textbook.
+
+---
+
+## Two hours beat several months, and Doug diagnosed why — 2026-09-24
+
+**Doug, on the pendulum document built in a separate session that morning:** *"I had the feeling
+that I was learning more about all of this system modeling and simulation stuff in just those
+couple of hours than I had learned during several months of working on this HRW project."*
+
+**And his own diagnosis, which is the valuable part:** *"we focused initially on simulation,
+especially of ODEs. We then discussed the difference between DAEs and ODEs, and considered DAEs to
+be an evolution which is layered atop ODEs… We hadn't yet gotten to the part of the discussion
+about how modeling languages such as Modelica and compilers such as Rumoca were then created…
+In short, we began with problems, such as high index models, and then discussed solutions."*
+
+### The distinction is narrower than "problem before solution", which the labs already do
+
+[[feedback-problem-before-solution]] has been in force since July, and the lab overviews obey it.
+`matching.md` opens *"A Modelica equation is not an assignment"*; `dae-construction.md` opens *"A
+numerical integrator never sees your model."* Those **are** problems, stated first.
+
+**They are problems internal to the compiler.** *"Which equation solves which unknown?"* is only a
+problem once you have accepted that you are building a Modelica compiler. It was never a problem
+Doug had. The document's problems — the mass drifts off the circle, the rates cannot be read off,
+the solver dies at t ≈ 5×10⁻⁵ with no mention of index — are problems about **the world**, and they
+are his whether or not a compiler exists.
+
+**So the rule was being applied per lab and violated across the curriculum.** Every phase is
+motivated by the phase before it; nothing motivates the first phase.
+
+### The second half: order of discovery, not order of execution
+
+The labs run in **pipeline order** — the order the compiler executes. The document ran in
+**discovery order**: ODE numerics (Euler 1760s, Runge-Kutta 1900), then algebraic constraints on
+top (Gear 1971, DASSL 1982), then — not yet written — modeling languages and compilers on top of
+that. Each layer exists because the previous layer's users hit a wall.
+
+Pipeline order is not wrong; it is the right order for *using* HRW. It is the wrong order for
+arriving, because it starts in the middle of the third layer.
+
+### The consequence, and it is a plan rather than a lesson
+
+The document has not reached its third layer. **That unwritten chapter is the one that motivates
+the entire lab corpus**: why a modeling language exists at all, why connecting components generates
+constraints you did not write, and therefore why a compiler must do mechanically what Aside 1d does
+by hand. It is `connect-expansion`'s subject arrived at from underneath.
+
+Written, it would make the document the spine the labs hang from — and would mean a reader meets
+`matching.md` already knowing why anyone would want a matching.
+
+**Also worth noticing: Part II landed because it came late.** The Rumoca and System Modeler
+measurements are compelling *after* the problem has been felt. Opening with them would have been a
+table of phase outcomes.
+

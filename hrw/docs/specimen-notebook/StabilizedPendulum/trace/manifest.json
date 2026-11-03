@@ -1,0 +1,57 @@
+{
+  "model": "StabilizedPendulum",
+  "specimen": "specimens/StabilizedPendulum.mo",
+  "specimen_fnv1a": "4fbd1ba1ddce8be0",
+  "rumoca_rev": "e6f07f72",
+  "rumoca_version": "0.9.20",
+  "stages": {
+    "parse": {
+      "has_ir": true,
+      "note": null
+    },
+    "resolve": {
+      "has_ir": true,
+      "note": null
+    },
+    "instantiate": {
+      "has_ir": true,
+      "note": null
+    },
+    "typecheck": {
+      "has_ir": true,
+      "note": null
+    },
+    "flatten": {
+      "has_ir": true,
+      "note": null
+    },
+    "dae": {
+      "has_ir": true,
+      "note": "4 state(s), 1 algebraic(s), 5 continuous equation(s)"
+    },
+    "structural": {
+      "has_ir": true,
+      "note": null
+    },
+    "index_reduction": {
+      "has_ir": true,
+      "note": "already index-1 — the reduction funnel is a no-op here (same as the Structural tab)"
+    },
+    "initialization": {
+      "has_ir": true,
+      "note": "IC planning failed: structurally singular system: 0 matched out of 1 equations and 1 unknowns; unmatched equations: top-level model equation; unmatched unknowns: lambda"
+    },
+    "events": {
+      "has_ir": true,
+      "note": "no events — this model is a smooth (continuous) system"
+    },
+    "solve_lowering": {
+      "has_ir": true,
+      "note": null
+    }
+  },
+  "simulation": {
+    "simulated": false,
+    "error": "simulation failed: solver error: BDF new panicked: Failed to factorise matrix: SymbolicSingular { index: 4 } (at C:\\Users\\dougd\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\diffsol-0.13.2\\src\\linear_solver\\faer\\sparse_lu.rs:49:18)"
+  }
+}

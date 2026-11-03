@@ -1,0 +1,33 @@
+{
+  "error": {
+    "kind": "singular",
+    "message": "structurally singular system: 0 matched out of 1 equations and 1 unknowns; unmatched equations: top-level model equation; unmatched unknowns: lambda",
+    "n_equations": 1,
+    "n_unknowns": 1,
+    "n_matched": 0,
+    "rank_deficiency": 1,
+    "unmatched_equations": [
+      "top-level model equation"
+    ],
+    "unmatched_unknowns": [
+      "lambda"
+    ],
+    "guidance": "The initialization subsystem is structurally singular: the algebraic equations (beyond the state derivatives) cannot be fully matched to unknowns. Check for missing or redundant initial equations, and verify that start values are specified for the right variables.",
+    "determinacy": {
+      "states": 4,
+      "initial_equations": 0,
+      "fixed_start_states": 0,
+      "explicit_initial_conditions": 0,
+      "surplus_over_states": -4,
+      "verdict": "well-posed (remaining states initialize from their start attributes)"
+    }
+  },
+  "determinacy": {
+    "states": 4,
+    "initial_equations": 0,
+    "fixed_start_states": 0,
+    "explicit_initial_conditions": 0,
+    "surplus_over_states": -4,
+    "verdict": "well-posed (remaining states initialize from their start attributes)"
+  }
+}

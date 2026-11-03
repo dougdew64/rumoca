@@ -1,0 +1,35 @@
+{
+  "t_end": 2.0,
+  "n_time_points": 501,
+  "n_variables": 3,
+  "n_states": 0,
+  "has_discontinuities": false,
+  "t_start": 0.0,
+  "t_final": 2.0,
+  "variables": [
+    {
+      "name": "error",
+      "is_state": false,
+      "initial": 0.04761905217665241,
+      "final": 0.04761905217665241,
+      "min": 0.04761905217665241,
+      "max": 0.04761905217665241
+    },
+    {
+      "name": "command",
+      "is_state": false,
+      "initial": 0.4761905217665241,
+      "final": 0.4761905217665241,
+      "min": 0.4761905217665241,
+      "max": 0.4761905217665241
+    },
+    {
+      "name": "measurement",
+      "is_state": false,
+      "initial": 0.9523810435330482,
+      "final": 0.9523810435330482,
+      "min": 0.9523810435330482,
+      "max": 0.9523810435330482
+    }
+  ]
+}

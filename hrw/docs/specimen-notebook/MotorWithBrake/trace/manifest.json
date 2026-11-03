@@ -1,0 +1,61 @@
+{
+  "model": "MotorWithBrake",
+  "specimen": "specimens/MotorWithBrake.mo",
+  "specimen_fnv1a": "194e8b7286cf6c67",
+  "rumoca_rev": "fdcfc248",
+  "rumoca_version": "0.9.20",
+  "stages": {
+    "parse": {
+      "has_ir": true,
+      "note": null
+    },
+    "resolve": {
+      "has_ir": true,
+      "note": null
+    },
+    "instantiate": {
+      "has_ir": true,
+      "note": null
+    },
+    "typecheck": {
+      "has_ir": true,
+      "note": null
+    },
+    "flatten": {
+      "has_ir": true,
+      "note": null
+    },
+    "dae": {
+      "has_ir": true,
+      "note": "4 state(s), 44 algebraic(s), 48 continuous equation(s)"
+    },
+    "structural": {
+      "has_ir": true,
+      "note": "singular"
+    },
+    "index_reduction": {
+      "has_ir": true,
+      "note": "index-reduced from a structurally singular (high-index) system — now solvable"
+    },
+    "initialization": {
+      "has_ir": true,
+      "note": "IC planning failed: structurally singular system: 41 matched out of 44 equations and 44 unknowns; unmatched equations: equation from load, connection equation: emf.flange.phi = load.flange_a.phi, unconnected flow: load.flange_b.tau = 0; unmatched unknowns: src.i, emf.internalSupport.flange.tau, gnd.p.i"
+    },
+    "events": {
+      "has_ir": true,
+      "note": null
+    },
+    "solve_lowering": {
+      "has_ir": true,
+      "note": null
+    }
+  },
+  "simulation": {
+    "simulated": true,
+    "t_end": 2.0,
+    "n_variables": 51,
+    "n_time_points": 501,
+    "n_states": 4,
+    "has_discontinuities": true
+  }
+}
