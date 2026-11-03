@@ -235,24 +235,46 @@ drawn one edge at a time. Station 2's asymmetry, seen from the other side.
 `RcCircuit` is a voltage source, a resistor, a capacitor and a ground. Seven of its equations came
 from the six connection sets.
 
-> **Predict.** How many equations does the whole model have — and of the rest, how many belong to
-> the resistor alone?
+> **Predict.** How many equations does the whole model have — and does the origin text tell you
+> *which component* each one came from?
 
 [Look — RcCircuit → Flatten → Equations](hrw://load/RcCircuit/Flatten/EquationSheet)
 
-**Expected:** 23 equations, of which 16 are `Component equations`, split by origin:
+**Expected:** 23 equations, of which 16 are `Component equations`. The origin text answers the
+second question **no**:
 
 <!-- pane-origins: RcCircuit -->
 
 | origin text | rows |
 |---|---|
-| `equation from R` | 7 |
-| `equation from src` | 4 |
-| `equation from C` | 4 |
-| `equation from gnd` | 1 |
+| `source DAE object` | 16 |
+| `generated DAE object (connection equation)` | 4 |
+| `generated DAE object (flow-balance equation)` | 3 |
 
-Falsified if the total is not 23, or if the resistor contributes fewer than the source and the
-capacitor.
+Falsified if the total is not 23, or if any origin names a component.
+
+> **This station changed on Rumoca 0.10.0, and the change is a fact about the DAE worth having.**
+>
+> It used to read `equation from R` ×7, `equation from src` ×4, `equation from C` ×4,
+> `equation from gnd` ×1 — and the prediction asked how many belonged to the resistor alone,
+> because the pane answered it.
+>
+> **0.10.0 replaced the origin string with a typed provenance** of 24 generation kinds. It
+> records whether an equation came from the **source** or was **generated**, and for a
+> generated one *what made it* — but **not which component instance a source equation came
+> from.** The sixteen are now one undifferentiated group. *(7 + 4 + 4 + 1 = 16, so nothing was
+> recounted; the attribution is simply no longer carried.)*
+>
+> **What you gain is sharper than what you lose, and it is the distinction this lab is about.**
+> The old labels were uniform — everything was `equation from <something>` — so a connection
+> equation and a resistor's constitutive law read alike. Now the pane states outright which
+> equations the compiler *manufactured* while expanding `connect`, and names the two kinds
+> apart: four potential equalities and three flow balances.
+>
+> **And the per-component question is still answerable, just not from the origin column.** Read
+> the equation text: every one of the resistor's seven names an `R.`-prefixed variable. That is
+> the more honest instrument anyway — it reads the equation rather than trusting a label about
+> it, which is the rule `CLAUDE.md` states as *publish Rumoca's own names*.
 
 ### What just happened
 
@@ -260,10 +282,14 @@ A resistor is seven equations. Four of them:
 
 ```
 0 = R.T_heatPort - R.T
-0 = R.R_actual - R.R * (1 + R.alpha * (R.T_heatPort - R.T_ref))
-0 = R.v - R.R_actual * R.i
-0 = R.LossPower - R.v * R.i
+0 = R.R_actual - R.R*(1 + R.alpha*(R.T_heatPort - R.T_ref))
+0 = R.v - R.R_actual*R.i
+0 = R.LossPower - R.v*R.i
 ```
+
+*(Rumoca 0.10.0 prints multiplication without surrounding spaces — `R.v*R.i`, not
+`R.v * R.i`. These lines are copied from the pane, so they changed with it.
+`equation_text_quoted_in_labs_matches_the_traces` is what noticed.)*
 
 Ohm's law here is `v = R_actual·i`, against a resistance computed from a temperature. Nobody
 asked for thermal modelling; MSL's `Resistor` has it, so the model has it.
@@ -306,9 +332,14 @@ instantiated with a prefix. Only seven are new — and those seven determine the
 
 | origin text | rows |
 |---|---|
-| `top-level model equation` | 4 |
+| `source DAE object` | 4 |
 
-Falsified if a connector group appears, or if any equation's origin names a component.
+Falsified if a connector group appears, or if any origin says `generated`.
+
+*(The row read `top-level model equation` before Rumoca 0.10.0. Same four equations — the origin
+vocabulary changed, as the RcCircuit station above explains. The falsification clause moved with
+it: `generated` is now the thing that must not appear, because a model with no `connect` gives the
+compiler nothing to manufacture.)*
 
 ### What just happened
 
