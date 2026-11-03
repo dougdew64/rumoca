@@ -340,6 +340,69 @@ mod tests {
         assert_eq!(frames, vec![99]);
     }
 
+    /// **`spawn_structural_live` really runs the analysis and really
+    /// delivers.** This is the test the three animations' retired
+    /// `live_mode_receives_all_frames` tests point at: spawning and delivery
+    /// are this helper's job now, so one test here covers what three
+    /// animation-level tests used to, and covers it where the code is.
+    ///
+    /// The selector asks for matching steps only, which also pins the part a
+    /// caller depends on: a sink that returns `None` must drop the step rather
+    /// than end the run, so Tarjan and tearing steps passing through do not
+    /// truncate the matching stream.
+    ///
+    /// `SingleInertia` is MSL-free, so no library roots are loaded.
+    #[test]
+    fn a_live_session_runs_the_real_analysis_and_delivers_its_steps() {
+        let specimen = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("specimens/SingleInertia.mo");
+        let Ok(crate::worker::FromWorker::Compiled { dae: Some(dae), .. }) =
+            crate::worker::compile_specimen(&specimen, Vec::new())
+        else {
+            return; // specimen unavailable in this checkout
+        };
+
+        // No frame delay: the stepped delay exists to let egui paint between
+        // frames, and there is no debugger here to hold the thread.
+        let (rx, done) = spawn_structural_live(dae, Duration::from_millis(0), "test-live", |record| {
+            match record {
+                rumoca_phase_structural::StructuralRecord::Matching(matching) => Some(matching),
+                _ => None,
+            }
+        })
+        .expect("the thread must spawn");
+
+        // `wait_for_debugger` sleeps 500 ms before the first step, so this
+        // waits well past that rather than racing it.
+        let mut frames = Vec::new();
+        for _ in 0..200 {
+            frames.extend(rx.try_iter());
+            if done.load(std::sync::atomic::Ordering::Acquire) {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        frames.extend(rx.try_iter());
+
+        assert!(
+            done.load(std::sync::atomic::Ordering::Acquire),
+            "the analysis must finish and say so"
+        );
+        assert!(
+            !frames.is_empty(),
+            "a live session over a real DAE must deliver matching steps"
+        );
+        let last = frames
+            .last()
+            .expect("checked non-empty above")
+            .match_eq
+            .clone();
+        assert!(
+            last.iter().any(Option::is_some),
+            "the last step must show a matching that was actually built: {last:?}"
+        );
+    }
+
     #[test]
     fn frame_delay_propagates_through_clone() {
         // Pushing with a delay calls the anchor, writing LAST_FRAME_INDEX.

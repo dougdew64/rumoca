@@ -49,13 +49,9 @@
 //! yields **up to two passes** under different tear priorities, only one of
 //! which is adopted, which `TearingStep::PlanSelected` names.
 
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::thread;
 
 use eframe::egui;
 
-use crate::live_trace::LiveTrace;
 use rumoca_phase_structural::{StructuralRecord, TearingRecord, TearingStep};
 
 use crate::playback::{Animated, Playback};
@@ -591,7 +587,7 @@ mod tests {
     fn bf(step: TearingStep, tears: &[usize], causal: &[(usize, usize)]) -> BlockFrame {
         BlockFrame {
             block: 0,
-            frame: TearingFrame {
+            frame: TearingRecord {
                 step,
                 tears_so_far: tears.to_vec(),
                 causal_so_far: causal.to_vec(),
@@ -635,7 +631,20 @@ mod tests {
     #[test]
     fn every_step_renders() {
         for step in [
-            TearingStep::Start { n: 3 },
+            TearingStep::BlockStart {
+                ordinal: 0,
+                equations: 3,
+                unknowns: 3,
+            },
+            TearingStep::PassStart {
+                priority: rumoca_phase_structural::TearPriorityKind::CausalUnlocks,
+                n: 3,
+            },
+            TearingStep::PlanSelected {
+                priority: rumoca_phase_structural::TearPriorityKind::VariableDegree,
+                tears: 1,
+                residuals: 1,
+            },
             TearingStep::Torn {
                 variable: 0,
                 appearances: 3,
@@ -719,17 +728,39 @@ mod tests {
         assert_eq!(anim.live_state(false), crate::LiveState::Idle);
     }
 
-    /// End to end on a real coupled block: `walk_blocks` must find
-    /// `ProportionalLoop`'s 3x3 loop and produce a Start, at least one Torn,
-    /// and a Complete — the proof that the block-local translation lines up
-    /// with what the algorithm expects.
+    /// End to end on a real coupled block: the compile must find
+    /// `ProportionalLoop`'s 3x3 loop and report a `BlockStart`, at least one
+    /// `Torn`, and the `PlanSelected` naming the plan it kept — the proof that
+    /// the block-local translation lines up with what the algorithm expects.
+    ///
+    /// **Reads the compile rather than re-tearing.** This called
+    /// `TearingAnimation::record`, which rebuilt incidence, matching, the
+    /// dependency graph and the BLT and then tore every block again; that
+    /// constructor is gone and the steps come from `inspect_structural_report`.
+    /// `ProportionalLoop` is MSL-free, so no library roots are loaded.
     #[test]
-    fn walk_blocks_traces_a_real_algebraic_loop() {
-        let Some(dae) = crate::test_support::dae_for("ProportionalLoop") else {
+    fn a_real_algebraic_loop_is_traced_end_to_end() {
+        let specimen = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("specimens/ProportionalLoop.mo");
+        let Ok(compiled) = crate::worker::compile_specimen(&specimen, Vec::new()) else {
             return; // specimen unavailable in this checkout
         };
-        let anim = TearingAnimation::record(&dae);
-        assert!(!anim.is_empty(), "ProportionalLoop has a coupled block");
+        let crate::worker::FromWorker::Compiled {
+            stages,
+            tearing_frames,
+            ..
+        } = compiled
+        else {
+            panic!("ProportionalLoop must reach structural analysis");
+        };
+        let report = stages
+            .get(crate::worker::StageKind::Structural)
+            .value
+            .clone()
+            .expect("the Structural stage published a report");
+
+        let anim = TearingAnimation::from_captured(&report, &tearing_frames)
+            .expect("ProportionalLoop has a coupled block with tearing steps");
         assert_eq!(anim.blocks.len(), 1, "exactly one algebraic loop");
         assert_eq!(anim.blocks[0].unknowns.len(), 3, "a 3x3 loop");
 
@@ -739,17 +770,31 @@ mod tests {
             .iter()
             .map(|bf| &bf.frame.step)
             .collect();
+        // The block announces itself first — that ordinal is what keeps a
+        // block's tears off another block's rows.
         assert!(
-            matches!(steps.first(), Some(TearingStep::Start { n: 3 })),
+            matches!(
+                steps.first(),
+                Some(TearingStep::BlockStart {
+                    ordinal: 0,
+                    unknowns: 3,
+                    ..
+                })
+            ),
             "{steps:?}"
         );
         assert!(
             steps.iter().any(|s| matches!(s, TearingStep::Torn { .. })),
             "something must get torn: {steps:?}",
         );
+        // **`PlanSelected`, not `Complete`.** One loop yields up to two passes
+        // and each successful pass reports its own `Complete`; only the
+        // selection says which plan the compiler kept, so it is the last word.
         assert!(
-            matches!(steps.last(), Some(TearingStep::Complete { .. })),
-            "{steps:?}"
+            steps
+                .iter()
+                .any(|s| matches!(s, TearingStep::PlanSelected { .. })),
+            "the adopted plan must be named: {steps:?}",
         );
     }
 }
