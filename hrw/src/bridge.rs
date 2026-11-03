@@ -2975,10 +2975,26 @@ mod tests {
         fs::write(&file, src).unwrap();
 
         // A tree where the leaf `name` has no location; its parent component does.
+        //
+        // **The fixture carries `start_line`/`start_column`, not `file_name`** —
+        // updated 2026-11-03. v0.10.0's `Location` dropped `file_name` and gained
+        // the line/column pair, and `is_location` was changed to match; this
+        // fixture kept the 0.9.20 shape, so the recognizer rejected it and the
+        // ascent found nothing. **The fixture was wrong, not the ascent** — which is
+        // why it is rebuilt rather than the recognizer loosened. A recognizer that
+        // accepted either shape would have hidden that the field is gone.
+        //
+        // The line/column values are the real ones for byte 10 of `src`: line 2,
+        // column 3, since `flange_a` follows two spaces on the second line.
         let root = json!({
             "components": [
                 {
-                    "location": { "start": start, "end": end, "file_name": "M.mo" },
+                    "location": {
+                        "start": start,
+                        "end": end,
+                        "start_line": 2,
+                        "start_column": 3
+                    },
                     "name": "flange_a"
                 }
             ]

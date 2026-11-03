@@ -14,7 +14,6 @@
 //!
 //! Controls: play/pause, step forward/back, reset, speed slider.
 
-
 use eframe::egui;
 
 use rumoca_phase_structural::{MatchingRecord, MatchingStep, StructuralRecord};
@@ -204,7 +203,6 @@ impl MatchingAnimation {
     // preserves row and column order, is covered by `fidelity::check_f2`,
     // which compares the published unknown names, row labels and per-row
     // column sets against a fresh `build_incidence` **as ordered sequences**.
-
 
     /// Start a live debug session: spawn a thread that runs the matching
     /// algorithm with a `LiveTrace` producer, then return an animation that
@@ -834,10 +832,8 @@ mod tests {
     /// drawn on another.
     fn recorded_animation() -> MatchingAnimation {
         let mat = IncidenceMatrix::from_report(&sample_report()).expect("3x3 sample matrix");
-        let frame = |step: MatchingStep, match_eq: Vec<Option<usize>>| MatchingRecord {
-            step,
-            match_eq,
-        };
+        let frame =
+            |step: MatchingStep, match_eq: Vec<Option<usize>>| MatchingRecord { step, match_eq };
         let frames = vec![
             frame(
                 MatchingStep::Start {
@@ -856,10 +852,7 @@ mod tests {
                 MatchingStep::Assign { eq: 1, var: 1 },
                 vec![Some(0), Some(1), None],
             ),
-            frame(
-                MatchingStep::TryEquation(2),
-                vec![Some(0), Some(1), None],
-            ),
+            frame(MatchingStep::TryEquation(2), vec![Some(0), Some(1), None]),
             frame(
                 MatchingStep::Assign { eq: 2, var: 2 },
                 vec![Some(0), Some(1), Some(2)],
@@ -1011,6 +1004,65 @@ mod tests {
         assert_eq!(anim.position().0, 0);
     }
 
+    /// **`"No matching trace available."` cannot be reached, and this pins why.**
+    ///
+    /// Written 2026-11-03 while trying to *cover* that message, which turned out to
+    /// be impossible: `MatchingAnimation` has exactly two constructors and neither
+    /// can produce one for which `is_empty()` is true.
+    ///
+    /// - `from_captured_frames` returns `None` on an empty frame list by design —
+    ///   `app.rs` reports the absence instead of the pane re-deriving anything — so
+    ///   every recorded animation that exists has at least one frame.
+    /// - `start_live` builds `Playback::live`, and `is_empty()` requires
+    ///   `live_rx.is_none()`. `sync_live` never drops the receiver, so a live
+    ///   animation stays non-empty even after the session finishes with no frames.
+    ///
+    /// **So the branch is dead and the string is a claim the pane can never make.**
+    /// That is the C17 class, which `every_absence_message_a_pane_shows_is_named_by_a_test`
+    /// accepts rather than tests — on the reasoning that a test on such a string
+    /// would pass forever regardless of what the pane does.
+    ///
+    /// **This test exists because that reasoning was only ever written in prose.**
+    /// An unreachability argument is itself checkable, and if a later change gives
+    /// either constructor an empty path, the message becomes reachable and untested
+    /// at the same moment — the exact combination the budget is there to prevent.
+    /// This fails then, and the fix at that point is a real rendering test.
+    ///
+    /// *Deliberately asserts the invariant rather than the label*: no `Harness`,
+    /// because there is no state in which to render one.
+    #[test]
+    fn the_no_trace_label_stays_unreachable() {
+        let mat = IncidenceMatrix::from_report(&sample_report()).expect("3x3 sample matrix");
+
+        assert!(
+            MatchingAnimation::from_captured_frames(&mat, &[]).is_none(),
+            "an empty frame list must yield no animation at all \u{2014} if it now \
+             yields one, `No matching trace available.` has become reachable and \
+             needs a rendering test",
+        );
+
+        // A live session that finished without delivering a frame: the nearest thing
+        // to empty that can actually exist.
+        let (tx, rx) = std::sync::mpsc::channel::<MatchingRecord>();
+        drop(tx);
+        let done = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
+        let mut anim = MatchingAnimation {
+            playback: Playback::live(rx, done, FRAME_INTERVAL),
+            n_eq: mat.n_eq(),
+            n_var: mat.n_var(),
+            equation_names: mat.equation_texts().to_vec(),
+            unknown_names: mat.unknown_names().to_vec(),
+            rows: mat.rows().to_vec(),
+        };
+        anim.playback.sync_live();
+        assert!(
+            !anim.is_empty(),
+            "a finished, frameless live session must still not read as empty \u{2014} \
+             `is_empty()` requires the receiver to be gone, and `sync_live` does not \
+             drop it. If that changed, the dead branch above is now live",
+        );
+    }
+
     #[test]
     fn step_description_produces_readable_text() {
         let eq_names = vec!["eq_a".to_string()];
@@ -1068,10 +1120,10 @@ mod tests {
         //
         // `SingleInertia` is MSL-free, so no library roots are loaded and this
         // stays out of the slow lane.
-        let specimen = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("specimens/SingleInertia.mo");
-        let compiled = crate::worker::compile_specimen(&specimen, Vec::new())
-            .expect("SingleInertia compiles");
+        let specimen =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specimens/SingleInertia.mo");
+        let compiled =
+            crate::worker::compile_specimen(&specimen, Vec::new()).expect("SingleInertia compiles");
         let crate::worker::FromWorker::Compiled {
             matching_frames, ..
         } = compiled
