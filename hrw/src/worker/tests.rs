@@ -1395,21 +1395,12 @@ fn a_library_compile_leaves_the_session_usable_for_specimens() {
     );
 }
 
-/// The specimens F1 re-derives on. Shared by the three checks so a model
-/// added here is covered by all of them at once.
-#[cfg(test)]
-const F1_MODELS: &[&str] = &[
-    "ProportionalLoop",
-    "MixedLoop",
-    "TwoLoops",
-    "NonlinearLoop",
-    "Drivetrain",
-    "RcCircuit",
-    "SingleInertia",
-    "CapacitorLoop",
-    "BouncingBall",
-    "MotorWithBrake",
-];
+// `F1_MODELS` is deleted with the three F1 re-derivation checks it served.
+//
+// **`fidelity::MODELS` is the sole corpus list now**, and its own doc said it
+// was "deliberately the same list F1 uses, so a model added for one check is
+// covered by all of them" — which was true of two lists and is now true of
+// one. A specimen added for any check belongs there.
 
 // **Eight tests are retired here, and each lost its subject rather than its
 // value.** Recorded together because the pattern matters more than any one of
