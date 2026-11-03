@@ -11,7 +11,7 @@
 
 use std::fmt::Write as _;
 
-use rumoca_core::{Expression, OpBinary, Subscript};
+use rumoca_core::{ArrayConstructor, Expression, OpBinary, StringConversionFormat, Subscript};
 use rumoca_ir_dae as dae;
 
 fn precedence(op: &OpBinary) -> u8 {
@@ -157,6 +157,42 @@ fn format_expr_into(expr: &Expression, out: &mut String) {
             }
             out.push(')');
         }
+        // **New in 0.10.0, and deliberately not folded into `FunctionCall`.**
+        // `String(x, …)` is the predefined conversion operator of MLS §3.7.1, and
+        // 0.10.0 gives it its own variant so the resolved overload stays explicit
+        // rather than hiding behind a function name. It renders as the operator
+        // the modeller wrote, with its named arguments in MLS order — anything
+        // shorter (say, just the value) would show a conversion that discards the
+        // formatting it was given.
+        Expression::StringConversion { value, format, .. } => {
+            out.push_str("String(");
+            format_expr_into(value, out);
+            match format {
+                StringConversionFormat::Options {
+                    minimum_length,
+                    left_justified,
+                    significant_digits,
+                } => {
+                    for (name, argument) in [
+                        ("minimumLength", minimum_length),
+                        ("leftJustified", left_justified),
+                        ("significantDigits", significant_digits),
+                    ] {
+                        if let Some(argument) = argument {
+                            out.push_str(", ");
+                            out.push_str(name);
+                            out.push_str(" = ");
+                            format_expr_into(argument, out);
+                        }
+                    }
+                }
+                StringConversionFormat::Format { value } => {
+                    out.push_str(", format = ");
+                    format_expr_into(value, out);
+                }
+            }
+            out.push(')');
+        }
         Expression::Literal { value, .. } => {
             out.push_str(&value.to_string());
         }
@@ -178,15 +214,29 @@ fn format_expr_into(expr: &Expression, out: &mut String) {
             out.push_str(" else ");
             format_expr_into(else_branch, out);
         }
-        Expression::Array { elements, .. } => {
-            out.push('{');
+        // **Three different Modelica constructors, and HRW used to render all of
+        // them as one.** Before the v0.10.0 rebase this arm ignored the variant's
+        // `is_matrix: bool` and always emitted `{…}`, so `[1, 2; 3, 4]` came out as
+        // `{1, 2, 3, 4}` — a different expression, silently. 0.10.0 replaces the
+        // bool with [`ArrayConstructor`], which names all three cases (MLS §10.4),
+        // so each one can be rendered as what it is.
+        Expression::Array { elements, kind, .. } => {
+            let (open, separator, close) = match kind {
+                // `{a, b}` adds an outer element dimension.
+                ArrayConstructor::Array => ('{', ", ", '}'),
+                // `[a, b]` concatenates along dimension 2.
+                ArrayConstructor::Horizontal => ('[', ", ", ']'),
+                // `[a; b]` concatenates along dimension 1.
+                ArrayConstructor::Vertical => ('[', "; ", ']'),
+            };
+            out.push(open);
             for (i, e) in elements.iter().enumerate() {
                 if i > 0 {
-                    out.push_str(", ");
+                    out.push_str(separator);
                 }
                 format_expr_into(e, out);
             }
-            out.push('}');
+            out.push(close);
         }
         Expression::Tuple { elements, .. } => {
             out.push('(');
@@ -548,10 +598,78 @@ mod tests {
     fn array_expression() {
         let e = Expression::Array {
             elements: vec![lit_int(1), lit_int(2), lit_int(3)],
-            is_matrix: false,
+            kind: ArrayConstructor::Array,
             span: span(),
         };
         assert_eq!(format_expr(&e), "{1, 2, 3}");
+    }
+
+    /// The three array constructors render as three different expressions.
+    ///
+    /// This is a regression guard for a defect the v0.10.0 rebase exposed: the
+    /// arm used to ignore the old `is_matrix` flag and emit `{…}` for everything,
+    /// so a matrix constructor was displayed as an array constructor. Nothing
+    /// caught it because the output was still well-formed Modelica — just a
+    /// different expression from the one in the model.
+    #[test]
+    fn each_array_constructor_renders_as_itself() {
+        let elements = || vec![lit_int(1), lit_int(2)];
+        let rendered = |kind| {
+            format_expr(&Expression::Array {
+                elements: elements(),
+                kind,
+                span: span(),
+            })
+        };
+        assert_eq!(rendered(ArrayConstructor::Array), "{1, 2}");
+        assert_eq!(rendered(ArrayConstructor::Horizontal), "[1, 2]");
+        assert_eq!(rendered(ArrayConstructor::Vertical), "[1; 2]");
+    }
+
+    /// `String(…)` keeps the formatting arguments it was given.
+    ///
+    /// Both MLS §3.7.1 forms are covered, and only the arguments actually
+    /// present are emitted — a `None` must not become `minimumLength = `.
+    #[test]
+    fn string_conversion_renders_its_format_arguments() {
+        use rumoca_core::DefId;
+
+        let with_options = Expression::StringConversion {
+            declaration: DefId::new(0),
+            value: Box::new(var("x")),
+            format: StringConversionFormat::Options {
+                minimum_length: Some(Box::new(lit_int(8))),
+                left_justified: None,
+                significant_digits: Some(Box::new(lit_int(3))),
+            },
+            span: span(),
+        };
+        assert_eq!(
+            format_expr(&with_options),
+            "String(x, minimumLength = 8, significantDigits = 3)"
+        );
+
+        let bare = Expression::StringConversion {
+            declaration: DefId::new(0),
+            value: Box::new(var("x")),
+            format: StringConversionFormat::Options {
+                minimum_length: None,
+                left_justified: None,
+                significant_digits: None,
+            },
+            span: span(),
+        };
+        assert_eq!(format_expr(&bare), "String(x)");
+
+        let formatted = Expression::StringConversion {
+            declaration: DefId::new(0),
+            value: Box::new(var("x")),
+            format: StringConversionFormat::Format {
+                value: Box::new(var("fmt")),
+            },
+            span: span(),
+        };
+        assert_eq!(format_expr(&formatted), "String(x, format = fmt)");
     }
 
     #[test]
@@ -559,6 +677,11 @@ mod tests {
         let e = Expression::FieldAccess {
             base: Box::new(var("motor")),
             field: "torque".to_string(),
+            // New in 0.10.0: the field's resolved declaration travels with the
+            // access. The renderer does not use it — it prints `base.field` —
+            // but the variant now requires it, and a placeholder here is honest
+            // because nothing in this test depends on the identity resolving.
+            field_def_id: rumoca_core::DefId::new(0),
             span: span(),
         };
         assert_eq!(format_expr(&e), "motor.torque");
