@@ -419,13 +419,26 @@ fn maximize_preserved_preferences(
             &mut visits,
             &locked_preferences,
         );
-        let step = if claimed {
+        // **Emitted in each branch rather than through a `step` variable.** A
+        // consumer that maps a step kind to the source line emitting it — HRW's
+        // matching ledger does, for the live lab's breakpoints — can only see
+        // the variant when it is named at the call. Computing it first left
+        // both of these with no emit site at all, so the generated reference
+        // listed every other step and silently omitted these two.
+        if claimed {
             locked_preferences[eq] = true;
-            MatchingStep::ClaimedPreference { eq, var: preferred }
+            emit(
+                observer,
+                MatchingStep::ClaimedPreference { eq, var: preferred },
+                matching.match_eq,
+            );
         } else {
-            MatchingStep::PreferenceUnavailable { eq, var: preferred }
-        };
-        emit(observer, step, matching.match_eq);
+            emit(
+                observer,
+                MatchingStep::PreferenceUnavailable { eq, var: preferred },
+                matching.match_eq,
+            );
+        }
     }
 }
 
