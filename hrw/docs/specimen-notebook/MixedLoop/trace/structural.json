@@ -4,27 +4,27 @@
   "coupled_block_count": 1,
   "matching": [
     {
-      "equation": "f_x[0] (top-level model equation)",
+      "equation": "f_x[0] (setpoint = sensorGain * reference)",
       "id": "f_x[0]",
       "unknown": "setpoint"
     },
     {
-      "equation": "f_x[1] (top-level model equation)",
+      "equation": "f_x[1] (error = setpoint - measurement)",
       "id": "f_x[1]",
       "unknown": "measurement"
     },
     {
-      "equation": "f_x[2] (top-level model equation)",
+      "equation": "f_x[2] (command = controllerGain * error)",
       "id": "f_x[2]",
       "unknown": "error"
     },
     {
-      "equation": "f_x[3] (top-level model equation)",
+      "equation": "f_x[3] (measurement = plantGain * command)",
       "id": "f_x[3]",
       "unknown": "command"
     },
     {
-      "equation": "f_x[4] (top-level model equation)",
+      "equation": "f_x[4] (result = outputGain * measurement)",
       "id": "f_x[4]",
       "unknown": "result"
     }
@@ -33,7 +33,7 @@
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[0] (top-level model equation)",
+      "equation": "f_x[0] (setpoint = sensorGain * reference)",
       "id": "f_x[0]",
       "unknown": "setpoint"
     },
@@ -41,9 +41,9 @@
       "kind": "coupled",
       "size": 3,
       "equations": [
-        "f_x[3] (top-level model equation)",
-        "f_x[2] (top-level model equation)",
-        "f_x[1] (top-level model equation)"
+        "f_x[3] (measurement = plantGain * command)",
+        "f_x[2] (command = controllerGain * error)",
+        "f_x[1] (error = setpoint - measurement)"
       ],
       "ids": [
         "f_x[3]",
@@ -60,19 +60,19 @@
           "command"
         ],
         "residual_equations": [
-          "f_x[1] (top-level model equation)"
+          "f_x[1] (error = setpoint - measurement)"
         ],
         "residual_equation_ids": [
           "f_x[1]"
         ],
         "causal_sequence": [
           {
-            "equation": "f_x[2] (top-level model equation)",
+            "equation": "f_x[2] (command = controllerGain * error)",
             "id": "f_x[2]",
             "variable": "error"
           },
           {
-            "equation": "f_x[3] (top-level model equation)",
+            "equation": "f_x[3] (measurement = plantGain * command)",
             "id": "f_x[3]",
             "variable": "measurement"
           }
@@ -82,7 +82,7 @@
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[4] (top-level model equation)",
+      "equation": "f_x[4] (result = outputGain * measurement)",
       "id": "f_x[4]",
       "unknown": "result"
     }
@@ -99,49 +99,49 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0] (top-level model equation)",
+        "equation": "f_x[0] (setpoint = sensorGain * reference)",
         "id": "f_x[0]",
         "unknowns": [
           0
         ],
-        "equation_text": "setpoint - sensorGain * reference"
+        "equation_text": "0 = setpoint - sensorGain*reference"
       },
       {
-        "equation": "f_x[1] (top-level model equation)",
+        "equation": "f_x[1] (error = setpoint - measurement)",
         "id": "f_x[1]",
         "unknowns": [
           0,
           1,
           3
         ],
-        "equation_text": "error - (setpoint - measurement)"
+        "equation_text": "0 = error - (setpoint - measurement)"
       },
       {
-        "equation": "f_x[2] (top-level model equation)",
+        "equation": "f_x[2] (command = controllerGain * error)",
         "id": "f_x[2]",
         "unknowns": [
           1,
           2
         ],
-        "equation_text": "command - controllerGain * error"
+        "equation_text": "0 = command - controllerGain*error"
       },
       {
-        "equation": "f_x[3] (top-level model equation)",
+        "equation": "f_x[3] (measurement = plantGain * command)",
         "id": "f_x[3]",
         "unknowns": [
           2,
           3
         ],
-        "equation_text": "measurement - plantGain * command"
+        "equation_text": "0 = measurement - plantGain*command"
       },
       {
-        "equation": "f_x[4] (top-level model equation)",
+        "equation": "f_x[4] (result = outputGain * measurement)",
         "id": "f_x[4]",
         "unknowns": [
           3,
           4
         ],
-        "equation_text": "result - outputGain * measurement"
+        "equation_text": "0 = result - outputGain*measurement"
       }
     ]
   }

@@ -2,8 +2,8 @@
   "model": "UnbalancedShaft",
   "specimen": "specimens/UnbalancedShaft.mo",
   "specimen_fnv1a": "c1283a6cc791ba0e",
-  "rumoca_rev": "fdcfc248",
-  "rumoca_version": "0.9.20",
+  "rumoca_rev": "739d724e",
+  "rumoca_version": "0.10.0",
   "stages": {
     "parse": {
       "has_ir": true,
@@ -27,7 +27,7 @@
     },
     "dae": {
       "has_ir": true,
-      "note": "unbalanced model: 2 equations, 3 unknowns (balance = -1)"
+      "note": "unbalanced model: 2 equations, 3 unknowns (balance = -1); unknowns[state=2 algebraic=1 output=0 discrete_real=0 discrete_value=0] equations[continuous=2 discrete_real=0 b1c_definition=0]  (1 diagnostic(s))"
     },
     "structural": {
       "has_ir": false,

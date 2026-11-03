@@ -4,12 +4,12 @@
   "coupled_block_count": 0,
   "matching": [
     {
-      "equation": "f_x[0] (top-level model equation)",
+      "equation": "f_x[0] (der(h) = v)",
       "id": "f_x[0]",
       "unknown": "der(h)"
     },
     {
-      "equation": "f_x[1] (top-level model equation)",
+      "equation": "f_x[1] (der(v) = -g)",
       "id": "f_x[1]",
       "unknown": "der(v)"
     }
@@ -18,14 +18,14 @@
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[0] (top-level model equation)",
+      "equation": "f_x[0] (der(h) = v)",
       "id": "f_x[0]",
       "unknown": "der(h)"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[1] (top-level model equation)",
+      "equation": "f_x[1] (der(v) = -g)",
       "id": "f_x[1]",
       "unknown": "der(v)"
     }
@@ -39,20 +39,20 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0] (top-level model equation)",
+        "equation": "f_x[0] (der(h) = v)",
         "id": "f_x[0]",
         "unknowns": [
           0
         ],
-        "equation_text": "der(h) - v"
+        "equation_text": "0 = der(h) - v"
       },
       {
-        "equation": "f_x[1] (top-level model equation)",
+        "equation": "f_x[1] (der(v) = -g)",
         "id": "f_x[1]",
         "unknowns": [
           1
         ],
-        "equation_text": "der(v) - -g"
+        "equation_text": "0 = der(v) - -g"
       }
     ]
   }

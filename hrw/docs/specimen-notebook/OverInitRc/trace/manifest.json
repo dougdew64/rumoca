@@ -2,8 +2,8 @@
   "model": "OverInitRc",
   "specimen": "specimens/OverInitRc.mo",
   "specimen_fnv1a": "08e4ea0deefc0375",
-  "rumoca_rev": "fdcfc248",
-  "rumoca_version": "0.9.20",
+  "rumoca_rev": "739d724e",
+  "rumoca_version": "0.10.0",
   "stages": {
     "parse": {
       "has_ir": true,
@@ -34,16 +34,16 @@
       "note": null
     },
     "index_reduction": {
-      "has_ir": true,
-      "note": "already index-1 — the reduction funnel is a no-op here (same as the Structural tab)"
+      "has_ir": false,
+      "note": "Rumoca ran index reduction successfully; HRW cannot display it yet. On Rumoca 0.10.0 the ten-step dummy-derivative funnel became two fixed-point lanes with a candidate/attempt/selection protocol, and the DAE became immutable, so this pane is being rebuilt against the new model rather than shown in the old vocabulary. This is an HRW gap, not a compiler problem."
     },
     "initialization": {
-      "has_ir": true,
-      "note": "OVER-DETERMINED initialization: 2 explicit initial condition(s) (2 initial equation(s) + 0 fixed start(s)) for 1 state(s) — 1 too many; conflicting / redundant ICs"
+      "has_ir": false,
+      "note": "Rumoca ran initialization successfully; HRW cannot display it yet. On Rumoca 0.10.0 the IC plan's ordered IcBlock solve sequence was replaced by initial_pins, which seeds one value per state and projects the algebraic unknowns, so this pane is being rebuilt against the new model rather than shown in the old vocabulary. This is an HRW gap, not a compiler problem."
     },
     "events": {
-      "has_ir": true,
-      "note": null
+      "has_ir": false,
+      "note": "Rumoca ran the events phase successfully; HRW cannot display it yet. On Rumoca 0.10.0 an event condition became a boolean algebra (Initial, Always, Relation, Discrete, Clock, Not, And, Or, AnyRise) rather than an equation, and a root became a relation paired with its activation, so this pane is being rebuilt against the new model rather than shown in the old vocabulary. This is an HRW gap, not a compiler problem."
     },
     "solve_lowering": {
       "has_ir": true,
@@ -51,11 +51,7 @@
     }
   },
   "simulation": {
-    "simulated": true,
-    "t_end": 2.0,
-    "n_variables": 23,
-    "n_time_points": 501,
-    "n_states": 1,
-    "has_discontinuities": false
+    "simulated": false,
+    "error": "simulation failed: solve-IR evaluation failed: initial variable projection did not satisfy the complete residual system: max selected residual row=1 original_row=1 owner=surplus-check(every coordinate this row reads is determined elsewhere, so the row is an MLS 3.6 §8.6 consistency check the model does not satisfy) value=5.000000e1 norm=5.000000e1"
   }
 }

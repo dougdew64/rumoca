@@ -3,14 +3,14 @@
     "n_eq": 14,
     "n_var": 14,
     "unknown_names": [
-      "der(C.v)",
-      "src.v",
-      "C.i",
       "src.i",
+      "src.v",
       "src.p.v",
       "src.p.i",
       "src.n.v",
       "src.n.i",
+      "C.i",
+      "der(C.v)",
       "C.p.v",
       "C.p.i",
       "C.n.v",
@@ -20,207 +20,211 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0] (equation from src)",
+        "equation": "f_x[0] (0 = p.i + n.i)",
         "id": "f_x[0]",
-        "unknowns": [
-          5,
-          7
-        ],
-        "equation_text": "0 - (src.p.i + src.n.i)"
-      },
-      {
-        "equation": "f_x[1] (equation from src)",
-        "id": "f_x[1]",
         "unknowns": [
           3,
           5
         ],
-        "equation_text": "src.i - src.p.i"
+        "equation_text": "0 = 0 - (src.p.i + src.n.i)"
       },
       {
-        "equation": "f_x[2] (equation from src)",
+        "equation": "f_x[1] (i = p.i)",
+        "id": "f_x[1]",
+        "unknowns": [
+          0,
+          3
+        ],
+        "equation_text": "0 = src.i - src.p.i"
+      },
+      {
+        "equation": "f_x[2] (v = p.v - n.v)",
         "id": "f_x[2]",
         "unknowns": [
           1,
-          4,
-          6
+          2,
+          4
         ],
-        "equation_text": "src.v - (src.p.v - src.n.v)"
+        "equation_text": "0 = src.v - (src.p.v - src.n.v)"
       },
       {
-        "equation": "f_x[3] (equation from src)",
+        "equation": "f_x[3] (v = V)",
         "id": "f_x[3]",
         "unknowns": [
           1
         ],
-        "equation_text": "src.v - src.V"
+        "equation_text": "0 = src.v - src.V"
       },
       {
-        "equation": "f_x[4] (equation from C)",
+        "equation": "f_x[4] (0 = p.i + n.i)",
         "id": "f_x[4]",
         "unknowns": [
           9,
           11
         ],
-        "equation_text": "0 - (C.p.i + C.n.i)"
+        "equation_text": "0 = 0 - (C.p.i + C.n.i)"
       },
       {
-        "equation": "f_x[5] (equation from C)",
+        "equation": "f_x[5] (i = p.i)",
         "id": "f_x[5]",
         "unknowns": [
-          2,
+          6,
           9
         ],
-        "equation_text": "C.i - C.p.i"
+        "equation_text": "0 = C.i - C.p.i"
       },
       {
-        "equation": "f_x[6] (equation from C)",
+        "equation": "f_x[6] (v = p.v - n.v)",
         "id": "f_x[6]",
         "unknowns": [
           8,
           10
         ],
-        "equation_text": "C.v - (C.p.v - C.n.v)"
+        "equation_text": "0 = C.v - (C.p.v - C.n.v)"
       },
       {
-        "equation": "f_x[7] (equation from C)",
+        "equation": "f_x[7] (i = C*der(v))",
         "id": "f_x[7]",
         "unknowns": [
-          0
+          6,
+          7
         ],
-        "equation_text": "C.i - C.C * der(C.v)"
+        "equation_text": "0 = C.i - C.C*der(C.v)"
       },
       {
-        "equation": "f_x[8] (equation from gnd)",
+        "equation": "f_x[8] (p.v = 0)",
         "id": "f_x[8]",
         "unknowns": [
           12
         ],
-        "equation_text": "gnd.p.v - 0"
+        "equation_text": "0 = gnd.p.v - 0"
       },
       {
-        "equation": "f_x[9] (flow sum equation: src.p.i + C.p.i = 0)",
+        "equation": "f_x[9] (SI.Current i)",
         "id": "f_x[9]",
         "unknowns": [
-          5,
+          3,
           9
         ],
-        "equation_text": "src.p.i + C.p.i"
+        "equation_text": "0 = src.p.i + C.p.i"
       },
       {
-        "equation": "f_x[10] (flow sum equation: src.n.i + C.n.i + gnd.p.i = 0)",
+        "equation": "f_x[10] (SI.Current i)",
         "id": "f_x[10]",
         "unknowns": [
-          7,
+          5,
           11,
           13
         ],
-        "equation_text": "src.n.i + C.n.i + gnd.p.i"
+        "equation_text": "0 = src.n.i + C.n.i + gnd.p.i"
       },
       {
-        "equation": "f_x[11] (connection equation: src.p.v = C.p.v)",
+        "equation": "f_x[11] (SI.ElectricPotential v)",
         "id": "f_x[11]",
         "unknowns": [
-          4,
+          2,
           8
         ],
-        "equation_text": "src.p.v - C.p.v"
+        "equation_text": "0 = src.p.v - C.p.v"
       },
       {
-        "equation": "f_x[12] (connection equation: src.n.v = C.n.v)",
+        "equation": "f_x[12] (SI.ElectricPotential v)",
         "id": "f_x[12]",
         "unknowns": [
-          6,
+          4,
           10
         ],
-        "equation_text": "src.n.v - C.n.v"
+        "equation_text": "0 = src.n.v - C.n.v"
       },
       {
-        "equation": "f_x[13] (connection equation: C.n.v = gnd.p.v)",
+        "equation": "f_x[13] (SI.ElectricPotential v)",
         "id": "f_x[13]",
         "unknowns": [
           10,
           12
         ],
-        "equation_text": "C.n.v - gnd.p.v"
+        "equation_text": "0 = C.n.v - gnd.p.v"
       }
     ]
   },
   "matching": [
     {
-      "equation": "f_x[0] (equation from src)",
+      "equation": "f_x[0] (0 = p.i + n.i)",
       "id": "f_x[0]",
       "unknown": "src.p.i"
     },
     {
-      "equation": "f_x[1] (equation from src)",
+      "equation": "f_x[1] (i = p.i)",
       "id": "f_x[1]",
       "unknown": "src.i"
     },
     {
-      "equation": "f_x[2] (equation from src)",
+      "equation": "f_x[2] (v = p.v - n.v)",
       "id": "f_x[2]",
       "unknown": "src.p.v"
     },
     {
-      "equation": "f_x[3] (equation from src)",
+      "equation": "f_x[3] (v = V)",
       "id": "f_x[3]",
       "unknown": "src.v"
     },
     {
-      "equation": "f_x[4] (equation from C)",
+      "equation": "f_x[4] (0 = p.i + n.i)",
       "id": "f_x[4]",
       "unknown": "C.n.i"
     },
     {
-      "equation": "f_x[5] (equation from C)",
+      "equation": "f_x[5] (i = p.i)",
       "id": "f_x[5]",
       "unknown": "C.i"
     },
     {
-      "equation": "f_x[6] (equation from C)",
+      "equation": "f_x[6] (v = p.v - n.v)",
       "id": "f_x[6]",
       "unknown": "C.n.v"
     },
     {
-      "equation": "f_x[7] (equation from C)",
+      "equation": "f_x[7] (i = C*der(v))",
       "id": "f_x[7]",
       "unknown": "der(C.v)"
     },
     {
-      "equation": "f_x[8] (equation from gnd)",
+      "equation": "f_x[8] (p.v = 0)",
       "id": "f_x[8]",
       "unknown": "gnd.p.v"
     },
     {
-      "equation": "f_x[9] (flow sum equation: src.p.i + C.p.i = 0)",
+      "equation": "f_x[9] (SI.Current i)",
       "id": "f_x[9]",
       "unknown": "C.p.i"
     },
     {
-      "equation": "f_x[10] (flow sum equation: src.n.i + C.n.i + gnd.p.i = 0)",
+      "equation": "f_x[10] (SI.Current i)",
       "id": "f_x[10]",
       "unknown": "src.n.i"
     },
     {
-      "equation": "f_x[11] (connection equation: src.p.v = C.p.v)",
+      "equation": "f_x[11] (SI.ElectricPotential v)",
       "id": "f_x[11]",
       "unknown": "C.p.v"
     },
     {
-      "equation": "f_x[12] (connection equation: src.n.v = C.n.v)",
+      "equation": "f_x[12] (SI.ElectricPotential v)",
       "id": "f_x[12]",
       "unknown": "src.n.v"
     }
   ],
   "error": {
     "kind": "singular",
-    "message": "structurally singular system: 13 matched out of 14 equations and 14 unknowns; unmatched equations: f_x[13]; unmatched unknowns: gnd.p.i",
+    "message": "structurally singular system: 13 matched out of 14 equations and 14 unknowns",
     "n_equations": 14,
     "n_unknowns": 14,
     "n_matched": 13,
     "rank_deficiency": 1,
     "unmatched_equations": [
+      "f_x[13] (SI.ElectricPotential v)"
+    ],
+    "unmatched_equation_ids": [
       "f_x[13]"
     ],
     "unmatched_unknowns": [
@@ -239,6 +243,19 @@
         }
       }
     ],
+    "over_determined_block": {
+      "equations": 7,
+      "unknowns": 6,
+      "sample": [
+        "f_x[2]",
+        "f_x[3]",
+        "f_x[6]",
+        "f_x[8]",
+        "f_x[11]",
+        "f_x[12]",
+        "f_x[13]"
+      ]
+    },
     "guidance": "The maximum matching could not pair every equation with a unique unknown. Each unmatched unknown is a variable no equation determines; `unmatched_unknown_locations` gives the source line that declares it. If the Index Reduction stage also reports singular, the model is genuinely ill-posed rather than merely high-index."
   }
 }

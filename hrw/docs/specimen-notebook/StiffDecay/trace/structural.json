@@ -4,12 +4,12 @@
   "coupled_block_count": 0,
   "matching": [
     {
-      "equation": "f_x[0] (top-level model equation)",
+      "equation": "f_x[0] (der(slow) = -slowRate * slow)",
       "id": "f_x[0]",
       "unknown": "der(slow)"
     },
     {
-      "equation": "f_x[1] (top-level model equation)",
+      "equation": "f_x[1] (der(fast) = -fastRate * fast)",
       "id": "f_x[1]",
       "unknown": "der(fast)"
     }
@@ -18,14 +18,14 @@
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[0] (top-level model equation)",
+      "equation": "f_x[0] (der(slow) = -slowRate * slow)",
       "id": "f_x[0]",
       "unknown": "der(slow)"
     },
     {
       "kind": "scalar",
       "size": 1,
-      "equation": "f_x[1] (top-level model equation)",
+      "equation": "f_x[1] (der(fast) = -fastRate * fast)",
       "id": "f_x[1]",
       "unknown": "der(fast)"
     }
@@ -39,20 +39,20 @@
     ],
     "rows": [
       {
-        "equation": "f_x[0] (top-level model equation)",
+        "equation": "f_x[0] (der(slow) = -slowRate * slow)",
         "id": "f_x[0]",
         "unknowns": [
           0
         ],
-        "equation_text": "der(slow) - -(slowRate * slow)"
+        "equation_text": "0 = der(slow) - -(slowRate*slow)"
       },
       {
-        "equation": "f_x[1] (top-level model equation)",
+        "equation": "f_x[1] (der(fast) = -fastRate * fast)",
         "id": "f_x[1]",
         "unknowns": [
           1
         ],
-        "equation_text": "der(fast) - -(fastRate * fast)"
+        "equation_text": "0 = der(fast) - -(fastRate*fast)"
       }
     ]
   }
