@@ -4415,8 +4415,25 @@ fn incidence_to_json(
     inc: &rumoca_phase_structural::Incidence,
     dae: Option<&rumoca_ir_dae::Dae>,
 ) -> serde_json::Value {
+    // **No short form any more, and that is faithful rather than lazy.**
+    // This used `expr_format::equation_labels`, which rendered each equation in
+    // a "short" form — the bare right-hand side for a residual, `x = rhs` when
+    // the equation had been solved for `x`. A 0.10.0 equation *is* a residual
+    // and records no solved-for variable, so there are no longer two forms to
+    // choose between; every row reads `0 = …`.
     let eq_texts: Vec<String> = dae
-        .map(|d| crate::expr_format::equation_labels(&d.continuous.equations))
+        .map(|d| {
+            d.inspect(|view| {
+                (0..view.continuous_equation_count())
+                    .map(|index| {
+                        view.continuous_equation(index).map_or_else(
+                            || format!("f_x[{index}]"),
+                            |equation| crate::dae_expr_format::format_equation(view, equation),
+                        )
+                    })
+                    .collect()
+            })
+        })
         .unwrap_or_default();
     let rows: Vec<serde_json::Value> = inc
         .eq_unknowns
