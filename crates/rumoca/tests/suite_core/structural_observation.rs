@@ -316,6 +316,49 @@ equation
 end IndexTwo;
 "#;
 
+/// Every coupled block the report names must announce itself in the trace, at
+/// the ordinal the report puts it at.
+///
+/// This is the cross-check that makes drawing tears on a block's rows safe. A
+/// consumer grouping passes by *position* would be correct only while every
+/// coupled block happens to get torn — and `tear_scc` rejects a non-square SCC
+/// before the greedy search starts, contributing no passes at all. Matching the
+/// stated `ordinal` against the report's coupled blocks is what removes the
+/// inference.
+#[test]
+fn every_coupled_block_announces_itself_at_its_report_ordinal() {
+    let compiled = compile(COUPLED_LOOP, "CoupledLoop");
+    compiled.dae.inspect(|view| {
+        let (report, trace) = structural::inspect_structural_report(view);
+        let report = report.expect("CoupledLoop is a well-posed square system");
+        let coupled = report
+            .blocks
+            .iter()
+            .filter(|block| block.is_coupled())
+            .count();
+        assert!(
+            coupled > 0,
+            "CoupledLoop must produce a coupled block, or this test proves \
+             nothing"
+        );
+
+        let announced: Vec<usize> = trace
+            .tearing_blocks()
+            .iter()
+            .filter_map(|group| match group.first().map(|record| &record.step) {
+                Some(structural::TearingStep::BlockStart { ordinal, .. }) => Some(*ordinal),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            announced,
+            (0..coupled).collect::<Vec<_>>(),
+            "the trace must announce exactly the report's coupled blocks, in \
+             BLT order and with no gaps"
+        );
+    });
+}
+
 /// A system that fails to match must still report the search that proved it.
 ///
 /// This is the path the seam's predecessor deliberately kept observed: a
