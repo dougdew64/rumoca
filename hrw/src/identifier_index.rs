@@ -7,7 +7,7 @@
 
 use std::collections::HashMap;
 
-use rumoca_core::{SourceId, VarName};
+use rumoca_core::SourceId;
 use rumoca_ir_dae as dae;
 
 use crate::modelica_lex::TokenKind;
@@ -41,66 +41,98 @@ pub struct IdentifierIndex {
 
 impl IdentifierIndex {
     /// Build the index from a DAE and its source text.
+    ///
+    /// # Reading a 0.10.0 DAE: everything happens inside `inspect`
+    ///
+    /// Until the v0.10.0 rebase this read `dae.variables.states`, `.algebraics` and six more
+    /// pre-partitioned vectors. `rumoca_ir_dae::Dae` is now *"immutable, valid-by-construction"*
+    /// with private fields, reachable only through
+    /// `inspect(|view| …)` — a [`dae::DaeView`] under a higher-ranked lifetime, so **nothing
+    /// borrowed from the DAE can escape the closure.** This function was already shaped for that:
+    /// it returns an owned `Self`, so the whole build moves inside.
+    ///
+    /// **The eight partitions became one iteration filtered on [`dae::VariableRole`]**, whose
+    /// variants map one-to-one onto the names HRW already used — nothing renamed, nothing
+    /// invented, nothing dropped. The `match` below is that mapping, written out rather than
+    /// derived, so a future variant added upstream fails to compile here instead of silently
+    /// becoming some default.
+    ///
+    /// **One behaviour change, and it is not a pure refactor:** entries used to arrive partition
+    /// by partition and now arrive in DAE index order. The `variables` map cannot collide (a
+    /// variable has exactly one role), but [`Self::variables_on_line`] returns names in insertion
+    /// order, so for a line declaring several variables that order can differ from before. Both
+    /// orders are arbitrary to a reader, and `find_identifier_spans` is driven by lexer tokens
+    /// rather than by this, so nothing downstream depends on it.
     pub fn build(dae: &dae::Dae, source_uri: &str, source_text: &str) -> Self {
         let specimen_sid = SourceId::from_source_name(source_uri);
         let mut idx = Self::default();
 
-        let v = &dae.variables;
-        idx.add_partition("state", v.states.iter(), specimen_sid, source_text);
-        idx.add_partition("algebraic", v.algebraics.iter(), specimen_sid, source_text);
-        idx.add_partition("input", v.inputs.iter(), specimen_sid, source_text);
-        idx.add_partition("output", v.outputs.iter(), specimen_sid, source_text);
-        idx.add_partition("parameter", v.parameters.iter(), specimen_sid, source_text);
-        idx.add_partition("constant", v.constants.iter(), specimen_sid, source_text);
-        idx.add_partition(
-            "discrete real",
-            v.discrete_reals.iter(),
-            specimen_sid,
-            source_text,
-        );
-        idx.add_partition(
-            "discrete valued",
-            v.discrete_valued.iter(),
-            specimen_sid,
-            source_text,
-        );
+        dae.inspect(|view| {
+            for (_id, var) in view.variables() {
+                let kind = match var.role() {
+                    dae::VariableRole::State => "state",
+                    dae::VariableRole::Algebraic => "algebraic",
+                    dae::VariableRole::Input => "input",
+                    dae::VariableRole::Output => "output",
+                    dae::VariableRole::Parameter => "parameter",
+                    dae::VariableRole::Constant => "constant",
+                    dae::VariableRole::DiscreteReal => "discrete real",
+                    dae::VariableRole::DiscreteValue => "discrete valued",
+                };
+                idx.add_variable(kind, var, specimen_sid, source_text);
+            }
+        });
 
         idx
     }
 
-    fn add_partition<'a>(
+    /// Index one variable, if it was declared in the specimen rather than a library.
+    ///
+    /// Takes a [`dae::VariableView`] rather than the old `(&VarName, &dae::Variable)` pair: the
+    /// view carries both, and a 0.10.0 DAE hands out nothing else.
+    fn add_variable(
         &mut self,
         kind: &'static str,
-        iter: impl Iterator<Item = (&'a VarName, &'a dae::Variable)>,
+        var: dae::VariableView<'_>,
         specimen_sid: SourceId,
         source_text: &str,
     ) {
-        for (var_name, var) in iter {
-            if var.source_span.source != specimen_sid {
-                continue;
-            }
-            let name = var_name.to_string();
-            let line = byte_offset_to_line(source_text, var.source_span.start.0);
-            let def_id = var
-                .component_ref
-                .as_ref()
-                .and_then(|cr| cr.def_id.map(|id| id.0));
-
-            let entry = IndexedVariable {
-                name: name.clone(),
-                kind,
-                source_byte_range: (var.source_span.start.0, var.source_span.end.0),
-                source_line: line,
-                def_id,
-                description: var.description.clone(),
-            };
-
-            let names = self.line_to_variables.entry(line).or_default();
-            if !names.contains(&name) {
-                names.push(name.clone());
-            }
-            self.variables.insert(name, entry);
+        // `declaration()` replaces the old `source_span` field and returns the same `Span`
+        // through `DaeProvenance::span()`, so the byte offsets below are unchanged.
+        let span = var.declaration().span();
+        if span.source != specimen_sid {
+            return;
         }
+        let name = var.name().to_string();
+        let line = byte_offset_to_line(source_text, span.start.0);
+        // **`target_def_id()`, not `root_def_id()`, and the choice is a claim.**
+        //
+        // The old `ComponentReference` carried one `Option<DefId>` for the whole reference;
+        // 0.10.0 gives every part its own and offers two accessors — the first part's id and the
+        // last's. For `a.phi` those are the declarations of `a` and of `phi`, and picking wrongly
+        // would point this index at a containing component instead of the variable, silently.
+        //
+        // [`docs/identity-and-provenance.md`] settles which: *"Every flat/DAE variable carries
+        // `component_ref` (with `def_id`) … pointing back to its declaration."* The declaration a
+        // variable names is the last part. The id is also no longer optional — identity is
+        // guaranteed by construction now — so this is `Some` wherever a reference exists at all.
+        let def_id = var.component_reference().map(|cr| cr.target_def_id().0);
+
+        let entry = IndexedVariable {
+            name: name.clone(),
+            kind,
+            source_byte_range: (span.start.0, span.end.0),
+            source_line: line,
+            def_id,
+            // `description()` now borrows from the DAE, so this owns it before the view dies.
+            description: var.description().map(str::to_owned),
+        };
+
+        let names = self.line_to_variables.entry(line).or_default();
+        if !names.contains(&name) {
+            names.push(name.clone());
+        }
+        self.variables.insert(name, entry);
     }
 
     /// Look up all variables declared on a given 1-based source line.
@@ -478,44 +510,72 @@ mod tests {
 
     // --- IdentifierIndex::build ---
 
-    /// Build an index from a minimal Dae with variables across two partitions
-    /// and verify the resulting entries.
+    /// Build an index from a minimal Dae with variables across three roles and
+    /// verify the resulting entries.
+    ///
+    /// A 0.10.0 `Dae` has no public fields and is valid-by-construction, so this
+    /// fixture goes through `Dae::construct` instead of assembling struct
+    /// literals. The `SourceMap` is what makes the span filter under test a real
+    /// check: `SourceMap::add` derives each id through `source_id_for_name`,
+    /// which delegates to the same `SourceId::from_source_name` that `build`
+    /// calls on `source_uri`, so the two sides compare like with like. Were the
+    /// ids assigned sequentially instead, every variable would be filtered out
+    /// and this test would read as "the index is empty" rather than as a
+    /// mismatch.
     #[test]
     fn build_index_from_dae() {
-        use rumoca_core::{BytePos, SourceId, Span};
+        use rumoca_core::{SourceMap, Span, TypeId, VarName};
 
-        // Source text: two declaration lines.
+        // Source text: three declaration lines.
         let source_uri = "test://specimen.mo";
         let source_text = "Real h;\nReal v;\nparameter Real g = 9.81;\n";
         //                  ^0    ^6 ^8   ^14 ^16                   ^40
-        let sid = SourceId::from_source_name(source_uri);
 
-        let mut dae = dae::Dae::default();
-
-        // h is a state on line 1, byte range 0..6.
-        let h_var = dae::Variable {
-            name: "h".into(),
-            source_span: Span::new(sid, BytePos(0), BytePos(6)),
-            ..dae::Variable::empty_with_span(Span::DUMMY)
+        let mut sources = SourceMap::new();
+        let sid = sources.add(source_uri, source_text);
+        let at = |start: usize, end: usize| {
+            dae::DaeProvenance::source(Span::from_offsets(sid, start, end))
+                .expect("fixture spans lie inside the fixture source")
         };
-        dae.variables.states.insert("h".into(), h_var);
 
-        // v is algebraic on line 2, byte range 8..14.
-        let v_var = dae::Variable {
-            name: "v".into(),
-            source_span: Span::new(sid, BytePos(8), BytePos(14)),
-            ..dae::Variable::empty_with_span(Span::DUMMY)
-        };
-        dae.variables.algebraics.insert("v".into(), v_var);
-
-        // g is a parameter on line 3, byte range 16..40.
-        let g_var = dae::Variable {
-            name: "g".into(),
-            source_span: Span::new(sid, BytePos(16), BytePos(40)),
-            description: Some("gravitational accel".to_string()),
-            ..dae::Variable::empty_with_span(Span::DUMMY)
-        };
-        dae.variables.parameters.insert("g".into(), g_var);
+        let dae = dae::Dae::construct(sources, |model| {
+            let real = model.types(|types| {
+                types.intern(
+                    TypeId::new(0),
+                    dae::ValueType::scalar(dae::ScalarType::Real),
+                    at(0, 6),
+                )
+            })?;
+            model.variables(|variables| {
+                // h is a state on line 1, byte range 0..6.
+                variables.state(
+                    VarName::new("h"),
+                    real,
+                    at(0, 6),
+                    dae::VariableAttributes::default(),
+                )?;
+                // v is algebraic on line 2, byte range 8..14.
+                variables.algebraic(
+                    VarName::new("v"),
+                    real,
+                    at(8, 14),
+                    dae::VariableAttributes::default(),
+                )?;
+                // g is a parameter on line 3, byte range 16..40, and is the one
+                // declaration carrying a description.
+                variables.parameter(
+                    VarName::new("g"),
+                    real,
+                    at(16, 40),
+                    dae::VariableAttributes {
+                        description: Some("gravitational accel".to_string()),
+                        ..dae::VariableAttributes::default()
+                    },
+                )?;
+                Ok(())
+            })
+        })
+        .expect("fixture DAE is well-formed");
 
         let idx = IdentifierIndex::build(&dae, source_uri, source_text);
 
@@ -552,32 +612,53 @@ mod tests {
     }
 
     /// Variables from a non-matching source URI are excluded from the index.
+    ///
+    /// Both sources are registered in the one `SourceMap`, because
+    /// `Dae::construct` rejects a provenance whose source it does not know — so
+    /// a library variable has to be modelled as a second *known* source rather
+    /// than as a dangling id.
     #[test]
     fn build_index_excludes_foreign_source() {
-        use rumoca_core::{BytePos, SourceId, Span};
+        use rumoca_core::{SourceMap, Span, TypeId, VarName};
 
         let source_uri = "test://mine.mo";
         let source_text = "Real x;\n";
-        let my_sid = SourceId::from_source_name(source_uri);
-        let other_sid = SourceId::from_source_name("test://other.mo");
 
-        let mut dae = dae::Dae::default();
-
-        // x from the specimen source — should be indexed.
-        let x_var = dae::Variable {
-            name: "x".into(),
-            source_span: Span::new(my_sid, BytePos(0), BytePos(6)),
-            ..dae::Variable::empty_with_span(Span::DUMMY)
+        let mut sources = SourceMap::new();
+        let my_sid = sources.add(source_uri, source_text);
+        let other_sid = sources.add("test://other.mo", "Real y;\n");
+        let at = |sid, start: usize, end: usize| {
+            dae::DaeProvenance::source(Span::from_offsets(sid, start, end))
+                .expect("fixture spans lie inside their fixture source")
         };
-        dae.variables.states.insert("x".into(), x_var);
 
-        // y from a different source (e.g. library) — should be excluded.
-        let y_var = dae::Variable {
-            name: "y".into(),
-            source_span: Span::new(other_sid, BytePos(0), BytePos(6)),
-            ..dae::Variable::empty_with_span(Span::DUMMY)
-        };
-        dae.variables.algebraics.insert("y".into(), y_var);
+        let dae = dae::Dae::construct(sources, |model| {
+            let real = model.types(|types| {
+                types.intern(
+                    TypeId::new(0),
+                    dae::ValueType::scalar(dae::ScalarType::Real),
+                    at(my_sid, 0, 6),
+                )
+            })?;
+            model.variables(|variables| {
+                // x from the specimen source — should be indexed.
+                variables.state(
+                    VarName::new("x"),
+                    real,
+                    at(my_sid, 0, 6),
+                    dae::VariableAttributes::default(),
+                )?;
+                // y from a different source (e.g. a library) — should be excluded.
+                variables.algebraic(
+                    VarName::new("y"),
+                    real,
+                    at(other_sid, 0, 6),
+                    dae::VariableAttributes::default(),
+                )?;
+                Ok(())
+            })
+        })
+        .expect("fixture DAE is well-formed");
 
         let idx = IdentifierIndex::build(&dae, source_uri, source_text);
 
