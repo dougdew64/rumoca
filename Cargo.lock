@@ -3235,6 +3235,7 @@ dependencies = [
  "egui_kittest",
  "egui_plot",
  "libc",
+ "png",
  "rumoca-compile",
  "rumoca-core",
  "rumoca-ir-ast",

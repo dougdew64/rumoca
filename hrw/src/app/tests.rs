@@ -535,6 +535,12 @@ impl App {
             // frame loop. `prewarm_arms_awaits_ack_then_removes` opts back in
             // deliberately, against a temp path.
             prewarm: Prewarm::Done,
+            // **Never watching, for the reason directly above.** `.hrw-bridge/` is
+            // Doug's running HRW's directory; a test App that polled his screenshot
+            // request file would dispatch its links inside the harness and fire
+            // viewport commands at a window that is not there. See
+            // `screenshot::ScreenshotState::watching`.
+            shots: crate::screenshot::ScreenshotState::for_tests(),
         };
         (app, from_tx)
     }
