@@ -676,8 +676,15 @@ impl StrictCompileTree {
     /// usable tree past errors `Standard` treats as fatal.
     ///
     /// This is the structural form of the question a caller would otherwise
-    /// answer by scanning the diagnostics for an error severity. Both are
-    /// legitimate; this one cannot drift if the severity taxonomy changes.
+    /// answer by scanning the diagnostics for an error severity, and it cannot
+    /// drift if the severity taxonomy changes.
+    ///
+    /// **Both are about the SESSION, not about one model.** One unresolvable
+    /// class anywhere in a loaded library makes this `false` for every model
+    /// compiled against it, and scanning the diagnostics for any error has the
+    /// same reach. A caller asking *did the model I named resolve* must filter
+    /// the diagnostics by the source each one's primary label points at;
+    /// `Session::strict_compile_resolved` says so at more length.
     #[must_use]
     pub fn is_complete(&self) -> bool {
         matches!(self.0, ResolutionPlanningTree::Complete(_))

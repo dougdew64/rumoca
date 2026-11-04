@@ -974,8 +974,26 @@ impl Session {
     /// here does not mean the model resolved cleanly, and a caller using an
     /// `Err` as its only failure signal would silently stop detecting
     /// failures. Returning the diagnostics makes ignoring them a visible
-    /// choice rather than an accident; [`StrictCompileTree::is_complete`] is
-    /// the same question answered structurally.
+    /// choice rather than an accident.
+    ///
+    /// # They are per-MODEL, and [`StrictCompileTree::is_complete`] is not
+    ///
+    /// An earlier version of this paragraph called `is_complete` "the same
+    /// question answered structurally". **It is not, and the difference bites.**
+    /// `is_complete` reports whether *this session's build* completed, so one
+    /// unresolvable class anywhere in a loaded library makes it `false` for every
+    /// model compiled against that library — including models that resolve
+    /// perfectly.
+    ///
+    /// A consumer holding the MSL plus one small model found this the hard way:
+    /// both `any(severity == Error)` over these diagnostics and `!is_complete()`
+    /// reported its model as failing to resolve, because the library itself emits
+    /// errors. **The per-model answer has to come from the diagnostics' own
+    /// labels** — each carries a `Span`, whose `source` identifies the document the
+    /// diagnostic is about — so a caller filters to the sources it asked about.
+    ///
+    /// `is_complete` remains the right question when the subject *is* the session's
+    /// resolve, which is what it says.
     pub fn strict_compile_resolved(
         &mut self,
     ) -> Result<(StrictCompileTree, CommonDiagnostics)> {
