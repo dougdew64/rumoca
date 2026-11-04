@@ -60,6 +60,20 @@ msl
 examples/.rumoca/results/
 rumoca_trace*.csv
 
+# **The HRW bridge directory, at the ROOT as well as under `hrw/`.**
+#
+# `hrw/.gitignore` already carries `/.hrw-bridge`, and that anchor covers only
+# `hrw/`. HRW itself always writes to `hrw/.hrw-bridge/` — `bridge.rs` builds every
+# path from `CARGO_MANIFEST_DIR`, not from the working directory — so the app cannot
+# produce one here. **A scratch specimen written by hand from the workspace root
+# can**, and two were on 2026-11-03: they landed in an unignored `.hrw-bridge/` and
+# showed up in `git status` as the only untracked entry in the tree.
+#
+# `bridge.rs` says scratch probes are "ephemeral by construction" because they live
+# under a gitignored directory. That is true of the path HRW builds and not of the
+# string `.hrw-bridge/specimens/…`, so this line makes the claim hold either way.
+/.hrw-bridge
+
 # Working notes (not for commit)
 .agents/
 skills-lock.json
