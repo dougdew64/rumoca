@@ -1353,6 +1353,10 @@ mod tests {
         // to be readable rather than guessed.
         let mut located: Vec<String> = Vec::new();
         let mut unlocated: Vec<String> = Vec::new();
+        // Source text per file a location names, so the vendored MSL is read once
+        // across the whole corpus rather than once per location.
+        let mut file_cache: std::collections::HashMap<String, Option<String>> =
+            std::collections::HashMap::new();
 
         for name in FAILING_MODELS {
             let source = std::fs::read_to_string(format!(
@@ -1408,10 +1412,26 @@ mod tests {
                     violations.push(format!("{at}: an error payload with no message field"));
                 }
 
-                // Every location anywhere in the value must be a real line of
-                // *this* specimen — not only inside `error`, since a determinacy
+                // Every location anywhere in the value must be a real line of **the
+                // file it names** — not only inside `error`, since a determinacy
                 // verdict or a diagnostic label carries them too.
-                let lines: Vec<&str> = source.lines().collect();
+                //
+                // # This check used to assume the specimen, and that is why it
+                // # certified the bug instead of catching it
+                //
+                // It read `source.lines()` and compared `line_text` against the
+                // *specimen's* line, for every location from every stage. Under the
+                // old resolver both numbers came out of the specimen, so they agreed
+                // — and this check reported "{n} source locations verified" over
+                // locations naming the wrong file entirely. `CapacitorLoop`'s
+                // `gnd.p.i` was certified as line 9 of `CapacitorLoop.mo` when it is
+                // `flow SI.Current i` in the MSL's `Interfaces/Pin.mo`; see
+                // `worker::span_location`.
+                //
+                // **A location with no `file` is now a violation in itself**, which
+                // is the shape the old resolver produced: there is no way to verify
+                // a line number that does not say which file it counts lines in, and
+                // "cannot be verified" must not read as "verified".
                 let before_locations = locations_checked;
                 let mut stack = vec![value];
                 while let Some(node) = stack.pop() {
@@ -1424,15 +1444,62 @@ mod tests {
                                 locations_checked += 1;
                                 let line = map["line"].as_u64().unwrap_or(0) as usize;
                                 let text = map["line_text"].as_str().unwrap_or_default();
+                                // The file the location claims. Read from disk and
+                                // memoized, because a span may name any file the
+                                // compile registered — the vendored MSL included.
+                                let named = map.get("file").and_then(Value::as_str);
+                                let contents = match named {
+                                    None => {
+                                        violations.push(format!(
+                                            "{at}: a location quoting line {line} with no \
+                                             `file` \u{2014} nothing says which file that \
+                                             line is in, so it cannot be verified",
+                                        ));
+                                        None
+                                    }
+                                    Some(path) if path.ends_with(&format!("{name}.mo")) => {
+                                        Some(source.clone())
+                                    }
+                                    Some(path) => match file_cache.entry(path.to_owned()) {
+                                        std::collections::hash_map::Entry::Occupied(e) => {
+                                            e.get().clone()
+                                        }
+                                        std::collections::hash_map::Entry::Vacant(e) => {
+                                            // Published names are workspace-relative
+                                            // (`worker::portable_source_name`), so they
+                                            // are resolved against the workspace root
+                                            // rather than the process's cwd.
+                                            let root =
+                                                std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                                                    .parent()
+                                                    .expect("the crate dir has a parent")
+                                                    .to_path_buf();
+                                            e.insert(std::fs::read_to_string(root.join(path)).ok())
+                                                .clone()
+                                        }
+                                    },
+                                };
+                                let Some(contents) = contents else {
+                                    if let Some(path) = named {
+                                        violations.push(format!(
+                                            "{at}: a location names {path}, which cannot be \
+                                             read \u{2014} the quote cannot be checked",
+                                        ));
+                                    }
+                                    stack.extend(map.values());
+                                    continue;
+                                };
+                                let lines: Vec<&str> = contents.lines().collect();
+                                let where_ = named.unwrap_or("<unnamed>");
                                 match lines.get(line.wrapping_sub(1)) {
                                     None => violations.push(format!(
-                                        "{at}: blames line {line}, but the specimen has {} lines",
+                                        "{at}: blames line {line}, but {where_} has {} lines",
                                         lines.len(),
                                     )),
                                     Some(actual) if actual.trim_end() != text => {
                                         violations.push(format!(
-                                            "{at}: line {line} quoted as {text:?}, the specimen \
-                                             has {:?}",
+                                            "{at}: line {line} quoted as {text:?}, but \
+                                             {where_} has {:?}",
                                             actual.trim_end(),
                                         ));
                                     }

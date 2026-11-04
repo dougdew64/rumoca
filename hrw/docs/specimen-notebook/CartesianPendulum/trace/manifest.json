@@ -2,7 +2,7 @@
   "model": "CartesianPendulum",
   "specimen": "specimens/CartesianPendulum.mo",
   "specimen_fnv1a": "95583943547159b1",
-  "rumoca_rev": "636acca3",
+  "rumoca_rev": "a8d60e11",
   "rumoca_version": "0.10.0",
   "stages": {
     "parse": {
