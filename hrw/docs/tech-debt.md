@@ -42,6 +42,33 @@ Three things go with it: `app::structural_frames_for_stage` loses its `IndexRedu
 must get it back; `StructuralView::Animate` is hard-coded `false`; and `app::tearing_dae` no longer
 special-cases the reduced system. All three carry comments saying so.
 
+### ~~Resolve failure is inferred from diagnostic severities where 0.10.0 states it structurally~~
+
+**CLOSED 2026-11-03, and the answer is that the switch must not happen.** `is_complete()` asks a
+**session-wide** question — `ResolutionPlanningTree` is `Complete(_)` or `Incomplete(_)` for the
+whole build — so with the 0.10.0 MSL emitting ~75 resolve errors it reads `Incomplete` for *every*
+model, including one that resolves perfectly. That is the identical contamination the severity
+predicate had, which is what made every specimen's Resolve stage read `Failed`.
+
+**So `is_complete()` is not the structural form of the same question; it is the structural form of
+a different one**, and this row proposed replacing a per-model answer with a per-session one.
+`strict_compile_resolved`'s own doc comment says they are equivalent — that sentence is wrong in
+the same way and is corrected there.
+
+**What replaced both** is the per-model subset: `diagnostic_source` attributes each diagnostic to
+the file its primary label names, using Rumoca's own precedence, and only this model's errors count
+as this model's failure. That is neither of the two options above.
+
+**The row's instinct was right and worth keeping**: it said the two should be *compared before one
+replaces the other*, because a disagreement on a corpus model would be the interesting finding.
+They disagree on all 25, and the disagreement found the bug.
+
+*`is_complete()` is still the right call for what it does answer* — whether the session's resolve
+completed — and the new `crates/rumoca/tests/suite_core/strict_compile_recovery.rs` pins it in that
+role.
+
+*The original row follows, unedited.*
+
 ### Resolve failure is inferred from diagnostic severities where 0.10.0 states it structurally
 
 `worker.rs` decides whether a strict compile's resolve actually succeeded with

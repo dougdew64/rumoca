@@ -5432,5 +5432,18 @@ to get is a guess wearing a figure's clothes. And **a rule with a stated scope d
 count could not**: the count was wrong, the scope was right, and the scope is what stopped the
 list growing.
 
-*Still Doug's to rule on:* whether six is acceptable, or whether the six should be reworded the
-way these two were. They are the same false positive, just more of it.
+### ⟶ RULED THE SAME DAY: REWORD ALL SIX. THE CARVE-OUT IS RETIRED.
+
+**Doug, 2026-11-03: reword all six.** So there is no carve-out any more —
+`test_reachable_commit_messages_have_no_ai_attribution` passes on the whole branch, and milestone
+1's "full gate is green" no longer carries an exception to remember at push time.
+
+Each reword keeps the information and drops the literal filename. The initial port commit is the
+one where those paths genuinely *were* the subject, so it keeps the content by describing them —
+"the assistant-config directory and its instructions file" — rather than losing the record of what
+came across wholesale. Content verified byte-identical against `backup/pre-reword-six`, and all
+58 rewritten commits kept their `Signed-off-by`.
+
+**Why rewording beat keeping the exception**, which is the part worth keeping: a standing carve-out
+is a thing someone has to know at exactly the moment they are least likely to check it — pushing.
+Six false positives cost nothing to reword and the exception cost attention forever.
