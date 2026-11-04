@@ -41,9 +41,6 @@ pub(crate) enum StructuralView {
     /// getting a stage of its own) because tearing is part of what the
     /// Structural stage reports — its output is already in `blocks`.
     TearingAnim,
-    /// Reveal of the alias eliminations. Index Reduction only -- that is the
-    /// stage whose report carries them.
-    AliasAnim,
     Animate,
     Tree,
 }
@@ -65,33 +62,26 @@ impl StructuralView {
         StructuralView::MatchingAnim,
         StructuralView::TarjanAnim,
         StructuralView::TearingAnim,
-        StructuralView::AliasAnim,
         StructuralView::Animate,
         StructuralView::Tree,
     ];
 }
 
-/// Sub-tab selector for the Initialization stage: the IR tree, or a run of the
-/// initial-condition solve plan.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub(crate) enum InitView {
-    #[default]
-    Tree,
-    IcPlan,
-}
-
-impl InitView {
-    /// Every variant — see `StructuralView::ALL`.
-    #[cfg(test)]
-    pub(crate) const ALL: &'static [InitView] = &[InitView::Tree, InitView::IcPlan];
-}
-
-pub(crate) fn init_view_name(v: InitView) -> &'static str {
-    match v {
-        InitView::Tree => "Tree",
-        InitView::IcPlan => "IcPlan",
-    }
-}
+// **`InitView` was deleted 2026-11-04 and Initialization is a tree-only stage.**
+//
+// It had two variants, `Tree` and `IcPlan`, and `IcPlan` drove the only non-tree
+// view the stage had. That view parsed the `ic_plan::IcBlock` solve *sequence*,
+// which v0.10.0 does not publish — the initialization re-model replaced it with
+// initial-value pins and roles — so `has_ic_plan` read a field nothing writes and
+// the sub-tab had stopped being offered.
+//
+// **The enum went rather than keeping a one-variant version**, which would have
+// drawn a selector with one item and, worse, kept Initialization in
+// `answer_check::STAGES_WITH_SUB_VIEWS` — making an Answer's node link into it
+// obliged to name a sub-view that is the stage's only one. `sub_view_name_for`
+// returns `None` for it now, which is what it already does for every other
+// tree-only stage, and that list's own both-directions test is what forced the
+// entry out.
 
 /// Sub-tab selector for the Flatten stage: readable equation sheet, source
 /// traceability map, or the generic serde tree.
@@ -158,7 +148,6 @@ pub(crate) fn structural_view_name(v: StructuralView) -> &'static str {
         StructuralView::MatchingAnim => "MatchingAnim",
         StructuralView::TarjanAnim => "TarjanAnim",
         StructuralView::TearingAnim => "TearingAnim",
-        StructuralView::AliasAnim => "AliasAnim",
         StructuralView::Animate => "Animate",
         StructuralView::Tree => "Tree",
     }
@@ -183,7 +172,6 @@ pub(crate) fn sub_view_name_for(stage: StageKind, viewport: &Viewport) -> Option
         StageKind::Structural | StageKind::IndexReduction => {
             Some(structural_view_name(viewport.structural))
         }
-        StageKind::Initialization => Some(init_view_name(viewport.init)),
         StageKind::Events => Some(events_view_name(viewport.events)),
         _ => None,
     }
@@ -211,8 +199,6 @@ pub(crate) struct Viewport {
     pub(crate) flatten: FlattenView,
     /// Which sub-view is open on the Events stage.
     pub(crate) events: EventsView,
-    /// Which sub-view is open on the Initialization stage.
-    pub(crate) init: InitView,
     /// Which sub-view is open on the report stages (Structural, Index Reduction).
     pub(crate) structural: StructuralView,
     /// Pan/zoom camera for the spy plot.
@@ -255,7 +241,6 @@ impl Default for Viewport {
             // thing: it forced these two choices to stay explicit.
             flatten: FlattenView::Equations,
             events: EventsView::default(),
-            init: InitView::default(),
             structural: StructuralView::SpyPlot,
             // The bias lifts the fitted content slightly above centre, leaving
             // room for the labels drawn under each matrix.

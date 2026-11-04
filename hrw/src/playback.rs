@@ -846,9 +846,19 @@ mod tests_animated_contract {
     #[test]
     fn every_animated_view_renders_an_opening_frame() {
         let views = animated_views();
+        // **Six since 2026-11-04, eight before it.** `alias_anim` and `ic_plan_anim`
+        // were deleted with the passes they animated: alias elimination is not a
+        // Rumoca phase on v0.10.0 (upstream deleted `eliminate/`), and initialization
+        // publishes initial-value pins rather than an `IcBlock` solve sequence.
+        //
+        // **The number is lowered, not removed.** Its job is to catch the scan
+        // breaking — the floor is what makes "found nothing wrong" mean something —
+        // so it has to move deliberately when a view genuinely goes, in the same
+        // commit as the reason. That is the same ratchet
+        // `doc_citations::no_doc_block_gains_a_second_summary` runs on.
         assert!(
-            views.len() >= 8,
-            "eight animated views existed on 2026-08-23; finding fewer means the \
+            views.len() >= 6,
+            "six animated views exist since 2026-11-04; finding fewer means the \
              scan broke rather than that views were deleted: {:?}",
             views.iter().map(|v| &v.module).collect::<Vec<_>>(),
         );

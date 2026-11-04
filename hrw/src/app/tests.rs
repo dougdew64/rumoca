@@ -45,6 +45,27 @@
 
 use super::*;
 
+/// One history-operator site, for the two tests that stage a replay with plain data.
+///
+/// `PreLoweringAnimation::from_sites` is the only `CompileViewCaches` replay that can
+/// be built without captured compiler frames, which is what makes Events ▸ pre()
+/// lowering the cheap subject for those two. `IcPlanAnimation::from_report` used to
+/// hold that place; it went with its view on 2026-11-04.
+#[cfg(test)]
+/// **Each site carries one step, because the frame count comes from the steps and not
+/// from the sites.** `from_sites` emits `Start` plus one frame per *step*, so sites
+/// with empty step lists produce a one-frame animation — which is how the first
+/// version of this helper made a "three-site" fixture that could not seek to frame 2.
+fn site(call: &str, line: usize) -> crate::pre_lowering_anim::PreLoweringSite {
+    crate::pre_lowering_anim::PreLoweringSite {
+        call: call.to_owned(),
+        line: Some(line),
+        lane: Some("Previous".to_owned()),
+        generated: true,
+        steps: vec![format!("{call} lowered")],
+    }
+}
+
 #[cfg(test)]
 impl App {
     /// pub(crate) so the headless UI tests in a sibling module can build an App.
@@ -1961,7 +1982,6 @@ fn report_cache_invalidated_on_stage_switch() {
             && app.stage_views.matching_anim.is_none()
             && app.stage_views.tarjan_anim.is_none()
             && app.stage_views.tearing_anim.is_none()
-            && app.stage_views.alias_anim.is_none()
             && app.stage_views.before_incidence.is_none(),
         "a stage switch must leave no view built for the previous stage",
     );
@@ -1988,11 +2008,16 @@ fn report_cache_invalidated_on_stage_switch() {
 /// does, and it fails at **runtime** rather than at compile time if a replay moves
 /// back into `StageViewCaches` — the loud failure, since it names the cursor.
 ///
-/// **Initialization ▸ IC Plan is the cheapest of the four to stage**, because
-/// `IcPlanAnimation::from_report` takes plain JSON while the other three want
-/// captured compiler frames. Three blocks, so a cursor at 2 is distinguishable from
-/// a reset to 0; the structural report exists only so the sub-view row draws at all
-/// (it needs `current_stage().value`), which is what calls `reset_for`.
+/// **Events ▸ pre() lowering is the cheapest of the three to stage**, because
+/// `PreLoweringAnimation::from_sites` takes plain data while the others want captured
+/// compiler frames. Three sites, so a cursor at 2 is distinguishable from a reset to
+/// 0; the structural report exists only so the sub-view row draws at all (it needs
+/// `current_stage().value`), which is what calls `reset_for`.
+///
+/// *Staged on Initialization ▸ IC Plan until 2026-11-04, which was the cheapest of
+/// four. That view and its stage's whole sub-view row are gone — the `ic_plan` solve
+/// sequence is not published on v0.10.0 — so the subject moved rather than the
+/// property.*
 #[test]
 fn a_replay_keeps_its_place_across_a_stage_switch() {
     use crate::ui_tests::{Answer, harness};
@@ -2003,23 +2028,19 @@ fn a_replay_keeps_its_place_across_a_stage_switch() {
     let _lab_state = Answer::absent();
 
     let mut app = App::test_default();
-    app.stages.initialization = Stage {
-        value: Some(serde_json::json!({
-            "blocks": [
-                { "kind": "scalar_direct", "var": "a" },
-                { "kind": "scalar_direct", "var": "b" },
-                { "kind": "scalar_direct", "var": "c" },
-            ]
-        })),
+    app.stages.events = Stage {
+        value: Some(serde_json::json!({ "conditions": [] })),
         ..Stage::default()
     };
+    // Three sites, so a cursor at 2 is distinguishable from a reset to 0.
+    app.frames.pre_lowering = vec![site("edge(a)", 1), site("edge(b)", 2), site("edge(c)", 3)];
     // Any non-empty report: the row only asks whether the stage has a value.
     app.stages.structural = Stage {
         value: Some(serde_json::json!({ "blocks": [] })),
         ..Stage::default()
     };
-    app.stage = StageKind::Initialization;
-    app.viewport.init = InitView::IcPlan;
+    app.stage = StageKind::Events;
+    app.viewport.events = crate::stage_view::EventsView::PreLowering;
     // **A specimen must be selected or `central_panel_ui` returns before the stage
     // view** — and `nav` must stay *empty*, which reads backwards until you know
     // what it is: `nav` is the go-to-definition stack, so a non-empty one means the
@@ -2036,15 +2057,15 @@ fn a_replay_keeps_its_place_across_a_stage_switch() {
     assert!(
         h.state_mut()
             .on_screen_animation_mut()
-            .expect("precondition: the IC plan replay is on screen")
+            .expect("precondition: the pre()-lowering replay is on screen")
             .seek(2),
-        "precondition: a three-block plan has a frame 2",
+        "precondition: three one-step sites have a frame 2",
     );
 
     // Off to a report stage and back — the exact round trip that used to reset it.
     h.state_mut().stage = StageKind::Structural;
     h.run_steps(2);
-    h.state_mut().stage = StageKind::Initialization;
+    h.state_mut().stage = StageKind::Events;
     h.run_steps(2);
 
     assert_eq!(
@@ -2052,8 +2073,8 @@ fn a_replay_keeps_its_place_across_a_stage_switch() {
             .on_screen_animation()
             .expect("the replay must still be on screen")
             .position(),
-        // 4, not 3: a three-block plan is four frames, because frame 0 is the
-        // opening state where nothing has been solved (2026-08-23). The cursor
+        // 4, not 3: three one-step sites are four frames, because frame 0 is the
+        // opening state where nothing has been lowered (2026-08-23). The cursor
         // is unchanged — this test is about the cursor surviving the round trip.
         (2, 4),
         "a replay built from the compile outlives a visit to another stage — \
@@ -2074,14 +2095,18 @@ fn a_replay_keeps_its_place_across_a_stage_switch() {
 /// was **the one arm of eight without it**.
 ///
 /// **What it looked like**: on Index Reduction choose **Animate ▶**, then click
-/// **Events**, **Initialization** or **Flatten**. The Events tab is highlighted, the
-/// sub-view row offers Tree / pre() lowering — and the pane below draws the
-/// *index-reduction* replay, because that arm sits above all three of theirs in the
-/// chain. Not "absence filled" this time but **presence substituted**: a correct
-/// animation of the wrong phase, under another phase's tab.
+/// **Events** or **Flatten**. The Events tab is highlighted, the sub-view row offers
+/// Tree / pre() lowering — and the pane below draws the *index-reduction* replay,
+/// because that arm sits above theirs in the chain. Not "absence filled" this time
+/// but **presence substituted**: a correct animation of the wrong phase, under
+/// another phase's tab.
 ///
 /// Found while splitting `CompileViewCaches` out, by a probe that was asking a
 /// different question — the IC plan cache was `None` when it should have been built.
+///
+/// *Staged on Initialization ▸ IC Plan until 2026-11-04, and on Events ▸ pre()
+/// lowering since: that stage's sub-view row went with the IC-plan view, so it can no
+/// longer be the stage being taken over.*
 #[test]
 fn a_stranded_structural_sub_view_does_not_take_over_another_stage() {
     use crate::ui_tests::{Answer, harness};
@@ -2090,15 +2115,14 @@ fn a_stranded_structural_sub_view_does_not_take_over_another_stage() {
     let _lab_state = Answer::absent();
 
     let mut app = App::test_default();
-    app.stages.initialization = Stage {
-        value: Some(serde_json::json!({
-            "blocks": [{ "kind": "scalar_direct", "var": "a" }]
-        })),
+    app.stages.events = Stage {
+        value: Some(serde_json::json!({ "conditions": [] })),
         ..Stage::default()
     };
+    app.frames.pre_lowering = vec![site("edge(a)", 1)];
     app.selected = Some(std::path::PathBuf::from("specimens/RcCircuit.mo"));
-    app.stage = StageKind::Initialization;
-    app.viewport.init = InitView::IcPlan;
+    app.stage = StageKind::Events;
+    app.viewport.events = crate::stage_view::EventsView::PreLowering;
     // The reader's last report-stage sub-view, still set — which is correct, and is
     // exactly the state the dispatch has to ignore.
     app.viewport.structural = StructuralView::Animate;
@@ -2107,8 +2131,8 @@ fn a_stranded_structural_sub_view_does_not_take_over_another_stage() {
     h.run_steps(2);
 
     assert!(
-        h.state().compile_views.ic_plan_anim.is_some(),
-        "the stage the reader is ON decides the pane: Initialization ▸ IC Plan must \
+        h.state().compile_views.pre_lowering_anim.is_some(),
+        "the stage the reader is ON decides the pane: Events ▸ pre() lowering must \
              render even when a report stage's sub-view is still selected behind it",
     );
     assert!(
@@ -2229,23 +2253,16 @@ fn every_animation_pane_reports_having_nothing_to_show() {
     // `App::test_default` has no compiled stages, so every animation's source
     // report is absent — which is the state under test.
     type Pane = fn(&mut App, &mut egui::Ui);
-    let panes: [(&str, Pane, &str); 5] = [
+    // **Five until 2026-11-04**, when the alias and IC-plan panes went with the
+    // views they drew. Both said "(no ... in this report)" for every real compile,
+    // because the fields they read are not published on v0.10.0.
+    let panes: [(&str, Pane, &str); 3] = [
         // **Was "no DAE available for tearing", which was usually untrue.** The
         // DAE is normally present; what is absent is the *tearing*, because the
         // compiler stopped at matching. `structural_unavailable` says which
         // (2026-08-04) — a pane that names the wrong cause is worse than one that
         // names none, because it sends the reader looking in the wrong place.
         ("tearing", |a, ui| a.tearing_anim_ui(ui), "No tearing"),
-        (
-            "alias",
-            |a, ui| a.alias_anim_ui(ui),
-            "no alias eliminations in this report",
-        ),
-        (
-            "ic_plan",
-            |a, ui| a.ic_plan_anim_ui(ui),
-            "no initial-condition plan in this report",
-        ),
         (
             "connection",
             |a, ui| a.connection_anim_ui(ui),
@@ -2329,36 +2346,20 @@ fn an_animation_built_from_an_empty_report_says_the_model_has_none() {
 
     type Pane = fn(&mut App, &mut egui::Ui);
     // (name, the stage to sit on, its report, the pane, what it must say)
-    let cases: [(&str, StageKind, serde_json::Value, Pane, &str); 3] = [
-        (
-            "alias",
-            StageKind::IndexReduction,
-            serde_json::json!({"reduction": {"eliminations": []}}),
-            |a, ui| a.alias_anim_ui(ui),
-            "No alias eliminations in this model",
-        ),
-        (
-            // What `BouncingBall` and `SingleInertia` actually produce.
-            "ic_plan (start-attribute verdict)",
-            StageKind::Initialization,
-            serde_json::json!({
-                "blocks": [],
-                "determinacy": {
-                    "verdict": "well-posed (remaining states initialize from their start attributes)"
-                },
-            }),
-            |a, ui| a.ic_plan_anim_ui(ui),
-            "Nothing has to be solved at t=0",
-        ),
-        (
-            // No determinacy at all: no header either, so the body must say so.
-            "ic_plan (no verdict)",
-            StageKind::Initialization,
-            serde_json::json!({"blocks": []}),
-            |a, ui| a.ic_plan_anim_ui(ui),
-            "no determinacy verdict",
-        ),
-    ];
+    // **All three cases were the alias and IC-plan panes, both deleted 2026-11-04**,
+    // so this list is the `pre()`-lowering pane alone. The property is unchanged and
+    // worth keeping with one subject: an empty report must say **the model has none**,
+    // not that the pane found nothing — the absence-versus-silence distinction. A
+    // second subject returns with the next view fed by a report list.
+    let cases: [(&str, StageKind, serde_json::Value, Pane, &str); 1] = [(
+        "pre_lowering",
+        StageKind::Events,
+        serde_json::json!({ "pre_lowering_sites": [] }),
+        |a, ui| a.pre_lowering_anim_ui(ui),
+        // `pre_lowering_anim::EMPTY_MESSAGE`, which is the view's own words about the
+        // MODEL rather than about the pane's luck reading a report.
+        "No history operators in this model",
+    )];
 
     for (name, stage, report, render, expected) in cases {
         let mut app = App::test_default();
@@ -2503,7 +2504,7 @@ fn drain_worker_compile_progress_drops_views_built_from_the_previous_report() {
     app.stage_views.built_for = Some(StageKind::Structural);
     app.stage_views.incidence = Some(None);
     // And a replay from that compile's frames, which this message carries none of.
-    app.compile_views.ic_plan_anim = Some(None);
+    app.compile_views.pre_lowering_anim = Some(None);
 
     tx.send(FromWorker::CompileProgress {
         path,
@@ -2525,7 +2526,7 @@ fn drain_worker_compile_progress_drops_views_built_from_the_previous_report() {
         "the key must go too, or the next paint reuses the cache for this same stage",
     );
     assert!(
-        app.compile_views.ic_plan_anim.is_some(),
+        app.compile_views.pre_lowering_anim.is_some(),
         "the frame-built replays must survive: frames arrive only with `Compiled`, so \
          dropping them here blanks every animation for the whole compile with nothing \
          to rebuild from",
@@ -3801,11 +3802,11 @@ fn a_link_can_address_a_sub_view() {
         )),
     );
     assert_eq!(
-        parse_hrw_link("hrw://load/MotorWithBrake/IndexReduction/AliasAnim"),
+        parse_hrw_link("hrw://load/MotorWithBrake/IndexReduction/Animate"),
         Some(HrwLink::LoadAndSwitch(
             "MotorWithBrake".to_owned(),
             StageKind::IndexReduction,
-            Some(SubView::Structural(StructuralView::AliasAnim)),
+            Some(SubView::Structural(StructuralView::Animate)),
         )),
     );
     // The bare forms still work — a sub-view is optional, not required.
@@ -3862,18 +3863,12 @@ fn every_capture_view_name_round_trips_as_a_link_slug() {
         );
         checked += 1;
     }
-    for v in InitView::ALL {
-        let name = init_view_name(*v);
-        assert_eq!(
-            SubView::from_slug(StageKind::Initialization, name),
-            Some(SubView::Init(*v)),
-            "Initialization: capture emits {name:?}, hrw:// cannot parse it",
-        );
-        checked += 1;
-    }
+    // Initialization was a fourth roster until 2026-11-04. It is tree-only now, and
+    // `sub_view_name_for` returns `None` for it, so the capture emits no sub-view name
+    // for that stage and there is nothing here to round-trip.
 
     assert!(
-        checked >= 26,
+        checked >= 22,
         "expected every view variant covered, checked {checked}"
     );
 }
@@ -4572,7 +4567,6 @@ fn every_lab_sub_view_link_is_available_for_its_specimen() {
                     SubView::Flatten(FlattenView::Tree)
                         | SubView::Flatten(FlattenView::Equations)
                         | SubView::Events(EventsView::Tree)
-                        | SubView::Init(InitView::Tree)
                 ) {
                     skipped_conditional_non_report += 1;
                 }
@@ -4851,11 +4845,6 @@ fn every_sub_view_slug_round_trips() {
             EventsView::ALL
                 .iter()
                 .map(|v| (StageKind::Events, SubView::Events(*v))),
-        )
-        .chain(
-            InitView::ALL
-                .iter()
-                .map(|v| (StageKind::Initialization, SubView::Init(*v))),
         )
         .collect();
 
@@ -5141,13 +5130,6 @@ fn links_into_events_and_initialization_apply_their_sub_views() {
          where it was rather than landing on an empty pane",
     );
 
-    let (mut app, _tx) = App::test_with_sender();
-    app.stage = StageKind::Initialization;
-    app.viewport.init = InitView::Tree;
-    give_ic_plan(&mut app);
-    app.pending_sub_view = Some(SubView::Init(InitView::IcPlan));
-    app.apply_pending_view_and_seek();
-    assert_eq!(app.viewport.init, InitView::IcPlan);
     assert!(parse_hrw_link("hrw://stage/Structural/MatchingAnim/frame/0").is_none());
 }
 
@@ -5181,15 +5163,11 @@ fn give_flatten_every_tab(app: &mut App) {
 // for a disabled pane would let a test assert a link lands somewhere the app
 // cannot actually show anything.
 
-/// Give `app` an initial-condition plan, so the Initialization row has its tab.
-///
-/// Written as the JSON `App::has_ic_plan` reads rather than as a typed report, for the
-/// reason that method's doc gives: the pane's question is about what the *report* carries.
-fn give_ic_plan(app: &mut App) {
-    app.stages.initialization.value = Some(serde_json::json!({
-        "blocks": [{ "kind": "assignment", "unknowns": ["x"] }]
-    }));
-}
+// `give_ic_plan` is deleted for the same reason as `give_pre_lowering_trace` above:
+// there is no plan to give. v0.10.0 states initialization as initial-value pins with
+// roles, not as an `IcBlock` solve sequence, so the `blocks` array this manufactured
+// is a shape nothing publishes — and the row it fed, along with `InitView` itself,
+// went on 2026-11-04.
 
 /// **A link naming a Flatten sub-view this model does not have is refused, not applied.**
 ///
@@ -5715,9 +5693,10 @@ fn a_sub_view_with_no_tab_is_clamped_and_reported() {
     let mut app = App::test_default();
     app.stage = StageKind::Structural;
     app.stages.structural = Stage::ok(serde_json::json!({}));
-    // Structural never offers the alias replay: `structural_view_available` requires
-    // the Index Reduction stage for it, whatever the report holds.
-    app.viewport.structural = StructuralView::AliasAnim;
+    // Structural never offers the reduction replay: `structural_view_available`
+    // requires the Index Reduction stage for it, whatever the report holds.
+    // (Was `AliasAnim` until 2026-11-04, same property, same stage restriction.)
+    app.viewport.structural = StructuralView::Animate;
 
     app.clamp_structural_sub_view();
 
@@ -5731,7 +5710,7 @@ fn a_sub_view_with_no_tab_is_clamped_and_reported() {
              not silently corrected",
     );
     assert!(
-        notice.contains("AliasAnim"),
+        notice.contains("Animate"),
         "the notice must name the view that was stranded, not the fallback: {notice}",
     );
     assert!(
@@ -5768,11 +5747,11 @@ fn a_sub_view_that_has_a_tab_is_left_alone() {
 fn the_clamp_does_not_touch_a_non_report_stage() {
     let mut app = App::test_default();
     app.stage = StageKind::Flatten;
-    app.viewport.structural = StructuralView::AliasAnim;
+    app.viewport.structural = StructuralView::Animate;
 
     app.clamp_structural_sub_view();
 
-    assert_eq!(app.viewport.structural, StructuralView::AliasAnim);
+    assert_eq!(app.viewport.structural, StructuralView::Animate);
     assert!(app.notice.is_none());
 }
 
@@ -6043,11 +6022,9 @@ fn a_link_can_seek_to_a_frame() {
         )),
     );
     // The non-structural animated views too — one per stage that has one.
-    for (stage, view) in [
-        ("Events", "PreLowering"),
-        ("Initialization", "IcPlan"),
-        ("Flatten", "Connections"),
-    ] {
+    // (`Initialization`/`IcPlan` was a third until 2026-11-04; that stage is tree-only
+    // now and has no animated view to seek in.)
+    for (stage, view) in [("Events", "PreLowering"), ("Flatten", "Connections")] {
         let link = format!("hrw://stage/{stage}/{view}/frame/3");
         assert!(
             matches!(parse_hrw_link(&link), Some(HrwLink::SeekFrame(_, _, 2))),
@@ -6143,7 +6120,6 @@ fn link_slugs_and_capture_names_are_the_same_vocabulary() {
                 structural_view_name(StructuralView::MatchingAnim),
                 structural_view_name(StructuralView::TarjanAnim),
                 structural_view_name(StructuralView::TearingAnim),
-                structural_view_name(StructuralView::AliasAnim),
                 structural_view_name(StructuralView::Animate),
                 structural_view_name(StructuralView::Tree),
             ],
@@ -6164,13 +6140,8 @@ fn link_slugs_and_capture_names_are_the_same_vocabulary() {
                 events_view_name(EventsView::PreLowering),
             ],
         ),
-        (
-            StageKind::Initialization,
-            &[
-                init_view_name(InitView::Tree),
-                init_view_name(InitView::IcPlan),
-            ],
-        ),
+        // Initialization was a fourth case until 2026-11-04. It is tree-only now, so
+        // it emits no sub-view name at all.
     ];
     for (stage, names) in cases {
         for name in *names {

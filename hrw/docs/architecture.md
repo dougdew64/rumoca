@@ -115,14 +115,14 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**73 modules, 88,909 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**71 modules, 87,324 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `worker/tests.rs` | 9,243 |
-| `app.rs` | 8,040 |
+| `app.rs` | 7,963 |
 | `worker.rs` | 7,594 |
-| `app/tests.rs` | 7,314 |
+| `app/tests.rs` | 7,285 |
 | `doc_citations.rs` | 7,180 |
 | `bridge.rs` | 4,386 |
 | `ui_tests.rs` | 3,094 |
@@ -134,32 +134,30 @@ showing 48 equations. They are derived now, and
 | `lab_panel.rs` | 1,259 |
 | `matching_anim.rs` | 1,243 |
 | `incidence_view.rs` | 1,219 |
-| `lib.rs` | 1,188 |
+| `lib.rs` | 1,186 |
 | `reduction_view.rs` | 1,112 |
 | `connection_anim.rs` | 1,106 |
-| `playback.rs` | 1,048 |
+| `playback.rs` | 1,058 |
 | `tarjan_anim.rs` | 988 |
 | `matching_ledger.rs` | 916 |
 | `context_bar.rs` | 890 |
 | `dae_expr_format.rs` | 881 |
-| `ic_plan_anim.rs` | 871 |
 | `model_list.rs` | 842 |
 | `tearing_anim.rs` | 826 |
 | `survey.rs` | 769 |
 | `stage_tabs.rs` | 766 |
 | `arch_doc.rs` | 758 |
 | `lab.rs` | 736 |
-| `sub_view_rows.rs` | 719 |
-| `answer_check.rs` | 700 |
+| `answer_check.rs` | 706 |
 | `identifier_index.rs` | 688 |
 | `canvas.rs` | 681 |
-| `report_sub_view.rs` | 650 |
+| `sub_view_rows.rs` | 659 |
+| `report_sub_view.rs` | 653 |
 | `expr_format.rs` | 645 |
 | `modelica_lex.rs` | 595 |
 | `spyplot.rs` | 594 |
 | `pantelides_ladder.rs` | 576 |
 | `source_view.rs` | 576 |
-| `alias_anim.rs` | 546 |
 | `pre_lowering_anim.rs` | 531 |
 | `artifact_pane.rs` | 514 |
 | `gate_policy.rs` | 494 |
@@ -178,9 +176,9 @@ showing 48 equations. They are derived now, and
 | `machine_policy.rs` | 311 |
 | `source_map.rs` | 281 |
 | `equation_text.rs` | 279 |
-| `stage_view.rs` | 272 |
 | `colors.rs` | 266 |
 | `report.rs` | 265 |
+| `stage_view.rs` | 257 |
 | `test_support.rs` | 234 |
 | `log_view.rs` | 229 |
 | `worker/test_msl.rs` | 221 |
@@ -188,11 +186,11 @@ showing 48 equations. They are derived now, and
 | `reduction_anim.rs` | 179 |
 | `main.rs` | 178 |
 | `ui_state.rs` | 170 |
-| `stage_caches.rs` | 120 |
 | `json_read.rs` | 119 |
+| `stage_caches.rs` | 117 |
 | `doc_sizes.rs` | 115 |
-| `compile_caches.rs` | 101 |
-| **total** | **88,909** |
+| `compile_caches.rs` | 100 |
+| **total** | **87,324** |
 <!-- END GENERATED module-sizes -->
 
 

@@ -60,7 +60,7 @@
 //! which point the caller drops the whole struct. Adding a key would invite the reader
 //! to think some *other* event could invalidate one of these, and none can.
 
-use crate::{connection_anim, ic_plan_anim, pre_lowering_anim, reduction_anim};
+use crate::{connection_anim, pre_lowering_anim, reduction_anim};
 
 /// Replays derived from a **compile**, all valid until the next one.
 ///
@@ -86,7 +86,6 @@ pub(crate) struct CompileViewCaches {
     // the build result (None = this compile produced nothing for this view).
     pub(crate) reduction_anim: Option<Option<reduction_anim::ReductionAnimation>>,
     pub(crate) connection_anim: Option<Option<connection_anim::ConnectionAnimation>>,
-    pub(crate) ic_plan_anim: Option<Option<ic_plan_anim::IcPlanAnimation>>,
     pub(crate) pre_lowering_anim: Option<Option<pre_lowering_anim::PreLoweringAnimation>>,
 }
 

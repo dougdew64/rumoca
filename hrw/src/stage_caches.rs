@@ -28,9 +28,7 @@
 //! project treats as a defect class.
 
 use crate::worker::StageKind;
-use crate::{
-    alias_anim, incidence_view, matching_anim, reduction_view, spyplot, tarjan_anim, tearing_anim,
-};
+use crate::{incidence_view, matching_anim, reduction_view, spyplot, tarjan_anim, tearing_anim};
 /// Views derived from a **stage's report**, all valid for exactly one stage.
 ///
 /// **Every field here reads `stages.get(self.stage)` or branches on `self.stage`**, and
@@ -79,7 +77,6 @@ pub(crate) struct StageViewCaches {
     pub(crate) matching_anim: Option<Option<matching_anim::MatchingAnimation>>,
     pub(crate) tarjan_anim: Option<Option<tarjan_anim::TarjanAnimation>>,
     pub(crate) tearing_anim: Option<Option<tearing_anim::TearingAnimation>>,
-    pub(crate) alias_anim: Option<Option<alias_anim::AliasAnimation>>,
     pub(crate) before_incidence: Option<Option<incidence_view::IncidenceMatrix>>,
 }
 
