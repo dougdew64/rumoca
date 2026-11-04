@@ -1294,20 +1294,24 @@ pub enum FromWorker {
         // 0.10.0 makes impossible (`Dae` is immutable and not `Clone`) and
         // unnecessary (`inspect_prepare_for_solve` observes the real one). The
         // re-model will supply them from that seam; see `index_reduction_stage`.
-        // **`pre()`-lowering frames are gone, because the pass they described
-        // is gone.** On 0.9.20 `lower_pre_operator(&mut Dae)` was a distinct
-        // pass over a mutable DAE, and `PreLoweringStep` named its rewrites.
-        // On 0.10.0 `pre()` is lowered *during construction*, as one arm of
-        // `construction::expression`'s builtin dispatch beside `der`, `edge`
-        // and `previous` — there is no pass, no `lower_pre_operator`, and no
-        // `PreLoweringStep`.
-        //
-        // So this is a re-model rather than a port, and it follows the same
-        // rule as index reduction: disabled and labelled now, re-modelled
-        // afterwards where it can be watched running (`DECISIONS.md`,
-        // 2026-11-02). The field is removed rather than left empty for the
-        // reason stated on `index_reduction_stage` — an always-empty `Vec`
-        // leaves the plumbing looking alive.
+        /// Every MLS §3.7.5 history-operator site, and what each one lowered to.
+        ///
+        /// **Sites rather than the old frames, because the subject changed.** On
+        /// 0.9.20 `lower_pre_operator(&mut Dae)` was a pass and
+        /// `PreLoweringStep` named its rewrites; the field held one step per
+        /// rewrite. 0.10.0 has no such pass — `pre()` is lowered inside
+        /// `construction::expression`'s builtin dispatch — so a *step of a pass*
+        /// is not a thing that exists to carry.
+        ///
+        /// What exists instead is the result of that lowering, recoverable from
+        /// the finished DAE by provenance: see
+        /// [`pre_lowering_from_construction`], which also records why this
+        /// needed no instrumentation after both the module doc and
+        /// `docs/tech-debt.md` predicted it would.
+        ///
+        /// Empty for a model using no history operator, which is most of them
+        /// and is a report rather than a gap.
+        pre_lowering_sites: Vec<crate::pre_lowering_anim::PreLoweringSite>,
         /// The flat model, the last artifact from before DAE construction runs.
         flat: Option<rumoca_ir_flat::Model>,
         /// The raw DAE, for the views that read it after the compile.
@@ -1438,6 +1442,7 @@ fn panicked_compile(path: PathBuf, note: &str) -> FromWorker {
         matching_frames: Vec::new(),
         tarjan_frames: Vec::new(),
         tearing_frames: Vec::new(),
+        pre_lowering_sites: Vec::new(),
         connection_frames: Vec::new(),
         flat: None,
         dae: None,
@@ -2762,6 +2767,7 @@ impl WorkerState {
                     matching_frames: Vec::new(),
                     tarjan_frames: Vec::new(),
                     tearing_frames: Vec::new(),
+                    pre_lowering_sites: Vec::new(),
                     connection_frames: Vec::new(),
                     flat: None,
                     dae: None,
@@ -3228,6 +3234,7 @@ impl WorkerState {
             compiled_dae,
             compiled_flat,
             structural_frames,
+            pre_lowering_sites,
         ) = match &model {
             None => {
                 // **Seven `Stage::err`s until 2026-08-25, which is seven claims that
@@ -3259,6 +3266,10 @@ impl WorkerState {
                     // only compiled because nothing had re-counted it since the
                     // reduced system's frames were removed.
                     StructuralFrames::default(),
+                    // No DAE, so no history-operator site. Empty here is the
+                    // same answer a smooth model gives, and the Events-stage
+                    // outcome is what says the pipeline stopped at parse.
+                    Vec::new(),
                 )
             }
             Some(simple_name) => {
@@ -3675,6 +3686,18 @@ impl WorkerState {
                     initialization
                 );
                 let events = run_stage!("Events", events_stage(result), events);
+                // **Read from the DAE every stage above shows, not from a second
+                // construction run.** The provenance identifying a history
+                // operator's synthesised nodes survives into the artifact, so
+                // this is an observation of the compile rather than a replay of
+                // it — see `pre_lowering_from_construction`, which records how
+                // that was measured.
+                let pre_lowering_sites = match result {
+                    Some(PhaseResult::Success(cr)) => cr
+                        .dae
+                        .inspect(|view| pre_lowering_from_construction(view, &source)),
+                    _ => Vec::new(),
+                };
                 let solve_lowering = run_stage!(
                     "Solve lowering",
                     solve_lowering_stage(result),
@@ -3705,6 +3728,7 @@ impl WorkerState {
                     dae,
                     flat,
                     structural_frames,
+                    pre_lowering_sites,
                 )
             }
         };
@@ -3742,6 +3766,7 @@ impl WorkerState {
             matching_frames: structural_frames.matching,
             tarjan_frames: structural_frames.tarjan,
             tearing_frames: structural_frames.tearing,
+            pre_lowering_sites,
             connection_frames,
             library_source,
             flat: compiled_flat,
@@ -5047,6 +5072,159 @@ fn events_from_condition_algebra(view: rumoca_ir_dae::DaeView<'_>) -> serde_json
         "roots": roots,
         "event_actions": event_actions,
     })
+}
+
+/// **Every MLS §3.7.5 history-operator site the compile lowered, and what each
+/// one became** — the re-model of the `pre()`-lowering view.
+///
+/// # Why this needs no instrumentation, which was measured rather than assumed
+///
+/// `pre_lowering_anim`'s predecessor animated `lower_pre_operator`, a pass over
+/// a finished DAE that 0.10.0 does not have: `pre()` is lowered inside
+/// `construction::expression`'s builtin dispatch. Both that module's doc comment
+/// and `docs/tech-debt.md` predicted the replacement would have to read
+/// construction through a new seam.
+///
+/// **It does not, because construction's work survives into the artifact.** Two
+/// facts carry it, and a probe confirmed both:
+///
+/// 1. Every node the history-operator lowering synthesises is tagged
+///    [`rumoca_ir_dae::DaeGeneration::PreValueLowering`], while a `pre()` the
+///    model wrote is `Source`. **That is what lets this claim `edge(b)` *became*
+///    `b and not pre(b)`** rather than merely noting both appear.
+/// 2. The owner span on a generated node is the call that owns it — exactly
+///    `edge(b)` — so grouping by span reassembles each expansion, and the label
+///    is read from the span rather than matched by name.
+///
+/// # The order is provable, not chosen
+///
+/// Ascending arena index is insertion order, and a parent cannot reference a
+/// child that does not exist yet, so within a site the highest index is the
+/// root. Sites come out in the order construction reached them, because a site's
+/// first node is its lowest index.
+///
+/// # What a smooth model yields, and why that is a report
+///
+/// An empty list. Most models use no history operator, and
+/// `pre_lowering_anim` says so in those words; `the_pre_lowering_sites_are_only_
+/// the_models_own` is the must-fire guard that an empty result means absence
+/// rather than a walk that stopped looking.
+fn pre_lowering_from_construction(
+    view: rumoca_ir_dae::DaeView<'_>,
+    source: &str,
+) -> Vec<crate::pre_lowering_anim::PreLoweringSite> {
+    use rumoca_ir_dae::{CoordinateView, DaeGeneration, DaeProvenanceOrigin, ExpressionOperation};
+
+    /// The lane a `pre` reference reads, under Rumoca's own variant name.
+    ///
+    /// **Published as Rumoca spells it.** `PreState` and `PreAlgebraic` are the
+    /// event-entry snapshot lanes a continuous coordinate gets, and renaming
+    /// either to something friendlier would be a claim — the mistake the
+    /// `zero_crossing_conditions` episode cost three weeks.
+    const fn lane_of(operation: ExpressionOperation<'_>) -> Option<&'static str> {
+        match operation {
+            ExpressionOperation::Coordinate(CoordinateView::PreDiscreteReal(_)) => {
+                Some("PreDiscreteReal")
+            }
+            ExpressionOperation::Coordinate(CoordinateView::PreDiscreteValue(_)) => {
+                Some("PreDiscreteValue")
+            }
+            ExpressionOperation::Coordinate(CoordinateView::PreState(_)) => Some("PreState"),
+            ExpressionOperation::Coordinate(CoordinateView::PreAlgebraic(_)) => {
+                Some("PreAlgebraic")
+            }
+            _ => None,
+        }
+    }
+
+    /// A site's identity: the owner span, which is the compiler's own grouping.
+    type SiteKey = (u64, usize, usize);
+
+    struct Group {
+        /// Terms in arena order, so the last is the root.
+        steps: Vec<String>,
+        lane: Option<&'static str>,
+        generated: bool,
+        span: rumoca_core::Span,
+    }
+
+    let mut groups: std::collections::HashMap<SiteKey, Group> = std::collections::HashMap::new();
+    // First-seen order of the keys, which is construction order of the sites.
+    let mut order: Vec<SiteKey> = Vec::new();
+
+    for index in 0..view.expression_count() {
+        let Some(id) = view.expression_id(index) else {
+            continue;
+        };
+        let Some(expression) = view.expression(id) else {
+            continue;
+        };
+        let provenance = expression.provenance();
+        let operation = expression.operation();
+        let lane = lane_of(operation);
+        let generated = matches!(
+            provenance.origin(),
+            DaeProvenanceOrigin::Generated(DaeGeneration::PreValueLowering)
+        );
+        // **Generated is tested first on purpose.** `edge(b)`'s synthesised
+        // `pre(b)` is *both* a pre-lane reference and a generated node; treating
+        // it as a hand-written read would split one expansion into two sites and
+        // report a `pre(b)` the model never wrote.
+        if !generated && lane.is_none() {
+            continue;
+        }
+
+        let span = provenance.span();
+        let key: SiteKey = (span.source.0, span.start.0, span.end.0);
+        let term = crate::dae_expr_format::format_expr(view, id);
+        match groups.get_mut(&key) {
+            Some(group) => {
+                group.steps.push(term);
+                group.lane = group.lane.or(lane);
+                // A span owning any generated node is an expansion. A
+                // hand-written `pre()` never shares its span with one.
+                group.generated |= generated;
+            }
+            None => {
+                order.push(key);
+                groups.insert(
+                    key,
+                    Group {
+                        steps: vec![term],
+                        lane,
+                        generated,
+                        span,
+                    },
+                );
+            }
+        }
+    }
+
+    order
+        .into_iter()
+        .filter_map(|key| groups.remove(&key))
+        .map(|group| {
+            let location = span_to_location(source, &group.span);
+            crate::pre_lowering_anim::PreLoweringSite {
+                // The excerpt is the source text the span covers, so a site is
+                // labelled `edge(b)` because Rumoca says those bytes own it.
+                call: location
+                    .as_ref()
+                    .and_then(|l| l["excerpt"].as_str())
+                    .map_or_else(
+                        || "<span outside this specimen>".to_owned(),
+                        |excerpt| excerpt.trim().to_owned(),
+                    ),
+                line: location
+                    .as_ref()
+                    .and_then(|l| l["line"].as_u64())
+                    .map(|line| line as usize),
+                lane: group.lane.map(str::to_owned),
+                generated: group.generated,
+                steps: group.steps,
+            }
+        })
+        .collect()
 }
 
 /// Solve lowering (phase 8) — the DAE lowered to a `SolveModel`, the

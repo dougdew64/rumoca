@@ -3324,6 +3324,197 @@ fn no_events_term_is_a_placeholder() {
     );
 }
 
+/// **MLS §3.7.5: `edge` and `change` are not primitives, and the IR shows the
+/// expansion.**
+///
+/// The point of the pre-lowering re-model, pinned on the smallest model carrying
+/// all four cases. `edge(b)` is *defined* as `b and not pre(b)` and `change(b)`
+/// as `b <> pre(b)`, so construction synthesises the `pre` read neither one
+/// writes — which the old view could not show, because it animated a pass over
+/// `pre` alone.
+///
+/// # What makes the claim checkable rather than plausible
+///
+/// Each synthesised node carries `DaeGeneration::PreValueLowering` and the owner
+/// span of the call that produced it, while a `pre()` the model wrote is
+/// `Source`. **So "this became that" is read off provenance, not inferred from
+/// two terms happening to appear**, and the `generated` assertions below are the
+/// ones that would catch a version of this pane that merely listed every `pre`
+/// it could find.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn edge_and_change_expand_into_pre_and_the_ir_shows_it() {
+    const SOURCE: &str = "\
+model HistoryOps \"pre, edge and change in one model\"
+  Boolean b;
+  discrete Real counted(start = 0.0, fixed = true);
+  Real x(start = 1.0, fixed = true);
+equation
+  b = time > 0.5;
+  der(x) = -x;
+  when edge(b) then
+    counted = pre(counted) + 1;
+  end when;
+  when change(b) then
+    reinit(x, pre(x) + 1);
+  end when;
+end HistoryOps;
+";
+    let specimen = crate::test_support::ScratchSpecimen::with("HistoryOps.mo", SOURCE);
+    let FromWorker::Compiled {
+        pre_lowering_sites, ..
+    } = compile_specimen(specimen.path(), test_msl::msl_roots()).expect("compile_specimen")
+    else {
+        panic!("expected Compiled");
+    };
+
+    let by_call = |call: &str| -> &crate::pre_lowering_anim::PreLoweringSite {
+        pre_lowering_sites
+            .iter()
+            .find(|s| s.call == call)
+            .unwrap_or_else(|| {
+                panic!(
+                    "no site labelled `{call}`; got {:?}",
+                    pre_lowering_sites
+                        .iter()
+                        .map(|s| &s.call)
+                        .collect::<Vec<_>>()
+                )
+            })
+    };
+
+    assert_eq!(
+        pre_lowering_sites.len(),
+        4,
+        "two expansions and two hand-written reads: {pre_lowering_sites:#?}",
+    );
+
+    // **`edge(b)` -> three nodes, innermost first.** The order is the order
+    // construction built them, which is provable rather than chosen: a parent
+    // cannot reference a child that does not exist yet.
+    let edge = by_call("edge(b)");
+    assert_eq!(
+        edge.steps,
+        ["pre(b)", "not pre(b)", "b and not pre(b)"],
+        "MLS \u{a7}3.7.5 defines edge(b) as b and not pre(b): {edge:#?}",
+    );
+    assert_eq!(
+        edge.value(),
+        Some("b and not pre(b)"),
+        "and the last node is what the call evaluates to",
+    );
+    assert!(
+        edge.generated,
+        "every node here was synthesised \u{2014} the model wrote `edge(b)`, not a \
+         `pre(b)`: {edge:#?}",
+    );
+    assert_eq!(
+        edge.lane.as_deref(),
+        Some("PreDiscreteValue"),
+        "`b` is a Boolean, so its history lives in the discrete-value lane",
+    );
+
+    // `change(b)` -> two nodes. One fewer, because no negation is needed.
+    let change = by_call("change(b)");
+    assert_eq!(
+        change.steps,
+        ["pre(b)", "b <> pre(b)"],
+        "MLS \u{a7}3.7.5 defines change(b) as b <> pre(b): {change:#?}",
+    );
+    assert!(change.generated, "also synthesised: {change:#?}");
+
+    // **The two hand-written reads are NOT generated**, which is the half that
+    // makes the assertions above mean anything.
+    let counted = by_call("pre(counted)");
+    assert_eq!(counted.steps, ["pre(counted)"], "one node, no expansion");
+    assert!(
+        !counted.generated,
+        "the model wrote this `pre`, so calling it generated would credit the \
+         compiler with the modeller's decision: {counted:#?}",
+    );
+    assert_eq!(
+        counted.lane.as_deref(),
+        Some("PreDiscreteReal"),
+        "`counted` is a discrete Real",
+    );
+
+    let x = by_call("pre(x)");
+    assert!(!x.generated, "also the model's own: {x:#?}");
+    assert_eq!(
+        x.lane.as_deref(),
+        Some("PreState"),
+        "**`x` is a continuous state, and this is the lane that matters for \
+         semantics.** A state gets its own event-entry snapshot, which is what \
+         makes `reinit(x, pre(x) + 1)` in this model read the value `x` had on \
+         entering the event rather than the one the reinit just assigned: {x:#?}",
+    );
+
+    // Construction order, so a reader stepping the animation walks the sites the
+    // way the compiler reached them.
+    let lines: Vec<Option<usize>> = pre_lowering_sites.iter().map(|s| s.line).collect();
+    assert_eq!(
+        lines,
+        [Some(8), Some(9), Some(11), Some(12)],
+        "sites in the order construction reached them: {pre_lowering_sites:#?}",
+    );
+}
+
+/// **The pre-lowering sites are only the model's own, and silence means absence.**
+///
+/// The must-fire guard for [`edge_and_change_expand_into_pre_and_the_ir_shows_it`]:
+/// that test proves the walk finds things, and this proves it is not simply
+/// collecting every `pre`-ish node in the arena. Two directions:
+///
+/// - A smooth model yields **no** sites. A walk that over-collected would find
+///   something in `SingleInertia`, which has no `when` clause at all.
+/// - `BouncingBall` yields **exactly one**, its `pre(v)`. It is the only curated
+///   specimen using a history operator, which `docs/tech-debt.md` records as a
+///   specimen gap rather than hiding behind a scratch model.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn the_pre_lowering_sites_are_only_the_models_own() {
+    let FromWorker::Compiled {
+        pre_lowering_sites, ..
+    } = compile_specimen_shared("SingleInertia")
+    else {
+        panic!("expected Compiled");
+    };
+    assert!(
+        pre_lowering_sites.is_empty(),
+        "SingleInertia has no when-clause and no history operator, so an \
+         over-collecting walk shows up here: {pre_lowering_sites:#?}",
+    );
+
+    let FromWorker::Compiled {
+        pre_lowering_sites, ..
+    } = compile_specimen_shared("BouncingBall")
+    else {
+        panic!("expected Compiled");
+    };
+    assert_eq!(
+        pre_lowering_sites.len(),
+        1,
+        "BouncingBall's `reinit(v, -e*pre(v))` is one site: {pre_lowering_sites:#?}",
+    );
+    let site = &pre_lowering_sites[0];
+    assert_eq!(site.call, "pre(v)", "labelled from its own owner span");
+    assert_eq!(site.steps, ["pre(v)"], "nothing was synthesised for it");
+    assert!(!site.generated, "the model wrote it");
+    assert_eq!(
+        site.lane.as_deref(),
+        Some("PreState"),
+        "`v` is the velocity state, so the read comes from the event-entry \
+         snapshot lane \u{2014} which is exactly why the bounce can set `v` from \
+         the `v` it had on contact",
+    );
+}
+
 /// **Every** stage's renderings resolve, and the stages that should have some do.
 ///
 /// # Why this generalises rather than being copied per stage

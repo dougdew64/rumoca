@@ -10,7 +10,7 @@ than by the toolchain. Every sweep starts from the lab holes, then re-measures.
 Quality improvements identified by code review, grouped by theme and ordered by severity within
 each group.
 
-## The v0.10.0 rebase disabled five surfaces, and two are still owed a re-model
+## The v0.10.0 rebase disabled five surfaces, and one is still owed a re-model
 
 **This is the largest outstanding item and it is not ordinary debt** — it is work Doug ruled into a
 specific order (`DECISIONS.md`, 2026-11-02). 0.10.0 re-shaped these phases' data models, so HRW's
@@ -147,25 +147,75 @@ The re-model is a solver observation seam, and the shape is already settled by p
 `()` as the production observer. A BDF integrator reporting `(t, h, order)` per accepted step is
 that pattern applied to a loop rather than a search.
 
-### `pre()` lowering — the pass became one arm of construction
+### ~~`pre()` lowering — the pass became one arm of construction~~
 
-`pre()`-lowering stepping is not built. <!-- unbuilt: worker::pre_lowering_from_construction -->
+**RE-MODELLED 2026-11-03, and it needed no instrumentation — which both this row and
+`pre_lowering_anim`'s module doc predicted it would.** That prediction is the interesting part of
+this entry, so it is kept rather than quietly corrected: *"the replacement reads construction"*, and
+*"one seam there can show `pre`, `edge`, `change` and `previous` being lowered together"*. A seam
+would have worked. It was not needed, because **construction's work survives into the artifact**:
 
-HRW animated `lower_pre_operator(&mut dae::Dae)`, a pass that walked a finished DAE and rewrote
-every `pre(x)`, with live stepping re-running `to_dae_with_options_traced`. **0.10.0 has no such
-pass.** `pre()` is lowered *while the expression arena is being built*, as one arm of
-`construction::expression`'s builtin dispatch (`lower_pre`), beside `der`, `edge`, `change`,
-`previous` and `hold`. Neither `lower_pre_operator`, `to_dae_with_options_traced` nor
-`PreLoweringStep` exists, and an immutable `Dae` could not host an in-place rewriting pass anyway.
+- every node the history-operator lowering synthesises carries
+  `DaeGeneration::PreValueLowering`, while a `pre()` the model wrote is `Source`
+- the owner span on a generated node is the call that produced it, so grouping by span
+  reassembles each expansion and the label is read from the span rather than matched by name
 
-**The replacement reads construction, and is richer than the pass was.** Because `lower_pre` sits
-beside the other history operators, one seam there can show `pre`, `edge`, `change` and `previous`
-being lowered *together* — which is the comparison that explains MLS §3.7.5's discrete-time
-semantics. The old pass could only ever show `pre` alone.
+So the right first move on a re-model is to **check what the finished IR already carries**, before
+pricing a `crates/` change. `worker::pre_lowering_from_construction` is HRW-side only, and
+`claims_of_absence_are_still_true` forced this retirement by failing the moment it existed.
 
-`pre_lowering_anim.rs` is a placeholder keeping the surface `app.rs` drives, and
-`FromWorker::Compiled` lost its `pre_lowering_frames` field rather than carrying an always-empty
-`Vec` that leaves the plumbing looking alive.
+**What the pane shows, measured on a four-case probe.** `edge` and `change` are *not* primitives —
+MLS §3.7.5 defines them in terms of `pre`, and the IR carries the expansion:
+
+| site | nodes construction created, innermost first | |
+|---|---|---|
+| `edge(b)` | `pre(b)`, `not pre(b)`, **`b and not pre(b)`** | synthesised |
+| `change(b)` | `pre(b)`, **`b <> pre(b)`** | synthesised |
+| `pre(counted)` | `pre(counted)` | the model's own |
+| `pre(x)` | `pre(x)` | the model's own |
+
+**The old pass could only ever show `pre` alone**, so this is strictly richer, exactly as predicted.
+`edge_and_change_expand_into_pre_and_the_ir_shows_it` pins it, and
+`the_pre_lowering_sites_are_only_the_models_own` is the must-fire half — a walk that over-collected
+would find something in `SingleInertia`, which has no `when` clause at all.
+
+**And the lane is a semantic claim rather than a label.** `pre()` resolves to one of
+`PreDiscreteReal`, `PreDiscreteValue`, `PreState` or `PreAlgebraic`; the last two exist because a
+continuous coordinate gets its own event-entry snapshot lane, which is what makes
+`reinit(x, pre(x) + 1)` read the `x` from event entry rather than the one the reinit assigned.
+`BouncingBall`'s `pre(v)` is a `PreState`, and that is why its bounce can set `v` from the `v` it
+had on contact.
+
+#### Live stepping is what did NOT come back, and the affordance went with it
+
+`pre()`-lowering live stepping is not built. <!-- unbuilt: worker::pre_lowering_live_trace -->
+
+*(The tag named `pre_lowering_anim::start_live` first and fired immediately: the checker matches a
+symbol **tree-wide**, and five other views define a `start_live`. A module-qualified target does not
+narrow it. So an `unbuilt:` tag has to name a symbol whose spelling is unique in the tree, or it
+reports a claim of absence as false the moment any module defines that name — the mirror of the
+misspelling failure the tag's own rule warns about. This one names the HRW entry point the seam
+would feed.)*
+
+The old view re-ran `to_dae_with_options_traced`; that function is gone, and re-running
+`Dae::construct` would report nothing without a tracing seam inside `lower_history_operator`. **So
+`start_live` and `app.rs`'s live-debug gate around it were deleted rather than left returning
+`None`**, and `PendingLiveDebug::PreLowering` went with them — a live-debug request no code path can
+originate.
+
+`playback::tests_animated_contract::only_the_views_with_a_live_path_report_a_live_session` is what
+forced the choice: a view `app.rs` hands a live path **must** delegate `live_state` to its
+`Playback`, and a view that delegates while holding only recorded frames answers `Arming` whenever
+any session is armed anywhere. There was no third option in which the button stayed and told the
+truth.
+
+#### A second specimen gap, found the same way as the `fixed = true` one
+
+**No curated specimen uses `edge` or `change`**, and only `BouncingBall` uses `pre` at all. So the
+corpus exercises one of the four cases, and `edge_and_change_expand_into_pre_and_the_ir_shows_it`
+has to author a scratch model to cover the other three. This is a *specimen* gap rather than a code
+one, the same shape as the `fixed = true` row below — and the same remedy: a curated model with an
+`edge`, authored through System Modeler, would cover the expansion the pane exists to show.
 
 ### ~~Events — a condition is an algebra now, not an equation~~
 

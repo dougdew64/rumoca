@@ -2251,20 +2251,23 @@ fn every_animation_pane_reports_having_nothing_to_show() {
             |a, ui| a.connection_anim_ui(ui),
             "no connections in this model",
         ),
-        // **The disabled pane says something different, and more**, since the
-        // v0.10.0 rebase. `pre_lowering_anim_ui` now always installs
-        // `PreLoweringAnimation::disabled()`, so the `(no pre() lowering in this
-        // model)` branch — which claimed the *model* used no `pre()` — is
-        // unreachable, and the placeholder explains that **HRW** cannot show the
-        // pass instead. That is the distinction `awaiting_remodel_note` exists for:
-        // a reader must not read an HRW gap as a fact about their model.
+        // **Back to a claim about the model**, since the re-model landed
+        // 2026-11-03. Through the rebase this expected "pre() lowering stepping
+        // is being rebuilt" — the placeholder's sentence, which said HRW could
+        // not show the pass. That was the right message while it was true, and
+        // it is the shape `awaiting_remodel_note` exists for: a reader must not
+        // read an HRW gap as a fact about their model.
         //
-        // The assertion is kept rather than dropped because the property is the
-        // same one: this pane must say something when it has nothing.
+        // Now the data is real, so the empty pane makes the other claim — this
+        // *model* uses no history operator — which is what `App::test_default`
+        // with no compile produces. `pre_lowering_anim::EMPTY_MESSAGE` is the
+        // one home for the sentence, and
+        // `pre_lowering_anim::tests::the_empty_pane_says_what_is_absent` pins
+        // that it talks about the model rather than about HRW.
         (
             "pre_lowering",
             |a, ui| a.pre_lowering_anim_ui(ui),
-            "pre() lowering stepping is being rebuilt",
+            "No history operators in this model.",
         ),
     ];
 
@@ -2658,6 +2661,7 @@ fn drain_worker_compiled_clears_caches_and_updates_state() {
         matching_frames: Vec::new(),
         tarjan_frames: Vec::new(),
         tearing_frames: Vec::new(),
+        pre_lowering_sites: Vec::new(),
         connection_frames: Vec::new(),
         flat: None,
         dae: None,
@@ -2694,6 +2698,7 @@ fn drain_worker_compiled_stale_path_ignored() {
         matching_frames: Vec::new(),
         tarjan_frames: Vec::new(),
         tearing_frames: Vec::new(),
+        pre_lowering_sites: Vec::new(),
         connection_frames: Vec::new(),
         flat: None,
         dae: None,
@@ -2733,6 +2738,7 @@ fn drain_worker_compiled_applies_pending_stage() {
         matching_frames: Vec::new(),
         tarjan_frames: Vec::new(),
         tearing_frames: Vec::new(),
+        pre_lowering_sites: Vec::new(),
         connection_frames: Vec::new(),
         flat: None,
         dae: None,
@@ -2783,6 +2789,7 @@ fn drain_worker_compiled_falls_back_without_pending_stage() {
         matching_frames: Vec::new(),
         tarjan_frames: Vec::new(),
         tearing_frames: Vec::new(),
+        pre_lowering_sites: Vec::new(),
         connection_frames: Vec::new(),
         flat: None,
         dae: None,
@@ -2825,6 +2832,7 @@ fn drain_worker_compiled_preserves_log_view() {
         matching_frames: Vec::new(),
         tarjan_frames: Vec::new(),
         tearing_frames: Vec::new(),
+        pre_lowering_sites: Vec::new(),
         connection_frames: Vec::new(),
         flat: None,
         dae: None,
