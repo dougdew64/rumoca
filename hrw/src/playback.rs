@@ -624,7 +624,7 @@ mod tests_animated_contract {
     /// in *both* directions, so when a re-model lands and the marker goes, the
     /// list fails and the view rejoins the contracts. An exemption that outlives
     /// its reason is how a disabled pane becomes a permanently unchecked one.
-    const DISABLED_VIEWS: &[&str] = &["pre_lowering_anim", "reduction_anim"];
+    const DISABLED_VIEWS: &[&str] = &["reduction_anim"];
 
     /// The marker every placeholder carries, named once.
     ///

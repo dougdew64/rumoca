@@ -85,10 +85,22 @@ single stop; `the_corpus_outcome_matrix_is_unchanged` pins it now.
 **"REPLAY" MEANS THREE THINGS AND ONLY ONE IS FORBIDDEN — judge by where the frames came from,
 never by the word.** **Playback** of frames recorded during the real compile is the animation
 feature and is **correct** (`CompileFrames`). **A live debug session** genuinely re-runs a phase
-because that is what was asked for (`PendingLiveDebug::PreLowering`) and must not be "fixed".
+because that is what was asked for (`PendingLiveDebug::Reduction`) and must not be "fixed".
 **Re-execution presented as the compile** is the fiction, and it is gone. *(Twice this has
 threatened a working feature: a session reads "the reduction replay" in a lab and either deletes
 something correct or — the silent case — concludes the fictions were dealt with and stops looking.)*
+
+**AND A THIRD WAY A LIVE PATH CAN GO, WHICH IS NEITHER OF THOSE — the phase it re-ran stops
+existing.** This rule named the PreLowering live-debug variant as its example of the legitimate kind
+until 2026-11-03, when that variant was deleted, and `qualified_citations_resolve` caught the dead
+pointer — which is why the name appears here in plain text: it is history, not something to follow.
+**Read that deletion as the narrow thing it was**: `pre()` lowering's live path re-ran
+`to_dae_with_options_traced`, which 0.10.0 does not have, and no seam inside `Dae::construct`
+exists to replace it — so there was no session to offer, and a Debug button that arms a breakpoint
+and reports nothing is a false affordance. **It is not a precedent for the surviving four**, each of
+which re-runs a phase that still exists and must not be "fixed". `docs/tech-debt.md` carries the
+account, and `playback::tests_animated_contract::only_the_views_with_a_live_path_report_a_live_session`
+is what forced the choice rather than leaving a stub.
 
 **A LARGE GREEN RESULT COVERS THE TERRITORY IT MEASURED AND NO MORE, WHILE THE CONFIDENCE IT
 PRODUCES DOES NOT KNOW THAT.** 2,614 green fidelity rows could not have caught one of the fictions,

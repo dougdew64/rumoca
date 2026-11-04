@@ -6405,7 +6405,14 @@ mod tests_orphaned_docs {
             // second sentence of the summary, which the scanner cannot tell from a
             // second summary. Triaged by the documented shortcut: no undocumented
             // item in the file for an orphan to belong to.
-            ("app.rs", 10),
+            //
+            // 10 -> 11 on 2026-11-03. The new hit is at `app.rs:4764`, inside
+            // `pre_lowering_anim_ui`'s doc: a wrapped line that happens to end a
+            // sentence, in a paragraph explaining why that view has no live path.
+            // The continuation-line shape, again. Triaged the documented way: the
+            // commit added no item to this file, so there is no undocumented item
+            // for an orphan to belong to.
+            ("app.rs", 11),
             // 4 -> 5 on 2026-09-22, with the reasoning this ratchet requires. The hit is the
             // closing paragraph of `a_copy_pushed_after_the_label_draws_is_lost` — *"`App` now
             // defers the push to the top of the next frame"* — which opens like a summary
@@ -6545,7 +6552,15 @@ mod tests_orphaned_docs {
             // `diagnostic_source` and `model_resolve_errors`, and both carry their
             // own summaries, so there is no undocumented item for an orphan to
             // belong to.
-            ("worker.rs", 19),
+            //
+            // 19 -> 20 on 2026-11-03, at `worker.rs:1304` — the last line of a
+            // paragraph in the `pre_lowering_sites` field's doc comment, which
+            // wraps and happens to end a sentence. **Exactly the shape this
+            // budget's first entry describes**, and triaged the documented way:
+            // the item that commit added is `pre_lowering_from_construction`,
+            // which carries its own summary, so there is no undocumented item
+            // for an orphan to belong to.
+            ("worker.rs", 20),
             // 5 -> 6 on 2026-11-03. The new hit is at `worker/tests.rs:6239`, the
             // `# The failure this prevents` section of
             // `the_tests_blocked_on_a_remodel_are_still_blocked` — a `#` heading

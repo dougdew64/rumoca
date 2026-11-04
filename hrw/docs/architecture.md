@@ -115,15 +115,15 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**73 modules, 85,784 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**73 modules, 86,568 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
-| `app.rs` | 8,017 |
-| `worker/tests.rs` | 7,844 |
-| `app/tests.rs` | 7,306 |
-| `doc_citations.rs` | 7,146 |
-| `worker.rs` | 6,479 |
+| `worker/tests.rs` | 8,035 |
+| `app.rs` | 8,025 |
+| `app/tests.rs` | 7,314 |
+| `doc_citations.rs` | 7,161 |
+| `worker.rs` | 6,657 |
 | `bridge.rs` | 4,386 |
 | `ui_tests.rs` | 3,094 |
 | `fidelity.rs` | 1,949 |
@@ -159,6 +159,7 @@ showing 48 equations. They are derived now, and
 | `spyplot.rs` | 594 |
 | `source_view.rs` | 576 |
 | `alias_anim.rs` | 563 |
+| `pre_lowering_anim.rs` | 531 |
 | `artifact_pane.rs` | 514 |
 | `pantelides_ladder.rs` | 496 |
 | `gate_policy.rs` | 494 |
@@ -186,13 +187,12 @@ showing 48 equations. They are derived now, and
 | `timing.rs` | 200 |
 | `main.rs` | 178 |
 | `ui_state.rs` | 170 |
-| `pre_lowering_anim.rs` | 147 |
 | `reduction_anim.rs` | 147 |
 | `stage_caches.rs` | 120 |
 | `json_read.rs` | 119 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 101 |
-| **total** | **85,784** |
+| **total** | **86,568** |
 <!-- END GENERATED module-sizes -->
 
 
