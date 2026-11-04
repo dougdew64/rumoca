@@ -48,10 +48,25 @@ use crate::stage_caches::StageViewCaches;
 use crate::stage_view::StructuralView;
 use crate::worker::{StageBundle, StageKind};
 
-/// Which of the four **conditional** sub-view tabs this model has.
+/// Which sub-view tabs this model has — **one field per tab the row draws**.
 ///
-/// The other five — Incidence, Matching, Tree, BLT and Tearing — are decided from
-/// singularity alone, which this row can read off the stage note.
+/// # It covered three of eight until 2026-11-04, and the row made up the rest
+///
+/// It said *"which of the four conditional tabs this model has … the other five are
+/// decided from singularity alone, which this row can read off the stage note"* — and
+/// that is exactly what went wrong. `Incidence` and `Matching` were drawn
+/// **unconditionally**, `BLT` and `Tearing` under a `!is_singular || is_index_reduction`
+/// the row recomputed from the note. So `App::structural_view_available` could refuse a
+/// view and the tab appeared anyway, and the row's own comment claimed the opposite: *"a
+/// tab that exists and a link that is honoured must not be able to disagree."*
+///
+/// **Doug found it by running the app** — Drivetrain → Index Reduction showing Matching,
+/// BLT and Tearing with animation triangles and no animation behind any of them. A test
+/// written the day before had asked `structural_view_available` about those views and
+/// agreed with itself, because the row was not consulting it.
+///
+/// So every tab now has a field, the row consults it and nothing else, and
+/// `tests::the_tabs_drawn_are_exactly_the_tabs_offered` compares the two sets.
 ///
 /// Every field is `pub(crate)` because `..Default::default()` in a test needs the whole
 /// struct visible, not only the fields being set (the `ContextBarState` lesson).
@@ -59,10 +74,89 @@ use crate::worker::{StageBundle, StageKind};
 pub(crate) struct TabAvailability {
     /// The singular-system explanation, plus Index Reduction's own report.
     pub(crate) summary: bool,
-    /// The reduction replay — Index Reduction only, and only when frames were captured.
+    /// The reduction replay — Index Reduction only, and only when it logged a search.
     pub(crate) animate: bool,
     /// The BLT spy plot, which needs a complete matching to mean anything.
     pub(crate) spy_plot: bool,
+    /// The incidence matrix. On Index Reduction it is the **reduced** system's, which a
+    /// refused reduction does not publish.
+    pub(crate) incidence: bool,
+    /// The augmenting-path search. Shown even when singular on Structural — the search
+    /// failing is the instructive part — and never on Index Reduction, whose frames
+    /// belong to the raw system.
+    pub(crate) matching_anim: bool,
+    /// The SCC search. Same frame restriction as `matching_anim`.
+    pub(crate) tarjan_anim: bool,
+    /// Tearing a coupled block open. Same frame restriction.
+    pub(crate) tearing_anim: bool,
+    /// The raw IR tree, which every report stage offers.
+    pub(crate) tree: bool,
+}
+
+impl TabAvailability {
+    /// Ask one predicate about every tab, so no tab can be forgotten.
+    ///
+    /// **Built from a closure rather than field by field** because the three-of-eight
+    /// gap was a field-by-field omission: the struct listed what someone remembered to
+    /// list. A caller now passes `App::structural_view_available` once and every arm is
+    /// filled from it.
+    pub(crate) fn from_predicate(mut offered: impl FnMut(StructuralView) -> bool) -> Self {
+        Self {
+            summary: offered(StructuralView::Summary),
+            animate: offered(StructuralView::Animate),
+            spy_plot: offered(StructuralView::SpyPlot),
+            incidence: offered(StructuralView::Incidence),
+            matching_anim: offered(StructuralView::MatchingAnim),
+            tarjan_anim: offered(StructuralView::TarjanAnim),
+            tearing_anim: offered(StructuralView::TearingAnim),
+            tree: offered(StructuralView::Tree),
+        }
+    }
+
+    /// Whether this tab is offered, by view.
+    ///
+    /// The inverse of [`Self::from_predicate`], so a test can compare the set the row
+    /// drew against the set it was handed without naming fields.
+    ///
+    /// `#[cfg(test)]` because production has no reader: the row consults the fields
+    /// directly, and a second production path to the same answer is what this whole
+    /// change exists to remove.
+    #[cfg(test)]
+    pub(crate) fn offers(&self, v: StructuralView) -> bool {
+        match v {
+            StructuralView::Summary => self.summary,
+            StructuralView::Animate => self.animate,
+            StructuralView::SpyPlot => self.spy_plot,
+            StructuralView::Incidence => self.incidence,
+            StructuralView::MatchingAnim => self.matching_anim,
+            StructuralView::TarjanAnim => self.tarjan_anim,
+            StructuralView::TearingAnim => self.tearing_anim,
+            StructuralView::Tree => self.tree,
+        }
+    }
+}
+
+/// Rumoca's own word for how reduction ended, from the Index Reduction payload.
+///
+/// `None` when the stage published nothing — a stage that was never reached. Read rather
+/// than inferred from the note, which is prose and has already been wrong about this
+/// once; `worker::reduction_outcome_summary` owns the vocabulary.
+fn reduction_outcome(stages: &StageBundle) -> Option<&str> {
+    stages.index_reduction.value.as_ref()?["outcome"]["kind"].as_str()
+}
+
+/// How many reduction rounds ran, which is what disambiguates `sorted`.
+///
+/// `sorted` with zero rounds means normalization rebuilt the system and reduction did
+/// nothing; `sorted` with rounds means reduction ran. The word alone cannot tell them
+/// apart, which is why the banner takes both.
+fn reduction_rounds(stages: &StageBundle) -> u64 {
+    stages
+        .index_reduction
+        .value
+        .as_ref()
+        .and_then(|v| v["rounds"].as_u64())
+        .unwrap_or(0)
 }
 
 /// The sub-view a reader lands on when the report stage changes.
@@ -148,25 +242,60 @@ pub(crate) fn report_sub_view_row_ui(
 
     // Status banner
     if is_index_reduction {
-        if is_singular {
-            ui.horizontal(|ui| {
-                ui.label(
-                    egui::RichText::new("Singular")
-                        .color(crate::colors::ANIM_FAIL)
-                        .strong(),
-                );
-                ui.weak("\u{2014} raw DAE was structurally singular; index reduction performed");
-            });
-        } else {
-            ui.horizontal(|ui| {
-                ui.label(
-                    egui::RichText::new("Index-1")
-                        .color(crate::colors::ANIM_PATH_FOUND)
-                        .strong(),
-                );
-                ui.weak("\u{2014} already non-singular; reduction funnel is a no-op");
-            });
-        }
+        // **Read from the payload's own outcome, not from the note, since 2026-11-04.**
+        //
+        // It asked `note.contains("singular")` and said *"Index-1 — already
+        // non-singular; reduction funnel is a no-op"* otherwise. With the re-modelled
+        // notes that is **exactly backwards**: a successful reduction's note reads
+        // `"sorted after 6 round(s): 9 state(s) → 5"` and contains no "singular", so
+        // `Drivetrain` — six rounds, four states demoted — was told it was a no-op, in
+        // the most prominent line on the tab. The word "funnel" had also outlived the
+        // funnel.
+        //
+        // The outcome word is Rumoca's own and distinguishes the three cases the note
+        // cannot: `borrowed` (nothing to do), `sorted` (reduction ran, or normalization
+        // did), and a refusal.
+        let (label, colour, gloss) = match reduction_outcome(stages) {
+            Some("borrowed") => (
+                "Index-1",
+                crate::colors::ANIM_PATH_FOUND,
+                "\u{2014} already index-1; the system sorted as it stood and nothing was \
+                 rebuilt",
+            ),
+            Some("sorted") if reduction_rounds(stages) == 0 => (
+                "Rebuilt",
+                crate::colors::ANIM_PATH_FOUND,
+                "\u{2014} sorted with no reduction round: derivative-alias normalization \
+                 rebuilt the system",
+            ),
+            Some("sorted") => (
+                "Reduced",
+                crate::colors::ANIM_PATH_FOUND,
+                "\u{2014} the raw DAE was structurally singular; reduction ran until it \
+                 sorted",
+            ),
+            Some("singular") => (
+                "Singular",
+                crate::colors::ANIM_FAIL,
+                "\u{2014} still singular after reduction; no candidate in either lane \
+                 could reduce the residue",
+            ),
+            // A stop this banner does not know, or a stage with no payload. Named rather
+            // than folded into one of the above, because guessing here is what produced
+            // the claim this replaced.
+            other => (
+                "Unreported",
+                crate::colors::ANIM_FAIL,
+                other.map_or(
+                    "\u{2014} this stage published no outcome to report",
+                    |_| "\u{2014} the stage reports an outcome this banner does not know",
+                ),
+            ),
+        };
+        ui.horizontal(|ui| {
+            ui.label(egui::RichText::new(label).color(colour).strong());
+            ui.weak(gloss);
+        });
         ui.add_space(2.0);
     } else if is_singular {
         ui.horizontal(|ui| {
@@ -205,7 +334,9 @@ pub(crate) fn report_sub_view_row_ui(
         if available.spy_plot {
             ui.selectable_value(structural, StructuralView::SpyPlot, "Spy-plot");
         }
-        ui.selectable_value(structural, StructuralView::Incidence, "Incidence");
+        if available.incidence {
+            ui.selectable_value(structural, StructuralView::Incidence, "Incidence");
+        }
         // Matching is shown *even when singular* — that is the whole
         // point of it. The other three below need a complete matching
         // before they mean anything; this one is a replay of the
@@ -217,25 +348,38 @@ pub(crate) fn report_sub_view_row_ui(
         // emits `MatchingStep::EquationFailed` and the view already
         // paints the failed row red. The feature was built, then
         // gated out of reach.
-        ui.selectable_value(
-            structural,
-            StructuralView::MatchingAnim,
-            "Matching \u{25b6}",
-        )
-        .on_hover_text(if is_singular && !is_index_reduction {
-            "Watch the augmenting-path search run out. The equation it \
-                 gives up on is the rank deficiency."
-        } else {
-            "Replay the augmenting-path search that pairs each equation \
-                 with one unknown."
-        });
-        if !is_singular || is_index_reduction {
+        // **Gated like every other tab since 2026-11-04.** This one was drawn
+        // unconditionally and the two below under a `!is_singular || is_index_reduction`
+        // recomputed right here, so `App::structural_view_available` refusing them had no
+        // effect on screen. Doug found that by running the app.
+        //
+        // The triangle means *this view animates*, so a tab carrying one over a view that
+        // cannot animate on this stage is a promise the pane does not keep.
+        if available.matching_anim {
+            ui.selectable_value(
+                structural,
+                StructuralView::MatchingAnim,
+                "Matching \u{25b6}",
+            )
+            .on_hover_text(if is_singular {
+                "Watch the augmenting-path search run out. The equation it \
+                     gives up on is the rank deficiency."
+            } else {
+                "Replay the augmenting-path search that pairs each equation \
+                     with one unknown."
+            });
+        }
+        if available.tarjan_anim {
             ui.selectable_value(structural, StructuralView::TarjanAnim, "BLT \u{25b6}");
-            // Tearing operates on the coupled blocks BLT finds,
-            // so it needs the same full matching those two do.
+        }
+        // Tearing operates on the coupled blocks BLT finds, so it needs the same full
+        // matching those two do.
+        if available.tearing_anim {
             ui.selectable_value(structural, StructuralView::TearingAnim, "Tearing \u{25b6}");
         }
-        ui.selectable_value(structural, StructuralView::Tree, "Tree");
+        if available.tree {
+            ui.selectable_value(structural, StructuralView::Tree, "Tree");
+        }
     });
     ui.separator();
 }
@@ -282,6 +426,11 @@ mod tests {
                     summary: false,
                     animate: false,
                     spy_plot: true,
+                    incidence: true,
+                    matching_anim: true,
+                    tarjan_anim: true,
+                    tearing_anim: true,
+                    tree: true,
                 },
             }
         }
@@ -347,8 +496,20 @@ mod tests {
     /// leaving the reader to infer it from an empty pane.
     #[test]
     fn a_non_singular_index_reduction_stage_shows_the_index_1_banner() {
+        // **The banner reads the payload now, not the note.** It asked
+        // `note.contains("singular")`, which with the re-modelled notes is true only for
+        // reductions that FAILED — so a successful `Drivetrain` was told its reduction
+        // was "a no-op" while six rounds had demoted four states.
+        let stages = StageBundle {
+            index_reduction: crate::worker::Stage::ok(serde_json::json!({
+                "rounds": 0,
+                "outcome": { "kind": "borrowed", "admitted": true },
+            })),
+            ..StageBundle::default()
+        };
         let mut h = harness(Row {
             stage: StageKind::IndexReduction,
+            stages,
             available: TabAvailability {
                 summary: true,
                 ..TabAvailability::default()
@@ -362,12 +523,90 @@ mod tests {
             "an already-index-1 system must be named as one",
         );
         assert!(
-            h.query_by_label_contains("no-op").is_some(),
-            "and the row must say the funnel did nothing",
+            h.query_by_label_contains("sorted as it stood").is_some(),
+            "and the row must say nothing was rebuilt; `funnel` went with the funnel",
         );
         assert!(
             h.query_by_label_contains("Singular").is_none(),
             "the two banners are exclusive — showing both would be incoherent",
+        );
+    }
+
+    /// **A reduction that ran is not reported as a no-op** — the inverse of the test
+    /// above, and the claim Doug was actually shown.
+    ///
+    /// `Drivetrain` reduces for six rounds and demotes four states. The banner read
+    /// `note.contains("singular")`, the re-modelled note reads `"sorted after 6 round(s):
+    /// 9 state(s) -> 5"`, and so the most prominent line on the tab said the reduction
+    /// did nothing. Both directions are pinned, because one test alone is satisfied by a
+    /// banner that always says the same thing.
+    #[test]
+    fn a_reduced_index_reduction_stage_is_not_reported_as_a_no_op() {
+        let stages = StageBundle {
+            index_reduction: crate::worker::Stage::ok(serde_json::json!({
+                "rounds": 6,
+                "outcome": { "kind": "sorted", "admitted": true },
+            })),
+            ..StageBundle::default()
+        };
+        let mut h = harness(Row {
+            stage: StageKind::IndexReduction,
+            stages,
+            available: TabAvailability {
+                summary: true,
+                ..TabAvailability::default()
+            },
+            ..Row::default()
+        });
+        h.run_steps(2);
+
+        assert!(
+            h.query_by_label_contains("Reduced").is_some(),
+            "a system reduction worked on must be named as reduced",
+        );
+        assert!(
+            h.query_by_label_contains("Index-1").is_none(),
+            "and not index-1, which is what it was NOT when it arrived",
+        );
+        assert!(
+            h.query_by_label_contains("no-op").is_none(),
+            "nor a no-op: six rounds demoted four states",
+        );
+    }
+
+    /// **`sorted` with zero rounds is a third thing, and the banner says which.**
+    ///
+    /// `StabilizedPendulum`: no reduction round ran and the system still changed, because
+    /// derivative-alias normalization rebuilt it. Reported as neither index-1 nor
+    /// reduced, because it is neither.
+    #[test]
+    fn a_normalized_index_reduction_stage_says_it_was_rebuilt() {
+        let stages = StageBundle {
+            index_reduction: crate::worker::Stage::ok(serde_json::json!({
+                "rounds": 0,
+                "outcome": { "kind": "sorted", "admitted": true },
+            })),
+            ..StageBundle::default()
+        };
+        let mut h = harness(Row {
+            stage: StageKind::IndexReduction,
+            stages,
+            available: TabAvailability {
+                summary: true,
+                ..TabAvailability::default()
+            },
+            ..Row::default()
+        });
+        h.run_steps(2);
+
+        assert!(
+            h.query_by_label_contains("Rebuilt").is_some(),
+            "normalization rebuilt it, which is neither index-1 nor reduced",
+        );
+        assert!(
+            h.query_by_label_contains("Index-1").is_none(),
+            "calling it index-1 would hide a rebuild behind a word meaning nothing \
+             happened",
         );
     }
 
@@ -399,8 +638,18 @@ mod tests {
     /// that must survive.
     #[test]
     fn a_singular_stage_hides_blt_and_tearing_but_keeps_matching() {
+        // `matching_anim` has to be OFFERED for the row to draw it: since 2026-11-04 the
+        // row consults availability for every tab rather than deciding this one itself.
+        // The rule under test is unchanged — it moved to the predicate, where
+        // `App::structural_view_available_from_stage` makes Matching available whatever
+        // the singularity.
         let mut h = harness(singular(Row {
-            available: TabAvailability::default(),
+            available: TabAvailability {
+                matching_anim: true,
+                incidence: true,
+                tree: true,
+                ..TabAvailability::default()
+            },
             ..Row::default()
         }));
         h.run_steps(2);
@@ -576,6 +825,13 @@ mod tests {
                 summary: true,
                 animate: true,
                 spy_plot: true,
+                incidence: true,
+                // The three animations are not offered on Index Reduction, which is the
+                // state this row is in — their frames belong to the raw system.
+                matching_anim: false,
+                tarjan_anim: false,
+                tearing_anim: false,
+                tree: true,
             },
             ..Row::default()
         });
@@ -599,6 +855,11 @@ mod tests {
             summary: false,
             animate: false,
             spy_plot: true,
+            incidence: true,
+            matching_anim: true,
+            tarjan_anim: true,
+            tearing_anim: true,
+            tree: true,
         };
         h.run_steps(2);
 
@@ -627,6 +888,8 @@ mod tests {
             stage: StageKind::IndexReduction,
             available: TabAvailability {
                 summary: true,
+                // The tab this test clicks; the row draws it only when offered now.
+                incidence: true,
                 ..TabAvailability::default()
             },
             ..Row::default()
@@ -648,6 +911,160 @@ mod tests {
             h.state().structural,
             StructuralView::Incidence,
             "the stage did not change, so the default must not be re-applied",
+        );
+    }
+
+    /// The on-screen label of each tab, so the drawn set can be read back.
+    ///
+    /// Shared with the row rather than restated: a label changed in one place and not the
+    /// other would make this test pass while the reader sees something else. That is why
+    /// it maps *view to label* and the assertion below queries by it, instead of listing
+    /// strings.
+    fn label(v: StructuralView) -> &'static str {
+        match v {
+            StructuralView::Summary => "Summary",
+            // **The triangles are part of the label on purpose.** A bare "Reduction"
+            // also matches the status banner, and matching the whole label asserts the
+            // second half of Doug's report: the marker appears on exactly the three tabs
+            // whose views animate, so a tab cannot promise an animation the pane does
+            // not have.
+            StructuralView::Animate => "Reduction \u{25b6}",
+            StructuralView::SpyPlot => "Spy-plot",
+            StructuralView::Incidence => "Incidence",
+            StructuralView::MatchingAnim => "Matching \u{25b6}",
+            StructuralView::TarjanAnim => "BLT \u{25b6}",
+            StructuralView::TearingAnim => "Tearing \u{25b6}",
+            StructuralView::Tree => "Tree",
+        }
+    }
+
+    /// **The tabs drawn are exactly the tabs offered — no more, no fewer.**
+    ///
+    /// # The defect this closes, and why nothing else could
+    ///
+    /// `TabAvailability` carried three of the eight tabs. `Incidence` and `Matching` were
+    /// drawn unconditionally; `BLT` and `Tearing` under a singularity the row recomputed
+    /// from the stage note. So `App::structural_view_available` could refuse a view and
+    /// its tab appeared regardless — and the row's own comment promised the opposite.
+    ///
+    /// **Doug found it by running the app**: Drivetrain → Index Reduction offering
+    /// Matching, BLT and Tearing with animation triangles over views that cannot animate
+    /// there. A test written the day before had asked the predicate about those views and
+    /// agreed with itself, because the row was not reading it. **One fact with two
+    /// expressions, for the third time in a day.**
+    ///
+    /// This compares the two sets through the widgets, so a tab drawn outside the
+    /// availability check fails here by name whichever direction it drifts.
+    ///
+    /// # Why both directions
+    ///
+    /// A drawn-but-not-offered tab is the defect above: a reader clicks it and the pane
+    /// has nothing, or worse, has the wrong system's data. An offered-but-not-drawn tab
+    /// is the inverse and just as bad — `hrw://` links and
+    /// `App::apply_pending_view_and_seek` honour availability, so a lab could navigate a
+    /// reader to a view with no tab to leave by.
+    #[test]
+    fn the_tabs_drawn_are_exactly_the_tabs_offered() {
+        // Every combination that matters: the two report stages, each with the tab set
+        // actually produced for a healthy and a singular system. Hand-built rather than
+        // taken from a compile, because this is a claim about the ROW and not about any
+        // specimen — the compile-fed version is
+        // `app::tests::every_offered_sub_view_has_something_to_draw`.
+        let cases = [
+            (
+                "structural, healthy",
+                StageKind::Structural,
+                TabAvailability {
+                    summary: false,
+                    animate: false,
+                    spy_plot: true,
+                    incidence: true,
+                    matching_anim: true,
+                    tarjan_anim: true,
+                    tearing_anim: true,
+                    tree: true,
+                },
+            ),
+            (
+                "structural, singular",
+                StageKind::Structural,
+                TabAvailability {
+                    summary: true,
+                    animate: false,
+                    spy_plot: false,
+                    incidence: true,
+                    matching_anim: true,
+                    tarjan_anim: false,
+                    tearing_anim: false,
+                    tree: true,
+                },
+            ),
+            (
+                // The shape Doug was looking at.
+                "index reduction, reduced",
+                StageKind::IndexReduction,
+                TabAvailability {
+                    summary: true,
+                    animate: true,
+                    spy_plot: true,
+                    incidence: true,
+                    matching_anim: false,
+                    tarjan_anim: false,
+                    tearing_anim: false,
+                    tree: true,
+                },
+            ),
+            (
+                // A refused reduction: no reduced matrix to draw either.
+                "index reduction, refused",
+                StageKind::IndexReduction,
+                TabAvailability {
+                    summary: true,
+                    animate: true,
+                    spy_plot: false,
+                    incidence: false,
+                    matching_anim: false,
+                    tarjan_anim: false,
+                    tearing_anim: false,
+                    tree: true,
+                },
+            ),
+        ];
+
+        let mut drawn_total = 0usize;
+        for (name, stage, available) in cases {
+            let h = harness(Row {
+                stage,
+                available,
+                // Something always offered, so the selection cannot itself be clamped
+                // away and change what the row draws.
+                structural: StructuralView::Tree,
+                ..Row::default()
+            });
+
+            for v in StructuralView::ALL {
+                let drawn = h.query_by_label_contains(label(*v)).is_some();
+                let offered = available.offers(*v);
+                assert_eq!(
+                    drawn,
+                    offered,
+                    "{name}: {} is {} but its tab is {}",
+                    crate::stage_view::structural_view_name(*v),
+                    if offered { "offered" } else { "not offered" },
+                    if drawn { "drawn" } else { "absent" },
+                );
+                if drawn {
+                    drawn_total += 1;
+                }
+            }
+        }
+
+        // Non-vacuity: a harness that drew no tabs at all would satisfy every `false`
+        // above and prove nothing.
+        assert!(
+            drawn_total > 12,
+            "only {drawn_total} tabs were drawn across four cases, so the row is not \
+             being exercised",
         );
     }
 }
