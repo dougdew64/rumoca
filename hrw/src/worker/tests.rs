@@ -269,63 +269,130 @@ fn capacitor_loop_is_singular_and_irreducible() {
     );
 }
 
-/// The Initialization stage plans a consistent initial state for the RC
-/// circuit — a non-empty IC plan plus the ground-current relaxation hint.
+/// **RcCircuit's only initial value is a guess, and the pane says so.**
+///
+/// Restored 2026-11-03 and renamed, because there is no IC plan to have: this
+/// asserted `block_count >= 1` and a `relaxation_hint`, both from the `ic_plan`
+/// era. RcCircuit declares `C.v(start = 0)` without `fixed = true`, so nothing
+/// is pinned and the state's initial value comes out of the initialization
+/// solve.
+///
+/// **That is the specimen at the centre of the initialization defect**
+/// (`upstream-issues.md`): on 0.9.20 the solve returned the value that zeroes
+/// `der(C.v)` instead of the start, and the trajectory flat-lined at 5. So
+/// `only_guessed: ["C.v"]` is not a shortcoming of the pane — it is the pane
+/// naming the exact coordinate that went wrong, which the old determinacy
+/// verdict could not do.
+///
+/// The old test's other point survives verbatim: a well-posed initialization
+/// must not be reported as over-determined (`ideas.md` #6). It is now asserted
+/// as *no surplus checks*, which is what over-determination would look like
+/// here.
 #[test]
-#[ignore = "awaiting the Initialization re-model: RcCircuit's IC plan and its blocks. The body is kept as the specification the re-model must satisfy — see worker::AWAITING_REMODEL"]
-fn rc_circuit_has_an_ic_plan() {
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn rc_circuits_only_initial_value_is_a_guess() {
     let FromWorker::Compiled { stages, .. } = compile_specimen_shared("RcCircuit") else {
         panic!("expected Compiled");
     };
     let v = stages
         .initialization
         .value
-        .unwrap_or_else(|| panic!("no IC plan: {:?}", stages.initialization.note));
-    assert!(
-        v["block_count"].as_u64().unwrap_or(0) >= 1,
-        "expected a non-empty IC plan"
+        .unwrap_or_else(|| panic!("no initialization IR: {:?}", stages.initialization.note));
+    let det = &v["determinacy"];
+
+    assert_eq!(
+        det["state_scalars"].as_u64(),
+        Some(1),
+        "RcCircuit has one continuous state, the capacitor voltage: {det}",
     );
-    assert!(
-        v["relaxation_hint"].is_object(),
-        "expected a relaxation hint (ground-current redundancy)"
+    assert_eq!(
+        det["only_guessed"],
+        serde_json::json!(["C.v"]),
+        "`C.v` states a bare `start`, so its initial value is whatever the solve \
+         returns \u{2014} and naming it is what makes the initialization defect's \
+         blast radius visible: {det}",
     );
-    // Well-posed init must NOT be mis-flagged as over-determined (idea #6).
-    assert_ne!(
-        v["determinacy"]["verdict"],
-        serde_json::json!("over-determined")
+    assert_eq!(
+        det["determined"].as_u64(),
+        Some(0),
+        "nothing determines it: no `fixed = true`, and no value transferred onto \
+         it through an equality: {det}",
+    );
+    // Well-posed init must NOT be mis-flagged as over-determined (ideas #6).
+    assert_eq!(
+        det["checks"].as_u64(),
+        Some(0),
+        "a surplus stated value would appear as a Check residual; a well-posed \
+         model has none: {det}",
     );
 }
 
-/// Idea #6: over-specified initialization is flagged. `OverInitRc` pins the
-/// capacitor voltage twice (`C.v = 0` and `der(C.v) = 0`), so the
-/// Initialization stage reports an over-determined init (surplus > 0) with a
-/// red note — the pure init blow-up `build_ic_plan` alone doesn't catch.
+/// **`ideas.md` #6 on v0.10.0: the over-determination is answered with numbers
+/// at the initialization instant, not pre-judged by the pane.**
+///
+/// Restored 2026-11-03, and the claim **moved** rather than being re-keyed.
+/// `OverInitRc` states the capacitor voltage twice (`C.v = 0` and
+/// `der(C.v) = 0`). The old Initialization stage computed a surplus count and
+/// reported `verdict: "over-determined"` with a red note; 0.10.0's preparation
+/// does no such arithmetic. A surplus stated value becomes a `Check` — a
+/// residual kept so that *"the initialization instant answers it with numbers
+/// instead of this phase guessing"*, in `initial_pins`' own words.
+///
+/// **That is the better design and it is why this test looks inverted.** The
+/// old verdict was a structural guess that a model might still satisfy
+/// numerically; the new answer is a measurement. So the stage must *not* flag
+/// it, and the simulation must refuse it — naming the row and the rule.
+///
+/// Asserting only the simulation failure would be weaker: a model that failed
+/// to compile at all would also fail to simulate. The first half pins that
+/// preparation admitted the system, so the refusal below is about the numbers.
 #[test]
-#[ignore = "awaiting the Initialization re-model: an over-determined initialization is flagged. The body is kept as the specification the re-model must satisfy — see worker::AWAITING_REMODEL"]
-fn over_init_rc_is_flagged_over_determined() {
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn over_init_rc_is_answered_at_the_initialization_instant() {
     let FromWorker::Compiled { stages, .. } = compile_specimen_shared("OverInitRc") else {
         panic!("expected Compiled");
     };
     let init = &stages.initialization;
-    let v = init.value.as_ref().expect("IC plan");
-    assert_eq!(
-        v["determinacy"]["verdict"],
-        serde_json::json!("over-determined")
-    );
-    assert!(
-        v["determinacy"]["surplus_over_states"]
-            .as_i64()
-            .unwrap_or(0)
-            >= 1
-    );
-    // `Flagged`, not `Failed` — and the distinction is the point of the enum.
-    // The IC plan above is real; Rumoca simply also reported that it is
-    // over-determined. Asserting `note_is_error()` here would pass equally for
-    // a stage that produced nothing at all.
     assert_eq!(
         init.outcome,
-        Outcome::Flagged,
-        "over-determined init is flagged, not failed"
+        Outcome::Ok,
+        "preparation admits this system \u{2014} the over-determination is not a \
+         structural refusal, and a stage reporting one here would be claiming the \
+         pipeline stopped at a stage it ran past: {:?}",
+        init.note,
+    );
+    assert!(
+        init.value.is_some(),
+        "and it publishes its pins like any admitted system",
+    );
+
+    // `SimData` has no `Debug`, so the error is unwrapped by hand.
+    let Err(refusal) = simulate_specimen(
+        Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/specimens/OverInitRc.mo"
+        )),
+        "OverInitRc",
+        1.0,
+        msl_roots(),
+    ) else {
+        panic!("an over-determined initialization cannot be satisfied");
+    };
+
+    assert!(
+        refusal.contains("surplus-check"),
+        "the refusal must name the surplus check, which is the mechanism that \
+         makes this a measurement rather than a guess: {refusal}",
+    );
+    assert!(
+        refusal.contains("8.6"),
+        "and cite the rule it violates, so a reader can look it up: {refusal}",
     );
 }
 
@@ -3471,8 +3538,22 @@ fn index_reduction_ir_has_reduction_report() {
 }
 
 /// The Initialization stage IR includes the determinacy check.
+///
+/// **Restored and re-keyed 2026-11-03**, when initialization left
+/// `worker::AWAITING_REMODEL`. The old keys described the `ic_plan` era —
+/// `initial_equations`, `fixed_start_states`, `explicit_initial_conditions`,
+/// `surplus_over_states`, `verdict` — and none of them survives, because the
+/// question changed shape: 0.10.0 does not count initial equations against
+/// states, it records which coordinates a *proof* determined.
+///
+/// `only_guessed` is asserted as an array rather than merely present, because it
+/// is the field a reader acts on: every name in it is a state whose reported
+/// initial value came out of the solve rather than out of the model.
 #[test]
-#[ignore = "awaiting the Initialization re-model: the initialization IR's determinacy fields. The body is kept as the specification the re-model must satisfy — see worker::AWAITING_REMODEL"]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
 fn initialization_ir_has_determinacy() {
     let FromWorker::Compiled { stages, .. } = compile_specimen_shared("RcCircuit") else {
         panic!("expected Compiled");
@@ -3481,15 +3562,25 @@ fn initialization_ir_has_determinacy() {
     let det = &v["determinacy"];
     assert!(det.is_object(), "should have a determinacy section");
     for key in [
-        "states",
-        "initial_equations",
-        "fixed_start_states",
-        "explicit_initial_conditions",
-        "surplus_over_states",
-        "verdict",
+        "state_scalars",
+        "determined",
+        "only_guessed",
+        "definitions",
+        "checks",
+        "partly_fixed_states",
     ] {
         assert!(det.get(key).is_some(), "determinacy missing key: {key}");
     }
+    assert!(
+        det["only_guessed"].is_array(),
+        "`only_guessed` names the states, so it must be a list a reader can read: \
+         {det}",
+    );
+    assert!(
+        v["pins"].is_array(),
+        "the pins are a list even when empty, so a pane never has to guess \
+         whether the field exists: {v}",
+    );
 }
 
 // -----------------------------------------------------------------------
@@ -6147,6 +6238,15 @@ fn the_corpus_outcome_matrix_is_unchanged() {
     //    at exactly one stage. 0.9.20 produced a solve model for a system it had
     //    already flagged as unsolvable.
     //
+    // 5. **Initialization `.` -> `O`, on every admitted system** (2026-11-03).
+    //    The pane is re-modelled onto `initial_pins`, so the stage publishes IR
+    //    again. `CartesianPendulum`, `IncompatibleConnect` and `TwiceDefined`
+    //    keep their `.`: `prepare_for_solve` does not admit a singular system,
+    //    and the stage says so with a neutral outcome rather than claiming the
+    //    pipeline stopped there — Structural already reports why. That split
+    //    is the useful part of this column now: `O` means a system was admitted
+    //    and its pins are shown, `.` means it was not.
+    //
     // 4. **Resolve: every row returned to what it should be.** The rebase briefly
     //    had all 25 reading `X` here, because HRW charged the MSL's ~75 resolve
     //    errors to whichever model was being compiled. This table is what caught
@@ -6154,36 +6254,36 @@ fn the_corpus_outcome_matrix_is_unchanged() {
     //    both directions.
     const MATRIX: &[(&str, &str)] = &[
         // Healthy: every phase produces IR.
-        ("BouncingBall", "OOOOOOO...O"),
-        ("HarmonicOscillator", "OOOOOOO...O"),
-        ("LoopWithInertia", "OOOOOOO...O"),
-        ("MixedLoop", "OOOOOOO...O"),
-        ("NonlinearLoop", "OOOOOOO...O"),
-        ("ProportionalLoop", "OOOOOOO...O"),
-        ("RcCircuit", "OOOOOOO...O"),
+        ("BouncingBall", "OOOOOOO.O.O"),
+        ("HarmonicOscillator", "OOOOOOO.O.O"),
+        ("LoopWithInertia", "OOOOOOO.O.O"),
+        ("MixedLoop", "OOOOOOO.O.O"),
+        ("NonlinearLoop", "OOOOOOO.O.O"),
+        ("ProportionalLoop", "OOOOOOO.O.O"),
+        ("RcCircuit", "OOOOOOO.O.O"),
         // `connect`s at two hierarchy levels, and clean all the way through —
         // deliberately, since the point it makes is about how sets are BUILT and a
         // failure anywhere would give the reader something else to look at.
-        ("ScopedConnect", "OOOOOOO...O"),
-        ("SingleInertia", "OOOOOOO...O"),
-        ("StiffDecay", "OOOOOOO...O"),
-        ("TwoLoops", "OOOOOOO...O"),
+        ("ScopedConnect", "OOOOOOO.O.O"),
+        ("SingleInertia", "OOOOOOO.O.O"),
+        ("StiffDecay", "OOOOOOO.O.O"),
+        ("TwoLoops", "OOOOOOO.O.O"),
         // Initialization relaxed something and said so.
-        ("OverInitRc", "OOOOOOO...O"),
-        ("RotationalInertia", "OOOOOOO...O"),
+        ("OverInitRc", "OOOOOOO.O.O"),
+        ("RotationalInertia", "OOOOOOO.O.O"),
         // Structurally sound and already index 1 — yet IC planning calls the same
         // system singular and cannot match `lambda`. The disagreement between two
         // phases about one system is `upstream-issues.md`'s 2026-09-24 entry, and
         // this row is what would change if it were fixed.
-        ("StabilizedPendulum", "OOOOOOO...O"),
+        ("StabilizedPendulum", "OOOOOOO.O.O"),
         // High-index: structural flags a singular system, reduction fixes it,
         // initialization then reports its relaxation. Four models, one shape.
-        ("BenchActuator", "OOOOOOF...O"),
-        ("Drivetrain", "OOOOOOF...O"),
-        ("GearWithBrake", "OOOOOOF...O"),
-        ("MotorWithBrake", "OOOOOOF...O"),
+        ("BenchActuator", "OOOOOOF.O.O"),
+        ("Drivetrain", "OOOOOOF.O.O"),
+        ("GearWithBrake", "OOOOOOF.O.O"),
+        ("MotorWithBrake", "OOOOOOF.O.O"),
         // Singular and NOT repaired by reduction — index reduction flags too.
-        ("CapacitorLoop", "OOOOOOF...O"),
+        ("CapacitorLoop", "OOOOOOF.O.O"),
         ("IncompatibleConnect", "OOOOOOF...X"),
         ("TwiceDefined", "OOOOOOF...X"),
         // The canonical index-3 DAE Rumoca does not reduce (`ideas.md` #83):
@@ -6255,6 +6355,116 @@ fn the_corpus_outcome_matrix_is_unchanged() {
         "the corpus outcome matrix moved. Stage order is COMPILATION; \
          O=IR, F=IR+report, X=failed, .=not reached.\n  {}",
         drift.join("\n  "),
+    );
+}
+
+/// **The initialization pane shows Rumoca's initial-value pins, with their roles.**
+///
+/// Re-modelled 2026-11-03, replacing the `ic_plan` solve sequence v0.10.0
+/// removed. The thing worth showing is the **role**: a `Definition` determines a
+/// state's initial value and stays an equation in the joint solve, while a
+/// `Check` stays a residual so the initialization instant answers it with
+/// numbers. The old pane could not express that distinction at all.
+///
+/// # Why this uses a scratch specimen rather than the corpus
+///
+/// **No curated specimen declares `fixed = true`.** They state `start = …`,
+/// which is a *guess* the initialization solve may move, not an MLS 3.6 §8.6
+/// initial equation. So every corpus model reports zero pins — correctly — and a
+/// test over the corpus would assert nothing about the rendering.
+///
+/// That is a specimen gap rather than a bug, and it is recorded in
+/// `docs/tech-debt.md`. It also explains the shape of the initialization defect
+/// `upstream-issues.md` carries: with nothing pinned, those models' initial
+/// values come from the solve, which is exactly where 0.9.20 took the
+/// derivative-zero answer instead of the start.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn the_initialization_pane_shows_each_pin_and_its_role() {
+    // **Three states, determined three different ways** — which is what makes
+    // this able to tell the mechanisms apart rather than merely count them.
+    //
+    //   `a`  its own `fixed = true`              -> determined, and NO pin
+    //   `b`  a transferred value from `c`        -> determined BY a pin
+    //   `d`  a bare `start`                      -> only guessed
+    //
+    // The `a` row is the one a wrong design passes anyway: a pane that only
+    // listed pins would show `b` and silently omit `a`, reporting one
+    // determined state out of three when the answer is two.
+    const SOURCE: &str = "\
+model InitProbe \"Three ways a state's initial value is or is not determined\"
+  parameter Real tau = 0.5;
+  Real a(start = 1.0, fixed = true);
+  Real b;
+  Real c(start = 2.0, fixed = true);
+  Real d(start = 9.0);
+equation
+  c = b;
+  tau * der(a) = -a;
+  tau * der(b) = -b;
+  tau * der(d) = -d;
+end InitProbe;
+";
+    let specimen = crate::test_support::ScratchSpecimen::with("InitProbe.mo", SOURCE);
+    let FromWorker::Compiled { stages, .. } =
+        compile_specimen(specimen.path(), test_msl::msl_roots()).expect("compile_specimen")
+    else {
+        panic!("expected Compiled");
+    };
+
+    let value = stages
+        .initialization
+        .value
+        .as_ref()
+        .expect("the Initialization stage publishes its pins");
+    let determinacy = &value["determinacy"];
+
+    assert_eq!(
+        determinacy["state_scalars"].as_u64(),
+        Some(3),
+        "a, b and d are states; c is algebraic because `c = b` determines it: \
+         {determinacy}",
+    );
+    assert_eq!(
+        determinacy["determined"].as_u64(),
+        Some(2),
+        "`a` by its own fixed start and `b` by the transfer from `c`. Counting \
+         only `fixed` STATES would say 1, and counting only pins would also say \
+         1 \u{2014} by leaving out the other one each time: {determinacy}",
+    );
+    assert_eq!(
+        determinacy["only_guessed"],
+        serde_json::json!(["d"]),
+        "`d` states a bare `start`, which the initialization solve may move. \
+         Naming it is the point: it is a state whose reported initial value came \
+         out of the solve rather than out of the model: {determinacy}",
+    );
+
+    let pins = value["pins"].as_array().expect("pins is an array");
+    assert_eq!(
+        pins.len(),
+        1,
+        "only the transferred value needed proving. A state's own fixed start is \
+         seeded directly and produces no pin, which is why the determinacy count \
+         above cannot be read off this list: {pins:#?}",
+    );
+    let pin = &pins[0];
+    assert_eq!(pin["role"], "definition", "it determines b: {pin}");
+    assert_eq!(pin["coordinate"], "b", "the pin is about the state: {pin}");
+    assert_eq!(
+        pin["source"], "c",
+        "and the value came from c's declaration, not from b's \u{2014} this field \
+         is the whole reason the pin is worth showing: {pin}",
+    );
+    assert_eq!(pin["value"], "2", "rendered as the expression it is: {pin}");
+    assert_eq!(
+        pin["declared_at"]["line"].as_u64(),
+        Some(5),
+        "pointing at `Real c(start = 2.0, fixed = true)`, the line that makes \
+         this value load-bearing: {pin}",
     );
 }
 

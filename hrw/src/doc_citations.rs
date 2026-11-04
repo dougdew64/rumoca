@@ -6689,14 +6689,46 @@ mod tests_orphaned_docs {
 
     /// Does the item on line `i` carry a doc comment, looking past its attributes?
     fn is_documented(lines: &[&str], i: usize) -> bool {
+        /// How far back a multi-line attribute's opening `#[` may be.
+        ///
+        /// Bounded on purpose. The walk below steps over a line that merely
+        /// *looks* like an attribute's tail, and the dangerous direction for
+        /// this check is claiming an item is documented when it is not — a
+        /// `///` further up belongs to something else. A bound means an
+        /// unrecognised shape reads as undocumented, which fails loudly, rather
+        /// than as documented, which is silent.
+        const ATTRIBUTE_SPAN: usize = 12;
+
         let mut j = i;
         while j > 0 {
             let prev = lines[j - 1].trim();
+            if prev.starts_with("///") {
+                return true;
+            }
             if prev.starts_with("#[") || prev.starts_with("#!") {
                 j -= 1;
                 continue;
             }
-            return prev.starts_with("///");
+            // **A multi-line attribute's closing line, and it was a blind spot
+            // until 2026-11-03.** `#[cfg_attr(\n    not(feature = "x"),\n    …\n)]`
+            // puts `)]` directly above the item, which starts with neither `#[`
+            // nor `///`, so the scan stopped there and reported a documented
+            // item as undocumented. Every such item was invisible to this
+            // check — and it is the one that watches for a *lost* doc comment,
+            // so the blind spot hid exactly what it exists to catch.
+            if prev.ends_with(']') {
+                let mut back = j - 1;
+                let floor = back.saturating_sub(ATTRIBUTE_SPAN);
+                while back > floor && !lines[back].trim_start().starts_with("#[") {
+                    back -= 1;
+                }
+                if lines[back].trim_start().starts_with("#[") {
+                    j = back;
+                    continue;
+                }
+                return false;
+            }
+            return false;
         }
         false
     }
@@ -6874,6 +6906,37 @@ mod tests_orphaned_docs {
         assert!(
             items_that_lost_their_doc(attributed, attributed).is_empty(),
             "attributes must not hide a doc comment"
+        );
+
+        // **A MULTI-LINE attribute, which was the blind spot until 2026-11-03.**
+        // `)]` sits directly above the item and starts with neither `#[` nor
+        // `///`, so the scan stopped there and read a documented item as
+        // undocumented. Both directions are asserted, because the bug made the
+        // second one pass vacuously: an item that already reads as undocumented
+        // cannot then be seen to lose anything.
+        let multiline = "/// A gated test.\n#[test]\n#[cfg_attr(\n    not(feature = \"slow\"),\n    ignore = \"slow\"\n)]\nfn gated() {}\n";
+        assert_eq!(
+            doc_counts(multiline).get("gated"),
+            Some(&(1, 1)),
+            "a doc comment above a multi-line attribute still documents its item",
+        );
+        let stripped = "#[test]\n#[cfg_attr(\n    not(feature = \"slow\"),\n    ignore = \"slow\"\n)]\nfn gated() {}\n";
+        assert_eq!(
+            items_that_lost_their_doc(multiline, stripped),
+            vec!["gated".to_owned()],
+            "and removing it must be detected \u{2014} the whole point of the check",
+        );
+
+        // The bound matters: an unrecognised shape must read as UNDOCUMENTED,
+        // which fails loudly, rather than walking back far enough to adopt a
+        // `///` belonging to something else.
+        let filler = "// filler\n".repeat(20);
+        let distant =
+            format!("/// Not this item's doc.\nfn other() {{}}\n{filler}]\nfn adopted() {{}}\n");
+        assert_eq!(
+            doc_counts(&distant).get("adopted"),
+            Some(&(0, 1)),
+            "a stray `]` must not let an item adopt a distant doc comment",
         );
 
         // Non-vacuity: the parser finds items at all, and reads visibility forms.
