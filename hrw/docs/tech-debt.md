@@ -1424,6 +1424,29 @@ repeatedly" was true while sweeps were daily; the corpus is green now and the su
 times a year. A trigger whose conditions can lapse is working as intended — but it means the
 standing candidates list needs re-reading, not just appending to.
 
+### 11-04 — the column Doug has owned alone now has a second occupant
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 11-04 | **the screenshot channel never fired at all**: `frame_ui` runs the poll, and egui does not paint an idle window | Claude, **by running the feature** | the first live request sat on disk unanswered; `session.json`'s last frame was stamped fourteen seconds *before* it arrived. Fixed with a waker thread that `stat`s the request file and wakes the UI only on a change |
+| 11-04 | the poll's 250 ms rate limiter **raced the waker it could not see** | Claude, reasoning about the fix just made | a wake arriving just after a poll would find the next one "not due" and let the app sleep again, with nothing to wake it until the file changed a *second* time. The limiter was removed rather than coordinated: one `stat` per painted frame is cheaper than the session file the same frame already writes |
+
+**Two rows, both from one afternoon's feature, and the first one is the point.** Every unit test
+passed before the feature worked at all — because they test the protocol and the clock, and the
+defect was that nothing ever turned the clock. **It was found by using the thing**, which is the
+method this ledger has recorded as Doug's for eight months.
+
+**The standing claim one section up now needs qualifying.** *"Layout is the one surface where
+`egui_kittest` cannot help, so it is the one place a change is verified only by Doug looking at
+it"* was true when written and is **no longer the whole truth**: `screenshot.rs` lets Claude look
+too. On its first navigated run it confirmed three of that day's fixes — the tab row offering five
+tabs rather than eight, the banner reading its payload rather than a note, and the constraint
+excerpts a lab station expects — none of which the suite could show directly.
+
+**What it does not change is Doug's judgement.** A photograph tells Claude *what is drawn*; it does
+not say whether the drawing teaches. His 2026-08-23 preference for minimising layout churn stands
+on its own evidence and is not softened by this.
+
 ## Owed sweeps — small `src/` fixes that must not buy a gate of their own
 
 **Doug, 2026-08-31**, asked whether a five-second imprecision should be swept up next time

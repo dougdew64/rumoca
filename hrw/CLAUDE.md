@@ -928,6 +928,16 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
   appears, the mechanism belongs on Claude's side.**
 - **A `crates/` change costs Doug one full MSL re-parse on his next launch**, because the artifact
   cache key hashes the whole tree. `hrw/` edits are free. Say so when proposing one.
+- **CLAUDE CAN NOW LOOK AT THE WINDOW — use it** *(2026-11-04)*. Launch HRW, write
+  `.hrw-bridge/screenshot-request.json` with an increasing `seq`, a `why`, and `follow` (a list of
+  `hrw://` links), then read `.hrw-bridge/screenshot-result.json` and the PNG it names. The links
+  go through `dispatch_hrw_link`, the same path a click takes. **This is the only instrument that
+  sees the painter-drawn half of HRW** — matrices, graphs, animations, every tab row — which
+  `egui_kittest` cannot see at all, and which until now only Doug could check. On its first run it
+  confirmed three of that day's fixes that the suite could only confirm indirectly.
+  - **Read `notice` and `error` in the result, every time.** A refused link leaves a window that
+    looks entirely healthy, and a failed shot leaves the *previous* request's PNG on disk.
+  - **HRW must be closed before the gate**, which relinks `hrw.exe`; the runner says so.
 
 ## Where things live
 

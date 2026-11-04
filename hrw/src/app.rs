@@ -1076,6 +1076,13 @@ pub struct App {
     // first (slow) resolution of live_trace.rs does not happen on the critical
     // path of the first Debug click.
     prewarm: Prewarm,
+
+    // ---- 17. Capture and inspect ----
+    // The screenshot channel: Claude asks HRW to photograph itself, so the
+    // painter-drawn half of the app — matrices, graphs, animations, every tab row —
+    // stops being verifiable only by Doug looking at it. See `screenshot.rs` for the
+    // argument and `tick_screenshot` for the wiring.
+    shots: crate::screenshot::ScreenshotState,
 }
 
 /// `PartialEq` so "is the pending session this view's?" is `==`.
@@ -1266,6 +1273,186 @@ impl App {
                 }
             }
             Prewarm::Done => {}
+        }
+    }
+
+    /// Drive the screenshot channel one frame: deliver, dispatch, shoot, or report.
+    ///
+    /// **Why the app owns this rather than `screenshot.rs`.** The state machine there
+    /// is pure — a clock, a queue and a deadline — and deliberately knows nothing
+    /// about `App`. The two things it cannot do are the two things that must happen
+    /// here: dispatch a link through [`Self::dispatch_hrw_link`], the same function a
+    /// *clicked* `hrw://` link goes through, and describe what is on screen through
+    /// [`Self::view_context`], the same builder a capture uses. Both are reuse on
+    /// purpose. A screenshot run that navigated by its own route, or described the
+    /// screen by its own rules, would photograph and testify about something no user
+    /// gesture produces.
+    ///
+    /// Order within the frame matters and is the order below: collect any image
+    /// delivered by a *previous* frame's command first, because a pending shot blocks
+    /// everything else, and only then advance.
+    fn tick_screenshot(&mut self, ctx: &egui::Context) {
+        self.collect_screenshot(ctx);
+
+        let step = self.shots.step(self.compiling, std::time::Instant::now());
+        match step {
+            crate::screenshot::ShotStep::Idle => {}
+            crate::screenshot::ShotStep::Follow(link) => {
+                diagnostics::record_action("shot-follow", link.clone());
+                // **Parsed with the same function the lab link checker uses.** A link
+                // this rejects would otherwise navigate nowhere and the shot would
+                // photograph the previous state as though it were the requested one.
+                match parse_hrw_link(&link) {
+                    Some(action) => self.dispatch_hrw_link(action),
+                    None => {
+                        let failure = self.shots.link_failed(&link);
+                        self.report_failed_shot(&failure);
+                    }
+                }
+            }
+            crate::screenshot::ShotStep::Shoot(seq) => {
+                diagnostics::record_action("shot-capture", format!("seq {seq}"));
+                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(seq)));
+            }
+            ref failure @ crate::screenshot::ShotStep::Failed { .. } => {
+                self.report_failed_shot(failure);
+            }
+        }
+
+        // **A pending shot must keep the frames coming.** egui repaints on input, and
+        // a window nobody is touching is exactly the case a Claude-driven capture runs
+        // in: without this the settle interval would never elapse, the viewport
+        // command would never be processed, and the reply would be the 120-second
+        // give-up rather than a photograph.
+        if self.shots.is_pending() {
+            ctx.request_repaint();
+        }
+    }
+
+    /// Collect a screenshot egui delivered for a command sent on an earlier frame.
+    ///
+    /// The capture is **asynchronous on the wgpu backend** — the frame is copied to a
+    /// buffer, read back, and pushed as an [`egui::Event::Screenshot`] some frames
+    /// later — so this cannot be folded into the command site.
+    fn collect_screenshot(&mut self, ctx: &egui::Context) {
+        let delivered: Vec<(u64, std::sync::Arc<egui::ColorImage>)> = ctx.input(|i| {
+            i.events
+                .iter()
+                .filter_map(|event| match event {
+                    egui::Event::Screenshot {
+                        user_data, image, ..
+                    } => {
+                        // The seq travels in `UserData` rather than being assumed from
+                        // the pending request, so an image that arrives after its
+                        // request was abandoned is *identifiable* as the wrong one
+                        // instead of being filed under whatever is pending now.
+                        let seq = user_data
+                            .data
+                            .as_ref()
+                            .and_then(|d| d.downcast_ref::<u64>())
+                            .copied()?;
+                        Some((seq, std::sync::Arc::clone(image)))
+                    }
+                    _ => None,
+                })
+                .collect()
+        });
+        for (seq, image) in delivered {
+            let Some(record) = self.shots.delivered(seq) else {
+                // Not this request's image. Said out loud rather than dropped: a late
+                // delivery is evidence the delivery deadline is too short, and that is
+                // worth knowing the first time rather than the fifth.
+                diagnostics::record_action(
+                    "shot-stale",
+                    format!("an image tagged seq {seq} arrived with no request pending"),
+                );
+                continue;
+            };
+            let path = bridge::screenshot_path(record.seq);
+            let bytes = crate::screenshot::rgba_bytes(&image);
+            let [width, height] = image.size;
+            // **A write that fails is reported as a failure, not as a success with a
+            // missing file.** The request's author goes looking for this path.
+            let (image, error) = match bridge::write_png(&path, width, height, &bytes) {
+                Ok(()) => (
+                    Some(bridge::ShotImage {
+                        path,
+                        width,
+                        height,
+                    }),
+                    None,
+                ),
+                Err(e) => (
+                    None,
+                    Some(format!(
+                        "the capture arrived but the PNG could not be written: {e}"
+                    )),
+                ),
+            };
+            self.report_screenshot(
+                Some(record.seq),
+                record.why.as_deref(),
+                &record.followed,
+                image,
+                error.as_deref(),
+            );
+        }
+    }
+
+    /// Answer a [`crate::screenshot::ShotStep::Failed`], whatever produced it.
+    ///
+    /// One funnel for all five failure kinds, so a new one cannot reach a shorter
+    /// path and answer nothing.
+    fn report_failed_shot(&self, step: &crate::screenshot::ShotStep) {
+        let crate::screenshot::ShotStep::Failed {
+            seq,
+            why,
+            followed,
+            error,
+        } = step
+        else {
+            return;
+        };
+        self.report_screenshot(*seq, why.as_deref(), followed, None, Some(error));
+    }
+
+    /// Write the reply to `.hrw-bridge/screenshot-result.json`.
+    ///
+    /// `image` is `Some` exactly when a PNG was written, and `error` is `Some`
+    /// exactly when it was not. One function for both so a failure cannot take a
+    /// shorter path than a success and lose a field on the way — the result file is
+    /// the only evidence either way, and the fields that matter most (`notice`,
+    /// `showing`) are the ones a hand-rolled error reply would be likeliest to omit.
+    fn report_screenshot(
+        &self,
+        seq: Option<u64>,
+        why: Option<&str>,
+        followed: &[String],
+        image: Option<bridge::ShotImage>,
+        error: Option<&str>,
+    ) {
+        let showing = self.view_context();
+        let result = bridge::ShotResult {
+            seq,
+            why,
+            followed,
+            image,
+            showing: Some(&showing),
+            specimen: self.model.as_deref(),
+            stage: self.stage.name(),
+            // **The notice is the whole reason a refused link is visible.** HRW
+            // answers an impossible link with an on-screen message and an otherwise
+            // healthy window; without this field the photograph of that window is
+            // indistinguishable from the photograph of a link that worked.
+            notice: self.notice.as_deref(),
+            error,
+        };
+        match bridge::write_screenshot_result(&result) {
+            Ok(path) => diagnostics::record_action("shot-result", path.display().to_string()),
+            // Nothing else can be done — the channel *is* the file — but the session
+            // log is read when a run produced no answer, and this is the only place
+            // that would say why.
+            Err(e) => diagnostics::record_action("shot-result-failed", e.to_string()),
         }
     }
 
@@ -1704,6 +1891,10 @@ impl App {
             pending_live_debug: None,
             live_breakpoint_armed: false,
             prewarm: Prewarm::NotStarted,
+            // Seeded from `.hrw-bridge/screenshot-result.json`, so a request left on
+            // disk by the previous session does not navigate this one's window the
+            // moment it opens.
+            shots: crate::screenshot::ScreenshotState::new(&cc.egui_ctx),
         };
         // Scan the specimen directory and pre-load libraries at startup so the
         // Resolve phase works immediately when the user selects a specimen
@@ -6884,6 +7075,12 @@ impl App {
         // reflects this frame rather than the last one — the clock must see the
         // compile finish on the frame it finishes.
         self.tick_autoplay(ui.ctx());
+
+        // The screenshot channel, for the same reason and in the same place: it also
+        // dispatches links and also has to see `compiling` as of this frame. Before
+        // the panels draw, so the viewport command it may send is queued for the paint
+        // that is about to happen rather than for the next one.
+        self.tick_screenshot(ui.ctx());
 
         // ---- Top menu bar ----
         self.menu_bar_ui(ui);

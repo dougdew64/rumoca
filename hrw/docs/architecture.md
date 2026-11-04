@@ -115,16 +115,16 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**71 modules, 88,805 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**72 modules, 90,253 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `worker/tests.rs` | 9,265 |
-| `app.rs` | 8,088 |
+| `app.rs` | 8,285 |
 | `worker.rs` | 7,599 |
-| `app/tests.rs` | 7,451 |
+| `app/tests.rs` | 7,457 |
 | `doc_citations.rs` | 7,196 |
-| `bridge.rs` | 4,386 |
+| `bridge.rs` | 4,962 |
 | `ui_tests.rs` | 3,094 |
 | `fidelity.rs` | 2,016 |
 | `equation_sheet.rs` | 1,569 |
@@ -134,7 +134,7 @@ showing 48 equations. They are derived now, and
 | `lab_panel.rs` | 1,259 |
 | `matching_anim.rs` | 1,243 |
 | `incidence_view.rs` | 1,219 |
-| `lib.rs` | 1,186 |
+| `lib.rs` | 1,187 |
 | `playback.rs` | 1,135 |
 | `connection_anim.rs` | 1,106 |
 | `report_sub_view.rs` | 1,070 |
@@ -153,6 +153,7 @@ showing 48 equations. They are derived now, and
 | `answer_check.rs` | 706 |
 | `identifier_index.rs` | 688 |
 | `canvas.rs` | 681 |
+| `screenshot.rs` | 668 |
 | `sub_view_rows.rs` | 659 |
 | `expr_format.rs` | 645 |
 | `modelica_lex.rs` | 595 |
@@ -190,7 +191,7 @@ showing 48 equations. They are derived now, and
 | `stage_caches.rs` | 117 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 100 |
-| **total** | **88,805** |
+| **total** | **90,253** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -504,7 +505,7 @@ added after it, while the *count* stayed accidentally correct at 15 — the shap
 error a total is powerless to catch.
 
 <!-- BEGIN GENERATED app-field-groups -->
-**15 groups**, numbered 1–16 with **6** unused — a number is retired when its group is extracted into its own state struct, and the surviving numbers stay put so they keep matching the comments in `app.rs`.
+**16 groups**, numbered 1–17 with **6** unused — a number is retired when its group is extracted into its own state struct, and the surviving numbers stay put so they keep matching the comments in `app.rs`.
 
 | # | group |
 |---|---|
@@ -523,6 +524,7 @@ error a total is powerless to catch.
 | 14 | Pending stage from hrw:// link |
 | 15 | Deferred live debug spawn (ack handshake) |
 | 16 | Breakpoint pre-warm |
+| 17 | Capture and inspect |
 <!-- END GENERATED app-field-groups -->
 
 **The field count is ratcheted, not counted here.** `App` went 105 → 57 fields during
@@ -1361,7 +1363,8 @@ that don't correspond to a pipeline stage.
 
 ### The file protocol
 
-Two categories of files, both in `.hrw-bridge/` (gitignored):
+Four channels, all in `.hrw-bridge/` (gitignored). Two carry context **out** to
+Claude, and two carry a request **in**:
 
 1. **`focus.json`** — written on each capture. Contains:
    - `seq` — monotonic counter (each capture increments it)
@@ -1377,6 +1380,68 @@ Two categories of files, both in `.hrw-bridge/` (gitignored):
 
 2. **`stages/<name>.json`** — one file per pipeline stage's full IR, rewritten
    each compile. Claude can diff any two stages by reading two files.
+
+3. **`answer.md`** — the first channel that runs the *other* way. Claude writes a
+   markdown lab; HRW's lab mode renders it and picks up a rewrite without a restart,
+   as `hrw://` links the reader can click.
+
+4. **`screenshot-request.json` / `screenshot-result.json` / `screenshots/*.png`** —
+   capture and inspect, below.
+
+### Capture and inspect (`screenshot.rs`)
+
+Claude asks HRW to photograph its own window; HRW writes a PNG and a result file
+saying what was on screen.
+
+**The problem it closes.** Roughly half of HRW is painter-drawn — the incidence
+matrix, the spy plot, the Tarjan graph, the four animations, and every tab row — and
+`egui_kittest` cannot see any of it, because an accessibility tree has no entry for a
+shape on a canvas. Until this existed, **Doug looking at the window was the only
+instrument** for that half, and the ledger in `tech-debt.md` records the bill: nine of
+his ten findings in the 08-16 section were things visibly wrong on screen, each of
+them sitting in a green tree until he ran the app.
+
+**Request:**
+
+```json
+{
+  "seq": 3,
+  "why": "does the Index Reduction tab row offer Matching?",
+  "follow": ["hrw://load/Drivetrain/IndexReduction/Summary"],
+  "settleMs": 600
+}
+```
+
+`seq` is required and must increase; HRW seeds its "already answered" mark from the
+**result** file at startup, so a request left on disk is not re-honoured on the next
+launch. `follow` is dispatched through **`App::dispatch_hrw_link`** — the same
+function a clicked link goes through — one link per settle interval, exactly as
+autoplay dispatches a beat. A capture that navigated by its own private route could
+photograph a state no user gesture produces, and would then testify about it.
+
+**Reply:** the PNG's path and its *measured* size, the `showing` block from the same
+`view_context` a capture uses, the current specimen and stage, HRW's on-screen
+`notice`, and `error`. Every request gets a reply, **including the ones that fail** —
+a malformed request, an unparseable link, a compile that never ends, a backend that
+never delivers, a failed write. All five leave a window that looks entirely healthy,
+so silence would let Claude find the *previous* request's PNG and read it as this
+one's answer. `notice` is load-bearing for the same reason: a link HRW refuses leaves
+a healthy-looking window and an on-screen message that no photograph can show.
+
+**Not image-snapshot testing.** Nothing is committed, no reference image exists, and
+no test asserts on a pixel — the 2026-08-01 decision against golden images stands.
+The difference is the consumer: a golden-image test compares today's pixels with
+yesterday's and fails on a font update; this hands one photograph to a reader.
+
+**A waker thread, because egui does not paint an idle window.** The poll runs in
+`frame_ui`, and a Claude-driven capture is precisely the case where nobody is touching
+the mouse — the first live request sat unnoticed, with the last frame logged fourteen
+seconds before it arrived. `request_repaint_after` was rejected: every frame here
+writes the session file to disk, so a 4 Hz heartbeat means four disk writes a second
+forever. The thread instead does one `stat` per interval and wakes the UI **only when
+the request file changes**, never reading it — the UI thread's poll stays the single
+reader, so a spurious wake costs one frame and cannot produce a second opinion about
+what the request says.
 
 ### Span-ascent (source provenance)
 
