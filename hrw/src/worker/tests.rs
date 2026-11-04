@@ -2626,25 +2626,35 @@ fn a_published_source_name_is_relative_to_the_workspace() {
 /// The guard rather than the policy: `portable_source_name` is the one place that
 /// decides, and this is what fails if a new publisher bypasses it.
 ///
-/// # What this covers, and the two things it deliberately does not
+/// # What this covers, and the one thing it deliberately does not
 ///
 /// It covers the path fields **HRW itself authors** — every `file` value anywhere in
-/// a committed trace. Two kinds of absolute path remain in the notebook, and both are
-/// named here rather than left to look like coverage:
+/// a committed trace, `dae.json` included since 2026-11-04. One kind of absolute path
+/// remains in the notebook, and it is named here rather than left to look like
+/// coverage:
 ///
-/// 1. **Rumoca's own rendered messages.** `UnclosedModel/trace/parse.json` carries a
-///    miette-rendered parse error that embeds the source path it was given. Rewriting
-///    it would be editing what the compiler said, and `examples/gen_trace.rs` records
-///    a decision of 2026-08-16 declining exactly that — *"that changes which file the
-///    string names"*. So `message` and `note` are exempt, and the tension between
-///    that decision and keeping a public repository free of a home directory is
-///    Doug's to settle, not this test's.
-/// 2. **`dae.json`.** `Stage::from_ser` serializes the whole `Dae`, and a `Dae` owns
-///    its `SourceMap` — so each one embeds every vendored MSL file's name *and
-///    contents*. Measured 2026-11-04: 24 files, **342.6 MB of the notebook's 359 MB**,
-///    with `BouncingBall/trace/dae.json` alone at 16.3 MB holding 2863 absolute paths.
-///    Fixing that changes what the notebook *is*, so it is reported rather than
-///    quietly rewritten.
+/// **Rumoca's own rendered messages.** `UnclosedModel/trace/parse.json` carries a
+/// miette-rendered parse error that embeds the source path it was given. Rewriting it
+/// would be editing what the compiler said, and `examples/gen_trace.rs` records a
+/// decision of 2026-08-16 declining exactly that — *"that changes which file the
+/// string names"*. So `message` and `note` are exempt, and the tension between that
+/// decision and keeping a public repository free of a home directory is Doug's to
+/// settle, not this test's.
+///
+/// # `dae.json` was the second exclusion and no longer is
+///
+/// It was exempt because `Stage::from_ser` serializes the whole `Dae`, a `Dae` owns
+/// its `SourceMap`, and that map serializes every registered file's name *and*
+/// contents — so each trace embedded the entire vendored MSL. Measured 2026-11-04:
+/// **2556 files and 15.25 MiB of embedded text per trace, 342.6 MiB across 24 files,
+/// 320.0 MiB (93.4 %) of it that text**, with the account name appearing 2556 times
+/// in each. Doug ruled the same day; `worker::replace_source_map_with_a_portable_index`
+/// publishes an id-to-file index instead, so the exemption and the `dae.json` skip
+/// both went.
+///
+/// *(The figure first reported for this was "2863 absolute paths" in one file. The
+/// measured count is 2556, one per registered source; the first number was a raw text
+/// count and is not reproducible. It changed nothing about the decision.)*
 #[test]
 fn no_committed_trace_names_a_path_outside_the_workspace() {
     let notebook =
@@ -2674,10 +2684,6 @@ fn no_committed_trace_names_a_path_outside_the_workspace() {
                 continue;
             }
             if path.extension().is_none_or(|e| e != "json") {
-                continue;
-            }
-            // See the doc comment: a pre-existing violation, reported not hidden.
-            if path.file_name().is_some_and(|n| n == "dae.json") {
                 continue;
             }
             let Ok(text) = std::fs::read_to_string(&path) else {
@@ -2724,6 +2730,305 @@ fn no_committed_trace_names_a_path_outside_the_workspace() {
          is public, and a committed trace must be checkable on another machine:\n  {}",
         offenders.len(),
         offenders.join("\n  "),
+    );
+}
+
+/// **The DAE stage indexes its sources and publishes no source text.**
+///
+/// `worker::replace_source_map_with_a_portable_index` carries why this exists; what
+/// follows is why the test has the shape it has, since three of its assertions exist
+/// to fail rather than to pass.
+///
+/// # The silence this makes impossible
+///
+/// `source_map` is a key `Dae`'s `Serialize` owns. If upstream renames it, the
+/// replacement finds nothing, replaces nothing, and **15.25 MiB of vendored MSL
+/// returns to every trace** — nothing on screen changes, no stage reports an error,
+/// and the next `gen_trace -- --all` quietly re-commits 342.6 MiB. So the shape
+/// assertions below are not redundant with the size one: the size could also be met
+/// by publishing nothing at all, and `registered_files` and the completeness walk are
+/// what distinguish *indexed* from *discarded*.
+///
+/// # Why completeness is checked, not assumed
+///
+/// The index is the **referenced subset**, so a span whose `source` has no entry is
+/// unreadable — the exact wrong-negative this project keeps meeting, since a missing
+/// entry looks like a file that was never registered. The walk asserts every `source`
+/// id in the published document resolves, and `seen > 0` keeps that from passing
+/// vacuously on a DAE with no spans.
+///
+/// `Drivetrain` is the subject because it references 28 files where most specimens
+/// reference one, so the completeness check has real work to do.
+#[test]
+fn the_dae_stage_indexes_its_sources_and_publishes_no_source_text() {
+    let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
+        panic!("expected Compiled");
+    };
+    let value = stages
+        .dae
+        .value
+        .as_ref()
+        .expect("Drivetrain must produce a DAE");
+
+    let node = value
+        .get("source_map")
+        .unwrap_or_else(|| panic!("the DAE must publish a source_map node: {:?}", keys(value)));
+    // Keys, never the node. Printing the node here dumped 15.5 MiB of vendored MSL
+    // into the failure output when this assertion was first proved to fire, which is
+    // a true report nobody can read.
+    assert!(
+        node.get("hrw_note").and_then(|v| v.as_str()).is_some(),
+        "the node must say in its own text that HRW published it, not Rumoca; its \
+         keys are {:?}",
+        keys(node),
+    );
+
+    // The MSL is registered as one source root, so this is in the thousands. It is
+    // the evidence that the real map was consulted rather than an empty one.
+    let registered = node
+        .get("registered_files")
+        .and_then(|v| v.as_u64())
+        .expect("registered_files must be published");
+    assert!(
+        registered > 1000,
+        "registered_files = {registered}, so the vendored MSL was not registered \u{2014} \
+         this compile is not the one this test is about",
+    );
+
+    let files = node
+        .get("files")
+        .and_then(|v| v.as_array())
+        .expect("files must be an array");
+    assert!(!files.is_empty(), "Drivetrain's spans name files");
+    assert!(
+        files.len() < registered as usize,
+        "the index is the referenced subset, not the whole registry: {} of {registered}",
+        files.len(),
+    );
+
+    let mut by_id: std::collections::BTreeMap<u64, &str> = std::collections::BTreeMap::new();
+    for entry in files {
+        // An **object**, not Rumoca's `(id, name, text)` triple. That is what proves
+        // the text-bearing wire shape is gone rather than merely emptied.
+        let id = entry
+            .get("source_id")
+            .and_then(|v| v.as_u64())
+            .unwrap_or_else(|| panic!("each entry needs a source_id: {entry:?}"));
+        let named = entry
+            .get("file")
+            .and_then(|v| v.as_str())
+            .unwrap_or_else(|| panic!("each entry needs a file: {entry:?}"));
+        assert!(
+            entry
+                .get("content_bytes")
+                .and_then(|v| v.as_u64())
+                .is_some(),
+            "each entry needs content_bytes: {entry:?}",
+        );
+        assert!(
+            !named.starts_with('/')
+                && !named
+                    .as_bytes()
+                    .get(1)
+                    .is_some_and(|&b| b == b':' && named.as_bytes()[0].is_ascii_alphabetic()),
+            "a published file name must be workspace-relative: {named:?}",
+        );
+        by_id.insert(id, named);
+    }
+
+    // Every span in the published document must resolve against the index.
+    let mut seen = 0usize;
+    let mut unresolved: Vec<u64> = Vec::new();
+    let mut stack = vec![value];
+    while let Some(current) = stack.pop() {
+        match current {
+            serde_json::Value::Array(items) => stack.extend(items),
+            serde_json::Value::Object(map) => {
+                for (key, child) in map {
+                    if key == "source"
+                        && let Some(id) = child.as_u64()
+                    {
+                        seen += 1;
+                        if !by_id.contains_key(&id) {
+                            unresolved.push(id);
+                        }
+                    }
+                    stack.push(child);
+                }
+            }
+            _ => {}
+        }
+    }
+    assert!(
+        seen > 0,
+        "no span was found in the published DAE, so completeness was not tested \
+         \u{2014} either spans stopped being published or `source` was renamed",
+    );
+    unresolved.sort_unstable();
+    unresolved.dedup();
+    assert!(
+        unresolved.is_empty(),
+        "{} source id(s) in the published DAE resolve to no indexed file, so those \
+         spans cannot be read: {unresolved:?}",
+        unresolved.len(),
+    );
+
+    // The size, last: 15.25 MiB of embedded MSL text per trace was the defect.
+    let bytes = serde_json::to_vec(value)
+        .expect("the DAE value serializes")
+        .len();
+    assert!(
+        bytes < 4 * 1024 * 1024,
+        "the published DAE is {:.1} MiB; it carried 15.25 MiB of vendored MSL text \
+         before 2026-11-04 and must not again",
+        bytes as f64 / 1_048_576.0,
+    );
+}
+
+/// The top-level keys of a JSON object, for a failure message.
+fn keys(value: &serde_json::Value) -> Vec<&str> {
+    value
+        .as_object()
+        .map(|m| m.keys().map(String::as_str).collect())
+        .unwrap_or_default()
+}
+
+/// The two committed strings that name this machine's workspace root, each one
+/// Rumoca's own rendered message rather than a path HRW chose to publish.
+///
+/// A baseline rather than a blanket exemption for `message` and `note`: a *new*
+/// rendered message carrying a path should fail and be justified, not be waved
+/// through by a rule written for these two.
+const RENDERED_MESSAGES_NAMING_THE_ROOT: [(&str, &str); 2] = [
+    ("UnclosedModel/trace/parse.json", "message"),
+    ("UnclosedModel/trace/manifest.json", "note"),
+];
+
+/// **No committed trace names this machine's workspace root**, except the two
+/// rendered compiler messages above.
+///
+/// # Why this exists beside the `file`-value walk
+///
+/// `no_committed_trace_names_a_path_outside_the_workspace` checks the fields HRW
+/// authors, and on 2026-11-04 it passed over `dae.json` **while `dae.json` held
+/// 56,232 absolute paths** — because Rumoca's source map serializes its entries as
+/// `(id, name, text)` *arrays*, so there was no `file` key to find. A green check and
+/// a false claim, which is this project's recurring shape: the walk measured the
+/// right thing and the wrong unit.
+///
+/// So this one asks the privacy question directly — does the published text contain
+/// the root at all — and is therefore indifferent to which key, shape or nesting a
+/// path arrives under. **The needle is derived from `CARGO_MANIFEST_DIR`**, never
+/// written down: this repository is public, and a test that hardcoded the account
+/// name would be the thing it is checking for.
+///
+/// # What a failure means
+///
+/// Not that the trace is wrong — that it is not portable. A committed trace quotes
+/// files so a later reader can check the quote, and a path under a home directory
+/// cannot be checked on another machine and names its owner in a public repository.
+#[test]
+fn no_committed_trace_mentions_the_workspace_root() {
+    let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let notebook = manifest.join("docs/specimen-notebook");
+    let root = manifest
+        .parent()
+        .expect("the crate directory has a parent")
+        .to_string_lossy()
+        .replace('\\', "/")
+        .to_lowercase();
+    assert!(
+        root.len() > 3,
+        "the workspace root came out as {root:?}, so this check has no needle",
+    );
+
+    let mut offenders: Vec<String> = Vec::new();
+    let mut exempt_seen: Vec<String> = Vec::new();
+    let mut strings_seen = 0usize;
+
+    let mut dirs = vec![notebook.clone()];
+    while let Some(dir) = dirs.pop() {
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                dirs.push(path);
+                continue;
+            }
+            if path.extension().is_none_or(|e| e != "json") {
+                continue;
+            }
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                continue;
+            };
+            let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) else {
+                continue;
+            };
+            let shown = path
+                .strip_prefix(&notebook)
+                .unwrap_or(&path)
+                .display()
+                .to_string()
+                .replace('\\', "/");
+
+            // (node, the key it sits under) — the key is what decides exemption.
+            let mut stack: Vec<(&serde_json::Value, &str)> = vec![(&value, "")];
+            while let Some((node, key)) = stack.pop() {
+                match node {
+                    serde_json::Value::Array(items) => {
+                        stack.extend(items.iter().map(|item| (item, key)));
+                    }
+                    serde_json::Value::Object(map) => {
+                        stack.extend(map.iter().map(|(k, v)| (v, k.as_str())));
+                    }
+                    serde_json::Value::String(s) => {
+                        strings_seen += 1;
+                        // Separators are mixed in these names and case can differ
+                        // between halves joined by different code, so compare the
+                        // same normalized form the needle is in.
+                        if s.replace('\\', "/").to_lowercase().contains(&root) {
+                            let here = format!("{shown}: {key}");
+                            if RENDERED_MESSAGES_NAMING_THE_ROOT
+                                .iter()
+                                .any(|&(file, k)| file == shown && k == key)
+                            {
+                                exempt_seen.push(here);
+                            } else {
+                                offenders.push(here);
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    assert!(
+        strings_seen > 0,
+        "no string was examined in any committed trace, so this check proves nothing",
+    );
+    offenders.sort_unstable();
+    offenders.dedup();
+    assert!(
+        offenders.is_empty(),
+        "{} committed trace string(s) name this machine's workspace root \u{2014} this \
+         repository is public, and a committed trace must be checkable on another \
+         machine:\n  {}",
+        offenders.len(),
+        offenders.join("\n  "),
+    );
+    // Must-fire: the exemptions are a measured baseline, so losing them silently
+    // would mean this test was passing over a notebook that no longer contains the
+    // case it was written around.
+    exempt_seen.sort_unstable();
+    exempt_seen.dedup();
+    assert_eq!(
+        exempt_seen.len(),
+        RENDERED_MESSAGES_NAMING_THE_ROOT.len(),
+        "expected exactly the known rendered messages to name the root, found {exempt_seen:?}",
     );
 }
 
