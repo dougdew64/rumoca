@@ -4517,11 +4517,18 @@ fn every_lab_link_round_trips_through_describe() {
 /// `App::structural_view_available_from_stage`, the same function the app calls.
 /// Neither is a reimplementation, so neither can drift.
 ///
-/// **`Animate` and `AliasAnim` are skipped, loudly.** Their availability also
-/// depends on frames captured at compile time, which a trace cannot settle, so the
-/// predicate returns `None` and this test counts them as unchecked rather than
-/// assuming they pass. No lab links to either today; if one does, the count below
-/// says so instead of the link going silently unverified.
+/// **`Animate` is settled from the trace; nothing is skipped loudly any more.**
+///
+/// It used to be, along with `AliasAnim`, because both depended on frames captured at
+/// compile time that a committed trace does not carry. **The "loudly" was false**: the
+/// skip count appears only inside another assertion's failure message, so a lab link to
+/// a skipped view went silently unverified — which is exactly what happened on
+/// 2026-11-04, when `index-reduction.md` Station 4 gained an `Animate` link while
+/// `App::structural_view_available` still hard-coded `false` for that view.
+///
+/// `AliasAnim` is gone with its pane, and `Animate`'s availability now reads the stage's
+/// published `search`, which `index_reduction.json` carries — so the trace settles it
+/// and the arm below checks it.
 #[test]
 fn every_lab_sub_view_link_is_available_for_its_specimen() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -4598,7 +4605,50 @@ fn every_lab_sub_view_link_is_available_for_its_specimen() {
             let is_singular = App::note_says_singular(note);
             let is_index_reduction = stage == StageKind::IndexReduction;
 
-            match App::structural_view_available_from_stage(view, is_index_reduction, is_singular) {
+            // **`Animate` is settled from the trace since 2026-11-04, not skipped.**
+            // Its availability used to depend on frames captured at compile time, which
+            // a committed trace cannot carry — so the predicate returned `None` and this
+            // test counted it unchecked. It now reads the stage's published `search`,
+            // which `index_reduction.json` *does* carry, so the trace can settle it.
+            //
+            // **That skip was a hole, and this is what fell through it.** The doc above
+            // claimed *"if a lab links to either, the count below says so"* — and the
+            // count appears only inside another assertion's failure message, so it never
+            // fires. `index-reduction.md` Station 4 gained an `Animate` link while
+            // `App::structural_view_available` still hard-coded `false` for it, and
+            // nothing said a word.
+            // **Asked of the app, not re-derived.** The first attempt at this arm read
+            // the trace and decided availability itself — which is two expressions of one
+            // fact, and they are free to disagree. It passed while the app said the
+            // opposite, so it proved nothing. This builds an `App` carrying the committed
+            // stage and calls the method the tab row actually calls.
+            let settled = match view {
+                StructuralView::Animate if is_index_reduction => {
+                    let stage_json = root
+                        .join("docs/specimen-notebook")
+                        .join(&model)
+                        .join("trace/index_reduction.json");
+                    let Some(value) = std::fs::read_to_string(&stage_json)
+                        .ok()
+                        .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
+                    else {
+                        no_manifest.push(format!("{lab}: {model} has no index_reduction.json"));
+                        continue;
+                    };
+                    let mut probe = App::test_default();
+                    probe.stage = StageKind::IndexReduction;
+                    probe.stages.index_reduction = crate::worker::Stage {
+                        value: Some(value),
+                        note: note.map(str::to_owned),
+                        ..crate::worker::Stage::default()
+                    };
+                    Some(probe.structural_view_available(view))
+                }
+                _ => {
+                    App::structural_view_available_from_stage(view, is_index_reduction, is_singular)
+                }
+            };
+            match settled {
                 None => skipped_frame_dependent += 1,
                 Some(true) => checked += 1,
                 Some(false) => {
