@@ -764,11 +764,16 @@ struct CompileFrames {
     // re-derivation rather than an observation of the compile. The re-model will
     // take them from `inspect_prepare_for_solve`; see
     // `worker::index_reduction_stage`.
-    // **`pre()` lowering frames are gone too, and for a different reason.**
-    // Index reduction's frames were a re-derivation; these were a genuine
-    // capture of a pass that no longer exists. 0.10.0 lowers `pre()` inside
-    // DAE construction, as one arm of the builtin dispatch, so there is no
-    // pass to capture. See `docs/tech-debt.md`'s `pre_lowering_from_construction`.
+    /// MLS §3.7.5 history-operator sites, and what each one lowered to.
+    ///
+    /// **Sites, not frames, and the difference is not cosmetic.** 0.9.20
+    /// captured one frame per rewrite of a pass; 0.10.0 lowers `pre()` inside
+    /// DAE construction, so there is no pass and no rewrite to capture. What
+    /// this holds is read back out of the finished DAE by provenance — an
+    /// observation of the artifact the compile produced, which is why it sits in
+    /// this type beside the genuine captures rather than apart from them. See
+    /// `worker::pre_lowering_from_construction`.
+    pre_lowering: Vec<crate::pre_lowering_anim::PreLoweringSite>,
     /// Connection expansion (MLS §9).
     connection: Vec<rumoca_phase_flatten::connections::trace::ConnectionFrame>,
 }
@@ -1087,9 +1092,14 @@ enum PendingLiveDebug {
     Matching,
     Tarjan,
     Reduction,
-    /// Idea #40. Unlike the other three it replays a phase of *DAE
-    /// construction*, so it re-runs from the flat model rather than the DAE.
-    PreLowering,
+    // **`PreLowering` is gone, because nothing can reach it** (2026-11-03).
+    // It re-ran `to_dae_with_options_traced` over the flat model; 0.10.0 has no
+    // such function and lowers `pre()` inside `Dae::construct`, so a live
+    // session would need a seam in `lower_history_operator` that does not
+    // exist. The view it served now renders recorded sites and offers no Debug
+    // button, so a variant kept here would be a live-debug request no code path
+    // can originate — see `Self::pre_lowering_anim_ui` and the `unbuilt:` tag
+    // in `docs/tech-debt.md` that recruits the seam.
     /// Tearing. Re-runs from the DAE, like Reduction, because tearing needs the
     /// BLT blocks and those are rebuilt from the incidence each time.
     Tearing,
@@ -1115,7 +1125,6 @@ impl PendingLiveDebug {
         PendingLiveDebug::Matching,
         PendingLiveDebug::Tarjan,
         PendingLiveDebug::Reduction,
-        PendingLiveDebug::PreLowering,
         PendingLiveDebug::Tearing,
         PendingLiveDebug::Connections,
     ];
@@ -1380,9 +1389,6 @@ impl App {
     fn has_live_debug_data(&self, variant: PendingLiveDebug) -> bool {
         match variant {
             PendingLiveDebug::Reduction | PendingLiveDebug::Tearing => self.cached_dae.is_some(),
-            // The flat model, not the DAE: `pre()` lowering runs inside DAE
-            // construction, so the DAE is already past it.
-            PendingLiveDebug::PreLowering => self.cached_flat.is_some(),
             // A specimen with a compiled model is all the worker needs; the
             // session it will re-compile through lives there, not here.
             PendingLiveDebug::Connections => self.selected.is_some() && self.model.is_some(),
@@ -2011,6 +2017,7 @@ impl App {
                     matching_frames,
                     tarjan_frames,
                     tearing_frames,
+                    pre_lowering_sites,
                     dae,
                     connection_frames,
                     flat,
@@ -2044,6 +2051,7 @@ impl App {
                             tarjan: tarjan_frames,
                             tearing: tearing_frames,
                         },
+                        pre_lowering: pre_lowering_sites,
                         connection: connection_frames,
                     };
                     self.cached_flat = flat;
@@ -4701,13 +4709,13 @@ impl App {
     /// reason [`Self::flatten_content`] exists: **the sub-view row and the `hrw://` link
     /// guard must ask the same question**, and two spellings of it are two places to
     /// change.
-    /// **Always `false` for the v0.10.0 rebase.** The pass this asked about
-    /// does not exist on 0.10.0 — `pre()` is lowered inside DAE construction —
-    /// so there is no trace to have. Kept as a method rather than inlined
-    /// because the guard and the sub-view row must ask the same question, and
-    /// the re-model will give it a real answer again.
+    /// **A real answer again since 2026-11-03**, when the re-model landed. It
+    /// returned a flat `false` through the rebase, because the pass it asked
+    /// about does not exist on 0.10.0; what it asks now is whether the model
+    /// used any MLS §3.7.5 history operator at all, which is the question the
+    /// tab is actually about.
     fn has_pre_lowering_trace(&self) -> bool {
-        false
+        !self.frames.pre_lowering.is_empty()
     }
 
     /// What the Flatten compile produced, in the form its sub-view row and its link guard
@@ -4735,45 +4743,45 @@ impl App {
 
     /// The `pre()`-lowering replay (idea #40), on the Events stage.
     ///
-    /// Mirrors `reduction_anim_ui` beat for beat — the six-step live-debug
-    /// sequence is the same for every animated view. The one difference is what
-    /// gets re-run for a live session: the flat model rather than the DAE,
-    /// because this pass happens *inside* DAE construction and the DAE HRW holds
-    /// is already past it.
+    /// The history-operator view (idea #40), on the Events stage.
+    ///
+    /// # It no longer mirrors `reduction_anim_ui`, and that is the point
+    ///
+    /// This used to run the same six-step live-debug sequence as every other
+    /// animated view, re-running `to_dae_with_options_traced` over the flat
+    /// model for a live session. **That function does not exist on 0.10.0 and
+    /// no replacement can be reached from here**: `pre()` is lowered inside
+    /// `Dae::construct`, and observing it would need a seam in
+    /// `lower_history_operator` that nothing has built yet.
+    ///
+    /// So the gate is gone rather than left in place around a `start_live` that
+    /// could only ever return `None`. Keeping it would have cost a false
+    /// affordance — a Debug button that arms a breakpoint, waits, and reports
+    /// nothing — and `playback::tests_animated_contract::only_the_views_with_a_
+    /// live_path_report_a_live_session` is what refused it: a view `app.rs`
+    /// hands a live path must delegate `live_state` to its `Playback`, and one
+    /// that delegates while holding only recorded frames answers `Arming`
+    /// whenever any session is being armed anywhere.
+    ///
+    /// The seam live stepping would need is recruited by an `unbuilt:` tag in
+    /// `docs/tech-debt.md`.
     fn pre_lowering_anim_ui(&mut self, ui: &mut egui::Ui) {
-        let gate = self.live_debug_gate(ui.ctx(), PendingLiveDebug::PreLowering, |a| {
-            &a.compile_views.pre_lowering_anim
-        });
-        let mut debug_clicked = false;
-        if gate.spawn_live
-            && let Some(flat) = &self.cached_flat
-        {
-            let delay = crate::live_frame_delay(self.live_breakpoint_armed);
-            let live = pre_lowering_anim::PreLoweringAnimation::start_live(flat.clone(), delay);
-            if live.is_none() {
-                let _ = bridge::remove_live_trace_breakpoint();
-                self.live_breakpoint_armed = false;
-            }
-            self.compile_views.pre_lowering_anim = Some(live);
-        }
         if self.compile_views.pre_lowering_anim.is_none() {
-            // **`Some(Some(..))`, not `Some(None)`**: the placeholder's whole
-            // job is to draw the explanation of its own absence, so the pane
-            // must exist. `Some(None)` is how this view reports "no trace for
-            // this model", which would read as a model that uses no `pre()`.
+            // **`Some(Some(..))` even with no sites**, because the animation
+            // states its own emptiness in words — "No history operators in this
+            // model." — where `Some(None)` would render the generic line below
+            // instead. Both are true; the view's own sentence says *why*.
             self.compile_views.pre_lowering_anim =
-                Some(Some(pre_lowering_anim::PreLoweringAnimation::disabled()));
+                Some(Some(pre_lowering_anim::PreLoweringAnimation::from_sites(
+                    self.frames.pre_lowering.clone(),
+                )));
         }
         if let Some(Some(anim)) = &mut self.compile_views.pre_lowering_anim {
-            debug_clicked = egui::ScrollArea::vertical()
+            egui::ScrollArea::vertical()
                 .auto_shrink(false)
-                .show(ui, |ui| anim.ui(ui, gate.arming, gate.debug_enabled))
-                .inner;
+                .show(ui, |ui| anim.ui(ui));
         } else {
             ui.weak("(no pre() lowering in this model)");
-        }
-        if debug_clicked {
-            self.start_live_debug(PendingLiveDebug::PreLowering);
         }
     }
 
