@@ -2,7 +2,7 @@
   "model": "MotorWithBrake",
   "specimen": "specimens/MotorWithBrake.mo",
   "specimen_fnv1a": "194e8b7286cf6c67",
-  "rumoca_rev": "739d724e",
+  "rumoca_rev": "e49f68eb",
   "rumoca_version": "0.10.0",
   "stages": {
     "parse": {
@@ -38,8 +38,8 @@
       "note": "Rumoca ran index reduction successfully; HRW cannot display it yet. On Rumoca 0.10.0 the ten-step dummy-derivative funnel became two fixed-point lanes with a candidate/attempt/selection protocol, and the DAE became immutable, so this pane is being rebuilt against the new model rather than shown in the old vocabulary. This is an HRW gap, not a compiler problem."
     },
     "initialization": {
-      "has_ir": false,
-      "note": "Rumoca ran initialization successfully; HRW cannot display it yet. On Rumoca 0.10.0 the IC plan's ordered IcBlock solve sequence was replaced by initial_pins, which seeds one value per state and projects the algebraic unknowns, so this pane is being rebuilt against the new model rather than shown in the old vocabulary. This is an HRW gap, not a compiler problem."
+      "has_ir": true,
+      "note": null
     },
     "events": {
       "has_ir": false,
