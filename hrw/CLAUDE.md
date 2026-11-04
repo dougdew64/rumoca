@@ -102,6 +102,21 @@ which re-runs a phase that still exists and must not be "fixed". `docs/tech-debt
 account, and `playback::tests_animated_contract::only_the_views_with_a_live_path_report_a_live_session`
 is what forced the choice rather than leaving a stub.
 
+**AND THE FOURTH WAY, WHICH IS THE ONE TO REACH FOR FIRST: INSTRUMENT RUMOCA INSTEAD OF DELETING
+THE PATH** *(2026-11-04)*. `PendingLiveDebug::Reduction` — the example named two paragraphs up as
+the legitimate kind — spent a day in **exactly the state PreLowering had been in**: `start_live`
+returning `None` unconditionally, a Debug button arming a breakpoint and reporting nothing. The
+PreLowering precedent fits it perfectly and the conclusion would have been wrong. `watch_prepare_for_solve`
+now exists in `rumoca-phase-structural` (additive, observation-only, one trait and one function),
+and the path is real.
+
+**So the test is not "does the phase still exist" but "can a seam exist".** PreLowering had none —
+no point inside `Dae::construct` to stand at. Reduction's was merely *private*, which is a
+different fact wearing the same symptom, and the workspace `CLAUDE.md` prices that trade already:
+*"it is much better to defend a rumoca api change to the repo maintainers than to defend
+replays."* **Check which of the two you have before applying the deletion precedent**, because
+from the HRW side they look identical.
+
 **A LARGE GREEN RESULT COVERS THE TERRITORY IT MEASURED AND NO MORE, WHILE THE CONFIDENCE IT
 PRODUCES DOES NOT KNOW THAT.** 2,614 green fidelity rows could not have caught one of the fictions,
 because every check asked about a **noun** and every fiction was a **verb**. **And 2026-09-01 added
