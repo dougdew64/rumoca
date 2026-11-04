@@ -2437,12 +2437,31 @@ it**, so there is no longer a label to owe.
 could not have survived. **The ordering risk the entry was really about is therefore gone at the
 root** — there is no HRW-maintained order left to drift.
 
-**Fix 2 is still the live ask, and it got closer.** Upstream grew a `ReductionObserver` /
-`ReductionEvent` seam in `crates/rumoca-phase-structural/src/dae_transform/observation.rs` — the
-observation hook this entry asked for — but both are `pub(super)`. **Widening those two is now a
-much smaller request than the old one**: it exposes what the pass reports about itself rather
-than a way to drive it step by step. The re-model of the pane waits on it and is tracked as the
-reduction `unbuilt:` row.
+**Fix 2 is not an ask at all any more — upstream already did it.**
+`crates/rumoca-phase-structural/src/dae_transform/observation.rs` carries the observation hook
+this entry asked for, and **`inspect_prepare_for_solve` is the public entry**: it returns
+`(Result<PreparedDae>, ReductionReport)` with the observer type erased, and `ReductionReport` is
+fully public — `records` of `Round` / `Candidates` / `Attempt` / `Selected` / `RetriedPristine`
+carrying lanes, residues and named unmatched coordinates, plus a `ReductionSnapshot` of the
+discarded still-singular DAE when preparation fails. That is *more* than this entry asked for: it
+reports the attempts, not only the outcome.
+
+*Corrected 2026-11-03, having been written wrong the same day.* The first version of this
+paragraph said the seam was `pub(super)` and needed widening. The **trait and the borrowed
+event** are private, which is the design — `inspect_sort` is identical — and reading that as "the
+pass cannot be observed" confused the seam with its consumer surface. **A wrong negative is the
+error nobody catches, because acting on it means not looking**, and this one would have sent an
+unnecessary request upstream and parked the re-model behind it.
+
+**The sharpest part: this file already had it right.** The *Index reduction* re-model row above
+names `inspect_prepare_for_solve` as the replacement and describes its report accurately — it was
+written during the rebase, from the same source. The wrong claim came from re-reading
+`observation.rs`, seeing `pub(super)` on the trait, and preferring that fresh read to a correct
+record. **A grep for a visibility marker is not a search for the public entry**, and the record
+written by someone who had looked for the entry was the better evidence.
+
+So the reduction re-model is HRW-side work, blocked on nothing, and tracked as the reduction
+`unbuilt:` row.
 
 *The original entry follows, unedited — including the doc comment it quotes, whose path named
 0.9.20.*
