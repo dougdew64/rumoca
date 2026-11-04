@@ -69,18 +69,20 @@ pub enum ReductionStep {
     /// Before any record. What it needs to say — the system's size and the residue the
     /// search began from — the animation reads off the payload it holds.
     Start,
-    /// One observed record, at this index in the published log.
+    /// One observed record, as the stage published it.
     ///
-    /// An index rather than a copy of the record, so the frame cannot describe
-    /// something other than what `records[i]` says.
-    Record(usize),
+    /// **The record itself, not an index into a vector**, because a live session has no
+    /// vector: records arrive one at a time down a channel. Carrying it in the frame is
+    /// what lets the recorded and live paths share every accessor below instead of
+    /// having two of each.
+    Record(Value),
 }
 
 /// Replay of the reduction search.
 pub struct ReductionAnimation {
-    /// The published records, in the order Rumoca observed them.
-    records: Vec<Value>,
     /// The raw system's size, for the opening frame.
+    ///
+    /// `None` for a live session, which has no published payload to read it from.
     before: Option<(u64, u64, u64)>,
     /// The residue the first round reported, which is where the search began.
     opening_residue: Option<u64>,
@@ -98,7 +100,7 @@ impl ReductionAnimation {
     /// corpus, three alternations finding nothing.
     #[must_use]
     pub fn from_report(report: &Value) -> Option<Self> {
-        let records: Vec<Value> = report.get("search")?.as_array()?.clone();
+        let records: &Vec<Value> = report.get("search")?.as_array()?;
         // **No opening frame when there is nothing to open.** A lone `Start` would make
         // `is_empty` false for a system nothing was done to, and the pane would offer a
         // run through nothing instead of saying so.
@@ -106,7 +108,7 @@ impl ReductionAnimation {
             Vec::new()
         } else {
             std::iter::once(ReductionStep::Start)
-                .chain((0..records.len()).map(ReductionStep::Record))
+                .chain(records.iter().cloned().map(ReductionStep::Record))
                 .collect()
         };
         let before = (|| {
@@ -122,43 +124,99 @@ impl ReductionAnimation {
             .find(|r| r["kind"] == "round")
             .and_then(|r| r["residue"].as_u64());
         Some(Self {
-            records,
             before,
             opening_residue,
             playback: Playback::recorded(frames, FRAME_INTERVAL),
         })
     }
 
-    /// Always `None`: there is no live session to start.
+    /// Run reduction on a worker thread and step its records as they arrive.
     ///
-    /// See the module docs — the seam a live session needs is `pub(super)` upstream.
-    /// `None` is the same answer this gave when a thread could not be spawned, so
-    /// `app.rs`'s existing fallback path is already correct.
+    /// **A real live session since 2026-11-04**, when `watch_prepare_for_solve` landed
+    /// in `rumoca-phase-structural`. It returned `None` unconditionally before that,
+    /// because the only crate-external surface handed back a finished report and
+    /// replaying one on a timer would have been a recording wearing a live label.
+    ///
+    /// `None` when the thread cannot be spawned, which is the answer `app.rs` already
+    /// handles: it releases the breakpoint and falls back to the recorded view.
+    ///
+    /// # What a live session has that the recorded one does not
+    ///
+    /// The same records in the same order — so nothing here is *more true* than the
+    /// replay. What it adds is a **breakpoint that fires inside the real reduction**:
+    /// the thread waits for the debugger before the first step and pauses between
+    /// pushes, so `docs/setup-windows.md`'s anchor can stop in `dae_transform.rs` with
+    /// a candidate half-attempted and the locals live. That is the thing a trace cannot
+    /// give, and the reason `CLAUDE.md` protects this path.
     #[must_use]
     pub fn start_live(
-        _dae: &rumoca_ir_dae::Dae,
-        _frame_delay: std::time::Duration,
+        dae: &std::sync::Arc<rumoca_ir_dae::Dae>,
+        frame_delay: std::time::Duration,
     ) -> Option<Self> {
-        None
+        // Every record is a frame: unlike the structural views, there is no sub-kind to
+        // filter — the reduction's log is already exactly this view's subject.
+        // **Each record is published the same way the stage publishes it**, through
+        // `worker::reduction_record_to_json` and the compile's own source map. A second
+        // rendering here would be a second vocabulary for one thing, and a reader
+        // stepping live would see different words than the replay gives.
+        let dae_for_records = std::sync::Arc::clone(dae);
+        let (rx, done) = crate::live_trace::spawn_reduction_live(
+            std::sync::Arc::clone(dae),
+            frame_delay,
+            "reduction-debug",
+            move |record| {
+                Some(ReductionStep::Record(
+                    crate::worker::reduction_record_to_json(&record, dae_for_records.source_map()),
+                ))
+            },
+        )?;
+        Some(Self {
+            // **No opening frame and no `before` size for a live session.** Both are
+            // read off the published payload, which this path does not have — and
+            // inventing a `Start` here would claim a residue nobody reported. The
+            // recorded view is where the opening state comes from.
+            before: None,
+            opening_residue: None,
+            playback: Playback::live(rx, done, FRAME_INTERVAL),
+        })
     }
 
-    /// Whether the compile recorded any search record.
+    /// Whether there is anything to step through.
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.records.is_empty()
+        self.playback.is_empty()
     }
 
-    /// Records in the log, which is one fewer than the frame count.
+    /// Records in the log.
+    ///
+    /// **Counted rather than derived from the frame count**, because the two paths
+    /// differ by one: a recorded run opens on `Start` and a live one has no opening
+    /// frame to read a size from. Counting the `Record` frames is right for both.
     #[must_use]
     pub fn n_records(&self) -> usize {
-        self.playback.position().1.saturating_sub(1)
+        self.records_through(usize::MAX).count()
+    }
+
+    /// The `Record` frames up to and including frame `cursor`.
+    ///
+    /// One helper for every accumulation below, so none of them can disagree about
+    /// which frames count as "so far".
+    fn records_through(&self, cursor: usize) -> impl Iterator<Item = &Value> {
+        self.playback
+            .frames()
+            .iter()
+            .take(cursor.saturating_add(1))
+            .filter_map(|step| match step {
+                ReductionStep::Start => None,
+                ReductionStep::Record(record) => Some(record),
+            })
     }
 
     /// The record under the cursor, or `None` at the opening frame.
     fn current_record(&self) -> Option<&Value> {
         match self.playback.current()? {
             ReductionStep::Start => None,
-            ReductionStep::Record(i) => self.records.get(*i),
+            ReductionStep::Record(record) => Some(record),
         }
     }
 
@@ -167,10 +225,7 @@ impl ReductionAnimation {
     /// The accumulation the stepping exists for: at the opening frame none has, and at
     /// frame *k* exactly those among the first *k* records.
     fn rounds_so_far(&self) -> usize {
-        let cursor = self.playback.cursor();
-        self.records
-            .iter()
-            .take(cursor)
+        self.records_through(self.playback.cursor())
             .filter(|r| r["kind"] == "round")
             .count()
     }
@@ -181,10 +236,8 @@ impl ReductionAnimation {
     /// number would understate progress whenever a `Held` selection moved nothing, and
     /// a reader would have no way to tell.
     fn residue_now(&self) -> Option<u64> {
-        let cursor = self.playback.cursor();
-        self.records
-            .iter()
-            .take(cursor)
+        let seen: Vec<&Value> = self.records_through(self.playback.cursor()).collect();
+        seen.into_iter()
             .rev()
             .find_map(|r| match r["kind"].as_str() {
                 Some("round") => r["residue"].as_u64(),
@@ -620,9 +673,22 @@ mod tests {
         assert!(summary.contains("teleported"), "{summary}");
     }
 
-    /// This view is never live, and says so through the playback.
+    /// **A recorded run reports no live session**, which is the playback's answer and
+    /// not a hardcoded one.
+    ///
+    /// *Named `the_view_is_never_live` until 2026-11-04, when `watch_prepare_for_solve`
+    /// made a live session possible. The assertion is unchanged and the name was not: a
+    /// recorded cursor is still `Idle`, but the **view** is no longer never-live, and a
+    /// test whose name says otherwise is the kind of stale claim nothing else would
+    /// catch.*
+    ///
+    /// `start_live` is deliberately not exercised here. It spawns a thread that waits
+    /// at `LiveTrace::wait_for_debugger` and then runs a real reduction, which is a
+    /// debugger-attached path rather than a unit-testable one — `CLAUDE.md`'s standing
+    /// limit on what Claude can verify applies, and Doug pressing Debug is the
+    /// verification.
     #[test]
-    fn the_view_is_never_live() {
+    fn a_recorded_run_reports_no_live_session() {
         let anim = ReductionAnimation::from_report(&report(log())).expect("an animation");
         assert!(matches!(anim.live_state(false), LiveState::Idle));
     }

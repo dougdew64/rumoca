@@ -127,45 +127,57 @@ modules builds its own payload, so all of them would pass against a shape
 `worker::index_reduction_from_observation` no longer publishes — they agree with each other and with
 nothing else.
 
-### Live reduction stepping needs a public observer, and that is an upstream API question
+### ~~Live reduction stepping needs a public observer, and that is an upstream API question~~
 
-Live stepping is not built. <!-- unbuilt: reduction_anim::ReductionAnimation::live_from_observer -->
+**Closed 2026-11-04, in two commits.** The seam landed in `rumoca-phase-structural` (`4e54fd1d`,
+`crates/` only, a clean cherry-pick) and HRW wired it the same day. Kept because the *reasoning* is
+what generalizes, and because it is the clearest example this project has of the rule that when HRW
+cannot observe something, the answer is to instrument Rumoca.
 
-**Recorded stepping landed 2026-11-04** — see the row above. What follows is the live half only.
+**What was missing, and why no HRW-side workaround was acceptable.** `inspect_prepare_for_solve`
+returns an owned `ReductionReport` *after the run completes*. HRW's live stepping paces a real
+algorithm against a breakpoint, so feeding a finished report into the frame channel on a timer would
+have looked identical on screen and been **a recording wearing a live label** — the fiction this
+repository has already removed twice. So the pane said so and offered nothing, which was the honest
+state but not the useful one.
 
-**Live** stepping needs something HRW cannot reach, and this is the real instrumentation candidate
-the index-reduction re-model turned up:
+**`CLAUDE.md` is what made this load-bearing rather than optional.**
+`PendingLiveDebug::Reduction` is named there as one of the four live paths that re-run a phase which
+still exists and *must not be "fixed"* by deletion — and `start_live` returned `None`
+unconditionally, so that path was an affordance which armed a breakpoint and reported nothing: the
+exact shape that forced the PreLowering variant's deletion. **Either the seam became public or that
+path had to go**, and only one of those serves the learning.
 
-`ReductionObserver` and `ReductionEvent` are **`pub(super)` by design**.
-`inspect_prepare_for_solve` is the crate-external surface and returns an owned `ReductionReport`
-*after the run completes*. HRW's live stepping paces a real algorithm against a breakpoint, so
-feeding a finished report into the frame channel on a timer would be **a recording wearing a live
-label** — the fiction this repository has already removed twice.
+**What landed is not what this entry predicted**, which is the part worth keeping. The prediction
+was *"export `ReductionObserver` and `ReductionEvent`, and make `prepare_for_solve_with_observer`
+public"*. That would have exported the **borrowed callback protocol** — `Identity<'a>`,
+`AttemptOutcome<'a>`, `Lane`, `CandidateGroup` — and `observation.rs`'s own module doc draws exactly
+that boundary: *"consumers receive only extracted data, never the reduction protocol."* Taking the
+prediction would have fought the design upstream chose, for nothing: a watcher needs the record, not
+the event that produced it.
 
-**`CLAUDE.md` makes this load-bearing rather than optional.** `PendingLiveDebug::Reduction` is named
-there as one of the four live paths that re-run a phase which still exists and *must not be "fixed"*
-by deletion. Today `ReductionAnimation::start_live` returns `None` unconditionally, so that path is
-an affordance which arms a breakpoint and reports nothing — the exact shape that forced the
-PreLowering variant's deletion. Either the seam becomes public or that path has to go, and the first
-is the one that serves the learning.
+So the shape is a `ReductionWatcher` trait receiving the **already-owned** `ReductionRecord`, plus
+`watch_prepare_for_solve`. The borrowed types stay private, the owned conversion was extracted to
+one `record_of` that both the batch recorder and the streaming forwarder call, and the new public
+surface is one trait and one function.
 
-**`live_state` delegates to the playback now**, which is not a workaround but what the contract
-requires: `playback::tests_animated_contract::only_the_views_with_a_live_path_report_a_live_session`
-holds the gated set and the delegating set equal, and `app.rs` gates this view. For a recorded
-cursor the playback answers `Idle`, so it is correct today and stays correct when `start_live`
-becomes real — the mistake it rules out is the one `connection_anim`'s own comment records, a
-hardcoded `Idle` reporting "no session" during a real one.
+*Read that as a caution about this document rather than about the seam: an entry that names the
+implementation is predicting, and this one predicted wrong while being right about the need.*
 
-**Shape of the candidate change**, additive and observation-only: export `ReductionObserver` and
-`ReductionEvent`, and make `prepare_for_solve_with_observer` public — it already exists as the
-generic seam both `prepare_for_solve` and `inspect_prepare_for_solve` instantiate, so this exposes a
-boundary rather than inventing one. That is the same shape as
-`rumoca_phase_structural::sort_with_observer`, which HRW already drives for matching, Tarjan and
-tearing, so there is precedent in the crate's own public surface.
+**A stalled intermediate is deliberately not streamed.** `ReductionReport::stalled` transfers an
+owned `dae::Dae` out of the reducer at the discard point — a transfer of ownership, not an
+observation — so a watcher handed one could keep the discarded model alive past the run.
+`inspect_prepare_for_solve` remains the way to get it.
 
-*Note what this is **not**: it is not `derivative_aliases::normalize`. That pass extends an implicit
-derivative system rather than eliminating alias equations, and its work is already observable —
-`Stopped::Sorted` with zero rounds, per `worker::reduction_outcome_summary`.*
+*Note what this was **not**: it was not `derivative_aliases::normalize`. That pass extends an
+implicit derivative system rather than eliminating alias equations, and its work is already
+observable — `Stopped::Sorted` with zero rounds, per `worker::reduction_outcome_summary`.*
+
+**What Doug has to verify, because no test can.** The live path spawns a thread that waits at
+`LiveTrace::wait_for_debugger` and then runs a real reduction, so a breakpoint firing inside
+`dae_transform.rs` with a candidate half-attempted is the thing being bought — and
+`CLAUDE.md`'s standing limit applies: pressing Debug on the Index Reduction tab is the
+verification, and there is no test to write instead.
 
 ### ~~Resolve failure is inferred from diagnostic severities where 0.10.0 states it structurally~~
 

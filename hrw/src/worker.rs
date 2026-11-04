@@ -5276,7 +5276,7 @@ fn reduction_lane_name(lane: rumoca_phase_structural::ReductionLane) -> &'static
 ///
 /// `kind` names the record variant so a reader never has to infer which it is from
 /// which keys are present — the failure mode of a flattened union.
-fn reduction_record_to_json(
+pub(crate) fn reduction_record_to_json(
     record: &rumoca_phase_structural::ReductionRecord,
     source_map: &rumoca_core::SourceMap,
 ) -> serde_json::Value {
