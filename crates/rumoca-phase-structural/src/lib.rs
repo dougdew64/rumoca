@@ -35,8 +35,9 @@ pub use dae_transform::{
     InitialValuePin, InitialValueRole, PinTerm, PreparedDae, PreparedReducedChart,
     PreparedStructuralAnalysis, PreparedSystem, ReducedSelectionChart, ReductionCandidateGroup,
     ReductionIdentity, ReductionLane, ReductionOutcome, ReductionRecord, ReductionReport,
-    ReductionSnapshot, ReductionStop, StateSelection, UnmatchedKind, UnmatchedName,
-    construct_formal_derivatives, inspect_prepare_for_solve, prepare_for_solve,
+    ReductionSnapshot, ReductionStop, ReductionWatcher, StateSelection, UnmatchedKind,
+    UnmatchedName, construct_formal_derivatives, inspect_prepare_for_solve, prepare_for_solve,
+    watch_prepare_for_solve,
 };
 pub use diagnostic_codes::STRUCTURAL_DIAGNOSTIC_CODES;
 pub use diagnostics::{AlgebraicLoop, StructuralDiagnostics};

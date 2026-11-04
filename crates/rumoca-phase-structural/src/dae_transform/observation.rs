@@ -520,67 +520,128 @@ impl ReductionObserver for ReductionRecorder {
     }
 
     fn observe(&mut self, event: ReductionEvent<'_>) {
-        let record = match event {
-            ReductionEvent::Round { lane, round, error } => {
-                let StructuralError::Singular {
-                    unmatched_equations,
-                    unmatched_unknowns,
-                    ..
-                } = error
-                else {
-                    unreachable!("Round events only fire for a Singular structural error")
-                };
-                ReductionRecord::Round {
-                    lane: lane.into(),
-                    round,
-                    residue: super::unmatched_residue(error)
-                        .expect("Round events only fire for a Singular structural error"),
-                    unmatched_equations: unmatched_equations.clone(),
-                    unmatched_unknowns: unmatched_unknowns
-                        .iter()
-                        .map(|name| UnmatchedName {
-                            kind: classify_unmatched_kind(name),
-                            name: name.clone(),
-                        })
-                        .collect(),
-                }
+        self.records.push(record_of(event));
+    }
+}
+
+/// Receives each reduction record as the reduction produces it.
+///
+/// The streaming counterpart of [`crate::inspect_prepare_for_solve`], which returns
+/// every record at once after the run has finished. Both carry the same owned
+/// [`ReductionRecord`] values through the same conversion; they differ only in *when*
+/// a consumer sees one.
+///
+/// # Why a second surface exists at all
+///
+/// A report delivered after the fact answers *what did reduction do*. It cannot answer
+/// *what is reduction doing*, which is what a consumer needs in order to pace a
+/// debugger, drive a progress indicator, or stop early — all of which require a
+/// callback per event rather than a vector at the end.
+///
+/// # What it deliberately does not expose
+///
+/// **The borrowed protocol stays private.** `ReductionEvent`, `Identity`,
+/// `AttemptOutcome`, `Lane` and `CandidateGroup` are internal and remain so: an
+/// implementor of this trait receives the extracted owned record, never the callback
+/// types that produced it. That is the same boundary `inspect_prepare_for_solve`
+/// already draws, and it is what lets the reduction's internals change without
+/// breaking a consumer.
+///
+/// A stalled intermediate is **not** streamed. `ReductionReport::stalled` transfers an
+/// owned `dae::Dae` out of the reducer at the discard point, which is a transfer of
+/// ownership rather than an observation; a watcher that received one could keep the
+/// discarded model alive past the run. Use [`crate::inspect_prepare_for_solve`] when
+/// the stalled system is what you need.
+pub trait ReductionWatcher {
+    /// One record, in the order the reduction observed it.
+    fn record(&mut self, record: ReductionRecord);
+}
+
+/// Adapts a [`ReductionWatcher`] to the internal observer protocol.
+pub(super) struct RecordForwarder<'watcher, W: ReductionWatcher + ?Sized> {
+    watcher: &'watcher mut W,
+}
+
+impl<'watcher, W: ReductionWatcher + ?Sized> RecordForwarder<'watcher, W> {
+    pub(super) fn new(watcher: &'watcher mut W) -> Self {
+        Self { watcher }
+    }
+}
+
+impl<W: ReductionWatcher + ?Sized> ReductionObserver for RecordForwarder<'_, W> {
+    fn observe(&mut self, event: ReductionEvent<'_>) {
+        self.watcher.record(record_of(event));
+    }
+
+    // `discard_stalled` keeps the default, which drops the intermediate unchanged —
+    // see [`ReductionWatcher`] on why a stalled system is not streamed.
+}
+
+/// Turn one borrowed reduction event into its owned [`ReductionRecord`].
+///
+/// Extracted from [`ReductionRecorder::observe`] so the collecting recorder and the
+/// streaming [`RecordForwarder`] share one conversion. Two copies of this match
+/// would be two chances for a consumer to be told something the other one is not.
+fn record_of(event: ReductionEvent<'_>) -> ReductionRecord {
+    match event {
+        ReductionEvent::Round { lane, round, error } => {
+            let StructuralError::Singular {
+                unmatched_equations,
+                unmatched_unknowns,
+                ..
+            } = error
+            else {
+                unreachable!("Round events only fire for a Singular structural error")
+            };
+            ReductionRecord::Round {
+                lane: lane.into(),
+                round,
+                residue: super::unmatched_residue(error)
+                    .expect("Round events only fire for a Singular structural error"),
+                unmatched_equations: unmatched_equations.clone(),
+                unmatched_unknowns: unmatched_unknowns
+                    .iter()
+                    .map(|name| UnmatchedName {
+                        kind: classify_unmatched_kind(name),
+                        name: name.clone(),
+                    })
+                    .collect(),
             }
-            ReductionEvent::Candidates {
-                lane,
-                group,
-                discovered,
-            } => ReductionRecord::Candidates {
-                lane: lane.into(),
-                group: group.into(),
-                discovered,
-            },
-            ReductionEvent::Attempt {
-                lane,
-                identity,
-                outcome,
-            } => ReductionRecord::Attempt {
-                lane: lane.into(),
-                identity: identity.into(),
-                outcome: outcome.into(),
-            },
-            ReductionEvent::Selected {
-                lane,
-                identity,
-                residue_before,
-                residue_after,
-            } => ReductionRecord::Selected {
-                lane: lane.into(),
-                identity: identity.into(),
-                residue_before,
-                residue_after,
-            },
-            ReductionEvent::RetriedPristine { lane } => {
-                ReductionRecord::RetriedPristine { lane: lane.into() }
-            }
-            ReductionEvent::Stopped { outcome } => ReductionRecord::Stopped {
-                outcome: outcome.into(),
-            },
-        };
-        self.records.push(record);
+        }
+        ReductionEvent::Candidates {
+            lane,
+            group,
+            discovered,
+        } => ReductionRecord::Candidates {
+            lane: lane.into(),
+            group: group.into(),
+            discovered,
+        },
+        ReductionEvent::Attempt {
+            lane,
+            identity,
+            outcome,
+        } => ReductionRecord::Attempt {
+            lane: lane.into(),
+            identity: identity.into(),
+            outcome: outcome.into(),
+        },
+        ReductionEvent::Selected {
+            lane,
+            identity,
+            residue_before,
+            residue_after,
+        } => ReductionRecord::Selected {
+            lane: lane.into(),
+            identity: identity.into(),
+            residue_before,
+            residue_after,
+        },
+        ReductionEvent::RetriedPristine { lane } => {
+            ReductionRecord::RetriedPristine { lane: lane.into() }
+        }
+        ReductionEvent::Stopped { outcome } => ReductionRecord::Stopped {
+            outcome: outcome.into(),
+        },
     }
 }
