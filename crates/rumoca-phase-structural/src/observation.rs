@@ -217,7 +217,10 @@ pub enum TearingStep {
         unknowns: usize,
     },
     /// One pass begins, under `priority`, over a loop of `n` equations.
-    PassStart { priority: TearPriorityKind, n: usize },
+    PassStart {
+        priority: TearPriorityKind,
+        n: usize,
+    },
     /// An equation had exactly one unknown left, so it can be solved directly
     /// -- no iteration needed. `competitors` is how many equations could have
     /// solved for this variable; when it is more than one, the tie was broken
@@ -417,10 +420,9 @@ impl StructuralTrace {
     /// Use [`Self::tearing_blocks`] instead when the steps have to be
     /// attributed to a particular block's rows.
     pub fn tearing_passes(&self) -> Vec<Vec<&TearingRecord>> {
-        group_by_start(
-            self.tearing(),
-            |record| matches!(record.step, TearingStep::PassStart { .. }),
-        )
+        group_by_start(self.tearing(), |record| {
+            matches!(record.step, TearingStep::PassStart { .. })
+        })
     }
 
     /// Every tearing step, in order.
@@ -444,10 +446,9 @@ impl StructuralTrace {
     /// Each group's opening `BlockStart` carries the `ordinal` to match
     /// against the coupled blocks of the structural report, in BLT order.
     pub fn tearing_blocks(&self) -> Vec<Vec<&TearingRecord>> {
-        group_by_start(
-            self.tearing(),
-            |record| matches!(record.step, TearingStep::BlockStart { .. }),
-        )
+        group_by_start(self.tearing(), |record| {
+            matches!(record.step, TearingStep::BlockStart { .. })
+        })
     }
 }
 
@@ -456,10 +457,7 @@ impl StructuralTrace {
 /// Items before the first start form their own leading group rather than being
 /// dropped: a dropped item is a step that happened and is not reported, which
 /// is the one thing this module exists to prevent.
-fn group_by_start<T>(
-    items: impl Iterator<Item = T>,
-    is_start: impl Fn(&T) -> bool,
-) -> Vec<Vec<T>> {
+fn group_by_start<T>(items: impl Iterator<Item = T>, is_start: impl Fn(&T) -> bool) -> Vec<Vec<T>> {
     let mut groups: Vec<Vec<T>> = Vec::new();
     for item in items {
         if is_start(&item) || groups.is_empty() {
@@ -901,14 +899,7 @@ mod algorithms {
     fn each_step_carries_the_matching_as_it_stood() {
         let eq_vars = IncidenceRows::from_sets(vec![HashSet::from([0]), HashSet::from([0, 1])]);
         let mut recorder = StructuralRecorder::default();
-        crate::matching::maximum_matching_with_structured(
-            2,
-            2,
-            &eq_vars,
-            &[],
-            &[],
-            &mut recorder,
-        );
+        crate::matching::maximum_matching_with_structured(2, 2, &eq_vars, &[], &[], &mut recorder);
         let trace = recorder.finish();
         let snapshots: Vec<_> = trace.matching().map(|r| r.match_eq.clone()).collect();
         assert_eq!(
@@ -1149,10 +1140,10 @@ mod algorithms {
             "the selection must describe the plan actually returned"
         );
         assert!(
-            starts
-                .iter()
-                .any(|step| matches!(step, TearingStep::PassStart { priority, .. }
-                    if *priority == selected.0)),
+            starts.iter().any(
+                |step| matches!(step, TearingStep::PassStart { priority, .. }
+                    if *priority == selected.0)
+            ),
             "the selected priority must name a pass that actually ran: {steps:?}"
         );
     }
@@ -1228,7 +1219,10 @@ mod algorithms {
                 "case {case}: a search that ran must report something"
             );
 
-            let adj: Vec<Vec<usize>> = rows.iter().map(|row| row.iter().copied().collect()).collect();
+            let adj: Vec<Vec<usize>> = rows
+                .iter()
+                .map(|row| row.iter().copied().collect())
+                .collect();
             let mut recorder = StructuralRecorder::default();
             assert_eq!(
                 crate::tarjan::tarjan_scc(n, &adj),
@@ -1238,12 +1232,8 @@ mod algorithms {
 
             let mut recorder = StructuralRecorder::default();
             let untorn = crate::tearing::tear_algebraic_loop(n, &rows);
-            let torn = crate::tearing::tear_algebraic_loop_with_observer(
-                n,
-                &rows,
-                &rows,
-                &mut recorder,
-            );
+            let torn =
+                crate::tearing::tear_algebraic_loop_with_observer(n, &rows, &rows, &mut recorder);
             assert_eq!(
                 untorn.map(|plan| plan.tear_var_local_indices),
                 torn.map(|plan| plan.tear_var_local_indices),

@@ -421,5 +421,10 @@ fn tear_scc(
                 .collect()
         })
         .collect();
-    crate::tearing::tear_algebraic_loop_with_observer(scc.len(), &eq_unknowns, &eq_unknowns, observer)
+    crate::tearing::tear_algebraic_loop_with_observer(
+        scc.len(),
+        &eq_unknowns,
+        &eq_unknowns,
+        observer,
+    )
 }
