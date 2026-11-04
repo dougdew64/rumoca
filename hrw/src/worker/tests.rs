@@ -225,13 +225,40 @@ fn nonlinear_loop_has_a_coupled_block() {
     assert_eq!(v["coupled_block_count"], serde_json::json!(1));
 }
 
-/// Blow-up: a capacitor directly across an ideal source can't be
-/// consistently initialized — its state voltage is pinned to the source. Unlike
-/// Drivetrain, index reduction can NOT rescue it: both Structural and Index
-/// reduction stay singular (an observable initialization blow-up).
+/// **A capacitor across an ideal source is singular, and 0.10.0's holonomic lane
+/// rescues it — which is the opposite of what this test used to assert.**
+///
+/// # Re-keyed to the opposite claim, 2026-11-04
+///
+/// It read: *"Unlike Drivetrain, index reduction can NOT rescue it: both Structural
+/// and Index reduction stay singular (an observable initialization blow-up)"*, and
+/// asserted `index_reduction.note_is_error()`. On v0.10.0 that is false. Measured:
+/// the Direct lane finds **0** candidates in both its proof groups, the Holonomic
+/// lane then finds **2**, and the first one attempted **sorts** the system.
+///
+/// **A blocked test's body is a specification only while the data model it describes
+/// is the one being re-modelled onto.** Here it was not a stale *shape* but a stale
+/// *premise* — restoring it unchanged would have pinned a claim about the compiler
+/// that stopped being true, and the re-model would have been "finished" with a
+/// failing test or a false one. Recorded because this is the only one of the eight
+/// that inverted rather than rotted.
+///
+/// # What makes this specimen worth keeping
+///
+/// Its counts do not move: **1 state, 13 algebraics, 14 equations before and
+/// after.** What changes is one manifold constraint and the matching. So it is the
+/// corpus's proof that **reduction is not a size reduction** — a pane reporting only
+/// before/after counts would say nothing happened here, and be wrong.
+///
+/// Structural still reports singular with its error payload, which is the half of
+/// the old claim that survives: the raw system *is* singular. What is no longer true
+/// is that nothing can fix it.
 #[test]
-#[ignore = "awaiting the Index reduction re-model: reduction does not rescue a capacitor-across-source loop. The body is kept as the specification the re-model must satisfy — see worker::AWAITING_REMODEL"]
-fn capacitor_loop_is_singular_and_irreducible() {
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn capacitor_loop_is_singular_and_the_holonomic_lane_rescues_it() {
     let FromWorker::Compiled { stages, .. } = compile_specimen_shared("CapacitorLoop") else {
         panic!("expected Compiled");
     };
@@ -253,19 +280,60 @@ fn capacitor_loop_is_singular_and_irreducible() {
             .is_some(),
         "singular Structural should carry error details"
     );
+    // **The inverted half.** Reduction admits this system now.
     assert!(
-        stages.index_reduction.note_is_error(),
-        "index reduction should NOT rescue a capacitor-across-source loop"
+        !stages.index_reduction.note_is_error(),
+        "0.10.0's holonomic lane rescues a capacitor-across-source loop: {:?}",
+        stages.index_reduction.note,
     );
+    let v = stages
+        .index_reduction
+        .value
+        .as_ref()
+        .expect("a rescued reduction publishes its search");
+    assert_eq!(
+        v["outcome"]["kind"], "sorted",
+        "it sorted: {}",
+        v["outcome"]
+    );
+    assert_eq!(v["outcome"]["admitted"], true);
+
+    // The Direct lane cannot see this; the Holonomic lane can. Asserted as the
+    // *reason*, because "it sorted" alone would pass just as well if the Direct lane
+    // had done it, and then the specimen would have stopped being about the loop.
+    let search = v["search"].as_array().expect("a search log");
+    let selected: Vec<&serde_json::Value> =
+        search.iter().filter(|r| r["kind"] == "selected").collect();
+    assert_eq!(selected.len(), 1, "one selection sorted it: {selected:?}");
+    assert_eq!(selected[0]["lane"], "holonomic");
+    assert_eq!(selected[0]["identity"]["form"], "holonomic");
     assert!(
-        stages
-            .index_reduction
-            .value
-            .as_ref()
-            .unwrap()
-            .get("error")
-            .is_some(),
-        "irreducible index reduction should carry error details"
+        selected[0]["residue_after"].is_null(),
+        "a selection that sorts the system has no residue after \u{2014} null, not 0: {}",
+        selected[0],
+    );
+    let direct_found: u64 = search
+        .iter()
+        .filter(|r| r["kind"] == "candidates" && r["lane"] == "direct")
+        .filter_map(|r| r["discovered"].as_u64())
+        .sum();
+    assert_eq!(
+        direct_found, 0,
+        "the Direct lane must find nothing here, or this specimen no longer \
+         demonstrates the holonomic rescue",
+    );
+
+    // **Reduction is not a size reduction.** The counts are identical; the manifold
+    // constraint is the change.
+    for key in ["n_states", "n_algebraics", "n_equations"] {
+        assert_eq!(
+            v["before"][key], v["after"][key],
+            "{key} must be unchanged for CapacitorLoop",
+        );
+    }
+    assert_eq!(
+        v["after"]["n_manifold_constraints"], 1,
+        "one manifold constraint is what reduction actually added",
     );
 }
 
@@ -1055,8 +1123,23 @@ fn editing_a_file_changes_its_source_root_fingerprint() {
 /// The comment here used to say "singular (no IR)" while the line below
 /// asserted the IR was there. That contradiction is the one
 /// [`Outcome::Flagged`] exists to end.
+///
+/// **Restored and re-keyed 2026-11-04.** The first half held unchanged; the second
+/// asserted `reduction.funnel_completed`, `reduction.steps` and
+/// `reduction.n_states_before`, which were the ten-step funnel's keys and have no
+/// successor — 0.10.0 reduction is a search, not a pipeline. Re-keyed onto what
+/// "recovers" now means concretely: **9 states to 5 across 6 rounds**, with at least
+/// one selection recorded.
+///
+/// Rounds are asserted as `>= 1` rather than `== 6`. The subject is recovery; the
+/// exact round count is a property of the candidate ordering, and pinning it here
+/// would make an upstream search improvement look like a regression. The measured
+/// numbers live in this comment, where that cannot happen.
 #[test]
-#[ignore = "awaiting the Index reduction re-model: reduction recovers a singular Drivetrain. The body is kept as the specification the re-model must satisfy — see worker::AWAITING_REMODEL"]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
 fn drivetrain_index_reduction_stage_recovers_singular() {
     let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
         panic!("expected Compiled");
@@ -1082,18 +1165,42 @@ fn drivetrain_index_reduction_stage_recovers_singular() {
             stages.index_reduction.note
         )
     });
-    assert!(
-        v["coupled_block_count"].as_u64().is_some(),
-        "reduced report missing block count"
+    assert_eq!(
+        v["outcome"]["kind"], "sorted",
+        "it sorted: {}",
+        v["outcome"]
     );
-    let red = &v["reduction"];
+    assert_eq!(v["outcome"]["admitted"], true);
     assert!(
-        red["funnel_completed"].as_bool() == Some(true),
-        "funnel should complete for Drivetrain"
+        v["after"]["coupled_block_count"].as_u64().is_some(),
+        "the reduced system's own report carries its block count",
     );
-    let steps = red["steps"].as_array().expect("steps array");
-    assert!(!steps.is_empty(), "should have logged funnel steps");
-    assert!(red["n_states_before"].as_u64().unwrap() > 0);
+
+    // **What "recovers" means, as numbers.** Measured 2026-11-04: 9 states to 5.
+    let before = v["before"]["n_states"].as_u64().expect("states before");
+    let after = v["after"]["n_states"].as_u64().expect("states after");
+    assert!(
+        after < before,
+        "reduction must demote states for Drivetrain: {before} -> {after}",
+    );
+    assert_eq!((before, after), (9, 5), "the measured demotion");
+
+    let rounds = v["rounds"].as_u64().expect("a round count");
+    assert!(
+        rounds >= 1,
+        "a recovered singular system ran at least one round"
+    );
+    let search = v["search"].as_array().expect("a search log");
+    assert!(
+        search.iter().any(|r| r["kind"] == "selected"),
+        "recovery means at least one candidate was selected",
+    );
+    // Both lanes are exercised here, which is why this is the richest specimen.
+    assert_eq!(
+        v["lanes"],
+        serde_json::json!(["direct", "holonomic"]),
+        "Drivetrain enters both lanes",
+    );
 }
 
 /// **Every constructor maps to exactly one outcome, and `note_is_error()`
@@ -1224,8 +1331,18 @@ fn singular_structural_carries_summary_data() {
 
 /// The index reduction stage embeds a "before" report with the raw
 /// (pre-reduction) DAE's incidence matrix and partial matching.
+///
+/// **Restored unchanged 2026-11-04** apart from the counts it now also checks. This
+/// is the one blocked body that needed no re-keying, because `before` means the same
+/// thing it always did — and it is why the re-model takes the Structural stage's own
+/// published report as `before` rather than rebuilding one: a second
+/// `build_incidence` here would be a second copy of a matrix that already has a
+/// publisher, and the two could disagree.
 #[test]
-#[ignore = "awaiting the Index reduction re-model: the reduction stage carries a before-report. The body is kept as the specification the re-model must satisfy — see worker::AWAITING_REMODEL"]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
 fn drivetrain_index_reduction_has_before_report() {
     let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
         panic!("expected Compiled");
@@ -1257,12 +1374,30 @@ fn drivetrain_index_reduction_has_before_report() {
         matching.len() < n_eq,
         "partial matching should be incomplete (singular)"
     );
+    // The counts the re-model adds beside the borrowed report, so a reader of
+    // `before` alone can size the system without parsing the matrix.
+    for key in ["n_states", "n_algebraics", "n_equations"] {
+        assert!(
+            before[key].as_u64().is_some_and(|n| n > 0),
+            "before.{key} must be published and non-zero: {}",
+            before[key],
+        );
+    }
 }
 
 /// The "before" report is parseable by `IncidenceMatrix::from_report`,
 /// enabling the Before/After split view on the Index Reduction tab.
+///
+/// **Restored and re-keyed 2026-11-04.** `before` parses as it always did. The
+/// *after* half moved: it read `IncidenceMatrix::from_report(&v)` — the stage value
+/// itself — because on 0.9.20 the reduced report *was* the stage value, with
+/// `before` nested inside it. The re-model publishes the reduced system under
+/// `after` instead, so the two sides are symmetric and neither is the document root.
 #[test]
-#[ignore = "awaiting the Index reduction re-model: the before-report parses as an incidence matrix. The body is kept as the specification the re-model must satisfy — see worker::AWAITING_REMODEL"]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
 fn drivetrain_before_report_parseable_as_incidence() {
     let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
         panic!("expected Compiled");
@@ -1285,7 +1420,10 @@ fn drivetrain_before_report_parseable_as_incidence() {
     // The after incidence must resolve matching (equation names must
     // agree between the structural report's matching array and the
     // incidence rows — both use the labeled form like "f_x[0] (origin)").
-    let after_mat = crate::incidence_view::IncidenceMatrix::from_report(&v)
+    //
+    // Read from `v["after"]`, not `v`: the reduced system is a sibling of `before`
+    // now rather than the document root.
+    let after_mat = crate::incidence_view::IncidenceMatrix::from_report(&v["after"])
         .expect("after report should parse into an IncidenceMatrix");
     let after_caption = after_mat.caption();
     assert!(
@@ -1296,8 +1434,18 @@ fn drivetrain_before_report_parseable_as_incidence() {
 
 /// For an already index-1 system, the "before" report still exists (so
 /// the split view code doesn't crash), but the note says "index-1".
+///
+/// **Restored 2026-11-04**, and the wording it asserts is now load-bearing in a way
+/// it was not: `index-1` is published for `Stopped::Borrowed` and **deliberately not**
+/// for `Stopped::Sorted` with zero rounds. Those are different facts —
+/// `SingleInertia` is left alone, while `StabilizedPendulum` sorts with no round
+/// because derivative-alias normalization *rebuilt* it. Calling both "index-1" would
+/// hide a rebuild behind a word meaning nothing happened.
 #[test]
-#[ignore = "awaiting the Index reduction re-model: an already-index-1 model says so. The body is kept as the specification the re-model must satisfy — see worker::AWAITING_REMODEL"]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
 fn single_inertia_index_reduction_note_says_index_1() {
     let FromWorker::Compiled { stages, .. } = compile_specimen_shared("SingleInertia") else {
         panic!("expected Compiled");
@@ -1319,6 +1467,412 @@ fn single_inertia_index_reduction_note_says_index_1() {
         v.get("before").is_some(),
         "before report should exist even for index-1 systems"
     );
+    assert_eq!(
+        v["outcome"]["kind"], "borrowed",
+        "index-1 is the `borrowed` stop, not any success: {}",
+        v["outcome"],
+    );
+}
+
+/// **A system that sorted because normalization rebuilt it does NOT say index-1.**
+///
+/// The must-fire half of `single_inertia_index_reduction_note_says_index_1`. Without
+/// it, `reduction_success_note` could label every admitted system "index-1" and both
+/// halves of the distinction would still pass one test each.
+///
+/// `StabilizedPendulum` is the specimen: **zero reduction rounds**, so a round-count
+/// test cannot tell it from `SingleInertia`, and yet its system is rebuilt —
+/// measured 1 algebraic and 5 equations before, **3 and 7 after**, with its 4 states
+/// unchanged. That is `derivative_aliases::normalize`, a `pub(super)` pass whose work
+/// is visible here only because `Stopped::Borrowed` and `Stopped::Sorted` distinguish
+/// *unchanged* from *rebuilt* — see `worker::reduction_outcome_summary`.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn a_normalized_system_is_not_called_index_1() {
+    let FromWorker::Compiled { stages, .. } = compile_specimen_shared("StabilizedPendulum") else {
+        panic!("expected Compiled");
+    };
+    let note = stages.index_reduction.note.as_deref().unwrap_or("");
+    let v = stages
+        .index_reduction
+        .value
+        .as_ref()
+        .expect("StabilizedPendulum is admitted");
+
+    assert_eq!(v["rounds"], 0, "no reduction round runs for this specimen");
+    assert_eq!(
+        v["outcome"]["kind"], "sorted",
+        "normalization rebuilt it, so the stop is Sorted and not Borrowed: {}",
+        v["outcome"],
+    );
+    assert!(
+        !note.contains("index-1"),
+        "a rebuilt system must not be labelled index-1: {note:?}",
+    );
+
+    // The rebuild itself, which is the only evidence that normalization ran.
+    assert_eq!(
+        v["before"]["n_states"], v["after"]["n_states"],
+        "states held"
+    );
+    let (alg_before, alg_after) = (
+        v["before"]["n_algebraics"]
+            .as_u64()
+            .expect("algebraics before"),
+        v["after"]["n_algebraics"]
+            .as_u64()
+            .expect("algebraics after"),
+    );
+    let (eq_before, eq_after) = (
+        v["before"]["n_equations"]
+            .as_u64()
+            .expect("equations before"),
+        v["after"]["n_equations"].as_u64().expect("equations after"),
+    );
+    assert!(
+        alg_after > alg_before && eq_after > eq_before,
+        "normalization EXTENDS the system \u{2014} it does not shrink it: \
+         {alg_before} algebraics and {eq_before} equations became {alg_after} and {eq_after}",
+    );
+}
+
+/// **The reduction search log is the compile's own run, and every record kind of it
+/// reaches the payload.**
+///
+/// The must-fire test for `worker::index_reduction_from_observation`. Its job is to
+/// *report* a search, so silence has to be a failure — and silence here is cheap to
+/// produce: an empty `search` array, a `Round` arm that drops its unmatched lists, or
+/// an `Attempt` whose outcome serializes to `{}` would all leave a pane that renders
+/// without complaint and shows a shorter search than happened.
+///
+/// # Why it sweeps the corpus instead of asserting on one specimen
+///
+/// **No single specimen produces every record kind.** Measured 2026-11-04:
+/// `Drivetrain` is the only one that reaches both lanes *and* records a `held`
+/// attempt; `CapacitorLoop` is the only `selected` with a null `residue_after`;
+/// `CartesianPendulum` is the only run with `candidates` and no `attempt`;
+/// `SingleInertia` produces exactly one record, a `stopped`. A one-specimen test
+/// would have silently covered a third of the arms.
+///
+/// # The property that is really being defended
+///
+/// **An identity must carry no resolved name.** `state_ordinal` and friends index the
+/// *rebuilt system of their own round*, so a name attached to one would be a
+/// confident wrong answer from round 2 onward — the same defect class the span
+/// resolver was fixed for on this same day. So this asserts the ordinals are present
+/// as bare numbers, that `declared_at` is there instead, and that **no identity
+/// carries a `name` or `variable` key at all**: the check has to fail if a later
+/// session adds the convenience, not merely if it adds it wrongly.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn the_reduction_search_log_is_the_compiles_own_run() {
+    // One specimen per record kind that only it produces; see the doc comment.
+    let specimens = [
+        "Drivetrain",
+        "CapacitorLoop",
+        "CartesianPendulum",
+        "SingleInertia",
+        "GearWithBrake",
+        "StabilizedPendulum",
+    ];
+    let mut kinds_seen: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+    let mut outcomes_seen: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+    let mut stops_seen: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+    let mut forms_seen: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+    let mut located = 0usize;
+    let mut checked = 0usize;
+
+    for name in specimens {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared(name) else {
+            panic!("expected Compiled for {name}");
+        };
+        let v = stages
+            .index_reduction
+            .value
+            .as_ref()
+            .unwrap_or_else(|| panic!("{name} reaches index reduction"));
+        checked += 1;
+
+        // The two statements the payload makes about how to read itself. Asserted
+        // because a reader who loses them reads `residue` as a rank deficiency and
+        // an ordinal as a variable index — both wrong, and neither detectable.
+        assert!(
+            v["residue_definition"]
+                .as_str()
+                .is_some_and(|s| s.contains("both deficits")),
+            "{name}: the payload must define its own residue",
+        );
+        assert!(
+            v["ordinals_note"]
+                .as_str()
+                .is_some_and(|s| s.contains("rebuilt system")),
+            "{name}: the payload must say the ordinals are arena-local",
+        );
+
+        let search = v["search"]
+            .as_array()
+            .unwrap_or_else(|| panic!("{name}: a search log"));
+        assert!(
+            !search.is_empty(),
+            "{name}: the search log must not be empty"
+        );
+        assert_eq!(
+            search.last().expect("non-empty")["kind"],
+            "stopped",
+            "{name}: every run ends with how it stopped",
+        );
+        // `rounds` is derived from the log, so a disagreement means one of the two
+        // was computed from something else.
+        let counted = search.iter().filter(|r| r["kind"] == "round").count();
+        assert_eq!(
+            v["rounds"].as_u64(),
+            Some(counted as u64),
+            "{name}: the round count and the log must agree",
+        );
+
+        for record in search {
+            let kind = record["kind"]
+                .as_str()
+                .unwrap_or_else(|| panic!("{name}: every record names its kind"));
+            kinds_seen.insert(kind.to_owned());
+            match kind {
+                "round" => {
+                    assert!(
+                        record["residue"].as_u64().is_some(),
+                        "{name}: a round states its residue",
+                    );
+                    // Arrays, not absent: an unmatched side with nothing in it is a
+                    // real and different statement from one that was not reported.
+                    for key in ["unmatched_equations", "unmatched_unknowns"] {
+                        assert!(
+                            record[key].is_array(),
+                            "{name}: a round reports {key}: {record}",
+                        );
+                    }
+                    for unknown in record["unmatched_unknowns"].as_array().unwrap() {
+                        assert!(unknown["name"].as_str().is_some(), "{name}: {unknown}");
+                        // Rumoca's classification, published as its own word.
+                        assert!(
+                            matches!(
+                                unknown["kind"].as_str(),
+                                Some("derivative" | "algebraic" | "other")
+                            ),
+                            "{name}: an unmatched unknown carries Rumoca's kind: {unknown}",
+                        );
+                    }
+                }
+                "candidates" => {
+                    assert!(
+                        record["discovered"].as_u64().is_some(),
+                        "{name}: a candidate group states how many it found",
+                    );
+                    assert!(
+                        matches!(
+                            record["group"].as_str(),
+                            Some("direct_admissible" | "direct_conditional" | "holonomic")
+                        ),
+                        "{name}: a candidate group names its proof boundary: {record}",
+                    );
+                }
+                "attempt" => {
+                    let outcome = record["outcome"]["kind"]
+                        .as_str()
+                        .unwrap_or_else(|| panic!("{name}: an attempt has an outcome: {record}"));
+                    outcomes_seen.insert(outcome.to_owned());
+                    forms_seen.insert(identity_form(name, &record["identity"]));
+                    if record["identity"]["declared_at"]["file"].as_str().is_some() {
+                        located += 1;
+                    }
+                }
+                "selected" => {
+                    assert!(
+                        record["residue_before"].as_u64().is_some(),
+                        "{name}: a selection states the residue it started from",
+                    );
+                    forms_seen.insert(identity_form(name, &record["identity"]));
+                }
+                "retried_pristine" => {}
+                "stopped" => {
+                    stops_seen.insert(
+                        record["outcome"]["kind"]
+                            .as_str()
+                            .unwrap_or_else(|| panic!("{name}: a stop names itself"))
+                            .to_owned(),
+                    );
+                }
+                other => panic!("{name}: unknown record kind {other:?} in {record}"),
+            }
+        }
+    }
+
+    assert_eq!(
+        checked,
+        specimens.len(),
+        "every specimen must have been read"
+    );
+    // **Coverage, stated as the thing that must be true.** Each of these was
+    // measured; a missing one means an arm of the publisher is never exercised and
+    // could be wrong without any test noticing.
+    for kind in ["round", "candidates", "attempt", "selected", "stopped"] {
+        assert!(
+            kinds_seen.contains(kind),
+            "no specimen produced a {kind:?} record, so that arm is untested: {kinds_seen:?}",
+        );
+    }
+    for outcome in ["sorted", "reduced", "held"] {
+        assert!(
+            outcomes_seen.contains(outcome),
+            "no attempt reported {outcome:?}, so that arm is untested: {outcomes_seen:?}",
+        );
+    }
+    for stop in ["borrowed", "sorted", "singular"] {
+        assert!(
+            stops_seen.contains(stop),
+            "no run stopped as {stop:?}, so that arm is untested: {stops_seen:?}",
+        );
+    }
+    for form in ["direct", "holonomic"] {
+        assert!(
+            forms_seen.contains(form),
+            "no candidate had the {form:?} identity form: {forms_seen:?}",
+        );
+    }
+    assert!(
+        located > 0,
+        "no attempted candidate resolved to a source location, so `declared_at` \
+         \u{2014} the only stable identity a candidate has \u{2014} is never populated",
+    );
+}
+
+/// An identity's `form`, with the arena-local ordinal contract checked on the way.
+///
+/// Lives here rather than inline because both the `attempt` and `selected` arms need
+/// it, and the contract is the point: **an ordinal must stay an unnamed number.**
+fn identity_form(specimen: &str, identity: &serde_json::Value) -> String {
+    let form = identity["form"]
+        .as_str()
+        .unwrap_or_else(|| panic!("{specimen}: an identity names its form: {identity}"));
+    // `declared_at` may legitimately be `null` — a span in no registered source
+    // refuses rather than resolving against the wrong file — but the KEY must be
+    // present, or the pane cannot tell "no location" from "not published".
+    assert!(
+        identity.get("declared_at").is_some(),
+        "{specimen}: an identity must carry declared_at, even as null: {identity}",
+    );
+    let ordinals: &[&str] = match form {
+        "direct" | "derivative_definition" => &["state_ordinal", "rhs_ordinal"],
+        "auxiliary_state" => &["state_ordinal", "variable_ordinal"],
+        "holonomic" => &["owner_ordinal", "residual_ordinal"],
+        other => panic!("{specimen}: unknown identity form {other:?}"),
+    };
+    for key in ordinals {
+        assert!(
+            identity[*key].as_u64().is_some(),
+            "{specimen}: {form} identity must publish {key} as a number: {identity}",
+        );
+    }
+    // **The negative half, and it is the one worth having.** Resolving an ordinal to
+    // a name against the raw DAE produces a confident wrong answer from round 2
+    // onward, because the ordinal belongs to that round's rebuilt system. This fails
+    // if a later session adds the convenience at all.
+    for forbidden in ["name", "variable", "state", "unknown"] {
+        assert!(
+            identity.get(forbidden).is_none(),
+            "{specimen}: an identity must not resolve its arena-local ordinals to a \
+             name \u{2014} found {forbidden:?} in {identity}",
+        );
+    }
+    form.to_owned()
+}
+
+/// **No stage reports an HRW sequencing fault.**
+///
+/// `index_reduction_stage` and `initialization_stage` both take the shared
+/// `ObservedReduction` as an `Option`, and both say so in plain words if it is
+/// `None` rather than reporting something about the model. That wording is a claim
+/// about HRW's own call order, so it must never reach a reader — and this is what
+/// fails if the two stages are ever sequenced before the preparation they read.
+///
+/// # And the stronger half: the two stages agree about admission
+///
+/// That agreement is the whole point of sharing one `inspect_prepare_for_solve`
+/// call. Index reduction publishes IR either way — a refusal is a result, and
+/// `CartesianPendulum`'s search log is its most interesting payload — while
+/// Initialization has pins only for a system that was admitted. **So
+/// `initialization.value.is_some()` must equal `index_reduction.outcome.admitted`**,
+/// on every specimen, and a disagreement means the two are no longer reading one
+/// preparation.
+///
+/// *The first version of this test asserted both stages always publish IR, and
+/// `CartesianPendulum` failed it correctly: it is not admitted, so Initialization
+/// says so instead. A true measurement of the wrong unit, which is the mistake this
+/// repository logs most often.*
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn no_stage_reports_an_hrw_sequencing_fault() {
+    let mut checked = 0usize;
+    let mut admitted_seen = 0usize;
+    let mut refused_seen = 0usize;
+    for name in [
+        "Drivetrain",
+        "CartesianPendulum",
+        "SingleInertia",
+        "RcCircuit",
+    ] {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared(name) else {
+            panic!("expected Compiled for {name}");
+        };
+        for (label, stage) in [
+            ("index reduction", &stages.index_reduction),
+            ("initialization", &stages.initialization),
+        ] {
+            checked += 1;
+            let note = stage.note.as_deref().unwrap_or("");
+            assert!(
+                !note.contains("sequencing fault"),
+                "{name}: {label} read no observation, so HRW ran the stage before the \
+                 preparation it depends on: {note}",
+            );
+        }
+
+        // Index reduction always has a payload: a refusal is a result.
+        let reduction = stages
+            .index_reduction
+            .value
+            .as_ref()
+            .unwrap_or_else(|| panic!("{name}: index reduction always publishes its search"));
+        let admitted = reduction["outcome"]["admitted"]
+            .as_bool()
+            .unwrap_or_else(|| panic!("{name}: the outcome states whether it was admitted"));
+        assert_eq!(
+            stages.initialization.value.is_some(),
+            admitted,
+            "{name}: initialization has pins exactly when reduction admitted the \
+             system; the two read one preparation",
+        );
+        if admitted {
+            admitted_seen += 1;
+        } else {
+            refused_seen += 1;
+        }
+    }
+    assert!(
+        checked > 0,
+        "no stage was examined, so this check proves nothing"
+    );
+    // Must-fire on both sides of the biconditional: with only admitted specimens the
+    // assertion above would hold for a stage that always published IR.
+    assert!(admitted_seen > 0, "no admitted specimen was examined");
+    assert!(refused_seen > 0, "no refused specimen was examined");
 }
 
 /// A scratch specimen compiles like any other (ideas #42).
@@ -4378,30 +4932,25 @@ fn structural_incidence_has_equation_text_labels() {
     }
 }
 
-/// The Index-reduction stage IR includes the reduction report.
-#[test]
-#[ignore = "awaiting the Index reduction re-model: the reduction IR's report fields. The body is kept as the specification the re-model must satisfy — see worker::AWAITING_REMODEL"]
-fn index_reduction_ir_has_reduction_report() {
-    let FromWorker::Compiled { stages, .. } = compile_specimen_shared("Drivetrain") else {
-        panic!("expected Compiled");
-    };
-    let v = stages.index_reduction.value.expect("index reduction IR");
-    let red = &v["reduction"];
-    assert!(red.is_object(), "should have a reduction report");
-    assert!(red.get("steps").is_some(), "reduction should have steps");
-    assert!(
-        red.get("n_states_before").is_some(),
-        "reduction should have n_states_before"
-    );
-    assert!(
-        red.get("n_states_after").is_some(),
-        "reduction should have n_states_after"
-    );
-    assert!(
-        red.get("funnel_completed").is_some(),
-        "reduction should have funnel_completed"
-    );
-}
+// **`index_reduction_ir_has_reduction_report` was retired 2026-11-04, not restored.**
+//
+// It asserted five keys of the 0.9.20 funnel — `reduction.steps`,
+// `reduction.n_states_before`, `reduction.n_states_after`,
+// `reduction.funnel_completed` — and **none has a successor**, because the funnel is
+// not what 0.10.0 does. A body that pins the shape of a pipeline against an
+// implementation that performs a search is not a specification; restoring it would
+// have meant inventing a `reduction` object to satisfy it, which is the tail wagging
+// the IR.
+//
+// That is the same judgement `events_ir_has_expected_summary_keys` got on 2026-11-03,
+// and the rule behind both is on `worker::AWAITING_REMODEL`: **a blocked test's body
+// is the specification only while the data model it describes is the one being
+// re-modelled onto.**
+//
+// What covers the ground now, and does it against the real search:
+// `drivetrain_index_reduction_stage_recovers_singular` (outcome, demotion, lanes,
+// a selection), `the_reduction_search_log_is_the_compiles_own_run` (every record
+// kind, and the ordinals' identity) and `a_normalized_system_is_not_called_index_1`.
 
 /// The Initialization stage IR includes the determinacy check.
 ///
@@ -7129,41 +7678,66 @@ fn the_corpus_outcome_matrix_is_unchanged() {
     //    errors to whichever model was being compiled. This table is what caught
     //    it; `a_broken_model_reports_its_own_resolve_error_and_no_others` now pins
     //    both directions.
+    //
+    // 5. **Index reduction, column 8: every `.` became `O` or `F` on 2026-11-04**,
+    //    when the stage was re-modelled onto `inspect_prepare_for_solve`. It had
+    //    been `.` for every specimen that reached it, because the stage published a
+    //    note and no IR. Nothing about the compiler changed; HRW started reading it.
+    //
+    //    **`O` where the system was admitted, `F` where it was not** — and `F` here
+    //    appears on exactly the three rows where Structural also reads `F`:
+    //    `CartesianPendulum`, `IncompatibleConnect`, `TwiceDefined`. Two `F`s in one
+    //    row is correct and the rule says so: `F` is `Flagged`, *the pipeline
+    //    continued*. It is `X`/`Failed` that at most one stage per compile may claim,
+    //    and neither of these does.
+    //
+    //    **The four high-index rows now disagree with their own comment, usefully.**
+    //    It says *"reduction fixes it"*, and column 8 now reads `O` for all four,
+    //    which is that claim made checkable instead of asserted. `CapacitorLoop` sits
+    //    under *"Singular and NOT repaired by reduction"* and reads `O`, because on
+    //    0.10.0 the holonomic lane **does** repair it — see
+    //    `capacitor_loop_is_singular_and_the_holonomic_lane_rescues_it`, which was
+    //    re-keyed to the opposite of what it used to assert.
     const MATRIX: &[(&str, &str)] = &[
         // Healthy: every phase produces IR.
-        ("BouncingBall", "OOOOOOO.OOO"),
-        ("HarmonicOscillator", "OOOOOOO.OOO"),
-        ("LoopWithInertia", "OOOOOOO.OOO"),
-        ("MixedLoop", "OOOOOOO.OOO"),
-        ("NonlinearLoop", "OOOOOOO.OOO"),
-        ("ProportionalLoop", "OOOOOOO.OOO"),
-        ("RcCircuit", "OOOOOOO.OOO"),
+        ("BouncingBall", "OOOOOOOOOOO"),
+        ("HarmonicOscillator", "OOOOOOOOOOO"),
+        ("LoopWithInertia", "OOOOOOOOOOO"),
+        ("MixedLoop", "OOOOOOOOOOO"),
+        ("NonlinearLoop", "OOOOOOOOOOO"),
+        ("ProportionalLoop", "OOOOOOOOOOO"),
+        ("RcCircuit", "OOOOOOOOOOO"),
         // `connect`s at two hierarchy levels, and clean all the way through —
         // deliberately, since the point it makes is about how sets are BUILT and a
         // failure anywhere would give the reader something else to look at.
-        ("ScopedConnect", "OOOOOOO.OOO"),
-        ("SingleInertia", "OOOOOOO.OOO"),
-        ("StiffDecay", "OOOOOOO.OOO"),
-        ("TwoLoops", "OOOOOOO.OOO"),
+        ("ScopedConnect", "OOOOOOOOOOO"),
+        ("SingleInertia", "OOOOOOOOOOO"),
+        ("StiffDecay", "OOOOOOOOOOO"),
+        ("TwoLoops", "OOOOOOOOOOO"),
         // Initialization relaxed something and said so.
-        ("OverInitRc", "OOOOOOO.OOO"),
-        ("RotationalInertia", "OOOOOOO.OOO"),
+        ("OverInitRc", "OOOOOOOOOOO"),
+        ("RotationalInertia", "OOOOOOOOOOO"),
         // Structurally sound and already index 1 — yet IC planning calls the same
         // system singular and cannot match `lambda`. The disagreement between two
         // phases about one system is `upstream-issues.md`'s 2026-09-24 entry, and
         // this row is what would change if it were fixed.
-        ("StabilizedPendulum", "OOOOOOO.OOO"),
+        ("StabilizedPendulum", "OOOOOOOOOOO"),
         // High-index: structural flags a singular system, reduction fixes it,
         // initialization then reports its relaxation. Four models, one shape.
-        ("BenchActuator", "OOOOOOF.OOO"),
-        ("Drivetrain", "OOOOOOF.OOO"),
-        ("GearWithBrake", "OOOOOOF.OOO"),
-        ("MotorWithBrake", "OOOOOOF.OOO"),
-        // Singular and NOT repaired by reduction — index reduction flags too.
-        // CapacitorLoop still reaches solve lowering; the other two do not.
-        ("CapacitorLoop", "OOOOOOF.OOO"),
-        ("IncompatibleConnect", "OOOOOOF..OX"),
-        ("TwiceDefined", "OOOOOOF..OX"),
+        ("BenchActuator", "OOOOOOFOOOO"),
+        ("Drivetrain", "OOOOOOFOOOO"),
+        ("GearWithBrake", "OOOOOOFOOOO"),
+        ("MotorWithBrake", "OOOOOOFOOOO"),
+        // **Singular, and repaired by reduction since v0.10.0** — the holonomic lane
+        // differentiates `v = p.v - n.v` and admits the system, so column 8 reads
+        // `O`. It was grouped here as *"NOT repaired"* on 0.9.20, which is why the
+        // test asserting that was re-keyed rather than restored. Its counts do not
+        // move; one manifold constraint is what changed.
+        ("CapacitorLoop", "OOOOOOFOOOO"),
+        // Singular and NOT repaired — index reduction flags too, and neither
+        // reaches solve lowering.
+        ("IncompatibleConnect", "OOOOOOFF.OX"),
+        ("TwiceDefined", "OOOOOOFF.OX"),
         // The canonical index-3 DAE Rumoca does not reduce (`ideas.md` #83).
         //
         // **Its row is identical to the two above, and the comment here claimed
@@ -7174,7 +7748,7 @@ fn the_corpus_outcome_matrix_is_unchanged() {
         // records whether `prepare_for_solve` admitted the system, and it admits
         // none of the three. **What distinguishes this specimen is not visible in
         // this table**, so the pointer to #83 is the whole of what this row says.
-        ("CartesianPendulum", "OOOOOOF..OX"),
+        ("CartesianPendulum", "OOOOOOFF.OX"),
         // A flagged typecheck stops the pipeline; everything after is `.`.
         ("DimensionMismatch", "OOOF......."),
         // Flatten and DAE fail with a payload, then nothing is reached.
@@ -7814,10 +8388,36 @@ fn the_tests_blocked_on_a_remodel_are_still_blocked() {
         "a stage came back and its tests did not:\n  {}",
         stale.join("\n  "),
     );
-    assert!(
-        total > 0,
-        "no ignore reason of the form `awaiting the <Stage> re-model` was found. Either the wording drifted \u{2014} in which case this check now proves nothing \u{2014} or every blocked test has been restored, in which case AWAITING_REMODEL should be empty and this test should go with it.",
-    );
+
+    // **The non-vacuity guard is conditional on the roster, since 2026-11-04.**
+    //
+    // It used to be unconditional, and its message said that an empty roster meant
+    // *"this test should go with it"*. Emptying the roster is what made that advice
+    // readable — and taking it would have retired the one check that guards the
+    // regime we are now in. With nothing blocked, the live claim is the complement:
+    // **no test is ignored for a re-model at all.** That is exactly what fails if a
+    // future session disables a stage, ignores its tests, and forgets to roster it,
+    // which is the failure the loop above cannot see because it only looks at stages
+    // the roster already names.
+    //
+    // The wording guard genuinely cannot survive an empty roster: with no blocked
+    // test to find, a drifted `awaiting the <Stage> re-model` phrase is undetectable.
+    // It is also harmless there, because there is nothing for it to miss. So the
+    // guard comes back by itself the moment anything is rostered again.
+    if on_roster.is_empty() {
+        assert_eq!(
+            total, 0,
+            "AWAITING_REMODEL is empty, so no test may still be ignored for a \
+             re-model \u{2014} grep `re-model` in the ignore reasons",
+        );
+    } else {
+        assert!(
+            total > 0,
+            "AWAITING_REMODEL names {on_roster:?}, but no ignore reason of the form \
+             `awaiting the <Stage> re-model` was found, so the wording drifted and \
+             this check proves nothing",
+        );
+    }
 }
 
 /// **A panic becomes an answer, and the answer blames no phase.**
