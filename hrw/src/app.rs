@@ -1083,6 +1083,21 @@ pub struct App {
     // stops being verifiable only by Doug looking at it. See `screenshot.rs` for the
     // argument and `tick_screenshot` for the wiring.
     shots: crate::screenshot::ScreenshotState,
+    // How many notices have been shown this session — **not** a count anyone displays.
+    //
+    // It exists so a reader can tell a notice THIS action produced from one that was
+    // already on screen: record it before acting, compare after. A notice persists
+    // until something replaces it, so without this every observer of `notice` inherits
+    // the last one and reports it as its own. See [`App::set_notice`].
+    notice_seq: u64,
+    // Where the central panel drew, for a `region: "pane"` screenshot.
+    //
+    // **The same move `ui_tests.rs`'s header names**: the accessibility tree carries
+    // no geometry, but a widget's own state is a number the app can keep, and
+    // `source_scroll_offset` is the worked example. Recorded on the frame the panel
+    // draws and read a few frames later when the pixels arrive, so `crop` clamps it
+    // rather than trusting it — a window resized in between would index past the end.
+    pane_rect: Option<egui::Rect>,
 }
 
 /// `PartialEq` so "is the pending session this view's?" is `==`.
@@ -1294,7 +1309,9 @@ impl App {
     fn tick_screenshot(&mut self, ctx: &egui::Context) {
         self.collect_screenshot(ctx);
 
-        let step = self.shots.step(self.compiling, std::time::Instant::now());
+        let step = self
+            .shots
+            .step(self.compiling, self.notice_seq, std::time::Instant::now());
         match step {
             crate::screenshot::ShotStep::Idle => {}
             crate::screenshot::ShotStep::Follow(link) => {
@@ -1369,6 +1386,12 @@ impl App {
                 continue;
             };
             let path = bridge::screenshot_path(record.seq);
+            let (image, region) = crate::screenshot::crop(
+                &image,
+                record.region,
+                self.pane_rect,
+                ctx.pixels_per_point(),
+            );
             let bytes = crate::screenshot::rgba_bytes(&image);
             let [width, height] = image.size;
             // **A write that fails is reported as a failure, not as a success with a
@@ -1394,6 +1417,8 @@ impl App {
                 record.why.as_deref(),
                 &record.followed,
                 image,
+                region,
+                record.notice_floor,
                 error.as_deref(),
             );
         }
@@ -1408,12 +1433,23 @@ impl App {
             seq,
             why,
             followed,
+            notice_floor,
             error,
         } = step
         else {
             return;
         };
-        self.report_screenshot(*seq, why.as_deref(), followed, None, Some(error));
+        // A failure kept nothing, so the region it reports is the whole window —
+        // there is no picture for a crop to have applied to.
+        self.report_screenshot(
+            *seq,
+            why.as_deref(),
+            followed,
+            None,
+            bridge::ShotRegion::Window,
+            *notice_floor,
+            Some(error),
+        );
     }
 
     /// Write the reply to `.hrw-bridge/screenshot-result.json`.
@@ -1429,6 +1465,8 @@ impl App {
         why: Option<&str>,
         followed: &[String],
         image: Option<bridge::ShotImage>,
+        region: bridge::ShotRegion,
+        notice_floor: u64,
         error: Option<&str>,
     ) {
         let showing = self.view_context();
@@ -1437,6 +1475,7 @@ impl App {
             why,
             followed,
             image,
+            region,
             showing: Some(&showing),
             specimen: self.model.as_deref(),
             stage: self.stage.name(),
@@ -1444,7 +1483,15 @@ impl App {
             // answers an impossible link with an on-screen message and an otherwise
             // healthy window; without this field the photograph of that window is
             // indistinguishable from the photograph of a link that worked.
-            notice: self.notice.as_deref(),
+            //
+            // **Only a notice THIS shot caused.** A notice stays up until something
+            // replaces it, and reporting the standing one made three consecutive
+            // shots claim a refusal that belonged to an earlier request — true about
+            // the screen, false about the shot, and read by the capture suite as this
+            // shot's answer. See `App::set_notice`.
+            notice: (self.notice_seq > notice_floor)
+                .then_some(self.notice.as_deref())
+                .flatten(),
             error,
         };
         match bridge::write_screenshot_result(&result) {
@@ -1895,6 +1942,8 @@ impl App {
             // disk by the previous session does not navigate this one's window the
             // moment it opens.
             shots: crate::screenshot::ScreenshotState::new(&cc.egui_ctx),
+            notice_seq: 0,
+            pane_rect: None,
         };
         // Scan the specimen directory and pre-load libraries at startup so the
         // Resolve phase works immediately when the user selects a specimen
@@ -2733,7 +2782,7 @@ impl App {
         self.context.point_error = result.as_ref().err().map(std::string::ToString::to_string);
         // `None` on success: the Context Bar already names the point, and it
         // does so persistently. See `status_line`.
-        self.notice = status_line(seq, &target, "explain", result);
+        self.set_notice(status_line(seq, &target, "explain", result));
     }
 
     /// What HRW is showing, for the capture.
@@ -3000,9 +3049,41 @@ impl App {
     ///
     /// One function so the shown text and the recorded text cannot drift apart.
     fn notify(&mut self, message: impl Into<String>) {
-        let message = message.into();
-        diagnostics::record_action("notice", message.clone());
-        self.notice = Some(message);
+        self.set_notice(Some(message.into()));
+    }
+
+    /// Set or clear the notice — **the single place `self.notice` is written.**
+    ///
+    /// # Why it had to become single
+    ///
+    /// *Found 2026-11-04 by the capture suite's first run.* A notice stays on screen
+    /// until something replaces it, so a screenshot reply reported whatever notice was
+    /// standing rather than the one its own shot produced: three consecutive shots
+    /// came back carrying *"Structural has no SpyPlot view"*, two of them having asked
+    /// about a different stage entirely. The reply was true about the screen and
+    /// **false about the shot**, which is worse than silence — a capture run reads it
+    /// as this shot's answer.
+    ///
+    /// So every notice now bumps [`App::notice_seq`], and a reader who recorded the
+    /// counter before acting can tell a *new* notice from one already there. That is
+    /// the same rule `screenshot-result.json` follows with `writtenAtMs`, and the one
+    /// `debug-state.json` follows with `seq`: **state that can be stale must carry
+    /// something that says so.**
+    ///
+    /// # And it closes a gap that was already there
+    ///
+    /// [`Self::notify`] records every notice into the session log, which its own doc
+    /// gives as the reason it exists — *"until 2026-07-30 they existed only on screen
+    /// for a few seconds"*. **Four sites assigned `self.notice` directly and were
+    /// therefore never recorded**, including both `status_line` results and the lab
+    /// refusals. They route through here now, so the claim that doc makes is true for
+    /// the first time.
+    fn set_notice(&mut self, message: Option<String>) {
+        if let Some(text) = &message {
+            diagnostics::record_action("notice", text.clone());
+            self.notice_seq += 1;
+        }
+        self.notice = message;
     }
 
     /// Act on a followed `hrw://` link.
@@ -3063,7 +3144,7 @@ impl App {
                     // **Named, not silent.** A link that does nothing is the worst
                     // outcome in a lab, because nothing on screen says why — the
                     // reason the parser caps `splitn` at 5 rather than 4.
-                    self.notice = Some(format!("no fixture lab named `{lab}`"));
+                    self.notify(format!("no fixture lab named `{lab}`"));
                     return;
                 };
                 self.select_lab(LabSource::Fixture(path));
@@ -3082,7 +3163,7 @@ impl App {
                         // "it opened at the top" is indistinguishable from a lab
                         // whose first stop is the one that was asked for.
                         _ => {
-                            self.notice = Some(format!(
+                            self.notify(format!(
                                 "`{lab}` has no stop `{slug}` \u{2014} opened at the top"
                             ));
                         }
@@ -3697,7 +3778,7 @@ impl App {
                 None => Some("(no IR for this stage to point at)".to_owned()),
             }
         };
-        self.notice = status;
+        self.set_notice(status);
     }
 
     /// `hrw://simulate` — the reader's click, with its three refusals stated.
@@ -7153,6 +7234,12 @@ impl App {
         // `&mut self` and one `&mut FrameIntent`, where before it would have
         // required seven transposable out-parameters.
         egui::CentralPanel::default().show(ui, |ui| {
+            // Where the pane is, for a `region: "pane"` screenshot. Recorded here
+            // rather than inside `central_panel_ui` so it covers the stage tab row
+            // and the sub-view row too: a crop that kept only the pane's body would
+            // cut out the row whose contents were the first thing this feature found
+            // wrong.
+            self.pane_rect = Some(ui.max_rect());
             self.central_panel_ui(ui, &mut intent);
         });
 

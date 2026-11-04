@@ -6791,3 +6791,77 @@ through the stage-pane wrapper, so the gap is precisely the marks themselves. Th
 hover only and does not steal clicks, so a per-cell interaction can be added underneath it without
 fighting it — see `docs/pointing-plan.md` for why that sense was chosen.
 
+## 91. Widen the capture suite to the four-specimen walk — RAISED 2026-11-04
+
+`examples/capture_suite.rs` photographs the canvas sub-views of **one** specimen, defaulting to
+`Drivetrain`. The headless test it complements,
+`app::tests::every_offered_sub_view_has_something_to_draw`, walks **four**: `Drivetrain`,
+`CapacitorLoop`, `CartesianPendulum`, `SingleInertia`. Closing that gap is one argument away and
+deliberately not taken yet.
+
+**Why one specimen was enough to start.** The first run found three defects — see the 11-04 ledger
+in `tech-debt.md` — so the question *"does this instrument find anything?"* is answered. A second
+specimen would have answered the same question again at four times the cost.
+
+### What the first run measured, so a later one can be budgeted
+
+| | Drivetrain |
+|---|---|
+| shots requested | 12 (2 canvas stages x 6 canvas views) |
+| landed | 5 |
+| refused by the app | 7 |
+| wall clock | ~2 min, dominated by the first shot's cold MSL compile |
+| PNG size, `region: pane` | 2048x1307, ~300 KB each |
+
+**The binding cost is not wall clock, it is the reader.** Five photographs of one specimen is a
+comfortable read; twenty across four is not, and the reader is a language model with a context
+budget. So widening needs one of these first, and choosing between them is the actual open
+question:
+
+- **Shoot all four, read only what changed.** Needs a notion of "changed", which means storing
+  something to compare against — and a stored reference image is the golden-image approach
+  `Cargo.toml` rules out, arriving by the back door. **Probably the wrong road**; recorded so it
+  is not re-proposed without noticing that.
+- **Shoot all four, read the ones whose `landed`/`refused` pattern differs from the others.** No
+  stored image, and the pattern is already computed. A specimen that offers a different set of
+  views is the one whose panes have not been seen.
+- **Shoot one specimen per run and rotate**, the way a sweep covers a corpus over several sittings.
+  Cheapest, and loses the cross-specimen comparison that makes a pattern visible.
+
+### What each specimen would add that `Drivetrain` cannot
+
+Drivetrain is singular-then-reduced, which is why it exercises the Before/After split. The other
+three were chosen for `every_offered_sub_view_has_something_to_draw` and have **not** been
+photographed, so what follows is what their reports imply, not what anyone has seen:
+
+- **`CapacitorLoop`** — 14x14, against Drivetrain's 97x97. The small-matrix case is where the
+  **axis labels** appear at all: `LABEL_ZOOM_THRESHOLD` is 16 px per cell, and every Drivetrain
+  shot says *"Zoom in to see row and column labels"* instead. **Nothing has ever photographed a
+  labelled matrix**, so nothing has checked that the labels are legible, unclipped or correctly
+  aligned to their rows.
+- **`CartesianPendulum`** — the reduction *refuses* on this one (`tech-debt.md` records
+  `CartesianPendulum / IndexReduction / Incidence` as the case the availability check caught), so
+  it is the specimen for the **honest-absence** panes: what a refused reduction looks like, and
+  whether "unavailable" reads as a statement or as a blank.
+- **`SingleInertia`** — small and non-singular, so `Structural` is clean and the views Drivetrain
+  refuses (`SpyPlot`, `TarjanAnim`, `TearingAnim`) should all be **offered**. That is the half of
+  the canvas surface this run never photographed at all: **three of the six canvas views have
+  still never been seen by this instrument.**
+
+That last line is the strongest argument for widening, and it is an argument for **`SingleInertia`
+specifically** rather than for all four.
+
+### Two things the runner would need
+
+1. **A `--all` or a specimen list.** Today the specimen is `argv[1]`; a loop is trivial, and the
+   index is already per-specimen (`index_markdown` takes the name).
+2. **A per-specimen index, or one index with a specimen column.** `capture-suite.md` is written to
+   a fixed path and would be overwritten by the next specimen in the same run.
+
+### What must NOT change while widening
+
+**The suite asks the app what is available; it never computes it.** `capture_suite`'s module
+header has the reasoning, and the defect it protects against — a checker re-deriving availability
+and passing while the app disagreed — cost a session already. A widening that pre-filtered the
+plan per specimen to save shots would reintroduce exactly that.
+

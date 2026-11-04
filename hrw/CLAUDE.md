@@ -938,6 +938,13 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
   - **Read `notice` and `error` in the result, every time.** A refused link leaves a window that
     looks entirely healthy, and a failed shot leaves the *previous* request's PNG on disk.
   - **HRW must be closed before the gate**, which relinks `hrw.exe`; the runner says so.
+  - **`cargo run -p hrw --example capture_suite [specimen] [pane|window]`** walks every canvas
+    sub-view of a specimen against a *running* HRW and writes `.hrw-bridge/capture-suite.md`. It
+    is the complement of `every_offered_sub_view_has_something_to_draw` and a **survey, not a
+    gate** — run it after a rebase, after touching a painter, after a stage re-model. Its first
+    run found three defects; `ideas.md` #91 holds the costs of widening it past one specimen.
+  - **`region: "pane"` for a pane, the default window for chrome.** The first defect this found
+    was a *tab row*, which a crop would have cut out.
 
 ## Where things live
 
