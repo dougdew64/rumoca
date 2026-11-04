@@ -5695,8 +5695,24 @@ fn a_station_needing_a_specimen_refuses_without_one() {
 ///
 /// One predicate now answers this for both the tab bar and the link guard, so a
 /// tab that exists and a link that is honoured cannot disagree.
+///
+/// **The probe carries frames from 2026-11-04**, because availability for the three
+/// replays is now two gates and this test is about the *stage* one. The frame gate
+/// gets its own assertions at the foot, so neither half can be dropped without a
+/// failure here.
 #[test]
 fn a_sub_view_is_available_only_when_its_tab_is() {
+    // Enough for "the compile captured something". The *contents* are the
+    // constructors' business, not this predicate's — the app gates on non-emptiness
+    // precisely so it can decide a tab without building an animation.
+    let some_frames = crate::worker::StructuralFrames {
+        matching: vec![rumoca_phase_structural::MatchingRecord {
+            step: rumoca_phase_structural::MatchingStep::TryEquation(0),
+            match_eq: vec![None],
+        }],
+        tarjan: vec![vec![]],
+        tearing: vec![vec![]],
+    };
     let clean = Stage::ok(serde_json::json!({}));
     // `recovered` = Outcome::Flagged, which is what the worker really builds for
     // a singular structural analysis: real IR *plus* an error, and the pipeline
@@ -5707,6 +5723,7 @@ fn a_sub_view_is_available_only_when_its_tab_is() {
     let mut app = App::test_default();
     app.stage = StageKind::Structural;
     app.stages.structural = clean.clone();
+    app.frames.structural = some_frames.clone();
     assert!(
         !app.structural_view_available(StructuralView::Summary),
         "no Summary here"
@@ -5726,12 +5743,50 @@ fn a_sub_view_is_available_only_when_its_tab_is() {
 
     // Index Reduction always has a Summary, and the reduction replay only with frames.
     app.stage = StageKind::IndexReduction;
-    app.stages.index_reduction = clean;
+    app.stages.index_reduction = clean.clone();
     assert!(app.structural_view_available(StructuralView::Summary));
     assert!(
         !app.structural_view_available(StructuralView::Animate),
         "no frames yet"
     );
+
+    // --- The frame gate, which the stage rule above cannot see ---
+    //
+    // *Added 2026-11-04 after the capture suite photographed `SingleInertia /
+    // Structural / TearingAnim`: a tab offered with a **>** on it, over a pane
+    // saying the compiler produced no tearing to replay.* The stage rule says a
+    // non-singular system **could** have tearing; only the capture says whether this
+    // one **does**.
+    let mut bare = App::test_default();
+    bare.stage = StageKind::Structural;
+    bare.stages.structural = clean;
+    for view in [
+        StructuralView::MatchingAnim,
+        StructuralView::TarjanAnim,
+        StructuralView::TearingAnim,
+    ] {
+        assert!(
+            !bare.structural_view_available(view),
+            "{} must not be offered with no frames behind it: the tab carries a play \
+             marker, and a marker that promises an animation must not appear without \
+             one",
+            structural_view_name(view)
+        );
+    }
+    // And the same stage with frames offers all three, so the assertions above are
+    // about the frames and not about some other thing this probe lacks.
+    bare.frames.structural = some_frames;
+    for view in [
+        StructuralView::MatchingAnim,
+        StructuralView::TarjanAnim,
+        StructuralView::TearingAnim,
+    ] {
+        assert!(
+            bare.structural_view_available(view),
+            "{} is offered once the compile has captured something",
+            structural_view_name(view)
+        );
+    }
 }
 
 /// **A selected sub-view with no tab is corrected AND reported**, never quietly
@@ -7382,8 +7437,17 @@ fn every_offered_sub_view_has_something_to_draw() {
         "CartesianPendulum",
         "SingleInertia",
     ] {
-        let crate::worker::FromWorker::Compiled { stages, .. } =
-            crate::worker::test_msl::compile_specimen_shared(name)
+        // **The frames, not only the stages.** The three animations replay captured
+        // records; the incidence matrix is only the backdrop they draw on. Asking
+        // whether the backdrop parses, which is what this walk used to do for all
+        // three, is a true measurement of the wrong unit — see the `fillable` arm.
+        let crate::worker::FromWorker::Compiled {
+            stages,
+            matching_frames,
+            tarjan_frames,
+            tearing_frames,
+            ..
+        } = crate::worker::test_msl::compile_specimen_shared(name)
         else {
             panic!("expected Compiled for {name}");
         };
@@ -7395,6 +7459,14 @@ fn every_offered_sub_view_has_something_to_draw() {
             let mut app = App::test_default();
             app.stage = stage;
             app.stages = stages.clone();
+            // The app's own frame gate reads these, so a probe without them would
+            // report every animation unavailable and the walk would skip the three
+            // views it most needs to check.
+            app.frames.structural = crate::worker::StructuralFrames {
+                matching: matching_frames.clone(),
+                tarjan: tarjan_frames.clone(),
+                tearing: tearing_frames.clone(),
+            };
 
             let (after, before) = App::matrix_reports(&app.stages, stage);
             for view in StructuralView::ALL {
@@ -7424,13 +7496,50 @@ fn every_offered_sub_view_has_something_to_draw() {
                     StructuralView::SpyPlot => {
                         after.and_then(crate::spyplot::Plot::from_report).is_some()
                     }
-                    // The frame-driven three. Offered only where the frames belong to the
-                    // system on screen, which is why they are refused on Index Reduction.
-                    StructuralView::MatchingAnim
-                    | StructuralView::TarjanAnim
-                    | StructuralView::TearingAnim => after
+                    // **The frame-driven three, asked about their FRAMES.**
+                    //
+                    // This arm used to read `after.and_then(IncidenceMatrix::from_report)`
+                    // — the matrix the animation draws *on*, not the records it replays.
+                    // A true measurement of the wrong unit, and the capture suite
+                    // photographed what it was missing on 2026-11-04:
+                    // `SingleInertia / Structural / TearingAnim` is offered, carries a
+                    // **>** promising a replay, and draws *"No tearing was recorded for
+                    // this model. The compiler produced none, so there is nothing to
+                    // replay."* The test agreed with the app because both were looking at
+                    // the matrix.
+                    //
+                    // **And asked of the PANE'S OWN CONSTRUCTOR, not of the frame
+                    // count.** `App::structural_view_available` gates on "is the
+                    // capture non-empty", which is cheap enough to run every frame;
+                    // these constructors additionally refuse frames that do not
+                    // *address* this matrix — a count mismatch, or indices from the
+                    // raw system against reduced rows. Checking the count here too
+                    // would make this walk re-assert the app's own line and it could
+                    // never fail; checking the constructor leaves exactly the gap the
+                    // app cannot afford to check itself.
+                    StructuralView::MatchingAnim => after
                         .and_then(crate::incidence_view::IncidenceMatrix::from_report)
+                        .and_then(|m| {
+                            crate::matching_anim::MatchingAnimation::from_captured_frames(
+                                &m,
+                                &matching_frames,
+                            )
+                        })
                         .is_some(),
+                    StructuralView::TarjanAnim => after
+                        .and_then(crate::incidence_view::IncidenceMatrix::from_report)
+                        .and_then(|m| {
+                            crate::tarjan_anim::TarjanAnimation::from_captured_frames(
+                                &m,
+                                &matching_frames,
+                                &tarjan_frames,
+                            )
+                        })
+                        .is_some(),
+                    StructuralView::TearingAnim => after.is_some_and(|r| {
+                        crate::tearing_anim::TearingAnimation::from_captured(r, &tearing_frames)
+                            .is_some()
+                    }),
                 };
                 if !fillable {
                     empty.push(format!(
