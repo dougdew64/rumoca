@@ -2068,11 +2068,22 @@ in an order of HRW's choosing.
 
 **The current state is an honest absence.** The reduction pane is listed in
 `playback::DISABLED_VIEWS` and shows a placeholder, and `worker.rs` carries no reduced-DAE
-stage. Upstream grew its own observer seam for the pass — `ReductionObserver` and
-`ReductionEvent` in `dae_transform/observation.rs` — but both are `pub(super)`, so a reduction
-still cannot be watched from outside that module. **Widening those two is the upstream ask**,
-and it is a much smaller one than the old funnel-visibility request: it exposes what the pass
-reports about itself, not a way to drive the pass by hand.
+stage.
+
+**There is no upstream ask here, and a note in this file said there was** *(corrected
+2026-11-03)*. It read that `ReductionObserver` and `ReductionEvent` are `pub(super)` and
+concluded a reduction could not be watched from outside — **which confuses the seam with its
+consumer surface.** The trait and the borrowed event are private *by design*, exactly as in
+`rumoca_phase_structural::inspect_sort`, and the public entry is
+**`inspect_prepare_for_solve`**: it returns `(Result<PreparedDae>, ReductionReport)` with the
+observer type erased, and `ReductionReport` is fully public — `records: Vec<ReductionRecord>`
+of `Round` / `Candidates` / `Attempt` / `Selected` / `RetriedPristine` with lanes, residues and
+named unmatched coordinates, plus a `ReductionSnapshot` of the discarded still-singular DAE when
+preparation fails.
+
+**So the re-model is HRW-side work and needs nothing from upstream.** Reading `pub(super)` on
+the trait and stopping there is the *wrong-negative* failure this repository keeps recording:
+acting on it means not looking.
 
 ### Why the "thin emitter, thick reasoner" bridge?
 
