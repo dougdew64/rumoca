@@ -173,11 +173,28 @@ observation — so a watcher handed one could keep the discarded model alive pas
 implicit derivative system rather than eliminating alias equations, and its work is already
 observable — `Stopped::Sorted` with zero rounds, per `worker::reduction_outcome_summary`.*
 
-**What Doug has to verify, because no test can.** The live path spawns a thread that waits at
-`LiveTrace::wait_for_debugger` and then runs a real reduction, so a breakpoint firing inside
-`dae_transform.rs` with a candidate half-attempted is the thing being bought — and
-`CLAUDE.md`'s standing limit applies: pressing Debug on the Index Reduction tab is the
-verification, and there is no test to write instead.
+**VERIFIED BY DOUG 2026-11-04, and the verification earned its keep.** The live path spawns a
+thread that waits at `LiveTrace::wait_for_debugger` and then runs a real reduction, so a breakpoint
+firing inside the reduction with a candidate half-attempted is the thing being bought — and
+`CLAUDE.md`'s standing limit applied: there was no test to write instead.
+
+He pressed Debug and reported *"live debugging is not working… the UI is not updating when I step in
+the debugger."* `.hrw-bridge/debug-state.json` settled which half was wrong: stopped at
+`live_trace.rs:186` in `live_trace_breakpoint`, with a 21-frame stack running
+`watch_prepare_for_solve` → `prepare_for_solve_with_observer` →
+`reduce_for_solve_with_observer` → `observation::observe` → `WatchFn::record` →
+`LiveTrace::push`. **The seam worked on the first attempt; the pane did not.**
+
+**It found two defects, both in `ReductionAnimation::ui` and both documented verbatim one file
+over** in `connection_anim::ui`: no `Playback::sync_live` call, so the channel filled while the pane
+redrew its first frame; and a bail-out on `is_empty()`, which is the state a live session *begins*
+in. Fixed, and the first is a contract now
+(`playback::tests_animated_contract::every_live_capable_view_drains_its_channel`), because it is the
+second view to make that exact mistake. Doug confirmed the fix the same day.
+
+**The lesson is about where a rule lives.** Both rules existed, correct and well argued, as comments
+beside the code they governed — and so were read only by someone already in that file. Writing a
+new animation is precisely the case where nobody is.
 
 ### ~~Resolve failure is inferred from diagnostic severities where 0.10.0 states it structurally~~
 
