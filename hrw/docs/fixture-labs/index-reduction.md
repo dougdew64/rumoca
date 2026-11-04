@@ -22,48 +22,6 @@ disagrees with your screen, the lab is wrong and I want to know.
 
 ---
 
-> ## ⚠ Stations 2–5 are suspended: they describe Rumoca 0.9.20, and several counts are now wrong
->
-> **Do not run them yet, and do not treat their numbers as read.** Station 1 is unaffected — it is
-> worked by hand before the compiler is asked anything.
->
-> The stations below are written against the **ten-step dummy-derivative funnel**:
-> `n_differentiations`, `differentiated_rows`, `reduce_constrained_dummy_derivatives`,
-> `eliminate_trivial`, a step list with per-step before/after counts. **Rumoca 0.10.0 runs none of
-> that.** Reduction is two fixed-point lanes, Direct and Holonomic, alternating as a fixed point,
-> and a candidate is tried by rebuilding and re-sorting the whole system. The stage re-model landed
-> 2026-11-04; this lab's re-authoring has not.
->
-> **The claim that is outright false, rather than merely renamed:** Station 4 says *"the system goes
-> from 97 equations to 20"* and Station 5 says `eliminate_trivial` removes 77 of them. Measured on
-> 0.10.0, `Drivetrain` goes from **97 equations to 97**. There is no elimination pass — upstream
-> deleted it — so nothing is substituted out. What changes is the states.
->
-> **A trap for whoever re-authors this.** Station 5 asks about *6 differentiations* and 0.10.0
-> reports *6 rounds* for the same model. **Those are not the same quantity**, and the coincidence is
-> inviting. A round is one lane iteration that may try many candidates and may select one that
-> changes nothing; it is not a differentiation.
->
-> **Measured 0.10.0 facts for the models this lab uses**, so the rewrite starts from data:
->
-> | model | outcome | rounds | states | equations | algebraics |
-> |---|---|---|---|---|---|
-> | `CartesianPendulum` | singular, not admitted | 3 | 4 | 5 | 1 |
-> | `SingleInertia` | `borrowed` (already index-1) | 0 | 2 → 2 | 2 → 2 | 0 → 0 |
-> | `Drivetrain` | `sorted` | 6 | **9 → 5** | 97 → 97 | 88 → 92 |
-> | `StabilizedPendulum` | `sorted` | **0** | 4 → 4 | **5 → 7** | **1 → 3** |
-> | `CapacitorLoop` | `sorted` | 2 | 1 → 1 | 14 → 14 | 13 → 13 |
->
-> Three of those rows are new teaching material the funnel could not have shown.
-> **`CartesianPendulum` discovers zero candidates in every lane** across three alternations — it is
-> not refused, there is nothing to try, which is `docs/ideas.md` #83 stated precisely.
-> **`CapacitorLoop` sorts with every count unchanged**, so reduction is visibly not a size
-> reduction; what it added is one manifold constraint. And **`StabilizedPendulum` sorts with zero
-> rounds** while gaining two equations and two algebraics — the signature of derivative-alias
-> normalization rather than of reduction.
->
-> `docs/tech-debt.md` carries the account.
-
 ---
 
 ## Station 1 — Why can five equations in five unknowns be unsolvable?
@@ -164,187 +122,302 @@ to reach.
 
 ---
 
-## Station 2 — The case that needs nothing
+## Station 2 — The case that needs nothing, and there are two of those
 
-`BouncingBall` has two states, `h` and `v`.
+`BouncingBall` has two states, `h` and `v`. `StabilizedPendulum` has four, and a constraint.
 
-> **Predict.** Height and velocity. Is either one determined by the other?
+Neither one costs reduction a single round of work. That is the only thing they have in common,
+and the pane does not say the same thing about them.
 
-[Look — BouncingBall → Index reduction](hrw://load/BouncingBall/IndexReduction)
+> **Predict.** Two models, no reduction performed on either. Before you look: can a pane that
+> reports *nothing happened* be telling you two different things? If it can, what is the second
+> one?
 
-**Expected:** 2 states before, 2 after. Nothing demoted, and the pane reports no
-differentiation.
+[Look — BouncingBall → Index reduction → Summary](hrw://load/BouncingBall/IndexReduction/Summary)
 
-Falsified if: any state is demoted, or the counts differ.
+**Expected:** `borrowed`, **0 rounds**, and the three counts identical on both sides — 2 states,
+0 algebraics, 2 equations. The verdict line says *already index-1, nothing rebuilt*.
 
-*What just happened.* A ball can be anywhere at any speed, so no equation relates `h` to `v`
-without a derivative in it. There is no constraint to differentiate and the distance to index 1
-is already zero.
+Falsified if: the outcome word is anything but `borrowed`, or any count differs across the two
+rows of the grid.
 
-This is the common case, and it is worth establishing first so the next station reads as a
-discovery rather than as routine.
+[Look — StabilizedPendulum → Index reduction → Summary](hrw://load/StabilizedPendulum/IndexReduction/Summary)
 
----
+**Expected:** also **0 rounds**, and the outcome is **`sorted`, not `borrowed`** — with the counts
+*different*: 4 states both sides, but 1 algebraic becoming **3** and 5 equations becoming **7**.
+The verdict line does **not** say index-1.
 
-## Station 3 — The smallest model that needs something
+Falsified if: this one also reads `borrowed`, or its equation counts match across the grid.
 
-`BenchActuator` is a motor driving a load — four states, and one of them is not free.
+### What just happened
 
-> **Predict.** Four states. If the compiler removes one, how many equations do you think it has
-> to differentiate to do it — none, one, or several?
+A ball can be anywhere at any speed, so no equation relates `h` to `v` without a derivative in
+it. There is no constraint to differentiate, the distance to index 1 is zero, and reduction hands
+the system straight back. `borrowed` is that: *I was given a system that already sorted, and I
+returned the same one.*
 
-[Look — BenchActuator → Index reduction](hrw://load/BenchActuator/IndexReduction)
+The pendulum's system also sorted — but it was **rebuilt on the way through**, and that is what
+the second word records. Something gave it two more equations and two more algebraic unknowns
+before anyone looked at its index. Not reduction: reduction ran zero rounds.
 
-**Expected:** 4 states before, 3 after, the demoted state is `emf.phi`, and the pane
-reports 1 differentiation performed.
+**The grid is how you can tell, and the word alone is not.** `sorted` is reported both by a run
+that reduced for five rounds and by this one, which reduced for none. So the honest reading of
+the headline needs the round count beside it — which is why the pane puts them on the same line
+rather than leaving you to notice.
 
-Falsified if: more than one state is demoted, or the differentiation count is 0.
+> What rebuilt it is **derivative-alias normalization**, a pass that runs before reduction is
+> asked anything. It extends an implicit derivative system so that the rates it needs exist as
+> coordinates — which *adds* equations rather than removing them. Rumoca does not expose that pass
+> directly, and the only way to see that it ran is this: `borrowed` means untouched, `sorted` with
+> zero rounds means rebuilt.
 
-*What just happened.* One constraint, one differentiation, one state removed — the whole
-mechanism at a size you can hold in your head.
-
-`emf.phi` is the motor shaft's angle, and the model already determines it from the rotor's. So it
-was never an independent quantity; it was bookkeeping. Removing it needs the constraint restated
-in terms of rates, and that restatement is the differentiation the pane counts.
-
-Notice what the pane says about survival. It reports the differentiation happening, and then
-that none of the manufactured equations survive to the end. Hold that; Station 5 is about it.
-
----
-
-## Station 4 — The same idea, at a scale you could not do by hand
-
-`Drivetrain` is a motor, an ideal gear, a shaft and a compliant mount.
-
-> **Predict.** Nine states. How many independent freedoms does that machine really have?
-
-[Look — Drivetrain → Index reduction](hrw://load/Drivetrain/IndexReduction)
-
-**Expected:** 9 states before, 3 after, and 6 differentiations performed. The survivors
-are `L.i`, `shaft.w` and `mount.s_rel`; the system goes from 97 equations to 20.
-
-Falsified if: the after-count is other than 3, or `shaft.w` is among the demoted.
-
-*What just happened.* Six of the nine were never independent. The gear ties the rotor's angle
-to the shaft's, the rack-and-pinion ties the load's position to the shaft's angle, and
-differentiating those ties the velocities too.
-
-Look at *which* three survived, because it is physically legible: exactly one state per
-independent energy store. The inductor stores magnetic energy, the shaft inertia kinetic, the
-mount spring potential. Everything else was bookkeeping about where things sit relative to each
-other.
-
-The compiler discovered that from the equations alone, knowing nothing about gears.
+Two kinds of nothing, then. It is worth establishing both before the next station, so that *"the
+counts did not move"* does not become your test for whether anything happened — because in
+Station 5 it will be wrong.
 
 ---
 
-## Station 5 — What the compiler actually reached for
+## Station 3 — The smallest model that needs something, and it points at a line you did not write
 
-Here is the station this lab exists for, and it is about a number that used to be read wrong.
+`BenchActuator` is a motor driving a load. Four states, and one of them is not free.
 
-> **Predict.** `Drivetrain` differentiated 6 times. How many of those manufactured equations do
-> you expect to find in the final system?
+> **Predict.** The compiler is about to demote a state, which means it found a constraint saying
+> that state was never independent. **You wrote this model's `.mo` file.** When the pane tells you
+> which constraint it used, which file do you expect it to name?
 
-[Look — Drivetrain → Index reduction](hrw://load/Drivetrain/IndexReduction)
+[Look — BenchActuator → Index reduction → Summary](hrw://load/BenchActuator/IndexReduction/Summary)
 
-*(The `node/reduction` link that stood here pointed at the funnel report's root, which the
-0.10.0 stage does not publish. Removed rather than re-aimed: re-aiming it would imply the station
-around it had been re-authored. See the suspension notice at the top.)*
+**Expected:** 4 states before, **3** after; one pass; the selected candidate's location is
 
-**Expected:** `n_differentiations` is 6 and `differentiated_rows` is empty — none of them
-survive. The step list shows `reduce_constrained_dummy_derivatives` demoting all 6, and
-`eliminate_trivial` removing 77 equations.
+```text
+hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Basic/RotationalEMF.mo:41
+    phi = flange.phi - internalSupport.phi
+```
 
-Falsified if: the demotions come from any step other than
-`reduce_constrained_dummy_derivatives`, or `n_differentiations` is 0.
+Falsified if: the location is a file under `hrw/specimens/`, or more than one pass is listed.
 
-*What just happened.* The differentiated equations were built and then thrown away, and both
-halves are correct.
+### What just happened
 
-Differentiating gives the solver a usable statement — but once the surplus state is demoted, the
-manufactured row often says something a *simpler* row already says, and `eliminate_trivial`
-substitutes it out. 97 equations become 20 that way. The differentiation did its job by
-existing, not by surviving.
+**The constraint is in the Modelica Standard Library, not in your model.** You wrote
+`emf`, `load` and a few connects; the MSL's `RotationalEMF` defines its shaft angle as an offset
+from its flange's, and that single line is what makes one of your four states bookkeeping.
 
-The step that did the demoting is named for the method.
-`reduce_constrained_dummy_derivatives` is the dummy-derivative method — Mattsson and
-Söderlind's, the standard companion to Pantelides. When differentiating would leave you with more
-equations than unknowns, you demote a derivative to an ordinary unknown — a *dummy* — to keep the
-count square. That is what those six demotions are.
+This is most of what index reduction does in practice. A model assembled from library components
+inherits their internal definitions, and those definitions are where the redundancy lives. You
+cannot find it by reading your own file.
 
-> ### Why this station is worded so carefully
+> That location is a *span* — a byte range the compiler carried from the source through flatten,
+> DAE construction and into the reduction. It resolves back to the file and line because the
+> span, not the name, is what identifies the candidate. Which is also why the pane shows you a
+> line of text and no variable name: the ordinals in the record belong to the rebuilt system of
+> that pass, so a name read off them would be the wrong variable's.
+
+### And the number beside it
+
+The pass opens at **residue 2** on a system with a rank deficiency of **1**, and the pane states
+the definition under the heading: *both deficits summed*.
+
+```text
+residue = (equations - matched) + (unknowns - matched)
+```
+
+One unmatched equation and one unmatched unknown is a residue of 2. So **a residue is twice the
+rank deficiency for a square system** — it is not an error count, and halving it in your head is
+the only way to read it as one. The pane publishes Rumoca's number rather than a friendlier one,
+with the definition next to it.
+
+---
+
+## Station 4 — Reduction is a search, and a pass that moves nothing is not a wasted pass
+
+`Drivetrain` is a motor, an ideal gear, a shaft and a compliant mount: nine states, 97 equations,
+and a rank deficiency of 4.
+
+> **Predict.** Nine states will become five. Two parts to this one.
 >
-> Until 2026-08-17 it read *"zero differentiations — the textbook mechanism was not needed"*,
-> because `differentiated_rows` is empty and I read the name instead of the semantics. It
-> counts survivors, not differentiations. The pane now reports both, and it reports them
-> because this station was wrong.
+> **(a)** The system has 97 equations before reduction. How many after?
+>
+> **(b)** One of the six passes selects a candidate and the residue afterwards is **the same
+> number** it was before. Was that pass wasted?
+
+[Look — Drivetrain → Index reduction → Summary](hrw://load/Drivetrain/IndexReduction/Summary)
+
+**Expected:** **97 equations before and 97 after.** States fall 9 → 5 and algebraics rise
+88 → 92; the equation count does not move at all.
+
+Falsified if: the after-count of equations is anything other than 97.
+
+**Expected:** Pass 3 takes the gear ratio — `phi_a = ratio*phi_b`, in
+`IdealGear.mo:16` — with the outcome **`held`** and residue **4 → 4**. Then open pass 4 and read
+its unmatched equation: it is **`f_x[33] (w = der(phi))`**, where pass 3's was
+`f_x[92] (SI.Angle phi)`. Pass 4 then reduces 4 → 2.
+
+Falsified if: pass 4's unmatched equation is the same one pass 3 reported, or pass 3's outcome is
+anything other than `held`.
+
+### What just happened
+
+**(a) Nothing is eliminated.** Demoting a state does not delete its equation — it moves the
+unknown from the integrated set to the algebraic set, and the equation stays to determine it. Four
+states became four algebraic unknowns, which is exactly the `88 → 92` beside it. A phase that
+made systems *smaller* would be a different phase.
+
+**(b) The residue held and the system still changed.** That is the whole point, and pass 4's
+unmatched equation is the proof: pass 3 was stuck on `SI.Angle phi` and pass 4 is stuck on
+`w = der(phi)`. The gear ratio did not reduce the count of things left to match — it changed
+*which* things they were, and the new one had a candidate the old one did not.
+
+So the search is not hill-climbing on a number. A pass that holds is accepted in the Direct lane
+precisely because *held* is progress on something the residue cannot see.
+
+> This is where the old version of this lab was wrong, and worth saying plainly because the
+> replacement is not obviously better. Until 2026-11-04 this station asked *"`Drivetrain`
+> differentiated 6 times — how many manufactured equations survive?"* and answered *"none; 97
+> equations become 20."* Both halves described a pipeline Rumoca no longer runs. The coincidence
+> that it now reports **6 passes** for the same model is a trap: a pass is one lane iteration that
+> may try several candidates and may take one that changes nothing. It is not a differentiation.
+
+Step it, if you want the accumulation rather than the table — the stepper opens on the system
+before the search and advances one record at a time:
+
+[Step it — Drivetrain → Index reduction → Reduction replay](hrw://load/Drivetrain/IndexReduction/Animate)
 
 ---
 
-## Station 6 — The model Rumoca cannot reduce
+## Station 5 — Two lanes, and one of them sees what the other cannot
 
-Back to the pendulum from Station 1. Every constraint in the three stations since was an alias:
-one variable equal to another times a constant, which substitution can remove. `x² + y² = L²` is
-not. It is nonlinear and involves two states at once, so no substitution touches it.
-Differentiation is the only route, which makes this the textbook case and the first real test of
-the phase.
+`CapacitorLoop` is a capacitor straight across an ideal voltage source. One state.
+
+> **Predict.** The Direct lane searches first and finds **nothing** — zero candidates in both of
+> its proof groups. Does that make this system irreducible?
+
+[Look — CapacitorLoop → Index reduction → Summary](hrw://load/CapacitorLoop/IndexReduction/Summary)
+
+**Expected:** two passes. Pass 1 is the Direct lane with `direct_admissible: 0 candidates` and
+`direct_conditional: 0 candidates` — *nothing to try*. Pass 2 is the **Holonomic** lane, which
+finds **2**, and its first attempt **sorts** the system, on
+
+```text
+hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Interfaces/TwoPin.mo:10
+    v = p.v - n.v
+```
+
+Falsified if: the Direct lane discovers any candidate, or the system is not admitted.
+
+> **Now the part Station 2 warned you about.** Look at the before/after grid.
+
+**Expected:** **every count is identical** — 1 state, 13 algebraics, 14 equations, both rows. And
+the manifold column reads **1** where the before row has an em dash.
+
+Falsified if: any of the three counts differs across the grid.
+
+### What just happened
+
+Reduction admitted a system it changed without resizing. **If the counts had been your test for
+whether anything happened, you would have concluded nothing did** — and the pane says otherwise in
+a sentence, because that conclusion is the one worth preventing.
+
+What it added is a **manifold constraint**: a statement that the reduced system's states are not
+free to wander, but must stay on the surface the original constraint describes. One state, one
+constraint, the same 14 equations — and a matching that now completes.
+
+**Why the Direct lane could not see it.** The Direct lane looks for a state that some equation
+*defines* outright, and demotes it. `v = p.v - n.v` is not that shape: it relates three
+quantities with no single one of them being defined by the others in a way reduction can take
+directly. The Holonomic lane looks for the other shape — a constraint among coordinates that can
+be differentiated into a statement about rates — which is what this is.
+
+Two lanes, alternating as a fixed point until neither can move. `Drivetrain` ends the same way:
+its first five passes are the Direct lane, which stalls at residue 2, and its sixth is the
+Holonomic lane taking the rack-and-pinion in `IdealGearR2T.mo:9` and sorting what was left.
+
+---
+
+## Station 6 — The model Rumoca cannot reduce, and the exact reason
+
+Back to the pendulum from Station 1. Every constraint in the three stations since has been a
+component definition — one quantity written in terms of others, which reduction can take directly
+or differentiate. `x² + y² = L²` is neither: it is nonlinear and ties two states together, so no
+definition hides inside it.
 
 **You already know what has to happen.** Station 1 differentiated that constraint twice by hand,
 and the second differentiation is what brings `lambda` within reach.
 
-> **Predict.** So: how many differentiations will Rumoca perform?
+> **Predict.** Rumoca will not reduce this system. There are two ways that can look in the pane,
+> and they are not the same: it could **try** candidates and reject every one, or it could find
+> **nothing to try**. Which do you expect?
 
-[Look — CartesianPendulum → Index reduction](hrw://load/CartesianPendulum/IndexReduction)
+[Look — CartesianPendulum → Index reduction → Summary](hrw://load/CartesianPendulum/IndexReduction/Summary)
 
-**Expected:** zero. States 4 before, 4 after, nothing demoted, and every step reports 0.
-The pane says the funnel did not act on the system.
+**Expected:** not admitted, stopped `singular` at residue 2, and **no reduced side at all** — the
+after row is em dashes. Three passes, alternating Direct → Holonomic → Direct, and **every
+candidate group reports 0**. There is not one attempt record in the whole log.
 
-Falsified if: any state is demoted, or the differentiation count is above 0.
+Falsified if: any group discovers a candidate, or any attempt appears, or an after row has numbers
+in it.
 
-*What just happened.* Rumoca does not reduce this model, and the diagnosis names the physics
-exactly. Look at the Structural tab:
+### What just happened
 
-[Look — CartesianPendulum → Structural](hrw://load/CartesianPendulum/Structural)
+**Rumoca does not decline to differentiate the constraint. It never gets as far as considering
+it.** Both lanes search, both find nothing admissible, the lanes alternate once more to be sure,
+and the search halts with the residue exactly where it started.
 
-**Expected:** `structurally singular system: 4 matched out of 5 equations and 5 unknowns;
-unmatched equations: f_x[4]; unmatched unknowns: lambda`.
+That is a sharper statement than *"index reduction does not work here"*, and a more useful one: the
+missing piece is not a decision made badly, it is **candidate discovery for this shape of
+constraint**. Pantelides' algorithm is precisely a procedure for finding that candidate — take a
+structurally singular subset and differentiate its equations — and the two lanes here each hunt a
+narrower pattern.
 
-Falsified if: the unmatched pair is anything other than one equation and `lambda`.
+Look at where the diagnosis comes from, because it is the same pair you found by hand:
 
-**That is the same pair you found in Station 1**, arrived at by a different route. There you
-read it off the incidence pattern — an empty row, a column reachable from only two equations.
-Here the matching reports it as a failure, by name. The compiler found by algorithm what you
-found by reading five equations.
+[Point at the raw system's error](hrw://stage/IndexReduction/Tree/node/before.error)
 
-Rumoca's index reduction is pattern-based, not general Pantelides. Read the step names:
-exact aliases, direct assignments, constrained dummy derivatives, states missing a derivative
-row. Each hunts a *shape*. The pendulum matches none of them: all four states have derivative
-rows, and the constraint is nonlinear.
+**Expected:** `rank_deficiency: 1`, `unmatched_equations: ["f_x[4] (x ^ 2 + y ^ 2 = L ^ 2)"]`,
+`unmatched_unknowns: ["lambda"]`.
 
-The simulation then fails the way an unreduced high-index system does — *"step size is too small
-at time = 0.0000477"* — with no mention of index anywhere.
+Falsified if: the unmatched pair is anything other than that one equation and `lambda`.
 
-This is not a defect claim. Whether general reduction is missing, deferred, or deliberately
-out of scope is a question for Rumoca's maintainers, and it is filed in
-[`upstream-issues.md`](hrw://doc/upstream-issues.md) as a question. What the station establishes is the
-boundary: you now know what this compiler does, and what it does not.
+**That is Station 1's answer, reached by algorithm.** There you read it off the incidence pattern —
+an empty row, a column reachable from only two equations. Here the matching reports it by name,
+and the reduction then confirms it has no move for it.
+
+The simulation fails the way an unreduced high-index system does — *"step size is too small at
+time = 0.0000477"* — with no mention of index anywhere.
+
+This is not a defect claim. Whether general Pantelides is missing, deferred, or deliberately out
+of scope is a question for Rumoca's maintainers, and it is filed in
+[`upstream-issues.md`](hrw://doc/upstream-issues.md) as a question. What the station establishes is
+the boundary: you now know what this compiler does, and exactly where it stops.
 
 ---
 
 ## What this lab cannot check
 
-Whether the four specimens read as one idea. They are meant to: a model that must be
-differentiated by hand before anything else happens, then nothing needed, one differentiation,
-six, and back to the first with the compiler declining. Whether that
-lands as a progression or as four unrelated panes is your report and nothing else's.
+Whether the six specimens read as one idea. They are meant to: a system you reduce by hand, two
+kinds of nothing, one constraint found in a library file, a search that holds and still advances,
+a lane seeing what another cannot, and back to the first with the compiler finding no move.
+Whether that lands as a progression or as six unrelated panes is your report and nothing else's.
 
 Whether "index" survives as a distance rather than a score. Station 1 builds it that way and no
 pane displays an index number anywhere, so the idea rests on that station's prose and the
 arithmetic the reader does there.
 
-What a differentiated equation looks like. The pane counts them and, on every specimen that
-makes any, they are gone by the end — so the corpus can tell you six were made and cannot show
-you one.
+**What a differentiated equation looks like.** This is the biggest hole in the lab, and it is in
+the data rather than in the writing. The reduction log says *which candidate was taken* and *where
+its constraint was declared*, and the before/after reports say what the system became — but
+nothing publishes the differentiated row itself. So the corpus can show you that `s_rel =
+flange_b.s - flange_a.s` was the constraint reduction used, and cannot show you the equation it
+produced from it. Station 1's by-hand derivation is the only place in this lab where you see one.
+
+**Whether a `held` pass is legible as progress.** Station 4 argues it from two unmatched-equation
+names one pass apart, which is evidence rather than intuition — but it is evidence you have to
+assemble by opening two sections and comparing a string. If that reads as arithmetic rather than
+as insight, the station has failed at the thing it exists for and I want to know.
+
+**Whether the two-lane structure means anything to you yet.** The lab shows the Direct lane
+stalling and the Holonomic lane finishing, twice, and explains the shapes they look for in a
+paragraph. It does not show you *why* those are the two shapes, because that is the Pantelides
+material and this lab deliberately stops at the boundary.
 
 Whether System Modeler reduces the pendulum. That is the calibration that would turn Station
 6's reading into a fact, and it has not been run. `the-oracle.md` is the lab for that gesture.
