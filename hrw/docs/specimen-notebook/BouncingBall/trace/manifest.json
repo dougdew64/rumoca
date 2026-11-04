@@ -2,7 +2,7 @@
   "model": "BouncingBall",
   "specimen": "specimens/BouncingBall.mo",
   "specimen_fnv1a": "b5af7f4daae91f1b",
-  "rumoca_rev": "a8d60e11",
+  "rumoca_rev": "da6d13b1",
   "rumoca_version": "0.10.0",
   "stages": {
     "parse": {

@@ -2,7 +2,7 @@
   "model": "MixedLoop",
   "specimen": "specimens/MixedLoop.mo",
   "specimen_fnv1a": "5886eb96c8161101",
-  "rumoca_rev": "a8d60e11",
+  "rumoca_rev": "da6d13b1",
   "rumoca_version": "0.10.0",
   "stages": {
     "parse": {
