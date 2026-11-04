@@ -756,6 +756,63 @@ mod tests_animated_contract {
         out
     }
 
+    /// **Every view with a live path drains its channel.**
+    ///
+    /// Frames arrive on a worker thread and `Playback::sync_live` is the only thing that
+    /// moves them into the playback; `tick` advances a *recorded* cursor and nothing
+    /// else. A gated view whose `ui` omits it shows a live session that never moves —
+    /// the breakpoint fires in the real algorithm, Continue re-fires it, and the pane
+    /// redraws the frame it started on while the channel fills behind it.
+    ///
+    /// # This has now happened twice, which is why it is a test and not a comment
+    ///
+    /// `connection_anim` did it first, and the fix carries a comment recording what Doug
+    /// saw. **`reduction_anim` did it again on 2026-11-04, the day its live path was
+    /// built** — and Doug found it the same way, from the running app, with the
+    /// breakpoint stopped inside `watch_prepare_for_solve`. A rule written beside the
+    /// code it governs is only read by someone already in that file.
+    ///
+    /// Paired with [`Self::live_state`] delegation by the test below: that one asks
+    /// whether a view *reports* a session, this one whether it would *see* one.
+    #[test]
+    fn every_live_capable_view_drains_its_channel() {
+        let gated = live_debug_gated_views();
+        assert!(
+            !gated.is_empty(),
+            "no live-debug gate call sites were found in app.rs, so this check is              reading nothing"
+        );
+
+        let views = animated_views();
+        // Assembled, for the reason `tests_layout` gives: this file is scanned by some of
+        // these checks and a literal would self-match.
+        let drains = format!("playback.{}()", "sync_live");
+
+        let mut missing: Vec<String> = Vec::new();
+        for module in &gated {
+            let Some(view) = views.iter().find(|v| &v.module == module) else {
+                // A gate naming a module with no `impl Animated` is its own defect, and
+                // `the_disabled_view_list_matches_the_placeholders` would not catch it.
+                missing.push(format!("{module} is gated but implements no Animated"));
+                continue;
+            };
+            if !view.source.contains(drains.as_str()) {
+                missing.push(format!("{module} never calls sync_live"));
+            }
+        }
+
+        assert!(
+            missing.is_empty(),
+            "
+{} gated view(s) cannot see a live session:
+  {}
+
+A view app.rs arms a              debug session for must drain its channel in `ui`, or the session runs and the              pane never moves.",
+            missing.len(),
+            missing.join("
+  "),
+        );
+    }
+
     /// **A view reports a live session if and only if it can have one.**
     ///
     /// Six of the eight delegate `live_state` to [`super::Playback`]; `alias_anim`

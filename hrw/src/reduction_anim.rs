@@ -250,7 +250,24 @@ impl ReductionAnimation {
 
     /// Draw the stepper. Returns whether the Debug button was clicked.
     pub fn ui(&mut self, ui: &mut egui::Ui, arming: bool, debug_enabled: bool) -> bool {
-        if self.playback.is_empty() {
+        // **First, always.** Frames arrive on the worker thread and nothing else moves
+        // them into the playback; `tick` only advances a *recorded* cursor. Omitting this
+        // is what Doug reported on 2026-11-04 — the breakpoint fires in the real
+        // reduction, Continue re-fires it, and the pane never moves, because the channel
+        // fills while the view redraws the frame it started on.
+        //
+        // `connection_anim::ui` carries the same line and a comment saying it had
+        // happened before. **I wrote this function without it anyway**, which is what a
+        // rule living only next door to the code it governs costs — see
+        // `playback::tests_animated_contract::every_live_capable_view_drains_its_channel`,
+        // which is the version that cannot be skipped.
+        self.playback.sync_live();
+
+        // **Empty is not the same as not-yet-live.** A live session begins with no frames
+        // at all — the worker is waiting at the startup gate for the reader to arrive — so
+        // bailing out on `is_empty` alone hides the controls exactly when the reader needs
+        // to see the session is armed. The second half of the same report.
+        if self.playback.is_empty() && !self.playback.is_live() && !arming {
             ui.label("No reduction search in this report.");
             ui.weak(
                 "The stage was not reached, so there is no search to step through \u{2014} \
