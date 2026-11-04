@@ -2235,49 +2235,60 @@ impl WorkerState {
         // `OutputCapture` — so without one the trace lands in a terminal Doug is not
         // watching. It is started only for the retry, which happens only on a failure
         // already headed for the error path.
-        let res = match rumoca_sim::simulate_with_diagnostics(&cr.dae, &opts) {
-            Ok(res) => res,
-            Err(e) => {
-                let msg = format!("{e}");
-                if !rumoca_sim::nan_trace::nan_trace_enabled()
-                    && rumoca_sim::nan_trace::error_suggests_nonfinite(&msg)
-                {
-                    log(
-                        LogLevel::Info,
-                        "the error suggests a non-finite value \u{2014} re-running with \
+        // **`simulate_with_optional_step_records`, so the diagnostics plots have
+        // data again** (2026-11-03, re-modelled after the v0.10.0 rebase disabled
+        // them). Same dispatch as `simulate_with_diagnostics`: `Auto` resolves
+        // through the same selector, so asking for the steps never changes which
+        // integrator runs, and `suite_core::step_observation` pins that an observed
+        // run is bit-identical to an unobserved one.
+        //
+        // `None` is the backend saying it has no steps to report — the rk45 path
+        // never enters the ME session — and is kept distinct from `Some(empty)`,
+        // which would claim a solve that took no steps.
+        let (res, solver_steps) =
+            match rumoca_sim::simulate_with_optional_step_records(&cr.dae, &opts) {
+                Ok(pair) => pair,
+                Err(e) => {
+                    let msg = format!("{e}");
+                    if !rumoca_sim::nan_trace::nan_trace_enabled()
+                        && rumoca_sim::nan_trace::error_suggests_nonfinite(&msg)
+                    {
+                        log(
+                            LogLevel::Info,
+                            "the error suggests a non-finite value \u{2014} re-running with \
                          NaN tracing to name the variable"
-                            .to_owned(),
-                    );
-                    let mut capture = OutputCapture::start();
-                    rumoca_sim::nan_trace::set_nan_trace(true);
-                    let _ = rumoca_sim::simulate_with_diagnostics(&cr.dae, &opts);
-                    rumoca_sim::nan_trace::set_nan_trace(false);
-                    match capture.as_mut() {
-                        Some(cap) => {
-                            let (out, err) = cap.drain();
-                            for line in out.lines().chain(err.lines()) {
-                                if !line.is_empty() {
-                                    log(LogLevel::Stderr, line.to_owned());
+                                .to_owned(),
+                        );
+                        let mut capture = OutputCapture::start();
+                        rumoca_sim::nan_trace::set_nan_trace(true);
+                        let _ = rumoca_sim::simulate_with_diagnostics(&cr.dae, &opts);
+                        rumoca_sim::nan_trace::set_nan_trace(false);
+                        match capture.as_mut() {
+                            Some(cap) => {
+                                let (out, err) = cap.drain();
+                                for line in out.lines().chain(err.lines()) {
+                                    if !line.is_empty() {
+                                        log(LogLevel::Stderr, line.to_owned());
+                                    }
                                 }
                             }
-                        }
-                        // Stating the absence rather than losing the trace quietly:
-                        // without a capture the report went somewhere Doug cannot see,
-                        // and a silent nothing here reads as "the trace found nothing".
-                        None => log(
-                            LogLevel::Info,
-                            "stderr could not be captured, so the NaN trace went to the \
+                            // Stating the absence rather than losing the trace quietly:
+                            // without a capture the report went somewhere Doug cannot see,
+                            // and a silent nothing here reads as "the trace found nothing".
+                            None => log(
+                                LogLevel::Info,
+                                "stderr could not be captured, so the NaN trace went to the \
                              terminal rather than this log"
-                                .to_owned(),
-                        ),
+                                    .to_owned(),
+                            ),
+                        }
+                        drop(capture);
                     }
-                    drop(capture);
+                    drain_traces(&log);
+                    log(LogLevel::Error, format!("simulation failed: {msg}"));
+                    return Err(format!("simulation failed: {msg}"));
                 }
-                drain_traces(&log);
-                log(LogLevel::Error, format!("simulation failed: {msg}"));
-                return Err(format!("simulation failed: {msg}"));
-            }
-        };
+            };
         drain_traces(&log);
         log(
             LogLevel::StageEnd,
@@ -2299,10 +2310,7 @@ impl WorkerState {
             data: res.data,
             n_states: res.n_states,
             has_discontinuities,
-            // Empty because 0.10.0's `SimResult` carries no per-step record —
-            // see the field's own note. Written out rather than defaulted so
-            // the absence is visible at the one place that would fill it.
-            solver_steps: Vec::new(),
+            solver_steps: solver_steps_from_integrator(solver_steps.as_deref()),
         })
     }
 
@@ -3953,6 +3961,40 @@ fn awaiting_remodel_note(phase: &str, what_changed: &str) -> String {
          the new model rather than shown in the old vocabulary. \
          This is an HRW gap, not a compiler problem."
     )
+}
+
+/// One plot row per accepted step the integrator took.
+///
+/// **This is the symbol `docs/tech-debt.md`'s `unbuilt:` tag recruited**, so
+/// `doc_citations::claims_of_absence_are_still_true` fails once this exists and
+/// forces that row to be retired — which is the mechanism working rather than a
+/// coincidence of naming.
+///
+/// `None` means the backend that ran reports no steps: the rk45 path never
+/// enters the ME session, so there is nothing to observe. That is kept distinct
+/// from an empty slice, which would be a claim about a solve that took no
+/// steps. Both map to an empty plot, and the Simulation pane says which it is.
+///
+/// # What each column is, and why `h` is computed here
+///
+/// `t` is the time the step **reached**, so a reader comparing the diagnostics
+/// plot against the trajectory finds a step where the trajectory has a value.
+/// `h` is the interval it covered, derived from the two endpoints the solver
+/// reported rather than read from a third field — a stored size could disagree
+/// with the interval it describes, and `MeStepRecord::step_size` exists so that
+/// the subtraction happens once.
+fn solver_steps_from_integrator(
+    records: Option<&[rumoca_solver::fmi_me::step_observation::MeStepRecord]>,
+) -> Vec<crate::plot_labels::StepRow> {
+    records
+        .unwrap_or_default()
+        .iter()
+        .map(|step| crate::plot_labels::StepRow {
+            t: step.accepted_time,
+            h: step.step_size(),
+            order: step.order as usize,
+        })
+        .collect()
 }
 
 /// The sentence fragment every [`awaiting_remodel_note`] contains.
