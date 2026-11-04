@@ -5066,17 +5066,20 @@ impl App {
                 );
                 let report_ready = report_stage && self.current_stage().value.is_some();
                 if report_ready {
-                    // **The four questions are asked here rather than in the row**, so
-                    // that a tab which exists and a link which is honoured cannot
-                    // disagree: `structural_view_available` is the one predicate, and
+                    // **Every question is asked here rather than in the row**, so that a
+                    // tab which exists and a link which is honoured cannot disagree:
+                    // `structural_view_available` is the one predicate, and
                     // `apply_pending_view_and_seek` below consults the very same method.
-                    // Two of the four additionally depend on what the compile *captured*,
-                    // which is state the row never otherwise touches.
-                    let available = report_sub_view::TabAvailability {
-                        summary: self.structural_view_available(StructuralView::Summary),
-                        animate: self.structural_view_available(StructuralView::Animate),
-                        spy_plot: self.structural_view_available(StructuralView::SpyPlot),
-                    };
+                    //
+                    // **It asked three of the eight until 2026-11-04**, and the row drew
+                    // the rest unconditionally or from its own recomputed singularity —
+                    // so this comment's promise was false for five tabs and the one that
+                    // mattered was `Matching ▶` on Index Reduction. Asking by closure
+                    // rather than field by field is what makes a forgotten tab
+                    // impossible rather than merely unlikely.
+                    let available = report_sub_view::TabAvailability::from_predicate(|v| {
+                        self.structural_view_available(v)
+                    });
                     report_sub_view::report_sub_view_row_ui(
                         ui,
                         self.stage,
