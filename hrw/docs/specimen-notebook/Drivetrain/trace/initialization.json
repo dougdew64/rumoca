@@ -1,0 +1,17 @@
+{
+  "determinacy": {
+    "state_scalars": 5,
+    "determined": 0,
+    "only_guessed": [
+      "L.i",
+      "shaft.phi",
+      "shaft.w",
+      "load.s",
+      "load.v"
+    ],
+    "definitions": 0,
+    "checks": 0,
+    "partly_fixed_states": []
+  },
+  "pins": []
+}
