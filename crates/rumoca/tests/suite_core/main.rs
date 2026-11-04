@@ -163,6 +163,7 @@ mod tiered_models;
 mod time_event_when_activation;
 mod verification_surface_wiring;
 
+mod step_observation;
 mod strict_compile_recovery;
 mod structural_binding_functions;
 mod structural_observation;

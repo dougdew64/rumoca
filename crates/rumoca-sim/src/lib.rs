@@ -136,6 +136,37 @@ pub fn simulate_with_diagnostics(
 #[cfg(any(feature = "solver-diffsol", feature = "solver-rk45"))]
 pub use simulate_with_diagnostics as simulate_dae_with_diagnostics;
 
+/// Simulate on the BDF backend, reporting every accepted step.
+///
+/// The same numerical run as [`simulate_with_diagnostics`] with
+/// `SimSolverMode::Bdf`, observed: the step records describe the *solve* — the
+/// size the integrator chose and the order its continuous extension reached —
+/// which `SimResult` does not carry because it describes the trajectory.
+///
+/// # Why this is BDF-only rather than dispatching
+///
+/// The observation seam lives in the ME session
+/// ([`rumoca_solver::fmi_me::step_observation`]), and only the diffsol backend
+/// drives it with a method that has a step size and an order to report at all.
+/// **Dispatching and returning an empty `Vec` for the other modes would be the
+/// worse choice**: an empty step list reads as a solve that took no steps,
+/// which is a false claim about a run that integrated normally. So this names
+/// its backend, and a caller asking for another one is told rather than shown
+/// nothing.
+#[cfg(feature = "solver-diffsol")]
+pub fn simulate_with_step_records(
+    dae_model: &dae::Dae,
+    opts: &SimOptions,
+) -> Result<
+    (
+        SimResult,
+        Vec<rumoca_solver::fmi_me::step_observation::MeStepRecord>,
+    ),
+    SimulationDiagnosticError,
+> {
+    diffsol::simulate_with_step_records(dae_model, opts)
+}
+
 /// Simulate one already-constructed correlated FMI component, dispatching by
 /// `opts.solver_mode`.
 ///

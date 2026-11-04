@@ -70,6 +70,9 @@ pub(crate) mod lifecycle;
 /// unchecked constructor: none of it belongs in the solver-plugin API
 mod root;
 pub mod session;
+/// Observation-only reporting of accepted numerical steps. Nothing here can
+/// change what the solver does, and the production observer is `()`
+pub mod step_observation;
 #[cfg(test)]
 mod tests;
 /// Host-private trace policy. Roles, the recorder, and its violation type all

@@ -45,6 +45,7 @@ use super::{
         MeRootApplication, MeRootSearchPolicy, RootScanTarget, RootScanWorkspace, accept_step,
         scan_accepted_interval_with_workspace,
     },
+    step_observation::{MeStepEvent, MeStepObserver},
     trace::{MeTraceRecorder, TraceObservationRole},
 };
 use crate::{
@@ -310,6 +311,7 @@ impl MeComponentHost<'_> {
             host: self.host,
             backend,
             scan_workspace: RefCell::new(RootScanWorkspace::default()),
+            step_observer: None,
             lease: PhantomData,
         };
         session.start_plugin()?;
@@ -322,10 +324,57 @@ pub struct MeSimulationSession<'lease, 'plugin> {
     host: MeHostState,
     backend: Box<dyn MeIntegratorBackend + 'plugin>,
     scan_workspace: RefCell<RootScanWorkspace>,
+    /// Observation only, and `None` unless a caller asked. See
+    /// [`Self::observe_steps`].
+    step_observer: Option<Box<dyn MeStepObserver + 'plugin>>,
     lease: PhantomData<&'lease ()>,
 }
 
+impl<'plugin> MeSimulationSession<'_, 'plugin> {
+    /// Watch this session's accepted steps.
+    ///
+    /// Observation only: the observer is handed facts the session already holds,
+    /// cannot return anything, and cannot change what the solver does. A session
+    /// with no observer pays one `Option` branch per accepted step.
+    ///
+    /// **Why this is a setter rather than a constructor parameter.** Every
+    /// existing caller of [`MeComponentHost::into_session`] keeps its signature,
+    /// so adding observation to this crate changed no call site — which is the
+    /// property that makes the seam safe to carry and easy to accept. A caller
+    /// that wants records installs [`MeStepRecorder`] and takes them afterwards.
+    ///
+    /// Replaces any observer already installed; the previous one is returned so
+    /// that a caller nesting observation can put it back.
+    pub fn observe_steps(
+        &mut self,
+        observer: Box<dyn MeStepObserver + 'plugin>,
+    ) -> Option<Box<dyn MeStepObserver + 'plugin>> {
+        self.step_observer.replace(observer)
+    }
+}
+
 impl MeSimulationSession<'_, '_> {
+    /// Hand one proved accepted step to the observer, if there is one.
+    ///
+    /// Takes the **proposal**, not the plugin's candidate: a candidate that
+    /// fails its §6 obligations never happened as far as the trajectory is
+    /// concerned, and reporting one would draw a step the solver did not take.
+    ///
+    /// Called after `MeStepProposal::bind` and before the step is consumed. The
+    /// session's accepted-step path has no rollback proof from `advance`
+    /// onward, so this must not be able to fail — and it cannot:
+    /// `MeStepObserver::observe` returns `()`.
+    fn report_accepted_step(&mut self, proposal: &MeStepProposal) {
+        let Some(observer) = self.step_observer.as_mut() else {
+            return;
+        };
+        observer.observe(MeStepEvent::Accepted {
+            start_time: proposal.previous().time(),
+            accepted_time: proposal.accepted().time(),
+            order: proposal.order(),
+        });
+    }
+
     // -- public incremental surface ----------------------------------------
 
     #[must_use]
@@ -734,6 +783,7 @@ impl MeSimulationSession<'_, '_> {
         let candidate =
             self.run_with_derivatives_until(event_boundary, |backend| backend.advance(&request))?;
         let proposal = MeStepProposal::bind(request, candidate, self.host.state_count)?;
+        self.report_accepted_step(&proposal);
         self.consume_accepted_step(proposal, cursor)
     }
 
