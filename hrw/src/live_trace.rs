@@ -257,6 +257,84 @@ where
     Some((rx, done))
 }
 
+/// Adapts a closure to Rumoca's [`ReductionWatcher`] trait.
+///
+/// The reduction seam takes a trait where `observe_sort` takes an `impl FnMut`, which
+/// suits a stateful consumer better but costs a closure caller this four-line adapter.
+/// It lives here rather than upstream so the crate's new public surface stays one trait
+/// and one function.
+struct WatchFn<G>(G);
+
+impl<G> rumoca_phase_structural::ReductionWatcher for WatchFn<G>
+where
+    G: FnMut(rumoca_phase_structural::ReductionRecord),
+{
+    fn record(&mut self, record: rumoca_phase_structural::ReductionRecord) {
+        (self.0)(record);
+    }
+}
+
+/// Run index reduction on a worker thread, pushing each record it observes as a frame.
+///
+/// The reduction twin of [`spawn_structural_live`], and the same three things make it a
+/// live session rather than a replay: the thread waits at
+/// [`LiveTrace::wait_for_debugger`] so the reader arrives before the first step, each
+/// push pauses by `frame_delay` so a debugger can stop between events, and the records
+/// come from Rumoca's own observation of a reduction that is **happening now**.
+///
+/// # Why this needs an upstream seam at all, and did not have one until 2026-11-04
+///
+/// `inspect_prepare_for_solve` returns its report *after* the run completes. Feeding a
+/// finished report into this channel on a timer would look identical on screen and be a
+/// recording wearing a live label — which is why the pane said so and offered nothing
+/// instead. `watch_prepare_for_solve` is the per-event seam that makes the real thing
+/// possible; `crates/rumoca-phase-structural` carries it, and
+/// `docs/upstream-strategy.md` is why it is shaped as a general observability API rather
+/// than as something HRW-specific.
+///
+/// **Rumoca never learns `LiveTrace` exists.** It takes a watcher; the HRW type lives on
+/// this side of the call, exactly as `observe_sort`'s closure does.
+pub fn spawn_reduction_live<F, S>(
+    dae: std::sync::Arc<rumoca_ir_dae::Dae>,
+    frame_delay: Duration,
+    thread_name: &str,
+    mut select: S,
+) -> Option<(mpsc::Receiver<F>, Arc<std::sync::atomic::AtomicBool>)>
+where
+    F: Send + 'static,
+    S: FnMut(rumoca_phase_structural::ReductionRecord) -> Option<F> + Send + 'static,
+{
+    let (lt, rx) = LiveTrace::new();
+    let lt = lt.with_frame_delay(frame_delay);
+    let done = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let done_for_thread = Arc::clone(&done);
+
+    std::thread::Builder::new()
+        .name(thread_name.to_owned())
+        .spawn(move || {
+            lt.wait_for_debugger();
+            // The prepared system is dropped: this thread exists to observe the search,
+            // and the compile already holds the result every pane reads. Keeping it
+            // would be a second prepared DAE with nothing to reconcile it against.
+            let _ = rumoca_phase_structural::watch_prepare_for_solve(
+                &dae,
+                &mut WatchFn(|record| {
+                    if let Some(frame) = select(record) {
+                        lt.push(frame);
+                    }
+                }),
+            );
+            // Set when the call *returns*, not on the last push — reduction does work
+            // after its final record (finalizing the prepared system), and a reader
+            // told "finished" early would re-enable the controls mid-run. Same reason
+            // `spawn_structural_live` stores here.
+            done_for_thread.store(true, std::sync::atomic::Ordering::Release);
+        })
+        .ok()?;
+
+    Some((rx, done))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
