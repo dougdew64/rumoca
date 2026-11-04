@@ -537,8 +537,8 @@ the next phase touches — is procedure and lives there.
 > | # | what | gate that opens it |
 > |---|---|---|
 > | 1 | **learning the math and algorithms of Modelica compilation** | **NOW — this is where he is** |
-> | 2 | rebase onto 0.10.0 | **the branch is labelled/tagged** |
-> | 3 | learning simulation | the rebase |
+> | 2 | ~~rebase onto 0.10.0~~ | **DONE 2026-11-04** — see the box below |
+> | 3 | learning simulation | **OPEN NOW** — the rebase was its gate |
 > | 4 | iterating [`docs/diagnosing-models.md`](docs/diagnosing-models.md) toward a prescriptive method | *after* he has begun 3 |
 > | 5 | learning the MicroDuck; modelling a servo in Modelica | **hardware arrives — several months out** |
 > | 6 | building the HRW comparison feature (`ideas.md` #88) | a servo model exists to compare |
@@ -555,6 +555,62 @@ the next phase touches — is procedure and lives there.
 > now"* because it needs no hardware. **Available is not next** — it sits after step 3 at the
 > earliest, and Doug's *"fine for now"* on Stage A settled its *ordering within the programme*,
 > not its position in this queue.
+>
+> ### ⟶ THE REBASE IS DONE AND PUSHED — branch `hrw-rebase-0.10.0`, 2026-11-04
+>
+> **This is not a branch of `hrw`.** Both descend from `main`; `hrw` is 1199 commits of HRW work on
+> 0.9.20 and still points at 2026-09-25, while this branch is upstream's v0.10.0 (PR #340) with the
+> `hrw/` tree **ported on top** at `668c89c9` — so HRW's per-commit history is on `hrw` and is not
+> an ancestor here. Nothing is stranded: `hrw` has not moved since before the port.
+>
+> **All five re-models the rebase recruited have landed, and `worker::AWAITING_REMODEL` is empty.**
+> The roster mechanism is kept and re-aimed — an empty roster now asserts that *no* stage claims to
+> be undisplayable and *no* test is still ignored for a re-model.
+>
+> **`alias_anim` and `ic_plan_anim` are DELETED, not re-modelled.** Alias elimination is not a
+> Rumoca phase on 0.10.0 (upstream deleted `rumoca-phase-structural/src/eliminate/`) and no
+> specimen's equation count shrinks any more; initialization publishes pins, not an `IcBlock`
+> sequence. Do not go looking for either view, and do not restore them from git without reading
+> `docs/tech-debt.md` first.
+>
+> **There is a new upstream seam and it is ours.** `watch_prepare_for_solve` + `ReductionWatcher`
+> in `rumoca-phase-structural`, committed separately from `hrw/` for a clean cherry-pick. It is what
+> makes live reduction stepping a real session rather than a recording wearing a live label.
+>
+> #### The question the old boxes below were gated on is ANSWERED: the rebase bought the plots
+>
+> Measured from the committed traces, 2026-11-04 — **18 of 28 specimens simulate**, and every one
+> of the 10 failures is a specimen *authored* to fail. Of the 14 with states, **13 have moving
+> states**; the one frozen specimen is `CapacitorLoop`, where a capacitor pinned across an ideal
+> source correctly carries no current. **On 0.9.20 the figure was 13 of 18 frozen.**
+>
+> Two reproducers check out against a closed form rather than against "it moved":
+> `LoopWithInertia`'s `w` now starts at **0** and reaches **1** against `w = 1 - exp(-10t)` — it
+> started at the steady state 1.0 on 0.9.20 — and `RcCircuit`'s charging current decays from
+> -0.05 to ~0 where it used to flat-line.
+>
+> **`StabilizedPendulum` simulates**, `lambda` is solved (0 → 17.9, peak 29.4), and the trajectory
+> is a pendulum swinging through 180° with `x² + y² = 0.9996` against `L² = 1` at the final sample.
+> **That unblocks specimen-ladder rungs 4 and 5**, which needed exactly the state-plus-algebraics
+> combination that used to flat-line.
+>
+> *A caution about how that was measured, because the first attempt was wrong in this project's
+> usual way: `simulation.json` is written even when the run FAILED, so counting `min == max` over
+> its variables scored `OverInitRc`'s failed run as a frozen trajectory. Read `manifest.json`'s
+> `simulation.simulated` first.*
+>
+> #### Owed, and only Doug can close them
+>
+> - **Press Debug on the Index Reduction tab.** Live reduction stepping is wired to the new seam
+>   and **no test can verify it** — the thread waits for a debugger and runs a real reduction.
+> - **Run `docs/fixture-labs/index-reduction.md`.** Stations 2-6 were re-authored against the
+>   0.10.0 search on 2026-11-04 and have had no reader. Station 4 is the one to watch: it argues
+>   that a `held` pass is progress from two equation names a pass apart, which may read as
+>   arithmetic rather than as insight.
+> - **File `upstream-issues.md` F1** — v0.10.0 fails its own `cargo fmt --all -- --check` in 22
+>   sites across 10 files, under its own pinned toolchain. 11 are fixed here; 11 are not.
+>
+> **Next is the 0.10.4 hop.** The outstanding items are cleared.
 >
 > ### ⟶ AN ADJUDICATED INITIALIZATION DEFECT IS READY TO FILE, AND IT GATES THE PLOT WORK — 2026-09-04
 >
@@ -582,22 +638,11 @@ the next phase touches — is procedure and lives there.
 > 4.999773`, matching System Modeler and the closed form. **The wait-for-the-release ruling is
 > vindicated and the question it was blocked on is answered: the rebase buys the plots.**
 >
-> **RULED 2026-09-19 — DO NOT REBASE YET.** Doug: *"We will adhere to the updating-rumoca.md
-> step 0 guidance. In other words, we will not rebase now."* **Knowing the branch works is not a
-> reason to adopt it**: there is still **no v0.10.0 tag**, and **#340 has not moved since
-> 2026-08-27** with its own CI not green, so rebasing means depending on an unmerged ref that
-> may be force-pushed, renamed or abandoned. The measurement changed what we know, not what the
-> rule says.
->
-> **The signal to watch is a v0.10.0 tag appearing, or #340 merging into `main`** — not further
-> activity on the branch, which has been steady all along. Both are one `curl` to check:
-> `/repos/CogniPilot/rumoca/tags` and `/pulls/340`.
->
-> **What this blocks, and what it does not.** Blocked while we stay on 0.9.20: the plot/animation
-> specimen work (`CompliantDrive` is oracle-validated and waits), and anything reading a
-> trajectory as evidence. **Not blocked**: structural and flatten work, which is where the
-> corpus is actually wrong-free — `OrphanConnector` is a candidate curated specimen needing no
-> simulation at all, and the `connect-expansion` passage on unconnected potentials is owed.
+> **CLOSED 2026-11-04 — the rebase happened, and the ruling it replaced is spent.** It read
+> *DO NOT REBASE YET*, gated on a v0.10.0 tag or #340 merging, neither of which arrived; Doug
+> ruled the other way once the measurements were in. The reasoning is in `DECISIONS.md`. **Do not
+> re-apply it** — and do not read its *"blocked while we stay on 0.9.20"* list as current, because
+> the thing it blocked is now the thing that works.
 >
 > **One breakage is already known: the MSL source-root shape changed.** HRW's `msl_roots()`
 > passes three roots (`Modelica 4.1.0`, `ModelicaServices 4.1.0`, `Complex.mo`); on 0.10.0 that
