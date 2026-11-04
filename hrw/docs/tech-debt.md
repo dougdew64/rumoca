@@ -84,34 +84,57 @@ its work is visible without instrumenting it.
 **`Drivetrain` demotes 9 states to 5, not to 3** as `docs/upstream-issues.md`'s open state-count
 entry records. That entry needs re-measuring against 0.10.0 before anything is concluded from it.
 
-### The Index Reduction tab's two displays still speak the funnel's vocabulary
+### ~~The Index Reduction tab's two displays still speak the funnel's vocabulary~~
 
-The reduction summary panel is not re-modelled. <!-- unbuilt: reduction_view::ReductionView::from_search -->
+**Both re-modelled 2026-11-04**, in the commit after the stage's own. The record is kept for one
+reason: **the `unbuilt:` tags on this row named a symbol that was never written.**
 
-**The stage's re-model landed 2026-11-04 and these two did not**, which is a narrower gap than it
-was and worth stating precisely, because the data is no longer missing — only two renderings of it.
+They read `reduction_view::ReductionView::from_search` and
+`reduction_anim::ReductionAnimation::from_search`. Both implementations are called `from_report`, so
+neither tag ever resolved — and `doc_citations::claims_of_absence_are_still_true` **fails only when a
+target DOES resolve**, so a tag naming nothing is indistinguishable from a claim that is still true.
+`CLAUDE.md` states that exactly — *"a misspelled target is silently permanent"* — and this is an
+instance of it produced by the same session that quoted the rule. The mechanism did not fail; the
+tag was aimed at a symbol that did not get written.
 
-1. **`reduction_view.rs` (1112 lines) parses `report["reduction"]`** — `funnel_completed`, `steps`,
-   `n_states_before`, `demoted_states` — so `from_report` returns `None` for every real compile.
-   The pane's fallback said *"(no reduction data in this report)"*, which had become **false**: the
-   report is full of it. That message now says which side is stale, and the IR tree shows the real
-   payload meanwhile.
-2. **`reduction_anim.rs` is still a placeholder**, and its reason is *not* vocabulary — see below.
+What landed:
 
-**The panel's rewrite is held up by a file split, not by the model.** `abbreviate_expr` and
-`expr_to_short` live in `reduction_view.rs` with about twenty tests, and **`alias_anim` and
-`ic_plan_anim` both reach into this module for them** — an expression formatter is not a reduction
-view, and a third formatter (`dae_expr_format`) already exists. So rewriting the pane means first
-deciding where expression abbreviation belongs, which is a cleanup with its own blast radius rather
-than a line of the re-model.
+1. **`reduction_view.rs` is a reader for the search log** rather than the funnel report: the
+   outcome and its own `meaning`, a before/after size grid with the manifold count, and the rounds
+   grouped back out of the flat log, each collapsible with its candidate groups, attempts and
+   selection. The grouping **announces anything it could not place** — a record before any round, an
+   unknown kind, a record with no kind at all — because the lines around it are positive claims
+   about the model that a silent loss would falsify.
+2. **`reduction_anim.rs` steps the log**, one observed record at a time, with an opening frame that
+   is the system before the search.
+
+**Three renderings are deliberate, each a measured misreading the plainer table invites:** `held` is
+glossed as progress (`Drivetrain`'s round 3 moves nothing and round 4 then succeeds); identical
+before/after counts get a sentence saying reduction is not a size reduction (`CapacitorLoop`); and a
+candidate group of zero reads *nothing to try*, never a refusal (`CartesianPendulum`, which is
+`ideas.md` #83 stated precisely).
+
+**The expression-formatter question dissolved instead of being answered.** `abbreviate_expr` and
+`expr_to_short` lived in `reduction_view.rs` with about twenty tests, and `alias_anim` and
+`ic_plan_anim` were their only consumers — so deleting those two views removed the question of where
+an expression formatter belongs. The new panel needs none: the search log carries ordinals, spans
+and names, not serialized expressions, and `dae_expr_format` already renders expressions from a live
+`DaeView`, which is the better input anyway.
+
+**Each reader has one test that compares it against the writer**
+(`the_panel_reads_a_real_compile`, `the_stepper_reads_a_real_compile`). Every other test in both
+modules builds its own payload, so all of them would pass against a shape
+`worker::index_reduction_from_observation` no longer publishes — they agree with each other and with
+nothing else.
 
 ### Live reduction stepping needs a public observer, and that is an upstream API question
 
-Stepping is not built. <!-- unbuilt: reduction_anim::ReductionAnimation::from_search -->
+Live stepping is not built. <!-- unbuilt: reduction_anim::ReductionAnimation::live_from_observer -->
 
-**Recorded** stepping — walking the published search log one record at a time — needs only the panel
-work above. **Live** stepping needs something HRW cannot reach, and this is the real instrumentation
-candidate the index-reduction re-model turned up:
+**Recorded stepping landed 2026-11-04** — see the row above. What follows is the live half only.
+
+**Live** stepping needs something HRW cannot reach, and this is the real instrumentation candidate
+the index-reduction re-model turned up:
 
 `ReductionObserver` and `ReductionEvent` are **`pub(super)` by design**.
 `inspect_prepare_for_solve` is the crate-external surface and returns an owned `ReductionReport`
@@ -125,6 +148,13 @@ by deletion. Today `ReductionAnimation::start_live` returns `None` unconditional
 an affordance which arms a breakpoint and reports nothing — the exact shape that forced the
 PreLowering variant's deletion. Either the seam becomes public or that path has to go, and the first
 is the one that serves the learning.
+
+**`live_state` delegates to the playback now**, which is not a workaround but what the contract
+requires: `playback::tests_animated_contract::only_the_views_with_a_live_path_report_a_live_session`
+holds the gated set and the delegating set equal, and `app.rs` gates this view. For a recorded
+cursor the playback answers `Idle`, so it is correct today and stays correct when `start_live`
+becomes real — the mistake it rules out is the one `connection_anim`'s own comment records, a
+hardcoded `Idle` reporting "no session" during a real one.
 
 **Shape of the candidate change**, additive and observation-only: export `ReductionObserver` and
 `ReductionEvent`, and make `prepare_for_solve_with_observer` public — it already exists as the

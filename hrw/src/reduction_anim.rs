@@ -1,105 +1,139 @@
-//! Index-reduction animation — **the stepping is disabled; the stage's data is not.**
-//! Awaiting a public per-event seam, not a vocabulary.
+//! Index-reduction stepping — the search, one observed record at a time.
 //!
-//! # What was here, and why it is gone rather than ported
+//! ## Why this phase is worth stepping through
 //!
-//! This module stepped through a **ten-step dummy-derivative funnel**:
-//! `demote_exact_alias_component_states`,
-//! `reduce_constrained_dummy_derivatives`,
-//! `index_reduce_missing_state_derivatives` and seven more, each mutating a
-//! `&mut Dae` in place, with HRW's instrumentation emitting an
-//! `IndexReductionFrame` per step.
+//! The [summary panel](crate::reduction_view) shows the whole search at once, which is
+//! the right shape for *what happened*. What a table cannot give is the **accumulation**:
+//! watching a residue come down round by round, seeing a lane find nothing and hand
+//! over to the other, and meeting each refusal at the moment it was made rather than as
+//! one row among forty.
 //!
-//! **Rumoca 0.10.0 does not run that algorithm.** `dae_prepare` is gone.
-//! Reduction is now two fixed-point *lanes* — Direct and Holonomic — driven by
-//! a candidate / attempt / selection protocol, and a `Dae` is immutable, so
-//! there is no in-place mutation to watch. Every name this module animated has
-//! stopped existing, and the shape it drew is not the shape of the search.
+//! `GearWithBrake` logs 40 records and `Drivetrain` 29. Read as a table they are a wall;
+//! read as a sequence they are a search with a plot.
 //!
-//! Porting it was therefore not available: there is nothing to port it *to*.
-//! Keeping the old renderer behind a feature flag would be worse than deleting
-//! it, because the one thing a reader could then do is look at a correct-looking
-//! animation of an algorithm the compiler does not perform. The implementation
-//! is in git history, which is the right place for the record of an algorithm
-//! Rumoca used to run.
+//! ## What kind of animation this is, and the one it is not
 //!
-//! # What replaces it, and why not now
+//! **A replay of a recorded search, not a re-derivation.** The frames are
+//! `worker::index_reduction_from_observation`'s published records, which came from
+//! Rumoca's own observation of the one reduction this compile performed. Stepping moves
+//! a cursor over them; nothing is recomputed, and there is no second implementation that
+//! could drift from the first.
 //!
-//! `rumoca_phase_structural::inspect_prepare_for_solve` returns the real
-//! reduction plus an owned `ReductionReport`: per-round residue, unmatched
-//! equations and unknowns, candidate counts per proof boundary, **every attempt
-//! with its outcome including why it was rejected**, each selection with
-//! residue before and after, pristine retries, the stop reason, and a snapshot
-//! of the stalled DAE when preparation fails. That is strictly richer than the
-//! funnel frames were, and it observes the compile that actually happened
-//! instead of a re-run.
+//! **It is not live yet, and that gap is an upstream API question rather than a missing
+//! vocabulary.** `ReductionObserver` and `ReductionEvent` are `pub(super)` in
+//! `rumoca-phase-structural`; `inspect_prepare_for_solve` is the crate-external surface
+//! and it returns an owned report *after the run completes*. HRW's live stepping paces a
+//! real algorithm against a breakpoint, so feeding a finished report into the frame
+//! channel on a timer would be **a recording wearing a live label** — the fiction this
+//! repository has removed twice. `docs/tech-debt.md` carries the shape of the candidate
+//! change, and `CLAUDE.md` is why it matters: `PendingLiveDebug::Reduction` is named
+//! there as one of the four live paths that must not be "fixed" by deletion.
 //!
-//! # The stage's re-model has landed; this view's has not, and the reason changed
+//! So [`ReductionAnimation::start_live`] still returns `None`, and
+//! [`Animated::live_state`] delegates to the playback — which is what
+//! `playback::tests_animated_contract::only_the_views_with_a_live_path_report_a_live_session`
+//! requires of a view `app.rs` gates, and which answers `Idle` for a recorded cursor.
 //!
-//! **Since 2026-11-04 `worker::index_reduction_from_observation` publishes the whole
-//! search** — every round, candidate group, attempt, refusal and selection from the
-//! one reduction the compile performed. So the Index Reduction tab is no longer
-//! empty, and the thing missing here is narrower than it was: **stepping**, not the
-//! data.
+//! ## What replaced the funnel
 //!
-//! It stayed a placeholder through that commit for a reason worth recording, because
-//! it is not "no time left". **A live session needs a per-event seam, and Rumoca's
-//! does not exist publicly.** `ReductionObserver` and `ReductionEvent` are
-//! `pub(super)` by design; `inspect_prepare_for_solve` is the crate-external surface
-//! and it hands back an owned report *after the run finishes*. HRW's live stepping
-//! works by pacing a real algorithm against a breakpoint, so feeding a finished
-//! report into the channel on a timer would be a **recording wearing a live label** —
-//! the one fiction this repository has already removed twice.
-//!
-//! That makes the observer seam the real instrumentation candidate for this view,
-//! and `CLAUDE.md` is why it matters rather than being optional:
-//! `PendingLiveDebug::Reduction` is named there as one of the four live paths that
-//! re-run a phase that still exists and **must not be "fixed"** by deletion. A
-//! public observer keeps that path honest; without one, the Debug button on this tab
-//! is an affordance that arms a breakpoint and reports nothing.
-//!
-//! Doug's ruling that re-models land one at a time, where each can be watched
-//! running, is in `DECISIONS.md`, 2026-11-02.
+//! This module used to step through a **ten-step dummy-derivative funnel**:
+//! `demote_exact_alias_component_states`, `reduce_constrained_dummy_derivatives` and
+//! eight more, each mutating a `&mut Dae` in place with HRW's own instrumentation
+//! emitting a frame per step. **Rumoca 0.10.0 does not run that algorithm** — the DAE is
+//! immutable and reduction is two fixed-point lanes driven by a
+//! candidate/attempt/selection protocol — so every name it animated stopped existing and
+//! the shape it drew was not the shape of the search. The implementation is in git
+//! history, which is the right place for the record of an algorithm Rumoca used to run.
 
 use eframe::egui;
 use serde_json::Value;
 
 use crate::LiveState;
-use crate::playback::Animated;
+use crate::playback::{Animated, Playback};
 
-/// A placeholder that reports its own absence.
+/// Seconds between auto-advance frames.
 ///
-/// Keeps the surface `app.rs` drives — `from_frames`, `start_live`, `is_empty`,
-/// `ui`, and [`Animated`] — so the pane still exists, still appears in the stage
-/// roster, and still answers an `hrw://stage/.../frame/<n>` link with a truthful
-/// "no". A missing pane would read as a phase that produced nothing, which is a
-/// false claim about the compiler: Rumoca runs index reduction on 0.10.0
-/// perfectly well.
-#[derive(Default)]
+/// Slower than `alias_anim`'s old 0.45s reveal and nearer the decision-making views:
+/// every frame here is a choice or a measurement, not an item in a stream.
+const FRAME_INTERVAL: f64 = 0.7;
+
+/// One step of the search.
+///
+/// **`Start` is the opening frame — nothing tried, nothing selected.** Every view fed by
+/// a Rumoca capture carries one, after Doug reported on 2026-08-23 that two views
+/// "open to frame 1 with progress already having been made". A log's first record is
+/// already a round *in progress*; the state before it is the system as reduction was
+/// handed it, and that is what a reader needs first.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ReductionStep {
+    /// Before any record. What it needs to say — the system's size and the residue the
+    /// search began from — the animation reads off the payload it holds.
+    Start,
+    /// One observed record, at this index in the published log.
+    ///
+    /// An index rather than a copy of the record, so the frame cannot describe
+    /// something other than what `records[i]` says.
+    Record(usize),
+}
+
+/// Replay of the reduction search.
 pub struct ReductionAnimation {
-    /// Nothing. Named rather than a unit struct so the type can gain real state
-    /// when the re-model lands without every construction site changing shape.
-    _awaiting_remodel: (),
+    /// The published records, in the order Rumoca observed them.
+    records: Vec<Value>,
+    /// The raw system's size, for the opening frame.
+    before: Option<(u64, u64, u64)>,
+    /// The residue the first round reported, which is where the search began.
+    opening_residue: Option<u64>,
+    /// `[Start, Record(0), …]` — **one longer than the record count**, so anything
+    /// reporting a total must subtract the opening frame.
+    playback: Playback<ReductionStep>,
 }
 
 impl ReductionAnimation {
-    /// **Takes no frames, because none are produced any more.**
+    /// Build from an index-reduction stage report.
     ///
-    /// The old signature was `from_frames(Vec<IndexReductionFrame>)`. Keeping a
-    /// frames parameter that is always empty would leave the plumbing looking
-    /// alive, and a later session would reasonably conclude the frames were
-    /// simply not arriving — a bug hunt with no bug in it.
+    /// `None` when the payload carries no `search` array — a stage that was never
+    /// reached. A stage that *was* reached always has one, even when the run refused
+    /// the system: `CartesianPendulum`'s refusal is the most interesting log in the
+    /// corpus, three alternations finding nothing.
     #[must_use]
-    pub fn disabled() -> Self {
-        Self::default()
+    pub fn from_report(report: &Value) -> Option<Self> {
+        let records: Vec<Value> = report.get("search")?.as_array()?.clone();
+        // **No opening frame when there is nothing to open.** A lone `Start` would make
+        // `is_empty` false for a system nothing was done to, and the pane would offer a
+        // run through nothing instead of saying so.
+        let frames: Vec<ReductionStep> = if records.is_empty() {
+            Vec::new()
+        } else {
+            std::iter::once(ReductionStep::Start)
+                .chain((0..records.len()).map(ReductionStep::Record))
+                .collect()
+        };
+        let before = (|| {
+            let b = report.get("before")?;
+            Some((
+                b["n_states"].as_u64()?,
+                b["n_algebraics"].as_u64()?,
+                b["n_equations"].as_u64()?,
+            ))
+        })();
+        let opening_residue = records
+            .iter()
+            .find(|r| r["kind"] == "round")
+            .and_then(|r| r["residue"].as_u64());
+        Some(Self {
+            records,
+            before,
+            opening_residue,
+            playback: Playback::recorded(frames, FRAME_INTERVAL),
+        })
     }
 
     /// Always `None`: there is no live session to start.
     ///
-    /// Live stepping drove the funnel through HRW's `LiveTrace` and the
-    /// `*_with_trace` entry points, none of which exist on 0.10.0. Returning
-    /// `None` is the same answer this gave when a thread could not be spawned,
-    /// so the caller's existing fallback path is already correct.
+    /// See the module docs — the seam a live session needs is `pub(super)` upstream.
+    /// `None` is the same answer this gave when a thread could not be spawned, so
+    /// `app.rs`'s existing fallback path is already correct.
     #[must_use]
     pub fn start_live(
         _dae: &rumoca_ir_dae::Dae,
@@ -108,47 +142,261 @@ impl ReductionAnimation {
         None
     }
 
-    /// Always empty — there are no frames.
+    /// Whether the compile recorded any search record.
     #[must_use]
-    pub const fn is_empty(&self) -> bool {
-        true
+    pub fn is_empty(&self) -> bool {
+        self.records.is_empty()
     }
 
-    /// Draw the explanation. Returns `false`: nothing here can be armed.
+    /// Records in the log, which is one fewer than the frame count.
+    #[must_use]
+    pub fn n_records(&self) -> usize {
+        self.playback.position().1.saturating_sub(1)
+    }
+
+    /// The record under the cursor, or `None` at the opening frame.
+    fn current_record(&self) -> Option<&Value> {
+        match self.playback.current()? {
+            ReductionStep::Start => None,
+            ReductionStep::Record(i) => self.records.get(*i),
+        }
+    }
+
+    /// How many rounds have begun at or before the cursor.
     ///
-    /// **Re-worded 2026-11-04, when the stage's re-model landed.** The previous text
-    /// described the replacement as future work — *"the replacement reads Rumoca's
-    /// own observation seam … more than this view ever showed"* — which stopped being
-    /// true the moment `worker::index_reduction_from_observation` shipped. A pane
-    /// that describes a present thing in the future tense sends the reader looking
-    /// for something they already have.
-    pub fn ui(&mut self, ui: &mut egui::Ui, _arming: bool, _debug_enabled: bool) -> bool {
-        ui.label(egui::RichText::new("The search is published; the stepping is not").strong());
+    /// The accumulation the stepping exists for: at the opening frame none has, and at
+    /// frame *k* exactly those among the first *k* records.
+    fn rounds_so_far(&self) -> usize {
+        let cursor = self.playback.cursor();
+        self.records
+            .iter()
+            .take(cursor)
+            .filter(|r| r["kind"] == "round")
+            .count()
+    }
+
+    /// The residue most recently reported at or before the cursor.
+    ///
+    /// **Read from the log, never derived.** Subtracting selections from an opening
+    /// number would understate progress whenever a `Held` selection moved nothing, and
+    /// a reader would have no way to tell.
+    fn residue_now(&self) -> Option<u64> {
+        let cursor = self.playback.cursor();
+        self.records
+            .iter()
+            .take(cursor)
+            .rev()
+            .find_map(|r| match r["kind"].as_str() {
+                Some("round") => r["residue"].as_u64(),
+                Some("selected") => r["residue_after"].as_u64(),
+                Some("attempt") => r["outcome"]["residue"].as_u64(),
+                _ => None,
+            })
+            .or(self.opening_residue)
+    }
+
+    /// Draw the stepper. Returns whether the Debug button was clicked.
+    pub fn ui(&mut self, ui: &mut egui::Ui, arming: bool, debug_enabled: bool) -> bool {
+        if self.playback.is_empty() {
+            ui.label("No reduction search in this report.");
+            ui.weak(
+                "The stage was not reached, so there is no search to step through \u{2014} \
+                 the stage tab's note says what stopped the pipeline earlier.",
+            );
+            return false;
+        }
+
+        let live = self.live_state(arming);
+        let dt = ui.input(|i| i.stable_dt) as f64;
+        if self.playback.tick(dt, live) {
+            ui.ctx().request_repaint();
+        }
+        let debug_clicked =
+            crate::animation_controls(ui, self.playback.controls(), live, debug_enabled);
+
         ui.add_space(4.0);
-        ui.label(
-            "Rumoca 0.10.0 replaced the ten-step dummy-derivative funnel this view \
-             animated with two fixed-point lanes and a candidate/attempt/selection \
-             protocol, and made the DAE immutable. The algorithm this view stepped \
-             through is not the one the compiler runs any more.",
-        );
-        ui.add_space(4.0);
-        ui.label(
-            "What the compiler did run is on this tab already: every round with its \
-             residue and unmatched names, every candidate group, every attempt with \
-             its outcome and why it was refused, and each selection. Read it in the \
-             IR tree — the stage publishes it from Rumoca's own observation of the \
-             one reduction this compile performed.",
-        );
-        ui.add_space(4.0);
-        ui.label(
-            "Stepping through it one record at a time is what is still missing here, \
-             and live stepping needs something HRW cannot reach: Rumoca's \
-             ReductionObserver is private, so there is no per-event seam to pace \
-             against a breakpoint. inspect_prepare_for_solve hands back the whole \
-             report after the fact, and replaying that as though it were live would \
-             be a recording wearing a live label.",
-        );
-        false
+        self.render_current(ui);
+        ui.add_space(8.0);
+        self.render_running_state(ui);
+        debug_clicked
+    }
+
+    /// The frame under the cursor, in words.
+    fn render_current(&self, ui: &mut egui::Ui) {
+        let Some(record) = self.current_record() else {
+            ui.label(egui::RichText::new("Before the search").strong());
+            match (self.before, self.opening_residue) {
+                (Some((states, algebraics, equations)), Some(residue)) => ui.label(format!(
+                    "{states} state(s), {algebraics} algebraic(s), {equations} equation(s); \
+                     residue {residue}"
+                )),
+                (Some((states, algebraics, equations)), None) => ui.label(format!(
+                    "{states} state(s), {algebraics} algebraic(s), {equations} equation(s)"
+                )),
+                // Absent rather than zero: a size nobody published is not a size of 0.
+                _ => ui.weak("The payload carries no size for the raw system."),
+            };
+            return;
+        };
+
+        let (icon, strong, summary) = step_style(record);
+        ui.horizontal_wrapped(|ui| {
+            ui.label(egui::RichText::new(icon).size(16.0));
+            let text = egui::RichText::new(summary);
+            ui.label(if strong { text.strong() } else { text });
+        });
+
+        // The unmatched names are the evidence for a round's residue, so a round frame
+        // shows them in full rather than as a count.
+        if record["kind"] == "round" {
+            for (label, key) in [
+                ("equations", "unmatched_equations"),
+                ("unknowns", "unmatched_unknowns"),
+            ] {
+                let names: Vec<String> = record[key]
+                    .as_array()
+                    .map(|a| {
+                        a.iter()
+                            .map(|v| match v["name"].as_str() {
+                                Some(n) => n.to_owned(),
+                                None => v.as_str().unwrap_or("(unnamed)").to_owned(),
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                if !names.is_empty() {
+                    ui.add_space(2.0);
+                    // No nested scroll area: the pane already scrolls.
+                    ui.weak(format!("unmatched {label}: {}", names.join(", ")));
+                }
+            }
+        }
+
+        if let Some(at) = record["identity"]["declared_at"]["file"].as_str() {
+            let line = record["identity"]["declared_at"]["line"]
+                .as_u64()
+                .map(|l| format!(":{l}"))
+                .unwrap_or_default();
+            ui.add_space(2.0);
+            ui.weak(format!("at {at}{line}"));
+        }
+    }
+
+    /// What has accumulated by this frame.
+    fn render_running_state(&self, ui: &mut egui::Ui) {
+        let (cursor, total) = self.playback.position();
+        ui.weak(format!(
+            "record {cursor} of {}  \u{2022}  {} round(s) begun{}",
+            total.saturating_sub(1),
+            self.rounds_so_far(),
+            match self.residue_now() {
+                Some(r) => format!("  \u{2022}  residue {r}"),
+                None => String::new(),
+            },
+        ));
+    }
+}
+
+/// An icon, whether the line is the frame's headline, and the line itself.
+///
+/// **Rumoca's own words for the record kinds and outcomes**, with a gloss only where
+/// the bare name misleads — `held` especially, which is progress and reads as failure.
+fn step_style(record: &Value) -> (&'static str, bool, String) {
+    let lane = record["lane"].as_str().unwrap_or("?");
+    match record["kind"].as_str().unwrap_or("?") {
+        "round" => (
+            "\u{25cf}",
+            true,
+            format!(
+                "Round {} [{lane}] \u{2014} residue {}",
+                record["round"], record["residue"],
+            ),
+        ),
+        "candidates" => {
+            let discovered = record["discovered"].as_u64().unwrap_or(0);
+            let group = record["group"].as_str().unwrap_or("?");
+            if discovered == 0 {
+                (
+                    "\u{25cb}",
+                    false,
+                    format!(
+                        "[{lane}] {group}: nothing to try \u{2014} no candidate was \
+                         admissible, which is not a refusal"
+                    ),
+                )
+            } else {
+                (
+                    "\u{25cb}",
+                    false,
+                    format!("[{lane}] {group}: {discovered} candidate(s) found"),
+                )
+            }
+        }
+        "attempt" => {
+            let form = record["identity"]["form"].as_str().unwrap_or("?");
+            let outcome = record["outcome"]["kind"].as_str().unwrap_or("?");
+            let residue = record["outcome"]["residue"]
+                .as_u64()
+                .map(|r| format!(" \u{2192} residue {r}"))
+                .unwrap_or_default();
+            let gloss = match outcome {
+                "held" => " (the residue held and the system changed \u{2014} progress)",
+                "raised" => " (the residue grew, so this was not taken)",
+                "sorted" => " (this one sorted the system)",
+                _ => "",
+            };
+            (
+                "\u{2192}",
+                false,
+                format!("Tried {form} [{lane}]: {outcome}{residue}{gloss}"),
+            )
+        }
+        "selected" => {
+            let form = record["identity"]["form"].as_str().unwrap_or("?");
+            let after = record["residue_after"]
+                .as_u64()
+                .map(|r| r.to_string())
+                .unwrap_or_else(|| "sorted".to_owned());
+            (
+                "\u{2714}",
+                true,
+                format!(
+                    "Selected {form} [{lane}]: residue {} \u{2192} {after}",
+                    record["residue_before"],
+                ),
+            )
+        }
+        "retried_pristine" => (
+            "\u{21ba}",
+            false,
+            format!("[{lane}] restarted from the unmodified system"),
+        ),
+        "stopped" => {
+            let kind = record["outcome"]["kind"].as_str().unwrap_or("?");
+            (
+                "\u{25a0}",
+                true,
+                match record["outcome"]["residue"].as_u64() {
+                    Some(r) => format!("Stopped: {kind}, residue {r}"),
+                    None => format!("Stopped: {kind}"),
+                },
+            )
+        }
+        other => (
+            "?",
+            false,
+            // **Named rather than skipped.** An upstream sixth record variant would
+            // otherwise step past silently, and the search would read shorter than it was.
+            format!("a record of kind `{other}`, which this view does not know how to show"),
+        ),
+    }
+}
+
+/// The frame's `step` value for the capture: the record's own kind.
+fn step_name(record: Option<&Value>) -> String {
+    match record {
+        None => "start".to_owned(),
+        Some(r) => r["kind"].as_str().unwrap_or("unknown").to_owned(),
     }
 }
 
@@ -158,22 +406,292 @@ impl Animated for ReductionAnimation {
     }
 
     fn position(&self) -> (usize, usize) {
-        (0, 0)
+        self.playback.position()
     }
 
-    fn live_state(&self, _arming: bool) -> LiveState {
-        LiveState::Idle
+    fn live_state(&self, arming: bool) -> LiveState {
+        // **Delegated, not hardcoded `Idle`.** `app.rs` gates this view with
+        // `PendingLiveDebug::Reduction`, and
+        // `playback::tests_animated_contract::only_the_views_with_a_live_path_report_a_live_session`
+        // requires the gated set and the delegating set to be equal — a hardcoded
+        // `Idle` would report "no session" during a real one, which is the defect
+        // `connection_anim`'s own comment records. For a recorded cursor the playback
+        // answers `Idle` anyway, so this is correct today and stays correct when
+        // `start_live` becomes real.
+        self.playback.live_state(arming)
     }
 
-    /// `None`, which the trait already defines as a real state rather than a
-    /// failure: "no frame under the cursor".
+    /// What the frame under the cursor shows.
+    ///
+    /// Always `Some` for a non-empty log: the opening frame is a real state, not an
+    /// absence, and it describes itself through the second branch below.
     fn current_frame_context(&self) -> Option<Value> {
-        None
+        let record = self.current_record();
+        let mut ctx = serde_json::json!({
+            "step": step_name(record),
+            "rounds_so_far": self.rounds_so_far(),
+        });
+        if let Some(residue) = self.residue_now() {
+            ctx["residue"] = serde_json::json!(residue);
+        }
+        // **The record verbatim**, because Claude is the consumer of this capture and a
+        // summary would be HRW's reading of it rather than Rumoca's statement.
+        if let Some(record) = record {
+            ctx["record"] = record.clone();
+        } else if let Some((states, algebraics, equations)) = self.before {
+            ctx["before"] = serde_json::json!({
+                "n_states": states,
+                "n_algebraics": algebraics,
+                "n_equations": equations,
+            });
+        }
+        Some(ctx)
     }
 
-    /// Always `false`, so a `frame/<n>` link reports that the frame does not
-    /// exist instead of landing somewhere plausible.
-    fn seek(&mut self, _n: usize) -> bool {
-        false
+    /// Jump to frame `n`, for `hrw://…/frame/<n>`.
+    ///
+    /// `false` when the frame does not exist, so a link reports that instead of landing
+    /// on a plausible neighbour. Frame 0 is the opening state, so the log's first
+    /// record is frame 1 — which is also how the on-screen counter reads.
+    fn seek(&mut self, n: usize) -> bool {
+        self.playback.seek(n)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn report(search: Value) -> Value {
+        json!({
+            "before": { "n_states": 9, "n_algebraics": 88, "n_equations": 97 },
+            "search": search,
+        })
+    }
+
+    fn log() -> Value {
+        json!([
+            { "kind": "round", "lane": "direct", "round": 1, "residue": 8,
+              "unmatched_equations": ["f_x[90] (SI.Angle phi)"],
+              "unmatched_unknowns": [{ "name": "emf.w", "kind": "derivative" }] },
+            { "kind": "candidates", "lane": "direct", "group": "direct_admissible",
+              "discovered": 12 },
+            { "kind": "attempt", "lane": "direct",
+              "identity": { "form": "direct", "declared_at": { "file": "a.mo", "line": 15 } },
+              "outcome": { "kind": "reduced", "residue": 6 } },
+            { "kind": "selected", "lane": "direct",
+              "identity": { "form": "direct", "declared_at": null },
+              "residue_before": 8, "residue_after": 6 },
+            { "kind": "stopped", "outcome": { "kind": "sorted" } },
+        ])
+    }
+
+    #[test]
+    fn a_payload_with_no_search_is_not_an_animation() {
+        assert!(ReductionAnimation::from_report(&json!({ "before": {} })).is_none());
+    }
+
+    /// **The opening frame is the system before the search**, not the first record.
+    #[test]
+    fn the_run_opens_before_any_record() {
+        let anim = ReductionAnimation::from_report(&report(log())).expect("an animation");
+        assert_eq!(
+            anim.position(),
+            (0, 6),
+            "five records plus the opening frame"
+        );
+        assert_eq!(anim.n_records(), 5);
+        assert!(
+            anim.current_record().is_none(),
+            "frame 0 is before the search"
+        );
+        assert_eq!(
+            anim.rounds_so_far(),
+            0,
+            "no round has begun at the opening frame"
+        );
+
+        let ctx = anim
+            .current_frame_context()
+            .expect("the opening frame describes itself");
+        assert_eq!(ctx["step"], "start");
+        assert_eq!(ctx["before"]["n_states"], 9);
+        // The residue the search began from, so the opening frame is comparable with
+        // every frame after it.
+        assert_eq!(ctx["residue"], 8);
+    }
+
+    /// An empty log is **no frames**, not one.
+    ///
+    /// A lone `Start` would make `is_empty` false and offer a run through nothing.
+    #[test]
+    fn an_empty_log_has_no_frames() {
+        let anim = ReductionAnimation::from_report(&report(json!([]))).expect("an animation");
+        assert!(anim.is_empty());
+        assert_eq!(anim.position(), (0, 0));
+        assert_eq!(anim.n_records(), 0);
+    }
+
+    /// **Every frame describes itself, including the opening one.**
+    ///
+    /// The behavioural half of
+    /// `playback::tests_animated_contract::every_animation_context_names_the_step_on_screen`,
+    /// which reads the source and so cannot see that the context is built in two
+    /// branches.
+    #[test]
+    fn every_frame_describes_itself() {
+        let mut anim = ReductionAnimation::from_report(&report(log())).expect("an animation");
+        let expected = [
+            "start",
+            "round",
+            "candidates",
+            "attempt",
+            "selected",
+            "stopped",
+        ];
+        for (i, kind) in expected.iter().enumerate() {
+            assert!(anim.seek(i), "frame {i} exists");
+            let ctx = anim
+                .current_frame_context()
+                .unwrap_or_else(|| panic!("frame {i} must describe itself"));
+            assert_eq!(ctx["step"], *kind, "frame {i}");
+        }
+        assert!(
+            !anim.seek(6),
+            "there is no frame 6, so a link must be refused"
+        );
+    }
+
+    /// **The residue is read from the log, not derived from the opening number.**
+    ///
+    /// The frame after a `held` attempt must report the residue the *attempt* measured.
+    /// Deriving it by subtracting selections would understate progress exactly where a
+    /// `Held` selection moved nothing — `Drivetrain`'s round 3 — and the reader would
+    /// have no way to tell.
+    #[test]
+    fn the_residue_comes_from_the_record_under_the_cursor() {
+        let mut anim = ReductionAnimation::from_report(&report(json!([
+            { "kind": "round", "lane": "direct", "round": 1, "residue": 8 },
+            { "kind": "attempt", "lane": "direct", "identity": { "form": "direct" },
+              "outcome": { "kind": "held", "residue": 8 } },
+            { "kind": "round", "lane": "direct", "round": 2, "residue": 6 },
+        ])))
+        .expect("an animation");
+
+        assert!(anim.seek(1));
+        assert_eq!(anim.residue_now(), Some(8), "the first round's residue");
+        assert!(anim.seek(2));
+        assert_eq!(
+            anim.residue_now(),
+            Some(8),
+            "the held attempt measured 8 again"
+        );
+        assert!(anim.seek(3));
+        assert_eq!(anim.residue_now(), Some(6), "the second round reports 6");
+        assert_eq!(anim.rounds_so_far(), 2);
+    }
+
+    /// `held` carries a gloss, because the bare word reads as failure.
+    #[test]
+    fn a_held_attempt_is_rendered_as_progress() {
+        let record = json!({ "kind": "attempt", "lane": "direct",
+            "identity": { "form": "direct" },
+            "outcome": { "kind": "held", "residue": 4 } });
+        let (_, _, summary) = step_style(&record);
+        assert!(summary.contains("held"), "Rumoca's own word: {summary}");
+        assert!(summary.contains("progress"), "and what it means: {summary}");
+    }
+
+    /// Zero candidates is rendered as *nothing to try*, never as a rejection.
+    #[test]
+    fn an_empty_candidate_group_says_nothing_to_try() {
+        let record = json!({ "kind": "candidates", "lane": "holonomic",
+            "group": "holonomic", "discovered": 0 });
+        let (_, _, summary) = step_style(&record);
+        assert!(summary.contains("nothing to try"), "{summary}");
+        assert!(summary.contains("not a refusal"), "{summary}");
+    }
+
+    /// An unknown record kind is named on screen rather than stepped past.
+    #[test]
+    fn an_unknown_record_kind_is_named() {
+        let (_, _, summary) = step_style(&json!({ "kind": "teleported" }));
+        assert!(summary.contains("teleported"), "{summary}");
+    }
+
+    /// This view is never live, and says so through the playback.
+    #[test]
+    fn the_view_is_never_live() {
+        let anim = ReductionAnimation::from_report(&report(log())).expect("an animation");
+        assert!(matches!(anim.live_state(false), LiveState::Idle));
+    }
+
+    /// **The stepper reads a real compile**, with every frame describing itself.
+    ///
+    /// Every test above builds its own log, so all of them would pass against a shape
+    /// `worker::index_reduction_from_observation` no longer publishes. This is the only
+    /// one that compares the reader against the writer.
+    #[test]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
+    fn the_stepper_reads_a_real_compile() {
+        let crate::worker::FromWorker::Compiled { stages, .. } =
+            crate::worker::test_msl::compile_specimen_shared("Drivetrain")
+        else {
+            panic!("expected Compiled");
+        };
+        let report = stages
+            .index_reduction
+            .value
+            .as_ref()
+            .expect("Drivetrain reaches index reduction");
+        let mut anim = ReductionAnimation::from_report(report).expect("an animation");
+
+        let (_, total) = anim.position();
+        assert_eq!(
+            total,
+            report["n_records"].as_u64().expect("a record count") as usize + 1,
+            "one frame per record, plus the opening frame",
+        );
+        assert!(
+            total > 10,
+            "Drivetrain's search is 29 records; got {total} frames"
+        );
+
+        // Every frame must describe itself, and none may fall through to the unknown
+        // arm — which is what would happen if upstream added a record variant.
+        let mut kinds: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+        for i in 0..total {
+            assert!(anim.seek(i), "frame {i} exists");
+            let ctx = anim
+                .current_frame_context()
+                .unwrap_or_else(|| panic!("frame {i} describes itself"));
+            let step = ctx["step"].as_str().unwrap_or("").to_owned();
+            assert_ne!(step, "unknown", "frame {i} has a record with no kind");
+            if let Some(record) = anim.current_record() {
+                let (_, _, summary) = step_style(record);
+                assert!(
+                    !summary.contains("does not know how to show"),
+                    "frame {i} is a record kind this view cannot render: {summary}",
+                );
+            }
+            kinds.insert(step);
+        }
+        for kind in [
+            "start",
+            "round",
+            "candidates",
+            "attempt",
+            "selected",
+            "stopped",
+        ] {
+            assert!(
+                kinds.contains(kind),
+                "no frame was a {kind:?}, so that arm is untested: {kinds:?}",
+            );
+        }
     }
 }

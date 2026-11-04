@@ -624,7 +624,16 @@ mod tests_animated_contract {
     /// in *both* directions, so when a re-model lands and the marker goes, the
     /// list fails and the view rejoins the contracts. An exemption that outlives
     /// its reason is how a disabled pane becomes a permanently unchecked one.
-    const DISABLED_VIEWS: &[&str] = &["reduction_anim"];
+    /// **Empty since 2026-11-04**, when `reduction_anim` was re-modelled onto the
+    /// published search log and rejoined the three contracts.
+    ///
+    /// The mechanism is kept and still armed: `the_disabled_view_list_matches_the
+    /// _placeholders` compares this against the `_awaiting_remodel` marker in both
+    /// directions, so a view disabled by a future rebase must be listed here and a
+    /// listed view that is no longer a placeholder fails. An empty list means every
+    /// animated view is under the contracts, which is the state this was built to
+    /// return to.
+    const DISABLED_VIEWS: &[&str] = &[];
 
     /// The marker every placeholder carries, named once.
     ///
@@ -660,11 +669,22 @@ mod tests_animated_contract {
              re-model landed and three contracts stopped checking it. An unlisted \
              placeholder means a pane dropped out of them unnoticed.",
         );
-        assert!(
-            !listed.is_empty(),
-            "the list is empty, so this check and the exemptions it guards are \
-             reading nothing"
-        );
+        // **The non-vacuity guard was unconditional until 2026-11-04**, and emptying
+        // the list is what made it fire. Removing it would have left nothing watching
+        // the regime we are now in; what survives is the complementary claim, which the
+        // equality above already states: **no view carries the marker.** That is
+        // exactly what fails if a future rebase disables a pane and forgets to list it.
+        //
+        // The guard returns by itself the moment anything is listed again, which is the
+        // same shape `worker::tests::the_tests_blocked_on_a_remodel_are_still_blocked`
+        // took when its own roster emptied on the same day.
+        if !listed.is_empty() {
+            assert!(
+                !placeholders.is_empty(),
+                "views are exempted by name but none carries the marker, so the \
+                 exemption is reading nothing: {listed:?}"
+            );
+        }
     }
 
     /// Each `impl Animated for` in `src/`.
