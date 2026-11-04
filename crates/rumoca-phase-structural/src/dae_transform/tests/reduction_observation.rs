@@ -319,3 +319,79 @@ fn failed_inspection_retains_the_exact_stalled_dae_without_changing_failure() {
         serde_json::to_vec(snapshot.as_dae()).expect("snapshot serializes")
     );
 }
+
+/// Collects what the streaming seam hands it, so it can be compared with the batch one.
+#[derive(Default)]
+struct CollectingWatcher {
+    records: Vec<ReductionRecord>,
+}
+
+impl ReductionWatcher for CollectingWatcher {
+    fn record(&mut self, record: ReductionRecord) {
+        self.records.push(record);
+    }
+}
+
+/// **The streaming seam and the batch seam report the same records, in the same order.**
+///
+/// `watch_prepare_for_solve` exists so a consumer can act *during* a reduction rather
+/// than after it; the one thing that must not differ is *what* it is told. Both drive
+/// `prepare_for_solve_with_observer` and both convert through `record_of`, so this is
+/// the check that keeps that true rather than a hope about it.
+///
+/// Compared through `Debug` because `ReductionRecord` carries spans and owned error
+/// values and is deliberately not `PartialEq` — the same comparison
+/// `recording_observer_is_inert` makes of two `PreparedDae`s one screen up.
+///
+/// **A silently empty stream is the failure this is really guarding.** An observer that
+/// forwards nothing still returns a correct `PreparedDae`, so every other assertion in
+/// this file would pass while a watcher saw an empty search — which is why the record
+/// count is asserted non-zero on a fixture chosen for having real rounds.
+#[test]
+fn the_streaming_seam_reports_what_the_batch_seam_reports() {
+    for (label, model) in [
+        ("holonomic", independent_holonomic_model()),
+        ("direct", independent_constraint_model(false)),
+    ] {
+        let (batch_result, report) = inspect_prepare_for_solve(&model);
+        let mut watcher = CollectingWatcher::default();
+        let streamed_result = watch_prepare_for_solve(&model, &mut watcher);
+
+        let batch: Vec<String> = report.records.iter().map(|r| format!("{r:?}")).collect();
+        let streamed: Vec<String> = watcher.records.iter().map(|r| format!("{r:?}")).collect();
+        assert_eq!(
+            batch, streamed,
+            "{label}: the two seams must observe one reduction identically"
+        );
+        assert!(
+            !streamed.is_empty(),
+            "{label}: the watcher saw nothing, so this comparison proves nothing"
+        );
+
+        // And the reduction itself is unchanged by being watched, which is what
+        // "observation-only" means operationally.
+        let batch_prepared = batch_result.expect("the batch seam reduces the fixture");
+        let streamed_prepared = streamed_result.expect("so does the streaming seam");
+        assert_prepared_dae_matches(&batch_prepared, &streamed_prepared);
+    }
+}
+
+/// A watcher that ignores every record changes nothing about the result.
+///
+/// The complement of the test above: that one proves the records arrive, this one
+/// proves they are not load-bearing. Together they say the seam is observation-only in
+/// both directions — the reduction does not depend on being watched, and watching does
+/// not depend on the reduction behaving differently.
+#[test]
+fn an_inert_watcher_leaves_the_reduction_unchanged() {
+    struct Ignore;
+    impl ReductionWatcher for Ignore {
+        fn record(&mut self, _record: ReductionRecord) {}
+    }
+
+    let model = independent_holonomic_model();
+    let plain = prepare_for_solve(&model).expect("the plain seam reduces the fixture");
+    let watched = watch_prepare_for_solve(&model, &mut Ignore)
+        .expect("an ignored watcher cannot change the outcome");
+    assert_prepared_dae_matches(&plain, &watched);
+}
