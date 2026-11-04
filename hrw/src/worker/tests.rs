@@ -746,11 +746,16 @@ fn single_inertia_lowers_to_a_solve_model() {
     );
 }
 
-/// BouncingBall is a hybrid model — the Events stage reports its
-/// condition (`h <= 0`) + discrete update (the `reinit`). A smooth model
-/// (SingleInertia) reports none.
+/// BouncingBall is a hybrid model — the Events stage reports its condition
+/// (`h <= 0`), the root Rumoca monitors, and the `reinit` as an event action. A
+/// smooth model (SingleInertia) reports none of it.
+///
+/// **Re-keyed 2026-11-03**, when Events left `worker::AWAITING_REMODEL`. The old
+/// body asserted `discrete_updates.real_updates_f_z` was non-empty; on 0.10.0 a
+/// reinitialization is an `EventActionOperation::Reinitialize`, so the claim
+/// moved to `event_actions`. **The contrast it tests did not change** — only
+/// where Rumoca keeps the answer.
 #[test]
-#[ignore = "awaiting the Events re-model: a hybrid model has events and a smooth one has none. The body is kept as the specification the re-model must satisfy — see worker::AWAITING_REMODEL"]
 fn bouncing_ball_has_events_smooth_model_has_none() {
     let total_events = |v: &serde_json::Value| -> u64 {
         v["summary"]
@@ -766,13 +771,23 @@ fn bouncing_ball_has_events_smooth_model_has_none() {
     let v = stages.events.value.expect("events IR");
     assert!(
         total_events(&v) >= 1,
-        "BouncingBall should have hybrid structure"
+        "BouncingBall should have hybrid structure: {v:#?}",
     );
-    assert!(
-        v["discrete_updates"]["real_updates_f_z"]
-            .as_array()
-            .is_some_and(|a| !a.is_empty()),
-        "expected the reinit as a discrete real update"
+
+    // **The reinitialization, by its operation rather than by a count.**
+    // `dae_counts::has_discontinuities` once counted any event action and
+    // `bench_actuator_simulates_stiff_spinup` rejected it: BenchActuator has one
+    // event action too, and it is an `assert`. So a bare `event_actions >= 1`
+    // here would pass on a model that never moves a trajectory.
+    let actions = v["event_actions"].as_array().expect("event_actions array");
+    let reinit = actions
+        .iter()
+        .find(|a| a["kind"] == "reinitialize")
+        .unwrap_or_else(|| panic!("the `reinit(v, -e*pre(v))` must appear: {actions:#?}"));
+    assert_eq!(
+        reinit["trigger"], "h <= 0",
+        "and it is triggered by the contact relation, not by something that \
+         merely renders: {reinit:#?}",
     );
 
     let FromWorker::Compiled {
@@ -2830,14 +2845,22 @@ fn all_healthy_specimens_compile_through_solve_lowering() {
             "{name}: flatten failed: {:?}",
             stages.flatten.note
         );
-        // **Index reduction and events are not checked here, and that is not a
-        // hole in this test.** Both are on `worker::AWAITING_REMODEL`: Rumoca runs
-        // them and HRW cannot yet display their IR, so `value.is_some()` is false
-        // for every specimen and asserting it would fail on all ten for a reason
-        // that has nothing to do with whether they compile.
+        // **Events is back, since 2026-11-03** — it left `worker::AWAITING_REMODEL`
+        // when the condition-algebra re-model landed, so it publishes IR for every
+        // specimen, including the smooth ones (empty arenas, all counts zero).
+        assert!(
+            stages.events.value.is_some(),
+            "{name}: events failed: {:?}",
+            stages.events.note
+        );
+        // **Index reduction is still not checked here, and that is not a hole in
+        // this test.** It remains on `worker::AWAITING_REMODEL`: Rumoca runs it and
+        // HRW cannot yet display its IR, so `value.is_some()` is false for every
+        // specimen and asserting it would fail on all ten for a reason that has
+        // nothing to do with whether they compile.
         //
-        // The stages themselves are covered — by
-        // `the_remodel_roster_matches_what_the_pipeline_shows`, which requires each
+        // That stage is covered by
+        // `the_remodel_roster_matches_what_the_pipeline_shows`, which requires it
         // to report `Ok` with no IR and say why. **What this test is for survives
         // intact**: the claim is that a healthy specimen reaches solve lowering,
         // and solve lowering is still asserted below.
@@ -3190,58 +3213,114 @@ fn flatten_ir_has_expected_structure() {
     );
 }
 
-/// Every Events rendering is keyed to a node that exists, and says what the node means.
+/// **No term the Events pane publishes is a placeholder.**
 ///
-/// # The failure this forbids is silence
+/// # Lineage: this replaces `every_events_rendering_lands_on_a_real_node`
 ///
-/// A rendering is looked up by `bridge::describe_path`, so a key that does not match the
-/// path the tree builds simply never matches. **No tooltip appears, and that is
-/// indistinguishable from a node with nothing renderable** — the exact silent-success
-/// shape the must-fire rule exists for. So this walks the keys the worker produced and
-/// resolves each one against the IR the pane is handed.
+/// That test resolved each key of `Stage::rendered` against the IR, because on
+/// 0.9.20 the Events pane attached renderings as a side map and **a key that did
+/// not match a node simply never matched: no tooltip, indistinguishable from a
+/// node with nothing renderable.** On 0.10.0 the pane has no side map — a
+/// condition is a [`rumoca_ir_dae::ConditionOperation`] term, and
+/// `events_from_condition_algebra` writes its formatted text into the node
+/// itself. **So the old property cannot be re-keyed**: there are no keys left to
+/// resolve, which is the category error that function's doc comment names.
 ///
-/// It also pins the rendering of `BouncingBall`'s condition equation, because that is the
-/// 99-line, 10-level node Doug pointed at on 2026-09-04 and `c[1] = h <= 0` is the whole
-/// reason the feature exists. A formatter that silently dropped an operand would still
-/// produce *a* string, and only comparing against the equation settles it.
+/// # The silent failure that survived the change, in its new shape
+///
+/// Every formatter in that path has a fallback — `<relation 3>`,
+/// `<condition 5 not in the arena>`, `<unresolved relation>`, `<state>`,
+/// `<condition nested deeper than this pane renders>`. Each means HRW could not
+/// follow a reference Rumoca holds, **and each is a plausible-looking string in a
+/// pane full of plausible-looking strings.** A reader has no way to know that
+/// `not (<relation 3>)` is HRW failing rather than Rumoca's own notation. That is
+/// the same silence the predecessor forbade, relocated from a missing tooltip to
+/// a present-but-fabricated term.
+///
+/// Two specimens, because the `event_actions` arms differ and each formats
+/// different operands: BouncingBall reinitializes, BenchActuator asserts.
 #[test]
-#[ignore = "awaiting the Events re-model: every events rendering lands on a real node. The body is kept as the specification the re-model must satisfy — see worker::AWAITING_REMODEL"]
-fn every_events_rendering_lands_on_a_real_node() {
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn no_events_term_is_a_placeholder() {
+    /// Every fallback is `<` plus a word; every Modelica use of `<` is `<=` or
+    /// `<` followed by a space. **So `<` + a letter is the marker**, and it
+    /// cannot be fooled by a real relation like `h <= 0`.
+    fn is_placeholder(text: &str) -> bool {
+        text.as_bytes()
+            .windows(2)
+            .any(|w| w[0] == b'<' && w[1].is_ascii_alphabetic())
+    }
+
+    // The detector's own must-fire check: it must accept the real term and
+    // reject each fallback, or this test passes by not looking.
+    assert!(!is_placeholder("h <= 0"), "a relation is not a placeholder");
+    assert!(!is_placeholder("(a and b)"), "nor is an algebra term");
+    for fallback in [
+        "<relation 3>",
+        "<condition 5 not in the arena>",
+        "<unresolved relation>",
+        "<state>",
+        "<condition nested deeper than this pane renders>",
+        "not (<relation 3>)",
+    ] {
+        assert!(is_placeholder(fallback), "{fallback} must be detected");
+    }
+
+    /// Collects every string anywhere in the published IR, so a field added to
+    /// the Events JSON later is covered without this test being edited.
+    fn strings(value: &serde_json::Value, out: &mut Vec<String>) {
+        match value {
+            serde_json::Value::String(s) => out.push(s.clone()),
+            serde_json::Value::Array(a) => a.iter().for_each(|v| strings(v, out)),
+            serde_json::Value::Object(o) => o.values().for_each(|v| strings(v, out)),
+            _ => {}
+        }
+    }
+
+    for model in ["BouncingBall", "BenchActuator"] {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared(model) else {
+            panic!("expected Compiled for {model}");
+        };
+        let ir = stages.events.value.expect("events IR");
+
+        let mut texts = Vec::new();
+        strings(&ir, &mut texts);
+        // Non-vacuity: a model with no events publishes empty arrays, and the
+        // loop below would then prove nothing. Both of these have one event
+        // action, so there is text to inspect.
+        assert!(
+            texts.len() > 3,
+            "{model} published {} strings \u{2014} too few for this check to mean \
+             anything: {ir:#?}",
+            texts.len(),
+        );
+        for text in &texts {
+            assert!(
+                !is_placeholder(text),
+                "{model}'s Events IR contains {text:?}, which is HRW failing to \
+                 follow a reference rather than anything Rumoca wrote \u{2014} and it \
+                 reads as notation: {ir:#?}",
+            );
+            assert!(
+                !text.is_empty(),
+                "{model} published an empty string: {ir:#?}"
+            );
+        }
+    }
+
+    // And the one term that is the whole reason the pane exists, pinned
+    // literally. A formatter that silently dropped an operand would still
+    // produce *a* string, and only comparing against the relation settles it.
     let FromWorker::Compiled { stages, .. } = compile_specimen_shared("BouncingBall") else {
         panic!("expected Compiled");
     };
-    let events = &stages.events;
-    let ir = events.value.as_ref().expect("events IR");
-
-    assert!(
-        !events.rendered.is_empty(),
-        "BouncingBall has a `when h <= 0` clause, so the Events stage must render at \
-         least its condition equation \u{2014} an empty map here means the renderings are \
-         never attached, which looks exactly like a smooth model",
-    );
-
-    for (path, text) in events.rendered.iter() {
-        let segs = crate::bridge::parse_path(path)
-            .unwrap_or_else(|| panic!("rendering key {path:?} is not a node path"));
-        let mut node = ir;
-        for seg in &segs {
-            node = seg.get_in(node).unwrap_or_else(|| {
-                panic!(
-                    "rendering keyed at {path:?} resolves to nothing in the Events IR \
-                     \u{2014} the tooltip would silently never appear"
-                )
-            });
-        }
-        assert!(!text.is_empty(), "{path} rendered to an empty string");
-    }
-
-    let condition = events
-        .rendered
-        .get("conditions.equations_f_c[0]")
-        .expect("the condition equation is rendered");
+    let ir = stages.events.value.expect("events IR");
     assert_eq!(
-        condition, "c[1] = h <= 0",
-        "the rendering must be the equation, not merely a plausible string",
+        ir["conditions"][0]["term"], "h <= 0",
+        "BouncingBall's contact condition: {ir:#?}",
     );
 }
 
@@ -3268,18 +3347,32 @@ fn every_stage_rendering_lands_on_a_real_node() {
     // `build_ic_plan` returns empty and the tree has `blocks: []`. RcCircuit has 21
     // blocks. Checking one specimen would have left `for_ic_plan` unexercised and green.
     // **Events and Initialization are not in these lists, and two assertions went
-    // with them** (2026-11-03). Both stages are on `worker::AWAITING_REMODEL`:
-    // Rumoca runs them, HRW publishes no IR, so there is no tree to render and no
-    // node for a rendering to land on.
+    // with them** (2026-11-03). The first reason was that both were on
+    // `worker::AWAITING_REMODEL` and published no IR at all.
     //
-    // **The coverage lost is real and worth naming rather than quietly dropping.**
-    // `for_ic_plan` — the renderer that turns an IC-plan block into the assignment
-    // it performs — now has no caller in this test, and the pinned string
+    // **Both have since been re-modelled, and they still do not belong here** —
+    // for a different reason, which is the one a later session needs. Neither
+    // re-model attaches a `Stage::rendered` side map: `events_from_condition_algebra`
+    // writes each condition's term, and `initialization_from_initial_pins` each
+    // pin's value, **into the node itself**. `worker.rs` assigns `s.rendered` at
+    // exactly two sites, DAE and Flatten, and adding these stages to the roster
+    // below would assert a map they deliberately do not build.
+    //
+    // That is a real design shift and not an omission: a side map keyed by node
+    // path is the arrangement whose failure mode is a key that never matches —
+    // silence, with no tooltip and nothing to distinguish it from a node that has
+    // nothing to render. `no_events_term_is_a_placeholder` carries the account.
+    //
+    // **The coverage lost to the 0.9.20 shape is still worth naming rather than
+    // quietly dropping.** `for_ic_plan` — the renderer that turned an IC-plan block
+    // into the assignment it performed — has no caller here, and the pinned string
     // `blocks[0] == "src.v = src.V"` was the only check that it rendered an
     // assignment rather than describing one. The `scalar_newton` case below, which
     // pinned that a block with no expression gets **no** tooltip rather than an
-    // empty one, goes the same way. Both are part of the initialization re-model,
-    // not separate debts.
+    // empty one, goes the same way. **Neither is owed by the initialization
+    // re-model** — `IcBlock` does not exist on 0.10.0, so there is no assignment to
+    // render; what replaced it is a pin's role, and
+    // `the_initialization_pane_shows_each_pin_and_its_role` pins that instead.
     let ball = check_renderings("BouncingBall", &[StageKind::Dae, StageKind::Flatten]);
     let rc = check_renderings("RcCircuit", &[StageKind::Flatten]);
 
@@ -3380,43 +3473,17 @@ fn check_renderings(specimen: &str, expected: &[StageKind]) -> StageBundle {
     stages
 }
 
-/// The Events stage IR has the expected summary structure.
-#[test]
-#[ignore = "awaiting the Events re-model: the events IR's summary keys. The body is kept as the specification the re-model must satisfy — see worker::AWAITING_REMODEL"]
-fn events_ir_has_expected_summary_keys() {
-    let FromWorker::Compiled { stages, .. } = compile_specimen_shared("BouncingBall") else {
-        panic!("expected Compiled");
-    };
-    let v = stages.events.value.expect("events IR");
-    let summary = v["summary"].as_object().expect("summary object");
-    for key in [
-        "condition_equations",
-        "relations",
-        "discrete_real_updates",
-        "discrete_valued_updates",
-        "synthetic_root_conditions",
-        "scheduled_time_events",
-    ] {
-        assert!(
-            summary.contains_key(key),
-            "events summary missing key: {key}"
-        );
-    }
-
-    // **The renamed key must not come back.** `synthetic_root_conditions` was published as
-    // `zero_crossing_conditions` until 2026-09-02, and `BouncingBall` showed `0` — a
-    // bouncing ball apparently detecting no contact. Rumoca detects it through
-    // `conditions.relations`; the field counts only roots it had to *synthesise* because no
-    // relation supplied one. The value was right the whole time, so no fidelity check could
-    // have caught it: **the defect was in the label.**
-    assert!(
-        !summary.contains_key("zero_crossing_conditions"),
-        "the events summary renamed `synthetic_root_conditions` to \
-         `zero_crossing_conditions`, which is a claim Rumoca does not make — the field \
-         counts synthesised roots, not zero crossings, and a relation's root is removed \
-         from it by `remove_relation_duplicate_synthetic_roots`",
-    );
-}
+// `events_ir_has_expected_summary_keys` was here, and it is **retired rather than
+// restored** (2026-11-03, when Events left `worker::AWAITING_REMODEL`).
+//
+// It asserted six 0.9.20 keys — `condition_equations`, `discrete_real_updates`,
+// `discrete_valued_updates`, `synthetic_root_conditions`, `scheduled_time_events` —
+// and **not one of them survives the re-model**, because the summary now publishes
+// `DaeView`'s own arena accessors. Re-keying it would have produced a second,
+// weaker copy of `the_events_summary_uses_rumocas_own_names`, which asserts the
+// exact key set, that each count equals the arena it names, and that
+// `zero_crossing_conditions` stays gone. **The account of that defect moved there
+// with the check** — one home per fact, and the surviving half is the negative one.
 
 /// The Solve-lowering IR has the expected top-level fields.
 #[test]
@@ -6238,6 +6305,17 @@ fn the_corpus_outcome_matrix_is_unchanged() {
     //    at exactly one stage. 0.9.20 produced a solve model for a system it had
     //    already flagged as unsolvable.
     //
+    // 6. **Events `.` -> `O`, on every row that reaches a DAE** (2026-11-03). The
+    //    pane is re-modelled onto the condition algebra, so the stage publishes
+    //    IR. **It flips even for `CartesianPendulum`, `IncompatibleConnect` and
+    //    `TwiceDefined`, whose Initialization column stays `.`** — and that
+    //    asymmetry is correct rather than odd. Initialization reads
+    //    `prepare_for_solve`'s output, and preparation does not admit a singular
+    //    system; Events reads the DAE's own arenas, and the DAE exists. So this
+    //    column answers *"did a DAE get built?"* while the one before it answers
+    //    *"was that DAE admitted for solving?"*, and a singular model is the case
+    //    that separates them.
+    //
     // 5. **Initialization `.` -> `O`, on every admitted system** (2026-11-03).
     //    The pane is re-modelled onto `initial_pins`, so the stage publishes IR
     //    again. `CartesianPendulum`, `IncompatibleConnect` and `TwiceDefined`
@@ -6254,41 +6332,50 @@ fn the_corpus_outcome_matrix_is_unchanged() {
     //    both directions.
     const MATRIX: &[(&str, &str)] = &[
         // Healthy: every phase produces IR.
-        ("BouncingBall", "OOOOOOO.O.O"),
-        ("HarmonicOscillator", "OOOOOOO.O.O"),
-        ("LoopWithInertia", "OOOOOOO.O.O"),
-        ("MixedLoop", "OOOOOOO.O.O"),
-        ("NonlinearLoop", "OOOOOOO.O.O"),
-        ("ProportionalLoop", "OOOOOOO.O.O"),
-        ("RcCircuit", "OOOOOOO.O.O"),
+        ("BouncingBall", "OOOOOOO.OOO"),
+        ("HarmonicOscillator", "OOOOOOO.OOO"),
+        ("LoopWithInertia", "OOOOOOO.OOO"),
+        ("MixedLoop", "OOOOOOO.OOO"),
+        ("NonlinearLoop", "OOOOOOO.OOO"),
+        ("ProportionalLoop", "OOOOOOO.OOO"),
+        ("RcCircuit", "OOOOOOO.OOO"),
         // `connect`s at two hierarchy levels, and clean all the way through —
         // deliberately, since the point it makes is about how sets are BUILT and a
         // failure anywhere would give the reader something else to look at.
-        ("ScopedConnect", "OOOOOOO.O.O"),
-        ("SingleInertia", "OOOOOOO.O.O"),
-        ("StiffDecay", "OOOOOOO.O.O"),
-        ("TwoLoops", "OOOOOOO.O.O"),
+        ("ScopedConnect", "OOOOOOO.OOO"),
+        ("SingleInertia", "OOOOOOO.OOO"),
+        ("StiffDecay", "OOOOOOO.OOO"),
+        ("TwoLoops", "OOOOOOO.OOO"),
         // Initialization relaxed something and said so.
-        ("OverInitRc", "OOOOOOO.O.O"),
-        ("RotationalInertia", "OOOOOOO.O.O"),
+        ("OverInitRc", "OOOOOOO.OOO"),
+        ("RotationalInertia", "OOOOOOO.OOO"),
         // Structurally sound and already index 1 — yet IC planning calls the same
         // system singular and cannot match `lambda`. The disagreement between two
         // phases about one system is `upstream-issues.md`'s 2026-09-24 entry, and
         // this row is what would change if it were fixed.
-        ("StabilizedPendulum", "OOOOOOO.O.O"),
+        ("StabilizedPendulum", "OOOOOOO.OOO"),
         // High-index: structural flags a singular system, reduction fixes it,
         // initialization then reports its relaxation. Four models, one shape.
-        ("BenchActuator", "OOOOOOF.O.O"),
-        ("Drivetrain", "OOOOOOF.O.O"),
-        ("GearWithBrake", "OOOOOOF.O.O"),
-        ("MotorWithBrake", "OOOOOOF.O.O"),
+        ("BenchActuator", "OOOOOOF.OOO"),
+        ("Drivetrain", "OOOOOOF.OOO"),
+        ("GearWithBrake", "OOOOOOF.OOO"),
+        ("MotorWithBrake", "OOOOOOF.OOO"),
         // Singular and NOT repaired by reduction — index reduction flags too.
-        ("CapacitorLoop", "OOOOOOF.O.O"),
-        ("IncompatibleConnect", "OOOOOOF...X"),
-        ("TwiceDefined", "OOOOOOF...X"),
-        // The canonical index-3 DAE Rumoca does not reduce (`ideas.md` #83):
-        // initialization is flagged as well, which the three above are not.
-        ("CartesianPendulum", "OOOOOOF...X"),
+        // CapacitorLoop still reaches solve lowering; the other two do not.
+        ("CapacitorLoop", "OOOOOOF.OOO"),
+        ("IncompatibleConnect", "OOOOOOF..OX"),
+        ("TwiceDefined", "OOOOOOF..OX"),
+        // The canonical index-3 DAE Rumoca does not reduce (`ideas.md` #83).
+        //
+        // **Its row is identical to the two above, and the comment here claimed
+        // otherwise until 2026-11-03** — *"initialization is flagged as well,
+        // which the three above are not"*, which would require an `F` in the
+        // initialization column and there is a `.`. That was true of 0.9.20,
+        // where initialization produced its own report; on 0.10.0 the column
+        // records whether `prepare_for_solve` admitted the system, and it admits
+        // none of the three. **What distinguishes this specimen is not visible in
+        // this table**, so the pointer to #83 is the whole of what this row says.
+        ("CartesianPendulum", "OOOOOOF..OX"),
         // A flagged typecheck stops the pipeline; everything after is `.`.
         ("DimensionMismatch", "OOOF......."),
         // Flatten and DAE fail with a payload, then nothing is reached.
@@ -6468,6 +6555,204 @@ end InitProbe;
     );
 }
 
+/// **MLS 8.3.5.1: a vector `when` is not a disjunction, and no count can tell
+/// the two apart.**
+///
+/// The reason the Events pane renders the condition algebra instead of counting
+/// it, on the smallest pair of models that differ:
+///
+/// | model | `c[3]` renders as | fires |
+/// |---|---|---|
+/// | `when {u, not u}` | `anyRise(u, not (u))` | at every switch of `u` |
+/// | `when u or not u` | `(u or not (u))` | never |
+///
+/// MLS 3.6 §8.3.5.1 gives one `Boolean bi` per element and activates on
+/// `edge(b1) or … or edge(bn)` — which is **not** the edge of the disjunction.
+/// So the first model's second element rises whenever `u` falls, while the
+/// second model's condition is a tautology that has no rising edge at all.
+///
+/// **Their summaries are identical** — four conditions, one time event, one
+/// discrete real equation, one discrete value definition. A pane that counted
+/// events, or that rendered `AnyRise` as `or` because MLS defines it that way,
+/// would show these two models as the same thing, and one of them never runs
+/// its body.
+///
+/// This is the distinction `DECISIONS.md` (2026-11-02) recorded the Events
+/// re-model as gaining, and it is observable only because 0.10.0 put the
+/// activation semantics in the IR as its own operation.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn a_vector_when_is_not_a_disjunction() {
+    const VECTOR: &str = "\
+model VectorWhen \"MLS 8.3.5.1: a vector when fires on any element's edge\"
+  Boolean u;
+  discrete Real counted(start = 0.0, fixed = true);
+equation
+  u = time > 0.5;
+  when {u, not u} then
+    counted = pre(counted) + 1;
+  end when;
+end VectorWhen;
+";
+    const DISJUNCTION: &str = "\
+model OrWhen \"The disjunction: a tautology that never rises\"
+  Boolean u;
+  discrete Real counted(start = 0.0, fixed = true);
+equation
+  u = time > 0.5;
+  when u or not u then
+    counted = pre(counted) + 1;
+  end when;
+end OrWhen;
+";
+
+    fn events_of(name: &str, source: &str) -> serde_json::Value {
+        let specimen = crate::test_support::ScratchSpecimen::with(name, source);
+        let FromWorker::Compiled { stages, .. } =
+            compile_specimen(specimen.path(), test_msl::msl_roots()).expect("compile_specimen")
+        else {
+            panic!("expected Compiled for {name}");
+        };
+        stages
+            .events
+            .value
+            .unwrap_or_else(|| panic!("{name} publishes events IR: {:?}", stages.events.note))
+    }
+
+    let vector = events_of("VectorWhen.mo", VECTOR);
+    let disjunction = events_of("OrWhen.mo", DISJUNCTION);
+
+    // **The summaries agreeing is the half that makes the other half matter.**
+    // If this ever fails, the two models have stopped being indistinguishable
+    // by counting, and the assertions below prove less than they claim.
+    assert_eq!(
+        vector["summary"], disjunction["summary"],
+        "these models differ only in their activation, so every count must \
+         match \u{2014} which is why a count cannot be this pane's answer",
+    );
+
+    // The activation term, found by shape rather than by index, so a change in
+    // how many conditions the lowering interns does not quietly pick a
+    // different row and keep passing.
+    fn activation_term(events: &serde_json::Value) -> String {
+        events["conditions"]
+            .as_array()
+            .expect("conditions is an array")
+            .iter()
+            .filter_map(|c| c["term"].as_str())
+            .find(|term| term.contains("anyRise") || term.contains(" or "))
+            .unwrap_or_default()
+            .to_owned()
+    }
+
+    assert_eq!(
+        activation_term(&vector),
+        "anyRise(u, not (u))",
+        "the vector activation renders as Rumoca's own `anyRise`, not as a \
+         disjunction and not as HRW's paraphrase of MLS's `edge(\u{2026}) or \
+         edge(\u{2026})`: {vector:#?}",
+    );
+    assert_eq!(
+        activation_term(&disjunction),
+        "(u or not (u))",
+        "and a genuine disjunction renders as one: {disjunction:#?}",
+    );
+    assert_ne!(
+        activation_term(&vector),
+        activation_term(&disjunction),
+        "if these two ever render alike, the pane has lost the only thing \
+         separating a `when` that fires at every switch from one that never \
+         fires at all",
+    );
+}
+
+/// **The events summary uses Rumoca's own names, carrying Rumoca's own counts.**
+///
+/// Promised by name in `events_stage`'s doc comment before the re-model existed,
+/// and it guards the defect that cost three weeks: the old summary published
+/// Rumoca's `synthetic_root_conditions` as **`zero_crossing_conditions`**, which
+/// reads as a claim about all zero crossings — so `BouncingBall` showed `0`, a
+/// bouncing ball apparently detecting no contact. **Every value was correct.**
+/// The defect lived entirely in a renamed field, and no fidelity check could
+/// have caught it, because nothing compares a label against its meaning.
+///
+/// So this asserts the two halves a rename has to pass: the keys *are* the
+/// accessor names, and each count *is* the arena it names. Checking the keys
+/// alone would pass a summary whose `roots` carried the relation count.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn the_events_summary_uses_rumocas_own_names() {
+    let FromWorker::Compiled { stages, .. } = compile_specimen_shared("BouncingBall") else {
+        panic!("expected Compiled");
+    };
+    let events = stages.events.value.expect("events IR");
+    let summary = events["summary"]
+        .as_object()
+        .expect("the summary is an object");
+
+    // Every key names a `DaeView` arena accessor. A key that is not one is a
+    // rename, which is the defect this test exists for.
+    let mut keys: Vec<&str> = summary.keys().map(String::as_str).collect();
+    keys.sort_unstable();
+    let mut expected = [
+        "clocks",
+        "conditions",
+        "discrete_real_equations",
+        "discrete_value_definitions",
+        "event_actions",
+        "previous_values",
+        "relations",
+        "roots",
+        "structured_roots",
+        "terminals",
+        "time_events",
+    ];
+    expected.sort_unstable();
+    assert_eq!(
+        keys, expected,
+        "the summary's keys are Rumoca's arena names"
+    );
+
+    assert!(
+        !summary.contains_key("zero_crossing_conditions"),
+        "`zero_crossing_conditions` is the retired name that claimed more than \
+         it counted; it must not come back under any value",
+    );
+
+    // **And each count is the arena it names.** The published lists come from
+    // the `view.conditions()` family of iterators while the counts come from
+    // the `*_count()` family, so a count carrying a sibling's number shows up
+    // here even though both were read from the same `DaeView`.
+    for key in ["conditions", "relations", "roots", "event_actions"] {
+        let listed = events[key].as_array().map(Vec::len);
+        assert_eq!(
+            summary[key].as_u64().map(|n| n as usize),
+            listed,
+            "summary[{key}] must equal the {key} it published: {summary:#?}",
+        );
+    }
+
+    // BouncingBall's own shape, so none of the above is a statement about
+    // empty arenas agreeing with each other.
+    assert_eq!(
+        summary["roots"].as_u64(),
+        Some(1),
+        "the ball monitors one relation, `h <= 0` \u{2014} the count that read as \
+         zero under the retired name: {summary:#?}",
+    );
+    assert_eq!(
+        summary["event_actions"].as_u64(),
+        Some(1),
+        "and reinitializes one state when it crosses: {summary:#?}",
+    );
+}
+
 /// **A resolve error belongs to the model that caused it, and only to that model.**
 ///
 /// Both directions, because the two failure modes are opposites and each is silent
@@ -6585,7 +6870,7 @@ fn a_broken_model_reports_its_own_resolve_error_and_no_others() {
 
 /// **The re-model roster matches what a compile actually shows, both ways.**
 ///
-/// `worker::AWAITING_REMODEL` names the three stages Rumoca runs and HRW cannot yet
+/// `worker::AWAITING_REMODEL` names the stages Rumoca runs and HRW cannot yet
 /// display. This finds them by what they *say* — every such stage's note contains
 /// `AWAITING_REMODEL_MARKER` — and requires the two sets to be equal.
 ///

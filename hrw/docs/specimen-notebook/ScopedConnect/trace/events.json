@@ -1,0 +1,77 @@
+{
+  "summary": {
+    "conditions": 6,
+    "relations": 2,
+    "roots": 2,
+    "structured_roots": 0,
+    "time_events": 0,
+    "event_actions": 2,
+    "clocks": 0,
+    "previous_values": 0,
+    "terminals": 0,
+    "discrete_real_equations": 0,
+    "discrete_value_definitions": 0
+  },
+  "conditions": [
+    {
+      "id": "c[0]",
+      "term": "1 + seg1.R.alpha*(seg1.R.T_heatPort - seg1.R.T_ref) >= 0.0000000000000002220446049250313"
+    },
+    {
+      "id": "c[1]",
+      "term": "not (1 + seg1.R.alpha*(seg1.R.T_heatPort - seg1.R.T_ref) >= 0.0000000000000002220446049250313)"
+    },
+    {
+      "id": "c[2]",
+      "term": "always"
+    },
+    {
+      "id": "c[3]",
+      "term": "1 + seg2.R.alpha*(seg2.R.T_heatPort - seg2.R.T_ref) >= 0.0000000000000002220446049250313"
+    },
+    {
+      "id": "c[4]",
+      "term": "not (1 + seg2.R.alpha*(seg2.R.T_heatPort - seg2.R.T_ref) >= 0.0000000000000002220446049250313)"
+    },
+    {
+      "id": "c[5]",
+      "term": "always"
+    }
+  ],
+  "relations": [
+    {
+      "id": "r[0]",
+      "expression": "1 + seg1.R.alpha*(seg1.R.T_heatPort - seg1.R.T_ref) >= 0.0000000000000002220446049250313"
+    },
+    {
+      "id": "r[1]",
+      "expression": "1 + seg2.R.alpha*(seg2.R.T_heatPort - seg2.R.T_ref) >= 0.0000000000000002220446049250313"
+    }
+  ],
+  "roots": [
+    {
+      "relation": "r[0]",
+      "expression": "1 + seg1.R.alpha*(seg1.R.T_heatPort - seg1.R.T_ref) >= 0.0000000000000002220446049250313",
+      "activation": "1 + seg1.R.alpha*(seg1.R.T_heatPort - seg1.R.T_ref) >= 0.0000000000000002220446049250313"
+    },
+    {
+      "relation": "r[1]",
+      "expression": "1 + seg2.R.alpha*(seg2.R.T_heatPort - seg2.R.T_ref) >= 0.0000000000000002220446049250313",
+      "activation": "1 + seg2.R.alpha*(seg2.R.T_heatPort - seg2.R.T_ref) >= 0.0000000000000002220446049250313"
+    }
+  ],
+  "event_actions": [
+    {
+      "kind": "assert",
+      "detail": "\"Temperature outside scope of model!\"",
+      "trigger": "always",
+      "guard": "not (1 + seg1.R.alpha*(seg1.R.T_heatPort - seg1.R.T_ref) >= 0.0000000000000002220446049250313)"
+    },
+    {
+      "kind": "assert",
+      "detail": "\"Temperature outside scope of model!\"",
+      "trigger": "always",
+      "guard": "not (1 + seg2.R.alpha*(seg2.R.T_heatPort - seg2.R.T_ref) >= 0.0000000000000002220446049250313)"
+    }
+  ]
+}

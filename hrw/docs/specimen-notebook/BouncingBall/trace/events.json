@@ -1,0 +1,42 @@
+{
+  "summary": {
+    "conditions": 1,
+    "relations": 1,
+    "roots": 1,
+    "structured_roots": 0,
+    "time_events": 0,
+    "event_actions": 1,
+    "clocks": 0,
+    "previous_values": 0,
+    "terminals": 0,
+    "discrete_real_equations": 0,
+    "discrete_value_definitions": 0
+  },
+  "conditions": [
+    {
+      "id": "c[0]",
+      "term": "h <= 0"
+    }
+  ],
+  "relations": [
+    {
+      "id": "r[0]",
+      "expression": "h <= 0"
+    }
+  ],
+  "roots": [
+    {
+      "relation": "r[0]",
+      "expression": "h <= 0",
+      "activation": "h <= 0"
+    }
+  ],
+  "event_actions": [
+    {
+      "kind": "reinitialize",
+      "detail": "v := -(e*pre(v))",
+      "trigger": "h <= 0",
+      "guard": "h <= 0"
+    }
+  ]
+}

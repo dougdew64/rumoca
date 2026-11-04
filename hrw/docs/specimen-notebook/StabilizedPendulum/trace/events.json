@@ -1,0 +1,19 @@
+{
+  "summary": {
+    "conditions": 0,
+    "relations": 0,
+    "roots": 0,
+    "structured_roots": 0,
+    "time_events": 0,
+    "event_actions": 0,
+    "clocks": 0,
+    "previous_values": 0,
+    "terminals": 0,
+    "discrete_real_equations": 0,
+    "discrete_value_definitions": 0
+  },
+  "conditions": [],
+  "relations": [],
+  "roots": [],
+  "event_actions": []
+}

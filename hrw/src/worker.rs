@@ -4003,8 +4003,8 @@ fn solver_steps_from_integrator(
 /// they *say* instead of being told which they are — see
 /// [`AWAITING_REMODEL`], whose roster is checked against this in both directions.
 ///
-/// **`#[cfg(test)]`, because production has no use for it.** The three stage
-/// functions each state their own absence in their own words through
+/// **`#[cfg(test)]`, because production has no use for it.** Each rostered stage
+/// function states its own absence in its own words through
 /// [`awaiting_remodel_note`]; this constant exists so the *tests* can find those
 /// stages by what they say rather than being told which they are. A production
 /// reader would be a second place for the list to drift.
@@ -4039,7 +4039,17 @@ pub(crate) const AWAITING_REMODEL_MARKER: &str = "HRW cannot display it yet";
 /// tests were restored in the same commit, which
 /// `worker::tests::the_tests_blocked_on_a_remodel_are_still_blocked` required
 /// rather than trusted.
-pub(crate) const AWAITING_REMODEL: &[StageKind] = &[StageKind::IndexReduction, StageKind::Events];
+///
+/// *Events left it the same day*, re-modelled onto the condition algebra — see
+/// [`events_from_condition_algebra`]. **Two of its three blocked tests were
+/// restored and the third was retired**, which is the outcome worth noting here:
+/// `events_ir_has_expected_summary_keys` asserted six 0.9.20 key names and
+/// `every_events_rendering_lands_on_a_real_node` resolved a side map the re-model
+/// does not build, so neither body was still a specification. **A blocked test's
+/// body is the specification only while the data model it describes is the one
+/// being re-modelled onto** — restoring one past that point would pin 0.9.20's
+/// shape, which is the opposite of what the roster is for.
+pub(crate) const AWAITING_REMODEL: &[StageKind] = &[StageKind::IndexReduction];
 
 /// **The pipeline returned nothing at all** — worded once, for the same reason.
 ///
@@ -4858,12 +4868,185 @@ fn events_stage(result: Option<&PhaseResult>) -> Stage {
     if let Some(stage) = not_reached_stage(result) {
         return stage;
     }
-    Stage::info(awaiting_remodel_note(
-        "the events phase",
-        "an event condition became a boolean algebra (Initial, Always, Relation, \
-         Discrete, Clock, Not, And, Or, AnyRise) rather than an equation, and a root \
-         became a relation paired with its activation",
-    ))
+    let cr = unwrap_success(result);
+    Stage::ok(cr.dae.inspect(events_from_condition_algebra))
+}
+
+/// Render one condition as the algebra term it is.
+///
+/// **Rumoca's own operator names, which is the rule the old pane broke.**
+/// `anyRise` is spelled `anyRise` rather than expanded into MLS §8.3.5.1's
+/// `edge(b1) or … or edge(bn)`: the expansion is more informative and is *HRW's
+/// phrasing*, and the last time this pane paraphrased a name it published
+/// `synthetic_root_conditions` as `zero_crossing_conditions` and showed a
+/// bouncing ball detecting no contact for three weeks. The explanation belongs
+/// in the prose beside the value, never in place of it.
+///
+/// **Why `anyRise` must not render as `or`.** They are different activations:
+/// §8.3.5.1 gives one `Boolean bi` per element and fires on
+/// `edge(b1) or … or edge(bn)`, which is not the edge of the disjunction. So
+/// `when {u, not u}` has an element rising at every switch of `u`, while
+/// `u or not u` is a tautology that never rises at all. Collapsing the two
+/// would make those two models look identical in the pane.
+///
+/// A `Relation` renders as its expression, because that is what a reader is
+/// looking for — `h <= 0`, not `r[0]`. The id is published beside it in the
+/// `relations` list, so a reader can still tell two identical-looking relations
+/// apart.
+///
+/// `depth` bounds the recursion. The arena is acyclic by construction, so this
+/// is not a cycle guard but a refusal to recurse without a stated limit: a
+/// deeply nested condition reads as truncated rather than overflowing a stack,
+/// which is the same choice `matching.rs` made when it went iterative.
+fn render_condition<'dae>(
+    view: rumoca_ir_dae::DaeView<'dae>,
+    id: rumoca_ir_dae::ConditionId<'dae>,
+    depth: u8,
+) -> String {
+    use rumoca_ir_dae::ConditionOperation as Op;
+
+    if depth == 0 {
+        return "<condition nested deeper than this pane renders>".to_owned();
+    }
+    let Some(condition) = view.condition(id) else {
+        return format!("<condition {} not in the arena>", id.index());
+    };
+    let nested = |inner| render_condition(view, inner, depth - 1);
+    match condition.operation() {
+        Op::Initial => "initial".to_owned(),
+        Op::Always => "always".to_owned(),
+        Op::Relation(relation) => view.relation(relation).map_or_else(
+            || format!("<relation {}>", relation.index()),
+            |r| crate::dae_expr_format::format_expr(view, r.expression()),
+        ),
+        Op::Discrete(expression) => crate::dae_expr_format::format_expr(view, expression),
+        Op::Clock(clock) => format!("clock({})", clock.index()),
+        Op::Not(inner) => format!("not ({})", nested(inner)),
+        Op::And(left, right) => format!("({} and {})", nested(left), nested(right)),
+        Op::Or(left, right) => format!("({} or {})", nested(left), nested(right)),
+        Op::AnyRise(left, right) => format!("anyRise({}, {})", nested(left), nested(right)),
+    }
+}
+
+/// The Events pane, from Rumoca's condition algebra.
+///
+/// **This is the symbol `docs/tech-debt.md`'s `unbuilt:` tag recruited**, so
+/// `claims_of_absence_are_still_true` fails once it exists.
+///
+/// # What changed, and why nothing could be re-keyed
+///
+/// 0.9.20 read four flat collections — `conditions.equations`,
+/// `conditions.relations`, `discrete.real_updates`/`valued_updates`, and
+/// `events.synthetic_root_conditions` — and rendered each as an **equation**.
+/// On 0.10.0 a condition is not an equation: it is a
+/// [`rumoca_ir_dae::ConditionOperation`], a boolean algebra over relations and clocks, and
+/// a root is a relation paired with the condition that activates it. Rendering
+/// an algebra term as an equation is a category error.
+///
+/// # Every count is Rumoca's own arena length, under Rumoca's own name
+///
+/// The summary keys are the accessor names, and
+/// `the_events_summary_uses_rumocas_own_names` holds them there. The defect this
+/// retires was not a wrong number — every value was correct for three weeks —
+/// it was `synthetic_root_conditions` published as `zero_crossing_conditions`,
+/// a name that claims something larger. **A renamed field is a claim**, and the
+/// cheapest defence is not to make one.
+fn events_from_condition_algebra(view: rumoca_ir_dae::DaeView<'_>) -> serde_json::Value {
+    /// How deep a condition term renders before it is truncated.
+    const CONDITION_DEPTH: u8 = 24;
+
+    let conditions: Vec<serde_json::Value> = view
+        .conditions()
+        .map(|(id, _)| {
+            serde_json::json!({
+                "id": format!("c[{}]", id.index()),
+                "term": render_condition(view, id, CONDITION_DEPTH),
+            })
+        })
+        .collect();
+
+    let relations: Vec<serde_json::Value> = view
+        .relations()
+        .map(|(id, relation)| {
+            serde_json::json!({
+                "id": format!("r[{}]", id.index()),
+                "expression": crate::dae_expr_format::format_expr(view, relation.expression()),
+            })
+        })
+        .collect();
+
+    // A root is the pair, which is the whole point: the relation Rumoca
+    // monitors for a sign change, and the condition that has to hold for the
+    // crossing to matter.
+    let roots: Vec<serde_json::Value> = view
+        .roots()
+        .map(|(_id, root)| {
+            serde_json::json!({
+                    "relation": format!("r[{}]", root.relation().index()),
+                    "expression": view.relation(root.relation()).map_or_else(
+                        || "<unresolved relation>".to_owned(),
+                        |r| crate::dae_expr_format::format_expr(view, r.expression()),
+                    ),
+                "activation": render_condition(view, root.activation(), CONDITION_DEPTH),
+            })
+        })
+        .collect();
+
+    let event_actions: Vec<serde_json::Value> = view
+        .event_actions()
+        .map(|(_id, action)| {
+            use rumoca_ir_dae::EventActionOperation as Action;
+            let (kind, detail) = match action.operation() {
+                Action::Assert { message, .. } => {
+                    ("assert", crate::dae_expr_format::format_expr(view, message))
+                }
+                Action::Terminate { message } => (
+                    "terminate",
+                    crate::dae_expr_format::format_expr(view, message),
+                ),
+                // The only kind that moves a trajectory — see
+                // `dae_counts::has_discontinuities`, which counts exactly these.
+                Action::Reinitialize { state, value } => (
+                    "reinitialize",
+                    format!(
+                        "{} := {}",
+                        view.variable(state.into())
+                            .map_or_else(|| "<state>".to_owned(), |v| v.name().to_string(),),
+                        crate::dae_expr_format::format_expr(view, value),
+                    ),
+                ),
+            };
+            serde_json::json!({
+                "kind": kind,
+                "detail": detail,
+                "trigger": render_condition(view, action.trigger(), CONDITION_DEPTH),
+                "guard": render_condition(view, action.guard(), CONDITION_DEPTH),
+            })
+        })
+        .collect();
+
+    serde_json::json!({
+        // Arena lengths under the accessor names that produce them. A key here
+        // that is not a `*_count()` on `DaeView` is a renamed field, which is
+        // the defect this pane retires.
+        "summary": {
+            "conditions": view.condition_count(),
+            "relations": view.relation_count(),
+            "roots": view.root_count(),
+            "structured_roots": view.structured_root_count(),
+            "time_events": view.time_event_count(),
+            "event_actions": view.event_action_count(),
+            "clocks": view.clock_count(),
+            "previous_values": view.previous_value_count(),
+            "terminals": view.terminal_count(),
+            "discrete_real_equations": view.discrete_real_equation_count(),
+            "discrete_value_definitions": view.discrete_value_definition_count(),
+        },
+        "conditions": conditions,
+        "relations": relations,
+        "roots": roots,
+        "event_actions": event_actions,
+    })
 }
 
 /// Solve lowering (phase 8) — the DAE lowered to a `SolveModel`, the
@@ -5938,7 +6121,10 @@ const UNINSTRUMENTED_PHASES: &[(&str, Option<&str>, &str)] = &[
     (
         "Events",
         None,
-        "HRW renders this tab from `dae.events`; no Rumoca function is called",
+        "HRW renders this tab by walking the DAE's own condition, root and \
+         event-action arenas through `dae.inspect`; no Rumoca function is called. \
+         *(The reason named `dae.events` until 2026-11-03 \u{2014} a 0.9.20 field, and \
+         there is no such field now: the re-model reads nine arenas.)*",
     ),
     // **Three phases went silent on v0.10.0, and the numbers are measured.**
     //
