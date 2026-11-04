@@ -99,6 +99,8 @@ pub struct Attempt {
     /// system of their own round, so a name derived from one would be wrong from round
     /// 2 onward — the payload's `ordinals_note` says so, and this pane obeys it.
     at: Option<String>,
+    /// The constraint's own source text, if the span resolved to one.
+    excerpt: Option<String>,
 }
 
 /// One candidate group's result: a proof boundary and how many it admitted.
@@ -114,6 +116,16 @@ pub struct Group {
 pub struct Selection {
     lane: String,
     form: String,
+    /// `file:line` of the constraint this candidate came from, if it resolved.
+    at: Option<String>,
+    /// The constraint's own source text, if the span resolved to one.
+    ///
+    /// **The most useful line in the payload for a reader**, and the reason is that
+    /// almost every constraint reduction uses is declared in a *library* file rather
+    /// than in the model: `BenchActuator`'s is `phi = flange.phi -
+    /// internalSupport.phi` in the MSL's `RotationalEMF`. Showing the file alone
+    /// leaves the reader to go and open it.
+    excerpt: Option<String>,
     residue_before: u64,
     /// `None` when the selection sorted the system: there is no residue after, because
     /// there is no unmatched remainder. Zero would be a measurement.
@@ -244,6 +256,7 @@ impl ReductionView {
                             outcome: record["outcome"]["kind"].as_str().unwrap_or("?").to_owned(),
                             residue: record["outcome"]["residue"].as_u64(),
                             at: location_of(&record["identity"]["declared_at"]),
+                            excerpt: excerpt_of(&record["identity"]["declared_at"]),
                         }),
                         "selected" => {
                             round.selection = Some(Selection {
@@ -252,6 +265,8 @@ impl ReductionView {
                                     .as_str()
                                     .unwrap_or("?")
                                     .to_owned(),
+                                at: location_of(&record["identity"]["declared_at"]),
+                                excerpt: excerpt_of(&record["identity"]["declared_at"]),
                                 residue_before: record["residue_before"].as_u64().unwrap_or(0),
                                 residue_after: record["residue_after"].as_u64(),
                             });
@@ -374,7 +389,7 @@ impl ReductionView {
         let last = self.rounds.len().saturating_sub(1);
         for (i, round) in self.rounds.iter().enumerate() {
             let open = i < ROUNDS_OPEN_BY_DEFAULT || i == last;
-            self.round_ui(ui, round, open, tracked);
+            self.round_ui(ui, i + 1, round, open, tracked);
         }
 
         if let Some(stalled) = &self.stalled {
@@ -461,16 +476,41 @@ impl ReductionView {
     }
 
     /// One round, collapsible.
-    fn round_ui(&self, ui: &mut egui::Ui, round: &Round, open: bool, tracked: Option<&str>) {
+    /// One round, collapsible. `pass` is its position in the log, counted from 1.
+    ///
+    /// # `round.number` repeats, and both the label and the id account for it
+    ///
+    /// **Rumoca numbers rounds within a lane pass, and the counter restarts when a lane
+    /// is re-entered.** Measured on `CartesianPendulum`: its three records read round
+    /// **1** [direct], round **1** [holonomic], round **1** [direct]. `Drivetrain` is
+    /// the same shape — direct rounds 1 to 5, then a holonomic round 1.
+    ///
+    /// Two consequences, and the first is a defect this had until 2026-11-04. The
+    /// `id_salt` was `(number, lane)`, so the pendulum's first and third rounds **had
+    /// the same egui id** — one collapsing header's open state driving two sections.
+    /// Found while authoring `docs/fixture-labs/index-reduction.md` against this pane,
+    /// which is the testing the labs buy that no assertion here does.
+    ///
+    /// And the header leads with the pass, because *"Round 1"* appearing three times
+    /// reads as the search going in circles. The log's **order** is the sequence; the
+    /// number is a lane-local detail.
+    fn round_ui(
+        &self,
+        ui: &mut egui::Ui,
+        pass: usize,
+        round: &Round,
+        open: bool,
+        tracked: Option<&str>,
+    ) {
         let header = format!(
-            "Round {} [{}] \u{2014} residue {}, {} candidate(s)",
+            "Pass {pass} \u{2014} round {} [{}], residue {}, {} candidate(s)",
             round.number,
             round.lane,
             round.residue,
             round.discovered(),
         );
         egui::CollapsingHeader::new(header)
-            .id_salt(("reduction_round", round.number, round.lane.as_str()))
+            .id_salt(("reduction_round", pass))
             .default_open(open)
             .show(ui, |ui| {
                 if round.retried_pristine {
@@ -515,6 +555,15 @@ impl ReductionView {
                         ))
                         .strong(),
                     );
+                    // **The constraint itself, under the selection.** This is what the
+                    // reader is really being shown: one line of Modelica, usually from
+                    // a library file they did not write, that made a state redundant.
+                    if let Some(at) = &selection.at {
+                        ui.weak(format!("      at {at}"));
+                    }
+                    if let Some(excerpt) = &selection.excerpt {
+                        ui.label(egui::RichText::new(format!("      {excerpt}")).monospace());
+                    }
                 }
             });
     }
@@ -575,6 +624,9 @@ impl ReductionView {
         if let Some(at) = &attempt.at {
             ui.weak(format!("      at {at}"));
         }
+        if let Some(excerpt) = &attempt.excerpt {
+            ui.label(egui::RichText::new(format!("      {excerpt}")).monospace());
+        }
     }
 }
 
@@ -594,6 +646,17 @@ fn location_of(declared_at: &Value) -> Option<String> {
         Some(line) => Some(format!("{file}:{line}")),
         None => Some(file.to_owned()),
     }
+}
+
+/// The source text a `declared_at` quotes, if the span resolved to one.
+///
+/// Separate from [`location_of`] because the two can differ in availability: a span
+/// that resolves to a file and line always has a line, and `excerpt` is the slice of
+/// that line the span actually covers — absent when the span pointed into no registered
+/// source, which `worker::span_location` refuses rather than guessing at.
+fn excerpt_of(declared_at: &Value) -> Option<String> {
+    let excerpt = declared_at["excerpt"].as_str()?.trim();
+    (!excerpt.is_empty()).then(|| excerpt.to_owned())
 }
 
 /// A JSON string array as owned strings. Absent and empty both give an empty list,
@@ -824,6 +887,7 @@ mod tests {
     fn the_panel_reads_a_real_compile() {
         let mut checked = 0usize;
         let mut rounds_seen = 0usize;
+        let mut excerpts_seen = 0usize;
         for name in ["Drivetrain", "CartesianPendulum", "SingleInertia"] {
             let crate::worker::FromWorker::Compiled { stages, .. } =
                 crate::worker::test_msl::compile_specimen_shared(name)
@@ -855,14 +919,118 @@ mod tests {
                 "{name}: the grouping must find every round the payload counted",
             );
             rounds_seen += view.n_rounds();
+            excerpts_seen += view
+                .rounds
+                .iter()
+                .filter(|r| r.selection.as_ref().is_some_and(|s| s.excerpt.is_some()))
+                .count();
             checked += 1;
         }
         assert_eq!(checked, 3);
+        // **The lab quotes one of these**, so a real compile has to produce them: the
+        // Station 3 expectation is a line of MSL source, not a file name.
+        assert!(
+            excerpts_seen > 0,
+            "no selection on any specimen carried its constraint's source text, so \
+             `index-reduction.md` Station 3's expectation is unsatisfiable",
+        );
         // Non-vacuity: all three specimens reporting zero rounds would satisfy the
         // round-count equality above while proving nothing about the grouping.
         assert!(
             rounds_seen > 0,
             "no specimen produced a round, so the grouping was never exercised",
+        );
+    }
+
+    /// **A selection carries the constraint's own source text, not just its file.**
+    ///
+    /// `docs/fixture-labs/index-reduction.md` Station 3 asks the reader to predict which
+    /// *file* the compiler will name and expects to see `phi = flange.phi -
+    /// internalSupport.phi` from the MSL's `RotationalEMF` — so the excerpt is a load-
+    /// bearing part of a station's `**Expected:**`, not decoration.
+    ///
+    /// **The station found this missing.** The panel rendered a location on each attempt
+    /// and nothing at all on the selection, so that expectation was unsatisfiable when
+    /// it was written. Which is the testing the labs buy: composing one exercises the
+    /// pane's surface in a way no assertion in this file had.
+    #[test]
+    fn a_selection_carries_its_constraint_text() {
+        let v = report(
+            json!([
+                round(1, 2),
+                { "kind": "selected", "lane": "direct",
+                  "identity": { "form": "direct", "declared_at": {
+                      "file": "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Basic/RotationalEMF.mo",
+                      "line": 41,
+                      "excerpt": "phi = flange.phi - internalSupport.phi" } },
+                  "residue_before": 2, "residue_after": null },
+            ]),
+            Value::Null,
+        );
+        let view = ReductionView::from_report(&v).expect("a view");
+        let selection = view.rounds[0].selection.as_ref().expect("a selection");
+        assert_eq!(
+            selection.at.as_deref(),
+            Some("hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Basic/RotationalEMF.mo:41"),
+        );
+        assert_eq!(
+            selection.excerpt.as_deref(),
+            Some("phi = flange.phi - internalSupport.phi"),
+        );
+    }
+
+    /// An excerpt that is absent, or whitespace only, is `None` rather than a blank line.
+    ///
+    /// A blank monospace line under a selection reads as source text that happens to be
+    /// empty, which is a claim about the constraint rather than about the span.
+    #[test]
+    fn a_missing_excerpt_is_absent_rather_than_blank() {
+        assert_eq!(excerpt_of(&Value::Null), None);
+        assert_eq!(excerpt_of(&json!({ "file": "a.mo", "line": 1 })), None);
+        assert_eq!(excerpt_of(&json!({ "excerpt": "   " })), None);
+        assert_eq!(
+            excerpt_of(&json!({ "excerpt": "  v = p.v - n.v  " })).as_deref(),
+            Some("v = p.v - n.v"),
+            "trimmed, because a span's slice carries the line's indentation",
+        );
+    }
+
+    /// **A round number repeats, so the panel must not key anything on it.**
+    ///
+    /// Rumoca numbers rounds within a lane pass and restarts the counter when a lane is
+    /// re-entered, so `CartesianPendulum`'s three records all read round 1. This pins
+    /// that the grouping keeps them as three distinct rounds — the regression guard for
+    /// an `id_salt` of `(number, lane)`, which gave the first and third the **same egui
+    /// id** and one collapsing header driving two sections.
+    ///
+    /// It cannot assert the id itself: `egui_kittest` sees the accessibility tree and a
+    /// collision there is two nodes sharing state, not a missing node. What is checkable
+    /// is the shape that makes a collision possible, which is this.
+    #[test]
+    fn three_rounds_numbered_one_stay_three_rounds() {
+        let v = report(
+            json!([
+                round(1, 2),
+                { "kind": "round", "lane": "holonomic", "round": 1, "residue": 2,
+                  "unmatched_equations": [], "unmatched_unknowns": [] },
+                round(1, 2),
+            ]),
+            Value::Null,
+        );
+        let view = ReductionView::from_report(&v).expect("a view");
+        assert!(view.problems().is_empty(), "{:?}", view.problems());
+        assert_eq!(
+            view.n_rounds(),
+            3,
+            "the pendulum's three passes are three rounds"
+        );
+        let numbers: Vec<u64> = view.rounds.iter().map(|r| r.number).collect();
+        assert_eq!(numbers, vec![1, 1, 1], "and all three are numbered 1");
+        let lanes: Vec<&str> = view.rounds.iter().map(|r| r.lane.as_str()).collect();
+        assert_eq!(
+            lanes,
+            vec!["direct", "holonomic", "direct"],
+            "so lane does not disambiguate them either \u{2014} only the position does",
         );
     }
 

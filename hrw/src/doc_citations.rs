@@ -6580,6 +6580,22 @@ mod tests_orphaned_docs {
             // carries its own summary**, so there is no undocumented item in this
             // file for either orphan to belong to.
             ("worker.rs", 22),
+            // 0 -> 1 on 2026-11-04, while re-authoring
+            // `docs/fixture-labs/index-reduction.md` against this pane. The hit is at
+            // `reduction_view.rs:464`, in `round_ui`'s doc under the heading
+            // `# round.number repeats, and both the label and the id account for it`:
+            // *"**Rumoca numbers rounds within a lane pass, and the counter restarts
+            // when a lane is re-entered.**"* — a bold sentence opening a headed
+            // paragraph, which the scanner cannot tell from a second summary.
+            //
+            // Triaged the documented way rather than assumed: the items added in that
+            // commit are `three_rounds_numbered_one_stay_three_rounds` and nothing
+            // else, and it carries its own summary, so there is no undocumented item in
+            // this file for an orphan to belong to. The paragraph it sits in records a
+            // real defect — an `id_salt` of `(number, lane)` gave two of
+            // `CartesianPendulum`'s three rounds the same egui id — so it is prose
+            // worth keeping rather than rewording to satisfy a heuristic.
+            ("reduction_view.rs", 1),
             // 5 -> 6 on 2026-11-03. The new hit is at `worker/tests.rs:6239`, the
             // `# The failure this prevents` section of
             // `the_tests_blocked_on_a_remodel_are_still_blocked` — a `#` heading
