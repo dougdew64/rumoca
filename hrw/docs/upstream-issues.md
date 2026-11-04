@@ -44,6 +44,51 @@ egui entry came the other way — from a crash Doug hit while using HRW normally
 
 ---
 
+## F1. The v0.10.0 branch is not `cargo fmt --all -- --check` clean, under its own pinned toolchain
+
+**Found 2026-11-04**, incidentally: HRW's gate runs `cargo fmt -p <crate>` after touching a Rumoca
+crate, and the first commit on the rebase branch to touch `rumoca-phase-structural` reformatted
+**four files nobody had edited**. Checking the whole workspace found more.
+
+**Not version skew, which is the only thing that would make this a non-finding.**
+`rust-toolchain.toml` pins `nightly-2026-02-27`, and the rustfmt that produced these diffs is
+`1.8.0-nightly (6a979b3e32 2026-02-26)` — that toolchain's own build. So CI running in this
+repository uses the same formatter and should be seeing the same 11 diffs.
+
+**Measured: 22 sites across 10 files** — 11 in `rumoca-phase-structural`, already formatted on the
+`hrw` branch (`7f1c831e`, deliberately a separate commit so the feature beside it stays a clean
+cherry-pick), and **11 still outstanding across 6 files**:
+
+| crate | file | sites | state |
+|---|---|---|---|
+| `rumoca-phase-structural` | `src/observation.rs`, `src/blt.rs`, `src/incidence.rs`, `src/tearing.rs` | 11 | **fixed on `hrw`** |
+| `rumoca-compile` | `src/lib.rs:224`, `src/session/session_impl.rs:994`, `src/source_root_cache.rs:536` | 3 | outstanding |
+| `rumoca-solver` | `src/fmi_me/step_observation.rs:191` | 1 | outstanding |
+| `rumoca` | `tests/suite_core/strict_compile_recovery.rs:57,92` | 2 | outstanding |
+| `rumoca` | `tests/suite_core/structural_observation.rs:117,197,208,232,389` | 5 | outstanding |
+
+*(Counted as rustfmt hunks: `git show 7f1c831e --unified=0 | grep -c '^@@'` gives the 11 fixed, and
+`cargo fmt --all -- --check | grep -c '^Diff in'` gives the 11 that remain. The structural crate's
+share is concentrated in `observation.rs`, which took 8 of its 11.)*
+
+**Every one is a line rewrap or an argument-list split** — no behaviour, nothing to review beyond
+running the command.
+
+**Why this is worth reporting at all**, given how small it is: `docs/upstream-strategy.md` ranks
+deliverables by *their* cost to accept, and this is about as cheap as a contribution gets — one
+command, zero semantics, and it unblocks whatever CI check is currently either failing or disabled.
+It also answers a question before anyone asks it: a PR from us that touches a Rumoca crate will
+carry formatting of adjacent lines, and this says why rather than looking like carelessness.
+
+**The five files outside `rumoca-phase-structural` are deliberately left unformatted here.**
+Formatting crates HRW has no other reason to touch would add divergence every future rebase has to
+carry, for no gain to Doug's learning. They are listed above so the report can be complete without
+the branch being.
+
+**Reproduction:** `cargo fmt --all -- --check` at the repository root on the v0.10.0 branch.
+
+---
+
 ## Which to file first
 
 **Issue 2 (connector validation).** Doug's plan (2026-07-30) is to open one bug PR with a
