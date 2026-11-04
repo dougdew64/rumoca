@@ -2218,15 +2218,23 @@ impl App {
     /// One accessor rather than the choice repeated at three call sites: this is
     /// exactly the decision I got wrong once already by fixing it for tearing and
     /// not carrying the reasoning to the other two.
-    /// **Temporarily one set, while index reduction awaits its re-model.**
+    /// **One set, and the branch is NOT coming back — the reduced system's frames do
+    /// not exist to return.** Updated 2026-11-04, when the re-model landed.
     ///
-    /// The choice above is the whole reason this accessor exists, and the
-    /// reasoning still holds — it is the reduced system's frames that are
-    /// unavailable, not the need to pick between them. The `IndexReduction`
-    /// branch returns the raw system's frames only because that stage now shows
-    /// an explanation rather than a matrix, so nothing indexes into them from
-    /// there. **Restore the branch with the re-model**; do not conclude from
-    /// this body that one set is sufficient.
+    /// The choice above is the whole reason this accessor exists and the reasoning still
+    /// holds; what changed is that the missing half is now known to be *unobtainable*
+    /// rather than merely unported. `inspect_prepare_for_solve` records the reduction's
+    /// rounds, not the matching passes inside each rebuild, so **the reduced system's
+    /// report is observable and its search is not**. Restoring a branch would mean
+    /// observing `sort` on the reduced DAE a second time, which is a re-run.
+    ///
+    /// **The old justification was that nothing indexes into these from the Index
+    /// Reduction tab, and that is no longer the protection.** It held while the stage
+    /// published an explanation; it now publishes a report with incidence under `after`,
+    /// and the three frame-consuming sub-views are still offered as tabs there. They
+    /// draw nothing only because they look for a *top-level* `incidence` and find none —
+    /// protection by accident of payload shape, which is not protection. See
+    /// `docs/tech-debt.md`: the honest fix is to stop offering them on that stage.
     fn structural_frames_for_stage(&self) -> &crate::worker::StructuralFrames {
         &self.frames.structural
     }
@@ -2643,13 +2651,21 @@ impl App {
             // *captured* rather than on which stage it is and whether the system
             // was singular. Everything else defers to the pure predicate below,
             // so a checker can reach it without running a compile.
-            // **Unavailable while index reduction awaits its re-model.** This
-            // read `is_index_reduction && !self.frames.index_reduction.is_empty()`
-            // — the frames no longer exist, so the condition is now vacuously
-            // false. Kept as an arm rather than folded into the pure predicate
-            // below so the re-model restores one line here, and so the `expect`
-            // on that predicate keeps describing the set it actually covers.
-            StructuralView::Animate => false,
+            // **Available again since 2026-11-04**, on the stage that has a search to
+            // step and only there. It read `is_index_reduction &&
+            // !self.frames.index_reduction.is_empty()` on 0.9.20, then a hard-coded
+            // `false` through the rebase because those frames stopped existing.
+            //
+            // **The hard-coded `false` outlived its reason by a day**, which is the
+            // whole point of keeping it as a named arm: the re-model landed, the pane
+            // and its live session were both built and wired, and this line still said
+            // the tab was unavailable — so **nothing could reach either of them**, and
+            // `index-reduction.md` Station 4 shipped with a link to a view the app
+            // refused. Doug found it by asking what the rebase had cost.
+            //
+            // Frame-dependent like its predecessor, so it stays out of the pure
+            // predicate below and the `expect` there keeps describing the set it covers.
+            StructuralView::Animate => is_index_reduction && self.has_reduction_search(),
             other => {
                 Self::structural_view_available_from_stage(other, is_index_reduction, is_singular)
                     .expect("Animate is the only frame-dependent view, handled above")
@@ -4663,6 +4679,27 @@ impl App {
     /// tab is actually about.
     fn has_pre_lowering_trace(&self) -> bool {
         !self.frames.pre_lowering.is_empty()
+    }
+
+    /// Whether the Index Reduction stage published a search worth stepping.
+    ///
+    /// **Read from the stage JSON rather than the cache**, for the reason
+    /// `has_alias_eliminations` gave before it was deleted: the tab bar is drawn before
+    /// the view is, so the cache may not exist yet.
+    ///
+    /// The same question `reduction_anim::ReductionAnimation::from_report` asks, so a
+    /// tab that is drawn and a pane that can build cannot disagree — one builder, two
+    /// consumers. A stage that was never reached publishes no `search`, and that is the
+    /// only case where this is false for a compile that got here at all: a *refused*
+    /// reduction still logs its search, and `CartesianPendulum`'s refusal is the most
+    /// interesting one in the corpus.
+    fn has_reduction_search(&self) -> bool {
+        self.stages
+            .index_reduction
+            .value
+            .as_ref()
+            .and_then(|v| v.get("search")?.as_array())
+            .is_some_and(|a| !a.is_empty())
     }
 
     /// What the Flatten compile produced, in the form its sub-view row and its link guard

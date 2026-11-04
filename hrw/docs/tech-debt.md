@@ -3301,3 +3301,54 @@ came back positive on 2026-08-25.** They carry computed `f64`s, they travel thro
 rather than `Stage` JSON, and a three-equation model proved a successful run can carry an infinity.
 `SimData::non_finite_series` and the pane warning above the plot are the result — so unlike NULL 2,
 this one was reachable and is now reported.
+
+### The Index Reduction tab offers five sub-views that draw nothing
+
+**Found 2026-11-04 by Doug asking what the rebase had cost**, after two defects in the same
+area had already been found by the same question. Nothing on screen is *wrong*; five of the
+eight tabs are simply empty, and three of them cannot be filled.
+
+`structural_view_available_from_stage` approves every sub-view on the Index Reduction stage
+(`is_index_reduction` short-circuits the singular guards). Measured against what each pane can
+actually read from the re-modelled payload:
+
+| sub-view | state on that tab | why |
+|---|---|---|
+| `Summary` | **works** | the re-modelled panel |
+| `Animate` | **works** | the stepper — and it was unavailable until this was found |
+| `Tree` | **works** | the generic IR tree |
+| `Incidence` | empty | `IncidenceMatrix::from_report` wants a **top-level** `incidence`; the payload has `before.incidence` and `after.incidence` |
+| `SpyPlot` | empty | same, for `blocks` |
+| `MatchingAnim` | empty | same, and see below |
+| `TarjanAnim` | empty | same, and see below |
+| `TearingAnim` | empty | same, and see below |
+
+**The two halves have different answers, and conflating them is how this gets fixed badly.**
+
+**`Incidence` and `SpyPlot` are recoverable and should be.** They are static renderings of a
+report with no frames involved, so pointing them at `after` (and the split's Before pane at
+`before`) restores a genuinely useful view: the reduced system's matrix beside the raw one. That
+is the before/after split the 0.9.20 lab referred to, and `drivetrain_before_report_parseable_as_incidence`
+already asserts both halves parse.
+
+**The three animations are not recoverable, and should stop being offered.** They need the
+reduced system's *search steps*, and `inspect_prepare_for_solve` records the reduction's rounds
+rather than the matching passes inside each rebuild — so the reduced system's report is
+observable and its search is not. `app::structural_frames_for_stage` can only hand them the
+**raw** system's frames. They draw nothing today purely because they cannot find a top-level
+`incidence`, which is **protection by accident of payload shape**: anyone who fixes the Incidence
+pane by hoisting the after-report to the top level would silently pair raw frames with reduced
+rows, and `TearingAnimation::from_captured`'s guard would not catch it (it compares
+`blocks.len()` against `segments.len()` and ordinals that run `0..n` in both systems).
+
+**And `ir_split` keys on the wrong thing.** It turns the Before pane on when the stage note
+contains `"singular"` — which, with the re-modelled notes, is true only for reductions that
+**failed**, and those publish no `after` to compare against. For the successful reductions, where
+before/after is the whole point, the split is off. It should key on whether an `after` exists.
+
+**Why no test caught any of it.** `every_lab_sub_view_link_is_available_for_its_specimen` skipped
+`Animate` as frame-dependent and its doc claimed a count would say so — the count appears only
+inside another assertion's failure message. It now builds an `App` from the committed stage and
+asks `structural_view_available`, so it catches a tab the app refuses. **Nothing yet checks the
+complement: a tab the app OFFERS and the pane cannot fill.** That check is what this row really
+wants, and it is the one that would have found all five at once.
