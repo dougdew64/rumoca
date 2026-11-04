@@ -20,9 +20,7 @@ mod cost_tests;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
-use crate::observation::{
-    StructuralEvent, StructuralObserver, TearPriorityKind, TearingStep,
-};
+use crate::observation::{StructuralEvent, StructuralObserver, TearPriorityKind, TearingStep};
 
 /// Hand one tearing step and the plan it left behind to the observer.
 ///
