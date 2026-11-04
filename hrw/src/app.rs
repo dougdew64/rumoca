@@ -4442,16 +4442,24 @@ impl App {
             }
             self.compile_views.reduction_anim = Some(live);
         }
-        // **Always present, and it explains itself.** The old code built the
-        // animation from captured frames and fell back to
-        // "(no index-reduction trace for this model)" — a sentence that is now
-        // misleading in two ways: it reads as a property of the model, and it
-        // implies the compiler produced nothing. Rumoca reduces fine on 0.10.0;
-        // it is this display that awaits a re-model, which is what the
-        // placeholder's own `ui` says.
+        // **Built from the stage's published search**, since 2026-11-04. Through the
+        // rebase this installed a placeholder, because the funnel the view animated
+        // does not exist on v0.10.0; it now reads the records Rumoca observed.
+        //
+        // **`Some(Some(..))` even for a stage that was never reached**, because the
+        // animation states its own emptiness in words and names the *pipeline* rather
+        // than the model — the same judgement `pre_lowering_anim_ui` makes one screen
+        // over. The old fallback said "(no index-reduction trace for this model)",
+        // which read as a property of the model and implied the compiler produced
+        // nothing.
         if self.compile_views.reduction_anim.is_none() {
-            self.compile_views.reduction_anim =
-                Some(Some(reduction_anim::ReductionAnimation::disabled()));
+            self.compile_views.reduction_anim = Some(
+                self.stages
+                    .index_reduction
+                    .value
+                    .as_ref()
+                    .and_then(reduction_anim::ReductionAnimation::from_report),
+            );
         }
         if let Some(Some(anim)) = &mut self.compile_views.reduction_anim {
             debug_clicked = egui::ScrollArea::vertical()
@@ -5075,21 +5083,18 @@ impl App {
                                 if let Some(view) = cached {
                                     view.ui(ui, self.tracked_identifier.as_deref());
                                 } else {
-                                    // **"(no reduction data in this report)" became false on
-                                    // 2026-11-04** and is replaced rather than kept.
-                                    // `worker::index_reduction_from_observation` publishes the
-                                    // whole search; it is `ReductionView` that still parses the
-                                    // 0.9.20 funnel shape and so finds nothing. A message that
-                                    // blames the report sends the reader looking for data they
-                                    // have, which is the inverse of the usual defect and just as
-                                    // misleading.
+                                    // **Reached only for a stage that was never run.**
+                                    // `ReductionView::from_report` needs a `search` array,
+                                    // and a reached stage always has one — a refusal is a
+                                    // result, with the richest log in the corpus
+                                    // (`CartesianPendulum`). So this names the pipeline
+                                    // rather than the model: saying "no reduction data"
+                                    // would read as a claim that the compiler found
+                                    // nothing to report.
                                     ui.weak(
-                                        "This summary still reads the 0.9.20 funnel report and \
-                                         finds none, because the stage publishes the 0.10.0 \
-                                         search instead \u{2014} rounds, candidate groups, every \
-                                         attempt and its refusal, each selection. It is all in \
-                                         the IR tree on this tab; only this summary awaits its \
-                                         re-model.",
+                                        "This stage did not run, so there is no reduction \
+                                         to show. The stage tab's note says what stopped \
+                                         the pipeline earlier.",
                                     );
                                 }
                             }
