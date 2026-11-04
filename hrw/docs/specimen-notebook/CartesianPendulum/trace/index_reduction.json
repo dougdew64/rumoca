@@ -1,0 +1,230 @@
+{
+  "rounds": 3,
+  "n_records": 9,
+  "outcome": {
+    "kind": "singular",
+    "admitted": false,
+    "residue": 2,
+    "meaning": "no candidate in either lane could reduce the residue further"
+  },
+  "lanes": [
+    "direct",
+    "holonomic"
+  ],
+  "residue_definition": "(n_equations - n_matched) + (n_unknowns - n_matched): both deficits summed, so a square system's residue is twice its rank deficiency",
+  "ordinals_note": "state_ordinal, rhs_ordinal, variable_ordinal and the holonomic ordinals index the rebuilt system of their own round, not the raw DAE. They are deliberately unnamed; resolve a candidate through declared_at, which is a span and stable across rebuilds",
+  "before": {
+    "incidence": {
+      "n_eq": 5,
+      "n_var": 5,
+      "unknown_names": [
+        "der(x)",
+        "der(y)",
+        "der(vx)",
+        "der(vy)",
+        "lambda"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (der(x) = vx)",
+          "id": "f_x[0]",
+          "unknowns": [
+            0
+          ],
+          "equation_text": "0 = der(x) - vx"
+        },
+        {
+          "equation": "f_x[1] (der(y) = vy)",
+          "id": "f_x[1]",
+          "unknowns": [
+            1
+          ],
+          "equation_text": "0 = der(y) - vy"
+        },
+        {
+          "equation": "f_x[2] (m * der(vx) = -lambda * x)",
+          "id": "f_x[2]",
+          "unknowns": [
+            2,
+            4
+          ],
+          "equation_text": "0 = m*der(vx) - -(lambda*x)"
+        },
+        {
+          "equation": "f_x[3] (m * der(vy) = -lambda * y - m * g)",
+          "id": "f_x[3]",
+          "unknowns": [
+            3,
+            4
+          ],
+          "equation_text": "0 = m*der(vy) - (-(lambda*y) - m*g)"
+        },
+        {
+          "equation": "f_x[4] (x ^ 2 + y ^ 2 = L ^ 2)",
+          "id": "f_x[4]",
+          "unknowns": [],
+          "equation_text": "0 = x^2 + y^2 - L^2"
+        }
+      ]
+    },
+    "matching": [
+      {
+        "equation": "f_x[0] (der(x) = vx)",
+        "id": "f_x[0]",
+        "unknown": "der(x)"
+      },
+      {
+        "equation": "f_x[1] (der(y) = vy)",
+        "id": "f_x[1]",
+        "unknown": "der(y)"
+      },
+      {
+        "equation": "f_x[2] (m * der(vx) = -lambda * x)",
+        "id": "f_x[2]",
+        "unknown": "der(vx)"
+      },
+      {
+        "equation": "f_x[3] (m * der(vy) = -lambda * y - m * g)",
+        "id": "f_x[3]",
+        "unknown": "der(vy)"
+      }
+    ],
+    "error": {
+      "kind": "singular",
+      "message": "structurally singular system: 4 matched out of 5 equations and 5 unknowns",
+      "n_equations": 5,
+      "n_unknowns": 5,
+      "n_matched": 4,
+      "rank_deficiency": 1,
+      "unmatched_equations": [
+        "f_x[4] (x ^ 2 + y ^ 2 = L ^ 2)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[4]"
+      ],
+      "unmatched_unknowns": [
+        "lambda"
+      ],
+      "unmatched_unknown_locations": [
+        {
+          "unknown": "lambda",
+          "location": {
+            "file": "hrw/specimens/CartesianPendulum.mo",
+            "line": 10,
+            "column": 3,
+            "excerpt": "Real lambda",
+            "line_text": "  Real lambda \"rod tension per unit length — the constraint force\";",
+            "byte_start": 551,
+            "byte_end": 562
+          }
+        }
+      ],
+      "over_determined_block": {
+        "equations": 1,
+        "unknowns": 0,
+        "sample": [
+          "f_x[4]"
+        ]
+      },
+      "guidance": "The maximum matching could not pair every equation with a unique unknown. Each unmatched unknown is a variable no equation determines; `unmatched_unknown_locations` gives the source line that declares it. If the Index Reduction stage also reports singular, the model is genuinely ill-posed rather than merely high-index."
+    },
+    "n_states": 4,
+    "n_algebraics": 1,
+    "n_equations": 5
+  },
+  "after": null,
+  "search": [
+    {
+      "kind": "round",
+      "lane": "direct",
+      "round": 1,
+      "residue": 2,
+      "unmatched_equations": [
+        "f_x[4] (x ^ 2 + y ^ 2 = L ^ 2)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[4]"
+      ],
+      "unmatched_unknowns": [
+        {
+          "name": "lambda",
+          "kind": "algebraic"
+        }
+      ]
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_admissible",
+      "discovered": 0
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_conditional",
+      "discovered": 0
+    },
+    {
+      "kind": "round",
+      "lane": "holonomic",
+      "round": 1,
+      "residue": 2,
+      "unmatched_equations": [
+        "f_x[4] (x ^ 2 + y ^ 2 = L ^ 2)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[4]"
+      ],
+      "unmatched_unknowns": [
+        {
+          "name": "lambda",
+          "kind": "algebraic"
+        }
+      ]
+    },
+    {
+      "kind": "candidates",
+      "lane": "holonomic",
+      "group": "holonomic",
+      "discovered": 0
+    },
+    {
+      "kind": "round",
+      "lane": "direct",
+      "round": 1,
+      "residue": 2,
+      "unmatched_equations": [
+        "f_x[4] (x ^ 2 + y ^ 2 = L ^ 2)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[4]"
+      ],
+      "unmatched_unknowns": [
+        {
+          "name": "lambda",
+          "kind": "algebraic"
+        }
+      ]
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_admissible",
+      "discovered": 0
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_conditional",
+      "discovered": 0
+    },
+    {
+      "kind": "stopped",
+      "outcome": {
+        "kind": "singular",
+        "residue": 2
+      }
+    }
+  ],
+  "stalled": null
+}

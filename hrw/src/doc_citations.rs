@@ -6560,7 +6560,26 @@ mod tests_orphaned_docs {
             // the item that commit added is `pre_lowering_from_construction`,
             // which carries its own summary, so there is no undocumented item
             // for an orphan to belong to.
-            ("worker.rs", 20),
+            //
+            // 20 -> 22 on 2026-11-04, with the index-reduction re-model. Both new
+            // hits are headed paragraphs that open with a bold claim, which the
+            // scanner cannot tell from a second summary: `index_reduction_stage`'s
+            // *"0.9.20 cloned the DAE, re-ran a ten-step dummy-derivative
+            // funnel…"* under `# What it replaced`, and
+            // `reduction_success_note`'s *"**Read back out of the payload rather
+            // than computed beside it**…"*.
+            //
+            // Triaged by the documented shortcut rather than assumed: that commit
+            // added `ObservedReduction`, `index_reduction_from_observation`,
+            // `reduction_success_note`, `reduction_failure_note`,
+            // `reduction_outcome_summary`, `reduction_lanes_used`,
+            // `reduction_lane_name`, `reduction_record_to_json`,
+            // `reduction_identity_to_json`, `reduction_attempt_outcome_to_json`,
+            // `reduction_stop_to_json`, `collect_span_sources` and
+            // `replace_source_map_with_a_portable_index` — **every one of which
+            // carries its own summary**, so there is no undocumented item in this
+            // file for either orphan to belong to.
+            ("worker.rs", 22),
             // 5 -> 6 on 2026-11-03. The new hit is at `worker/tests.rs:6239`, the
             // `# The failure this prevents` section of
             // `the_tests_blocked_on_a_remodel_are_still_blocked` — a `#` heading

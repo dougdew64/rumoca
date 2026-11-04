@@ -1,0 +1,189 @@
+{
+  "rounds": 3,
+  "n_records": 9,
+  "outcome": {
+    "kind": "singular",
+    "admitted": false,
+    "residue": 2,
+    "meaning": "no candidate in either lane could reduce the residue further"
+  },
+  "lanes": [
+    "direct",
+    "holonomic"
+  ],
+  "residue_definition": "(n_equations - n_matched) + (n_unknowns - n_matched): both deficits summed, so a square system's residue is twice its rank deficiency",
+  "ordinals_note": "state_ordinal, rhs_ordinal, variable_ordinal and the holonomic ordinals index the rebuilt system of their own round, not the raw DAE. They are deliberately unnamed; resolve a candidate through declared_at, which is a span and stable across rebuilds",
+  "before": {
+    "incidence": {
+      "n_eq": 2,
+      "n_var": 2,
+      "unknown_names": [
+        "a",
+        "b"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (a = 1.0)",
+          "id": "f_x[0]",
+          "unknowns": [
+            0
+          ],
+          "equation_text": "0 = a - 1"
+        },
+        {
+          "equation": "f_x[1] (a = time)",
+          "id": "f_x[1]",
+          "unknowns": [
+            0
+          ],
+          "equation_text": "0 = a - time"
+        }
+      ]
+    },
+    "matching": [
+      {
+        "equation": "f_x[0] (a = 1.0)",
+        "id": "f_x[0]",
+        "unknown": "a"
+      }
+    ],
+    "error": {
+      "kind": "singular",
+      "message": "structurally singular system: 1 matched out of 2 equations and 2 unknowns",
+      "n_equations": 2,
+      "n_unknowns": 2,
+      "n_matched": 1,
+      "rank_deficiency": 1,
+      "unmatched_equations": [
+        "f_x[1] (a = time)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[1]"
+      ],
+      "unmatched_unknowns": [
+        "b"
+      ],
+      "unmatched_unknown_locations": [
+        {
+          "unknown": "b",
+          "location": {
+            "file": "hrw/specimens/TwiceDefined.mo",
+            "line": 14,
+            "column": 3,
+            "excerpt": "Real b",
+            "line_text": "  Real b;",
+            "byte_start": 784,
+            "byte_end": 790
+          }
+        }
+      ],
+      "over_determined_block": {
+        "equations": 2,
+        "unknowns": 1,
+        "sample": [
+          "f_x[0]",
+          "f_x[1]"
+        ]
+      },
+      "guidance": "The maximum matching could not pair every equation with a unique unknown. Each unmatched unknown is a variable no equation determines; `unmatched_unknown_locations` gives the source line that declares it. If the Index Reduction stage also reports singular, the model is genuinely ill-posed rather than merely high-index."
+    },
+    "n_states": 0,
+    "n_algebraics": 2,
+    "n_equations": 2
+  },
+  "after": null,
+  "search": [
+    {
+      "kind": "round",
+      "lane": "direct",
+      "round": 1,
+      "residue": 2,
+      "unmatched_equations": [
+        "f_x[1] (a = time)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[1]"
+      ],
+      "unmatched_unknowns": [
+        {
+          "name": "b",
+          "kind": "algebraic"
+        }
+      ]
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_admissible",
+      "discovered": 0
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_conditional",
+      "discovered": 0
+    },
+    {
+      "kind": "round",
+      "lane": "holonomic",
+      "round": 1,
+      "residue": 2,
+      "unmatched_equations": [
+        "f_x[1] (a = time)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[1]"
+      ],
+      "unmatched_unknowns": [
+        {
+          "name": "b",
+          "kind": "algebraic"
+        }
+      ]
+    },
+    {
+      "kind": "candidates",
+      "lane": "holonomic",
+      "group": "holonomic",
+      "discovered": 0
+    },
+    {
+      "kind": "round",
+      "lane": "direct",
+      "round": 1,
+      "residue": 2,
+      "unmatched_equations": [
+        "f_x[1] (a = time)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[1]"
+      ],
+      "unmatched_unknowns": [
+        {
+          "name": "b",
+          "kind": "algebraic"
+        }
+      ]
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_admissible",
+      "discovered": 0
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_conditional",
+      "discovered": 0
+    },
+    {
+      "kind": "stopped",
+      "outcome": {
+        "kind": "singular",
+        "residue": 2
+      }
+    }
+  ],
+  "stalled": null
+}

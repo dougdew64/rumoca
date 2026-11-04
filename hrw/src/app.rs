@@ -5143,7 +5143,22 @@ impl App {
                                 if let Some(view) = cached {
                                     view.ui(ui, self.tracked_identifier.as_deref());
                                 } else {
-                                    ui.weak("(no reduction data in this report)");
+                                    // **"(no reduction data in this report)" became false on
+                                    // 2026-11-04** and is replaced rather than kept.
+                                    // `worker::index_reduction_from_observation` publishes the
+                                    // whole search; it is `ReductionView` that still parses the
+                                    // 0.9.20 funnel shape and so finds nothing. A message that
+                                    // blames the report sends the reader looking for data they
+                                    // have, which is the inverse of the usual defect and just as
+                                    // misleading.
+                                    ui.weak(
+                                        "This summary still reads the 0.9.20 funnel report and \
+                                         finds none, because the stage publishes the 0.10.0 \
+                                         search instead \u{2014} rounds, candidate groups, every \
+                                         attempt and its refusal, each selection. It is all in \
+                                         the IR tree on this tab; only this summary awaits its \
+                                         re-model.",
+                                    );
                                 }
                             }
                         } else if report_ready
