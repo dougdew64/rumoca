@@ -131,11 +131,27 @@ pub(crate) fn spy_plot_pane_ui(
 
 /// The incidence matrix: which equations reference which unknowns.
 ///
-/// `report` is `Some` whenever this is reached, for the reason [`spy_plot_pane_ui`] gives.
+/// # Both reports are parameters, since 2026-11-04 — the convention was hidden
 ///
-/// `before` is `Some` exactly on an Index Reduction stage that needed reducing, and its
-/// matrix is parsed from **`report["before"]`** while `after` is parsed from the report
-/// root. Those two halves are the whole point of the split and the one thing here that can
+/// This used to take one `report` and dig the Before matrix out of `report["before"]`
+/// itself, parsing After from the report **root**. That encoded a convention nobody
+/// stated: *the top level of an Index Reduction payload is the reduced report.* True on
+/// 0.9.20, and when the re-modelled stage published `before`/`after` as siblings this
+/// pane silently found nothing — five sub-views on that tab drew empty while the data
+/// sat one level down.
+///
+/// **The fix is not to hoist the after-report back to the top level.** That would make
+/// this pane work and, in the same move, let `matching_anim`/`tarjan_anim`/`tearing_anim`
+/// find a matrix on that stage — and they would pair it with the **raw** system's
+/// recorded frames, which `TearingAnimation::from_captured` cannot detect. So the caller
+/// names both reports and nothing is merged.
+///
+/// `after_report` is the system to show; `before_report` is the one to show beside it,
+/// `None` when there is nothing to compare. The Before *pane* and the Before *report*
+/// are still one decision — passing a pane without a report, or the reverse, draws the
+/// explanation rather than a wrong matrix.
+///
+/// Those two halves are the whole point of the split and the one thing here that can
 /// go wrong invisibly, so the test asserts which system each pane built rather than that
 /// both panes appeared.
 ///
@@ -145,7 +161,8 @@ pub(crate) fn spy_plot_pane_ui(
 /// that position in the un-reduced system — the right column number for the wrong matrix.
 pub(crate) fn incidence_pane_ui(
     ui: &mut egui::Ui,
-    report: Option<&Value>,
+    after_report: Option<&Value>,
+    before_report: Option<&Value>,
     after: MatrixPane<'_, IncidenceMatrix>,
     before: Option<MatrixPane<'_, IncidenceMatrix>>,
     capture: &mut Option<Vec<Seg>>,
@@ -155,7 +172,7 @@ pub(crate) fn incidence_pane_ui(
     let Some(before) = before else {
         let cached = after
             .cache
-            .get_or_insert_with(|| report.and_then(IncidenceMatrix::from_report));
+            .get_or_insert_with(|| after_report.and_then(IncidenceMatrix::from_report));
         if let Some(mat) = cached {
             mat.caption_ui(ui);
             let tracked_col = tracked.and_then(|name| mat.column_index(name));
@@ -167,14 +184,12 @@ pub(crate) fn incidence_pane_ui(
     };
 
     // Before/After split for incidence matrices.
-    let before_cached = before.cache.get_or_insert_with(|| {
-        report
-            .and_then(|v| v.get("before"))
-            .and_then(IncidenceMatrix::from_report)
-    });
+    let before_cached = before
+        .cache
+        .get_or_insert_with(|| before_report.and_then(IncidenceMatrix::from_report));
     let after_cached = after
         .cache
-        .get_or_insert_with(|| report.and_then(IncidenceMatrix::from_report));
+        .get_or_insert_with(|| after_report.and_then(IncidenceMatrix::from_report));
     ui.columns(2, |cols| {
         // Before pane
         before_heading(&mut cols[0]);
@@ -228,12 +243,24 @@ mod tests {
         })
     }
 
-    /// An Index Reduction report: the reduced system at the root, the raw DAE under
+    /// An Index Reduction payload: the reduced system under `"after"`, the raw one under
     /// `"before"`, and deliberately **different sizes** so a swap is visible.
+    ///
+    /// **Two siblings since 2026-11-04**, which is what the re-modelled stage publishes.
+    /// It used to put the reduced report at the *root* with `before` nested inside it —
+    /// the pane's old unstated convention — so this fixture agreed with the pane and with
+    /// nothing else, and could not have caught the pane finding neither half.
+    ///
+    /// **The different sizes are a fixture device and not what reality looks like.**
+    /// Measured 2026-11-04: `Drivetrain` is 97×97 on both sides, `CapacitorLoop` 14×14,
+    /// `BenchActuator` 48×48 — reduction moves unknowns between the integrated and
+    /// algebraic sets without changing the matrix's dimensions. So a swap of the two
+    /// halves is **invisible by size on every real specimen**, and what distinguishes
+    /// them is rank: the raw half is rank-deficient and the reduced half is full rank.
+    /// `worker::tests::drivetrain_before_report_parseable_as_incidence` is the test that
+    /// pins that on a real compile; this one only has to make a swap *detectable here*.
     fn split_report() -> Value {
-        let mut after = matrix_report(2, 2);
-        after["before"] = matrix_report(3, 3);
-        after
+        json!({ "after": matrix_report(2, 2), "before": matrix_report(3, 3) })
     }
 
     /// What the pane is given and what it leaves behind, so a test can read the caches
@@ -276,9 +303,17 @@ mod tests {
                         cache: &mut p.before_cache,
                         camera: &mut p.before_camera,
                     });
+                    // Both halves named, the way `App::matrix_reports` names them. A
+                    // non-split report is its own after-report with nothing beside it.
+                    let (after_report, before_report) = if p.split {
+                        (p.report.get("after"), p.report.get("before"))
+                    } else {
+                        (Some(&p.report), None)
+                    };
                     incidence_pane_ui(
                         ui,
-                        Some(&p.report),
+                        after_report,
+                        before_report,
                         MatrixPane {
                             cache: &mut p.after_cache,
                             camera: &mut p.after_camera,
@@ -388,8 +423,9 @@ mod tests {
             "an unsplit pane with nothing to draw must say so rather than render blank",
         );
 
-        // Split, with a raw DAE under `before` and no reduced matrix at the root.
-        let report = json!({ "before": matrix_report(2, 2)["incidence"].clone() });
+        // Split, with a raw DAE under `before` and no reduced matrix beside it — the
+        // shape of a reduction that refused the system.
+        let report = json!({ "before": matrix_report(2, 2) });
         let h = draw_incidence(Panes::new(report, true));
         assert!(
             h.query_by_label_contains("(no after incidence data)")
@@ -409,7 +445,9 @@ mod tests {
     /// nothing, not quietly render the After matrix twice.
     #[test]
     fn a_missing_before_half_is_reported_rather_than_substituted() {
-        let h = draw_incidence(Panes::new(matrix_report(2, 2), true));
+        // An `after` half and no sibling — the shape the stage publishes for a reduction
+        // that was admitted while structural published no raw matrix to compare.
+        let h = draw_incidence(Panes::new(json!({ "after": matrix_report(2, 2) }), true));
 
         assert!(
             h.query_by_label_contains("(no before incidence data)")

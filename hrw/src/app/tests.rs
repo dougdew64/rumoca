@@ -7333,3 +7333,119 @@ fn a_press_inside_an_open_menu_leaves_the_menu_open() {
          the held text is dropped before the item can use it",
     );
 }
+
+/// **Every sub-view the app OFFERS on a stage is one a pane can fill.**
+///
+/// The complement of `every_lab_sub_view_link_is_available_for_its_specimen`, which asks
+/// whether a *link* names a tab the app offers. Nothing asked the reverse, and **that is
+/// how five of the eight tabs on the Index Reduction stage came to draw nothing** — the
+/// re-modelled payload put its reports under `before`/`after` while the matrix panes
+/// looked for a top-level `incidence`, and the tabs went on being offered.
+///
+/// Doug found that by asking what the rebase had cost. This is the check that would have
+/// found it, and all five at once.
+///
+/// # What "a pane can fill it" means here, and what it does not
+///
+/// It means the data the pane parses is present: an incidence matrix for `Incidence`, BLT
+/// blocks for `SpyPlot`, a search log for `Animate`, a report for `Summary`. **It is not a
+/// claim about pixels** — `egui_kittest` cannot reach a painted cell, and `CLAUDE.md`'s
+/// standing limit applies. A tab that is offered and whose data parses can still look
+/// wrong, and only Doug can see that.
+///
+/// `Tree` is exempt: it renders the stage value whatever shape it has, so there is nothing
+/// to parse and nothing that could be absent.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn every_offered_sub_view_has_something_to_draw() {
+    // Holds the live stage files: this test moves a real `Compiled` bundle into an `App`,
+    // and without this the suite overwrites `.hrw-bridge/stages/` with a synthetic one —
+    // which is Doug's running session's state, not the test's.
+    let _stages = crate::ui_tests::StageFiles::preserved();
+    let mut checked = 0usize;
+    let mut empty: Vec<String> = Vec::new();
+
+    for name in [
+        "Drivetrain",
+        "CapacitorLoop",
+        "CartesianPendulum",
+        "SingleInertia",
+    ] {
+        let crate::worker::FromWorker::Compiled { stages, .. } =
+            crate::worker::test_msl::compile_specimen_shared(name)
+        else {
+            panic!("expected Compiled for {name}");
+        };
+
+        for stage in [StageKind::Structural, StageKind::IndexReduction] {
+            if stages.get(stage).value.is_none() {
+                continue;
+            }
+            let mut app = App::test_default();
+            app.stage = stage;
+            app.stages = stages.clone();
+
+            let (after, before) = App::matrix_reports(&app.stages, stage);
+            for view in StructuralView::ALL {
+                if !app.structural_view_available(*view) {
+                    continue;
+                }
+                checked += 1;
+                let fillable = match view {
+                    // Renders whatever the stage value is.
+                    StructuralView::Tree => true,
+                    StructuralView::Summary => {
+                        crate::reduction_view::ReductionView::from_report(
+                            stages.get(stage).value.as_ref().expect("checked above"),
+                        )
+                        .is_some()
+                            || stage == StageKind::Structural
+                    }
+                    StructuralView::Animate => {
+                        crate::reduction_anim::ReductionAnimation::from_report(
+                            stages.get(stage).value.as_ref().expect("checked above"),
+                        )
+                        .is_some_and(|a| !a.is_empty())
+                    }
+                    StructuralView::Incidence => after
+                        .and_then(crate::incidence_view::IncidenceMatrix::from_report)
+                        .is_some(),
+                    StructuralView::SpyPlot => {
+                        after.and_then(crate::spyplot::Plot::from_report).is_some()
+                    }
+                    // The frame-driven three. Offered only where the frames belong to the
+                    // system on screen, which is why they are refused on Index Reduction.
+                    StructuralView::MatchingAnim
+                    | StructuralView::TarjanAnim
+                    | StructuralView::TearingAnim => after
+                        .and_then(crate::incidence_view::IncidenceMatrix::from_report)
+                        .is_some(),
+                };
+                if !fillable {
+                    empty.push(format!(
+                        "{name} / {stage:?} / {} \u{2014} offered, and the pane finds no \
+                         data to draw",
+                        structural_view_name(*view),
+                    ));
+                }
+                let _ = before;
+            }
+        }
+    }
+
+    assert!(
+        checked > 20,
+        "only {checked} offered sub-views were examined across four specimens and two \
+         stages, so the walk stopped looking",
+    );
+    assert!(
+        empty.is_empty(),
+        "{} sub-view(s) are offered with nothing to fill them \u{2014} a tab a reader can \
+         click and that draws an empty pane trains them to read empty as normal:\n  {}",
+        empty.len(),
+        empty.join("\n  "),
+    );
+}

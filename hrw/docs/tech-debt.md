@@ -3302,7 +3302,54 @@ rather than `Stage` JSON, and a three-equation model proved a successful run can
 `SimData::non_finite_series` and the pane warning above the plot are the result — so unlike NULL 2,
 this one was reachable and is now reported.
 
-### The Index Reduction tab offers five sub-views that draw nothing
+### ~~The Index Reduction tab offers five sub-views that draw nothing~~
+
+**Recovered 2026-11-04, the same day it was found.** Doug: *"I want to recover index reduction tabs
+which are recoverable. And, I don't want to conflate or otherwise recover badly."*
+
+**What landed, and what it refused to do.** The cause was not the payload: `incidence_pane_ui`
+took one report, dug the Before matrix out of `report["before"]`, and parsed After from the
+**root** — an unstated convention that was true on 0.9.20 and false the moment the re-modelled
+stage published the two as siblings. Both reports are parameters now, named by
+`App::matrix_reports`, and **nothing is merged**. Hoisting the after-report to the top level would
+have fixed these panes and, in the same move, handed the three frame-driven animations a matrix to
+pair the **raw** system's frames with — the bad recovery, and the one the shortest diff would have
+produced.
+
+So:
+
+- **`Incidence` and `SpyPlot` read `after`** on that stage, with the Before pane reading `before`.
+  The reduced system's matrix is back, with its matching marked, beside the raw one.
+- **`MatchingAnim`, `TarjanAnim` and `TearingAnim` are refused on that stage**, stated rather than
+  starved. Their frames can only be the raw system's, because `inspect_prepare_for_solve` records
+  the reduction's rounds and not the matching passes inside each rebuild.
+- **`Incidence`/`SpyPlot` require an admitted reduction.** A refused one publishes no `after`, and
+  showing `before` instead would let the pane's subject vary between the reduced and the raw system
+  with nothing saying which — the raw matrix is one tab over on Structural. Found by the new check
+  below on its first run, as `CartesianPendulum / IndexReduction / Incidence`.
+- **`ir_split` keys on both reports existing**, not on the note containing `"singular"` — which
+  with the re-modelled notes was true only for the failures, so the split was off for exactly the
+  successful cases it exists for.
+
+**The durable part is the check, not the fix:**
+`app::tests::every_offered_sub_view_has_something_to_draw` asserts that every sub-view the app
+*offers* is one a pane can fill. That is the complement of
+`every_lab_sub_view_link_is_available_for_its_specimen`, which only ever asked whether a *link*
+names an offered tab — and the missing direction is how all five hid. It is **not** a claim about
+pixels; `egui_kittest` cannot reach a painted cell, so a tab whose data parses can still look
+wrong, and only Doug can see that.
+
+**One thing the fixtures were quietly wrong about.** `matrix_panes`'s split fixture uses
+deliberately different sizes so a swap is visible — and measured on real specimens, `Drivetrain` is
+97×97 on both sides, `CapacitorLoop` 14×14, `BenchActuator` 48×48. Reduction moves unknowns between
+the integrated and algebraic sets without changing the matrix's dimensions, so **a swap is
+invisible by size on every real specimen**; what distinguishes the halves is rank.
+`drivetrain_before_report_parseable_as_incidence` is what pins that, and the fixture's doc now says
+it is a device rather than a likeness.
+
+*The original account follows.*
+
+
 
 **Found 2026-11-04 by Doug asking what the rebase had cost**, after two defects in the same
 area had already been found by the same question. Nothing on screen is *wrong*; five of the

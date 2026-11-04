@@ -2666,6 +2666,17 @@ impl App {
             // Frame-dependent like its predecessor, so it stays out of the pure
             // predicate below and the `expect` there keeps describing the set it covers.
             StructuralView::Animate => is_index_reduction && self.has_reduction_search(),
+            // **The matrices on this stage are the REDUCED system's**, and a reduction
+            // that refused the system publishes no `after` to draw. Offering them anyway
+            // gave `CartesianPendulum` an Incidence tab over an empty pane — found by
+            // `every_offered_sub_view_has_something_to_draw` on its first run.
+            //
+            // Unavailable rather than quietly showing `before` instead: the pane's subject
+            // would then vary between the reduced and the raw system with nothing saying
+            // which, and the raw matrix is already one tab over on Structural.
+            StructuralView::Incidence | StructuralView::SpyPlot if is_index_reduction => {
+                Self::matrix_reports(&self.stages, self.stage).0.is_some()
+            }
             other => {
                 Self::structural_view_available_from_stage(other, is_index_reduction, is_singular)
                     .expect("Animate is the only frame-dependent view, handled above")
@@ -2710,9 +2721,30 @@ impl App {
         match v {
             // Summary is the singular-system explanation, plus Index Reduction's report.
             StructuralView::Summary => Some(is_index_reduction || is_singular),
+            // **The three frame-driven animations are NOT offered on Index Reduction**,
+            // stated rather than left to starve. Their frames come from
+            // `structural_frames_for_stage`, which can only hand them the **raw**
+            // system's — `inspect_prepare_for_solve` records the reduction's rounds, not
+            // the matching passes inside each rebuild, so the reduced system's report is
+            // observable and its search is not.
+            //
+            // They drew nothing on that tab until 2026-11-04 only because they looked for
+            // a top-level `incidence` the re-modelled payload nests under `after`. That is
+            // protection by accident of payload shape, and it would have evaporated the
+            // moment anyone "fixed" the matrix panes by hoisting that report up — raw
+            // frames against reduced rows, which `TearingAnimation::from_captured` cannot
+            // detect because it compares `blocks.len()` to `segments.len()` and ordinals
+            // that run `0..n` in both systems.
+            StructuralView::MatchingAnim
+            | StructuralView::TarjanAnim
+            | StructuralView::TearingAnim
+                if is_index_reduction =>
+            {
+                Some(false)
+            }
             // These need a complete matching to mean anything.
             StructuralView::SpyPlot | StructuralView::TarjanAnim | StructuralView::TearingAnim => {
-                Some(!is_singular || is_index_reduction)
+                Some(!is_singular)
             }
             // Always available: the incidence pattern, the matching *search* (whose
             // failure is the point on a singular system), and the raw tree.
@@ -4681,6 +4713,46 @@ impl App {
         !self.frames.pre_lowering.is_empty()
     }
 
+    /// **Which report a matrix pane should read, and the one beside it if there are two.**
+    ///
+    /// Returns `(after, before)`. Every stage except Index Reduction *is* its own report
+    /// and has nothing to compare; Index Reduction publishes the raw system under
+    /// `before` and the reduced one under `after`, so both are named here and neither
+    /// pane has to guess.
+    ///
+    /// # Why this exists rather than the panes digging
+    ///
+    /// `matrix_panes::incidence_pane_ui` used to take one report and find the Before
+    /// matrix at `report["before"]`, parsing After from the **root** — a convention
+    /// nobody stated, true on 0.9.20 and false the moment the re-modelled stage published
+    /// the two as siblings. Five sub-views on that tab drew empty with the data one level
+    /// down.
+    ///
+    /// **The alternative fix was to hoist the after-report to the top level, and it would
+    /// have been a bad one.** It would have made these panes work and, in the same move,
+    /// handed `matching_anim`/`tarjan_anim`/`tearing_anim` a matrix on that stage — which
+    /// they would pair with the **raw** system's recorded frames. Nothing merges now, and
+    /// those three are refused on that stage outright.
+    ///
+    /// A `null` `after` — a reduction that refused the system — reads as absent rather
+    /// than as an empty report, so a pane says *why* instead of drawing nothing.
+    ///
+    /// Takes `&StageBundle` rather than `&self` so a caller can hold it alongside the
+    /// `&mut self` the pane closure needs; see the `ir_split` block.
+    fn matrix_reports(
+        stages: &crate::worker::StageBundle,
+        stage: StageKind,
+    ) -> (Option<&serde_json::Value>, Option<&serde_json::Value>) {
+        let value = stages.get(stage).value.as_ref();
+        match stage {
+            StageKind::IndexReduction => (
+                value.and_then(|v| v.get("after")).filter(|a| !a.is_null()),
+                value.and_then(|v| v.get("before")).filter(|b| !b.is_null()),
+            ),
+            _ => (value, None),
+        }
+    }
+
     /// Whether the Index Reduction stage published a search worth stepping.
     ///
     /// **Read from the stage JSON rather than the cache**, for the reason
@@ -5026,17 +5098,21 @@ impl App {
                 // than trusting each. It is a no-op on every known path — see the method.
                 self.clamp_structural_sub_view();
 
-                // Whether the Index Reduction tab shows a Before/After split for
-                // comparative views. True when index reduction was actually needed
-                // (the note mentions "singular").
-                let ir_split = report_ready
-                    && self.stage == StageKind::IndexReduction
-                    && self
-                        .stages
-                        .get(self.stage)
-                        .note
-                        .as_deref()
-                        .is_some_and(|n| n.contains("singular"));
+                // **Two matrices to compare**, which is the question the split actually
+                // asks. It read *"the note mentions `singular`"* until 2026-11-04 — and
+                // with the re-modelled notes that is true only for reductions that
+                // **failed**, which publish no `after` at all. So the split was off for
+                // exactly the successful cases it exists for, and on for the ones with
+                // nothing on the right.
+                //
+                // The borrow ends with this block on purpose: `matrix_reports` borrows
+                // `self.stages`, and the pane closure below needs `&mut self`. Taking the
+                // reports *inside* each arm keeps them a disjoint field borrow, which is
+                // how the single-report version worked before this split existed.
+                let ir_split = report_ready && self.stage == StageKind::IndexReduction && {
+                    let (after, before) = Self::matrix_reports(&self.stages, self.stage);
+                    after.is_some() && before.is_some()
+                };
 
                 // **One wrapper for every stage sub-view**, rather than one per pane. The
                 // arms below are a dozen and growing, and a pane added without its own would
@@ -5058,7 +5134,10 @@ impl App {
                         if report_ready && self.viewport.structural == StructuralView::SpyPlot {
                             matrix_panes::spy_plot_pane_ui(
                                 ui,
-                                self.stages.get(self.stage).value.as_ref(),
+                                // The reduced system on Index Reduction, this stage's own
+                                // report everywhere else — the same choice the incidence
+                                // pane makes one arm down, from the same pair.
+                                Self::matrix_reports(&self.stages, self.stage).0,
                                 matrix_panes::MatrixPane {
                                     cache: &mut self.stage_views.spy_plot,
                                     camera: &mut self.viewport.spy,
@@ -5072,7 +5151,8 @@ impl App {
                         {
                             matrix_panes::incidence_pane_ui(
                                 ui,
-                                self.stages.get(self.stage).value.as_ref(),
+                                Self::matrix_reports(&self.stages, self.stage).0,
+                                Self::matrix_reports(&self.stages, self.stage).1,
                                 matrix_panes::MatrixPane {
                                     cache: &mut self.stage_views.incidence,
                                     camera: &mut self.viewport.incidence,
