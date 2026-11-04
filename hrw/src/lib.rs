@@ -41,7 +41,6 @@
 //!   module sizes, `App` field groups), generated into marker-delimited regions so
 //!   the document cannot transcribe a count that then rots.
 
-pub mod alias_anim;
 pub mod answer_check;
 pub mod app;
 pub mod arch_doc;
@@ -68,7 +67,6 @@ pub mod field_help;
 /// Which pre-commit gate a change needs. Used by `examples/gate.rs`, and here
 /// rather than there so the decision is reachable by a test.
 pub mod gate_policy;
-pub mod ic_plan_anim;
 pub mod identifier_index;
 pub mod incidence_view;
 pub mod json_read;

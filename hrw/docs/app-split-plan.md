@@ -4,6 +4,20 @@
 **Status:** live plan, opened 2026-08-19. **Read when:** starting any of this work, or tempted to
 add to `app.rs`.
 
+> **Two views this document discusses in detail no longer exist.** `alias_anim` and `ic_plan_anim`
+> were deleted on **2026-11-04**, along with `StructuralView::AliasAnim`, `InitView`,
+> `alias_anim_ui`, `ic_plan_anim_ui` and the `aliases` tab. Alias elimination is not a Rumoca phase
+> on v0.10.0 — upstream deleted `rumoca-phase-structural/src/eliminate/` — and initialization
+> publishes initial-value pins rather than an `IcBlock` solve sequence, so both panes read fields
+> nothing writes and both tabs had already stopped appearing. `docs/tech-debt.md` carries the
+> account.
+>
+> **The passages naming them are kept and are still true of the days they describe.** The
+> `AliasAnim` redirect-list defect of 2026-08-19 happened, and the *reason for that list* outlives
+> the member that exposed it — `report_sub_view`'s own test says so, and was re-keyed to `Animate`
+> rather than deleted. A measurement, a defect account or a dated table does not move when the
+> present changes; read a symbol below as naming what it named then.
+
 **Doug's charge, and the second half is a hard requirement rather than a goal:**
 
 > *"You should determine the size of the pieces based upon a goal of reducing the frequency of

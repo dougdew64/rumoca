@@ -71,7 +71,7 @@
 
 use eframe::egui;
 
-use crate::stage_view::{EventsView, FlattenView, InitView};
+use crate::stage_view::{EventsView, FlattenView};
 use crate::worker::StageKind;
 
 /// What the Flatten compile produced, and therefore which of its tabs exist.
@@ -126,14 +126,10 @@ pub(crate) fn events_view_available(v: EventsView, have_pre_lowering: bool) -> b
     }
 }
 
-/// Whether an Initialization sub-view will show what it names. See
-/// [`flatten_view_available`].
-pub(crate) fn init_view_available(v: InitView, have_ic_plan: bool) -> bool {
-    match v {
-        InitView::Tree => true,
-        InitView::IcPlan => have_ic_plan,
-    }
-}
+// **`init_view_available` and `init_row_ui` were deleted 2026-11-04 with `InitView`.**
+// The Initialization stage is tree-only now: its one non-tree sub-view read the
+// `ic_plan` solve sequence, which v0.10.0 does not publish. See `stage_view.rs` for
+// why the enum went rather than keeping a one-variant version.
 
 /// The Flatten stage's sub-view row: the equation sheet, the source map, the connection
 /// replay, the tree.
@@ -241,34 +237,8 @@ pub(crate) fn events_row_ui(
     true
 }
 
-/// The Initialization stage's sub-view row: the tree, or a run of the IC solve plan.
-///
-/// Returns `init_ready`. `have_ic_plan` is whether the stage produced a plan — a model
-/// whose initialization failed has none, and shows no row rather than an empty tab.
-pub(crate) fn init_row_ui(
-    ui: &mut egui::Ui,
-    stage: StageKind,
-    have_ic_plan: bool,
-    view: &mut InitView,
-) -> bool {
-    // The Initialization stage offers a run of the initial-condition
-    // solve plan beside the tree -- only when there is a plan, so a
-    // model whose initialization failed never shows an empty tab.
-    if stage != StageKind::Initialization || !have_ic_plan {
-        return false;
-    }
-    ui.horizontal(|ui| {
-        ui.selectable_value(view, InitView::Tree, "Tree");
-        ui.selectable_value(view, InitView::IcPlan, "IC plan \u{25b6}")
-            .on_hover_text(
-                "Walk the plan for computing a consistent state at t=0. Mostly \
-                 plain assignment; the few blocks that iterate are where \
-                 initialization fails when it fails.",
-            );
-    });
-    ui.separator();
-    true
-}
+// `init_row_ui` was deleted here 2026-11-04 — see the note where
+// `init_view_available` stood, above.
 
 #[cfg(test)]
 mod tests {
@@ -284,14 +254,14 @@ mod tests {
     /// leftmost-is-default rule below is a claim about this order.
     const FLATTEN_TABS: &[&str] = &["Equations", "Source Map", "Connections \u{25b6}", "Tree"];
     const EVENTS_TABS: &[&str] = &["Tree", "pre() lowering \u{25b6}"];
-    const INIT_TABS: &[&str] = &["Tree", "IC plan \u{25b6}"];
+    // `INIT_TABS` went 2026-11-04 with the Initialization row: the stage is tree-only
+    // now, and it is exercised below as one of the tree-only cases instead.
 
     /// What the three gates said this frame.
     #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
     struct Gates {
         flatten: bool,
         events: bool,
-        init: bool,
     }
 
     /// Everything the three rows are handed, plus what they handed back.
@@ -302,10 +272,8 @@ mod tests {
         stage: StageKind,
         have: FlattenContent,
         pre_lowering: bool,
-        ic_plan: bool,
         flatten: FlattenView,
         events: EventsView,
-        init: InitView,
         gates: Gates,
     }
 
@@ -325,10 +293,8 @@ mod tests {
                     connections: true,
                 },
                 pre_lowering: true,
-                ic_plan: true,
                 flatten: v.flatten,
                 events: v.events,
-                init: v.init,
                 gates: Gates::default(),
             }
         }
@@ -349,7 +315,6 @@ mod tests {
                     r.gates = Gates {
                         flatten: flatten_row_ui(ui, r.stage, r.have, &mut r.flatten),
                         events: events_row_ui(ui, r.stage, r.pre_lowering, &mut r.events),
-                        init: init_row_ui(ui, r.stage, r.ic_plan, &mut r.init),
                     };
                 },
                 rows,
@@ -383,14 +348,6 @@ mod tests {
                 },
                 EVENTS_TABS,
             ),
-            (
-                StageKind::Initialization,
-                Gates {
-                    init: true,
-                    ..Gates::default()
-                },
-                INIT_TABS,
-            ),
         ] {
             let h = draw(Rows::on(stage));
             assert_eq!(
@@ -409,21 +366,29 @@ mod tests {
 
     /// A stage with no sub-views draws no row, however much the compile produced.
     ///
-    /// `Dae` stands for the eight tree-only stages: they have no sub-tabs at all, and a
-    /// row appearing on one would be a claim that they do.
+    /// `Dae` stands for the tree-only stages: they have no sub-tabs at all, and a row
+    /// appearing on one would be a claim that they do.
+    ///
+    /// **`Initialization` is asserted explicitly since 2026-11-04**, when it joined that
+    /// set — `InitView` went with the IC-plan view, whose solve sequence v0.10.0 does not
+    /// publish. Named rather than left to `Dae`'s stand-in, because it is the one stage
+    /// that *used* to draw a row: a regression would put the row back, and only a case
+    /// naming this stage would notice.
     #[test]
     fn a_tree_only_stage_draws_no_row() {
-        let h = draw(Rows::on(StageKind::Dae));
-        assert_eq!(
-            h.state().gates,
-            Gates::default(),
-            "a tree-only stage offers nothing, so every gate is closed",
-        );
-        for tab in FLATTEN_TABS.iter().chain(EVENTS_TABS).chain(INIT_TABS) {
-            assert!(
-                h.query_by_label(tab).is_none(),
-                "a tree-only stage must not draw {tab:?}",
+        for stage in [StageKind::Dae, StageKind::Initialization] {
+            let h = draw(Rows::on(stage));
+            assert_eq!(
+                h.state().gates,
+                Gates::default(),
+                "{stage:?} is tree-only, so every gate is closed",
             );
+            for tab in FLATTEN_TABS.iter().chain(EVENTS_TABS) {
+                assert!(
+                    h.query_by_label(tab).is_none(),
+                    "{stage:?} is tree-only and must not draw {tab:?}",
+                );
+            }
         }
     }
 
@@ -482,13 +447,15 @@ mod tests {
         );
     }
 
-    /// The Events row needs a captured `pre()`-lowering trace; the Initialization row
-    /// needs a solve plan.
+    /// The Events row needs a captured `pre()`-lowering trace.
     ///
-    /// Both are whole-row gates rather than tab gates, which is what makes those two rows
-    /// unable to strand a selection — see the module docs.
+    /// A whole-row gate rather than a tab gate, which is what makes this row unable to
+    /// strand a selection — see the module docs.
+    ///
+    /// *Covered the Initialization row too until 2026-11-04. That row is gone, and the
+    /// stage's tree-only behaviour is asserted in `a_tree_only_stage_draws_no_row`.*
     #[test]
-    fn the_events_and_init_rows_each_need_their_content() {
+    fn the_events_row_needs_its_content() {
         let mut rows = Rows::on(StageKind::Events);
         rows.pre_lowering = false;
         let h = draw(rows);
@@ -496,15 +463,6 @@ mod tests {
         assert!(
             h.query_by_label("pre() lowering \u{25b6}").is_none(),
             "the Events row must not be drawn at all",
-        );
-
-        let mut rows = Rows::on(StageKind::Initialization);
-        rows.ic_plan = false;
-        let h = draw(rows);
-        assert!(!h.state().gates.init, "a failed initialization has no plan");
-        assert!(
-            h.query_by_label("IC plan \u{25b6}").is_none(),
-            "the Initialization row must not be drawn at all",
         );
     }
 
@@ -525,11 +483,6 @@ mod tests {
         h.get_by_label("pre() lowering \u{25b6}").click();
         h.run_steps(2);
         assert_eq!(h.state().events, EventsView::PreLowering);
-
-        let mut h = draw(Rows::on(StageKind::Initialization));
-        h.get_by_label("IC plan \u{25b6}").click();
-        h.run_steps(2);
-        assert_eq!(h.state().init, InitView::IcPlan);
     }
 
     /// **The default sub-view is the leftmost tab of its row**, in all three rows.
@@ -547,7 +500,6 @@ mod tests {
         for (stage, tabs) in [
             (StageKind::Flatten, FLATTEN_TABS),
             (StageKind::Events, EVENTS_TABS),
-            (StageKind::Initialization, INIT_TABS),
         ] {
             let h = draw(Rows::on(stage));
             let mut selected: Vec<&str> = Vec::new();
@@ -670,25 +622,15 @@ mod tests {
     /// differ from Flatten. If either ever grows a conditional tab this fails, which is
     /// the moment it would need a clamp of its own.
     #[test]
-    fn the_events_and_init_rows_have_no_conditional_tabs() {
+    fn the_events_row_has_no_conditional_tabs() {
         for v in EventsView::ALL {
             assert!(
                 events_view_available(*v, true),
                 "{v:?} must be offered whenever the Events row is drawn",
             );
         }
-        for v in InitView::ALL {
-            assert!(
-                init_view_available(*v, true),
-                "{v:?} must be offered whenever the Initialization row is drawn",
-            );
-        }
         let h = draw(Rows::on(StageKind::Events));
         for tab in EVENTS_TABS {
-            assert!(h.query_by_label(tab).is_some(), "{tab:?} must be drawn");
-        }
-        let h = draw(Rows::on(StageKind::Initialization));
-        for tab in INIT_TABS {
             assert!(h.query_by_label(tab).is_some(), "{tab:?} must be drawn");
         }
     }
@@ -707,13 +649,11 @@ mod tests {
             FlattenContent::default()
         ));
         assert!(events_view_available(EventsView::Tree, false));
-        assert!(init_view_available(InitView::Tree, false));
 
         assert!(!flatten_view_available(
             FlattenView::Equations,
             FlattenContent::default()
         ));
         assert!(!events_view_available(EventsView::PreLowering, false));
-        assert!(!init_view_available(InitView::IcPlan, false));
     }
 }

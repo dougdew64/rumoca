@@ -43,11 +43,9 @@ use crate::identifier_index;
 // Canvas provides a pan/zoom camera for custom-painted views (spy-plot,
 // incidence matrix). It tracks the transform and handles drag/scroll input.
 use crate::LiveState;
-use crate::alias_anim;
 use crate::artifact_pane;
 use crate::connection_anim;
 use crate::field_help;
-use crate::ic_plan_anim;
 use crate::incidence_view;
 use crate::log_view;
 use crate::matching_anim;
@@ -789,8 +787,8 @@ use crate::specimen_source::{self, SourceViewState};
 use crate::stage_caches::StageViewCaches;
 use crate::stage_tabs;
 use crate::stage_view::{
-    EventsView, FlattenView, InitView, StructuralView, Viewport, events_view_name,
-    flatten_view_name, init_view_name, structural_view_name, sub_view_name_for,
+    EventsView, FlattenView, StructuralView, Viewport, events_view_name, flatten_view_name,
+    structural_view_name, sub_view_name_for,
 };
 use crate::ui_state::{NavEntry, SpecimenDetail, UiMode};
 
@@ -2559,7 +2557,6 @@ impl App {
                 }
                 StageKind::Flatten => Some(flatten_view_name(self.viewport.flatten)),
                 StageKind::Events => Some(events_view_name(self.viewport.events)),
-                StageKind::Initialization => Some(init_view_name(self.viewport.init)),
                 _ => None,
             },
             specimen_detail: (self.ui_mode == UiMode::Specimen).then_some({
@@ -2595,7 +2592,6 @@ impl App {
                 StructuralView::TearingAnim => {
                     Some(self.stage_views.tearing_anim.as_ref()?.as_ref()?)
                 }
-                StructuralView::AliasAnim => Some(self.stage_views.alias_anim.as_ref()?.as_ref()?),
                 _ => None,
             },
             StageKind::IndexReduction => {
@@ -2603,9 +2599,6 @@ impl App {
             }
             StageKind::Events if self.viewport.events == EventsView::PreLowering => {
                 Some(self.compile_views.pre_lowering_anim.as_ref()?.as_ref()?)
-            }
-            StageKind::Initialization if self.viewport.init == InitView::IcPlan => {
-                Some(self.compile_views.ic_plan_anim.as_ref()?.as_ref()?)
             }
             StageKind::Flatten if self.viewport.flatten == FlattenView::Connections => {
                 Some(self.compile_views.connection_anim.as_ref()?.as_ref()?)
@@ -2657,13 +2650,10 @@ impl App {
             // below so the re-model restores one line here, and so the `expect`
             // on that predicate keeps describing the set it actually covers.
             StructuralView::Animate => false,
-            StructuralView::AliasAnim => is_index_reduction && self.has_alias_eliminations(),
-            other => Self::structural_view_available_from_stage(
-                other,
-                is_index_reduction,
-                is_singular,
-            )
-            .expect("Animate and AliasAnim are the only frame-dependent views, both handled above"),
+            other => {
+                Self::structural_view_available_from_stage(other, is_index_reduction, is_singular)
+                    .expect("Animate is the only frame-dependent view, handled above")
+            }
         }
     }
 
@@ -2713,7 +2703,7 @@ impl App {
             StructuralView::Incidence | StructuralView::MatchingAnim | StructuralView::Tree => {
                 Some(true)
             }
-            StructuralView::Animate | StructuralView::AliasAnim => None,
+            StructuralView::Animate => None,
         }
     }
 
@@ -3109,7 +3099,6 @@ impl App {
                 StructuralView::TearingAnim => {
                     Some(self.stage_views.tearing_anim.as_mut()?.as_mut()?)
                 }
-                StructuralView::AliasAnim => Some(self.stage_views.alias_anim.as_mut()?.as_mut()?),
                 _ => None,
             },
             StageKind::IndexReduction => {
@@ -3117,9 +3106,6 @@ impl App {
             }
             StageKind::Events if self.viewport.events == EventsView::PreLowering => {
                 Some(self.compile_views.pre_lowering_anim.as_mut()?.as_mut()?)
-            }
-            StageKind::Initialization if self.viewport.init == InitView::IcPlan => {
-                Some(self.compile_views.ic_plan_anim.as_mut()?.as_mut()?)
             }
             StageKind::Flatten if self.viewport.flatten == FlattenView::Connections => {
                 Some(self.compile_views.connection_anim.as_mut()?.as_mut()?)
@@ -4636,72 +4622,25 @@ impl App {
         }
     }
 
-    /// The alias-elimination reveal, on the Index Reduction stage.
-    ///
-    /// Simpler than the replay views: no live-debug lifecycle, because this
-    /// phase has no search to trace (see `alias_anim`'s module note).
-    fn alias_anim_ui(&mut self, ui: &mut egui::Ui) {
-        if self.stage_views.alias_anim.is_none() {
-            self.stage_views.alias_anim = Some(
-                self.stages
-                    .get(self.stage)
-                    .value
-                    .as_ref()
-                    .and_then(alias_anim::AliasAnimation::from_report),
-            );
-        }
-        if let Some(Some(anim)) = &mut self.stage_views.alias_anim {
-            egui::ScrollArea::vertical()
-                .auto_shrink(false)
-                .show(ui, |ui| anim.ui(ui));
-        } else {
-            ui.weak("(no alias eliminations in this report)");
-        }
-    }
-
-    /// Whether the current report has alias eliminations worth a tab.
-    ///
-    /// Read straight from the stage JSON rather than the cache: the tab bar is
-    /// drawn before the view is, so the cache may not exist yet.
-    fn has_alias_eliminations(&self) -> bool {
-        self.stages
-            .get(self.stage)
-            .value
-            .as_ref()
-            .and_then(|v| v.get("reduction")?.get("eliminations")?.as_array())
-            .is_some_and(|a| !a.is_empty())
-    }
-
-    /// The initial-condition plan run, on the Initialization stage.
-    fn ic_plan_anim_ui(&mut self, ui: &mut egui::Ui) {
-        if self.compile_views.ic_plan_anim.is_none() {
-            self.compile_views.ic_plan_anim = Some(
-                self.stages
-                    .initialization
-                    .value
-                    .as_ref()
-                    .and_then(ic_plan_anim::IcPlanAnimation::from_report),
-            );
-        }
-        if let Some(Some(anim)) = &mut self.compile_views.ic_plan_anim {
-            egui::ScrollArea::vertical()
-                .auto_shrink(false)
-                .show(ui, |ui| anim.ui(ui));
-        } else {
-            ui.weak("(no initial-condition plan in this report)");
-        }
-    }
-
-    /// Whether the initialization report has a plan worth a tab. See
-    /// [`Self::has_alias_eliminations`] on why this reads the JSON directly.
-    fn has_ic_plan(&self) -> bool {
-        self.stages
-            .initialization
-            .value
-            .as_ref()
-            .and_then(|v| v.get("blocks")?.as_array())
-            .is_some_and(|a| !a.is_empty())
-    }
+    // **`alias_anim_ui`, `has_alias_eliminations`, `ic_plan_anim_ui` and
+    // `has_ic_plan` were deleted 2026-11-04 with the two views they drove.**
+    //
+    // Both gates read a field v0.10.0 never publishes — `reduction.eliminations`
+    // and `blocks` — so both sub-view tabs had stopped being offered at all. That
+    // is why nothing on screen looked wrong and nothing failed: a tab that is never
+    // drawn makes no false claim, it just quietly stops existing.
+    //
+    // The accounts are in `docs/tech-debt.md`. In short: alias elimination is **not
+    // a Rumoca phase any more** — upstream deleted
+    // `rumoca-phase-structural/src/eliminate/` outright, and the corpus shows it,
+    // since no specimen's equation count shrinks on 0.10.0 where `Drivetrain` once
+    // went from 97 equations to 20. And the initialization re-model replaced the
+    // `IcBlock` solve *sequence* with initial-value pins and roles, so there is no
+    // sequence left to step through.
+    //
+    // `has_pre_lowering_sites` below is the counter-example worth keeping in view:
+    // it also returned a dead answer through the rebase, and it came back, because
+    // the pass it asks about still exists. These two had nothing to come back to.
 
     /// Whether the compile captured a `pre()`-lowering trace worth a tab.
     ///
@@ -4979,11 +4918,15 @@ impl App {
                     }
                 }
 
-                // **Three rows, drawn unconditionally, at most one of which appears** —
+                // **Two rows, drawn unconditionally, at most one of which appears** —
                 // each begins with `stage == <its own stage>` and the app shows one
                 // stage. Each returns its own gate, which the pane dispatch below
                 // re-tests, so a tab that exists and a pane that draws cannot disagree.
-                // See `sub_view_rows` for why Flatten is the odd member of the three.
+                // See `sub_view_rows` for why Flatten is the odd member of the pair.
+                //
+                // **It was three until 2026-11-04.** `init_row_ui` went with
+                // `InitView`: the Initialization stage's only non-tree sub-view read
+                // the `ic_plan` solve sequence, which v0.10.0 does not publish.
                 let flatten_ready = sub_view_rows::flatten_row_ui(
                     ui,
                     self.stage,
@@ -4995,12 +4938,6 @@ impl App {
                     self.stage,
                     self.has_pre_lowering_trace(),
                     &mut self.viewport.events,
-                );
-                let init_ready = sub_view_rows::init_row_ui(
-                    ui,
-                    self.stage,
-                    self.has_ic_plan(),
-                    &mut self.viewport.init,
                 );
 
                 // The report stages (Structural + Index reduction) offer a custom
@@ -5021,7 +4958,6 @@ impl App {
                     let available = report_sub_view::TabAvailability {
                         summary: self.structural_view_available(StructuralView::Summary),
                         animate: self.structural_view_available(StructuralView::Animate),
-                        aliases: self.structural_view_available(StructuralView::AliasAnim),
                         spy_plot: self.structural_view_available(StructuralView::SpyPlot),
                     };
                     report_sub_view::report_sub_view_row_ui(
@@ -5121,10 +5057,6 @@ impl App {
                         {
                             self.tearing_anim_ui(ui);
                         } else if report_ready
-                            && self.viewport.structural == StructuralView::AliasAnim
-                        {
-                            self.alias_anim_ui(ui);
-                        } else if report_ready
                             && self.viewport.structural == StructuralView::Summary
                         {
                             if self.stage == StageKind::Structural {
@@ -5176,8 +5108,6 @@ impl App {
                             self.reduction_anim_ui(ui);
                         } else if events_ready && self.viewport.events == EventsView::PreLowering {
                             self.pre_lowering_anim_ui(ui);
-                        } else if init_ready && self.viewport.init == InitView::IcPlan {
-                            self.ic_plan_anim_ui(ui);
                         } else if flatten_ready && self.viewport.flatten == FlattenView::Equations {
                             self.equation_sheet_ui(ui);
                         } else if flatten_ready && self.viewport.flatten == FlattenView::SourceMap {
@@ -5342,7 +5272,6 @@ impl App {
             }
             (Some(SubView::Flatten(v)), StageKind::Flatten) => self.viewport.flatten = v,
             (Some(SubView::Events(v)), StageKind::Events) => self.viewport.events = v,
-            (Some(SubView::Init(v)), StageKind::Initialization) => self.viewport.init = v,
             _ => {}
         }
     }
@@ -6215,9 +6144,6 @@ impl App {
                 }
                 (SubView::Events(v), StageKind::Events) => {
                     sub_view_rows::events_view_available(v, self.has_pre_lowering_trace())
-                }
-                (SubView::Init(v), StageKind::Initialization) => {
-                    sub_view_rows::init_view_available(v, self.has_ic_plan())
                 }
                 // Stage mismatch — see above. `apply_sub_view` matches the same pairs and
                 // ignores it, so this changes nothing except which message is *not* shown.
@@ -7189,7 +7115,7 @@ struct FrameIntent {
 /// A sub-view within a stage, addressable by an `hrw://` link.
 ///
 /// **The slugs are exactly the names the capture emits** (`structural_view_name`,
-/// `flatten_view_name`, `events_view_name`, `init_view_name`), which is #42's design
+/// `flatten_view_name`, `events_view_name`), which is #42's design
 /// principle applied: `hrw://` should express any noun `focus.json` can describe, so
 /// the two directions share one vocabulary rather than inventing a second.
 ///
@@ -7202,7 +7128,6 @@ pub(crate) enum SubView {
     Structural(StructuralView),
     Flatten(FlattenView),
     Events(EventsView),
-    Init(InitView),
 }
 
 impl SubView {
@@ -7221,7 +7146,6 @@ impl SubView {
             Self::Structural(v) => structural_view_name(*v),
             Self::Flatten(v) => flatten_view_name(*v),
             Self::Events(v) => events_view_name(*v),
-            Self::Init(v) => init_view_name(*v),
         }
     }
 
@@ -7240,7 +7164,6 @@ impl SubView {
                 "MatchingAnim" => StructuralView::MatchingAnim,
                 "TarjanAnim" => StructuralView::TarjanAnim,
                 "TearingAnim" => StructuralView::TearingAnim,
-                "AliasAnim" => StructuralView::AliasAnim,
                 "Animate" => StructuralView::Animate,
                 "Tree" => StructuralView::Tree,
                 _ => return None,
@@ -7257,12 +7180,12 @@ impl SubView {
                 "Tree" => EventsView::Tree,
                 _ => return None,
             }),
-            StageKind::Initialization => Self::Init(match slug {
-                "IcPlan" => InitView::IcPlan,
-                "Tree" => InitView::Tree,
-                _ => return None,
-            }),
             // Stages with no sub-views: a link naming one is malformed.
+            // **Initialization joined them 2026-11-04**, when `InitView` went: its
+            // only non-tree sub-view read the `ic_plan` solve sequence, which
+            // v0.10.0 does not publish. A link saying `Initialization/Tree/node/...`
+            // now fails to parse rather than naming the stage's only view, which is
+            // how every other tree-only stage already behaves.
             _ => return None,
         })
     }
