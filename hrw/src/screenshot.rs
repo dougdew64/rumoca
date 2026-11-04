@@ -102,6 +102,9 @@ pub(crate) enum ShotStep {
         seq: Option<u64>,
         why: Option<String>,
         followed: Vec<String>,
+        /// See `ShotRecord::notice_floor`. `u64::MAX` for a failure with no request
+        /// behind it, so a standing notice can never be attributed to one.
+        notice_floor: u64,
         error: String,
     },
 }
@@ -115,6 +118,18 @@ pub(crate) struct ShotRecord {
     /// one of them failed — which is why this is recorded rather than re-read from
     /// the request.
     pub(crate) followed: Vec<String>,
+    /// The region the request asked for. Carried here rather than re-read from the
+    /// file, because by the time the pixels arrive the request may have been
+    /// rewritten — the image answers the request that *was* made.
+    pub(crate) region: bridge::ShotRegion,
+    /// `App::notice_seq` as it stood when this request was picked up.
+    ///
+    /// **The reply's `notice` means "what this shot caused", not "what is on screen".**
+    /// A notice persists until something replaces it, so reporting the standing one
+    /// made three consecutive shots claim a refusal belonging to an earlier request —
+    /// true about the screen and false about the shot. The caller reports a notice
+    /// only when the counter has moved past this floor.
+    pub(crate) notice_floor: u64,
 }
 
 /// One request being worked on.
@@ -122,6 +137,8 @@ pub(crate) struct ShotRecord {
 struct Pending {
     request: ScreenshotRequest,
     followed: Vec<String>,
+    /// `App::notice_seq` when this request was picked up. See `ShotRecord::notice_floor`.
+    notice_floor: u64,
     queue: VecDeque<String>,
     /// When the current settle interval started. Reset by every dispatch, and by
     /// every frame the app is compiling.
@@ -230,9 +247,9 @@ impl ScreenshotState {
     ///
     /// `now` is passed in rather than read here so the whole machine is testable
     /// against a synthetic clock.
-    pub(crate) fn step(&mut self, busy: bool, now: Instant) -> ShotStep {
+    pub(crate) fn step(&mut self, busy: bool, notice_seq: u64, now: Instant) -> ShotStep {
         let Some(pending) = self.pending.as_mut() else {
-            return self.poll(now);
+            return self.poll(notice_seq, now);
         };
 
         // Waiting for pixels. Nothing else may happen until they arrive or the
@@ -292,6 +309,7 @@ impl ScreenshotState {
             seq: Some(pending.request.seq),
             why: pending.request.why,
             followed: pending.followed,
+            notice_floor: pending.notice_floor,
             error,
         }
     }
@@ -327,6 +345,8 @@ impl ScreenshotState {
             seq,
             why: pending.request.why,
             followed: pending.followed,
+            region: pending.request.region,
+            notice_floor: pending.notice_floor,
         })
     }
 
@@ -339,7 +359,7 @@ impl ScreenshotState {
     /// until the file changed a second time. One `stat` per painted frame is far
     /// cheaper than the session file this same frame already writes to disk, and it
     /// has no such hole.
-    fn poll(&mut self, now: Instant) -> ShotStep {
+    fn poll(&mut self, notice_seq: u64, now: Instant) -> ShotStep {
         if !self.watching {
             return ShotStep::Idle;
         }
@@ -362,6 +382,7 @@ impl ScreenshotState {
                     seq: None,
                     why: None,
                     followed: Vec::new(),
+                    notice_floor: u64::MAX,
                     error,
                 };
             }
@@ -373,6 +394,7 @@ impl ScreenshotState {
         }
         self.pending = Some(Pending {
             followed: Vec::new(),
+            notice_floor: notice_seq,
             queue: request.follow.iter().cloned().collect(),
             since: now,
             started: now,
@@ -409,6 +431,40 @@ fn spawn_waker(ctx: egui::Context) {
         });
 }
 
+/// Keep only `region` of `image`, and say which region was actually kept.
+///
+/// `pane` with no `pane_rect` — nothing has drawn a central panel yet — falls back to
+/// the whole window **and reports the fallback**, rather than failing the shot. A
+/// photograph of too much is still a photograph; one that was never taken is not, and
+/// the reply's `region` field is what makes the difference legible.
+///
+/// Clamped to the image rather than trusted: `pane_rect` is recorded on the frame the
+/// central panel draws, and the pixels arrive a few frames later, so a window resized
+/// in between would otherwise index past the end and panic inside `region`.
+pub(crate) fn crop(
+    image: &egui::ColorImage,
+    region: bridge::ShotRegion,
+    pane_rect: Option<egui::Rect>,
+    pixels_per_point: f32,
+) -> (egui::ColorImage, bridge::ShotRegion) {
+    let (bridge::ShotRegion::Pane, Some(rect)) = (region, pane_rect) else {
+        return (image.clone(), bridge::ShotRegion::Window);
+    };
+    let [width, height] = image.size;
+    let scale = |v: f32| (v * pixels_per_point).round().max(0.0) as usize;
+    let x = scale(rect.min.x).min(width);
+    let y = scale(rect.min.y).min(height);
+    let w = scale(rect.width()).min(width - x);
+    let h = scale(rect.height()).min(height - y);
+    if w == 0 || h == 0 {
+        return (image.clone(), bridge::ShotRegion::Window);
+    }
+    (
+        image.region_by_pixels([x, y], [w, h]),
+        bridge::ShotRegion::Pane,
+    )
+}
+
 /// egui's pixels as straight 8-bit RGBA, row by row from the top.
 ///
 /// [`egui::Color32`] is **premultiplied**, and a PNG's RGBA is not, so writing the
@@ -436,11 +492,13 @@ mod tests {
                 why: Some("does the tab row offer Matching?".to_string()),
                 follow: vec!["hrw://load/Drivetrain".to_string()],
                 settle: Duration::from_millis(100),
+                region: bridge::ShotRegion::Window,
             },
             followed: Vec::new(),
             queue: VecDeque::from(["hrw://load/Drivetrain".to_string()]),
             since: now,
             started: now,
+            notice_floor: 0,
             shot_at: None,
         });
         state
@@ -454,24 +512,24 @@ mod tests {
 
         // Inside the settle interval: nothing yet.
         assert_eq!(
-            state.step(false, t0 + Duration::from_millis(50)),
+            state.step(false, 0, t0 + Duration::from_millis(50)),
             ShotStep::Idle
         );
 
         let t1 = t0 + Duration::from_millis(150);
         assert_eq!(
-            state.step(false, t1),
+            state.step(false, 0, t1),
             ShotStep::Follow("hrw://load/Drivetrain".to_string()),
             "the queued link should be dispatched once the settle interval elapses"
         );
         // The dispatch restarts the clock, so the shot does not happen on the next
         // frame — the link's effects have not reached the screen yet.
         assert_eq!(
-            state.step(false, t1 + Duration::from_millis(10)),
+            state.step(false, 0, t1 + Duration::from_millis(10)),
             ShotStep::Idle
         );
         assert_eq!(
-            state.step(false, t1 + Duration::from_millis(150)),
+            state.step(false, 0, t1 + Duration::from_millis(150)),
             ShotStep::Shoot(7)
         );
     }
@@ -487,7 +545,7 @@ mod tests {
         // fires, because the window is half-built the whole time.
         for ms in [50, 200, 400, 600] {
             assert_eq!(
-                state.step(true, t0 + Duration::from_millis(ms)),
+                state.step(true, 0, t0 + Duration::from_millis(ms)),
                 ShotStep::Idle,
                 "no shot while compiling"
             );
@@ -495,11 +553,11 @@ mod tests {
         // The compile ends at 600ms. A full settle interval must pass FROM THERE.
         let end = t0 + Duration::from_millis(600);
         assert_eq!(
-            state.step(false, end + Duration::from_millis(50)),
+            state.step(false, 0, end + Duration::from_millis(50)),
             ShotStep::Idle
         );
         assert_eq!(
-            state.step(false, end + Duration::from_millis(150)),
+            state.step(false, 0, end + Duration::from_millis(150)),
             ShotStep::Shoot(7)
         );
     }
@@ -515,7 +573,7 @@ mod tests {
         let mut state = one_link_pending(t0);
         state.pending.as_mut().unwrap().queue.clear();
         state.pending.as_mut().unwrap().shot_at = Some(t0);
-        let step = state.step(false, t0 + DELIVERY_DEADLINE + Duration::from_millis(1));
+        let step = state.step(false, 0, t0 + DELIVERY_DEADLINE + Duration::from_millis(1));
         let ShotStep::Failed {
             seq, error, why, ..
         } = step
@@ -543,7 +601,7 @@ mod tests {
 
         // 2. The app never settles.
         let mut state = one_link_pending(t0);
-        let step = state.step(true, t0 + OVERALL_DEADLINE + Duration::from_millis(1));
+        let step = state.step(true, 0, t0 + OVERALL_DEADLINE + Duration::from_millis(1));
         let ShotStep::Failed { seq, error, .. } = step else {
             panic!("a request that never settles must fail loudly, got {step:?}");
         };
@@ -568,6 +626,34 @@ mod tests {
              may still be on disk: {error}"
         );
         assert!(!state.is_pending());
+    }
+
+    /// **The notice floor is the counter as it stood when the request was picked up.**
+    ///
+    /// Found 2026-11-04 by the capture suite's first run: a notice stays on screen
+    /// until something replaces it, so three consecutive shots came back carrying a
+    /// refusal that belonged to an earlier request. The caller compares the app's
+    /// counter against this floor, so a notice is reported only when the shot caused
+    /// one — the floor being *recorded at pickup* is what makes that comparison mean
+    /// anything.
+    #[test]
+    fn the_record_carries_the_notice_count_from_when_the_shot_began() {
+        let t0 = Instant::now();
+        let mut state = one_link_pending(t0);
+        // 17 notices had already been shown when this request was picked up.
+        state.pending.as_mut().unwrap().notice_floor = 17;
+        state.pending.as_mut().unwrap().queue.clear();
+        assert_eq!(
+            state.step(false, 99, t0 + Duration::from_millis(150)),
+            ShotStep::Shoot(7),
+            "the counter passed in while a shot is pending must not disturb the floor"
+        );
+        let record = state.delivered(7).expect("delivered");
+        assert_eq!(
+            record.notice_floor, 17,
+            "the floor is the count at PICKUP; taking it at delivery would make every \
+             notice look pre-existing and none would ever be reported"
+        );
     }
 
     /// The delivered image must match the request that asked for it.
@@ -606,6 +692,7 @@ mod tests {
                     "hrw://simulate".to_string(),
                 ],
                 settle: Duration::from_millis(10),
+                region: bridge::ShotRegion::Pane,
             },
             followed: Vec::new(),
             queue: VecDeque::from([
@@ -614,13 +701,14 @@ mod tests {
             ]),
             since: t0,
             started: t0,
+            notice_floor: 0,
             shot_at: None,
         });
         let mut clock = t0;
         let mut steps = Vec::new();
         for _ in 0..4 {
             clock += Duration::from_millis(20);
-            steps.push(state.step(false, clock));
+            steps.push(state.step(false, 0, clock));
         }
         assert_eq!(
             steps,
@@ -641,6 +729,82 @@ mod tests {
             "the result file must name the links HRW dispatched, since a failed one \
              means the list is shorter than the request's"
         );
+    }
+
+    /// A pane crop keeps the pane, and the reply says which region it kept.
+    #[test]
+    fn a_pane_crop_keeps_the_pane_and_reports_itself() {
+        // Four columns of one row, each a different colour, so a crop that took the
+        // wrong columns cannot pass by accident.
+        let colours = [
+            egui::Color32::from_rgb(1, 0, 0),
+            egui::Color32::from_rgb(2, 0, 0),
+            egui::Color32::from_rgb(3, 0, 0),
+            egui::Color32::from_rgb(4, 0, 0),
+        ];
+        let image = egui::ColorImage::new([4, 1], colours.to_vec());
+        let pane = egui::Rect::from_min_size(egui::pos2(2.0, 0.0), egui::vec2(2.0, 1.0));
+
+        let (cropped, kept) = crop(&image, bridge::ShotRegion::Pane, Some(pane), 1.0);
+        assert_eq!(kept, bridge::ShotRegion::Pane);
+        assert_eq!(cropped.size, [2, 1]);
+        assert_eq!(
+            cropped.pixels,
+            vec![colours[2], colours[3]],
+            "the crop must keep the pane's own columns, not the window's first ones"
+        );
+
+        // `pixels_per_point` is the whole reason the rect cannot be used raw: the rect
+        // is in points and the image is in physical pixels.
+        let hidpi =
+            egui::ColorImage::new([8, 1], colours.iter().copied().cycle().take(8).collect());
+        let (scaled, _) = crop(&hidpi, bridge::ShotRegion::Pane, Some(pane), 2.0);
+        assert_eq!(
+            scaled.size,
+            [4, 1],
+            "a 2-point-wide pane is 4 pixels wide at 2x; ignoring the scale would keep \
+             half the pane and call it the pane"
+        );
+    }
+
+    /// **A crop that cannot be made is reported as a window, never as a pane.**
+    ///
+    /// The silent-wrong-picture case: a reply claiming `pane` while holding the whole
+    /// window would make every size check in a capture suite meaningless, and the
+    /// reader would be looking at more than they were told.
+    #[test]
+    fn a_crop_that_cannot_be_made_says_window() {
+        let image = egui::ColorImage::new([4, 1], vec![egui::Color32::WHITE; 4]);
+        for (case, rect) in [
+            // Nothing has drawn a central panel yet.
+            ("no pane recorded", None),
+            // A rect from before a resize, now entirely outside the image.
+            (
+                "pane outside the image",
+                Some(egui::Rect::from_min_size(
+                    egui::pos2(99.0, 99.0),
+                    egui::vec2(10.0, 10.0),
+                )),
+            ),
+            // A degenerate rect, which `region_by_pixels` would accept and return
+            // empty — a zero-pixel PNG is not a photograph.
+            (
+                "empty pane",
+                Some(egui::Rect::from_min_size(
+                    egui::pos2(1.0, 0.0),
+                    egui::vec2(0.0, 0.0),
+                )),
+            ),
+        ] {
+            let (out, kept) = crop(&image, bridge::ShotRegion::Pane, rect, 1.0);
+            assert_eq!(
+                kept,
+                bridge::ShotRegion::Window,
+                "{case}: the fallback must be reported, or the reply claims a crop it \
+                 did not make"
+            );
+            assert_eq!(out.size, [4, 1], "{case}");
+        }
     }
 
     /// Premultiplied in, straight out — and a solid pixel must survive untouched.

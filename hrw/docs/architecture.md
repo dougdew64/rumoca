@@ -115,26 +115,26 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**72 modules, 90,253 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**73 modules, 91,314 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `worker/tests.rs` | 9,265 |
-| `app.rs` | 8,285 |
+| `app.rs` | 8,372 |
 | `worker.rs` | 7,599 |
-| `app/tests.rs` | 7,457 |
-| `doc_citations.rs` | 7,196 |
-| `bridge.rs` | 4,962 |
+| `app/tests.rs` | 7,459 |
+| `doc_citations.rs` | 7,221 |
+| `bridge.rs` | 5,042 |
 | `ui_tests.rs` | 3,094 |
 | `fidelity.rs` | 2,016 |
 | `equation_sheet.rs` | 1,569 |
 | `tree.rs` | 1,432 |
 | `diagnostics.rs` | 1,397 |
 | `autoplay.rs` | 1,317 |
+| `matching_anim.rs` | 1,310 |
 | `lab_panel.rs` | 1,259 |
-| `matching_anim.rs` | 1,243 |
 | `incidence_view.rs` | 1,219 |
-| `lib.rs` | 1,187 |
+| `lib.rs` | 1,188 |
 | `playback.rs` | 1,135 |
 | `connection_anim.rs` | 1,106 |
 | `report_sub_view.rs` | 1,070 |
@@ -144,7 +144,9 @@ showing 48 equations. They are derived now, and
 | `context_bar.rs` | 890 |
 | `dae_expr_format.rs` | 881 |
 | `model_list.rs` | 842 |
+| `screenshot.rs` | 832 |
 | `tearing_anim.rs` | 826 |
+| `canvas.rs` | 793 |
 | `reduction_anim.rs` | 780 |
 | `survey.rs` | 769 |
 | `stage_tabs.rs` | 766 |
@@ -152,8 +154,6 @@ showing 48 equations. They are derived now, and
 | `lab.rs` | 736 |
 | `answer_check.rs` | 706 |
 | `identifier_index.rs` | 688 |
-| `canvas.rs` | 681 |
-| `screenshot.rs` | 668 |
 | `sub_view_rows.rs` | 659 |
 | `expr_format.rs` | 645 |
 | `modelica_lex.rs` | 595 |
@@ -162,6 +162,7 @@ showing 48 equations. They are derived now, and
 | `source_view.rs` | 576 |
 | `pre_lowering_anim.rs` | 531 |
 | `matrix_panes.rs` | 528 |
+| `capture_suite.rs` | 523 |
 | `artifact_pane.rs` | 514 |
 | `live_trace.rs` | 499 |
 | `gate_policy.rs` | 494 |
@@ -191,7 +192,7 @@ showing 48 equations. They are derived now, and
 | `stage_caches.rs` | 117 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 100 |
-| **total** | **90,253** |
+| **total** | **91,314** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -1432,6 +1433,19 @@ a healthy-looking window and an on-screen message that no photograph can show.
 no test asserts on a pixel — the 2026-08-01 decision against golden images stands.
 The difference is the consumer: a golden-image test compares today's pixels with
 yesterday's and fails on a font update; this hands one photograph to a reader.
+
+**The capture suite** (`screenshot.rs`'s companion, `capture_suite.rs` + the example of the same
+name) is the one standing use of this channel: the complement of
+`app::tests::every_offered_sub_view_has_something_to_draw`, walking the same product of specimens,
+canvas stages and sub-views. The test says *the pane finds data*; the suite says *the pane drew
+it*. The runner checks everything with a number — no `error`, the view reported is the one asked
+for, the PNG decodes at the size claimed — and leaves the one question none of those answers, *is
+anything drawn and can it be read*, to the reader. **Availability is asked of the app, never
+computed**; a view the app declines answers with a notice and is recorded as refused.
+
+It is a **survey, not a gate**: nothing asserts pixel equality, so it is run deliberately — after a
+rebase, after touching a painter, after a stage re-model. `ideas.md` #91 holds the costs of
+widening it from one specimen to four.
 
 **A waker thread, because egui does not paint an idle window.** The poll runs in
 `frame_ui`, and a Claude-driven capture is precisely the case where nobody is touching

@@ -469,6 +469,40 @@ pub const SCREENSHOTS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bri
 /// milliseconds.
 pub const SCREENSHOT_SETTLE_DEFAULT: std::time::Duration = std::time::Duration::from_millis(600);
 
+/// How much of the window a shot keeps.
+///
+/// # Why cropping exists at all
+///
+/// The reader of these photographs is a language model with a context budget, and a
+/// full HRW window is 3440x1369 of which the pane under test is the right-hand third.
+/// A suite of a dozen shots spends most of that budget re-reading the same menu bar,
+/// specimen list and lab prose.
+///
+/// **`Window` stays the default, deliberately.** The first defect this feature
+/// confirmed was a *tab row* drawing tabs it should not — chrome, not pane content —
+/// and a crop that had been on by default would have cut it out. A shot asks for less
+/// than the window only when it knows what it is looking at.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ShotRegion {
+    /// The whole viewport.
+    #[default]
+    Window,
+    /// Just the central panel: the stage tab row, the sub-view row and the pane.
+    Pane,
+}
+
+impl ShotRegion {
+    /// The spelling used in both the request and the reply, so what was asked for and
+    /// what was done are written in one vocabulary.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Window => "window",
+            Self::Pane => "pane",
+        }
+    }
+}
+
 /// A request to photograph the window, as [`SCREENSHOT_REQUEST_FILE`] carries it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ScreenshotRequest {
@@ -483,6 +517,8 @@ pub struct ScreenshotRequest {
     pub follow: Vec<String>,
     /// How long to let the UI settle after each dispatch, and before the shot.
     pub settle: std::time::Duration,
+    /// How much of the window to keep. See [`ShotRegion`].
+    pub region: ShotRegion,
 }
 
 /// Read the screenshot request, with the mtime it was read at.
@@ -543,7 +579,21 @@ pub fn parse_screenshot_request(text: &str) -> Result<ScreenshotRequest, String>
         .get("settleMs")
         .and_then(Value::as_u64)
         .map_or(SCREENSHOT_SETTLE_DEFAULT, std::time::Duration::from_millis);
+    // **A region we do not recognise is refused, not defaulted.** Defaulting would
+    // answer a request for a crop with a full window and nothing saying so, and the
+    // reply's own `region` field would then be the only clue — read after the fact,
+    // by someone already looking at the wrong picture.
+    let region = match value.get("region").and_then(Value::as_str) {
+        None | Some("window") => ShotRegion::Window,
+        Some("pane") => ShotRegion::Pane,
+        Some(other) => {
+            return Err(format!(
+                "`region` must be `window` or `pane`, not `{other}`"
+            ));
+        }
+    };
     Ok(ScreenshotRequest {
+        region,
         seq,
         why: value.get("why").and_then(Value::as_str).map(str::to_string),
         follow,
@@ -597,6 +647,11 @@ pub struct ShotResult<'a> {
     pub followed: &'a [String],
     /// The PNG, when there is one. Absent exactly when `error` is set.
     pub image: Option<ShotImage>,
+    /// The region the shot **actually** kept, which can differ from the one asked for:
+    /// a `pane` crop falls back to the whole window when no pane has been drawn yet.
+    /// Reported so the fallback is visible in the reply rather than inferred from a
+    /// picture that is larger than expected.
+    pub region: ShotRegion,
     /// What HRW was showing, from the same builder the capture uses.
     pub showing: Option<&'a View<'a>>,
     /// The loaded specimen's name, when one is loaded.
@@ -650,6 +705,7 @@ fn screenshot_result_json(result: &ShotResult<'_>) -> Value {
             "width": i.width,
             "height": i.height,
         })),
+        "region": result.region.as_str(),
         "specimen": result.specimen,
         "stage": result.stage,
         "showing": result.showing.map(View::to_json),
@@ -4796,6 +4852,28 @@ mod screenshot_protocol_tests {
         assert_eq!(unstated.settle, SCREENSHOT_SETTLE_DEFAULT);
     }
 
+    /// **An unrecognised `region` is refused, not quietly defaulted.** A request for a
+    /// crop answered with a whole window would send the reader a picture of more than
+    /// they asked about, with only the reply's own `region` field to say so.
+    #[test]
+    fn region_is_window_or_pane_and_nothing_else() {
+        assert_eq!(
+            parse_screenshot_request(r#"{"seq": 1}"#).unwrap().region,
+            ShotRegion::Window,
+            "the whole window is the default, so a shot keeps the chrome unless it \
+             says otherwise"
+        );
+        assert_eq!(
+            parse_screenshot_request(r#"{"seq": 1, "region": "pane"}"#)
+                .unwrap()
+                .region,
+            ShotRegion::Pane
+        );
+        let err = parse_screenshot_request(r#"{"seq": 1, "region": "centre"}"#)
+            .expect_err("an unknown region is not a region");
+        assert!(err.contains("centre"), "{err}");
+    }
+
     /// **The photograph must be a readable PNG**, which is the entire point of the
     /// dependency: Claude's own file reader accepts PNG and not the uncompressed
     /// formats that would have needed no crate at all.
@@ -4875,6 +4953,7 @@ mod screenshot_protocol_tests {
             why: Some("does the tab row offer Matching?"),
             followed: &followed,
             image: None,
+            region: ShotRegion::Window,
             showing: Some(&showing),
             specimen: Some("Drivetrain"),
             stage: "IndexReduction",
@@ -4919,6 +4998,7 @@ mod screenshot_protocol_tests {
                 width: 2560,
                 height: 1395,
             }),
+            region: ShotRegion::Pane,
             showing: Some(&showing),
             specimen: None,
             stage: "Resolve",

@@ -353,6 +353,23 @@ impl Canvas {
             let pad_x = (rect.width() - world_bounds.width() * self.zoom) / 2.0;
             self.pan = world_bounds.min.to_vec2() - egui::vec2(pad_x, top_reserve) / self.zoom;
             self.fit = false;
+            // **Record the size this fit was computed for**, which is what makes the
+            // refit check above able to fire at all.
+            //
+            // *Found 2026-11-04 by the capture suite's first run.* Until then this was
+            // written in exactly one place — the aim branch below — so a canvas that
+            // had never been aimed kept `fitted_rect_size` at zero, `should_refit`
+            // returned `false` by its own first rule, and the comment above promising
+            // *"width changes always refit"* described something the code could not do.
+            //
+            // The symptom: `viewport.incidence` is **one camera serving two layouts** —
+            // full width on Structural, a half-width column in Index Reduction's
+            // Before/After split. Visiting Structural first fitted it to ~2048 px; the
+            // split then drew the After matrix at that zoom, with that centring
+            // padding, inside a 1024 px column, so it sat offset to the right with a
+            // third of it past the edge. Order-dependent, which is why it survived: a
+            // lab that opens Index Reduction directly never sees it.
+            self.fitted_rect_size = rect.size();
         }
 
         // --- Aim (one-shot), after the fit so the more specific intent wins ---
@@ -419,6 +436,101 @@ mod tests {
             pan,
             zoom,
         }
+    }
+
+    /// Draw `canvas` in a `width` x `height` area and report **where a 97x97 matrix
+    /// lands on screen**, as (left, right) pixels from the canvas's left edge.
+    ///
+    /// The screen rect rather than the zoom, because the zoom is not what moved. A
+    /// 97-unit square in a 600px-tall area is height-limited, so `min(zx, zy)` is the
+    /// same at every width — what the width changes is the **centring padding**, and
+    /// the whole defect was the padding for a 2048px canvas applied inside a 1024px
+    /// column. Asserting on zoom would have passed while the matrix sat off the edge,
+    /// which is the first thing this test got wrong.
+    ///
+    /// Uses egui's own test `Ui` rather than a `kittest` harness: the subject is one
+    /// canvas's camera arithmetic, and an accessibility tree has nothing to say about
+    /// it. `max_rect` is forced because `show` allocates `ui.available_size()`.
+    fn draw_at(canvas: &mut Canvas, width: f32, height: f32) -> (f32, f32) {
+        let bounds = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(97.0, 97.0));
+        let mut span = (0.0, 0.0);
+        egui::__run_test_ui(|ui| {
+            let mut child = ui.new_child(
+                egui::UiBuilder::new()
+                    .max_rect(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(width, height),
+                    ))
+                    .layout(*ui.layout()),
+            );
+            let (response, view, _) = canvas.show(&mut child, bounds);
+            let on_screen = view.to_screen_rect(bounds);
+            span = (
+                on_screen.min.x - response.rect.min.x,
+                on_screen.max.x - response.rect.min.x,
+            );
+        });
+        span
+    }
+
+    /// **A canvas re-frames when its column gets narrower.**
+    ///
+    /// *The regression test for the capture suite's first finding.* One `Canvas`
+    /// serves two layouts — `viewport.incidence` is full width on Structural and a
+    /// half-width column in Index Reduction's Before/After split — and until
+    /// 2026-11-04 the second draw kept the first's zoom and centring padding, putting
+    /// the After matrix off the right edge of its column.
+    ///
+    /// The cause was not `should_refit`, which was correct and tested. It was that
+    /// **nothing ever recorded the size a fit was made for**, so the predicate was
+    /// asked `should_refit(ZERO, …)` every time and answered "no" by design. A check
+    /// on the predicate alone could not have caught it — which is the point worth
+    /// keeping: this asserts the *outcome*, a zoom that changes, rather than the
+    /// predicate's opinion.
+    #[test]
+    fn a_canvas_refits_when_its_column_narrows() {
+        let mut canvas = Canvas::default();
+        let (wide_left, wide_right) = draw_at(&mut canvas, 2048.0, 600.0);
+        assert!(
+            wide_left >= 0.0 && wide_right <= 2048.0,
+            "the first fit must land inside its own canvas: {wide_left}..{wide_right}"
+        );
+
+        let (left, right) = draw_at(&mut canvas, 1024.0, 600.0);
+        assert!(
+            left >= 0.0 && right <= 1024.0,
+            "a matrix fitted to a 2048px canvas and then drawn in a 1024px column must \
+             re-frame; it landed at {left}..{right}, running past the column's edge"
+        );
+
+        // And widening again re-frames the other way, so returning to the full-width
+        // view does not leave a column-sized framing behind.
+        let (back_left, back_right) = draw_at(&mut canvas, 2048.0, 600.0);
+        assert!(
+            (back_left - wide_left).abs() < 1.0 && (back_right - wide_right).abs() < 1.0,
+            "returning to the original width must restore the original framing: \
+             {back_left}..{back_right} vs {wide_left}..{wide_right}"
+        );
+    }
+
+    /// **A reflow of the text above a canvas must NOT re-frame it.**
+    ///
+    /// The behaviour `should_refit`'s fraction exists for, pinned here against the
+    /// fix above: the BLT view's status line wraps and un-wraps as Tarjan's stack
+    /// grows, and Doug reported the diagram shifting sideways once per run. Recording
+    /// the fitted size made that check live for the first time, so this is the first
+    /// moment it could regress.
+    #[test]
+    fn a_wrapped_line_above_a_canvas_does_not_refit_it() {
+        let mut canvas = Canvas::default();
+        let (before_left, _) = draw_at(&mut canvas, 1024.0, 600.0);
+        // Same width, one text line less room: a ~20px reflow against 600px.
+        let (after_left, _) = draw_at(&mut canvas, 1024.0, 580.0);
+        assert!(
+            (after_left - before_left).abs() < 1e-3,
+            "a wrapped line is reflow, not a resize, and must not shift the diagram \
+             sideways: {before_left} -> {after_left}"
+        );
     }
 
     #[test]

@@ -1447,6 +1447,49 @@ excerpts a lab station expects — none of which the suite could show directly.
 not say whether the drawing teaches. His 2026-08-23 preference for minimising layout churn stands
 on its own evidence and is not softened by this.
 
+### 11-04, later — the capture suite's first run, and what one specimen cost to look at
+
+Doug asked whether capture tests aligned with the headless ones made sense. The answer was: not as
+a mirror — fifty-odd of those assert facts the accessibility tree can see, and photographing them
+would be the same fact twice — but as the complement of **one**,
+`every_offered_sub_view_has_something_to_draw`, whose own doc had said the day before:
+
+> It is **not** a claim about pixels; `egui_kittest` cannot reach a painted cell, so a tab whose
+> data parses can still look wrong, and **only Doug can see that**.
+
+`examples/capture_suite.rs` is that sentence's falsification. Twelve shots of `Drivetrain` — two
+canvas stages x six canvas views, availability **asked of the app, never computed** — five landed,
+seven refused, nothing failed. Three defects in the five:
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 11-04 | the screenshot reply reported **whatever notice was on screen**, not the one its shot caused | the suite's first run | three consecutive shots came back carrying an earlier request's refusal — true about the screen, false about the shot. Fixed with a counter and a floor recorded at pickup. **Closed a second gap on the way:** four sites assigned `self.notice` directly and were therefore never recorded in the session log that `notify`'s own doc gives as its reason to exist |
+| 11-04 | **the After incidence matrix was drawn a third of the way off its column** | the suite's first run, confirmed at full window | `viewport.incidence` is one camera serving two layouts; `Canvas::fitted_rect_size` was written only by the *aim* branch, so `should_refit` was asked `should_refit(ZERO, …)` forever and answered "no" by design. The comment above it promising *"width changes always refit"* described something the code could not do |
+| 11-04 | *"still unmatched: &lt;six names&gt;"* on a frame where **97 equations are unmatched** | the suite's first run | `.take(6)` with no sign of truncation. Load-bearing, not cosmetic: the code's own comment says this line is how a reader sees that a system is structurally singular, so anyone counting the names to get the rank deficiency got six |
+
+**The middle one is the one worth carrying, for two reasons.**
+
+*It was order-dependent.* The camera is only wrong after the full-width view has been visited, so
+a lab that opens Index Reduction directly never sees it, and neither did two months of fixture
+runs. The suite hit it because it walks the product rather than a path.
+
+*And it was invisible to the test that was watching.* `should_refit` is correct and has four tests.
+What was broken is that **nothing ever fed it** — the predicate was right and its input was never
+set. That is this project's recurring shape, a claim narrower than the guarantee a reader takes
+from it, and no test of the predicate could have caught it. The regression test added
+(`a_canvas_refits_when_its_column_narrows`) asserts the **outcome** — where the matrix lands in
+pixels — and reproduces the photograph numerically: without the fix a 97x97 matrix fitted to a
+2048 px canvas lands at 748..1300 inside a 1024 px column.
+
+**One method note, because the first version of that test was wrong.** It asserted on the *zoom*,
+which does not move: a 97-unit square in a 600 px-tall pane is height-limited, so `min(zx, zy)` is
+identical at both widths. What the width changes is the **centring padding**. A test asserting
+zoom would have passed while the matrix sat off the edge — *the right ingredient at the wrong
+moment*, which is the 09-22 arc's lesson arriving again in a new costume.
+
+**The widening to all four specimens is `ideas.md` #91, with the costs measured.** Three of the six
+canvas views have still never been photographed by anything, because `Drivetrain` refuses them.
+
 ## Owed sweeps — small `src/` fixes that must not buy a gate of their own
 
 **Doug, 2026-08-31**, asked whether a five-second imprecision should be swept up next time

@@ -48,6 +48,7 @@ pub mod artifact_pane;
 pub mod autoplay;
 pub mod bridge;
 pub mod canvas;
+pub mod capture_suite;
 pub mod colors;
 pub mod compile_caches;
 pub mod connection_anim;

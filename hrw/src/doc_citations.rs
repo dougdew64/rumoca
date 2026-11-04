@@ -1649,7 +1649,32 @@ Some prose.
         /// that can be opened from more than one stage. Pushing this one into
         /// `matching_anim` would split a set that is uniform today and make the odd
         /// member the one nobody expects.
-        const MAX_APP_FIELDS: usize = 58;
+        ///
+        /// **Raised to 60 on 2026-11-04 for capture-and-inspect**, three fields, each
+        /// answered separately rather than waved through together — three at once is
+        /// exactly the drift this exists to notice.
+        ///
+        /// - **`shots: ScreenshotState`** is a *channel*, the fourth after the focus
+        ///   file, the stage files and the lab. Its siblings are `lab: LabState` and
+        ///   `context: ContextBarState`, and like them it is already a grouping struct
+        ///   rather than loose fields — one slot for a whole subsystem is the shape
+        ///   this ratchet was built to reward.
+        ///
+        /// - **`pane_rect`** is a layout number the frame loop records for something
+        ///   else to read, and the precedent is exact: `source_scroll_offset` is on
+        ///   `App` for the same reason, and `ui_tests.rs`'s header names that as *the*
+        ///   move for making a layout defect testable. Pushing it into
+        ///   `ScreenshotState` would put a fact about the window inside the thing that
+        ///   happens to consume it — which is field-count arbitrage, not modelling.
+        ///
+        /// - **`notice_seq`** is the one a grouping could absorb, and the honest answer
+        ///   is that it is not worth it. A `Notice { text, seq }` would make "the
+        ///   counter moves exactly when the text is set" structural; but `set_notice`
+        ///   is already the only writer, so within the crate the struct buys nothing
+        ///   the single setter does not, while costing ~20 call sites across `app.rs`
+        ///   and its tests where `app.notice` reads plainly today. Recorded as
+        ///   considered and declined, not deferred.
+        const MAX_APP_FIELDS: usize = 60;
 
         let src = std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("src/app.rs"))
             .expect("app.rs must be readable");
