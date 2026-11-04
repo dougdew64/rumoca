@@ -186,9 +186,70 @@ arena — `conditions()`, `relations()`, `roots()`, `structured_roots()`, `time_
 `event_actions()`, `clocks()`, `previous_values()`, `terminals()` — each documented with its MLS
 section. **No instrumentation required.**
 
-### Initialization — `ic_plan` became `initial_pins`
+### No curated specimen declares `fixed = true`, so the Initialization pane is empty across the corpus
 
-The initialization plan is not built. <!-- unbuilt: worker::initialization_from_initial_pins -->
+**Found 2026-11-03** while re-modelling that pane. Every curated specimen states `start = …` and
+none states `fixed = true`, so no model in the corpus produces a single initial-value pin. The pane
+is correct and informative about it — `SingleInertia` reports `only_guessed: ["phi", "w"]` — but
+nothing in the corpus exercises the pin rendering, and
+`the_initialization_pane_shows_each_pin_and_its_role` has to use a scratch specimen to cover it.
+
+**This is the same shape as F10's absence clause**, which went uncovered for three months for
+exactly this reason, and it is a *specimen* gap rather than a code one.
+
+**It is also not an accident, and that is the interesting part.** A bare `start` is a guess the
+initialization solve may move; `fixed = true` is an assertion it must satisfy. The corpus states
+guesses throughout, which is why the initialization defect in `docs/upstream-issues.md` could
+affect so much of it: with nothing pinned, every reported initial value came out of the solve, and
+on 0.9.20 the solve returned the value that zeroes the derivative.
+
+**What would close it:** one curated specimen in the arc-1 style whose states are genuinely pinned,
+and one where a value is *transferred* onto a state through a proved equality — the second being
+the case the pane's `source` column exists for, and the one a reader is least likely to predict.
+Both want the full curated ritual (System Modeler authoring, `// purpose:`, a notebook trace,
+`purpose.md`, the corpus baseline), so this is a specimen errand rather than a code change.
+
+### ~~Initialization — `ic_plan` became `initial_pins`~~
+
+**RE-MODELLED 2026-11-03.** The pane publishes Rumoca's own
+[`InitialValuePin`]s — each an MLS 3.6 §8.6 initial equation rewritten onto the coordinate it is
+about — plus a determinacy summary. `claims_of_absence_are_still_true` forced this retirement by
+failing the moment `worker::initialization_from_initial_pins` existed.
+
+**What the pane shows that the old one could not: the role.** A `Definition` determines a state's
+initial value and stays an equation in the joint solve; a `Check` stays a residual so the
+initialization instant answers it with numbers. A sequence of `IcBlock` solve steps said *how* the
+values are computed; the roles say **which stated values are load-bearing and which are
+consistency conditions the model must satisfy.**
+
+**Two things were measured rather than assumed, and the first one corrected a wrong design.**
+
+1. **A pin is not a state's own `fixed = true` start.** The first version counted those and
+   reported every corpus model as having no pins — correctly, but it also reported
+   `determined = 0` for models whose states *are* determined. A pin records an initial equation
+   that had to be **proved**: both producing paths in `initial_pins.rs` skip `role() == State`.
+   Measured on a two-line probe: `Real y(start = 2.0, fixed = true)` with `y = x` produces a
+   `Definition` pin **on `x`**, sourced from `y`. So the determinacy count reads *both*
+   mechanisms, and `only_guessed` names the states left over.
+2. **No curated specimen declares `fixed = true`.** Every one states `start = …`, which is a guess
+   the solve may move. So the pane is empty across the corpus — honestly — and the test uses a
+   scratch specimen covering all three mechanisms at once. **That is a specimen gap worth its own
+   row**, and it explains the shape of the initialization defect `upstream-issues.md` carries:
+   with nothing pinned, those models' initial values come out of the solve, which is where 0.9.20
+   took the derivative-zero answer instead of the start. `SingleInertia` reports
+   `only_guessed: ["phi", "w"]` — that list *is* the blast radius.
+
+**Provenance is `Compiler`, not `Hrw`.** `prepare_for_solve` is Rumoca's function over the
+compile's own immutable `Dae` and HRW invents no value — the same relationship `structural_stage`
+has to `inspect_structural_report`. Solve lowering prepares internally and returns nothing, so
+this second preparation is the only available route; unlike the old funnel it cannot disagree with
+the compile's, because `Dae` is immutable and `prepare_for_solve` takes `&Dae`.
+
+*When the index-reduction pane lands it will want `inspect_prepare_for_solve`, which does this same
+work and returns the `ReductionReport` too — one call should then serve both stages.*
+
+*The original row's account follows unedited; only its claim-of-absence sentence is gone, because
+it is no longer true.*
 
 `ic_plan::{IcBlock, build_ic_plan, build_ic_relaxation_hint}` are gone, replaced by
 `initial_pins::{InitialValuePin, InitialValueRole, PinTerm}`. The determinacy check HRW computed
