@@ -88,9 +88,43 @@ compile. The two should also be **compared before one replaces the other**: if t
 on a corpus model, the disagreement is the interesting finding, and whichever way it goes one of
 them is currently wrong about a model Doug can load.
 
-### Solver per-step diagnostics — our instrumentation, not an upstream API
+### ~~Solver per-step diagnostics — our instrumentation, not an upstream API~~
 
-The step-size and BDF-order plots have no data. <!-- unbuilt: worker::solver_steps_from_integrator -->
+**RE-MODELLED 2026-11-03, and it is now an upstream API rather than ours.** The plots have data
+again: one row per accepted step, `t` the time the step reached, `h` derived from its endpoints,
+`order` the local continuous-extension order.
+
+**The recruitment mechanism did its job, visibly.** This row's `unbuilt:` tag named
+`worker::solver_steps_from_integrator`, and `claims_of_absence_are_still_true` failed the moment
+that function existed — *"claims `worker::solver_steps_from_integrator` is unbuilt — it exists"* —
+which is what forced this retirement rather than leaving a stale claim of absence behind. The
+function is named for the tag on purpose.
+
+**What was built, and where.** `rumoca_solver::fmi_me::step_observation`: a borrowed
+`MeStepEvent`, an `MeStepObserver` whose `()` implementation is empty, an owned `MeStepRecord`, and
+`MeSimulationSession::observe_steps` to install one. `rumoca_sim::simulate_with_optional_step_records`
+is the entry HRW calls.
+
+**Three decisions worth keeping:**
+
+- **`observe` returns `()`,** which is load-bearing rather than convenient. The session's
+  accepted-step path has no rollback proof from the plugin's `advance` onward, so a hook that could
+  fail would be a new way to lose a live session.
+- **Emitted from the proved `MeStepProposal`, not the plugin's candidate.** A candidate that fails
+  its SPEC_0044 §6 obligations never happened as far as the trajectory is concerned; reporting one
+  would draw a step the solver did not take.
+- **`Option<Vec<_>>`, not `Vec<_>`.** `None` is *this backend reports no steps* — rk45 never enters
+  the ME session — and `Some(empty)` would be *it took none*. Collapsing them would tell a reader
+  the false one, which is this file's recurring lesson.
+
+Covered by `suite_core::step_observation` (the steps partition the interval; an observed run is
+**bit-identical** to an unobserved one) and
+`worker::tests::the_solver_diagnostics_plots_receive_the_steps_the_integrator_took`, which uses
+`StiffDecay` and requires the step size to **vary** — a constant series would make the plot a flat
+line and hide exactly what it exists to show.
+
+*The original row follows, unedited, because its account of why the plots were kept is still the
+reason they matter.*
 
 `rumoca_solver::SolverStepRecord` was **HRW's own instrumentation** of the integrator rather than
 an upstream type, so there is nothing to follow to: 0.10.0's `SimResult` carries `times`, `names`,

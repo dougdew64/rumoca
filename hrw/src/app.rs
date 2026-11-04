@@ -3807,22 +3807,26 @@ impl App {
                     }
                 });
 
-                // **The absence is stated, not left blank.** `solver_steps` is
-                // always empty on v0.10.0 — the per-step record it read was
-                // HRW's own instrumentation of the integrator, and 0.10.0's
-                // `SimResult` carries nothing equivalent. Without this note the
-                // missing section reads as a run that took no steps worth
-                // reporting, which is a false claim about the solver: it
-                // integrated normally, and only the per-step view is gone. See
-                // `worker::SimData::solver_steps`.
+                // **The absence is still stated, and now it means something
+                // narrower.** Until 2026-11-03 `solver_steps` was empty for every
+                // run, because the per-step record it read had been HRW's own
+                // instrumentation and 0.10.0 carried no equivalent. The seam is
+                // re-modelled (`rumoca_solver::fmi_me::step_observation`), so an
+                // empty list now says **this run's backend reports no steps** —
+                // the rk45 path never enters the ME session — rather than "HRW
+                // cannot see them".
+                //
+                // The note is kept because a missing section still reads as a run
+                // that took no steps worth reporting, which is false about a solver
+                // that integrated normally. Only the reason changed.
                 if !has_diagnostics {
                     ui.separator();
                     ui.strong("Solver diagnostics");
                     ui.label(
-                        "Not available on this Rumoca version. The step-size and BDF-order \
-                         plots read a per-step record that HRW added to the integrator; \
-                         v0.10.0's SimResult carries no equivalent, so re-instrumenting it \
-                         is pending. The trajectory above is unaffected.",
+                        "This run used a backend that reports no per-step record. Step size \
+                         and BDF order come from the Model Exchange session, which the \
+                         BDF/diffsol integrator drives and the rk45 path does not. The \
+                         trajectory above is unaffected.",
                     );
                 }
 
