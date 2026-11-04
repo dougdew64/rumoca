@@ -381,6 +381,7 @@ mod when_multi_output_calls;
 mod when_right_limit_events;
 mod when_written_reads;
 
+mod step_observation;
 mod strict_compile_recovery;
 mod structural_binding_functions;
 mod structural_branch_selections;
