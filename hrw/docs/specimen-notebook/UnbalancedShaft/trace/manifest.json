@@ -2,7 +2,7 @@
   "model": "UnbalancedShaft",
   "specimen": "specimens/UnbalancedShaft.mo",
   "specimen_fnv1a": "c1283a6cc791ba0e",
-  "rumoca_rev": "739d724e",
+  "rumoca_rev": "e49f68eb",
   "rumoca_version": "0.10.0",
   "stages": {
     "parse": {

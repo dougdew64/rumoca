@@ -1,0 +1,15 @@
+{
+  "determinacy": {
+    "state_scalars": 3,
+    "determined": 0,
+    "only_guessed": [
+      "L.i",
+      "load.phi",
+      "load.w"
+    ],
+    "definitions": 0,
+    "checks": 0,
+    "partly_fixed_states": []
+  },
+  "pins": []
+}
