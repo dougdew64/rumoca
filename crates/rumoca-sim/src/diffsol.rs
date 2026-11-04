@@ -280,6 +280,32 @@ pub(crate) fn simulate_probed(
     simulate_prepared(prepared)
 }
 
+/// [`simulate_artifact`] with an observer lent to the session for the run.
+pub(crate) fn simulate_artifact_observed(
+    artifact: rumoca_solver::fmi_me::MeModelArtifact,
+    opts: &rumoca_solver::SimOptions,
+    execution_backend: Option<rumoca_solver::fmi_me::MeExecutionBackend>,
+    observer: &mut (impl rumoca_solver::fmi_me::step_observation::MeStepObserver + 'static),
+) -> Result<rumoca_solver::SimResult, SimError> {
+    let prepared = instantiate_prepared_simulation(artifact, opts, execution_backend)
+        .map_err(|error| error.at_stage(SimFailureStage::BackendBuild))?;
+    simulate_prepared_observed(&prepared, observer)
+}
+
+/// [`simulate_probed`] with an observer lent to the session for the run.
+///
+/// The probed component is **reused, not rebuilt**, exactly as the unobserved
+/// path reuses it. Rebuilding here instead would have the observed run
+/// instantiate a component the real run does not, which is observation
+/// changing what it observes.
+#[cfg(all(feature = "solver-diffsol", feature = "solver-rk45"))]
+pub(crate) fn simulate_probed_observed(
+    prepared: &PreparedSimulation,
+    observer: &mut (impl rumoca_solver::fmi_me::step_observation::MeStepObserver + 'static),
+) -> Result<rumoca_solver::SimResult, SimError> {
+    simulate_prepared_observed(prepared, observer)
+}
+
 /// [`simulate_prepared`] with an observer lent to the session for the run.
 ///
 /// The observer is installed **after** the session exists and before it is

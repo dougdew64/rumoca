@@ -239,6 +239,69 @@ pub fn simulate_with_step_records(
     diffsol::simulate_with_step_records(dae_model, opts)
 }
 
+/// Simulate by `opts.solver_mode`, reporting accepted steps **when the backend
+/// that ran has them to report**.
+///
+/// `None` and `Some(vec![])` mean different things, and the difference is the
+/// reason for the `Option`. `None` is *this backend does not report steps* —
+/// the rk45 path never enters the ME session, so there is nothing to observe.
+/// `Some(empty)` would be *it reported none*, a claim about a solve that took
+/// no steps. A single `Vec` would have collapsed the two and told a reader the
+/// false one.
+///
+/// This is the entry a caller wants when it does not choose the backend.
+/// `Auto` resolves through the same `select_auto_integrator` the unobserved
+/// path uses, so observation never changes which integrator runs.
+#[cfg(all(feature = "solver-diffsol", feature = "solver-rk45"))]
+pub fn simulate_with_optional_step_records(
+    dae_model: &dae::Dae,
+    opts: &SimOptions,
+) -> Result<
+    (
+        SimResult,
+        Option<Vec<rumoca_solver::fmi_me::step_observation::MeStepRecord>>,
+    ),
+    SimulationDiagnosticError,
+> {
+    use rumoca_solver::fmi_me::step_observation::MeStepRecorder;
+
+    let observed = |artifact, execution_backend| {
+        let mut recorder = MeStepRecorder::new();
+        diffsol::simulate_artifact_observed(artifact, opts, execution_backend, &mut recorder)
+            .map(|result| (result, Some(recorder.into_records())))
+            .map_err(|err| SimulationDiagnosticError::Solver(err.to_string()))
+    };
+
+    match opts.solver_mode {
+        SimSolverMode::Bdf => {
+            let (result, records) = diffsol::simulate_with_step_records(dae_model, opts)?;
+            Ok((result, Some(records)))
+        }
+        SimSolverMode::RkLike | SimSolverMode::VelImplicit => {
+            simulate_with_rk45_diagnostics(dae_model, opts).map(|result| (result, None))
+        }
+        SimSolverMode::Auto => {
+            let (artifact, execution_backend) =
+                solve_lowering::lower_runtime_fmi_artifact(dae_model, opts)?;
+            match diffsol::select_auto_integrator(&artifact, opts, execution_backend.clone())
+                .map_err(|error| SimulationDiagnosticError::Solver(error.to_string()))?
+            {
+                diffsol::SelectedAutoIntegrator::Bdf(Some(prepared)) => {
+                    let mut recorder = MeStepRecorder::new();
+                    diffsol::simulate_probed_observed(&prepared, &mut recorder)
+                        .map(|result| (result, Some(recorder.into_records())))
+                        .map_err(|err| SimulationDiagnosticError::Solver(err.to_string()))
+                }
+                diffsol::SelectedAutoIntegrator::Bdf(None) => observed(artifact, execution_backend),
+                diffsol::SelectedAutoIntegrator::RkLike => {
+                    simulate_artifact_rk45(artifact, opts, execution_backend)
+                        .map(|result| (result, None))
+                }
+            }
+        }
+    }
+}
+
 /// Simulate one already-constructed correlated FMI component, dispatching by
 /// `opts.solver_mode`.
 ///
