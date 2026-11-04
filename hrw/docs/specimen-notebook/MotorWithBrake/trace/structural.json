@@ -743,10 +743,11 @@
       {
         "unknown": "emf.w",
         "location": {
-          "line": 8,
-          "column": 36,
-          "excerpt": "ler's Events phase s",
-          "line_text": "  // discrete Boolean — the compiler's Events phase sees this as a zero-crossing",
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Basic/RotationalEMF.mo",
+          "line": 15,
+          "column": 3,
+          "excerpt": "SI.AngularVelocity w",
+          "line_text": "  SI.AngularVelocity w \"Angular velocity of flange relative to support\";",
           "byte_start": 610,
           "byte_end": 630
         }

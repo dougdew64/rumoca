@@ -52,6 +52,7 @@
       {
         "unknown": "b",
         "location": {
+          "file": "hrw/specimens/TwiceDefined.mo",
           "line": 14,
           "column": 3,
           "excerpt": "Real b",

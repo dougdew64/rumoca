@@ -2,7 +2,7 @@
   "model": "MotorWithBrake",
   "specimen": "specimens/MotorWithBrake.mo",
   "specimen_fnv1a": "194e8b7286cf6c67",
-  "rumoca_rev": "636acca3",
+  "rumoca_rev": "a8d60e11",
   "rumoca_version": "0.10.0",
   "stages": {
     "parse": {

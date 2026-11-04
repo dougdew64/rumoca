@@ -2427,17 +2427,37 @@ fn the_balance_parse_is_absent_rather_than_wrong() {
     );
 }
 
-/// A structural failure is reported **in terms of Doug's source** (ideas #45).
+/// A structural failure is reported **in terms of the source that declares the
+/// unknown** (ideas #45) — which is usually not the specimen.
 ///
-/// This is the whole diagnostic claim: "unknown `gnd.p.i`" tells Doug nothing
-/// about the model he wrote, while "line 9, `connect(src.n, gnd.p);`" is a
-/// diagnosis. `StructuralError::Singular` has carried `unmatched_unknown_spans`
-/// all along; HRW dropped it until 2026-07-29.
+/// # This test used to assert the wrong answer, and passed
 ///
-/// `CapacitorLoop` is the specimen for this because it fails structurally **and
-/// stays failed** after index reduction — a capacitor straight across an ideal
-/// source is genuinely ill-posed, not merely high-index. `MotorWithBrake` and
-/// `Drivetrain` are also singular but get rescued, so neither is a diagnostic case.
+/// It read: *"'unknown `gnd.p.i`' tells Doug nothing about the model he wrote, while
+/// 'line 9, `connect(src.n, gnd.p);`' is a diagnosis"*, and asserted exactly that
+/// pair. **Both halves were false.** `gnd.p.i` is not declared on line 9 of
+/// `CapacitorLoop.mo`; it is `flow SI.Current i` in the MSL's
+/// `Electrical/Analog/Interfaces/Pin.mo`, and HRW was slicing the specimen for a span
+/// that belongs to a library file. `worker::span_location` records the measurement
+/// across the corpus.
+///
+/// **The line number agreed by coincidence.** The `Pin.mo` declaration is also on
+/// line 9, so `line == 9` passed while naming a different file — which is why the
+/// wrongness could only ever have been caught through `line_text`, and `line_text`
+/// was being read out of the wrong file too. Two consistent wrong readings look
+/// exactly like one right one.
+///
+/// So the assertions now name the file, and the former wrong answer is asserted
+/// *against*: a location claiming the `connect` line fails this test rather than
+/// passing it.
+///
+/// # Why `CapacitorLoop`
+///
+/// Because it is singular at Structural with exactly one unmatched unknown, which
+/// makes the diagnostic claim small enough to pin exactly. *(The old reason given
+/// here — that it "stays failed after index reduction" — is no longer true either:
+/// 0.10.0's holonomic lane differentiates `v = p.v - n.v` and admits the system,
+/// where 0.9.20 could not. That claim moved to the index-reduction tests, which
+/// measure it.)*
 #[test]
 #[cfg_attr(
     not(feature = "slow-tests"),
@@ -2479,17 +2499,300 @@ fn a_structural_failure_names_the_source_line() {
             !loc.is_null(),
             "{label}: the unknown must have a source location"
         );
+
+        // **The file, first.** A line number means nothing until the reader knows
+        // which file it counts lines in, and that was the unstated assumption.
+        // Compared on the tail only: the vendored MSL sits under an absolute path
+        // that differs per machine, and separators are mixed.
+        let file = loc["file"]
+            .as_str()
+            .unwrap_or_else(|| panic!("{label}: the location must name its file: {loc:?}"));
         assert_eq!(
-            loc["line"], 9,
-            "{label}: gnd.p.i traces to the ground connect()"
+            file, "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Interfaces/Pin.mo",
+            "{label}: gnd.p.i is declared in the MSL Pin connector, not in the \
+             specimen \u{2014} and the name must be workspace-relative, because this \
+             value is committed to a public repository",
+        );
+
+        // `flow SI.Current i` is the whole diagnosis: the unknown no equation
+        // determines is the current flowing into the ground pin, declared by the
+        // library. Naming the specimen for it destroyed exactly this.
+        assert_eq!(
+            loc["excerpt"], "SI.Current i",
+            "{label}: the excerpt must be the declaration: {loc:?}",
         );
         assert!(
             loc["line_text"]
                 .as_str()
-                .is_some_and(|t| t.contains("connect(src.n, gnd.p)")),
-            "{label}: line_text must be quotable back at Doug: {loc:?}",
+                .is_some_and(|t| t.contains("flow SI.Current i")),
+            "{label}: line_text must be quotable, from the declaring file: {loc:?}",
+        );
+
+        // **Must-fire half.** The answer this test used to assert is now a
+        // failure, so a regression to specimen-slicing cannot pass again.
+        assert!(
+            !loc["line_text"]
+                .as_str()
+                .is_some_and(|t| t.contains("connect(")),
+            "{label}: this is the specimen's connect line \u{2014} the span was \
+             resolved against the wrong file: {loc:?}",
         );
     }
+}
+
+/// **The resolver refuses a span belonging to another file**, which is the property
+/// four call sites were documented as having and none of them had.
+///
+/// A unit test rather than a corpus walk, because the thing under test is one
+/// comparison and the failure it prevents is silent: byte offsets into file A sliced
+/// out of file B produce a location that looks exactly like a correct one. The two
+/// texts here are the same length on purpose, so the old length-only guard would
+/// have let the foreign span through — that is precisely how the `Drivetrain` and
+/// `CapacitorLoop` wrong answers survived, and it is why asserting `None` for an
+/// *out-of-range* span alone would have proved nothing.
+#[test]
+fn the_span_resolver_refuses_a_foreign_span() {
+    let mine = crate::worker::SpanFile::specimen("Mine.mo", "model M\n  Real x;\nend M;\n");
+    let theirs = rumoca_core::source_id_for_name("Theirs.mo");
+    let ours = rumoca_core::source_id_for_name("Mine.mo");
+
+    // In range for both texts, so only the identity check can refuse it.
+    let foreign = rumoca_core::Span::from_offsets(theirs, 10, 16);
+    assert!(
+        crate::worker::span_to_location(mine, &foreign).is_none(),
+        "a span from another file must not be resolved against this one",
+    );
+
+    let own = rumoca_core::Span::from_offsets(ours, 10, 16);
+    let located = crate::worker::span_to_location(mine, &own)
+        .expect("a span naming this file resolves in it");
+    assert_eq!(located["file"], "Mine.mo", "the location names its file");
+    assert_eq!(located["excerpt"], "Real x", "and slices the right bytes");
+    assert_eq!(located["line"], 2);
+}
+
+/// **A published source name is workspace-relative**, so no committed artifact
+/// carries the absolute path of the machine that produced it.
+///
+/// Two independent reasons, and each is enough on its own: this repository is public
+/// and an absolute path under a home directory names an account, and a committed
+/// trace that quotes a file has to be checkable on a different machine.
+///
+/// The out-of-workspace case is the one worth pinning rather than assuming: a scratch
+/// specimen lives under the system temp directory, whose parent chain is exactly where
+/// an account name sits.
+#[test]
+fn a_published_source_name_is_relative_to_the_workspace() {
+    use crate::worker::portable_source_name;
+
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("the crate dir has a parent")
+        .to_string_lossy()
+        .to_string();
+
+    // The shape the source map actually hands back: an absolute root joined to
+    // relative parts by different code, so the separators are mixed.
+    let msl = format!("{root}\\hrw/vendor/msl\\Modelica 4.1.0\\Electrical\\Analog\\Basic\\X.mo");
+    assert_eq!(
+        portable_source_name(&msl),
+        "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Basic/X.mo",
+        "an in-workspace path keeps everything below the root, with one separator",
+    );
+    assert_eq!(
+        portable_source_name(&format!("{root}/hrw/specimens/Drivetrain.mo")),
+        "hrw/specimens/Drivetrain.mo",
+    );
+
+    // Case-insensitive, because Windows paths are and the two halves of a joined
+    // name can disagree.
+    assert_eq!(
+        portable_source_name(&format!("{}/hrw/specimens/A.mo", root.to_uppercase())),
+        "hrw/specimens/A.mo",
+        "a drive letter or directory in different case still matches the root",
+    );
+
+    // Outside the workspace: the last two components, and nothing above them.
+    let scratch = portable_source_name("C:\\Users\\someone\\AppData\\Local\\Temp\\xy\\Probe.mo");
+    assert_eq!(scratch, "xy/Probe.mo");
+    assert!(
+        !scratch.contains("Users") && !scratch.contains("someone"),
+        "the parent chain of an out-of-workspace path must not be published: {scratch}",
+    );
+}
+
+/// **No committed trace names a path outside the workspace.**
+///
+/// The guard rather than the policy: `portable_source_name` is the one place that
+/// decides, and this is what fails if a new publisher bypasses it.
+///
+/// # What this covers, and the two things it deliberately does not
+///
+/// It covers the path fields **HRW itself authors** — every `file` value anywhere in
+/// a committed trace. Two kinds of absolute path remain in the notebook, and both are
+/// named here rather than left to look like coverage:
+///
+/// 1. **Rumoca's own rendered messages.** `UnclosedModel/trace/parse.json` carries a
+///    miette-rendered parse error that embeds the source path it was given. Rewriting
+///    it would be editing what the compiler said, and `examples/gen_trace.rs` records
+///    a decision of 2026-08-16 declining exactly that — *"that changes which file the
+///    string names"*. So `message` and `note` are exempt, and the tension between
+///    that decision and keeping a public repository free of a home directory is
+///    Doug's to settle, not this test's.
+/// 2. **`dae.json`.** `Stage::from_ser` serializes the whole `Dae`, and a `Dae` owns
+///    its `SourceMap` — so each one embeds every vendored MSL file's name *and
+///    contents*. Measured 2026-11-04: 24 files, **342.6 MB of the notebook's 359 MB**,
+///    with `BouncingBall/trace/dae.json` alone at 16.3 MB holding 2863 absolute paths.
+///    Fixing that changes what the notebook *is*, so it is reported rather than
+///    quietly rewritten.
+#[test]
+fn no_committed_trace_names_a_path_outside_the_workspace() {
+    let notebook =
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/specimen-notebook");
+    let mut offenders: Vec<String> = Vec::new();
+    let mut checked = 0usize;
+    let mut files_seen = 0usize;
+
+    /// Is this an absolute path rather than a workspace-relative one?
+    fn is_absolute(value: &str) -> bool {
+        value.starts_with('/')
+            || value
+                .as_bytes()
+                .get(1)
+                .is_some_and(|&b| b == b':' && value.as_bytes()[0].is_ascii_alphabetic())
+    }
+
+    let mut dirs = vec![notebook.clone()];
+    while let Some(dir) = dirs.pop() {
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                dirs.push(path);
+                continue;
+            }
+            if path.extension().is_none_or(|e| e != "json") {
+                continue;
+            }
+            // See the doc comment: a pre-existing violation, reported not hidden.
+            if path.file_name().is_some_and(|n| n == "dae.json") {
+                continue;
+            }
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                continue;
+            };
+            let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) else {
+                continue;
+            };
+            checked += 1;
+            let shown = path.strip_prefix(&notebook).unwrap_or(&path).display();
+
+            let mut stack = vec![&value];
+            while let Some(node) = stack.pop() {
+                match node {
+                    serde_json::Value::Array(items) => stack.extend(items),
+                    serde_json::Value::Object(map) => {
+                        if let Some(serde_json::Value::String(named)) = map.get("file") {
+                            files_seen += 1;
+                            if is_absolute(named) {
+                                offenders.push(format!("{shown}: file = {named:?}"));
+                            }
+                        }
+                        stack.extend(map.values());
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    assert!(
+        checked > 0,
+        "no committed trace files were parsed, so this check proves nothing",
+    );
+    assert!(
+        files_seen > 0,
+        "no `file` value was found in any committed trace, so this check examined \
+         nothing \u{2014} either the key was renamed or the locations stopped being \
+         published",
+    );
+    assert!(
+        offenders.is_empty(),
+        "{} committed `file` value(s) name an absolute path \u{2014} this repository \
+         is public, and a committed trace must be checkable on another machine:\n  {}",
+        offenders.len(),
+        offenders.join("\n  "),
+    );
+}
+
+/// A diagnostic label pointing into a **library** file carries no location.
+///
+/// The weaker half of the same property: the diagnostics path is reached from
+/// `PhaseResult::Failed`, where no `Dae` exists and so no source map does either, so
+/// it is told the specimen and can only refuse everything else. `null` is the right
+/// answer there — the alternative, as `worker::span_location` measures, is a line
+/// number for the wrong file.
+///
+/// # Why this builds its diagnostics rather than compiling a specimen
+///
+/// It was written as a corpus walk over `TwoLoops`, whose compile is almost entirely
+/// MSL complaints — and **its must-fire check fired immediately**: the compile
+/// published no diagnostic *labels* at all, because `model_diagnostics_to_json`
+/// partitions library errors into a deduplicated `library_errors` summary that
+/// carries no labels. So there was nothing for the walk to examine and the test
+/// would have reported success over an empty set as soon as the must-fire guard was
+/// relaxed.
+///
+/// Constructing the pair directly tests the claim instead of hoping the corpus
+/// happens to exhibit it. Both labels sit on **one** diagnostic, which is the case
+/// the partition cannot filter: a diagnostic whose primary label is the specimen's
+/// own, carrying a secondary label into a library file.
+#[test]
+fn a_library_label_has_no_location() {
+    let text = "model M\n  Real x;\nend M;\n";
+    let mine = rumoca_core::source_id_for_name("Mine.mo");
+    let theirs = rumoca_core::source_id_for_name("Library.mo");
+
+    let diagnostic = rumoca_core::Diagnostic {
+        severity: rumoca_core::DiagnosticSeverity::Error,
+        code: None,
+        message: "two labels, two files".to_owned(),
+        labels: vec![
+            rumoca_core::Label {
+                span: rumoca_core::Span::from_offsets(mine, 10, 16),
+                message: Some("here".to_owned()),
+                primary: true,
+            },
+            rumoca_core::Label {
+                // In range for the specimen text too, so only the identity check
+                // can refuse it — the shape that produced the wrong answers.
+                span: rumoca_core::Span::from_offsets(theirs, 10, 16),
+                message: Some("and in the library".to_owned()),
+                primary: false,
+            },
+        ],
+        notes: Vec::new(),
+    };
+
+    let json = crate::worker::diagnostics_to_json(
+        std::slice::from_ref(&diagnostic),
+        crate::worker::SpanFile::specimen("Mine.mo", text),
+    );
+    let labels = json[0]["labels"].as_array().expect("labels array");
+    assert_eq!(labels.len(), 2, "both labels survive: {json}");
+
+    assert_eq!(
+        labels[0]["location"]["file"], "Mine.mo",
+        "the specimen's own label resolves: {json}",
+    );
+    assert_eq!(labels[0]["location"]["excerpt"], "Real x");
+    assert!(
+        labels[1]["location"].is_null(),
+        "a label in another file must carry no location, because this path is given \
+         only the specimen and cannot read the file the span names: {json}",
+    );
 }
 
 /// Rank deficiency comes from the **error's own** counts, not from whatever

@@ -3470,7 +3470,10 @@ impl WorkerState {
                             .map(ser_value)
                             .unwrap_or_else(|| serde_json::json!({}));
                         let n = typed.typecheck_diagnostics.len();
-                        let diag_json = diagnostics_to_json(&typed.typecheck_diagnostics, &source);
+                        let diag_json = diagnostics_to_json(
+                            &typed.typecheck_diagnostics,
+                            SpanFile::specimen(&uri, &source),
+                        );
                         json.as_object_mut().unwrap().insert("error".to_owned(), serde_json::json!({
                             "kind": "typecheck",
                             "message": format!("Typecheck reported {n} diagnostic(s)"),
@@ -3566,7 +3569,7 @@ impl WorkerState {
 
                 let flatten = run_stage!(
                     "Flatten",
-                    flatten_stage(result, &source),
+                    flatten_stage(result, SpanFile::specimen(&uri, &source)),
                     flatten,
                     flatten_traces
                 );
@@ -3630,7 +3633,7 @@ impl WorkerState {
                             s.rendered = crate::equation_text::for_dae(d);
                             s
                         }
-                        None => dae_absent_stage(result, &source),
+                        None => dae_absent_stage(result, SpanFile::specimen(&uri, &source)),
                     },
                     dae,
                     dae_traces
@@ -3655,7 +3658,7 @@ impl WorkerState {
                 let (structural, structural_frames) = {
                     log(LogLevel::StageStart, "Structural analysis".to_owned());
                     let t = Instant::now();
-                    let (stage, frames) = structural_stage(result, &source);
+                    let (stage, frames) = structural_stage(result);
                     drain_traces(&log);
                     log(
                         LogLevel::StageEnd,
@@ -3682,7 +3685,7 @@ impl WorkerState {
                 );
                 let initialization = run_stage!(
                     "Initialization",
-                    initialization_stage(result, &source),
+                    initialization_stage(result),
                     initialization
                 );
                 let events = run_stage!("Events", events_stage(result), events);
@@ -3695,7 +3698,7 @@ impl WorkerState {
                 let pre_lowering_sites = match result {
                     Some(PhaseResult::Success(cr)) => cr
                         .dae
-                        .inspect(|view| pre_lowering_from_construction(view, &source)),
+                        .inspect(|view| pre_lowering_from_construction(view, cr.dae.source_map())),
                     _ => Vec::new(),
                 };
                 let solve_lowering = run_stage!(
@@ -4123,10 +4126,28 @@ fn unwrap_success(result: Option<&PhaseResult>) -> &CompilationResult {
 /// `labels` until 2026-07-29 — the same species as the dropped structural spans, on the
 /// phases a hand-authored model fails in most.
 ///
-/// A label whose span points into a *library* file resolves to `null`: the offsets are
-/// into that file, not the specimen, and `span_to_location` refuses rather than inventing
-/// a line. That is why MSL warnings carry no location here and the model's own error does.
-fn diagnostics_to_json(diags: &[rumoca_core::Diagnostic], source: &str) -> serde_json::Value {
+/// # A library label resolves to `null`, and that is now true rather than claimed
+///
+/// This comment used to say so already: *"the offsets are into that file, not the
+/// specimen, and `span_to_location` refuses rather than inventing a line."* **It did
+/// not refuse.** Its only guard was `end > bytes.len()`, so a library span whose byte
+/// range happened to fit inside the specimen resolved against the wrong file and
+/// reported a line with full confidence. The same mistake was *live* next door, in
+/// `unmatched_unknown_locations`; [`span_location`] records what it published.
+///
+/// Byte offsets cannot say which file they are offsets *into*, so the only way to
+/// refuse is to be told, which is what [`SpanFile`] is for. This path is reached from
+/// `PhaseResult::Failed`, where there is no `Dae` and therefore no
+/// `Dae::source_map` — so it is told the **specimen** and refuses everything else.
+/// That is weaker than the IR sites, which resolve a library span in its own file,
+/// and it is the honest version of what this comment always said.
+///
+/// `a_library_label_has_no_location` is the check, with
+/// `the_span_resolver_refuses_a_foreign_span` on the guard itself.
+fn diagnostics_to_json(
+    diags: &[rumoca_core::Diagnostic],
+    specimen: SpanFile<'_>,
+) -> serde_json::Value {
     serde_json::Value::Array(
         diags
             .iter()
@@ -4139,7 +4160,7 @@ fn diagnostics_to_json(diags: &[rumoca_core::Diagnostic], source: &str) -> serde
                     "labels": d.labels.iter().map(|l| serde_json::json!({
                         "message": l.message,
                         "primary": l.primary,
-                        "location": span_to_location(source, &l.span),
+                        "location": span_to_location(specimen, &l.span),
                     })).collect::<Vec<_>>(),
                 })
             })
@@ -4205,7 +4226,7 @@ fn model_diagnostics_to_json(
     }
 
     serde_json::json!({
-        "errors": diagnostics_to_json(&errors, source),
+        "errors": diagnostics_to_json(&errors, SpanFile::specimen(uri, source)),
         "library_errors": {
             "note": "errors the compiler reported against LIBRARY sources, deduplicated. \
                      Not this model's problems and not why this compile failed \u{2014} \
@@ -4241,7 +4262,7 @@ fn dae_construction_error_to_json(
     error: &str,
     error_code: &Option<String>,
     diagnostics: &[rumoca_core::Diagnostic],
-    source: &str,
+    specimen: SpanFile<'_>,
 ) -> serde_json::Value {
     let mut json = serde_json::json!({
         "kind": "dae_construction",
@@ -4259,7 +4280,7 @@ fn dae_construction_error_to_json(
         // Shared helper so labels resolve to source lines here as well.
         obj.insert(
             "diagnostics".to_owned(),
-            diagnostics_to_json(diagnostics, source),
+            diagnostics_to_json(diagnostics, specimen),
         );
     }
 
@@ -4320,26 +4341,109 @@ fn parse_unbalanced(message: &str) -> Option<(usize, usize, i64)> {
     ))
 }
 
+/// One source file, named by the id Rumoca addresses it with.
+///
+/// **A span may only be resolved against the file its own `SourceId` names**, and
+/// carrying the id beside the text is what makes that checkable instead of assumed.
+/// Before 2026-11-04 the resolver took a bare `&str` and sliced whatever it was
+/// handed; [`span_location`] records what that cost.
+#[derive(Clone, Copy)]
+struct SpanFile<'a> {
+    id: rumoca_core::SourceId,
+    /// The name the compile registered, published so a line number says which file
+    /// it counts lines in.
+    name: &'a str,
+    text: &'a str,
+}
+
+/// A source name fit to **publish**: workspace-relative, forward slashes.
+///
+/// Rumoca registers each source under the path HRW handed it, so a name read back out
+/// of a `SourceMap` is an absolute path on *this* machine — `C:\Users\…\rumoca\hrw/
+/// vendor/msl\Modelica 4.1.0\…`. Two separate reasons it cannot be published that way:
+///
+/// - **This repository is public**, and an absolute path under a home directory
+///   carries the account name of whoever ran the compile into every committed trace.
+/// - **A committed trace has to mean the same thing on another machine**, and a
+///   checker that reads the named file cannot find it under someone else's prefix.
+///
+/// A path *outside* the workspace — a scratch specimen under the system temp
+/// directory — keeps only its last two components. Those locate the file for a reader
+/// who already has it (Claude wrote it) while leaving the parent chain, which is where
+/// an account name sits, off the record.
+fn portable_source_name(name: &str) -> String {
+    let normalized = name.replace('\\', "/");
+    // The workspace root is the parent of this crate's directory. Baked in at compile
+    // time, and never itself published.
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .map(|p| p.to_string_lossy().replace('\\', "/"));
+    if let Some(root) = root {
+        // Windows paths compare case-insensitively, and the two halves of a name can
+        // disagree in case when they were joined by different code.
+        let (lower, root_lower) = (normalized.to_lowercase(), root.to_lowercase());
+        if let Some(rest) = lower.strip_prefix(&root_lower) {
+            // Slice the original by the matched length so the published spelling is
+            // the real one rather than the lowercased comparison key.
+            let kept = &normalized[normalized.len() - rest.len()..];
+            return kept.trim_start_matches('/').to_owned();
+        }
+    }
+    let components: Vec<&str> = normalized.rsplit('/').take(2).collect();
+    components.into_iter().rev().collect::<Vec<_>>().join("/")
+}
+
+impl<'a> SpanFile<'a> {
+    /// The specimen, identified the way the session registers it.
+    ///
+    /// `source_id_for_name` is a pure function of the name — the same derivation
+    /// `model_resolve_errors` uses to tell this model's diagnostics from the
+    /// library's — so no map is needed and the id cannot go stale.
+    fn specimen(uri: &'a str, text: &'a str) -> Self {
+        Self {
+            id: rumoca_core::source_id_for_name(uri),
+            name: uri,
+            text,
+        }
+    }
+
+    /// The file an id names, from the compile's own map.
+    fn from_map(map: &'a rumoca_core::SourceMap, id: rumoca_core::SourceId) -> Option<Self> {
+        let (name, text) = map.get_source(id)?;
+        Some(Self { id, name, text })
+    }
+}
+
 /// Turn a Rumoca `Span` into a source location Claude can quote back at Doug.
 ///
-/// A span is byte offsets into the specimen source. On its own that is useless in an
-/// answer — "unknown `gnd.p.i`" tells Doug nothing about *his* model. With the line
+/// A span is byte offsets into one file. On its own that is useless in an answer —
+/// "unknown `gnd.p.i`" tells Doug nothing about *his* model. With the file, the line
 /// number and the line's text it becomes "line 5 of your model, the `gnd`
 /// declaration", which is the difference between explaining the compiler and
 /// diagnosing the model (ideas #45).
 ///
+/// **`None` for a span belonging to another file**, which is the property this
+/// function's callers were documented as having and did not have until 2026-11-04.
+/// Byte offsets alone cannot say which file they are offsets *into*, so the only way
+/// to refuse is to be told, and `SpanFile` is that telling.
+///
 /// Byte offsets are converted by counting newlines rather than by character
-/// arithmetic, and excerpts use `from_utf8_lossy`, so a specimen containing
+/// arithmetic, and excerpts use `from_utf8_lossy`, so a source containing
 /// non-ASCII cannot panic here. An em-dash in a description string caused exactly
 /// that class of crash in the lexer on 2026-07-27.
-fn span_to_location(source: &str, span: &rumoca_core::Span) -> Option<serde_json::Value> {
-    let bytes = source.as_bytes();
+fn span_to_location(file: SpanFile<'_>, span: &rumoca_core::Span) -> Option<serde_json::Value> {
+    if span.source != file.id {
+        return None;
+    }
+    let bytes = file.text.as_bytes();
     // `BytePos` is a newtype over `usize`; unwrap once here so the arithmetic
     // below reads as ordinary slicing.
     let (start, end) = (span.start.0, span.end.0);
     if start > end || end > bytes.len() {
-        // A span from a different source file than this specimen. Nothing to say
-        // about it, and inventing a line number would be worse than silence.
+        // The span names this file but does not fit inside it, so the two
+        // disagree. That is a Rumoca-side inconsistency rather than a foreign
+        // span — the id was already checked — and inventing a line number for
+        // it would be worse than silence.
         return None;
     }
     let line_start = bytes[..start]
@@ -4353,6 +4457,11 @@ fn span_to_location(source: &str, span: &rumoca_core::Span) -> Option<serde_json
     let line = bytes[..start].iter().filter(|&&b| b == b'\n').count() + 1;
     let column = start - line_start + 1;
     Some(serde_json::json!({
+        // **First, because it qualifies everything after it.** A line number with
+        // no file is the unstated assumption that produced the wrong answers.
+        // Normalized, because the raw name is this machine's absolute path — see
+        // `portable_source_name`.
+        "file": portable_source_name(file.name),
         "line": line,
         "column": column,
         "excerpt": String::from_utf8_lossy(&bytes[start..end]),
@@ -4360,6 +4469,55 @@ fn span_to_location(source: &str, span: &rumoca_core::Span) -> Option<serde_json
         "byte_start": start,
         "byte_end": end,
     }))
+}
+
+/// Resolve a span **in the file its own `SourceId` names**, through Rumoca's map.
+///
+/// # The defect this replaces, which was live and confident
+///
+/// [`span_to_location`] takes one source text and slices it. Its own doc comment
+/// claimed the safe property — *"a label whose span points into a library file
+/// resolves to `null` … `span_to_location` refuses rather than inventing a
+/// line"* — and that claim was **false**: the only guard is `end >
+/// bytes.len()`, so a span into an MSL file whose byte range happens to fit
+/// inside a short specimen resolves happily against the wrong file.
+///
+/// It was not hypothetical. Measured 2026-11-04, `Drivetrain`'s four unmatched
+/// unknowns were published as:
+///
+/// ```text
+///   emf.w         line 8   "// joints, closed-loop linkages — belong to the …"
+///   shaft.a       line 10  "// --- Electrical: a DC source drives the motor …"
+///   load.a        line 6   "// rotational flanges (tau), and translational …"
+///   wall.flange.f line 2   "// purpose: Ideal gears → high-index, structurally …"
+/// ```
+///
+/// Every one is a **comment in `Drivetrain.mo`**, and every one is wrong: the
+/// truth is `SI.AngularVelocity w`, `SI.AngularAcceleration a`,
+/// `SI.Acceleration a` and `SI.Force f`, in four different MSL connector and
+/// component files. `CapacitorLoop` named `connect(src.n, gnd.p);` for a span
+/// that is `SI.Current i` in `Modelica.Electrical.Analog.Interfaces.Pin`. The
+/// answer was not merely vague — it pointed Doug at his own comments and told
+/// him a declaration was there.
+///
+/// # Why a map lookup is the fix rather than a guard
+///
+/// Refusing a foreign span would make the old claim true, and would have been
+/// honest; but it would also blank the locations for exactly the models that
+/// need them, since most of this corpus declares its unknowns inside the MSL.
+/// `Dae::source_map` is already public and `SourceMap::get_source` returns
+/// `(name, text)` for any id the compile registered, so the *right* file is one
+/// call away and the excerpt comes out of it. Nothing is guessed and no new
+/// Rumoca API was needed.
+///
+/// `file` is therefore part of the published location: a line number means
+/// nothing until the reader knows which file it counts lines in, and that was
+/// the unstated assumption the old form smuggled in.
+fn span_location(
+    source_map: &rumoca_core::SourceMap,
+    span: &rumoca_core::Span,
+) -> Option<serde_json::Value> {
+    span_to_location(SpanFile::from_map(source_map, span.source)?, span)
 }
 
 /// Source locations for a singular error's unmatched unknowns, parallel to
@@ -4373,16 +4531,22 @@ fn span_to_location(source: &str, span: &rumoca_core::Span) -> Option<serde_json
 /// Entries carry `location: null` where an unknown has no source provenance: solver
 /// scalars and manufactured variables genuinely have no line, and saying so keeps the
 /// array aligned with `unmatched_unknowns` instead of silently shortening it.
+///
+/// **Resolved through Rumoca's source map since 2026-11-04**, because an unmatched
+/// unknown is usually declared in the *library*, not the specimen — `emf.w` is a
+/// field of an MSL component — and slicing the specimen for its span produced a
+/// confident wrong line for every unknown of every MSL-backed model in the corpus.
+/// [`span_location`] records the measurement.
 fn unmatched_unknown_locations(
-    source: &str,
+    source_map: &rumoca_core::SourceMap,
     names: &[String],
     // **Every unmatched unknown now HAS a span.** 0.10.0 reports
     // `Vec<Span>` where 0.9.20 reported `Vec<Option<Span>>`, because the error
     // is built from the incidence, which carries a span per unknown. The
     // positional `get(i)` stays — a shorter span list than name list would
     // still leave later unknowns unlocated rather than mispaired — but the
-    // inner `Option` is gone, so a `None` location now means only "this span
-    // does not resolve into the specimen source", never "no span was recorded".
+    // inner `Option` is gone, so a `None` location now means only "the compile
+    // registered no file under this span's id", never "no span was recorded".
     spans: &[rumoca_core::Span],
 ) -> serde_json::Value {
     serde_json::Value::Array(
@@ -4390,7 +4554,7 @@ fn unmatched_unknown_locations(
             .iter()
             .enumerate()
             .map(|(i, name)| {
-                let loc = spans.get(i).and_then(|s| span_to_location(source, s));
+                let loc = spans.get(i).and_then(|s| span_location(source_map, s));
                 serde_json::json!({ "unknown": name, "location": loc })
             })
             .collect(),
@@ -4445,7 +4609,11 @@ pub struct StructuralFrames {
 /// Rumoca API: `build_structural_report(&dae)` runs maximum matching +
 /// BLT decomposition. `build_incidence(&dae)` builds the equation x unknown
 /// bipartite adjacency matrix (which equations reference which unknowns).
-fn structural_stage(result: Option<&PhaseResult>, source: &str) -> (Stage, StructuralFrames) {
+///
+/// **No `source` parameter since 2026-11-04.** The unmatched-unknown locations it
+/// publishes are resolved through `cr.dae.source_map()` now, because most of them are
+/// declared in the MSL rather than the specimen; see [`span_location`].
+fn structural_stage(result: Option<&PhaseResult>) -> (Stage, StructuralFrames) {
     let empty = || StructuralFrames {
         matching: Vec::new(),
         tarjan: Vec::new(),
@@ -4531,7 +4699,10 @@ fn structural_stage(result: Option<&PhaseResult>, source: &str) -> (Stage, Struc
                         partial_matching_to_json(inc, &last.match_eq, view),
                     );
                 }
-                obj.insert("error".to_owned(), structural_error_to_json(e, source));
+                obj.insert(
+                    "error".to_owned(),
+                    structural_error_to_json(e, cr.dae.source_map()),
+                );
                 let note = match e {
                     rumoca_phase_structural::StructuralError::Singular { .. } => {
                         "singular".to_owned()
@@ -4637,15 +4808,19 @@ fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
 ///
 /// `docs/tech-debt.md` carries the `unbuilt:` tag naming
 /// `worker::initialization_from_initial_pins`.
-fn initialization_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
+///
+/// Takes no `source`: each pin's `declared_at` resolves through the compile's own
+/// source map, which is the only way to locate a `start` written in a library file.
+fn initialization_stage(result: Option<&PhaseResult>) -> Stage {
     if let Some(stage) = not_reached_stage(result) {
         return stage;
     }
     let cr = unwrap_success(result);
     match rumoca_phase_structural::prepare_for_solve(&cr.dae) {
-        Ok(prepared) => {
-            Stage::ok(prepared.inspect(|system| initialization_from_initial_pins(system, source)))
-        }
+        Ok(prepared) => Stage::ok(
+            prepared
+                .inspect(|system| initialization_from_initial_pins(system, cr.dae.source_map())),
+        ),
         // **Not `Failed`, and that is the one-`Failed`-per-compile rule.**
         // Preparation fails on a system structural analysis already reported as
         // singular, and Structural says so with the evidence. A second stage
@@ -4706,7 +4881,11 @@ fn initialization_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
 /// returns the `ReductionReport` too — at that point one call should serve both.
 fn initialization_from_initial_pins(
     system: rumoca_phase_structural::PreparedSystem<'_, '_>,
-    source: &str,
+    // The compile's own map, not the specimen text: a `start` attribute is often
+    // written on an MSL component (`Inertia load(J = 0.05, phi(start = 0))` puts the
+    // value in the specimen, but a library default puts it in the library), and
+    // slicing the specimen for a library span invents a line — see [`span_location`].
+    source_map: &rumoca_core::SourceMap,
 ) -> serde_json::Value {
     let view = system.view;
     let name_of = |index: u32| -> String {
@@ -4755,7 +4934,7 @@ fn initialization_from_initial_pins(
                 // class determines.
                 "source": name_of(pin.source),
                 "source_scalar": pin.source_scalar,
-                "declared_at": span_to_location(source, &pin.provenance.span()),
+                "declared_at": span_location(source_map, &pin.provenance.span()),
             })
         })
         .collect();
@@ -5111,7 +5290,14 @@ fn events_from_condition_algebra(view: rumoca_ir_dae::DaeView<'_>) -> serde_json
 /// rather than a walk that stopped looking.
 fn pre_lowering_from_construction(
     view: rumoca_ir_dae::DaeView<'_>,
-    source: &str,
+    // **The map, not the specimen text** (corrected 2026-11-04). A `pre`, `edge` or
+    // `change` written inside an MSL component — a friction or brake model's mode
+    // bookkeeping — owns a span in *that* file, and slicing the specimen for it would
+    // label the site with whatever bytes sit at those offsets in the model. No corpus
+    // specimen reaches that path today, so this was latent rather than live; the same
+    // mistake was live next door in `unmatched_unknown_locations`. See
+    // [`span_location`].
+    source_map: &rumoca_core::SourceMap,
 ) -> Vec<crate::pre_lowering_anim::PreLoweringSite> {
     use rumoca_ir_dae::{CoordinateView, DaeGeneration, DaeProvenanceOrigin, ExpressionOperation};
 
@@ -5204,7 +5390,7 @@ fn pre_lowering_from_construction(
         .into_iter()
         .filter_map(|key| groups.remove(&key))
         .map(|group| {
-            let location = span_to_location(source, &group.span);
+            let location = span_location(source_map, &group.span);
             crate::pre_lowering_anim::PreLoweringSite {
                 // The excerpt is the source text the span covers, so a site is
                 // labelled `edge(b)` because Rumoca says those bytes own it.
@@ -5212,7 +5398,7 @@ fn pre_lowering_from_construction(
                     .as_ref()
                     .and_then(|l| l["excerpt"].as_str())
                     .map_or_else(
-                        || "<span outside this specimen>".to_owned(),
+                        || "<span in no registered source>".to_owned(),
                         |excerpt| excerpt.trim().to_owned(),
                     ),
                 line: location
@@ -5431,13 +5617,16 @@ fn partial_matching_to_json<'dae>(
 
 /// Convert a `StructuralError` into structured JSON for the UI and for Claude.
 ///
-/// Takes the specimen `source` so unmatched unknowns can be reported with the line
-/// that declares them (ideas #45). It no longer takes the incidence: the only thing
-/// that used it was the rank-deficiency computation, which was *wrong* to use it —
-/// see the comment on that field.
+/// Takes the compile's **source map** so unmatched unknowns can be reported with the
+/// line that declares them (ideas #45) — *in the file that declares them*, which is
+/// usually an MSL component rather than the specimen. It took the specimen text until
+/// 2026-11-04 and mislabelled every library-declared unknown; [`span_location`] holds
+/// the measurement. It no longer takes the incidence either: the only thing that used
+/// it was the rank-deficiency computation, which was *wrong* to use it — see the
+/// comment on that field.
 fn structural_error_to_json(
     e: &rumoca_phase_structural::StructuralError,
-    source: &str,
+    source_map: &rumoca_core::SourceMap,
 ) -> serde_json::Value {
     match e {
         rumoca_phase_structural::StructuralError::Singular {
@@ -5487,8 +5676,11 @@ fn structural_error_to_json(
             // The point of ideas #45: where in *Doug's source* each untethered
             // unknown is declared, so a failure can be diagnosed rather than merely
             // described.
-            "unmatched_unknown_locations":
-                unmatched_unknown_locations(source, unmatched_unknowns, unmatched_unknown_spans),
+            "unmatched_unknown_locations": unmatched_unknown_locations(
+                source_map,
+                unmatched_unknowns,
+                unmatched_unknown_spans,
+            ),
             // **New in v0.10.0, and it answers the question the counts raise.**
             // `n_equations > n_unknowns` says the system is over-determined
             // somewhere; this says *where*, as the witness block's own shape
@@ -5691,7 +5883,7 @@ fn tearing_to_json(t: &rumoca_phase_structural::TearingReport) -> serde_json::Va
 /// `NeedsInner` (the model references inner declarations that weren't
 /// provided — a rare Modelica feature).
 /// `source` is the specimen text, so diagnostic labels become line numbers.
-fn flatten_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
+fn flatten_stage(result: Option<&PhaseResult>, specimen: SpanFile<'_>) -> Stage {
     match result {
         Some(PhaseResult::Success(cr)) => match serde_json::to_value(&cr.flat) {
             Ok(v) => {
@@ -5719,7 +5911,7 @@ fn flatten_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
                     // Shared helper, so `labels` — the source location of each problem —
                     // survives. This block used to build its own diagnostic JSON and
                     // drop them.
-                    let diag_json = diagnostics_to_json(diagnostics, source);
+                    let diag_json = diagnostics_to_json(diagnostics, specimen);
                     Stage::err_with_details(
                         serde_json::json!({
                             "kind": "flatten",
@@ -5801,7 +5993,7 @@ fn flatten_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
 ///
 /// Found by `docs/fixture-labs/dae-construction.md`, whose counterexample stop opens
 /// this exact tab on `UnbalancedShaft`.
-fn dae_absent_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
+fn dae_absent_stage(result: Option<&PhaseResult>, specimen: SpanFile<'_>) -> Stage {
     match result {
         Some(PhaseResult::Failed {
             phase: FailedPhase::ToDae,
@@ -5815,7 +6007,7 @@ fn dae_absent_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
                 format!("{error}  ({} diagnostic(s))", diagnostics.len())
             };
             Stage::err_with_details(
-                dae_construction_error_to_json(error, error_code, diagnostics, source),
+                dae_construction_error_to_json(error, error_code, diagnostics, specimen),
                 msg,
             )
         }

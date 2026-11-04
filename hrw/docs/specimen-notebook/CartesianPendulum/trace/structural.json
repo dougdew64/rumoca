@@ -94,6 +94,7 @@
       {
         "unknown": "lambda",
         "location": {
+          "file": "hrw/specimens/CartesianPendulum.mo",
           "line": 10,
           "column": 3,
           "excerpt": "Real lambda",
