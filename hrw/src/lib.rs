@@ -235,12 +235,48 @@ mod tests_one_home {
     }
 }
 
-pub fn truncate_label(s: &str, max: usize) -> &str {
-    if s.len() <= max {
-        s
-    } else {
-        s.get(..max).unwrap_or(s)
+/// Shorten a label to `max` **characters**, marking it when anything was removed.
+///
+/// # Why the ellipsis is not decoration
+///
+/// *Found 2026-11-04 by the capture suite's first photograph of the BLT graph.*
+/// `SingleInertia`'s two equations are `der(phi) = w` and `J*der(w) = tau`, whose
+/// residuals are `0 = der(phi) - w` and `0 = J*der(w) - tau`. At the old 12-character
+/// budget, with no marker, the graph drew:
+///
+/// ```text
+/// 0 = der(phi)        0 = J*der(w)
+/// ```
+///
+/// Both are **well-formed equations, and both are false** — the first says the angle
+/// never changes, the second that the inertia never accelerates. A reader has no cue
+/// that anything was dropped, and the Tarjan graph has **no hover**, so that label is
+/// the only thing the pane ever says about the node.
+///
+/// This is the defect class this repository treats as worst: not something that looks
+/// broken, but something that reads as a true statement and is not one. A truncation
+/// that announces itself is recoverable; a silent one is a fabrication.
+///
+/// # And it is now counted in characters
+///
+/// The old form compared `s.len()` (bytes) and sliced with `s.get(..max)`, which
+/// returns `None` on a char boundary — so a multi-byte label was silently **not
+/// truncated at all** and could overrun whatever the budget was protecting. The
+/// surviving test asserted that fallback as if it were the intent.
+///
+/// The marker costs one of the `max` characters, so the width a caller budgeted for is
+/// the width it gets.
+#[must_use]
+pub fn truncate_label(s: &str, max: usize) -> String {
+    if s.chars().count() <= max {
+        return s.to_owned();
     }
+    if max == 0 {
+        return String::new();
+    }
+    let mut out: String = s.chars().take(max - 1).collect();
+    out.push('\u{2026}');
+    out
 }
 
 /// Convert a byte offset into a 1-based line number by counting newlines.
@@ -592,7 +628,7 @@ pub fn draw_matrix_axis_labels(
         let cell_top = view.to_screen(egui::pos2(col as f32 + 0.5, 0.0));
         let anchor = egui::pos2(cell_top.x, cell_top.y - col_gap_px);
         let galley = painter.layout_no_wrap(
-            truncate_label(name, col_max_chars).to_owned(),
+            truncate_label(name, col_max_chars),
             font.clone(),
             label_color,
         );
@@ -869,16 +905,70 @@ mod tests {
 
     #[test]
     fn truncate_label_ascii() {
-        assert_eq!(truncate_label("abcde", 3), "abc");
-        assert_eq!(truncate_label("ab", 3), "ab");
-        assert_eq!(truncate_label("abc", 3), "abc");
+        assert_eq!(
+            truncate_label("abcde", 3),
+            "ab\u{2026}",
+            "a shortened label must say it was shortened"
+        );
+        assert_eq!(
+            truncate_label("ab", 3),
+            "ab",
+            "a label that fits is untouched"
+        );
+        assert_eq!(
+            truncate_label("abc", 3),
+            "abc",
+            "exactly at the budget is a fit"
+        );
+    }
+
+    /// **The regression test for the BLT graph's false equations.**
+    ///
+    /// `SingleInertia`'s residual `0 = der(phi) - w` is 16 characters against a
+    /// 12-character node budget, and the old function returned `0 = der(phi)` — a
+    /// well-formed equation saying the angle never changes. The Tarjan graph has no
+    /// hover, so that was the whole of what the pane said about the node.
+    #[test]
+    fn a_truncated_equation_cannot_read_as_a_complete_one() {
+        let residual = "0 = der(phi) - w";
+        let shown = truncate_label(residual, 12);
+        assert_ne!(
+            shown, "0 = der(phi)",
+            "this is the defect: a truncation that is itself a valid, false equation"
+        );
+        assert!(
+            shown.ends_with('\u{2026}'),
+            "anything dropped must be announced: {shown}"
+        );
+        assert_eq!(
+            shown.chars().count(),
+            12,
+            "the marker comes out of the caller's budget, not on top of it: {shown}"
+        );
+    }
+
+    /// The budget is characters, not bytes — the old form compared `len()` and sliced
+    /// with `get(..max)`, so a multi-byte label was silently left at full length.
+    #[test]
+    fn the_budget_counts_characters_not_bytes() {
+        // Six characters, twelve bytes: under a 10-character budget it must pass
+        // through whole, where a byte comparison would have shortened it.
+        let six = "\u{3b1}\u{3b2}\u{3b3}\u{3b4}\u{3b5}\u{3b6}";
+        assert_eq!(six.len(), 12, "the fixture must actually be multi-byte");
+        assert_eq!(truncate_label(six, 10), six);
+        // And over budget it is shortened rather than waved through by a failed slice.
+        assert_eq!(truncate_label(six, 4), "\u{3b1}\u{3b2}\u{3b3}\u{2026}");
     }
 
     #[test]
     fn truncate_label_multibyte_does_not_panic() {
         let s = "élan";
-        assert_eq!(truncate_label(s, 1), s);
-        assert_eq!(truncate_label(s, 2), "é");
+        // Was `== s`: the old byte-slicing form failed on the char boundary and
+        // returned the label **unshortened**, and this test asserted that fallback as
+        // if it were the intent. A budget of one leaves room for the marker alone.
+        assert_eq!(truncate_label(s, 1), "\u{2026}");
+        assert_eq!(truncate_label(s, 2), "é\u{2026}");
+        assert_eq!(truncate_label(s, 0), "");
     }
 }
 

@@ -2917,11 +2917,57 @@ impl App {
             StructuralView::Incidence | StructuralView::SpyPlot if is_index_reduction => {
                 Self::matrix_reports(&self.stages, self.stage).0.is_some()
             }
+            // **The three replays need frames, and the stage rule cannot see frames.**
+            //
+            // *Found 2026-11-04 by the capture suite's first run on `SingleInertia`.*
+            // The stage rule offers Tearing on any non-singular system, so the tab
+            // appeared with its **>** promising a replay, and the pane said *"No
+            // tearing was recorded for this model. The compiler produced none, so
+            // there is nothing to replay."* Two scalar blocks: there was nothing to
+            // tear, and nothing wrong with the model.
+            //
+            // **This is Doug's own report from 2026-11-04 in a second place** — *"there
+            // are triangles in the view labels Matching, BLT and Tearing, but none of
+            // those views offer animations"* — which was fixed for Index Reduction by
+            // refusing the tabs. The same answer applies here, and for his reason: a
+            // marker that promises an animation must not appear without one.
+            //
+            // The frame check is deliberately **cheap** (is the capture non-empty)
+            // rather than the pane's own constructor, which would have to build an
+            // animation every frame to decide whether to draw a tab. The gap between
+            // the two — frames that exist but which the constructor refuses, over an
+            // index or count mismatch — is what
+            // `every_offered_sub_view_has_something_to_draw` is for, and it asks the
+            // constructors precisely so it is not re-asserting this line.
+            StructuralView::MatchingAnim => {
+                self.stage_offers(v, is_index_reduction, is_singular)
+                    && !self.frames.structural.matching.is_empty()
+            }
+            StructuralView::TarjanAnim => {
+                self.stage_offers(v, is_index_reduction, is_singular)
+                    && !self.frames.structural.tarjan.is_empty()
+            }
+            StructuralView::TearingAnim => {
+                self.stage_offers(v, is_index_reduction, is_singular)
+                    && !self.frames.structural.tearing.is_empty()
+            }
             other => {
                 Self::structural_view_available_from_stage(other, is_index_reduction, is_singular)
-                    .expect("Animate is the only frame-dependent view, handled above")
+                    .expect("every frame-dependent view is handled above")
             }
         }
+    }
+
+    /// The stage-and-singularity half of availability, for a view that also depends
+    /// on frames.
+    ///
+    /// Both halves are real and neither subsumes the other: a singular system has no
+    /// tearing *to* show, and a non-singular one with nothing to tear has no tearing
+    /// *shown*. Keeping the first half in the pure function is what lets
+    /// `every_lab_sub_view_link_is_available_for_its_specimen` check 14 links without
+    /// running a compile — it answers the half it can see, and says so.
+    fn stage_offers(&self, v: StructuralView, is_index_reduction: bool, is_singular: bool) -> bool {
+        Self::structural_view_available_from_stage(v, is_index_reduction, is_singular) == Some(true)
     }
 
     /// Whether a stage note reports a structurally singular system.

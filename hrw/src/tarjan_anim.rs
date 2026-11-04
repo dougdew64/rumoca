@@ -26,6 +26,20 @@ use crate::incidence_view::IncidenceMatrix;
 use crate::playback::{Animated, Playback};
 use crate::truncate_label;
 
+/// How much of an equation's residual fits under a graph node.
+///
+/// **Tight, and knowingly so.** A 97-node `Drivetrain` graph has nodes close enough
+/// that a long label would overlap its neighbours, and this is the budget that keeps
+/// them apart. The cost is that a short residual like `0 = der(phi) - w` does not fit
+/// either — it is 16 characters — so even the smallest model shows an elided label.
+///
+/// That is survivable only because the elision is now **visible**: see
+/// [`crate::truncate_label`], whose doc records what this budget silently produced
+/// before 2026-11-04. Whether the budget itself should scale with the node count or
+/// the zoom is open, and is a measurement nobody has taken — the graph has no hover,
+/// so a label is all a node says, which raises the stakes on getting it right.
+const NODE_LABEL_MAX_CHARS: usize = 12;
+
 /// Where equation `i` sits in world space, for a graph of `n_nodes` equations.
 ///
 /// **The single source of truth for this view's layout.** Drawing and camera aiming both
@@ -592,11 +606,10 @@ impl TarjanAnimation {
                 );
             }
             if view.zoom() >= crate::NODE_LABEL_ZOOM_THRESHOLD {
-                let label = self
-                    .node_names
-                    .get(i)
-                    .map(|n| truncate_label(n, 12))
-                    .unwrap_or("?");
+                let label = self.node_names.get(i).map_or_else(
+                    || "?".to_owned(),
+                    |n| truncate_label(n, NODE_LABEL_MAX_CHARS),
+                );
                 painter.text(
                     center + egui::vec2(0.0, node_radius + view.zoom() * 0.12),
                     egui::Align2::CENTER_TOP,

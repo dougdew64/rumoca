@@ -6507,7 +6507,19 @@ mod tests_orphaned_docs {
             // enforce. Triaged by the documented shortcut — the file has no
             // undocumented item for an orphan to belong to — and
             // `no_item_loses_its_doc_comment` is green, which is the structural half.
-            ("lib.rs", 3),
+            //
+            // 3 -> 4 on 2026-11-04. The new hit is at `lib.rs:249`, inside
+            // `truncate_label`'s doc: the paragraph after a `text` code fence opens
+            // **"Both are well-formed equations, and both are false"**, which is a
+            // bold sentence commenting on the block above it and not a second
+            // summary. The scanner cannot tell a paragraph that follows a fence from
+            // one that opens a block. Triaged the documented way: the only item added
+            // to this file in that commit is the test beside it, which has its own
+            // summary, so there is no undocumented item for an orphan to belong to.
+            // Not reworded, because the sentence is the whole finding — a truncation
+            // that reads as a true statement — and dropping its emphasis to satisfy a
+            // ~29 %-precision heuristic is the trade this ratchet's own doc warns off.
+            ("lib.rs", 4),
             // Added on 2026-11-03 at 1: `live_trace.rs` is **new to `hrw/src` on this
             // rebase**, moved out of `rumoca-phase-structural` whose own header
             // admitted no phase used it. Its one hit is `live_trace_breakpoint`'s

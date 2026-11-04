@@ -1490,6 +1490,44 @@ moment*, which is the 09-22 arc's lesson arriving again in a new costume.
 **The widening to all four specimens is `ideas.md` #91, with the costs measured.** Three of the six
 canvas views have still never been photographed by anything, because `Drivetrain` refuses them.
 
+### 11-04, the second specimen — `SingleInertia`, and the rate held
+
+Doug asked whether to add it. No code was needed — the runner already takes the specimen as an
+argument — so the answer was to run it rather than to build anything. It was the strongest
+remaining case: the three views `Drivetrain` refuses are the three nothing had ever photographed.
+
+Two more defects, both in those views:
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 11-04 | the BLT graph labelled its nodes **`0 = der(phi)`** and **`0 = J*der(w)`** | the second capture run | the residuals are `0 = der(phi) - w` and `0 = J*der(w) - tau`. `truncate_label(n, 12)` cut them with **no marker**, and both results are well-formed equations that are *false* — the first says the angle never changes. The graph has **no hover**, so the label is all a node says |
+| 11-04 | `TearingAnim` offered with a **>** over *"No tearing was recorded for this model"* | the second capture run | two scalar blocks, nothing to tear. The availability rule gates on singularity, which cannot see whether the compile captured anything. **This is Doug's own 11-04 report in a second place** — *"there are triangles in the view labels… but none of those views offer animations"* — and takes the same answer he accepted for Index Reduction: refuse the tab |
+
+**The first is the worse one, and it is a new instance of the project's worst class.** Not a label
+that looks cut off — a label that reads as a complete, correct statement and is wrong. `0 = der(phi)`
+is exactly the sort of thing that gets read once, believed, and never questioned. The fix is in
+`truncate_label` itself, so no call site can shorten silently; the same change turned up a latent
+bug on the way, since the old form compared **bytes** and sliced with `get(..max)`, which returns
+`None` on a char boundary — so a multi-byte label was silently *not truncated at all*, and the
+surviving test asserted that fallback as if it were the intent.
+
+**The second found a test measuring the wrong unit, which is the durable part.**
+`every_offered_sub_view_has_something_to_draw` checked, for all three animations, whether an
+**incidence matrix** could be parsed — the backdrop they draw on, not the records they replay. So
+the test and the app were looking at the same wrong thing and agreed. Corrected, it reproduced the
+photograph exactly: one entry, `SingleInertia / Structural / TearingAnim`, across all four
+specimens.
+
+**And the corrected test deliberately does not ask what the app asks.** The app gates on *is the
+capture non-empty*, which is cheap enough to run every frame; the test asks the panes' own
+constructors, which additionally refuse frames that do not **address** this matrix. Had both asked
+the same question the walk could never fail — the tautology trap this suite exists upstream of.
+
+**One cross-confirmation worth recording**, because it is the kind that only a photograph gives:
+the same specimen's incidence matrix renders its row labels **in full** — `0 = der(phi) - w` — two
+tabs away from the graph that was truncating them. The two panes disagreed on screen about the same
+equation, and no test compared them.
+
 ## Owed sweeps — small `src/` fixes that must not buy a gate of their own
 
 **Doug, 2026-08-31**, asked whether a five-second imprecision should be swept up next time
