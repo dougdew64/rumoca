@@ -6793,25 +6793,33 @@ fighting it — see `docs/pointing-plan.md` for why that sense was chosen.
 
 ## 91. Widen the capture suite to the four-specimen walk — RAISED 2026-11-04
 
-`examples/capture_suite.rs` photographs the canvas sub-views of **one** specimen, defaulting to
-`Drivetrain`. The headless test it complements,
-`app::tests::every_offered_sub_view_has_something_to_draw`, walks **four**: `Drivetrain`,
-`CapacitorLoop`, `CartesianPendulum`, `SingleInertia`. Closing that gap is one argument away and
-deliberately not taken yet.
+`examples/capture_suite.rs` photographs the canvas sub-views of **one** specimen per run. The
+headless test it complements, `app::tests::every_offered_sub_view_has_something_to_draw`, walks
+**four**: `Drivetrain`, `CapacitorLoop`, `CartesianPendulum`, `SingleInertia`. **Two of the four
+have now been run** — Drivetrain and SingleInertia, on 2026-11-04 — and no code change was needed
+for the second: the runner already takes the specimen as an argument.
 
-**Why one specimen was enough to start.** The first run found three defects — see the 11-04 ledger
-in `tech-debt.md` — so the question *"does this instrument find anything?"* is answered. A second
-specimen would have answered the same question again at four times the cost.
+**The entry is therefore about the remaining two, and about whether a standing multi-specimen walk
+is worth building at all.** Both runs found defects (three and two, all in the 11-04 ledger), so
+*"does this instrument find anything"* is answered twice over. What is not answered is whether the
+rate holds: the first two were chosen as the extremes — 97x97 singular-then-reduced, and 2x2
+clean — and the remaining two sit between them.
 
 ### What the first run measured, so a later one can be budgeted
 
-| | Drivetrain |
-|---|---|
-| shots requested | 12 (2 canvas stages x 6 canvas views) |
-| landed | 5 |
-| refused by the app | 7 |
-| wall clock | ~2 min, dominated by the first shot's cold MSL compile |
-| PNG size, `region: pane` | 2048x1307, ~300 KB each |
+| | Drivetrain | SingleInertia |
+|---|---|---|
+| shots requested | 12 (2 canvas stages x 6 canvas views) | 12 |
+| landed | 5 | 7 |
+| refused by the app | 7 | 5 |
+| defects found | 3 | 2 |
+| wall clock | ~2 min, dominated by the first shot's cold MSL compile | ~2 min |
+| PNG size, `region: pane` | 2048x1307, ~300 KB each | same |
+
+**The two specimens overlap less than their shot counts suggest.** Drivetrain refuses `SpyPlot`,
+`TarjanAnim` and `TearingAnim` on Structural because it is singular; SingleInertia offers the
+first two and refuses `Animate` on Structural because it is not. Between them they have now landed
+**every one of the six canvas views at least once.**
 
 **The binding cost is not wall clock, it is the reader.** Five photographs of one specimen is a
 comfortable read; twenty across four is not, and the reader is a language model with a context
@@ -6830,26 +6838,28 @@ question:
 
 ### What each specimen would add that `Drivetrain` cannot
 
-Drivetrain is singular-then-reduced, which is why it exercises the Before/After split. The other
-three were chosen for `every_offered_sub_view_has_something_to_draw` and have **not** been
-photographed, so what follows is what their reports imply, not what anyone has seen:
+Drivetrain is singular-then-reduced, which is why it exercises the Before/After split.
 
-- **`CapacitorLoop`** — 14x14, against Drivetrain's 97x97. The small-matrix case is where the
-  **axis labels** appear at all: `LABEL_ZOOM_THRESHOLD` is 16 px per cell, and every Drivetrain
-  shot says *"Zoom in to see row and column labels"* instead. **Nothing has ever photographed a
-  labelled matrix**, so nothing has checked that the labels are legible, unclipped or correctly
-  aligned to their rows.
+**`SingleInertia` was run on 2026-11-04 and is no longer part of this entry.** It was the
+strongest case — three of the six canvas views had never been photographed by anything, because
+Drivetrain refuses them — and it found two defects, both in the ledger: the BLT graph's node
+labels were silently truncated into *well-formed, false* equations, and `TearingAnim` was offered
+with a play marker over a pane saying the compiler produced no tearing. It also settled a question
+this entry used to pose about `CapacitorLoop`: its 2x2 matrix renders **full, untruncated** row
+labels (`0 = der(phi) - w`), so the labelled-matrix path is seen and correct — and it is what
+confirmed the graph labels were dropping content the matrix next door shows whole.
+
+The two that remain are weaker cases, and neither is a view nothing has seen:
+
+- **`CapacitorLoop`** — 14x14, between SingleInertia's 2x2 and Drivetrain's 97x97. The labelled
+  path is now covered at the small end; what this would add is the **middle**, where labels are
+  drawn but crowded, and `LABEL_ZOOM_THRESHOLD`'s 16 px cutoff is actually doing work rather than
+  being trivially above or below it.
 - **`CartesianPendulum`** — the reduction *refuses* on this one (`tech-debt.md` records
   `CartesianPendulum / IndexReduction / Incidence` as the case the availability check caught), so
   it is the specimen for the **honest-absence** panes: what a refused reduction looks like, and
-  whether "unavailable" reads as a statement or as a blank.
-- **`SingleInertia`** — small and non-singular, so `Structural` is clean and the views Drivetrain
-  refuses (`SpyPlot`, `TarjanAnim`, `TearingAnim`) should all be **offered**. That is the half of
-  the canvas surface this run never photographed at all: **three of the six canvas views have
-  still never been seen by this instrument.**
-
-That last line is the strongest argument for widening, and it is an argument for **`SingleInertia`
-specifically** rather than for all four.
+  whether "unavailable" reads as a statement or as a blank. This is the better of the two,
+  because it is a *kind* of pane nothing has photographed rather than a size between two that have.
 
 ### Two things the runner would need
 
