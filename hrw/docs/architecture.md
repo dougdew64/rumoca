@@ -115,18 +115,18 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**73 modules, 85,309 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**73 modules, 85,784 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `app.rs` | 8,017 |
-| `worker/tests.rs` | 7,559 |
+| `worker/tests.rs` | 7,844 |
 | `app/tests.rs` | 7,306 |
 | `doc_citations.rs` | 7,146 |
-| `worker.rs` | 6,293 |
+| `worker.rs` | 6,479 |
 | `bridge.rs` | 4,386 |
 | `ui_tests.rs` | 3,094 |
-| `fidelity.rs` | 1,948 |
+| `fidelity.rs` | 1,949 |
 | `equation_sheet.rs` | 1,569 |
 | `tree.rs` | 1,432 |
 | `diagnostics.rs` | 1,397 |
@@ -176,7 +176,7 @@ showing 48 equations. They are derived now, and
 | `specimen_purpose.rs` | 316 |
 | `machine_policy.rs` | 311 |
 | `source_map.rs` | 281 |
-| `equation_text.rs` | 276 |
+| `equation_text.rs` | 279 |
 | `stage_view.rs` | 272 |
 | `colors.rs` | 266 |
 | `report.rs` | 265 |
@@ -192,7 +192,7 @@ showing 48 equations. They are derived now, and
 | `json_read.rs` | 119 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 101 |
-| **total** | **85,309** |
+| **total** | **85,784** |
 <!-- END GENERATED module-sizes -->
 
 
