@@ -150,8 +150,9 @@ fn load_target(url: &str) -> Option<&str> {
 /// happened to be up.
 ///
 /// So a node link into one of these must name its sub-view — `stage/Flatten/Tree/node/…`.
-/// The slug is `Tree` for all five; the others are `EquationSheet`, `Incidence`, `IcPlan`
-/// and the animations.
+/// The slug is `Tree` for all four; the others are `EquationSheet`, `Incidence` and the
+/// animations. *(It was five until 2026-11-04, when Initialization became tree-only and
+/// `IcPlan` stopped existing.)*
 ///
 /// # A list, but not a second opinion
 ///
@@ -164,7 +165,12 @@ pub const STAGES_WITH_SUB_VIEWS: &[&str] = &[
     "IndexReduction",
     "Flatten",
     "Events",
-    "Initialization",
+    // **`Initialization` left this list on 2026-11-04**, when `InitView` went with the
+    // IC-plan view: v0.10.0 states initialization as initial-value pins rather than as
+    // a solve sequence, so there was nothing for that sub-view to show. The stage is
+    // tree-only now, and `every_sub_viewed_stage_is_listed` is what required the entry
+    // out rather than leaving a node link into it obliged to name a sub-view that no
+    // longer parses.
 ];
 
 /// The stage and node path a `node` link addresses, if the link is one.

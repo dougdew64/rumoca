@@ -61,9 +61,6 @@ pub(crate) struct TabAvailability {
     pub(crate) summary: bool,
     /// The reduction replay — Index Reduction only, and only when frames were captured.
     pub(crate) animate: bool,
-    /// The alias-elimination replay — Index Reduction only, and only when something was
-    /// actually eliminated, so a model with no aliases shows no empty tab.
-    pub(crate) aliases: bool,
     /// The BLT spy plot, which needs a complete matching to mean anything.
     pub(crate) spy_plot: bool,
 }
@@ -108,10 +105,12 @@ fn default_sub_view_for(
         StructuralView::Summary
     } else if matches!(
         current,
-        // The three Index-Reduction-only views. Keep this list in step with
+        // The Index-Reduction-only views. Keep this list in step with
         // `App::structural_view_available`: a view that stage does not offer must never
         // survive the change, or it survives with no tab to un-select it.
-        StructuralView::Summary | StructuralView::Animate | StructuralView::AliasAnim
+        //
+        // **Three until 2026-11-04**, when `AliasAnim` went with the view it selected.
+        StructuralView::Summary | StructuralView::Animate
     ) {
         StructuralView::SpyPlot
     } else {
@@ -195,18 +194,12 @@ pub(crate) fn report_sub_view_row_ui(
         if available.animate {
             ui.selectable_value(structural, StructuralView::Animate, "Reduction \u{25b6}");
         }
-        // Alias elimination is reported by this stage only, and
-        // only when something was actually eliminated -- a model
-        // with no aliases must not show an empty tab.
-        if available.aliases {
-            ui.selectable_value(structural, StructuralView::AliasAnim, "Aliases \u{25b6}")
-                .on_hover_text(
-                    "Watch variables be substituted away. Every connection \
-                     equation `a = b` lets one of the two be deleted, which is \
-                     why the solved system is far smaller than the equation \
-                     count suggests.",
-                );
-        }
+        // **The `Aliases` tab was removed 2026-11-04.** Its gate read
+        // `reduction.eliminations`, which v0.10.0 never publishes, so the tab had
+        // already stopped appearing — and the pass it showed is not a Rumoca phase
+        // any more: upstream deleted `rumoca-phase-structural/src/eliminate/`
+        // outright. Measured on the corpus, no specimen's equation count shrinks on
+        // 0.10.0, where `Drivetrain` once went from 97 equations to 20.
         // Spy-plot, Matching, BLT require a full matching —
         // hide them when the Structural stage is singular.
         if available.spy_plot {
@@ -288,7 +281,6 @@ mod tests {
                 available: TabAvailability {
                     summary: false,
                     animate: false,
-                    aliases: false,
                     spy_plot: true,
                 },
             }
@@ -532,20 +524,20 @@ mod tests {
         );
     }
 
-    /// **The alias replay must not survive a move to Structural** — the regression guard
-    /// for the 2026-08-19 defect.
+    /// **No Index-Reduction-only view survives a move to Structural** — the regression
+    /// guard for the 2026-08-19 defect.
     ///
-    /// The three Index-Reduction-only views are asserted **together**, so that adding a
-    /// fourth such view and forgetting the redirect fails here rather than on screen. That
-    /// is exactly how `AliasAnim` came to be missing: `Animate` was in the list, the
-    /// Aliases tab was added later, and nothing compared the two.
+    /// They are asserted **together**, so that adding another such view and forgetting
+    /// the redirect fails here rather than on screen. That is exactly how `AliasAnim`
+    /// came to be missing: `Animate` was in the list, the Aliases tab was added later,
+    /// and nothing compared the two.
+    ///
+    /// **`AliasAnim` itself went on 2026-11-04** with the alias view, so this list is
+    /// two again. The history stays because the *reason for the list* is what it
+    /// teaches, and that outlives any one member.
     #[test]
     fn no_index_reduction_only_view_survives_a_move_to_structural() {
-        for view in [
-            StructuralView::Summary,
-            StructuralView::Animate,
-            StructuralView::AliasAnim,
-        ] {
+        for view in [StructuralView::Summary, StructuralView::Animate] {
             assert_eq!(
                 default_sub_view_for(false, false, view),
                 StructuralView::SpyPlot,
@@ -560,42 +552,52 @@ mod tests {
     /// path: the row must actually *call* it when the stage changes.
     ///
     /// This is the probe that found the defect, kept as a test. It runs the reader's
-    /// route — pick Aliases on Index Reduction, then click the Structural tab — and
+    /// route — pick an Index-Reduction-only tab, then click the Structural tab — and
     /// asserts on what the tab row shows afterwards, which is where the symptom was
     /// visible: no tab highlighted at all.
+    ///
+    /// # Re-keyed from `Aliases` to `Reduction` on 2026-11-04
+    ///
+    /// The Aliases tab went with the alias view, whose pass v0.10.0 does not run. **The
+    /// property is unchanged and still live**, so this moved to `Animate` rather than
+    /// being deleted: it is now the Index-Reduction-only tab that a stage change could
+    /// strand, and this is the only check that runs the route through the real widgets
+    /// instead of calling `default_sub_view_for` directly.
+    ///
+    /// Availability is set on the fixture rather than derived, which is why re-keying
+    /// works even though `App::structural_view_available` currently returns `false` for
+    /// `Animate` — this row's subject is the *redirect*, not what the app offers.
     #[test]
-    fn choosing_aliases_then_moving_to_structural_leaves_a_real_tab_selected() {
+    fn choosing_an_index_reduction_only_tab_then_moving_to_structural_leaves_a_real_tab_selected() {
         let mut h = harness(Row {
             stage: StageKind::IndexReduction,
             structural: StructuralView::Summary,
             available: TabAvailability {
                 summary: true,
                 animate: true,
-                aliases: true,
                 spy_plot: true,
             },
             ..Row::default()
         });
         h.run_steps(2);
 
-        h.get_all_by_label_contains("Aliases")
+        h.get_all_by_label_contains("Reduction")
             .next()
-            .expect("Index Reduction offers an Aliases tab")
+            .expect("Index Reduction offers a Reduction tab")
             .click();
         h.run_steps(2);
         assert_eq!(
             h.state().structural,
-            StructuralView::AliasAnim,
-            "precondition: the reader is watching the alias replay",
+            StructuralView::Animate,
+            "precondition: the reader is watching the reduction replay",
         );
 
         // The reader clicks the Structural stage tab. `App` swaps the stage and
-        // re-answers the availability questions; Structural offers no alias view.
+        // re-answers the availability questions; Structural offers no reduction view.
         h.state_mut().stage = StageKind::Structural;
         h.state_mut().available = TabAvailability {
             summary: false,
             animate: false,
-            aliases: false,
             spy_plot: true,
         };
         h.run_steps(2);
@@ -603,10 +605,11 @@ mod tests {
         assert_eq!(
             h.state().structural,
             StructuralView::SpyPlot,
-            "the alias view has no tab here, so keeping it selected would strand the pane",
+            "the reduction view has no tab here, so keeping it selected would strand the \
+             pane",
         );
         assert!(
-            h.query_by_label_contains("Aliases").is_none(),
+            h.query_by_label_contains("Reduction").is_none(),
             "and the tab itself must still be absent — the fix is the selection moving, \
              not the tab appearing",
         );
