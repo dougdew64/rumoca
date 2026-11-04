@@ -198,11 +198,17 @@ matching, `strongconnect` and its `enter`/`descend`/`pop_scc` helpers for Tarjan
 for tearing.
 
 **Index reduction has no row, and that is current rather than an omission.** Its HRW pane is
-disabled on this rebase pending a re-model (`playback::DISABLED_VIEWS`). Upstream grew its own
-seam for it — `ReductionObserver` and `ReductionEvent` in
-`crates/rumoca-phase-structural/src/dae_transform/observation.rs` — but both are `pub(super)`, so
-nothing outside that module can observe a reduction yet. That seam is the surface the re-model
-will use.
+disabled on this rebase pending a re-model (`playback::DISABLED_VIEWS`).
+
+*Corrected 2026-11-03:* this paragraph said the upstream seam was unreachable because
+`ReductionObserver` and `ReductionEvent` are `pub(super)`. They are — and that is the design, as
+it is for `inspect_sort`. The **public** entry is
+`rumoca_phase_structural::inspect_prepare_for_solve`, which erases the observer type and returns
+an owned `ReductionReport`. A reduction can be observed today; the re-model is HRW-side work.
+
+Breakpoints for it, once the pane exists, go on `ReductionRecorder`'s classification in
+`dae_transform/observation.rs` — the same relationship the rows above have to each algorithm's
+`emit`.
 
 ### Thread model
 
