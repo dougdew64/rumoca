@@ -2940,6 +2940,85 @@ fn simulate_specimen_headless_produces_trajectories() {
     );
 }
 
+/// **The solver diagnostics plots have data, and it describes the run.**
+///
+/// Re-modelled 2026-11-03. `SimData::solver_steps` was empty for the whole
+/// v0.10.0 rebase: `rumoca_solver::SolverStepRecord` had been HRW's own
+/// instrumentation rather than an upstream type, so the port had nothing to
+/// follow to and the step-size and BDF-order plots were kept with no series.
+///
+/// They were kept rather than deleted because they were built for a reported
+/// failure — Doug, 2026-09-25, could not verify one of lecture 1's solver
+/// claims, because egui_plot's three-place default rendered a 1e-4 step as
+/// `0.000`. The step size is on a log axis for the same reason.
+///
+/// # What this asserts, and what would otherwise pass
+///
+/// Not merely non-empty. A plot fed one row, or rows whose `h` is zero, or
+/// orders of zero, would all be non-empty and all be useless — so this checks
+/// that the rows **partition the run**: positive sizes, orders at least 1, and
+/// times that advance and stay inside the interval simulated.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn the_solver_diagnostics_plots_receive_the_steps_the_integrator_took() {
+    let data = simulate_specimen(
+        Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/specimens/StiffDecay.mo"
+        )),
+        "StiffDecay",
+        2.0,
+        msl_roots(),
+    )
+    .expect("simulate_specimen");
+
+    assert!(
+        !data.solver_steps.is_empty(),
+        "the diagnostics plots have no rows, so the re-modelled seam is not \
+         reaching HRW \u{2014} which is the state this test was written to end",
+    );
+
+    let t_end = *data.times.last().expect("the run produced samples");
+    let mut previous = f64::NEG_INFINITY;
+    for step in &data.solver_steps {
+        assert!(
+            step.h > 0.0,
+            "a step covering no interval cannot be plotted on a log axis: {step:?}",
+        );
+        assert!(
+            step.order >= 1,
+            "a continuous extension has order at least 1: {step:?}",
+        );
+        assert!(
+            step.t > previous,
+            "step times must advance, or the plot draws backwards: {} then {}",
+            previous,
+            step.t,
+        );
+        assert!(
+            step.t <= t_end + 1e-9,
+            "a step cannot land past the end of the run ({t_end}): {}",
+            step.t,
+        );
+        previous = step.t;
+    }
+
+    // **A stiff model must vary its step**, or this specimen proves nothing
+    // about a plot whose whole point is showing the solver choosing.
+    let sizes: Vec<f64> = data.solver_steps.iter().map(|s| s.h).collect();
+    let smallest = sizes.iter().copied().fold(f64::INFINITY, f64::min);
+    let largest = sizes.iter().copied().fold(0.0_f64, f64::max);
+    assert!(
+        largest > smallest,
+        "StiffDecay is stiff, so the integrator must not have taken one size \
+         throughout \u{2014} a constant series would make the step-size plot a \
+         flat line and hide what it exists to show: {sizes:?}",
+    );
+}
+
 /// **An MSL model simulates.** The path that did not exist until 2026-08-04.
 ///
 /// Doug pressed Run on `Modelica.Blocks.Continuous.SecondOrder` and got *"read
