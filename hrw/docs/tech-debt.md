@@ -261,39 +261,62 @@ plausible-looking string in a pane full of them. `no_events_term_is_a_placeholde
 descendant, and it detects `<` followed by a letter — a marker no real Modelica relation can
 produce, since every use of `<` in an expression is `<=` or `<` plus a space.
 
-### Every `dae.json` embeds the whole vendored MSL — 342.6 MB of the notebook's 359 MB, with absolute home paths
+### ~~Every `dae.json` embeds the whole vendored MSL — 320 MiB of library text and 56,232 home paths~~
 
-**Found 2026-11-04**, while fixing the span resolver next door (see the entry below). It is a
-pre-existing condition, not a regression, and it has two independent costs.
+**Found and fixed 2026-11-04**, while fixing the span resolver next door (see the entry below). It
+was a pre-existing condition, not a regression, and it had two independent costs.
 
 `Stage::from_ser(&dae)` serializes the whole `Dae`, and a `Dae` owns its `SourceMap` — which holds
 `(id, name, content)` for **every source the compile registered**, the entire vendored MSL
-included. So each specimen's `dae.json` carries a copy of the MSL source tree.
+included. So each specimen's `dae.json` carried a copy of the MSL source tree.
 
-**Measured:** 24 files, **342.6 MB** of the notebook's **359 MB**. `BouncingBall/trace/dae.json`
-alone is 16.3 MB and contains **2863** occurrences of the absolute path of the machine that
-generated it (`C:\Users\…\rumoca\hrw/vendor/msl\…`).
+**Measured:** 2556 registered files and **15.25 MiB of embedded text per trace**; **342.6 MiB
+across 24 `dae.json` files**, of which **320.0 MiB (93.4 %)** was that text; the notebook was
+359 MiB in all. The account name of the machine that generated them appeared **2556 times per file,
+56,232 times in the notebook**.
 
-**The second cost is the one that outranks size.** This repository is public, and an absolute path
-under a home directory carries the account name of whoever ran the compile. Doug's standing rule is
-that personal information does not go in the public repo; 24 committed files currently carry it
-several thousand times each.
+**The second cost is the one that outranked size.** This repository is public, and an absolute path
+under a home directory carries the account name of whoever ran the compile.
 
-**There is a tension to settle, not just a fix to apply.** `examples/gen_trace.rs` records a
+**There was a tension to settle, not just a fix to apply.** `examples/gen_trace.rs` records a
 decision of **2026-08-16** declining to rewrite these paths repo-relative, on the grounds that
 *"that changes which file the string names"* — an accuracy argument, made about Rumoca's own
-rendered strings. That argument and the privacy rule now point opposite ways for the same bytes, so
-this is Doug's call rather than a session's.
+rendered strings. **Doug's call, 2026-11-04: drop the text and publish workspace-relative names.**
+The 2026-08-16 decision survives where it was actually made — Rumoca's rendered messages are
+untouched, and the two that name the root are now a named baseline rather than a blanket exemption.
 
-**What the options look like.** `rumoca_core::SourceMap::without_source_contents()` already exists
-upstream and would drop the *contents* while keeping the names — which addresses the 342 MB and
-leaves the paths. Normalizing the names on top of that addresses the paths. Dropping the source map
-from the serialized DAE entirely would address both, and would cost the `dae.json` reader nothing
-that the specimen's own file does not already give.
+**What landed, and why not the obvious shape.** `worker::replace_source_map_with_a_portable_index`
+swaps Rumoca's node for an id-to-file index. Not Rumoca's wire format with the names edited:
+deserializing a `SourceMap` runs `checked_source_indexes`, which **requires
+`source_id_for_name(name) == id`** (SPEC_0029 §3a) — a source id *is* a hash of its name — so a
+portable name beside the real id is a triple Rumoca would reject, and recomputing the id to match
+would detach it from every span in the document. Publishing an HRW-shaped node **that says so in
+its own text** is honest where a Rumoca-shaped node that cannot round-trip would not be.
 
-`worker::tests::no_committed_trace_names_a_path_outside_the_workspace` holds every `file` value HRW
-itself authors to a workspace-relative path and **names this exclusion in its doc comment**, so
-"not covered" cannot read as "covered and clean".
+**And the index is the referenced subset, which the measurement earned:** 2556 files are registered
+but only **1 to 28 are referenced** by any span in a given DAE, with **nothing unresolvable**.
+`SingleInertia` names exactly one file — its own. Publishing all 2556 would restate the MSL's
+directory listing 22 times and explain no span that 28 entries do not.
+
+**Result: the notebook went 359 MiB → 18 MiB, `dae.json` 342.6 MiB → 1.7 MiB (203×), and
+workspace-root mentions 56,232 → 2** — both survivors being the miette-rendered parse error the
+2026-08-16 decision protects.
+
+**The *first* correction this entry owes is to itself.** It said `BouncingBall/trace/dae.json` held
+**2863** absolute paths. The measured count is **2556**, one per registered source; 2863 was a raw
+text count and is not reproducible. It changed nothing about the decision, which is exactly why it
+is worth recording — a number that does not move a decision is a number nobody re-checks.
+
+**Two checks, because the first one could not see this.**
+`no_committed_trace_names_a_path_outside_the_workspace` had `dae.json` excluded, and **the
+exclusion was not the only reason it would have passed**: Rumoca's source map serializes its
+entries as `(id, name, text)` *arrays*, so there was no `file` key for that walk to find. A green
+check and a false claim — the right thing measured in the wrong unit, which is this repository's
+most frequent defect shape. So `no_committed_trace_mentions_the_workspace_root` asks the privacy
+question directly, over every string in every trace regardless of key or nesting, with the needle
+**derived from `CARGO_MANIFEST_DIR`** rather than written down — a test that hardcoded the account
+name would be the thing it checks for. It was proved to fail against the pre-fix notebook, naming
+all 22 files.
 
 ### A span was resolved against whichever file the caller happened to hold, and four sites published the result
 

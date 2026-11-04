@@ -3625,6 +3625,14 @@ impl WorkerState {
                             let n_y = counts.algebraics;
                             let n_eq = counts.continuous_equations;
                             let mut s = Stage::from_ser(d);
+                            // A `Dae` owns its source map, and that map serializes
+                            // every registered file's full text — the whole vendored
+                            // MSL, 15 MiB per trace and absolute home paths in a
+                            // public repository. Swap it for an index of the files
+                            // this DAE's spans actually name.
+                            if let Some(value) = s.value.as_mut() {
+                                replace_source_map_with_a_portable_index(value, d.source_map());
+                            }
                             s.note = Some(format!(
                                 "{n_x} state(s), {n_y} algebraic(s), {n_eq} continuous equation(s)",
                             ));
@@ -4391,6 +4399,114 @@ fn portable_source_name(name: &str) -> String {
     }
     let components: Vec<&str> = normalized.rsplit('/').take(2).collect();
     components.into_iter().rev().collect::<Vec<_>>().join("/")
+}
+
+/// Collect every `SourceId` a serialized span names, anywhere in the IR.
+///
+/// `rumoca_core::Span` is `{source, start, end}` and its field names are its
+/// own, so **every serialized span has a `source` key** whatever struct contains
+/// it. That is what makes the result complete with respect to the published
+/// document rather than a guess about where spans live — the same reasoning
+/// [`collect_def_ids`] rests on, one key instead of three.
+fn collect_span_sources(v: &serde_json::Value, out: &mut BTreeSet<u64>) {
+    match v {
+        serde_json::Value::Object(map) => {
+            for (k, val) in map {
+                if k == "source"
+                    && let Some(n) = val.as_u64()
+                {
+                    out.insert(n);
+                }
+                collect_span_sources(val, out);
+            }
+        }
+        serde_json::Value::Array(arr) => arr.iter().for_each(|val| collect_span_sources(val, out)),
+        _ => {}
+    }
+}
+
+/// Replace a serialized `Dae`'s source map with an index of the files its spans
+/// name, carrying no source text and no absolute path.
+///
+/// # What it is replacing, and why that had to change
+///
+/// A `Dae` owns its [`rumoca_core::SourceMap`], and that map's `Serialize` emits
+/// `files: Vec<(SourceId, String, Arc<str>)>` — **every registered file's full
+/// text.** HRW registers the whole vendored MSL as one source root, so every
+/// `dae.json` carried the entire library: measured 2026-11-04 across the
+/// notebook, **2556 files and 15.25 MiB of embedded text per trace, 342.6 MiB
+/// over 24 files, of which 320.0 MiB (93.4 %) was that text.** The names were
+/// absolute paths under a home directory, 2556 of them per file, and **this
+/// repository is public.**
+///
+/// Doug ruled on 2026-11-04: drop the text, publish names relative to the
+/// workspace. Stripping the text alone is upstream's own practice —
+/// `rumoca-worker` maps its map through
+/// [`rumoca_core::SourceMap::without_source_contents`] before sending it — but
+/// that keeps the names, which is the half that carries the account name.
+///
+/// # Why this is not Rumoca's wire shape with the names edited
+///
+/// Deserializing a `SourceMap` runs `checked_source_indexes`, which **requires
+/// `source_id_for_name(name) == id`** (SPEC_0029 §3a) — a source id *is* a hash
+/// of its name. So a portable name beside the real id is a triple Rumoca would
+/// reject, and recomputing the id to match would detach it from every span in
+/// the document. Either way the wire shape would be a lie, so this publishes an
+/// **HRW-shaped node that says so in its own text** rather than a Rumoca-shaped
+/// one that does not round-trip.
+///
+/// # Why the referenced subset rather than the whole registry
+///
+/// The node exists so a reader can turn a span's `source` into a file. Measured
+/// on the committed corpus: **2556 files registered, 1 to 28 referenced**, and
+/// **nothing unresolvable** — `SingleInertia` names exactly one file, its own.
+/// Publishing all 2556 would restate the MSL's directory listing 22 times and
+/// explain no span that this does not. `registered_files` keeps the count that
+/// is genuinely about the compile.
+///
+/// # The silent failure this returns `false` for
+///
+/// `source_map` is a key name `Dae`'s `Serialize` owns, not HRW's. If upstream
+/// renames it, this finds nothing, replaces nothing, and **15 MiB of library
+/// text returns to every trace with nothing on screen looking different** — the
+/// project's usual shape of defect. `the_dae_stage_indexes_its_sources_and_publishes_no_source_text`
+/// fails by name on that.
+fn replace_source_map_with_a_portable_index(
+    value: &mut serde_json::Value,
+    map: &rumoca_core::SourceMap,
+) -> bool {
+    if value.get("source_map").is_none() {
+        return false;
+    }
+    // Scan before replacing. Rumoca's node holds its entries as arrays, so it
+    // contributes no `source` key of its own and cannot seed the set with ids
+    // nothing points at.
+    let mut ids = BTreeSet::new();
+    collect_span_sources(value, &mut ids);
+    let files: Vec<serde_json::Value> = ids
+        .iter()
+        .filter_map(|&id| {
+            let id = rumoca_core::SourceId(id);
+            let (name, text) = map.get_source(id)?;
+            Some(serde_json::json!({
+                "source_id": id.0,
+                "file": portable_source_name(name),
+                "content_bytes": text.len(),
+            }))
+        })
+        .collect();
+    value["source_map"] = serde_json::json!({
+        "hrw_note": "Published by HRW, not by Rumoca's Serialize. Rumoca's node \
+             carries every registered file's full text; this one carries the \
+             id-to-file index for the files this DAE's spans name, and no text. \
+             Names are workspace-relative, so source_id_for_name(file) does NOT \
+             equal source_id the way Rumoca's own node requires (SPEC_0029 §3a) \
+             — resolve a span by its source_id, never by re-deriving one from \
+             the name.",
+        "registered_files": map.source_ids().len(),
+        "files": files,
+    });
+    true
 }
 
 impl<'a> SpanFile<'a> {

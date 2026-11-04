@@ -2,7 +2,7 @@
   "model": "RcCircuit",
   "specimen": "specimens/RcCircuit.mo",
   "specimen_fnv1a": "52bcfa3f007682c3",
-  "rumoca_rev": "a8d60e11",
+  "rumoca_rev": "da6d13b1",
   "rumoca_version": "0.10.0",
   "stages": {
     "parse": {

@@ -2,7 +2,7 @@
   "model": "ScopedConnect",
   "specimen": "specimens/ScopedConnect.mo",
   "specimen_fnv1a": "18faeaec5f8b4329",
-  "rumoca_rev": "a8d60e11",
+  "rumoca_rev": "da6d13b1",
   "rumoca_version": "0.10.0",
   "stages": {
     "parse": {
