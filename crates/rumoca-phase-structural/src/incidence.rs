@@ -154,9 +154,7 @@ enum UnknownKey {
 /// root by `'dae`, so an incidence still cannot be mixed with another model's,
 /// and the projection is a pure read: it computes what the sorter would have
 /// computed and mutates nothing.
-pub fn build_incidence<'dae>(
-    view: dae::DaeView<'dae>,
-) -> Result<Incidence<'dae>, StructuralError> {
+pub fn build_incidence<'dae>(view: dae::DaeView<'dae>) -> Result<Incidence<'dae>, StructuralError> {
     build_incidence_inner(view, None)
 }
 
