@@ -234,10 +234,11 @@
       {
         "unknown": "gnd.p.i",
         "location": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Interfaces/Pin.mo",
           "line": 9,
-          "column": 1,
-          "excerpt": "  connect(sr",
-          "line_text": "  connect(src.n, gnd.p);",
+          "column": 8,
+          "excerpt": "SI.Current i",
+          "line_text": "  flow SI.Current i \"Current flowing into the pin\" annotation (",
           "byte_start": 460,
           "byte_end": 472
         }

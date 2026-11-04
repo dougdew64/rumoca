@@ -503,6 +503,7 @@
             "message": "equation assignment here",
             "primary": true,
             "location": {
+              "file": "hrw/specimens/DimensionMismatch.mo",
               "line": 11,
               "column": 3,
               "excerpt": "small",

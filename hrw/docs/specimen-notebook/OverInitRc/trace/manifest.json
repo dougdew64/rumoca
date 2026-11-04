@@ -2,7 +2,7 @@
   "model": "OverInitRc",
   "specimen": "specimens/OverInitRc.mo",
   "specimen_fnv1a": "08e4ea0deefc0375",
-  "rumoca_rev": "636acca3",
+  "rumoca_rev": "a8d60e11",
   "rumoca_version": "0.10.0",
   "stages": {
     "parse": {

@@ -671,10 +671,11 @@
       {
         "unknown": "motor.w",
         "location": {
-          "line": 4,
-          "column": 78,
-          "excerpt": " a\n  // load inertia",
-          "line_text": "  // Physics: a constant torque drives a rotor through an ideal gear (5:1) to a\n  // load inertia restrained by a rotational spring-damper anchored to a fixed",
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Sources/ConstantTorque.mo",
+          "line": 6,
+          "column": 3,
+          "excerpt": "SI.AngularVelocity w",
+          "line_text": "  SI.AngularVelocity w",
           "byte_start": 290,
           "byte_end": 310
         }
@@ -682,10 +683,11 @@
       {
         "unknown": "load.a",
         "location": {
-          "line": 12,
-          "column": 1,
-          "excerpt": "  //   Parse/Resolve    ",
-          "line_text": "  //   Parse/Resolve    — MSL component types, connectors, parameters",
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
+          "line": 14,
+          "column": 3,
+          "excerpt": "SI.AngularAcceleration a",
+          "line_text": "  SI.AngularAcceleration a",
           "byte_start": 710,
           "byte_end": 734
         }
@@ -693,10 +695,11 @@
       {
         "unknown": "spring.a_rel",
         "location": {
-          "line": 8,
-          "column": 36,
-          "excerpt": "en speed drops below half th",
-          "line_text": "  // source); the brake releases when speed drops below half the threshold,",
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialCompliantWithRelativeStates.mo",
+          "line": 12,
+          "column": 3,
+          "excerpt": "SI.AngularAcceleration a_rel",
+          "line_text": "  SI.AngularAcceleration a_rel(start=0)",
           "byte_start": 569,
           "byte_end": 597
         }

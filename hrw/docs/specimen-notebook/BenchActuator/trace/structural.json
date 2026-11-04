@@ -743,10 +743,11 @@
       {
         "unknown": "emf.w",
         "location": {
-          "line": 7,
-          "column": 63,
-          "excerpt": "05, phi(start = 0), ",
-          "line_text": "  Modelica.Mechanics.Rotational.Components.Inertia load(J = 0.05, phi(start = 0), w(start = 0)) \"large J -> slow mechanical\";",
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Basic/RotationalEMF.mo",
+          "line": 15,
+          "column": 3,
+          "excerpt": "SI.AngularVelocity w",
+          "line_text": "  SI.AngularVelocity w \"Angular velocity of flange relative to support\";",
           "byte_start": 610,
           "byte_end": 630
         }

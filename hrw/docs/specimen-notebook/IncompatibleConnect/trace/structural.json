@@ -67,6 +67,7 @@
       {
         "unknown": "b.v",
         "location": {
+          "file": "hrw/specimens/IncompatibleConnect.mo",
           "line": 32,
           "column": 5,
           "excerpt": "Real v",

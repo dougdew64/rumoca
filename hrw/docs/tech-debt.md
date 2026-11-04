@@ -261,6 +261,80 @@ plausible-looking string in a pane full of them. `no_events_term_is_a_placeholde
 descendant, and it detects `<` followed by a letter — a marker no real Modelica relation can
 produce, since every use of `<` in an expression is `<=` or `<` plus a space.
 
+### Every `dae.json` embeds the whole vendored MSL — 342.6 MB of the notebook's 359 MB, with absolute home paths
+
+**Found 2026-11-04**, while fixing the span resolver next door (see the entry below). It is a
+pre-existing condition, not a regression, and it has two independent costs.
+
+`Stage::from_ser(&dae)` serializes the whole `Dae`, and a `Dae` owns its `SourceMap` — which holds
+`(id, name, content)` for **every source the compile registered**, the entire vendored MSL
+included. So each specimen's `dae.json` carries a copy of the MSL source tree.
+
+**Measured:** 24 files, **342.6 MB** of the notebook's **359 MB**. `BouncingBall/trace/dae.json`
+alone is 16.3 MB and contains **2863** occurrences of the absolute path of the machine that
+generated it (`C:\Users\…\rumoca\hrw/vendor/msl\…`).
+
+**The second cost is the one that outranks size.** This repository is public, and an absolute path
+under a home directory carries the account name of whoever ran the compile. Doug's standing rule is
+that personal information does not go in the public repo; 24 committed files currently carry it
+several thousand times each.
+
+**There is a tension to settle, not just a fix to apply.** `examples/gen_trace.rs` records a
+decision of **2026-08-16** declining to rewrite these paths repo-relative, on the grounds that
+*"that changes which file the string names"* — an accuracy argument, made about Rumoca's own
+rendered strings. That argument and the privacy rule now point opposite ways for the same bytes, so
+this is Doug's call rather than a session's.
+
+**What the options look like.** `rumoca_core::SourceMap::without_source_contents()` already exists
+upstream and would drop the *contents* while keeping the names — which addresses the 342 MB and
+leaves the paths. Normalizing the names on top of that addresses the paths. Dropping the source map
+from the serialized DAE entirely would address both, and would cost the `dae.json` reader nothing
+that the specimen's own file does not already give.
+
+`worker::tests::no_committed_trace_names_a_path_outside_the_workspace` holds every `file` value HRW
+itself authors to a workspace-relative path and **names this exclusion in its doc comment**, so
+"not covered" cannot read as "covered and clean".
+
+### A span was resolved against whichever file the caller happened to hold, and four sites published the result
+
+**Found and fixed 2026-11-04.** Kept here because the *shape* is the lesson and it recurs: a
+documented safety property that nothing checked, holding up four publishers.
+
+`span_to_location` took one source text and sliced it. Its callers' comments claimed the safe
+behaviour — *"a label whose span points into a library file resolves to `null` … it refuses rather
+than inventing a line"* — and the only guard was `end > bytes.len()`. A span into an MSL file whose
+byte range happened to fit inside a short specimen resolved against the wrong file and reported a
+line with full confidence.
+
+**Live, across most of the corpus.** `Drivetrain`'s four unmatched unknowns were published as lines
+2, 6, 8 and 10 of `Drivetrain.mo` — **four of its own comments**. The truth is
+`SI.AngularVelocity w`, `SI.AngularAcceleration a`, `SI.Acceleration a` and `SI.Force f`, in four
+different MSL files. `CapacitorLoop` named `connect(src.n, gnd.p);` for a span that is
+`flow SI.Current i` in `Electrical/Analog/Interfaces/Pin.mo`.
+
+**Two checks were complicit rather than absent**, which is what makes this worth keeping:
+
+- `a_structural_failure_names_the_source_line` **asserted the wrong answer** and passed. It pinned
+  `line == 9` plus the `connect` line text for `gnd.p.i`. The `Pin.mo` declaration is *also* on
+  line 9, so the line check agreed by coincidence while naming a different file — and the text
+  check was reading the same wrong file. **Two consistent wrong readings look exactly like one
+  right one.**
+- `fidelity::a_rumoca_failure_is_represented_faithfully` verified each location's `line_text`
+  against **the specimen**, and so certified every one of these as *"source locations verified"*.
+  The checker embodied the same assumption as the code it was checking.
+
+`Dae::source_map()` and `SourceMap::get_source()` were already public, so the fix needed no Rumoca
+change: resolve a span in the file its own `SourceId` names, and publish `file` beside `line`,
+because a line number means nothing until the reader knows which file it counts lines in. The
+fidelity checker now reads the named file, so it would catch this rather than bless it, and a
+location with no `file` is a violation in itself — which is the shape the old resolver produced.
+
+**The remaining gap is narrow and stated.** The diagnostics path is reached from
+`PhaseResult::Failed`, where no `Dae` exists, so it is told the specimen and *refuses* every
+foreign span — `null` rather than a wrong line. `ModelDiagnostics` carries a
+`source_map: Option<SourceMap>`, so resolving a library label in its own file there is available
+and not yet done.
+
 ### No curated specimen declares `fixed = true`, so the Initialization pane is empty across the corpus
 
 **Found 2026-11-03** while re-modelling that pane. Every curated specimen states `start = …` and

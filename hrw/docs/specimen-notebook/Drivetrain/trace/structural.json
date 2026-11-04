@@ -1470,10 +1470,11 @@
       {
         "unknown": "emf.w",
         "location": {
-          "line": 8,
-          "column": 14,
-          "excerpt": "closed-loop linkages",
-          "line_text": "  // joints, closed-loop linkages — belong to the Matching/BLT and Pantelides arcs.)",
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Basic/RotationalEMF.mo",
+          "line": 15,
+          "column": 3,
+          "excerpt": "SI.AngularVelocity w",
+          "line_text": "  SI.AngularVelocity w \"Angular velocity of flange relative to support\";",
           "byte_start": 610,
           "byte_end": 630
         }
@@ -1481,10 +1482,11 @@
       {
         "unknown": "shaft.a",
         "location": {
-          "line": 10,
-          "column": 26,
-          "excerpt": " source drives the motor",
-          "line_text": "  // --- Electrical: a DC source drives the motor windings (R–L) into the EMF. ---",
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
+          "line": 14,
+          "column": 3,
+          "excerpt": "SI.AngularAcceleration a",
+          "line_text": "  SI.AngularAcceleration a",
           "byte_start": 710,
           "byte_end": 734
         }
@@ -1492,10 +1494,11 @@
       {
         "unknown": "load.a",
         "location": {
-          "line": 6,
-          "column": 46,
-          "excerpt": "nal flanges (f). ",
-          "line_text": "  // rotational flanges (tau), and translational flanges (f). Portable Modelica",
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Translational/Components/Mass.mo",
+          "line": 10,
+          "column": 3,
+          "excerpt": "SI.Acceleration a",
+          "line_text": "  SI.Acceleration a(start=0) \"Absolute acceleration of component\";",
           "byte_start": 481,
           "byte_end": 498
         }
@@ -1503,10 +1506,11 @@
       {
         "unknown": "wall.flange.f",
         "location": {
-          "line": 2,
-          "column": 66,
-          "excerpt": "AE (needs ",
-          "line_text": "  // purpose: Ideal gears → high-index, structurally singular DAE (needs index reduction — Arc 4).",
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Translational/Interfaces/Flange.mo",
+          "line": 5,
+          "column": 8,
+          "excerpt": "SI.Force f",
+          "line_text": "  flow SI.Force f \"Cut force directed into flange\";",
           "byte_start": 163,
           "byte_end": 173
         }
