@@ -217,16 +217,16 @@ This is a test, not an explanation. It verifies that a link can stop an animatio
 
 Counting a model's states can give you the wrong number — not miscounted, but wrong as a
 
-- **Specimens:** `CartesianPendulum`, `BouncingBall`, `BenchActuator`, `Drivetrain`
+- **Specimens:** `CartesianPendulum`, `BouncingBall`, `StabilizedPendulum`, `BenchActuator`, `Drivetrain`, `CapacitorLoop`
 - **Stages:** `IndexReduction`, `Structural`
 - **Stations:**
   - `fixture-lab-index-reduction-when-differentiating-is-the-only-way-out` — Fixture lab — Index reduction: when differentiating is the only way out
   - `station-1-why-can-five-equations-in-five-unknowns-be-unsolvable` — Station 1 — Why can five equations in five unknowns be unsolvable?
-  - `station-2-the-case-that-needs-nothing` — Station 2 — The case that needs nothing
-  - `station-3-the-smallest-model-that-needs-something` — Station 3 — The smallest model that needs something
-  - `station-4-the-same-idea-at-a-scale-you-could-not-do-by-hand` — Station 4 — The same idea, at a scale you could not do by hand
-  - `station-5-what-the-compiler-actually-reached-for` — Station 5 — What the compiler actually reached for
-  - `station-6-the-model-rumoca-cannot-reduce` — Station 6 — The model Rumoca cannot reduce
+  - `station-2-the-case-that-needs-nothing-and-there-are-two-of-those` — Station 2 — The case that needs nothing, and there are two of those
+  - `station-3-the-smallest-model-that-needs-something-and-it-points-at-a-line-you-did-not-write` — Station 3 — The smallest model that needs something, and it points at a line you did not write
+  - `station-4-reduction-is-a-search-and-a-pass-that-moves-nothing-is-not-a-wasted-pass` — Station 4 — Reduction is a search, and a pass that moves nothing is not a wasted pass
+  - `station-5-two-lanes-and-one-of-them-sees-what-the-other-cannot` — Station 5 — Two lanes, and one of them sees what the other cannot
+  - `station-6-the-model-rumoca-cannot-reduce-and-the-exact-reason` — Station 6 — The model Rumoca cannot reduce, and the exact reason
   - `what-this-lab-cannot-check` — What this lab cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
 
