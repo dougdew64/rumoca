@@ -1,646 +1,632 @@
-//! Index-reduction process view — a structured summary of the dummy-derivative
-//! funnel's transformations.
+//! Index-reduction summary — the search Rumoca ran, as a panel.
 //!
-//! ## What is index reduction?
+//! ## What index reduction is, and what "index" counts
 //!
-//! A **differential-algebraic equation (DAE)** system has an "index" that
-//! measures how far it is from being an ordinary differential equation (ODE).
-//! A DAE of index > 1 cannot be solved directly by standard numerical solvers
-//! (like BDF or Runge-Kutta) — it must first be reduced to index 1.
+//! A **differential-algebraic equation** system has an *index*: roughly, how many times
+//! some of its equations must be differentiated before the system can be handed to an
+//! ODE solver. Index 1 is what the solvers want. Above that, no amount of reordering
+//! helps, because the problem is not the order — it is that some equation constrains
+//! coordinates without saying anything about their rates.
 //!
-//! **Example:** A mechanical system with constraints (like two gears meshing)
-//! produces a high-index DAE because the constraint equations relate positions
-//! (not velocities or accelerations). The constraint must be differentiated to
-//! introduce velocity-level equations, and some "state" variables must be
-//! demoted to "algebraic" variables (they are no longer independently integrated
-//! but are instead determined by the constraints).
+//! **A mechanical constraint is the canonical source.** Mesh two rotating bodies with
+//! an ideal gear and each body has an angle and a velocity, so four states; but the
+//! gear ratio fixes the second angle as a multiple of the first. Four states, two
+//! freedoms. Something has to give, and reduction is what gives it.
 //!
-//! Rumoca uses the **Pantelides algorithm** combined with **dummy derivatives**
-//! to perform this reduction. The process runs through a "funnel" of steps:
+//! ## What this pane shows, and why it is a log rather than a pipeline
 //!
-//! 1. **Demotion steps:** identify state variables that are actually determined
-//!    by constraints (aliases, directly assigned, etc.) and demote them to
-//!    algebraic. Each step targets a specific pattern (e.g., `demote_exact_alias`
-//!    catches `x = y` constraints).
+//! v0.9.20's reduction was a **ten-step funnel** — a fixed sequence of named passes,
+//! each with a before/after state count — and this module rendered it as such. v0.10.0
+//! does something different enough that the old rendering had no successor: reduction
+//! is a **search**.
 //!
-//! 2. **Differentiation:** for states that lost their derivative equation to
-//!    demotion, manufacture a new equation by differentiating a constraint.
+//! - **Two lanes, `Direct` and `Holonomic`**, alternating as a fixed point.
+//! - **Candidates are discovered per proof boundary** (`DirectAdmissible`,
+//!   `DirectConditional`, `Holonomic`), and a lane can discover none.
+//! - **An attempt rebuilds and re-sorts the whole system**, so its outcome is a
+//!   *measurement*: `Sorted`, `Reduced`, `Held`, `Raised`, or one of four refusals.
 //!
-//! 3. **Elimination:** remove trivially determined variables by substitution
-//!    (e.g., if `z = y`, eliminate `z` everywhere and replace it with `y`).
+//! So the panel is a reader for `worker::index_reduction_from_observation`'s payload,
+//! grouped back into rounds. It invents nothing: the residue definition and the
+//! arena-local-ordinal warning are **read out of the payload** rather than restated
+//! here, so there is one copy of each.
+//!
+//! ## Three things the rendering must not let a reader conclude
+//!
+//! Each is a measured case from the corpus, and each would be a natural misreading of
+//! a plainer table:
+//!
+//! 1. **`Held` is progress.** `Drivetrain`'s round 3 selects a candidate whose residue
+//!    does not move, and round 4 then succeeds, because the *system* changed even
+//!    though the number did not. Rendering `Held` as a failure would teach that round
+//!    3 was wasted.
+//! 2. **Reduction is not a size reduction.** `CapacitorLoop` is admitted with 1 state,
+//!    13 algebraics and 14 equations before *and* after. A pane showing only counts
+//!    would say nothing happened; what changed is one manifold constraint and the
+//!    matching, so the manifold count is shown beside the sizes.
+//! 3. **Zero candidates is not a refusal.** `CartesianPendulum` discovers *nothing* in
+//!    either lane across three alternations. Rumoca does not decline to differentiate
+//!    `x^2 + y^2 = L^2`; it finds nothing to try, which is a sharper statement of
+//!    `docs/ideas.md` #83 than "index reduction does not work".
 //!
 //! ## Why this is a panel, not a canvas
 //!
-//! Unlike the spy-plot and incidence views (spatial, custom-painted on a
-//! pan/zoom canvas), the index-reduction story is *sequential*: a pipeline of
-//! named steps with outcomes. A scrollable text panel with tables is the
-//! natural fit — no coordinate transforms or hit-testing needed.
+//! Unlike the spy plot and incidence views (spatial, custom-painted on a pan/zoom
+//! canvas), a search log is *sequential*: rounds, each with attempts and an outcome. A
+//! scrollable panel with collapsing sections is the natural fit — no coordinate
+//! transforms, no hit-testing.
 
 use eframe::egui;
 use serde_json::Value;
 
 use crate::json_read::parse_list;
 
-use crate::str_vec;
+/// How many rounds to leave expanded on arrival.
+///
+/// **Not all of them.** `GearWithBrake` logs 40 records across 5 rounds and
+/// `Drivetrain` 29 across 6; a panel that opens with every attempt expanded is a wall,
+/// and the thing worth reading first is the shape — how many rounds, which lanes, where
+/// it ended. The *last* round is the interesting one when a system failed, so it opens
+/// too.
+const ROUNDS_OPEN_BY_DEFAULT: usize = 1;
+
+/// One system's size, before or after.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SystemSize {
+    states: u64,
+    algebraics: u64,
+    equations: u64,
+    /// Constraints reduction left on the state manifold. `None` for the raw system,
+    /// which has none by definition.
+    manifold: Option<u64>,
+}
+
+/// One attempted candidate.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Attempt {
+    lane: String,
+    /// Rumoca's own name for the candidate's shape: `direct`, `holonomic`,
+    /// `derivative_definition`, `auxiliary_state`.
+    form: String,
+    /// Rumoca's own name for what rebuilding measured.
+    outcome: String,
+    /// The residue the rebuild produced, where the outcome carries one. `None` for
+    /// `sorted` (there is no remainder) and for the four refusals (nothing was built).
+    residue: Option<u64>,
+    /// `file:line` of the span that identifies this candidate, if it resolved.
+    ///
+    /// **The span, never the ordinals.** `state_ordinal` and friends index the rebuilt
+    /// system of their own round, so a name derived from one would be wrong from round
+    /// 2 onward — the payload's `ordinals_note` says so, and this pane obeys it.
+    at: Option<String>,
+}
+
+/// One candidate group's result: a proof boundary and how many it admitted.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Group {
+    lane: String,
+    group: String,
+    discovered: u64,
+}
+
+/// What reduction selected in a round, if anything.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Selection {
+    lane: String,
+    form: String,
+    residue_before: u64,
+    /// `None` when the selection sorted the system: there is no residue after, because
+    /// there is no unmatched remainder. Zero would be a measurement.
+    residue_after: Option<u64>,
+}
+
+/// One lane iteration: where it started, what it looked at, what it took.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Round {
+    lane: String,
+    number: u64,
+    residue: u64,
+    unmatched_equations: Vec<String>,
+    unmatched_unknowns: Vec<String>,
+    groups: Vec<Group>,
+    attempts: Vec<Attempt>,
+    selection: Option<Selection>,
+    /// The lane restarted from the unmodified system during this round.
+    retried_pristine: bool,
+}
+
+impl Round {
+    /// Candidates discovered across every proof boundary this round consulted.
+    fn discovered(&self) -> u64 {
+        self.groups.iter().map(|g| g.discovered).sum()
+    }
+}
 
 /// Parsed index-reduction report, ready for rendering.
-///
-/// Built from the `reduction` sub-object of the structural report JSON.
-/// The fields mirror the JSON structure but are strongly typed.
 pub struct ReductionView {
-    // Did the funnel complete successfully (all steps ran without error)?
-    funnel_completed: bool,
-    // If the funnel stopped early, which step it stopped at.
-    stopped_at: Option<String>,
-    // Number of state (differential) variables before and after reduction.
-    // The difference = number of demoted states.
-    n_states_before: usize,
-    n_states_after: usize,
-    // Names of variables that were demoted from state to algebraic.
-    demoted_states: Vec<String>,
-    // Each funnel step, with the system's shape either side of it.
-    steps: Vec<StepRow>,
-    // Equations manufactured by differentiating a constraint **and still present at
-    // the end**. Empty does NOT mean no differentiation happened — see below.
-    differentiated_rows: Vec<DiffRow>,
-    /// **Differentiations the funnel actually performed**, from its own frames.
-    ///
-    /// The pane reported differentiation only when `differentiated_rows` was
-    /// non-empty, so on `Drivetrain` — six differentiations, none surviving
-    /// `eliminate_trivial` — it said **nothing at all**. A lab read that silence as
-    /// zero and taught the opposite of the truth for its whole existence.
-    n_differentiations: usize,
-    // Variables removed by symbolic substitution.
-    eliminations: Vec<Elimination>,
-    /// **What the report contained that this view could not read.**
-    ///
-    /// Added 2026-08-04 by the tech-debt sweep. Every list above used to be built
-    /// with `filter_map`, so an entry the parser could not understand was **silently
-    /// dropped** — the pane then showed four differentiated rows where the compiler
-    /// had produced five, with nothing on screen where the fifth had been.
-    ///
-    /// **A partial report leaves no gap where the missing part was**, which is the
-    /// same defect the Context Bar had, and the reason `CLAUDE.md` requires a pane to
-    /// ship with a test. It matters most here of anywhere in HRW: `differentiated_rows`
-    /// *is* the Pantelides output, and the tech-debt file's own priority-1 example is
-    /// a case where reasoning about that list being empty would have been confidently
-    /// wrong.
-    unreadable: Vec<String>,
-}
-
-/// One funnel step, with the system's shape on either side of it.
-///
-/// **The shapes are what let the pane say whether a step acted.** An outcome string
-/// reports that a step ran; only the pair of shapes reports what it did — and
-/// `CartesianPendulum` runs every step to completion while moving nothing, which
-/// looked identical to quiet work until these numbers arrived.
-struct StepRow {
-    name: String,
+    /// Rumoca's own word for how the run ended: `borrowed`, `sorted`, `singular`,
+    /// `failure`, `discards_initial`.
     outcome: String,
-    states_before: usize,
-    states_after: usize,
-    equations_before: usize,
-    equations_after: usize,
-}
-
-// An equation that was created by differentiating an existing constraint,
-// to provide a derivative row for a state that needed one after demotion
-// changed the equation structure.
-struct DiffRow {
-    // Which constraint was differentiated (e.g., "index_reduction:d_dt_for_x").
-    equation_origin: String,
-    // Which state variable this new equation serves.
-    for_state: String,
-}
-
-// A variable that was eliminated by symbolic substitution.
-// Example: z was replaced everywhere by y (because the system had z = y).
-struct Elimination {
-    variable: String,
-    // The replacement expression, pre-rendered to a human-readable string at
-    // construction time (avoiding per-frame JSON re-parsing).
-    display: String,
+    admitted: bool,
+    /// The payload's own sentence about what that outcome means here. Read rather than
+    /// composed, because `sorted` means two different things depending on the round
+    /// count and only the publisher knows which.
+    meaning: Option<String>,
+    lanes: Vec<String>,
+    before: Option<SystemSize>,
+    /// `None` when the system was not admitted — there is no reduced system to size,
+    /// and showing the input twice would read as "reduction changed nothing".
+    after: Option<SystemSize>,
+    rounds: Vec<Round>,
+    /// The payload's definition of `residue`, shown beside the number.
+    residue_definition: Option<String>,
+    /// The payload's warning that candidate ordinals are arena-local.
+    ordinals_note: Option<String>,
+    /// Why preparation stalled, when it did.
+    stalled: Option<String>,
+    /// Parts of the payload this parser could not read.
+    ///
+    /// Rendered **above** the summary, because the lines below it are positive claims
+    /// about the model — *"no candidate was discovered"*, *"2 rounds"* — and each
+    /// becomes false the moment a record is lost in parsing.
+    problems: Vec<String>,
 }
 
 impl ReductionView {
-    /// Parse the `reduction` sub-object from a structural report JSON.
+    /// Build from an index-reduction stage report.
     ///
-    /// Returns `None` if the report has no reduction data (e.g., the model
-    /// is already index-1 and no reduction was needed, or the structural
-    /// phase failed before reaching index reduction).
-    ///
-    /// # Missing is not the same as unreadable
-    ///
-    /// *(Rewritten 2026-08-04.)* This used to say the parsing was *"defensive: each
-    /// field uses `?` or `.unwrap_or_default()` to handle missing/malformed data
-    /// **gracefully**"* — and graceful meant **silent**. The two cases were collapsed:
-    ///
-    /// - **Absent** — the compiler produced no such list. Legitimate, extremely
-    ///   common (an already-index-1 model has no eliminations), and correctly shown
-    ///   as nothing.
-    /// - **Present but unreadable** — the list is there and this parser could not
-    ///   understand it, or one entry in it. That is a *defect*, and rendering it as
-    ///   an empty list tells the reader the compiler did nothing.
-    ///
-    /// They now go different ways: absent yields an empty list, unreadable is
-    /// recorded in [`unreadable`](Self::unreadable) and shown in the pane. **No entry
-    /// is ever dropped without a count of it appearing on screen.**
+    /// `None` when the payload carries no `search` array, which is the case for a
+    /// stage that was never reached. A stage that *was* reached always has one, even
+    /// when the run refused the system — a refusal is a result.
     pub fn from_report(report: &Value) -> Option<ReductionView> {
-        let red = report.get("reduction")?;
+        report.get("search")?.as_array()?;
+        let mut problems = Vec::new();
 
-        let funnel_completed = red.get("funnel_completed")?.as_bool()?;
-        let stopped_at = red
-            .get("stopped_at")
-            .and_then(|v| v.as_str())
-            .map(str::to_owned);
-        let n_states_before = red.get("n_states_before")?.as_u64()? as usize;
-        let n_states_after = red.get("n_states_after")?.as_u64()? as usize;
-
-        let demoted_states = str_vec(red.get("demoted_states"));
-
-        let mut unreadable = Vec::new();
-
-        let steps: Vec<StepRow> = parse_list(red, "steps", &mut unreadable, |s| {
-            let num = |k: &str| s.get(k).and_then(serde_json::Value::as_u64).unwrap_or(0) as usize;
-            Some(StepRow {
-                name: s.get("step")?.as_str()?.to_owned(),
-                outcome: s.get("outcome")?.as_str()?.to_owned(),
-                states_before: num("states_before"),
-                states_after: num("states_after"),
-                equations_before: num("equations_before"),
-                equations_after: num("equations_after"),
-            })
+        // **Grouped from the flat log rather than from a nested payload.** The records
+        // arrive in the order they were observed, which is the only order that is
+        // faithful; the grouping is this reader's convenience and belongs here.
+        let records: Vec<Value> = parse_list(report, "search", &mut problems, |v| {
+            // A record without a `kind` cannot be placed at all, and dropping it
+            // silently would shorten the search. `parse_list` counts it.
+            v.get("kind").and_then(Value::as_str).map(|_| v.clone())
         });
 
-        let differentiated_rows: Vec<DiffRow> =
-            parse_list(red, "differentiated_rows", &mut unreadable, |r| {
-                Some(DiffRow {
-                    equation_origin: r.get("equation_origin")?.as_str()?.to_owned(),
-                    for_state: r.get("for_state")?.as_str()?.to_owned(),
-                })
-            });
+        let mut rounds: Vec<Round> = Vec::new();
+        let mut stalled = None;
+        for record in &records {
+            let kind = record["kind"].as_str().unwrap_or_default();
+            match kind {
+                "round" => rounds.push(Round {
+                    lane: lane_of(record),
+                    number: record["round"].as_u64().unwrap_or(0),
+                    residue: record["residue"].as_u64().unwrap_or(0),
+                    unmatched_equations: strings(&record["unmatched_equations"]),
+                    unmatched_unknowns: record["unmatched_unknowns"]
+                        .as_array()
+                        .map(|a| {
+                            a.iter()
+                                .map(|u| match (u["name"].as_str(), u["kind"].as_str()) {
+                                    (Some(n), Some(k)) => format!("{n} ({k})"),
+                                    (Some(n), None) => n.to_owned(),
+                                    _ => "(unnamed)".to_owned(),
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default(),
+                    groups: Vec::new(),
+                    attempts: Vec::new(),
+                    selection: None,
+                    retried_pristine: false,
+                }),
+                // **Everything below belongs to the round above it.** A record arriving
+                // before any round is announced rather than attached to a round it did
+                // not come from — see `problems`.
+                "candidates" | "attempt" | "selected" | "retried_pristine" => {
+                    let Some(round) = rounds.last_mut() else {
+                        problems.push(format!(
+                            "a `{kind}` record arrived before any round, so it belongs \
+                             to no lane iteration this pane can show"
+                        ));
+                        continue;
+                    };
+                    match kind {
+                        "candidates" => round.groups.push(Group {
+                            lane: lane_of(record),
+                            group: record["group"].as_str().unwrap_or("?").to_owned(),
+                            discovered: record["discovered"].as_u64().unwrap_or(0),
+                        }),
+                        "attempt" => round.attempts.push(Attempt {
+                            lane: lane_of(record),
+                            form: record["identity"]["form"]
+                                .as_str()
+                                .unwrap_or("?")
+                                .to_owned(),
+                            outcome: record["outcome"]["kind"].as_str().unwrap_or("?").to_owned(),
+                            residue: record["outcome"]["residue"].as_u64(),
+                            at: location_of(&record["identity"]["declared_at"]),
+                        }),
+                        "selected" => {
+                            round.selection = Some(Selection {
+                                lane: lane_of(record),
+                                form: record["identity"]["form"]
+                                    .as_str()
+                                    .unwrap_or("?")
+                                    .to_owned(),
+                                residue_before: record["residue_before"].as_u64().unwrap_or(0),
+                                residue_after: record["residue_after"].as_u64(),
+                            });
+                        }
+                        _ => round.retried_pristine = true,
+                    }
+                }
+                "stopped" => {
+                    // The stop's own detail, where it has one beyond the outcome word.
+                    if let Some(error) = record["outcome"]["error"].as_str() {
+                        stalled = Some(error.to_owned());
+                    }
+                }
+                other => problems.push(format!(
+                    "a search record of kind `{other}` is not one this pane knows, so \
+                     whatever it reports is not on screen"
+                )),
+            }
+        }
 
-        let eliminations: Vec<Elimination> =
-            parse_list(red, "eliminations", &mut unreadable, |e| {
-                let replacement = e.get("replacement")?.as_str()?;
-                Some(Elimination {
-                    variable: e.get("variable")?.as_str()?.to_owned(),
-                    display: abbreviate_expr(replacement),
-                })
-            });
+        if let Some(error) = report["stalled"]["error"].as_str() {
+            stalled = Some(error.to_owned());
+        }
 
         Some(ReductionView {
-            funnel_completed,
-            stopped_at,
-            n_states_before,
-            n_states_after,
-            demoted_states,
-            steps,
-            differentiated_rows,
-            n_differentiations: red
-                .get("n_differentiations")
-                .and_then(serde_json::Value::as_u64)
-                .unwrap_or(0) as usize,
-            eliminations,
-            unreadable,
+            outcome: report["outcome"]["kind"]
+                .as_str()
+                .unwrap_or("unreported")
+                .to_owned(),
+            admitted: report["outcome"]["admitted"].as_bool().unwrap_or(false),
+            meaning: report["outcome"]["meaning"].as_str().map(str::to_owned),
+            lanes: strings(&report["lanes"]),
+            before: size_of(&report["before"], false),
+            after: size_of(&report["after"], true),
+            rounds,
+            residue_definition: report["residue_definition"].as_str().map(str::to_owned),
+            ordinals_note: report["ordinals_note"].as_str().map(str::to_owned),
+            stalled,
+            problems,
         })
     }
 
-    /// Render the full reduction view as a scrollable panel.
+    /// Parts of the payload this parser could not read.
     ///
-    /// The view is organized into sections, each conditionally shown:
-    /// 1. Summary (always) — completion status, state counts
-    /// 2. Funnel steps (always) — the step-by-step pipeline with outcomes
-    /// 3. Demoted states — which variables were demoted (if any)
-    /// 4. Differentiated equations — manufactured equations (if any)
-    /// 5. Trivial eliminations — substituted-away variables (if any)
-    pub fn ui(&self, ui: &mut egui::Ui, tracked: Option<&str>) {
-        egui::ScrollArea::both()
-            .id_salt("reduction_view")
-            .auto_shrink(false)
-            .show(ui, |ui| {
-                // **First, and in the error colour**: anything the report contained
-                // that this view could not read. It goes above the summary because a
-                // reader who scrolls past it would be reading an incomplete list
-                // believing it complete — which is the failure this records.
-                for problem in &self.unreadable {
-                    ui.colored_label(ui.visuals().error_fg_color, format!("\u{26a0} {problem}"));
-                }
-                if !self.unreadable.is_empty() {
-                    ui.add_space(8.0);
-                }
-                self.summary(ui);
-                ui.add_space(8.0);
-                self.funnel_steps(ui);
-                if !self.demoted_states.is_empty() {
-                    ui.add_space(8.0);
-                    self.demoted_section(ui, tracked);
-                }
-                if !self.differentiated_rows.is_empty() {
-                    ui.add_space(8.0);
-                    self.differentiated_section(ui, tracked);
-                }
-                if !self.eliminations.is_empty() {
-                    ui.add_space(8.0);
-                    self.elimination_section(ui, tracked);
-                }
-            });
+    /// Public and separate from the rendering for the reason `Plot::problems` is:
+    /// `egui_kittest` cannot reach a custom-painted cell, so what a test *can* reach
+    /// has to be the data. Nothing here is in the paint path.
+    #[must_use]
+    pub fn problems(&self) -> &[String] {
+        &self.problems
     }
 
-    // Top-level summary: funnel completion status and state variable counts.
-    fn summary(&self, ui: &mut egui::Ui) {
-        ui.heading("Index Reduction Summary");
+    /// Rounds the run logged.
+    #[must_use]
+    pub fn n_rounds(&self) -> usize {
+        self.rounds.len()
+    }
+
+    /// Candidates discovered across every round and proof boundary.
+    #[must_use]
+    pub fn n_discovered(&self) -> u64 {
+        self.rounds.iter().map(Round::discovered).sum()
+    }
+
+    /// **Did reduction change the system without changing its size?**
+    ///
+    /// The `CapacitorLoop` case, asked as a question the pane can answer rather than
+    /// left for a reader to notice: counts identical on both sides, and a manifold
+    /// constraint to show for it. `false` when either side is missing, because then
+    /// there is nothing to compare rather than nothing to report.
+    #[must_use]
+    pub fn changed_without_resizing(&self) -> bool {
+        match (&self.before, &self.after) {
+            (Some(b), Some(a)) => {
+                b.states == a.states
+                    && b.algebraics == a.algebraics
+                    && b.equations == a.equations
+                    && a.manifold.unwrap_or(0) > 0
+            }
+            _ => false,
+        }
+    }
+
+    /// Draw the panel. `tracked` is the followed identifier, highlighted where it
+    /// appears among the unmatched names.
+    pub fn ui(&self, ui: &mut egui::Ui, tracked: Option<&str>) {
+        for problem in &self.problems {
+            ui.colored_label(ui.visuals().warn_fg_color, format!("\u{26a0} {problem}"));
+        }
+        if !self.problems.is_empty() {
+            ui.add_space(6.0);
+        }
+
+        self.summary(ui);
+        ui.add_space(8.0);
+        self.sizes(ui);
+
+        if self.rounds.is_empty() {
+            ui.add_space(8.0);
+            // **Not an empty table.** Zero rounds is a real and informative state, and
+            // it means two different things — see the payload's own `meaning`, shown in
+            // the summary above.
+            ui.weak(
+                "No reduction round ran. Either the system sorted as it stood, or \
+                 normalizing it was enough.",
+            );
+            return;
+        }
+
+        ui.add_space(8.0);
+        ui.label(egui::RichText::new("The search").strong());
+        if let Some(note) = &self.residue_definition {
+            ui.weak(format!("residue = {note}"));
+        }
+        if let Some(note) = &self.ordinals_note {
+            ui.weak(note.as_str());
+        }
         ui.add_space(4.0);
 
-        let status = if self.funnel_completed {
-            egui::RichText::new("funnel completed")
-                .color(crate::colors::ok_color(ui.visuals().dark_mode))
-        } else {
-            let step = self.stopped_at.as_deref().unwrap_or("unknown");
-            egui::RichText::new(format!("stopped at {step}")).color(ui.visuals().error_fg_color)
-        };
-        ui.label(status);
+        let last = self.rounds.len().saturating_sub(1);
+        for (i, round) in self.rounds.iter().enumerate() {
+            let open = i < ROUNDS_OPEN_BY_DEFAULT || i == last;
+            self.round_ui(ui, round, open, tracked);
+        }
 
-        let n_demoted = self.demoted_states.len();
-        ui.label(format!(
-            "{} state{} before \u{2192} {} after ({} demoted)",
-            self.n_states_before,
-            if self.n_states_before == 1 { "" } else { "s" },
-            self.n_states_after,
-            n_demoted,
+        if let Some(stalled) = &self.stalled {
+            ui.add_space(8.0);
+            ui.colored_label(ui.visuals().warn_fg_color, format!("Stalled: {stalled}"));
+        }
+    }
+
+    /// The headline: how it ended, in how many rounds, through which lanes.
+    fn summary(&self, ui: &mut egui::Ui) {
+        let verdict = if self.admitted {
+            egui::RichText::new(format!("Admitted \u{2014} {}", self.outcome)).strong()
+        } else {
+            egui::RichText::new(format!("Not admitted \u{2014} {}", self.outcome))
+                .strong()
+                .color(ui.visuals().warn_fg_color)
+        };
+        ui.label(verdict);
+        if let Some(meaning) = &self.meaning {
+            ui.label(meaning.as_str());
+        }
+        let lanes = if self.lanes.is_empty() {
+            "no lane was entered".to_owned()
+        } else {
+            format!("lanes: {}", self.lanes.join(", "))
+        };
+        ui.weak(format!(
+            "{} round(s), {} candidate(s) discovered, {lanes}",
+            self.rounds.len(),
+            self.n_discovered(),
         ));
-        // **Reported whenever the funnel differentiated, not only when rows survived.**
-        // Keyed on `n_differentiations`, because the survivor list is empty on every
-        // specimen in the corpus that differentiates at all — so keying on it meant the
-        // pane was silent exactly when it had the most to say.
-        if self.n_differentiations > 0 {
-            let survivors = self.differentiated_rows.len();
-            ui.label(format!(
-                "{} differentiation{} performed \u{2014} {} of the manufactured \
-                 equation{} survive{} to the end",
-                self.n_differentiations,
-                if self.n_differentiations == 1 {
-                    ""
-                } else {
-                    "s"
-                },
-                survivors,
-                if survivors == 1 { "" } else { "s" },
-                if survivors == 1 { "s" } else { "" },
-            ));
-            if survivors == 0 {
-                // The gap is the interesting part, so it is explained where it is seen
-                // rather than left as two numbers that appear to contradict each other.
-                ui.label(
-                    egui::RichText::new(
-                        "the rows they produced were removed by a later elimination step",
-                    )
-                    .weak(),
-                );
-            }
-        } else if self.n_states_before == self.n_states_after && self.n_states_before > 0 {
-            // **A funnel that did nothing says so.** `CartesianPendulum` runs every step
-            // to completion and changes nothing; an unannotated pane of zeroes reads as
-            // "reduction happened and was small" rather than "reduction did not act".
+    }
+
+    /// Before and after, side by side.
+    fn sizes(&self, ui: &mut egui::Ui) {
+        egui::Grid::new("reduction_sizes")
+            .num_columns(5)
+            .striped(true)
+            .show(ui, |ui| {
+                ui.label(egui::RichText::new("").strong());
+                for header in ["states", "algebraics", "equations", "manifold"] {
+                    ui.label(egui::RichText::new(header).strong());
+                }
+                ui.end_row();
+
+                for (label, size) in [("before", &self.before), ("after", &self.after)] {
+                    ui.label(label);
+                    match size {
+                        Some(s) => {
+                            ui.label(s.states.to_string());
+                            ui.label(s.algebraics.to_string());
+                            ui.label(s.equations.to_string());
+                            match s.manifold {
+                                Some(m) => ui.label(m.to_string()),
+                                None => ui.weak("\u{2014}"),
+                            };
+                        }
+                        // Four cells, so the grid keeps its shape and the absence reads
+                        // as one row rather than as a truncated table.
+                        None => {
+                            for _ in 0..4 {
+                                ui.weak("\u{2014}");
+                            }
+                        }
+                    }
+                    ui.end_row();
+                }
+            });
+
+        if self.after.is_none() {
+            ui.weak(
+                "No reduced system: preparation did not admit this one, so there is \
+                 nothing to show on the other side.",
+            );
+        } else if self.changed_without_resizing() {
+            // **The `CapacitorLoop` sentence.** Without it, identical columns read as
+            // "reduction did nothing", which is the opposite of what happened.
             ui.label(
-                egui::RichText::new(
-                    "no differentiation and no demotion \u{2014} this funnel did not act \
-                     on the system",
-                )
-                .weak(),
+                "Every count is unchanged, and the system still changed: reduction \
+                 added a manifold constraint and a different matching. Reduction is \
+                 not a size reduction.",
             );
         }
-        if !self.eliminations.is_empty() {
-            ui.label(format!(
-                "{} variable{} eliminated by substitution",
-                self.eliminations.len(),
-                if self.eliminations.len() == 1 {
-                    ""
-                } else {
-                    "s"
-                },
-            ));
-        }
     }
 
-    // Render the funnel step table: each row is a named step with its outcome,
-    // color-coded: green for successful reductions, red for stops, dim for no-ops.
-    // Step names have their common prefix stripped (e.g., "demote_" is removed)
-    // for readability.
-    fn funnel_steps(&self, ui: &mut egui::Ui) {
-        ui.strong("Funnel steps");
-        ui.add_space(2.0);
-
-        let ok_color = crate::colors::ok_color(ui.visuals().dark_mode);
-        let err_color = ui.visuals().error_fg_color;
-        let neutral_color = ui.visuals().weak_text_color();
-
-        // **Three columns, because the outcome string alone cannot say whether a step
-        // acted.** An outcome of "ok" reports that a step ran; the shape either side
-        // reports what it did. `CartesianPendulum` runs every step to completion and
-        // moves nothing, and until these columns existed it looked exactly like a
-        // funnel doing quiet work.
-        egui::Grid::new("funnel_steps")
-            .num_columns(3)
-            .spacing([12.0, 4.0])
+    /// One round, collapsible.
+    fn round_ui(&self, ui: &mut egui::Ui, round: &Round, open: bool, tracked: Option<&str>) {
+        let header = format!(
+            "Round {} [{}] \u{2014} residue {}, {} candidate(s)",
+            round.number,
+            round.lane,
+            round.residue,
+            round.discovered(),
+        );
+        egui::CollapsingHeader::new(header)
+            .id_salt(("reduction_round", round.number, round.lane.as_str()))
+            .default_open(open)
             .show(ui, |ui| {
-                for row in &self.steps {
-                    let short = row
-                        .name
-                        .strip_prefix("demote_")
-                        .or_else(|| row.name.strip_prefix("reduce_"))
-                        .or_else(|| row.name.strip_prefix("index_reduce_"))
-                        .unwrap_or(&row.name);
-                    ui.label(egui::RichText::new(short).monospace());
+                if round.retried_pristine {
+                    ui.weak("The lane restarted from the unmodified system.");
+                }
 
-                    let is_err = row.outcome.starts_with("stopped");
-                    let acted = row.states_before != row.states_after
-                        || row.equations_before != row.equations_after;
-                    let color = if is_err {
-                        err_color
-                    } else if acted {
-                        ok_color
+                self.unmatched_ui(ui, round, tracked);
+
+                for group in &round.groups {
+                    let line = format!(
+                        "{} / {}: {} candidate(s)",
+                        group.lane, group.group, group.discovered
+                    );
+                    if group.discovered == 0 {
+                        // **Nothing to try, which is not a refusal.** Said in words,
+                        // because a `0` in a list of counts reads as a rejection.
+                        ui.weak(format!("{line} \u{2014} nothing to try here"));
                     } else {
-                        // **Keyed on the shape, not on the outcome text.** The old
-                        // version tested for the literal strings "0 demoted" and
-                        // "0 substituted", so a step reporting "ok" while changing
-                        // nothing was coloured as though it had worked — and the
-                        // wording changed under it twice this week.
-                        neutral_color
+                        ui.label(line);
+                    }
+                }
+
+                if round.attempts.is_empty() && round.discovered() == 0 {
+                    ui.weak(
+                        "No attempt was made, because no candidate was found \u{2014} \
+                         this lane had nothing admissible to rebuild with.",
+                    );
+                }
+                for attempt in &round.attempts {
+                    self.attempt_ui(ui, attempt);
+                }
+
+                if let Some(selection) = &round.selection {
+                    let after = match selection.residue_after {
+                        Some(r) => r.to_string(),
+                        None => "sorted".to_owned(),
                     };
-                    ui.label(egui::RichText::new(&row.outcome).color(color));
+                    ui.label(
+                        egui::RichText::new(format!(
+                            "Selected: {} [{}], residue {} \u{2192} {after}",
+                            selection.form, selection.lane, selection.residue_before,
+                        ))
+                        .strong(),
+                    );
+                }
+            });
+    }
 
-                    // Shown only where something moved. A column of unchanged pairs
-                    // beside every row is noise that hides the two rows that matter.
-                    if acted {
-                        let mut parts: Vec<String> = Vec::new();
-                        if row.states_before != row.states_after {
-                            parts.push(format!(
-                                "states {}\u{2192}{}",
-                                row.states_before, row.states_after
-                            ));
-                        }
-                        if row.equations_before != row.equations_after {
-                            parts.push(format!(
-                                "eqs {}\u{2192}{}",
-                                row.equations_before, row.equations_after
-                            ));
-                        }
-                        ui.label(egui::RichText::new(parts.join("  ")).weak().monospace());
+    /// What is still unmatched on both sides, with the followed identifier marked.
+    fn unmatched_ui(&self, ui: &mut egui::Ui, round: &Round, tracked: Option<&str>) {
+        for (label, names) in [
+            ("unmatched equations", &round.unmatched_equations),
+            ("unmatched unknowns", &round.unmatched_unknowns),
+        ] {
+            if names.is_empty() {
+                continue;
+            }
+            ui.horizontal_wrapped(|ui| {
+                ui.weak(format!("{label}:"));
+                for name in names {
+                    // Equality on the leading token, not `contains`: a followed `a.v`
+                    // must not light up `a.vx`. `identity-and-provenance.md` — no
+                    // substring search decides identity.
+                    let followed = tracked.is_some_and(|t| {
+                        name == t || name.split(' ').next().is_some_and(|head| head == t)
+                    });
+                    if followed {
+                        ui.label(
+                            egui::RichText::new(name)
+                                .strong()
+                                .color(ui.visuals().hyperlink_color),
+                        );
                     } else {
-                        ui.label("");
+                        ui.label(name);
                     }
-                    ui.end_row();
                 }
-            });
-    }
-
-    // List of demoted state variables — these were differential variables in the
-    // original DAE but were reclassified as algebraic by the reduction funnel.
-    fn demoted_section(&self, ui: &mut egui::Ui, tracked: Option<&str>) {
-        ui.strong(format!("Demoted states ({})", self.demoted_states.len()));
-        ui.add_space(2.0);
-        ui.label(
-            egui::RichText::new(
-                "These variables were state (differential) variables in the raw DAE; \
-                 the reduction funnel demoted them to algebraic.",
-            )
-            .weak(),
-        );
-        ui.add_space(2.0);
-        for name in &self.demoted_states {
-            let is_tracked =
-                tracked.is_some_and(|t| crate::identifier_index::same_variable(name, t));
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("\u{2022}").color(ui.visuals().warn_fg_color));
-                let mut rt = egui::RichText::new(name).monospace();
-                if is_tracked {
-                    rt = rt
-                        .strong()
-                        .background_color(crate::colors::TRACKED_FILL_MEDIUM);
-                }
-                ui.label(rt);
             });
         }
     }
 
-    // Table of equations that were manufactured by differentiating existing
-    // constraints. When a state variable's original derivative equation is
-    // disrupted by demotion, the compiler differentiates a constraint to
-    // produce a replacement.
-    fn differentiated_section(&self, ui: &mut egui::Ui, tracked: Option<&str>) {
-        ui.strong(format!(
-            "Differentiated equations ({})",
-            self.differentiated_rows.len()
-        ));
-        ui.add_space(2.0);
-        ui.label(
-            egui::RichText::new(
-                "Equations manufactured by differentiating a constraint to produce \
-                 a derivative row for a state that lacked one.",
-            )
-            .weak(),
+    /// One attempt, with `Held` rendered as progress.
+    fn attempt_ui(&self, ui: &mut egui::Ui, attempt: &Attempt) {
+        let residue = match attempt.residue {
+            Some(r) => format!(" \u{2192} residue {r}"),
+            None => String::new(),
+        };
+        let gloss = match attempt.outcome.as_str() {
+            // **The three that need a word, because the bare name misleads.**
+            "held" => " (the residue held, and the system changed \u{2014} progress)",
+            "raised" => " (the residue grew, so this candidate was not taken)",
+            "sorted" => " (this one sorted the system)",
+            _ => "",
+        };
+        let line = format!(
+            "  {} [{}]: {}{residue}{gloss}",
+            attempt.form, attempt.lane, attempt.outcome,
         );
-        ui.add_space(2.0);
-        egui::Grid::new("diff_rows")
-            .num_columns(2)
-            .spacing([12.0, 4.0])
-            .show(ui, |ui| {
-                ui.label(egui::RichText::new("for state").weak());
-                ui.label(egui::RichText::new("equation origin").weak());
-                ui.end_row();
-                for row in &self.differentiated_rows {
-                    let is_tracked = tracked
-                        .is_some_and(|t| crate::identifier_index::same_variable(&row.for_state, t));
-                    let mut rt = egui::RichText::new(&row.for_state).monospace();
-                    if is_tracked {
-                        rt = rt
-                            .strong()
-                            .background_color(crate::colors::TRACKED_FILL_MEDIUM);
-                    }
-                    ui.label(rt);
-                    ui.label(egui::RichText::new(&row.equation_origin).monospace().weak());
-                    ui.end_row();
-                }
-            });
-    }
-
-    // Table of trivially eliminated variables. When the system contains
-    // equations like `z = y` (a single-unknown row or an alias), the variable
-    // `z` can be replaced everywhere by `y`, reducing the system size.
-    fn elimination_section(&self, ui: &mut egui::Ui, tracked: Option<&str>) {
-        ui.strong(format!(
-            "Trivial eliminations ({})",
-            self.eliminations.len()
-        ));
-        ui.add_space(2.0);
-        ui.label(
-            egui::RichText::new(
-                "Variables removed by symbolic substitution (aliases, single-unknown rows).",
-            )
-            .weak(),
-        );
-        ui.add_space(2.0);
-        egui::Grid::new("eliminations")
-            .num_columns(2)
-            .spacing([12.0, 4.0])
-            .show(ui, |ui| {
-                ui.label(egui::RichText::new("variable").weak());
-                ui.label(egui::RichText::new("replaced by").weak());
-                ui.end_row();
-                for elim in &self.eliminations {
-                    let is_tracked = tracked
-                        .is_some_and(|t| crate::identifier_index::same_variable(&elim.variable, t));
-                    let mut rt = egui::RichText::new(&elim.variable).monospace();
-                    if is_tracked {
-                        rt = rt
-                            .strong()
-                            .background_color(crate::colors::TRACKED_FILL_MEDIUM);
-                    }
-                    ui.label(rt);
-                    ui.label(egui::RichText::new(&elim.display).monospace().weak());
-                    ui.end_row();
-                }
-            });
+        match attempt.outcome.as_str() {
+            "sorted" | "reduced" | "held" => ui.label(line),
+            _ => ui.weak(line),
+        };
+        if let Some(at) = &attempt.at {
+            ui.weak(format!("      at {at}"));
+        }
     }
 }
 
-// Convert a JSON-encoded Rumoca expression into a short human-readable string.
-//
-// The `replacement` field in eliminations stores the replacement expression as a
-// JSON string (it's a serialized Rumoca IR expression). Showing raw JSON in the
-// UI would be unreadable, so this function pattern-matches on common expression
-// kinds and renders them concisely:
-//   - VarRef -> just the variable name (e.g., "omega")
-//   - Literal -> the literal value (e.g., "3.14", "true")
-//   - Binary -> "lhs op rhs" (e.g., "x + y")
-//   - Unary -> "op rhs" (e.g., "-x")
-//   - BuiltinCall -> "func(args)" (e.g., "sin(theta)")
-//   - anything else -> "(expr)" as a fallback
-pub(crate) fn abbreviate_expr(json_expr: &str) -> String {
-    if let Ok(v) = serde_json::from_str::<Value>(json_expr) {
-        expr_to_short(&v)
-    } else {
-        // Not valid JSON — show the raw string (shouldn't happen in practice).
-        json_expr.to_owned()
-    }
+/// A record's lane, or a placeholder that cannot be mistaken for one.
+fn lane_of(record: &Value) -> String {
+    record["lane"].as_str().unwrap_or("?").to_owned()
 }
 
-fn binary_op_symbol(variant: &str) -> &str {
-    match variant {
-        "Add" => "+",
-        "Sub" => "-",
-        "Mul" => "*",
-        "Div" => "/",
-        "Eq" => "==",
-        "Neq" => "<>",
-        "Lt" => "<",
-        "Le" => "<=",
-        "Gt" => ">",
-        "Ge" => ">=",
-        "And" => "and",
-        "Or" => "or",
-        "Exp" => "^",
-        "ExpElem" => ".^",
-        "AddElem" => ".+",
-        "SubElem" => ".-",
-        "MulElem" => ".*",
-        "DivElem" => "./",
-        "Assign" => "=",
-        _ => variant,
-    }
-}
-
-fn unary_op_symbol(variant: &str) -> &str {
-    match variant {
-        "Minus" => "-",
-        "Plus" => "+",
-        "DotMinus" => ".-",
-        "DotPlus" => ".+",
-        "Not" => "not ",
-        _ => variant,
-    }
-}
-
-/// Stands in for a subexpression this renderer could not find.
+/// A `declared_at` location as `file:line`, or `None` when it did not resolve.
 ///
-/// **It has to be visible, and it has to not look like Modelica.** Until 2026-08-04
-/// a missing operand rendered as the empty string, so `a * 2` with an unreadable
-/// left side became `" * 2"` and `x + y` became `"x + "` — **a different equation,
-/// displayed as the model's equation**, which is the same class of defect as the
-/// incidence matrix showing a dependency that is not there.
-///
-/// Distinct from `"(expr)"`, which this function already used and which means
-/// something else: *an expression shape this renderer does not know how to print*.
-/// That one is a limit of HRW; this one is a hole in the data.
-const MISSING: &str = "(missing)";
-
-// Recursive expression-to-string renderer. Each branch pattern-matches on the
-// Rumoca IR expression enum variant (serialized as a JSON object with one key).
-pub(crate) fn expr_to_short(v: &Value) -> String {
-    match v.get("VarRef").or_else(|| v.get("Literal")) {
-        Some(inner) => {
-            if let Some(name) = inner.get("name").and_then(|n| n.as_str()) {
-                return name.to_owned();
-            }
-            if let Some(val) = inner.get("value") {
-                if let Some(r) = val.get("Real").and_then(|r| r.as_f64()) {
-                    return format!("{r}");
-                }
-                if let Some(i) = val.get("Integer").and_then(|i| i.as_i64()) {
-                    return format!("{i}");
-                }
-                if let Some(b) = val.get("Bool").and_then(|b| b.as_bool()) {
-                    return format!("{b}");
-                }
-                if let Some(s) = val.get("String").and_then(|s| s.as_str()) {
-                    return format!("\"{s}\"");
-                }
-            }
-            "(expr)".to_owned()
-        }
-        None => {
-            if let Some(bin) = v.get("Binary") {
-                let op = bin.get("op").and_then(|o| o.as_str()).unwrap_or("?");
-                let sym = binary_op_symbol(op);
-                let lhs = bin
-                    .get("lhs")
-                    .map_or_else(|| MISSING.to_owned(), expr_to_short);
-                let rhs = bin
-                    .get("rhs")
-                    .map_or_else(|| MISSING.to_owned(), expr_to_short);
-                return format!("{lhs} {sym} {rhs}");
-            }
-            if let Some(unary) = v.get("Unary") {
-                let op = unary.get("op").and_then(|o| o.as_str()).unwrap_or("?");
-                let sym = unary_op_symbol(op);
-                let rhs = unary
-                    .get("rhs")
-                    .map_or_else(|| MISSING.to_owned(), expr_to_short);
-                return format!("{sym}{rhs}");
-            }
-            if let Some(call) = v.get("BuiltinCall") {
-                // **`"f"` was the worst substitution in this function.** An unreadable
-                // function name rendered as a call to a function literally named `f`,
-                // which is a plausible Modelica identifier — so `sin(x)` with an
-                // unreadable name became `f(x)`, and nothing said otherwise.
-                let func = call
-                    .get("function")
-                    .and_then(|f| f.as_str())
-                    .unwrap_or("(unknown fn)");
-                // Absent args and an empty args list are different expressions:
-                // `time()` really takes none, while a missing `args` key means this
-                // parser could not find them. `unwrap_or_default` rendered both as
-                // a zero-argument call.
-                let args: String = match call.get("args").and_then(Value::as_array) {
-                    Some(a) => a.iter().map(expr_to_short).collect::<Vec<_>>().join(", "),
-                    None => MISSING.to_owned(),
-                };
-                return format!("{func}({args})");
-            }
-            "(expr)".to_owned()
-        }
+/// **`None` is a real answer**: a span in no registered source refuses rather than
+/// resolving against whichever file was to hand, which is `worker::span_location`'s
+/// whole point. Rendering it as an empty string would read as a location of nothing.
+fn location_of(declared_at: &Value) -> Option<String> {
+    let file = declared_at["file"].as_str()?;
+    match declared_at["line"].as_u64() {
+        Some(line) => Some(format!("{file}:{line}")),
+        None => Some(file.to_owned()),
     }
+}
+
+/// A JSON string array as owned strings. Absent and empty both give an empty list,
+/// which is correct here: both mean *nothing to show*, and the caller says which.
+fn strings(value: &Value) -> Vec<String> {
+    value
+        .as_array()
+        .map(|a| {
+            a.iter()
+                .map(|v| v.as_str().unwrap_or("(unnamed)").to_owned())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// One side's size, or `None` when that side is absent.
+///
+/// `with_manifold` because only the reduced side has manifold constraints; publishing
+/// `0` for the raw system would be a measurement of something that does not apply.
+fn size_of(value: &Value, with_manifold: bool) -> Option<SystemSize> {
+    if value.is_null() {
+        return None;
+    }
+    Some(SystemSize {
+        states: value["n_states"].as_u64()?,
+        algebraics: value["n_algebraics"].as_u64()?,
+        equations: value["n_equations"].as_u64()?,
+        manifold: if with_manifold {
+            value["n_manifold_constraints"].as_u64()
+        } else {
+            None
+        },
+    })
 }
 
 #[cfg(test)]
@@ -648,465 +634,247 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    #[test]
-    fn parses_reduction_report() {
-        let report = json!({
-            "reduction": {
-                "funnel_completed": true,
-                "stopped_at": null,
-                "n_states_before": 4,
-                "n_states_after": 2,
-                "states_before": ["a", "b", "c", "d"],
-                "states_after": ["a", "c"],
-                "demoted_states": ["b", "d"],
-                "steps": [
-                    { "step": "demote_exact_alias_component_states", "outcome": "1 demoted" },
-                    { "step": "demote_direct_assigned_states", "outcome": "1 demoted" },
-                ],
-                "differentiated_rows": [
-                    { "equation_origin": "index_reduction:d_dt_for_x", "for_state": "x" }
-                ],
-                "eliminations": [
-                    { "variable": "z", "replacement": "{\"VarRef\":{\"name\":\"y\"}}" }
-                ],
-            }
-        });
-        let view = ReductionView::from_report(&report).expect("should parse");
-        assert!(view.funnel_completed);
-        assert_eq!(view.n_states_before, 4);
-        assert_eq!(view.n_states_after, 2);
-        assert_eq!(view.demoted_states, vec!["b", "d"]);
-        assert_eq!(view.steps.len(), 2);
-        assert_eq!(view.differentiated_rows.len(), 1);
-        assert_eq!(view.eliminations.len(), 1);
-    }
-
-    #[test]
-    fn missing_reduction_returns_none() {
-        assert!(ReductionView::from_report(&json!({})).is_none());
-        assert!(ReductionView::from_report(&json!({"blocks": []})).is_none());
-    }
-
-    #[test]
-    fn abbreviate_renders_var_ref() {
-        let expr = r#"{"VarRef":{"name":"omega","subscripts":[],"span":{"lo":0,"hi":0}}}"#;
-        assert_eq!(abbreviate_expr(expr), "omega");
-    }
-
-    #[test]
-    fn abbreviate_renders_literal_real() {
-        let expr = r#"{"Literal":{"value":{"Real":3.14}}}"#;
-        assert_eq!(abbreviate_expr(expr), "3.14");
-    }
-
-    #[test]
-    fn abbreviate_renders_literal_integer() {
-        let expr = r#"{"Literal":{"value":{"Integer":42}}}"#;
-        assert_eq!(abbreviate_expr(expr), "42");
-    }
-
-    #[test]
-    fn abbreviate_renders_literal_bool() {
-        let expr = r#"{"Literal":{"value":{"Bool":true}}}"#;
-        assert_eq!(abbreviate_expr(expr), "true");
-    }
-
-    #[test]
-    fn abbreviate_renders_literal_string() {
-        let expr = r#"{"Literal":{"value":{"String":"hello"}}}"#;
-        assert_eq!(abbreviate_expr(expr), "\"hello\"");
-    }
-
-    #[test]
-    fn abbreviate_renders_binary() {
-        let expr = r#"{"Binary":{"op":"Add","lhs":{"VarRef":{"name":"x"}},"rhs":{"VarRef":{"name":"y"}}}}"#;
-        assert_eq!(abbreviate_expr(expr), "x + y");
-    }
-
-    #[test]
-    fn abbreviate_renders_binary_operators() {
-        let bin = |op| {
-            format!(
-                r#"{{"Binary":{{"op":"{op}","lhs":{{"VarRef":{{"name":"x"}}}},"rhs":{{"VarRef":{{"name":"y"}}}}}}}}"#
-            )
-        };
-        assert_eq!(abbreviate_expr(&bin("Sub")), "x - y");
-        assert_eq!(abbreviate_expr(&bin("Mul")), "x * y");
-        assert_eq!(abbreviate_expr(&bin("Div")), "x / y");
-        assert_eq!(abbreviate_expr(&bin("Exp")), "x ^ y");
-        assert_eq!(abbreviate_expr(&bin("Ge")), "x >= y");
-        assert_eq!(abbreviate_expr(&bin("And")), "x and y");
-    }
-
-    #[test]
-    fn abbreviate_renders_unary() {
-        let expr = r#"{"Unary":{"op":"Minus","rhs":{"VarRef":{"name":"x"}}}}"#;
-        assert_eq!(abbreviate_expr(expr), "-x");
-    }
-
-    #[test]
-    fn abbreviate_renders_unary_not() {
-        let expr = r#"{"Unary":{"op":"Not","rhs":{"VarRef":{"name":"b"}}}}"#;
-        assert_eq!(abbreviate_expr(expr), "not b");
-    }
-
-    #[test]
-    fn abbreviate_renders_builtin_call() {
-        let expr = r#"{"BuiltinCall":{"function":"sin","args":[{"VarRef":{"name":"theta"}}]}}"#;
-        assert_eq!(abbreviate_expr(expr), "sin(theta)");
-    }
-
-    #[test]
-    fn abbreviate_renders_builtin_call_multiple_args() {
-        let expr = r#"{"BuiltinCall":{"function":"atan2","args":[{"VarRef":{"name":"y"}},{"VarRef":{"name":"x"}}]}}"#;
-        assert_eq!(abbreviate_expr(expr), "atan2(y, x)");
-    }
-
-    #[test]
-    fn abbreviate_nested_binary_in_builtin() {
-        let expr = r#"{"BuiltinCall":{"function":"abs","args":[{"Binary":{"op":"Sub","lhs":{"VarRef":{"name":"a"}},"rhs":{"VarRef":{"name":"b"}}}}]}}"#;
-        assert_eq!(abbreviate_expr(expr), "abs(a - b)");
-    }
-
-    #[test]
-    fn abbreviate_unknown_variant_falls_back() {
-        let expr = r#"{"FunctionCall":{"name":"custom","args":[]}}"#;
-        assert_eq!(abbreviate_expr(expr), "(expr)");
-    }
-
-    #[test]
-    fn abbreviate_invalid_json_returns_raw() {
-        assert_eq!(abbreviate_expr("not json"), "not json");
-    }
-
-    #[test]
-    fn elimination_display_uses_abbreviate() {
-        let report = json!({
-            "reduction": {
-                "funnel_completed": true,
-                "n_states_before": 2,
-                "n_states_after": 1,
-                "demoted_states": ["z"],
-                "steps": [],
-                "differentiated_rows": [],
-                "eliminations": [
-                    {
-                        "variable": "z",
-                        "replacement": "{\"Binary\":{\"op\":\"Mul\",\"lhs\":{\"VarRef\":{\"name\":\"a\"}},\"rhs\":{\"Literal\":{\"value\":{\"Real\":2.0}}}}}"
-                    }
-                ],
-            }
-        });
-        let view = ReductionView::from_report(&report).expect("should parse");
-        assert_eq!(view.eliminations[0].variable, "z");
-        assert_eq!(view.eliminations[0].display, "a * 2");
-    }
-
-    /// A minimal report with a well-formed `reduction` object, for the two tests
-    /// below to perturb. Kept tiny so the perturbation is the only difference.
-    fn report_with(rows: serde_json::Value) -> Value {
-        serde_json::json!({
-            "reduction": {
-                "funnel_completed": true,
-                "n_states_before": 2,
-                "n_states_after": 1,
-                "differentiated_rows": rows,
-            }
-        })
-    }
-
-    /// **A row the parser cannot read is reported, not dropped.**
-    ///
-    /// This is the defect the 2026-08-04 sweep found: every list here was built with
-    /// `filter_map`, so an entry missing a field vanished and the pane showed a
-    /// shorter list with **nothing where the missing row had been**. A partial report
-    /// leaves no gap, so nothing prompts a second look.
-    ///
-    /// It matters most on this view of any in HRW. `differentiated_rows` *is* the
-    /// Pantelides output, and `tech-debt.md`'s priority-1 example is a case where
-    /// reasoning from that list would have been confidently wrong.
-    #[test]
-    fn an_unreadable_row_is_counted_rather_than_silently_dropped() {
-        let report = report_with(serde_json::json!([
-            { "equation_origin": "eq[1]", "for_state": "phi" },
-            { "equation_origin": "eq[2]" },
-        ]));
-        let view = ReductionView::from_report(&report).expect("should parse");
-
-        assert_eq!(
-            view.differentiated_rows.len(),
-            1,
-            "the malformed row has nothing to render, so it is still excluded",
-        );
-        assert_eq!(
-            view.unreadable.len(),
-            1,
-            "but its absence must be REPORTED. Dropping it silently shows one \
-             differentiated equation where the compiler produced two, and the pane \
-             gives the reader no reason to doubt it",
-        );
-        assert!(
-            view.unreadable[0].contains("1 of 2")
-                && view.unreadable[0].contains("differentiated_rows"),
-            "the notice must say how many and which list: {:?}",
-            view.unreadable[0],
-        );
-    }
-
-    /// **Absent is not unreadable.** The other half, and the one that keeps the
-    /// notice meaningful: an already-index-1 model has no differentiated rows at all,
-    /// and saying so in red would train the reader to ignore the warning.
-    #[test]
-    fn a_list_the_compiler_never_emitted_is_not_a_problem() {
-        let report = serde_json::json!({
-            "reduction": {
-                "funnel_completed": true,
-                "n_states_before": 1,
-                "n_states_after": 1,
-            }
-        });
-        let view = ReductionView::from_report(&report).expect("should parse");
-        assert!(view.differentiated_rows.is_empty());
-        assert!(
-            view.unreadable.is_empty(),
-            "a list the compiler never produced is not a parse failure: {:?}",
-            view.unreadable,
-        );
-
-        // And a well-formed list is likewise silent.
-        let clean = report_with(serde_json::json!([
-            { "equation_origin": "eq[1]", "for_state": "phi" },
-        ]));
-        let view = ReductionView::from_report(&clean).expect("should parse");
-        assert_eq!(view.differentiated_rows.len(), 1);
-        assert!(view.unreadable.is_empty(), "{:?}", view.unreadable);
-    }
-
-    /// **A missing operand is visible, not blank.** The sweep's finding, 2026-08-04.
-    ///
-    /// `expr_to_short` rendered an absent `lhs`/`rhs` as the empty string, so the
-    /// pane displayed a *different equation* as the model's equation — with correct
-    /// spacing and plausible syntax, giving a reader no reason to doubt it. Equations
-    /// are what Doug is learning from; a wrong one is as damaging here as a wrong
-    /// incidence matrix.
-    #[test]
-    fn a_missing_operand_renders_visibly_rather_than_as_nothing() {
-        // `a * <missing>` — the shape that used to render as "a *".
-        let half = json!({ "Binary": {
-            "op": "Mul",
-            "lhs": { "VarRef": { "name": "a" } },
-        }});
-        let out = expr_to_short(&half);
-        assert!(
-            out.contains("(missing)"),
-            "a missing operand must be visible: {out:?}",
-        );
-        assert!(
-            !out.ends_with("* "),
-            "and must not read as a well-formed expression: {out:?}"
-        );
-
-        // A unary with no operand used to render as a bare "-".
-        let unary = expr_to_short(&json!({ "Unary": { "op": "Neg" } }));
-        assert!(unary.contains("(missing)"), "{unary:?}");
-    }
-
-    /// **An unreadable function name does not become a plausible one.**
-    ///
-    /// It rendered as `"f"` — a legal Modelica identifier — so `sin(x)` with an
-    /// unreadable name became `f(x)`, indistinguishable from a real call to a
-    /// function named `f`. The substitution was not just lossy, it was *convincing*.
-    #[test]
-    fn an_unreadable_function_name_is_not_replaced_by_a_plausible_one() {
-        let call = expr_to_short(&json!({ "BuiltinCall": {
-            "args": [{ "VarRef": { "name": "x" } }],
-        }}));
-        assert!(
-            !call.starts_with("f("),
-            "a plausible fake name is worse than none: {call:?}"
-        );
-        assert!(call.contains("unknown fn"), "{call:?}");
-
-        // Absent args and an empty args list are different expressions.
-        let no_args = expr_to_short(&json!({ "BuiltinCall": { "function": "sin" } }));
-        assert!(
-            no_args.contains("(missing)"),
-            "absent args must say so: {no_args:?}"
-        );
-        let empty_args =
-            expr_to_short(&json!({ "BuiltinCall": { "function": "time", "args": [] }}));
-        assert_eq!(
-            empty_args, "time()",
-            "a genuine zero-argument call is unchanged"
-        );
-    }
-
-    /// A well-formed expression is untouched by all of the above.
-    #[test]
-    fn a_complete_expression_still_renders_normally() {
-        let e = json!({ "Binary": {
-            "op": "Add",
-            "lhs": { "VarRef": { "name": "x" } },
-            "rhs": { "VarRef": { "name": "y" } },
-        }});
-        assert_eq!(expr_to_short(&e), "x + y");
-    }
-
-    /// A list that is present but is not a list at all is a defect too — the shape
-    /// changed under us, which is exactly what the fidelity suite exists to notice
-    /// and what this view would otherwise render as "nothing happened".
-    #[test]
-    fn a_list_that_is_not_a_list_is_reported() {
-        let report = report_with(serde_json::json!("eq[1], eq[2]"));
-        let view = ReductionView::from_report(&report).expect("should parse");
-        assert!(view.differentiated_rows.is_empty());
-        assert_eq!(view.unreadable.len(), 1, "{:?}", view.unreadable);
-        assert!(
-            view.unreadable[0].contains("is not a list"),
-            "{:?}",
-            view.unreadable[0]
-        );
-    }
-}
-
-#[cfg(test)]
-mod tests_differentiation_count {
-    use super::*;
-    use serde_json::json;
-
-    fn report(n_differentiations: u64, survivors: usize) -> Value {
+    /// A payload shaped like `worker::index_reduction_from_observation`'s.
+    fn report(search: Value, after: Value) -> Value {
         json!({
-            "reduction": {
-                "funnel_completed": true,
-                "stopped_at": null,
-                "n_states_before": 9,
-                "n_states_after": 3,
-                "states_before": [], "states_after": [],
-                "demoted_states": [],
-                "steps": [],
-                "n_differentiations": n_differentiations,
-                "differentiated_rows": (0..survivors)
-                    .map(|i| json!({
-                        "equation_origin": format!("index_reduction:d_dt_for_x{i}"),
-                        "for_state": format!("x{i}"),
-                    }))
-                    .collect::<Vec<_>>(),
-                "eliminations": [],
-            }
+            "rounds": 1,
+            "outcome": { "kind": "sorted", "admitted": true, "meaning": "it sorted" },
+            "lanes": ["direct"],
+            "residue_definition": "both deficits summed",
+            "ordinals_note": "arena-local to the rebuilt system",
+            "before": { "n_states": 9, "n_algebraics": 88, "n_equations": 97 },
+            "after": after,
+            "search": search,
         })
     }
 
-    /// **The pane knows how many differentiations happened, not just how many rows
-    /// survived.**
-    ///
-    /// `Drivetrain` differentiates six times and retains none, and the pane reported
-    /// differentiation *only* when the survivor list was non-empty — so it was silent
-    /// exactly when it had the most to say. A lab read that silence as zero and taught
-    /// the opposite of the truth for its whole existence (`DECISIONS.md`, 2026-08-17).
+    fn round(number: u64, residue: u64) -> Value {
+        json!({
+            "kind": "round",
+            "lane": "direct",
+            "round": number,
+            "residue": residue,
+            "unmatched_equations": ["f_x[90] (SI.Angle phi)"],
+            "unmatched_unknowns": [{ "name": "emf.w", "kind": "derivative" }],
+        })
+    }
+
     #[test]
-    fn the_view_carries_differentiations_performed_separately_from_survivors() {
-        let view = ReductionView::from_report(&report(6, 0)).expect("the report parses");
+    fn a_payload_with_no_search_is_not_a_view() {
+        assert!(ReductionView::from_report(&json!({ "rounds": 0 })).is_none());
+        assert!(ReductionView::from_report(&json!({ "search": "not a list" })).is_none());
+    }
+
+    /// **The flat log is grouped back into rounds, and nothing is lost doing it.**
+    #[test]
+    fn the_records_after_a_round_belong_to_it() {
+        let v = report(
+            json!([
+                round(1, 8),
+                { "kind": "candidates", "lane": "direct", "group": "direct_admissible", "discovered": 12 },
+                { "kind": "attempt", "lane": "direct",
+                  "identity": { "form": "direct", "declared_at": { "file": "a.mo", "line": 15 } },
+                  "outcome": { "kind": "reduced", "residue": 6 } },
+                { "kind": "selected", "lane": "direct",
+                  "identity": { "form": "direct", "declared_at": null },
+                  "residue_before": 8, "residue_after": 6 },
+                { "kind": "stopped", "outcome": { "kind": "sorted" } },
+            ]),
+            json!({ "n_states": 5, "n_algebraics": 92, "n_equations": 97,
+                    "n_manifold_constraints": 2 }),
+        );
+        let view = ReductionView::from_report(&v).expect("a view");
+        assert!(view.problems().is_empty(), "{:?}", view.problems());
+        assert_eq!(view.n_rounds(), 1);
+        assert_eq!(view.n_discovered(), 12);
+
+        let r = &view.rounds[0];
+        assert_eq!(r.number, 1);
+        assert_eq!(r.residue, 8);
+        assert_eq!(r.groups.len(), 1);
+        assert_eq!(r.attempts.len(), 1);
+        assert_eq!(r.attempts[0].at.as_deref(), Some("a.mo:15"));
+        assert_eq!(r.attempts[0].residue, Some(6));
         assert_eq!(
-            view.n_differentiations, 6,
-            "the count of differentiations performed must survive into the view; it is \
-             the number whose absence caused the defect",
+            r.selection.as_ref().expect("a selection").residue_after,
+            Some(6)
         );
+        // The unknown carries Rumoca's own kind beside its name.
+        assert_eq!(r.unmatched_unknowns, vec!["emf.w (derivative)".to_owned()]);
+    }
+
+    /// **A record arriving before any round is reported, not attached to one.**
+    ///
+    /// The must-fire half of the grouping: silently hanging an orphan attempt on
+    /// whichever round came later would put it in a lane iteration it did not happen
+    /// in, and the picture would stay well-formed.
+    #[test]
+    fn a_record_before_any_round_is_announced() {
+        let v = report(
+            json!([
+                { "kind": "candidates", "lane": "direct", "group": "holonomic", "discovered": 1 },
+                round(1, 2),
+            ]),
+            Value::Null,
+        );
+        let view = ReductionView::from_report(&v).expect("a view");
+        assert_eq!(view.problems().len(), 1, "{:?}", view.problems());
         assert!(
-            view.differentiated_rows.is_empty(),
-            "and it must stay distinct from the survivor list, which is the whole point \
-             \u{2014} equal counts would collapse two different facts into one",
+            view.problems()[0].contains("before any round"),
+            "{:?}",
+            view.problems(),
         );
-    }
-
-    /// **An older report without the field reads as zero, not as garbage.**
-    ///
-    /// Traces committed before 2026-08-18 have no `n_differentiations`. A missing field
-    /// must degrade to "nothing to say" rather than to a panic, because
-    /// `from_report` returning `None` would blank the whole pane over one absent key.
-    #[test]
-    fn a_report_predating_the_field_still_parses() {
-        let mut old = report(0, 0);
-        old["reduction"]
-            .as_object_mut()
-            .expect("object")
-            .remove("n_differentiations");
-
-        let view = ReductionView::from_report(&old).expect("an older report must still parse");
-        assert_eq!(view.n_differentiations, 0);
-    }
-}
-
-#[cfg(test)]
-mod tests_step_shapes {
-    use super::*;
-    use serde_json::json;
-
-    /// **A step carries the system's shape either side of it, so the pane can say
-    /// whether it acted.**
-    ///
-    /// The funnel table showed a name and an outcome string, and `"ok"` reports that a
-    /// step *ran* while saying nothing about what it *did*. `CartesianPendulum` runs
-    /// all eleven steps to completion and moves nothing — which looked exactly like a
-    /// funnel doing quiet work.
-    #[test]
-    fn a_step_that_moved_nothing_is_distinguishable_from_one_that_did() {
-        let report = json!({
-            "reduction": {
-                "funnel_completed": true, "stopped_at": null,
-                "n_states_before": 4, "n_states_after": 3,
-                "states_before": [], "states_after": [], "demoted_states": [],
-                "n_differentiations": 1,
-                "differentiated_rows": [], "eliminations": [],
-                "steps": [
-                    { "step": "expand_compound_derivatives", "outcome": "ok",
-                      "states_before": 4, "states_after": 4,
-                      "equations_before": 48, "equations_after": 48 },
-                    { "step": "reduce_constrained_dummy_derivatives", "outcome": "1 demoted",
-                      "states_before": 4, "states_after": 3,
-                      "equations_before": 48, "equations_after": 48 },
-                ],
-            }
-        });
-
-        let view = ReductionView::from_report(&report).expect("parses");
-        let inert = &view.steps[0];
-        let acted = &view.steps[1];
-
         assert_eq!(
-            (inert.states_before, inert.states_after),
-            (4, 4),
-            "an inert step's shapes must survive parsing; without them the pane is back \
-             to guessing from the outcome text",
-        );
-        assert_eq!((acted.states_before, acted.states_after), (4, 3));
-        assert!(
-            inert.states_before == inert.states_after
-                && inert.equations_before == inert.equations_after,
-            "the inert step must be recognisable as inert from its shapes alone \u{2014} \
-             its outcome string says \"ok\", which is exactly the case the old \
-             literal-string test could not colour correctly",
+            view.n_discovered(),
+            0,
+            "the orphan is not counted into a round"
         );
     }
 
-    /// **An older trace without the shape fields still parses.**
+    /// An unknown record kind is reported rather than skipped.
     ///
-    /// Every committed trace predating 2026-08-18 has bare `{step, outcome}` rows. A
-    /// missing number must read as zero rather than blanking the pane over one absent
-    /// key — the same rule the differentiation count follows.
+    /// Upstream adding a sixth `ReductionRecord` variant is the live case: the pane
+    /// cannot render it, and saying so is what stops a shorter search reading as the
+    /// whole one.
     #[test]
-    fn a_step_row_predating_the_shape_fields_still_parses() {
-        let report = json!({
-            "reduction": {
-                "funnel_completed": true, "stopped_at": null,
-                "n_states_before": 2, "n_states_after": 2,
-                "states_before": [], "states_after": [], "demoted_states": [],
-                "differentiated_rows": [], "eliminations": [],
-                "steps": [{ "step": "eliminate_trivial", "outcome": "0 eliminated" }],
-            }
-        });
+    fn an_unknown_record_kind_is_announced() {
+        let v = report(json!([round(1, 2), { "kind": "teleported" }]), Value::Null);
+        let view = ReductionView::from_report(&v).expect("a view");
+        assert_eq!(view.problems().len(), 1, "{:?}", view.problems());
+        assert!(view.problems()[0].contains("teleported"));
+    }
 
-        let view = ReductionView::from_report(&report).expect("an older trace must parse");
-        assert_eq!(view.steps.len(), 1, "the row survives");
-        assert_eq!(view.steps[0].states_before, 0);
+    /// A record with no `kind` at all is counted by `parse_list`.
+    #[test]
+    fn a_record_with_no_kind_is_counted_rather_than_dropped() {
+        let v = report(json!([round(1, 2), { "lane": "direct" }]), Value::Null);
+        let view = ReductionView::from_report(&v).expect("a view");
+        assert!(!view.problems().is_empty(), "the loss must be stated");
+    }
+
+    /// **`CapacitorLoop`'s shape: every count unchanged, and the system changed.**
+    #[test]
+    fn an_unchanged_size_with_a_manifold_constraint_is_a_change() {
+        let mut v = report(json!([round(1, 2)]), Value::Null);
+        v["before"] = json!({ "n_states": 1, "n_algebraics": 13, "n_equations": 14 });
+        v["after"] = json!({ "n_states": 1, "n_algebraics": 13, "n_equations": 14,
+                             "n_manifold_constraints": 1 });
+        let view = ReductionView::from_report(&v).expect("a view");
+        assert!(
+            view.changed_without_resizing(),
+            "identical counts plus a manifold constraint is the case the pane must not \
+             render as 'nothing happened'",
+        );
+    }
+
+    /// And the same counts with **no** manifold constraint is not that case.
+    ///
+    /// The must-fire half: without it, `changed_without_resizing` could return `true`
+    /// whenever the sizes match and the sentence would appear on a system reduction
+    /// genuinely left alone.
+    #[test]
+    fn an_unchanged_size_with_no_manifold_constraint_is_not_a_change() {
+        let mut v = report(json!([round(1, 2)]), Value::Null);
+        v["before"] = json!({ "n_states": 2, "n_algebraics": 0, "n_equations": 2 });
+        v["after"] = json!({ "n_states": 2, "n_algebraics": 0, "n_equations": 2,
+                             "n_manifold_constraints": 0 });
+        let view = ReductionView::from_report(&v).expect("a view");
+        assert!(!view.changed_without_resizing());
+    }
+
+    /// A system that was not admitted has no `after` side, and does not borrow the
+    /// `before` one.
+    #[test]
+    fn a_refused_system_shows_no_reduced_side() {
+        let v = report(json!([round(1, 2)]), Value::Null);
+        let view = ReductionView::from_report(&v).expect("a view");
+        assert!(view.after.is_none());
+        assert!(view.before.is_some(), "the raw system is still sized");
+        assert!(!view.changed_without_resizing());
+    }
+
+    /// The `before` side carries no manifold column, because the raw system has none.
+    ///
+    /// `Some(0)` would be a measurement of something that does not apply; the pane
+    /// shows an em dash for it.
+    #[test]
+    fn the_raw_system_has_no_manifold_count() {
+        let v = report(json!([round(1, 2)]), Value::Null);
+        let view = ReductionView::from_report(&v).expect("a view");
+        assert_eq!(view.before.expect("sized").manifold, None);
+    }
+
+    /// **The panel reads a real compile, with nothing it could not place.**
+    ///
+    /// Every test above builds its own payload, so every one of them would still pass
+    /// if `worker::index_reduction_from_observation` published a different shape
+    /// tomorrow — they agree with each other and with nothing else. This is the only
+    /// check here that compares the reader against the writer.
+    ///
+    /// **`problems` empty is the assertion**, not merely that a view was produced: the
+    /// parser is built to carry on past what it cannot read, so a silent shape change
+    /// gives a view that renders and omits things. Three specimens, because they cover
+    /// different arms — both lanes and a `held` attempt, a refusal with no `after`, and
+    /// a run of exactly one record.
+    #[test]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
+    fn the_panel_reads_a_real_compile() {
+        let mut checked = 0usize;
+        let mut rounds_seen = 0usize;
+        for name in ["Drivetrain", "CartesianPendulum", "SingleInertia"] {
+            let crate::worker::FromWorker::Compiled { stages, .. } =
+                crate::worker::test_msl::compile_specimen_shared(name)
+            else {
+                panic!("expected Compiled for {name}");
+            };
+            let report = stages
+                .index_reduction
+                .value
+                .as_ref()
+                .unwrap_or_else(|| panic!("{name} reaches index reduction"));
+            let view = ReductionView::from_report(report)
+                .unwrap_or_else(|| panic!("{name}: the panel must read a real payload"));
+            assert!(
+                view.problems().is_empty(),
+                "{name}: the panel could not place part of the real payload: {:?}",
+                view.problems(),
+            );
+            // The payload's own two notes must arrive, or the pane shows a residue with
+            // no definition and ordinals with no warning.
+            assert!(
+                view.residue_definition.is_some(),
+                "{name}: residue definition"
+            );
+            assert!(view.ordinals_note.is_some(), "{name}: ordinals note");
+            assert_eq!(
+                view.n_rounds(),
+                report["rounds"].as_u64().unwrap_or(0) as usize,
+                "{name}: the grouping must find every round the payload counted",
+            );
+            rounds_seen += view.n_rounds();
+            checked += 1;
+        }
+        assert_eq!(checked, 3);
+        // Non-vacuity: all three specimens reporting zero rounds would satisfy the
+        // round-count equality above while proving nothing about the grouping.
+        assert!(
+            rounds_seen > 0,
+            "no specimen produced a round, so the grouping was never exercised",
+        );
+    }
+
+    /// A `declared_at` that refused to resolve stays `None`.
+    #[test]
+    fn an_unresolved_location_is_absent_rather_than_empty() {
+        assert_eq!(location_of(&Value::Null), None);
+        assert_eq!(location_of(&json!({ "line": 3 })), None);
+        assert_eq!(
+            location_of(&json!({ "file": "b.mo" })).as_deref(),
+            Some("b.mo"),
+            "a file with no line still locates something",
+        );
     }
 }
