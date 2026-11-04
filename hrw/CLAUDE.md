@@ -601,8 +601,12 @@ the next phase touches — is procedure and lives there.
 >
 > #### Owed, and only Doug can close them
 >
-> - **Press Debug on the Index Reduction tab.** Live reduction stepping is wired to the new seam
->   and **no test can verify it** — the thread waits for a debugger and runs a real reduction.
+> - ~~**Press Debug on the Index Reduction tab.**~~ **DONE 2026-11-04, and it found two defects.**
+>   The seam worked first time — the bridge showed the breakpoint stopped inside
+>   `watch_prepare_for_solve` — while the *pane* never drained its channel and bailed out on the
+>   empty state a live session starts in. Both were rules living as comments in `connection_anim`,
+>   which is how a correct rule goes unread: only someone already in that file sees it. One is a
+>   contract now. **This is the standing limit paying for itself, not an exception to it.**
 > - **Run `docs/fixture-labs/index-reduction.md`.** Stations 2-6 were re-authored against the
 >   0.10.0 search on 2026-11-04 and have had no reader. Station 4 is the one to watch: it argues
 >   that a `held` pass is progress from two equation names a pass apart, which may read as
