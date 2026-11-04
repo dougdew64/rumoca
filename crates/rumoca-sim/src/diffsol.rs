@@ -8,6 +8,8 @@ scheduled_executor_items! {
 }
 use rumoca_ir_dae as dae;
 
+use rumoca_solver::fmi_me::step_observation::{MeStepRecord, MeStepRecorder};
+
 use crate::BuildSimulationTimings;
 use rumoca_solver::fmi_me::numerical_observation::{ConstructionPurpose, SettingsCollector};
 scheduled_executor_items! {
@@ -280,6 +282,37 @@ pub(crate) fn simulate_artifact_with_observation(
     simulate_prepared_with_observation(&prepared, observation)
 }
 
+/// [`simulate_prepared`] with an observer lent to the session for the run.
+///
+/// The observer is installed **after** the session exists and before it is
+/// driven, so nothing about construction changes. The borrow ends when the
+/// session is consumed by `finish`, which is what lets the caller read its
+/// recorder afterwards.
+fn simulate_prepared_observed(
+    prepared: &PreparedSimulation,
+    observer: &mut (impl rumoca_solver::fmi_me::step_observation::MeStepObserver + 'static),
+) -> Result<rumoca_solver::SimResult, SimError> {
+    let options = batch_options(&prepared.root_location, &prepared.opts)?;
+    let mut cursor = rumoca_solver::fmi_me::driver::batch_output_cursor(&options)?;
+    let mut retained =
+        prepared
+            .retained
+            .try_borrow_mut()
+            .map_err(|_| SimError::RuntimeContract {
+                reason: "a prepared FMI component already has an active simulation lease"
+                    .to_owned(),
+            })?;
+    let host = retained.lease(options)?;
+    if host.is_terminated() {
+        return Ok(host.finish());
+    }
+    let plugin = plugin_for_host(&host, &prepared.opts, BDF_INTEGRATOR)?;
+    let mut session = host.into_session(plugin)?;
+    session.observe_steps(Box::new(observer));
+    session.run_to_stop(&mut cursor)?;
+    Ok(session.finish())
+}
+
 fn simulate_prepared(prepared: &PreparedSimulation) -> Result<rumoca_solver::SimResult, SimError> {
     simulate_prepared_with_observation(prepared, None)
 }
@@ -322,6 +355,33 @@ pub(crate) fn simulate_with_diagnostics(
     build_simulation_with_observation(dae_model, opts, |_| {}, |_| {}, observation)
         .and_then(|(prepared, _)| simulate_prepared_with_observation(&prepared, observation))
         .map_err(SimulationDiagnosticError::from)
+}
+
+/// Simulate, and report every accepted step the integrator took.
+///
+/// The same run as [`simulate_with_diagnostics`], observed. The trajectory is
+/// unaffected: the observer is handed facts the session already holds and can
+/// return nothing, so this is the same numerical path with a recorder borrowed
+/// into it.
+///
+/// **Why the step records are not simply added to `SimResult`.** They describe
+/// the *solve*, not the model, and every caller that wants a trajectory would
+/// pay to carry them. Returning a pair keeps the cost where the interest is —
+/// the same shape `rumoca_phase_structural::inspect_sort` uses for the same
+/// reason.
+///
+/// Accepted steps only; see [`rumoca_solver::fmi_me::step_observation`] for why
+/// rejected candidates are not reported and should not be inferred from this.
+pub(crate) fn simulate_with_step_records(
+    dae_model: &dae::Dae,
+    opts: &rumoca_solver::SimOptions,
+) -> Result<(rumoca_solver::SimResult, Vec<MeStepRecord>), SimulationDiagnosticError> {
+    let prepared = build_simulation(dae_model, opts)
+        .map_err(|err| SimulationDiagnosticError::Solver(err.to_string()))?;
+    let mut recorder = MeStepRecorder::new();
+    let result = simulate_prepared_observed(&prepared, &mut recorder)
+        .map_err(|err| SimulationDiagnosticError::Solver(err.to_string()))?;
+    Ok((result, recorder.into_records()))
 }
 
 pub(crate) struct SimulationSession {

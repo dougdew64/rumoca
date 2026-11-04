@@ -120,6 +120,7 @@ impl MeSimulationSession<'_, '_> {
             owned_component: _,
             deferred: _,
             snapped_yield: _,
+            step_observer: _,
             lease: _,
         } = self;
         drop(backend);

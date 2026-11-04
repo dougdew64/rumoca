@@ -417,6 +417,7 @@ mod when_right_limit_events;
 mod when_seeded_condition;
 mod when_written_reads;
 
+mod step_observation;
 mod strict_compile_recovery;
 mod structural_binding_functions;
 mod structural_branch_selections;

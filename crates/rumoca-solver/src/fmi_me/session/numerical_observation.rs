@@ -42,6 +42,7 @@ impl MeComponentHost<'_> {
             scan_workspace: RefCell::new(RootScanWorkspace::default()),
             deferred: None,
             snapped_yield: None,
+            step_observer: None,
             lease: PhantomData,
         };
         session.start_plugin()?;
