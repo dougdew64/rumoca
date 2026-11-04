@@ -94,6 +94,7 @@ pub mod reduction_anim;
 pub mod reduction_view;
 pub mod report;
 pub mod report_sub_view;
+pub mod screenshot;
 pub mod source_map;
 pub mod source_view;
 pub mod specimen_purpose;

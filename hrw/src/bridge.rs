@@ -384,6 +384,334 @@ pub fn read_lab() -> Option<(String, std::time::SystemTime)> {
     Some((text, mtime))
 }
 
+/// Claude asks HRW to photograph itself here; [`SCREENSHOT_RESULT_FILE`] is the reply.
+///
+/// # Why a fourth channel, and what it is actually for
+///
+/// Everything HRW publishes about itself is *derived*: `focus.json` says which node
+/// is captured, `session.json` says which links were followed, the stage files say
+/// what the IR holds. **None of them can say what the window looked like**, and a
+/// large part of HRW is painter-drawn — the incidence matrix, the spy plot, the
+/// Tarjan graph, the four animations — which `Cargo.toml` already records as
+/// *invisible to an accessibility-tree harness*. For those views Doug's eyes have
+/// been the only instrument, and `docs/tech-debt.md` logs what that costs: nine of
+/// his ten findings in the 08-16 ledger were *things visibly wrong on screen*.
+///
+/// This channel does not replace his judgement. It removes the **mechanical** half —
+/// is the tab there, did the link land, is the pane empty — from the set of things
+/// only he can check, which is the same argument that bought `egui_kittest`.
+///
+/// **This is not image-snapshot testing**, which `Cargo.toml` rules out and this does
+/// not re-open: nothing is committed, no reference image exists, and no test asserts
+/// on a pixel. The photograph is read *by Claude, once*, in the conversation that
+/// asked for it.
+///
+/// # The request
+///
+/// ```json
+/// {
+///   "seq": 3,
+///   "why": "does the Index Reduction tab row offer Matching?",
+///   "follow": ["hrw://load/Drivetrain/IndexReduction/Summary"],
+///   "settleMs": 600
+/// }
+/// ```
+///
+/// `seq` is required and must increase. HRW seeds its "already answered" mark from
+/// the **result** file at startup, so a request left on disk is not re-honoured on
+/// the next launch — which would otherwise navigate Doug's window somewhere no one
+/// asked for while he was using it.
+///
+/// `follow` is a list of `hrw://` links, dispatched **through the same
+/// `dispatch_hrw_link` a click goes through** — one per settle interval, exactly as
+/// autoplay dispatches a beat. Reusing that path rather than reaching into the app's
+/// fields is the point: a capture-and-inspect run that navigated by its own private
+/// route would photograph a state no user gesture can produce, and then testify
+/// about it.
+pub const SCREENSHOT_REQUEST_FILE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/.hrw-bridge/screenshot-request.json"
+);
+
+/// HRW's reply to a [`SCREENSHOT_REQUEST_FILE`]: where the PNG landed, how big it
+/// is, what was on screen, and **what went wrong** when nothing landed.
+///
+/// # Every request gets one of these, including the ones that fail
+///
+/// A capture has four ways to produce no image — a malformed request, a link that
+/// does not parse, a backend that never delivers the pixels, a failed write — and in
+/// all four the *window still looks fine*. So silence here is the worst possible
+/// outcome: Claude would find a stale PNG from the previous request, read it as this
+/// one's answer, and testify about a screen that was never photographed. That is the
+/// wrong-negative shape this repository treats as the error nobody catches.
+///
+/// Hence: `seq` and `writtenAtMs` on every reply so a stale one is *detectable* (the
+/// rule `debug-state.json` already follows), `error` set whenever `image` is absent,
+/// and `notice` carrying HRW's own on-screen message — because a refused link
+/// ("no specimen loaded") leaves a perfectly healthy-looking window.
+pub const SCREENSHOT_RESULT_FILE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/.hrw-bridge/screenshot-result.json"
+);
+
+/// Where the PNGs land, one per honoured request, named by `seq`.
+///
+/// Gitignored with the rest of `.hrw-bridge/`, which is what makes "nothing is
+/// committed" structural rather than a promise.
+pub const SCREENSHOTS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/screenshots");
+
+/// How long HRW lets the UI settle before shooting, when the request does not say.
+///
+/// Long enough for a dispatched link's effects to reach the screen — a stage switch
+/// re-lays out, a sub-view reset runs on the following frame — and short enough that
+/// a run of a dozen shots is not a coffee break. The compile is *not* what this
+/// covers: a capture also waits for `compiling` to clear, which is seconds, not
+/// milliseconds.
+pub const SCREENSHOT_SETTLE_DEFAULT: std::time::Duration = std::time::Duration::from_millis(600);
+
+/// A request to photograph the window, as [`SCREENSHOT_REQUEST_FILE`] carries it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ScreenshotRequest {
+    /// Monotonic counter. Echoed in the result so a reply can be matched to its
+    /// request, and compared against the last honoured one so a request is acted
+    /// on exactly once.
+    pub seq: u64,
+    /// Free text: what this shot is meant to show. Echoed, never interpreted —
+    /// it is there so a result file read later still says what the question was.
+    pub why: Option<String>,
+    /// `hrw://` links to dispatch before shooting, in order.
+    pub follow: Vec<String>,
+    /// How long to let the UI settle after each dispatch, and before the shot.
+    pub settle: std::time::Duration,
+}
+
+/// Read the screenshot request, with the mtime it was read at.
+///
+/// `None` means **no request file**, which is the overwhelmingly common case and not
+/// an error — HRW runs for hours without one.
+///
+/// `Some(Err(why))` means a file that is not a request: unreadable, not JSON, or
+/// missing `seq`. It is returned rather than dropped so the caller can answer it with
+/// an `error` result. A malformed request that HRW ignored in silence would be
+/// indistinguishable from one it never saw, and the author of the request is a
+/// process that will go looking for a PNG.
+pub fn read_screenshot_request()
+-> Option<(Result<ScreenshotRequest, String>, std::time::SystemTime)> {
+    let meta = fs::metadata(SCREENSHOT_REQUEST_FILE).ok()?;
+    let mtime = meta.modified().ok()?;
+    Some((parse_screenshot_request_at(SCREENSHOT_REQUEST_FILE), mtime))
+}
+
+/// The parsing half of [`read_screenshot_request`], against any path, so a test can
+/// drive it without writing into the live bridge directory.
+fn parse_screenshot_request_at(path: &str) -> Result<ScreenshotRequest, String> {
+    let text = fs::read_to_string(path).map_err(|e| format!("cannot read request: {e}"))?;
+    parse_screenshot_request(&text)
+}
+
+/// Parse a screenshot request from the text of the request file.
+///
+/// **`seq` is required.** Defaulting it to zero or to "one more than last time" would
+/// make the once-only rule depend on HRW's memory rather than on the request, and the
+/// first thing that costs is a request re-honoured after a restart.
+pub fn parse_screenshot_request(text: &str) -> Result<ScreenshotRequest, String> {
+    let value: Value =
+        serde_json::from_str(text).map_err(|e| format!("request is not valid JSON: {e}"))?;
+    let seq = value
+        .get("seq")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| "request has no numeric `seq`".to_string())?;
+    let follow = match value.get("follow") {
+        None | Some(Value::Null) => Vec::new(),
+        // A single link is the common case, so accept the bare string as well as the
+        // list — a request that failed because it said `"follow": "hrw://..."` would
+        // be a protocol detail costing a round trip to discover.
+        Some(Value::String(one)) => vec![one.clone()],
+        Some(Value::Array(many)) => {
+            let mut links = Vec::with_capacity(many.len());
+            for item in many {
+                let Some(link) = item.as_str() else {
+                    return Err(format!("`follow` holds a non-string entry: {item}"));
+                };
+                links.push(link.to_string());
+            }
+            links
+        }
+        Some(other) => return Err(format!("`follow` must be a string or a list: {other}")),
+    };
+    let settle = value
+        .get("settleMs")
+        .and_then(Value::as_u64)
+        .map_or(SCREENSHOT_SETTLE_DEFAULT, std::time::Duration::from_millis);
+    Ok(ScreenshotRequest {
+        seq,
+        why: value.get("why").and_then(Value::as_str).map(str::to_string),
+        follow,
+        settle,
+    })
+}
+
+/// The `seq` the result file already carries, if any.
+///
+/// Read at startup to seed the "already answered" mark, so a request still sitting on
+/// disk from a previous session does not move Doug's window the moment HRW opens.
+#[must_use]
+pub fn last_answered_screenshot() -> Option<u64> {
+    let text = fs::read_to_string(SCREENSHOT_RESULT_FILE).ok()?;
+    serde_json::from_str::<Value>(&text)
+        .ok()?
+        .get("seq")?
+        .as_u64()
+}
+
+/// The PNG a given request's shot is written to.
+#[must_use]
+pub fn screenshot_path(seq: u64) -> PathBuf {
+    // Zero-padded so a directory listing sorts in request order rather than
+    // lexicographically — `10.png` before `2.png` is a small thing that makes a
+    // sequence of shots read wrongly.
+    Path::new(SCREENSHOTS_DIR).join(format!("shot-{seq:04}.png"))
+}
+
+/// The image half of a [`ShotResult`]: where it landed and how big it is.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ShotImage {
+    /// Absolute path to the PNG, as written.
+    pub path: PathBuf,
+    /// Pixel dimensions, **as captured** rather than as requested — a window the
+    /// user resized, or a HiDPI scale factor, makes these differ from anything HRW
+    /// could predict, and the measurement is the useful one.
+    pub width: usize,
+    pub height: usize,
+}
+
+/// Everything HRW says back about one honoured (or failed) screenshot request.
+pub struct ShotResult<'a> {
+    /// The request this answers. `None` only for a request so malformed that no
+    /// `seq` could be read from it.
+    pub seq: Option<u64>,
+    /// Echoed from the request.
+    pub why: Option<&'a str>,
+    /// The links HRW actually dispatched, in order — which can be shorter than the
+    /// request's list when one of them failed to parse.
+    pub followed: &'a [String],
+    /// The PNG, when there is one. Absent exactly when `error` is set.
+    pub image: Option<ShotImage>,
+    /// What HRW was showing, from the same builder the capture uses.
+    pub showing: Option<&'a View<'a>>,
+    /// The loaded specimen's name, when one is loaded.
+    pub specimen: Option<&'a str>,
+    /// The current stage tab, by `StageKind::name`.
+    pub stage: &'a str,
+    /// HRW's on-screen notice at the moment of the shot, if any.
+    ///
+    /// **Load-bearing, not decoration.** A link HRW refuses — "no specimen loaded",
+    /// "no fixture lab named X", a frame seek out of range — leaves a window that
+    /// looks entirely healthy, and the photograph of it would support a confident
+    /// wrong conclusion. The notice is the only place that refusal is recorded.
+    pub notice: Option<&'a str>,
+    /// Why there is no image. `None` on success.
+    pub error: Option<&'a str>,
+}
+
+/// Write the reply to [`SCREENSHOT_RESULT_FILE`].
+///
+/// Pretty-printed, like `focus.json`: Doug reads these when a capture-and-inspect run
+/// is the thing under suspicion.
+pub fn write_screenshot_result(result: &ShotResult<'_>) -> std::io::Result<PathBuf> {
+    fs::create_dir_all(BRIDGE_DIR)?;
+    let path = Path::new(SCREENSHOT_RESULT_FILE).to_path_buf();
+    fs::write(
+        &path,
+        serde_json::to_string_pretty(&screenshot_result_json(result)).unwrap_or_default(),
+    )?;
+    Ok(path)
+}
+
+/// Build the result document. Split from the write so a test can assert on the
+/// shape without touching the filesystem.
+fn screenshot_result_json(result: &ShotResult<'_>) -> Value {
+    json!({
+        "instructions": "HRW's reply to .hrw-bridge/screenshot-request.json. `seq` \
+                         identifies the request; `writtenAtMs` is when this reply was \
+                         written, so a reply left over from an earlier request is \
+                         detectable rather than mistaken for this one's. When `image` \
+                         is null, `error` says why and NO photograph was taken — the \
+                         previous PNG on disk is not this request's answer. `notice` \
+                         carries HRW's own on-screen message, which is where a refused \
+                         `follow` link is recorded; the window itself looks healthy \
+                         when a link is refused.",
+        "seq": result.seq,
+        "writtenAtMs": now_ms(),
+        "why": result.why,
+        "followed": result.followed,
+        "image": result.image.as_ref().map(|i| json!({
+            "path": i.path.display().to_string(),
+            "width": i.width,
+            "height": i.height,
+        })),
+        "specimen": result.specimen,
+        "stage": result.stage,
+        "showing": result.showing.map(View::to_json),
+        "notice": result.notice,
+        "error": result.error,
+    })
+}
+
+/// Milliseconds since the Unix epoch, for the result's staleness stamp.
+fn now_ms() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
+}
+
+/// Write `rgba` as a PNG at `path`, creating [`SCREENSHOTS_DIR`] if needed.
+///
+/// `rgba` is **straight** (not premultiplied) 8-bit RGBA, row by row from the top —
+/// the conversion from egui's premultiplied `Color32` happens in `screenshot.rs`,
+/// which owns the egui types. This function deliberately knows nothing about egui, so
+/// the bridge module stays the file protocol and nothing else.
+///
+/// # Errors
+///
+/// Returns the io error from creating the directory or writing the file, and an
+/// `InvalidData` error when `rgba` is not exactly `width * height * 4` bytes — a
+/// mismatch there would otherwise produce a PNG that decodes to garbage or a panic
+/// inside the encoder.
+pub fn write_png(path: &Path, width: usize, height: usize, rgba: &[u8]) -> std::io::Result<()> {
+    let expected = width
+        .checked_mul(height)
+        .and_then(|px| px.checked_mul(4))
+        .ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("screenshot dimensions overflow: {width}x{height}"),
+            )
+        })?;
+    if rgba.len() != expected {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!(
+                "screenshot is {} bytes, but {width}x{height} RGBA needs {expected}",
+                rgba.len()
+            ),
+        ));
+    }
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let file = fs::File::create(path)?;
+    let mut encoder = png::Encoder::new(
+        std::io::BufWriter::new(file),
+        u32::try_from(width).unwrap_or(u32::MAX),
+        u32::try_from(height).unwrap_or(u32::MAX),
+    );
+    encoder.set_color(png::ColorType::Rgba);
+    encoder.set_depth(png::BitDepth::Eight);
+    let mut writer = encoder.write_header().map_err(std::io::Error::other)?;
+    writer.write_image_data(rgba).map_err(std::io::Error::other)
+}
+
 /// Absolute path to `live_trace_breakpoint`, resolved at compile time so the
 /// VS Code extension can set breakpoints without path resolution.
 ///
@@ -4382,5 +4710,253 @@ mod view_file_tests {
         assert!(!path.exists(), "body without kind is absence");
 
         let _ = fs::remove_file(&path);
+    }
+}
+
+/// The screenshot channel's file protocol: what a request may say, what a reply
+/// must say, and that the PNG is a PNG.
+///
+/// The *timing* half — settle, deadlines, once-only — lives in
+/// `crate::screenshot`, which owns the clock. This module owns the bytes.
+#[cfg(test)]
+mod screenshot_protocol_tests {
+    use super::*;
+
+    fn temp_png_path(name: &str) -> PathBuf {
+        // A temp path rather than `screenshot_path`, which names the live bridge
+        // directory and would overwrite a photograph the running app just took.
+        std::env::temp_dir().join(format!("hrw-shot-test-{name}.png"))
+    }
+
+    fn a_view() -> View<'static> {
+        View {
+            ui_mode: "Lab",
+            stage_view: Some("Summary"),
+            specimen_detail: None,
+            viewing_log: false,
+            animation: None,
+        }
+    }
+
+    /// **`seq` is the whole once-only rule**, so a request without one must be
+    /// refused rather than defaulted. A defaulted `seq` would be re-honoured on
+    /// every restart, navigating Doug's window while he was using it.
+    #[test]
+    fn a_request_without_a_numeric_seq_is_refused() {
+        for text in [
+            "{}",
+            r#"{"why": "no seq here"}"#,
+            r#"{"seq": "3"}"#,
+            r#"{"seq": null}"#,
+            "not json at all",
+        ] {
+            let err = parse_screenshot_request(text)
+                .expect_err(&format!("{text} should not parse as a request"));
+            assert!(
+                err.contains("seq") || err.contains("JSON"),
+                "the reason must name what is wrong, since it is written back as the \
+                 reply: {err}"
+            );
+        }
+    }
+
+    /// A single link may be written bare. The list is the general form, but the
+    /// one-link case is the common one and a protocol detail costing a round trip to
+    /// discover is a protocol detail too many.
+    #[test]
+    fn follow_accepts_one_link_or_a_list() {
+        let bare = parse_screenshot_request(r#"{"seq": 1, "follow": "hrw://simulate"}"#)
+            .expect("a bare string is a one-link list");
+        assert_eq!(bare.follow, vec!["hrw://simulate".to_string()]);
+
+        let listed = parse_screenshot_request(
+            r#"{"seq": 2, "follow": ["hrw://load/RcCircuit", "hrw://simulate"]}"#,
+        )
+        .expect("a list is the general form");
+        assert_eq!(listed.follow.len(), 2);
+
+        let absent = parse_screenshot_request(r#"{"seq": 3}"#)
+            .expect("no `follow` means photograph what is already on screen");
+        assert!(absent.follow.is_empty());
+
+        // A non-string entry is refused rather than skipped: skipping would
+        // photograph a state the request did not describe.
+        let err = parse_screenshot_request(r#"{"seq": 4, "follow": [7]}"#)
+            .expect_err("a numeric link is not a link");
+        assert!(err.contains("non-string"), "{err}");
+    }
+
+    /// The settle interval is the request's to set, and the default is used when it
+    /// does not — stated here because the default is what nearly every request gets.
+    #[test]
+    fn settle_comes_from_the_request_or_the_default() {
+        let stated = parse_screenshot_request(r#"{"seq": 1, "settleMs": 1500}"#).unwrap();
+        assert_eq!(stated.settle, std::time::Duration::from_millis(1500));
+        let unstated = parse_screenshot_request(r#"{"seq": 1}"#).unwrap();
+        assert_eq!(unstated.settle, SCREENSHOT_SETTLE_DEFAULT);
+    }
+
+    /// **The photograph must be a readable PNG**, which is the entire point of the
+    /// dependency: Claude's own file reader accepts PNG and not the uncompressed
+    /// formats that would have needed no crate at all.
+    ///
+    /// Decoded with `png`'s own reader rather than compared byte-for-byte against a
+    /// stored file: a byte comparison would pin the encoder's compression choices,
+    /// which is the brittleness that ruled out image snapshots in the first place.
+    #[test]
+    fn write_png_round_trips_through_a_decoder() {
+        let path = temp_png_path("round-trip");
+        let _ = fs::remove_file(&path);
+        // Two rows of two, deliberately asymmetric so a transposed or mirrored write
+        // cannot pass: row-major from the TOP is the contract.
+        let pixels: Vec<u8> = vec![
+            255, 0, 0, 255, // top-left: red
+            0, 255, 0, 255, // top-right: green
+            0, 0, 255, 255, // bottom-left: blue
+            10, 20, 30, 128, // bottom-right: translucent dark
+        ];
+        write_png(&path, 2, 2, &pixels).expect("the PNG should write");
+
+        let decoder = png::Decoder::new(std::io::BufReader::new(
+            fs::File::open(&path).expect("the file exists"),
+        ));
+        let mut reader = decoder.read_info().expect("a valid PNG header");
+        let info = reader.info();
+        assert_eq!((info.width, info.height), (2, 2));
+        assert_eq!(info.color_type, png::ColorType::Rgba);
+        assert_eq!(info.bit_depth, png::BitDepth::Eight);
+        let mut out = vec![0; reader.output_buffer_size().unwrap()];
+        let frame = reader.next_frame(&mut out).expect("one frame");
+        assert_eq!(
+            &out[..frame.buffer_size()],
+            &pixels[..],
+            "the decoded pixels must be the ones written, in the order written"
+        );
+
+        let _ = fs::remove_file(&path);
+    }
+
+    /// A byte count that does not match the dimensions is refused **before** the
+    /// encoder sees it.
+    ///
+    /// Not defensive clutter: `width`, `height` and the buffer arrive from three
+    /// different places in `collect_screenshot` (the event's `ColorImage::size` and
+    /// a conversion over its pixels), and a PNG written from a mismatched trio
+    /// decodes to garbage or panics inside the encoder — either of which would be
+    /// discovered by a reader looking at a corrupted photograph and wondering what
+    /// the app had done.
+    #[test]
+    fn write_png_refuses_a_buffer_that_does_not_match_its_dimensions() {
+        let path = temp_png_path("mismatch");
+        let _ = fs::remove_file(&path);
+        let err = write_png(&path, 2, 2, &[0; 12]).expect_err("12 bytes is not 2x2 RGBA");
+        assert_eq!(err.kind(), std::io::ErrorKind::InvalidData);
+        assert!(
+            err.to_string().contains("needs 16"),
+            "the error should say what was expected: {err}"
+        );
+        assert!(
+            !path.exists(),
+            "and must not leave a truncated file behind to be read as the photograph"
+        );
+    }
+
+    /// **A reply with no image says so, in the field a reader checks.**
+    ///
+    /// The failure mode this closes: the previous request's PNG is still on disk, so
+    /// a reply that merely omitted `image` would let Claude find that file, read it
+    /// as this request's answer, and describe a screen that was never photographed.
+    #[test]
+    fn a_failed_reply_names_the_error_and_carries_no_image() {
+        let showing = a_view();
+        let followed = vec!["hrw://load/Drivetrain".to_string()];
+        let doc = screenshot_result_json(&ShotResult {
+            seq: Some(9),
+            why: Some("does the tab row offer Matching?"),
+            followed: &followed,
+            image: None,
+            showing: Some(&showing),
+            specimen: Some("Drivetrain"),
+            stage: "IndexReduction",
+            notice: Some("no specimen loaded \u{2014} this link needs one."),
+            error: Some("the backend never delivered the pixels"),
+        });
+        assert_eq!(doc["seq"], 9);
+        assert!(
+            doc["image"].is_null(),
+            "no image means null, not a stale path"
+        );
+        assert_eq!(doc["error"], "the backend never delivered the pixels");
+        assert!(
+            doc["writtenAtMs"].as_u64().is_some_and(|ms| ms > 0),
+            "every reply is stamped, so one left over from an earlier request is \
+             detectable rather than mistaken for this one's"
+        );
+        assert_eq!(doc["why"], "does the tab row offer Matching?");
+        assert_eq!(doc["followed"][0], "hrw://load/Drivetrain");
+        assert_eq!(doc["specimen"], "Drivetrain");
+        assert_eq!(doc["stage"], "IndexReduction");
+        assert_eq!(doc["showing"]["stage_view"], "Summary");
+        assert!(
+            doc["notice"]
+                .as_str()
+                .is_some_and(|n| n.contains("no specimen loaded")),
+            "the notice is where a REFUSED link is recorded; the window itself looks \
+             healthy when HRW refuses one, so a photograph cannot show it"
+        );
+    }
+
+    /// And a successful reply carries the measurement, not the request's guess.
+    #[test]
+    fn a_successful_reply_carries_the_captured_size() {
+        let showing = a_view();
+        let doc = screenshot_result_json(&ShotResult {
+            seq: Some(10),
+            why: None,
+            followed: &[],
+            image: Some(ShotImage {
+                path: PathBuf::from("/tmp/shot-0010.png"),
+                width: 2560,
+                height: 1395,
+            }),
+            showing: Some(&showing),
+            specimen: None,
+            stage: "Resolve",
+            notice: None,
+            error: None,
+        });
+        assert!(doc["error"].is_null());
+        assert_eq!(doc["image"]["width"], 2560);
+        assert_eq!(doc["image"]["height"], 1395);
+        assert!(
+            doc["image"]["path"]
+                .as_str()
+                .is_some_and(|p| p.ends_with("shot-0010.png"))
+        );
+    }
+
+    /// The PNG name sorts in request order.
+    #[test]
+    fn screenshot_paths_sort_in_request_order() {
+        let mut names: Vec<String> = [2u64, 10, 1]
+            .iter()
+            .map(|seq| {
+                screenshot_path(*seq)
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .into_owned()
+            })
+            .collect();
+        names.sort();
+        assert_eq!(
+            names,
+            vec![
+                "shot-0001.png".to_string(),
+                "shot-0002.png".to_string(),
+                "shot-0010.png".to_string()
+            ],
+            "a lexicographic listing must read as the sequence it is"
+        );
     }
 }
