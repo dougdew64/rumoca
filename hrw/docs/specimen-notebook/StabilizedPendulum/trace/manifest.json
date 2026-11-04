@@ -2,7 +2,7 @@
   "model": "StabilizedPendulum",
   "specimen": "specimens/StabilizedPendulum.mo",
   "specimen_fnv1a": "4fbd1ba1ddce8be0",
-  "rumoca_rev": "da6d13b1",
+  "rumoca_rev": "a334820a",
   "rumoca_version": "0.10.0",
   "stages": {
     "parse": {
@@ -34,8 +34,8 @@
       "note": null
     },
     "index_reduction": {
-      "has_ir": false,
-      "note": "Rumoca ran index reduction successfully; HRW cannot display it yet. On Rumoca 0.10.0 the ten-step dummy-derivative funnel became two fixed-point lanes with a candidate/attempt/selection protocol, and the DAE became immutable, so this pane is being rebuilt against the new model rather than shown in the old vocabulary. This is an HRW gap, not a compiler problem."
+      "has_ir": true,
+      "note": "normalized without a reduction round (derivative aliases)"
     },
     "initialization": {
       "has_ir": true,

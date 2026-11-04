@@ -22,9 +22,11 @@ Each row's tag names the symbol its re-model will introduce, so
 `doc_citations::claims_of_absence_are_still_true` **fails the moment that symbol exists** and forces
 the row to be retired. That is what keeps "temporarily disabled" from becoming permanent quietly.
 
-### Index reduction — the funnel is gone, and the replacement is richer
+### ~~Index reduction — the funnel is gone, and the replacement is richer~~
 
-Index-reduction stepping is not built. <!-- unbuilt: worker::index_reduction_from_observation -->
+**Re-modelled 2026-11-04**, the last of the five the rebase recruited; emptying
+`worker::AWAITING_REMODEL`. The account stays because what the re-model *refused* is the useful
+part.
 
 HRW animated a **ten-step dummy-derivative funnel** mutating a `&mut Dae` in place. 0.10.0 deleted
 `dae_prepare`, made `Dae` immutable and non-`Clone`, and reduces in **two fixed-point lanes** —
@@ -32,15 +34,108 @@ Direct and Holonomic — through a candidate / attempt / selection protocol. Not
 change, and the pane was *also* re-running reduction on a cloned DAE rather than observing the
 compile.
 
-**The replacement is `rumoca_phase_structural::inspect_prepare_for_solve`**, which returns the real
-reduction plus an owned `ReductionReport`: per-round residue, unmatched equations and unknowns,
+**The replacement is `rumoca_phase_structural::inspect_prepare_for_solve`**, published by
+`worker::index_reduction_from_observation`: per-round residue, unmatched equations and unknowns,
 candidate counts per proof boundary, every attempt with its outcome **including why it was
 rejected**, each selection with residue before and after, pristine retries, the stop reason, and a
 snapshot of the stalled DAE when preparation fails. Strictly more than the funnel frames carried.
 
-Three things go with it: `app::structural_frames_for_stage` loses its `IndexReduction` branch and
-must get it back; `StructuralView::Animate` is hard-coded `false`; and `app::tearing_dae` no longer
-special-cases the reduced system. All three carry comments saying so.
+**One call, two stages.** `inspect_prepare_for_solve` reduces the system *and* returns the initial
+value pins, so Index reduction and Initialization now read one observation instead of calling
+preparation twice. The second call was not wrong — the function is pure — but nothing held the two
+runs together, and `no_stage_reports_an_hrw_sequencing_fault` now asserts they agree about admission.
+
+**What the re-model refused to restore, which is the part worth keeping:**
+
+- **The frame-consuming sub-views stay unavailable on this tab** — matching, Tarjan and tearing
+  animations. The reduced system's *report* is observable; its *search* is not, because the
+  reduction records rounds rather than the matching passes inside each rebuild. And the existing
+  guard would not have caught a mistake here: `TearingAnimation::from_captured` compares
+  `blocks.len()` against `segments.len()` and ordinals that run `0..n` in **both** systems, so a
+  structural-report-shaped payload would have let the raw system's recorded frames pair silently
+  with reduced block names.
+- **No name is attached to a candidate's ordinals.** `state_ordinal` and friends index the rebuilt
+  system of their own round, so resolving one against the raw DAE gives a confident wrong answer
+  from round 2 onward. The span is the stable identity; `declared_at` carries it, and
+  `the_reduction_search_log_is_the_compiles_own_run` fails if a later session adds the convenience.
+
+So the three companions resolve rather than wait: `app::structural_frames_for_stage` needs no
+`IndexReduction` branch, `app::tearing_dae` needs no special case, and `StructuralView::Animate`
+becomes real for the views that do have frames.
+
+**Measured on the corpus, 2026-11-04** — 13 specimens `borrowed` (already index-1), 5 `sorted` after
+real rounds, 1 `sorted` with **zero** rounds, 3 `singular`:
+
+| specimen | rounds | states | note |
+|---|---|---|---|
+| `Drivetrain` | 6 | 9 → 5 | both lanes; round 3 selects a `held` candidate and round 4 then succeeds |
+| `GearWithBrake` | 5 | 7 → 2 | 40 records, Direct lane only |
+| `CapacitorLoop` | 2 | 1 → 1 | **counts unchanged**; Direct finds 0 candidates, Holonomic sorts it |
+| `StabilizedPendulum` | 0 | 4 → 4 | 1 algebraic and 5 equations → **3 and 7**: normalization, no round |
+| `CartesianPendulum` | 3 | — | singular; **0 candidates in every lane**, so nothing is attempted |
+
+Two of those rows are the teaching material. **`CapacitorLoop` shows that reduction is not a size
+reduction** — a pane reporting only before/after counts would say nothing happened. And
+**`StabilizedPendulum` shows `Sorted` with zero rounds**, which is the observable signature of
+`derivative_aliases::normalize`: `borrowed_with_observer` reports `Borrowed` when normalization
+leaves the system alone and `Sorted` when it rebuilds it. That pass is `pub(super)`, and this is how
+its work is visible without instrumenting it.
+
+**`Drivetrain` demotes 9 states to 5, not to 3** as `docs/upstream-issues.md`'s open state-count
+entry records. That entry needs re-measuring against 0.10.0 before anything is concluded from it.
+
+### The Index Reduction tab's two displays still speak the funnel's vocabulary
+
+The reduction summary panel is not re-modelled. <!-- unbuilt: reduction_view::ReductionView::from_search -->
+
+**The stage's re-model landed 2026-11-04 and these two did not**, which is a narrower gap than it
+was and worth stating precisely, because the data is no longer missing — only two renderings of it.
+
+1. **`reduction_view.rs` (1112 lines) parses `report["reduction"]`** — `funnel_completed`, `steps`,
+   `n_states_before`, `demoted_states` — so `from_report` returns `None` for every real compile.
+   The pane's fallback said *"(no reduction data in this report)"*, which had become **false**: the
+   report is full of it. That message now says which side is stale, and the IR tree shows the real
+   payload meanwhile.
+2. **`reduction_anim.rs` is still a placeholder**, and its reason is *not* vocabulary — see below.
+
+**The panel's rewrite is held up by a file split, not by the model.** `abbreviate_expr` and
+`expr_to_short` live in `reduction_view.rs` with about twenty tests, and **`alias_anim` and
+`ic_plan_anim` both reach into this module for them** — an expression formatter is not a reduction
+view, and a third formatter (`dae_expr_format`) already exists. So rewriting the pane means first
+deciding where expression abbreviation belongs, which is a cleanup with its own blast radius rather
+than a line of the re-model.
+
+### Live reduction stepping needs a public observer, and that is an upstream API question
+
+Stepping is not built. <!-- unbuilt: reduction_anim::ReductionAnimation::from_search -->
+
+**Recorded** stepping — walking the published search log one record at a time — needs only the panel
+work above. **Live** stepping needs something HRW cannot reach, and this is the real instrumentation
+candidate the index-reduction re-model turned up:
+
+`ReductionObserver` and `ReductionEvent` are **`pub(super)` by design**.
+`inspect_prepare_for_solve` is the crate-external surface and returns an owned `ReductionReport`
+*after the run completes*. HRW's live stepping paces a real algorithm against a breakpoint, so
+feeding a finished report into the frame channel on a timer would be **a recording wearing a live
+label** — the fiction this repository has already removed twice.
+
+**`CLAUDE.md` makes this load-bearing rather than optional.** `PendingLiveDebug::Reduction` is named
+there as one of the four live paths that re-run a phase which still exists and *must not be "fixed"*
+by deletion. Today `ReductionAnimation::start_live` returns `None` unconditionally, so that path is
+an affordance which arms a breakpoint and reports nothing — the exact shape that forced the
+PreLowering variant's deletion. Either the seam becomes public or that path has to go, and the first
+is the one that serves the learning.
+
+**Shape of the candidate change**, additive and observation-only: export `ReductionObserver` and
+`ReductionEvent`, and make `prepare_for_solve_with_observer` public — it already exists as the
+generic seam both `prepare_for_solve` and `inspect_prepare_for_solve` instantiate, so this exposes a
+boundary rather than inventing one. That is the same shape as
+`rumoca_phase_structural::sort_with_observer`, which HRW already drives for matching, Tarjan and
+tearing, so there is precedent in the crate's own public surface.
+
+*Note what this is **not**: it is not `derivative_aliases::normalize`. That pass extends an implicit
+derivative system rather than eliminating alias equations, and its work is already observable —
+`Stopped::Sorted` with zero rounds, per `worker::reduction_outcome_summary`.*
 
 ### ~~Resolve failure is inferred from diagnostic severities where 0.10.0 states it structurally~~
 

@@ -127,8 +127,12 @@ impl AliasAnimation {
         // SingleInertia 2) — but it was *arithmetic HRW did*, and it understated
         // the starting size whenever an elimination failed to parse. The
         // captured number cannot: it was measured before the pass ran.
-        // `the_starting_size_is_read_from_the_run_not_reconstructed` holds them
-        // to each other.
+        //
+        // **Nothing holds the two to each other any more.** The test that did
+        // (`the_starting_size_is_read_from_the_run_not_reconstructed`) was retired
+        // 2026-11-04 with the pass it observed — see the note in `tests` below. On
+        // v0.10.0 no report carries a `before.n_unknowns` for this view, so the
+        // fallback below is the only live path.
         //
         // The derivation survives only as a fallback for a report with no
         // `before` block, and its old failure mode is still announced through
@@ -393,9 +397,10 @@ mod tests {
     /// size is reconstructed. Getting this backwards would show the system
     /// growing.
     ///
-    /// A real compile takes the captured path instead — see
-    /// [`tests::the_starting_size_is_read_from_the_run_not_reconstructed`], which
-    /// also proves the two agree.
+    /// **Since 2026-11-04 this is the only path**, and the test that checked the
+    /// captured one against it is retired with the pass it observed — see the note
+    /// in this module's `tests`. So the reconstruction is no longer cross-checked by
+    /// anything, which is one of the reasons this view's future is Doug's call.
     #[test]
     fn the_running_count_reconstructs_the_starting_size() {
         let anim = AliasAnimation::from_report(&report(&[("a", "b"), ("c", "d"), ("e", "f")], 20))
@@ -462,55 +467,33 @@ mod tests {
         assert_eq!(anim.which(), "alias_elimination");
     }
 
-    /// **The starting size is read from the run, not reconstructed from it.**
-    ///
-    /// The opening frame states the system before the pass, and that number used
-    /// to be HRW's own arithmetic: the report's after-count plus the number of
-    /// eliminations parsed. Sound reasoning — each alias elimination removes one
-    /// unknown — but arithmetic that understated the starting size whenever an
-    /// elimination failed to parse, and the reader had no way to tell.
-    ///
-    /// The reduction stage records `before.n_unknowns` during the real run, so
-    /// the view reads that instead. This test is what keeps the two honest: it
-    /// checks the captured number against the derivation that used to stand in
-    /// for it, on a real compile. **A disagreement means one of them is lying**,
-    /// and this fails naming both.
-    #[test]
-    #[ignore = "awaiting the Index reduction re-model: the alias animation's starting size comes from the run. The body is kept as the specification the re-model must satisfy — see worker::AWAITING_REMODEL"]
-    fn the_starting_size_is_read_from_the_run_not_reconstructed() {
-        let crate::worker::FromWorker::Compiled { stages, .. } =
-            crate::worker::test_msl::compile_specimen_shared("Drivetrain")
-        else {
-            panic!("expected Compiled");
-        };
-        let report = stages
-            .index_reduction
-            .value
-            .as_ref()
-            .expect("Drivetrain reaches index reduction");
-
-        let anim = AliasAnimation::from_report(report).expect("Drivetrain has alias eliminations");
-        let captured = report["before"]["n_unknowns"]
-            .as_u64()
-            .expect("the reduction stage records the size it found")
-            as usize;
-        let after = report["n_unknowns"]
-            .as_u64()
-            .expect("and the size it produced") as usize;
-
-        assert_eq!(
-            anim.unknowns_before,
-            Some(captured),
-            "the view must show the captured starting size, not a reconstruction"
-        );
-        assert_eq!(
-            captured,
-            after + anim.n_eliminations(),
-            "the captured starting size and the old derivation must agree: {captured} \
-             captured, {after} after + {} eliminated",
-            anim.n_eliminations(),
-        );
-    }
+    // **`the_starting_size_is_read_from_the_run_not_reconstructed` was retired
+    // 2026-11-04, not restored, and the reason is about this whole module.**
+    //
+    // It compiled `Drivetrain` and read `report["before"]["n_unknowns"]` and
+    // `report["eliminations"]` off the Index-reduction stage. The re-modelled stage
+    // publishes neither, and **not because the keys were renamed**: the pass this
+    // module animates does not exist in Rumoca 0.10.0. Upstream deleted
+    // `rumoca-phase-structural/src/eliminate/` entirely — `aggregate_alias.rs`,
+    // `connection_policy.rs`, `direct_definition_index.rs` and six more — and
+    // `eliminate_trivial` survives only as a word in a comment in `matching.rs`.
+    //
+    // **Where its data came from is the finding.** HRW called
+    // `eliminate::eliminate_trivial(dae)` itself and applied the substitutions to
+    // its own copy, and the comment at that call site said so outright: *"it is NOT
+    // part of the preparation funnel … In `rumoca-sim` it belongs to the next
+    // phase."* So this was never an observation of the compile — it was a re-run
+    // presented as one, which survived because the funnel view was deleted wholesale
+    // before anyone read the comment back.
+    //
+    // **The module is left standing pending Doug's decision**, not quietly deleted.
+    // Its remaining tests build synthetic reports and still hold, and the view is
+    // already unreachable (`playback::DISABLED_VIEWS`). Restoring it would need a
+    // pass to observe, and `derivative_aliases::normalize` is not that pass — it
+    // *extends* an implicit derivative system rather than eliminating alias
+    // equations, so instrumenting it would publish a different phenomenon under this
+    // module's label. `worker::reduction_outcome_summary` records how that
+    // normalization *is* observable: `Stopped::Sorted` with zero rounds.
 
     /// **Every frame describes itself, including the opening one.**
     ///

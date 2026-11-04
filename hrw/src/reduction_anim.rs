@@ -1,5 +1,5 @@
-//! Index-reduction animation — **disabled for the v0.10.0 rebase, awaiting a
-//! re-model against Rumoca's own observation seam.**
+//! Index-reduction animation — **the stepping is disabled; the stage's data is not.**
+//! Awaiting a public per-event seam, not a vocabulary.
 //!
 //! # What was here, and why it is gone rather than ported
 //!
@@ -34,17 +34,32 @@
 //! funnel frames were, and it observes the compile that actually happened
 //! instead of a re-run.
 //!
-//! It is not built here because a re-model cannot be done blind. Nothing in
-//! `hrw` compiles mid-rebase, so a pane re-modelled now would get no reader
-//! until every other file is finished — and this pane is lecture-facing. A
-//! vocabulary chosen by reading `dae_transform/observation.rs` and never watched
-//! running is how a pane ends up correct-looking and wrong. Doug's ruling is in
-//! `DECISIONS.md`, 2026-11-02.
+//! # The stage's re-model has landed; this view's has not, and the reason changed
 //!
-//! The replacement is recruited by an `unbuilt:` tag in `docs/tech-debt.md`
-//! naming `worker::index_reduction_from_observation`, so
-//! `doc_citations::claims_of_absence_are_still_true` fails the moment that
-//! symbol exists and the claim of absence stops being true.
+//! **Since 2026-11-04 `worker::index_reduction_from_observation` publishes the whole
+//! search** — every round, candidate group, attempt, refusal and selection from the
+//! one reduction the compile performed. So the Index Reduction tab is no longer
+//! empty, and the thing missing here is narrower than it was: **stepping**, not the
+//! data.
+//!
+//! It stayed a placeholder through that commit for a reason worth recording, because
+//! it is not "no time left". **A live session needs a per-event seam, and Rumoca's
+//! does not exist publicly.** `ReductionObserver` and `ReductionEvent` are
+//! `pub(super)` by design; `inspect_prepare_for_solve` is the crate-external surface
+//! and it hands back an owned report *after the run finishes*. HRW's live stepping
+//! works by pacing a real algorithm against a breakpoint, so feeding a finished
+//! report into the channel on a timer would be a **recording wearing a live label** —
+//! the one fiction this repository has already removed twice.
+//!
+//! That makes the observer seam the real instrumentation candidate for this view,
+//! and `CLAUDE.md` is why it matters rather than being optional:
+//! `PendingLiveDebug::Reduction` is named there as one of the four live paths that
+//! re-run a phase that still exists and **must not be "fixed"** by deletion. A
+//! public observer keeps that path honest; without one, the Debug button on this tab
+//! is an affordance that arms a breakpoint and reports nothing.
+//!
+//! Doug's ruling that re-models land one at a time, where each can be watched
+//! running, is in `DECISIONS.md`, 2026-11-02.
 
 use eframe::egui;
 use serde_json::Value;
@@ -100,8 +115,15 @@ impl ReductionAnimation {
     }
 
     /// Draw the explanation. Returns `false`: nothing here can be armed.
+    ///
+    /// **Re-worded 2026-11-04, when the stage's re-model landed.** The previous text
+    /// described the replacement as future work — *"the replacement reads Rumoca's
+    /// own observation seam … more than this view ever showed"* — which stopped being
+    /// true the moment `worker::index_reduction_from_observation` shipped. A pane
+    /// that describes a present thing in the future tense sends the reader looking
+    /// for something they already have.
     pub fn ui(&mut self, ui: &mut egui::Ui, _arming: bool, _debug_enabled: bool) -> bool {
-        ui.label(egui::RichText::new("Index-reduction stepping is being rebuilt").strong());
+        ui.label(egui::RichText::new("The search is published; the stepping is not").strong());
         ui.add_space(4.0);
         ui.label(
             "Rumoca 0.10.0 replaced the ten-step dummy-derivative funnel this view \
@@ -111,10 +133,20 @@ impl ReductionAnimation {
         );
         ui.add_space(4.0);
         ui.label(
-            "The replacement reads Rumoca's own observation seam \
-             (inspect_prepare_for_solve), which reports every candidate it tried and \
-             why each was rejected — more than this view ever showed. Rumoca still \
-             performs index reduction correctly; only this display is missing.",
+            "What the compiler did run is on this tab already: every round with its \
+             residue and unmatched names, every candidate group, every attempt with \
+             its outcome and why it was refused, and each selection. Read it in the \
+             IR tree — the stage publishes it from Rumoca's own observation of the \
+             one reduction this compile performed.",
+        );
+        ui.add_space(4.0);
+        ui.label(
+            "Stepping through it one record at a time is what is still missing here, \
+             and live stepping needs something HRW cannot reach: Rumoca's \
+             ReductionObserver is private, so there is no per-event seam to pace \
+             against a breakpoint. inspect_prepare_for_solve hands back the whole \
+             report after the fact, and replaying that as though it were live would \
+             be a recording wearing a live label.",
         );
         false
     }

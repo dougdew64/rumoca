@@ -1,0 +1,2560 @@
+{
+  "rounds": 5,
+  "n_records": 40,
+  "outcome": {
+    "kind": "sorted",
+    "admitted": true,
+    "rounds": 5,
+    "meaning": "reduction ran until the system sorted"
+  },
+  "lanes": [
+    "direct"
+  ],
+  "residue_definition": "(n_equations - n_matched) + (n_unknowns - n_matched): both deficits summed, so a square system's residue is twice its rank deficiency",
+  "ordinals_note": "state_ordinal, rhs_ordinal, variable_ordinal and the holonomic ordinals index the rebuilt system of their own round, not the raw DAE. They are deliberately unnamed; resolve a candidate through declared_at, which is a span and stable across rebuilds",
+  "before": {
+    "incidence": {
+      "n_eq": 44,
+      "n_var": 44,
+      "unknown_names": [
+        "der(motor.phi)",
+        "motor.flange.phi",
+        "motor.flange.tau",
+        "motor.phi_support",
+        "motor.w",
+        "motor.tau",
+        "rotor.flange_a.phi",
+        "rotor.flange_a.tau",
+        "rotor.flange_b.phi",
+        "rotor.flange_b.tau",
+        "der(rotor.phi)",
+        "der(rotor.w)",
+        "rotor.a",
+        "gear.flange_a.phi",
+        "gear.flange_a.tau",
+        "gear.flange_b.phi",
+        "gear.flange_b.tau",
+        "gear.phi_support",
+        "gear.phi_a",
+        "gear.phi_b",
+        "load.flange_a.phi",
+        "load.flange_a.tau",
+        "load.flange_b.phi",
+        "load.flange_b.tau",
+        "der(load.phi)",
+        "der(load.w)",
+        "load.a",
+        "der(spring.phi_rel)",
+        "der(spring.w_rel)",
+        "spring.a_rel",
+        "spring.tau",
+        "spring.flange_a.phi",
+        "spring.flange_a.tau",
+        "spring.flange_b.phi",
+        "spring.flange_b.tau",
+        "spring.lossPower",
+        "spring.tau_c",
+        "spring.tau_d",
+        "frame.flange.phi",
+        "frame.flange.tau",
+        "brakeTorque.flange.phi",
+        "brakeTorque.flange.tau",
+        "brakeTorque.phi_support",
+        "brakeTorque.tau"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (phi = flange.phi - phi_support)",
+          "id": "f_x[0]",
+          "unknowns": [
+            1,
+            3
+          ],
+          "equation_text": "0 = motor.phi - (motor.flange.phi - motor.phi_support)"
+        },
+        {
+          "equation": "f_x[1] (phi_support = 0)",
+          "id": "f_x[1]",
+          "unknowns": [
+            3
+          ],
+          "equation_text": "0 = motor.phi_support - 0"
+        },
+        {
+          "equation": "f_x[2] (w = der(phi))",
+          "id": "f_x[2]",
+          "unknowns": [
+            0,
+            4
+          ],
+          "equation_text": "0 = motor.w - der(motor.phi)"
+        },
+        {
+          "equation": "f_x[3] (tau = -flange.tau)",
+          "id": "f_x[3]",
+          "unknowns": [
+            2,
+            5
+          ],
+          "equation_text": "0 = motor.tau - -motor.flange.tau"
+        },
+        {
+          "equation": "f_x[4] (tau = tau_constant)",
+          "id": "f_x[4]",
+          "unknowns": [
+            5
+          ],
+          "equation_text": "0 = motor.tau - motor.tau_constant"
+        },
+        {
+          "equation": "f_x[5] (phi = flange_a.phi)",
+          "id": "f_x[5]",
+          "unknowns": [
+            6
+          ],
+          "equation_text": "0 = rotor.phi - rotor.flange_a.phi"
+        },
+        {
+          "equation": "f_x[6] (phi = flange_b.phi)",
+          "id": "f_x[6]",
+          "unknowns": [
+            8
+          ],
+          "equation_text": "0 = rotor.phi - rotor.flange_b.phi"
+        },
+        {
+          "equation": "f_x[7] (w = der(phi))",
+          "id": "f_x[7]",
+          "unknowns": [
+            10
+          ],
+          "equation_text": "0 = rotor.w - der(rotor.phi)"
+        },
+        {
+          "equation": "f_x[8] (a = der(w))",
+          "id": "f_x[8]",
+          "unknowns": [
+            11,
+            12
+          ],
+          "equation_text": "0 = rotor.a - der(rotor.w)"
+        },
+        {
+          "equation": "f_x[9] (J*a = flange_a.tau + flange_b.tau)",
+          "id": "f_x[9]",
+          "unknowns": [
+            7,
+            9,
+            12
+          ],
+          "equation_text": "0 = rotor.J*rotor.a - (rotor.flange_a.tau + rotor.flange_b.tau)"
+        },
+        {
+          "equation": "f_x[10] (phi_support = 0)",
+          "id": "f_x[10]",
+          "unknowns": [
+            17
+          ],
+          "equation_text": "0 = gear.phi_support - 0"
+        },
+        {
+          "equation": "f_x[11] (phi_a = flange_a.phi - phi_support)",
+          "id": "f_x[11]",
+          "unknowns": [
+            13,
+            17,
+            18
+          ],
+          "equation_text": "0 = gear.phi_a - (gear.flange_a.phi - gear.phi_support)"
+        },
+        {
+          "equation": "f_x[12] (phi_b = flange_b.phi - phi_support)",
+          "id": "f_x[12]",
+          "unknowns": [
+            15,
+            17,
+            19
+          ],
+          "equation_text": "0 = gear.phi_b - (gear.flange_b.phi - gear.phi_support)"
+        },
+        {
+          "equation": "f_x[13] (phi_a = ratio*phi_b)",
+          "id": "f_x[13]",
+          "unknowns": [
+            18,
+            19
+          ],
+          "equation_text": "0 = gear.phi_a - gear.ratio*gear.phi_b"
+        },
+        {
+          "equation": "f_x[14] (0 = ratio*flange_a.tau + flange_b.tau)",
+          "id": "f_x[14]",
+          "unknowns": [
+            14,
+            16
+          ],
+          "equation_text": "0 = 0 - (gear.ratio*gear.flange_a.tau + gear.flange_b.tau)"
+        },
+        {
+          "equation": "f_x[15] (phi = flange_a.phi)",
+          "id": "f_x[15]",
+          "unknowns": [
+            20
+          ],
+          "equation_text": "0 = load.phi - load.flange_a.phi"
+        },
+        {
+          "equation": "f_x[16] (phi = flange_b.phi)",
+          "id": "f_x[16]",
+          "unknowns": [
+            22
+          ],
+          "equation_text": "0 = load.phi - load.flange_b.phi"
+        },
+        {
+          "equation": "f_x[17] (w = der(phi))",
+          "id": "f_x[17]",
+          "unknowns": [
+            24
+          ],
+          "equation_text": "0 = load.w - der(load.phi)"
+        },
+        {
+          "equation": "f_x[18] (a = der(w))",
+          "id": "f_x[18]",
+          "unknowns": [
+            25,
+            26
+          ],
+          "equation_text": "0 = load.a - der(load.w)"
+        },
+        {
+          "equation": "f_x[19] (J*a = flange_a.tau + flange_b.tau)",
+          "id": "f_x[19]",
+          "unknowns": [
+            21,
+            23,
+            26
+          ],
+          "equation_text": "0 = load.J*load.a - (load.flange_a.tau + load.flange_b.tau)"
+        },
+        {
+          "equation": "f_x[20] (phi_rel = flange_b.phi - flange_a.phi)",
+          "id": "f_x[20]",
+          "unknowns": [
+            31,
+            33
+          ],
+          "equation_text": "0 = spring.phi_rel - (spring.flange_b.phi - spring.flange_a.phi)"
+        },
+        {
+          "equation": "f_x[21] (w_rel = der(phi_rel))",
+          "id": "f_x[21]",
+          "unknowns": [
+            27
+          ],
+          "equation_text": "0 = spring.w_rel - der(spring.phi_rel)"
+        },
+        {
+          "equation": "f_x[22] (a_rel = der(w_rel))",
+          "id": "f_x[22]",
+          "unknowns": [
+            28,
+            29
+          ],
+          "equation_text": "0 = spring.a_rel - der(spring.w_rel)"
+        },
+        {
+          "equation": "f_x[23] (flange_b.tau = tau)",
+          "id": "f_x[23]",
+          "unknowns": [
+            30,
+            34
+          ],
+          "equation_text": "0 = spring.flange_b.tau - spring.tau"
+        },
+        {
+          "equation": "f_x[24] (flange_a.tau = -tau)",
+          "id": "f_x[24]",
+          "unknowns": [
+            30,
+            32
+          ],
+          "equation_text": "0 = spring.flange_a.tau - -spring.tau"
+        },
+        {
+          "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0)",
+          "id": "f_x[25]",
+          "unknowns": [
+            36
+          ],
+          "equation_text": "0 = spring.tau_c - spring.c*(spring.phi_rel - spring.phi_rel0)"
+        },
+        {
+          "equation": "f_x[26] (tau_d = d*w_rel)",
+          "id": "f_x[26]",
+          "unknowns": [
+            37
+          ],
+          "equation_text": "0 = spring.tau_d - spring.d*spring.w_rel"
+        },
+        {
+          "equation": "f_x[27] (tau = tau_c + tau_d)",
+          "id": "f_x[27]",
+          "unknowns": [
+            30,
+            36,
+            37
+          ],
+          "equation_text": "0 = spring.tau - (spring.tau_c + spring.tau_d)"
+        },
+        {
+          "equation": "f_x[28] (lossPower = tau_d*w_rel)",
+          "id": "f_x[28]",
+          "unknowns": [
+            35,
+            37
+          ],
+          "equation_text": "0 = spring.lossPower - spring.tau_d*spring.w_rel"
+        },
+        {
+          "equation": "f_x[29] (flange.phi = phi0)",
+          "id": "f_x[29]",
+          "unknowns": [
+            38
+          ],
+          "equation_text": "0 = frame.flange.phi - frame.phi0"
+        },
+        {
+          "equation": "f_x[30] (phi_support = 0)",
+          "id": "f_x[30]",
+          "unknowns": [
+            42
+          ],
+          "equation_text": "0 = brakeTorque.phi_support - 0"
+        },
+        {
+          "equation": "f_x[31] (flange.tau = -tau)",
+          "id": "f_x[31]",
+          "unknowns": [
+            41,
+            43
+          ],
+          "equation_text": "0 = brakeTorque.flange.tau - -brakeTorque.tau"
+        },
+        {
+          "equation": "f_x[32] (brakeTorque.tau = if braking then\n    (if load.w > 0 then -brakeForce else brakeForce)\n  else 0)",
+          "id": "f_x[32]",
+          "unknowns": [
+            43
+          ],
+          "equation_text": "0 = brakeTorque.tau - if braking then if load.w > 0 then -brakeForce else brakeForce else 0"
+        },
+        {
+          "equation": "f_x[33] (SI.Torque tau)",
+          "id": "f_x[33]",
+          "unknowns": [
+            2,
+            7
+          ],
+          "equation_text": "0 = motor.flange.tau + rotor.flange_a.tau"
+        },
+        {
+          "equation": "f_x[34] (SI.Torque tau)",
+          "id": "f_x[34]",
+          "unknowns": [
+            9,
+            14
+          ],
+          "equation_text": "0 = rotor.flange_b.tau + gear.flange_a.tau"
+        },
+        {
+          "equation": "f_x[35] (SI.Torque tau)",
+          "id": "f_x[35]",
+          "unknowns": [
+            16,
+            21
+          ],
+          "equation_text": "0 = gear.flange_b.tau + load.flange_a.tau"
+        },
+        {
+          "equation": "f_x[36] (SI.Torque tau)",
+          "id": "f_x[36]",
+          "unknowns": [
+            23,
+            32,
+            41
+          ],
+          "equation_text": "0 = load.flange_b.tau + spring.flange_a.tau + brakeTorque.flange.tau"
+        },
+        {
+          "equation": "f_x[37] (SI.Torque tau)",
+          "id": "f_x[37]",
+          "unknowns": [
+            34,
+            39
+          ],
+          "equation_text": "0 = spring.flange_b.tau + frame.flange.tau"
+        },
+        {
+          "equation": "f_x[38] (SI.Angle phi)",
+          "id": "f_x[38]",
+          "unknowns": [
+            1,
+            6
+          ],
+          "equation_text": "0 = motor.flange.phi - rotor.flange_a.phi"
+        },
+        {
+          "equation": "f_x[39] (SI.Angle phi)",
+          "id": "f_x[39]",
+          "unknowns": [
+            8,
+            13
+          ],
+          "equation_text": "0 = rotor.flange_b.phi - gear.flange_a.phi"
+        },
+        {
+          "equation": "f_x[40] (SI.Angle phi)",
+          "id": "f_x[40]",
+          "unknowns": [
+            15,
+            20
+          ],
+          "equation_text": "0 = gear.flange_b.phi - load.flange_a.phi"
+        },
+        {
+          "equation": "f_x[41] (SI.Angle phi)",
+          "id": "f_x[41]",
+          "unknowns": [
+            22,
+            31
+          ],
+          "equation_text": "0 = load.flange_b.phi - spring.flange_a.phi"
+        },
+        {
+          "equation": "f_x[42] (SI.Angle phi)",
+          "id": "f_x[42]",
+          "unknowns": [
+            31,
+            40
+          ],
+          "equation_text": "0 = spring.flange_a.phi - brakeTorque.flange.phi"
+        },
+        {
+          "equation": "f_x[43] (SI.Angle phi)",
+          "id": "f_x[43]",
+          "unknowns": [
+            33,
+            38
+          ],
+          "equation_text": "0 = spring.flange_b.phi - frame.flange.phi"
+        }
+      ]
+    },
+    "matching": [
+      {
+        "equation": "f_x[0] (phi = flange.phi - phi_support)",
+        "id": "f_x[0]",
+        "unknown": "motor.flange.phi"
+      },
+      {
+        "equation": "f_x[1] (phi_support = 0)",
+        "id": "f_x[1]",
+        "unknown": "motor.phi_support"
+      },
+      {
+        "equation": "f_x[2] (w = der(phi))",
+        "id": "f_x[2]",
+        "unknown": "der(motor.phi)"
+      },
+      {
+        "equation": "f_x[3] (tau = -flange.tau)",
+        "id": "f_x[3]",
+        "unknown": "motor.flange.tau"
+      },
+      {
+        "equation": "f_x[4] (tau = tau_constant)",
+        "id": "f_x[4]",
+        "unknown": "motor.tau"
+      },
+      {
+        "equation": "f_x[5] (phi = flange_a.phi)",
+        "id": "f_x[5]",
+        "unknown": "rotor.flange_a.phi"
+      },
+      {
+        "equation": "f_x[6] (phi = flange_b.phi)",
+        "id": "f_x[6]",
+        "unknown": "rotor.flange_b.phi"
+      },
+      {
+        "equation": "f_x[7] (w = der(phi))",
+        "id": "f_x[7]",
+        "unknown": "der(rotor.phi)"
+      },
+      {
+        "equation": "f_x[8] (a = der(w))",
+        "id": "f_x[8]",
+        "unknown": "der(rotor.w)"
+      },
+      {
+        "equation": "f_x[9] (J*a = flange_a.tau + flange_b.tau)",
+        "id": "f_x[9]",
+        "unknown": "rotor.a"
+      },
+      {
+        "equation": "f_x[10] (phi_support = 0)",
+        "id": "f_x[10]",
+        "unknown": "gear.phi_support"
+      },
+      {
+        "equation": "f_x[11] (phi_a = flange_a.phi - phi_support)",
+        "id": "f_x[11]",
+        "unknown": "gear.phi_a"
+      },
+      {
+        "equation": "f_x[12] (phi_b = flange_b.phi - phi_support)",
+        "id": "f_x[12]",
+        "unknown": "gear.flange_b.phi"
+      },
+      {
+        "equation": "f_x[13] (phi_a = ratio*phi_b)",
+        "id": "f_x[13]",
+        "unknown": "gear.phi_b"
+      },
+      {
+        "equation": "f_x[14] (0 = ratio*flange_a.tau + flange_b.tau)",
+        "id": "f_x[14]",
+        "unknown": "gear.flange_a.tau"
+      },
+      {
+        "equation": "f_x[15] (phi = flange_a.phi)",
+        "id": "f_x[15]",
+        "unknown": "load.flange_a.phi"
+      },
+      {
+        "equation": "f_x[16] (phi = flange_b.phi)",
+        "id": "f_x[16]",
+        "unknown": "load.flange_b.phi"
+      },
+      {
+        "equation": "f_x[17] (w = der(phi))",
+        "id": "f_x[17]",
+        "unknown": "der(load.phi)"
+      },
+      {
+        "equation": "f_x[18] (a = der(w))",
+        "id": "f_x[18]",
+        "unknown": "der(load.w)"
+      },
+      {
+        "equation": "f_x[19] (J*a = flange_a.tau + flange_b.tau)",
+        "id": "f_x[19]",
+        "unknown": "load.flange_a.tau"
+      },
+      {
+        "equation": "f_x[20] (phi_rel = flange_b.phi - flange_a.phi)",
+        "id": "f_x[20]",
+        "unknown": "spring.flange_b.phi"
+      },
+      {
+        "equation": "f_x[21] (w_rel = der(phi_rel))",
+        "id": "f_x[21]",
+        "unknown": "der(spring.phi_rel)"
+      },
+      {
+        "equation": "f_x[22] (a_rel = der(w_rel))",
+        "id": "f_x[22]",
+        "unknown": "der(spring.w_rel)"
+      },
+      {
+        "equation": "f_x[23] (flange_b.tau = tau)",
+        "id": "f_x[23]",
+        "unknown": "spring.flange_b.tau"
+      },
+      {
+        "equation": "f_x[24] (flange_a.tau = -tau)",
+        "id": "f_x[24]",
+        "unknown": "spring.flange_a.tau"
+      },
+      {
+        "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0)",
+        "id": "f_x[25]",
+        "unknown": "spring.tau_c"
+      },
+      {
+        "equation": "f_x[26] (tau_d = d*w_rel)",
+        "id": "f_x[26]",
+        "unknown": "spring.tau_d"
+      },
+      {
+        "equation": "f_x[27] (tau = tau_c + tau_d)",
+        "id": "f_x[27]",
+        "unknown": "spring.tau"
+      },
+      {
+        "equation": "f_x[28] (lossPower = tau_d*w_rel)",
+        "id": "f_x[28]",
+        "unknown": "spring.lossPower"
+      },
+      {
+        "equation": "f_x[29] (flange.phi = phi0)",
+        "id": "f_x[29]",
+        "unknown": "frame.flange.phi"
+      },
+      {
+        "equation": "f_x[30] (phi_support = 0)",
+        "id": "f_x[30]",
+        "unknown": "brakeTorque.phi_support"
+      },
+      {
+        "equation": "f_x[31] (flange.tau = -tau)",
+        "id": "f_x[31]",
+        "unknown": "brakeTorque.flange.tau"
+      },
+      {
+        "equation": "f_x[32] (brakeTorque.tau = if braking then\n    (if load.w > 0 then -brakeForce else brakeForce)\n  else 0)",
+        "id": "f_x[32]",
+        "unknown": "brakeTorque.tau"
+      },
+      {
+        "equation": "f_x[33] (SI.Torque tau)",
+        "id": "f_x[33]",
+        "unknown": "rotor.flange_a.tau"
+      },
+      {
+        "equation": "f_x[34] (SI.Torque tau)",
+        "id": "f_x[34]",
+        "unknown": "rotor.flange_b.tau"
+      },
+      {
+        "equation": "f_x[35] (SI.Torque tau)",
+        "id": "f_x[35]",
+        "unknown": "gear.flange_b.tau"
+      },
+      {
+        "equation": "f_x[36] (SI.Torque tau)",
+        "id": "f_x[36]",
+        "unknown": "load.flange_b.tau"
+      },
+      {
+        "equation": "f_x[37] (SI.Torque tau)",
+        "id": "f_x[37]",
+        "unknown": "frame.flange.tau"
+      },
+      {
+        "equation": "f_x[39] (SI.Angle phi)",
+        "id": "f_x[39]",
+        "unknown": "gear.flange_a.phi"
+      },
+      {
+        "equation": "f_x[41] (SI.Angle phi)",
+        "id": "f_x[41]",
+        "unknown": "spring.flange_a.phi"
+      },
+      {
+        "equation": "f_x[42] (SI.Angle phi)",
+        "id": "f_x[42]",
+        "unknown": "brakeTorque.flange.phi"
+      }
+    ],
+    "error": {
+      "kind": "singular",
+      "message": "structurally singular system: 41 matched out of 44 equations and 44 unknowns",
+      "n_equations": 44,
+      "n_unknowns": 44,
+      "n_matched": 41,
+      "rank_deficiency": 3,
+      "unmatched_equations": [
+        "f_x[38] (SI.Angle phi)",
+        "f_x[40] (SI.Angle phi)",
+        "f_x[43] (SI.Angle phi)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[38]",
+        "f_x[40]",
+        "f_x[43]"
+      ],
+      "unmatched_unknowns": [
+        "motor.w",
+        "load.a",
+        "spring.a_rel"
+      ],
+      "unmatched_unknown_locations": [
+        {
+          "unknown": "motor.w",
+          "location": {
+            "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Sources/ConstantTorque.mo",
+            "line": 6,
+            "column": 3,
+            "excerpt": "SI.AngularVelocity w",
+            "line_text": "  SI.AngularVelocity w",
+            "byte_start": 290,
+            "byte_end": 310
+          }
+        },
+        {
+          "unknown": "load.a",
+          "location": {
+            "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
+            "line": 14,
+            "column": 3,
+            "excerpt": "SI.AngularAcceleration a",
+            "line_text": "  SI.AngularAcceleration a",
+            "byte_start": 710,
+            "byte_end": 734
+          }
+        },
+        {
+          "unknown": "spring.a_rel",
+          "location": {
+            "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialCompliantWithRelativeStates.mo",
+            "line": 12,
+            "column": 3,
+            "excerpt": "SI.AngularAcceleration a_rel",
+            "line_text": "  SI.AngularAcceleration a_rel(start=0)",
+            "byte_start": 569,
+            "byte_end": 597
+          }
+        }
+      ],
+      "over_determined_block": {
+        "equations": 17,
+        "unknowns": 14,
+        "sample": [
+          "f_x[0]",
+          "f_x[1]",
+          "f_x[5]",
+          "f_x[6]",
+          "f_x[10]",
+          "f_x[11]",
+          "f_x[12]",
+          "f_x[13]",
+          "f_x[15]",
+          "f_x[16]",
+          "f_x[20]",
+          "f_x[29]",
+          "f_x[38]",
+          "f_x[39]",
+          "f_x[40]",
+          "f_x[41]",
+          "f_x[43]"
+        ]
+      },
+      "guidance": "The maximum matching could not pair every equation with a unique unknown. Each unmatched unknown is a variable no equation determines; `unmatched_unknown_locations` gives the source line that declares it. If the Index Reduction stage also reports singular, the model is genuinely ill-posed rather than merely high-index."
+    },
+    "n_states": 7,
+    "n_algebraics": 37,
+    "n_equations": 44
+  },
+  "after": {
+    "n_equations": 44,
+    "n_unknowns": 44,
+    "coupled_block_count": 1,
+    "matching": [
+      {
+        "equation": "f_x[0] (phi = flange.phi - phi_support)",
+        "id": "f_x[0]",
+        "unknown": "motor.phi"
+      },
+      {
+        "equation": "f_x[1] (phi_support = 0)",
+        "id": "f_x[1]",
+        "unknown": "motor.phi_support"
+      },
+      {
+        "equation": "f_x[2] (w = der(phi))",
+        "id": "f_x[2]",
+        "unknown": "motor.w"
+      },
+      {
+        "equation": "f_x[3] (tau = -flange.tau)",
+        "id": "f_x[3]",
+        "unknown": "motor.flange.tau"
+      },
+      {
+        "equation": "f_x[4] (tau = tau_constant)",
+        "id": "f_x[4]",
+        "unknown": "motor.tau"
+      },
+      {
+        "equation": "f_x[5] (phi = flange_a.phi)",
+        "id": "f_x[5]",
+        "unknown": "rotor.flange_a.phi"
+      },
+      {
+        "equation": "f_x[6] (phi = flange_b.phi)",
+        "id": "f_x[6]",
+        "unknown": "rotor.phi"
+      },
+      {
+        "equation": "f_x[7] (w = der(phi))",
+        "id": "f_x[7]",
+        "unknown": "rotor.w"
+      },
+      {
+        "equation": "f_x[8] (a = der(w))",
+        "id": "f_x[8]",
+        "unknown": "spring.a_rel"
+      },
+      {
+        "equation": "f_x[9] (J*a = flange_a.tau + flange_b.tau)",
+        "id": "f_x[9]",
+        "unknown": "rotor.a"
+      },
+      {
+        "equation": "f_x[10] (phi_support = 0)",
+        "id": "f_x[10]",
+        "unknown": "gear.phi_support"
+      },
+      {
+        "equation": "f_x[11] (phi_a = flange_a.phi - phi_support)",
+        "id": "f_x[11]",
+        "unknown": "gear.flange_a.phi"
+      },
+      {
+        "equation": "f_x[12] (phi_b = flange_b.phi - phi_support)",
+        "id": "f_x[12]",
+        "unknown": "gear.phi_b"
+      },
+      {
+        "equation": "f_x[13] (phi_a = ratio*phi_b)",
+        "id": "f_x[13]",
+        "unknown": "gear.phi_a"
+      },
+      {
+        "equation": "f_x[14] (0 = ratio*flange_a.tau + flange_b.tau)",
+        "id": "f_x[14]",
+        "unknown": "gear.flange_a.tau"
+      },
+      {
+        "equation": "f_x[15] (phi = flange_a.phi)",
+        "id": "f_x[15]",
+        "unknown": "load.flange_a.phi"
+      },
+      {
+        "equation": "f_x[16] (phi = flange_b.phi)",
+        "id": "f_x[16]",
+        "unknown": "load.flange_b.phi"
+      },
+      {
+        "equation": "f_x[17] (w = der(phi))",
+        "id": "f_x[17]",
+        "unknown": "der(load.phi)"
+      },
+      {
+        "equation": "f_x[18] (a = der(w))",
+        "id": "f_x[18]",
+        "unknown": "load.a"
+      },
+      {
+        "equation": "f_x[19] (J*a = flange_a.tau + flange_b.tau)",
+        "id": "f_x[19]",
+        "unknown": "load.flange_a.tau"
+      },
+      {
+        "equation": "f_x[20] (phi_rel = flange_b.phi - flange_a.phi)",
+        "id": "f_x[20]",
+        "unknown": "spring.phi_rel"
+      },
+      {
+        "equation": "f_x[21] (w_rel = der(phi_rel))",
+        "id": "f_x[21]",
+        "unknown": "load.w"
+      },
+      {
+        "equation": "f_x[22] (a_rel = der(w_rel))",
+        "id": "f_x[22]",
+        "unknown": "der(spring.w_rel)"
+      },
+      {
+        "equation": "f_x[23] (flange_b.tau = tau)",
+        "id": "f_x[23]",
+        "unknown": "spring.flange_b.tau"
+      },
+      {
+        "equation": "f_x[24] (flange_a.tau = -tau)",
+        "id": "f_x[24]",
+        "unknown": "spring.flange_a.tau"
+      },
+      {
+        "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0)",
+        "id": "f_x[25]",
+        "unknown": "spring.tau_c"
+      },
+      {
+        "equation": "f_x[26] (tau_d = d*w_rel)",
+        "id": "f_x[26]",
+        "unknown": "spring.tau_d"
+      },
+      {
+        "equation": "f_x[27] (tau = tau_c + tau_d)",
+        "id": "f_x[27]",
+        "unknown": "spring.tau"
+      },
+      {
+        "equation": "f_x[28] (lossPower = tau_d*w_rel)",
+        "id": "f_x[28]",
+        "unknown": "spring.lossPower"
+      },
+      {
+        "equation": "f_x[29] (flange.phi = phi0)",
+        "id": "f_x[29]",
+        "unknown": "frame.flange.phi"
+      },
+      {
+        "equation": "f_x[30] (phi_support = 0)",
+        "id": "f_x[30]",
+        "unknown": "brakeTorque.phi_support"
+      },
+      {
+        "equation": "f_x[31] (flange.tau = -tau)",
+        "id": "f_x[31]",
+        "unknown": "brakeTorque.flange.tau"
+      },
+      {
+        "equation": "f_x[32] (brakeTorque.tau = if braking then\n    (if load.w > 0 then -brakeForce else brakeForce)\n  else 0)",
+        "id": "f_x[32]",
+        "unknown": "brakeTorque.tau"
+      },
+      {
+        "equation": "f_x[33] (SI.Torque tau)",
+        "id": "f_x[33]",
+        "unknown": "rotor.flange_a.tau"
+      },
+      {
+        "equation": "f_x[34] (SI.Torque tau)",
+        "id": "f_x[34]",
+        "unknown": "rotor.flange_b.tau"
+      },
+      {
+        "equation": "f_x[35] (SI.Torque tau)",
+        "id": "f_x[35]",
+        "unknown": "gear.flange_b.tau"
+      },
+      {
+        "equation": "f_x[36] (SI.Torque tau)",
+        "id": "f_x[36]",
+        "unknown": "load.flange_b.tau"
+      },
+      {
+        "equation": "f_x[37] (SI.Torque tau)",
+        "id": "f_x[37]",
+        "unknown": "frame.flange.tau"
+      },
+      {
+        "equation": "f_x[38] (SI.Angle phi)",
+        "id": "f_x[38]",
+        "unknown": "motor.flange.phi"
+      },
+      {
+        "equation": "f_x[39] (SI.Angle phi)",
+        "id": "f_x[39]",
+        "unknown": "rotor.flange_b.phi"
+      },
+      {
+        "equation": "f_x[40] (SI.Angle phi)",
+        "id": "f_x[40]",
+        "unknown": "gear.flange_b.phi"
+      },
+      {
+        "equation": "f_x[41] (SI.Angle phi)",
+        "id": "f_x[41]",
+        "unknown": "spring.flange_a.phi"
+      },
+      {
+        "equation": "f_x[42] (SI.Angle phi)",
+        "id": "f_x[42]",
+        "unknown": "brakeTorque.flange.phi"
+      },
+      {
+        "equation": "f_x[43] (SI.Angle phi)",
+        "id": "f_x[43]",
+        "unknown": "spring.flange_b.phi"
+      }
+    ],
+    "blocks": [
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[1] (phi_support = 0)",
+        "id": "f_x[1]",
+        "unknown": "motor.phi_support"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[10] (phi_support = 0)",
+        "id": "f_x[10]",
+        "unknown": "gear.phi_support"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[15] (phi = flange_a.phi)",
+        "id": "f_x[15]",
+        "unknown": "load.flange_a.phi"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[40] (SI.Angle phi)",
+        "id": "f_x[40]",
+        "unknown": "gear.flange_b.phi"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[12] (phi_b = flange_b.phi - phi_support)",
+        "id": "f_x[12]",
+        "unknown": "gear.phi_b"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[13] (phi_a = ratio*phi_b)",
+        "id": "f_x[13]",
+        "unknown": "gear.phi_a"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[11] (phi_a = flange_a.phi - phi_support)",
+        "id": "f_x[11]",
+        "unknown": "gear.flange_a.phi"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[39] (SI.Angle phi)",
+        "id": "f_x[39]",
+        "unknown": "rotor.flange_b.phi"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[6] (phi = flange_b.phi)",
+        "id": "f_x[6]",
+        "unknown": "rotor.phi"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[5] (phi = flange_a.phi)",
+        "id": "f_x[5]",
+        "unknown": "rotor.flange_a.phi"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[38] (SI.Angle phi)",
+        "id": "f_x[38]",
+        "unknown": "motor.flange.phi"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[0] (phi = flange.phi - phi_support)",
+        "id": "f_x[0]",
+        "unknown": "motor.phi"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[21] (w_rel = der(phi_rel))",
+        "id": "f_x[21]",
+        "unknown": "load.w"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[7] (w = der(phi))",
+        "id": "f_x[7]",
+        "unknown": "rotor.w"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[2] (w = der(phi))",
+        "id": "f_x[2]",
+        "unknown": "motor.w"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[4] (tau = tau_constant)",
+        "id": "f_x[4]",
+        "unknown": "motor.tau"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[3] (tau = -flange.tau)",
+        "id": "f_x[3]",
+        "unknown": "motor.flange.tau"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[33] (SI.Torque tau)",
+        "id": "f_x[33]",
+        "unknown": "rotor.flange_a.tau"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[16] (phi = flange_b.phi)",
+        "id": "f_x[16]",
+        "unknown": "load.flange_b.phi"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[41] (SI.Angle phi)",
+        "id": "f_x[41]",
+        "unknown": "spring.flange_a.phi"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[29] (flange.phi = phi0)",
+        "id": "f_x[29]",
+        "unknown": "frame.flange.phi"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[43] (SI.Angle phi)",
+        "id": "f_x[43]",
+        "unknown": "spring.flange_b.phi"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[20] (phi_rel = flange_b.phi - flange_a.phi)",
+        "id": "f_x[20]",
+        "unknown": "spring.phi_rel"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0)",
+        "id": "f_x[25]",
+        "unknown": "spring.tau_c"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[26] (tau_d = d*w_rel)",
+        "id": "f_x[26]",
+        "unknown": "spring.tau_d"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[27] (tau = tau_c + tau_d)",
+        "id": "f_x[27]",
+        "unknown": "spring.tau"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[24] (flange_a.tau = -tau)",
+        "id": "f_x[24]",
+        "unknown": "spring.flange_a.tau"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[32] (brakeTorque.tau = if braking then\n    (if load.w > 0 then -brakeForce else brakeForce)\n  else 0)",
+        "id": "f_x[32]",
+        "unknown": "brakeTorque.tau"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[31] (flange.tau = -tau)",
+        "id": "f_x[31]",
+        "unknown": "brakeTorque.flange.tau"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[36] (SI.Torque tau)",
+        "id": "f_x[36]",
+        "unknown": "load.flange_b.tau"
+      },
+      {
+        "kind": "coupled",
+        "size": 7,
+        "equations": [
+          "f_x[18] (a = der(w))",
+          "f_x[19] (J*a = flange_a.tau + flange_b.tau)",
+          "f_x[35] (SI.Torque tau)",
+          "f_x[14] (0 = ratio*flange_a.tau + flange_b.tau)",
+          "f_x[34] (SI.Torque tau)",
+          "f_x[9] (J*a = flange_a.tau + flange_b.tau)",
+          "f_x[8] (a = der(w))"
+        ],
+        "ids": [
+          "f_x[18]",
+          "f_x[19]",
+          "f_x[35]",
+          "f_x[14]",
+          "f_x[34]",
+          "f_x[9]",
+          "f_x[8]"
+        ],
+        "unknowns": [
+          "load.a",
+          "load.flange_a.tau",
+          "gear.flange_b.tau",
+          "gear.flange_a.tau",
+          "rotor.flange_b.tau",
+          "rotor.a",
+          "spring.a_rel"
+        ],
+        "tearing": {
+          "tear_vars": [
+            "load.a"
+          ],
+          "residual_equations": [
+            "f_x[34] (SI.Torque tau)"
+          ],
+          "residual_equation_ids": [
+            "f_x[34]"
+          ],
+          "causal_sequence": [
+            {
+              "equation": "f_x[19] (J*a = flange_a.tau + flange_b.tau)",
+              "id": "f_x[19]",
+              "variable": "load.flange_a.tau"
+            },
+            {
+              "equation": "f_x[18] (a = der(w))",
+              "id": "f_x[18]",
+              "variable": "spring.a_rel"
+            },
+            {
+              "equation": "f_x[35] (SI.Torque tau)",
+              "id": "f_x[35]",
+              "variable": "gear.flange_b.tau"
+            },
+            {
+              "equation": "f_x[8] (a = der(w))",
+              "id": "f_x[8]",
+              "variable": "rotor.a"
+            },
+            {
+              "equation": "f_x[14] (0 = ratio*flange_a.tau + flange_b.tau)",
+              "id": "f_x[14]",
+              "variable": "gear.flange_a.tau"
+            },
+            {
+              "equation": "f_x[9] (J*a = flange_a.tau + flange_b.tau)",
+              "id": "f_x[9]",
+              "variable": "rotor.flange_b.tau"
+            }
+          ]
+        }
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[17] (w = der(phi))",
+        "id": "f_x[17]",
+        "unknown": "der(load.phi)"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[22] (a_rel = der(w_rel))",
+        "id": "f_x[22]",
+        "unknown": "der(spring.w_rel)"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[23] (flange_b.tau = tau)",
+        "id": "f_x[23]",
+        "unknown": "spring.flange_b.tau"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[28] (lossPower = tau_d*w_rel)",
+        "id": "f_x[28]",
+        "unknown": "spring.lossPower"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[30] (phi_support = 0)",
+        "id": "f_x[30]",
+        "unknown": "brakeTorque.phi_support"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[37] (SI.Torque tau)",
+        "id": "f_x[37]",
+        "unknown": "frame.flange.tau"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[42] (SI.Angle phi)",
+        "id": "f_x[42]",
+        "unknown": "brakeTorque.flange.phi"
+      }
+    ],
+    "n_states": 2,
+    "n_algebraics": 42,
+    "incidence": {
+      "n_eq": 44,
+      "n_var": 44,
+      "unknown_names": [
+        "motor.phi",
+        "motor.flange.phi",
+        "motor.flange.tau",
+        "motor.phi_support",
+        "motor.w",
+        "motor.tau",
+        "rotor.flange_a.phi",
+        "rotor.flange_a.tau",
+        "rotor.flange_b.phi",
+        "rotor.flange_b.tau",
+        "rotor.phi",
+        "rotor.w",
+        "rotor.a",
+        "gear.flange_a.phi",
+        "gear.flange_a.tau",
+        "gear.flange_b.phi",
+        "gear.flange_b.tau",
+        "gear.phi_support",
+        "gear.phi_a",
+        "gear.phi_b",
+        "load.flange_a.phi",
+        "load.flange_a.tau",
+        "load.flange_b.phi",
+        "load.flange_b.tau",
+        "der(load.phi)",
+        "load.w",
+        "load.a",
+        "spring.phi_rel",
+        "der(spring.w_rel)",
+        "spring.a_rel",
+        "spring.tau",
+        "spring.flange_a.phi",
+        "spring.flange_a.tau",
+        "spring.flange_b.phi",
+        "spring.flange_b.tau",
+        "spring.lossPower",
+        "spring.tau_c",
+        "spring.tau_d",
+        "frame.flange.phi",
+        "frame.flange.tau",
+        "brakeTorque.flange.phi",
+        "brakeTorque.flange.tau",
+        "brakeTorque.phi_support",
+        "brakeTorque.tau"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (phi = flange.phi - phi_support)",
+          "id": "f_x[0]",
+          "unknowns": [
+            0,
+            1,
+            3
+          ],
+          "equation_text": "0 = motor.phi - (motor.flange.phi - motor.phi_support)"
+        },
+        {
+          "equation": "f_x[1] (phi_support = 0)",
+          "id": "f_x[1]",
+          "unknowns": [
+            3
+          ],
+          "equation_text": "0 = motor.phi_support - 0"
+        },
+        {
+          "equation": "f_x[2] (w = der(phi))",
+          "id": "f_x[2]",
+          "unknowns": [
+            4,
+            11
+          ],
+          "equation_text": "0 = motor.w - rotor.w"
+        },
+        {
+          "equation": "f_x[3] (tau = -flange.tau)",
+          "id": "f_x[3]",
+          "unknowns": [
+            2,
+            5
+          ],
+          "equation_text": "0 = motor.tau - -motor.flange.tau"
+        },
+        {
+          "equation": "f_x[4] (tau = tau_constant)",
+          "id": "f_x[4]",
+          "unknowns": [
+            5
+          ],
+          "equation_text": "0 = motor.tau - motor.tau_constant"
+        },
+        {
+          "equation": "f_x[5] (phi = flange_a.phi)",
+          "id": "f_x[5]",
+          "unknowns": [
+            6,
+            10
+          ],
+          "equation_text": "0 = rotor.phi - rotor.flange_a.phi"
+        },
+        {
+          "equation": "f_x[6] (phi = flange_b.phi)",
+          "id": "f_x[6]",
+          "unknowns": [
+            8,
+            10
+          ],
+          "equation_text": "0 = rotor.phi - rotor.flange_b.phi"
+        },
+        {
+          "equation": "f_x[7] (w = der(phi))",
+          "id": "f_x[7]",
+          "unknowns": [
+            11,
+            25
+          ],
+          "equation_text": "0 = rotor.w - gear.ratio*load.w"
+        },
+        {
+          "equation": "f_x[8] (a = der(w))",
+          "id": "f_x[8]",
+          "unknowns": [
+            12,
+            29
+          ],
+          "equation_text": "0 = rotor.a - gear.ratio*-spring.a_rel"
+        },
+        {
+          "equation": "f_x[9] (J*a = flange_a.tau + flange_b.tau)",
+          "id": "f_x[9]",
+          "unknowns": [
+            7,
+            9,
+            12
+          ],
+          "equation_text": "0 = rotor.J*rotor.a - (rotor.flange_a.tau + rotor.flange_b.tau)"
+        },
+        {
+          "equation": "f_x[10] (phi_support = 0)",
+          "id": "f_x[10]",
+          "unknowns": [
+            17
+          ],
+          "equation_text": "0 = gear.phi_support - 0"
+        },
+        {
+          "equation": "f_x[11] (phi_a = flange_a.phi - phi_support)",
+          "id": "f_x[11]",
+          "unknowns": [
+            13,
+            17,
+            18
+          ],
+          "equation_text": "0 = gear.phi_a - (gear.flange_a.phi - gear.phi_support)"
+        },
+        {
+          "equation": "f_x[12] (phi_b = flange_b.phi - phi_support)",
+          "id": "f_x[12]",
+          "unknowns": [
+            15,
+            17,
+            19
+          ],
+          "equation_text": "0 = gear.phi_b - (gear.flange_b.phi - gear.phi_support)"
+        },
+        {
+          "equation": "f_x[13] (phi_a = ratio*phi_b)",
+          "id": "f_x[13]",
+          "unknowns": [
+            18,
+            19
+          ],
+          "equation_text": "0 = gear.phi_a - gear.ratio*gear.phi_b"
+        },
+        {
+          "equation": "f_x[14] (0 = ratio*flange_a.tau + flange_b.tau)",
+          "id": "f_x[14]",
+          "unknowns": [
+            14,
+            16
+          ],
+          "equation_text": "0 = 0 - (gear.ratio*gear.flange_a.tau + gear.flange_b.tau)"
+        },
+        {
+          "equation": "f_x[15] (phi = flange_a.phi)",
+          "id": "f_x[15]",
+          "unknowns": [
+            20
+          ],
+          "equation_text": "0 = load.phi - load.flange_a.phi"
+        },
+        {
+          "equation": "f_x[16] (phi = flange_b.phi)",
+          "id": "f_x[16]",
+          "unknowns": [
+            22
+          ],
+          "equation_text": "0 = load.phi - load.flange_b.phi"
+        },
+        {
+          "equation": "f_x[17] (w = der(phi))",
+          "id": "f_x[17]",
+          "unknowns": [
+            24,
+            25
+          ],
+          "equation_text": "0 = load.w - der(load.phi)"
+        },
+        {
+          "equation": "f_x[18] (a = der(w))",
+          "id": "f_x[18]",
+          "unknowns": [
+            26,
+            29
+          ],
+          "equation_text": "0 = load.a - -spring.a_rel"
+        },
+        {
+          "equation": "f_x[19] (J*a = flange_a.tau + flange_b.tau)",
+          "id": "f_x[19]",
+          "unknowns": [
+            21,
+            23,
+            26
+          ],
+          "equation_text": "0 = load.J*load.a - (load.flange_a.tau + load.flange_b.tau)"
+        },
+        {
+          "equation": "f_x[20] (phi_rel = flange_b.phi - flange_a.phi)",
+          "id": "f_x[20]",
+          "unknowns": [
+            27,
+            31,
+            33
+          ],
+          "equation_text": "0 = spring.phi_rel - (spring.flange_b.phi - spring.flange_a.phi)"
+        },
+        {
+          "equation": "f_x[21] (w_rel = der(phi_rel))",
+          "id": "f_x[21]",
+          "unknowns": [
+            25
+          ],
+          "equation_text": "0 = spring.w_rel - -load.w"
+        },
+        {
+          "equation": "f_x[22] (a_rel = der(w_rel))",
+          "id": "f_x[22]",
+          "unknowns": [
+            28,
+            29
+          ],
+          "equation_text": "0 = spring.a_rel - der(spring.w_rel)"
+        },
+        {
+          "equation": "f_x[23] (flange_b.tau = tau)",
+          "id": "f_x[23]",
+          "unknowns": [
+            30,
+            34
+          ],
+          "equation_text": "0 = spring.flange_b.tau - spring.tau"
+        },
+        {
+          "equation": "f_x[24] (flange_a.tau = -tau)",
+          "id": "f_x[24]",
+          "unknowns": [
+            30,
+            32
+          ],
+          "equation_text": "0 = spring.flange_a.tau - -spring.tau"
+        },
+        {
+          "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0)",
+          "id": "f_x[25]",
+          "unknowns": [
+            27,
+            36
+          ],
+          "equation_text": "0 = spring.tau_c - spring.c*(spring.phi_rel - spring.phi_rel0)"
+        },
+        {
+          "equation": "f_x[26] (tau_d = d*w_rel)",
+          "id": "f_x[26]",
+          "unknowns": [
+            37
+          ],
+          "equation_text": "0 = spring.tau_d - spring.d*spring.w_rel"
+        },
+        {
+          "equation": "f_x[27] (tau = tau_c + tau_d)",
+          "id": "f_x[27]",
+          "unknowns": [
+            30,
+            36,
+            37
+          ],
+          "equation_text": "0 = spring.tau - (spring.tau_c + spring.tau_d)"
+        },
+        {
+          "equation": "f_x[28] (lossPower = tau_d*w_rel)",
+          "id": "f_x[28]",
+          "unknowns": [
+            35,
+            37
+          ],
+          "equation_text": "0 = spring.lossPower - spring.tau_d*spring.w_rel"
+        },
+        {
+          "equation": "f_x[29] (flange.phi = phi0)",
+          "id": "f_x[29]",
+          "unknowns": [
+            38
+          ],
+          "equation_text": "0 = frame.flange.phi - frame.phi0"
+        },
+        {
+          "equation": "f_x[30] (phi_support = 0)",
+          "id": "f_x[30]",
+          "unknowns": [
+            42
+          ],
+          "equation_text": "0 = brakeTorque.phi_support - 0"
+        },
+        {
+          "equation": "f_x[31] (flange.tau = -tau)",
+          "id": "f_x[31]",
+          "unknowns": [
+            41,
+            43
+          ],
+          "equation_text": "0 = brakeTorque.flange.tau - -brakeTorque.tau"
+        },
+        {
+          "equation": "f_x[32] (brakeTorque.tau = if braking then\n    (if load.w > 0 then -brakeForce else brakeForce)\n  else 0)",
+          "id": "f_x[32]",
+          "unknowns": [
+            25,
+            43
+          ],
+          "equation_text": "0 = brakeTorque.tau - if braking then if load.w > 0 then -brakeForce else brakeForce else 0"
+        },
+        {
+          "equation": "f_x[33] (SI.Torque tau)",
+          "id": "f_x[33]",
+          "unknowns": [
+            2,
+            7
+          ],
+          "equation_text": "0 = motor.flange.tau + rotor.flange_a.tau"
+        },
+        {
+          "equation": "f_x[34] (SI.Torque tau)",
+          "id": "f_x[34]",
+          "unknowns": [
+            9,
+            14
+          ],
+          "equation_text": "0 = rotor.flange_b.tau + gear.flange_a.tau"
+        },
+        {
+          "equation": "f_x[35] (SI.Torque tau)",
+          "id": "f_x[35]",
+          "unknowns": [
+            16,
+            21
+          ],
+          "equation_text": "0 = gear.flange_b.tau + load.flange_a.tau"
+        },
+        {
+          "equation": "f_x[36] (SI.Torque tau)",
+          "id": "f_x[36]",
+          "unknowns": [
+            23,
+            32,
+            41
+          ],
+          "equation_text": "0 = load.flange_b.tau + spring.flange_a.tau + brakeTorque.flange.tau"
+        },
+        {
+          "equation": "f_x[37] (SI.Torque tau)",
+          "id": "f_x[37]",
+          "unknowns": [
+            34,
+            39
+          ],
+          "equation_text": "0 = spring.flange_b.tau + frame.flange.tau"
+        },
+        {
+          "equation": "f_x[38] (SI.Angle phi)",
+          "id": "f_x[38]",
+          "unknowns": [
+            1,
+            6
+          ],
+          "equation_text": "0 = motor.flange.phi - rotor.flange_a.phi"
+        },
+        {
+          "equation": "f_x[39] (SI.Angle phi)",
+          "id": "f_x[39]",
+          "unknowns": [
+            8,
+            13
+          ],
+          "equation_text": "0 = rotor.flange_b.phi - gear.flange_a.phi"
+        },
+        {
+          "equation": "f_x[40] (SI.Angle phi)",
+          "id": "f_x[40]",
+          "unknowns": [
+            15,
+            20
+          ],
+          "equation_text": "0 = gear.flange_b.phi - load.flange_a.phi"
+        },
+        {
+          "equation": "f_x[41] (SI.Angle phi)",
+          "id": "f_x[41]",
+          "unknowns": [
+            22,
+            31
+          ],
+          "equation_text": "0 = load.flange_b.phi - spring.flange_a.phi"
+        },
+        {
+          "equation": "f_x[42] (SI.Angle phi)",
+          "id": "f_x[42]",
+          "unknowns": [
+            31,
+            40
+          ],
+          "equation_text": "0 = spring.flange_a.phi - brakeTorque.flange.phi"
+        },
+        {
+          "equation": "f_x[43] (SI.Angle phi)",
+          "id": "f_x[43]",
+          "unknowns": [
+            33,
+            38
+          ],
+          "equation_text": "0 = spring.flange_b.phi - frame.flange.phi"
+        }
+      ]
+    },
+    "n_manifold_constraints": 0
+  },
+  "search": [
+    {
+      "kind": "round",
+      "lane": "direct",
+      "round": 1,
+      "residue": 6,
+      "unmatched_equations": [
+        "f_x[38] (SI.Angle phi)",
+        "f_x[40] (SI.Angle phi)",
+        "f_x[43] (SI.Angle phi)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[38]",
+        "f_x[40]",
+        "f_x[43]"
+      ],
+      "unmatched_unknowns": [
+        {
+          "name": "motor.w",
+          "kind": "algebraic"
+        },
+        {
+          "name": "load.a",
+          "kind": "algebraic"
+        },
+        {
+          "name": "spring.a_rel",
+          "kind": "algebraic"
+        }
+      ]
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_admissible",
+      "discovered": 15
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 0,
+        "rhs_ordinal": 88,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialTorque.mo",
+          "line": 9,
+          "column": 3,
+          "excerpt": "phi = flange.phi - phi_support",
+          "line_text": "  phi = flange.phi - phi_support;",
+          "byte_start": 346,
+          "byte_end": 376
+        }
+      },
+      "outcome": {
+        "kind": "reduced",
+        "residue": 4
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 13,
+        "rhs_ordinal": 85,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
+          "line": 19,
+          "column": 3,
+          "excerpt": "phi = flange_a.phi",
+          "line_text": "  phi = flange_a.phi;",
+          "byte_start": 881,
+          "byte_end": 899
+        }
+      },
+      "outcome": {
+        "kind": "reduced",
+        "residue": 4
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 13,
+        "rhs_ordinal": 104,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
+          "line": 19,
+          "column": 3,
+          "excerpt": "phi = flange_a.phi",
+          "line_text": "  phi = flange_a.phi;",
+          "byte_start": 881,
+          "byte_end": 899
+        }
+      },
+      "outcome": {
+        "kind": "reduced",
+        "residue": 4
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 13,
+        "rhs_ordinal": 107,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
+          "line": 20,
+          "column": 3,
+          "excerpt": "phi = flange_b.phi",
+          "line_text": "  phi = flange_b.phi;",
+          "byte_start": 903,
+          "byte_end": 921
+        }
+      },
+      "outcome": {
+        "kind": "reduced",
+        "residue": 4
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 30,
+        "rhs_ordinal": 133,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
+          "line": 15,
+          "column": 3,
+          "excerpt": "phi_b = flange_b.phi - phi_support",
+          "line_text": "  phi_b = flange_b.phi - phi_support;",
+          "byte_start": 514,
+          "byte_end": 548
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 6,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 30,
+        "rhs_ordinal": 148,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
+          "line": 19,
+          "column": 3,
+          "excerpt": "phi = flange_a.phi",
+          "line_text": "  phi = flange_a.phi;",
+          "byte_start": 881,
+          "byte_end": 899
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 6,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 30,
+        "rhs_ordinal": 151,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
+          "line": 20,
+          "column": 3,
+          "excerpt": "phi = flange_b.phi",
+          "line_text": "  phi = flange_b.phi;",
+          "byte_start": 903,
+          "byte_end": 921
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 6,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 30,
+        "rhs_ordinal": 252,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/Flange.mo",
+          "line": 4,
+          "column": 3,
+          "excerpt": "SI.Angle phi",
+          "line_text": "  SI.Angle phi \"Absolute rotation angle of flange\";",
+          "byte_start": 105,
+          "byte_end": 117
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 6,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 30,
+        "rhs_ordinal": 255,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/Flange.mo",
+          "line": 4,
+          "column": 3,
+          "excerpt": "SI.Angle phi",
+          "line_text": "  SI.Angle phi \"Absolute rotation angle of flange\";",
+          "byte_start": 105,
+          "byte_end": 117
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 6,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 30,
+        "rhs_ordinal": 258,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/Flange.mo",
+          "line": 4,
+          "column": 3,
+          "excerpt": "SI.Angle phi",
+          "line_text": "  SI.Angle phi \"Absolute rotation angle of flange\";",
+          "byte_start": 105,
+          "byte_end": 117
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 6,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 33,
+        "rhs_ordinal": 169,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialCompliantWithRelativeStates.mo",
+          "line": 29,
+          "column": 3,
+          "excerpt": "phi_rel = flange_b.phi - flange_a.phi",
+          "line_text": "  phi_rel = flange_b.phi - flange_a.phi;",
+          "byte_start": 1355,
+          "byte_end": 1392
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 6,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "selected",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 0,
+        "rhs_ordinal": 88,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialTorque.mo",
+          "line": 9,
+          "column": 3,
+          "excerpt": "phi = flange.phi - phi_support",
+          "line_text": "  phi = flange.phi - phi_support;",
+          "byte_start": 346,
+          "byte_end": 376
+        }
+      },
+      "residue_before": 6,
+      "residue_after": 4
+    },
+    {
+      "kind": "round",
+      "lane": "direct",
+      "round": 2,
+      "residue": 4,
+      "unmatched_equations": [
+        "f_x[40] (SI.Angle phi)",
+        "f_x[43] (SI.Angle phi)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[40]",
+        "f_x[43]"
+      ],
+      "unmatched_unknowns": [
+        {
+          "name": "load.a",
+          "kind": "algebraic"
+        },
+        {
+          "name": "spring.a_rel",
+          "kind": "algebraic"
+        }
+      ]
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_admissible",
+      "discovered": 8
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 13,
+        "rhs_ordinal": 140,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
+          "line": 16,
+          "column": 3,
+          "excerpt": "phi_a = ratio*phi_b",
+          "line_text": "  phi_a = ratio*phi_b;",
+          "byte_start": 552,
+          "byte_end": 571
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 4,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 30,
+        "rhs_ordinal": 135,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
+          "line": 15,
+          "column": 3,
+          "excerpt": "phi_b = flange_b.phi - phi_support",
+          "line_text": "  phi_b = flange_b.phi - phi_support;",
+          "byte_start": 514,
+          "byte_end": 548
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 4,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 30,
+        "rhs_ordinal": 150,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
+          "line": 19,
+          "column": 3,
+          "excerpt": "phi = flange_a.phi",
+          "line_text": "  phi = flange_a.phi;",
+          "byte_start": 881,
+          "byte_end": 899
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 4,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 30,
+        "rhs_ordinal": 153,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
+          "line": 20,
+          "column": 3,
+          "excerpt": "phi = flange_b.phi",
+          "line_text": "  phi = flange_b.phi;",
+          "byte_start": 903,
+          "byte_end": 921
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 4,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 30,
+        "rhs_ordinal": 254,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/Flange.mo",
+          "line": 4,
+          "column": 3,
+          "excerpt": "SI.Angle phi",
+          "line_text": "  SI.Angle phi \"Absolute rotation angle of flange\";",
+          "byte_start": 105,
+          "byte_end": 117
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 4,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 30,
+        "rhs_ordinal": 257,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/Flange.mo",
+          "line": 4,
+          "column": 3,
+          "excerpt": "SI.Angle phi",
+          "line_text": "  SI.Angle phi \"Absolute rotation angle of flange\";",
+          "byte_start": 105,
+          "byte_end": 117
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 4,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 30,
+        "rhs_ordinal": 260,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/Flange.mo",
+          "line": 4,
+          "column": 3,
+          "excerpt": "SI.Angle phi",
+          "line_text": "  SI.Angle phi \"Absolute rotation angle of flange\";",
+          "byte_start": 105,
+          "byte_end": 117
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 4,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 33,
+        "rhs_ordinal": 171,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialCompliantWithRelativeStates.mo",
+          "line": 29,
+          "column": 3,
+          "excerpt": "phi_rel = flange_b.phi - flange_a.phi",
+          "line_text": "  phi_rel = flange_b.phi - flange_a.phi;",
+          "byte_start": 1355,
+          "byte_end": 1392
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 4,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "selected",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 33,
+        "rhs_ordinal": 171,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialCompliantWithRelativeStates.mo",
+          "line": 29,
+          "column": 3,
+          "excerpt": "phi_rel = flange_b.phi - flange_a.phi",
+          "line_text": "  phi_rel = flange_b.phi - flange_a.phi;",
+          "byte_start": 1355,
+          "byte_end": 1392
+        }
+      },
+      "residue_before": 4,
+      "residue_after": 4
+    },
+    {
+      "kind": "round",
+      "lane": "direct",
+      "round": 3,
+      "residue": 4,
+      "unmatched_equations": [
+        "f_x[21] (w_rel = der(phi_rel))",
+        "f_x[40] (SI.Angle phi)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[21]",
+        "f_x[40]"
+      ],
+      "unmatched_unknowns": [
+        {
+          "name": "load.a",
+          "kind": "algebraic"
+        },
+        {
+          "name": "spring.a_rel",
+          "kind": "algebraic"
+        }
+      ]
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_admissible",
+      "discovered": 3
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 13,
+        "rhs_ordinal": 143,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
+          "line": 16,
+          "column": 3,
+          "excerpt": "phi_a = ratio*phi_b",
+          "line_text": "  phi_a = ratio*phi_b;",
+          "byte_start": 552,
+          "byte_end": 571
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 4,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 31,
+        "rhs_ordinal": 176,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialCompliantWithRelativeStates.mo",
+          "line": 30,
+          "column": 3,
+          "excerpt": "w_rel = der(phi_rel)",
+          "line_text": "  w_rel = der(phi_rel);",
+          "byte_start": 1396,
+          "byte_end": 1416
+        }
+      },
+      "outcome": {
+        "kind": "reduced",
+        "residue": 2
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 34,
+        "rhs_ordinal": 177,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialCompliantWithRelativeStates.mo",
+          "line": 30,
+          "column": 3,
+          "excerpt": "w_rel = der(phi_rel)",
+          "line_text": "  w_rel = der(phi_rel);",
+          "byte_start": 1396,
+          "byte_end": 1416
+        }
+      },
+      "outcome": {
+        "kind": "reduced",
+        "residue": 2
+      }
+    },
+    {
+      "kind": "selected",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 31,
+        "rhs_ordinal": 176,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialCompliantWithRelativeStates.mo",
+          "line": 30,
+          "column": 3,
+          "excerpt": "w_rel = der(phi_rel)",
+          "line_text": "  w_rel = der(phi_rel);",
+          "byte_start": 1396,
+          "byte_end": 1416
+        }
+      },
+      "residue_before": 4,
+      "residue_after": 2
+    },
+    {
+      "kind": "round",
+      "lane": "direct",
+      "round": 4,
+      "residue": 2,
+      "unmatched_equations": [
+        "f_x[40] (SI.Angle phi)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[40]"
+      ],
+      "unmatched_unknowns": [
+        {
+          "name": "spring.a_rel",
+          "kind": "algebraic"
+        }
+      ]
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_admissible",
+      "discovered": 1
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 13,
+        "rhs_ordinal": 146,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
+          "line": 16,
+          "column": 3,
+          "excerpt": "phi_a = ratio*phi_b",
+          "line_text": "  phi_a = ratio*phi_b;",
+          "byte_start": 552,
+          "byte_end": 571
+        }
+      },
+      "outcome": {
+        "kind": "held",
+        "residue": 2,
+        "meaning": "the residue did not move, but the system changed"
+      }
+    },
+    {
+      "kind": "selected",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 13,
+        "rhs_ordinal": 146,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
+          "line": 16,
+          "column": 3,
+          "excerpt": "phi_a = ratio*phi_b",
+          "line_text": "  phi_a = ratio*phi_b;",
+          "byte_start": 552,
+          "byte_end": 571
+        }
+      },
+      "residue_before": 2,
+      "residue_after": 2
+    },
+    {
+      "kind": "round",
+      "lane": "direct",
+      "round": 5,
+      "residue": 2,
+      "unmatched_equations": [
+        "f_x[21] (w_rel = der(phi_rel))"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[21]"
+      ],
+      "unmatched_unknowns": [
+        {
+          "name": "spring.a_rel",
+          "kind": "algebraic"
+        }
+      ]
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_admissible",
+      "discovered": 1
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 14,
+        "rhs_ordinal": 123,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
+          "line": 21,
+          "column": 3,
+          "excerpt": "w = der(phi)",
+          "line_text": "  w = der(phi);",
+          "byte_start": 925,
+          "byte_end": 937
+        }
+      },
+      "outcome": {
+        "kind": "sorted"
+      }
+    },
+    {
+      "kind": "selected",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 14,
+        "rhs_ordinal": 123,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
+          "line": 21,
+          "column": 3,
+          "excerpt": "w = der(phi)",
+          "line_text": "  w = der(phi);",
+          "byte_start": 925,
+          "byte_end": 937
+        }
+      },
+      "residue_before": 2,
+      "residue_after": null
+    },
+    {
+      "kind": "stopped",
+      "outcome": {
+        "kind": "sorted"
+      }
+    }
+  ],
+  "stalled": null
+}

@@ -2,7 +2,7 @@
   "model": "RcCircuit",
   "specimen": "specimens/RcCircuit.mo",
   "specimen_fnv1a": "52bcfa3f007682c3",
-  "rumoca_rev": "da6d13b1",
+  "rumoca_rev": "a334820a",
   "rumoca_version": "0.10.0",
   "stages": {
     "parse": {
@@ -34,8 +34,8 @@
       "note": null
     },
     "index_reduction": {
-      "has_ir": false,
-      "note": "Rumoca ran index reduction successfully; HRW cannot display it yet. On Rumoca 0.10.0 the ten-step dummy-derivative funnel became two fixed-point lanes with a candidate/attempt/selection protocol, and the DAE became immutable, so this pane is being rebuilt against the new model rather than shown in the old vocabulary. This is an HRW gap, not a compiler problem."
+      "has_ir": true,
+      "note": "already index-1: no reduction needed"
     },
     "initialization": {
       "has_ir": true,

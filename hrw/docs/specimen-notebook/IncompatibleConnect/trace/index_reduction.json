@@ -1,0 +1,204 @@
+{
+  "rounds": 3,
+  "n_records": 9,
+  "outcome": {
+    "kind": "singular",
+    "admitted": false,
+    "residue": 2,
+    "meaning": "no candidate in either lane could reduce the residue further"
+  },
+  "lanes": [
+    "direct",
+    "holonomic"
+  ],
+  "residue_definition": "(n_equations - n_matched) + (n_unknowns - n_matched): both deficits summed, so a square system's residue is twice its rank deficiency",
+  "ordinals_note": "state_ordinal, rhs_ordinal, variable_ordinal and the holonomic ordinals index the rebuilt system of their own round, not the raw DAE. They are deliberately unnamed; resolve a candidate through declared_at, which is a span and stable across rebuilds",
+  "before": {
+    "incidence": {
+      "n_eq": 3,
+      "n_var": 3,
+      "unknown_names": [
+        "a.v",
+        "a.i",
+        "b.v"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (Real v)",
+          "id": "f_x[0]",
+          "unknowns": [
+            0,
+            2
+          ],
+          "equation_text": "0 = a.v - b.v"
+        },
+        {
+          "equation": "f_x[1] (Real i)",
+          "id": "f_x[1]",
+          "unknowns": [
+            1
+          ],
+          "equation_text": "0 = a.i"
+        },
+        {
+          "equation": "f_x[2] (Real i)",
+          "id": "f_x[2]",
+          "unknowns": [
+            1
+          ],
+          "equation_text": "0 = a.i"
+        }
+      ]
+    },
+    "matching": [
+      {
+        "equation": "f_x[0] (Real v)",
+        "id": "f_x[0]",
+        "unknown": "a.v"
+      },
+      {
+        "equation": "f_x[1] (Real i)",
+        "id": "f_x[1]",
+        "unknown": "a.i"
+      }
+    ],
+    "error": {
+      "kind": "singular",
+      "message": "structurally singular system: 2 matched out of 3 equations and 3 unknowns",
+      "n_equations": 3,
+      "n_unknowns": 3,
+      "n_matched": 2,
+      "rank_deficiency": 1,
+      "unmatched_equations": [
+        "f_x[2] (Real i)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[2]"
+      ],
+      "unmatched_unknowns": [
+        "b.v"
+      ],
+      "unmatched_unknown_locations": [
+        {
+          "unknown": "b.v",
+          "location": {
+            "file": "hrw/specimens/IncompatibleConnect.mo",
+            "line": 32,
+            "column": 5,
+            "excerpt": "Real v",
+            "line_text": "    Real v;",
+            "byte_start": 1664,
+            "byte_end": 1670
+          }
+        }
+      ],
+      "over_determined_block": {
+        "equations": 2,
+        "unknowns": 1,
+        "sample": [
+          "f_x[1]",
+          "f_x[2]"
+        ]
+      },
+      "guidance": "The maximum matching could not pair every equation with a unique unknown. Each unmatched unknown is a variable no equation determines; `unmatched_unknown_locations` gives the source line that declares it. If the Index Reduction stage also reports singular, the model is genuinely ill-posed rather than merely high-index."
+    },
+    "n_states": 0,
+    "n_algebraics": 3,
+    "n_equations": 3
+  },
+  "after": null,
+  "search": [
+    {
+      "kind": "round",
+      "lane": "direct",
+      "round": 1,
+      "residue": 2,
+      "unmatched_equations": [
+        "f_x[2] (Real i)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[2]"
+      ],
+      "unmatched_unknowns": [
+        {
+          "name": "b.v",
+          "kind": "algebraic"
+        }
+      ]
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_admissible",
+      "discovered": 0
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_conditional",
+      "discovered": 0
+    },
+    {
+      "kind": "round",
+      "lane": "holonomic",
+      "round": 1,
+      "residue": 2,
+      "unmatched_equations": [
+        "f_x[2] (Real i)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[2]"
+      ],
+      "unmatched_unknowns": [
+        {
+          "name": "b.v",
+          "kind": "algebraic"
+        }
+      ]
+    },
+    {
+      "kind": "candidates",
+      "lane": "holonomic",
+      "group": "holonomic",
+      "discovered": 0
+    },
+    {
+      "kind": "round",
+      "lane": "direct",
+      "round": 1,
+      "residue": 2,
+      "unmatched_equations": [
+        "f_x[2] (Real i)"
+      ],
+      "unmatched_equation_ids": [
+        "f_x[2]"
+      ],
+      "unmatched_unknowns": [
+        {
+          "name": "b.v",
+          "kind": "algebraic"
+        }
+      ]
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_admissible",
+      "discovered": 0
+    },
+    {
+      "kind": "candidates",
+      "lane": "direct",
+      "group": "direct_conditional",
+      "discovered": 0
+    },
+    {
+      "kind": "stopped",
+      "outcome": {
+        "kind": "singular",
+        "residue": 2
+      }
+    }
+  ],
+  "stalled": null
+}

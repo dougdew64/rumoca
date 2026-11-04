@@ -22,6 +22,50 @@ disagrees with your screen, the lab is wrong and I want to know.
 
 ---
 
+> ## ⚠ Stations 2–5 are suspended: they describe Rumoca 0.9.20, and several counts are now wrong
+>
+> **Do not run them yet, and do not treat their numbers as read.** Station 1 is unaffected — it is
+> worked by hand before the compiler is asked anything.
+>
+> The stations below are written against the **ten-step dummy-derivative funnel**:
+> `n_differentiations`, `differentiated_rows`, `reduce_constrained_dummy_derivatives`,
+> `eliminate_trivial`, a step list with per-step before/after counts. **Rumoca 0.10.0 runs none of
+> that.** Reduction is two fixed-point lanes, Direct and Holonomic, alternating as a fixed point,
+> and a candidate is tried by rebuilding and re-sorting the whole system. The stage re-model landed
+> 2026-11-04; this lab's re-authoring has not.
+>
+> **The claim that is outright false, rather than merely renamed:** Station 4 says *"the system goes
+> from 97 equations to 20"* and Station 5 says `eliminate_trivial` removes 77 of them. Measured on
+> 0.10.0, `Drivetrain` goes from **97 equations to 97**. There is no elimination pass — upstream
+> deleted it — so nothing is substituted out. What changes is the states.
+>
+> **A trap for whoever re-authors this.** Station 5 asks about *6 differentiations* and 0.10.0
+> reports *6 rounds* for the same model. **Those are not the same quantity**, and the coincidence is
+> inviting. A round is one lane iteration that may try many candidates and may select one that
+> changes nothing; it is not a differentiation.
+>
+> **Measured 0.10.0 facts for the models this lab uses**, so the rewrite starts from data:
+>
+> | model | outcome | rounds | states | equations | algebraics |
+> |---|---|---|---|---|---|
+> | `CartesianPendulum` | singular, not admitted | 3 | 4 | 5 | 1 |
+> | `SingleInertia` | `borrowed` (already index-1) | 0 | 2 → 2 | 2 → 2 | 0 → 0 |
+> | `Drivetrain` | `sorted` | 6 | **9 → 5** | 97 → 97 | 88 → 92 |
+> | `StabilizedPendulum` | `sorted` | **0** | 4 → 4 | **5 → 7** | **1 → 3** |
+> | `CapacitorLoop` | `sorted` | 2 | 1 → 1 | 14 → 14 | 13 → 13 |
+>
+> Three of those rows are new teaching material the funnel could not have shown.
+> **`CartesianPendulum` discovers zero candidates in every lane** across three alternations — it is
+> not refused, there is nothing to try, which is `docs/ideas.md` #83 stated precisely.
+> **`CapacitorLoop` sorts with every count unchanged**, so reduction is visibly not a size
+> reduction; what it added is one manifold constraint. And **`StabilizedPendulum` sorts with zero
+> rounds** while gaining two equations and two algebraics — the signature of derivative-alias
+> normalization rather than of reduction.
+>
+> `docs/tech-debt.md` carries the account.
+
+---
+
 ## Station 1 — Why can five equations in five unknowns be unsolvable?
 
 `CartesianPendulum` is a point mass on a rigid rod, in Cartesian coordinates:
@@ -203,7 +247,9 @@ Here is the station this lab exists for, and it is about a number that used to b
 
 [Look — Drivetrain → Index reduction](hrw://load/Drivetrain/IndexReduction)
 
-[Point at `reduction`](hrw://stage/IndexReduction/Tree/node/reduction)
+*(The `node/reduction` link that stood here pointed at the funnel report's root, which the
+0.10.0 stage does not publish. Removed rather than re-aimed: re-aiming it would imply the station
+around it had been re-authored. See the suspension notice at the top.)*
 
 **Expected:** `n_differentiations` is 6 and `differentiated_rows` is empty — none of them
 survive. The step list shows `reduce_constrained_dummy_derivatives` demoting all 6, and

@@ -193,11 +193,35 @@ mod tests {
     /// — it concludes *"this system is structurally singular"*, which is the
     /// symptom. Naming this test for the stronger claim would be the shape this
     /// repository keeps catching, a name promising more than the mechanism gives.
+    ///
+    /// # Restored and re-keyed 2026-11-04
+    ///
+    /// It read `stage["error"]`. The re-modelled stage publishes the raw system's
+    /// report under **`before`** — taken from the Structural stage rather than
+    /// recomputed — so the deficiency is at `before.error`, which is also where it
+    /// belongs: **detection is the raw system's structural analysis**, and this rung
+    /// is about detection.
+    ///
+    /// Reduction's own verdict is a separate claim and now worth asserting beside
+    /// it: `outcome.kind == "singular"` with `residue == 2`. Two numbers for one
+    /// deficiency, and they are not inconsistent —
+    /// `worker::index_reduction_from_observation` publishes the definition:
+    /// residue sums **both** deficits, so a square system's residue is twice its
+    /// rank deficiency.
+    ///
+    /// The ladder's shape is unchanged by any of this. Rungs 2-5 stay ignored on
+    /// `docs/ideas.md` #83, and the measured reason is sharper than before: the
+    /// Direct lane discovers **0** candidates in both proof groups and the Holonomic
+    /// lane **0**, across three alternations. Rumoca does not refuse to
+    /// differentiate `x^2 + y^2 = L^2` — it finds nothing to try.
     #[test]
-    #[ignore = "awaiting the Index reduction re-model: rung 1 of the Pantelides ladder. The body is kept as the specification the re-model must satisfy — see worker::AWAITING_REMODEL"]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
     fn rung_1_the_deficiency_is_detected_at_the_constraint() {
         let stage = reduction_stage();
-        let error = &stage["error"];
+        let error = &stage["before"]["error"];
 
         assert_eq!(
             error["kind"].as_str(),
@@ -223,11 +247,67 @@ mod tests {
         // `docs/identity-and-provenance.md` — no substring search ever decides
         // identity. `f_x[4]` is the fifth equation, and the model declares the
         // constraint fifth.
+        //
+        // **On v0.10.0 the label carries the equation text too** — measured
+        // 2026-11-04 as `f_x[4] (x ^ 2 + y ^ 2 = L ^ 2)` where 0.9.20 published a
+        // bare `f_x[4]`. So the ordinal is matched as a PREFIX and the parenthetical
+        // is left alone: the identity is still the position, and the text is
+        // decoration this test must not depend on.
+        //
+        // It is worth noticing what that decoration says, though. It independently
+        // *corroborates* the position claim — the fifth equation really is
+        // `x^2 + y^2 = L^2` — which the old body could only take on trust from the
+        // declaration order. Corroboration, not evidence: if the two ever disagreed,
+        // the position is what this rung means.
+        let unmatched = error["unmatched_equations"]
+            .as_array()
+            .map(Vec::as_slice)
+            .unwrap_or_default();
         assert_eq!(
-            error["unmatched_equations"].as_array().map(Vec::as_slice),
-            Some([serde_json::json!("f_x[4]")].as_slice()),
+            unmatched.len(),
+            1,
+            "exactly one equation is left unmatched: {unmatched:?}"
+        );
+        let label = unmatched[0].as_str().unwrap_or_default();
+        assert!(
+            label == "f_x[4]" || label.starts_with("f_x[4] "),
             "the fifth equation of the model is `x^2 + y^2 = L^2`, and it is the one \
-             left unmatched"
+             left unmatched; got {label:?}"
+        );
+
+        // **Reduction's own verdict, beside detection's.** It is the half the old
+        // body could not state: the funnel reported completion regardless.
+        assert_eq!(
+            stage["outcome"]["kind"], "singular",
+            "reduction must not admit the pendulum: {}",
+            stage["outcome"],
+        );
+        assert_eq!(stage["outcome"]["admitted"], false);
+        assert_eq!(
+            stage["outcome"]["residue"], 2,
+            "residue sums both deficits, so one rank deficiency reads as 2",
+        );
+        assert!(
+            stage["after"].is_null(),
+            "a system that was not admitted has no `after` to show",
+        );
+
+        // **Nothing to try, rather than something refused** — the sharpest statement
+        // of what #83 is missing.
+        let search = stage["search"].as_array().expect("a search log");
+        let discovered: u64 = search
+            .iter()
+            .filter(|r| r["kind"] == "candidates")
+            .filter_map(|r| r["discovered"].as_u64())
+            .sum();
+        assert_eq!(
+            discovered, 0,
+            "no lane discovers a candidate for the pendulum; if this is now non-zero, \
+             #83 may have moved and rungs 2-5 are waiting",
+        );
+        assert!(
+            !search.iter().any(|r| r["kind"] == "attempt"),
+            "and so nothing is attempted",
         );
     }
 

@@ -1,0 +1,145 @@
+{
+  "rounds": 0,
+  "n_records": 1,
+  "outcome": {
+    "kind": "borrowed",
+    "admitted": true,
+    "rounds": 0,
+    "meaning": "the raw system sorted and normalization left it unchanged: already index-1, nothing rebuilt"
+  },
+  "lanes": [],
+  "residue_definition": "(n_equations - n_matched) + (n_unknowns - n_matched): both deficits summed, so a square system's residue is twice its rank deficiency",
+  "ordinals_note": "state_ordinal, rhs_ordinal, variable_ordinal and the holonomic ordinals index the rebuilt system of their own round, not the raw DAE. They are deliberately unnamed; resolve a candidate through declared_at, which is a span and stable across rebuilds",
+  "before": {
+    "n_equations": 2,
+    "n_unknowns": 2,
+    "coupled_block_count": 0,
+    "matching": [
+      {
+        "equation": "f_x[0] (der(h) = v)",
+        "id": "f_x[0]",
+        "unknown": "der(h)"
+      },
+      {
+        "equation": "f_x[1] (der(v) = -g)",
+        "id": "f_x[1]",
+        "unknown": "der(v)"
+      }
+    ],
+    "blocks": [
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[0] (der(h) = v)",
+        "id": "f_x[0]",
+        "unknown": "der(h)"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[1] (der(v) = -g)",
+        "id": "f_x[1]",
+        "unknown": "der(v)"
+      }
+    ],
+    "incidence": {
+      "n_eq": 2,
+      "n_var": 2,
+      "unknown_names": [
+        "der(h)",
+        "der(v)"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (der(h) = v)",
+          "id": "f_x[0]",
+          "unknowns": [
+            0
+          ],
+          "equation_text": "0 = der(h) - v"
+        },
+        {
+          "equation": "f_x[1] (der(v) = -g)",
+          "id": "f_x[1]",
+          "unknowns": [
+            1
+          ],
+          "equation_text": "0 = der(v) - -g"
+        }
+      ]
+    },
+    "n_states": 2,
+    "n_algebraics": 0
+  },
+  "after": {
+    "n_equations": 2,
+    "n_unknowns": 2,
+    "coupled_block_count": 0,
+    "matching": [
+      {
+        "equation": "f_x[0] (der(h) = v)",
+        "id": "f_x[0]",
+        "unknown": "der(h)"
+      },
+      {
+        "equation": "f_x[1] (der(v) = -g)",
+        "id": "f_x[1]",
+        "unknown": "der(v)"
+      }
+    ],
+    "blocks": [
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[0] (der(h) = v)",
+        "id": "f_x[0]",
+        "unknown": "der(h)"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[1] (der(v) = -g)",
+        "id": "f_x[1]",
+        "unknown": "der(v)"
+      }
+    ],
+    "n_states": 2,
+    "n_algebraics": 0,
+    "incidence": {
+      "n_eq": 2,
+      "n_var": 2,
+      "unknown_names": [
+        "der(h)",
+        "der(v)"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (der(h) = v)",
+          "id": "f_x[0]",
+          "unknowns": [
+            0
+          ],
+          "equation_text": "0 = der(h) - v"
+        },
+        {
+          "equation": "f_x[1] (der(v) = -g)",
+          "id": "f_x[1]",
+          "unknowns": [
+            1
+          ],
+          "equation_text": "0 = der(v) - -g"
+        }
+      ]
+    },
+    "n_manifold_constraints": 0
+  },
+  "search": [
+    {
+      "kind": "stopped",
+      "outcome": {
+        "kind": "borrowed"
+      }
+    }
+  ],
+  "stalled": null
+}

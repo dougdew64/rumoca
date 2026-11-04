@@ -3682,18 +3682,36 @@ impl WorkerState {
                     });
                     (stage, frames)
                 };
-                // Back to the ordinary `run_stage!` shape. This block was spelled
-                // out by hand only because the stage returned a three-tuple —
-                // its own frames plus the reduced system's structural captures.
-                // Both are gone with the funnel; see `index_reduction_stage`.
+                // **One preparation serves both stages**, which is what 0.10.0 makes
+                // possible: `inspect_prepare_for_solve` reduces the system and
+                // returns both the prepared result and the report of how it got
+                // there. Running it twice would be two reductions of one compile,
+                // and nothing would make them agree — so it runs here, outside both
+                // `run_stage!` brackets, and each stage reads the same observation.
+                //
+                // Outside the brackets rather than inside the first, because
+                // charging the whole cost to Index reduction and nothing to
+                // Initialization would be a timing claim neither stage can support.
+                let observed_reduction = match result {
+                    Some(PhaseResult::Success(cr)) => {
+                        let (prepared, report) =
+                            rumoca_phase_structural::inspect_prepare_for_solve(&cr.dae);
+                        Some(ObservedReduction { prepared, report })
+                    }
+                    _ => None,
+                };
                 let index_reduction = run_stage!(
                     "Index reduction",
-                    index_reduction_stage(result),
+                    index_reduction_stage(
+                        result,
+                        observed_reduction.as_ref(),
+                        structural.value.as_ref()
+                    ),
                     index_reduction
                 );
                 let initialization = run_stage!(
                     "Initialization",
-                    initialization_stage(result),
+                    initialization_stage(result, observed_reduction.as_ref()),
                     initialization
                 );
                 let events = run_stage!("Events", events_stage(result), events);
@@ -3956,49 +3974,6 @@ fn not_reached_note(because: &str) -> String {
     format!("not reached ({because})")
 }
 
-/// **"Rumoca ran this phase; HRW cannot read it yet"** — worded once, for the
-/// three surfaces the v0.10.0 rebase disables.
-///
-/// # Why a stage says this instead of showing something
-///
-/// 0.10.0 did not merely rename the fields these panes read — it re-shaped the
-/// phases' data models. Index reduction became two lanes with a
-/// candidate/attempt/selection protocol in place of a ten-step funnel; an event
-/// condition became a `ConditionOperation` algebra in place of an equation;
-/// initialization moved from `ic_plan::IcBlock` to `initial_pins`. HRW's panes
-/// speak the old vocabulary, and nothing in them survives contact with the new
-/// one, so each needs re-modelling rather than porting. Doug ruled that ports
-/// reach the build and re-models land afterwards, one at a time, where they can
-/// be watched running — see `DECISIONS.md`, 2026-11-02.
-///
-/// # Why the outcome is `Ok` and not `Failed` or `Flagged`
-///
-/// [`Outcome`] is a claim about **control flow**, which is the same reasoning
-/// [`no_result_note`] carries. `Failed` means *the pipeline stopped here* and at
-/// most one stage per compile may say it; `Flagged` means Rumoca reported
-/// something about usable IR. Neither happened: the compiler ran this phase
-/// perfectly and produced its IR. The gap is on HRW's side, so the stage
-/// reports no IR with a neutral outcome and says whose gap it is.
-///
-/// **Saying nothing was the alternative, and it is worse.** An empty pane is
-/// indistinguishable from a phase that produced nothing, which is a false claim
-/// about the compiler — the exact confusion `not_reached_note` exists to
-/// prevent. This sentence puts the absence where a reader can see it.
-///
-/// Each disabled surface also carries an `unbuilt:` tag in
-/// `docs/tech-debt.md` naming the symbol its re-model will introduce, so
-/// `doc_citations::claims_of_absence_are_still_true` fails once the work lands
-/// and the claim stops being true. That is what keeps "temporarily disabled"
-/// from becoming permanent quietly.
-fn awaiting_remodel_note(phase: &str, what_changed: &str) -> String {
-    format!(
-        "Rumoca ran {phase} successfully; HRW cannot display it yet. \
-         On Rumoca 0.10.0 {what_changed}, so this pane is being rebuilt against \
-         the new model rather than shown in the old vocabulary. \
-         This is an HRW gap, not a compiler problem."
-    )
-}
-
 /// One plot row per accepted step the integrator took.
 ///
 /// **This is the symbol `docs/tech-debt.md`'s `unbuilt:` tag recruited**, so
@@ -4033,24 +4008,43 @@ fn solver_steps_from_integrator(
         .collect()
 }
 
-/// The sentence fragment every [`awaiting_remodel_note`] contains.
+/// The sentence fragment a stage disabled for a re-model puts in its note.
 ///
-/// Matched on rather than reconstructed, so a test can find these stages by what
-/// they *say* instead of being told which they are — see
-/// [`AWAITING_REMODEL`], whose roster is checked against this in both directions.
+/// Matched on rather than reconstructed, so a test can find such stages by what they
+/// *say* instead of being told which they are — see [`AWAITING_REMODEL`], whose
+/// roster is checked against this in both directions.
 ///
-/// **`#[cfg(test)]`, because production has no use for it.** Each rostered stage
-/// function states its own absence in its own words through
-/// [`awaiting_remodel_note`]; this constant exists so the *tests* can find those
-/// stages by what they say rather than being told which they are. A production
-/// reader would be a second place for the list to drift.
+/// **Nothing produces this string any more.** `awaiting_remodel_note` was its only
+/// writer and went with the last re-model on 2026-11-04. The string stays because it
+/// is the wording the **next** rebase's disabled stage must use, and because
+/// [`AWAITING_REMODEL`]'s roster test is what makes a new one visible — a disabled
+/// stage that invents its own wording would be invisible to that check.
+///
+/// **`#[cfg(test)]`, because production has no use for it**, and a production reader
+/// would be a second place for the list to drift.
 #[cfg(test)]
 pub(crate) const AWAITING_REMODEL_MARKER: &str = "HRW cannot display it yet";
 
-/// **The stages Rumoca runs and HRW cannot yet show, as of the v0.10.0 rebase.**
+/// **The stages Rumoca runs and HRW cannot yet show. Empty since 2026-11-04.**
 ///
-/// Each produces `Outcome::Ok` with no IR and an [`awaiting_remodel_note`]; the
-/// reasoning for that outcome class is on that function.
+/// All five re-models the v0.10.0 rebase recruited have landed. **The mechanism is
+/// kept and stays armed**, because an empty roster is not a dead check — it is the
+/// complementary claim, and a stronger one:
+///
+/// - `the_remodel_roster_matches_what_the_pipeline_shows` now asserts that **no
+///   stage claims [`AWAITING_REMODEL_MARKER`]**, so a future rebase cannot disable a
+///   stage without rostering it here.
+/// - `the_tests_blocked_on_a_remodel_are_still_blocked` now asserts that **no test is
+///   still `#[ignore]`d for a re-model**. That is what forced the eight blocked tests
+///   to be individually restored, re-keyed or retired in the commit that emptied
+///   this, rather than left switched off behind a green gate.
+/// - [`crate::fidelity`] filters its stage sweep by this list, so emptying it put
+///   **every** stage back under fidelity's invariants.
+///
+/// Deleting it instead would have cost about twenty doc comments their citation of
+/// it — and those are *history*, true statements about the day a stage left this
+/// list. A symbol naming something in the past does not move when the present
+/// changes.
 ///
 /// # Why a roster exists at all
 ///
@@ -4085,7 +4079,14 @@ pub(crate) const AWAITING_REMODEL_MARKER: &str = "HRW cannot display it yet";
 /// body is the specification only while the data model it describes is the one
 /// being re-modelled onto** — restoring one past that point would pin 0.9.20's
 /// shape, which is the opposite of what the roster is for.
-pub(crate) const AWAITING_REMODEL: &[StageKind] = &[StageKind::IndexReduction];
+///
+/// *Index reduction left it on 2026-11-04*, re-modelled onto the observed reduction
+/// — see [`index_reduction_from_observation`] — and emptied it. Of its eight blocked
+/// tests, **four were restored, one was re-keyed to the opposite claim, and three
+/// were retired**; the re-keyed one is the finding, because 0.10.0's holonomic lane
+/// *does* now rescue `CapacitorLoop`, so a body asserting that reduction cannot was
+/// no longer a specification but a false premise.
+pub(crate) const AWAITING_REMODEL: &[StageKind] = &[];
 
 /// **The pipeline returned nothing at all** — worded once, for the same reason.
 ///
@@ -4832,46 +4833,69 @@ fn structural_stage(result: Option<&PhaseResult>) -> (Stage, StructuralFrames) {
     (stage, frames)
 }
 
-/// Index reduction — **disabled for the v0.10.0 rebase**, awaiting a re-model
-/// against Rumoca's own observation seam.
+/// **The one reduction this compile performed**, with the record of how it got there.
 ///
-/// # What this did, and why it could not be ported
+/// Index reduction and Initialization are the same act of preparation seen from two
+/// ends: [`rumoca_phase_structural::inspect_prepare_for_solve`] reduces the system
+/// *and* returns the initial-value pins of what it admitted. Calling it twice would
+/// be two reductions of one compile, and nothing would make them agree — so it is
+/// called once and both stages read this.
 ///
-/// It cloned the DAE, re-ran a **ten-step dummy-derivative funnel** over the
-/// copy (`index_reduce_for_structural_analysis`), then ran
-/// `build_structural_report` on the result so the tab could show the reduced
-/// system beside the raw one.
+/// That sharing was predicted rather than discovered: `initialization_stage` carried
+/// the note *"shares its preparation with nothing yet … at that point one call should
+/// serve both"* from the day it landed, 2026-11-03.
+struct ObservedReduction<'a> {
+    /// What preparation admitted, or why it did not.
+    prepared:
+        Result<rumoca_phase_structural::PreparedDae<'a>, rumoca_phase_structural::StructuralError>,
+    /// Every round, candidate, attempt and refusal the run observed, in order.
+    report: rumoca_phase_structural::ReductionReport,
+}
+
+/// Index reduction, from the report of the run the compiler actually performed.
 ///
-/// Two independent reasons that is gone on 0.10.0, and either alone is fatal to
-/// the port:
+/// **Re-modelled 2026-11-04**, the last of the five the v0.10.0 rebase recruited.
+/// [`index_reduction_from_observation`] carries the model; this function is the
+/// stage wrapper and the outcome judgement.
 ///
-/// - **`Dae` is immutable and no longer `Clone`.** The funnel mutated a `&mut
-///   Dae` in place; there is nothing to clone and nothing to mutate.
-/// - **The funnel is not the algorithm any more.** `dae_prepare` does not
-///   exist. Reduction is two fixed-point lanes, Direct and Holonomic, driven by
-///   a candidate / attempt / selection protocol.
+/// # What it replaced, kept because the shape is the lesson
 ///
-/// **It was also a re-run presented as the compile**, which this repository
-/// treats as a fiction whatever the word on the pane says. On 0.9.20 that may
-/// have been the only way to see reduction at all; 0.10.0 removes the excuse,
-/// because `inspect_prepare_for_solve` observes the reduction the compiler
-/// actually performed and returns an owned `ReductionReport` of every round,
-/// candidate, attempt and rejection. So the replacement is not merely a
-/// translation — it stops HRW re-deriving this phase.
+/// 0.9.20 cloned the DAE, re-ran a **ten-step dummy-derivative funnel** over the
+/// copy (`index_reduce_for_structural_analysis`), then ran `build_structural_report`
+/// on the result so the tab could show the reduced system beside the raw one.
 ///
-/// Doug ruled that ports reach the build and re-models land afterwards, one at
-/// a time, where each can be watched running (`DECISIONS.md`, 2026-11-02). The
-/// `unbuilt:` tag in `docs/tech-debt.md` names
-/// `worker::index_reduction_from_observation`, so
-/// `doc_citations::claims_of_absence_are_still_true` fails once that exists.
+/// Two independent things make that unportable, and either alone is fatal: **`Dae`
+/// is immutable and no longer `Clone`**, so there is nothing to clone and nothing to
+/// mutate; and **the funnel is not the algorithm any more** — `dae_prepare` does not
+/// exist, and reduction is two fixed-point lanes driven by a candidate / attempt /
+/// selection protocol.
 ///
-/// # What the caller loses
+/// **It was also a re-run presented as the compile**, which this repository treats as
+/// a fiction whatever the word on the pane says. On 0.9.20 that may have been the
+/// only way to see reduction at all; 0.10.0 removes the excuse, because
+/// `inspect_prepare_for_solve` observes the reduction the compiler performed and
+/// returns an owned `ReductionReport` of every round, candidate, attempt and
+/// rejection. So this is not a translation — **it stops HRW re-deriving this phase.**
 ///
-/// The frame vector and the reduced system's `StructuralFrames` are both gone
-/// from the return type rather than returned empty. An always-empty `Vec` leaves
-/// the plumbing looking alive, and the next session to read it would reasonably
-/// go hunting for why frames never arrive — a bug hunt with no bug in it.
-fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
+/// # What does not come back, and why that is stated rather than stubbed
+///
+/// The **frame-consuming sub-views are unavailable on this tab** — matching, Tarjan
+/// and tearing animations. The reduced system's *report* is observable; its *search*
+/// is not, because `inspect_prepare_for_solve` records the reduction's rounds and not
+/// the matching passes inside each rebuild.
+///
+/// That is a deliberate refusal rather than an omission, because the existing guard
+/// would not have caught the mistake: `TearingAnimation::from_captured` compares
+/// `blocks.len()` against `segments.len()` and ordinals that run `0..n` in both
+/// systems, so publishing a structural-report-shaped payload here would let the
+/// **raw** system's recorded frames pair silently with **reduced** block names. A
+/// plausible animation of a search that never happened is worse than no animation.
+fn index_reduction_stage(
+    result: Option<&PhaseResult>,
+    observed: Option<&ObservedReduction<'_>>,
+    // The Structural stage's published report, which is this stage's `before`.
+    structural: Option<&serde_json::Value>,
+) -> Stage {
     // Still answers the earlier-failure question, so a model that stopped at
     // parse reports *that* here rather than this message. The distinction
     // matters: one says the compiler never got here, the other says it did and
@@ -4879,11 +4903,602 @@ fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
     if let Some(stage) = not_reached_stage(result) {
         return stage;
     }
-    Stage::info(awaiting_remodel_note(
-        "index reduction",
-        "the ten-step dummy-derivative funnel became two fixed-point lanes with a \
-         candidate/attempt/selection protocol, and the DAE became immutable",
-    ))
+    let cr = unwrap_success(result);
+    let Some(observed) = observed else {
+        // Reached only if the caller sequenced this stage before the shared
+        // preparation ran. `the_reduction_stage_reads_the_compiles_own_run`
+        // fails rather than letting that read as a property of the model.
+        return Stage::info(
+            "no reduction was observed for this compile, which is an HRW sequencing \
+             fault rather than a fact about the model"
+                .to_owned(),
+        );
+    };
+    let json = index_reduction_from_observation(observed, cr, structural, cr.dae.source_map());
+    match &observed.prepared {
+        Ok(_) => {
+            let mut stage = Stage::ok(json);
+            stage.note = Some(reduction_success_note(&stage.value));
+            stage
+        }
+        // **`recovered`, not `err`** — the same judgement `structural_stage` makes
+        // for a singular system. Rumoca flags the failure and the compile continues,
+        // so a stage claiming the pipeline stopped here would be the invented
+        // control-flow claim C20 removed from four sites. `Outcome::Failed` is a
+        // statement about control flow and at most one stage per compile may make it.
+        Err(error) => Stage::recovered(json, reduction_failure_note(error)),
+    }
+}
+
+/// The stage-tab note for a reduction that admitted the system.
+///
+/// **Read back out of the payload rather than computed beside it**, so the label and
+/// the pane cannot disagree about what happened — the defect shape
+/// `the_events_summary_uses_rumocas_own_names` and the `zero_crossing_conditions`
+/// episode both come from two expressions of one fact.
+///
+/// `index-1` appears for `borrowed` because that is precisely what it means: the raw
+/// system sorted and normalization left it alone. `sorted` with zero rounds does
+/// **not** get that wording, because something was rebuilt.
+fn reduction_success_note(value: &Option<serde_json::Value>) -> String {
+    let Some(v) = value else {
+        return "reduction observed".to_owned();
+    };
+    let kind = v["outcome"]["kind"].as_str().unwrap_or("unreported");
+    let rounds = v["rounds"].as_u64().unwrap_or(0);
+    let (before, after) = (
+        v["before"]["n_states"].as_u64(),
+        v["after"]["n_states"].as_u64(),
+    );
+    match (kind, rounds) {
+        ("borrowed", _) => "already index-1: no reduction needed".to_owned(),
+        ("sorted", 0) => "normalized without a reduction round (derivative aliases)".to_owned(),
+        ("sorted", n) => match (before, after) {
+            (Some(b), Some(a)) if b != a => {
+                format!("sorted after {n} round(s): {b} state(s) \u{2192} {a}")
+            }
+            // **Not "0 states demoted".** `CapacitorLoop` sorts with its counts
+            // unchanged, so the honest line names the manifold constraint instead of
+            // reporting a difference of zero as though nothing had happened.
+            _ => {
+                let manifold = v["after"]["n_manifold_constraints"].as_u64().unwrap_or(0);
+                format!(
+                    "sorted after {n} round(s): state count unchanged, \
+                     {manifold} manifold constraint(s)"
+                )
+            }
+        },
+        (other, _) => format!("reduction reported {other}"),
+    }
+}
+
+/// The short note for a reduction that did not admit the system.
+///
+/// Separate from the payload so the tab label and the pane cannot disagree about
+/// what happened.
+fn reduction_failure_note(error: &rumoca_phase_structural::StructuralError) -> String {
+    match error {
+        rumoca_phase_structural::StructuralError::Singular { .. } => {
+            "still singular after reduction".to_owned()
+        }
+        other => format!("{other}"),
+    }
+}
+
+/// **Index reduction as Rumoca performed it**, from the report of the one run.
+///
+/// This is the symbol `docs/tech-debt.md`'s `unbuilt:` tag recruited, so
+/// `doc_citations::claims_of_absence_are_still_true` fails now that it exists and
+/// forces that row to be retired.
+///
+/// # The model, which is not the funnel under new names
+///
+/// 0.9.20 published a **ten-step funnel**: a fixed pipeline of named steps, each with
+/// a before/after state count, which HRW re-ran over a cloned DAE. 0.10.0 reduction is
+/// a **search**, and the published shape is its log:
+///
+/// - **Two lanes, `Direct` and `Holonomic`**, alternating as a fixed point. A round
+///   states the lane, the round number, the current `residue`, and what is still
+///   unmatched on both sides.
+/// - **Candidates are discovered per proof boundary** — `DirectAdmissible`,
+///   `DirectConditional`, `Holonomic` — and `discovered` is how many that boundary
+///   admitted.
+/// - **An attempt rebuilds and re-sorts the whole system**, so its `outcome` is a
+///   measurement and not a prediction: `Sorted`, `Reduced`, `Held`, `Raised`, or one
+///   of four refusals.
+/// - **`Held` is progress.** Measured on `Drivetrain`, round 3 selects a candidate
+///   whose residue does not move, and round 4 then succeeds — because the system
+///   changed even though the number did not. A funnel step cannot express that, and
+///   a reader shown only the numbers would call round 3 wasted.
+///
+/// `residue` is **both deficits summed**: `(n_equations - n_matched) + (n_unknowns -
+/// n_matched)`, so a square system's residue is twice its rank deficiency. Published
+/// as Rumoca's own number, with that definition stated in the payload rather than
+/// halved into something friendlier.
+///
+/// # The ordinals are arena-local, and that is why no name is attached to them
+///
+/// `state_ordinal`, `rhs_ordinal`, `variable_ordinal` and the holonomic ordinals
+/// index the **rebuilt system of that round**, not the raw DAE. Resolving them
+/// against `cr.dae` would produce a confident wrong name from round 2 onward, which
+/// is the defect class `span_location` was fixed for on the same day this was
+/// written. **The span is the stable identity**, so each identity publishes
+/// `declared_at` and leaves the ordinal an unnamed number — and the payload says so
+/// in `ordinals_note`, so a reader cannot take the silence for an oversight.
+///
+/// # Before and after are observations, not re-runs
+///
+/// **`before` is the Structural stage's own published report**, taken as it stands
+/// and given the three counts. Not a second analysis of the raw system: that is
+/// exactly the duplication the shared `inspect_prepare_for_solve` call removed one
+/// screen above, and a `build_incidence` here would be a second copy of a matrix
+/// that already has a publisher. It carries the partial matching and the singular
+/// `error` with it, which is what lets the before/after split view show a rank
+/// deficiency beside a full rank.
+///
+/// `after` comes from
+/// [`rumoca_phase_structural::PreparedDae::structural_report`], which reports the
+/// matching and BLT **issued for the reduced DAE that Solve consumes** — so the two
+/// cannot drift. Its `None` arm returns a 0/0 report, which is indistinguishable
+/// from a real analysis of an empty system, so this branches on
+/// `system.structural` itself and omits the key instead.
+///
+/// # Counts alone do not show reduction, measured
+///
+/// `CapacitorLoop` is admitted through the holonomic lane with **1 state, 13
+/// algebraics and 14 equations before and after** — identical — plus one manifold
+/// constraint. So a pane reporting only the counts would say nothing happened, and
+/// `n_manifold_constraints` plus the search log are what make the change visible.
+/// `Drivetrain` is the opposite case: 9 states to 5. Both are the same phase.
+fn index_reduction_from_observation(
+    observed: &ObservedReduction<'_>,
+    cr: &CompilationResult,
+    // The Structural stage's published value, reused rather than recomputed.
+    structural: Option<&serde_json::Value>,
+    source_map: &rumoca_core::SourceMap,
+) -> serde_json::Value {
+    let records = &observed.report.records;
+    let rounds = records
+        .iter()
+        .filter(|r| matches!(r, rumoca_phase_structural::ReductionRecord::Round { .. }))
+        .count();
+    let search: Vec<serde_json::Value> = records
+        .iter()
+        .map(|record| reduction_record_to_json(record, source_map))
+        .collect();
+
+    let counts_before = crate::dae_counts::DaeCounts::of(&cr.dae);
+    // The Structural stage's report, with the counts added. Cloned rather than
+    // rebuilt: one origin for the raw system's incidence and matching.
+    let mut before = structural.cloned().unwrap_or_else(|| serde_json::json!({}));
+    if let Some(obj) = before.as_object_mut() {
+        obj.insert(
+            "n_states".to_owned(),
+            serde_json::json!(counts_before.states),
+        );
+        obj.insert(
+            "n_algebraics".to_owned(),
+            serde_json::json!(counts_before.algebraics),
+        );
+        obj.insert(
+            "n_equations".to_owned(),
+            serde_json::json!(counts_before.continuous_equations),
+        );
+    }
+
+    let after = match &observed.prepared {
+        Ok(prepared) => {
+            let reduced = prepared.as_dae();
+            let counts = crate::dae_counts::DaeCounts::of(reduced);
+            // **The same shape as `before`**, which is what lets one reader —
+            // `incidence_view::IncidenceMatrix::from_report` — parse either side.
+            // Nesting the report under an `after.structural` key instead would put
+            // `matching` one level below where `before` keeps it, and the split
+            // view's two halves would need two parsers.
+            //
+            // Absent rather than empty when there is no analysis:
+            // `PreparedDae::structural_report`'s own `None` arm returns a 0/0 report,
+            // which reads as a real analysis of an empty system.
+            let mut obj = prepared.inspect(|system| {
+                if system.structural.is_some() {
+                    structural_to_json(&prepared.structural_report())
+                } else {
+                    serde_json::json!({})
+                }
+            });
+            if let Some(map) = obj.as_object_mut() {
+                map.insert("n_states".to_owned(), serde_json::json!(counts.states));
+                map.insert(
+                    "n_algebraics".to_owned(),
+                    serde_json::json!(counts.algebraics),
+                );
+                map.insert(
+                    "n_equations".to_owned(),
+                    serde_json::json!(counts.continuous_equations),
+                );
+            }
+            prepared.inspect(|system| {
+                if let Ok(inc) = rumoca_phase_structural::build_incidence(system.view) {
+                    obj["incidence"] = incidence_to_json(&inc, Some(system.view));
+                }
+                // **The number that makes `CapacitorLoop` legible.** Its counts do
+                // not move; this is what reduction added.
+                obj["n_manifold_constraints"] = serde_json::json!(system.manifold.len());
+            });
+            obj
+        }
+        // **No `after` at all**, rather than the raw system relabelled. A failed
+        // reduction produced no admitted system, and showing the input twice would
+        // read as "reduction changed nothing".
+        Err(_) => serde_json::Value::Null,
+    };
+
+    serde_json::json!({
+        "rounds": rounds,
+        "n_records": records.len(),
+        "outcome": reduction_outcome_summary(observed, rounds, source_map),
+        "lanes": reduction_lanes_used(records),
+        "residue_definition":
+            "(n_equations - n_matched) + (n_unknowns - n_matched): both deficits \
+             summed, so a square system's residue is twice its rank deficiency",
+        "ordinals_note":
+            "state_ordinal, rhs_ordinal, variable_ordinal and the holonomic ordinals \
+             index the rebuilt system of their own round, not the raw DAE. They are \
+             deliberately unnamed; resolve a candidate through declared_at, which is \
+             a span and stable across rebuilds",
+        "before": before,
+        "after": after,
+        "search": search,
+        "stalled": observed.report.stalled.as_ref().map(|snapshot| {
+            serde_json::json!({
+                "error": format!("{}", snapshot.error()),
+                "observed_records": snapshot.observed_records(),
+                "n_manifold_constraints": snapshot.manifold_expression_ordinals().count(),
+            })
+        }),
+    })
+}
+
+/// The one word for how reduction ended, taken from the `Stopped` record.
+///
+/// Read from the record rather than from `prepared.is_ok()`, because the two answer
+/// different questions. Both `Borrowed` and `Sorted` are successes, and they mean
+/// different things.
+///
+/// # `Sorted` is overloaded, and the round count is what disambiguates it
+///
+/// **`Sorted` with zero rounds is not "reduced until it sorted".** No round ran.
+/// `borrowed_with_observer` is reached when the *raw* system's structural analysis
+/// already succeeded; it then applies `derivative_aliases::normalize` and reports
+/// `Borrowed` if the system came back unchanged and **`Sorted` if normalization
+/// rebuilt it**. The same `Sorted` is also emitted from inside the reduction loop
+/// when a round sorts the system, so the word alone cannot tell a reader which
+/// happened — hence `rounds` decides the sentence this publishes.
+///
+/// That makes `Sorted` with zero rounds the observable signature of derivative-alias
+/// normalization, which is otherwise a `pub(super)` pass. `StabilizedPendulum` is the
+/// measured case: 0 rounds, and its system goes from 1 algebraic and 5 equations to
+/// **3 algebraics and 7 equations** with its 4 states unchanged. The extension is
+/// visible in `before`/`after` without any instrumentation; what is not visible is
+/// *which* coordinates received auxiliary aliases.
+fn reduction_outcome_summary(
+    observed: &ObservedReduction<'_>,
+    rounds: usize,
+    source_map: &rumoca_core::SourceMap,
+) -> serde_json::Value {
+    use rumoca_phase_structural::{ReductionRecord, ReductionStop};
+    let stop = observed.report.records.iter().rev().find_map(|record| {
+        if let ReductionRecord::Stopped { outcome } = record {
+            Some(outcome)
+        } else {
+            None
+        }
+    });
+    match stop {
+        Some(ReductionStop::Borrowed) => serde_json::json!({
+            "kind": "borrowed",
+            "admitted": true,
+            "rounds": rounds,
+            "meaning": "the raw system sorted and normalization left it unchanged: \
+                        already index-1, nothing rebuilt",
+        }),
+        Some(ReductionStop::Sorted) if rounds == 0 => serde_json::json!({
+            "kind": "sorted",
+            "admitted": true,
+            "rounds": 0,
+            // Not "reduced until it sorted": no round ran. See this function's doc.
+            "meaning": "the raw system sorted, and derivative-alias normalization \
+                        rebuilt it: no reduction round ran, so the before/after \
+                        difference is the normalization's",
+        }),
+        Some(ReductionStop::Sorted) => serde_json::json!({
+            "kind": "sorted",
+            "admitted": true,
+            "rounds": rounds,
+            "meaning": "reduction ran until the system sorted",
+        }),
+        Some(ReductionStop::Singular { residue }) => serde_json::json!({
+            "kind": "singular",
+            "admitted": false,
+            "residue": residue,
+            "meaning": "no candidate in either lane could reduce the residue further",
+        }),
+        Some(ReductionStop::Failure { error }) => serde_json::json!({
+            "kind": "failure",
+            "admitted": false,
+            "error": format!("{error}"),
+        }),
+        Some(ReductionStop::DiscardsInitial { variable, span }) => serde_json::json!({
+            "kind": "discards_initial",
+            "admitted": false,
+            "variable": variable,
+            "declared_at": span_location(source_map, span),
+        }),
+        // **Absent, not guessed.** Every terminating path emits `Stopped`; if one
+        // does not, the honest report is that nothing said how this ended.
+        None => serde_json::json!({
+            "kind": "unreported",
+            "admitted": observed.prepared.is_ok(),
+            "meaning": "the run emitted no Stopped record, so how it ended is unknown",
+        }),
+    }
+}
+
+/// Which lanes the run actually entered, in first-seen order.
+fn reduction_lanes_used(records: &[rumoca_phase_structural::ReductionRecord]) -> Vec<&'static str> {
+    use rumoca_phase_structural::ReductionRecord;
+    let mut lanes: Vec<&'static str> = Vec::new();
+    for record in records {
+        let lane = match record {
+            ReductionRecord::Round { lane, .. }
+            | ReductionRecord::Candidates { lane, .. }
+            | ReductionRecord::Attempt { lane, .. }
+            | ReductionRecord::Selected { lane, .. }
+            | ReductionRecord::RetriedPristine { lane } => reduction_lane_name(*lane),
+            ReductionRecord::Stopped { .. } => continue,
+        };
+        if !lanes.contains(&lane) {
+            lanes.push(lane);
+        }
+    }
+    lanes
+}
+
+/// Rumoca's own lane name, lowercased for JSON.
+fn reduction_lane_name(lane: rumoca_phase_structural::ReductionLane) -> &'static str {
+    match lane {
+        rumoca_phase_structural::ReductionLane::Direct => "direct",
+        rumoca_phase_structural::ReductionLane::Holonomic => "holonomic",
+    }
+}
+
+/// One record of the search, as the pane and the stepper read it.
+///
+/// `kind` names the record variant so a reader never has to infer which it is from
+/// which keys are present — the failure mode of a flattened union.
+fn reduction_record_to_json(
+    record: &rumoca_phase_structural::ReductionRecord,
+    source_map: &rumoca_core::SourceMap,
+) -> serde_json::Value {
+    use rumoca_phase_structural::ReductionRecord;
+    match record {
+        ReductionRecord::Round {
+            lane,
+            round,
+            residue,
+            unmatched_equations,
+            unmatched_unknowns,
+        } => serde_json::json!({
+            "kind": "round",
+            "lane": reduction_lane_name(*lane),
+            "round": round,
+            "residue": residue,
+            "unmatched_equations": unmatched_equations,
+            // **The bare ids beside the labels**, the same way
+            // `structural_error_to_json` does it and for the same reason: v0.10.0
+            // decorates these strings — `"f_x[90] (SI.Angle phi)"` — and a decorated
+            // label is not an identity, so pointing at one resolves to nothing.
+            // Rumoca's own string is published unchanged; the id goes next to it.
+            //
+            // **Derived from the label, never recomputed.** A second derivation could
+            // disagree with the string it is supposed to identify, and an id naming a
+            // different equation than the label beside it is worse than no id.
+            //
+            // Found by `tests_equation_identity::every_committed_trace_identifies_every_equation_it_names`
+            // walking the published trees — 35 labels across the notebook, on the
+            // first gate after this stage started publishing. Nobody checked this
+            // site; the data enumerated it.
+            "unmatched_equation_ids": unmatched_equations
+                .iter()
+                .map(|l| crate::equation_id_from_label(l))
+                .collect::<Vec<_>>(),
+            "unmatched_unknowns": unmatched_unknowns
+                .iter()
+                .map(|u| serde_json::json!({
+                    "name": u.name,
+                    // Rumoca's own classification, not HRW's reading of the name.
+                    "kind": match u.kind {
+                        rumoca_phase_structural::UnmatchedKind::Derivative => "derivative",
+                        rumoca_phase_structural::UnmatchedKind::Algebraic => "algebraic",
+                        rumoca_phase_structural::UnmatchedKind::Other => "other",
+                    },
+                }))
+                .collect::<Vec<_>>(),
+        }),
+        ReductionRecord::Candidates {
+            lane,
+            group,
+            discovered,
+        } => serde_json::json!({
+            "kind": "candidates",
+            "lane": reduction_lane_name(*lane),
+            "group": match group {
+                rumoca_phase_structural::ReductionCandidateGroup::DirectAdmissible =>
+                    "direct_admissible",
+                rumoca_phase_structural::ReductionCandidateGroup::DirectConditional =>
+                    "direct_conditional",
+                rumoca_phase_structural::ReductionCandidateGroup::Holonomic => "holonomic",
+            },
+            "discovered": discovered,
+        }),
+        ReductionRecord::Attempt {
+            lane,
+            identity,
+            outcome,
+        } => serde_json::json!({
+            "kind": "attempt",
+            "lane": reduction_lane_name(*lane),
+            "identity": reduction_identity_to_json(identity, source_map),
+            "outcome": reduction_attempt_outcome_to_json(outcome, source_map),
+        }),
+        ReductionRecord::Selected {
+            lane,
+            identity,
+            residue_before,
+            residue_after,
+        } => serde_json::json!({
+            "kind": "selected",
+            "lane": reduction_lane_name(*lane),
+            "identity": reduction_identity_to_json(identity, source_map),
+            "residue_before": residue_before,
+            // `null` when the attempt sorted the system: there is no residue after,
+            // because there is no unmatched remainder. Zero would be a measurement.
+            "residue_after": residue_after,
+        }),
+        ReductionRecord::RetriedPristine { lane } => serde_json::json!({
+            "kind": "retried_pristine",
+            "lane": reduction_lane_name(*lane),
+            "meaning": "the lane restarted from the unmodified system",
+        }),
+        ReductionRecord::Stopped { outcome } => {
+            let mut obj = serde_json::json!({ "kind": "stopped" });
+            obj["outcome"] = reduction_stop_to_json(outcome, source_map);
+            obj
+        }
+    }
+}
+
+/// One attempted candidate's identity: its form, its arena-local ordinals, and the
+/// span that identifies it stably.
+fn reduction_identity_to_json(
+    identity: &rumoca_phase_structural::ReductionIdentity,
+    source_map: &rumoca_core::SourceMap,
+) -> serde_json::Value {
+    use rumoca_phase_structural::ReductionIdentity;
+    match identity {
+        ReductionIdentity::Direct {
+            state_ordinal,
+            rhs_ordinal,
+            provenance_span,
+        } => serde_json::json!({
+            "form": "direct",
+            "state_ordinal": state_ordinal,
+            "rhs_ordinal": rhs_ordinal,
+            "declared_at": span_location(source_map, provenance_span),
+        }),
+        ReductionIdentity::DerivativeDefinition {
+            state_ordinal,
+            rhs_ordinal,
+            provenance_span,
+        } => serde_json::json!({
+            "form": "derivative_definition",
+            "state_ordinal": state_ordinal,
+            "rhs_ordinal": rhs_ordinal,
+            "declared_at": span_location(source_map, provenance_span),
+        }),
+        ReductionIdentity::AuxiliaryState {
+            state_ordinal,
+            variable_ordinal,
+            provenance_span,
+        } => serde_json::json!({
+            "form": "auxiliary_state",
+            "state_ordinal": state_ordinal,
+            "variable_ordinal": variable_ordinal,
+            "declared_at": span_location(source_map, provenance_span),
+        }),
+        ReductionIdentity::Holonomic {
+            owner_ordinal,
+            body_ordinal,
+            component_scalar,
+            residual_ordinal,
+            owner_span,
+            anchored_state_ordinals,
+        } => serde_json::json!({
+            "form": "holonomic",
+            "owner_ordinal": owner_ordinal,
+            "body_ordinal": body_ordinal,
+            "component_scalar": component_scalar,
+            "residual_ordinal": residual_ordinal,
+            "declared_at": span_location(source_map, owner_span),
+            "anchored_state_ordinals": anchored_state_ordinals,
+        }),
+    }
+}
+
+/// What rebuilding and re-sorting the system with this candidate measured.
+fn reduction_attempt_outcome_to_json(
+    outcome: &rumoca_phase_structural::ReductionOutcome,
+    source_map: &rumoca_core::SourceMap,
+) -> serde_json::Value {
+    use rumoca_phase_structural::ReductionOutcome;
+    match outcome {
+        ReductionOutcome::Sorted => serde_json::json!({ "kind": "sorted" }),
+        ReductionOutcome::Reduced { residue } => serde_json::json!({
+            "kind": "reduced",
+            "residue": residue,
+        }),
+        // **Accepted in the Direct lane, and it is progress.** See
+        // `index_reduction_from_observation` for the Drivetrain round that proves it.
+        ReductionOutcome::Held { residue } => serde_json::json!({
+            "kind": "held",
+            "residue": residue,
+            "meaning": "the residue did not move, but the system changed",
+        }),
+        ReductionOutcome::Raised { residue } => serde_json::json!({
+            "kind": "raised",
+            "residue": residue,
+        }),
+        ReductionOutcome::NonSingularFailure { error } => serde_json::json!({
+            "kind": "non_singular_failure",
+            "error": format!("{error}"),
+        }),
+        ReductionOutcome::WouldDiscardInitial { variable, span } => serde_json::json!({
+            "kind": "would_discard_initial",
+            "variable": variable,
+            "declared_at": span_location(source_map, span),
+        }),
+        ReductionOutcome::WouldInvalidateManifold => serde_json::json!({
+            "kind": "would_invalidate_manifold",
+        }),
+        ReductionOutcome::WouldCreateVacuousResidual => serde_json::json!({
+            "kind": "would_create_vacuous_residual",
+        }),
+    }
+}
+
+/// How the run ended, as its own record states it.
+fn reduction_stop_to_json(
+    outcome: &rumoca_phase_structural::ReductionStop,
+    source_map: &rumoca_core::SourceMap,
+) -> serde_json::Value {
+    use rumoca_phase_structural::ReductionStop;
+    match outcome {
+        ReductionStop::Borrowed => serde_json::json!({ "kind": "borrowed" }),
+        ReductionStop::Sorted => serde_json::json!({ "kind": "sorted" }),
+        ReductionStop::Failure { error } => serde_json::json!({
+            "kind": "failure",
+            "error": format!("{error}"),
+        }),
+        ReductionStop::Singular { residue } => serde_json::json!({
+            "kind": "singular",
+            "residue": residue,
+        }),
+        ReductionStop::DiscardsInitial { variable, span } => serde_json::json!({
+            "kind": "discards_initial",
+            "variable": variable,
+            "declared_at": span_location(source_map, span),
+        }),
+    }
 }
 
 /// Initialization — **disabled for the v0.10.0 rebase**, awaiting a re-model
@@ -4927,12 +5542,26 @@ fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
 ///
 /// Takes no `source`: each pin's `declared_at` resolves through the compile's own
 /// source map, which is the only way to locate a `start` written in a library file.
-fn initialization_stage(result: Option<&PhaseResult>) -> Stage {
+fn initialization_stage(
+    result: Option<&PhaseResult>,
+    observed: Option<&ObservedReduction<'_>>,
+) -> Stage {
     if let Some(stage) = not_reached_stage(result) {
         return stage;
     }
     let cr = unwrap_success(result);
-    match rumoca_phase_structural::prepare_for_solve(&cr.dae) {
+    // **The same preparation Index reduction reports on**, since 2026-11-04. It was
+    // its own `prepare_for_solve` call until then, which was a second reduction of
+    // one compile — two runs that happened to agree because the function is pure,
+    // not because anything held them together.
+    let Some(observed) = observed else {
+        return Stage::info(
+            "no preparation was observed for this compile, which is an HRW sequencing \
+             fault rather than a fact about the model"
+                .to_owned(),
+        );
+    };
+    match &observed.prepared {
         Ok(prepared) => Stage::ok(
             prepared
                 .inspect(|system| initialization_from_initial_pins(system, cr.dae.source_map())),
