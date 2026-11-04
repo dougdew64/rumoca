@@ -3671,7 +3671,7 @@ impl WorkerState {
                 );
                 let initialization = run_stage!(
                     "Initialization",
-                    initialization_stage(result),
+                    initialization_stage(result, &source),
                     initialization
                 );
                 let events = run_stage!("Events", events_stage(result), events);
@@ -4034,11 +4034,12 @@ pub(crate) const AWAITING_REMODEL_MARKER: &str = "HRW cannot display it yet";
 /// copy to keep true. Its whole job is to let two tests disagree with reality
 /// loudly.
 #[cfg(test)]
-pub(crate) const AWAITING_REMODEL: &[StageKind] = &[
-    StageKind::IndexReduction,
-    StageKind::Initialization,
-    StageKind::Events,
-];
+/// *Initialization left this list on 2026-11-03*, re-modelled onto
+/// `initial_pins` — see [`initialization_from_initial_pins`]. Its three blocked
+/// tests were restored in the same commit, which
+/// `worker::tests::the_tests_blocked_on_a_remodel_are_still_blocked` required
+/// rather than trusted.
+pub(crate) const AWAITING_REMODEL: &[StageKind] = &[StageKind::IndexReduction, StageKind::Events];
 
 /// **The pipeline returned nothing at all** — worded once, for the same reason.
 ///
@@ -4601,15 +4602,208 @@ fn index_reduction_stage(result: Option<&PhaseResult>) -> Stage {
 ///
 /// `docs/tech-debt.md` carries the `unbuilt:` tag naming
 /// `worker::initialization_from_initial_pins`.
-fn initialization_stage(result: Option<&PhaseResult>) -> Stage {
+fn initialization_stage(result: Option<&PhaseResult>, source: &str) -> Stage {
     if let Some(stage) = not_reached_stage(result) {
         return stage;
     }
-    Stage::info(awaiting_remodel_note(
-        "initialization",
-        "the IC plan's ordered IcBlock solve sequence was replaced by initial_pins, \
-         which seeds one value per state and projects the algebraic unknowns",
-    ))
+    let cr = unwrap_success(result);
+    match rumoca_phase_structural::prepare_for_solve(&cr.dae) {
+        Ok(prepared) => {
+            Stage::ok(prepared.inspect(|system| initialization_from_initial_pins(system, source)))
+        }
+        // **Not `Failed`, and that is the one-`Failed`-per-compile rule.**
+        // Preparation fails on a system structural analysis already reported as
+        // singular, and Structural says so with the evidence. A second stage
+        // claiming the pipeline stopped here would be the invented control-flow
+        // claim C20 removed from four sites.
+        Err(error) => Stage::info(format!(
+            "no initial-value pins: structural preparation did not admit this system \
+             ({error}). The Structural tab reports why \u{2014} initialization has \
+             nothing to plan until a system is admitted."
+        )),
+    }
+}
+
+/// What Rumoca will do at the initialization instant, from its own pins.
+///
+/// **This is the symbol `docs/tech-debt.md`'s `unbuilt:` tag recruited**, so
+/// `claims_of_absence_are_still_true` fails once it exists and forces that row
+/// to be retired.
+///
+/// # The model, which is not the old one under new names
+///
+/// 0.9.20 published an ordered **solve sequence** of `IcBlock`s. 0.10.0 states
+/// initialization as a set of [`InitialValuePin`](rumoca_phase_structural::InitialValuePin)s,
+/// each an MLS 3.6 §8.6 initial equation rewritten onto the coordinate it is
+/// about, with a role deciding how the runtime enforces it:
+///
+/// - **`Definition`** — this equation *determines* a state's initial value, and
+///   stays an equation in the joint initialization solve.
+/// - **`Check`** — it stays a residual, so the initialization instant answers it
+///   with numbers rather than this phase guessing. A restated value about an
+///   already-seeded state is a check, and so is a pin about an algebraic or
+///   output coordinate with no unique state to receive a definition.
+///
+/// That distinction is the thing worth showing, and the old pane could not: a
+/// sequence of solve blocks says *how* the values are computed, while the roles
+/// say **which stated values are load-bearing and which are consistency
+/// conditions the model must satisfy.** `OverInitRc` is the specimen that makes
+/// it visible, and it now fails at simulation with an MLS §8.6 message for
+/// exactly this reason.
+///
+/// # Why `provenance` is `Compiler` even though HRW made the call
+///
+/// `prepare_for_solve` is Rumoca's function over the compile's own immutable
+/// `Dae`, and HRW invents no value — the same relationship
+/// [`structural_stage`] has to `inspect_structural_report`, which also publishes
+/// with [`Stage::ok`]. `Stage::computed` is for content HRW *synthesises*, which
+/// this is not.
+///
+/// **The second preparation cannot disagree with the compile's**, which is the
+/// part the old funnel could not claim. Solve lowering prepares internally and
+/// returns nothing, so this is the only available route; but `Dae` is immutable
+/// and `prepare_for_solve` takes `&Dae`, so the input is the same object and the
+/// function is pure. The old pane cloned a DAE and ran steps in an order HRW
+/// maintained by hand.
+///
+/// *Shares its preparation with nothing yet.* When the index-reduction pane
+/// lands it will want `inspect_prepare_for_solve`, which does this work and
+/// returns the `ReductionReport` too — at that point one call should serve both.
+fn initialization_from_initial_pins(
+    system: rumoca_phase_structural::PreparedSystem<'_, '_>,
+    source: &str,
+) -> serde_json::Value {
+    let view = system.view;
+    let name_of = |index: u32| -> String {
+        view.variable_id(index as usize)
+            .and_then(|id| view.variable(id))
+            .map_or_else(|| format!("<variable {index}>"), |v| v.name().to_string())
+    };
+
+    let pins: Vec<serde_json::Value> = system
+        .pins
+        .iter()
+        .map(|pin| {
+            // The stated value is a sum of signed terms, so it is rendered as
+            // one: `a - b`, not a list a reader has to add up.
+            let mut value = String::new();
+            for (position, term) in pin.value.iter().enumerate() {
+                if position == 0 {
+                    if term.negated {
+                        value.push('-');
+                    }
+                } else {
+                    value.push_str(if term.negated { " - " } else { " + " });
+                }
+                match view.expression_id(term.expression as usize) {
+                    Some(expression) => {
+                        value.push_str(&crate::dae_expr_format::format_expr(view, expression));
+                    }
+                    None => value.push_str("<unresolved expression>"),
+                }
+            }
+            serde_json::json!({
+                "role": match pin.role {
+                    rumoca_phase_structural::InitialValueRole::Definition => "definition",
+                    rumoca_phase_structural::InitialValueRole::Check => "check",
+                },
+                "coordinate": name_of(pin.coordinate),
+                // Reported for every pin, not only aggregates: a reader
+                // comparing two pins on one array needs to see which element
+                // each is about, and omitting it on scalars would make the
+                // field look optional rather than always meaningful.
+                "scalar": pin.scalar,
+                "value": value,
+                // Where the value was read from, which is not always the
+                // coordinate it ends up about: a value stated on one member of
+                // a proved equality class is transferred onto the state that
+                // class determines.
+                "source": name_of(pin.source),
+                "source_scalar": pin.source_scalar,
+                "declared_at": span_to_location(source, &pin.provenance.span()),
+            })
+        })
+        .collect();
+
+    // **The determinacy summary answers one question: which states' initial
+    // values are DETERMINED, and which are only guessed?**
+    //
+    // That is the reader's question and the old pane's determinacy check was
+    // aimed at it, by comparing explicit initial conditions against the state
+    // count. Three things make it a different computation on 0.10.0:
+    //
+    // 1. **A state's value can be determined without the state being `fixed`.**
+    //    Measured on a two-line probe: `Real y(start = 2.0, fixed = true)` with
+    //    `y = x` produces a `Definition` pin **on `x`**, sourced from `y`. So
+    //    counting `fixed` states alone reports zero determined and is wrong —
+    //    the first version of this function did exactly that.
+    // 2. **`fixed` is per element** (MLS §4.8.6), so this counts scalars rather
+    //    than declarations; a single `Option<bool>` could not express a partly
+    //    fixed array at all.
+    // 3. **A bare `start` is a guess, not an initial condition.** It seeds the
+    //    solve and the solve may move it. Naming those states is the useful
+    //    half: each one is a state whose reported initial value came out of the
+    //    initialization solve rather than out of the model, which is precisely
+    //    the blast radius of the initialization defect `upstream-issues.md`
+    //    carries.
+    let defined: std::collections::BTreeSet<(u32, u32)> = system
+        .pins
+        .iter()
+        .filter(|pin| {
+            matches!(
+                pin.role,
+                rumoca_phase_structural::InitialValueRole::Definition
+            )
+        })
+        .map(|pin| (pin.coordinate, pin.scalar))
+        .collect();
+
+    let mut state_scalars = 0usize;
+    let mut determined = 0usize;
+    let mut partly_fixed: Vec<String> = Vec::new();
+    let mut only_guessed: Vec<String> = Vec::new();
+    for (id, variable) in view.variables() {
+        if variable.role() != rumoca_ir_dae::VariableRole::State {
+            continue;
+        }
+        let count = variable.scalar_count();
+        state_scalars += count;
+        let mut fixed_here = 0usize;
+        for scalar in 0..count {
+            let own_fixed = variable.fixed_scalar(scalar) == Some(true);
+            if own_fixed {
+                fixed_here += 1;
+            }
+            if own_fixed || defined.contains(&(id.index(), scalar as u32)) {
+                determined += 1;
+            } else {
+                // Named per scalar for an aggregate, so a reader can tell a
+                // wholly guessed array from one with a guessed element.
+                only_guessed.push(if count > 1 {
+                    format!("{}[{}]", variable.name(), scalar + 1)
+                } else {
+                    variable.name().to_string()
+                });
+            }
+        }
+        if fixed_here > 0 && fixed_here < count {
+            partly_fixed.push(variable.name().to_string());
+        }
+    }
+
+    serde_json::json!({
+        "determinacy": {
+            "state_scalars": state_scalars,
+            "determined": determined,
+            "only_guessed": only_guessed,
+            "definitions": defined.len(),
+            "checks": system.pins.len() - defined.len(),
+            // Named per element, because this is the case the old single
+            // `Option<bool>` could not express at all.
+            "partly_fixed_states": partly_fixed,
+        },
+        "pins": pins,
+    })
 }
 
 /// Events — **disabled for the v0.10.0 rebase**, awaiting a re-model onto
