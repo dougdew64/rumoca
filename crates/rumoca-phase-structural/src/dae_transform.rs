@@ -111,7 +111,8 @@ pub use self::initial_pins::{InitialValuePin, InitialValueRole, PinTerm};
 pub use self::inline_calls::{inline_annotated_calls, inline_formal_calls};
 pub use self::observation::{
     ReductionCandidateGroup, ReductionIdentity, ReductionLane, ReductionOutcome, ReductionRecord,
-    ReductionReport, ReductionSnapshot, ReductionStop, UnmatchedKind, UnmatchedName,
+    ReductionReport, ReductionSnapshot, ReductionStop, ReductionWatcher, UnmatchedKind,
+    UnmatchedName,
 };
 
 /// A finalized DAE ready for Solve lowering.
@@ -612,6 +613,36 @@ pub fn inspect_prepare_for_solve(
     let result = prepare_for_solve_with_observer(model, &mut recorder);
     let report = recorder.finish(result.is_err());
     (result, report)
+}
+
+/// Prepare for solve, handing each reduction record to `watcher` as it is produced.
+///
+/// The streaming counterpart of [`inspect_prepare_for_solve`]: identical reduction,
+/// identical records, through the same conversion — the difference is only that a
+/// consumer sees each one *during* the run rather than all of them after it. Nothing
+/// is recomputed and no second traversal exists, so the two cannot disagree about what
+/// the reduction did.
+///
+/// # What it is for
+///
+/// Anything that has to act while reduction is running: pacing a debugger or an
+/// animation against real events, reporting progress on a long search, or logging a
+/// run that may not finish. A report returned at the end cannot serve those, because
+/// by then the thing to observe is over.
+///
+/// `ReductionWatcher` receives the owned [`ReductionRecord`]; the borrowed event
+/// protocol stays private to this module. See that trait for what it does not expose
+/// and why a stalled intermediate is not among it.
+///
+/// Like `prepare_for_solve`, this is a pure function of `model`: the watcher observes
+/// and cannot steer. An implementation that panics unwinds through the reduction, which
+/// leaves nothing inconsistent because nothing has been mutated — `Dae` is immutable
+/// and each candidate is tried by building a new one.
+pub fn watch_prepare_for_solve<'source>(
+    model: &'source dae::Dae,
+    watcher: &mut (impl ReductionWatcher + ?Sized),
+) -> Result<PreparedDae<'source>, StructuralError> {
+    prepare_for_solve_with_observer(model, &mut observation::RecordForwarder::new(watcher))
 }
 
 fn prepare_for_solve_with_observer<'source>(
