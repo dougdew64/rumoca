@@ -5501,8 +5501,11 @@ fn reduction_stop_to_json(
     }
 }
 
-/// Initialization — **disabled for the v0.10.0 rebase**, awaiting a re-model
-/// onto `initial_pins`.
+/// Initialization, from Rumoca's own initial-value pins.
+///
+/// **Re-modelled 2026-11-03.** This heading read *"disabled for the v0.10.0 rebase,
+/// awaiting a re-model onto `initial_pins`"* for a day after the re-model landed, which
+/// is a false claim in the one place a reader looks first. The account below is history.
 ///
 /// # What this did
 ///
@@ -5765,8 +5768,10 @@ fn initialization_from_initial_pins(
     })
 }
 
-/// Events — **disabled for the v0.10.0 rebase**, awaiting a re-model onto
-/// Rumoca's condition algebra.
+/// Events, from Rumoca's condition algebra.
+///
+/// **Re-modelled 2026-11-03**; this heading claimed otherwise for a day afterwards. The
+/// account below is history.
 ///
 /// # Why this is a re-model and not a port
 ///

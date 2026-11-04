@@ -519,7 +519,26 @@ fn single_inertia_simulates_to_a_correct_trajectory() {
     );
 }
 
-/// **ACCEPTANCE TEST FOR AN OPEN DEFECT — `#[ignore]`d because it FAILS today.**
+/// **RESTORED 2026-11-04 — v0.10.0 fixed the defect and this had been switched off since.**
+///
+/// It passes: `C.v(0)` is 0 and `C.v(2)` reaches 5 with `tau = RC = 0.1 s`, against the
+/// closed form rather than against "the series moved".
+///
+/// **The ignore outlived the defect by a day.** It was `#[ignore]`d on 2026-09-04 for an
+/// open initialization defect, the rebase fixed that defect, and nothing re-checked it —
+/// it was not on `worker::AWAITING_REMODEL`, so neither roster test could see it. **Doug
+/// found it by asking what the rebase had cost.**
+///
+/// The account below predicted *"when this passes, 13 of 18 frozen specimens are expected
+/// to come back to life with it, and that is the signal to re-measure the corpus rather
+/// than trust this single assertion."* The corpus was re-measured the same day: **18 of
+/// 28 specimens simulate and 13 of the 14 with states have moving states**, the one
+/// frozen survivor being `CapacitorLoop`, where a capacitor pinned across an ideal source
+/// correctly carries no current. The prediction held.
+///
+/// *Everything from here down is the 2026-09-04 account, kept as written.*
+///
+/// **ACCEPTANCE TEST FOR AN OPEN DEFECT — `#[ignore]`d because it FAILED on 0.9.20.**
 ///
 /// `RcCircuit` must charge its capacitor. It does not: Rumoca reports `C.v = 5`
 /// constant from `t = 0`, the DC steady state, where the analytic answer is
@@ -554,7 +573,10 @@ fn single_inertia_simulates_to_a_correct_trajectory() {
 /// expected to come back to life with it, and *that* is the signal to re-measure the
 /// corpus rather than trust this single assertion.
 #[test]
-#[ignore = "OPEN DEFECT: initialization solves der(x) = 0; see docs/upstream-issues.md"]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
 fn rc_circuit_charges_its_capacitor() {
     // **`simulate_specimen`, not the shared worker.** The first draft of this test
     // compiled through `shared_worker()` with the *cached* compile entry point and got a
