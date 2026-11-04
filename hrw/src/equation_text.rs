@@ -159,8 +159,10 @@ impl Rendered {
 /// condition is not an expression at all — it is a `ConditionOperation` algebra
 /// (`And`, `Or`, `Not`, `AnyRise`, …) over relations and clocks, and a root is a
 /// relation paired with an activation. Rendering either as an equation would be
-/// a category error. They are the Events re-model's business; see
-/// `worker::events_stage` and the `unbuilt:` tag in `docs/tech-debt.md`.
+/// a category error. **They are the Events pane's business, and since 2026-11-03
+/// it does render them** — `worker::events_from_condition_algebra` publishes each
+/// condition as an algebra *term* rather than an equation, which is why this
+/// function still leaves them alone rather than having gained two more arms.
 pub fn for_dae(d: &dae::Dae) -> Rendered {
     let mut out = Rendered::default();
     d.inspect(|view| {
@@ -237,9 +239,10 @@ mod tests {
     /// empty would satisfy any assertion about a *missing* tooltip, which is the silent
     /// success this module's whole point is to avoid.
     ///
-    /// *(Rewritten for v0.10.0. It used `for_events`, whose stage is disabled
-    /// pending the Events re-model, over `Dae::default()`, which no longer
-    /// exists — a `Dae` is valid-by-construction now. An empty `SourceMap` is
+    /// *(Rewritten for v0.10.0. It used `for_events` over `Dae::default()`, and
+    /// neither survives: the Events stage was disabled at the time and its
+    /// re-model renders condition terms rather than equations, while a `Dae` is
+    /// valid-by-construction now and has no `default()`. An empty `SourceMap` is
     /// the smallest well-formed model, so the subject moved to `for_dae`.)*
     #[test]
     fn nothing_renderable_produces_no_entries() {

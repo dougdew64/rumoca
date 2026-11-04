@@ -1800,9 +1800,10 @@ mod tests {
             );
 
             // **The rostered stages are excluded, or this count means the opposite
-            // of what it says** (2026-11-03). Index reduction, initialization and
-            // events are on `worker::AWAITING_REMODEL`: Rumoca runs them and HRW
-            // publishes no IR, so they are empty for **every** model. Counting them
+            // of what it says** (2026-11-03). A stage on
+            // `worker::AWAITING_REMODEL` is one Rumoca runs and HRW publishes no IR
+            // for, so it is empty for **every** model. When that roster held index
+            // reduction, initialization and events, counting them
             // put `with_empty` at 5 of 5 and the assertion below announced that
             // *"F10's absence clause has corpus coverage for the first time"* —
             // which would have been recorded in `fidelity-plan.md` as a fact about

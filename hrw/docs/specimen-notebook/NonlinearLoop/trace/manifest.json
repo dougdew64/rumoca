@@ -2,7 +2,7 @@
   "model": "NonlinearLoop",
   "specimen": "specimens/NonlinearLoop.mo",
   "specimen_fnv1a": "73d6f91c3181cf5d",
-  "rumoca_rev": "e49f68eb",
+  "rumoca_rev": "636acca3",
   "rumoca_version": "0.10.0",
   "stages": {
     "parse": {
@@ -42,8 +42,8 @@
       "note": null
     },
     "events": {
-      "has_ir": false,
-      "note": "Rumoca ran the events phase successfully; HRW cannot display it yet. On Rumoca 0.10.0 an event condition became a boolean algebra (Initial, Always, Relation, Discrete, Clock, Not, And, Or, AnyRise) rather than an equation, and a root became a relation paired with its activation, so this pane is being rebuilt against the new model rather than shown in the old vocabulary. This is an HRW gap, not a compiler problem."
+      "has_ir": true,
+      "note": null
     },
     "solve_lowering": {
       "has_ir": true,

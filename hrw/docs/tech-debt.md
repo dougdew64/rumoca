@@ -10,7 +10,7 @@ than by the toolchain. Every sweep starts from the lab holes, then re-measures.
 Quality improvements identified by code review, grouped by theme and ordered by severity within
 each group.
 
-## The v0.10.0 rebase disabled three surfaces, and each one is owed a re-model
+## The v0.10.0 rebase disabled five surfaces, and two are still owed a re-model
 
 **This is the largest outstanding item and it is not ordinary debt** — it is work Doug ruled into a
 specific order (`DECISIONS.md`, 2026-11-02). 0.10.0 re-shaped these phases' data models, so HRW's
@@ -167,24 +167,49 @@ semantics. The old pass could only ever show `pre` alone.
 `FromWorker::Compiled` lost its `pre_lowering_frames` field rather than carrying an always-empty
 `Vec` that leaves the plumbing looking alive.
 
-### Events — a condition is an algebra now, not an equation
+### ~~Events — a condition is an algebra now, not an equation~~
 
-The Events stage is not built. <!-- unbuilt: worker::events_from_condition_algebra -->
+**RE-MODELLED 2026-11-03, and the lecture point it promised is now a test.** The pane publishes
+Rumoca's own condition algebra: `ConditionOperation` rendered as a term, relations, roots as the
+`{relation, activation}` pair they are, and event actions by operation. No instrumentation was
+required — `DaeView` already hands out an accessor and an ordered walk per arena.
+`claims_of_absence_are_still_true` forced this retirement by failing the moment
+`worker::events_from_condition_algebra` existed.
 
-An event condition used to be an equation. 0.10.0 makes it a `ConditionOperation`: `Initial`,
-`Always`, `Relation`, `Discrete`, `Clock`, `Not`, `And`, `Or`, `AnyRise`. A root is no longer a bare
-expression but `{relation, activation}`, and HRW's `synthetic_root_conditions` maps onto nothing
-one-to-one.
+**MLS 3.6 §8.3.5.1 is observable, and `a_vector_when_is_not_a_disjunction` holds it there.** A
+vector `when` activates on `edge(b1) or … or edge(bn)`, which is *not* the edge of the disjunction.
+Two scratch specimens measured it:
 
-**This re-model gains something worth a lecture.** MLS §8.3.5.1 activates on
-`edge(b1) or … or edge(bn)`, which is *not* the edge of the disjunction — so `when {u, not u}` fires
-at every switch of `u` while `u or not u` is a tautology that never rises at all. 0.10.0's `AnyRise`
-variant exists precisely to keep those apart, and HRW never showed the distinction.
+| model | `c[3]` renders as | fires |
+|---|---|---|
+| `when {u, not u}` | `anyRise(u, not (u))` | at every switch of `u` |
+| `when u or not u` | `(u or not (u))` | never |
 
-Everything needed is public: `DaeView` hands out both an accessor and an ordered walk for each
-arena — `conditions()`, `relations()`, `roots()`, `structured_roots()`, `time_events()`,
-`event_actions()`, `clocks()`, `previous_values()`, `terminals()` — each documented with its MLS
-section. **No instrumentation required.**
+**Their summaries are identical** — four conditions, one time event, one discrete real equation,
+one discrete value definition. **So this is a case where no count could have distinguished two
+models with opposite behaviour**, which is the whole argument for rendering the algebra instead of
+counting it, and the reason `AnyRise` is published under Rumoca's name rather than expanded into
+the `or` form MLS defines it by.
+
+**Three records went with the re-model.** `the_events_summary_uses_rumocas_own_names` pins the
+summary keys to `DaeView`'s accessor names *and* each count to the arena it names — checking the
+keys alone would pass a summary whose `roots` carried the relation count.
+`bouncing_ball_has_events_smooth_model_has_none` was re-keyed onto `event_actions` and now looks
+for the `reinitialize` **operation**, because BenchActuator has one event action too and it is an
+`assert`. And `events_ir_has_expected_summary_keys` was **retired rather than restored**: all six
+keys it asserted were 0.9.20's, and re-keying it would have made a weaker second copy of the first
+test.
+
+**One predecessor could not be re-keyed at all, and the reason is worth keeping.**
+`every_events_rendering_lands_on_a_real_node` resolved each key of `Stage::rendered` against the
+IR, because 0.9.20 attached renderings as a side map where a non-matching key meant *no tooltip,
+indistinguishable from a node with nothing renderable*. The re-model has no side map — formatted
+text goes into the node — so there are no keys left to resolve. **The silence it guarded survived
+the change in a new shape**: every formatter has a fallback (`<relation 3>`, `<unresolved
+relation>`, `<state>`), each meaning HRW could not follow a reference Rumoca holds, and each a
+plausible-looking string in a pane full of them. `no_events_term_is_a_placeholder` is the
+descendant, and it detects `<` followed by a letter — a marker no real Modelica relation can
+produce, since every use of `<` in an expression is `<=` or `<` plus a space.
 
 ### No curated specimen declares `fixed = true`, so the Initialization pane is empty across the corpus
 
