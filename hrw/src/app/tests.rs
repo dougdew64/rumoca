@@ -541,6 +541,8 @@ impl App {
             // viewport commands at a window that is not there. See
             // `screenshot::ScreenshotState::watching`.
             shots: crate::screenshot::ScreenshotState::for_tests(),
+            notice_seq: 0,
+            pane_rect: None,
         };
         (app, from_tx)
     }

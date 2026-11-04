@@ -404,13 +404,9 @@ impl MatchingAnimation {
                         .map(String::as_str)
                         .unwrap_or("?")
                 })
-                .take(6)
                 .collect();
-            if !unmatched.is_empty() {
-                ui.weak(format!(
-                    "\u{2014} still unmatched: {}",
-                    unmatched.join(", ")
-                ));
+            if let Some(phrase) = unmatched_phrase(&unmatched, UNMATCHED_NAMES_SHOWN) {
+                ui.weak(phrase);
             }
         });
     }
@@ -670,6 +666,45 @@ impl MatchingAnimation {
             });
         }
     }
+}
+
+/// How many unmatched equation names the status line lists before summarising.
+///
+/// Six fits the line at the usual window width. The number is not the point — what
+/// matters is that the line says when it is showing six **of ninety-seven**.
+const UNMATCHED_NAMES_SHOWN: usize = 6;
+
+/// The *"still unmatched: …"* phrase, or `None` when everything is matched.
+///
+/// # Why the count is in the text
+///
+/// *Found 2026-11-04 by the capture suite's first photograph of this pane.* The list
+/// was built with `.take(6)` and printed with no sign of truncation, so at frame 1 of
+/// `Drivetrain` — where **all 97 equations are unmatched** — the line read
+/// *"Matched 0 of 97 — still unmatched: <six names>"*. Six names, offered as the
+/// answer to a question the reader has just been told is about ninety-seven.
+///
+/// That is load-bearing rather than cosmetic, and the code's own comment says why:
+/// *"naming what is not matched yet is the useful half: a system that ends with an
+/// unmatched equation is structurally singular."* A reader who counts the names to
+/// find the rank deficiency gets six on any system deficient by more than six, and the
+/// pane gave them no way to know.
+///
+/// The accessibility tree carries this label, so a headless test *could* have read it
+/// — but no test asked, because nobody knew to ask. It took looking at the pane.
+fn unmatched_phrase(names: &[&str], shown: usize) -> Option<String> {
+    let total = names.len();
+    if total == 0 {
+        return None;
+    }
+    if total <= shown {
+        return Some(format!("\u{2014} still unmatched: {}", names.join(", ")));
+    }
+    Some(format!(
+        "\u{2014} still unmatched ({total}): {}, and {} more",
+        names[..shown].join(", "),
+        total - shown
+    ))
 }
 
 fn step_description(
@@ -1239,5 +1274,37 @@ mod tests {
         // `same_variable` deliberately allows, and the reason this is not a
         // string comparison either.
         assert_eq!(anim.tracked_column("der(w)"), Some(1));
+    }
+
+    /// **A truncated list must say what it is a sample of.**
+    ///
+    /// The regression test for the capture suite's first photograph of this pane: at
+    /// frame 1 of `Drivetrain` all 97 equations are unmatched, and the line listed six
+    /// with nothing to say so. A reader counting the names to find the rank deficiency
+    /// — which is exactly what this line is for — would have read six.
+    #[test]
+    fn a_truncated_unmatched_list_says_how_many_it_is_hiding() {
+        let all: Vec<&str> = (0..97).map(|_| "f_x[n]").collect();
+        let phrase = unmatched_phrase(&all, UNMATCHED_NAMES_SHOWN).expect("97 is not none");
+        assert!(
+            phrase.contains("(97)"),
+            "the total belongs in the line, because the pane is where a reader counts \
+             the deficiency: {phrase}"
+        );
+        assert!(phrase.contains("and 91 more"), "{phrase}");
+
+        // A list that fits is printed whole, with no count to read as a second number.
+        let few = ["a", "b", "c"];
+        let phrase = unmatched_phrase(&few, UNMATCHED_NAMES_SHOWN).expect("3 is not none");
+        assert_eq!(phrase, "\u{2014} still unmatched: a, b, c");
+
+        // Exactly at the cap is still whole: an "and 0 more" would be absurd.
+        let six: Vec<&str> = (0..6).map(|_| "x").collect();
+        let phrase = unmatched_phrase(&six, UNMATCHED_NAMES_SHOWN).expect("6 is not none");
+        assert!(!phrase.contains("more"), "{phrase}");
+
+        // Nothing unmatched is the end state, and says nothing at all — the
+        // "Matched 97 of 97" beside it is the whole message.
+        assert_eq!(unmatched_phrase(&[], UNMATCHED_NAMES_SHOWN), None);
     }
 }
