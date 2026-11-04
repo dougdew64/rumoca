@@ -1259,6 +1259,23 @@ whole 25-specimen corpus.** Not filed.
 > are kept because the located instruction is the evidence for the diagnosis, and an entry
 > that drops its evidence cannot be re-checked.
 >
+> **AND NOW CONFIRMED BY BEHAVIOUR, NOT ONLY BY READING THE SOURCE — 2026-11-04.** The
+> confirmation above is *"the instruction is absent"*, which is a claim about the compiler's
+> text. This is a claim about its output: `worker::tests::rc_circuit_charges_its_capacitor`
+> was `#[ignore]`d for this defect on 2026-09-04 and **now passes**, asserting `C.v(0) = 0`
+> and `C.v(2) → 5` against the closed form with `tau = RC = 0.1 s`.
+>
+> Its own doc predicted that when it passed, the frozen specimens would come back with it and
+> the corpus should be re-measured rather than trusted from one assertion. Re-measured the
+> same day: **18 of 28 specimens simulate and 13 of the 14 with states have moving states**,
+> against **13 of 18 frozen** on 0.9.20. The single frozen survivor is `CapacitorLoop`, where
+> a capacitor pinned across an ideal source correctly carries no current.
+>
+> Two reproducers check against closed forms rather than against movement:
+> `LoopWithInertia`'s `w` starts at **0** and reaches **1** against `w = 1 - exp(-10t)` where
+> it used to start at the steady state 1.0, and `RcCircuit`'s charging current decays from
+> -0.05 to ~0 where it used to flat-line.
+>
 > <!-- historical: crates/rumoca-phase-solve/src/lower/scalar_ops.rs -->
 > <!-- historical: rumoca-phase-structural/src/ic_plan.rs -->
 >
@@ -1696,9 +1713,31 @@ rather than with the diagnosis.
 ## IC planning fails to match an algebraic unknown that structural analysis matched
 
 **Found 2026-09-24**, while building the specimen ladder's rung 5. **Reproduced on one
-purpose-built 11-line model and adjudicated against System Modeler.** Not filed. Baseline
-`0.9.20`; **whether the 0.10.0 branch fixes it has not been measured**, and that measurement
-should precede any filing.
+purpose-built 11-line model and adjudicated against System Modeler.** Baseline `0.9.20`.
+
+> ## ⟶ DO NOT FILE — FIXED ON v0.10.0, MEASURED 2026-11-04
+>
+> This entry asked for exactly one thing before filing: *"whether the 0.10.0 branch fixes it
+> has not been measured, and that measurement should precede any filing."* **It is fixed.**
+>
+> `StabilizedPendulum` now simulates end to end, and **`lambda` — the algebraic unknown IC
+> planning could not match — is solved**: 0 at `t=0`, 17.91 at `t=2`, peaking at 29.43. The
+> trajectory is a real pendulum released horizontally at `(1, 0)` and swinging through the
+> lower half plane to `(-1, 0)`, with `x` ranging `[-1, 1]` and `y` `[-1, 0]`. The constraint
+> holds: `x² + y² = 0.9996` against `L² = 1` at the final sample, and `der(vy)` starts at
+> exactly `-9.81`, which is right for a horizontal release — the rod is perpendicular to
+> gravity, so tension is zero, and `lambda(0) = 0` agrees.
+>
+> **Reduction reports it `sorted` with zero rounds**, so Baumgarte's hand-stabilization is
+> doing its job: derivative-alias normalization rebuilt the system (5 equations to 7) and
+> reduction had nothing left to do.
+>
+> **Not measured: accuracy against the oracle over the whole run.** The constraint residual is
+> checked at one sample and the shape is right; nobody has re-run System Modeler against it.
+> That is what a filing would have needed and a fixed defect does not.
+>
+> **This unblocks specimen-ladder rungs 4 and 5**, which needed exactly the
+> state-plus-algebraics combination that used to fail.
 
 **Why this is not the flat-line entry above.** That defect is about **states** taking the
 derivative-zero value instead of their `start`. This one is about an **algebraic** unknown —
