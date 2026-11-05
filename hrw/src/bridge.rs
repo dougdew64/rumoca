@@ -1656,8 +1656,41 @@ pub struct Ask<'a> {
     /// What HRW was showing. See [`View`] — a point made in a tree and one made
     /// mid-animation used to produce identical files.
     pub view: View<'a>,
-    /// The first pipeline stage that failed, if any. See [`PipelineFailure`].
+    /// The stage that **stopped** the pipeline, if one did. See [`PipelineFailure`].
     pub failure: Option<PipelineFailure<'a>>,
+    /// Stages Rumoca flagged and **carried on past**. See [`FlaggedStage`].
+    pub flags: Vec<FlaggedStage<'a>>,
+}
+
+/// A stage where Rumoca reported a problem and the pipeline **continued**.
+///
+/// # The problem this exists to stop asserting, measured 2026-11-05
+///
+/// Everything abnormal used to arrive as [`PipelineFailure`], because
+/// `App::failure_context` selected on `Stage::note_is_error`, which is
+/// `outcome != Ok`. **`Drivetrain`'s capture therefore told Claude the pipeline failed
+/// at Structural** — in a file whose own `downstream_not_reached` was `[]`, about a
+/// model that simulates 501 samples on 3 states. Doug read the table recording the
+/// code-level suspicion and said *"I very much want to widen the scope"*; the capture
+/// above was then taken to confirm it, because the suspicion had been read from the
+/// source rather than seen.
+///
+/// **Six corpus specimens are in this class** — `BenchActuator`, `CapacitorLoop`,
+/// `CartesianPendulum`, `Drivetrain`, `GearWithBrake`, `MotorWithBrake` — so it is the
+/// ordinary condition of a healthy high-index model, not an edge case. Rumoca is a
+/// recovering compiler: it flags and continues, and `Outcome::Flagged` exists to say so.
+///
+/// **The payload is kept, only the framing changes.** `error` here carries the same
+/// unmatched unknowns and source locations the failure section carried, because that is
+/// real diagnosis and discarding it would send Claude to `stages/structural.json` to
+/// dig it out again.
+pub struct FlaggedStage<'a> {
+    /// Stage name, as `StageKind::name` reports it.
+    pub stage: &'static str,
+    /// The stage's note — the one-line summary already shown in the UI.
+    pub note: &'a str,
+    /// The stage's structured payload, when it has one.
+    pub error: Option<&'a Value>,
 }
 
 /// The first stage of the pipeline that failed, and what it said.
@@ -1672,6 +1705,15 @@ pub struct Ask<'a> {
 /// downstream reports "not reached", so the *earliest* error is the cause and the rest
 /// are consequences. Naming the stage Doug happens to be looking at would often name a
 /// consequence.
+///
+/// # What this is NOT, since 2026-11-05
+///
+/// **A stage being abnormal is not a stop**, and this type is now reserved for a stage
+/// after which the pipeline genuinely did not continue — `not_reached` non-empty.
+/// Everything else arrives as [`FlaggedStage`]. The discriminator is deliberately the
+/// *measured* tail rather than the outcome label, because the label does not decide it:
+/// `DimensionMismatch`'s Typecheck is `Flagged` and **does** stop the pipeline, while
+/// `Drivetrain`'s Structural is `Flagged` and does not.
 pub struct PipelineFailure<'a> {
     /// Stage name, as `StageKind::name` reports it.
     pub stage: &'static str,
@@ -2177,11 +2219,33 @@ fn build(ask: &Ask) -> Value {
     // point-specific sections for that reason.
     if let Some(f) = &ask.failure {
         doc["pipeline_failure"] = json!({
-            "note": "the FIRST stage that failed. A failure cascades, so stages after it                      report \"not reached\" and are consequences rather than problems.                      `error` carries the diagnosis: counts, unmatched names, source                      locations, guidance. Full IR for every stage is under `stages.dir`.",
+            "note": "the stage that STOPPED the pipeline: every stage after it says it \
+                     never ran. `error` carries the diagnosis — counts, unmatched names, \
+                     source locations, guidance. Full IR for every stage is under \
+                     `stages.dir`. A stage that reported a problem and was CARRIED PAST \
+                     is not here; see `pipeline_flags`.",
             "stage": f.stage,
             "summary": f.note,
             "error": f.error,
             "downstream_not_reached": f.not_reached,
+        });
+    }
+    // **Emitted separately from a failure, and both may appear.** A flag before a real
+    // stop was reported as the stop itself until 2026-11-05, which was wrong twice over:
+    // it named the wrong stage and it called a recovery a failure.
+    if !ask.flags.is_empty() {
+        doc["pipeline_flags"] = json!({
+            "note": "stages where Rumoca reported a problem and the compile CONTINUED — \
+                     every later stage ran. These are not failures and usually not bugs: \
+                     Rumoca is a recovering compiler, and a structurally singular report \
+                     here is the normal, expected state of a high-index model that a \
+                     later phase goes on to reduce and simulate. Do not present one as a \
+                     reason the model does not work without checking that it does not.",
+            "stages": ask.flags.iter().map(|f| json!({
+                "stage": f.stage,
+                "summary": f.note,
+                "error": f.error,
+            })).collect::<Vec<_>>(),
         });
     }
     if let Focus::Node {
@@ -2822,6 +2886,7 @@ mod tests {
                 animation: None,
             },
             failure: None,
+            flags: vec![],
         };
 
         let doc = build(&ask);
@@ -2887,6 +2952,7 @@ mod tests {
                 animation: None,
             },
             failure: None,
+            flags: vec![],
         };
 
         let doc = build(&ask);
@@ -3293,6 +3359,7 @@ mod tests {
                 error: Some(&error),
                 not_reached: vec![StageKind::Structural.name(), StageKind::Events.name()],
             }),
+            flags: vec![],
         };
         let doc = build(&ask);
 
@@ -3339,6 +3406,7 @@ mod tests {
             tracking: None,
             view: test_view(),
             failure: None,
+            flags: vec![],
         };
         assert!(build(&ask).get("pipeline_failure").is_none());
     }
@@ -3464,6 +3532,7 @@ mod tests {
             tracking: None,
             view: test_view(),
             failure: None,
+            flags: vec![],
         };
 
         let cs = build(&ask)["cross_stage"].clone();
@@ -3508,6 +3577,7 @@ mod tests {
             }),
             view: test_view(),
             failure: None,
+            flags: vec![],
         }
     }
 
@@ -3593,6 +3663,7 @@ mod tests {
             tracking: None,
             view: test_view(),
             failure: None,
+            flags: vec![],
         };
         assert!(build(&ask).get("tracking").is_none());
     }
@@ -3904,6 +3975,7 @@ mod tests {
                 }),
             },
             failure: None,
+            flags: vec![],
         };
         let doc = build(&ask);
 
@@ -3995,6 +4067,7 @@ mod tests {
             tracking: None,
             view: test_view(),
             failure: None,
+            flags: vec![],
         };
         assert_eq!(build(&ask)["cross_stage"]["applicable"], json!(false));
     }
@@ -4019,6 +4092,7 @@ mod tests {
             tracking: None,
             view: test_view(),
             failure: None,
+            flags: vec![],
         };
         let doc = build(&ask);
         let files = doc["stages"]["files"]
@@ -4179,6 +4253,7 @@ mod tests {
             tracking: None,
             view: test_view(),
             failure: None,
+            flags: vec![],
         };
         let doc = build(&ask);
         let cs = &doc["cross_stage"];
@@ -4213,6 +4288,7 @@ mod tests {
             tracking: None,
             view: test_view(),
             failure: None,
+            flags: vec![],
         };
         let doc = build(&ask);
         assert_eq!(doc["stage"], json!("(navigated definition)"));
@@ -4616,6 +4692,7 @@ mod tests {
             tracking: None,
             view: test_view(),
             failure: None,
+            flags: vec![],
         };
         let path = write(&ask).expect("write focus");
         assert!(path.exists(), "focus.json should exist");

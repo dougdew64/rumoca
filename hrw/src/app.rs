@@ -2632,6 +2632,7 @@ impl App {
         focus: Focus<'a>,
         stage_values: &'a [(&'a str, Option<&'a Value>)],
     ) -> Ask<'a> {
+        let (flags, failure) = self.pipeline_context();
         Ask {
             seq,
             request,
@@ -2645,43 +2646,105 @@ impl App {
             focus,
             tracking: self.tracking_context(stage_values),
             view: self.view_context(),
-            failure: self.failure_context(),
+            failure,
+            flags,
         }
     }
 
-    /// The first pipeline stage that failed, for the capture (ideas #45 step 3).
+    /// Every abnormal stage, split into **what stopped the pipeline** and **what it was
+    /// carried past** (ideas #45 step 3; re-shaped 2026-11-05).
     ///
-    /// **First, not current.** A failure cascades — every later stage reports "not
-    /// reached" — so the earliest error is the cause and the rest are consequences.
-    /// Naming whichever stage Doug happens to be looking at would often name a
-    /// consequence, which is exactly the wrong thing to hand a question like "why
-    /// doesn't this work?".
+    /// # The defect this replaced, and it was three
     ///
-    /// Returns `None` for a clean compile, so the section is absent rather than
-    /// present-and-empty: a `pipeline_failure` key that exists always would make
-    /// "nothing failed" indistinguishable from "the field was not populated".
-    fn failure_context(&self) -> Option<bridge::PipelineFailure<'_>> {
+    /// This returned a single `PipelineFailure`, chosen as the first stage with
+    /// [`Stage::note_is_error`] — which is `outcome != Ok`. Measured on `Drivetrain`'s
+    /// real capture, the emitted file told Claude the pipeline **failed at Structural**,
+    /// while that same object's `downstream_not_reached` was `[]` and the model
+    /// simulates 501 samples. **Six corpus specimens are in that class.**
+    ///
+    /// 1. **A flag was reported as a failure.** Fixed by splitting the return.
+    /// 2. **The discriminator was the outcome label, which does not decide it.**
+    ///    `DimensionMismatch`'s Typecheck is `Flagged` and *does* stop the pipeline;
+    ///    `Drivetrain`'s Structural is `Flagged` and does not. So the test is the
+    ///    measured tail — did anything after it actually not run.
+    /// 3. **"Not reached" was read off `value.is_none()`, a different fact.**
+    ///    See [`Stage::says_not_reached`]: `OverDeterminedShaft`'s Flatten is empty
+    ///    *because nothing was retained*, and `CartesianPendulum`'s Initialization
+    ///    produces no IR while Events and Solve lowering after it both do. The old code
+    ///    therefore listed Initialization as never reached, in a compile that finished.
+    ///
+    /// # Why both halves can be non-empty
+    ///
+    /// A flag before a genuine stop was previously reported *as* the stop, naming the
+    /// wrong stage and calling a recovery a failure in one move. Scanning every stage
+    /// and classifying each on its own tail reports both.
+    ///
+    /// Each half is absent rather than present-and-empty, so "nothing was flagged" stays
+    /// distinguishable from "the field was not populated".
+    fn pipeline_context(
+        &self,
+    ) -> (
+        Vec<bridge::FlaggedStage<'_>>,
+        Option<bridge::PipelineFailure<'_>>,
+    ) {
+        let mut flags = Vec::new();
+        let mut failure = None;
         // `COMPILATION`, not `ALL`: `ALL` ends with `Simulation`, which is a tab rather
         // than a compilation stage, and `StageBundle::get()` panics on it.
-        let first = StageKind::COMPILATION
-            .iter()
-            .copied()
-            .find(|&k| self.stages.get(k).note_is_error())?;
-        let stage = self.stages.get(first);
-        let after = StageKind::COMPILATION
-            .iter()
-            .copied()
-            .skip_while(|&k| k != first)
-            .skip(1)
-            .filter(|&k| self.stages.get(k).value.is_none())
-            .map(StageKind::name)
-            .collect();
-        Some(bridge::PipelineFailure {
-            stage: first.name(),
-            note: stage.note.as_deref().unwrap_or(""),
-            error: stage.value.as_ref().and_then(|v| v.get("error")),
-            not_reached: after,
-        })
+        for kind in StageKind::COMPILATION.iter().copied() {
+            let stage = self.stages.get(kind);
+            if !stage.note_is_error() {
+                continue;
+            }
+            let note = stage.note.as_deref().unwrap_or("");
+            let error = stage.value.as_ref().and_then(|v| v.get("error"));
+            // **The stages after this one that say they never ran** — their own note,
+            // not their emptiness. See `Stage::says_not_reached` for the two specimens
+            // that make those different facts.
+            let not_reached: Vec<&'static str> = StageKind::COMPILATION
+                .iter()
+                .copied()
+                .skip_while(|&k| k != kind)
+                .skip(1)
+                .filter(|&k| self.stages.get(k).says_not_reached())
+                .map(StageKind::name)
+                .collect();
+            if not_reached.is_empty() {
+                flags.push(bridge::FlaggedStage {
+                    stage: kind.name(),
+                    note,
+                    error,
+                });
+            } else {
+                // The first stage with nothing running after it is the stop. Later
+                // abnormal stages are inside the tail it caused, so scanning ends here
+                // rather than reporting consequences as further problems.
+                failure = Some(bridge::PipelineFailure {
+                    stage: kind.name(),
+                    note,
+                    error,
+                    not_reached,
+                });
+                break;
+            }
+        }
+        (flags, failure)
+    }
+
+    /// [`Self::pipeline_context`]'s failure half, for the four `Ask` literals that do
+    /// not go through `base_ask`.
+    ///
+    /// **A pair of thin wrappers rather than a binding inserted into four scopes.** They
+    /// re-scan — eleven stages and a small `Vec` — and that happens once per *capture*,
+    /// which is a click, not once per frame. The two cannot disagree because they are
+    /// the same function; splitting the computation instead is what would let them.
+    fn failure_context(&self) -> Option<bridge::PipelineFailure<'_>> {
+        self.pipeline_context().1
+    }
+
+    /// [`Self::pipeline_context`]'s flags half. See [`Self::failure_context`].
+    fn flags_context(&self) -> Vec<bridge::FlaggedStage<'_>> {
+        self.pipeline_context().0
     }
 
     /// The ambient half of the emitted context — what is being followed.
@@ -3795,6 +3858,7 @@ impl App {
                 tracking: None,
                 view: self.view_context(),
                 failure: self.failure_context(),
+                flags: self.flags_context(),
             };
             status_line(seq, &target, request_str, bridge::write(&ask))
         } else {
@@ -5974,6 +6038,7 @@ impl App {
                 tracking,
                 view: self.view_context(),
                 failure: self.failure_context(),
+                flags: self.flags_context(),
             };
             self.context.point_error = bridge::write(&ask).err().map(|e| e.to_string());
             return;
@@ -6005,6 +6070,7 @@ impl App {
                 tracking,
                 view: self.view_context(),
                 failure: self.failure_context(),
+                flags: self.flags_context(),
             };
             self.context.point_error = bridge::write(&ask).err().map(|e| e.to_string());
             return;
@@ -6054,6 +6120,7 @@ impl App {
             tracking,
             view: self.view_context(),
             failure: self.failure_context(),
+            flags: self.flags_context(),
         };
         self.context.point_error = bridge::write(&ask).err().map(|e| e.to_string());
     }

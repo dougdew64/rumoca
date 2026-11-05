@@ -3638,32 +3638,46 @@ should say what it is a fact *about*.
 
 ### 11-05, `note_is_error` has six remaining callers and one of them feeds Claude
 
-> ### ⟶ DOUG WIDENED THE SCOPE THE SAME DAY — `App::failure_context` IS THE NEXT PIECE OF WORK
+> ### ⟶ FIXED 2026-11-05 IN CHICAGO — and measuring first changed the fix twice
 >
-> *"I very much want to widen the scope to fix `App::failure_context`"* (2026-11-05), said on
-> reading the table below and then immediately shutting the machine down to travel. **So this is a
-> ruling with no work attached to it yet, which is exactly the thing that evaporates between
-> sessions.** The order he set:
+> *"I very much want to widen the scope to fix `App::failure_context`"*, then the machine was shut
+> down to travel. Resumed and done. **`App::pipeline_context` replaces it**, returning flags and an
+> optional stop; `bridge` emits `pipeline_flags` beside `pipeline_failure`.
 >
-> 1. **fix `App::failure_context`** (this section's first row),
-> 2. **then finish the 0.10.4 rebase** — steps 6, 6b, 7, 8 of
->    [`updating-rumoca.md`](updating-rumoca.md), all prose and all his,
-> 3. **then run the long-running suites** — `updating-rumoca.md` **step 10**, which exists because
->    of this ruling.
+> **What the measurement found that the code read had not.** `Drivetrain` was loaded in a running
+> HRW and the Structural tab clicked — the only path that writes `focus.json`, which is itself worth
+> knowing, since **neither `hrw://load/...` nor `hrw://stage/.../node/...` through the screenshot
+> harness captures anything.** The real file carried `pipeline_failure` naming Structural with the
+> note *"the FIRST stage that failed"* **and `downstream_not_reached: []` in the same object**. The
+> section contradicted itself and asserted the failure anyway.
 >
-> **Measure before fixing.** The table's "verified how" column is honest: the first four rows were
-> read from the code with HRW showing `RcCircuit`, which has no flagged stage and therefore no
-> `pipeline_failure` to look at. **Load `Drivetrain` or `CartesianPendulum`, read
-> `.hrw-bridge/focus.json`, and confirm the key is actually there before changing anything** — a
-> true measurement of the wrong artefact is this repository's most repeated mistake, and a fix
-> aimed at a key that never appears would be the next one.
+> **Then the fix changed shape twice, both times because something was checked rather than
+> assumed:**
 >
-> **The fix is not simply "use `Outcome::Failed`".** `failure_context` also reports every later
-> stage with no value as a *consequence*, and for a flagged-but-continuing pipeline there are no
-> such stages — so the whole section may need to become something other than a failure. **What
-> `focus.json` should say instead is a claim about the compile, so it is Doug's to approve**, and
-> the candidate worth putting to him is a `pipeline_flags` section that names the flagged stages
-> without asserting a stop.
+> 1. *"Emit the failure only when the outcome is `Failed`"* — **wrong.** `DimensionMismatch`'s
+>    Typecheck is `Flagged` and **does** stop the pipeline (7 stages never run), while
+>    `Drivetrain`'s Structural is `Flagged` and does not. The outcome label does not decide it;
+>    the measured tail does.
+> 2. *"The tail is the later stages with no value"* — **also wrong**, and the counter-example was
+>    already written down on a sibling test: `the_not_reached_tail_is_contiguous_and_agrees_on_its_cause`
+>    records that `OverDeterminedShaft`'s Flatten is empty **because nothing was retained**, not
+>    because it never ran. `CartesianPendulum` is the other direction — Initialization produces no
+>    IR, says so about the *model*, and Events and Solve lowering after it both run. So the old code
+>    told Claude that a stage in a finished compile had never been reached. **Reading the sibling
+>    test's doc comment is what caught this**, before it was written rather than after.
+>
+> **So it was three defects, not one**, and `Stage::says_not_reached` now single-sources the reading
+> side of the signal `not_reached_note` writes — a leak that existed in the other direction all
+> along, with `fidelity::tests::a_stage_that_says_it_never_ran_shows_no_ir` matching the words by
+> hand.
+>
+> **Verified at the artefact, not only in tests**: the same click re-run against the fix gives no
+> `pipeline_failure`, a `pipeline_flags` naming Structural, and the full diagnosis — 4 unmatched
+> unknowns with their 4 MSL source locations — intact. Both tests were proved to fail against the
+> old behaviour, **and defect 3 was isolated on its own** so claim 3 could not pass vacuously.
+>
+> **Still open, and next:** the 0.10.4 rebase — steps 6, 6b, 7, 8 — then
+> [`updating-rumoca.md`](updating-rumoca.md) **step 10**, the long-running suites and the oracle.
 
 **`Stage::note_is_error()` is `outcome != Ok`**, so every caller reads *"Rumoca had something to
 report"* as *"this stage failed"*. `stage_tabs::tab_color` was fixed on 11-05; the rest were scoped
@@ -3676,18 +3690,25 @@ Structural stage — `BenchActuator`, `CapacitorLoop`, `CartesianPendulum`, `Dri
 
 | caller | what it claims | verified how |
 |---|---|---|
-| `App::failure_context` → `bridge::PipelineFailure` → **`focus.json`'s `pipeline_failure`** | names the first flagged stage as *the* pipeline failure, plus every later stage as a consequence | **read from the code, not measured.** The live `focus.json` at the time held `RcCircuit`, which has no flagged stage |
+| ~~`App::failure_context` → `bridge::PipelineFailure` → **`focus.json`'s `pipeline_failure`**~~ | ~~names the first flagged stage as *the* pipeline failure, plus every later stage as a consequence~~ | **FIXED 2026-11-05** — measured on a real `Drivetrain` capture first, which is what turned one defect into three. See the box above |
 | `App::compile_outcome` → `diagnostics::record_action("compiled", …)` | the action trail records `"<model>: FAILED at Structural"` | read from the code |
 | `App::last_successful_stage` | a flagged stage is not "where the tabs should land", so a singular model opens further back than it reached | read from the code |
 | `app.rs`'s stage-note colour (~5342) | the note under the tab row is drawn in `error_fg_color` — **the same conflation as the tab, in the pane below it** | read from the code |
 | `app.rs`'s `has_error_summary` (~5329) | requires an `"error"` payload as well, so it is probably right | — |
 | `artifact_pane` (~168) | its module doc already says `note_is_error` covers *both* abnormal outcomes, so it is deliberate | — |
 
-**The first row is the one that matters most and it is not the colour.** `focus.json` is the
+**The first row was the one that mattered most, and it was not the colour.** `focus.json` is the
 context Claude reasons from, and *"emitted context must be exact, never approximate"* — a
-`pipeline_failure` naming Structural for a model that simulates 507 samples is a false claim in the
-one artefact that cannot be cross-checked by looking at the screen. **It wants measuring before it
-is fixed**, because the code-read may be wrong about when `failure_context` is called.
+`pipeline_failure` naming Structural for a model that simulates is a false claim in the one
+artefact that cannot be cross-checked by looking at the screen. **Fixed 11-05, and the instruction
+to measure first paid for itself twice**: the measurement confirmed the key was really there, and
+then two successive candidate fixes were each refuted by a specimen before being written.
+
+**Four rows remain and none is in that class** — `compile_outcome` writes `"<model>: FAILED at
+Structural"` into the action trail, `last_successful_stage` lands the tabs further back than the
+compile reached, and the stage-note colour repeats the tab's old conflation one pane down. All
+three are seen by Doug rather than by Claude, which is why they rank below the row above and not
+beside it.
 
 **Why this went unseen for as long as the outcome split has existed:** `Outcome`'s own doc comment
 says the UI colouring is *"unchanged"*. That sentence was true, read as harmless, and was the whole
