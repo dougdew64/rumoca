@@ -488,7 +488,13 @@ pub struct LibrarySource {
 /// 2026-07-29 (`docs/ideas.md` #51), which is why `docs/fidelity-plan.md`
 /// sequences this split *before* any harness reads outcomes at scale.
 ///
-/// The UI's red/neutral colouring is unchanged — see [`Stage::note_is_error`].
+/// **The UI caught up on 2026-11-05, and the gap had lasted since the split.** This doc
+/// said *"the UI's red/neutral colouring is unchanged"*, which was true and read as
+/// harmless: `Stage::note_is_error` is `outcome != Ok`, so [`Outcome::Flagged`] — the
+/// outcome this enum exists to distinguish — painted exactly the red the split was
+/// introduced to stop meaning. Doug reported it on `CartesianPendulum`.
+/// `stage_tabs::tab_label` now branches on the outcome itself; the other callers of
+/// `note_is_error` are listed in `docs/tech-debt.md`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Outcome {
     /// The stage produced its IR and Rumoca reported nothing about it. Also the
@@ -3755,7 +3761,10 @@ impl WorkerState {
                     }
                     _ => None,
                 };
-                let index_reduction = run_stage!(
+                // `mut` because solve lowering, built below, can overturn this stage's
+                // outcome — see `reconcile_reduction_with_lowering`, which is called as
+                // soon as both exist.
+                let mut index_reduction = run_stage!(
                     "Index reduction",
                     index_reduction_stage(
                         result,
@@ -3787,6 +3796,10 @@ impl WorkerState {
                     solve_lowering_stage(result),
                     solve_lowering
                 );
+                // **Both stages exist for the first time here**, which is the earliest
+                // point this judgement can be made without re-running a phase or
+                // reordering the two. See `reconcile_reduction_with_lowering`.
+                reconcile_reduction_with_lowering(&mut index_reduction, &solve_lowering);
 
                 // **The pre()-lowering replay is gone** (2026-08-04, idea #40's
                 // frames kept, its replay removed). It re-ran the whole of DAE
@@ -5038,6 +5051,77 @@ fn reduction_failure_note(error: &rumoca_phase_structural::StructuralError) -> S
         }
         other => format!("{other}"),
     }
+}
+
+/// Reconcile the Index Reduction stage with what solve lowering actually produced.
+///
+/// # The problem: one phase's refusal is not the compiler's verdict
+///
+/// `inspect_prepare_for_solve` declines the canonical index-3 pendulum — its Holonomic
+/// lane finds the rod constraint, attempts it, and reports `would_create_vacuous_residual`,
+/// because differentiating `x² + y² = L²` and substituting it back leaves `0 = 0`. The
+/// compiler then lowers and simulates the model anyway, on **2** coordinates, because
+/// v0.10.4 added `rumoca-phase-solve`'s state selection, which picks independent
+/// coordinates on the constraint manifold.
+///
+/// So [`index_reduction_stage`] cannot settle this stage's outcome from `observed.prepared`
+/// alone: `Err` there means *this entry point declined*, not *the index stayed high*. Left
+/// alone it published [`Outcome::Flagged`] with the note *"still singular after reduction"*,
+/// and `stage_tabs::tab_label` painted the tab in `error_fg_color` — about a model whose rod
+/// constraint holds to 4.6e-12 over two seconds.
+///
+/// # Why this is a second function and not a line in the banner
+///
+/// `report_sub_view::reduction_banner` was fixed on 2026-11-04 and **this was not**, so for a
+/// day the pane read *Reduced by state selection* underneath a red tab. Doug reported the tab;
+/// nothing else could have, because no test compares a label's colour against the pane beneath
+/// it. Both now derive from the one `state_scalar_count` in the Solve Lowering payload, which
+/// is the only way two expressions of one fact stay agreed.
+///
+/// # Why a post-pass rather than a branch inside the stage
+///
+/// Index reduction is built **before** solve lowering, and deliberately: the preparation both
+/// reduction stages share runs outside either `run_stage!` bracket so neither is charged the
+/// other's time. Reordering to let the stage read the lowered layout would trade a false
+/// outcome for a false timing claim. So the judgement waits until both stages exist.
+///
+/// # The note keeps the word `singular`, and that is load-bearing
+///
+/// `App::note_says_singular` decides sub-view availability by searching the note for
+/// `"singular"`, and this stage's *payload* is still the refusal report — Summary is where its
+/// rounds and residue live, so it must stay offered.
+/// `the_reconciled_note_still_offers_the_summary_view` pins that coupling rather than leaving
+/// it to be rediscovered.
+fn reconcile_reduction_with_lowering(index_reduction: &mut Stage, solve_lowering: &Stage) {
+    // Only a reduction that reported `singular` is in question. Read from the payload
+    // rather than from the note, because the note is prose and the payload is Rumoca's
+    // own word — the same reason `reduction_success_note` reads back out of the value.
+    let reported_singular = index_reduction
+        .value
+        .as_ref()
+        .and_then(|v| v["outcome"]["kind"].as_str())
+        == Some("singular");
+    if !reported_singular {
+        return;
+    }
+    // **The count the real lowering produced.** `rumoca_phase_solve::integrated_state_names`
+    // answers the same question by running state selection a second time, which would be a
+    // re-execution presented as the compile — the fiction this repository has removed twice.
+    let Some(states) = solve_lowering
+        .value
+        .as_ref()
+        .and_then(|v| v["solve_layout"]["state_scalar_count"].as_u64())
+    else {
+        // Solve lowering published no layout, so nothing carried the model and the
+        // reduction's own refusal is the whole story. Measured across the corpus:
+        // `IncompatibleConnect` and `TwiceDefined` land here and must stay flagged.
+        return;
+    };
+    index_reduction.outcome = Outcome::Ok;
+    index_reduction.note = Some(format!(
+        "this reducer's search stayed singular; solve lowering selected {states} \
+         independent coordinate(s) on the constraint manifold and lowered the model"
+    ));
 }
 
 /// **Index reduction as Rumoca performed it**, from the report of the one run.
