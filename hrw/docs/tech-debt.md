@@ -3610,9 +3610,37 @@ this class found on 11-04 were each caught by a human or a photograph.
 
 ### 11-05, `note_is_error` has six remaining callers and one of them feeds Claude
 
+> ### ⟶ DOUG WIDENED THE SCOPE THE SAME DAY — `App::failure_context` IS THE NEXT PIECE OF WORK
+>
+> *"I very much want to widen the scope to fix `App::failure_context`"* (2026-11-05), said on
+> reading the table below and then immediately shutting the machine down to travel. **So this is a
+> ruling with no work attached to it yet, which is exactly the thing that evaporates between
+> sessions.** The order he set:
+>
+> 1. **fix `App::failure_context`** (this section's first row),
+> 2. **then finish the 0.10.4 rebase** — steps 6, 6b, 7, 8 of
+>    [`updating-rumoca.md`](updating-rumoca.md), all prose and all his,
+> 3. **then run the long-running suites** — `updating-rumoca.md` **step 10**, which exists because
+>    of this ruling.
+>
+> **Measure before fixing.** The table's "verified how" column is honest: the first four rows were
+> read from the code with HRW showing `RcCircuit`, which has no flagged stage and therefore no
+> `pipeline_failure` to look at. **Load `Drivetrain` or `CartesianPendulum`, read
+> `.hrw-bridge/focus.json`, and confirm the key is actually there before changing anything** — a
+> true measurement of the wrong artefact is this repository's most repeated mistake, and a fix
+> aimed at a key that never appears would be the next one.
+>
+> **The fix is not simply "use `Outcome::Failed`".** `failure_context` also reports every later
+> stage with no value as a *consequence*, and for a flagged-but-continuing pipeline there are no
+> such stages — so the whole section may need to become something other than a failure. **What
+> `focus.json` should say instead is a claim about the compile, so it is Doug's to approve**, and
+> the candidate worth putting to him is a `pipeline_flags` section that names the flagged stages
+> without asserting a stop.
+
 **`Stage::note_is_error()` is `outcome != Ok`**, so every caller reads *"Rumoca had something to
-report"* as *"this stage failed"*. `stage_tabs::tab_color` was fixed on 11-05; **Doug scoped the
-rest out deliberately**, and this is the record so the scope is a decision rather than an oversight.
+report"* as *"this stage failed"*. `stage_tabs::tab_color` was fixed on 11-05; the rest were scoped
+out **in the same conversation that then widened the scope**, which is why the table survives as the
+work list rather than as a record of a decision.
 
 **The population is not an edge case.** Six corpus specimens simulate successfully with a flagged
 Structural stage — `BenchActuator`, `CapacitorLoop`, `CartesianPendulum`, `Drivetrain`,
