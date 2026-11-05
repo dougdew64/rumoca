@@ -5,7 +5,10 @@ integration solves, the single move Euler made, and what Rumoca does with it.
 **Status:** lecture — a draft to be argued with. **Ask, and this file gets revised.**
 **Read in VS Code's markdown preview**, which renders the math ($\LaTeX$ via KaTeX, on by default
 as `markdown.math.enabled`). If the formulas below appear as literal `$` signs, that setting is off.
-**Specimen:** `SingleInertia`. **Measured against Rumoca 0.9.20 on 2026-09-24.**
+**Specimen:** `SingleInertia`. **Measured against Rumoca 0.10.4 on 2026-11-05**, at
+$t_{\text{end}} = 1$ (the corpus traces use 2). Previously 0.9.20, 2026-09-24; what moved between
+them is marked in §4, and **§4's argument and its headline number both survived unchanged.**
+Re-measure with `cargo run -p hrw --example solver_steps -- SingleInertia 1.0`.
 
 > **A notation convention, because two things share every name here.** Italic math — $\varphi$,
 > $\omega$, $\tau$ — means the *mathematical* quantity. `Backticks` — `phi`, `w`, `tau` — mean the
@@ -345,18 +348,27 @@ Rumoca's solver reports what it did on every step. For this model, $t_{\text{end
 ```
    #      t            h        order
    0  0.00010000  1.000e-4  1
-   1  0.00020000  2.000e-4  2
+   1  0.00020000  1.000e-4  2
    2  0.00040000  2.000e-4  2
    ...                        (34 steps in total, none above order 2)
 ```
 
-> **A trap in that `h` column, which cost a defect in HRW before it was noticed.** The recorded `h`
-> is the size the solver has chosen for the step it is *about to take*, not the one that just
-> finished — Rumoca captures it after the step completes, when the adaptive controller has already
-> revised it. Look at row 1: `t` advanced by $10^{-4}$ while `h` reads $2\times10^{-4}$. On this run
-> 11 of the 34 rows disagree that way, every one of them where the solver doubled. **HRW's hover
-> label says `arrived by h` and `next h` separately for exactly this reason.** Where this lecture
-> writes $h_0$ it means the *first step actually taken*, which happens to equal row 0's `h`.
+> **That `h` column used to carry a trap, and Rumoca 0.10 removed it at the source.** On 0.9.20
+> the recorded `h` was the size chosen for the step *about to be taken*, not the one that had just
+> finished — captured after the step, when the adaptive controller had already revised it. Row 1
+> read $2\times10^{-4}$ while `t` had advanced by $10^{-4}$, and 11 of the 34 rows disagreed that
+> way, every one where the solver doubled. **HRW's hover label said `arrived by h` and `next h`
+> separately for exactly that reason.**
+>
+> **It cannot happen now.** `MeStepRecord::step_size()` is `accepted_time - start_time` — derived,
+> so in the crate's own words it *"cannot disagree with the endpoints it is computed from"*. On
+> this run 0 of 34 rows differ. So `h` means the step that was taken, and $h_0$ means row 0's `h`
+> with nothing to disambiguate.
+>
+> *Re-measuring this paragraph for 0.10.4 found that **HRW's hover label had not caught up** — it
+> was still printing `arrived by h` and `next h`, which on this release are the same number, the
+> second under a name asserting a controller decision HRW does not record. It now reads
+> `h (this step)`. A lecture earning its place as an instrument, not only as prose.*
 
 Four things there are not in §3.
 
@@ -372,16 +384,21 @@ step. That is why it can take large steps on models where §3's method cannot, a
 subject. For this wheel the distinction does not bite, which is part of why this is the right first
 specimen.
 
-**It runs past the end.** §3 stopped exactly at $t = 1$ because you chose $h$ to divide the
+**The last step is cut to fit.** §3 stopped exactly at $t = 1$ because you chose $h$ to divide the
 interval. The solver does not get that choice — it takes the step its error control asks for, and
-the last one lands wherever it lands. **On this model the step records reach $t = 1.0236$ while the
-trajectory stops at $1$**, so the answer at $t = 1$ is interpolated back from a step that went
-2.36 % too far. The overshoot cannot exceed one step, which is why it is visible here (the final
-steps are ~0.2 long) and not on `BouncingBall`, whose steps never exceed $3\times10^{-3}$. *Why
-`BouncingBall` lands on $t_{\text{end}}$ exactly, rather than merely close, is not established.*
+the last one would land past the end. Look at the final two rows: step 32 covers $0.2048$, and step
+33 covers **$0.1812$**, shortened to land on $t = 1$ exactly rather than at $1.0236$. The error
+controller asked for another $0.2048$ and did not get it.
 
-You can see this: on the diagnostics plots the step markers continue a little past where the
-trajectory ends. **That is not a rendering artefact** — it is the last thing the solver did.
+> **This changed between Rumoca 0.9.20 and 0.10.4, and the earlier behaviour is worth knowing
+> because it is what most solvers do.** On 0.9.20 the step records *overshot*: they reached
+> $t = 1.0236$ while the trajectory stopped at $1$, so the answer at $t = 1$ was interpolated back
+> from a step that went 2.36 % too far, and the step markers on the diagnostics plots visibly
+> continued past the end of the trajectory. **On 0.10.4 the last record lands on $t_{\text{end}}$
+> exactly and there is no overshoot.** *Whether the final step is clipped by the solver or by the
+> harness driving it to `t_end` is not established here, and the distinction matters to anyone
+> reading the last step's size as a controller decision — it is the one step in the run that is
+> not one.*
 
 ### The measurement, and the thing worth seeing
 
@@ -407,9 +424,11 @@ $e' = 0$: it neither grows nor decays.
 *(That "exactly one" is a fact about **this run**, at the default tolerance, and not a property of
 the solver. Loosen the tolerance and there are five; the table below is where that matters.)*
 
-**One wrong step at the very start, frozen for the whole run.** The error is
-$9.801 \times 10^{-9}$ at $t = 0.002$ and $9.801 \times 10^{-9}$ at $t = 1$. A constant, not a
-drift — and that is the tell which says *startup*, not *accumulation*.
+**One wrong step at the very start, frozen for the whole run.** Sampled across the run, `phi` is
+$0.031250009801$, $0.125000009801$, $0.281250009801$ and $0.500000009801$ at
+$t = 0.25,\ 0.5,\ 0.75,\ 1$ — against exact values of $t^2/2$, that is
+$+9.801 \times 10^{-9}$ **at every one of them**. A constant, not a drift, and that is the tell
+which says *startup*, not *accumulation*.
 
 ### Why §3's errors were a hundred million times bigger
 
@@ -609,8 +628,25 @@ entry has `"lhs": null` with an `rhs` that subtracts `w` from `Der(phi)` — the
 
 **Start here for any question about what a phase produced.** It costs nothing and cannot be stale.
 
-### A.2 The solver's own diagnostics — in HRW, no code
+### A.2 The solver's own diagnostics — two ways
 
+**The whole of §4 is one command**, added 2026-11-05 because re-measuring this section at a rebase
+otherwise meant hovering thirty-four markers by hand:
+
+```text
+cargo run -p hrw --example solver_steps -- SingleInertia 1.0
+```
+
+It prints every step record — index, the interval covered, `h`, order — then the step count, the
+order histogram, where the last record lands relative to $t_{\text{end}}$, and the trajectory
+sampled across the run. **Every number in §4 is in that output.** It also takes a path, so the
+tolerance table below is four invocations on four copies rather than four edits to the corpus:
+
+```text
+cargo run -p hrw --example solver_steps -- /path/to/SingleInertia.mo 1.0
+```
+
+**And in HRW, which is where you should look first if you want to *see* it rather than check it.**
 Load `SingleInertia`, press Run, and look at the **Simulation** tab. Below the trajectory is a
 second plot whose axis reads **"step size h / BDF order k"** — the solver's record of what it
 actually did, step by step.
@@ -675,9 +711,13 @@ decimal places**, and the diagnostics plot reports the step it is nearest:
 ```
 step 0 of 34
 t = 0.000100
-h = 1.000e-4
 order = 1
+h (this step) = 1.000e-4
 ```
+
+*(The label reads `h (this step)` as of 2026-11-05. It briefly read `arrived by h` and `next h`
+on two lines — correct on 0.9.20, where the recorded `h` was the size chosen for the step about to
+be taken, and misleading on 0.10.4, where it is the step just completed. See §4.)*
 
 **That is §4's first table row, readable directly.** Hover the next few points and the `order = 1`
 becomes `order = 2` and stays there — which is §4's entire explanation of the frozen offset,

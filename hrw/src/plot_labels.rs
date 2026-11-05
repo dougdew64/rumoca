@@ -63,29 +63,32 @@ pub(crate) fn solver_step_label(
 ) -> String {
     match index.and_then(|i| steps.get(i).map(|s| (i, s))) {
         Some((i, s)) => {
-            // **Two different step sizes, and calling either one "h" would be a claim.**
+            // **One step size on v0.10.x, and reporting two was the 0.9.20 shape left
+            // behind by the rebase.**
             //
-            // `SolverStepRecord::h` is captured *after* the step completes, from diffsol's
-            // current step size — which by then is the size chosen for the step **about to be
-            // taken**. Its field doc says "Step size used", and the data disagrees: on
-            // `SingleInertia` 11 of 34 records have `h != t_n - t_{n-1}`, every mismatch at a
-            // point where the solver doubled. So the recorded `h` spans `[t_n, t_{n+1}]`, not
-            // `[t_{n-1}, t_n}`.
+            // On 0.9.20 `SolverStepRecord::h` was captured *after* the step completed,
+            // from diffsol's current step size — by then the size chosen for the step
+            // **about to be taken**. On `SingleInertia`, 11 of 34 records disagreed with
+            // `t_n - t_{n-1}`. So the label reported `arrived by h` and `next h`
+            // separately, correctly, and that is what Lecture 1 §4 documents.
             //
-            // The label therefore reports the arrival step separately and says which is which.
-            // Anything less would attribute a size to a step that did not use it — the same
-            // defect class as the rounding this module was written for, one level subtler.
-            let arrived_by = i
-                .checked_sub(1)
-                .and_then(|p| steps.get(p))
-                .map_or(s.t, |prev| s.t - prev.t);
+            // **v0.10.x removed the discrepancy at the source.**
+            // `MeStepRecord::step_size()` is `accepted_time - start_time`, *derived* so
+            // it "cannot disagree with the endpoints it is computed from". The recorded
+            // `h` is now the step that WAS taken, and HRW carries no next-step size at
+            // all — `MeStepRecord` has only `start_time`, `accepted_time` and `order`.
+            //
+            // So the two-value label printed **the same number twice**, one of them
+            // under a name asserting something nothing in the data says. Measured
+            // 2026-11-05 on `SingleInertia`: 0 of 34 rows differ. A reader hovering saw
+            // "next h" and could only conclude the controller had chosen that size
+            // next, which HRW does not know.
             format!(
-                "step {} of {}\nt = {:.6}\norder = {}\narrived by h = {:.3e}\nnext h = {:.3e}",
+                "step {} of {}\nt = {:.6}\norder = {}\nh (this step) = {:.3e}",
                 i,
                 steps.len(),
                 s.t,
                 s.order,
-                arrived_by,
                 s.h,
             )
         }
@@ -336,21 +339,41 @@ mod tests {
         assert!(pts[1][0] >= pts[0][0], "segment ran backwards: {pts:?}");
     }
 
-    /// **The label must not call the recorded `h` the step that was taken.**
+    /// **The label reports one step size, and names which one it is.**
     ///
-    /// `SolverStepRecord::h` is captured after the step and is diffsol's *next* size; its field
-    /// doc says "Step size used". On `SingleInertia`, 11 of 34 records disagree with
-    /// `t_n - t_{n-1}`. A label saying plain "h" would attribute a size to a step that did not
-    /// use it.
+    /// # What this test used to assert, and why it was green and vacuous
+    ///
+    /// It was `the_label_separates_the_arrival_step_from_the_next_one`, and it asserted
+    /// `arrived by h = 1.000e-4` beside `next h = 2.000e-4` — a true description of
+    /// Rumoca **0.9.20**, where `h` was captured after the step and was diffsol's next
+    /// size. It passed on v0.10.4 too, because it builds [`rows()`] by hand and can put
+    /// any numbers it likes in them. **Production data can no longer take that shape**:
+    /// `MeStepRecord::step_size()` is `accepted_time - start_time`, so `h` is the step
+    /// taken and 0 of `SingleInertia`'s 34 rows differ from the interval.
+    ///
+    /// So the label was printing one number twice, the second under a name claiming a
+    /// controller decision HRW does not record. The test could not see it: **a fixture
+    /// that can express a state the system cannot produce will keep asserting that
+    /// state long after it stops occurring.**
+    ///
+    /// Found during `updating-rumoca.md` step 6b, re-measuring Lecture 1 — which is the
+    /// only scheduled read of these numbers, and is why a lecture earns its place as an
+    /// instrument rather than only as prose.
     #[test]
-    fn the_label_separates_the_arrival_step_from_the_next_one() {
-        // Step 1 arrived by 1e-4 (0.0002 - 0.0001) while its recorded h is 2e-4.
+    fn the_label_names_which_step_size_it_reports() {
         let label = solver_step_label(&rows(), Some(1), (0.0, 0.0));
-        assert!(label.contains("arrived by h = 1.000e-4"), "got:\n{label}");
-        assert!(label.contains("next h = 2.000e-4"), "got:\n{label}");
         assert!(
-            !label.contains("\nh = "),
-            "a bare `h` claims to be the step taken, which the record does not say:\n{label}",
+            label.contains("h (this step) = "),
+            "the size must be named for the step it describes:\n{label}",
+        );
+        assert!(
+            !label.contains("next h"),
+            "HRW records no next-step size -- `MeStepRecord` carries start_time, \
+             accepted_time and order, and nothing else:\n{label}",
+        );
+        assert!(
+            !label.contains("arrived by"),
+            "with one size there is nothing to separate it from:\n{label}",
         );
     }
 
