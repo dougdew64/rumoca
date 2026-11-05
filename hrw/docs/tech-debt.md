@@ -1893,6 +1893,42 @@ what has not been paid. Full reasoning is in git history and in the sweep table 
 
 ## UI defects — found by running
 
+- [x] **An infinite-width widget must be the LAST thing in its row — FIXED 2026-11-05, and
+  the general case is unchecked.** *(Doug, smoke-testing the rebase: the Settings window
+  grew off the right of the screen; then, after that fix, "the 'Settings' banner does not
+  extend to the right edge of the settings dialog… the 'X' … is placed leftward of the
+  right edge.")*
+
+  **One mechanism produced both reports.** `desired_width(f32::INFINITY)` means *all the
+  width available **at that moment***. In a left-to-right row it is therefore the **whole
+  row**, and anything appended after it is laid out past the container — the row measures
+  wider than the window was told it could be. `egui::Window` then disagrees with itself:
+  `title_ui` sizes the bar to the width the inner `Resize` *claimed*
+  (`child_ui.available_width()`), while `Resize::end` advances the frame by
+  `last_content_size`, the width the body *measured*. The banner stops at the claim and
+  the frame goes on to the measurement, which is the bare strip Doug saw. Logged as
+  `upstream-issues.md` **E4**.
+
+  **The three bounds that hold it**, all in `app::settings_ui`: `min_width == max_width`
+  pins the claim (a width that cannot move cannot ratchet, which subsumes the growth fix);
+  the specimen-directory row is `right_to_left` so the ⟳ is allocated *before* the field
+  asks for infinity; and the library-status label is `.truncate()`, because a label in a
+  horizontal row does not wrap and this one reports paths. Each was proved load-bearing by
+  reverting it — 52 pt, 28.5 pt and 533 pt of failure respectively.
+  `app::tests::an_opened_windows_title_bar_spans_the_window` pins all three.
+
+  **What is NOT checked: every other row in HRW.** The invariant is *a width-filling widget
+  is the last widget in its row*, and nothing asserts it. The sweep is small — four
+  `desired_width(f32::INFINITY)` sites in `src/`, and the only other live one
+  (`model_list.rs:262`) is already correct, with the 🔍 label ahead of the field rather than
+  a button behind it. **So there is nothing to fix and no mechanism to catch the next one**,
+  which is the gap worth recording: the natural checker is a layout assertion per window, and
+  only Settings has one.
+
+  **Who caught it: Doug, twice.** Both reports are the class `CLAUDE.md` names — *what did
+  it look like* rather than *what did it contain* — except that this one turned out to be a
+  rect rather than a pixel, so it was testable after all. *Files:* `app.rs`.
+
 - [ ] **The "✨ Claude's answer" row vanishes when no Answer exists, and its absence is
   indistinguishable from breakage.** *(Doug, 2026-08-15: "the 'Claude's Answer' lab seems to
   have disappeared from the labs list in the lab mode.")*
