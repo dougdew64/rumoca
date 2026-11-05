@@ -44,7 +44,23 @@ egui entry came the other way — from a crash Doug hit while using HRW normally
 
 ---
 
-## F1. The v0.10.0 branch is not `cargo fmt --all -- --check` clean, under its own pinned toolchain
+## ~~F1. The v0.10.0 branch is not `cargo fmt --all -- --check` clean, under its own pinned toolchain~~
+
+### ⟶ FIXED BY v0.10.4 — re-tested 2026-11-04. DO NOT FILE.
+
+**`cargo fmt --all -- --check` reports zero diffs** on `upstream/main` at `590ac739`, under the
+same pinned `nightly-2026-02-27` (`rustfmt 1.8.0-nightly (6a979b3e32)`). All 11 outstanding sites
+across the 6 files below are gone, and the 11 this fork had already formatted are moot.
+
+**Checked before proposing it as a first contribution, which is the only reason it was caught.**
+`updating-rumoca.md` step 0 says to ask whether the release already fixes what you were about to
+fix; this entry was the leading candidate for a first PR, and the check cost one command and
+saved opening a pull request that changes nothing.
+
+---
+
+*The original entry, preserved:*
+
 
 **Found 2026-11-04**, incidentally: HRW's gate runs `cargo fmt -p <crate>` after touching a Rumoca
 crate, and the first commit on the rebase branch to touch `rumoca-phase-structural` reformatted
@@ -706,7 +722,35 @@ anyone, not only to HRW.
 `dae_prepare` step. That is a maintainer's call about the crate's shape, and the reason this is
 written as a request rather than a patch.
 
-## Index reduction does not reduce the canonical index-3 DAE
+## ~~Index reduction does not reduce the canonical index-3 DAE~~
+
+### ⟶ FIXED IN v0.10.4 — re-tested 2026-11-04. DO NOT FILE.
+
+**`CartesianPendulum` reduces and simulates.** The whole account below is kept because the oracle
+work in it is still good and the *mechanism* is instructive, but the defect claim is dead and this
+entry must not be sent anywhere.
+
+**It is not fixed the way this entry expected**, which is the part worth reading. The reducer still
+refuses: its Holonomic lane finds the constraint, attempts it, and reports
+`would_create_vacuous_residual` — differentiate `x² + y² = L²`, substitute it back, and `0 = 0`
+remains. The reduction happens in **`rumoca-phase-solve`'s state selection**, added in v0.10.4,
+which picks independent coordinates on the constraint manifold instead of differentiating in place.
+
+**Measured from the committed trace**, not inferred: 2 integrated scalars against 4 states before;
+`x`, `y`, `vx`, `vy` and `lambda` all reconstructed algebraics; `$formal_derivative.2.x` and `.2.y`
+present, so the constraint *is* differentiated twice, just not substituted back. The rod holds to
+**4.6e-12** at the final sample and `lambda` peaks at **29.4303** against the hand-computed 3*mg*.
+
+**The oracle comparison came out better than the entry asked for.** It established that System
+Modeler reduces to two states by dynamic state selection over `{y}` and `{vy}`. v0.10.4's chart is
+`{y, der(y)}` — **the same two coordinates**, read from the solver's own `state_coordinate`
+metadata. Two independent implementations, given a nonlinear constraint and no hint, choose the
+same pair. That is a stronger statement than the one this entry was written to make, and it is now
+a *corroboration* rather than a complaint.
+
+---
+
+*The original entry, preserved:*
 
 **Reproduced 2026-08-18** with `hrw/specimens/CartesianPendulum.mo` — a point mass on a rigid rod
 in Cartesian coordinates, the example every treatment of index reduction opens with.
@@ -861,8 +905,10 @@ succeed, it demotes exactly the two states the physics says are redundant.
   **not** show a mid-run state-set switch, even though the selection mechanism is dynamic. Whether
   switching is reported as an event was not determined.
 
-**Charter §4.3 is now settled for this specimen and still fails**: it runs in one toolchain and
-not the other, which is the disagreement the specimen was authored to hold.
+**Charter §4.3 failed for this specimen until v0.10.4**: it ran in one toolchain and not the other,
+which is the disagreement the specimen was authored to hold. **It passes now** — both toolchains
+run it, both reduce to two states, both put the rod tension at 29.43 — so the specimen's job has
+changed from holding a disagreement to being the corpus's worked example of a succeeding reduction.
 
 ## PERFORMANCE QUESTIONS -- not defect claims
 
