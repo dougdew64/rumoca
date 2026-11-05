@@ -129,7 +129,7 @@ scrolling, deterministic start, nothing needing a second read.
 
 ---
 
-## 1. WITHDRAWN — not a Rumoca defect. It was HRW leaving documents in the session
+## ~~1. WITHDRAWN — not a Rumoca defect. It was HRW leaving documents in the session~~
 
 **Status: withdrawn 2026-08-26, before filing.** Everything below is kept because the
 reasoning is worth more than the conclusion was, and because a future recurrence should be
@@ -483,7 +483,37 @@ every outcome matched exactly.
 
 ---
 
-## Index reduction's demoted states are still counted as states downstream
+## ~~Index reduction's demoted states are still counted as states downstream~~
+
+### ⟶ GONE ON v0.10.4, AND THE SHAPE CHANGED — re-diagnosed 2026-11-04. DO NOT FILE.
+
+**The defect as stated is not reproducible.** It claimed solve lowering kept counting the
+*pre*-reduction states: `Drivetrain` demoted nine to three while lowering reported **9**.
+Lowering now reports **3**, and the simulation integrates 3.
+
+**`GearWithBrake` is simply consistent**: reduction 7 → 2, lowering 2, simulation 2.
+
+**`Drivetrain` still shows two different numbers, and neither is wrong — which is why this is
+re-diagnosed rather than edited.** Reduction reports **9 → 5**; lowering integrates **3**. The
+gap is the two-phase structure v0.10.4 introduced, the same one `CartesianPendulum` shows:
+`prepare_for_solve` demotes what its lanes can reach, and then `rumoca-phase-solve`'s state
+selection picks a chart on what remains. `Drivetrain`'s lowered layout binds
+`$state_coordinates` with shape **[3]**, one `State` declaration against 119 algebraics, and 22
+formal derivatives including order-2 ones.
+
+**So "5" is the reduced system's state count and "3" is the integrated coordinate count, and the
+original entry's direction has reversed**: downstream now reports *fewer* states than reduction,
+not more.
+
+**What survives is an HRW problem, not a Rumoca one.** The Index Reduction pane will say
+`9 state(s) → 5` while the Simulation pane says 3 states, and a reader has nothing on screen
+telling them those count different things. That is the same cross-pane disagreement the Index
+Reduction banner had on this date, and it is logged in
+[`tech-debt.md`](tech-debt.md) rather than here, because no part of it is upstream's.
+
+---
+
+*The original entry, preserved:*
 
 **Found 2026-08-08** while writing `docs/fixture-labs/index-reduction.md` from generated
 notebook traces. **Reproduced on two specimens, same direction both times.**
@@ -1286,7 +1316,29 @@ cost knowingly. A caret click does not copy, and a primary press invalidates the
 what HRW holds cannot silently go stale.
 
 
-## A state's initial value comes from the derivative-zero solution, not from its `start`
+## ~~A state's initial value comes from the derivative-zero solution, not from its `start`~~
+
+### ⟶ CONFIRMED FIXED BY TRAJECTORY ON v0.10.4 — re-tested 2026-11-04. DO NOT FILE.
+
+**The heading was not struck through until now, and the body has said DO NOT FILE since
+2026-09-19.** A reader scanning this file's headings — which is how anyone reads a 2,000-line
+issue list — saw an open defect claim against someone else's compiler. That is the exact failure
+mode step 3c of [`updating-rumoca.md`](updating-rumoca.md) exists to prevent, and this entry had
+the content without the shape.
+
+**The evidence is now behavioural rather than a source-read.** `RcCircuit` charges: `C.v` runs
+**0 → 5** over the run and `R.v` decays **5 → 0**, which is the RC response System Modeler
+produced and the closed form predicts. The entry's original symptom was a flat 5 from `t = 0`.
+Measured from the committed trace, 2026-11-04. `worker::tests::rc_circuit_charges_its_capacitor`
+is no longer ignored for this defect either — it carries only the compile-heavy gate.
+
+**Every specimen the entry correlated now initializes**: `RcCircuit`, `LoopWithInertia`,
+`Drivetrain`, `GearWithBrake` and `StabilizedPendulum` all produce an initialization plan with no
+note. `OverInitRc` still fails to simulate, correctly — it is authored over-determined.
+
+---
+
+*The original entry, preserved:*
 
 **Found 2026-09-04**, from Doug's report that no fixture specimen produces a simulation
 plot worth looking at. **Reproduced on two purpose-built models and correlated across the
@@ -1756,7 +1808,7 @@ rather than with the diagnosis.
 
 ---
 
-## IC planning fails to match an algebraic unknown that structural analysis matched
+## ~~IC planning fails to match an algebraic unknown that structural analysis matched~~
 
 **Found 2026-09-24**, while building the specimen ladder's rung 5. **Reproduced on one
 purpose-built 11-line model and adjudicated against System Modeler.** Baseline `0.9.20`.
