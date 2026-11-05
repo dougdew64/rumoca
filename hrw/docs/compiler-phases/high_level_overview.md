@@ -110,12 +110,15 @@ phase 7's crate name changed and phase 8 is a new phase entirely.
 differentiation of constraint equations to make a high-index DAE
 solvable — runs as part of phase 6 (DAE construction). In earlier
 versions the implementation lived in `rumoca-sim`; v0.9.x moved it into
-`rumoca-phase-structural::dae_prepare` where it conceptually belongs.
-The orchestrating driver still lives in `rumoca-sim` for the simulation
-path and in `rumoca-phase-dae::prepare_dae_for_codegen` for the codegen
-path; both call the same `rumoca-phase-structural::dae_prepare`
-helpers. See [index_reduction.md](phase6_dae_construction/index_reduction.md)
-for details.
+`rumoca-phase-structural`, where it conceptually belongs.
+
+**On v0.10.x the module is `dae_transform`, not `dae_prepare`**, and the entry point is
+`prepare_for_solve` — a two-lane search (Direct, then Holonomic) over a candidate /
+attempt / selection protocol, replacing 0.9.20's fixed funnel of demotion sweeps. There
+is no orchestrating driver in `rumoca-sim` any more.
+See [index_reduction.md](phase6_dae_construction/index_reduction.md) for the full
+treatment, including why the canonical index-3 pendulum is reduced **after** this phase
+rather than in it.
 
 ---
 
@@ -252,8 +255,10 @@ This phase also includes a **DAE-preparation sub-pass** that runs after
 `to_dae()` produces the raw DAE: index reduction (symbolic differentiation of
 algebraic constraints to expose missing state derivatives), state-demotion
 sweeps, derivative-alias elimination, and compound-derivative expansion. The
-output is an **index-1** DAE ready for structural analysis. As of v0.9.x the
-prep code lives in `rumoca-phase-structural::dae_prepare`; see the index
+output is an **index-1** DAE ready for structural analysis — **or a reported refusal,
+which is not the same as a failed compile**: `CartesianPendulum` is declined here and
+reduced one phase later by solve lowering's state selection. The prep code lives in
+`rumoca-phase-structural::dae_transform` (v0.9.x called it `dae_prepare`); see the index
 reduction drill-down for the full treatment.
 
 Full treatment: [dae_construction.md](phase6_dae_construction/dae_construction.md);
@@ -280,7 +285,7 @@ six topical drill-downs:
 ## Solve Lowering (Phase 8)
 
 Solve lowering produces an execution-ready tensor IR (`SolveProblem`) from
-the DAE. It runs `dae_prepare` cleanups, performs forward-mode AD,
+the DAE. It runs `dae_transform` cleanups, performs forward-mode AD,
 eliminates dummy derivatives, lowers residual / derivative / discrete /
 event / clock partitions to `ComputeBlock`s of typed nodes (`MatMul`,
 `LinSolve`, `Map`, `AffineStencil`, `ScalarPrograms`), and produces a
@@ -386,7 +391,7 @@ rumoca/
 │   ├── rumoca-phase-typecheck/  # Phase 4 (runs after instantiate)
 │   ├── rumoca-phase-flatten/    # Phase 5
 │   ├── rumoca-phase-dae/        # Phase 6
-│   ├── rumoca-phase-structural/ # Phase 7 (matching, BLT, tearing, IC, dae_prepare)
+│   ├── rumoca-phase-structural/ # Phase 7 (matching, BLT, tearing, IC, dae_transform)
 │   ├── rumoca-phase-solve/      # Phase 8 (DAE → SolveProblem lowering)
 │   ├── rumoca-phase-codegen/    # Phase 10 (templates)
 │   ├── rumoca-ir-{ast,flat,dae,solve,galec}/ # IR crates

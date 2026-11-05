@@ -144,16 +144,27 @@ will end up in the unmatched-equations diagnostic if the matching turns out to
 be imperfect).
 
 The clever part of Kuhn's algorithm is that it does **not** explicitly build or
-run the augmenting path. Instead, the path is encoded implicitly in the call
-stack of a recursive function: each level of recursion represents one "step"
-along the path, and when the recursion reaches a free unknown, the assignment
-cascade on the way back up performs the toggling.
+run the augmenting path. Instead, the path is encoded as a chain of *frames*: each frame is one
+"step" along the path, and when the search reaches a free unknown, the assignment
+cascade back down the chain performs the toggling.
+
+> **The textbook writes that chain as recursion, and Rumoca 0.9.20 did too. v0.10.x does not.**
+> The search is iterative over an explicit stack, because the recursive form **overflowed the
+> thread stack** on array-shaped models, where a displacement chain can run hundreds of thousands
+> long (`matching.rs` says so at the top). The algorithm is unchanged; what moved is where the
+> chain lives.
+>
+> **Read the recursive version below first anyway** — it is the clearer statement of *why* the
+> method works, and the iterative one is a mechanical transformation of it. Then read
+> *"How the chain is represented on v0.10.x"*, which names what each part became. **Do not cite
+> the recursive code as Rumoca's**: `fn augment` on v0.10.x sets up a stack and hands it to
+> `run_augment_search`, and there is no self-call anywhere in it.
 
 ---
 
 ## The Code, Step by Step
 
-Here is the recursive helper from `matching.rs`, annotated:
+Here is the recursive form, **as 0.9.20 wrote it and as the textbook states it** — annotated:
 
 ```rust
 fn augment(
@@ -249,6 +260,38 @@ As the recursion unwinds:
 - `augment(eq0)` finally sets `match_eq[eq0] = Some(v0)` and `match_var[v0] = Some(eq0)`.
 
 Every edge along the path has been toggled, and the matching has grown by 1.
+
+### How the chain is represented on v0.10.x
+
+**Every part of the story above survives; only the carrier changes.** The chain of calls becomes a
+`Vec<AugmentFrame>`, and each thing the call stack did for free is now named:
+
+| recursive form | v0.10.x |
+|---|---|
+| a live call to `augment(eq)` | an `AugmentFrame { eq, cursor, chosen }` on the stack |
+| the `for var in vars` loop position | `frame.cursor` — saved before descending, resumed on return |
+| the recursive call | push a frame; `AugmentStep::Descend { variable, owner }` |
+| reaching a free unknown | `AugmentStep::Claim(variable)` |
+| the loop finishing without success | `AugmentStep::Exhausted` — pop the frame |
+| the assignment cascade on unwind | `commit_augment`, walking `stack.iter().rev()` |
+| the driver | `run_augment_search`, a `while let Some(top) = stack.last()` loop |
+| `visited: &mut [bool]` | `scratch.visited_epoch[var] == scratch.epoch` |
+
+**Two consequences worth holding on to.**
+
+**The toggle now happens in one place, after the path is known.** The recursive form assigns on
+the way back up, so a partially-explored path has already written some assignments. `commit_augment`
+runs only on a `Claim`, innermost-first, and its doc says it reproduces the recursive unwind's
+assignment order **exactly** — so the observable frame sequence is identical while the intermediate
+state is not. A dead-end leaves the matching untouched.
+
+**`visited` is an epoch stamp, not a boolean.** Marking is `visited_epoch[var] = epoch`, and a new
+round bumps `epoch` instead of clearing a vector. Reading that array without comparing against the
+current `epoch` gives stale marks from previous rounds — which matters at a debugger breakpoint,
+where the array is full of numbers that look meaningful and are not.
+
+**There is also `augment_layered`**, a second explicit-stack search used where the matcher works in
+layers. It is the same transformation applied to the same algorithm.
 
 ---
 

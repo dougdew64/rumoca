@@ -384,7 +384,7 @@ eq2:      1     1
 |------|---------|
 | `rumoca-phase-structural/src/eliminate/` | Algebraic elimination and substitution framework (boundary resolution, BLT scalar-block elimination, solve-for-unknown, substitution application) |
 | `rumoca-phase-structural/src/scalarize/` | Array-to-scalar equation expansion (scalarization of vector/matrix equations) |
-| `rumoca-phase-structural/src/dae_prepare/` | DAE preparation: alias demotion, dummy-state reduction, structural preprocessing |
+| `rumoca-phase-structural/src/dae_transform/` | DAE preparation and index reduction: the two-lane search behind `prepare_for_solve`. **Called `dae_prepare/` until v0.10.0, which deleted it** |
 | `rumoca-phase-structural/src/projection_maps.rs` | Projection map utilities for scalarized component-array and function-output references |
 | `rumoca-phase-structural/src/report.rs` | `StructuralReport`, `BlockReport`, `TearingReport` for the `--structure` debug dump |
 | `rumoca-phase-structural/src/runtime_defined.rs` | Enumerates unknowns defined at event/clock runtime rather than by the continuous solver |
