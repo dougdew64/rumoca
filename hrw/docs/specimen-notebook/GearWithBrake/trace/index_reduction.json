@@ -1,6 +1,6 @@
 {
   "rounds": 5,
-  "n_records": 40,
+  "n_records": 42,
   "outcome": {
     "kind": "sorted",
     "admitted": true,
@@ -1803,7 +1803,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 0,
-        "rhs_ordinal": 88,
+        "rhs_ordinal": 89,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialTorque.mo",
           "line": 9,
@@ -1825,7 +1825,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 13,
-        "rhs_ordinal": 85,
+        "rhs_ordinal": 86,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
           "line": 19,
@@ -1847,7 +1847,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 13,
-        "rhs_ordinal": 104,
+        "rhs_ordinal": 105,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
           "line": 19,
@@ -1869,7 +1869,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 13,
-        "rhs_ordinal": 107,
+        "rhs_ordinal": 108,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
           "line": 20,
@@ -1891,7 +1891,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 30,
-        "rhs_ordinal": 133,
+        "rhs_ordinal": 134,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
           "line": 15,
@@ -1903,9 +1903,9 @@
         }
       },
       "outcome": {
-        "kind": "held",
-        "residue": 6,
-        "meaning": "the residue did not move, but the system changed"
+        "kind": "cannot_reduce",
+        "bound": 6,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
       }
     },
     {
@@ -1914,7 +1914,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 30,
-        "rhs_ordinal": 148,
+        "rhs_ordinal": 149,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
           "line": 19,
@@ -1926,9 +1926,9 @@
         }
       },
       "outcome": {
-        "kind": "held",
-        "residue": 6,
-        "meaning": "the residue did not move, but the system changed"
+        "kind": "cannot_reduce",
+        "bound": 6,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
       }
     },
     {
@@ -1937,7 +1937,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 30,
-        "rhs_ordinal": 151,
+        "rhs_ordinal": 152,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
           "line": 20,
@@ -1949,55 +1949,9 @@
         }
       },
       "outcome": {
-        "kind": "held",
-        "residue": 6,
-        "meaning": "the residue did not move, but the system changed"
-      }
-    },
-    {
-      "kind": "attempt",
-      "lane": "direct",
-      "identity": {
-        "form": "direct",
-        "state_ordinal": 30,
-        "rhs_ordinal": 252,
-        "declared_at": {
-          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/Flange.mo",
-          "line": 4,
-          "column": 3,
-          "excerpt": "SI.Angle phi",
-          "line_text": "  SI.Angle phi \"Absolute rotation angle of flange\";",
-          "byte_start": 105,
-          "byte_end": 117
-        }
-      },
-      "outcome": {
-        "kind": "held",
-        "residue": 6,
-        "meaning": "the residue did not move, but the system changed"
-      }
-    },
-    {
-      "kind": "attempt",
-      "lane": "direct",
-      "identity": {
-        "form": "direct",
-        "state_ordinal": 30,
-        "rhs_ordinal": 255,
-        "declared_at": {
-          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/Flange.mo",
-          "line": 4,
-          "column": 3,
-          "excerpt": "SI.Angle phi",
-          "line_text": "  SI.Angle phi \"Absolute rotation angle of flange\";",
-          "byte_start": 105,
-          "byte_end": 117
-        }
-      },
-      "outcome": {
-        "kind": "held",
-        "residue": 6,
-        "meaning": "the residue did not move, but the system changed"
+        "kind": "cannot_reduce",
+        "bound": 6,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
       }
     },
     {
@@ -2018,9 +1972,55 @@
         }
       },
       "outcome": {
-        "kind": "held",
-        "residue": 6,
-        "meaning": "the residue did not move, but the system changed"
+        "kind": "cannot_reduce",
+        "bound": 6,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 30,
+        "rhs_ordinal": 261,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/Flange.mo",
+          "line": 4,
+          "column": 3,
+          "excerpt": "SI.Angle phi",
+          "line_text": "  SI.Angle phi \"Absolute rotation angle of flange\";",
+          "byte_start": 105,
+          "byte_end": 117
+        }
+      },
+      "outcome": {
+        "kind": "cannot_reduce",
+        "bound": 6,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 30,
+        "rhs_ordinal": 264,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/Flange.mo",
+          "line": 4,
+          "column": 3,
+          "excerpt": "SI.Angle phi",
+          "line_text": "  SI.Angle phi \"Absolute rotation angle of flange\";",
+          "byte_start": 105,
+          "byte_end": 117
+        }
+      },
+      "outcome": {
+        "kind": "cannot_reduce",
+        "bound": 6,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
       }
     },
     {
@@ -2029,7 +2029,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 33,
-        "rhs_ordinal": 169,
+        "rhs_ordinal": 170,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialCompliantWithRelativeStates.mo",
           "line": 29,
@@ -2041,9 +2041,9 @@
         }
       },
       "outcome": {
-        "kind": "held",
-        "residue": 6,
-        "meaning": "the residue did not move, but the system changed"
+        "kind": "cannot_reduce",
+        "bound": 6,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
       }
     },
     {
@@ -2052,7 +2052,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 0,
-        "rhs_ordinal": 88,
+        "rhs_ordinal": 89,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialTorque.mo",
           "line": 9,
@@ -2102,7 +2102,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 13,
-        "rhs_ordinal": 140,
+        "rhs_ordinal": 141,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
           "line": 16,
@@ -2114,9 +2114,9 @@
         }
       },
       "outcome": {
-        "kind": "held",
-        "residue": 4,
-        "meaning": "the residue did not move, but the system changed"
+        "kind": "cannot_reduce",
+        "bound": 4,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
       }
     },
     {
@@ -2125,7 +2125,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 30,
-        "rhs_ordinal": 135,
+        "rhs_ordinal": 136,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
           "line": 15,
@@ -2137,9 +2137,9 @@
         }
       },
       "outcome": {
-        "kind": "held",
-        "residue": 4,
-        "meaning": "the residue did not move, but the system changed"
+        "kind": "cannot_reduce",
+        "bound": 4,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
       }
     },
     {
@@ -2148,7 +2148,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 30,
-        "rhs_ordinal": 150,
+        "rhs_ordinal": 151,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
           "line": 19,
@@ -2160,9 +2160,9 @@
         }
       },
       "outcome": {
-        "kind": "held",
-        "residue": 4,
-        "meaning": "the residue did not move, but the system changed"
+        "kind": "cannot_reduce",
+        "bound": 4,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
       }
     },
     {
@@ -2171,7 +2171,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 30,
-        "rhs_ordinal": 153,
+        "rhs_ordinal": 154,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
           "line": 20,
@@ -2183,55 +2183,9 @@
         }
       },
       "outcome": {
-        "kind": "held",
-        "residue": 4,
-        "meaning": "the residue did not move, but the system changed"
-      }
-    },
-    {
-      "kind": "attempt",
-      "lane": "direct",
-      "identity": {
-        "form": "direct",
-        "state_ordinal": 30,
-        "rhs_ordinal": 254,
-        "declared_at": {
-          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/Flange.mo",
-          "line": 4,
-          "column": 3,
-          "excerpt": "SI.Angle phi",
-          "line_text": "  SI.Angle phi \"Absolute rotation angle of flange\";",
-          "byte_start": 105,
-          "byte_end": 117
-        }
-      },
-      "outcome": {
-        "kind": "held",
-        "residue": 4,
-        "meaning": "the residue did not move, but the system changed"
-      }
-    },
-    {
-      "kind": "attempt",
-      "lane": "direct",
-      "identity": {
-        "form": "direct",
-        "state_ordinal": 30,
-        "rhs_ordinal": 257,
-        "declared_at": {
-          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/Flange.mo",
-          "line": 4,
-          "column": 3,
-          "excerpt": "SI.Angle phi",
-          "line_text": "  SI.Angle phi \"Absolute rotation angle of flange\";",
-          "byte_start": 105,
-          "byte_end": 117
-        }
-      },
-      "outcome": {
-        "kind": "held",
-        "residue": 4,
-        "meaning": "the residue did not move, but the system changed"
+        "kind": "cannot_reduce",
+        "bound": 4,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
       }
     },
     {
@@ -2252,9 +2206,55 @@
         }
       },
       "outcome": {
-        "kind": "held",
-        "residue": 4,
-        "meaning": "the residue did not move, but the system changed"
+        "kind": "cannot_reduce",
+        "bound": 4,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 30,
+        "rhs_ordinal": 263,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/Flange.mo",
+          "line": 4,
+          "column": 3,
+          "excerpt": "SI.Angle phi",
+          "line_text": "  SI.Angle phi \"Absolute rotation angle of flange\";",
+          "byte_start": 105,
+          "byte_end": 117
+        }
+      },
+      "outcome": {
+        "kind": "cannot_reduce",
+        "bound": 4,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 30,
+        "rhs_ordinal": 266,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/Flange.mo",
+          "line": 4,
+          "column": 3,
+          "excerpt": "SI.Angle phi",
+          "line_text": "  SI.Angle phi \"Absolute rotation angle of flange\";",
+          "byte_start": 105,
+          "byte_end": 117
+        }
+      },
+      "outcome": {
+        "kind": "cannot_reduce",
+        "bound": 4,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
       }
     },
     {
@@ -2263,7 +2263,30 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 33,
-        "rhs_ordinal": 171,
+        "rhs_ordinal": 172,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialCompliantWithRelativeStates.mo",
+          "line": 29,
+          "column": 3,
+          "excerpt": "phi_rel = flange_b.phi - flange_a.phi",
+          "line_text": "  phi_rel = flange_b.phi - flange_a.phi;",
+          "byte_start": 1355,
+          "byte_end": 1392
+        }
+      },
+      "outcome": {
+        "kind": "cannot_reduce",
+        "bound": 4,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 33,
+        "rhs_ordinal": 172,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialCompliantWithRelativeStates.mo",
           "line": 29,
@@ -2286,7 +2309,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 33,
-        "rhs_ordinal": 171,
+        "rhs_ordinal": 172,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialCompliantWithRelativeStates.mo",
           "line": 29,
@@ -2336,7 +2359,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 13,
-        "rhs_ordinal": 143,
+        "rhs_ordinal": 144,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
           "line": 16,
@@ -2348,9 +2371,9 @@
         }
       },
       "outcome": {
-        "kind": "held",
-        "residue": 4,
-        "meaning": "the residue did not move, but the system changed"
+        "kind": "cannot_reduce",
+        "bound": 4,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
       }
     },
     {
@@ -2359,7 +2382,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 31,
-        "rhs_ordinal": 176,
+        "rhs_ordinal": 177,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialCompliantWithRelativeStates.mo",
           "line": 30,
@@ -2381,7 +2404,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 34,
-        "rhs_ordinal": 177,
+        "rhs_ordinal": 178,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialCompliantWithRelativeStates.mo",
           "line": 30,
@@ -2403,7 +2426,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 31,
-        "rhs_ordinal": 176,
+        "rhs_ordinal": 177,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Interfaces/PartialCompliantWithRelativeStates.mo",
           "line": 30,
@@ -2447,7 +2470,30 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 13,
-        "rhs_ordinal": 146,
+        "rhs_ordinal": 147,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
+          "line": 16,
+          "column": 3,
+          "excerpt": "phi_a = ratio*phi_b",
+          "line_text": "  phi_a = ratio*phi_b;",
+          "byte_start": 552,
+          "byte_end": 571
+        }
+      },
+      "outcome": {
+        "kind": "cannot_reduce",
+        "bound": 2,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 13,
+        "rhs_ordinal": 147,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
           "line": 16,
@@ -2470,7 +2516,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 13,
-        "rhs_ordinal": 146,
+        "rhs_ordinal": 147,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
           "line": 16,
@@ -2514,7 +2560,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 14,
-        "rhs_ordinal": 123,
+        "rhs_ordinal": 124,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
           "line": 21,
@@ -2535,7 +2581,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 14,
-        "rhs_ordinal": 123,
+        "rhs_ordinal": 124,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
           "line": 21,

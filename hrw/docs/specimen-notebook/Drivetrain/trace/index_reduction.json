@@ -1,6 +1,6 @@
 {
   "rounds": 6,
-  "n_records": 29,
+  "n_records": 30,
   "outcome": {
     "kind": "sorted",
     "admitted": true,
@@ -3798,7 +3798,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 32,
-        "rhs_ordinal": 265,
+        "rhs_ordinal": 272,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Basic/RotationalEMF.mo",
           "line": 41,
@@ -3820,7 +3820,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 32,
-        "rhs_ordinal": 265,
+        "rhs_ordinal": 272,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Basic/RotationalEMF.mo",
           "line": 41,
@@ -3876,7 +3876,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 56,
-        "rhs_ordinal": 328,
+        "rhs_ordinal": 335,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
           "line": 16,
@@ -3888,9 +3888,9 @@
         }
       },
       "outcome": {
-        "kind": "held",
-        "residue": 6,
-        "meaning": "the residue did not move, but the system changed"
+        "kind": "cannot_reduce",
+        "bound": 6,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
       }
     },
     {
@@ -3899,7 +3899,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 107,
-        "rhs_ordinal": 420,
+        "rhs_ordinal": 427,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Translational/Interfaces/PartialCompliantWithRelativeStates.mo",
           "line": 22,
@@ -3921,7 +3921,7 @@
       "identity": {
         "form": "derivative_definition",
         "state_ordinal": 107,
-        "rhs_ordinal": 395,
+        "rhs_ordinal": 402,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Translational/Interfaces/PartialRigid.mo",
           "line": 10,
@@ -3943,7 +3943,7 @@
       "identity": {
         "form": "derivative_definition",
         "state_ordinal": 107,
-        "rhs_ordinal": 402,
+        "rhs_ordinal": 409,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Translational/Interfaces/PartialRigid.mo",
           "line": 11,
@@ -3965,7 +3965,7 @@
       "identity": {
         "form": "derivative_definition",
         "state_ordinal": 107,
-        "rhs_ordinal": 538,
+        "rhs_ordinal": 545,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Translational/Interfaces/Flange.mo",
           "line": 4,
@@ -3987,7 +3987,7 @@
       "identity": {
         "form": "derivative_definition",
         "state_ordinal": 107,
-        "rhs_ordinal": 541,
+        "rhs_ordinal": 548,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Translational/Interfaces/Flange.mo",
           "line": 4,
@@ -4009,7 +4009,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 107,
-        "rhs_ordinal": 420,
+        "rhs_ordinal": 427,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Translational/Interfaces/PartialCompliantWithRelativeStates.mo",
           "line": 22,
@@ -4059,7 +4059,30 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 56,
-        "rhs_ordinal": 334,
+        "rhs_ordinal": 341,
+        "declared_at": {
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
+          "line": 16,
+          "column": 3,
+          "excerpt": "phi_a = ratio*phi_b",
+          "line_text": "  phi_a = ratio*phi_b;",
+          "byte_start": 552,
+          "byte_end": 571
+        }
+      },
+      "outcome": {
+        "kind": "cannot_reduce",
+        "bound": 4,
+        "meaning": "a structural lower bound proves the residue cannot fall below this"
+      }
+    },
+    {
+      "kind": "attempt",
+      "lane": "direct",
+      "identity": {
+        "form": "direct",
+        "state_ordinal": 56,
+        "rhs_ordinal": 341,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
           "line": 16,
@@ -4082,7 +4105,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 56,
-        "rhs_ordinal": 334,
+        "rhs_ordinal": 341,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGear.mo",
           "line": 16,
@@ -4132,7 +4155,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 57,
-        "rhs_ordinal": 314,
+        "rhs_ordinal": 321,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
           "line": 21,
@@ -4154,7 +4177,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 57,
-        "rhs_ordinal": 314,
+        "rhs_ordinal": 321,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/Inertia.mo",
           "line": 21,
@@ -4230,7 +4253,7 @@
         "owner_ordinal": 52,
         "body_ordinal": null,
         "component_scalar": null,
-        "residual_ordinal": 403,
+        "residual_ordinal": 410,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGearR2T.mo",
           "line": 9,
@@ -4257,7 +4280,7 @@
         "owner_ordinal": 52,
         "body_ordinal": null,
         "component_scalar": null,
-        "residual_ordinal": 403,
+        "residual_ordinal": 410,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGearR2T.mo",
           "line": 9,

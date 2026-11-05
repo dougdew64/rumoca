@@ -113,6 +113,7 @@
       },
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -180,6 +181,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -247,6 +249,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -576,6 +579,7 @@
   "potential_roots": [],
   "top_level_connectors": [],
   "top_level_input_components": [],
+  "top_level_output_components": [],
   "oc_break_edge_scalar_count": 0,
   "enum_literal_ordinals": {
     "StateSelect.never": 1,
@@ -593,6 +597,7 @@
     "AssertionLevel.error": 2,
     "AssertionLevel.'error'": 2
   },
+  "enumeration_declarations": {},
   "instance_relations": {
     "1": {
       "owner": null,

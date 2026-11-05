@@ -212,6 +212,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -278,6 +279,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -354,6 +356,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -430,6 +433,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -506,6 +510,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -582,6 +587,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -685,6 +691,7 @@
       },
       "binding_from_modification": true,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -761,6 +768,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -837,6 +845,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -913,6 +922,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -989,6 +999,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -1065,6 +1076,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -1141,6 +1153,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -1227,6 +1240,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -1313,6 +1327,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -1399,6 +1414,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -1485,6 +1501,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -1598,6 +1615,7 @@
       },
       "binding_from_modification": false,
       "evaluate": true,
+      "evaluate_refused": false,
       "is_discrete_type": true,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -1733,9 +1751,31 @@
         }
       },
       "fixed": null,
-      "min": null,
+      "min": {
+        "Literal": {
+          "value": {
+            "Real": 0.0
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16445,
+            "end": 16448
+          }
+        }
+      },
       "max": null,
-      "nominal": null,
+      "nominal": {
+        "Literal": {
+          "value": {
+            "Integer": 300
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16492,
+            "end": 16495
+          }
+        }
+      },
       "quantity": "ThermodynamicTemperature",
       "unit": "K",
       "display_unit": "degC",
@@ -1799,6 +1839,7 @@
       },
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -1875,6 +1916,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -1938,11 +1980,44 @@
       "stream": false,
       "dims": [],
       "connected": false,
-      "start": null,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 288.15
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16466,
+            "end": 16472
+          }
+        }
+      },
       "fixed": null,
-      "min": null,
+      "min": {
+        "Literal": {
+          "value": {
+            "Real": 0.0
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16445,
+            "end": 16448
+          }
+        }
+      },
       "max": null,
-      "nominal": null,
+      "nominal": {
+        "Literal": {
+          "value": {
+            "Integer": 300
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16492,
+            "end": 16495
+          }
+        }
+      },
       "quantity": "ThermodynamicTemperature",
       "unit": "K",
       "display_unit": "degC",
@@ -1951,6 +2026,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -2064,6 +2140,7 @@
       },
       "binding_from_modification": true,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -2155,9 +2232,31 @@
         }
       },
       "fixed": null,
-      "min": null,
+      "min": {
+        "Literal": {
+          "value": {
+            "Real": 0.0
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16445,
+            "end": 16448
+          }
+        }
+      },
       "max": null,
-      "nominal": null,
+      "nominal": {
+        "Literal": {
+          "value": {
+            "Integer": 300
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16492,
+            "end": 16495
+          }
+        }
+      },
       "quantity": "ThermodynamicTemperature",
       "unit": "K",
       "display_unit": "degC",
@@ -2177,6 +2276,7 @@
       },
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -2290,6 +2390,7 @@
       },
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -2366,6 +2467,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -2442,6 +2544,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -2518,6 +2621,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -2594,6 +2698,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -2670,6 +2775,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -2746,6 +2852,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -2822,6 +2929,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -2908,6 +3016,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -2994,6 +3103,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -3080,6 +3190,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -3166,6 +3277,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -3279,6 +3391,7 @@
       },
       "binding_from_modification": false,
       "evaluate": true,
+      "evaluate_refused": false,
       "is_discrete_type": true,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -3414,9 +3527,31 @@
         }
       },
       "fixed": null,
-      "min": null,
+      "min": {
+        "Literal": {
+          "value": {
+            "Real": 0.0
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16445,
+            "end": 16448
+          }
+        }
+      },
       "max": null,
-      "nominal": null,
+      "nominal": {
+        "Literal": {
+          "value": {
+            "Integer": 300
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16492,
+            "end": 16495
+          }
+        }
+      },
       "quantity": "ThermodynamicTemperature",
       "unit": "K",
       "display_unit": "degC",
@@ -3480,6 +3615,7 @@
       },
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -3556,6 +3692,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -3619,11 +3756,44 @@
       "stream": false,
       "dims": [],
       "connected": false,
-      "start": null,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 288.15
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16466,
+            "end": 16472
+          }
+        }
+      },
       "fixed": null,
-      "min": null,
+      "min": {
+        "Literal": {
+          "value": {
+            "Real": 0.0
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16445,
+            "end": 16448
+          }
+        }
+      },
       "max": null,
-      "nominal": null,
+      "nominal": {
+        "Literal": {
+          "value": {
+            "Integer": 300
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16492,
+            "end": 16495
+          }
+        }
+      },
       "quantity": "ThermodynamicTemperature",
       "unit": "K",
       "display_unit": "degC",
@@ -3632,6 +3802,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -3745,6 +3916,7 @@
       },
       "binding_from_modification": true,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -3836,9 +4008,31 @@
         }
       },
       "fixed": null,
-      "min": null,
+      "min": {
+        "Literal": {
+          "value": {
+            "Real": 0.0
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16445,
+            "end": 16448
+          }
+        }
+      },
       "max": null,
-      "nominal": null,
+      "nominal": {
+        "Literal": {
+          "value": {
+            "Integer": 300
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16492,
+            "end": 16495
+          }
+        }
+      },
       "quantity": "ThermodynamicTemperature",
       "unit": "K",
       "display_unit": "degC",
@@ -3858,6 +4052,7 @@
       },
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -3971,6 +4166,7 @@
       },
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -4047,6 +4243,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -4123,6 +4320,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -4199,6 +4397,7 @@
       "binding": null,
       "binding_from_modification": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_discrete_type": false,
       "is_primitive": true,
       "from_expandable_connector": false,
@@ -9270,8 +9469,41 @@
   "branches": [],
   "optional_edges": [],
   "potential_roots": [],
+  "parameter_branch_selections": [
+    {
+      "span": {
+        "source": 18355245647093129072,
+        "start": 890,
+        "end": 901
+      },
+      "kind": "BranchSelection",
+      "references": [
+        [
+          "seg1.R.useHeatPort",
+          "seg1.useHeatPort",
+          "useHeatPort"
+        ]
+      ]
+    },
+    {
+      "span": {
+        "source": 18355245647093129072,
+        "start": 890,
+        "end": 901
+      },
+      "kind": "BranchSelection",
+      "references": [
+        [
+          "seg2.R.useHeatPort",
+          "seg2.useHeatPort",
+          "useHeatPort"
+        ]
+      ]
+    }
+  ],
   "top_level_connectors": [],
   "top_level_input_components": [],
+  "top_level_output_components": [],
   "oc_break_edge_scalar_count": 0,
   "enum_literal_ordinals": {
     "StateSelect.never": 1,
@@ -9289,6 +9521,7 @@
     "AssertionLevel.error": 2,
     "AssertionLevel.'error'": 2
   },
+  "enumeration_declarations": {},
   "instance_relations": {
     "7": {
       "owner": 6,

@@ -28,7 +28,7 @@
       ],
       "library_errors": {
         "note": "errors the compiler reported against LIBRARY sources, deduplicated. Not this model's problems and not why this compile failed — v0.10.0 rejects some MSL code that 0.9.20 accepted, which is a question for upstream rather than a fault in the model above.",
-        "total": 72,
+        "total": 150,
         "distinct": [
           {
             "message": "reference to non-constant variable 'L' from a lexically nested class is not allowed (MLS §5.3.1)",
@@ -89,6 +89,66 @@
           {
             "message": "reference to non-constant variable 'v_small' from a lexically nested class is not allowed (MLS §5.3.1)",
             "occurrences": 2
+          },
+          {
+            "message": "unresolved component reference: 'Medium.T_default'",
+            "occurrences": 1
+          },
+          {
+            "message": "unresolved component reference: 'Medium.X_default'",
+            "occurrences": 1
+          },
+          {
+            "message": "unresolved component reference: 'Medium.p_default'",
+            "occurrences": 1
+          },
+          {
+            "message": "unresolved component reference: 'Medium.reference_T'",
+            "occurrences": 2
+          },
+          {
+            "message": "unresolved component reference: 'Medium.reference_X'",
+            "occurrences": 2
+          },
+          {
+            "message": "unresolved component reference: 'Medium.reference_p'",
+            "occurrences": 2
+          },
+          {
+            "message": "unresolved function call: 'Medium.density'",
+            "occurrences": 36
+          },
+          {
+            "message": "unresolved function call: 'Medium.density_pTX'",
+            "occurrences": 1
+          },
+          {
+            "message": "unresolved function call: 'Medium.dynamicViscosity'",
+            "occurrences": 14
+          },
+          {
+            "message": "unresolved function call: 'Medium.pressure'",
+            "occurrences": 6
+          },
+          {
+            "message": "unresolved function call: 'Medium.setState_pTX'",
+            "occurrences": 2
+          },
+          {
+            "message": "unresolved function call: 'Medium.setState_phX'",
+            "occurrences": 2
+          },
+          {
+            "message": "unresolved type reference: 'Medium.AbsolutePressure'",
+            "occurrences": 3
+          },
+          {
+            "message": "unresolved type reference: 'Medium.Density'",
+            "occurrences": 1
+          },
+          {
+            "message": "unresolved type reference: 'Medium.ThermodynamicState'",
+            "occurrences": 4
           }
         ]
       },

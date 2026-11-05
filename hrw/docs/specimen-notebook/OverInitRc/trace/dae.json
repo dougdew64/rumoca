@@ -1,5 +1,5 @@
 {
-  "schema_version": 38,
+  "schema_version": 52,
   "source_map": {
     "hrw_note": "Published by HRW, not by Rumoca's Serialize. Rumoca's node carries every registered file's full text; this one carries the id-to-file index for the files this DAE's spans name, and no text. Names are workspace-relative, so source_id_for_name(file) does NOT equal source_id the way Rumoca's own node requires (SPEC_0029 §3a) — resolve a span by its source_id, never by re-deriving one from the name.",
     "registered_files": 2556,
@@ -33,6 +33,11 @@
         "source_id": 10712131675900935278,
         "file": "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Interfaces/Pin.mo",
         "content_bytes": 2051
+      },
+      {
+        "source_id": 11081430449150228211,
+        "file": "hrw/vendor/msl/Modelica 4.1.0/Units.mo",
+        "content_bytes": 96897
       },
       {
         "source_id": 13756986950433633865,
@@ -288,9 +293,12 @@
           "unit": "A",
           "state_select": "Default",
           "description": "Current flowing from pin p to pin n",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -347,9 +355,12 @@
           "unit": "V",
           "state_select": "Default",
           "description": "Voltage drop of the two pins (= p.v - n.v)",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -416,9 +427,12 @@
           "unit": "V",
           "state_select": "Default",
           "description": "Potential at the pin",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -485,9 +499,12 @@
           "unit": "A",
           "state_select": "Default",
           "description": "Current flowing into the pin",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -554,9 +571,12 @@
           "unit": "V",
           "state_select": "Default",
           "description": "Potential at the pin",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -623,9 +643,12 @@
           "unit": "A",
           "state_select": "Default",
           "description": "Current flowing into the pin",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -682,9 +705,12 @@
           "unit": "V",
           "state_select": "Default",
           "description": "Value of constant voltage",
+          "enumeration": null,
           "causality": "parameter",
+          "declared_causality": "none",
           "is_tunable": true,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -741,9 +767,12 @@
           "unit": "A",
           "state_select": "Default",
           "description": "Current flowing from pin p to pin n",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -800,9 +829,12 @@
           "unit": "V",
           "state_select": "Default",
           "description": "Voltage drop of the two pins (= p.v - n.v)",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -869,9 +901,12 @@
           "unit": "V",
           "state_select": "Default",
           "description": "Potential at the pin",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -938,9 +973,12 @@
           "unit": "A",
           "state_select": "Default",
           "description": "Current flowing into the pin",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1007,9 +1045,12 @@
           "unit": "V",
           "state_select": "Default",
           "description": "Potential at the pin",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1076,9 +1117,12 @@
           "unit": "A",
           "state_select": "Default",
           "description": "Current flowing into the pin",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1135,9 +1179,12 @@
           "unit": null,
           "state_select": "Default",
           "description": "= true, if heatPort is enabled",
+          "enumeration": null,
           "causality": "parameter",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": true,
           "origin": "source"
         }
       },
@@ -1185,18 +1232,21 @@
               }
             ]
           },
-          "binding": 35,
-          "start": 36,
+          "binding": 40,
+          "start": 41,
           "fixed": null,
-          "min": null,
+          "min": 42,
           "max": null,
-          "nominal": null,
+          "nominal": 43,
           "unit": "K",
           "state_select": "Default",
           "description": "Fixed device temperature if useHeatPort = false",
+          "enumeration": null,
           "causality": "parameter",
+          "declared_causality": "none",
           "is_tunable": true,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1253,9 +1303,12 @@
           "unit": "W",
           "state_select": "Default",
           "description": "Loss power leaving component via heatPort",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1306,15 +1359,18 @@
           "binding": null,
           "start": 17,
           "fixed": null,
-          "min": null,
+          "min": 18,
           "max": null,
-          "nominal": null,
+          "nominal": 19,
           "unit": "K",
           "state_select": "Default",
           "description": "Temperature of heatPort",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1362,8 +1418,8 @@
               }
             ]
           },
-          "binding": 18,
-          "start": 19,
+          "binding": 20,
+          "start": 21,
           "fixed": null,
           "min": null,
           "max": null,
@@ -1371,9 +1427,12 @@
           "unit": "Ohm",
           "state_select": "Default",
           "description": "Resistance at temperature T_ref",
+          "enumeration": null,
           "causality": "parameter",
+          "declared_causality": "none",
           "is_tunable": true,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1421,18 +1480,21 @@
               }
             ]
           },
-          "binding": 20,
-          "start": 21,
+          "binding": 22,
+          "start": 23,
           "fixed": null,
-          "min": null,
+          "min": 24,
           "max": null,
-          "nominal": null,
+          "nominal": 25,
           "unit": "K",
           "state_select": "Default",
           "description": "Reference temperature",
+          "enumeration": null,
           "causality": "parameter",
+          "declared_causality": "none",
           "is_tunable": true,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1480,8 +1542,8 @@
               }
             ]
           },
-          "binding": 22,
-          "start": 23,
+          "binding": 26,
+          "start": 27,
           "fixed": null,
           "min": null,
           "max": null,
@@ -1489,9 +1551,12 @@
           "unit": "1/K",
           "state_select": "Default",
           "description": "Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))",
+          "enumeration": null,
           "causality": "parameter",
+          "declared_causality": "none",
           "is_tunable": true,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1540,7 +1605,7 @@
             ]
           },
           "binding": null,
-          "start": 24,
+          "start": 28,
           "fixed": null,
           "min": null,
           "max": null,
@@ -1548,9 +1613,12 @@
           "unit": "Ohm",
           "state_select": "Default",
           "description": "Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1599,7 +1667,7 @@
             ]
           },
           "binding": null,
-          "start": 25,
+          "start": 29,
           "fixed": null,
           "min": null,
           "max": null,
@@ -1607,9 +1675,12 @@
           "unit": "A",
           "state_select": "Default",
           "description": "Current flowing from pin p to pin n",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1658,7 +1729,7 @@
             ]
           },
           "binding": null,
-          "start": 26,
+          "start": 30,
           "fixed": null,
           "min": null,
           "max": null,
@@ -1666,9 +1737,12 @@
           "unit": "V",
           "state_select": "Default",
           "description": "Voltage drop of the two pins (= p.v - n.v)",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1727,7 +1801,7 @@
             ]
           },
           "binding": null,
-          "start": 27,
+          "start": 31,
           "fixed": null,
           "min": null,
           "max": null,
@@ -1735,9 +1809,12 @@
           "unit": "V",
           "state_select": "Default",
           "description": "Potential at the pin",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1796,7 +1873,7 @@
             ]
           },
           "binding": null,
-          "start": 28,
+          "start": 32,
           "fixed": null,
           "min": null,
           "max": null,
@@ -1804,9 +1881,12 @@
           "unit": "A",
           "state_select": "Default",
           "description": "Current flowing into the pin",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1865,7 +1945,7 @@
             ]
           },
           "binding": null,
-          "start": 29,
+          "start": 33,
           "fixed": null,
           "min": null,
           "max": null,
@@ -1873,9 +1953,12 @@
           "unit": "V",
           "state_select": "Default",
           "description": "Potential at the pin",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1934,7 +2017,7 @@
             ]
           },
           "binding": null,
-          "start": 30,
+          "start": 34,
           "fixed": null,
           "min": null,
           "max": null,
@@ -1942,9 +2025,12 @@
           "unit": "A",
           "state_select": "Default",
           "description": "Current flowing into the pin",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1992,18 +2078,21 @@
               }
             ]
           },
-          "binding": 31,
-          "start": 32,
+          "binding": 35,
+          "start": 36,
           "fixed": null,
-          "min": null,
+          "min": 37,
           "max": null,
           "nominal": null,
           "unit": "F",
           "state_select": "Default",
           "description": "Capacitance",
+          "enumeration": null,
           "causality": "parameter",
+          "declared_causality": "none",
           "is_tunable": true,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -2062,7 +2151,7 @@
             ]
           },
           "binding": null,
-          "start": 33,
+          "start": 38,
           "fixed": null,
           "min": null,
           "max": null,
@@ -2070,9 +2159,12 @@
           "unit": "V",
           "state_select": "Default",
           "description": "Potential at the pin",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -2131,7 +2223,7 @@
             ]
           },
           "binding": null,
-          "start": 34,
+          "start": 39,
           "fixed": null,
           "min": null,
           "max": null,
@@ -2139,16 +2231,179 @@
           "unit": "A",
           "state_select": "Default",
           "description": "Current flowing into the pin",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       }
     ],
     "functions": [],
     "domains": [],
+    "model_conditionals": [],
     "expressions": {
+      "model_contexts": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
       "nodes": [
         {
           "literal": {
@@ -2237,7 +2492,17 @@
         },
         {
           "literal": {
+            "real": 288.15
+          }
+        },
+        {
+          "literal": {
             "real": 0.0
+          }
+        },
+        {
+          "literal": {
+            "integer": 300
           }
         },
         {
@@ -2258,6 +2523,16 @@
         {
           "literal": {
             "real": 300.15
+          }
+        },
+        {
+          "literal": {
+            "real": 0.0
+          }
+        },
+        {
+          "literal": {
+            "integer": 300
           }
         },
         {
@@ -2317,6 +2592,11 @@
         },
         {
           "literal": {
+            "integer": 0
+          }
+        },
+        {
+          "literal": {
             "real": 0.0
           }
         },
@@ -2333,6 +2613,16 @@
         {
           "coordinate": {
             "parameter": 18
+          }
+        },
+        {
+          "literal": {
+            "real": 0.0
+          }
+        },
+        {
+          "literal": {
+            "integer": 300
           }
         },
         {
@@ -2353,15 +2643,15 @@
         {
           "binary": {
             "operator": "add",
-            "lhs": 38,
-            "rhs": 39
+            "lhs": 45,
+            "rhs": 46
           }
         },
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 37,
-            "rhs": 40
+            "lhs": 44,
+            "rhs": 47
           }
         },
         {
@@ -2377,8 +2667,8 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 42,
-            "rhs": 43
+            "lhs": 49,
+            "rhs": 50
           }
         },
         {
@@ -2399,15 +2689,15 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 46,
-            "rhs": 47
+            "lhs": 53,
+            "rhs": 54
           }
         },
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 45,
-            "rhs": 48
+            "lhs": 52,
+            "rhs": 55
           }
         },
         {
@@ -2423,8 +2713,8 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 50,
-            "rhs": 51
+            "lhs": 57,
+            "rhs": 58
           }
         },
         {
@@ -2445,15 +2735,15 @@
         {
           "binary": {
             "operator": "add",
-            "lhs": 54,
-            "rhs": 55
+            "lhs": 61,
+            "rhs": 62
           }
         },
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 53,
-            "rhs": 56
+            "lhs": 60,
+            "rhs": 63
           }
         },
         {
@@ -2469,8 +2759,8 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 58,
-            "rhs": 59
+            "lhs": 65,
+            "rhs": 66
           }
         },
         {
@@ -2491,15 +2781,15 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 62,
-            "rhs": 63
+            "lhs": 69,
+            "rhs": 70
           }
         },
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 61,
-            "rhs": 64
+            "lhs": 68,
+            "rhs": 71
           }
         },
         {
@@ -2515,8 +2805,8 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 66,
-            "rhs": 67
+            "lhs": 73,
+            "rhs": 74
           }
         },
         {
@@ -2552,36 +2842,36 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 73,
-            "rhs": 74
+            "lhs": 80,
+            "rhs": 81
           }
         },
         {
           "binary": {
             "operator": "multiply",
-            "lhs": 72,
-            "rhs": 75
+            "lhs": 79,
+            "rhs": 82
           }
         },
         {
           "binary": {
             "operator": "add",
-            "lhs": 71,
-            "rhs": 76
+            "lhs": 78,
+            "rhs": 83
           }
         },
         {
           "binary": {
             "operator": "multiply",
-            "lhs": 70,
-            "rhs": 77
+            "lhs": 77,
+            "rhs": 84
           }
         },
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 69,
-            "rhs": 78
+            "lhs": 76,
+            "rhs": 85
           }
         },
         {
@@ -2602,15 +2892,15 @@
         {
           "binary": {
             "operator": "multiply",
-            "lhs": 81,
-            "rhs": 82
+            "lhs": 88,
+            "rhs": 89
           }
         },
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 80,
-            "rhs": 83
+            "lhs": 87,
+            "rhs": 90
           }
         },
         {
@@ -2631,15 +2921,15 @@
         {
           "binary": {
             "operator": "multiply",
-            "lhs": 86,
-            "rhs": 87
+            "lhs": 93,
+            "rhs": 94
           }
         },
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 85,
-            "rhs": 88
+            "lhs": 92,
+            "rhs": 95
           }
         },
         {
@@ -2660,15 +2950,15 @@
         {
           "binary": {
             "operator": "add",
-            "lhs": 91,
-            "rhs": 92
+            "lhs": 98,
+            "rhs": 99
           }
         },
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 90,
-            "rhs": 93
+            "lhs": 97,
+            "rhs": 100
           }
         },
         {
@@ -2684,8 +2974,8 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 95,
-            "rhs": 96
+            "lhs": 102,
+            "rhs": 103
           }
         },
         {
@@ -2706,15 +2996,15 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 99,
-            "rhs": 100
+            "lhs": 106,
+            "rhs": 107
           }
         },
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 98,
-            "rhs": 101
+            "lhs": 105,
+            "rhs": 108
           }
         },
         {
@@ -2735,15 +3025,15 @@
         {
           "binary": {
             "operator": "multiply",
-            "lhs": 104,
-            "rhs": 105
+            "lhs": 111,
+            "rhs": 112
           }
         },
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 103,
-            "rhs": 106
+            "lhs": 110,
+            "rhs": 113
           }
         },
         {
@@ -2759,8 +3049,8 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 108,
-            "rhs": 109
+            "lhs": 115,
+            "rhs": 116
           }
         },
         {
@@ -2776,8 +3066,8 @@
         {
           "binary": {
             "operator": "add",
-            "lhs": 111,
-            "rhs": 112
+            "lhs": 118,
+            "rhs": 119
           }
         },
         {
@@ -2793,8 +3083,8 @@
         {
           "binary": {
             "operator": "add",
-            "lhs": 114,
-            "rhs": 115
+            "lhs": 121,
+            "rhs": 122
           }
         },
         {
@@ -2810,8 +3100,8 @@
         {
           "binary": {
             "operator": "add",
-            "lhs": 117,
-            "rhs": 118
+            "lhs": 124,
+            "rhs": 125
           }
         },
         {
@@ -2822,8 +3112,8 @@
         {
           "binary": {
             "operator": "add",
-            "lhs": 119,
-            "rhs": 120
+            "lhs": 126,
+            "rhs": 127
           }
         },
         {
@@ -2839,8 +3129,8 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 122,
-            "rhs": 123
+            "lhs": 129,
+            "rhs": 130
           }
         },
         {
@@ -2856,8 +3146,8 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 125,
-            "rhs": 126
+            "lhs": 132,
+            "rhs": 133
           }
         },
         {
@@ -2873,8 +3163,8 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 128,
-            "rhs": 129
+            "lhs": 135,
+            "rhs": 136
           }
         },
         {
@@ -2890,8 +3180,8 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 131,
-            "rhs": 132
+            "lhs": 138,
+            "rhs": 139
           }
         },
         {
@@ -2907,8 +3197,8 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 134,
-            "rhs": 135
+            "lhs": 141,
+            "rhs": 142
           }
         },
         {
@@ -2924,8 +3214,8 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 137,
-            "rhs": 138
+            "lhs": 144,
+            "rhs": 145
           }
         },
         {
@@ -2951,22 +3241,22 @@
         {
           "binary": {
             "operator": "subtract",
-            "lhs": 142,
-            "rhs": 143
+            "lhs": 149,
+            "rhs": 150
           }
         },
         {
           "binary": {
             "operator": "multiply",
-            "lhs": 141,
-            "rhs": 144
+            "lhs": 148,
+            "rhs": 151
           }
         },
         {
           "binary": {
             "operator": "add",
-            "lhs": 140,
-            "rhs": 145
+            "lhs": 147,
+            "rhs": 152
           }
         },
         {
@@ -2977,8 +3267,8 @@
         {
           "binary": {
             "operator": "greater_equal",
-            "lhs": 146,
-            "rhs": 147
+            "lhs": 153,
+            "rhs": 154
           }
         },
         {
@@ -3151,13 +3441,27 @@
           }
         },
         {
-          "origin": {
-            "generated": "default_start"
-          },
+          "origin": "source",
           "span": {
-            "source": 18355245647093129072,
-            "start": 819,
-            "end": 844
+            "source": 11081430449150228211,
+            "start": 16466,
+            "end": 16472
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16445,
+            "end": 16448
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16492,
+            "end": 16495
           }
         },
         {
@@ -3190,6 +3494,22 @@
             "source": 17631980999968599698,
             "start": 200,
             "end": 206
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16445,
+            "end": 16448
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16492,
+            "end": 16495
           }
         },
         {
@@ -3293,6 +3613,14 @@
           }
         },
         {
+          "origin": "source",
+          "span": {
+            "source": 11081430449150228211,
+            "start": 22432,
+            "end": 22433
+          }
+        },
+        {
           "origin": {
             "generated": "default_start"
           },
@@ -3326,6 +3654,22 @@
             "source": 17631980999968599698,
             "start": 504,
             "end": 509
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16445,
+            "end": 16448
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16492,
+            "end": 16495
           }
         },
         {
@@ -4253,7 +4597,7 @@
     "continuous_equation_operations": [
       {
         "residual": {
-          "residual": 41,
+          "residual": 48,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4266,7 +4610,7 @@
       },
       {
         "residual": {
-          "residual": 44,
+          "residual": 51,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4279,7 +4623,7 @@
       },
       {
         "residual": {
-          "residual": 49,
+          "residual": 56,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4292,7 +4636,7 @@
       },
       {
         "residual": {
-          "residual": 52,
+          "residual": 59,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4305,7 +4649,7 @@
       },
       {
         "residual": {
-          "residual": 57,
+          "residual": 64,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4318,7 +4662,7 @@
       },
       {
         "residual": {
-          "residual": 60,
+          "residual": 67,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4331,7 +4675,7 @@
       },
       {
         "residual": {
-          "residual": 65,
+          "residual": 72,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4344,7 +4688,7 @@
       },
       {
         "residual": {
-          "residual": 68,
+          "residual": 75,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4357,7 +4701,7 @@
       },
       {
         "residual": {
-          "residual": 79,
+          "residual": 86,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4370,7 +4714,7 @@
       },
       {
         "residual": {
-          "residual": 84,
+          "residual": 91,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4383,7 +4727,7 @@
       },
       {
         "residual": {
-          "residual": 89,
+          "residual": 96,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4396,7 +4740,7 @@
       },
       {
         "residual": {
-          "residual": 94,
+          "residual": 101,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4409,7 +4753,7 @@
       },
       {
         "residual": {
-          "residual": 97,
+          "residual": 104,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4422,7 +4766,7 @@
       },
       {
         "residual": {
-          "residual": 102,
+          "residual": 109,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4435,7 +4779,7 @@
       },
       {
         "residual": {
-          "residual": 107,
+          "residual": 114,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4448,7 +4792,7 @@
       },
       {
         "residual": {
-          "residual": 110,
+          "residual": 117,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4461,7 +4805,7 @@
       },
       {
         "residual": {
-          "residual": 113,
+          "residual": 120,
           "provenance": {
             "origin": {
               "generated": "flow_balance_equation"
@@ -4476,7 +4820,7 @@
       },
       {
         "residual": {
-          "residual": 116,
+          "residual": 123,
           "provenance": {
             "origin": {
               "generated": "flow_balance_equation"
@@ -4491,7 +4835,7 @@
       },
       {
         "residual": {
-          "residual": 121,
+          "residual": 128,
           "provenance": {
             "origin": {
               "generated": "flow_balance_equation"
@@ -4506,7 +4850,7 @@
       },
       {
         "residual": {
-          "residual": 124,
+          "residual": 131,
           "provenance": {
             "origin": {
               "generated": "connection_equation"
@@ -4521,7 +4865,7 @@
       },
       {
         "residual": {
-          "residual": 127,
+          "residual": 134,
           "provenance": {
             "origin": {
               "generated": "connection_equation"
@@ -4536,7 +4880,7 @@
       },
       {
         "residual": {
-          "residual": 130,
+          "residual": 137,
           "provenance": {
             "origin": {
               "generated": "connection_equation"
@@ -4551,7 +4895,7 @@
       },
       {
         "residual": {
-          "residual": 133,
+          "residual": 140,
           "provenance": {
             "origin": {
               "generated": "connection_equation"
@@ -4568,7 +4912,7 @@
     "initialization_equation_operations": [
       {
         "residual": {
-          "residual": 136,
+          "residual": 143,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4581,7 +4925,7 @@
       },
       {
         "residual": {
-          "residual": 139,
+          "residual": 146,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4601,7 +4945,7 @@
     "relations": [
       {
         "relation": {
-          "expression": 148,
+          "expression": 155,
           "provenance": {
             "origin": "source",
             "span": {
@@ -4682,8 +5026,7 @@
         "guard": 1,
         "kind": {
           "assert": {
-            "message": 149,
-            "level": null
+            "message": 156
           }
         },
         "provenance": {

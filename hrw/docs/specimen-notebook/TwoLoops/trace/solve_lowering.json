@@ -1,5 +1,5 @@
 {
-  "schema_version": 70,
+  "schema_version": 89,
   "layout": {
     "bindings": {
       "errorA": {
@@ -63,34 +63,6 @@
     "p_scalars": 5
   },
   "solve_layout": {
-    "solver_maps": {
-      "names": [
-        "errorA",
-        "commandA",
-        "errorB",
-        "commandB"
-      ],
-      "name_to_idx": {
-        "errorA": 0,
-        "commandA": 1,
-        "errorB": 2,
-        "commandB": 3
-      },
-      "base_to_indices": {
-        "errorA": [
-          0
-        ],
-        "commandA": [
-          1
-        ],
-        "errorB": [
-          2
-        ],
-        "commandB": [
-          3
-        ]
-      }
-    },
     "variable_storage_runs": [
       {
         "base": {
@@ -474,90 +446,70 @@
                 "end": 1454
               }
             ],
-            "output_indices": [
-              0,
-              1,
-              2,
-              3
-            ]
+            "output_placements": {
+              "Dense": {
+                "count": 4
+              }
+            }
           }
         }
       ]
     },
-    "implicit_row_targets": [
-      {
-        "Y": {
-          "index": 1,
-          "byte_offset": 8
-        }
-      },
-      {
-        "Y": {
-          "index": 0,
-          "byte_offset": 0
-        }
-      },
-      {
-        "Y": {
-          "index": 3,
-          "byte_offset": 24
-        }
-      },
-      {
-        "Y": {
-          "index": 2,
-          "byte_offset": 16
-        }
-      }
-    ],
+    "implicit_row_targets": "Projection",
     "algebraic_projection_plan": {
       "blocks": [
         {
-          "rows": [
-            1,
-            0
-          ],
-          "y_indices": [
-            0,
-            1
-          ],
-          "tearing": {
-            "tear_y_indices": [
+          "Explicit": {
+            "rows": [
+              1,
               0
             ],
-            "residual_rows": [
-              0
+            "y_indices": [
+              0,
+              1
             ],
-            "causal_steps": [
-              {
-                "row": 1,
-                "y_index": 1
-              }
-            ]
+            "tearing": {
+              "tear_y_indices": [
+                0
+              ],
+              "residual_rows": [
+                0
+              ],
+              "causal_steps": [
+                {
+                  "row": 1,
+                  "y_index": 1,
+                  "coefficient": "Unit"
+                }
+              ]
+            }
           }
         },
         {
-          "rows": [
-            3,
-            2
-          ],
-          "y_indices": [
-            2,
-            3
-          ],
-          "tearing": {
-            "tear_y_indices": [
+          "Explicit": {
+            "rows": [
+              3,
               2
             ],
-            "residual_rows": [
-              2
+            "y_indices": [
+              2,
+              3
             ],
-            "causal_steps": [
-              {
-                "row": 3,
-                "y_index": 3
-              }
-            ]
+            "tearing": {
+              "tear_y_indices": [
+                2
+              ],
+              "residual_rows": [
+                2
+              ],
+              "causal_steps": [
+                {
+                  "row": 3,
+                  "y_index": 3,
+                  "coefficient": "Unit"
+                }
+              ]
+            }
           }
         }
       ]
@@ -782,12 +734,11 @@
                 "end": 1454
               }
             ],
-            "output_indices": [
-              0,
-              1,
-              2,
-              3
-            ]
+            "output_placements": {
+              "Dense": {
+                "count": 4
+              }
+            }
           }
         }
       ]
@@ -802,55 +753,62 @@
       "nodes": []
     },
     "refresh_owners": {
+      "compact_projection": null,
       "algebraic": {
         "simultaneous_plan": {
           "blocks": [
             {
-              "rows": [
-                1,
-                0
-              ],
-              "y_indices": [
-                0,
-                1
-              ],
-              "tearing": {
-                "tear_y_indices": [
+              "Explicit": {
+                "rows": [
+                  1,
                   0
                 ],
-                "residual_rows": [
-                  0
+                "y_indices": [
+                  0,
+                  1
                 ],
-                "causal_steps": [
-                  {
-                    "row": 1,
-                    "y_index": 1
-                  }
-                ]
+                "tearing": {
+                  "tear_y_indices": [
+                    0
+                  ],
+                  "residual_rows": [
+                    0
+                  ],
+                  "causal_steps": [
+                    {
+                      "row": 1,
+                      "y_index": 1,
+                      "coefficient": "Unit"
+                    }
+                  ]
+                }
               }
             },
             {
-              "rows": [
-                3,
-                2
-              ],
-              "y_indices": [
-                2,
-                3
-              ],
-              "tearing": {
-                "tear_y_indices": [
+              "Explicit": {
+                "rows": [
+                  3,
                   2
                 ],
-                "residual_rows": [
-                  2
+                "y_indices": [
+                  2,
+                  3
                 ],
-                "causal_steps": [
-                  {
-                    "row": 3,
-                    "y_index": 3
-                  }
-                ]
+                "tearing": {
+                  "tear_y_indices": [
+                    2
+                  ],
+                  "residual_rows": [
+                    2
+                  ],
+                  "causal_steps": [
+                    {
+                      "row": 3,
+                      "y_index": 3,
+                      "coefficient": "Unit"
+                    }
+                  ]
+                }
               }
             }
           ]
@@ -862,51 +820,57 @@
         "value_projection_plan": {
           "blocks": [
             {
-              "rows": [
-                1,
-                0
-              ],
-              "y_indices": [
-                0,
-                1
-              ],
-              "tearing": {
-                "tear_y_indices": [
+              "Explicit": {
+                "rows": [
+                  1,
                   0
                 ],
-                "residual_rows": [
-                  0
+                "y_indices": [
+                  0,
+                  1
                 ],
-                "causal_steps": [
-                  {
-                    "row": 1,
-                    "y_index": 1
-                  }
-                ]
+                "tearing": {
+                  "tear_y_indices": [
+                    0
+                  ],
+                  "residual_rows": [
+                    0
+                  ],
+                  "causal_steps": [
+                    {
+                      "row": 1,
+                      "y_index": 1,
+                      "coefficient": "Unit"
+                    }
+                  ]
+                }
               }
             },
             {
-              "rows": [
-                3,
-                2
-              ],
-              "y_indices": [
-                2,
-                3
-              ],
-              "tearing": {
-                "tear_y_indices": [
+              "Explicit": {
+                "rows": [
+                  3,
                   2
                 ],
-                "residual_rows": [
-                  2
+                "y_indices": [
+                  2,
+                  3
                 ],
-                "causal_steps": [
-                  {
-                    "row": 3,
-                    "y_index": 3
-                  }
-                ]
+                "tearing": {
+                  "tear_y_indices": [
+                    2
+                  ],
+                  "residual_rows": [
+                    2
+                  ],
+                  "causal_steps": [
+                    {
+                      "row": 3,
+                      "y_index": 3,
+                      "coefficient": "Unit"
+                    }
+                  ]
+                }
               }
             }
           ]
@@ -1119,27 +1083,30 @@
               "plan": {
                 "blocks": [
                   {
-                    "rows": [
-                      1,
-                      0
-                    ],
-                    "y_indices": [
-                      0,
-                      1
-                    ],
-                    "tearing": {
-                      "tear_y_indices": [
+                    "Explicit": {
+                      "rows": [
+                        1,
                         0
                       ],
-                      "residual_rows": [
-                        0
+                      "y_indices": [
+                        0,
+                        1
                       ],
-                      "causal_steps": [
-                        {
-                          "row": 1,
-                          "y_index": 1
-                        }
-                      ]
+                      "tearing": {
+                        "tear_y_indices": [
+                          0
+                        ],
+                        "residual_rows": [
+                          0
+                        ],
+                        "causal_steps": [
+                          {
+                            "row": 1,
+                            "y_index": 1,
+                            "coefficient": "Unit"
+                          }
+                        ]
+                      }
                     }
                   }
                 ]
@@ -1153,27 +1120,30 @@
               "plan": {
                 "blocks": [
                   {
-                    "rows": [
-                      3,
-                      2
-                    ],
-                    "y_indices": [
-                      2,
-                      3
-                    ],
-                    "tearing": {
-                      "tear_y_indices": [
+                    "Explicit": {
+                      "rows": [
+                        3,
                         2
                       ],
-                      "residual_rows": [
-                        2
+                      "y_indices": [
+                        2,
+                        3
                       ],
-                      "causal_steps": [
-                        {
-                          "row": 3,
-                          "y_index": 3
-                        }
-                      ]
+                      "tearing": {
+                        "tear_y_indices": [
+                          2
+                        ],
+                        "residual_rows": [
+                          2
+                        ],
+                        "causal_steps": [
+                          {
+                            "row": 3,
+                            "y_index": 3,
+                            "coefficient": "Unit"
+                          }
+                        ]
+                      }
                     }
                   }
                 ]
@@ -1238,12 +1208,17 @@
     },
     "row_roles": [],
     "projection_plan": {
-      "blocks": []
+      "blocks": [],
+      "iterates_discretes": false
     },
     "update_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "update_targets": [],
     "manifold_row_count": 0,
@@ -1251,26 +1226,69 @@
   },
   "discrete": {
     "event_iteration_plan": {
-      "runs": []
+      "runs": [],
+      "partitions": [],
+      "schedule": {
+        "event_pass": [
+          "RelationOverrides",
+          "RuntimeAssignments",
+          "AlgebraicProjection",
+          "RuntimeAssignments",
+          "RelationRefresh",
+          "RelationSettle"
+        ],
+        "relation_pass": [
+          "DiscreteSettle",
+          "SettledIfRelationsUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "settle_pass": [
+          "DiscreteOwners",
+          "RuntimeAssignments",
+          "SettledIfUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "fixed_point_cap": 32,
+        "stalled_settle": {
+          "iteration_cap": 32,
+          "line_search_halvings": 16
+        },
+        "relation_surface_window": 8,
+        "mode_search_relations": 4
+      }
     },
     "runtime_assignment_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "runtime_assignment_targets": [],
     "runtime_assignment_roles": [],
     "post_commit_assignment_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "post_commit_assignment_targets": [],
     "post_commit_assignment_runtime_rows": [],
     "rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "update_targets": [],
     "row_roles": [],
@@ -1289,7 +1307,11 @@
     "clock_partition_intermediates": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "clock_partition_intermediate_targets": [],
     "clock_partition_intermediate_clocks": []
@@ -1298,7 +1320,11 @@
     "root_conditions": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "root_relation_memory_targets": [],
     "root_zero_domains": [],
@@ -1310,12 +1336,20 @@
     "dynamic_time_event_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "action_conditions": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "actions": [],
     "has_terminal_event": false,
@@ -1323,17 +1357,29 @@
       "source_rhs": {
         "programs": [],
         "program_spans": [],
-        "output_indices": []
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
       },
       "delay_time_rhs": {
         "programs": [],
         "program_spans": [],
-        "output_indices": []
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
       },
       "delay_max_rhs": {
         "programs": [],
         "program_spans": [],
-        "output_indices": []
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
       },
       "value_parameter_indices": [],
       "source_is_discrete": []

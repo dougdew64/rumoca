@@ -80,6 +80,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -198,6 +199,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -316,6 +318,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -434,6 +437,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -566,6 +570,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -698,6 +703,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -816,6 +822,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -948,6 +955,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1080,6 +1088,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1284,6 +1293,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1372,6 +1382,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1490,6 +1501,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1656,6 +1668,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1774,6 +1787,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1906,6 +1920,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2038,6 +2053,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2156,6 +2172,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2288,6 +2305,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2420,6 +2438,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2559,7 +2578,30 @@
         }
       },
       "fixed": null,
-      "min": null,
+      "min": {
+        "Terminal": {
+          "terminal_type": "UnsignedInteger",
+          "token": {
+            "text": "0",
+            "location": {
+              "start_line": 508,
+              "start_column": 13,
+              "end_line": 508,
+              "end_column": 14,
+              "start": 22432,
+              "end": 22433,
+              "source": 11081430449150228211
+            },
+            "token_number": 2343,
+            "token_type": 67
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 22432,
+            "end": 22433
+          }
+        }
+      },
       "max": null,
       "nominal": null,
       "quantity": "Capacitance",
@@ -2618,12 +2660,30 @@
       "binding_source_scope": {
         "parts": []
       },
-      "attribute_source_scopes": {},
+      "attribute_source_scopes": {
+        "min": {
+          "parts": [
+            [
+              "Modelica",
+              []
+            ],
+            [
+              "Units",
+              []
+            ],
+            [
+              "SI",
+              []
+            ]
+          ]
+        }
+      },
       "binding_from_modification": true,
       "is_primitive": true,
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2712,6 +2772,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2830,6 +2891,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2962,6 +3024,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -3094,6 +3157,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -3155,7 +3219,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "11": {
       "instance_id": 11,
@@ -3208,7 +3273,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "3": {
       "instance_id": 3,
@@ -3824,7 +3890,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "20": {
       "instance_id": 20,
@@ -3877,7 +3944,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "24": {
       "instance_id": 24,
@@ -3930,7 +3998,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "16": {
       "instance_id": 16,
@@ -4624,7 +4693,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "31": {
       "instance_id": 31,
@@ -4677,7 +4747,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "29": {
       "instance_id": 29,
@@ -4841,7 +4912,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "1": {
       "instance_id": 1,
@@ -4964,7 +5036,8 @@
           "scope": ""
         }
       ],
-      "resolved_imports": []
+      "resolved_imports": [],
+      "parameter_branch_selections": []
     }
   },
   "is_partial": false,
@@ -4977,6 +5050,7 @@
   "outer_prefix_to_inner": {},
   "inner_outer_to_parent_inner": {},
   "synthesized_inners": [],
+  "synthesized_inner_messages": [],
   "type_roots": {},
   "type_ids_by_def_id": {},
   "enumeration_type_roots": [],

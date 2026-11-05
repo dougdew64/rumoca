@@ -80,6 +80,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -198,6 +199,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -400,6 +402,7 @@
       "is_discrete_type": true,
       "from_expandable_connector": false,
       "evaluate": true,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -518,6 +521,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -650,6 +654,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -782,6 +787,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -900,6 +906,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": true,
@@ -1081,6 +1088,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1199,6 +1207,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1317,6 +1326,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1405,6 +1415,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1523,6 +1534,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1655,6 +1667,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1787,6 +1800,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1905,6 +1919,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2037,6 +2052,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2169,6 +2185,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2396,6 +2413,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2619,6 +2637,7 @@
       "is_discrete_type": true,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2737,6 +2756,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2855,6 +2875,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2973,6 +2994,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -3061,6 +3083,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -3263,6 +3286,7 @@
       "is_discrete_type": true,
       "from_expandable_connector": false,
       "evaluate": true,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -3381,6 +3405,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -3513,6 +3538,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -3645,6 +3671,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -3763,6 +3790,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -3895,6 +3923,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -4027,6 +4056,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -4145,6 +4175,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": true,
@@ -4349,6 +4380,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -4467,6 +4499,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -4585,6 +4618,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -4673,6 +4707,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -4791,6 +4826,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -4923,6 +4959,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -5055,6 +5092,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -5173,6 +5211,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -5305,6 +5344,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -5437,6 +5477,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -5664,6 +5705,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -5887,6 +5929,7 @@
       "is_discrete_type": true,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -6005,6 +6048,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -6123,6 +6167,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -6241,6 +6286,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -6329,6 +6375,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -6637,6 +6684,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -6778,6 +6826,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -6919,6 +6968,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -7037,6 +7087,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -7155,6 +7206,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -7287,6 +7339,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -7419,6 +7472,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -7537,6 +7591,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -7669,6 +7724,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -7801,6 +7857,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -8003,6 +8060,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -8226,6 +8284,7 @@
       "is_discrete_type": true,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -8428,6 +8487,7 @@
       "is_discrete_type": true,
       "from_expandable_connector": false,
       "evaluate": true,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -8546,6 +8606,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -8773,6 +8834,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -9000,6 +9062,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -9202,6 +9265,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -9320,6 +9384,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": true,
@@ -9438,6 +9503,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": true,
@@ -9526,6 +9592,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -9728,6 +9795,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -9846,6 +9914,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -9978,6 +10047,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -10110,6 +10180,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -10198,6 +10269,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -10400,6 +10472,7 @@
       "is_discrete_type": true,
       "from_expandable_connector": false,
       "evaluate": true,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -10518,6 +10591,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -10650,6 +10724,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -10782,6 +10857,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -10900,6 +10976,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": true,
@@ -11033,6 +11110,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -11182,6 +11260,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -11331,6 +11410,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -11442,6 +11522,7 @@
       "is_discrete_type": true,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -11503,7 +11584,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "3": {
       "instance_id": 3,
@@ -12180,6 +12262,64 @@
           "SI",
           "Modelica.Units.SI"
         ]
+      ],
+      "parameter_branch_selections": [
+        {
+          "conditions": [
+            {
+              "Unary": {
+                "op": "Not",
+                "rhs": {
+                  "ComponentReference": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "useSupport",
+                          "location": {
+                            "start_line": 19,
+                            "start_column": 10,
+                            "end_line": 19,
+                            "end_column": 20,
+                            "start": 890,
+                            "end": 900,
+                            "source": 4979990776833295005
+                          },
+                          "token_number": 125,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 4979990776833295005,
+                      "start": 890,
+                      "end": 900
+                    }
+                  }
+                },
+                "span": {
+                  "source": 4979990776833295005,
+                  "start": 886,
+                  "end": 900
+                }
+              }
+            }
+          ],
+          "origin": {
+            "parts": [
+              [
+                "motor",
+                []
+              ]
+            ]
+          },
+          "span": {
+            "source": 4979990776833295005,
+            "start": 890,
+            "end": 900
+          }
+        }
       ]
     },
     "17": {
@@ -12233,7 +12373,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "21": {
       "instance_id": 21,
@@ -12286,7 +12427,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "15": {
       "instance_id": 15,
@@ -13070,7 +13212,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "33": {
       "instance_id": 33,
@@ -13123,7 +13266,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "37": {
       "instance_id": 37,
@@ -13176,7 +13320,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "30": {
       "instance_id": 30,
@@ -13989,6 +14134,64 @@
           "SI",
           "Modelica.Units.SI"
         ]
+      ],
+      "parameter_branch_selections": [
+        {
+          "conditions": [
+            {
+              "Unary": {
+                "op": "Not",
+                "rhs": {
+                  "ComponentReference": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "useSupport",
+                          "location": {
+                            "start_line": 21,
+                            "start_column": 10,
+                            "end_line": 21,
+                            "end_column": 20,
+                            "start": 1034,
+                            "end": 1044,
+                            "source": 10678963298757257260
+                          },
+                          "token_number": 160,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 10678963298757257260,
+                      "start": 1034,
+                      "end": 1044
+                    }
+                  }
+                },
+                "span": {
+                  "source": 10678963298757257260,
+                  "start": 1030,
+                  "end": 1044
+                }
+              }
+            }
+          ],
+          "origin": {
+            "parts": [
+              [
+                "gear",
+                []
+              ]
+            ]
+          },
+          "span": {
+            "source": 10678963298757257260,
+            "start": 1034,
+            "end": 1044
+          }
+        }
       ]
     },
     "47": {
@@ -14042,7 +14245,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "51": {
       "instance_id": 51,
@@ -14095,7 +14299,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "45": {
       "instance_id": 45,
@@ -14879,7 +15084,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "66": {
       "instance_id": 66,
@@ -14932,7 +15138,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "70": {
       "instance_id": 70,
@@ -14985,7 +15192,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "60": {
       "instance_id": 60,
@@ -16352,7 +16560,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "86": {
       "instance_id": 86,
@@ -16405,7 +16614,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "83": {
       "instance_id": 83,
@@ -16574,7 +16784,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "93": {
       "instance_id": 93,
@@ -16627,7 +16838,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "90": {
       "instance_id": 90,
@@ -16903,6 +17115,64 @@
           "SI",
           "Modelica.Units.SI"
         ]
+      ],
+      "parameter_branch_selections": [
+        {
+          "conditions": [
+            {
+              "Unary": {
+                "op": "Not",
+                "rhs": {
+                  "ComponentReference": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "useSupport",
+                          "location": {
+                            "start_line": 19,
+                            "start_column": 10,
+                            "end_line": 19,
+                            "end_column": 20,
+                            "start": 890,
+                            "end": 900,
+                            "source": 4979990776833295005
+                          },
+                          "token_number": 125,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 4979990776833295005,
+                      "start": 890,
+                      "end": 900
+                    }
+                  }
+                },
+                "span": {
+                  "source": 4979990776833295005,
+                  "start": 886,
+                  "end": 900
+                }
+              }
+            }
+          ],
+          "origin": {
+            "parts": [
+              [
+                "brakeTorque",
+                []
+              ]
+            ]
+          },
+          "span": {
+            "source": 4979990776833295005,
+            "start": 890,
+            "end": 900
+          }
+        }
       ]
     },
     "1": {
@@ -17780,7 +18050,8 @@
           "scope": ""
         }
       ],
-      "resolved_imports": []
+      "resolved_imports": [],
+      "parameter_branch_selections": []
     }
   },
   "is_partial": false,
@@ -17798,6 +18069,7 @@
   "outer_prefix_to_inner": {},
   "inner_outer_to_parent_inner": {},
   "synthesized_inners": [],
+  "synthesized_inner_messages": [],
   "type_roots": {
     "0": 0,
     "1": 1,

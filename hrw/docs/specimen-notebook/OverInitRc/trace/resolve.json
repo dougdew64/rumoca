@@ -1526,6 +1526,8 @@
   "is_redeclare": false,
   "redeclare_target_def_id": null,
   "constrainedby": null,
+  "constraining_modifications": [],
   "array_subscripts": [],
-  "external": null
+  "external": null,
+  "partial_derivative": null
 }

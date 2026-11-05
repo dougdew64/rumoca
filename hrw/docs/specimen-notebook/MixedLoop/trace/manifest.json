@@ -2,8 +2,8 @@
   "model": "MixedLoop",
   "specimen": "specimens/MixedLoop.mo",
   "specimen_fnv1a": "5886eb96c8161101",
-  "rumoca_rev": "a334820a",
-  "rumoca_version": "0.10.0",
+  "rumoca_rev": "5b88a383",
+  "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
       "has_ir": true,

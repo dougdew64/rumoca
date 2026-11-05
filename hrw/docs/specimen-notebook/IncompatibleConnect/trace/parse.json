@@ -385,8 +385,10 @@
           "is_redeclare": false,
           "redeclare_target_def_id": null,
           "constrainedby": null,
+          "constraining_modifications": [],
           "array_subscripts": [],
-          "external": null
+          "external": null,
+          "partial_derivative": null
         },
         "PinB": {
           "def_id": null,
@@ -590,8 +592,10 @@
           "is_redeclare": false,
           "redeclare_target_def_id": null,
           "constrainedby": null,
+          "constraining_modifications": [],
           "array_subscripts": [],
-          "external": null
+          "external": null,
+          "partial_derivative": null
         }
       },
       "components": {
@@ -872,8 +876,10 @@
       "is_redeclare": false,
       "redeclare_target_def_id": null,
       "constrainedby": null,
+      "constraining_modifications": [],
       "array_subscripts": [],
-      "external": null
+      "external": null,
+      "partial_derivative": null
     }
   },
   "within": null

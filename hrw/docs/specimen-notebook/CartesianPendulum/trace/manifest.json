@@ -2,8 +2,8 @@
   "model": "CartesianPendulum",
   "specimen": "specimens/CartesianPendulum.mo",
   "specimen_fnv1a": "95583943547159b1",
-  "rumoca_rev": "a334820a",
-  "rumoca_version": "0.10.0",
+  "rumoca_rev": "5b88a383",
+  "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
       "has_ir": true,
@@ -47,11 +47,15 @@
     },
     "solve_lowering": {
       "has_ir": true,
-      "note": "solve lowering failed: DAE structural proof failed: structurally singular system: 4 matched out of 5 equations and 5 unknowns"
+      "note": null
     }
   },
   "simulation": {
-    "simulated": false,
-    "error": "solve lowering failed: DAE structural proof failed: structurally singular system: 4 matched out of 5 equations and 5 unknowns"
+    "simulated": true,
+    "t_end": 2.0,
+    "n_variables": 13,
+    "n_time_points": 507,
+    "n_states": 2,
+    "has_discontinuities": false
   }
 }

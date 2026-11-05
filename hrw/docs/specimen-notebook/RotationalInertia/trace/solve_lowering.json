@@ -1,5 +1,5 @@
 {
-  "schema_version": 70,
+  "schema_version": 89,
   "layout": {
     "bindings": {
       "inertia.phi": {
@@ -99,74 +99,6 @@
     "p_scalars": 3
   },
   "solve_layout": {
-    "solver_maps": {
-      "names": [
-        "inertia.phi",
-        "inertia.w",
-        "inertia.flange_a.phi",
-        "inertia.flange_a.tau",
-        "inertia.flange_b.phi",
-        "inertia.flange_b.tau",
-        "inertia.a",
-        "torque.flange.phi",
-        "torque.flange.tau",
-        "torque.phi_support",
-        "torque.tau",
-        "tau.y"
-      ],
-      "name_to_idx": {
-        "inertia.phi": 0,
-        "inertia.w": 1,
-        "inertia.flange_a.phi": 2,
-        "inertia.flange_a.tau": 3,
-        "inertia.flange_b.phi": 4,
-        "inertia.flange_b.tau": 5,
-        "inertia.a": 6,
-        "torque.flange.phi": 7,
-        "torque.flange.tau": 8,
-        "torque.phi_support": 9,
-        "torque.tau": 10,
-        "tau.y": 11
-      },
-      "base_to_indices": {
-        "inertia.flange_a.phi": [
-          2
-        ],
-        "inertia.flange_a.tau": [
-          3
-        ],
-        "inertia.flange_b.phi": [
-          4
-        ],
-        "inertia.flange_b.tau": [
-          5
-        ],
-        "inertia.phi": [
-          0
-        ],
-        "inertia.w": [
-          1
-        ],
-        "inertia.a": [
-          6
-        ],
-        "torque.flange.phi": [
-          7
-        ],
-        "torque.flange.tau": [
-          8
-        ],
-        "torque.phi_support": [
-          9
-        ],
-        "torque.tau": [
-          10
-        ],
-        "tau.y": [
-          11
-        ]
-      }
-    },
     "variable_storage_runs": [
       {
         "base": {
@@ -343,7 +275,7 @@
       {
         "role": "Algebraic",
         "value_kind": "Real",
-        "time_domain": "continuous_time"
+        "time_domain": "event_discontinuous"
       },
       {
         "role": "Algebraic",
@@ -388,7 +320,7 @@
       {
         "role": "Algebraic",
         "value_kind": "Real",
-        "time_domain": "event_discontinuous"
+        "time_domain": "continuous_time"
       },
       {
         "role": "Algebraic",
@@ -435,13 +367,13 @@
                 {
                   "LoadY": {
                     "dst": 0,
-                    "index": 0
+                    "index": 2
                   }
                 },
                 {
                   "LoadY": {
                     "dst": 1,
-                    "index": 2
+                    "index": 0
                   }
                 },
                 {
@@ -462,13 +394,13 @@
                 {
                   "LoadY": {
                     "dst": 0,
-                    "index": 0
+                    "index": 4
                   }
                 },
                 {
                   "LoadY": {
                     "dst": 1,
-                    "index": 4
+                    "index": 0
                   }
                 },
                 {
@@ -548,9 +480,22 @@
                   }
                 },
                 {
-                  "Const": {
+                  "StoreOutput": {
+                    "src": 0
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 10
+                  }
+                },
+                {
+                  "LoadY": {
                     "dst": 1,
-                    "value": 0.0
+                    "index": 3
                   }
                 },
                 {
@@ -571,41 +516,7 @@
                 {
                   "LoadY": {
                     "dst": 0,
-                    "index": 8
-                  }
-                },
-                {
-                  "LoadY": {
-                    "dst": 1,
-                    "index": 10
-                  }
-                },
-                {
-                  "Unary": {
-                    "dst": 2,
-                    "op": "Neg",
-                    "arg": 1
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 3,
-                    "op": "Sub",
-                    "lhs": 0,
-                    "rhs": 2
-                  }
-                },
-                {
-                  "StoreOutput": {
-                    "src": 3
-                  }
-                }
-              ],
-              [
-                {
-                  "LoadY": {
-                    "dst": 0,
-                    "index": 11
+                    "index": 3
                   }
                 },
                 {
@@ -665,7 +576,7 @@
                 {
                   "LoadY": {
                     "dst": 1,
-                    "index": 10
+                    "index": 3
                   }
                 },
                 {
@@ -692,7 +603,7 @@
                 {
                   "LoadY": {
                     "dst": 1,
-                    "index": 2
+                    "index": 0
                   }
                 },
                 {
@@ -775,177 +686,186 @@
                 "end": 175
               }
             ],
-            "output_indices": [
-              0,
-              1,
-              4,
-              5,
-              6,
-              7,
-              8,
-              9,
-              10,
-              11
-            ]
+            "output_placements": {
+              "ProgramRanges": [
+                {
+                  "Range": {
+                    "start": 0,
+                    "end": 1
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 1,
+                    "end": 2
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 4,
+                    "end": 5
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 5,
+                    "end": 6
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 6,
+                    "end": 7
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 7,
+                    "end": 8
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 8,
+                    "end": 9
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 9,
+                    "end": 10
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 10,
+                    "end": 11
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 11,
+                    "end": 12
+                  }
+                }
+              ]
+            }
           }
         }
       ]
     },
-    "implicit_row_targets": [
-      {
-        "Y": {
-          "index": 2,
-          "byte_offset": 16
-        }
-      },
-      {
-        "Y": {
-          "index": 4,
-          "byte_offset": 32
-        }
-      },
-      null,
-      null,
-      {
-        "Y": {
-          "index": 6,
-          "byte_offset": 48
-        }
-      },
-      {
-        "Y": {
-          "index": 9,
-          "byte_offset": 72
-        }
-      },
-      {
-        "Y": {
-          "index": 8,
-          "byte_offset": 64
-        }
-      },
-      {
-        "Y": {
-          "index": 11,
-          "byte_offset": 88
-        }
-      },
-      {
-        "Y": {
-          "index": 3,
-          "byte_offset": 24
-        }
-      },
-      {
-        "Y": {
-          "index": 10,
-          "byte_offset": 80
-        }
-      },
-      {
-        "Y": {
-          "index": 7,
-          "byte_offset": 56
-        }
-      },
-      {
-        "Y": {
-          "index": 5,
-          "byte_offset": 40
-        }
-      }
-    ],
+    "implicit_row_targets": "Projection",
     "algebraic_projection_plan": {
       "blocks": [
         {
-          "rows": [
-            0
-          ],
-          "y_indices": [
-            2
-          ],
-          "tearing": null
+          "Explicit": {
+            "rows": [
+              0
+            ],
+            "y_indices": [
+              2
+            ],
+            "tearing": null
+          }
         },
         {
-          "rows": [
-            1
-          ],
-          "y_indices": [
-            4
-          ],
-          "tearing": null
+          "Explicit": {
+            "rows": [
+              1
+            ],
+            "y_indices": [
+              4
+            ],
+            "tearing": null
+          }
         },
         {
-          "rows": [
-            7
-          ],
-          "y_indices": [
-            11
-          ],
-          "tearing": null
+          "Explicit": {
+            "rows": [
+              7
+            ],
+            "y_indices": [
+              3
+            ],
+            "tearing": null
+          }
         },
         {
-          "rows": [
-            9
-          ],
-          "y_indices": [
-            10
-          ],
-          "tearing": null
+          "Explicit": {
+            "rows": [
+              11
+            ],
+            "y_indices": [
+              5
+            ],
+            "tearing": null
+          }
         },
         {
-          "rows": [
-            6
-          ],
-          "y_indices": [
-            8
-          ],
-          "tearing": null
+          "Explicit": {
+            "rows": [
+              4
+            ],
+            "y_indices": [
+              6
+            ],
+            "tearing": null
+          }
         },
         {
-          "rows": [
-            8
-          ],
-          "y_indices": [
-            3
-          ],
-          "tearing": null
+          "Explicit": {
+            "rows": [
+              5
+            ],
+            "y_indices": [
+              9
+            ],
+            "tearing": null
+          }
         },
         {
-          "rows": [
-            11
-          ],
-          "y_indices": [
-            5
-          ],
-          "tearing": null
+          "Explicit": {
+            "rows": [
+              6
+            ],
+            "y_indices": [
+              10
+            ],
+            "tearing": null
+          }
         },
         {
-          "rows": [
-            4
-          ],
-          "y_indices": [
-            6
-          ],
-          "tearing": null
+          "Explicit": {
+            "rows": [
+              8
+            ],
+            "y_indices": [
+              8
+            ],
+            "tearing": null
+          }
         },
         {
-          "rows": [
-            5
-          ],
-          "y_indices": [
-            9
-          ],
-          "tearing": null
+          "Explicit": {
+            "rows": [
+              9
+            ],
+            "y_indices": [
+              11
+            ],
+            "tearing": null
+          }
         },
         {
-          "rows": [
-            10
-          ],
-          "y_indices": [
-            7
-          ],
-          "tearing": null
+          "Explicit": {
+            "rows": [
+              10
+            ],
+            "y_indices": [
+              7
+            ],
+            "tearing": null
+          }
         }
       ]
     },
@@ -958,13 +878,13 @@
                 {
                   "LoadY": {
                     "dst": 0,
-                    "index": 0
+                    "index": 2
                   }
                 },
                 {
                   "LoadY": {
                     "dst": 1,
-                    "index": 2
+                    "index": 0
                   }
                 },
                 {
@@ -985,13 +905,13 @@
                 {
                   "LoadY": {
                     "dst": 0,
-                    "index": 0
+                    "index": 4
                   }
                 },
                 {
                   "LoadY": {
                     "dst": 1,
-                    "index": 4
+                    "index": 0
                   }
                 },
                 {
@@ -1071,9 +991,22 @@
                   }
                 },
                 {
-                  "Const": {
+                  "StoreOutput": {
+                    "src": 0
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 10
+                  }
+                },
+                {
+                  "LoadY": {
                     "dst": 1,
-                    "value": 0.0
+                    "index": 3
                   }
                 },
                 {
@@ -1094,41 +1027,7 @@
                 {
                   "LoadY": {
                     "dst": 0,
-                    "index": 8
-                  }
-                },
-                {
-                  "LoadY": {
-                    "dst": 1,
-                    "index": 10
-                  }
-                },
-                {
-                  "Unary": {
-                    "dst": 2,
-                    "op": "Neg",
-                    "arg": 1
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 3,
-                    "op": "Sub",
-                    "lhs": 0,
-                    "rhs": 2
-                  }
-                },
-                {
-                  "StoreOutput": {
-                    "src": 3
-                  }
-                }
-              ],
-              [
-                {
-                  "LoadY": {
-                    "dst": 0,
-                    "index": 11
+                    "index": 3
                   }
                 },
                 {
@@ -1188,7 +1087,7 @@
                 {
                   "LoadY": {
                     "dst": 1,
-                    "index": 10
+                    "index": 3
                   }
                 },
                 {
@@ -1215,7 +1114,7 @@
                 {
                   "LoadY": {
                     "dst": 1,
-                    "index": 2
+                    "index": 0
                   }
                 },
                 {
@@ -1298,18 +1197,70 @@
                 "end": 175
               }
             ],
-            "output_indices": [
-              0,
-              1,
-              4,
-              5,
-              6,
-              7,
-              8,
-              9,
-              10,
-              11
-            ]
+            "output_placements": {
+              "ProgramRanges": [
+                {
+                  "Range": {
+                    "start": 0,
+                    "end": 1
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 1,
+                    "end": 2
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 4,
+                    "end": 5
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 5,
+                    "end": 6
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 6,
+                    "end": 7
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 7,
+                    "end": 8
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 8,
+                    "end": 9
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 9,
+                    "end": 10
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 10,
+                    "end": 11
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 11,
+                    "end": 12
+                  }
+                }
+              ]
+            }
           }
         }
       ]
@@ -1364,107 +1315,129 @@
                 "end": 951
               }
             ],
-            "output_indices": [
-              0,
-              1
-            ]
+            "output_placements": {
+              "Dense": {
+                "count": 2
+              }
+            }
           }
         }
       ]
     },
     "refresh_owners": {
+      "compact_projection": null,
       "algebraic": {
         "simultaneous_plan": {
           "blocks": [
             {
-              "rows": [
-                0
-              ],
-              "y_indices": [
-                2
-              ],
-              "tearing": null
+              "Explicit": {
+                "rows": [
+                  0
+                ],
+                "y_indices": [
+                  2
+                ],
+                "tearing": null
+              }
             },
             {
-              "rows": [
-                1
-              ],
-              "y_indices": [
-                4
-              ],
-              "tearing": null
+              "Explicit": {
+                "rows": [
+                  1
+                ],
+                "y_indices": [
+                  4
+                ],
+                "tearing": null
+              }
             },
             {
-              "rows": [
-                7
-              ],
-              "y_indices": [
-                11
-              ],
-              "tearing": null
+              "Explicit": {
+                "rows": [
+                  7
+                ],
+                "y_indices": [
+                  3
+                ],
+                "tearing": null
+              }
             },
             {
-              "rows": [
-                9
-              ],
-              "y_indices": [
-                10
-              ],
-              "tearing": null
+              "Explicit": {
+                "rows": [
+                  11
+                ],
+                "y_indices": [
+                  5
+                ],
+                "tearing": null
+              }
             },
             {
-              "rows": [
-                6
-              ],
-              "y_indices": [
-                8
-              ],
-              "tearing": null
+              "Explicit": {
+                "rows": [
+                  4
+                ],
+                "y_indices": [
+                  6
+                ],
+                "tearing": null
+              }
             },
             {
-              "rows": [
-                8
-              ],
-              "y_indices": [
-                3
-              ],
-              "tearing": null
+              "Explicit": {
+                "rows": [
+                  5
+                ],
+                "y_indices": [
+                  9
+                ],
+                "tearing": null
+              }
             },
             {
-              "rows": [
-                11
-              ],
-              "y_indices": [
-                5
-              ],
-              "tearing": null
+              "Explicit": {
+                "rows": [
+                  6
+                ],
+                "y_indices": [
+                  10
+                ],
+                "tearing": null
+              }
             },
             {
-              "rows": [
-                4
-              ],
-              "y_indices": [
-                6
-              ],
-              "tearing": null
+              "Explicit": {
+                "rows": [
+                  8
+                ],
+                "y_indices": [
+                  8
+                ],
+                "tearing": null
+              }
             },
             {
-              "rows": [
-                5
-              ],
-              "y_indices": [
-                9
-              ],
-              "tearing": null
+              "Explicit": {
+                "rows": [
+                  9
+                ],
+                "y_indices": [
+                  11
+                ],
+                "tearing": null
+              }
             },
             {
-              "rows": [
-                10
-              ],
-              "y_indices": [
-                7
-              ],
-              "tearing": null
+              "Explicit": {
+                "rows": [
+                  10
+                ],
+                "y_indices": [
+                  7
+                ],
+                "tearing": null
+              }
             }
           ]
         },
@@ -1497,9 +1470,9 @@
             "assignment_shape": {
               "Direct": {
                 "target_y_index": 2,
-                "expr_reg": 0,
-                "target_scale": -1.0,
-                "expr_eval_len": 1
+                "expr_reg": 1,
+                "target_scale": 1.0,
+                "expr_eval_len": 2
               }
             },
             "direct_assignment_certified": true,
@@ -1518,9 +1491,9 @@
             "assignment_shape": {
               "Direct": {
                 "target_y_index": 4,
-                "expr_reg": 0,
-                "target_scale": -1.0,
-                "expr_eval_len": 1
+                "expr_reg": 1,
+                "target_scale": 1.0,
+                "expr_eval_len": 2
               }
             },
             "direct_assignment_certified": true,
@@ -1537,51 +1510,30 @@
             "target_index": 9,
             "assignment_target": 9,
             "assignment_shape": {
-              "Direct": {
+              "Zero": {
                 "target_y_index": 9,
-                "expr_reg": 1,
-                "target_scale": 1.0,
-                "expr_eval_len": 2
+                "expr_eval_len": 1
               }
             },
             "direct_assignment_certified": true,
             "exact_assignment_certified": true
           },
           {
-            "owner_id": 11,
+            "owner_id": 3,
             "source": {
               "node": 0,
               "program": 5
             },
             "equation_index": 7,
             "output_offset": 0,
-            "target_index": 11,
-            "assignment_target": 11,
+            "target_index": 3,
+            "assignment_target": 3,
             "assignment_shape": {
               "Direct": {
-                "target_y_index": 11,
+                "target_y_index": 3,
                 "expr_reg": 1,
                 "target_scale": 1.0,
                 "expr_eval_len": 2
-              }
-            },
-            "direct_assignment_certified": true,
-            "exact_assignment_certified": true
-          },
-          {
-            "owner_id": 5,
-            "source": {
-              "node": 0,
-              "program": 9
-            },
-            "equation_index": 11,
-            "output_offset": 0,
-            "target_index": 5,
-            "assignment_target": 5,
-            "assignment_shape": {
-              "Zero": {
-                "target_y_index": 5,
-                "expr_eval_len": 1
               }
             },
             "direct_assignment_certified": true,
@@ -1609,21 +1561,40 @@
             "exact_assignment_certified": true
           },
           {
+            "owner_id": 5,
+            "source": {
+              "node": 0,
+              "program": 9
+            },
+            "equation_index": 11,
+            "output_offset": 0,
+            "target_index": 5,
+            "assignment_target": 5,
+            "assignment_shape": {
+              "Zero": {
+                "target_y_index": 5,
+                "expr_eval_len": 1
+              }
+            },
+            "direct_assignment_certified": true,
+            "exact_assignment_certified": true
+          },
+          {
             "owner_id": 10,
             "source": {
               "node": 0,
-              "program": 7
+              "program": 4
             },
-            "equation_index": 9,
+            "equation_index": 6,
             "output_offset": 0,
             "target_index": 10,
             "assignment_target": 10,
             "assignment_shape": {
               "Direct": {
                 "target_y_index": 10,
-                "expr_reg": 0,
-                "target_scale": -1.0,
-                "expr_eval_len": 1
+                "expr_reg": 1,
+                "target_scale": 1.0,
+                "expr_eval_len": 2
               }
             },
             "direct_assignment_certified": true,
@@ -1633,44 +1604,44 @@
             "owner_id": 8,
             "source": {
               "node": 0,
-              "program": 4
-            },
-            "equation_index": 6,
-            "output_offset": 0,
-            "target_index": 8,
-            "assignment_target": 8,
-            "assignment_shape": {
-              "Direct": {
-                "target_y_index": 8,
-                "expr_reg": 2,
-                "target_scale": 1.0,
-                "expr_eval_len": 3
-              }
-            },
-            "direct_assignment_certified": true,
-            "exact_assignment_certified": true
-          },
-          {
-            "owner_id": 3,
-            "source": {
-              "node": 0,
               "program": 6
             },
             "equation_index": 8,
             "output_offset": 0,
-            "target_index": 3,
-            "assignment_target": 3,
+            "target_index": 8,
+            "assignment_target": 8,
             "assignment_shape": {
               "Affine": {
-                "target_y_index": 3,
-                "offset_reg": 0,
+                "target_y_index": 8,
+                "offset_reg": 1,
                 "coefficient_reg": null,
                 "offset_scale": 1.0,
                 "coefficient_scale": 1.0,
-                "expr_eval_len": 1
+                "expr_eval_len": 2
               }
             },
             "direct_assignment_certified": false,
+            "exact_assignment_certified": true
+          },
+          {
+            "owner_id": 11,
+            "source": {
+              "node": 0,
+              "program": 7
+            },
+            "equation_index": 9,
+            "output_offset": 0,
+            "target_index": 11,
+            "assignment_target": 11,
+            "assignment_shape": {
+              "Direct": {
+                "target_y_index": 11,
+                "expr_reg": 1,
+                "target_scale": 1.0,
+                "expr_eval_len": 2
+              }
+            },
+            "direct_assignment_certified": true,
             "exact_assignment_certified": true
           },
           {
@@ -1712,7 +1683,7 @@
         "static_causal_seed_rows": [
           2,
           3,
-          4,
+          5,
           6,
           7,
           8,
@@ -1721,7 +1692,7 @@
         "dynamic_causal_seed_rows": [
           0,
           1,
-          5
+          4
         ],
         "value_stages": [
           {
@@ -1729,7 +1700,7 @@
               "static_rows": [
                 2,
                 3,
-                4,
+                5,
                 6,
                 7,
                 8,
@@ -1738,7 +1709,7 @@
               "dynamic_rows": [
                 0,
                 1,
-                5
+                4
               ]
             }
           },
@@ -1747,7 +1718,7 @@
               "static_rows": [
                 2,
                 3,
-                4,
+                5,
                 6,
                 7,
                 8,
@@ -1756,7 +1727,7 @@
               "dynamic_rows": [
                 0,
                 1,
-                5
+                4
               ]
             }
           }
@@ -1767,86 +1738,62 @@
         "simultaneous_plan": {
           "blocks": [
             {
-              "rows": [
-                7
-              ],
-              "y_indices": [
-                11
-              ],
-              "tearing": null
+              "Explicit": {
+                "rows": [
+                  7
+                ],
+                "y_indices": [
+                  3
+                ],
+                "tearing": null
+              }
             },
             {
-              "rows": [
-                9
-              ],
-              "y_indices": [
-                10
-              ],
-              "tearing": null
+              "Explicit": {
+                "rows": [
+                  11
+                ],
+                "y_indices": [
+                  5
+                ],
+                "tearing": null
+              }
             },
             {
-              "rows": [
-                6
-              ],
-              "y_indices": [
-                8
-              ],
-              "tearing": null
-            },
-            {
-              "rows": [
-                8
-              ],
-              "y_indices": [
-                3
-              ],
-              "tearing": null
-            },
-            {
-              "rows": [
-                11
-              ],
-              "y_indices": [
-                5
-              ],
-              "tearing": null
-            },
-            {
-              "rows": [
-                4
-              ],
-              "y_indices": [
-                6
-              ],
-              "tearing": null
+              "Explicit": {
+                "rows": [
+                  4
+                ],
+                "y_indices": [
+                  6
+                ],
+                "tearing": null
+              }
             }
           ]
         },
         "simultaneous_block_indices": [
           2,
           3,
-          4,
-          5,
-          6,
-          7
+          4
         ],
         "value_projection_plan": {
           "blocks": []
         },
         "rows": [
           {
-            "owner_id": 11,
+            "owner_id": 3,
             "source": {
               "node": 0,
               "program": 5
             },
             "equation_index": 7,
             "output_offset": 0,
-            "target_index": 11,
-            "assignment_target": 11,
+            "target_index": 3,
+            "assignment_target": 3,
             "assignment_shape": {
               "Direct": {
-                "target_y_index": 11,
+                "target_y_index": 3,
                 "expr_reg": 1,
                 "target_scale": 1.0,
                 "expr_eval_len": 2
@@ -1875,71 +1822,6 @@
             "exact_assignment_certified": true
           },
           {
-            "owner_id": 10,
-            "source": {
-              "node": 0,
-              "program": 7
-            },
-            "equation_index": 9,
-            "output_offset": 0,
-            "target_index": 10,
-            "assignment_target": 10,
-            "assignment_shape": {
-              "Direct": {
-                "target_y_index": 10,
-                "expr_reg": 0,
-                "target_scale": -1.0,
-                "expr_eval_len": 1
-              }
-            },
-            "direct_assignment_certified": true,
-            "exact_assignment_certified": true
-          },
-          {
-            "owner_id": 8,
-            "source": {
-              "node": 0,
-              "program": 4
-            },
-            "equation_index": 6,
-            "output_offset": 0,
-            "target_index": 8,
-            "assignment_target": 8,
-            "assignment_shape": {
-              "Direct": {
-                "target_y_index": 8,
-                "expr_reg": 2,
-                "target_scale": 1.0,
-                "expr_eval_len": 3
-              }
-            },
-            "direct_assignment_certified": true,
-            "exact_assignment_certified": true
-          },
-          {
-            "owner_id": 3,
-            "source": {
-              "node": 0,
-              "program": 6
-            },
-            "equation_index": 8,
-            "output_offset": 0,
-            "target_index": 3,
-            "assignment_target": 3,
-            "assignment_shape": {
-              "Affine": {
-                "target_y_index": 3,
-                "offset_reg": 0,
-                "coefficient_reg": null,
-                "offset_scale": 1.0,
-                "coefficient_scale": 1.0,
-                "expr_eval_len": 1
-              }
-            },
-            "direct_assignment_certified": false,
-            "exact_assignment_certified": true
-          },
-          {
             "owner_id": 6,
             "source": {
               "node": 0,
@@ -1966,18 +1848,12 @@
         "causal_seed_rows": [
           0,
           1,
-          2,
-          3,
-          4,
-          5
+          2
         ],
         "static_causal_seed_rows": [
           0,
           1,
-          2,
-          3,
-          4,
-          5
+          2
         ],
         "dynamic_causal_seed_rows": [],
         "value_stages": [
@@ -1986,10 +1862,7 @@
               "static_rows": [
                 0,
                 1,
-                2,
-                3,
-                4,
-                5
+                2
               ],
               "dynamic_rows": []
             }
@@ -1999,10 +1872,7 @@
               "static_rows": [
                 0,
                 1,
-                2,
-                3,
-                4,
-                5
+                2
               ],
               "dynamic_rows": []
             }
@@ -2049,12 +1919,17 @@
     },
     "row_roles": [],
     "projection_plan": {
-      "blocks": []
+      "blocks": [],
+      "iterates_discretes": false
     },
     "update_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "update_targets": [],
     "manifold_row_count": 0,
@@ -2062,26 +1937,69 @@
   },
   "discrete": {
     "event_iteration_plan": {
-      "runs": []
+      "runs": [],
+      "partitions": [],
+      "schedule": {
+        "event_pass": [
+          "RelationOverrides",
+          "RuntimeAssignments",
+          "AlgebraicProjection",
+          "RuntimeAssignments",
+          "RelationRefresh",
+          "RelationSettle"
+        ],
+        "relation_pass": [
+          "DiscreteSettle",
+          "SettledIfRelationsUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "settle_pass": [
+          "DiscreteOwners",
+          "RuntimeAssignments",
+          "SettledIfUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "fixed_point_cap": 32,
+        "stalled_settle": {
+          "iteration_cap": 32,
+          "line_search_halvings": 16
+        },
+        "relation_surface_window": 8,
+        "mode_search_relations": 4
+      }
     },
     "runtime_assignment_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "runtime_assignment_targets": [],
     "runtime_assignment_roles": [],
     "post_commit_assignment_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "post_commit_assignment_targets": [],
     "post_commit_assignment_runtime_rows": [],
     "rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "update_targets": [],
     "row_roles": [],
@@ -2100,7 +2018,11 @@
     "clock_partition_intermediates": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "clock_partition_intermediate_targets": [],
     "clock_partition_intermediate_clocks": []
@@ -2109,7 +2031,11 @@
     "root_conditions": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "root_relation_memory_targets": [],
     "root_zero_domains": [],
@@ -2121,12 +2047,20 @@
     "dynamic_time_event_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "action_conditions": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "actions": [],
     "has_terminal_event": false,
@@ -2134,17 +2068,29 @@
       "source_rhs": {
         "programs": [],
         "program_spans": [],
-        "output_indices": []
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
       },
       "delay_time_rhs": {
         "programs": [],
         "program_spans": [],
-        "output_indices": []
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
       },
       "delay_max_rhs": {
         "programs": [],
         "program_spans": [],
-        "output_indices": []
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
       },
       "value_parameter_indices": [],
       "source_is_discrete": []

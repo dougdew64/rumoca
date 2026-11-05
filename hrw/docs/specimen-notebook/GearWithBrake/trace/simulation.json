@@ -1,7 +1,7 @@
 {
   "t_end": 2.0,
-  "n_time_points": 516,
-  "n_variables": 45,
+  "n_time_points": 501,
+  "n_variables": 61,
   "n_states": 2,
   "has_discontinuities": true,
   "t_start": 0.0,
@@ -10,18 +10,18 @@
     {
       "name": "motor.phi",
       "is_state": true,
-      "initial": 0.0,
-      "final": 0.5235207571134146,
-      "min": 0.0,
-      "max": 0.8470190047162239
+      "initial": -0.0,
+      "final": 0.5235102788789296,
+      "min": -0.0,
+      "max": 0.8469355901333829
     },
     {
       "name": "motor.flange.phi",
       "is_state": true,
-      "initial": 0.0,
-      "final": 0.5235207571134146,
-      "min": 0.0,
-      "max": 0.8470190047162239
+      "initial": -0.0,
+      "final": 0.5235102788789296,
+      "min": -0.0,
+      "max": 0.8469355901333829
     },
     {
       "name": "motor.flange.tau",
@@ -43,9 +43,9 @@
       "name": "motor.w",
       "is_state": false,
       "initial": -0.0,
-      "final": -0.32809618269619645,
-      "min": -3.3833232763930803,
-      "max": 4.8746042201386315
+      "final": -0.32792786880764374,
+      "min": -3.3832645699248958,
+      "max": 4.874604220138638
     },
     {
       "name": "motor.tau",
@@ -58,10 +58,10 @@
     {
       "name": "rotor.flange_a.phi",
       "is_state": false,
-      "initial": 0.0,
-      "final": 0.5235207571134146,
-      "min": 0.0,
-      "max": 0.8470190047162239
+      "initial": -0.0,
+      "final": 0.5235102788789296,
+      "min": -0.0,
+      "max": 0.8469355901333829
     },
     {
       "name": "rotor.flange_a.tau",
@@ -74,74 +74,74 @@
     {
       "name": "rotor.flange_b.phi",
       "is_state": false,
-      "initial": 0.0,
-      "final": 0.5235207571134146,
-      "min": 0.0,
-      "max": 0.8470190047162239
+      "initial": -0.0,
+      "final": 0.5235102788789296,
+      "min": -0.0,
+      "max": 0.8469355901333829
     },
     {
       "name": "rotor.flange_b.tau",
       "is_state": false,
       "initial": -1.3333333333333333,
-      "final": -2.0226117779459876,
-      "min": -2.475218714292917,
+      "final": -2.0226022953370357,
+      "min": -2.4752187142929185,
       "max": -1.3333333333333333
     },
     {
       "name": "rotor.phi",
       "is_state": false,
-      "initial": 0.0,
-      "final": 0.5235207571134146,
-      "min": 0.0,
-      "max": 0.8470190047162239
+      "initial": -0.0,
+      "final": 0.5235102788789296,
+      "min": -0.0,
+      "max": 0.8469355901333829
     },
     {
       "name": "rotor.w",
       "is_state": false,
       "initial": -0.0,
-      "final": -0.32809618269619645,
-      "min": -3.3833232763930803,
-      "max": 4.8746042201386315
+      "final": -0.32792786880764374,
+      "min": -3.3832645699248958,
+      "max": 4.874604220138638
     },
     {
       "name": "rotor.a",
       "is_state": false,
-      "initial": 66.66666666666666,
-      "final": -2.2611777945987503,
-      "min": -47.52187142929171,
-      "max": 66.66666666666666
+      "initial": 66.66666666666667,
+      "final": -2.2602295337035727,
+      "min": -47.521871429291835,
+      "max": 66.66666666666667
     },
     {
       "name": "gear.flange_a.phi",
       "is_state": false,
-      "initial": 0.0,
-      "final": 0.5235207571134146,
-      "min": 0.0,
-      "max": 0.8470190047162239
+      "initial": -0.0,
+      "final": 0.5235102788789296,
+      "min": -0.0,
+      "max": 0.8469355901333829
     },
     {
       "name": "gear.flange_a.tau",
       "is_state": false,
       "initial": 1.3333333333333333,
-      "final": 2.0226117779459876,
+      "final": 2.0226022953370357,
       "min": 1.3333333333333333,
-      "max": 2.475218714292917
+      "max": 2.4752187142929185
     },
     {
       "name": "gear.flange_b.phi",
       "is_state": false,
-      "initial": 0.0,
-      "final": 0.10470415142268293,
-      "min": 0.0,
-      "max": 0.16940380094324478
+      "initial": -0.0,
+      "final": 0.10470205577578592,
+      "min": -0.0,
+      "max": 0.16938711802667658
     },
     {
       "name": "gear.flange_b.tau",
       "is_state": false,
-      "initial": -6.666666666666666,
-      "final": -10.113058889729938,
-      "min": -12.376093571464587,
-      "max": -6.666666666666666
+      "initial": -6.666666666666667,
+      "final": -10.113011476685179,
+      "min": -12.376093571464592,
+      "max": -6.666666666666667
     },
     {
       "name": "gear.phi_support",
@@ -154,122 +154,122 @@
     {
       "name": "gear.phi_a",
       "is_state": false,
-      "initial": 0.0,
-      "final": 0.5235207571134146,
-      "min": 0.0,
-      "max": 0.8470190047162239
+      "initial": -0.0,
+      "final": 0.5235102788789296,
+      "min": -0.0,
+      "max": 0.8469355901333829
     },
     {
       "name": "gear.phi_b",
       "is_state": false,
-      "initial": 0.0,
-      "final": 0.10470415142268293,
-      "min": 0.0,
-      "max": 0.16940380094324478
+      "initial": -0.0,
+      "final": 0.10470205577578592,
+      "min": -0.0,
+      "max": 0.16938711802667658
     },
     {
       "name": "load.flange_a.phi",
       "is_state": false,
-      "initial": 0.0,
-      "final": 0.10470415142268293,
-      "min": 0.0,
-      "max": 0.16940380094324478
+      "initial": -0.0,
+      "final": 0.10470205577578592,
+      "min": -0.0,
+      "max": 0.16938711802667658
     },
     {
       "name": "load.flange_a.tau",
       "is_state": false,
-      "initial": 6.666666666666666,
-      "final": 10.113058889729938,
-      "min": 6.666666666666666,
-      "max": 12.376093571464587
+      "initial": 6.666666666666667,
+      "final": 10.113011476685179,
+      "min": 6.666666666666667,
+      "max": 12.376093571464592
     },
     {
       "name": "load.flange_b.phi",
       "is_state": false,
-      "initial": 0.0,
-      "final": 0.10470415142268293,
-      "min": 0.0,
-      "max": 0.16940380094324478
+      "initial": -0.0,
+      "final": 0.10470205577578592,
+      "min": -0.0,
+      "max": 0.16938711802667658
     },
     {
       "name": "load.flange_b.tau",
       "is_state": false,
-      "initial": -0.0,
-      "final": -10.339176669189813,
-      "min": -17.128280714393757,
-      "max": -0.0
+      "initial": 0.0,
+      "final": -10.339034430055536,
+      "min": -17.128280714393775,
+      "max": 0.0
     },
     {
       "name": "load.phi",
       "is_state": false,
-      "initial": 0.0,
-      "final": 0.10470415142268293,
-      "min": 0.0,
-      "max": 0.16940380094324478
+      "initial": -0.0,
+      "final": 0.10470205577578592,
+      "min": -0.0,
+      "max": 0.16938711802667658
     },
     {
       "name": "load.w",
       "is_state": false,
       "initial": -0.0,
-      "final": -0.06561923653923929,
-      "min": -0.6766646552786161,
-      "max": 0.9749208440277263
+      "final": -0.06558557376152875,
+      "min": -0.6766529139849792,
+      "max": 0.9749208440277275
     },
     {
       "name": "load.a",
       "is_state": false,
-      "initial": 13.333333333333332,
-      "final": -0.45223555891975015,
-      "min": -9.504374285858342,
-      "max": 13.333333333333332
+      "initial": 13.333333333333334,
+      "final": -0.45204590674071454,
+      "min": -9.504374285858367,
+      "max": 13.333333333333334
     },
     {
       "name": "spring.phi_rel",
       "is_state": false,
       "initial": 0.0,
-      "final": -0.10470415142268293,
-      "min": -0.16940380094324478,
+      "final": -0.10470205577578592,
+      "min": -0.16938711802667658,
       "max": 0.0
     },
     {
       "name": "spring.w_rel",
       "is_state": false,
       "initial": 0.0,
-      "final": 0.06561923653923929,
-      "min": -0.9749208440277263,
-      "max": 0.6766646552786161
+      "final": 0.06558557376152875,
+      "min": -0.9749208440277275,
+      "max": 0.6766529139849792
     },
     {
       "name": "spring.a_rel",
       "is_state": false,
-      "initial": -13.333333333333332,
-      "final": 0.45223555891975015,
-      "min": -13.333333333333332,
-      "max": 9.504374285858342
+      "initial": -13.333333333333334,
+      "final": 0.45204590674071454,
+      "min": -13.333333333333334,
+      "max": 9.504374285858367
     },
     {
       "name": "spring.tau",
       "is_state": false,
       "initial": 0.0,
-      "final": -10.339176669189813,
-      "min": -17.128280714393757,
+      "final": -10.339034430055536,
+      "min": -17.128280714393775,
       "max": 0.0
     },
     {
       "name": "spring.flange_a.phi",
       "is_state": false,
-      "initial": 0.0,
-      "final": 0.10470415142268293,
-      "min": 0.0,
-      "max": 0.16940380094324478
+      "initial": -0.0,
+      "final": 0.10470205577578592,
+      "min": -0.0,
+      "max": 0.16938711802667658
     },
     {
       "name": "spring.flange_a.tau",
       "is_state": false,
       "initial": -0.0,
-      "final": 10.339176669189813,
+      "final": 10.339034430055536,
       "min": -0.0,
-      "max": 17.128280714393757
+      "max": 17.128280714393775
     },
     {
       "name": "spring.flange_b.phi",
@@ -283,33 +283,33 @@
       "name": "spring.flange_b.tau",
       "is_state": false,
       "initial": 0.0,
-      "final": -10.339176669189813,
-      "min": -17.128280714393757,
+      "final": -10.339034430055536,
+      "min": -17.128280714393775,
       "max": 0.0
     },
     {
       "name": "spring.lossPower",
       "is_state": false,
       "initial": 0.0,
-      "final": 0.008611768407985273,
+      "final": 0.008602934971257857,
       "min": 0.0,
-      "max": 1.9009413042394683
+      "max": 1.9009413042394732
     },
     {
       "name": "spring.tau_c",
       "is_state": false,
       "initial": 0.0,
-      "final": -10.470415142268292,
-      "min": -16.940380094324478,
+      "final": -10.470205577578593,
+      "min": -16.938711802667658,
       "max": 0.0
     },
     {
       "name": "spring.tau_d",
       "is_state": false,
       "initial": 0.0,
-      "final": 0.13123847307847858,
-      "min": -1.9498416880554525,
-      "max": 1.3533293105572322
+      "final": 0.1311711475230575,
+      "min": -1.949841688055455,
+      "max": 1.3533058279699584
     },
     {
       "name": "frame.flange.phi",
@@ -323,17 +323,17 @@
       "name": "frame.flange.tau",
       "is_state": false,
       "initial": -0.0,
-      "final": 10.339176669189813,
+      "final": 10.339034430055536,
       "min": -0.0,
-      "max": 17.128280714393757
+      "max": 17.128280714393775
     },
     {
       "name": "brakeTorque.flange.phi",
       "is_state": false,
-      "initial": 0.0,
-      "final": 0.10470415142268293,
-      "min": 0.0,
-      "max": 0.16940380094324478
+      "initial": -0.0,
+      "final": 0.10470205577578592,
+      "min": -0.0,
+      "max": 0.16938711802667658
     },
     {
       "name": "brakeTorque.flange.tau",
@@ -366,6 +366,134 @@
       "final": 0.0,
       "min": 0.0,
       "max": 0.0
+    },
+    {
+      "name": "$formal_derivative.1.motor.phi",
+      "is_state": false,
+      "initial": -0.0,
+      "final": -0.32792786880764374,
+      "min": -3.3832645699248958,
+      "max": 4.874604220138638
+    },
+    {
+      "name": "$formal_derivative.1.rotor.phi",
+      "is_state": false,
+      "initial": -0.0,
+      "final": -0.32792786880764374,
+      "min": -3.3832645699248958,
+      "max": 4.874604220138638
+    },
+    {
+      "name": "$formal_derivative.2.rotor.phi",
+      "is_state": false,
+      "initial": 66.66666666666667,
+      "final": -2.2602295337035727,
+      "min": -47.521871429291835,
+      "max": 66.66666666666667
+    },
+    {
+      "name": "$formal_derivative.1.rotor.w",
+      "is_state": false,
+      "initial": 66.66666666666667,
+      "final": -2.2602295337035727,
+      "min": -47.521871429291835,
+      "max": 66.66666666666667
+    },
+    {
+      "name": "$formal_derivative.1.gear.phi_a",
+      "is_state": false,
+      "initial": -0.0,
+      "final": -0.32792786880764374,
+      "min": -3.3832645699248958,
+      "max": 4.874604220138638
+    },
+    {
+      "name": "$formal_derivative.2.gear.phi_a",
+      "is_state": false,
+      "initial": 66.66666666666667,
+      "final": -2.2602295337035727,
+      "min": -47.521871429291835,
+      "max": 66.66666666666667
+    },
+    {
+      "name": "$formal_derivative.1.gear.phi_b",
+      "is_state": false,
+      "initial": -0.0,
+      "final": -0.06558557376152875,
+      "min": -0.6766529139849792,
+      "max": 0.9749208440277275
+    },
+    {
+      "name": "$formal_derivative.2.gear.phi_b",
+      "is_state": false,
+      "initial": 13.333333333333334,
+      "final": -0.45204590674071454,
+      "min": -9.504374285858367,
+      "max": 13.333333333333334
+    },
+    {
+      "name": "$formal_derivative.1.load.phi",
+      "is_state": false,
+      "initial": -0.0,
+      "final": -0.06558557376152875,
+      "min": -0.6766529139849792,
+      "max": 0.9749208440277275
+    },
+    {
+      "name": "$formal_derivative.2.load.phi",
+      "is_state": false,
+      "initial": 13.333333333333334,
+      "final": -0.45204590674071454,
+      "min": -9.504374285858367,
+      "max": 13.333333333333334
+    },
+    {
+      "name": "$formal_derivative.1.load.w",
+      "is_state": false,
+      "initial": 13.333333333333334,
+      "final": -0.45204590674071454,
+      "min": -9.504374285858367,
+      "max": 13.333333333333334
+    },
+    {
+      "name": "$formal_derivative.1.spring.phi_rel",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.06558557376152875,
+      "min": -0.9749208440277275,
+      "max": 0.6766529139849792
+    },
+    {
+      "name": "$formal_derivative.2.spring.phi_rel",
+      "is_state": false,
+      "initial": -13.333333333333334,
+      "final": 0.45204590674071454,
+      "min": -13.333333333333334,
+      "max": 9.504374285858367
+    },
+    {
+      "name": "$formal_derivative.1.spring.w_rel",
+      "is_state": false,
+      "initial": -13.333333333333334,
+      "final": 0.45204590674071454,
+      "min": -13.333333333333334,
+      "max": 9.504374285858367
+    },
+    {
+      "name": "$state_coordinates[1]",
+      "is_state": false,
+      "initial": 0.0,
+      "final": -0.10470205577578592,
+      "min": -0.16938711802667658,
+      "max": 0.0
+    },
+    {
+      "name": "$state_coordinates[2]",
+      "is_state": false,
+      "initial": 0.0,
+      "final": 0.06558557376152875,
+      "min": -0.9749208440277275,
+      "max": 0.6766529139849792
     }
   ]
 }

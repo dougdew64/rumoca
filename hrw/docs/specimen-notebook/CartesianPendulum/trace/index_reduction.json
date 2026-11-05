@@ -1,6 +1,6 @@
 {
   "rounds": 3,
-  "n_records": 9,
+  "n_records": 10,
   "outcome": {
     "kind": "singular",
     "admitted": false,
@@ -186,7 +186,34 @@
       "kind": "candidates",
       "lane": "holonomic",
       "group": "holonomic",
-      "discovered": 0
+      "discovered": 1
+    },
+    {
+      "kind": "attempt",
+      "lane": "holonomic",
+      "identity": {
+        "form": "holonomic",
+        "owner_ordinal": 4,
+        "body_ordinal": null,
+        "component_scalar": null,
+        "residual_ordinal": 47,
+        "declared_at": {
+          "file": "hrw/specimens/CartesianPendulum.mo",
+          "line": 16,
+          "column": 3,
+          "excerpt": "x ^ 2 + y ^ 2 = L ^ 2",
+          "line_text": "  x ^ 2 + y ^ 2 = L ^ 2;",
+          "byte_start": 726,
+          "byte_end": 747
+        },
+        "anchored_state_ordinals": [
+          3,
+          4
+        ]
+      },
+      "outcome": {
+        "kind": "would_create_vacuous_residual"
+      }
     },
     {
       "kind": "round",

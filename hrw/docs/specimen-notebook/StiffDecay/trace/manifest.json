@@ -2,8 +2,8 @@
   "model": "StiffDecay",
   "specimen": "specimens/StiffDecay.mo",
   "specimen_fnv1a": "fb054116cc43d41c",
-  "rumoca_rev": "a334820a",
-  "rumoca_version": "0.10.0",
+  "rumoca_rev": "5b88a383",
+  "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
       "has_ir": true,
