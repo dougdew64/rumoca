@@ -7953,6 +7953,188 @@ fn an_opened_windows_title_bar_spans_the_window() {
     );
 }
 
+/// **A one-line row takes one line's height.** Doug, 2026-11-05, on the fix above:
+/// *"You fixed the horizontal layout problem in the settings dialog. But, you broke the
+/// vertical layout. The specimens directory setting is now taking the entire vertical
+/// space. The library directory setting is not even visible."*
+///
+/// # Why the width test could not see this
+///
+/// Every assertion in `an_opened_windows_title_bar_spans_the_window` is about an **x**
+/// coordinate, so a row that swallowed the dialog vertically satisfied all of them. That
+/// is this repository's most repeated mistake wearing new clothes — *a true measurement
+/// of the wrong unit* — and it was made **by the fix for the previous instance of it.**
+///
+/// # The mechanism: `with_layout` is not `horizontal`
+///
+/// `Ui::horizontal` does not merely pick a left-to-right `Layout`. It calls
+/// `allocate_ui_with_layout` with an explicit `initial_size` whose height is one
+/// `interact_size.y` — egui's own comment: *"Assume there will be something interactive
+/// on the horizontal layout"*. `Ui::with_layout` instead takes
+/// `available_rect_before_wrap`, i.e. **all the remaining height**, and
+/// `Layout::right_to_left(Align::Center)` then centres the row inside that. The row looks
+/// right and consumes everything below it.
+///
+/// So reaching for `with_layout` to change a row's *direction* silently changes its
+/// *extent*. `allocate_ui_with_layout` with `horizontal`'s own `initial_size` is the
+/// direction change without the extent change.
+///
+/// # The assertion is a comparison, not a constant
+///
+/// *"Taking the entire vertical space"* could be pinned with a magic number of points,
+/// which would then be wrong at a different zoom factor or font. Instead the two blocks
+/// of the dialog are compared against each other: the specimen block is a heading plus
+/// **one** line, and the library block is a heading plus a label plus a **four-row**
+/// field plus a row of controls. The first must be the smaller of the two at any scale.
+#[test]
+fn a_settings_row_does_not_swallow_the_dialog() {
+    let mut app = App::test_default();
+    app.show_settings = true;
+    let mut h = crate::ui_tests::harness(app);
+    h.run_steps(5);
+
+    use egui_kittest::kittest::Queryable as _;
+    let at = |label: &str| {
+        h.query_by_label(label)
+            .unwrap_or_else(|| panic!("{label:?} should be a node in the Settings dialog"))
+            .rect()
+    };
+
+    let specimen_heading = at("Specimen directory");
+    let library_heading = at("Library source roots");
+    let load = at("Load libraries");
+
+    // Heading top to heading top: a heading, one line of field, and a separator.
+    let specimen_block = library_heading.min.y - specimen_heading.min.y;
+    // Heading top to the last control's bottom: a heading, a label, four rows, a row.
+    let library_block = load.max.y - library_heading.min.y;
+
+    assert!(
+        specimen_block < library_block,
+        "the specimen-directory block is {specimen_block:.1}pt tall and the library \
+         block {library_block:.1}pt -- a heading plus ONE line cannot be taller than a \
+         heading plus a four-row field, so the row has been allocated the dialog's whole \
+         remaining height. `Ui::with_layout` does that; `Ui::horizontal` does not, \
+         because it passes an explicit one-row `initial_size`.",
+    );
+
+    // **And Doug's own sentence, which is about the screen rather than the ratio.** A
+    // row that swallows the dialog pushes the rest past the bottom edge: egui clamps the
+    // inner `Resize` to the screen but the window frame follows its content, so the
+    // window itself ends up taller than the viewport and the overflow is simply not
+    // there to click.
+    let viewport = h.ctx.viewport_rect();
+    let window = the_one_floating_window(&h);
+    assert!(
+        window.height() <= viewport.height(),
+        "the Settings window is {:.1}pt tall in a {:.1}pt viewport, so its lower \
+         controls are off the screen -- \"the library directory setting is not even \
+         visible\"",
+        window.height(),
+        viewport.height(),
+    );
+
+    // Non-vacuity: three real, ordered blocks rather than three rects at the origin.
+    assert!(
+        specimen_block > 10.0 && library_block > 10.0 && load.max.y > library_heading.max.y,
+        "expected a laid-out dialog to compare -- specimen block {specimen_block:.1}, \
+         library block {library_block:.1}, load button {load:?}",
+    );
+}
+
+/// **Every floating window opens from a link, which is what makes it visible to Claude
+/// at all.** Doug, 2026-11-05: *"fix the testing blind spot by adding the twenty lines of
+/// code."*
+///
+/// # The blind spot this closes
+///
+/// The screenshot instrument is the **only** thing that sees the painter-drawn half of
+/// HRW — `CLAUDE.md` says so, and `egui_kittest` is built here with
+/// `default-features = false`, so there is no pixel renderer in the suite either. It
+/// drives HRW by writing `hrw://` links, and **every verb was a route to a pane.**
+/// `show_settings`, `show_help` and `show_about` start `false` and are set only by a menu
+/// item, which the harness cannot click.
+///
+/// So three Settings defects in two days were diagnosed, fixed and committed without
+/// Claude once looking at the dialog. The rects were right and the reasoning held, but
+/// *"is the banner across the top"* is a question about the screen, and the one instrument
+/// that answers it could not reach the window.
+///
+/// # Why this is a roster test rather than three assertions
+///
+/// A fourth window added later must **fail by name** rather than be quietly unreachable,
+/// which is the `StageKind::ALL` discipline applied to a much smaller roster. The two
+/// per-variant matches in `HrwLink` are exhaustive for the same reason, and the loop
+/// below is driven by `FloatingWindow::ALL` rather than by a list written here.
+#[test]
+fn every_floating_window_is_reachable_by_link() {
+    use egui_kittest::kittest::Queryable as _;
+
+    for window in super::FloatingWindow::ALL {
+        let url = format!("hrw://window/{}", window.slug());
+
+        let link = parse_hrw_link(&url).unwrap_or_else(|| panic!("{url} should parse"));
+        assert_eq!(
+            link,
+            HrwLink::OpenWindow(window),
+            "{url} parsed to the wrong verb"
+        );
+        // The action trail must round-trip, or a reported session names a link nobody
+        // can replay.
+        assert_eq!(link.describe(), format!("window/{}", window.slug()));
+        // A window is chrome. Requiring a specimen here would answer the click with a
+        // notice about loading one, which is 2026-08-31's bug exactly.
+        assert!(
+            !link.requires_specimen(),
+            "{url} must not need a specimen -- it says nothing about a model",
+        );
+        assert!(!link.leaves_hrw(), "{url} opens one of HRW's own windows");
+
+        // **Through the harness, as the screenshot instrument does it** — build the app,
+        // follow the link, let it paint. Not by setting the flag, which would test
+        // nothing about the link.
+        let mut h = crate::ui_tests::harness(App::test_default());
+        h.run_steps(2);
+        h.state_mut().follow_link_for_test(&url);
+        h.run_steps(3);
+
+        assert!(
+            h.query_all_by_label(window.title()).next().is_some(),
+            "after following {url} the window titled {:?} is not in the tree -- \
+             `egui::Window` keys its area on that title, so this is the string a link, \
+             a test and the window itself must agree on",
+            window.title(),
+        );
+
+        // And it is really on screen, not merely a node: exactly one floating area,
+        // of a usable size.
+        let rect = the_one_floating_window(&h);
+        assert!(
+            rect.width() > 100.0 && rect.height() > 40.0,
+            "{url} opened something {rect:?}, which is not a usable window",
+        );
+    }
+
+    // **An unknown window does not parse**, so a typo reads as an unknown link and
+    // `fixture_lab_links_all_resolve` can see it. Silently opening nothing is the one
+    // outcome a lab cannot recover from.
+    assert_eq!(
+        parse_hrw_link("hrw://window/preferences"),
+        None,
+        "a window HRW does not have must not parse",
+    );
+    assert_eq!(
+        parse_hrw_link("hrw://window"),
+        None,
+        "the bare verb names no window",
+    );
+    assert_eq!(
+        parse_hrw_link("hrw://window/"),
+        None,
+        "an empty slug names no window",
+    );
+}
+
 /// **A path offered back to the user is spelled their platform's way.** Doug, 2026-11-05:
 /// *"there is this specimens directory path which uses both back slashes and forward
 /// slashes: `C:\Users\dougd\source\repos\rumoca\hrw/specimens`."*

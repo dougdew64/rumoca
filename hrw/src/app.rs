@@ -3555,6 +3555,24 @@ impl App {
                 // sub-view may not be built until it paints.
                 self.seek_frame = Some((frame, SEEK_ATTEMPTS));
             }
+            HrwLink::OpenWindow(window) => {
+                // **Open, never toggle** — see `HrwLink::OpenWindow`. A screenshot
+                // request carries a *list* of links, so a toggle would have the second
+                // of two window links undo the first.
+                *self.window_flag(window) = true;
+                self.notify(format!("opened {}", window.title()));
+            }
+        }
+    }
+
+    /// **The one place a [`FloatingWindow`] becomes a field.** The flags predate the
+    /// enum and are not named after it (`show_help` is *Using HRW*), so this mapping is
+    /// the join and lives once.
+    fn window_flag(&mut self, window: FloatingWindow) -> &mut bool {
+        match window {
+            FloatingWindow::Settings => &mut self.show_settings,
+            FloatingWindow::UsingHrw => &mut self.show_help,
+            FloatingWindow::About => &mut self.show_about,
         }
     }
 
@@ -4495,7 +4513,10 @@ fn status_line(
 // every frame.
 impl App {
     fn floating_windows(&mut self, ui: &mut egui::Ui) {
-        egui::Window::new("Using HRW")
+        // The titles come from `FloatingWindow::title()` rather than literals, because
+        // `egui::Window` keys its area on its title: a link, a test and the window
+        // itself must agree on the string, so it has one home.
+        egui::Window::new(FloatingWindow::UsingHrw.title())
             .open(&mut self.show_help)
             .collapsible(false)
             .default_width(440.0)
@@ -4551,7 +4572,7 @@ impl App {
                      right-click the specimen and choose Recompile to hit it.",
                 );
             });
-        egui::Window::new("About HRW Observatory")
+        egui::Window::new(FloatingWindow::About.title())
             .open(&mut self.show_about)
             .collapsible(false)
             .resizable(false)
@@ -4608,7 +4629,7 @@ impl App {
         // for the same reason; this is the only window in HRW carrying an infinite-width
         // request. `an_opened_window_settles_instead_of_growing_every_frame` pins the
         // growth and `an_opened_windows_title_bar_spans_the_window` the agreement.
-        egui::Window::new("Settings")
+        egui::Window::new(FloatingWindow::Settings.title())
             .open(&mut self.show_settings)
             .collapsible(false)
             .min_width(SETTINGS_WIDTH)
@@ -4636,19 +4657,38 @@ impl App {
                 // layout puts the button at the right edge first, so `available_width`
                 // has already had it subtracted. Reading order on screen is unchanged:
                 // path on the left, ⟳ on the right.
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    let rescan = ui.button("⟳").on_hover_text("Rescan directory").clicked();
-                    let changed = ui
-                        .add(
-                            egui::TextEdit::singleline(&mut self.model_list.dir)
-                                .desired_width(f32::INFINITY)
-                                .font(egui::TextStyle::Monospace),
-                        )
-                        .changed();
-                    if rescan || changed {
-                        rescan_specimens = true;
-                    }
-                });
+                //
+                // **`allocate_ui_with_layout`, not `with_layout`** — the first attempt
+                // used the latter and Doug reported the row swallowing the dialog.
+                // `Ui::horizontal` is not just a left-to-right `Layout`: it allocates an
+                // explicit `initial_size` one `interact_size.y` tall, under egui's own
+                // comment *"Assume there will be something interactive on the horizontal
+                // layout"*. `with_layout` takes `available_rect_before_wrap` instead —
+                // **all** the remaining height — and `Align::Center` then centres the
+                // row inside it, so the row looks correct and consumes everything below.
+                // This is `horizontal`'s own call with the direction reversed, which is
+                // the direction change without the extent change.
+                let one_row = egui::vec2(
+                    ui.available_size_before_wrap().x,
+                    ui.spacing().interact_size.y,
+                );
+                ui.allocate_ui_with_layout(
+                    one_row,
+                    egui::Layout::right_to_left(egui::Align::Center),
+                    |ui| {
+                        let rescan = ui.button("⟳").on_hover_text("Rescan directory").clicked();
+                        let changed = ui
+                            .add(
+                                egui::TextEdit::singleline(&mut self.model_list.dir)
+                                    .desired_width(f32::INFINITY)
+                                    .font(egui::TextStyle::Monospace),
+                            )
+                            .changed();
+                        if rescan || changed {
+                            rescan_specimens = true;
+                        }
+                    },
+                );
                 ui.separator();
                 ui.strong("Library source roots");
                 ui.label("One package directory (or single .mo) per line:");
@@ -8033,6 +8073,88 @@ enum HrwLink {
     /// `ModelCenter.exe` (verified 2026-07-30), so this is the same OS hand-off that
     /// opens a notebook. HRW never learns where System Modeler lives.
     OpenInSystemModeler(String),
+    /// `hrw://window/<slug>` — open one of HRW's floating windows.
+    ///
+    /// # The verb exists to close a hole in what Claude can SEE
+    ///
+    /// `CLAUDE.md`'s *Claude can now look at the window* records the screenshot
+    /// instrument as **the only one that sees the painter-drawn half of HRW** — tab
+    /// rows, matrices, animations — which `egui_kittest` cannot see at all. It drives
+    /// HRW by writing `hrw://` links to `.hrw-bridge/screenshot-request.json`, which go
+    /// through the same `dispatch_hrw_link` a click does.
+    ///
+    /// **So every verb was a route to a pane, and HRW's three floating windows had
+    /// none.** `show_settings`, `show_help` and `show_about` start `false` and are set
+    /// only by a menu item, and the harness cannot open a menu. The consequence showed up
+    /// on 2026-11-05: Doug reported the Settings banner stopping short of the window,
+    /// Claude fixed it with three rect-level assertions and **could not look at the
+    /// result** — the one claim that settles a layout question was the one unavailable.
+    ///
+    /// Doug's ruling the same day: *"we will always make time to stop and fix defects …
+    /// fix the testing blind spot."*
+    ///
+    /// # Why a window verb rather than a settings verb
+    ///
+    /// A `hrw://settings` would have been shorter and would have left the other two
+    /// windows exactly as unreachable — the shape this repository keeps paying for, an
+    /// exhaustive-list-written-when-there-was-one-thing. [`FloatingWindow::ALL`] is the
+    /// roster, `requires_specimen` and `leaves_hrw` match on it exhaustively, and
+    /// `every_floating_window_is_reachable_by_link` fails by name for a fourth window
+    /// that forgets to join.
+    ///
+    /// **Opening only, never closing.** Same decision as [`Self::ArmBreakpoint`]: a
+    /// toggle makes the second click of a two-link sequence undo the first, and a
+    /// screenshot request carrying a list of links is exactly that sequence.
+    OpenWindow(FloatingWindow),
+}
+
+/// **HRW's floating windows, as a roster** — every window opened from the menu bar
+/// rather than laid out in a panel.
+///
+/// Exists so [`HrwLink::OpenWindow`] can name one. The three are chrome rather than
+/// views of a model, which is why they were the last thing in HRW unreachable by a link
+/// and therefore invisible to the screenshot instrument.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub(crate) enum FloatingWindow {
+    /// File ▸ Settings… — zoom, specimen directory, library source roots.
+    Settings,
+    /// Help ▸ Using HRW… — the short orientation text.
+    UsingHrw,
+    /// Help ▸ About HRW… — version and provenance.
+    About,
+}
+
+impl FloatingWindow {
+    /// Every variant. **A roster, not a list written in prose** — see
+    /// `CLAUDE.md`'s rule about `StageKind::ALL`, which this follows for the same
+    /// reason: a new window must fail a test rather than be silently unreachable.
+    pub(crate) const ALL: [Self; 3] = [Self::Settings, Self::UsingHrw, Self::About];
+
+    /// The slug a link spells it with. Lower-case and hyphenated, like a stage slug.
+    pub(crate) fn slug(self) -> &'static str {
+        match self {
+            Self::Settings => "settings",
+            Self::UsingHrw => "using-hrw",
+            Self::About => "about",
+        }
+    }
+
+    /// Parsed from a link's segment. Derived from [`Self::ALL`] rather than written as a
+    /// second match, so a variant cannot be parseable-but-unlisted or the reverse.
+    fn from_slug(slug: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|w| w.slug() == slug)
+    }
+
+    /// **The title egui paints, which is also the handle a test identifies it by.**
+    /// `egui::Window::new(title)` keys its area on the title, so this is the one string
+    /// that must match the call site — hence a single home for it.
+    pub(crate) fn title(self) -> &'static str {
+        match self {
+            Self::Settings => "Settings",
+            Self::UsingHrw => "Using HRW",
+            Self::About => "About HRW Observatory",
+        }
+    }
 }
 
 impl HrwLink {
@@ -8099,6 +8221,11 @@ impl HrwLink {
             // is exactly what `matching-live.md` warns them not to do the other way
             // round.
             Self::ArmBreakpoint(_) => false,
+            // A floating window is **chrome**: Settings, Using HRW and About say nothing
+            // about a model and are reachable from the menu with nothing loaded. Making
+            // one need a specimen would reproduce 2026-08-31 exactly — a notice about
+            // loading a specimen in answer to a click that had nothing to do with one.
+            Self::OpenWindow(_) => false,
             // Everything below acts ON a loaded model: it selects a stage's view, aims at
             // one of its equations, seeks a frame of its captured run, points at a node of
             // its IR, or follows one of its identifiers. With nothing loaded there is no
@@ -8149,6 +8276,9 @@ impl HrwLink {
             | Self::SeekFrame(..)
             | Self::PointAtNode(..)
             | Self::Follow(_)
+            // A floating window is HRW's own window, not another application's — the
+            // reader does not have to reorient to a different app.
+            | Self::OpenWindow(_)
             // A run happens inside HRW, on the Simulation tab.
             | Self::Simulate(_) => false,
         }
@@ -8198,6 +8328,7 @@ impl HrwLink {
             Self::OpenSource(target) => format!("src/{target}"),
             Self::OpenInSystemModeler(name) => format!("systemmodeler/{name}"),
             Self::ArmBreakpoint(name) => format!("breakpoint/{name}"),
+            Self::OpenWindow(w) => format!("window/{}", w.slug()),
         }
     }
 }
@@ -8267,6 +8398,11 @@ fn parse_hrw_link(url: &str) -> Option<HrwLink> {
             Some(HrwLink::OpenInSystemModeler((*name).to_owned()))
         }
         ["notebook", name] if !name.is_empty() => Some(HrwLink::OpenNotebook((*name).to_owned())),
+        // **An unknown slug does not parse**, so a link naming a window HRW does not
+        // have reads as an unknown link rather than silently opening nothing — the same
+        // choice `breakpoint` makes for an unknown anchor, and it is what lets
+        // `fixture_lab_links_all_resolve` see the typo.
+        ["window", name] => FloatingWindow::from_slug(name).map(HrwLink::OpenWindow),
         // **Rest-joined, because docs nest.** A notebook is a bare file name; a document
         // may be `compiler-phases/the-chain-of-problems.md`, so the tail is rejoined
         // rather than matched as one segment. `bridge::resolve_doc` refuses `..`.
