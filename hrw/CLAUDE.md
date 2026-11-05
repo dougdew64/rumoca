@@ -394,11 +394,13 @@ This HRW project provides less advantage over this text conversation if you don'
 provide rich answers when possible."*
 
 **Before answering, ask what HRW could show** — write an **Answer** to `.hrw-bridge/answer.md` when
-the reply wants a route through panes. There are **eighteen `hrw://` link forms**
-(`app.rs`'s `parse_hrw_link` is the roster): not only `load` and `stage`, but `node` to land on one
-field, `frame` on one animation step, `equation` on one row, `follow` to trace an identifier across
-every stage, `src` to open Rumoca in VS Code, `source` for a specimen line, `breakpoint` to arm a
-live anchor, `systemmodeler` and `notebook` for the oracle.
+the reply wants a route through panes. **The `hrw://` link forms are `app.rs`'s `parse_hrw_link`,
+which is the roster** — not only `load` and `stage`, but `node` to land on one field, `frame` on one
+animation step, `equation` on one row, `follow` to trace an identifier across every stage, `src` to
+open Rumoca in VS Code, `source` for a specimen line, `breakpoint` to arm a live anchor, `window` to
+open Settings or About, and `systemmodeler` and `notebook` for the oracle. *(This said "eighteen
+link forms" until 2026-11-05, by which time there were 21 — a count in prose beside the list it
+counts, which is the cheapest thing in this repository to leave stale. Read the match.)*
 
 **Why this needs writing down rather than remembering: a text-only answer looks finished.** Nothing
 signals that the platform went unused — Doug gets a good answer and neither of us notices. **The
@@ -988,6 +990,11 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
   confirmed three of that day's fixes that the suite could only confirm indirectly.
   - **Read `notice` and `error` in the result, every time.** A refused link leaves a window that
     looks entirely healthy, and a failed shot leaves the *previous* request's PNG on disk.
+  - **`hrw://window/settings|using-hrw|about` opens a floating window** *(2026-11-05)*. Until then
+    every verb was a route to a **pane**, and the three menu-driven windows had none — so three
+    Settings layout defects were fixed in two days without Claude once looking at the dialog. A
+    layout question is about the screen; this is what reaches it. `FloatingWindow::ALL` is the
+    roster and `every_floating_window_is_reachable_by_link` fails by name for a fourth.
   - **HRW must be closed before the gate**, which relinks `hrw.exe`; the runner says so.
   - **`cargo run -p hrw --example capture_suite [specimen] [pane|window]`** walks every canvas
     sub-view of a specimen against a *running* HRW and writes `.hrw-bridge/capture-suite.md`. It
