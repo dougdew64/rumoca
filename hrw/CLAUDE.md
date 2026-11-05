@@ -574,6 +574,24 @@ the next phase touches — is procedure and lives there.
 > `rumoca-phase-solve::state_selection`, which is private, exactly as `prepare_for_solve` was
 > before `watch_prepare_for_solve`.
 >
+> ### ⟶ RESUMING IN CHICAGO? START HERE — the order is Doug's, set 2026-11-05
+>
+> He shut the machine down mid-task to travel, so **this is a ruling with no work attached to it
+> yet**, which is the kind that evaporates. In order:
+>
+> 1. **Fix `App::failure_context`** — *"I very much want to widen the scope"*. It names the first
+>    **flagged** stage as the pipeline's failure, so `focus.json` tells Claude `Drivetrain` failed
+>    at Structural while it simulates. **Measure it first**: load `Drivetrain`, read
+>    `.hrw-bridge/focus.json`, confirm `pipeline_failure` is really there — it was read from the
+>    code, not seen. Full entry, including why the fix is not just `Outcome::Failed`, in
+>    `docs/tech-debt.md`.
+> 2. **Finish the 0.10.4 rebase** — steps 6, 6b, 7 (labs, lectures, `compiler-phases`) and 8, the
+>    smoke test. All prose, all his.
+> 3. **Then `updating-rumoca.md` step 10**, which is new and exists because of this ruling: the
+>    hours-long suites — `fidelity_msl`, the full `slow-tests` set including `--ignored`,
+>    `notebook-check`, and the **oracle** over the 28 specimens. **Night 8's 3b run does not
+>    count**, because F4 was blind while it ran.
+>
 > ### ⟶ NIGHT 8 RAN 2026-11-04 — four pairs wait in `docs/tech-debt.md`, record in the run log
 >
 > **Two traps for a session picking the rebase back up.** **(1) Step 4 is UNFINISHED and
@@ -582,8 +600,7 @@ the next phase touches — is procedure and lives there.
 > clause* doc). Do not re-run `gen_field_help` and commit it; the guard that blocks it is right.
 > **(2) F4 has been blind since v0.10.0**, so `docs/reports.md` is stale as well as wrong.
 >
-> **What remains of the rebase is prose and is Doug's** — steps 6, 6b, 7 — plus step 8, the smoke
-> test, worth doing on `CartesianPendulum`.
+> *(What remains of the rebase is listed in the resume box above.)*
 >
 > ### ⟶ v0.10.4 REDUCES THE CANONICAL INDEX-3 DAE, and it is not Pantelides
 >
@@ -649,20 +666,12 @@ the next phase touches — is procedure and lives there.
 >
 > #### Owed, and only Doug can close them
 >
-> - ~~**Press Debug on the Index Reduction tab.**~~ **DONE 2026-11-04, and it found two defects.**
->   The seam worked first time — the bridge showed the breakpoint stopped inside
->   `watch_prepare_for_solve` — while the *pane* never drained its channel and bailed out on the
->   empty state a live session starts in. Both were rules living as comments in `connection_anim`,
->   which is how a correct rule goes unread: only someone already in that file sees it. One is a
->   contract now. **This is the standing limit paying for itself, not an exception to it.**
 > - **Run `docs/fixture-labs/index-reduction.md`.** Stations 2-6 were re-authored against the
 >   0.10.0 search on 2026-11-04 and have had no reader. Station 4 is the one to watch: it argues
 >   that a `held` pass is progress from two equation names a pass apart, which may read as
 >   arithmetic rather than as insight.
-> - **File `upstream-issues.md` F1** — v0.10.0 fails its own `cargo fmt --all -- --check` in 22
->   sites across 10 files, under its own pinned toolchain. 11 are fixed here; 11 are not.
 >
-> **Next is the 0.10.4 hop.** The outstanding items are cleared.
+> *(Two items left on 11-05: Debug on Index Reduction was pressed 11-04, and F1 is dead.)*
 >
 > ### ⟶ AN ADJUDICATED INITIALIZATION DEFECT IS READY TO FILE, AND IT GATES THE PLOT WORK — 2026-09-04
 >
@@ -740,13 +749,9 @@ the next phase touches — is procedure and lives there.
 > **Plausible and NOT to be stated in a report: this may subsume the open state-count entry** —
 > `Drivetrain` and `GearWithBrake` are its two specimens and both are frozen here.
 >
-> ### ⟶ THE MACHINE SWITCH DID NOT HAPPEN — Doug stayed here, 2026-09-03
+> ### ⟶ A STANDING FACT ABOUT THE VS CODE EXTENSION — the 2026-09-03 arc that left it is closed
 >
-> The handoff written for it is gone rather than left standing; a stale instruction to rebuild
-> things "on that machine" is worse than none. **Its one owed item is DONE** — Doug rebuilt the
-> bridge extension and reloaded on 2026-09-03, verified by `out/*.js` carrying the new fields.
->
-> **The standing fact it leaves behind: `hrw/vscode-extension/out/` is gitignored, so a commit
+> **`hrw/vscode-extension/out/` is gitignored, so a commit
 > touching the extension does not reach the running VS Code until `npm run build` plus
 > *Developer: Reload Window*.** Doug always launches HRW under the debugger — his words — so the
 > bridge is his primary instrument, and a stale build reports the old schema while looking

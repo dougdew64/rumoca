@@ -347,11 +347,42 @@ selection, the numbers and the explanation both move, and only the explanation w
 - `cargo run`; load a specimen; confirm each stage renders, and the bridge capture / field-help
   tooltips / "Go to" navigation / debugger arming still work.
 
-## 9. Confirm the version/commit readout
+## 9. Confirm the version/commit readout (continues below — step 10 is new)
 - **Help → About auto-updates** — `build.rs` reads `rumoca-compile`'s version from `Cargo.lock` and
   the **commit from the workspace git HEAD** (HRW is an in-workspace member, so HEAD *is* the Rumoca
   source it's built against). Do **not** hand-edit it; just confirm About shows the new version/commit
   after rebuilding (a good final sanity check that the rebase landed).
+
+## 10. Run the long-running suites — **after** the rebase closes, not during it
+
+**Doug's ruling, 2026-11-05**, made while the 0.10.4 rebase was still open: *"after we complete the
+rebase we need to perform the long-running tests such as the fidelity test and the oracle test."*
+So this is a step of its own at the end, not a line inside 3b.
+
+**Why it is not simply 3b again.** 3b runs *during* the rebase to say what the release changed, and
+on the 0.10.4 hop it ran on night 8 and found **F4 blind since v0.10.0** — so that run measured
+less than it appeared to, and `docs/reports.md` is stale as well as wrong. A suite that was broken
+when it ran has to run again after it is fixed; **a green sweep covers the territory it measured
+and no more.** The same applies to anything else repaired between 3b and here.
+
+```text
+# the stratified MSL sweep (hours; own runbook and watchdog)
+cargo run -p hrw --example fidelity_msl -- --out <file>
+# every slow test, including the ignored set a release may have repaired
+cargo test -p hrw --lib --features slow-tests -- --test-threads=1
+cargo test -p hrw --lib --features slow-tests -- --test-threads=1 --ignored
+cargo test -p hrw --test msl_resolve --features slow-tests -- --test-threads=1
+# the committed notebook's values, which the DOCS gate lane skips
+cargo test -p hrw --lib --features notebook-check -- --test-threads=1 the_committed_notebook
+```
+
+**Then the oracle**, which is the strongest single statement this project can make about a release:
+System Modeler through the Wolfram MCP server over the 28 specimens (recipe in
+[`ideas.md`](ideas.md) #43). **Oracle-first still applies** — where Rumoca and the oracle disagree,
+that is not yet a Rumoca bug until the specimen itself has been cleared.
+
+**Announce the cost before starting.** These are hours, not minutes, and
+[`long-runs.md`](long-runs.md) owns the safety rules.
 
 ---
 
@@ -368,8 +399,10 @@ read `cargo build` / `cargo test` for brevity — this note sits at the end of t
 **Rule of thumb:** step 0 is research and decides whether the rest happens at all; steps 1–3 are
 mechanical and compiler-driven; 3b–3c say what the release actually changed; steps 4–5 are one
 command each (then review the diffs); step 6 is a targeted search-and-update; steps 7 and 9 are
-human judgement. If `cargo build` + `cargo test` are green and the field-help + trace diffs look
-sane, the update is in good shape.
+human judgement; **step 10 is hours of machine time and is the one that cannot be hurried.** If
+`cargo build` + `cargo test` are green and the field-help + trace diffs look sane, the update is in
+good shape — **but not finished until step 10 has run**, because the pre-commit gate deliberately
+excludes every suite that would make it slow.
 
 **The rule of thumb does NOT cover a release of 0.10.0's size, and saying so is the point.** It was
 written for the deltas this fork had actually seen — a handful of upstream commits, where the
