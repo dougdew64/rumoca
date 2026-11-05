@@ -2208,6 +2208,84 @@ That is the one thing a maintainer would know immediately and this project does 
 
 ---
 
+## E4. **egui** — a `Window`'s title bar is sized to the width the window *claimed*, while its frame follows the width the content *measured*
+
+**Project:** egui · **File with:** [emilk/egui](https://github.com/emilk/egui) · **Baseline:**
+`0.35.0`, as pinned by `hrw/Cargo.toml` · **Status: NOT FILED** — Doug's call, per this file's
+own rule.
+
+**Found by running.** Doug, 2026-11-05, smoke-testing HRW's Settings dialog: *"the 'Settings'
+banner does not extend to the right edge of the settings dialog. It should. Right now, the 'X'
+to close the settings dialog is placed leftward of the right edge of the settings dialog."*
+
+### Actual
+
+With a `Window` whose content measures wider than the window's own `max_width`, the title bar
+is laid out to the narrower figure and the window frame to the wider one. The result is a bare
+strip of frame to the right of the banner, carrying the close button inward with it. Measured
+in HRW: window **617.7 pt** wide, close button's right edge at **565.7 pt** — a **52 pt** strip.
+
+### Expected
+
+The title bar spans the window it titles.
+
+### Mechanism — read from `0.35.0` source and reproduced, but NOT confirmed as unintended
+
+Three facts in `egui/src/containers/`, each of which is reasonable alone:
+
+1. `window.rs`, `show_dyn` — the user's `min_width`/`max_width` are **outer** measurements, so
+   the frame margin is subtracted before they reach the inner `Resize`: *"The user-supplied
+   min/max/default sizes on `Window` refer to the \*outer\* window size … `Resize` sizes the
+   title bar + inner content area, so we subtract the extra frame margin."*
+2. `window.rs`, `title_ui` — for a window that is not `auto_sized`, the bar's width is
+   `child_ui.available_width()`, i.e. `Resize`'s `state.desired_size`, which `max_size` clamps:
+
+   ```rust
+   let min_width = if auto_sized {
+       ui.response().rect.width()
+   } else {
+       child_ui.available_width()
+   };
+   layout = layout.min_size(Vec2::new(min_width, 0.0));
+   ```
+3. `resize.rs`, `Resize::end` — a window is `resizable(false)` with no stroke, so the parent
+   cursor advances by the **measured** content size, explicitly rather than by the clamped one:
+
+   ```rust
+   } else {
+       // Probably a window.
+       size[d] = state.last_content_size[d];
+   }
+   ```
+
+So `max_width` bounds what the title bar will span but not what the frame will become. Any
+content that measures wider than the claim separates the two, and `max_width` is itself the
+easiest way to make that reachable.
+
+### Suspected fix — UNVERIFIED, and deliberately offered as alternatives
+
+Either lay the title bar out to the frame's final width (which the `auto_sized` branch already
+approximates, at the cost of a frame's delay that its own comment apologises for), or clamp
+`last_content_size` to `max_size` so the frame cannot exceed the claim. Both are behaviour
+changes in one of egui's most-used containers, and the maintainers have context neither of us
+does about which is wanted.
+
+### Honestly bounded
+
+- **The mechanism is read from source and reproduced through HRW, not through a minimal egui
+  example.** Build one before filing; a report that cannot be run is worse than none.
+- **Re-run against `master` first**, which is E1's lesson: every measurement here is `0.35.0`.
+- **HRW does not need this fixed.** It pins `min_width == max_width` and bounds every row, so
+  the claim and the measurement agree (`app::tests::an_opened_windows_title_bar_spans_the_window`).
+  The entry exists because the failure is *silent* — the window looks healthy, merely slightly
+  wrong — and nothing in egui warns about it.
+
+### A naming collision in this file, noticed while adding the above
+
+**`E` now means two things.** `E1` and `E2` are egui; `E3` is Rumoca, where `E` evidently stood
+for *enhancement*. This entry is egui, so it takes `E4` by the older sense. Renumbering would
+break any citation of `E3`, so this is recorded rather than fixed — **Doug's call.**
+
 ## Adding to this file
 
 One entry per bug, and only for bugs **reproduced**, not suspected. Include the

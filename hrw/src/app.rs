@@ -289,6 +289,14 @@ const DEFAULT_LIBRARIES: &str = concat!(
 // ---- Layout constants ----
 // Named fractions for panel sizes and splits, replacing inline magic numbers.
 
+/// **The Settings window's width, pinned at both ends.** Points, not pixels — egui
+/// scales by `zoom_factor`.
+///
+/// Module-level rather than local to `settings_ui` so the tests can assert against the
+/// number the window is actually configured with. `settings_ui`'s own comment carries
+/// why the width is pinned and what the unpinned version did.
+pub(crate) const SETTINGS_WIDTH: f32 = 560.0;
+
 /// Fraction of available width used by the left panel (lab text or specimen
 /// list) in Lab and Specimen modes.
 const LEFT_PANEL_WIDTH_FRACTION: f32 = 0.4;
@@ -4579,22 +4587,33 @@ impl App {
         // edge. Measured: 836 px wide seven frames after opening, 1627 px thirty frames
         // later, in a 1600 px viewport.
         //
-        // `max_width` stops the window being driven wider; `set_max_width` inside stops
-        // the content asking. **Both, deliberately** — the first alone would merely move
-        // the destination, letting it creep to the cap and stop there, which is the same
-        // defect with a shorter runway.
+        // **Pinned, by `min_width == max_width`, which is one bound rather than two.**
+        // The creep is `Resize`'s `desired_size = desired.max(last_content_size)`
+        // ratcheting upward once per frame; a width that cannot move cannot ratchet.
         //
-        // `About` never did this because its content is labels, and `Using HRW` because
-        // of the same; this is the only window in HRW carrying an infinite-width request.
-        // `an_opened_window_settles_instead_of_growing_every_frame` pins it.
-        const SETTINGS_WIDTH: f32 = 560.0;
+        // The first attempt used `max_width` plus a `set_max_width(SETTINGS_WIDTH)` on
+        // the content, and that second bound was wrong in a way the growth test could
+        // not see. `Window`'s width is an **outer** measurement, so egui subtracts the
+        // frame margin before handing it to the inner `Resize` — telling the body it
+        // may be the full outer width makes it a frame margin wider than the window
+        // ever claimed to be. egui then lays the **title bar** out to the claimed width
+        // (`child_ui.available_width()`) while advancing the **frame** by the measured
+        // one (`Resize::end` follows `last_content_size` for a non-resizable window), so
+        // the banner stopped 52 pt short of the body's right edge and took the close
+        // button with it. Doug, 2026-11-05: *"the "X" to close the settings dialog is
+        // placed leftward of the right edge of the settings dialog."*
+        //
+        // So the body is told nothing and inherits the available width, which is the
+        // pinned one. `About` never grew because its content is labels, and `Using HRW`
+        // for the same reason; this is the only window in HRW carrying an infinite-width
+        // request. `an_opened_window_settles_instead_of_growing_every_frame` pins the
+        // growth and `an_opened_windows_title_bar_spans_the_window` the agreement.
         egui::Window::new("Settings")
             .open(&mut self.show_settings)
             .collapsible(false)
-            .default_width(SETTINGS_WIDTH)
+            .min_width(SETTINGS_WIDTH)
             .max_width(SETTINGS_WIDTH)
             .show(ui.ctx(), |ui| {
-                ui.set_max_width(SETTINGS_WIDTH);
                 ui.strong("Display");
                 let mut zoom = ui.ctx().zoom_factor();
                 if ui
@@ -4609,7 +4628,16 @@ impl App {
                 }
                 ui.separator();
                 ui.strong("Specimen directory");
-                ui.horizontal(|ui| {
+                // **Right-to-left, so the button is placed before the field measures.**
+                // `desired_width(f32::INFINITY)` means *all the width available now*,
+                // which in a left-to-right row is the whole row — the button appended
+                // after it is then laid out past the container's right edge, and the row
+                // comes out ~44 pt wider than the window claimed to be. A right-to-left
+                // layout puts the button at the right edge first, so `available_width`
+                // has already had it subtracted. Reading order on screen is unchanged:
+                // path on the left, ⟳ on the right.
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    let rescan = ui.button("⟳").on_hover_text("Rescan directory").clicked();
                     let changed = ui
                         .add(
                             egui::TextEdit::singleline(&mut self.model_list.dir)
@@ -4617,7 +4645,7 @@ impl App {
                                 .font(egui::TextStyle::Monospace),
                         )
                         .changed();
-                    if ui.button("⟳").on_hover_text("Rescan directory").clicked() || changed {
+                    if rescan || changed {
                         rescan_specimens = true;
                     }
                 });
@@ -4640,7 +4668,15 @@ impl App {
                     if self.libraries_busy {
                         ui.spinner();
                     }
-                    ui.weak(&self.library_status);
+                    // Truncated, because this status line reports paths. A label in a
+                    // horizontal layout does not wrap, so a long one widens the row past
+                    // the window's pinned width, and the window follows its content —
+                    // which is the same disagreement the title bar showed, reached from
+                    // the other side.
+                    ui.add(
+                        egui::Label::new(egui::RichText::new(&self.library_status).weak())
+                            .truncate(),
+                    );
                 });
             });
         if load_libraries {

@@ -7768,34 +7768,9 @@ fn an_opened_window_settles_instead_of_growing_every_frame() {
     app.show_settings = true;
     let mut h = crate::ui_tests::harness(app);
 
-    // **The window is found as "the one area that is not the viewport", not by an Id.**
-    //
-    // `egui::Window::new(title)` keys its area on `Id::new(title.text())`, and
-    // `Id::new("Settings")` does **not** reproduce it — measured, not assumed. Rather
-    // than reverse-engineer `Atoms::text()` and bake the result in, this identifies the
-    // window the way the situation already defines it: `harness` opens exactly one, and
-    // the only other layer is the full-viewport background. Verified by running the
-    // harness with `show_settings` false, which leaves exactly one area.
-    //
-    // The `assert_eq!` below makes that sound rather than lucky: if a tooltip or a second
-    // window ever appears, this fails loudly instead of silently measuring the wrong one.
-    let width = |h: &egui_kittest::Harness<'static, App>| {
-        let viewport = h.ctx.viewport_rect();
-        let mut found: Vec<f32> = h.ctx.memory(|m| {
-            m.layer_ids()
-                .filter_map(|l| m.area_rect(l.id))
-                .filter(|r| r.size() != viewport.size())
-                .map(|r| r.width())
-                .collect()
-        });
-        assert_eq!(
-            found.len(),
-            1,
-            "expected exactly one floating window to measure, found {}",
-            found.len(),
-        );
-        found.pop().expect("length checked above")
-    };
+    // The window is found as "the one area that is not the viewport", not by an Id;
+    // `the_one_floating_window` carries why, and is shared with the title-bar test.
+    let width = |h: &egui_kittest::Harness<'static, App>| the_one_floating_window(h).width();
 
     // Two frames have already run inside `harness`. Let it settle further, then
     // measure across a span long enough that a per-frame creep is unmistakable.
@@ -7830,6 +7805,151 @@ fn an_opened_window_settles_instead_of_growing_every_frame() {
         (400.0..=viewport).contains(&settled),
         "expected a real, usable window to measure against -- roughly its configured 560 \
          wide -- and got {settled:.1}",
+    );
+}
+
+/// **The one floating window on screen, found by elimination rather than by `Id`.**
+///
+/// `egui::Window::new(title)` keys its area on `Id::new(title.text())`, and
+/// `Id::new("Settings")` does **not** reproduce it — measured, not assumed. Rather than
+/// reverse-engineer `Atoms::text()` and bake the result in, this identifies the window
+/// the way the situation already defines it: `harness` opens exactly one, and the only
+/// other layer is the full-viewport background. Verified by running the harness with
+/// `show_settings` false, which leaves exactly one area.
+///
+/// The `assert_eq!` makes that sound rather than lucky: if a tooltip or a second window
+/// ever appears, the caller fails loudly instead of silently measuring the wrong one.
+fn the_one_floating_window(h: &egui_kittest::Harness<'static, App>) -> egui::Rect {
+    let viewport = h.ctx.viewport_rect();
+    let mut found: Vec<egui::Rect> = h.ctx.memory(|m| {
+        m.layer_ids()
+            .filter_map(|l| m.area_rect(l.id))
+            .filter(|r| r.size() != viewport.size())
+            .collect()
+    });
+    assert_eq!(
+        found.len(),
+        1,
+        "expected exactly one floating window to measure, found {}",
+        found.len(),
+    );
+    found.pop().expect("length checked above")
+}
+
+/// **A window's title bar spans the window.** Doug, 2026-11-05, continuing the smoke
+/// test: *"the "Settings" banner does not extend to the right edge of the settings
+/// dialog. It should. Right now, the "X" to close the settings dialog is placed leftward
+/// of the right edge of the settings dialog."*
+///
+/// # The mechanism, and it is the previous fix's own side effect
+///
+/// `egui::Window` lays its title bar out to `child_ui.available_width()` — the width the
+/// inner `Resize` *claimed*, which `Window::max_width` caps. The window **frame** does
+/// not follow that claim: for a window (`resizable(false)`, no stroke) `Resize::end`
+/// advances by `last_content_size`, the body's **measured** width. So the two disagree
+/// the moment the body is allowed to be wider than the claim — the banner stops at the
+/// claim while the body sets the window's right edge.
+///
+/// `ui.set_max_width(SETTINGS_WIDTH)` did exactly that. egui subtracts the frame margin
+/// from the `Resize`'s cap, because `Window`'s width is an *outer* measurement and
+/// `Resize` sizes the inside; raising the body's own bound back to the outer width made
+/// the body a frame margin wider than the title bar could ever be.
+///
+/// # What replaced it
+///
+/// `min_width == max_width` pins the claim, so there is no room for the body's measured
+/// width to drift above it, and the body inherits the available width instead of being
+/// told a larger one. **That also subsumes the growth fix** rather than weakening it:
+/// the creep was `desired_size = desired.max(last_content_size)` ratcheting upward, and
+/// a pinned width cannot ratchet.
+///
+/// # Why this is testable when layout usually is not
+///
+/// The same reason the growth test is: a rect, not a pixel. The close button carries
+/// `WidgetInfo::labeled(Button, "Close window")`, so it is in the accessibility tree
+/// with its layout rect, and the window's rect is in `egui::Memory`. Doug's sentence
+/// names two edges and this compares them.
+#[test]
+fn an_opened_windows_title_bar_spans_the_window() {
+    let mut app = App::test_default();
+    app.show_settings = true;
+    // **A realistic status line, because an empty one proves nothing.** This label
+    // reports library paths and sits in a horizontal row, where a label does not wrap.
+    // Left untruncated it widens the row past the window's pinned width, and the window
+    // follows its content — so without this the test would pass on a blank string and
+    // leave the truncation unexercised.
+    app.library_status =
+        "Loaded 1182 models from C:/Users/dougd/source/repos/rumoca/hrw/vendor/msl".to_owned();
+    let mut h = crate::ui_tests::harness(app);
+    h.run_steps(5);
+
+    // The accessibility-tree queries live on a trait, not on `Harness` itself; `ui_tests`
+    // imports it at module scope, and this module does not.
+    use egui_kittest::kittest::Queryable as _;
+
+    let window = the_one_floating_window(&h);
+    let close = h
+        .query_by_label("Close window")
+        .expect("an `.open()` window paints a close button, and it is a tree node")
+        .rect();
+
+    // The window's frame has a margin and a stroke, so the X is not expected *at* the
+    // edge — every egui window insets it. What Doug reported is a gap far larger than
+    // that: with `set_max_width` the body was a full frame margin wider than the title
+    // bar, stacking two insets instead of one. Allowing one frame margin of slack keeps
+    // this a test of the disagreement rather than of egui's chrome.
+    let slack = 12.0;
+    let gap = window.max.x - close.max.x;
+    assert!(
+        gap <= slack,
+        "the close button's right edge is {gap:.1}pt short of the window's \
+         (X at {:.1}, window edge at {:.1}) -- the title bar laid itself out to the \
+         width the `Resize` claimed while the window grew to the width the body \
+         measured, so the banner stops short of the dialog it titles",
+        close.max.x,
+        window.max.x,
+    );
+
+    // **And the cause, stated directly rather than through its symptom.** The gap above
+    // is what Doug can see; this is what produces it. The frame follows the body's
+    // measured width while the title bar follows the width the window claimed, so any
+    // row that measures wider than the available width reopens the gap — which is how
+    // the first fix still failed by 38 pt after `set_max_width` was removed. A
+    // right-to-left row and a truncated status label are what hold this line.
+    assert!(
+        (window.width() - super::SETTINGS_WIDTH).abs() <= 1.0,
+        "the Settings window settled at {:.1}pt wide where {:.1} is pinned at both ends \
+         -- so something inside it measured wider than the width it was given, and the \
+         window grew to its content",
+        window.width(),
+        super::SETTINGS_WIDTH,
+    );
+
+    // **The ⟳ stays on the right, which is the half of the row fix the width cannot
+    // see.** What actually bounds that row is the *order*: the button is allocated
+    // before the field asks for `f32::INFINITY`, so `available_width` has already had it
+    // subtracted. A plain `left_to_right` row with the button written first bounds it
+    // just as well and **moves the button to the left of the path** — a silent
+    // appearance change, and one the width assertion above passes. Measured: it does.
+    let rescan = h
+        .query_by_label("⟳")
+        .expect("the rescan button is a tree node")
+        .rect();
+    assert!(
+        window.max.x - rescan.max.x <= slack,
+        "the rescan button's right edge is {:.1}pt short of the window's -- it has moved \
+         off the right-hand margin, so the row is bounded by placing the button first in \
+         a left-to-right layout rather than by `right_to_left`",
+        window.max.x - rescan.max.x,
+    );
+
+    // Non-vacuity. A window that never laid out, or a close button measured at the
+    // origin, would satisfy the inequalities above while proving nothing.
+    assert!(
+        window.width() > 400.0 && close.max.x > window.min.x + 400.0,
+        "expected a real, usable window with its X near the right-hand end -- window \
+         {:?}, close button {close:?}",
+        window,
     );
 }
 
