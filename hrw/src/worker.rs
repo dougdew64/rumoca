@@ -191,8 +191,34 @@ pub struct SimData {
     pub times: Vec<f64>,
     pub names: Vec<String>,
     pub data: Vec<Vec<f64>>,
-    /// The first `n_states` names are true states (the rest are algebraics/outputs).
+    /// How many scalars the integrator advances.
+    ///
+    /// **This is a count, not a position — corrected 2026-11-04.** It used to be read
+    /// as *"the first `n_states` names are the true states"*, which held while states
+    /// led the name list and stopped holding on v0.10.4. `CartesianPendulum` lowers to
+    /// **one** `State` declaration — `$state_coordinates`, a 2-vector chart on the
+    /// constraint manifold — with `x`, `y`, `vx`, `vy` and `lambda` all `Algebraic`
+    /// and reconstructed from it. The name list still begins `x, y`, so the positional
+    /// rule labelled two algebraics as the model's states, in the pane Doug reads
+    /// plots from. Use [`is_state`](Self::is_state) instead.
     pub n_states: usize,
+    /// Rumoca's own per-variable answer to *is this a state*, aligned with
+    /// [`names`](Self::names).
+    ///
+    /// **Read, never derived.** `SimVariableMeta::is_state` is published per variable
+    /// by the solver; inferring it from an ordering is the same class of mistake as
+    /// renaming a field — HRW asserting something about Rumoca that Rumoca already
+    /// states. Empty only if the solver returned no metadata, which the accessor
+    /// treats as "unknown" rather than as "false".
+    pub is_state: Vec<bool>,
+    /// For a generated reduced-selection state scalar, the source scalar it equals.
+    ///
+    /// `None` for every ordinary variable. On a model that selects a chart this is how
+    /// a reader learns that `$state_coordinates[1]` *is* some declared variable, which
+    /// is the whole content of the selection — and it comes from
+    /// `SimVariableMeta::state_coordinate`, whose doc is *"the source scalar a
+    /// generated reduced-selection state scalar equals"*.
+    pub state_coordinate: Vec<Option<String>>,
     /// True when the model has a **discrete update** — a `reinit` (`f_z`) or a
     /// `when`-clause assignment (`f_m`) — that can jump a variable's value at an
     /// event. Only then does the plot break the polyline at discontinuities. A
@@ -300,9 +326,23 @@ impl SimData {
                 let series = &self.data[i];
                 serde_json::json!({
                     "name": name,
-                    // The first `n_states` names are the true states; see the
-                    // field's own doc on `SimData`.
-                    "is_state": i < self.n_states,
+                    // **Rumoca's answer, not a position.** See `SimData::is_state`:
+                    // the positional rule called `CartesianPendulum`'s `x` and `y`
+                    // states on v0.10.4, when the only state it lowers is a 2-vector
+                    // chart and both of those are reconstructed algebraics. Falls
+                    // back to the old rule only when the solver returned no metadata
+                    // at all, so a missing answer cannot silently read as `false`.
+                    "is_state": self
+                        .is_state
+                        .get(i)
+                        .copied()
+                        .unwrap_or(i < self.n_states),
+                    // Present only on a generated reduced-selection state scalar,
+                    // where it names the source scalar that coordinate equals.
+                    "state_coordinate": self
+                        .state_coordinate
+                        .get(i)
+                        .and_then(Option::as_deref),
                     "initial": series.first().copied().unwrap_or(f64::NAN),
                     "final": series.last().copied().unwrap_or(f64::NAN),
                     "min": series.iter().copied().fold(f64::INFINITY, f64::min),
@@ -2309,11 +2349,26 @@ impl WorkerState {
             format!("done ({:.1}ms total)", t0.elapsed().as_secs_f64() * 1000.0),
         );
 
+        // **Rumoca's own per-variable facts, carried rather than re-derived.** The
+        // metadata is aligned with `names` by position in `SimResult`; it is lifted
+        // into two parallel vectors so `SimData` keeps no borrow and the UI thread
+        // needs no solver type. `source_name()` is the solver's own rendering of a
+        // coordinate — `y`, or `der(y)` for a formal derivative — so HRW invents no
+        // notation for it.
+        let is_state: Vec<bool> = res.variable_meta.iter().map(|m| m.is_state).collect();
+        let state_coordinate: Vec<Option<String>> = res
+            .variable_meta
+            .iter()
+            .map(|m| m.state_coordinate.as_ref().map(|c| c.source_name()))
+            .collect();
+
         Ok(SimData {
             times: res.times,
             names: res.names,
             data: res.data,
             n_states: res.n_states,
+            is_state,
+            state_coordinate,
             has_discontinuities,
             solver_steps: solver_steps_from_integrator(solver_steps.as_deref()),
         })
