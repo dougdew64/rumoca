@@ -579,11 +579,23 @@ pub fn reference() -> String {
          `TryDisplace` descends and `DisplaceOk`/`DisplaceFail` return. It is \
          pinned against two real debugger runs by `matching_ledger`'s tests.\n\n",
     );
+    // **Re-derived for v0.10.4 at `updating-rumoca.md` step 7.** This cited "the two
+    // `augment_traced:243` give-ups" — a function and a line that no longer exist, in a
+    // GENERATED file, which is the worst place for a hand-written citation to rot: the
+    // header says "do not edit by hand", so a reader correcting it edits the output and
+    // the next regeneration puts the stale text back.
+    //
+    // The *claim* survives; only its anchor was dead. Both mechanisms below are read
+    // from `matching.rs` rather than counted, because a count is per-specimen and this
+    // paragraph is not.
     out.push_str(
-        "**What is missing here, deliberately:** the two `augment_traced:243` \
-         give-ups that emit no frame at all. They are real algorithm steps that \
-         the frame stream cannot contain, so no generator can list them — see \
-         `docs/ideas.md` #73. **A ledger is not a transcript of the search.**\n",
+        "**What is missing here, deliberately:** two kinds of step emit no frame at \
+         all. A variable already stamped with the current epoch is skipped inside \
+         `next_augment_step` without an `Explore`; and when the **outermost** frame is \
+         exhausted it pops without a `DisplaceFail`, because there is no parent to \
+         attribute the failure to. Both are real algorithm steps that the frame stream \
+         cannot contain, so no generator can list them — see `docs/ideas.md` #73. \
+         **A ledger is not a transcript of the search.**\n",
     );
     out
 }

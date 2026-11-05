@@ -408,11 +408,126 @@ separate "analysis" of an already-finished one.
 
 ---
 
-## The Index-Reduction Algorithm
+## The Index-Reduction Algorithm on v0.10.4 — two lanes and a search
 
-*Expired — verified 2026-07-30 against `crates/rumoca-phase-structural/src/dae_prepare/mod.rs`, which v0.10.0 removed.* The verification was real and the observation it recorded is worth keeping: on `MotorWithBrake` the 0.9.20 funnel demoted `emf.phi` (4 states to 3) via `reduce_constrained_dummy_derivatives`, with **no** rows differentiated. Textbook Pantelides differentiates a constraint; that path did not, and the difference mattered when reading a report. **Whether v0.10.0's two-lane reduction still declines to differentiate here is UNMEASURED** — it is the first question the refresh should put to a live report.
+*Written 2026-11-05 at `updating-rumoca.md` step 7, against
+`crates/rumoca-phase-structural/src/dae_transform.rs` and the committed specimen traces. The
+0.9.20 account it replaces is kept below, under its own banner, because it explains what this
+shape was built out of.*
 
-### The outer driver
+**The old open question is answered, and the answer is yes.** The 0.9.20 note asked whether the
+new reduction still declines to differentiate on `MotorWithBrake`. Measured from
+`docs/specimen-notebook/MotorWithBrake/trace/index_reduction.json`: **it does.** The Direct lane
+discovers 4 admissible candidates in round 1, attempts one, and it **sorts** — the candidate being
+`phi = flange.phi - internalSupport.phi` at `RotationalEMF.mo:41`, which is `emf.phi`'s own
+definition. 4 states become 3, in one round, **with no row differentiated.** Same variable, same
+outcome, different machinery.
+
+### The shape
+
+`prepare_for_solve` runs structural analysis once and branches on the result:
+
+- **it sorts** → `Borrowed`. Nothing was rebuilt; the raw system was already index-1.
+- **`EmptySystem`** → borrowed with an empty analysis.
+- **any other error** → `Stopped { Failure }`, and reduction never begins.
+- **`Singular`** → the search below, seeded with that error's unmatched **residue**.
+
+**Residue is not rank deficiency.** It is `(n_equations - n_matched) + (n_unknowns - n_matched)`:
+both deficits summed, so a square system's residue is **twice** its rank deficiency. A pendulum
+reporting `rank_deficiency: 1` reports `residue: 2`, and the two numbers are not in disagreement.
+
+### The two lanes, which are not symmetric
+
+**The Direct lane runs to exhaustion first.** Each round emits `Round { lane: Direct, round, error }`
+and asks `demote_direct_state_with_observer` for a candidate. A round ends in one of three ways:
+
+| step | meaning |
+|---|---|
+| `Sorted` | the rebuilt system matched completely — done, return the transformed DAE |
+| `Reduced` | still singular, **strictly smaller** residue — keep the rebuilt DAE and loop |
+| `None` | nothing admissible left — leave the loop *blocked* and hand over to Holonomic |
+
+**Then the Holonomic lane runs once**, on whatever the Direct lane left behind. It looks for a
+rigid relation among positions — a constraint with no derivative in it.
+
+**And if Holonomic finds nothing on the demoted system, the demoted system is thrown away and it
+retries on the pristine one** (`RetriedPristine`). That is why a trace can show `direct → holonomic
+→ direct` with the round counter restarting: the second Direct pass is a fresh search on the
+original model, not a continuation.
+
+### An attempt is a measurement, not a prediction
+
+**A candidate is not applied and checked afterwards — it is rebuilt, re-sorted, and the outcome is
+what the rebuild produced.** `AttemptOutcome` is the vocabulary, and the refusals are where the
+interesting information is:
+
+| outcome | accepted? | what it says |
+|---|---|---|
+| `Sorted` | yes | the rebuilt system matched completely |
+| `Reduced { residue }` | yes | still singular, residue strictly smaller |
+| `Held { residue }` | **Direct only** | residue unchanged. The Direct lane may keep it as a fallback; **the Holonomic lane refuses it** |
+| `Raised { residue }` | never | the rebuild made it worse |
+| `CannotReduce { bound }` | never | a structural lower bound proves the residue cannot fall below `bound`, so the candidate was never reconstructed at all |
+| `NonSingularFailure` | never | reconstruction failed, or failed to sort for a reason other than ordinary singularity |
+| `WouldDiscardInitial` | never | the rebuild would drop an MLS §8.6 initial value the source stated |
+| `WouldInvalidateManifold` | never | demotion would invalidate a retained state-manifold projection row |
+| `WouldCreateVacuousResidual` | never | holonomic reconstruction produced no residual scalar containing a continuous unknown |
+
+**`WouldCreateVacuousResidual` is the one to understand**, because it is what the canonical index-3
+pendulum hits. Differentiate `x² + y² = L²` twice and substitute the equations of motion back in,
+and every term cancels: the "new" row is `0 = 0`. It constrains nothing, so it cannot play the part
+the structural replacement promises. **The reducer finds the move, computes what the move would
+produce, and refuses** — which is not the same as failing to find it, and the distinction is the
+whole lesson of `fixture-labs/index-reduction.md` Station 6.
+
+### Where the pendulum is actually reduced — and it is not here
+
+**`prepare_for_solve` refuses `CartesianPendulum` and the model still simulates, on 2 coordinates.**
+The reduction happens one phase later, in `rumoca-phase-solve`'s **state selection**, which picks
+independent coordinates on the constraint manifold rather than differentiating anything. The rod
+says the point has one degree of freedom; one coordinate and its rate suffice.
+
+**So this phase's report is not the compiler's verdict on index**, and reading it as one is a
+mistake HRW made twice — see `docs/tech-debt.md`. State selection is a private module with no
+observation seam, so nothing here can show its search.
+<!-- unbuilt: rumoca_phase_solve::watch_state_selection -->
+
+### Where the code lives on v0.10.4
+
+| what | where |
+|---|---|
+| the entry point | `prepare_for_solve` in `crates/rumoca-phase-structural/src/dae_transform.rs` |
+| the observed twin | `inspect_prepare_for_solve` — same run, returns an owned `ReductionReport` |
+| the live-steppable twin | `watch_prepare_for_solve` — **HRW's own upstream seam**, additive and observation-only |
+| the fixed point | `reduce_from_first_round`, same file |
+| the Holonomic attempt | `dae_transform/holonomic_attempt.rs` |
+| symbolic differentiation | `dae_transform/differentiation.rs` — `differentiate`, `differentiate_order`, `differentiate_holonomic` |
+| the observation vocabulary | `dae_transform/observation.rs` — `AttemptOutcome`, `StoppedOutcome`, `Lane`, `CandidateGroup` |
+
+**There is no `dae_prepare/` and no driver in `rumoca-sim`.** The 0.9.x section below says the
+orchestrating driver lives at `crates/rumoca-sim/src/solve_lowering/structural_lowering.rs` as
+`prepare_dae_for_structural_analysis`; **that file and that function are both gone.** It survived
+this long because the path was written in bare parentheses rather than as a markdown link or a
+backtick citation, so neither `every_documented_source_path_exists` nor `qualified_citations_resolve`
+could see it — a dead reference hiding in its own formatting.
+
+---
+
+> # ⟶ EVERYTHING FROM HERE TO *"What This Pass Is Not"* DESCRIBES RUMOCA 0.9.20, WHICH v0.10.0 DELETED
+>
+> `crates/rumoca-phase-structural/src/dae_prepare/` is **gone**, and with it
+> `index_reduce_missing_state_derivatives`, its `_once` round function,
+> `reduce_constrained_dummy_derivatives` and the three `demote_*` sweeps. Three of those names
+> survive in the tree **only as banned symbols** in
+> `crates/rumoca/tests/.../architecture_boundaries.rs`, which exists to stop them coming back in
+> the wrong crate.
+>
+> **It is kept rather than deleted because it is the thing the current design was built out of**,
+> and because a reader asking *why two lanes* is better served by seeing the funnel they replaced
+> than by being told the shape is self-evident. Read it as history, the way `DECISIONS.md` is read.
+> **Nothing below is a claim about the compiler as it stands.**
+
+### The outer driver (0.9.20)
 
 ```rust
 pub fn index_reduce_missing_state_derivatives(dae: &mut Dae) -> Result<usize, StructuralError> {
@@ -887,7 +1002,9 @@ introducing an explicit auxiliary variable).
 
 ---
 
-## Where the Code Lives (and the v0.9.x Refactor)
+## Where the Code Lives (and the v0.9.x Refactor) — EXPIRED, see the v0.10.4 table above
+
+*Every path and symbol in this section is gone. Kept for the refactor history it records.*
 
 As of v0.9.x, the index-reduction pass and its companion DAE-prep helpers
 live in the **`rumoca-phase-structural`** crate, under

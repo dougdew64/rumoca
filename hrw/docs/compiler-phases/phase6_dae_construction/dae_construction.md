@@ -528,16 +528,21 @@ The pass mutates the Appendix B form directly:
 
 Because the pass rewrites the Appendix B form itself (rather than producing
 an analysis artifact alongside it, as phase 7 does), it is conceptually a
-continuation of DAE construction. As of v0.9.x, the implementation lives in
-`crates/rumoca-phase-structural/src/dae_prepare/` (it was historically in
-`rumoca-sim`; the v0.9.x refactor moved it into the phase-crate layer
-where it conceptually belongs). The orchestrating driver --
-`prepare_dae_for_structural_analysis` in `rumoca-sim/src/solve_lowering/structural_lowering.rs` --
-runs the prep stages in order for the simulation path. A separate
-`prepare_dae_for_codegen` in `rumoca-phase-dae/src/dae_lowering.rs` serves
-the codegen path. Both call the same `rumoca-phase-structural::dae_prepare`
-helpers, so every downstream consumer (simulator, template codegen,
-solve-IR lowering) receives an index-1 DAE built by the same code paths.
+continuation of DAE construction. The implementation lives in
+`crates/rumoca-phase-structural/src/dae_transform/` — historically in `rumoca-sim`, moved to the
+phase-crate layer by the v0.9.x refactor as `dae_prepare/`, and renamed and rewritten by v0.10.0.
+
+**The two drivers the v0.9.x text described are gone.**
+`prepare_dae_for_structural_analysis` and the file that held it,
+`rumoca-sim/src/solve_lowering/structural_lowering.rs`, no longer exist. The entry point is
+`prepare_for_solve`, and the property the old paragraph was asserting — that every downstream
+consumer receives a DAE built by the same code path — still holds, now because there is one
+entry point rather than two drivers agreeing.
+
+**And "receives an index-1 DAE" is the part to read carefully.** `prepare_for_solve` can
+*decline*: it returns `Singular` for `CartesianPendulum` while the compiler goes on to lower and
+simulate that model on two coordinates, because solve lowering selects a chart on the constraint
+manifold instead. A refusal here is not a failed compile.
 
 A full run-through — what differential index means, the
 `index_reduce_missing_state_derivatives_once` algorithm step by step, the
@@ -627,15 +632,21 @@ initial_equations:
 
 ### DAE preparation (`rumoca-phase-structural`)
 
+**The module is `dae_transform/` on v0.10.x.** `dae_prepare/` and every file in it was deleted;
+the table below lists what the four entries verified at the 0.10.4 rebase actually are. The rest
+of `dae_transform/` is ~40 files whose names are self-describing, and listing them from their
+names alone would be a claim this refresh did not check.
+
 | File | Purpose |
 |------|---------|
-| `rumoca-phase-structural/src/dae_prepare/mod.rs` | DAE-prep helpers: alias elimination, derivative expansion, demotion sweeps |
-| `rumoca-phase-structural/src/dae_prepare/state_row_reduction.rs` | Index reduction, sign normalization, derivative-row demotion |
-| `rumoca-phase-structural/src/dae_prepare/symbolic.rs` | Symbolic time differentiator (chain rule) |
-| `rumoca-phase-structural/src/dae_prepare/connection_alias.rs` | Connection-component fixed defining expression resolution |
-| `rumoca-phase-structural/src/dae_prepare/direct_demotion.rs` | Direct-assignment state demotion |
-| `rumoca-phase-structural/src/dae_prepare/dummy_state_metadata.rs` | Constrained dummy-state identification |
-| `rumoca-phase-structural/src/dae_prepare/row_shape.rs` | DAE variable sizing and residual scalar-width helpers |
+| `rumoca-phase-structural/src/dae_transform.rs` | The entry points — `prepare_for_solve`, `inspect_prepare_for_solve`, `watch_prepare_for_solve` — and `reduce_from_first_round`, the Direct-then-Holonomic fixed point |
+| `rumoca-phase-structural/src/dae_transform/differentiation.rs` | Symbolic time differentiator: `differentiate`, `differentiate_order`, `differentiate_holonomic` |
+| `rumoca-phase-structural/src/dae_transform/holonomic_attempt.rs` | The Holonomic lane's attempt, including the `WouldCreateVacuousResidual` refusal |
+| `rumoca-phase-structural/src/dae_transform/observation.rs` | The observation vocabulary: `AttemptOutcome`, `StoppedOutcome`, `Lane`, `CandidateGroup` |
+
+<!-- historical: rumoca-phase-structural/src/dae_prepare/state_row_reduction.rs -->
+<!-- historical: rumoca-phase-structural/src/dae_prepare/symbolic.rs -->
+<!-- historical: rumoca-phase-structural/src/dae_prepare/row_shape.rs -->
 
 ### Pipeline driver
 

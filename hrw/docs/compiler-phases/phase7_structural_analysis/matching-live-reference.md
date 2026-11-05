@@ -78,4 +78,4 @@ The lines a live lab sends you to. Each is located by what the line *says*, so m
 
 **Depth is derived from the step sequence, not from a stack** — `TryDisplace` descends and `DisplaceOk`/`DisplaceFail` return. It is pinned against two real debugger runs by `matching_ledger`'s tests.
 
-**What is missing here, deliberately:** the two `augment_traced:243` give-ups that emit no frame at all. They are real algorithm steps that the frame stream cannot contain, so no generator can list them — see `docs/ideas.md` #73. **A ledger is not a transcript of the search.**
+**What is missing here, deliberately:** two kinds of step emit no frame at all. A variable already stamped with the current epoch is skipped inside `next_augment_step` without an `Explore`; and when the **outermost** frame is exhausted it pops without a `DisplaceFail`, because there is no parent to attribute the failure to. Both are real algorithm steps that the frame stream cannot contain, so no generator can list them — see `docs/ideas.md` #73. **A ledger is not a transcript of the search.**

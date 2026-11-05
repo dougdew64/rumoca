@@ -1,5 +1,12 @@
 # Structural Analysis Guided Lab — Design
 
+> **History, not a map of the code.** This is the working document from the lab's design, and its
+> code names are 0.9.20's: `tarjan_scc_with_trace` and `TarjanTraceResult` do not exist on
+> v0.10.x, where the entry point is `tarjan_scc_with_observer` and the traversal walks an explicit
+> frame stack rather than recursing. The design reasoning is what this file is for and it still
+> holds; **for the current code read [`guided-lab.md`](guided-lab.md)**, which was corrected at the
+> 0.10.4 rebase.
+
 Working document for the first HRW-driven guided lab (idea #24). This lab
 proves the concept: theory + HRW actions + specimens = interactive learning.
 
