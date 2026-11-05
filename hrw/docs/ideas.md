@@ -6400,7 +6400,43 @@ view that as a learning opportunity. For example, the fact that Rumoca does not 
 Pantelides algorithm means that a learning opportunity exists for me. Perhaps I would enjoy
 attempting to implement that algorithm for Rumoca."*
 
-**Not scheduled. Not started.** <!-- unbuilt: rumoca_phase_structural::pantelides -->
+### ⟶ CLOSED BY UPSTREAM, 2026-11-04 — v0.10.4 reduces the pendulum, and the ladder is GREEN
+
+**All five rungs pass.** Rumoca v0.10.4 handles the canonical index-3 DAE, so the learning
+opportunity this entry was built around no longer exists in the form it describes. The entry is
+kept because *how* it was closed is worth more than the fact.
+
+**It is not Pantelides-as-written.** v0.10.4 added `rumoca-phase-solve`'s **state selection** —
+*"static independent coordinates for structurally constrained state manifolds"* — which constructs
+formal derivatives and picks a `ReducedSelectionChart` on the manifold, rather than differentiating
+and re-matching in place. `prepare_for_solve`'s reducer still **declines** this model: the
+Holonomic lane finds the rod constraint, attempts it, and refuses with
+`would_create_vacuous_residual`, because substituting a differentiated `x² + y² = L²` leaves
+`0 = 0`. So one component reports failure and the next succeeds anyway.
+
+**The measured result**, from the committed trace rather than inferred: 2 integrated scalars
+(`$state_coordinates`, a 2-vector), `x`/`y`/`vx`/`vy`/`lambda` all reconstructed algebraics,
+`$formal_derivative.2.x` and `.2.y` present — a *second* derivative, which is the differentiation
+this entry was waiting for. λ peaks at **29.43 = 3mg**, the hand-computed `m(g + v²/L)` for a mass
+released from horizontal, and `x² + y² = L²` holds to **4.6e-12** at the final sample. Exactly one
+specimen's simulated flag changed across the corpus.
+
+**Rungs 2-4 had to be re-aimed, and that is the lesson worth keeping.** They interrogated the
+reducer's report and got `null` — a true answer from a search that declined, and no answer at all
+to the question the rung's *name* asks. The same mistake HRW's Index Reduction banner was making
+on the same day. A rung is about a phenomenon, not about which component produces it.
+
+**What survives as a learning opportunity** is no longer implementing the algorithm but *seeing*
+it: `state_selection` is a private module, so its process — formal derivative construction, chart
+candidates, the selection search — is unobservable. That is the same shape `prepare_for_solve` had
+before `watch_prepare_for_solve`, and the same remedy applies.
+<!-- unbuilt: rumoca_phase_solve::watch_state_selection -->
+
+---
+
+*The original entry, preserved because the reasoning is the route in:*
+
+**Not scheduled. Not started.**
 
 **The acceptance criterion is written and waiting** — `pantelides_ladder`, added 2026-08-23. Five
 rungs, each able to turn green on its own: the deficiency is detected at the constraint (**green
