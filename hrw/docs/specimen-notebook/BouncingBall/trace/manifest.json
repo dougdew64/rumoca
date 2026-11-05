@@ -2,8 +2,8 @@
   "model": "BouncingBall",
   "specimen": "specimens/BouncingBall.mo",
   "specimen_fnv1a": "b5af7f4daae91f1b",
-  "rumoca_rev": "a334820a",
-  "rumoca_version": "0.10.0",
+  "rumoca_rev": "5b88a383",
+  "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
       "has_ir": true,
@@ -54,7 +54,7 @@
     "simulated": true,
     "t_end": 2.0,
     "n_variables": 2,
-    "n_time_points": 510,
+    "n_time_points": 512,
     "n_states": 2,
     "has_discontinuities": true
   }

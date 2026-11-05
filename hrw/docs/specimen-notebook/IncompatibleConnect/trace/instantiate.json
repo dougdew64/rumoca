@@ -80,6 +80,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -209,6 +210,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -338,6 +340,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -426,6 +429,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -555,6 +559,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -595,7 +600,8 @@
       "algorithms": [],
       "initial_algorithms": [],
       "connections": [],
-      "resolved_imports": []
+      "resolved_imports": [],
+      "parameter_branch_selections": []
     },
     "7": {
       "instance_id": 7,
@@ -627,7 +633,8 @@
       "algorithms": [],
       "initial_algorithms": [],
       "connections": [],
-      "resolved_imports": []
+      "resolved_imports": [],
+      "parameter_branch_selections": []
     },
     "1": {
       "instance_id": 1,
@@ -676,7 +683,8 @@
           "scope": ""
         }
       ],
-      "resolved_imports": []
+      "resolved_imports": [],
+      "parameter_branch_selections": []
     }
   },
   "is_partial": false,
@@ -689,6 +697,7 @@
   "outer_prefix_to_inner": {},
   "inner_outer_to_parent_inner": {},
   "synthesized_inners": [],
+  "synthesized_inner_messages": [],
   "type_roots": {},
   "type_ids_by_def_id": {},
   "enumeration_type_roots": [],

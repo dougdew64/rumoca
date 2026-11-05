@@ -667,7 +667,7 @@
         "owner_ordinal": 2,
         "body_ordinal": null,
         "component_scalar": null,
-        "residual_ordinal": 30,
+        "residual_ordinal": 31,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Interfaces/TwoPin.mo",
           "line": 10,
@@ -693,7 +693,7 @@
         "owner_ordinal": 2,
         "body_ordinal": null,
         "component_scalar": null,
-        "residual_ordinal": 30,
+        "residual_ordinal": 31,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Interfaces/TwoPin.mo",
           "line": 10,

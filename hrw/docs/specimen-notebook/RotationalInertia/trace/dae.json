@@ -1,5 +1,5 @@
 {
-  "schema_version": 38,
+  "schema_version": 52,
   "source_map": {
     "hrw_note": "Published by HRW, not by Rumoca's Serialize. Rumoca's node carries every registered file's full text; this one carries the id-to-file index for the files this DAE's spans name, and no text. Names are workspace-relative, so source_id_for_name(file) does NOT equal source_id the way Rumoca's own node requires (SPEC_0029 §3a) — resolve a span by its source_id, never by re-deriving one from the name.",
     "registered_files": 2556,
@@ -263,9 +263,12 @@
           "unit": "rad",
           "state_select": "Default",
           "description": "Absolute rotation angle of flange",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -332,9 +335,12 @@
           "unit": "N.m",
           "state_select": "Default",
           "description": "Cut torque in the flange",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -401,9 +407,12 @@
           "unit": "rad",
           "state_select": "Default",
           "description": "Absolute rotation angle of flange",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -470,9 +479,12 @@
           "unit": "N.m",
           "state_select": "Default",
           "description": "Cut torque in the flange",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -529,9 +541,12 @@
           "unit": "kg.m2",
           "state_select": "Default",
           "description": "Moment of inertia",
+          "enumeration": null,
           "causality": "parameter",
+          "declared_causality": "none",
           "is_tunable": true,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -588,9 +603,12 @@
           "unit": "rad",
           "state_select": "Default",
           "description": "Absolute rotation angle of component",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -647,9 +665,12 @@
           "unit": "rad/s",
           "state_select": "Default",
           "description": "Absolute angular velocity of component (= der(phi))",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -706,9 +727,12 @@
           "unit": "rad/s2",
           "state_select": "Default",
           "description": "Absolute angular acceleration of component (= der(w))",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -765,9 +789,12 @@
           "unit": null,
           "state_select": "Default",
           "description": "= true, if support flange enabled, otherwise implicitly grounded",
+          "enumeration": null,
           "causality": "parameter",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": true,
           "origin": "source"
         }
       },
@@ -834,9 +861,12 @@
           "unit": "rad",
           "state_select": "Default",
           "description": "Absolute rotation angle of flange",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -903,9 +933,12 @@
           "unit": "N.m",
           "state_select": "Default",
           "description": "Cut torque in the flange",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -962,9 +995,12 @@
           "unit": "rad",
           "state_select": "Default",
           "description": "Absolute angle of support flange",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1021,9 +1057,12 @@
           "unit": "N.m",
           "state_select": "Default",
           "description": "Accelerating torque acting at flange (= -flange.tau)",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "input",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1080,9 +1119,12 @@
           "unit": null,
           "state_select": "Default",
           "description": "Connector of Real output signal",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "output",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -1139,16 +1181,80 @@
           "unit": null,
           "state_select": "Default",
           "description": "Constant output value",
+          "enumeration": null,
           "causality": "parameter",
+          "declared_causality": "none",
           "is_tunable": true,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       }
     ],
     "functions": [],
     "domains": [],
+    "model_conditionals": [],
     "expressions": {
+      "model_contexts": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
       "nodes": [
         {
           "literal": {

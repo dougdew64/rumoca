@@ -1891,7 +1891,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 32,
-        "rhs_ordinal": 174,
+        "rhs_ordinal": 180,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Basic/RotationalEMF.mo",
           "line": 41,
@@ -1912,7 +1912,7 @@
       "identity": {
         "form": "direct",
         "state_ordinal": 32,
-        "rhs_ordinal": 174,
+        "rhs_ordinal": 180,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Basic/RotationalEMF.mo",
           "line": 41,

@@ -1,5 +1,5 @@
 {
-  "schema_version": 38,
+  "schema_version": 52,
   "source_map": {
     "hrw_note": "Published by HRW, not by Rumoca's Serialize. Rumoca's node carries every registered file's full text; this one carries the id-to-file index for the files this DAE's spans name, and no text. Names are workspace-relative, so source_id_for_name(file) does NOT equal source_id the way Rumoca's own node requires (SPEC_0029 §3a) — resolve a span by its source_id, never by re-deriving one from the name.",
     "registered_files": 2556,
@@ -108,9 +108,12 @@
           "unit": null,
           "state_select": "Default",
           "description": "gravity",
+          "enumeration": null,
           "causality": "parameter",
+          "declared_causality": "none",
           "is_tunable": true,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -157,9 +160,12 @@
           "unit": null,
           "state_select": "Default",
           "description": "coefficient of restitution",
+          "enumeration": null,
           "causality": "parameter",
+          "declared_causality": "none",
           "is_tunable": true,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -206,9 +212,12 @@
           "unit": null,
           "state_select": "Default",
           "description": "height",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       },
@@ -255,16 +264,42 @@
           "unit": null,
           "state_select": "Default",
           "description": "velocity",
+          "enumeration": null,
           "causality": "local",
+          "declared_causality": "none",
           "is_tunable": false,
           "is_held": false,
+          "evaluable": false,
           "origin": "source"
         }
       }
     ],
     "functions": [],
     "domains": [],
+    "model_conditionals": [],
     "expressions": {
+      "model_contexts": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
       "nodes": [
         {
           "literal": {

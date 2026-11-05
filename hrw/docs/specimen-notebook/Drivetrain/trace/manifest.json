@@ -2,8 +2,8 @@
   "model": "Drivetrain",
   "specimen": "specimens/Drivetrain.mo",
   "specimen_fnv1a": "8a7b13d217d23398",
-  "rumoca_rev": "a334820a",
-  "rumoca_version": "0.10.0",
+  "rumoca_rev": "5b88a383",
+  "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
       "has_ir": true,
@@ -53,7 +53,7 @@
   "simulation": {
     "simulated": true,
     "t_end": 2.0,
-    "n_variables": 136,
+    "n_variables": 122,
     "n_time_points": 501,
     "n_states": 3,
     "has_discontinuities": false

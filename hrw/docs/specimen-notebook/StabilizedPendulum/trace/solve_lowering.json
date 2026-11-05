@@ -1,5 +1,5 @@
 {
-  "schema_version": 70,
+  "schema_version": 89,
   "layout": {
     "bindings": {
       "x": {
@@ -81,49 +81,6 @@
     "p_scalars": 5
   },
   "solve_layout": {
-    "solver_maps": {
-      "names": [
-        "x",
-        "y",
-        "vx",
-        "vy",
-        "lambda",
-        "$derivative.vx",
-        "$derivative.vy"
-      ],
-      "name_to_idx": {
-        "x": 0,
-        "y": 1,
-        "vx": 2,
-        "vy": 3,
-        "lambda": 4,
-        "$derivative.vx": 5,
-        "$derivative.vy": 6
-      },
-      "base_to_indices": {
-        "x": [
-          0
-        ],
-        "y": [
-          1
-        ],
-        "vx": [
-          2
-        ],
-        "vy": [
-          3
-        ],
-        "lambda": [
-          4
-        ],
-        "$derivative.vx": [
-          5
-        ],
-        "$derivative.vy": [
-          6
-        ]
-      }
-    },
     "variable_storage_runs": [
       {
         "base": {
@@ -506,14 +463,8 @@
                   }
                 },
                 {
-                  "Const": {
-                    "dst": 2,
-                    "value": 2.0
-                  }
-                },
-                {
                   "Binary": {
-                    "dst": 3,
+                    "dst": 4,
                     "op": "Mul",
                     "lhs": 1,
                     "rhs": 1
@@ -521,99 +472,77 @@
                 },
                 {
                   "LoadY": {
-                    "dst": 4,
-                    "index": 3
-                  }
-                },
-                {
-                  "Const": {
                     "dst": 5,
-                    "value": 2.0
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 6,
-                    "op": "Mul",
-                    "lhs": 4,
-                    "rhs": 4
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 7,
-                    "op": "Add",
-                    "lhs": 3,
-                    "rhs": 6
+                    "index": 3
                   }
                 },
                 {
                   "Binary": {
                     "dst": 8,
                     "op": "Mul",
+                    "lhs": 5,
+                    "rhs": 5
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 9,
+                    "op": "Add",
+                    "lhs": 4,
+                    "rhs": 8
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 10,
+                    "op": "Mul",
                     "lhs": 0,
-                    "rhs": 7
+                    "rhs": 9
                   }
                 },
                 {
                   "Const": {
-                    "dst": 9,
+                    "dst": 11,
                     "value": 2.0
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 10,
+                    "dst": 12,
                     "index": 0
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 11,
+                    "dst": 13,
                     "index": 5
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 12,
+                    "dst": 14,
                     "op": "Mul",
-                    "lhs": 10,
-                    "rhs": 11
+                    "lhs": 12,
+                    "rhs": 13
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 13,
+                    "dst": 15,
                     "index": 1
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 14,
-                    "index": 6
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 15,
-                    "op": "Mul",
-                    "lhs": 13,
-                    "rhs": 14
-                  }
-                },
-                {
-                  "Binary": {
                     "dst": 16,
-                    "op": "Add",
-                    "lhs": 12,
-                    "rhs": 15
+                    "index": 6
                   }
                 },
                 {
                   "Binary": {
                     "dst": 17,
                     "op": "Mul",
-                    "lhs": 9,
+                    "lhs": 15,
                     "rhs": 16
                   }
                 },
@@ -621,83 +550,83 @@
                   "Binary": {
                     "dst": 18,
                     "op": "Add",
-                    "lhs": 8,
+                    "lhs": 14,
                     "rhs": 17
                   }
                 },
                 {
-                  "Const": {
+                  "Binary": {
                     "dst": 19,
+                    "op": "Mul",
+                    "lhs": 11,
+                    "rhs": 18
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 20,
+                    "op": "Add",
+                    "lhs": 10,
+                    "rhs": 19
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 21,
                     "value": 4.0
                   }
                 },
                 {
                   "LoadP": {
-                    "dst": 20,
+                    "dst": 22,
                     "index": 3
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 21,
+                    "dst": 23,
                     "op": "Mul",
-                    "lhs": 19,
-                    "rhs": 20
+                    "lhs": 21,
+                    "rhs": 22
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 22,
+                    "dst": 24,
                     "index": 0
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 23,
+                    "dst": 25,
                     "index": 2
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 24,
+                    "dst": 26,
                     "op": "Mul",
-                    "lhs": 22,
-                    "rhs": 23
+                    "lhs": 24,
+                    "rhs": 25
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 25,
+                    "dst": 27,
                     "index": 1
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 26,
-                    "index": 3
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 27,
-                    "op": "Mul",
-                    "lhs": 25,
-                    "rhs": 26
-                  }
-                },
-                {
-                  "Binary": {
                     "dst": 28,
-                    "op": "Add",
-                    "lhs": 24,
-                    "rhs": 27
+                    "index": 3
                   }
                 },
                 {
                   "Binary": {
                     "dst": 29,
                     "op": "Mul",
-                    "lhs": 21,
+                    "lhs": 27,
                     "rhs": 28
                   }
                 },
@@ -705,93 +634,63 @@
                   "Binary": {
                     "dst": 30,
                     "op": "Add",
-                    "lhs": 18,
+                    "lhs": 26,
                     "rhs": 29
                   }
                 },
                 {
-                  "LoadP": {
+                  "Binary": {
                     "dst": 31,
-                    "index": 4
-                  }
-                },
-                {
-                  "Const": {
-                    "dst": 32,
-                    "value": 2.0
+                    "op": "Mul",
+                    "lhs": 23,
+                    "rhs": 30
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 33,
-                    "op": "Mul",
-                    "lhs": 31,
+                    "dst": 32,
+                    "op": "Add",
+                    "lhs": 20,
                     "rhs": 31
                   }
                 },
                 {
-                  "LoadY": {
-                    "dst": 34,
-                    "index": 0
-                  }
-                },
-                {
-                  "Const": {
-                    "dst": 35,
-                    "value": 2.0
+                  "LoadP": {
+                    "dst": 33,
+                    "index": 4
                   }
                 },
                 {
                   "Binary": {
                     "dst": 36,
                     "op": "Mul",
-                    "lhs": 34,
-                    "rhs": 34
+                    "lhs": 33,
+                    "rhs": 33
                   }
                 },
                 {
                   "LoadY": {
                     "dst": 37,
-                    "index": 1
-                  }
-                },
-                {
-                  "Const": {
-                    "dst": 38,
-                    "value": 2.0
+                    "index": 0
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 39,
+                    "dst": 40,
                     "op": "Mul",
                     "lhs": 37,
                     "rhs": 37
                   }
                 },
                 {
-                  "Binary": {
-                    "dst": 40,
-                    "op": "Add",
-                    "lhs": 36,
-                    "rhs": 39
-                  }
-                },
-                {
-                  "LoadP": {
+                  "LoadY": {
                     "dst": 41,
-                    "index": 0
-                  }
-                },
-                {
-                  "Const": {
-                    "dst": 42,
-                    "value": 2.0
+                    "index": 1
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 43,
+                    "dst": 44,
                     "op": "Mul",
                     "lhs": 41,
                     "rhs": 41
@@ -799,45 +698,53 @@
                 },
                 {
                   "Binary": {
-                    "dst": 44,
-                    "op": "Sub",
-                    "lhs": 40,
-                    "rhs": 43
-                  }
-                },
-                {
-                  "Binary": {
                     "dst": 45,
-                    "op": "Mul",
-                    "lhs": 33,
+                    "op": "Add",
+                    "lhs": 40,
                     "rhs": 44
                   }
                 },
                 {
-                  "Binary": {
+                  "LoadP": {
                     "dst": 46,
-                    "op": "Add",
-                    "lhs": 30,
-                    "rhs": 45
-                  }
-                },
-                {
-                  "Const": {
-                    "dst": 47,
-                    "value": 0.0
+                    "index": 0
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 48,
-                    "op": "Sub",
+                    "dst": 49,
+                    "op": "Mul",
                     "lhs": 46,
-                    "rhs": 47
+                    "rhs": 46
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 50,
+                    "op": "Sub",
+                    "lhs": 45,
+                    "rhs": 49
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 51,
+                    "op": "Mul",
+                    "lhs": 36,
+                    "rhs": 50
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 52,
+                    "op": "Add",
+                    "lhs": 32,
+                    "rhs": 51
                   }
                 },
                 {
                   "StoreOutput": {
-                    "src": 48
+                    "src": 52
                   }
                 }
               ]
@@ -859,67 +766,60 @@
                 "end": 1195
               }
             ],
-            "output_indices": [
-              2,
-              3,
-              4
-            ]
+            "output_placements": {
+              "ProgramRanges": [
+                {
+                  "Range": {
+                    "start": 2,
+                    "end": 3
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 3,
+                    "end": 4
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 4,
+                    "end": 5
+                  }
+                }
+              ]
+            }
           }
         }
       ]
     },
-    "implicit_row_targets": [
-      null,
-      null,
-      {
-        "Y": {
-          "index": 4,
-          "byte_offset": 32
-        }
-      },
-      {
-        "Y": {
-          "index": 6,
-          "byte_offset": 48
-        }
-      },
-      {
-        "Y": {
-          "index": 5,
-          "byte_offset": 40
-        }
-      }
-    ],
+    "implicit_row_targets": "Projection",
     "algebraic_projection_plan": {
       "blocks": [
         {
-          "rows": [
-            3,
-            4,
-            2
-          ],
-          "y_indices": [
-            6,
-            5,
-            4
-          ],
-          "tearing": {
-            "tear_y_indices": [
-              6
-            ],
-            "residual_rows": [
+          "Explicit": {
+            "rows": [
+              3,
+              4,
               2
             ],
-            "causal_steps": [
-              {
-                "row": 4,
-                "y_index": 5
-              },
-              {
-                "row": 3,
-                "y_index": 4
-              }
-            ]
+            "y_indices": [
+              6,
+              5,
+              4
+            ],
+            "tearing": {
+              "tear_y_indices": [
+                6,
+                5,
+                4
+              ],
+              "residual_rows": [
+                2,
+                4,
+                3
+              ],
+              "causal_steps": []
+            }
           }
         }
       ]
@@ -1095,14 +995,8 @@
                   }
                 },
                 {
-                  "Const": {
-                    "dst": 2,
-                    "value": 2.0
-                  }
-                },
-                {
                   "Binary": {
-                    "dst": 3,
+                    "dst": 4,
                     "op": "Mul",
                     "lhs": 1,
                     "rhs": 1
@@ -1110,99 +1004,77 @@
                 },
                 {
                   "LoadY": {
-                    "dst": 4,
-                    "index": 3
-                  }
-                },
-                {
-                  "Const": {
                     "dst": 5,
-                    "value": 2.0
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 6,
-                    "op": "Mul",
-                    "lhs": 4,
-                    "rhs": 4
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 7,
-                    "op": "Add",
-                    "lhs": 3,
-                    "rhs": 6
+                    "index": 3
                   }
                 },
                 {
                   "Binary": {
                     "dst": 8,
                     "op": "Mul",
+                    "lhs": 5,
+                    "rhs": 5
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 9,
+                    "op": "Add",
+                    "lhs": 4,
+                    "rhs": 8
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 10,
+                    "op": "Mul",
                     "lhs": 0,
-                    "rhs": 7
+                    "rhs": 9
                   }
                 },
                 {
                   "Const": {
-                    "dst": 9,
+                    "dst": 11,
                     "value": 2.0
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 10,
+                    "dst": 12,
                     "index": 0
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 11,
+                    "dst": 13,
                     "index": 5
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 12,
+                    "dst": 14,
                     "op": "Mul",
-                    "lhs": 10,
-                    "rhs": 11
+                    "lhs": 12,
+                    "rhs": 13
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 13,
+                    "dst": 15,
                     "index": 1
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 14,
-                    "index": 6
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 15,
-                    "op": "Mul",
-                    "lhs": 13,
-                    "rhs": 14
-                  }
-                },
-                {
-                  "Binary": {
                     "dst": 16,
-                    "op": "Add",
-                    "lhs": 12,
-                    "rhs": 15
+                    "index": 6
                   }
                 },
                 {
                   "Binary": {
                     "dst": 17,
                     "op": "Mul",
-                    "lhs": 9,
+                    "lhs": 15,
                     "rhs": 16
                   }
                 },
@@ -1210,83 +1082,83 @@
                   "Binary": {
                     "dst": 18,
                     "op": "Add",
-                    "lhs": 8,
+                    "lhs": 14,
                     "rhs": 17
                   }
                 },
                 {
-                  "Const": {
+                  "Binary": {
                     "dst": 19,
+                    "op": "Mul",
+                    "lhs": 11,
+                    "rhs": 18
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 20,
+                    "op": "Add",
+                    "lhs": 10,
+                    "rhs": 19
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 21,
                     "value": 4.0
                   }
                 },
                 {
                   "LoadP": {
-                    "dst": 20,
+                    "dst": 22,
                     "index": 3
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 21,
+                    "dst": 23,
                     "op": "Mul",
-                    "lhs": 19,
-                    "rhs": 20
+                    "lhs": 21,
+                    "rhs": 22
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 22,
+                    "dst": 24,
                     "index": 0
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 23,
+                    "dst": 25,
                     "index": 2
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 24,
+                    "dst": 26,
                     "op": "Mul",
-                    "lhs": 22,
-                    "rhs": 23
+                    "lhs": 24,
+                    "rhs": 25
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 25,
+                    "dst": 27,
                     "index": 1
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 26,
-                    "index": 3
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 27,
-                    "op": "Mul",
-                    "lhs": 25,
-                    "rhs": 26
-                  }
-                },
-                {
-                  "Binary": {
                     "dst": 28,
-                    "op": "Add",
-                    "lhs": 24,
-                    "rhs": 27
+                    "index": 3
                   }
                 },
                 {
                   "Binary": {
                     "dst": 29,
                     "op": "Mul",
-                    "lhs": 21,
+                    "lhs": 27,
                     "rhs": 28
                   }
                 },
@@ -1294,93 +1166,63 @@
                   "Binary": {
                     "dst": 30,
                     "op": "Add",
-                    "lhs": 18,
+                    "lhs": 26,
                     "rhs": 29
                   }
                 },
                 {
-                  "LoadP": {
+                  "Binary": {
                     "dst": 31,
-                    "index": 4
-                  }
-                },
-                {
-                  "Const": {
-                    "dst": 32,
-                    "value": 2.0
+                    "op": "Mul",
+                    "lhs": 23,
+                    "rhs": 30
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 33,
-                    "op": "Mul",
-                    "lhs": 31,
+                    "dst": 32,
+                    "op": "Add",
+                    "lhs": 20,
                     "rhs": 31
                   }
                 },
                 {
-                  "LoadY": {
-                    "dst": 34,
-                    "index": 0
-                  }
-                },
-                {
-                  "Const": {
-                    "dst": 35,
-                    "value": 2.0
+                  "LoadP": {
+                    "dst": 33,
+                    "index": 4
                   }
                 },
                 {
                   "Binary": {
                     "dst": 36,
                     "op": "Mul",
-                    "lhs": 34,
-                    "rhs": 34
+                    "lhs": 33,
+                    "rhs": 33
                   }
                 },
                 {
                   "LoadY": {
                     "dst": 37,
-                    "index": 1
-                  }
-                },
-                {
-                  "Const": {
-                    "dst": 38,
-                    "value": 2.0
+                    "index": 0
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 39,
+                    "dst": 40,
                     "op": "Mul",
                     "lhs": 37,
                     "rhs": 37
                   }
                 },
                 {
-                  "Binary": {
-                    "dst": 40,
-                    "op": "Add",
-                    "lhs": 36,
-                    "rhs": 39
-                  }
-                },
-                {
-                  "LoadP": {
+                  "LoadY": {
                     "dst": 41,
-                    "index": 0
-                  }
-                },
-                {
-                  "Const": {
-                    "dst": 42,
-                    "value": 2.0
+                    "index": 1
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 43,
+                    "dst": 44,
                     "op": "Mul",
                     "lhs": 41,
                     "rhs": 41
@@ -1388,45 +1230,53 @@
                 },
                 {
                   "Binary": {
-                    "dst": 44,
-                    "op": "Sub",
-                    "lhs": 40,
-                    "rhs": 43
-                  }
-                },
-                {
-                  "Binary": {
                     "dst": 45,
-                    "op": "Mul",
-                    "lhs": 33,
+                    "op": "Add",
+                    "lhs": 40,
                     "rhs": 44
                   }
                 },
                 {
-                  "Binary": {
+                  "LoadP": {
                     "dst": 46,
-                    "op": "Add",
-                    "lhs": 30,
-                    "rhs": 45
-                  }
-                },
-                {
-                  "Const": {
-                    "dst": 47,
-                    "value": 0.0
+                    "index": 0
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 48,
-                    "op": "Sub",
+                    "dst": 49,
+                    "op": "Mul",
                     "lhs": 46,
-                    "rhs": 47
+                    "rhs": 46
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 50,
+                    "op": "Sub",
+                    "lhs": 45,
+                    "rhs": 49
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 51,
+                    "op": "Mul",
+                    "lhs": 36,
+                    "rhs": 50
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 52,
+                    "op": "Add",
+                    "lhs": 32,
+                    "rhs": 51
                   }
                 },
                 {
                   "StoreOutput": {
-                    "src": 48
+                    "src": 52
                   }
                 }
               ]
@@ -1448,11 +1298,28 @@
                 "end": 1195
               }
             ],
-            "output_indices": [
-              2,
-              3,
-              4
-            ]
+            "output_placements": {
+              "ProgramRanges": [
+                {
+                  "Range": {
+                    "start": 2,
+                    "end": 3
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 3,
+                    "end": 4
+                  }
+                },
+                {
+                  "Range": {
+                    "start": 4,
+                    "end": 5
+                  }
+                }
+              ]
+            }
           }
         }
       ]
@@ -1543,48 +1410,45 @@
                 "end": 700
               }
             ],
-            "output_indices": [
-              0,
-              1,
-              2,
-              3
-            ]
+            "output_placements": {
+              "Dense": {
+                "count": 4
+              }
+            }
           }
         }
       ]
     },
     "refresh_owners": {
+      "compact_projection": null,
       "algebraic": {
         "simultaneous_plan": {
           "blocks": [
             {
-              "rows": [
-                3,
-                4,
-                2
-              ],
-              "y_indices": [
-                6,
-                5,
-                4
-              ],
-              "tearing": {
-                "tear_y_indices": [
-                  6
-                ],
-                "residual_rows": [
+              "Explicit": {
+                "rows": [
+                  3,
+                  4,
                   2
                 ],
-                "causal_steps": [
-                  {
-                    "row": 4,
-                    "y_index": 5
-                  },
-                  {
-                    "row": 3,
-                    "y_index": 4
-                  }
-                ]
+                "y_indices": [
+                  6,
+                  5,
+                  4
+                ],
+                "tearing": {
+                  "tear_y_indices": [
+                    6,
+                    5,
+                    4
+                  ],
+                  "residual_rows": [
+                    2,
+                    4,
+                    3
+                  ],
+                  "causal_steps": []
+                }
               }
             }
           ]
@@ -1595,33 +1459,30 @@
         "value_projection_plan": {
           "blocks": [
             {
-              "rows": [
-                3,
-                4,
-                2
-              ],
-              "y_indices": [
-                6,
-                5,
-                4
-              ],
-              "tearing": {
-                "tear_y_indices": [
-                  6
-                ],
-                "residual_rows": [
+              "Explicit": {
+                "rows": [
+                  3,
+                  4,
                   2
                 ],
-                "causal_steps": [
-                  {
-                    "row": 4,
-                    "y_index": 5
-                  },
-                  {
-                    "row": 3,
-                    "y_index": 4
-                  }
-                ]
+                "y_indices": [
+                  6,
+                  5,
+                  4
+                ],
+                "tearing": {
+                  "tear_y_indices": [
+                    6,
+                    5,
+                    4
+                  ],
+                  "residual_rows": [
+                    2,
+                    4,
+                    3
+                  ],
+                  "causal_steps": []
+                }
               }
             }
           ]
@@ -1726,22 +1587,22 @@
               "TensorAffine": {
                 "target_y_index": 5,
                 "projection": {
-                  "output": 48,
+                  "output": 52,
                   "steps": [
-                    [
-                      8,
-                      "Independent"
-                    ],
-                    [
-                      9,
-                      "Independent"
-                    ],
                     [
                       10,
                       "Independent"
                     ],
                     [
                       11,
+                      "Independent"
+                    ],
+                    [
+                      12,
+                      "Independent"
+                    ],
+                    [
+                      13,
                       {
                         "Target": {
                           "offset": 0
@@ -1749,82 +1610,70 @@
                       }
                     ],
                     [
-                      12,
+                      14,
                       "RightProduct"
-                    ],
-                    [
-                      15,
-                      "Independent"
-                    ],
-                    [
-                      16,
-                      "Linear"
                     ],
                     [
                       17,
-                      "RightProduct"
+                      "Independent"
                     ],
                     [
                       18,
                       "Linear"
                     ],
                     [
-                      29,
-                      "Independent"
+                      19,
+                      "RightProduct"
                     ],
                     [
-                      30,
+                      20,
                       "Linear"
                     ],
                     [
-                      45,
+                      31,
                       "Independent"
                     ],
                     [
-                      46,
+                      32,
                       "Linear"
                     ],
                     [
-                      47,
+                      51,
                       "Independent"
                     ],
                     [
-                      48,
+                      52,
                       "Linear"
                     ]
                   ],
                   "independent_ranges": [
                     [
-                      8,
-                      1
-                    ],
-                    [
-                      9,
-                      1
-                    ],
-                    [
                       10,
                       1
                     ],
                     [
-                      15,
+                      11,
                       1
                     ],
                     [
-                      29,
+                      12,
                       1
                     ],
                     [
-                      45,
+                      17,
                       1
                     ],
                     [
-                      47,
+                      31,
+                      1
+                    ],
+                    [
+                      51,
                       1
                     ]
                   ]
                 },
-                "expr_eval_len": 49
+                "expr_eval_len": 41
               }
             },
             "direct_assignment_certified": false,
@@ -1849,33 +1698,30 @@
               "plan": {
                 "blocks": [
                   {
-                    "rows": [
-                      3,
-                      4,
-                      2
-                    ],
-                    "y_indices": [
-                      6,
-                      5,
-                      4
-                    ],
-                    "tearing": {
-                      "tear_y_indices": [
-                        6
-                      ],
-                      "residual_rows": [
+                    "Explicit": {
+                      "rows": [
+                        3,
+                        4,
                         2
                       ],
-                      "causal_steps": [
-                        {
-                          "row": 4,
-                          "y_index": 5
-                        },
-                        {
-                          "row": 3,
-                          "y_index": 4
-                        }
-                      ]
+                      "y_indices": [
+                        6,
+                        5,
+                        4
+                      ],
+                      "tearing": {
+                        "tear_y_indices": [
+                          6,
+                          5,
+                          4
+                        ],
+                        "residual_rows": [
+                          2,
+                          4,
+                          3
+                        ],
+                        "causal_steps": []
+                      }
                     }
                   }
                 ]
@@ -1890,33 +1736,30 @@
         "simultaneous_plan": {
           "blocks": [
             {
-              "rows": [
-                3,
-                4,
-                2
-              ],
-              "y_indices": [
-                6,
-                5,
-                4
-              ],
-              "tearing": {
-                "tear_y_indices": [
-                  6
-                ],
-                "residual_rows": [
+              "Explicit": {
+                "rows": [
+                  3,
+                  4,
                   2
                 ],
-                "causal_steps": [
-                  {
-                    "row": 4,
-                    "y_index": 5
-                  },
-                  {
-                    "row": 3,
-                    "y_index": 4
-                  }
-                ]
+                "y_indices": [
+                  6,
+                  5,
+                  4
+                ],
+                "tearing": {
+                  "tear_y_indices": [
+                    6,
+                    5,
+                    4
+                  ],
+                  "residual_rows": [
+                    2,
+                    4,
+                    3
+                  ],
+                  "causal_steps": []
+                }
               }
             }
           ]
@@ -1927,33 +1770,30 @@
         "value_projection_plan": {
           "blocks": [
             {
-              "rows": [
-                3,
-                4,
-                2
-              ],
-              "y_indices": [
-                6,
-                5,
-                4
-              ],
-              "tearing": {
-                "tear_y_indices": [
-                  6
-                ],
-                "residual_rows": [
+              "Explicit": {
+                "rows": [
+                  3,
+                  4,
                   2
                 ],
-                "causal_steps": [
-                  {
-                    "row": 4,
-                    "y_index": 5
-                  },
-                  {
-                    "row": 3,
-                    "y_index": 4
-                  }
-                ]
+                "y_indices": [
+                  6,
+                  5,
+                  4
+                ],
+                "tearing": {
+                  "tear_y_indices": [
+                    6,
+                    5,
+                    4
+                  ],
+                  "residual_rows": [
+                    2,
+                    4,
+                    3
+                  ],
+                  "causal_steps": []
+                }
               }
             }
           ]
@@ -2058,22 +1898,22 @@
               "TensorAffine": {
                 "target_y_index": 5,
                 "projection": {
-                  "output": 48,
+                  "output": 52,
                   "steps": [
-                    [
-                      8,
-                      "Independent"
-                    ],
-                    [
-                      9,
-                      "Independent"
-                    ],
                     [
                       10,
                       "Independent"
                     ],
                     [
                       11,
+                      "Independent"
+                    ],
+                    [
+                      12,
+                      "Independent"
+                    ],
+                    [
+                      13,
                       {
                         "Target": {
                           "offset": 0
@@ -2081,82 +1921,70 @@
                       }
                     ],
                     [
-                      12,
+                      14,
                       "RightProduct"
-                    ],
-                    [
-                      15,
-                      "Independent"
-                    ],
-                    [
-                      16,
-                      "Linear"
                     ],
                     [
                       17,
-                      "RightProduct"
+                      "Independent"
                     ],
                     [
                       18,
                       "Linear"
                     ],
                     [
-                      29,
-                      "Independent"
+                      19,
+                      "RightProduct"
                     ],
                     [
-                      30,
+                      20,
                       "Linear"
                     ],
                     [
-                      45,
+                      31,
                       "Independent"
                     ],
                     [
-                      46,
+                      32,
                       "Linear"
                     ],
                     [
-                      47,
+                      51,
                       "Independent"
                     ],
                     [
-                      48,
+                      52,
                       "Linear"
                     ]
                   ],
                   "independent_ranges": [
                     [
-                      8,
-                      1
-                    ],
-                    [
-                      9,
-                      1
-                    ],
-                    [
                       10,
                       1
                     ],
                     [
-                      15,
+                      11,
                       1
                     ],
                     [
-                      29,
+                      12,
                       1
                     ],
                     [
-                      45,
+                      17,
                       1
                     ],
                     [
-                      47,
+                      31,
+                      1
+                    ],
+                    [
+                      51,
                       1
                     ]
                   ]
                 },
-                "expr_eval_len": 49
+                "expr_eval_len": 41
               }
             },
             "direct_assignment_certified": false,
@@ -2181,33 +2009,30 @@
               "plan": {
                 "blocks": [
                   {
-                    "rows": [
-                      3,
-                      4,
-                      2
-                    ],
-                    "y_indices": [
-                      6,
-                      5,
-                      4
-                    ],
-                    "tearing": {
-                      "tear_y_indices": [
-                        6
-                      ],
-                      "residual_rows": [
+                    "Explicit": {
+                      "rows": [
+                        3,
+                        4,
                         2
                       ],
-                      "causal_steps": [
-                        {
-                          "row": 4,
-                          "y_index": 5
-                        },
-                        {
-                          "row": 3,
-                          "y_index": 4
-                        }
-                      ]
+                      "y_indices": [
+                        6,
+                        5,
+                        4
+                      ],
+                      "tearing": {
+                        "tear_y_indices": [
+                          6,
+                          5,
+                          4
+                        ],
+                        "residual_rows": [
+                          2,
+                          4,
+                          3
+                        ],
+                        "causal_steps": []
+                      }
                     }
                   }
                 ]
@@ -2257,12 +2082,17 @@
     },
     "row_roles": [],
     "projection_plan": {
-      "blocks": []
+      "blocks": [],
+      "iterates_discretes": false
     },
     "update_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "update_targets": [],
     "manifold_row_count": 0,
@@ -2270,26 +2100,69 @@
   },
   "discrete": {
     "event_iteration_plan": {
-      "runs": []
+      "runs": [],
+      "partitions": [],
+      "schedule": {
+        "event_pass": [
+          "RelationOverrides",
+          "RuntimeAssignments",
+          "AlgebraicProjection",
+          "RuntimeAssignments",
+          "RelationRefresh",
+          "RelationSettle"
+        ],
+        "relation_pass": [
+          "DiscreteSettle",
+          "SettledIfRelationsUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "settle_pass": [
+          "DiscreteOwners",
+          "RuntimeAssignments",
+          "SettledIfUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "fixed_point_cap": 32,
+        "stalled_settle": {
+          "iteration_cap": 32,
+          "line_search_halvings": 16
+        },
+        "relation_surface_window": 8,
+        "mode_search_relations": 4
+      }
     },
     "runtime_assignment_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "runtime_assignment_targets": [],
     "runtime_assignment_roles": [],
     "post_commit_assignment_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "post_commit_assignment_targets": [],
     "post_commit_assignment_runtime_rows": [],
     "rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "update_targets": [],
     "row_roles": [],
@@ -2308,7 +2181,11 @@
     "clock_partition_intermediates": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "clock_partition_intermediate_targets": [],
     "clock_partition_intermediate_clocks": []
@@ -2317,7 +2194,11 @@
     "root_conditions": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "root_relation_memory_targets": [],
     "root_zero_domains": [],
@@ -2329,12 +2210,20 @@
     "dynamic_time_event_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "action_conditions": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "actions": [],
     "has_terminal_event": false,
@@ -2342,17 +2231,29 @@
       "source_rhs": {
         "programs": [],
         "program_spans": [],
-        "output_indices": []
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
       },
       "delay_time_rhs": {
         "programs": [],
         "program_spans": [],
-        "output_indices": []
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
       },
       "delay_max_rhs": {
         "programs": [],
         "program_spans": [],
-        "output_indices": []
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
       },
       "value_parameter_indices": [],
       "source_is_discrete": []

@@ -1,5 +1,5 @@
 {
-  "schema_version": 70,
+  "schema_version": 89,
   "layout": {
     "bindings": {
       "h": {
@@ -30,27 +30,9 @@
     "shapes": {},
     "shape_spans": {},
     "y_scalars": 2,
-    "p_scalars": 5
+    "p_scalars": 6
   },
   "solve_layout": {
-    "solver_maps": {
-      "names": [
-        "h",
-        "v"
-      ],
-      "name_to_idx": {
-        "h": 0,
-        "v": 1
-      },
-      "base_to_indices": {
-        "h": [
-          0
-        ],
-        "v": [
-          1
-        ]
-      }
-    },
     "variable_storage_runs": [
       {
         "base": {
@@ -123,14 +105,14 @@
     "algebraic_scalar_count": 0,
     "output_scalar_count": 0,
     "parameter_count": 2,
-    "compiled_parameter_len": 5,
+    "compiled_parameter_len": 6,
     "input_scalar_names": [],
     "discrete_real_scalar_names": [],
     "discrete_valued_scalar_names": [],
     "relation_memory_parameter_indices": [
       4
     ],
-    "initial_event_parameter_index": null,
+    "initial_event_parameter_index": 5,
     "terminal_event_parameter_index": null,
     "initial_homotopy_parameter_index": null,
     "pre_param_bindings": [
@@ -149,7 +131,7 @@
     "implicit_rhs": {
       "nodes": []
     },
-    "implicit_row_targets": [],
+    "implicit_row_targets": "Projection",
     "algebraic_projection_plan": {
       "blocks": []
     },
@@ -213,15 +195,17 @@
                 "end": 421
               }
             ],
-            "output_indices": [
-              0,
-              1
-            ]
+            "output_placements": {
+              "Dense": {
+                "count": 2
+              }
+            }
           }
         }
       ]
     },
     "refresh_owners": {
+      "compact_projection": null,
       "algebraic": {
         "simultaneous_plan": {
           "blocks": []
@@ -291,12 +275,17 @@
     },
     "row_roles": [],
     "projection_plan": {
-      "blocks": []
+      "blocks": [],
+      "iterates_discretes": false
     },
     "update_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "update_targets": [],
     "manifold_row_count": 0,
@@ -304,19 +293,58 @@
   },
   "discrete": {
     "event_iteration_plan": {
-      "runs": []
+      "runs": [],
+      "partitions": [],
+      "schedule": {
+        "event_pass": [
+          "RelationOverrides",
+          "RuntimeAssignments",
+          "AlgebraicProjection",
+          "RuntimeAssignments",
+          "RelationRefresh",
+          "RelationSettle"
+        ],
+        "relation_pass": [
+          "DiscreteSettle",
+          "SettledIfRelationsUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "settle_pass": [
+          "DiscreteOwners",
+          "RuntimeAssignments",
+          "SettledIfUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "fixed_point_cap": 32,
+        "stalled_settle": {
+          "iteration_cap": 32,
+          "line_search_halvings": 16
+        },
+        "relation_surface_window": 8,
+        "mode_search_relations": 4
+      }
     },
     "runtime_assignment_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "runtime_assignment_targets": [],
     "runtime_assignment_roles": [],
     "post_commit_assignment_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "post_commit_assignment_targets": [],
     "post_commit_assignment_runtime_rows": [],
@@ -324,9 +352,77 @@
       "programs": [
         [
           {
-            "LoadP": {
-              "dst": 0,
-              "index": 4
+            "FunctionConditional": {
+              "dst_start": 0,
+              "capture_start": 0,
+              "program": {
+                "owner": null,
+                "capture_count": 0,
+                "target_widths": [
+                  1
+                ],
+                "result_count": 1,
+                "arms": [
+                  {
+                    "condition_register_count": 1,
+                    "result_register_count": 3,
+                    "condition": [
+                      {
+                        "LoadP": {
+                          "dst": 0,
+                          "index": 5
+                        }
+                      },
+                      {
+                        "StoreOutput": {
+                          "src": 0
+                        }
+                      }
+                    ],
+                    "result": [
+                      {
+                        "LoadY": {
+                          "dst": 0,
+                          "index": 0
+                        }
+                      },
+                      {
+                        "Const": {
+                          "dst": 1,
+                          "value": 0.0
+                        }
+                      },
+                      {
+                        "Compare": {
+                          "dst": 2,
+                          "op": "Le",
+                          "lhs": 0,
+                          "rhs": 1
+                        }
+                      },
+                      {
+                        "StoreOutput": {
+                          "src": 2
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "fallback_register_count": 1,
+                "fallback": [
+                  {
+                    "LoadP": {
+                      "dst": 0,
+                      "index": 4
+                    }
+                  },
+                  {
+                    "StoreOutput": {
+                      "src": 0
+                    }
+                  }
+                ]
+              }
             }
           },
           {
@@ -343,9 +439,11 @@
           "end": 436
         }
       ],
-      "output_indices": [
-        0
-      ]
+      "output_placements": {
+        "Dense": {
+          "count": 1
+        }
+      }
     },
     "update_targets": [
       {
@@ -387,13 +485,81 @@
                 "result_count": 1,
                 "arms": [
                   {
-                    "condition_register_count": 6,
+                    "condition_register_count": 5,
                     "result_register_count": 4,
                     "condition": [
                       {
-                        "LoadP": {
-                          "dst": 0,
-                          "index": 4
+                        "FunctionConditional": {
+                          "dst_start": 0,
+                          "capture_start": 0,
+                          "program": {
+                            "owner": null,
+                            "capture_count": 0,
+                            "target_widths": [
+                              1
+                            ],
+                            "result_count": 1,
+                            "arms": [
+                              {
+                                "condition_register_count": 1,
+                                "result_register_count": 3,
+                                "condition": [
+                                  {
+                                    "LoadP": {
+                                      "dst": 0,
+                                      "index": 5
+                                    }
+                                  },
+                                  {
+                                    "StoreOutput": {
+                                      "src": 0
+                                    }
+                                  }
+                                ],
+                                "result": [
+                                  {
+                                    "LoadY": {
+                                      "dst": 0,
+                                      "index": 0
+                                    }
+                                  },
+                                  {
+                                    "Const": {
+                                      "dst": 1,
+                                      "value": 0.0
+                                    }
+                                  },
+                                  {
+                                    "Compare": {
+                                      "dst": 2,
+                                      "op": "Le",
+                                      "lhs": 0,
+                                      "rhs": 1
+                                    }
+                                  },
+                                  {
+                                    "StoreOutput": {
+                                      "src": 2
+                                    }
+                                  }
+                                ]
+                              }
+                            ],
+                            "fallback_register_count": 1,
+                            "fallback": [
+                              {
+                                "LoadP": {
+                                  "dst": 0,
+                                  "index": 4
+                                }
+                              },
+                              {
+                                "StoreOutput": {
+                                  "src": 0
+                                }
+                              }
+                            ]
+                          }
                         }
                       },
                       {
@@ -418,22 +584,16 @@
                         }
                       },
                       {
-                        "LoadP": {
-                          "dst": 4,
-                          "index": 4
-                        }
-                      },
-                      {
                         "Binary": {
-                          "dst": 5,
+                          "dst": 4,
                           "op": "And",
                           "lhs": 3,
-                          "rhs": 4
+                          "rhs": 0
                         }
                       },
                       {
                         "StoreOutput": {
-                          "src": 5
+                          "src": 4
                         }
                       }
                     ],
@@ -538,7 +698,11 @@
     "clock_partition_intermediates": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "clock_partition_intermediate_targets": [],
     "clock_partition_intermediate_clocks": []
@@ -560,16 +724,8 @@
             }
           },
           {
-            "Binary": {
-              "dst": 2,
-              "op": "Sub",
-              "lhs": 0,
-              "rhs": 1
-            }
-          },
-          {
             "StoreOutput": {
-              "src": 2
+              "src": 0
             }
           }
         ]
@@ -581,9 +737,11 @@
           "end": 436
         }
       ],
-      "output_indices": [
-        0
-      ]
+      "output_placements": {
+        "Dense": {
+          "count": 1
+        }
+      }
     },
     "root_relation_memory_targets": [
       {
@@ -608,12 +766,20 @@
     "dynamic_time_event_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "action_conditions": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "actions": [],
     "has_terminal_event": false,
@@ -621,17 +787,29 @@
       "source_rhs": {
         "programs": [],
         "program_spans": [],
-        "output_indices": []
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
       },
       "delay_time_rhs": {
         "programs": [],
         "program_spans": [],
-        "output_indices": []
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
       },
       "delay_max_rhs": {
         "programs": [],
         "program_spans": [],
-        "output_indices": []
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
       },
       "value_parameter_indices": [],
       "source_is_discrete": []

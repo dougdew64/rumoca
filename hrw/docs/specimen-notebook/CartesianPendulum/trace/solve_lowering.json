@@ -1,10 +1,4390 @@
 {
-  "error": {
-    "kind": "Structural",
-    "message": "DAE structural proof failed: structurally singular system: 4 matched out of 5 equations and 5 unknowns",
-    "reason": "structurally singular system: 4 matched out of 5 equations and 5 unknowns",
-    "guidance": "Solve lowering could not order the system. The Structural stage shows the matching and blocks for the run that failed.",
-    "span_start": 551,
-    "span_end": 562
+  "schema_version": 89,
+  "layout": {
+    "bindings": {
+      "$state_coordinates": {
+        "Y": {
+          "index": 0,
+          "byte_offset": 0
+        }
+      },
+      "x": {
+        "Y": {
+          "index": 2,
+          "byte_offset": 16
+        }
+      },
+      "y": {
+        "Y": {
+          "index": 3,
+          "byte_offset": 24
+        }
+      },
+      "vx": {
+        "Y": {
+          "index": 4,
+          "byte_offset": 32
+        }
+      },
+      "vy": {
+        "Y": {
+          "index": 5,
+          "byte_offset": 40
+        }
+      },
+      "lambda": {
+        "Y": {
+          "index": 6,
+          "byte_offset": 48
+        }
+      },
+      "$formal_derivative.1.x": {
+        "Y": {
+          "index": 7,
+          "byte_offset": 56
+        }
+      },
+      "$formal_derivative.2.x": {
+        "Y": {
+          "index": 8,
+          "byte_offset": 64
+        }
+      },
+      "$formal_derivative.1.y": {
+        "Y": {
+          "index": 9,
+          "byte_offset": 72
+        }
+      },
+      "$formal_derivative.2.y": {
+        "Y": {
+          "index": 10,
+          "byte_offset": 80
+        }
+      },
+      "$formal_derivative.1.vx": {
+        "Y": {
+          "index": 11,
+          "byte_offset": 88
+        }
+      },
+      "$formal_derivative.1.vy": {
+        "Y": {
+          "index": 12,
+          "byte_offset": 96
+        }
+      },
+      "L": {
+        "P": {
+          "index": 0,
+          "byte_offset": 0
+        }
+      },
+      "m": {
+        "P": {
+          "index": 1,
+          "byte_offset": 8
+        }
+      },
+      "g": {
+        "P": {
+          "index": 2,
+          "byte_offset": 16
+        }
+      }
+    },
+    "shapes": {
+      "$state_coordinates": [
+        2
+      ]
+    },
+    "shape_spans": {
+      "$state_coordinates": {
+        "source": 1149367593561279432,
+        "start": 418,
+        "end": 424
+      }
+    },
+    "y_scalars": 13,
+    "p_scalars": 3
+  },
+  "solve_layout": {
+    "variable_storage_runs": [
+      {
+        "base": {
+          "P": {
+            "index": 0,
+            "byte_offset": 0
+          }
+        },
+        "scalar_count": 1,
+        "role": "Parameter",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "P": {
+            "index": 1,
+            "byte_offset": 8
+          }
+        },
+        "scalar_count": 1,
+        "role": "Parameter",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "P": {
+            "index": 2,
+            "byte_offset": 16
+          }
+        },
+        "scalar_count": 1,
+        "role": "Parameter",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 2,
+            "byte_offset": 16
+          }
+        },
+        "scalar_count": 1,
+        "role": "Algebraic",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 3,
+            "byte_offset": 24
+          }
+        },
+        "scalar_count": 1,
+        "role": "Algebraic",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 4,
+            "byte_offset": 32
+          }
+        },
+        "scalar_count": 1,
+        "role": "Algebraic",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 5,
+            "byte_offset": 40
+          }
+        },
+        "scalar_count": 1,
+        "role": "Algebraic",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 6,
+            "byte_offset": 48
+          }
+        },
+        "scalar_count": 1,
+        "role": "Algebraic",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 7,
+            "byte_offset": 56
+          }
+        },
+        "scalar_count": 1,
+        "role": "Algebraic",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 8,
+            "byte_offset": 64
+          }
+        },
+        "scalar_count": 1,
+        "role": "Algebraic",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 9,
+            "byte_offset": 72
+          }
+        },
+        "scalar_count": 1,
+        "role": "Algebraic",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 10,
+            "byte_offset": 80
+          }
+        },
+        "scalar_count": 1,
+        "role": "Algebraic",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 11,
+            "byte_offset": 88
+          }
+        },
+        "scalar_count": 1,
+        "role": "Algebraic",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 12,
+            "byte_offset": 96
+          }
+        },
+        "scalar_count": 1,
+        "role": "Algebraic",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 0,
+            "byte_offset": 0
+          }
+        },
+        "scalar_count": 2,
+        "role": "State",
+        "value_kind": "Real"
+      }
+    ],
+    "variable_declarations": [
+      {
+        "role": "Parameter",
+        "value_kind": "Real",
+        "time_domain": "static"
+      },
+      {
+        "role": "Parameter",
+        "value_kind": "Real",
+        "time_domain": "static"
+      },
+      {
+        "role": "Parameter",
+        "value_kind": "Real",
+        "time_domain": "static"
+      },
+      {
+        "role": "Algebraic",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      },
+      {
+        "role": "Algebraic",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      },
+      {
+        "role": "Algebraic",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      },
+      {
+        "role": "Algebraic",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      },
+      {
+        "role": "Algebraic",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      },
+      {
+        "role": "Algebraic",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      },
+      {
+        "role": "Algebraic",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      },
+      {
+        "role": "Algebraic",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      },
+      {
+        "role": "Algebraic",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      },
+      {
+        "role": "Algebraic",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      },
+      {
+        "role": "Algebraic",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      },
+      {
+        "role": "State",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      }
+    ],
+    "state_scalar_count": 2,
+    "algebraic_scalar_count": 11,
+    "output_scalar_count": 0,
+    "parameter_count": 3,
+    "compiled_parameter_len": 3,
+    "input_scalar_names": [],
+    "discrete_real_scalar_names": [],
+    "discrete_valued_scalar_names": [],
+    "relation_memory_parameter_indices": [],
+    "initial_event_parameter_index": null,
+    "terminal_event_parameter_index": null,
+    "initial_homotopy_parameter_index": null,
+    "pre_param_bindings": []
+  },
+  "continuous": {
+    "implicit_rhs": {
+      "nodes": [
+        {
+          "ScalarPrograms": {
+            "programs": [
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 7
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 4
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Sub",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 2
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 9
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 5
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Sub",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 2
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadP": {
+                    "dst": 0,
+                    "index": 1
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 8
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Mul",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 3,
+                    "index": 6
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 4,
+                    "index": 2
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 5,
+                    "op": "Mul",
+                    "lhs": 3,
+                    "rhs": 4
+                  }
+                },
+                {
+                  "Unary": {
+                    "dst": 6,
+                    "op": "Neg",
+                    "arg": 5
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 7,
+                    "op": "Sub",
+                    "lhs": 2,
+                    "rhs": 6
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 7
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadP": {
+                    "dst": 0,
+                    "index": 1
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 10
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Mul",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 3,
+                    "index": 6
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 4,
+                    "index": 3
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 5,
+                    "op": "Mul",
+                    "lhs": 3,
+                    "rhs": 4
+                  }
+                },
+                {
+                  "Unary": {
+                    "dst": 6,
+                    "op": "Neg",
+                    "arg": 5
+                  }
+                },
+                {
+                  "LoadP": {
+                    "dst": 7,
+                    "index": 1
+                  }
+                },
+                {
+                  "LoadP": {
+                    "dst": 8,
+                    "index": 2
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 9,
+                    "op": "Mul",
+                    "lhs": 7,
+                    "rhs": 8
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 10,
+                    "op": "Sub",
+                    "lhs": 6,
+                    "rhs": 9
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 11,
+                    "op": "Sub",
+                    "lhs": 2,
+                    "rhs": 10
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 11
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 2
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 3,
+                    "op": "Mul",
+                    "lhs": 0,
+                    "rhs": 0
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 4,
+                    "index": 3
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 7,
+                    "op": "Mul",
+                    "lhs": 4,
+                    "rhs": 4
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 8,
+                    "op": "Add",
+                    "lhs": 3,
+                    "rhs": 7
+                  }
+                },
+                {
+                  "LoadP": {
+                    "dst": 9,
+                    "index": 0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 12,
+                    "op": "Mul",
+                    "lhs": 9,
+                    "rhs": 9
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 13,
+                    "op": "Sub",
+                    "lhs": 8,
+                    "rhs": 12
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 13
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 11
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 8
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Sub",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 2
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 12
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 10
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Sub",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 2
+                  }
+                }
+              ],
+              [
+                {
+                  "Const": {
+                    "dst": 0,
+                    "value": 2.0
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 2
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 2,
+                    "value": 1.0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 3,
+                    "op": "Pow",
+                    "lhs": 1,
+                    "rhs": 2
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 4,
+                    "op": "Mul",
+                    "lhs": 0,
+                    "rhs": 3
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 5,
+                    "index": 4
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 6,
+                    "op": "Mul",
+                    "lhs": 4,
+                    "rhs": 5
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 7,
+                    "value": 2.0
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 8,
+                    "index": 3
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 9,
+                    "value": 1.0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 10,
+                    "op": "Pow",
+                    "lhs": 8,
+                    "rhs": 9
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 11,
+                    "op": "Mul",
+                    "lhs": 7,
+                    "rhs": 10
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 12,
+                    "index": 5
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 13,
+                    "op": "Mul",
+                    "lhs": 11,
+                    "rhs": 12
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 14,
+                    "op": "Add",
+                    "lhs": 6,
+                    "rhs": 13
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 14
+                  }
+                }
+              ],
+              [
+                {
+                  "Const": {
+                    "dst": 0,
+                    "value": 2.0
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 2
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 2,
+                    "value": 0.0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 3,
+                    "op": "Pow",
+                    "lhs": 1,
+                    "rhs": 2
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 4,
+                    "op": "Mul",
+                    "lhs": 0,
+                    "rhs": 3
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 5,
+                    "index": 4
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 6,
+                    "op": "Mul",
+                    "lhs": 5,
+                    "rhs": 5
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 7,
+                    "op": "Mul",
+                    "lhs": 4,
+                    "rhs": 6
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 8,
+                    "value": 2.0
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 9,
+                    "value": 1.0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 10,
+                    "op": "Pow",
+                    "lhs": 1,
+                    "rhs": 9
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 11,
+                    "op": "Mul",
+                    "lhs": 8,
+                    "rhs": 10
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 12,
+                    "index": 8
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 13,
+                    "op": "Mul",
+                    "lhs": 11,
+                    "rhs": 12
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 14,
+                    "op": "Add",
+                    "lhs": 7,
+                    "rhs": 13
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 15,
+                    "value": 2.0
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 16,
+                    "index": 3
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 17,
+                    "value": 0.0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 18,
+                    "op": "Pow",
+                    "lhs": 16,
+                    "rhs": 17
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 19,
+                    "op": "Mul",
+                    "lhs": 15,
+                    "rhs": 18
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 20,
+                    "index": 5
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 21,
+                    "op": "Mul",
+                    "lhs": 20,
+                    "rhs": 20
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 22,
+                    "op": "Mul",
+                    "lhs": 19,
+                    "rhs": 21
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 23,
+                    "value": 2.0
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 24,
+                    "value": 1.0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 25,
+                    "op": "Pow",
+                    "lhs": 16,
+                    "rhs": 24
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 26,
+                    "op": "Mul",
+                    "lhs": 23,
+                    "rhs": 25
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 27,
+                    "index": 10
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 28,
+                    "op": "Mul",
+                    "lhs": 26,
+                    "rhs": 27
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 29,
+                    "op": "Add",
+                    "lhs": 22,
+                    "rhs": 28
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 30,
+                    "op": "Add",
+                    "lhs": 14,
+                    "rhs": 29
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 30
+                  }
+                }
+              ],
+              [
+                {
+                  "TensorLoad": {
+                    "dst_start": 0,
+                    "input": "Y",
+                    "input_start": 0,
+                    "count": 2,
+                    "seed_start": null,
+                    "lanes": 1
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 2,
+                    "index": 3
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 3,
+                    "index": 5
+                  }
+                },
+                {
+                  "TensorBinary": {
+                    "dst_start": 4,
+                    "op": "Sub",
+                    "lhs_start": 0,
+                    "rhs_start": 2,
+                    "count": 2,
+                    "lhs_stride": 1,
+                    "rhs_stride": 1,
+                    "lanes": 1
+                  }
+                },
+                {
+                  "StoreOutputRange": {
+                    "start": 4,
+                    "count": 2,
+                    "stride": 1
+                  }
+                }
+              ]
+            ],
+            "program_spans": [
+              {
+                "source": 1149367593561279432,
+                "start": 630,
+                "end": 641
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 645,
+                "end": 656
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 660,
+                "end": 685
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 689,
+                "end": 722
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 726,
+                "end": 747
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 630,
+                "end": 641
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 645,
+                "end": 656
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 726,
+                "end": 747
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 726,
+                "end": 747
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 418,
+                "end": 424
+              }
+            ],
+            "output_placements": {
+              "Dense": {
+                "count": 11
+              }
+            }
+          }
+        }
+      ]
+    },
+    "implicit_row_targets": "Projection",
+    "algebraic_projection_plan": {
+      "blocks": [
+        {
+          "Explicit": {
+            "rows": [
+              9
+            ],
+            "y_indices": [
+              3
+            ],
+            "tearing": null
+          }
+        },
+        {
+          "Explicit": {
+            "rows": [
+              10
+            ],
+            "y_indices": [
+              5
+            ],
+            "tearing": null
+          }
+        },
+        {
+          "Explicit": {
+            "rows": [
+              4
+            ],
+            "y_indices": [
+              2
+            ],
+            "tearing": null
+          }
+        },
+        {
+          "Explicit": {
+            "rows": [
+              7
+            ],
+            "y_indices": [
+              4
+            ],
+            "tearing": null
+          }
+        },
+        {
+          "Explicit": {
+            "rows": [
+              0
+            ],
+            "y_indices": [
+              7
+            ],
+            "tearing": null
+          }
+        },
+        {
+          "Explicit": {
+            "rows": [
+              1
+            ],
+            "y_indices": [
+              9
+            ],
+            "tearing": null
+          }
+        },
+        {
+          "Explicit": {
+            "rows": [
+              3,
+              8,
+              2
+            ],
+            "y_indices": [
+              10,
+              8,
+              6
+            ],
+            "tearing": {
+              "tear_y_indices": [
+                10,
+                8,
+                6
+              ],
+              "residual_rows": [
+                2,
+                8,
+                3
+              ],
+              "causal_steps": []
+            }
+          }
+        },
+        {
+          "Explicit": {
+            "rows": [
+              5
+            ],
+            "y_indices": [
+              11
+            ],
+            "tearing": null
+          }
+        },
+        {
+          "Explicit": {
+            "rows": [
+              6
+            ],
+            "y_indices": [
+              12
+            ],
+            "tearing": null
+          }
+        }
+      ]
+    },
+    "residual": {
+      "nodes": [
+        {
+          "ScalarPrograms": {
+            "programs": [
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 7
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 4
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Sub",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 2
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 9
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 5
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Sub",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 2
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadP": {
+                    "dst": 0,
+                    "index": 1
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 8
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Mul",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 3,
+                    "index": 6
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 4,
+                    "index": 2
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 5,
+                    "op": "Mul",
+                    "lhs": 3,
+                    "rhs": 4
+                  }
+                },
+                {
+                  "Unary": {
+                    "dst": 6,
+                    "op": "Neg",
+                    "arg": 5
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 7,
+                    "op": "Sub",
+                    "lhs": 2,
+                    "rhs": 6
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 7
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadP": {
+                    "dst": 0,
+                    "index": 1
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 10
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Mul",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 3,
+                    "index": 6
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 4,
+                    "index": 3
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 5,
+                    "op": "Mul",
+                    "lhs": 3,
+                    "rhs": 4
+                  }
+                },
+                {
+                  "Unary": {
+                    "dst": 6,
+                    "op": "Neg",
+                    "arg": 5
+                  }
+                },
+                {
+                  "LoadP": {
+                    "dst": 7,
+                    "index": 1
+                  }
+                },
+                {
+                  "LoadP": {
+                    "dst": 8,
+                    "index": 2
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 9,
+                    "op": "Mul",
+                    "lhs": 7,
+                    "rhs": 8
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 10,
+                    "op": "Sub",
+                    "lhs": 6,
+                    "rhs": 9
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 11,
+                    "op": "Sub",
+                    "lhs": 2,
+                    "rhs": 10
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 11
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 2
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 3,
+                    "op": "Mul",
+                    "lhs": 0,
+                    "rhs": 0
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 4,
+                    "index": 3
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 7,
+                    "op": "Mul",
+                    "lhs": 4,
+                    "rhs": 4
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 8,
+                    "op": "Add",
+                    "lhs": 3,
+                    "rhs": 7
+                  }
+                },
+                {
+                  "LoadP": {
+                    "dst": 9,
+                    "index": 0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 12,
+                    "op": "Mul",
+                    "lhs": 9,
+                    "rhs": 9
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 13,
+                    "op": "Sub",
+                    "lhs": 8,
+                    "rhs": 12
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 13
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 11
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 8
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Sub",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 2
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 12
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 10
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Sub",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 2
+                  }
+                }
+              ],
+              [
+                {
+                  "Const": {
+                    "dst": 0,
+                    "value": 2.0
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 2
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 2,
+                    "value": 1.0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 3,
+                    "op": "Pow",
+                    "lhs": 1,
+                    "rhs": 2
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 4,
+                    "op": "Mul",
+                    "lhs": 0,
+                    "rhs": 3
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 5,
+                    "index": 4
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 6,
+                    "op": "Mul",
+                    "lhs": 4,
+                    "rhs": 5
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 7,
+                    "value": 2.0
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 8,
+                    "index": 3
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 9,
+                    "value": 1.0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 10,
+                    "op": "Pow",
+                    "lhs": 8,
+                    "rhs": 9
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 11,
+                    "op": "Mul",
+                    "lhs": 7,
+                    "rhs": 10
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 12,
+                    "index": 5
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 13,
+                    "op": "Mul",
+                    "lhs": 11,
+                    "rhs": 12
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 14,
+                    "op": "Add",
+                    "lhs": 6,
+                    "rhs": 13
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 14
+                  }
+                }
+              ],
+              [
+                {
+                  "Const": {
+                    "dst": 0,
+                    "value": 2.0
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 2
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 2,
+                    "value": 0.0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 3,
+                    "op": "Pow",
+                    "lhs": 1,
+                    "rhs": 2
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 4,
+                    "op": "Mul",
+                    "lhs": 0,
+                    "rhs": 3
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 5,
+                    "index": 4
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 6,
+                    "op": "Mul",
+                    "lhs": 5,
+                    "rhs": 5
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 7,
+                    "op": "Mul",
+                    "lhs": 4,
+                    "rhs": 6
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 8,
+                    "value": 2.0
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 9,
+                    "value": 1.0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 10,
+                    "op": "Pow",
+                    "lhs": 1,
+                    "rhs": 9
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 11,
+                    "op": "Mul",
+                    "lhs": 8,
+                    "rhs": 10
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 12,
+                    "index": 8
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 13,
+                    "op": "Mul",
+                    "lhs": 11,
+                    "rhs": 12
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 14,
+                    "op": "Add",
+                    "lhs": 7,
+                    "rhs": 13
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 15,
+                    "value": 2.0
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 16,
+                    "index": 3
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 17,
+                    "value": 0.0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 18,
+                    "op": "Pow",
+                    "lhs": 16,
+                    "rhs": 17
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 19,
+                    "op": "Mul",
+                    "lhs": 15,
+                    "rhs": 18
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 20,
+                    "index": 5
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 21,
+                    "op": "Mul",
+                    "lhs": 20,
+                    "rhs": 20
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 22,
+                    "op": "Mul",
+                    "lhs": 19,
+                    "rhs": 21
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 23,
+                    "value": 2.0
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 24,
+                    "value": 1.0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 25,
+                    "op": "Pow",
+                    "lhs": 16,
+                    "rhs": 24
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 26,
+                    "op": "Mul",
+                    "lhs": 23,
+                    "rhs": 25
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 27,
+                    "index": 10
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 28,
+                    "op": "Mul",
+                    "lhs": 26,
+                    "rhs": 27
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 29,
+                    "op": "Add",
+                    "lhs": 22,
+                    "rhs": 28
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 30,
+                    "op": "Add",
+                    "lhs": 14,
+                    "rhs": 29
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 30
+                  }
+                }
+              ],
+              [
+                {
+                  "TensorLoad": {
+                    "dst_start": 0,
+                    "input": "Y",
+                    "input_start": 0,
+                    "count": 2,
+                    "seed_start": null,
+                    "lanes": 1
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 2,
+                    "index": 3
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 3,
+                    "index": 5
+                  }
+                },
+                {
+                  "TensorBinary": {
+                    "dst_start": 4,
+                    "op": "Sub",
+                    "lhs_start": 0,
+                    "rhs_start": 2,
+                    "count": 2,
+                    "lhs_stride": 1,
+                    "rhs_stride": 1,
+                    "lanes": 1
+                  }
+                },
+                {
+                  "StoreOutputRange": {
+                    "start": 4,
+                    "count": 2,
+                    "stride": 1
+                  }
+                }
+              ]
+            ],
+            "program_spans": [
+              {
+                "source": 1149367593561279432,
+                "start": 630,
+                "end": 641
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 645,
+                "end": 656
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 660,
+                "end": 685
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 689,
+                "end": 722
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 726,
+                "end": 747
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 630,
+                "end": 641
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 645,
+                "end": 656
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 726,
+                "end": 747
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 726,
+                "end": 747
+              },
+              {
+                "source": 1149367593561279432,
+                "start": 418,
+                "end": 424
+              }
+            ],
+            "output_placements": {
+              "Dense": {
+                "count": 11
+              }
+            }
+          }
+        }
+      ]
+    },
+    "manifold_residual": {
+      "nodes": []
+    },
+    "manifold_projection_plan": {
+      "blocks": []
+    },
+    "derivative_rhs": {
+      "nodes": [
+        {
+          "Map": {
+            "domain": {
+              "binders": [
+                {
+                  "provenance": "Generated",
+                  "id": 0,
+                  "display_name": "$axis1",
+                  "lower": 1,
+                  "upper": 2,
+                  "step": 1
+                }
+              ]
+            },
+            "output_map": {
+              "start": 0,
+              "strides": [
+                {
+                  "dimension": 0,
+                  "stride": 1
+                }
+              ]
+            },
+            "base_ops": [
+              {
+                "LoadY": {
+                  "dst": 1,
+                  "index": 5
+                }
+              },
+              {
+                "StoreOutput": {
+                  "src": 1
+                }
+              }
+            ],
+            "load_strides": [
+              {
+                "op_position": 0,
+                "terms": [
+                  {
+                    "dimension": 0,
+                    "stride": 5
+                  }
+                ]
+              }
+            ],
+            "const_strides": [],
+            "metadata": {
+              "element_type": "Real64",
+              "layout": "RowMajorDense",
+              "scalar_fallback": "Exact"
+            },
+            "span": {
+              "source": 1149367593561279432,
+              "start": 418,
+              "end": 424
+            }
+          }
+        }
+      ]
+    },
+    "refresh_owners": {
+      "compact_projection": null,
+      "algebraic": {
+        "simultaneous_plan": {
+          "blocks": [
+            {
+              "Explicit": {
+                "rows": [
+                  9
+                ],
+                "y_indices": [
+                  3
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  10
+                ],
+                "y_indices": [
+                  5
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  4
+                ],
+                "y_indices": [
+                  2
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  7
+                ],
+                "y_indices": [
+                  4
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  0
+                ],
+                "y_indices": [
+                  7
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  1
+                ],
+                "y_indices": [
+                  9
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  3,
+                  8,
+                  2
+                ],
+                "y_indices": [
+                  10,
+                  8,
+                  6
+                ],
+                "tearing": {
+                  "tear_y_indices": [
+                    10,
+                    8,
+                    6
+                  ],
+                  "residual_rows": [
+                    2,
+                    8,
+                    3
+                  ],
+                  "causal_steps": []
+                }
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  5
+                ],
+                "y_indices": [
+                  11
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  6
+                ],
+                "y_indices": [
+                  12
+                ],
+                "tearing": null
+              }
+            }
+          ]
+        },
+        "simultaneous_block_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "value_projection_plan": {
+          "blocks": [
+            {
+              "Explicit": {
+                "rows": [
+                  9
+                ],
+                "y_indices": [
+                  3
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  10
+                ],
+                "y_indices": [
+                  5
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  4
+                ],
+                "y_indices": [
+                  2
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  7
+                ],
+                "y_indices": [
+                  4
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  0
+                ],
+                "y_indices": [
+                  7
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  1
+                ],
+                "y_indices": [
+                  9
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  3,
+                  8,
+                  2
+                ],
+                "y_indices": [
+                  10,
+                  8,
+                  6
+                ],
+                "tearing": {
+                  "tear_y_indices": [
+                    10,
+                    8,
+                    6
+                  ],
+                  "residual_rows": [
+                    2,
+                    8,
+                    3
+                  ],
+                  "causal_steps": []
+                }
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  5
+                ],
+                "y_indices": [
+                  11
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  6
+                ],
+                "y_indices": [
+                  12
+                ],
+                "tearing": null
+              }
+            }
+          ]
+        },
+        "rows": [
+          {
+            "owner_id": 3,
+            "source": {
+              "node": 0,
+              "program": 9
+            },
+            "equation_index": 9,
+            "output_offset": 0,
+            "target_index": 3,
+            "assignment_target": 3,
+            "assignment_shape": {
+              "Direct": {
+                "target_y_index": 3,
+                "expr_reg": 0,
+                "target_scale": -1.0,
+                "expr_eval_len": 1
+              }
+            },
+            "direct_assignment_certified": true,
+            "exact_assignment_certified": true
+          },
+          {
+            "owner_id": 5,
+            "source": {
+              "node": 0,
+              "program": 9
+            },
+            "equation_index": 10,
+            "output_offset": 1,
+            "target_index": 5,
+            "assignment_target": 5,
+            "assignment_shape": {
+              "Direct": {
+                "target_y_index": 5,
+                "expr_reg": 1,
+                "target_scale": -1.0,
+                "expr_eval_len": 1
+              }
+            },
+            "direct_assignment_certified": true,
+            "exact_assignment_certified": true
+          },
+          {
+            "owner_id": 9,
+            "source": {
+              "node": 0,
+              "program": 1
+            },
+            "equation_index": 1,
+            "output_offset": 0,
+            "target_index": 9,
+            "assignment_target": 9,
+            "assignment_shape": {
+              "Direct": {
+                "target_y_index": 9,
+                "expr_reg": 1,
+                "target_scale": 1.0,
+                "expr_eval_len": 2
+              }
+            },
+            "direct_assignment_certified": true,
+            "exact_assignment_certified": true
+          },
+          {
+            "owner_id": 4,
+            "source": {
+              "node": 0,
+              "program": 7
+            },
+            "equation_index": 7,
+            "output_offset": 0,
+            "target_index": 4,
+            "assignment_target": 4,
+            "assignment_shape": {
+              "Affine": {
+                "target_y_index": 4,
+                "offset_reg": 13,
+                "coefficient_reg": 4,
+                "offset_scale": 1.0,
+                "coefficient_scale": 1.0,
+                "expr_eval_len": 14
+              }
+            },
+            "direct_assignment_certified": false,
+            "exact_assignment_certified": true
+          },
+          {
+            "owner_id": 7,
+            "source": {
+              "node": 0,
+              "program": 0
+            },
+            "equation_index": 0,
+            "output_offset": 0,
+            "target_index": 7,
+            "assignment_target": 7,
+            "assignment_shape": {
+              "Direct": {
+                "target_y_index": 7,
+                "expr_reg": 1,
+                "target_scale": 1.0,
+                "expr_eval_len": 2
+              }
+            },
+            "direct_assignment_certified": true,
+            "exact_assignment_certified": true
+          },
+          {
+            "owner_id": 6,
+            "source": {
+              "node": 0,
+              "program": 2
+            },
+            "equation_index": 2,
+            "output_offset": 0,
+            "target_index": 6,
+            "assignment_target": 6,
+            "assignment_shape": {
+              "TensorAffine": {
+                "target_y_index": 6,
+                "projection": {
+                  "output": 7,
+                  "steps": [
+                    [
+                      2,
+                      "Independent"
+                    ],
+                    [
+                      3,
+                      {
+                        "Target": {
+                          "offset": 0
+                        }
+                      }
+                    ],
+                    [
+                      4,
+                      "Independent"
+                    ],
+                    [
+                      5,
+                      "LeftProduct"
+                    ],
+                    [
+                      6,
+                      "Linear"
+                    ],
+                    [
+                      7,
+                      "Linear"
+                    ]
+                  ],
+                  "independent_ranges": [
+                    [
+                      2,
+                      1
+                    ],
+                    [
+                      4,
+                      1
+                    ]
+                  ]
+                },
+                "expr_eval_len": 8
+              }
+            },
+            "direct_assignment_certified": false,
+            "exact_assignment_certified": true
+          },
+          {
+            "owner_id": 10,
+            "source": {
+              "node": 0,
+              "program": 3
+            },
+            "equation_index": 3,
+            "output_offset": 0,
+            "target_index": 10,
+            "assignment_target": 10,
+            "assignment_shape": {
+              "Affine": {
+                "target_y_index": 10,
+                "offset_reg": 10,
+                "coefficient_reg": 0,
+                "offset_scale": -1.0,
+                "coefficient_scale": 1.0,
+                "expr_eval_len": 11
+              }
+            },
+            "direct_assignment_certified": false,
+            "exact_assignment_certified": true
+          },
+          {
+            "owner_id": 11,
+            "source": {
+              "node": 0,
+              "program": 5
+            },
+            "equation_index": 5,
+            "output_offset": 0,
+            "target_index": 11,
+            "assignment_target": 11,
+            "assignment_shape": {
+              "Direct": {
+                "target_y_index": 11,
+                "expr_reg": 1,
+                "target_scale": 1.0,
+                "expr_eval_len": 2
+              }
+            },
+            "direct_assignment_certified": true,
+            "exact_assignment_certified": true
+          },
+          {
+            "owner_id": 12,
+            "source": {
+              "node": 0,
+              "program": 6
+            },
+            "equation_index": 6,
+            "output_offset": 0,
+            "target_index": 12,
+            "assignment_target": 12,
+            "assignment_shape": {
+              "Direct": {
+                "target_y_index": 12,
+                "expr_reg": 1,
+                "target_scale": 1.0,
+                "expr_eval_len": 2
+              }
+            },
+            "direct_assignment_certified": true,
+            "exact_assignment_certified": true
+          },
+          {
+            "owner_id": 8,
+            "source": {
+              "node": 0,
+              "program": 8
+            },
+            "equation_index": 8,
+            "output_offset": 0,
+            "target_index": 8,
+            "assignment_target": 8,
+            "assignment_shape": {
+              "TensorAffine": {
+                "target_y_index": 8,
+                "projection": {
+                  "output": 30,
+                  "steps": [
+                    [
+                      7,
+                      "Independent"
+                    ],
+                    [
+                      11,
+                      "Independent"
+                    ],
+                    [
+                      12,
+                      {
+                        "Target": {
+                          "offset": 0
+                        }
+                      }
+                    ],
+                    [
+                      13,
+                      "RightProduct"
+                    ],
+                    [
+                      14,
+                      "Linear"
+                    ],
+                    [
+                      29,
+                      "Independent"
+                    ],
+                    [
+                      30,
+                      "Linear"
+                    ]
+                  ],
+                  "independent_ranges": [
+                    [
+                      7,
+                      1
+                    ],
+                    [
+                      11,
+                      1
+                    ],
+                    [
+                      29,
+                      1
+                    ]
+                  ]
+                },
+                "expr_eval_len": 31
+              }
+            },
+            "direct_assignment_certified": false,
+            "exact_assignment_certified": true
+          }
+        ],
+        "causal_seed_rows": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "static_causal_seed_rows": [],
+        "dynamic_causal_seed_rows": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "value_stages": [
+          {
+            "ExactAssignments": {
+              "static_rows": [],
+              "dynamic_rows": [
+                0,
+                1
+              ]
+            }
+          },
+          {
+            "ProjectionBlock": {
+              "block_index": 2,
+              "plan": {
+                "blocks": [
+                  {
+                    "Explicit": {
+                      "rows": [
+                        4
+                      ],
+                      "y_indices": [
+                        2
+                      ],
+                      "tearing": null
+                    }
+                  }
+                ]
+              },
+              "seed_rows": []
+            }
+          },
+          {
+            "ExactAssignments": {
+              "static_rows": [],
+              "dynamic_rows": [
+                3,
+                4,
+                2
+              ]
+            }
+          },
+          {
+            "ProjectionBlock": {
+              "block_index": 6,
+              "plan": {
+                "blocks": [
+                  {
+                    "Explicit": {
+                      "rows": [
+                        3,
+                        8,
+                        2
+                      ],
+                      "y_indices": [
+                        10,
+                        8,
+                        6
+                      ],
+                      "tearing": {
+                        "tear_y_indices": [
+                          10,
+                          8,
+                          6
+                        ],
+                        "residual_rows": [
+                          2,
+                          8,
+                          3
+                        ],
+                        "causal_steps": []
+                      }
+                    }
+                  }
+                ]
+              },
+              "seed_rows": []
+            }
+          },
+          {
+            "ExactAssignments": {
+              "static_rows": [],
+              "dynamic_rows": [
+                7,
+                8
+              ]
+            }
+          }
+        ],
+        "causal_solution_certified": false
+      },
+      "derivative": {
+        "simultaneous_plan": {
+          "blocks": [
+            {
+              "Explicit": {
+                "rows": [
+                  9
+                ],
+                "y_indices": [
+                  3
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  10
+                ],
+                "y_indices": [
+                  5
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  4
+                ],
+                "y_indices": [
+                  2
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  7
+                ],
+                "y_indices": [
+                  4
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  3,
+                  8,
+                  2
+                ],
+                "y_indices": [
+                  10,
+                  8,
+                  6
+                ],
+                "tearing": {
+                  "tear_y_indices": [
+                    10,
+                    8,
+                    6
+                  ],
+                  "residual_rows": [
+                    2,
+                    8,
+                    3
+                  ],
+                  "causal_steps": []
+                }
+              }
+            }
+          ]
+        },
+        "simultaneous_block_indices": [
+          0,
+          1,
+          2,
+          3,
+          6
+        ],
+        "value_projection_plan": {
+          "blocks": [
+            {
+              "Explicit": {
+                "rows": [
+                  9
+                ],
+                "y_indices": [
+                  3
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  10
+                ],
+                "y_indices": [
+                  5
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  4
+                ],
+                "y_indices": [
+                  2
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  7
+                ],
+                "y_indices": [
+                  4
+                ],
+                "tearing": null
+              }
+            },
+            {
+              "Explicit": {
+                "rows": [
+                  3,
+                  8,
+                  2
+                ],
+                "y_indices": [
+                  10,
+                  8,
+                  6
+                ],
+                "tearing": {
+                  "tear_y_indices": [
+                    10,
+                    8,
+                    6
+                  ],
+                  "residual_rows": [
+                    2,
+                    8,
+                    3
+                  ],
+                  "causal_steps": []
+                }
+              }
+            }
+          ]
+        },
+        "rows": [
+          {
+            "owner_id": 3,
+            "source": {
+              "node": 0,
+              "program": 9
+            },
+            "equation_index": 9,
+            "output_offset": 0,
+            "target_index": 3,
+            "assignment_target": 3,
+            "assignment_shape": {
+              "Direct": {
+                "target_y_index": 3,
+                "expr_reg": 0,
+                "target_scale": -1.0,
+                "expr_eval_len": 1
+              }
+            },
+            "direct_assignment_certified": true,
+            "exact_assignment_certified": true
+          },
+          {
+            "owner_id": 5,
+            "source": {
+              "node": 0,
+              "program": 9
+            },
+            "equation_index": 10,
+            "output_offset": 1,
+            "target_index": 5,
+            "assignment_target": 5,
+            "assignment_shape": {
+              "Direct": {
+                "target_y_index": 5,
+                "expr_reg": 1,
+                "target_scale": -1.0,
+                "expr_eval_len": 1
+              }
+            },
+            "direct_assignment_certified": true,
+            "exact_assignment_certified": true
+          },
+          {
+            "owner_id": 4,
+            "source": {
+              "node": 0,
+              "program": 7
+            },
+            "equation_index": 7,
+            "output_offset": 0,
+            "target_index": 4,
+            "assignment_target": 4,
+            "assignment_shape": {
+              "Affine": {
+                "target_y_index": 4,
+                "offset_reg": 13,
+                "coefficient_reg": 4,
+                "offset_scale": 1.0,
+                "coefficient_scale": 1.0,
+                "expr_eval_len": 14
+              }
+            },
+            "direct_assignment_certified": false,
+            "exact_assignment_certified": true
+          },
+          {
+            "owner_id": 6,
+            "source": {
+              "node": 0,
+              "program": 2
+            },
+            "equation_index": 2,
+            "output_offset": 0,
+            "target_index": 6,
+            "assignment_target": 6,
+            "assignment_shape": {
+              "TensorAffine": {
+                "target_y_index": 6,
+                "projection": {
+                  "output": 7,
+                  "steps": [
+                    [
+                      2,
+                      "Independent"
+                    ],
+                    [
+                      3,
+                      {
+                        "Target": {
+                          "offset": 0
+                        }
+                      }
+                    ],
+                    [
+                      4,
+                      "Independent"
+                    ],
+                    [
+                      5,
+                      "LeftProduct"
+                    ],
+                    [
+                      6,
+                      "Linear"
+                    ],
+                    [
+                      7,
+                      "Linear"
+                    ]
+                  ],
+                  "independent_ranges": [
+                    [
+                      2,
+                      1
+                    ],
+                    [
+                      4,
+                      1
+                    ]
+                  ]
+                },
+                "expr_eval_len": 8
+              }
+            },
+            "direct_assignment_certified": false,
+            "exact_assignment_certified": true
+          },
+          {
+            "owner_id": 10,
+            "source": {
+              "node": 0,
+              "program": 3
+            },
+            "equation_index": 3,
+            "output_offset": 0,
+            "target_index": 10,
+            "assignment_target": 10,
+            "assignment_shape": {
+              "Affine": {
+                "target_y_index": 10,
+                "offset_reg": 10,
+                "coefficient_reg": 0,
+                "offset_scale": -1.0,
+                "coefficient_scale": 1.0,
+                "expr_eval_len": 11
+              }
+            },
+            "direct_assignment_certified": false,
+            "exact_assignment_certified": true
+          },
+          {
+            "owner_id": 8,
+            "source": {
+              "node": 0,
+              "program": 8
+            },
+            "equation_index": 8,
+            "output_offset": 0,
+            "target_index": 8,
+            "assignment_target": 8,
+            "assignment_shape": {
+              "TensorAffine": {
+                "target_y_index": 8,
+                "projection": {
+                  "output": 30,
+                  "steps": [
+                    [
+                      7,
+                      "Independent"
+                    ],
+                    [
+                      11,
+                      "Independent"
+                    ],
+                    [
+                      12,
+                      {
+                        "Target": {
+                          "offset": 0
+                        }
+                      }
+                    ],
+                    [
+                      13,
+                      "RightProduct"
+                    ],
+                    [
+                      14,
+                      "Linear"
+                    ],
+                    [
+                      29,
+                      "Independent"
+                    ],
+                    [
+                      30,
+                      "Linear"
+                    ]
+                  ],
+                  "independent_ranges": [
+                    [
+                      7,
+                      1
+                    ],
+                    [
+                      11,
+                      1
+                    ],
+                    [
+                      29,
+                      1
+                    ]
+                  ]
+                },
+                "expr_eval_len": 31
+              }
+            },
+            "direct_assignment_certified": false,
+            "exact_assignment_certified": true
+          }
+        ],
+        "causal_seed_rows": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "static_causal_seed_rows": [],
+        "dynamic_causal_seed_rows": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "value_stages": [
+          {
+            "ExactAssignments": {
+              "static_rows": [],
+              "dynamic_rows": [
+                0,
+                1
+              ]
+            }
+          },
+          {
+            "ProjectionBlock": {
+              "block_index": 2,
+              "plan": {
+                "blocks": [
+                  {
+                    "Explicit": {
+                      "rows": [
+                        4
+                      ],
+                      "y_indices": [
+                        2
+                      ],
+                      "tearing": null
+                    }
+                  }
+                ]
+              },
+              "seed_rows": []
+            }
+          },
+          {
+            "ExactAssignments": {
+              "static_rows": [],
+              "dynamic_rows": [
+                2
+              ]
+            }
+          },
+          {
+            "ProjectionBlock": {
+              "block_index": 6,
+              "plan": {
+                "blocks": [
+                  {
+                    "Explicit": {
+                      "rows": [
+                        3,
+                        8,
+                        2
+                      ],
+                      "y_indices": [
+                        10,
+                        8,
+                        6
+                      ],
+                      "tearing": {
+                        "tear_y_indices": [
+                          10,
+                          8,
+                          6
+                        ],
+                        "residual_rows": [
+                          2,
+                          8,
+                          3
+                        ],
+                        "causal_steps": []
+                      }
+                    }
+                  }
+                ]
+              },
+              "seed_rows": []
+            }
+          }
+        ],
+        "causal_solution_certified": false
+      },
+      "root": {
+        "simultaneous_plan": {
+          "blocks": []
+        },
+        "simultaneous_block_indices": [],
+        "value_projection_plan": {
+          "blocks": []
+        },
+        "rows": [],
+        "causal_seed_rows": [],
+        "static_causal_seed_rows": [],
+        "dynamic_causal_seed_rows": [],
+        "value_stages": [],
+        "causal_solution_certified": true
+      },
+      "event": {
+        "simultaneous_plan": {
+          "blocks": []
+        },
+        "simultaneous_block_indices": [],
+        "value_projection_plan": {
+          "blocks": []
+        },
+        "rows": [],
+        "causal_seed_rows": [],
+        "static_causal_seed_rows": [],
+        "dynamic_causal_seed_rows": [],
+        "value_stages": [],
+        "causal_solution_certified": true
+      },
+      "clock_events": []
+    },
+    "reduced_chart_set": {
+      "charts": [
+        {
+          "independent_y_indices": [
+            3
+          ],
+          "dependent_y_indices": [
+            2
+          ],
+          "trial_rcond": 1.0,
+          "trial_singular_threshold": 4.440892098500626e-16
+        },
+        {
+          "independent_y_indices": [
+            2
+          ],
+          "dependent_y_indices": [
+            3
+          ],
+          "trial_rcond": 0.0,
+          "trial_singular_threshold": 4.440892098500626e-16,
+          "plan": {
+            "residual": {
+              "Rows": {
+                "programs": {
+                  "Replace": [
+                    [
+                      9,
+                      [
+                        {
+                          "TensorLoad": {
+                            "dst_start": 0,
+                            "input": "Y",
+                            "input_start": 0,
+                            "count": 2,
+                            "seed_start": null,
+                            "lanes": 1
+                          }
+                        },
+                        {
+                          "LoadY": {
+                            "dst": 2,
+                            "index": 2
+                          }
+                        },
+                        {
+                          "LoadY": {
+                            "dst": 3,
+                            "index": 4
+                          }
+                        },
+                        {
+                          "TensorBinary": {
+                            "dst_start": 4,
+                            "op": "Sub",
+                            "lhs_start": 0,
+                            "rhs_start": 2,
+                            "count": 2,
+                            "lhs_stride": 1,
+                            "rhs_stride": 1,
+                            "lanes": 1
+                          }
+                        },
+                        {
+                          "StoreOutputRange": {
+                            "start": 4,
+                            "count": 2,
+                            "stride": 1
+                          }
+                        }
+                      ]
+                    ]
+                  ]
+                },
+                "program_spans": {
+                  "Replace": [
+                    [
+                      9,
+                      {
+                        "source": 1149367593561279432,
+                        "start": 373,
+                        "end": 379
+                      }
+                    ]
+                  ]
+                },
+                "output_indices": {
+                  "Replace": []
+                }
+              }
+            },
+            "implicit_rhs": null,
+            "implicit_row_targets": "Projection",
+            "projection_blocks": {
+              "Replace": [
+                [
+                  0,
+                  {
+                    "Explicit": {
+                      "rows": [
+                        9
+                      ],
+                      "y_indices": [
+                        2
+                      ],
+                      "tearing": null
+                    }
+                  }
+                ],
+                [
+                  1,
+                  {
+                    "Explicit": {
+                      "rows": [
+                        10
+                      ],
+                      "y_indices": [
+                        4
+                      ],
+                      "tearing": null
+                    }
+                  }
+                ],
+                [
+                  2,
+                  {
+                    "Explicit": {
+                      "rows": [
+                        0
+                      ],
+                      "y_indices": [
+                        7
+                      ],
+                      "tearing": null
+                    }
+                  }
+                ],
+                [
+                  3,
+                  {
+                    "Explicit": {
+                      "rows": [
+                        4
+                      ],
+                      "y_indices": [
+                        3
+                      ],
+                      "tearing": null
+                    }
+                  }
+                ],
+                [
+                  4,
+                  {
+                    "Explicit": {
+                      "rows": [
+                        7
+                      ],
+                      "y_indices": [
+                        5
+                      ],
+                      "tearing": null
+                    }
+                  }
+                ]
+              ]
+            },
+            "derivative_rhs": {
+              "nodes": [
+                {
+                  "Map": {
+                    "domain": {
+                      "binders": [
+                        {
+                          "provenance": "Generated",
+                          "id": 0,
+                          "display_name": "$axis1",
+                          "lower": 1,
+                          "upper": 2,
+                          "step": 1
+                        }
+                      ]
+                    },
+                    "output_map": {
+                      "start": 0,
+                      "strides": [
+                        {
+                          "dimension": 0,
+                          "stride": 1
+                        }
+                      ]
+                    },
+                    "base_ops": [
+                      {
+                        "LoadY": {
+                          "dst": 1,
+                          "index": 4
+                        }
+                      },
+                      {
+                        "StoreOutput": {
+                          "src": 1
+                        }
+                      }
+                    ],
+                    "load_strides": [
+                      {
+                        "op_position": 0,
+                        "terms": [
+                          {
+                            "dimension": 0,
+                            "stride": 4
+                          }
+                        ]
+                      }
+                    ],
+                    "const_strides": [],
+                    "metadata": {
+                      "element_type": "Real64",
+                      "layout": "RowMajorDense",
+                      "scalar_fallback": "Exact"
+                    },
+                    "span": {
+                      "source": 1149367593561279432,
+                      "start": 373,
+                      "end": 379
+                    }
+                  }
+                }
+              ]
+            },
+            "refresh_owners": {
+              "compact_projection": null,
+              "algebraic": {
+                "simultaneous_blocks": {
+                  "Replace": [
+                    [
+                      0,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            9
+                          ],
+                          "y_indices": [
+                            2
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ],
+                    [
+                      1,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            10
+                          ],
+                          "y_indices": [
+                            4
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ],
+                    [
+                      2,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            0
+                          ],
+                          "y_indices": [
+                            7
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ],
+                    [
+                      3,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            4
+                          ],
+                          "y_indices": [
+                            3
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ],
+                    [
+                      4,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            7
+                          ],
+                          "y_indices": [
+                            5
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ]
+                  ]
+                },
+                "simultaneous_block_indices": {
+                  "Replace": []
+                },
+                "value_projection_blocks": {
+                  "Replace": [
+                    [
+                      0,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            9
+                          ],
+                          "y_indices": [
+                            2
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ],
+                    [
+                      1,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            10
+                          ],
+                          "y_indices": [
+                            4
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ],
+                    [
+                      2,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            0
+                          ],
+                          "y_indices": [
+                            7
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ],
+                    [
+                      3,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            4
+                          ],
+                          "y_indices": [
+                            3
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ],
+                    [
+                      4,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            7
+                          ],
+                          "y_indices": [
+                            5
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ]
+                  ]
+                },
+                "rows": {
+                  "Replace": [
+                    [
+                      0,
+                      {
+                        "owner_id": 2,
+                        "source": {
+                          "node": 0,
+                          "program": 9
+                        },
+                        "equation_index": 9,
+                        "output_offset": 0,
+                        "target_index": 2,
+                        "assignment_target": 2,
+                        "assignment_shape": {
+                          "Direct": {
+                            "target_y_index": 2,
+                            "expr_reg": 0,
+                            "target_scale": -1.0,
+                            "expr_eval_len": 1
+                          }
+                        },
+                        "direct_assignment_certified": true,
+                        "exact_assignment_certified": true
+                      }
+                    ],
+                    [
+                      1,
+                      {
+                        "owner_id": 4,
+                        "source": {
+                          "node": 0,
+                          "program": 9
+                        },
+                        "equation_index": 10,
+                        "output_offset": 1,
+                        "target_index": 4,
+                        "assignment_target": 4,
+                        "assignment_shape": {
+                          "Direct": {
+                            "target_y_index": 4,
+                            "expr_reg": 1,
+                            "target_scale": -1.0,
+                            "expr_eval_len": 1
+                          }
+                        },
+                        "direct_assignment_certified": true,
+                        "exact_assignment_certified": true
+                      }
+                    ],
+                    [
+                      2,
+                      {
+                        "owner_id": 7,
+                        "source": {
+                          "node": 0,
+                          "program": 0
+                        },
+                        "equation_index": 0,
+                        "output_offset": 0,
+                        "target_index": 7,
+                        "assignment_target": 7,
+                        "assignment_shape": {
+                          "Direct": {
+                            "target_y_index": 7,
+                            "expr_reg": 1,
+                            "target_scale": 1.0,
+                            "expr_eval_len": 2
+                          }
+                        },
+                        "direct_assignment_certified": true,
+                        "exact_assignment_certified": true
+                      }
+                    ],
+                    [
+                      3,
+                      {
+                        "owner_id": 5,
+                        "source": {
+                          "node": 0,
+                          "program": 7
+                        },
+                        "equation_index": 7,
+                        "output_offset": 0,
+                        "target_index": 5,
+                        "assignment_target": 5,
+                        "assignment_shape": {
+                          "Affine": {
+                            "target_y_index": 5,
+                            "offset_reg": 6,
+                            "coefficient_reg": 11,
+                            "offset_scale": 1.0,
+                            "coefficient_scale": 1.0,
+                            "expr_eval_len": 12
+                          }
+                        },
+                        "direct_assignment_certified": false,
+                        "exact_assignment_certified": true
+                      }
+                    ],
+                    [
+                      4,
+                      {
+                        "owner_id": 9,
+                        "source": {
+                          "node": 0,
+                          "program": 1
+                        },
+                        "equation_index": 1,
+                        "output_offset": 0,
+                        "target_index": 9,
+                        "assignment_target": 9,
+                        "assignment_shape": {
+                          "Direct": {
+                            "target_y_index": 9,
+                            "expr_reg": 1,
+                            "target_scale": 1.0,
+                            "expr_eval_len": 2
+                          }
+                        },
+                        "direct_assignment_certified": true,
+                        "exact_assignment_certified": true
+                      }
+                    ]
+                  ]
+                },
+                "causal_seed_rows": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ],
+                "static_causal_seed_rows": [],
+                "dynamic_causal_seed_rows": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ],
+                "value_stages": {
+                  "Replace": [
+                    [
+                      0,
+                      {
+                        "ExactAssignments": {
+                          "static_rows": [],
+                          "dynamic_rows": [
+                            0,
+                            1,
+                            2
+                          ]
+                        }
+                      }
+                    ],
+                    [
+                      1,
+                      {
+                        "ProjectionBlock": {
+                          "block_index": 3,
+                          "plan": {
+                            "blocks": [
+                              {
+                                "Explicit": {
+                                  "rows": [
+                                    4
+                                  ],
+                                  "y_indices": [
+                                    3
+                                  ],
+                                  "tearing": null
+                                }
+                              }
+                            ]
+                          },
+                          "seed_rows": []
+                        }
+                      }
+                    ],
+                    [
+                      2,
+                      {
+                        "ExactAssignments": {
+                          "static_rows": [],
+                          "dynamic_rows": [
+                            3,
+                            4
+                          ]
+                        }
+                      }
+                    ]
+                  ]
+                },
+                "causal_solution_certified": false
+              },
+              "derivative": {
+                "simultaneous_blocks": {
+                  "Replace": [
+                    [
+                      0,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            9
+                          ],
+                          "y_indices": [
+                            2
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ],
+                    [
+                      1,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            10
+                          ],
+                          "y_indices": [
+                            4
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ],
+                    [
+                      2,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            4
+                          ],
+                          "y_indices": [
+                            3
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ],
+                    [
+                      3,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            7
+                          ],
+                          "y_indices": [
+                            5
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ]
+                  ]
+                },
+                "simultaneous_block_indices": {
+                  "Replace": [
+                    [
+                      2,
+                      3
+                    ],
+                    [
+                      3,
+                      4
+                    ]
+                  ]
+                },
+                "value_projection_blocks": {
+                  "Replace": [
+                    [
+                      0,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            9
+                          ],
+                          "y_indices": [
+                            2
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ],
+                    [
+                      1,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            10
+                          ],
+                          "y_indices": [
+                            4
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ],
+                    [
+                      2,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            4
+                          ],
+                          "y_indices": [
+                            3
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ],
+                    [
+                      3,
+                      {
+                        "Explicit": {
+                          "rows": [
+                            7
+                          ],
+                          "y_indices": [
+                            5
+                          ],
+                          "tearing": null
+                        }
+                      }
+                    ]
+                  ]
+                },
+                "rows": {
+                  "Replace": [
+                    [
+                      0,
+                      {
+                        "owner_id": 2,
+                        "source": {
+                          "node": 0,
+                          "program": 9
+                        },
+                        "equation_index": 9,
+                        "output_offset": 0,
+                        "target_index": 2,
+                        "assignment_target": 2,
+                        "assignment_shape": {
+                          "Direct": {
+                            "target_y_index": 2,
+                            "expr_reg": 0,
+                            "target_scale": -1.0,
+                            "expr_eval_len": 1
+                          }
+                        },
+                        "direct_assignment_certified": true,
+                        "exact_assignment_certified": true
+                      }
+                    ],
+                    [
+                      1,
+                      {
+                        "owner_id": 4,
+                        "source": {
+                          "node": 0,
+                          "program": 9
+                        },
+                        "equation_index": 10,
+                        "output_offset": 1,
+                        "target_index": 4,
+                        "assignment_target": 4,
+                        "assignment_shape": {
+                          "Direct": {
+                            "target_y_index": 4,
+                            "expr_reg": 1,
+                            "target_scale": -1.0,
+                            "expr_eval_len": 1
+                          }
+                        },
+                        "direct_assignment_certified": true,
+                        "exact_assignment_certified": true
+                      }
+                    ],
+                    [
+                      2,
+                      {
+                        "owner_id": 5,
+                        "source": {
+                          "node": 0,
+                          "program": 7
+                        },
+                        "equation_index": 7,
+                        "output_offset": 0,
+                        "target_index": 5,
+                        "assignment_target": 5,
+                        "assignment_shape": {
+                          "Affine": {
+                            "target_y_index": 5,
+                            "offset_reg": 6,
+                            "coefficient_reg": 11,
+                            "offset_scale": 1.0,
+                            "coefficient_scale": 1.0,
+                            "expr_eval_len": 12
+                          }
+                        },
+                        "direct_assignment_certified": false,
+                        "exact_assignment_certified": true
+                      }
+                    ]
+                  ]
+                },
+                "causal_seed_rows": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "static_causal_seed_rows": [],
+                "dynamic_causal_seed_rows": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "value_stages": {
+                  "Replace": [
+                    [
+                      1,
+                      {
+                        "ProjectionBlock": {
+                          "block_index": 3,
+                          "plan": {
+                            "blocks": [
+                              {
+                                "Explicit": {
+                                  "rows": [
+                                    4
+                                  ],
+                                  "y_indices": [
+                                    3
+                                  ],
+                                  "tearing": null
+                                }
+                              }
+                            ]
+                          },
+                          "seed_rows": []
+                        }
+                      }
+                    ]
+                  ]
+                },
+                "causal_solution_certified": false
+              },
+              "root": {
+                "simultaneous_blocks": {
+                  "Replace": []
+                },
+                "simultaneous_block_indices": {
+                  "Replace": []
+                },
+                "value_projection_blocks": {
+                  "Replace": []
+                },
+                "rows": {
+                  "Replace": []
+                },
+                "causal_seed_rows": [],
+                "static_causal_seed_rows": [],
+                "dynamic_causal_seed_rows": [],
+                "value_stages": {
+                  "Replace": []
+                },
+                "causal_solution_certified": true
+              },
+              "event": {
+                "simultaneous_blocks": {
+                  "Replace": []
+                },
+                "simultaneous_block_indices": {
+                  "Replace": []
+                },
+                "value_projection_blocks": {
+                  "Replace": []
+                },
+                "rows": {
+                  "Replace": []
+                },
+                "causal_seed_rows": [],
+                "static_causal_seed_rows": [],
+                "dynamic_causal_seed_rows": [],
+                "value_stages": {
+                  "Replace": []
+                },
+                "causal_solution_certified": true
+              },
+              "clock_events": []
+            }
+          }
+        }
+      ],
+      "exchanges": [
+        {
+          "dependent": {
+            "variable": "x",
+            "scalar": 0
+          },
+          "incoming": {
+            "variable": "y",
+            "scalar": 0
+          },
+          "status": {
+            "Issued": {
+              "chart": 1
+            }
+          }
+        }
+      ]
+    }
+  },
+  "initialization": {
+    "residual": {
+      "nodes": []
+    },
+    "row_roles": [],
+    "projection_plan": {
+      "blocks": [],
+      "iterates_discretes": false
+    },
+    "update_rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "update_targets": [],
+    "manifold_row_count": 0,
+    "given_state_indices": []
+  },
+  "discrete": {
+    "event_iteration_plan": {
+      "runs": [],
+      "partitions": [],
+      "schedule": {
+        "event_pass": [
+          "RelationOverrides",
+          "RuntimeAssignments",
+          "AlgebraicProjection",
+          "RuntimeAssignments",
+          "RelationRefresh",
+          "RelationSettle"
+        ],
+        "relation_pass": [
+          "DiscreteSettle",
+          "SettledIfRelationsUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "settle_pass": [
+          "DiscreteOwners",
+          "RuntimeAssignments",
+          "SettledIfUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "fixed_point_cap": 32,
+        "stalled_settle": {
+          "iteration_cap": 32,
+          "line_search_halvings": 16
+        },
+        "relation_surface_window": 8,
+        "mode_search_relations": 4
+      }
+    },
+    "runtime_assignment_rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "runtime_assignment_targets": [],
+    "runtime_assignment_roles": [],
+    "post_commit_assignment_rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "post_commit_assignment_targets": [],
+    "post_commit_assignment_runtime_rows": [],
+    "rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "update_targets": [],
+    "row_roles": [],
+    "pre_modes": [],
+    "observation_refresh": [],
+    "observation_refresh_reads_y": false,
+    "integrator_history_effects": [],
+    "clock_owners": [],
+    "guarded_assignments": [],
+    "event_transactions": [],
+    "structured_rhs": {
+      "nodes": []
+    },
+    "structured_updates": [],
+    "clock_partition_order": [],
+    "clock_partition_intermediates": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "clock_partition_intermediate_targets": [],
+    "clock_partition_intermediate_clocks": []
+  },
+  "events": {
+    "root_conditions": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "root_relation_memory_targets": [],
+    "root_zero_domains": [],
+    "root_relation_refresh_roles": [],
+    "condition_memory_parameter_indices": [],
+    "scheduled_root_conditions": [],
+    "scheduled_time_events": [],
+    "dynamic_time_event_names": [],
+    "dynamic_time_event_rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "action_conditions": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "actions": [],
+    "has_terminal_event": false,
+    "delays": {
+      "source_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "delay_time_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "delay_max_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "value_parameter_indices": [],
+      "source_is_discrete": []
+    }
+  },
+  "clocks": {
+    "periodic_event_schedules": [],
+    "activation_parameter_indices": []
   }
 }

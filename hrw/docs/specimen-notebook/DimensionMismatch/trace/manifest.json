@@ -2,8 +2,8 @@
   "model": "DimensionMismatch",
   "specimen": "specimens/DimensionMismatch.mo",
   "specimen_fnv1a": "665d59a2f4f63dfb",
-  "rumoca_rev": "a334820a",
-  "rumoca_version": "0.10.0",
+  "rumoca_rev": "5b88a383",
+  "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
       "has_ir": true,

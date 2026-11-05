@@ -80,6 +80,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -198,6 +199,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -316,6 +318,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -434,6 +437,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -566,6 +570,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -698,6 +703,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -816,6 +822,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -948,6 +955,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1080,6 +1088,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1284,6 +1293,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1372,6 +1382,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1490,6 +1501,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1608,6 +1620,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1726,6 +1739,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1858,6 +1872,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -1990,6 +2005,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2108,6 +2124,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2240,6 +2257,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2372,6 +2390,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2574,6 +2593,7 @@
       "is_discrete_type": true,
       "from_expandable_connector": false,
       "evaluate": true,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2718,9 +2738,55 @@
         }
       },
       "fixed": null,
-      "min": null,
+      "min": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 399,
+              "start_column": 15,
+              "end_line": 399,
+              "end_column": 18,
+              "start": 16445,
+              "end": 16448,
+              "source": 11081430449150228211
+            },
+            "token_number": 1459,
+            "token_type": 68
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16445,
+            "end": 16448
+          }
+        }
+      },
       "max": null,
-      "nominal": null,
+      "nominal": {
+        "Terminal": {
+          "terminal_type": "UnsignedInteger",
+          "token": {
+            "text": "300",
+            "location": {
+              "start_line": 401,
+              "start_column": 19,
+              "end_line": 401,
+              "end_column": 22,
+              "start": 16492,
+              "end": 16495,
+              "source": 11081430449150228211
+            },
+            "token_number": 1467,
+            "token_type": 67
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16492,
+            "end": 16495
+          }
+        }
+      },
       "quantity": "ThermodynamicTemperature",
       "unit": "K",
       "display_unit": "degC",
@@ -2757,12 +2823,46 @@
       },
       "binding_source": null,
       "binding_source_scope": null,
-      "attribute_source_scopes": {},
+      "attribute_source_scopes": {
+        "min": {
+          "parts": [
+            [
+              "Modelica",
+              []
+            ],
+            [
+              "Units",
+              []
+            ],
+            [
+              "SI",
+              []
+            ]
+          ]
+        },
+        "nominal": {
+          "parts": [
+            [
+              "Modelica",
+              []
+            ],
+            [
+              "Units",
+              []
+            ],
+            [
+              "SI",
+              []
+            ]
+          ]
+        }
+      },
       "binding_from_modification": false,
       "is_primitive": true,
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2881,6 +2981,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -2980,11 +3081,80 @@
       "causality": "Empty",
       "flow": false,
       "stream": false,
-      "start": null,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "288.15",
+            "location": {
+              "start_line": 400,
+              "start_column": 17,
+              "end_line": 400,
+              "end_column": 23,
+              "start": 16466,
+              "end": 16472,
+              "source": 11081430449150228211
+            },
+            "token_number": 1463,
+            "token_type": 68
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16466,
+            "end": 16472
+          }
+        }
+      },
       "fixed": null,
-      "min": null,
+      "min": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 399,
+              "start_column": 15,
+              "end_line": 399,
+              "end_column": 18,
+              "start": 16445,
+              "end": 16448,
+              "source": 11081430449150228211
+            },
+            "token_number": 1459,
+            "token_type": 68
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16445,
+            "end": 16448
+          }
+        }
+      },
       "max": null,
-      "nominal": null,
+      "nominal": {
+        "Terminal": {
+          "terminal_type": "UnsignedInteger",
+          "token": {
+            "text": "300",
+            "location": {
+              "start_line": 401,
+              "start_column": 19,
+              "end_line": 401,
+              "end_column": 22,
+              "start": 16492,
+              "end": 16495,
+              "source": 11081430449150228211
+            },
+            "token_number": 1467,
+            "token_type": 67
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16492,
+            "end": 16495
+          }
+        }
+      },
       "quantity": "ThermodynamicTemperature",
       "unit": "K",
       "display_unit": "degC",
@@ -2993,12 +3163,62 @@
       "binding": null,
       "binding_source": null,
       "binding_source_scope": null,
-      "attribute_source_scopes": {},
+      "attribute_source_scopes": {
+        "min": {
+          "parts": [
+            [
+              "Modelica",
+              []
+            ],
+            [
+              "Units",
+              []
+            ],
+            [
+              "SI",
+              []
+            ]
+          ]
+        },
+        "start": {
+          "parts": [
+            [
+              "Modelica",
+              []
+            ],
+            [
+              "Units",
+              []
+            ],
+            [
+              "SI",
+              []
+            ]
+          ]
+        },
+        "nominal": {
+          "parts": [
+            [
+              "Modelica",
+              []
+            ],
+            [
+              "Units",
+              []
+            ],
+            [
+              "SI",
+              []
+            ]
+          ]
+        }
+      },
       "binding_from_modification": false,
       "is_primitive": true,
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -3203,6 +3423,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -3342,9 +3563,55 @@
         }
       },
       "fixed": null,
-      "min": null,
+      "min": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "0.0",
+            "location": {
+              "start_line": 399,
+              "start_column": 15,
+              "end_line": 399,
+              "end_column": 18,
+              "start": 16445,
+              "end": 16448,
+              "source": 11081430449150228211
+            },
+            "token_number": 1459,
+            "token_type": 68
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16445,
+            "end": 16448
+          }
+        }
+      },
       "max": null,
-      "nominal": null,
+      "nominal": {
+        "Terminal": {
+          "terminal_type": "UnsignedInteger",
+          "token": {
+            "text": "300",
+            "location": {
+              "start_line": 401,
+              "start_column": 19,
+              "end_line": 401,
+              "end_column": 22,
+              "start": 16492,
+              "end": 16495,
+              "source": 11081430449150228211
+            },
+            "token_number": 1467,
+            "token_type": 67
+          },
+          "span": {
+            "source": 11081430449150228211,
+            "start": 16492,
+            "end": 16495
+          }
+        }
+      },
       "quantity": "ThermodynamicTemperature",
       "unit": "K",
       "display_unit": "degC",
@@ -3376,12 +3643,46 @@
       },
       "binding_source": null,
       "binding_source_scope": null,
-      "attribute_source_scopes": {},
+      "attribute_source_scopes": {
+        "min": {
+          "parts": [
+            [
+              "Modelica",
+              []
+            ],
+            [
+              "Units",
+              []
+            ],
+            [
+              "SI",
+              []
+            ]
+          ]
+        },
+        "nominal": {
+          "parts": [
+            [
+              "Modelica",
+              []
+            ],
+            [
+              "Units",
+              []
+            ],
+            [
+              "SI",
+              []
+            ]
+          ]
+        }
+      },
       "binding_from_modification": false,
       "is_primitive": true,
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -3584,6 +3885,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -3702,6 +4004,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -3790,6 +4093,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -3935,6 +4239,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -4053,6 +4358,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -4171,6 +4477,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -4303,6 +4610,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -4435,6 +4743,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -4553,6 +4862,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -4685,6 +4995,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -4817,6 +5128,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -5021,6 +5333,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -5109,6 +5422,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -5311,6 +5625,7 @@
       "is_discrete_type": true,
       "from_expandable_connector": false,
       "evaluate": true,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -5515,6 +5830,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -5633,6 +5949,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -5751,6 +6068,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -5869,6 +6187,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -5987,6 +6306,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -6105,6 +6425,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -6223,6 +6544,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -6341,6 +6663,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -6473,6 +6796,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -6605,6 +6929,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -6723,6 +7048,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -6855,6 +7181,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -6987,6 +7314,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -7105,6 +7433,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -7237,6 +7566,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -7369,6 +7699,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -7487,6 +7818,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": true,
@@ -7703,6 +8035,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": true,
@@ -7835,6 +8168,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": true,
@@ -7981,6 +8315,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": true,
@@ -8127,6 +8462,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": true,
@@ -8245,6 +8581,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": true,
@@ -8475,6 +8812,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": true,
@@ -8607,6 +8945,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": true,
@@ -8739,6 +9078,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": true,
@@ -8885,6 +9225,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": true,
@@ -9031,6 +9372,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": true,
@@ -9119,6 +9461,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -9237,6 +9580,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -9369,6 +9713,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -9501,6 +9846,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -9619,6 +9965,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -9751,6 +10098,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -9883,6 +10231,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -10110,6 +10459,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -10333,6 +10683,7 @@
       "is_discrete_type": true,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -10478,6 +10829,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -10623,6 +10975,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -10741,6 +11094,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -10829,6 +11183,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -10947,6 +11302,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -11079,6 +11435,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -11211,6 +11568,7 @@
       "is_discrete_type": false,
       "from_expandable_connector": false,
       "evaluate": false,
+      "evaluate_refused": false,
       "is_final": false,
       "is_overconstrained": false,
       "is_protected": false,
@@ -11272,7 +11630,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "11": {
       "instance_id": 11,
@@ -11325,7 +11684,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "3": {
       "instance_id": 3,
@@ -11941,7 +12301,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "20": {
       "instance_id": 20,
@@ -11994,7 +12355,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "24": {
       "instance_id": 24,
@@ -12047,7 +12409,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "16": {
       "instance_id": 16,
@@ -13550,6 +13913,64 @@
           "SI",
           "Modelica.Units.SI"
         ]
+      ],
+      "parameter_branch_selections": [
+        {
+          "conditions": [
+            {
+              "Unary": {
+                "op": "Not",
+                "rhs": {
+                  "ComponentReference": {
+                    "local": false,
+                    "parts": [
+                      {
+                        "ident": {
+                          "text": "useHeatPort",
+                          "location": {
+                            "start_line": 16,
+                            "start_column": 10,
+                            "end_line": 16,
+                            "end_column": 21,
+                            "start": 890,
+                            "end": 901,
+                            "source": 18355245647093129072
+                          },
+                          "token_number": 146,
+                          "token_type": 64
+                        },
+                        "subs": null
+                      }
+                    ],
+                    "span": {
+                      "source": 18355245647093129072,
+                      "start": 890,
+                      "end": 901
+                    }
+                  }
+                },
+                "span": {
+                  "source": 18355245647093129072,
+                  "start": 886,
+                  "end": 901
+                }
+              }
+            }
+          ],
+          "origin": {
+            "parts": [
+              [
+                "R",
+                []
+              ]
+            ]
+          },
+          "span": {
+            "source": 18355245647093129072,
+            "start": 890,
+            "end": 901
+          }
+        }
       ]
     },
     "40": {
@@ -13603,7 +14024,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "44": {
       "instance_id": 44,
@@ -13656,7 +14078,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "36": {
       "instance_id": 36,
@@ -14350,7 +14773,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "59": {
       "instance_id": 59,
@@ -14403,7 +14827,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "63": {
       "instance_id": 63,
@@ -14456,7 +14881,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "67": {
       "instance_id": 67,
@@ -14509,7 +14935,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "74": {
       "instance_id": 74,
@@ -14566,7 +14993,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "71": {
       "instance_id": 71,
@@ -14743,7 +15171,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "82": {
       "instance_id": 82,
@@ -14800,7 +15229,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "78": {
       "instance_id": 78,
@@ -15100,7 +15530,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "49": {
       "instance_id": 49,
@@ -16532,7 +16963,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "88": {
       "instance_id": 88,
@@ -16585,7 +17017,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "92": {
       "instance_id": 92,
@@ -16638,7 +17071,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "86": {
       "instance_id": 86,
@@ -17422,7 +17856,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "103": {
       "instance_id": 103,
@@ -17475,7 +17910,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "101": {
       "instance_id": 101,
@@ -17639,7 +18075,8 @@
           "SI",
           "Modelica.Units.SI"
         ]
-      ]
+      ],
+      "parameter_branch_selections": []
     },
     "1": {
       "instance_id": 1,
@@ -17861,7 +18298,8 @@
           "scope": ""
         }
       ],
-      "resolved_imports": []
+      "resolved_imports": [],
+      "parameter_branch_selections": []
     }
   },
   "is_partial": false,
@@ -17877,6 +18315,7 @@
   "outer_prefix_to_inner": {},
   "inner_outer_to_parent_inner": {},
   "synthesized_inners": [],
+  "synthesized_inner_messages": [],
   "type_roots": {},
   "type_ids_by_def_id": {},
   "enumeration_type_roots": [],

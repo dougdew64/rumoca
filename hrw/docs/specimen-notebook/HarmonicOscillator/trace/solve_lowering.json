@@ -1,5 +1,5 @@
 {
-  "schema_version": 70,
+  "schema_version": 89,
   "layout": {
     "bindings": {
       "x": {
@@ -27,24 +27,6 @@
     "p_scalars": 1
   },
   "solve_layout": {
-    "solver_maps": {
-      "names": [
-        "x",
-        "v"
-      ],
-      "name_to_idx": {
-        "x": 0,
-        "v": 1
-      },
-      "base_to_indices": {
-        "x": [
-          0
-        ],
-        "v": [
-          1
-        ]
-      }
-    },
     "variable_storage_runs": [
       {
         "base": {
@@ -115,7 +97,7 @@
     "implicit_rhs": {
       "nodes": []
     },
-    "implicit_row_targets": [],
+    "implicit_row_targets": "Projection",
     "algebraic_projection_plan": {
       "blocks": []
     },
@@ -154,14 +136,8 @@
                   }
                 },
                 {
-                  "Const": {
-                    "dst": 1,
-                    "value": 2.0
-                  }
-                },
-                {
                   "Binary": {
-                    "dst": 2,
+                    "dst": 3,
                     "op": "Mul",
                     "lhs": 0,
                     "rhs": 0
@@ -169,28 +145,28 @@
                 },
                 {
                   "LoadY": {
-                    "dst": 3,
+                    "dst": 4,
                     "index": 0
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 4,
+                    "dst": 5,
                     "op": "Mul",
-                    "lhs": 2,
-                    "rhs": 3
+                    "lhs": 3,
+                    "rhs": 4
                   }
                 },
                 {
                   "Unary": {
-                    "dst": 5,
+                    "dst": 6,
                     "op": "Neg",
-                    "arg": 4
+                    "arg": 5
                   }
                 },
                 {
                   "StoreOutput": {
-                    "src": 5
+                    "src": 6
                   }
                 }
               ]
@@ -207,15 +183,17 @@
                 "end": 400
               }
             ],
-            "output_indices": [
-              0,
-              1
-            ]
+            "output_placements": {
+              "Dense": {
+                "count": 2
+              }
+            }
           }
         }
       ]
     },
     "refresh_owners": {
+      "compact_projection": null,
       "algebraic": {
         "simultaneous_plan": {
           "blocks": []
@@ -285,12 +263,17 @@
     },
     "row_roles": [],
     "projection_plan": {
-      "blocks": []
+      "blocks": [],
+      "iterates_discretes": false
     },
     "update_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "update_targets": [],
     "manifold_row_count": 0,
@@ -298,26 +281,69 @@
   },
   "discrete": {
     "event_iteration_plan": {
-      "runs": []
+      "runs": [],
+      "partitions": [],
+      "schedule": {
+        "event_pass": [
+          "RelationOverrides",
+          "RuntimeAssignments",
+          "AlgebraicProjection",
+          "RuntimeAssignments",
+          "RelationRefresh",
+          "RelationSettle"
+        ],
+        "relation_pass": [
+          "DiscreteSettle",
+          "SettledIfRelationsUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "settle_pass": [
+          "DiscreteOwners",
+          "RuntimeAssignments",
+          "SettledIfUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "fixed_point_cap": 32,
+        "stalled_settle": {
+          "iteration_cap": 32,
+          "line_search_halvings": 16
+        },
+        "relation_surface_window": 8,
+        "mode_search_relations": 4
+      }
     },
     "runtime_assignment_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "runtime_assignment_targets": [],
     "runtime_assignment_roles": [],
     "post_commit_assignment_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "post_commit_assignment_targets": [],
     "post_commit_assignment_runtime_rows": [],
     "rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "update_targets": [],
     "row_roles": [],
@@ -336,7 +362,11 @@
     "clock_partition_intermediates": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "clock_partition_intermediate_targets": [],
     "clock_partition_intermediate_clocks": []
@@ -345,7 +375,11 @@
     "root_conditions": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "root_relation_memory_targets": [],
     "root_zero_domains": [],
@@ -357,12 +391,20 @@
     "dynamic_time_event_rhs": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "action_conditions": {
       "programs": [],
       "program_spans": [],
-      "output_indices": []
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
     },
     "actions": [],
     "has_terminal_event": false,
@@ -370,17 +412,29 @@
       "source_rhs": {
         "programs": [],
         "program_spans": [],
-        "output_indices": []
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
       },
       "delay_time_rhs": {
         "programs": [],
         "program_spans": [],
-        "output_indices": []
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
       },
       "delay_max_rhs": {
         "programs": [],
         "program_spans": [],
-        "output_indices": []
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
       },
       "value_parameter_indices": [],
       "source_is_discrete": []
