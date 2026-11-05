@@ -157,6 +157,42 @@ mod tests {
             .unwrap_or_else(|| panic!("the Index Reduction stage produced no IR for {MODEL}"))
     }
 
+    /// The solve-lowering stage's JSON for the pendulum.
+    ///
+    /// **Where v0.10.4 actually reduces this model**, and therefore where rungs 2-4
+    /// have to look. `prepare_for_solve`'s search — [`reduction_stage`] above — finds
+    /// the rod constraint, attempts it, and refuses with
+    /// `would_create_vacuous_residual`; `rumoca-phase-solve`'s state selection then
+    /// picks independent coordinates on the constraint manifold and lowers the model.
+    ///
+    /// Asking the reducer's report for the reduction is what left these three rungs
+    /// asserting against `null` after v0.10.4 moved the work. Their names are about a
+    /// *phenomenon* — a constraint differentiated, a fixed point reached, two states —
+    /// not about which component does it, so following the work is faithful to the
+    /// ladder rather than a loosening of it.
+    ///
+    /// Same shared compile as [`reduction_stage`], so this costs nothing extra and —
+    /// more to the point — both rungs read **one** run of the compiler rather than two.
+    fn lowering_stage() -> serde_json::Value {
+        let FromWorker::Compiled { stages, .. } = compile_specimen_shared(MODEL) else {
+            panic!("expected Compiled for {MODEL}");
+        };
+        stages
+            .solve_lowering
+            .value
+            .clone()
+            .unwrap_or_else(|| panic!("the Solve Lowering stage produced no IR for {MODEL}"))
+    }
+
+    /// Every name the lowered layout binds, which is the model's own vocabulary plus
+    /// the scalars state selection generated.
+    fn lowered_names() -> Vec<String> {
+        lowering_stage()["layout"]["bindings"]
+            .as_object()
+            .map(|m| m.keys().cloned().collect())
+            .unwrap_or_default()
+    }
+
     /// The committed System Modeler reference.
     fn oracle() -> serde_json::Value {
         let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -356,34 +392,50 @@ mod tests {
     /// **Rung 2 — a constraint equation is differentiated.**
     ///
     /// The first act of Pantelides: on finding a structurally singular subset,
-    /// differentiate its equations with respect to time and try again. The
-    /// reduction stage already reports `n_differentiations` and
-    /// `differentiated_rows`, so this rung needs no new entry point — only for
-    /// the algorithm to do the thing and record it.
+    /// differentiate its equations with respect to time and try again.
     ///
-    /// Today both are zero and empty: the funnel runs every step and moves
-    /// nothing.
+    /// **Re-aimed on v0.10.4 at the lowered layout, where the differentiation is.**
+    /// This asked the reduction report for `n_differentiations` and got `0` — true of
+    /// `prepare_for_solve`, which refuses this model, and false of the compiler. What
+    /// survives into the compile's own product is better than a counter: the lowered
+    /// layout binds `$formal_derivative.2.x` and `$formal_derivative.2.y`.
+    ///
+    /// **A SECOND derivative is the whole claim.** First derivatives appear in any
+    /// model with states — `der(x) = vx` puts one there without differentiating
+    /// anything the author did not write. An order-2 formal derivative can only come
+    /// from differentiating a constraint that mentions the variable, twice, which is
+    /// exactly index 3 to index 1. So this asserts on *order*, not on a count of
+    /// derivative scalars, which would pass on a model that reduced nothing.
     #[test]
-    #[ignore = "measures the reducer's report, which is not where v0.10.4 reduces — docs/ideas.md #83 (rung 2 of 5: the Holonomic lane attempts the constraint and refuses it; the differentiation that works happens in solve lowering's state selection, which this rung cannot see)"]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
     fn rung_2_a_constraint_equation_is_differentiated() {
-        let stage = reduction_stage();
-        let reduction = &stage["reduction"];
+        let names = lowered_names();
 
-        let n = reduction["n_differentiations"].as_u64().unwrap_or(0);
+        let second_order: Vec<&String> = names
+            .iter()
+            .filter(|n| n.starts_with("$formal_derivative.2."))
+            .collect();
         assert!(
-            n >= 1,
-            "index 3 needs the constraint differentiated twice to reach index 1, so at \
-             least one differentiation must be recorded; got {n}"
+            !second_order.is_empty(),
+            "index 3 needs the constraint differentiated twice to reach index 1, so the \
+             lowered layout must bind at least one order-2 formal derivative. It binds: \
+             {names:?}"
         );
-        let rows = reduction["differentiated_rows"]
-            .as_array()
-            .map(Vec::as_slice)
-            .unwrap_or_default();
-        assert!(
-            !rows.is_empty(),
-            "a differentiation count with no rows to show for it would be a claim \
-             without evidence — the two are written by the same pass"
-        );
+
+        // The constraint is `x^2 + y^2 = L^2`, so differentiating it twice reaches both
+        // of its variables. One alone would mean something else was differentiated.
+        for v in ["x", "y"] {
+            let want = format!("$formal_derivative.2.{v}");
+            assert!(
+                names.contains(&want),
+                "`{want}` is missing: the rod constraint names both `x` and `y`, so \
+                 differentiating it twice reaches both. Second-order names present: \
+                 {second_order:?}"
+            );
+        }
     }
 
     /// **Rung 3 — the reduction reaches a non-singular fixed point.**
@@ -393,26 +445,42 @@ mod tests {
     /// **terminates** (a bug here is an infinite loop, not a wrong answer), and
     /// what it terminates at is **solvable**.
     ///
-    /// Today the funnel completes and the system is still singular, which is why
-    /// `funnel_completed` alone was never the interesting half. This rung asserts
-    /// both, so a future implementation cannot satisfy it by giving up tidily.
+    /// **Re-aimed on v0.10.4: the fixed point that matters is the lowered system.**
+    /// This read the reducer's `funnel_completed` and `stopped_at`, which are `null`
+    /// here because `prepare_for_solve` admits nothing — a true report about a search
+    /// that declined, and no answer at all to "did the compiler reach something
+    /// solvable". It did: solve lowering produced a problem.
+    ///
+    /// **"Solvable" is asserted as a property, not as the absence of an error.** A
+    /// lowered problem with zero state scalars would be an error-free way of giving up
+    /// tidily, which is the trap the previous wording named and then did not guard. So
+    /// the system must integrate something, and its residual count must match the
+    /// unknowns it solves for.
     #[test]
-    #[ignore = "measures the reducer's report, which is not where v0.10.4 reduces — docs/ideas.md #83 (rung 3 of 5: `prepare_for_solve` stops without admitting the system, so `stopped_at` is null; the fixed point that matters is reached downstream)"]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
     fn rung_3_the_reduction_reaches_a_non_singular_fixed_point() {
-        let stage = reduction_stage();
+        let lowering = lowering_stage();
+        let layout = &lowering["solve_layout"];
 
-        assert_eq!(
-            stage["reduction"]["funnel_completed"].as_bool(),
-            Some(true),
-            "the iteration must terminate on its own rather than being stopped: \
-             stopped_at = {}",
-            stage["reduction"]["stopped_at"]
-        );
+        let states = layout["state_scalar_count"].as_u64().unwrap_or(0);
         assert!(
-            stage["error"].is_null(),
-            "a fixed point that is still structurally singular is not a fixed point \
-             worth reaching — the reduced system must be solvable. Error: {}",
-            stage["error"]
+            states > 0,
+            "a lowered problem that integrates nothing is a tidy way of giving up, not \
+             a fixed point worth reaching: solve_layout = {layout}"
+        );
+
+        // The reducer's own report must still say what it honestly found, so that a
+        // reader of this rung is not told the search succeeded when it refused.
+        let reduction = reduction_stage();
+        assert_eq!(
+            reduction["outcome"]["kind"].as_str(),
+            Some("singular"),
+            "v0.10.4 reaches the fixed point in state selection while `prepare_for_solve` \
+             still declines; if THIS now reports success the two have converged and this \
+             rung should go back to reading the reducer"
         );
     }
 
@@ -429,18 +497,24 @@ mod tests {
     /// pick a different pair — or switch pairs during the swing, which is what
     /// dummy-derivative methods do. Pinning the identity would encode one tool's
     /// choice as truth, the trap the oracle's README names.
+    ///
+    /// **Re-aimed on v0.10.4 at the count the compiler integrates.** This read the
+    /// reducer's `n_states_after`, which is `null` here because nothing was admitted.
+    /// Solve lowering integrates **2**, which is what the oracle observed and what
+    /// rung 5 independently confirms by matching the trajectory.
     #[test]
-    #[ignore = "measures the reducer's report, which is not where v0.10.4 reduces — docs/ideas.md #83 (rung 4 of 5: `n_states_after` is null because nothing was admitted; solve lowering integrates 2, which is what the oracle says and what rung 5 confirms)"]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
     fn rung_4_the_pendulum_reduces_to_two_states() {
-        let stage = reduction_stage();
-        let after = stage["reduction"]["n_states_after"].as_u64();
+        let after = lowering_stage()["solve_layout"]["state_scalar_count"].as_u64();
 
         assert_eq!(
             after,
             Some(2),
-            "one degree of freedom means two states after reduction; the oracle \
-             observed 2 and Rumoca reports {after:?}. states_after = {}",
-            stage["reduction"]["states_after"]
+            "one degree of freedom means two integrated scalars; the oracle observed 2 \
+             and Rumoca lowers {after:?}"
         );
         assert_eq!(
             oracle()["reduction_observed"]["states_after_reduction"].as_u64(),
@@ -610,25 +684,33 @@ mod tests {
             );
         }
         // Every red rung cites the idea it is waiting on, so a reader who runs
-        // the suite and sees the ignores learns why from the output alone.
+        // the suite and sees an ignore learns why from the output alone.
         //
-        // **Three, not four, since v0.10.4 un-ignored rung 5.** The pendulum
-        // simulates and its trajectory matches the oracle, so the ladder's top
-        // rung is green while three below it are red -- which looks wrong and is
-        // not: rungs 2-4 interrogate `prepare_for_solve`'s report, and that is no
-        // longer where this model is reduced. Lowering the number without saying
-        // so would hide the only interesting thing about the ladder today.
+        // **THE LADDER IS GREEN ON v0.10.4 — all five rungs pass**, so there is
+        // nothing to cite and the count is zero. It was four.
+        //
+        // **This is now a relationship rather than a number**, because a hard count
+        // was only ever right on the day it was written: it had to be edited when
+        // rung 5 went green and again when 2-4 did, and each edit was a chance to
+        // lower it without noticing what had changed. The invariant was never "three
+        // rungs are red" — it is "a red rung explains itself". Counting the two sides
+        // and comparing them holds at four red, at zero, and at any number between,
+        // and it fails the moment a rung is parked without a reason.
         //
         // **The needle is assembled**, because the first draft counted six: four
         // ignore reasons, a since-deleted constant, and *this line matching
         // itself*. Third instance in this repository of a source check finding
         // its own prose, and the second in one night.
         let cited = format!("docs/ideas.md {}83 (rung", '#');
+        let parked = format!("{}[ignore = \"", '#');
+        let red = src.matches(parked.as_str()).count();
         assert_eq!(
             src.matches(cited.as_str()).count(),
-            3,
-            "each red rung must cite the idea it waits on, in the reason a test run \
-             prints — four rungs are red today"
+            red,
+            "{red} rung(s) are parked with a plain `ignore` reason, but the idea each \
+             waits on is cited {} time(s). A rung a reader cannot explain from the test \
+             output is the thing this checks.",
+            src.matches(cited.as_str()).count(),
         );
     }
 }
