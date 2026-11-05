@@ -10,6 +10,7 @@
     {
       "name": "error",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0682548584919003,
       "final": 0.0682548584919003,
       "min": 0.0682548584919003,
@@ -18,6 +19,7 @@
     {
       "name": "command",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.6825485849190029,
       "final": 0.6825485849190029,
       "min": 0.6825485849190029,
@@ -26,6 +28,7 @@
     {
       "name": "measurement",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.9317451415080997,
       "final": 0.9317451415080997,
       "min": 0.9317451415080997,

@@ -10,6 +10,7 @@
     {
       "name": "setpoint",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.5,
       "final": 0.5,
       "min": 0.5,
@@ -18,6 +19,7 @@
     {
       "name": "error",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.023809523809523808,
       "final": 0.023809523809523808,
       "min": 0.023809523809523808,
@@ -26,6 +28,7 @@
     {
       "name": "command",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.23809523809523808,
       "final": 0.23809523809523808,
       "min": 0.23809523809523808,
@@ -34,6 +37,7 @@
     {
       "name": "measurement",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.47619047619047616,
       "final": 0.47619047619047616,
       "min": 0.47619047619047616,
@@ -42,6 +46,7 @@
     {
       "name": "result",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 1.4285714285714284,
       "final": 1.4285714285714284,
       "min": 1.4285714285714284,

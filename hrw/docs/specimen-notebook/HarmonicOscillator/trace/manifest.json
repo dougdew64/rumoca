@@ -2,7 +2,7 @@
   "model": "HarmonicOscillator",
   "specimen": "specimens/HarmonicOscillator.mo",
   "specimen_fnv1a": "67b86c3a26b1f038",
-  "rumoca_rev": "5b88a383",
+  "rumoca_rev": "80faaf36",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {

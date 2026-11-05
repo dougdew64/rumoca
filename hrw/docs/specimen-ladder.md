@@ -50,11 +50,11 @@ Each rung's specimen is chosen so that **the rung below it cannot express or sol
 | **2** | Runge **1895**, Heun **1900**, Kutta **1901** | **accuracy per step** — buying error reduction with function evaluations instead of with smaller `h` | `HarmonicOscillator` | ✅ 2 states, 0 algebraics |
 | **3** | Curtiss & Hirschfelder **1952**; Dahlquist **1963** | stepping **past a dead fast mode** — implicit methods, and the stability theory that justifies them | `StiffDecay` | ✅ 2 states, 0 algebraics |
 | **4** | Gear **1971** | handing the solver `F(t, z, z') = 0` — **algebraic unknowns need not be eliminated first**; Petzold's DASSL (**1982**) makes it production software | `LoopWithInertia` | ❌ compiles clean, but `w` starts at its steady state — see below |
-| **5** | Baumgarte **1972** | **constrained mechanics simulated** — by the *modeller* differentiating the constraint and damping the drift | `StabilizedPendulum` | ❌ see below — and this is the find |
+| **5** | Baumgarte **1972** | **constrained mechanics simulated** — by the *modeller* differentiating the constraint and damping the drift | `StabilizedPendulum` | ✅ v0.10.4 — 4 states, `lambda` 29.4301, constraint held to 2.9e-06 |
 | **6** | Elmqvist **1978** (Dymola); Modelica 1.0 **Sept 1997** | **declaring** a model by connecting components, instead of deriving `z' = f(z,t)` by hand | `RotationalInertia`, `RcCircuit` | ✅ 5 of 12 move / ⚠ `RcCircuit` dies at t = 0.014 |
 | **7** | Tarjan **1972**, implemented by Duff & Reid **1978** | recovering computational order from declared equations automatically — **BLT**, and with it the discovery that some blocks *cannot* be ordered | `ProportionalLoop` | ✅ steady state, 0 states |
 | **8** | Elmqvist & Otter **1994** | solving a large coupled block by iterating on **a few** variables — tearing | `NonlinearLoop`, `MixedLoop`, `TwoLoops` | ✅ steady state, 0 states |
-| **9** | Gear **1988**, Pantelides **1988**, Mattsson & Söderlind **1993** | **the compiler** detecting and removing high index, so the modeller no longer does rung 5's work by hand | `BenchActuator`, `CartesianPendulum` (wall) | ⚠ index story sound, trajectory partly wrong — see below / ❌ step size too small |
+| **9** | Gear **1988**, Pantelides **1988**, Mattsson & Söderlind **1993** | **the compiler** detecting and removing high index, so the modeller no longer does rung 5's work by hand | `BenchActuator`, `CartesianPendulum` | ⚠ index story sound, electrical trajectory not re-checked on v0.10.4 / ✅ **the wall is gone** — 2 states, constraint held to 4.6e-12 |
 | **10** | Cellier **1979** | continuous and discrete behaviour in **one** model — state events and zero crossings | `BouncingBall` | ✅ 2 of 3 move |
 
 **Where this diverges from chronology**, and why:
@@ -120,11 +120,17 @@ fast transient is the entire reason `BenchActuator` is the corpus's stiffness sp
 exactly the part 0.9.20 gets wrong.** Its mechanical states (`load.phi`, `load.w`) initialize
 correctly. So: use it for the index story, **never for the electrical trajectory**.
 
-**Rungs 4 and 5 are blocked, for different reasons.** Rung 4 needs a *dynamic* system with
-algebraic unknowns and a visible transient, which is precisely the combination 0.9.20 flat-lines.
-Rung 5 does not run at all. Both are documentable — the derivation and the oracle are available —
-but neither lab can check a trajectory, and rung 4's whole point is that the solver integrates a
-state **while** solving algebraics.
+**Rungs 4 and 5 were blocked on 0.9.20, for different reasons.** Rung 4 needs a *dynamic* system
+with algebraic unknowns and a visible transient, which is precisely the combination 0.9.20
+flat-lines. Rung 5 did not run at all. Both were documentable — the derivation and the oracle were
+available — but neither lab could check a trajectory, and rung 4's whole point is that the solver
+integrates a state **while** solving algebraics.
+
+**Both are unblocked on v0.10.4**, measured 2026-11-04: `StabilizedPendulum` simulates on 4 states
+and `CartesianPendulum` on 2, each solving `lambda` as an algebraic unknown alongside an
+integrating state — which is rung 4's requirement as well as rung 5's. 18 of 28 corpus specimens
+simulated on 0.10.0; 19 do now, and every remaining failure is a specimen authored to fail. See
+the measurement below.
 
 **A consolation at rung 3.** `BenchActuator` was the corpus's designated stiffness specimen, and
 its stiffness is the broken part. `StiffDecay`, added 2026-09-24, has no connectors, no algebraic
@@ -154,21 +160,42 @@ Where `CartesianPendulum` reports `Structural … singular` and then `still sing
 reduction`, this model **passes both**, and Rumoca correctly calls it already index 1. Baumgarte's
 construction does exactly what it claims, confirmed by a compiler with no idea it was applied.
 
-**And it still does not run.** Initialization cannot match `lambda`, so `lambda` never receives a
-consistent initial value, and the iteration matrix is singular at index 4 — which is `lambda`.
-
-So **Rumoca's inability to simulate a constrained pendulum is not only the missing Pantelides.**
-There is a second, independent stop downstream, in initialization of an algebraic unknown, and it
-is reached even when the index problem has already been removed. The specimen was validated in
-**System Modeler first** — it runs there, `lambda` matches the analytic tension to ~1e−9, and the
-constraint residual *shrinks* from 1.5e−8 to 5.6e−12 across the run — so the failure is Rumoca's,
-not the model's. Full evidence:
+**On 0.9.20 it still did not run.** Initialization could not match `lambda`, so `lambda` never
+received a consistent initial value, and the iteration matrix was singular at index 4 — which is
+`lambda`. The specimen was validated in **System Modeler first** — it runs there, `lambda` matches
+the analytic tension to ~1e−9, and the constraint residual *shrinks* from 1.5e−8 to 5.6e−12 across
+the run — so the failure was Rumoca's, not the model's. Full evidence:
 [`specimen-notebook/StabilizedPendulum/purpose.md`](specimen-notebook/StabilizedPendulum/purpose.md).
 
-**Open question, not a claim:** whether the 0.10.0 initialization fix (which revives `RcCircuit`
-and three others) also matches `lambda` here. If it does, rung 5 becomes reachable and Doug can
-simulate a constrained pendulum on Rumoca **without waiting for Pantelides**. That is worth
-measuring the day the rebase happens, and it is the strongest argument yet for doing it.
+### ⟶ MEASURED 2026-11-04, the day the rebase happened — and the answer is yes, twice
+
+This section carried an **open question**: whether the 0.10.0 initialization fix would match
+`lambda` here, making rung 5 reachable *"without waiting for Pantelides"*. It said the measurement
+was worth taking the day the rebase happened. It was taken, and the news is better than the
+question allowed for.
+
+**`StabilizedPendulum` simulates** — initialization produces its plan, solve lowering produces a
+problem, 501 samples to t = 2 s on 4 states. So rung 5 is reachable, as predicted.
+
+**And the wait for Pantelides is over too, which the question did not anticipate.** v0.10.4
+simulates the *unstabilized* `CartesianPendulum`, on 2 states, through `rumoca-phase-solve`'s
+state selection. So the corpus now holds **the same physics solved two ways**, and the comparison
+is the point:
+
+| | `CartesianPendulum` | `StabilizedPendulum` |
+|---|---|---|
+| route to index 1 | coordinate reduction — a chart on the manifold | Baumgarte stabilization, written by hand |
+| integrated states | **2** | **4** |
+| `lambda` peak | 29.4303 | 29.4301 |
+| `\|x² + y² − L²\|`, final sample | **4.6e-12** | **2.9e-06** |
+
+**Both get the physics right** — the rod tension agrees to five figures with the hand-computed
+3*mg* — and the *reduced* one holds the constraint **six orders of magnitude** tighter. That is
+the difference between removing a constraint and merely damping its violation, stated as a number
+a reader can check against either tool.
+
+*(Written when `CartesianPendulum` could not run at all. The paragraph above it is kept as the
+0.9.20 record, because the second stop it names was real and finding it was the ladder's work.)*
 
 ## Rung 9 is the showpiece
 

@@ -726,31 +726,76 @@ constraint row mentions none of the quantities being solved for.
 | Parse → Flatten | Ok | nothing interesting; the model is small and well-formed |
 | DAE | Ok | 4 states, 1 algebraic, 5 continuous equations |
 | Structural | **Flagged** | `singular` |
-| Index reduction | **Flagged** | `still singular after index reduction: 4 matched out of 5 equations and 5 unknowns; unmatched equations: f_x[4]; unmatched unknowns: lambda` |
-| Initialization | **Flagged** | `IC planning failed: 0 matched out of 1 equations and 1 unknowns; unmatched unknowns: lambda` |
+| Index reduction | **Flagged** | `still singular after reduction` — the Holonomic lane finds the constraint, attempts it, and refuses with `would_create_vacuous_residual` |
+| Initialization | **Flagged** | no initial-value pins: structural preparation did not admit this system |
 | Events | Ok | no events — a smooth system |
-| Solve lowering | Ok | it lowers happily, which tells you nothing about solvability |
+| Solve lowering | **Ok, and it means it** | state selection takes a chart on the manifold: 2 integrated scalars, and the model simulates |
 
 **Rumoca is a recovering compiler**: almost nothing stops the pipeline. A flagged phase records the
-problem and the next phase runs anyway. So "Solve lowering: Ok" is not a contradiction — it means
-the lowering succeeded, not that the system can be solved.
+problem and the next phase runs anyway.
 
-## Where it stops, and why
+**On v0.10.4 that recovery is not merely cosmetic here — it is the answer.** Through v0.10.0 this
+table ended *"Solve lowering: Ok ... which tells you nothing about solvability"*, and that was the
+right reading: the model then failed with `DAE structural proof failed` and did not run. It runs
+now. Solve lowering's `Ok` means a different thing, because `rumoca-phase-solve`'s **state
+selection** reduces the index itself, by choosing independent coordinates on the constraint
+manifold rather than differentiating in place.
+
+**So two phases disagree, and both are telling the truth.** Index reduction refuses this
+constraint — differentiate `x² + y² = L²`, substitute it back, and you are left with `0 = 0`,
+which is what `would_create_vacuous_residual` names. Solve lowering never needs to: it integrates
+two abstract coordinates and reconstructs `x`, `y`, `vx`, `vy` and `lambda` from them. The rod
+holds to **4.6e-12** and `lambda` peaks at the hand-computed 3*mg*.
+
+**Read the tab, then read the trajectory.** A phase reporting failure is a fact about that phase.
+
+## Where the reducer refuses, and why the refusal is right
 
 The matching finds four of five equations a rate to determine, and leaves `f_x[4]` and `lambda`
 unpaired. **That is exactly the pair Step 7 predicts**, arrived at by a compiler counting rather
 than by the chain argument.
 
-Index reduction is then asked to fix it, and cannot. **Rumoca's index reduction is pattern-based,
-not general Pantelides.** Its passes hunt particular shapes — derivative aliases
-(`connection_alias.rs`), direct assignments (`direct_demotion.rs`), constrained dummy derivatives
-(`dummy_state_metadata.rs`), and states whose derivative row is missing
-(`state_row_reduction.rs`). Every constraint reachable by those is an *alias*: one variable equal
-to another times a constant, which substitution removes.
+Index reduction is then asked to fix it, and declines. **It is not that it cannot see the
+constraint** — on v0.10.4 reduction is a search over two lanes, `Direct` and `Holonomic`,
+alternating to a fixed point, and the Holonomic lane finds `x² + y² = L²` and *attempts* it:
 
-`x² + y² = L²` is none of those. It is nonlinear and couples two states, so no substitution touches
-it and differentiation is the only route — which is what Aside 7a works through by hand, and what
-Rumoca does not implement. The funnel reports that it did not act.
+```text
+candidates  direct     direct_admissible    0 discovered
+candidates  direct     direct_conditional   0 discovered
+candidates  holonomic  holonomic            1 discovered
+attempt     holonomic                       would_create_vacuous_residual
+```
+
+**`would_create_vacuous_residual` is a result, not a shrug.** Aside 7a differentiates the
+constraint twice by hand and keeps the result as a *new* equation. A reducer that differentiates
+and then *substitutes back* — which is what "reduce this row" means here — is left with `0 = 0`:
+a row constraining nothing, in a system that still needs five. So the lane reports that the move
+is available and worthless, which is more information than "no pattern matched".
+
+The `Direct` lane finds nothing in either proof group, and that is also right: a direct candidate
+is one variable *defined* by an expression in others, and a nonlinear relation between two states
+defines neither of them.
+
+*(Through v0.10.0 this section described a fixed ten-step funnel of pattern-based demotions —
+derivative aliases, direct assignments, dummy derivatives, missing derivative rows — and concluded
+that the pendulum matched none of the patterns. That funnel no longer exists; the four modules it
+named were deleted. The conclusion was right for the wrong mechanism, which is the more
+interesting way for a document to rot.)*
+
+## And then it reduces anyway, somewhere else
+
+**The route that works does not differentiate the constraint at all.** `rumoca-phase-solve`'s
+state selection picks **independent coordinates on the constraint manifold** — the circle of
+radius `L` — and integrates those. The Cartesian positions, the velocities and the rod tension are
+all reconstructed from the chart, so the constraint is satisfied *by construction* rather than
+enforced by an equation.
+
+That is why it holds to **4.6e-12** over a full swing, where `StabilizedPendulum` — the same
+physics with Baumgarte damping written in by hand, which is Aside 7a's route made explicit —
+holds it to **2.9e-06**. Six orders of magnitude, and the difference is between removing a
+constraint and damping its violation.
+
+**Both reach index 1. Only one of them ever writes down a differentiated constraint.**
 
 ## Initialization fails on the same variable
 

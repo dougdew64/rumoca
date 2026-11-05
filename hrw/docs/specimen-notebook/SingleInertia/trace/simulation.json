@@ -10,6 +10,7 @@
     {
       "name": "phi",
       "is_state": true,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 2.0000000098009756,
       "min": 0.0,
@@ -18,6 +19,7 @@
     {
       "name": "w",
       "is_state": true,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 2.0,
       "min": 0.0,

@@ -2,7 +2,7 @@
   "model": "Drivetrain",
   "specimen": "specimens/Drivetrain.mo",
   "specimen_fnv1a": "8a7b13d217d23398",
-  "rumoca_rev": "5b88a383",
+  "rumoca_rev": "80faaf36",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {

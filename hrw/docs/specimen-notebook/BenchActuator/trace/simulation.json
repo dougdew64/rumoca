@@ -9,7 +9,8 @@
   "variables": [
     {
       "name": "src.i",
-      "is_state": true,
+      "is_state": false,
+      "state_coordinate": null,
       "initial": -0.0,
       "final": -8.044097999059401,
       "min": -11.990880309029793,
@@ -17,7 +18,8 @@
     },
     {
       "name": "src.v",
-      "is_state": true,
+      "is_state": false,
+      "state_coordinate": null,
       "initial": 12.0,
       "final": 12.0,
       "min": 12.0,
@@ -25,7 +27,8 @@
     },
     {
       "name": "src.p.v",
-      "is_state": true,
+      "is_state": false,
+      "state_coordinate": null,
       "initial": 12.0,
       "final": 12.0,
       "min": 12.0,
@@ -34,6 +37,7 @@
     {
       "name": "src.p.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": -0.0,
       "final": -8.044097999059401,
       "min": -11.990880309029793,
@@ -42,6 +46,7 @@
     {
       "name": "src.n.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.0,
       "min": 0.0,
@@ -50,6 +55,7 @@
     {
       "name": "src.n.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 8.044097999059401,
       "min": 0.0,
@@ -58,6 +64,7 @@
     {
       "name": "R.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 8.044097999059401,
       "min": 0.0,
@@ -66,6 +73,7 @@
     {
       "name": "R.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 8.044097999059401,
       "min": 0.0,
@@ -74,6 +82,7 @@
     {
       "name": "R.p.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 12.0,
       "final": 12.0,
       "min": 12.0,
@@ -82,6 +91,7 @@
     {
       "name": "R.p.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 8.044097999059401,
       "min": 0.0,
@@ -90,6 +100,7 @@
     {
       "name": "R.n.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 12.0,
       "final": 3.9559020009405987,
       "min": 0.009119690970207373,
@@ -98,6 +109,7 @@
     {
       "name": "R.n.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": -0.0,
       "final": -8.044097999059401,
       "min": -11.990880309029793,
@@ -106,6 +118,7 @@
     {
       "name": "R.LossPower",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 64.70751261847147,
       "min": 0.0,
@@ -114,6 +127,7 @@
     {
       "name": "R.T_heatPort",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 300.15,
       "final": 300.15,
       "min": 300.15,
@@ -122,6 +136,7 @@
     {
       "name": "R.R_actual",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 1.0,
       "final": 1.0,
       "min": 1.0,
@@ -129,7 +144,8 @@
     },
     {
       "name": "L.i",
-      "is_state": false,
+      "is_state": true,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 8.044097999059401,
       "min": 0.0,
@@ -138,6 +154,7 @@
     {
       "name": "L.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 12.0,
       "final": -0.0001608851777490372,
       "min": -0.00023983962879854312,
@@ -146,6 +163,7 @@
     {
       "name": "L.p.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 12.0,
       "final": 3.9559020009405987,
       "min": 0.009119690970207373,
@@ -154,6 +172,7 @@
     {
       "name": "L.p.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 8.044097999059401,
       "min": 0.0,
@@ -162,6 +181,7 @@
     {
       "name": "L.n.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 3.9560628861183478,
       "min": 0.0,
@@ -170,6 +190,7 @@
     {
       "name": "L.n.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": -0.0,
       "final": -8.044097999059401,
       "min": -11.990880309029793,
@@ -178,6 +199,7 @@
     {
       "name": "emf.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 3.9560628861183478,
       "min": 0.0,
@@ -186,6 +208,7 @@
     {
       "name": "emf.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 8.044097999059401,
       "min": 0.0,
@@ -194,6 +217,7 @@
     {
       "name": "emf.phi",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 42.188811596083774,
       "min": 0.0,
@@ -202,6 +226,7 @@
     {
       "name": "emf.w",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 39.560628861183474,
       "min": 0.0,
@@ -210,6 +235,7 @@
     {
       "name": "emf.tau",
       "is_state": false,
+      "state_coordinate": null,
       "initial": -0.0,
       "final": -0.8044097999059402,
       "min": -1.1990880309029792,
@@ -218,6 +244,7 @@
     {
       "name": "emf.tauElectrical",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.8044097999059402,
       "min": 0.0,
@@ -226,6 +253,7 @@
     {
       "name": "emf.p.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 3.9560628861183478,
       "min": 0.0,
@@ -234,6 +262,7 @@
     {
       "name": "emf.p.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 8.044097999059401,
       "min": 0.0,
@@ -242,6 +271,7 @@
     {
       "name": "emf.n.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.0,
       "min": 0.0,
@@ -250,6 +280,7 @@
     {
       "name": "emf.n.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": -0.0,
       "final": -8.044097999059401,
       "min": -11.990880309029793,
@@ -258,6 +289,7 @@
     {
       "name": "emf.flange.phi",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 42.188811596083774,
       "min": 0.0,
@@ -266,6 +298,7 @@
     {
       "name": "emf.flange.tau",
       "is_state": false,
+      "state_coordinate": null,
       "initial": -0.0,
       "final": -0.8044097999059402,
       "min": -1.1990880309029792,
@@ -274,6 +307,7 @@
     {
       "name": "emf.fixed.flange.phi",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.0,
       "min": 0.0,
@@ -282,6 +316,7 @@
     {
       "name": "emf.fixed.flange.tau",
       "is_state": false,
+      "state_coordinate": null,
       "initial": -0.0,
       "final": -0.8044097999059402,
       "min": -1.1990880309029792,
@@ -290,6 +325,7 @@
     {
       "name": "emf.internalSupport.tau",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.8044097999059402,
       "min": 0.0,
@@ -298,6 +334,7 @@
     {
       "name": "emf.internalSupport.phi",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.0,
       "min": 0.0,
@@ -306,6 +343,7 @@
     {
       "name": "emf.internalSupport.flange.phi",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.0,
       "min": 0.0,
@@ -314,6 +352,7 @@
     {
       "name": "emf.internalSupport.flange.tau",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.8044097999059402,
       "min": 0.0,
@@ -322,6 +361,7 @@
     {
       "name": "load.flange_a.phi",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 42.188811596083774,
       "min": 0.0,
@@ -330,6 +370,7 @@
     {
       "name": "load.flange_a.tau",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.8044097999059402,
       "min": 0.0,
@@ -338,6 +379,7 @@
     {
       "name": "load.flange_b.phi",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 42.188811596083774,
       "min": 0.0,
@@ -346,6 +388,7 @@
     {
       "name": "load.flange_b.tau",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.0,
       "min": 0.0,
@@ -353,7 +396,8 @@
     },
     {
       "name": "load.phi",
-      "is_state": false,
+      "is_state": true,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 42.188811596083774,
       "min": 0.0,
@@ -361,7 +405,8 @@
     },
     {
       "name": "load.w",
-      "is_state": false,
+      "is_state": true,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 39.560628861183474,
       "min": 0.0,
@@ -370,6 +415,7 @@
     {
       "name": "load.a",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 16.088195998118803,
       "min": 0.0,
@@ -378,6 +424,7 @@
     {
       "name": "gnd.p.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.0,
       "min": 0.0,
@@ -386,6 +433,7 @@
     {
       "name": "gnd.p.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": -0.0,
       "final": -0.0,
       "min": -0.0,

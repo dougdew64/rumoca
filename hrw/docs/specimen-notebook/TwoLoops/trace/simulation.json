@@ -10,6 +10,7 @@
     {
       "name": "errorA",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.047619047619047616,
       "final": 0.047619047619047616,
       "min": 0.047619047619047616,
@@ -18,6 +19,7 @@
     {
       "name": "commandA",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.47619047619047616,
       "final": 0.47619047619047616,
       "min": 0.47619047619047616,
@@ -26,6 +28,7 @@
     {
       "name": "errorB",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.02976190476190476,
       "final": 0.02976190476190476,
       "min": 0.02976190476190476,
@@ -34,6 +37,7 @@
     {
       "name": "commandB",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.1488095238095238,
       "final": 0.1488095238095238,
       "min": 0.1488095238095238,

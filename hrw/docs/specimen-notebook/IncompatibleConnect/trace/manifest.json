@@ -2,7 +2,7 @@
   "model": "IncompatibleConnect",
   "specimen": "specimens/IncompatibleConnect.mo",
   "specimen_fnv1a": "8275dd3b1c19203f",
-  "rumoca_rev": "5b88a383",
+  "rumoca_rev": "80faaf36",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
