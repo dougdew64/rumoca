@@ -41,13 +41,36 @@ simulation       FAILED    BDF: Failed to factorise matrix: SymbolicSingular { i
 ```
 
 **The hand reduction works.** Where `CartesianPendulum` reports `Structural … singular` and then
-`still singular after index reduction`, this model passes both — and Rumoca correctly identifies
+`still singular after reduction`, this model passes both — and Rumoca correctly identifies
 it as already index 1. That is a real confirmation that Baumgarte's 1972 construction does what
-it claims, checked by a compiler that has no idea it was applied.
+it claims, checked by a compiler that has no idea it was applied. **That remains true on v0.10.4**,
+and it is the durable half of this specimen's value.
 
-**And it still does not run.** Initialization cannot match `lambda` to an equation, so `lambda`
-never receives a consistent initial value, and the solver's iteration matrix is singular at
-index 4 — which is `lambda`, the fifth variable.
+**And on 0.9.20 it still did not run.** Initialization could not match `lambda` to an equation, so
+`lambda` never received a consistent initial value, and the solver's iteration matrix was singular
+at index 4 — which is `lambda`, the fifth variable.
+
+### ⟶ IT RUNS ON v0.10.4 — measured 2026-11-04, and the comparison is now the point
+
+**Both walls are down.** Initialization produces its plan, solve lowering produces a problem, and
+the model simulates 501 samples to t = 2 s on **4 states**, with `lambda` peaking at **29.4301**
+against the hand-computed rod tension 3*mg* = 29.43.
+
+**And `CartesianPendulum` runs too**, which this file was written assuming would not happen: v0.10.4
+reduces the *unstabilized* model to **2** states by choosing coordinates on the constraint manifold.
+So the corpus holds the same physics solved two ways, and the numbers separate them cleanly:
+
+| | this model — Baumgarte, by hand | `CartesianPendulum` — chart on the manifold |
+|---|---|---|
+| integrated states | 4 | **2** |
+| `\|x² + y² − L²\|`, final sample | 2.9e-06 | **4.6e-12** |
+| `lambda` peak | 29.4301 | 29.4303 |
+
+**Six orders of magnitude, and both get the physics right.** Damping a constraint violation keeps
+it small; removing the constraint by changing coordinates means there is nothing to drift. That is
+the clearest statement of what index reduction buys that this corpus can make, and it needs both
+specimens to make it — so **this one's purpose has changed rather than expired**: it was evidence
+of a gap, and it is now the control in a comparison.
 
 So Rumoca's inability to simulate a constrained pendulum is **not only** the missing Pantelides
 implementation. There is a second, independent stop downstream, in initialization of an algebraic

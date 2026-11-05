@@ -75,11 +75,23 @@ open chain lands in this class.** *(Why a closed chain is a high-index DAE, why 
 central rather than parked, and the MultiBody charter tension are in
 [`vision.md`](vision.md) — that file owns what he is trying to learn.)*
 
-**AND THAT MAKES THREE ITEMS ONE ITEM** *(the convergence, noticed 2026-08-22)*: **#83** implement
-general Pantelides, **#5** four-bar linkage plus un-parking the planar mechanics library — which is
-deferred *precisely* because Rumoca does not reduce nonlinear holonomic constraints — and the
-degree itself. **The missing algorithm sits exactly where his study, his career goal and his
+**AND THAT MADE THREE ITEMS ONE ITEM** *(the convergence, noticed 2026-08-22)*: **#83** implement
+general Pantelides, **#5** four-bar linkage plus un-parking the planar mechanics library — which was
+deferred *precisely* because Rumoca did not reduce nonlinear holonomic constraints — and the
+degree itself. **The missing algorithm sat exactly where his study, his career goal and his
 learning project intersect.**
+
+**⟶ v0.10.4 REMOVED THE ALGORITHM FROM THAT INTERSECTION, 2026-11-04 — and it is the deferral
+reason for #5 that needs re-measuring, not the convergence.** Rumoca now reduces
+`CartesianPendulum`, which *is* a nonlinear holonomic constraint, to two coordinates on the
+constraint manifold. **#83 is closed by upstream**; see `ideas.md`.
+
+**That is one constraint, and a four-bar linkage is a closed chain of several coupled ones.** So
+the honest statement is that #5's stated reason has **weakened and gone unmeasured**, not that it
+is gone: nobody has put a closed kinematic chain through v0.10.4. **That measurement is now the
+cheapest thing standing between this project and the work Doug actually wants to do**, and it is a
+specimen, not a compiler feature — which is a very different size of task from the one this
+paragraph was written about.
 
 ### The background he brings
 

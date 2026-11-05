@@ -120,10 +120,18 @@ algorithm. It also gives [`ideas.md`](ideas.md) **#83** *(implement general Pant
 consumed a working implementation's output professionally, so he has a reference intuition for
 what a production one must produce.
 
-**And it bears on a live finding.** `upstream-issues.md` records that Rumoca does not reduce
-`CartesianPendulum`, the canonical index-3 DAE, where System Modeler reduces it to two states by
-dynamic state selection. Someone who has shipped against a working Pantelides has grounds for an
-opinion there that this project currently lacks.
+**And it bore on a live finding, which v0.10.4 closed on 2026-11-04.** Rumoca did not reduce
+`CartesianPendulum`, the canonical index-3 DAE, where System Modeler reduced it to two states by
+dynamic state selection. It reduces it now — on the same two coordinates, `{y, der(y)}` — through
+`rumoca-phase-solve`'s state selection rather than through differentiation in place.
+
+**The experience is still the point, and the question it answers has moved.** Someone who has
+shipped against a working Pantelides has grounds for an opinion this project otherwise lacks — and
+the opinion now wanted is not *"should it reduce this?"* but *"is a chart on the constraint
+manifold the same guarantee as a differentiated constraint, for a HIL rig?"* That is a V&V
+question, not a compiler-feature one, and it is closer to the destination this programme serves.
+The measured difference is in [`specimen-ladder.md`](specimen-ladder.md): the reduced pendulum
+holds its constraint to 4.6e-12, the hand-stabilized one to 2.9e-06.
 
 ## Credentials — what the field actually gates on
 
