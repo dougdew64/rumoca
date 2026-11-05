@@ -59,8 +59,13 @@ outcome: singular, admitted false, residue 2
 nothing. The Direct lane finds nothing in either proof group, correctly: a nonlinear constraint in
 two variables is not a direct definition of anything.
 
-So the **Index Reduction tab reports a refusal, and the model simulates anyway.** That is not a
+So the **Index Reduction payload is a refusal, and the model simulates anyway.** That is not a
 contradiction and it is the most instructive thing this specimen now does.
+
+*The tab itself says so as of 2026-11-05: its note reads* "this reducer's search stayed singular;
+solve lowering selected 2 independent coordinate(s) on the constraint manifold and lowered the
+model", *and the stage's outcome is `Ok`. The rounds and the refusal are still there in the pane —
+what changed is that the stage no longer passes one phase's refusal off as the compiler's verdict.*
 
 **Solve lowering carries it, by changing coordinates instead of differentiating in place.**
 `rumoca-phase-solve`'s state selection — *"static independent coordinates for structurally
@@ -96,6 +101,13 @@ a full swing, and `lambda` peaks at **29.4303**, against the hand-computed rod t
 statement about one search, and reading it as the compiler's verdict is a mistake HRW itself made
 — its Index Reduction banner called this model *Singular* in red on the day the model began
 simulating correctly. If a pane and a trajectory disagree, the trajectory is the arbiter.
+
+**And it made the same mistake twice, which is the sharper lesson.** The banner was fixed on
+2026-11-04; the **stage outcome underneath it was not**, so for a day this specimen showed *Reduced
+by state selection* in green under a tab painted red. Doug found it by loading the model. One fact
+had two homes — the pane and the label — and fixing the home you are looking at feels like fixing
+the fact. Both now read the same `state_scalar_count` from solve lowering, which is the only
+arrangement in which they cannot drift apart again.
 
 **Reduction is not the only way down from high index.** Differentiate-and-substitute is the
 textbook route and it is the one that fails here. Choosing independent coordinates on the

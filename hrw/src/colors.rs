@@ -34,7 +34,12 @@ pub fn stage_start_color(dark_mode: bool) -> Color32 {
     }
 }
 
-/// Warning amber — fixed color for log warnings.
+/// Warning amber — fixed color for log warnings, and for a **flagged** stage tab.
+///
+/// The second use arrived 2026-11-05 and is the same claim in a different place: Rumoca
+/// reported a problem and the pipeline carried on. `stage_tabs::tab_label` keeps
+/// `error_fg_color` for `Outcome::Failed`, which is the only outcome asserting the
+/// pipeline stopped.
 pub const WARN_AMBER: Color32 = Color32::from_rgb(0xD2, 0x9E, 0x22);
 
 /// Incidence matrix cell fill — the non-zero entry color.

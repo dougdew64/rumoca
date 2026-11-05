@@ -2,7 +2,7 @@
   "model": "CartesianPendulum",
   "specimen": "specimens/CartesianPendulum.mo",
   "specimen_fnv1a": "95583943547159b1",
-  "rumoca_rev": "80faaf36",
+  "rumoca_rev": "422a838a",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
@@ -35,7 +35,7 @@
     },
     "index_reduction": {
       "has_ir": true,
-      "note": "still singular after reduction"
+      "note": "this reducer's search stayed singular; solve lowering selected 2 independent coordinate(s) on the constraint manifold and lowered the model"
     },
     "initialization": {
       "has_ir": false,

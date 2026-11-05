@@ -7707,11 +7707,17 @@ fn the_corpus_outcome_matrix_is_unchanged() {
     //    note and no IR. Nothing about the compiler changed; HRW started reading it.
     //
     //    **`O` where the system was admitted, `F` where it was not** — and `F` here
-    //    appears on exactly the three rows where Structural also reads `F`:
+    //    appeared on exactly the three rows where Structural also reads `F`:
     //    `CartesianPendulum`, `IncompatibleConnect`, `TwiceDefined`. Two `F`s in one
-    //    row is correct and the rule says so: `F` is `Flagged`, *the pipeline
+    //    row is permitted and the rule says so: `F` is `Flagged`, *the pipeline
     //    continued*. It is `X`/`Failed` that at most one stage per compile may claim,
-    //    and neither of these does.
+    //    and none of these does.
+    //
+    //    **One of those three lost its second `F` on 2026-11-05**, and permitted turned
+    //    out not to mean correct. `CartesianPendulum` is reduced by a *later* phase, so
+    //    `reconcile_reduction_with_lowering` reads the lowered coordinate count and the
+    //    column is `O`. The two that remain publish no lowered layout, which is the
+    //    discriminator — not the word `singular`, which all three share.
     //
     //    **The four high-index rows now disagree with their own comment, usefully.**
     //    It says *"reduction fixes it"*, and column 8 now reads `O` for all four,
@@ -7777,14 +7783,27 @@ fn the_corpus_outcome_matrix_is_unchanged() {
         // unknowns"; it now lowers the canonical index-3 pendulum on two independent
         // coordinates, and the model simulates with the rod constraint holding to 4.6e-12.
         //
-        // **The two `F`s before it did NOT move**, and that is the interesting part.
-        // Structural and Index Reduction still report a singular system, because
-        // `prepare_for_solve`'s search still declines it — the Holonomic lane finds the
-        // constraint, attempts it, and refuses with `would_create_vacuous_residual`. The
-        // reduction that works happens afterwards, in `rumoca-phase-solve`'s state
-        // selection. So this row now reads as a phase failing and the next one succeeding
-        // anyway, which is exactly what happens.
-        ("CartesianPendulum", "OOOOOOFF.OO"),
+        // **Structural stays `F` and Index Reduction became `O` on 2026-11-05.**
+        //
+        // `prepare_for_solve`'s search still declines this model — the Holonomic lane
+        // finds the rod constraint, attempts it, and refuses with
+        // `would_create_vacuous_residual` — and the raw system still *is* singular, which
+        // is column 7. What changed is column 8: the compiler reduces this model, in
+        // `rumoca-phase-solve`'s state selection, and `reconcile_reduction_with_lowering`
+        // now reads the 2 coordinates solve lowering produced rather than letting one
+        // phase's refusal stand as the stage's outcome.
+        //
+        // **This row previously read `FF` and the comment called that "a phase failing
+        // and the next one succeeding anyway, which is exactly what happens".** The
+        // reading was right about the compiler and wrong about what a stage *outcome*
+        // claims: `F` is what paints the tab, and Doug reported a red Index Reduction tab
+        // on a model that simulates. The two `F`s were a true description of two phases
+        // wearing the shape of a verdict about one.
+        //
+        // The other two `singular` reductions keep their `F` — see `IncompatibleConnect`
+        // and `TwiceDefined` below, where solve lowering publishes no layout because
+        // nothing carried those models.
+        ("CartesianPendulum", "OOOOOOFO.OO"),
         // A flagged typecheck stops the pipeline; everything after is `.`.
         ("DimensionMismatch", "OOOF......."),
         // Flatten and DAE fail with a payload, then nothing is reached.
@@ -9345,5 +9364,119 @@ fn each_tolerance_source_has_its_own_words() {
     assert!(
         all.iter().all(|s| !s.describe().is_empty()),
         "a source with no words leaves the log saying only a number",
+    );
+}
+
+/// Build the two stages [`reconcile_reduction_with_lowering`] judges.
+///
+/// `kind` is the reduction outcome Rumoca reported; `lowered` is the
+/// `state_scalar_count` solve lowering published, or `None` for a stage that published
+/// no layout. Only the two keys the function reads are filled — a fuller fixture would
+/// suggest the judgement depends on more than it does.
+fn reduction_pair(kind: &str, lowered: Option<u64>) -> (Stage, Stage) {
+    let ir = Stage::recovered(
+        serde_json::json!({ "outcome": { "kind": kind } }),
+        "still singular after reduction",
+    );
+    let sl = match lowered {
+        Some(n) => Stage::ok(serde_json::json!({ "solve_layout": { "state_scalar_count": n } })),
+        None => Stage::info("not lowered"),
+    };
+    (ir, sl)
+}
+
+/// **A reduction the compiler carried downstream is not flagged** — `CartesianPendulum`,
+/// and the defect Doug reported on 2026-11-05.
+///
+/// `inspect_prepare_for_solve` refuses the canonical index-3 pendulum while the compiler
+/// lowers and simulates it on two coordinates. The stage reported
+/// [`Outcome::Flagged`] with *"still singular after reduction"*, so the tab was painted
+/// red and the committed trace carried the false note — while
+/// `report_sub_view::reduction_banner`, fixed a day earlier, said *Reduced by state
+/// selection* directly beneath it.
+///
+/// **The three cases are measured, not imagined.** Across the corpus exactly one
+/// specimen has a `singular` reduction and a lowered layout (`CartesianPendulum`, 2
+/// coordinates); two have a `singular` reduction and no layout (`IncompatibleConnect`,
+/// `TwiceDefined`) and must stay flagged, because nothing carried those models.
+#[test]
+fn a_reduction_the_compiler_carried_downstream_is_not_flagged() {
+    // The pendulum: refused here, lowered on 2 coordinates one stage over.
+    let (mut ir, sl) = reduction_pair("singular", Some(2));
+    assert_eq!(ir.outcome, Outcome::Flagged, "fixture must start flagged");
+    reconcile_reduction_with_lowering(&mut ir, &sl);
+    assert_eq!(
+        ir.outcome,
+        Outcome::Ok,
+        "the compiler reduced this model; one phase declining is not its verdict",
+    );
+    let note = ir.note.clone().expect("the upgrade must leave a note");
+    assert!(
+        note.contains('2'),
+        "the note must name the coordinate count solve lowering produced: {note:?}",
+    );
+    assert!(
+        !note.contains("still singular after reduction"),
+        "the falsified note must be gone, not appended to: {note:?}",
+    );
+
+    // Refused, and nothing downstream carried it. This is the majority case and the
+    // one an over-eager upgrade would corrupt.
+    let (mut ir, sl) = reduction_pair("singular", None);
+    reconcile_reduction_with_lowering(&mut ir, &sl);
+    assert_eq!(
+        ir.outcome,
+        Outcome::Flagged,
+        "with no lowered layout nothing carried the model, so the refusal stands",
+    );
+    assert_eq!(
+        ir.note.as_deref(),
+        Some("still singular after reduction"),
+        "an untouched stage keeps the note its own phase wrote",
+    );
+
+    // A reduction that admitted the system is not re-judged, whatever solve lowering
+    // published — `Ok` stages have already stated what happened.
+    let (mut ir, sl) = reduction_pair("sorted", Some(5));
+    let before = ir.note.clone();
+    reconcile_reduction_with_lowering(&mut ir, &sl);
+    assert_eq!(
+        ir.note, before,
+        "a non-singular reduction must be untouched"
+    );
+}
+
+/// **The upgraded note still contains `singular`, and that is load-bearing.**
+///
+/// `App::note_says_singular` decides sub-view availability by searching the note for the
+/// word, and this stage's payload is still the refusal report — Summary is where its
+/// rounds and residue live. So the note replacing the refusal's own wording may not
+/// quietly drop the word and take the Summary tab with it.
+///
+/// Pinned here rather than left as a comment because the coupling runs between two files
+/// and a rule beside the code it governs is read only by someone already in that file.
+///
+/// **The non-vacuity guard is the whole test, and it was added after a failure.**
+/// **Written without it, this test passed while the fix was disabled** — proved by
+/// stubbing `reconcile_reduction_with_lowering` to return immediately, which is the
+/// must-fire check `CLAUDE.md` requires of anything whose job is to report. The reason is
+/// exact: the note it falls back to is *"still singular after reduction"*, which contains
+/// the word too. **Asserting a substring of the replacement cannot tell a replacement
+/// from no replacement**, so the assertion has to pin that the note *changed* first.
+#[test]
+fn the_reconciled_note_still_offers_the_summary_view() {
+    let (mut ir, sl) = reduction_pair("singular", Some(2));
+    let before = ir.note.clone().expect("the fixture carries a note");
+    reconcile_reduction_with_lowering(&mut ir, &sl);
+    let note = ir.note.as_deref().expect("the upgrade must leave a note");
+    assert_ne!(
+        note, before,
+        "non-vacuity: the word below is only evidence if the upgrade actually ran, and \
+         the note it replaces contains that word as well",
+    );
+    assert!(
+        note.contains("singular"),
+        "`App::note_says_singular` gates the Summary sub-view on this word, and this \
+         stage's payload is still the refusal report: {note:?}",
     );
 }

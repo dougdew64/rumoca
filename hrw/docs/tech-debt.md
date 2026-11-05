@@ -3576,10 +3576,19 @@ what remains. So a reader of `Drivetrain` sees:
 | Simulation | 3 states | the same chart |
 
 **Every number is right and nothing on screen says they count different things.** `CartesianPendulum`
-is the acute case — Index Reduction reported a refusal while the model simulated — and that one was
-fixed on the day by `report_sub_view::reduction_banner`. `Drivetrain` is the quiet case: no
-contradiction loud enough to notice, just two counts a reader will assume are the same quantity and
-subtract.
+is the acute case — Index Reduction reported a refusal while the model simulated. `Drivetrain` is
+the quiet case: no contradiction loud enough to notice, just two counts a reader will assume are the
+same quantity and subtract.
+
+> **⟶ CORRECTION, 11-05. This paragraph said the acute case "was fixed on the day by
+> `report_sub_view::reduction_banner`", and Doug falsified it by loading the specimen: the banner
+> was green and the TAB WAS STILL RED.** The fix had covered the pane and not the stage outcome the
+> pane sits under, which is a second expression of the same fact — exactly the hazard the banner's
+> own doc comment warns about, written while the second site went untouched. **A fix verified at one
+> of a fact's two homes is not a fix**, and the claim of completion here is what stopped anyone
+> looking for a day. Both now derive from the one `state_scalar_count`:
+> `worker::reconcile_reduction_with_lowering` sets the outcome, and `stage_tabs::tab_color` paints
+> it. Corpus effect, measured: exactly one row of the outcome matrix moved.
 
 **Not fixed, and deliberately not papered over.** The honest fix is for the Index Reduction pane to
 name what it is counting and to say when a chart follows — which needs the selection to be
@@ -3595,6 +3604,40 @@ this class found on 11-04 were each caught by a human or a photograph.
 | 11-04 | the Index Reduction banner called a reduced model **Singular**, in red | Claude, reading the regenerated trace | `inspect_prepare_for_solve` refuses `CartesianPendulum` while the compiler lowers and simulates it on 2 coordinates. True about the entry point, false about the compiler |
 | 11-04 | `x` and `y` reported as **states** when both are reconstructed algebraics | chasing the banner into the data | `is_state` was `i < n_states`, a positional rule. v0.10.4 lowers one `State` declaration — a 2-vector chart — and `SimVariableMeta::is_state` was being dropped on the floor |
 | 11-04 | `Drivetrain`'s three panes report 5, 3 and 3 states with nothing reconciling them | re-testing an upstream entry | the row above |
+| 11-05 | the Index Reduction **tab** stayed red on `CartesianPendulum` after the banner was fixed | **Doug**, loading the specimen | the stage outcome is the banner's second home and went untouched. Nothing compares a label's colour against the pane beneath it, and `egui::RichText` cannot be read back — so the colour was unreachable from a test until `tab_color` was split out |
+| 11-05 | `Outcome::Flagged` painted `error_fg_color`, on **six** specimens that simulate | measuring the corpus while chasing the tab | the split exists to tell a flagged stage from a failed one, and `Outcome`'s own doc recorded that the UI was *"unchanged"* — true, harmless-sounding, and the whole defect |
+| 11-05 | `the_reconciled_note_still_offers_the_summary_view` **passed with the fix stubbed out** | the must-fire check, run before trusting the test | the note it falls back to contains the asserted word too. A substring assertion cannot tell a replacement from no replacement; it needed a non-vacuity guard |
+
+### 11-05, `note_is_error` has six remaining callers and one of them feeds Claude
+
+**`Stage::note_is_error()` is `outcome != Ok`**, so every caller reads *"Rumoca had something to
+report"* as *"this stage failed"*. `stage_tabs::tab_color` was fixed on 11-05; **Doug scoped the
+rest out deliberately**, and this is the record so the scope is a decision rather than an oversight.
+
+**The population is not an edge case.** Six corpus specimens simulate successfully with a flagged
+Structural stage — `BenchActuator`, `CapacitorLoop`, `CartesianPendulum`, `Drivetrain`,
+`GearWithBrake`, `MotorWithBrake` — measured from the committed manifests.
+
+| caller | what it claims | verified how |
+|---|---|---|
+| `App::failure_context` → `bridge::PipelineFailure` → **`focus.json`'s `pipeline_failure`** | names the first flagged stage as *the* pipeline failure, plus every later stage as a consequence | **read from the code, not measured.** The live `focus.json` at the time held `RcCircuit`, which has no flagged stage |
+| `App::compile_outcome` → `diagnostics::record_action("compiled", …)` | the action trail records `"<model>: FAILED at Structural"` | read from the code |
+| `App::last_successful_stage` | a flagged stage is not "where the tabs should land", so a singular model opens further back than it reached | read from the code |
+| `app.rs`'s stage-note colour (~5342) | the note under the tab row is drawn in `error_fg_color` — **the same conflation as the tab, in the pane below it** | read from the code |
+| `app.rs`'s `has_error_summary` (~5329) | requires an `"error"` payload as well, so it is probably right | — |
+| `artifact_pane` (~168) | its module doc already says `note_is_error` covers *both* abnormal outcomes, so it is deliberate | — |
+
+**The first row is the one that matters most and it is not the colour.** `focus.json` is the
+context Claude reasons from, and *"emitted context must be exact, never approximate"* — a
+`pipeline_failure` naming Structural for a model that simulates 507 samples is a false claim in the
+one artefact that cannot be cross-checked by looking at the screen. **It wants measuring before it
+is fixed**, because the code-read may be wrong about when `failure_context` is called.
+
+**Why this went unseen for as long as the outcome split has existed:** `Outcome`'s own doc comment
+says the UI colouring is *"unchanged"*. That sentence was true, read as harmless, and was the whole
+defect — the split was introduced precisely to stop `Flagged` meaning failure, and then nothing
+downstream was moved. **A doc comment recording that the consumers were not updated is a to-do
+wearing the clothes of a design note.**
 
 ### 11-04 night, F4 has been blind since v0.10.0 — and nobody ran the large suite to see it
 

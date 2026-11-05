@@ -73,7 +73,7 @@
 use eframe::egui;
 
 use crate::diagnostics;
-use crate::worker::{Stage, StageBundle, StageKind};
+use crate::worker::{Outcome, Stage, StageBundle, StageKind};
 
 /// What the tab row did, for `App` to finish.
 ///
@@ -339,15 +339,48 @@ fn tab_label(
     err_color: egui::Color32,
 ) -> egui::RichText {
     let text = egui::RichText::new(label);
-    if stage.note_is_error() {
-        text.color(err_color)
-    } else if stage.value.is_some() {
-        text.color(ok_color)
-    } else {
-        // No color override — uses the theme's default text color. This
-        // neutral state covers "not yet reached" (an upstream stage failed
-        // or hasn't completed) and "still compiling".
-        text
+    match tab_color(stage, ok_color, err_color) {
+        Some(c) => text.color(c),
+        None => text,
+    }
+}
+
+/// What a tab's label says about its stage, as a colour — **separate from
+/// [`tab_label`] because `egui::RichText` cannot be read back.**
+///
+/// A `RichText` exposes no accessor for the colour it was given and implements no
+/// equality, so a test of `tab_label` can assert the *text* and nothing else. That is
+/// how the defect below survived: the one thing this row reports about a stage was the
+/// one thing no test could reach. `None` means no override — the theme's default.
+///
+/// # The three claims, and the one that was wrong until 2026-11-05
+///
+/// - **`Failed` means the pipeline stopped here**, and at most one stage per compile may
+///   say it (`CLAUDE.md`, *a stage's outcome is a claim too*). Red is reserved for that.
+/// - **`Flagged` is a recovering compiler working** — Rumoca reported a problem and the
+///   pipeline consumed the IR anyway. This branched on [`Stage::note_is_error`], which is
+///   `outcome != Ok`: a true predicate for *"something to report"*, rendered as
+///   *"something broke"*. Six corpus specimens simulate successfully with a flagged
+///   Structural stage — `BenchActuator`, `CapacitorLoop`, `CartesianPendulum`,
+///   `Drivetrain`, `GearWithBrake`, `MotorWithBrake` — and every one of them showed a red
+///   tab on a model that runs. **Doug reported it on `CartesianPendulum`**; nothing else
+///   could have, because the colour was unreachable from a test.
+/// - **`Ok` with no payload is neutral**, which covers *not yet reached* and *still
+///   compiling*.
+///
+/// The other seven callers of `note_is_error` are unchanged and listed in
+/// `docs/tech-debt.md` — `App::failure_context` among them, which still names a
+/// `pipeline_failure` to the chat bridge for models that simulate.
+fn tab_color(
+    stage: &Stage,
+    ok_color: egui::Color32,
+    err_color: egui::Color32,
+) -> Option<egui::Color32> {
+    match stage.outcome {
+        Outcome::Failed => Some(err_color),
+        Outcome::Flagged => Some(crate::colors::WARN_AMBER),
+        Outcome::Ok if stage.value.is_some() => Some(ok_color),
+        Outcome::Ok => None,
     }
 }
 
@@ -761,6 +794,48 @@ mod tests {
             StageKind::COMPILATION.len(),
             "expected every stage to be found in the roster slice; the parse may have \
              captured the wrong region",
+        );
+    }
+
+    /// **A flagged stage is not painted as a failure** — the defect Doug reported on
+    /// 2026-11-05, and the reason [`tab_color`] exists apart from [`tab_label`].
+    ///
+    /// `Flagged` and `Failed` shared one colour because the row branched on
+    /// [`Stage::note_is_error`], which is `outcome != Ok`. **The load-bearing assertion is
+    /// the inequality**: amber may be re-chosen or themed, but a flagged tab may never
+    /// read as the one outcome that claims the pipeline stopped. Six corpus specimens
+    /// simulate successfully with a flagged Structural stage, so this is a claim about
+    /// most of the healthy corpus and not about an edge case.
+    #[test]
+    fn a_flagged_stage_is_not_painted_as_a_failure() {
+        let ok = egui::Color32::from_rgb(0x3F, 0xB9, 0x50);
+        let err = egui::Color32::from_rgb(0xE5, 0x39, 0x35);
+        let payload = serde_json::json!({ "outcome": { "kind": "singular" } });
+
+        let flagged = tab_color(&Stage::recovered(payload.clone(), "singular"), ok, err);
+        let failed = tab_color(&Stage::err("boom"), ok, err);
+
+        assert_ne!(
+            flagged, failed,
+            "a flagged stage must not read as a stopped pipeline -- `BenchActuator`, \
+             `CapacitorLoop`, `CartesianPendulum`, `Drivetrain`, `GearWithBrake` and \
+             `MotorWithBrake` all simulate with a flagged Structural stage",
+        );
+        assert_eq!(
+            failed,
+            Some(err),
+            "`Failed` is the one outcome asserting the pipeline stopped, so it keeps red",
+        );
+        assert_eq!(flagged, Some(crate::colors::WARN_AMBER));
+        assert_eq!(
+            tab_color(&Stage::ok(payload), ok, err),
+            Some(ok),
+            "a clean stage with a payload stays green",
+        );
+        assert_eq!(
+            tab_color(&Stage::default(), ok, err),
+            None,
+            "not yet reached, or still compiling, overrides no colour at all",
         );
     }
 }

@@ -597,8 +597,14 @@ the next phase touches — is procedure and lives there.
 > `x² + y² = L²` and substituting it back leaves `0 = 0`. The reduction happens in
 > `rumoca-phase-solve`'s **state selection**, which picks independent coordinates on the constraint
 > manifold. **So one phase reports failure and the next succeeds. Do not read the reducer's report
-> as the compiler's verdict** — three HRW defects on 11-04 were exactly that mistake, and a fourth
-> is open (`Drivetrain`'s 5 / 3 / 3, in `docs/tech-debt.md`).
+> as the compiler's verdict** — **five** HRW defects were that mistake, and one is open
+> (`Drivetrain`'s 5 / 3 / 3, in `docs/tech-debt.md`).
+>
+> **The fifth: the banner was fixed on 11-04 and the TAB STAYED RED**, a stage outcome being that
+> fact's second home. Both now read one `state_scalar_count`
+> (`worker::reconcile_reduction_with_lowering`, `stage_tabs::tab_color`), and **`Flagged` is amber,
+> not red**. `note_is_error`'s six other callers are deliberately unchanged — `docs/tech-debt.md`
+> tabulates them and says which to measure first.
 >
 > **This is not a branch of `hrw`.** Both descend from `main`; `hrw` is 1199 commits of HRW work on
 > 0.9.20 and still points at 2026-09-25, while the 0.10.0 branch took upstream's v0.10.0 (PR #340)
