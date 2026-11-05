@@ -8675,6 +8675,8 @@ fn a_simulation_that_succeeded_still_reports_its_non_finite_values() {
         names: vec!["x".into(), "y".into()],
         data: vec![vec![1.0, 0.5, 0.0], vec![-2.0, -4.0, 2.0]],
         n_states: 1,
+        is_state: Vec::new(),
+        state_coordinate: Vec::new(),
         has_discontinuities: false,
         solver_steps: Vec::new(),
     };
@@ -8701,6 +8703,72 @@ fn a_simulation_that_succeeded_still_reports_its_non_finite_values() {
         both.non_finite_series(),
         vec![("x".to_owned(), 1), ("y".to_owned(), 2)],
         "every affected series is listed, in the order the model declares them",
+    );
+}
+
+/// **A state is what Rumoca says it is, not what position a name holds.**
+///
+/// `to_bridge_json` read `is_state` as `i < n_states`, which held while the integrated
+/// scalars led the name list. v0.10.4 broke it: `CartesianPendulum` lowers to **one**
+/// `State` declaration — `$state_coordinates`, a 2-vector chart on the constraint
+/// manifold — while `x`, `y`, `vx`, `vy` and `lambda` are all `Algebraic`, reconstructed
+/// from it. The name list still begins `x, y`, so the positional rule labelled two
+/// reconstructed algebraics as the model's states, in the pane plots are read from.
+///
+/// The fixture below is that shape: two leading non-states and the real state last.
+/// Under the old rule it fails on the first assertion.
+///
+/// **The fallback is asserted too.** An empty metadata vector must mean *unknown* and
+/// fall back to the count, not mean *false* — a solver that returned no metadata would
+/// otherwise silently report a model with no states at all.
+#[test]
+fn a_reconstructed_algebraic_is_not_reported_as_a_state() {
+    let chart = SimData {
+        times: vec![0.0, 1.0],
+        names: vec!["x".into(), "y".into(), "$state_coordinates[1]".into()],
+        data: vec![vec![1.0, 0.8], vec![0.0, -0.6], vec![0.0, 0.9]],
+        n_states: 1,
+        is_state: vec![false, false, true],
+        state_coordinate: vec![None, None, Some("y".into())],
+        has_discontinuities: false,
+        solver_steps: Vec::new(),
+    };
+    let json = chart.to_bridge_json(1.0);
+    let vars = json["variables"].as_array().expect("variables");
+
+    let states: Vec<&str> = vars
+        .iter()
+        .filter(|v| v["is_state"] == serde_json::json!(true))
+        .filter_map(|v| v["name"].as_str())
+        .collect();
+    assert_eq!(
+        states,
+        ["$state_coordinates[1]"],
+        "the integrated chart coordinate is the state; `x` and `y` are reconstructed          from it and must not be reported as states because they come first"
+    );
+    assert_eq!(
+        vars[2]["state_coordinate"],
+        serde_json::json!("y"),
+        "a generated chart scalar must name the source scalar it equals, which is the          whole content of the selection"
+    );
+    assert!(
+        vars[0]["state_coordinate"].is_null(),
+        "an ordinary variable has no state coordinate"
+    );
+
+    // Non-vacuity: with no metadata the count still decides, so a solver that reports
+    // none does not silently claim the model has no states.
+    let unknown = SimData {
+        is_state: Vec::new(),
+        state_coordinate: Vec::new(),
+        ..chart
+    };
+    let json = unknown.to_bridge_json(1.0);
+    let vars = json["variables"].as_array().expect("variables");
+    assert_eq!(
+        vars[0]["is_state"],
+        serde_json::json!(true),
+        "with no metadata the positional count is the only answer available, and it          must still be given rather than defaulting to `false`"
     );
 }
 
@@ -8735,6 +8803,8 @@ fn the_simulation_summary_distinguishes_a_flat_trajectory_from_a_moving_one() {
             vec![1.0, 3.0, 1.0],
         ],
         n_states: 2,
+        is_state: Vec::new(),
+        state_coordinate: Vec::new(),
         has_discontinuities: false,
         solver_steps: Vec::new(),
     };
