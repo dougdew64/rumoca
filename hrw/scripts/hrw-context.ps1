@@ -81,6 +81,25 @@ function Format-Age([int]$seconds) {
 $sessionAge = Format-Age ([int]((Get-Date) - (Get-Item $sessionPath).LastWriteTime).TotalSeconds)
 Write-Output "$tag state as of $sessionAge - session.json is rewritten only when HRW records an action"
 
+# **Whether HRW is RUNNING, which no age can tell you and which Claude kept inferring
+# from one.** Every line in this block reports a file's age, and a bridge file outlives
+# the process that wrote it -- so a focus.json written 54s ago reads as a live session
+# and is equally consistent with an app that exited 53s ago. On 2026-11-05 Claude
+# asserted "HRW is open" twice from exactly that, with `tasklist` available and already
+# used earlier in the same session; Doug corrected it. The hook's own comment above
+# records the *previous* version of this mistake -- two file ages conflated with each
+# other -- so this is the same defect one step out: a file age conflated with a
+# process.
+#
+# **It also decides whether the gate may run**, which is the other reason a session
+# wants it without asking: the gate relinks hrw.exe and fails while the app is up.
+$hrwUp = $null -ne (Get-Process -Name 'hrw' -ErrorAction SilentlyContinue)
+if ($hrwUp) {
+    Write-Output "$tag HRW IS RUNNING - close it before the gate, which relinks hrw.exe"
+} else {
+    Write-Output "$tag HRW is NOT running - every age below is a file's, not a live session's"
+}
+
 $where = @("mode: $($app.ui_mode)")
 if ($app.tour) { $where += "tour: $($app.tour)" }
 if ($app.model) { $where += "model: $($app.model)" }
