@@ -574,6 +574,17 @@ the next phase touches — is procedure and lives there.
 > `rumoca-phase-solve::state_selection`, which is private, exactly as `prepare_for_solve` was
 > before `watch_prepare_for_solve`.
 >
+> ### ⟶ NIGHT 8 RAN 2026-11-04 — four pairs wait in `docs/tech-debt.md`, record in the run log
+>
+> **Two traps for a session picking the rebase back up.** **(1) Step 4 is UNFINISHED and
+> `src/field_help.json` is deliberately stale** — v0.10.4 deleted two `///` docs, so regenerating
+> it restores Doug's own 2026-09-03 complaint (Solve lowering's `names` showing an *import
+> clause* doc). Do not re-run `gen_field_help` and commit it; the guard that blocks it is right.
+> **(2) F4 has been blind since v0.10.0**, so `docs/reports.md` is stale as well as wrong.
+>
+> **What remains of the rebase is prose and is Doug's** — steps 6, 6b, 7 — plus step 8, the smoke
+> test, worth doing on `CartesianPendulum`.
+>
 > ### ⟶ v0.10.4 REDUCES THE CANONICAL INDEX-3 DAE, and it is not Pantelides
 >
 > **`CartesianPendulum` simulates**, on **2** integrated coordinates — the chart is `{y, der(y)}`,

@@ -381,3 +381,56 @@ rule 5 now reads *every CODE item*, and the restore-never-choose boundary moved 
 plan into the **standing** document step, where it is the verification instrument for this class of
 work. **The escalation was correct and cost one sentence to settle** — which is the argument for
 escalating rather than deciding at 3 a.m., not against it.
+
+---
+
+### Night 8 — 2026-11-04. The back half of the 0.10.4 rebase. Four items, four commits, one revert
+
+**The lens was a procedure, not a region**: [`updating-rumoca.md`](updating-rumoca.md) steps 3b, 3c,
+4/5b and 9, after a 613-commit hop from v0.10.0. New ground, so the rotation condition is met and no
+lens is retired — night 7's document-contradiction lens stays live and still should not run
+back-to-back.
+
+**Three of the four items produced a finding, and two of those are two releases old.** That is the
+night's shape: the rebase did not create most of this, it *revealed* it, because the steps that
+would have caught it had not been run since before 0.10.0.
+
+| item | step | outcome |
+|---|---|---|
+| 1 | 3b, fidelity at scale | **F4 blind since v0.10.0** — 24 false violations, and it cannot see a real partition defect |
+| 2 | 3c, upstream entries | 8 of 21 struck; one superseded, three re-confirmed with versions |
+| 3 | 4, field help | **REVERTED** — regenerating restores a tooltip Doug reported as lying |
+| 4 | 9, version readout | 0.10.4 / `4a4f4ed8` / clean, verified at the inputs |
+
+**Item 3 is the one to read.** `gen_field_help` ran clean and its output was thrown away, because
+v0.10.4 deleted the `rumoca-ir-solve` doc for `names` and the `rumoca-ir-dae` doc for `causality`.
+Committing the fresh table would have made Solve lowering's `names` tooltip serve
+`rumoca-ir-ast`'s *"All names imported from the package"* — **the exact symptom Doug reported five
+times in one afternoon on 2026-09-03**, and the symptom
+`solve_lowerings_names_is_documented_as_slots_not_imports` is named after. That test's own doc says
+the fix needed two halves; upstream removed one of them.
+
+**A stale-but-true tooltip beats a fresh-but-false one**, so `field_help.json` stays at its v0.10.0
+content and step 4 is recorded as **unfinished rather than done**. Weakening the guard to let the
+regeneration through would have deleted the only thing that noticed.
+
+### What the night deliberately did not touch, and why each was tempting
+
+- **`Drivetrain`'s three state counts** (5 / 3 / 3, every number correct). Reconciling them changes
+  what a pane claims.
+- **`index-reduction.md`**, which v0.10.4 falsified. Lab prose is Doug's.
+- **F4's repair**, which needs a decision about what rows a compacted family covers.
+- **The two missing doc comments**, which could be carried as fork instrumentation or overridden
+  locally — one source of truth or two, and not a 3 a.m. choice.
+
+**Four pairs are waiting in [`tech-debt.md`](tech-debt.md)**, each stated as alternatives rather
+than a recommendation.
+
+### The one process defect the night found in itself
+
+**`check_machine` does not check what its own documentation says it checks.** This file's
+preconditions read *"HRW closed, sleep disabled, tree clean and pushed"*; the command verifies
+**clean** and says nothing about **pushed**. The branch had 102 unpushed commits and no upstream at
+all when the night was proposed, which would have left commit-never-push with no baseline to reset
+*to* — the entire safety model. Caught in conversation before the run, not by the mechanism.
+**That gap is still open**; closing it is a `src/` errand.
