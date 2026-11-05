@@ -1651,6 +1651,7 @@ fn clearing_the_point_emits_nothing_not_the_current_stage() {
             animation: None,
         },
         failure: None,
+        flags: vec![],
     };
     let doc = bridge::build_for_test(&ask);
 
@@ -7574,5 +7575,165 @@ fn every_offered_sub_view_has_something_to_draw() {
          click and that draws an empty pane trains them to read empty as normal:\n  {}",
         empty.len(),
         empty.join("\n  "),
+    );
+}
+
+/// Build a real `App` around a real compile of `name`, for the pipeline-context tests.
+///
+/// Uses the shared compile and the app's own default, so what these tests read is what
+/// the app reads. Nothing is reconstructed.
+#[cfg(feature = "slow-tests")]
+fn app_for(name: &str) -> App {
+    // **Taken although this helper never drains the message into an `App`**, so
+    // `bridge::write_stages` is not reached and Doug's eleven live stage files are not
+    // at risk today. `a_test_injecting_a_compiled_message_preserves_the_stage_files` is
+    // textual by design and cannot see that distinction — and the convention it enforces
+    // is the right one to follow rather than argue with, because the day this helper
+    // grows a `drain` is the day the guard would have mattered and nobody would re-read
+    // this comment.
+    let _stages = crate::ui_tests::StageFiles::preserved();
+    let crate::worker::FromWorker::Compiled { stages, .. } =
+        crate::worker::test_msl::compile_specimen_shared(name)
+    else {
+        panic!("expected Compiled for {name}");
+    };
+    let mut app = App::test_default();
+    app.stages = stages;
+    app
+}
+
+/// **A flagged stage the compiler was carried past is not a pipeline failure** — the
+/// defect Doug widened the scope to fix, 2026-11-05.
+///
+/// # What was measured before this was written
+///
+/// `Drivetrain` was loaded in a running HRW, the Structural tab clicked, and the real
+/// `.hrw-bridge/focus.json` read. It carried `pipeline_failure` naming Structural, whose
+/// note began *"the FIRST stage that failed"* — **in the same object as
+/// `downstream_not_reached: []`**, about a model whose committed trace records
+/// `simulated: true` over 501 samples on 3 states. The section contradicted itself and
+/// still asserted the failure.
+///
+/// That measurement is why this test exists rather than a narrower one: the entry in
+/// `docs/tech-debt.md` had been written from a code read, and the plan said to confirm
+/// the key was really there before changing anything.
+///
+/// # The three claims pinned here
+///
+/// 1. a flag the pipeline survived produces **no** failure,
+/// 2. a stage that really stops it still does — `Flagged` does not decide this,
+/// 3. a stage that ran and retained nothing is **not** listed as never reached.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compiles specimens; run with --features slow-tests"
+)]
+#[cfg(feature = "slow-tests")]
+fn a_flagged_stage_the_pipeline_survived_is_not_a_failure() {
+    // ---- 1. carried past: Structural is flagged, nothing stopped ----
+    let app = app_for("Drivetrain");
+    let (flags, failure) = app.pipeline_context();
+    assert!(
+        failure.is_none(),
+        "Drivetrain simulates 501 samples; nothing stopped, so nothing may be reported \
+         as the stage that stopped it. Got: {:?}",
+        failure.map(|f| f.stage),
+    );
+    assert!(
+        flags
+            .iter()
+            .any(|f| f.stage == StageKind::Structural.name()),
+        "Structural is flagged singular and must still be reported, as a flag",
+    );
+    assert!(
+        flags.iter().all(|f| !f.note.is_empty()),
+        "a flag with no summary tells Claude only that something is wrong, which is the \
+         shape that invites guessing",
+    );
+
+    // ---- 2. a real stop is still a failure, and `Flagged` did not decide it ----
+    let app = app_for("DimensionMismatch");
+    let (_, failure) = app.pipeline_context();
+    let failure = failure.expect("DimensionMismatch stops: 7 stages never run");
+    assert_eq!(
+        failure.stage,
+        StageKind::Typecheck.name(),
+        "the stop is Typecheck -- whose outcome is Flagged, not Failed, which is exactly \
+         why the outcome label cannot be the discriminator",
+    );
+    assert!(
+        !failure.not_reached.is_empty(),
+        "a stop must name what it stopped",
+    );
+
+    // ---- 3. ran-and-retained-nothing is not never-ran ----
+    let app = app_for("CartesianPendulum");
+    let (flags, failure) = app.pipeline_context();
+    assert!(
+        failure.is_none(),
+        "CartesianPendulum simulates on 2 coordinates; it has no stop",
+    );
+    assert!(
+        !flags.is_empty(),
+        "its Structural stage is singular and that is worth reporting",
+    );
+    // Initialization produces no IR here and says why -- a claim about the model, not
+    // about the pipeline. Reading `value.is_none()` listed it as never reached.
+    assert!(
+        !app.stages.get(StageKind::Initialization).says_not_reached(),
+        "Initialization ran and reported that it had nothing to plan; if this ever \
+         becomes true, the specimen changed and claim 3 below is measuring nothing",
+    );
+}
+
+/// **The emitted file says `pipeline_flags` and not `pipeline_failure`** for a compile
+/// that was flagged and finished.
+///
+/// Separate from the test above because that one checks the *producer* and this one the
+/// *document*, and the defect lived in the join between them: `failure_context` was
+/// correct about there being something to report and wrong about what it was, and
+/// `build` then wrapped it in a note asserting a stop. **A reporter is checked at the
+/// artefact it emits**, which here is the JSON Claude is actually handed.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compiles specimens; run with --features slow-tests"
+)]
+#[cfg(feature = "slow-tests")]
+fn the_emitted_capture_reports_a_flag_as_a_flag() {
+    let app = app_for("Drivetrain");
+    let stage_values = app.stages.as_stage_pairs();
+    let ask = app.base_ask(1, bridge::AskRequest::Explain, Focus::Stage, &stage_values);
+    let doc = bridge::build_for_test(&ask);
+
+    assert!(
+        doc.get("pipeline_failure").is_none(),
+        "nothing stopped, so the file must not claim a stage stopped it: {}",
+        doc["pipeline_failure"],
+    );
+    let flags = doc
+        .get("pipeline_flags")
+        .expect("a flagged stage must still be reported -- silence would hide the singular system");
+    let stages = flags["stages"]
+        .as_array()
+        .expect("`stages` is a list so more than one flag can be carried");
+    assert!(
+        stages
+            .iter()
+            .any(|s| s["stage"] == serde_json::json!(StageKind::Structural.name())),
+        "Structural is the flagged stage and must be named: {stages:?}",
+    );
+    assert!(
+        stages
+            .iter()
+            .any(|s| s["error"]["unmatched_unknowns"].is_array()),
+        "the diagnosis must survive the reframing -- the unmatched unknowns and their \
+         source locations are the half of this section that was always correct",
+    );
+    let note = flags["note"].as_str().unwrap_or_default();
+    assert!(
+        note.contains("CONTINUED"),
+        "the note is what carried the false claim, so it is what must say the compile \
+         continued: {note:?}",
     );
 }

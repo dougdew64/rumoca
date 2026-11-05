@@ -733,6 +733,29 @@ impl Stage {
         self.outcome != Outcome::Ok
     }
 
+    /// Whether this stage says **it never ran**, as opposed to ran and retained nothing.
+    ///
+    /// # Why `value.is_none()` is not this question, measured
+    ///
+    /// They look interchangeable and are not, and
+    /// `the_not_reached_tail_is_contiguous_and_agrees_on_its_cause` already carries the
+    /// counter-example: `OverDeterminedShaft` reads `OOOO.X.....`, where **Flatten is
+    /// empty *before* DAE's failure** because no flat model was retained — it ran.
+    /// `CartesianPendulum` is the other direction: Initialization produces no IR and
+    /// says *"no initial-value pins: structural preparation did not admit this
+    /// system"*, which is a claim about the model, while Events and Solve lowering
+    /// after it both produce IR and the model simulates.
+    ///
+    /// **So a missing value is ambiguous and the note is not** — exactly the
+    /// distinction [`not_reached_note`] exists to protect. `App::failure_context` built
+    /// its `downstream_not_reached` list from `value.is_none()` until 2026-11-05, and so
+    /// told Claude that `CartesianPendulum`'s Initialization was never reached.
+    pub fn says_not_reached(&self) -> bool {
+        self.note
+            .as_deref()
+            .is_some_and(|n| n.starts_with(NOT_REACHED_PREFIX))
+    }
+
     /// The structured error payload Rumoca supplied, if this stage carries one.
     ///
     /// Both `Failed` (via `err_with_details`) and `Flagged` (via `recovered`)
@@ -4039,8 +4062,18 @@ fn not_reached_stage(result: Option<&PhaseResult>) -> Option<Stage> {
 /// phase, a compile that stopped before instantiate — and those are genuinely different
 /// facts. What must not differ is the words that say *it did not run*.
 fn not_reached_note(because: &str) -> String {
-    format!("not reached ({because})")
+    format!("{NOT_REACHED_PREFIX}{because})")
 }
+
+/// The words that mean *it did not run*, shared by the writer above and
+/// [`Stage::says_not_reached`] which reads them back.
+///
+/// **The reading side was unsingle-sourced until 2026-11-05**, which is the same slow
+/// leak [`not_reached_note`] was built to stop, one direction over:
+/// `fidelity::tests::a_stage_that_says_it_never_ran_shows_no_ir` matched `"not reached"`
+/// by hand, and `App::failure_context` did not test for it at all — it used
+/// `value.is_none()`, which is a **different fact**. See [`Stage::says_not_reached`].
+const NOT_REACHED_PREFIX: &str = "not reached (";
 
 /// One plot row per accepted step the integrator took.
 ///

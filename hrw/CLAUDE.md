@@ -574,23 +574,21 @@ the next phase touches — is procedure and lives there.
 > `rumoca-phase-solve::state_selection`, which is private, exactly as `prepare_for_solve` was
 > before `watch_prepare_for_solve`.
 >
-> ### ⟶ RESUMING IN CHICAGO? START HERE — the order is Doug's, set 2026-11-05
+> ### ⟶ THE ORDER DOUG SET 2026-11-05 — step 1 is DONE, 2 and 3 are next
 >
-> He shut the machine down mid-task to travel, so **this is a ruling with no work attached to it
-> yet**, which is the kind that evaporates. In order:
->
-> 1. **Fix `App::failure_context`** — *"I very much want to widen the scope"*. It names the first
->    **flagged** stage as the pipeline's failure, so `focus.json` tells Claude `Drivetrain` failed
->    at Structural while it simulates. **Measure it first**: load `Drivetrain`, read
->    `.hrw-bridge/focus.json`, confirm `pipeline_failure` is really there — it was read from the
->    code, not seen. Full entry, including why the fix is not just `Outcome::Failed`, in
->    `docs/tech-debt.md`.
+> 1. ~~**Fix `App::failure_context`**~~ — **DONE in Chicago.** Now `App::pipeline_context`, and
+>    `focus.json` carries `pipeline_flags` beside `pipeline_failure`. **Measuring first turned one
+>    defect into three** and refuted two candidate fixes before either was written; the account is
+>    in `docs/tech-debt.md`. The reusable part: `Stage::says_not_reached` — **a stage with no IR
+>    has not necessarily been skipped**, and `value.is_none()` is a different question.
 > 2. **Finish the 0.10.4 rebase** — steps 6, 6b, 7 (labs, lectures, `compiler-phases`) and 8, the
->    smoke test. All prose, all his.
-> 3. **Then `updating-rumoca.md` step 10**, which is new and exists because of this ruling: the
->    hours-long suites — `fidelity_msl`, the full `slow-tests` set including `--ignored`,
->    `notebook-check`, and the **oracle** over the 28 specimens. **Night 8's 3b run does not
->    count**, because F4 was blind while it ran.
+>    smoke test. All prose, all Doug's.
+> 3. **Then `updating-rumoca.md` step 10**: the hours-long suites — `fidelity_msl`, the full
+>    `slow-tests` set including `--ignored`, `notebook-check`, and the **oracle** over the 28
+>    specimens. **Night 8's 3b run does not count**, because F4 was blind while it ran.
+>
+> **Only a real stage-tab click writes `focus.json`.** Links followed through the screenshot
+> harness capture nothing, so a measurement needing that file needs Doug.
 >
 > ### ⟶ NIGHT 8 RAN 2026-11-04 — four pairs wait in `docs/tech-debt.md`, record in the run log
 >
