@@ -10,6 +10,7 @@
     {
       "name": "src.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.0,
       "min": 0.0,
@@ -18,6 +19,7 @@
     {
       "name": "src.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 5.0,
       "final": 5.0,
       "min": 5.0,
@@ -26,6 +28,7 @@
     {
       "name": "src.p.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 5.0,
       "final": 5.0,
       "min": 5.0,
@@ -34,6 +37,7 @@
     {
       "name": "src.p.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.0,
       "min": 0.0,
@@ -42,6 +46,7 @@
     {
       "name": "src.n.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.0,
       "min": 0.0,
@@ -50,6 +55,7 @@
     {
       "name": "src.n.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": -0.0,
       "final": -0.0,
       "min": -0.0,
@@ -58,6 +64,7 @@
     {
       "name": "C.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": -0.0,
       "final": -0.0,
       "min": -0.0,
@@ -66,6 +73,7 @@
     {
       "name": "C.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 5.0,
       "final": 5.0,
       "min": 5.0,
@@ -74,6 +82,7 @@
     {
       "name": "C.p.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 5.0,
       "final": 5.0,
       "min": 5.0,
@@ -82,6 +91,7 @@
     {
       "name": "C.p.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": -0.0,
       "final": -0.0,
       "min": -0.0,
@@ -90,6 +100,7 @@
     {
       "name": "C.n.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.0,
       "min": 0.0,
@@ -98,6 +109,7 @@
     {
       "name": "C.n.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.0,
       "min": 0.0,
@@ -106,6 +118,7 @@
     {
       "name": "gnd.p.v",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 0.0,
       "min": 0.0,
@@ -114,6 +127,7 @@
     {
       "name": "gnd.p.i",
       "is_state": false,
+      "state_coordinate": null,
       "initial": -0.0,
       "final": -0.0,
       "min": -0.0,

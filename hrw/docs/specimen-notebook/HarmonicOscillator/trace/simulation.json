@@ -10,6 +10,7 @@
     {
       "name": "x",
       "is_state": true,
+      "state_coordinate": null,
       "initial": 1.0,
       "final": -0.41614589172745137,
       "min": -0.41614589172745137,
@@ -18,6 +19,7 @@
     {
       "name": "v",
       "is_state": true,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": -0.9092919823856964,
       "min": -0.9999956698905493,

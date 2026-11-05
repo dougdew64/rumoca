@@ -9,7 +9,8 @@
   "variables": [
     {
       "name": "x",
-      "is_state": true,
+      "is_state": false,
+      "state_coordinate": null,
       "initial": 1.0,
       "final": 0.793583235296978,
       "min": -0.9999999999977858,
@@ -17,7 +18,8 @@
     },
     {
       "name": "y",
-      "is_state": true,
+      "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": -0.6084617068074011,
       "min": -0.9999999810911333,
@@ -26,6 +28,7 @@
     {
       "name": "vx",
       "is_state": false,
+      "state_coordinate": null,
       "initial": -0.0,
       "final": 2.1023327234595715,
       "min": -4.4294634917741496,
@@ -34,6 +37,7 @@
     {
       "name": "vy",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 2.741957276338266,
       "min": -2.7480660612932293,
@@ -42,6 +46,7 @@
     {
       "name": "lambda",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 17.907141929256376,
       "min": 0.0,
@@ -50,6 +55,7 @@
     {
       "name": "$formal_derivative.1.x",
       "is_state": false,
+      "state_coordinate": null,
       "initial": -0.0,
       "final": 2.1023327234595715,
       "min": -4.4294634917741496,
@@ -58,6 +64,7 @@
     {
       "name": "$formal_derivative.2.x",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": -14.210807627141444,
       "min": -14.715157435149747,
@@ -66,6 +73,7 @@
     {
       "name": "$formal_derivative.1.y",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": 2.741957276338266,
       "min": -2.7480660612932293,
@@ -74,6 +82,7 @@
     {
       "name": "$formal_derivative.2.y",
       "is_state": false,
+      "state_coordinate": null,
       "initial": -9.81,
       "final": 1.0858101423177118,
       "min": -9.81,
@@ -82,6 +91,7 @@
     {
       "name": "$formal_derivative.1.vx",
       "is_state": false,
+      "state_coordinate": null,
       "initial": 0.0,
       "final": -14.210807627141444,
       "min": -14.715157435149747,
@@ -90,6 +100,7 @@
     {
       "name": "$formal_derivative.1.vy",
       "is_state": false,
+      "state_coordinate": null,
       "initial": -9.81,
       "final": 1.0858101423177118,
       "min": -9.81,
@@ -97,7 +108,8 @@
     },
     {
       "name": "$state_coordinates[1]",
-      "is_state": false,
+      "is_state": true,
+      "state_coordinate": "y",
       "initial": 0.0,
       "final": 0.793583235296978,
       "min": -0.9093350722779957,
@@ -105,7 +117,8 @@
     },
     {
       "name": "$state_coordinates[2]",
-      "is_state": false,
+      "is_state": true,
+      "state_coordinate": "der(y)",
       "initial": 0.0,
       "final": 2.1023327234595715,
       "min": -4.4294634917741496,
