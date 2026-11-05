@@ -3562,3 +3562,36 @@ inside another assertion's failure message. It now builds an `App` from the comm
 asks `structural_view_available`, so it catches a tab the app refuses. **Nothing yet checks the
 complement: a tab the app OFFERS and the pane cannot fill.** That check is what this row really
 wants, and it is the one that would have found all five at once.
+
+### 11-04, the two-phase reduction — three panes, three numbers, all correct
+
+**v0.10.4 reduces in two places, and HRW reports them as if they were one.** `prepare_for_solve`
+demotes what its lanes can reach; `rumoca-phase-solve`'s state selection then picks a chart on
+what remains. So a reader of `Drivetrain` sees:
+
+| pane | says | about |
+|---|---|---|
+| Index Reduction | `sorted after 6 round(s): 9 state(s) → 5` | the reduced *system* |
+| Solve Lowering | `state_scalar_count: 3` | the integrated *chart* |
+| Simulation | 3 states | the same chart |
+
+**Every number is right and nothing on screen says they count different things.** `CartesianPendulum`
+is the acute case — Index Reduction reported a refusal while the model simulated — and that one was
+fixed on the day by `report_sub_view::reduction_banner`. `Drivetrain` is the quiet case: no
+contradiction loud enough to notice, just two counts a reader will assume are the same quantity and
+subtract.
+
+**Not fixed, and deliberately not papered over.** The honest fix is for the Index Reduction pane to
+name what it is counting and to say when a chart follows — which needs the selection to be
+*observable*, and it is not: `state_selection` is a private module, exactly as `prepare_for_solve`
+was before `watch_prepare_for_solve`. <!-- unbuilt: rumoca_phase_solve::watch_state_selection -->
+
+**Found by re-testing an upstream entry, not by a checker**, which is the "who caught it?" trigger
+pointing at a gap: nothing compares two panes' numbers against each other, and the three defects of
+this class found on 11-04 were each caught by a human or a photograph.
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 11-04 | the Index Reduction banner called a reduced model **Singular**, in red | Claude, reading the regenerated trace | `inspect_prepare_for_solve` refuses `CartesianPendulum` while the compiler lowers and simulates it on 2 coordinates. True about the entry point, false about the compiler |
+| 11-04 | `x` and `y` reported as **states** when both are reconstructed algebraics | chasing the banner into the data | `is_state` was `i < n_states`, a positional rule. v0.10.4 lowers one `State` declaration — a 2-vector chart — and `SimVariableMeta::is_state` was being dropped on the floor |
+| 11-04 | `Drivetrain`'s three panes report 5, 3 and 3 states with nothing reconciling them | re-testing an upstream entry | the row above |
