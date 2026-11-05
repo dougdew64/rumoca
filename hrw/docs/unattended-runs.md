@@ -101,20 +101,53 @@ goes to [`unattended-run-log.md`](unattended-run-log.md) and this section is ove
 the next plan — otherwise it becomes
 the accumulating history `CLAUDE.md`'s *Current work* had to be rescued from.
 
-### QUEUED — nothing. The slot is empty.
+### QUEUED — night 8, 2026-11-04: finish what the 0.10.4 rebase leaves that needs nobody awake
 
-**Night 7 ran and closed 2026-08-31** — the document-contradiction lens, four findings, all
-resolved. Its record is in [`unattended-run-log.md`](unattended-run-log.md).
+**The lens is not a reading lens tonight.** It is the back half of
+[`updating-rumoca.md`](updating-rumoca.md), after a 613-commit hop from v0.10.0 to v0.10.4. The
+rotation rule is satisfied by that: this is new ground, not a region already established as clean.
+**No lens is retired** — night 7's document-contradiction lens stays live and still should not run
+back-to-back.
 
-**The lens is NOT spent**, so the rotation rule does not retire it: it returned four on its first
-run. **But do not queue it back-to-back.** Everything it found was *same-day* drift — a mechanism
-changed that afternoon and its description did not — so the yield came from a day of heavy
-mechanism change, not from accumulated rot. Point it at the documents again after the next such
-day, not tomorrow.
+**Context the executing session will not otherwise have.** v0.10.4 reduces `CartesianPendulum`,
+the canonical index-3 DAE, through `rumoca-phase-solve`'s **state selection** — a chart on the
+constraint manifold — while `prepare_for_solve`'s reducer still refuses it. Three HRW accuracy
+defects came out of that today and are fixed; a fourth is open and is **not** tonight's work.
 
-**The obvious next work needs Doug awake:** `connect-expansion` is rewritten and unwalked, Station 6
-and `ScopedConnect` have never been read by anyone, and night 7 left him one ruling — hard rule 5
-against the document item — **ruled the next morning**, and recorded in the log.
+**The four items, in order. The document sweep runs first, as every night.**
+
+1. **Step 3b — the large-scale fidelity suite.** Pure measurement. Record the numbers; if it
+   finds a divergence, that is a finding, not an invitation to fix a pane.
+2. **Step 3c — the 14 still-open `upstream-issues.md` entries.** 7 of 21 are struck. Re-test each
+   remaining one against v0.10.4 and take one of the three outcomes the step names: **fixed**
+   (strike through, keep the account, name the version), **still present** (record the version it
+   was re-confirmed on), **changed shape** (re-diagnose; never half-edit). W1 and W2 were
+   re-confirmed live on 0.10.4 today — record that and do not re-test them.
+3. **Steps 4 and 5b — regenerate** the per-stage field-help table and every other generated
+   document, and commit whatever moves.
+4. **Step 9 — the version/commit readout**, which should now say 0.10.4.
+
+**The ceiling applies: four items and the sweep, no more.** If 3c runs long, stop inside it and
+say where.
+
+### What tonight must NOT do, beyond the standing no-go list
+
+- **`Drivetrain`'s three state counts.** Index Reduction says `9 state(s) → 5`, Solve Lowering
+  says 3, Simulation says 3. Every number is correct and nothing on screen says they count
+  different things. Reconciling them **changes what a pane claims**, which is no-go. It is logged
+  in [`tech-debt.md`](tech-debt.md) and waits for Doug.
+- **`docs/fixture-labs/index-reduction.md`.** It references the pendulum seven times, was authored
+  against the 0.10.0 search, and v0.10.4 falsified that story. **Read it and report what is now
+  false, as a list with line numbers. Do not rewrite a sentence of it** — lab prose is his.
+- **Step 6b, the lectures.** Re-measure only. Measuring is the item; revising is not.
+- **Step 7, `docs/compiler-phases/`.** Report which of the 41 `crates/` citations no longer
+  resolve. Refreshing the explanations is prose and waits.
+
+### What the morning needs, stated as pairs rather than recommendations
+
+- whether `index-reduction.md` is re-authored or retired for now
+- whether `Drivetrain`'s counts are reconciled in the pane, or explained in prose beside it
+- which of the remaining open upstream entries are worth filing now that PRs are invited
 
 ### ⟶ RULED, 2026-08-25 — THE NIGHTS CONTINUE, AND ROTATION IS THE CONDITION
 
