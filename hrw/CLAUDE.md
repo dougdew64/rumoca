@@ -556,12 +556,43 @@ the next phase touches — is procedure and lives there.
 > earliest, and Doug's *"fine for now"* on Stage A settled its *ordering within the programme*,
 > not its position in this queue.
 >
-> ### ⟶ THE REBASE IS DONE AND PUSHED — branch `hrw-rebase-0.10.0`, 2026-11-04
+> ### ⟶ YOU ARE ON `hrw-rebase-0.10.4` NOW — hopped 2026-11-04, same day as the 0.10.0 rebase
+>
+> **Read this before anything else; `hrw-rebase-0.10.0` is the PREVIOUS branch and is behind.**
+> The 0.10.4 branch is 95 commits on top of `upstream/main@590ac739` (version 0.10.4), replayed
+> with `git rebase --onto`. **There is no v0.10.x tag** — upstream's tags stop at `v0.9.20` — so
+> the target was chosen as `main`, pinned to a SHA, because that is where merged PRs land.
+> `pre-0.10.4-rebase` tags the pre-hop tip.
+>
+> **The split survived: 17 `crates/`-only commits, 0 mixed.** That is what makes the instrumentation
+> a clean cherry-pick for an upstream PR, and it must stay true.
+>
+> **THE MAINTAINER INVITED DOUG TO SUBMIT PRs** *(2026-11-04)*. That reorders
+> `docs/upstream-strategy.md`, whose ordering assumed cold outreach: the gifts were meant to buy
+> exactly the opening that now exists. **F1 — the formatting fix — was the lead candidate and is
+> DEAD**; 0.10.4 is `cargo fmt --check` clean. The strongest candidate now is instrumenting
+> `rumoca-phase-solve::state_selection`, which is private, exactly as `prepare_for_solve` was
+> before `watch_prepare_for_solve`.
+>
+> ### ⟶ v0.10.4 REDUCES THE CANONICAL INDEX-3 DAE, and it is not Pantelides
+>
+> **`CartesianPendulum` simulates**, on **2** integrated coordinates — the chart is `{y, der(y)}`,
+> the same pair System Modeler picks. The rod constraint holds to **4.6e-12** and `lambda` peaks at
+> the hand-computed 3*mg*. **The `pantelides_ladder` is green, all five rungs**, and `ideas.md` #83
+> is closed by upstream.
+>
+> **`prepare_for_solve`'s reducer still REFUSES this model** — its Holonomic lane finds the rod
+> constraint, attempts it, and reports `would_create_vacuous_residual`, because differentiating
+> `x² + y² = L²` and substituting it back leaves `0 = 0`. The reduction happens in
+> `rumoca-phase-solve`'s **state selection**, which picks independent coordinates on the constraint
+> manifold. **So one phase reports failure and the next succeeds. Do not read the reducer's report
+> as the compiler's verdict** — three HRW defects on 11-04 were exactly that mistake, and a fourth
+> is open (`Drivetrain`'s 5 / 3 / 3, in `docs/tech-debt.md`).
 >
 > **This is not a branch of `hrw`.** Both descend from `main`; `hrw` is 1199 commits of HRW work on
-> 0.9.20 and still points at 2026-09-25, while this branch is upstream's v0.10.0 (PR #340) with the
-> `hrw/` tree **ported on top** at `668c89c9` — so HRW's per-commit history is on `hrw` and is not
-> an ancestor here. Nothing is stranded: `hrw` has not moved since before the port.
+> 0.9.20 and still points at 2026-09-25, while the 0.10.0 branch took upstream's v0.10.0 (PR #340)
+> with the `hrw/` tree **ported on top** at `668c89c9` — so HRW's per-commit history is on `hrw` and
+> is not an ancestor here. Nothing is stranded: `hrw` has not moved since before the port.
 >
 > **All five re-models the rebase recruited have landed, and `worker::AWAITING_REMODEL` is empty.**
 > The roster mechanism is kept and re-aimed — an empty roster now asserts that *no* stage claims to
