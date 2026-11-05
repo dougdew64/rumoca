@@ -5255,7 +5255,13 @@ fn reduction_lanes_used(records: &[rumoca_phase_structural::ReductionRecord]) ->
             | ReductionRecord::Attempt { lane, .. }
             | ReductionRecord::Selected { lane, .. }
             | ReductionRecord::RetriedPristine { lane } => reduction_lane_name(*lane),
-            ReductionRecord::Stopped { .. } => continue,
+            // **Neither carries a lane, for different reasons.** `Stopped` ends the
+            // search rather than belonging to a lane, and an alias class belongs to a
+            // *quotient scope* — `Source` or `FormalDerivatives` — which is a different
+            // axis from the Direct/Holonomic lanes this function reports.
+            ReductionRecord::Stopped { .. } | ReductionRecord::AliasClassUnchanged { .. } => {
+                continue;
+            }
         };
         if !lanes.contains(&lane) {
             lanes.push(lane);
@@ -5269,6 +5275,31 @@ fn reduction_lane_name(lane: rumoca_phase_structural::ReductionLane) -> &'static
     match lane {
         rumoca_phase_structural::ReductionLane::Direct => "direct",
         rumoca_phase_structural::ReductionLane::Holonomic => "holonomic",
+    }
+}
+
+/// Rumoca's own quotient-scope name, lowercased for JSON.
+///
+/// Which application of the alias quotient a class was considered under:
+/// `Source` is every eligible edge before state selection, `FormalDerivatives`
+/// only edges with a formal-derivative endpoint, after that construction.
+fn quotient_scope_name(scope: &rumoca_phase_structural::AliasQuotientScope) -> &'static str {
+    match scope {
+        rumoca_phase_structural::AliasQuotientScope::Source => "source",
+        rumoca_phase_structural::AliasQuotientScope::FormalDerivatives => "formal_derivatives",
+    }
+}
+
+/// Rumoca's own refusal name, lowercased for JSON.
+///
+/// Why one alias class was left as it was. These are **refusals, not failures**:
+/// a class the quotient declines to collapse is a correct outcome, and the whole
+/// reduction may still succeed.
+fn alias_refusal_name(reason: &rumoca_phase_structural::AliasRefusal) -> &'static str {
+    match reason {
+        rumoca_phase_structural::AliasRefusal::Cycle => "cycle",
+        rumoca_phase_structural::AliasRefusal::SeveralAnchors => "several_anchors",
+        rumoca_phase_structural::AliasRefusal::AnchorIsNotState => "anchor_is_not_state",
     }
 }
 
@@ -5375,6 +5406,21 @@ pub(crate) fn reduction_record_to_json(
             obj["outcome"] = reduction_stop_to_json(outcome, source_map);
             obj
         }
+        // **New in 0.10.4, and it is not a lane record.** The alias quotient
+        // considered one class and left it as it was. `members` are arena-local
+        // variable ordinals, published bare the way every other ordinal here is:
+        // they identify a variable only within this compile's arena.
+        ReductionRecord::AliasClassUnchanged {
+            scope,
+            members,
+            reason,
+        } => serde_json::json!({
+            "kind": "alias_class_unchanged",
+            "scope": quotient_scope_name(scope),
+            "members": members,
+            "reason": alias_refusal_name(reason),
+            "meaning": "the alias quotient declined to collapse this class",
+        }),
     }
 }
 
@@ -5457,6 +5503,16 @@ fn reduction_attempt_outcome_to_json(
         ReductionOutcome::Raised { residue } => serde_json::json!({
             "kind": "raised",
             "residue": residue,
+        }),
+        // **New in 0.10.4, and it is a refusal to even try.** A structural lower
+        // bound proved the residue cannot fall below `bound`, so the candidate was
+        // never reconstructed. `bound` is at least the current residue, which is why
+        // this is published as a bound rather than as a residue: it is a statement
+        // about what no reconstruction could achieve, not a measurement of one.
+        ReductionOutcome::CannotReduce { bound } => serde_json::json!({
+            "kind": "cannot_reduce",
+            "bound": bound,
+            "meaning": "a structural lower bound proves the residue cannot fall below this",
         }),
         ReductionOutcome::NonSingularFailure { error } => serde_json::json!({
             "kind": "non_singular_failure",
@@ -5958,6 +6014,25 @@ fn events_from_condition_algebra(view: rumoca_ir_dae::DaeView<'_>) -> serde_json
                     "terminate",
                     crate::dae_expr_format::format_expr(view, message),
                 ),
+                // **New in 0.10.4. A warning-level assertion (MLS 8.3.7), and it
+                // never aborts.** `condition` is a third thing beside this action's
+                // trigger and guard, and it is the one that decides whether the
+                // warning fires: the action reports while the guard is active and
+                // `condition` is *false*. Publishing only the message would drop it,
+                // and nothing else in this object carries it.
+                Action::Warning { message, condition } => (
+                    "warning",
+                    format!(
+                        "{} unless {}",
+                        crate::dae_expr_format::format_expr(view, message),
+                        crate::dae_expr_format::format_expr(view, condition),
+                    ),
+                ),
+                // **New in 0.10.4**: one MLS 3.7 12.9 `ModelicaInternal_print` call,
+                // reported each time the action is active at a settled event.
+                Action::Print { message } => {
+                    ("print", crate::dae_expr_format::format_expr(view, message))
+                }
                 // The only kind that moves a trajectory — see
                 // `dae_counts::has_discontinuities`, which counts exactly these.
                 Action::Reinitialize { state, value } => (
@@ -6485,6 +6560,8 @@ fn solve_lower_error_to_json(e: &rumoca_phase_solve::LowerError) -> serde_json::
         LowerError::UnspannedContractViolation { reason } => {
             ("UnspannedContractViolation", reason, None)
         }
+        // New in 0.10.4.
+        LowerError::BudgetExceeded { reason, span } => ("BudgetExceeded", reason, Some(span)),
     };
     let guidance = match e {
         LowerError::Structural { .. } => {
@@ -6500,6 +6577,15 @@ fn solve_lower_error_to_json(e: &rumoca_phase_solve::LowerError) -> serde_json::
         LowerError::ContractViolation { .. } | LowerError::UnspannedContractViolation { .. } => {
             "Solve lowering detected a violated internal contract \u{2014} a compiler defect \
              rather than a model error, and worth an upstream-issues entry."
+        }
+        // **Deliberately not grouped with the contract violations above**, which
+        // call themselves a compiler defect. A budget refusal is neither that nor a
+        // malformed model: lowering declined an allocation *before attempting it*
+        // because a resource limit would be exceeded. Saying "compiler defect" here
+        // would send a reader to file an upstream issue about a working limit.
+        LowerError::BudgetExceeded { .. } => {
+            "Solve lowering refused an allocation before attempting it, because a \
+             resource budget would be exceeded. The reason names the budget."
         }
     };
     let mut json = serde_json::json!({
@@ -7246,13 +7332,20 @@ const UNINSTRUMENTED_PHASES: &[(&str, Option<&str>, &str)] = &[
          *(The reason named `dae.events` until 2026-11-03 \u{2014} a 0.9.20 field, and \
          there is no such field now: the re-model reads nine arenas.)*",
     ),
-    // **Three phases went silent on v0.10.0, and the numbers are measured.**
+    // **Three phases went silent on v0.10.0; two of them still are on v0.10.4.**
     //
-    // *2026-11-03, `tracing::`/`*_trace!(` call sites per phase crate:*
-    // flatten 10, instantiate 4, structural **2**, resolve 1, and
-    // **typecheck 0, dae 0, solve 0**. The release cut tracing sharply — the
-    // `structural_trace!` wrapper that accounted for 27 sites is gone, and the three
-    // below emit nothing at all.
+    // *2026-11-04, re-measured on v0.10.4 — `tracing::` call sites per phase crate:*
+    // flatten 9, instantiate 2, structural **2**, **solve 2**, resolve 1, and
+    // **typecheck 0, dae 0**. v0.10.0 had cut tracing sharply — the
+    // `structural_trace!` wrapper that accounted for 27 sites is gone — and the two
+    // below still emit nothing at all.
+    //
+    // **Solve Lowering was the third and came back in v0.10.4**, with two
+    // `tracing::debug!` sites in `lower/scalar/register_ledger.rs`. The test below
+    // is what removed it, failing with *"now has 2 tracing call site(s)"* on the
+    // 0.10.4 rebase — the same way it removed Typecheck on 2026-08-04. That is the
+    // second time this mechanism has retired its own entry, which is the argument
+    // for pinning a claim of absence to something that can notice.
     //
     // **Typecheck is a re-entry, which is the mechanism working.** It was on this
     // list until 2026-08-04, when the crate gained tracing and the test below
@@ -7270,12 +7363,6 @@ const UNINSTRUMENTED_PHASES: &[(&str, Option<&str>, &str)] = &[
         Some("rumoca-phase-dae"),
         "the v0.10.0 crate emits no tracing; the twenty-odd single-purpose modules \
          that carried it collapsed into `construction/` and the calls did not survive",
-    ),
-    (
-        "Solve Lowering",
-        Some("rumoca-phase-solve"),
-        "the v0.10.0 crate emits no tracing; lowering was reorganised under \
-         `src/lower/` without it",
     ),
 ];
 

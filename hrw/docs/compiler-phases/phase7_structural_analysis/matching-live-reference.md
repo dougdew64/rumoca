@@ -10,18 +10,18 @@ Where each `MatchingStep` is pushed. **This is the line a debugger reports for t
 
 | step | emitted at `matching.rs:` |
 |---|---|
-| `Assign` | 767 |
-| `ClaimedPreference` | 430 |
-| `DisplaceFail` | 695 |
-| `DisplaceOk` | 756 |
-| `EquationFailed` | 73 |
-| `Explore` | 725 |
-| `FoundFree` | 661 |
-| `PreferenceUnavailable` | 436 |
-| `SeedStructured` | 318 |
-| `Start` | 35 |
-| `TryDisplace` | 674 |
-| `TryEquation` | 61 |
+| `Assign` | 901 |
+| `ClaimedPreference` | 564 |
+| `DisplaceFail` | 829 |
+| `DisplaceOk` | 890 |
+| `EquationFailed` | 207 |
+| `Explore` | 859 |
+| `FoundFree` | 795 |
+| `PreferenceUnavailable` | 570 |
+| `SeedStructured` | 452 |
+| `Start` | 169 |
+| `TryDisplace` | 808 |
+| `TryEquation` | 195 |
 
 **Every step has its own line, including the two displacement outcomes.** On Rumoca 0.9.20 one emit chose between `DisplaceOk` and `DisplaceFail` with an `if`, so the site said *where* and never *which* — only the frame distinguished the outcome. 0.10.0's iterative search reaches them at different points: `DisplaceFail` on an exhausted pop, `DisplaceOk` during the commit. **So a stop at either line now tells you which branch you are in**, without inspecting a local.
 
@@ -32,9 +32,9 @@ The lines a live lab sends you to. Each is located by what the line *says*, so m
 
 | name | line | what you are looking at |
 |---|---|---|
-| `decision` | `matching.rs:730` | the free-versus-displace branch — the whole decision, in one expression |
-| `descend` | `matching.rs:683` | the displacement being pushed — the stack below the top is the chain of equations asked to move |
-| `give_up` | `matching.rs:707` | the search giving up — reached only by falling out of the loop |
+| `decision` | `matching.rs:864` | the free-versus-displace branch — the whole decision, in one expression |
+| `descend` | `matching.rs:817` | the displacement being pushed — the stack below the top is the chain of equations asked to move |
+| `give_up` | `matching.rs:841` | the search giving up — reached only by falling out of the loop |
 | `gate` | `live_trace.rs:110` | the startup gate, called before any algorithm work |
 | `push` | `live_trace.rs:124` | the per-frame anchor call, after the frame is sent and the delay slept |
 | `anchor` | `live_trace.rs:186` | the breakpoint the Debug button arms — every live stop lands here |
@@ -43,38 +43,38 @@ The lines a live lab sends you to. Each is located by what the line *says*, so m
 
 | idx | step | emit line | depth |
 |---|---|---|---|
-| 0 | `Start { n_equations: 3, n_unknowns: 3 }` | 35 | 0 |
-| 1 | `TryEquation(0)` | 61 | 0 |
-| 2 | `Explore { eq: 0, var: 0 }` | 725 | 1 |
-| 3 | `FoundFree { eq: 0, var: 0 }` | 661 | 1 |
-| 4 | `Assign { eq: 0, var: 0 }` | 767 | 1 |
-| 5 | `TryEquation(1)` | 61 | 0 |
-| 6 | `Explore { eq: 1, var: 0 }` | 725 | 1 |
-| 7 | `TryDisplace { eq: 1, var: 0, holder: 0 }` | 674 | 1 |
-| 8 | `Explore { eq: 0, var: 2 }` | 725 | 2 |
-| 9 | `FoundFree { eq: 0, var: 2 }` | 661 | 2 |
-| 10 | `Assign { eq: 0, var: 2 }` | 767 | 2 |
-| 11 | `DisplaceOk { eq: 1, var: 0 }` | 756 | 1 |
-| 12 | `Assign { eq: 1, var: 0 }` | 767 | 1 |
-| 13 | `TryEquation(2)` | 61 | 0 |
-| 14 | `Explore { eq: 2, var: 1 }` | 725 | 1 |
-| 15 | `FoundFree { eq: 2, var: 1 }` | 661 | 1 |
-| 16 | `Assign { eq: 2, var: 1 }` | 767 | 1 |
+| 0 | `Start { n_equations: 3, n_unknowns: 3 }` | 169 | 0 |
+| 1 | `TryEquation(0)` | 195 | 0 |
+| 2 | `Explore { eq: 0, var: 0 }` | 859 | 1 |
+| 3 | `FoundFree { eq: 0, var: 0 }` | 795 | 1 |
+| 4 | `Assign { eq: 0, var: 0 }` | 901 | 1 |
+| 5 | `TryEquation(1)` | 195 | 0 |
+| 6 | `Explore { eq: 1, var: 0 }` | 859 | 1 |
+| 7 | `TryDisplace { eq: 1, var: 0, holder: 0 }` | 808 | 1 |
+| 8 | `Explore { eq: 0, var: 2 }` | 859 | 2 |
+| 9 | `FoundFree { eq: 0, var: 2 }` | 795 | 2 |
+| 10 | `Assign { eq: 0, var: 2 }` | 901 | 2 |
+| 11 | `DisplaceOk { eq: 1, var: 0 }` | 890 | 1 |
+| 12 | `Assign { eq: 1, var: 0 }` | 901 | 1 |
+| 13 | `TryEquation(2)` | 195 | 0 |
+| 14 | `Explore { eq: 2, var: 1 }` | 859 | 1 |
+| 15 | `FoundFree { eq: 2, var: 1 }` | 795 | 1 |
+| 16 | `Assign { eq: 2, var: 1 }` | 901 | 1 |
 
 ## Ledger — `TwiceDefined` (fails — the displacement has nowhere to go)
 
 | idx | step | emit line | depth |
 |---|---|---|---|
-| 0 | `Start { n_equations: 2, n_unknowns: 2 }` | 35 | 0 |
-| 1 | `TryEquation(0)` | 61 | 0 |
-| 2 | `Explore { eq: 0, var: 0 }` | 725 | 1 |
-| 3 | `FoundFree { eq: 0, var: 0 }` | 661 | 1 |
-| 4 | `Assign { eq: 0, var: 0 }` | 767 | 1 |
-| 5 | `TryEquation(1)` | 61 | 0 |
-| 6 | `Explore { eq: 1, var: 0 }` | 725 | 1 |
-| 7 | `TryDisplace { eq: 1, var: 0, holder: 0 }` | 674 | 1 |
-| 8 | `DisplaceFail { eq: 1, var: 0 }` | 695 | 1 |
-| 9 | `EquationFailed(1)` | 73 | 0 |
+| 0 | `Start { n_equations: 2, n_unknowns: 2 }` | 169 | 0 |
+| 1 | `TryEquation(0)` | 195 | 0 |
+| 2 | `Explore { eq: 0, var: 0 }` | 859 | 1 |
+| 3 | `FoundFree { eq: 0, var: 0 }` | 795 | 1 |
+| 4 | `Assign { eq: 0, var: 0 }` | 901 | 1 |
+| 5 | `TryEquation(1)` | 195 | 0 |
+| 6 | `Explore { eq: 1, var: 0 }` | 859 | 1 |
+| 7 | `TryDisplace { eq: 1, var: 0, holder: 0 }` | 808 | 1 |
+| 8 | `DisplaceFail { eq: 1, var: 0 }` | 829 | 1 |
+| 9 | `EquationFailed(1)` | 207 | 0 |
 
 **Depth is derived from the step sequence, not from a stack** — `TryDisplace` descends and `DisplaceOk`/`DisplaceFail` return. It is pinned against two real debugger runs by `matching_ledger`'s tests.
 
