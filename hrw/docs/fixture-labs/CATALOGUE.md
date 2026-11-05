@@ -213,20 +213,20 @@ This is a test, not an explanation. It verifies that a link can stop an animatio
 
 ## `index-reduction`
 
-**Fixture lab — Index reduction: when differentiating is the only way out**
+**Fixture lab — Index reduction: differentiating a constraint, and when that is not the way out**
 
 Counting a model's states can give you the wrong number — not miscounted, but wrong as a
 
 - **Specimens:** `CartesianPendulum`, `BouncingBall`, `StabilizedPendulum`, `BenchActuator`, `Drivetrain`, `CapacitorLoop`
-- **Stages:** `IndexReduction`, `Structural`
+- **Stages:** `IndexReduction`, `Simulation`, `Structural`
 - **Stations:**
-  - `fixture-lab-index-reduction-when-differentiating-is-the-only-way-out` — Fixture lab — Index reduction: when differentiating is the only way out
+  - `fixture-lab-index-reduction-differentiating-a-constraint-and-when-that-is-not-the-way-out` — Fixture lab — Index reduction: differentiating a constraint, and when that is not the way out
   - `station-1-why-can-five-equations-in-five-unknowns-be-unsolvable` — Station 1 — Why can five equations in five unknowns be unsolvable?
   - `station-2-the-case-that-needs-nothing-and-there-are-two-of-those` — Station 2 — The case that needs nothing, and there are two of those
   - `station-3-the-smallest-model-that-needs-something-and-it-points-at-a-line-you-did-not-write` — Station 3 — The smallest model that needs something, and it points at a line you did not write
   - `station-4-reduction-is-a-search-and-a-pass-that-moves-nothing-is-not-a-wasted-pass` — Station 4 — Reduction is a search, and a pass that moves nothing is not a wasted pass
   - `station-5-two-lanes-and-one-of-them-sees-what-the-other-cannot` — Station 5 — Two lanes, and one of them sees what the other cannot
-  - `station-6-the-model-rumoca-cannot-reduce-and-the-exact-reason` — Station 6 — The model Rumoca cannot reduce, and the exact reason
+  - `station-6-the-reducer-refuses-and-the-model-runs-anyway` — Station 6 — The reducer refuses, and the model runs anyway
   - `what-this-lab-cannot-check` — What this lab cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
 

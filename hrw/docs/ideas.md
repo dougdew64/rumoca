@@ -2055,6 +2055,14 @@ accepts is exactly a filable issue.
    `pipeline_failure` section carrying the failing stage, its summary, its full `error`
    payload, and the downstream stages that will read as "not reached".
 
+   > **Superseded 2026-11-05, and the paragraph below is why.** *"The first failing
+   > stage"* was implemented as the first stage with `outcome != Ok`, which conflates
+   > **flagged-and-continued** with **stopped** — so `Drivetrain`, which simulates, was
+   > reported as having failed at Structural. `pipeline_flags` now carries that case and
+   > `pipeline_failure` is reserved for a genuine stop. The reasoning below is still the
+   > right reasoning *for a real failure*; it was the selector that was wrong, not the
+   > principle. See `docs/tech-debt.md`.
+
    **The first failing stage, not the current one.** A failure cascades, so the earliest
    error is the cause and everything after it is a consequence. A capture naming
    whichever stage Doug happens to be looking at would routinely name a consequence —

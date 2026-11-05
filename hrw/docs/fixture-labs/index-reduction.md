@@ -1,4 +1,4 @@
-# Fixture lab — Index reduction: when differentiating is the only way out
+# Fixture lab — Index reduction: differentiating a constraint, and when that is not the way out
 
 <!-- kind: concept -->
 
@@ -117,8 +117,9 @@ phase exists.
 > than by arithmetic — which is why a compiler can detect it before any number is computed.
 
 Index reduction is the phase that runs that distance. The next four stations watch it run — and
-then **Station 6 comes back to this pendulum**, where you now know the answer the compiler ought
-to reach.
+then **Station 6 comes back to this pendulum**, where this reducer declines the move you just made
+by hand, for a reason worth knowing, and the model simulates regardless. The last station is the
+one that says what this phase is *not*.
 
 ---
 
@@ -333,7 +334,7 @@ Holonomic lane taking the rack-and-pinion in `IdealGearR2T.mo:9` and sorting wha
 
 ---
 
-## Station 6 — The model Rumoca cannot reduce, and the exact reason
+## Station 6 — The reducer refuses, and the model runs anyway
 
 Back to the pendulum from Station 1. Every constraint in the three stations since has been a
 component definition — one quantity written in terms of others, which reduction can take directly
@@ -343,30 +344,37 @@ definition hides inside it.
 **You already know what has to happen.** Station 1 differentiated that constraint twice by hand,
 and the second differentiation is what brings `lambda` within reach.
 
-> **Predict.** Rumoca will not reduce this system. There are two ways that can look in the pane,
-> and they are not the same: it could **try** candidates and reject every one, or it could find
-> **nothing to try**. Which do you expect?
+> **Predict.** This reducer will not admit the system. There are two ways that can look in the
+> pane, and they are not the same: it could **try** candidates and reject them, or it could find
+> **nothing to try**. Which do you expect — and if it does try, what would a *good* reason to
+> refuse look like?
 
 [Look — CartesianPendulum → Index reduction → Summary](hrw://load/CartesianPendulum/IndexReduction/Summary)
 
-**Expected:** not admitted, stopped `singular` at residue 2, and **no reduced side at all** — the
-after row is em dashes. Three passes, alternating Direct → Holonomic → Direct, and **every
-candidate group reports 0**. There is not one attempt record in the whole log.
+**Expected:** not admitted, stopped `singular` at residue 2, and **no reduced side** — the after
+row is em dashes. Three passes, alternating Direct → Holonomic → Direct. The Direct lane's two
+groups report **0** candidates every time; the **Holonomic lane discovers 1**, and there is
+**exactly one attempt record**, which refuses with `would_create_vacuous_residual`.
 
-Falsified if: any group discovers a candidate, or any attempt appears, or an after row has numbers
-in it.
+Falsified if: the Direct lane discovers anything, or the attempt count is not one, or the refusal
+is any other reason, or an after row has numbers in it.
 
 ### What just happened
 
-**Rumoca does not decline to differentiate the constraint. It never gets as far as considering
-it.** Both lanes search, both find nothing admissible, the lanes alternate once more to be sure,
-and the search halts with the residue exactly where it started.
+**It gets as far as considering the constraint, and declines for a stated reason.** The Holonomic
+lane is exactly the one that hunts this shape — a rigid relation among positions — and it finds
+the rod. Then the attempt fails, and the word it fails with is the whole lesson:
+**`would_create_vacuous_residual`**.
 
-That is a sharper statement than *"index reduction does not work here"*, and a more useful one: the
-missing piece is not a decision made badly, it is **candidate discovery for this shape of
-constraint**. Pantelides' algorithm is precisely a procedure for finding that candidate — take a
-structurally singular subset and differentiate its equations — and the two lanes here each hunt a
-narrower pattern.
+Work out why by hand and it is immediate. Differentiate `x² + y² = L²` twice and you get a
+relation among the accelerations; substitute the equations of motion back into it and every term
+cancels. What is left is `0 = 0` — a row that constrains nothing. The reducer is not failing to
+find the move. **It finds the move, computes what the move would produce, and refuses to add a
+row that determines nothing**, which is the correct call.
+
+So this is not *"candidate discovery is missing for this shape"*. Pantelides' procedure would take
+the same structurally singular subset; what stops the substitute-in-place route here is the
+algebra, not the search.
 
 Look at where the diagnosis comes from, because it is the same pair you found by hand:
 
@@ -379,15 +387,42 @@ Falsified if: the unmatched pair is anything other than that one equation and `l
 
 **That is Station 1's answer, reached by algorithm.** There you read it off the incidence pattern —
 an empty row, a column reachable from only two equations. Here the matching reports it by name,
-and the reduction then confirms it has no move for it.
+and the reduction then confirms the substitution route has no move for it.
 
-The simulation fails the way an unreduced high-index system does — *"step size is too small at
-time = 0.0000477"* — with no mention of index anywhere.
+### And now the part that would have been the lab's falsification
 
-This is not a defect claim. Whether general Pantelides is missing, deferred, or deliberately out
-of scope is a question for Rumoca's maintainers, and it is filed in
-[`upstream-issues.md`](hrw://doc/upstream-issues.md) as a question. What the station establishes is
-the boundary: you now know what this compiler does, and exactly where it stops.
+> **Predict, before you look.** The reducer refused. Does the model simulate?
+
+[Look — CartesianPendulum → Simulation](hrw://load/CartesianPendulum/Simulation)
+
+**Expected:** it runs. 507 samples to *t* = 2 s, on **2** integrated states.
+
+Falsified if: the run fails, or the state count is 4.
+
+**Two states, from a model whose DAE has four.** The index came down — just not here. Rumoca
+v0.10.4 reduces this model in the *next* phase: `rumoca-phase-solve`'s **state selection** picks
+independent coordinates on the constraint manifold instead of differentiating in place. The rod
+says the point has one degree of freedom, so one coordinate and its rate suffice, and the chart it
+takes is `{y, der(y)}` — the same pair System Modeler selects.
+
+**Changing coordinates and differentiating the constraint are two routes to index 1, and this
+model separates them cleanly.** Differentiate-and-substitute is the textbook route and it is the
+one that goes vacuous here. Choosing a chart never rewrites the constraint at all, so there is
+nothing to drift: compare the two in the corpus and the rod length holds to **4.6e-12** here
+against **2.9e-06** for `StabilizedPendulum`, which damps a twice-differentiated constraint by
+hand. Six orders of magnitude, same physics, both right.
+
+### The thing to carry out of this station
+
+**One phase reporting failure is not the compiler's verdict.** The Index Reduction tab says this
+search stayed singular *and* that solve lowering went on to lower the model — read both, and when
+a pane and a trajectory disagree, the trajectory is the arbiter.
+
+That is not a hypothetical caution. HRW itself made this exact mistake twice while this station was
+being written: its banner called the model **Singular** in red on the day it began simulating
+correctly, and after that was fixed the **tab stayed red for another day** because a stage's
+outcome is the same fact's second home. Both are in `docs/tech-debt.md`. **If this lab and the
+simulation ever disagree again, the lab is what is wrong, and I want to know.**
 
 ---
 
@@ -419,8 +454,17 @@ stalling and the Holonomic lane finishing, twice, and explains the shapes they l
 paragraph. It does not show you *why* those are the two shapes, because that is the Pantelides
 material and this lab deliberately stops at the boundary.
 
-Whether System Modeler reduces the pendulum. That is the calibration that would turn Station
-6's reading into a fact, and it has not been run. `the-oracle.md` is the lab for that gesture.
+~~Whether System Modeler reduces the pendulum.~~ **Run, and it agrees**: System Modeler selects
+`$dynState` sets over `{y}` and `{vy}` — the same chart Rumoca's state selection takes. So Station
+6's reading is calibrated rather than inferred, and `the-oracle.md` is still the lab for repeating
+the gesture yourself.
+
+**What this lab does NOT show is the route that actually reduces the pendulum.** Station 6 reports
+that state selection happened and what it produced, because that is all the compiler publishes:
+`rumoca-phase-solve::state_selection` is a private module with no observation seam, so there is no
+search to step through the way Stations 2-5 step through this one. A lab for *choosing coordinates
+on a manifold* is owed and cannot be written yet.
+<!-- unbuilt: rumoca_phase_solve::watch_state_selection -->
 
 ---
 
