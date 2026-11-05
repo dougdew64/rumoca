@@ -7832,3 +7832,43 @@ fn an_opened_window_settles_instead_of_growing_every_frame() {
          wide -- and got {settled:.1}",
     );
 }
+
+/// **A path offered back to the user is spelled their platform's way.** Doug, 2026-11-05:
+/// *"there is this specimens directory path which uses both back slashes and forward
+/// slashes: `C:\Users\dougd\source\repos\rumoca\hrw/specimens`."*
+///
+/// Both defaults are built by appending a literal to `CARGO_MANIFEST_DIR`, which Cargo
+/// spells natively — so a `"/..."` literal produced a mixed path on Windows and a
+/// correct one everywhere else. **Nothing malfunctioned**, because Windows accepts both;
+/// the defect is that the Settings dialog puts these strings in editable fields, so they
+/// are not merely shown but proposed.
+///
+/// **This cannot fail on Linux or macOS**, where the literal and the separator already
+/// agree, and that is precisely why it is worth pinning: the whole defect is invisible
+/// on the platforms most likely to run CI, and visible only on the one Doug uses.
+#[test]
+fn the_default_paths_use_one_kind_of_separator() {
+    let foreign = if std::path::MAIN_SEPARATOR == '/' {
+        '\\'
+    } else {
+        '/'
+    };
+    for (name, value) in [
+        ("DEFAULT_SPECIMEN_DIR", DEFAULT_SPECIMEN_DIR),
+        ("DEFAULT_LIBRARIES", super::DEFAULT_LIBRARIES),
+    ] {
+        assert!(
+            !value.contains(foreign),
+            "{name} mixes separators -- it contains {foreign:?} on a platform whose \
+             separator is {:?}: {value}",
+            std::path::MAIN_SEPARATOR,
+        );
+        // Non-vacuity: a constant with no separator at all would satisfy the check above
+        // while being nothing like a path.
+        assert!(
+            value.contains(std::path::MAIN_SEPARATOR),
+            "{name} has no {:?} in it, so the check above proved nothing: {value}",
+            std::path::MAIN_SEPARATOR,
+        );
+    }
+}

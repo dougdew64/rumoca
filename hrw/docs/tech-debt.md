@@ -3608,6 +3608,36 @@ this class found on 11-04 were each caught by a human or a photograph.
 | 11-05 | `Outcome::Flagged` painted `error_fg_color`, on **six** specimens that simulate | measuring the corpus while chasing the tab | the split exists to tell a flagged stage from a failed one, and `Outcome`'s own doc recorded that the UI was *"unchanged"* — true, harmless-sounding, and the whole defect |
 | 11-05 | `the_reconciled_note_still_offers_the_summary_view` **passed with the fix stubbed out** | the must-fire check, run before trusting the test | the note it falls back to contains the asserted word too. A substring assertion cannot tell a replacement from no replacement; it needed a non-vacuity guard |
 
+### 11-05, mixed path separators — fixed where Doug can edit them, 20 instances left
+
+**`concat!(env!("CARGO_MANIFEST_DIR"), "/…")` produces a mixed path on Windows**, because Cargo
+spells the manifest dir natively and the appended literal does not. Doug found it smoke-testing the
+rebase: *"`C:\Users\dougd\source\repos\rumoca\hrw/specimens`. It seems that the slashes should all
+be the same kind."*
+
+**Fixed for the two the Settings dialog hands back to the user** — `DEFAULT_SPECIMEN_DIR` and
+`DEFAULT_LIBRARIES` — with a `cfg`-selected `native_sep!()` literal, so the mixed form is
+unconstructible rather than cleaned up afterwards. That mattered: `app::tests` compares paths
+against `DEFAULT_SPECIMEN_DIR` with `starts_with`, so a display-only fix would have put the two
+spellings one assertion apart. `the_default_paths_use_one_kind_of_separator` pins both.
+
+**Twenty instances of the same shape remain in `hrw/src`, twelve of them in `bridge.rs`** —
+`BRIDGE_DIR`, `STAGES_DIR`, `DOCS_DIR` and the rest. **Deliberately not swept**, and the reason is
+not that they are harmless: they reach `focus.json` (`stages.dir`), the log, and generator output
+(`gen_trace` prints `…\hrw/docs/specimen-notebook/…`). They are *internal* — nothing offers them
+back to a user to edit — and the committed notebook traces carry canonicalised paths, so changing
+what the constants emit could move trace content during a smoke test. **The sweep is cheap and the
+mechanism now exists; it wants a quiet moment and a full gate, not a mid-test change.**
+
+*This repository has a name for stopping here: `lib.rs`'s `msl_roots` doc records a sweep that
+consolidated seven copies and was itself half-finished, with the eighth copy being the one the
+running app used. **Twenty left is that shape.** The difference is that this one is written down
+with its count, which is the whole of the mitigation.*
+
+**Found by Doug reading a dialog**, which is the "who caught it?" trigger: nothing checks that an
+emitted path is spelled consistently, and **the defect is invisible on Linux and macOS**, where the
+literal and the separator already agree — so it could not have failed on a CI box.
+
 ### 11-05, a file's age read as a process's liveness — the hook now says which
 
 **Claude asserted "HRW is open" twice while it was closed**, from the hook line *"focus.json written
