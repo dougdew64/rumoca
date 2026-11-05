@@ -57,9 +57,19 @@ fn main() -> std::io::Result<()> {
     println!("(HRW must be running; a cold compile makes the first shot the slow one)");
 
     let mut rows = Vec::with_capacity(plan.len());
+    // **Measured, not guessed.** This was a hard-coded 46, which `Drivetrain`'s labels
+    // fit and `CartesianPendulum / IndexReduction / Incidence` does not — so the status
+    // ran straight into the view name and the line read `Incidencerefused`. The widest
+    // label is known before the first shot; there is no reason to guess it.
+    let width = plan
+        .iter()
+        .map(|s| s.label(&specimen).chars().count())
+        .max()
+        .unwrap_or(0);
+
     for (seq, shot) in (first_seq..).zip(plan) {
         let label = shot.label(&specimen);
-        print!("  seq {seq:>4}  {label:<46}");
+        print!("  seq {seq:>4}  {label:<width$}  ");
         let _ = std::io::stdout().flush();
         write_request(seq, &shot.link(&specimen), region, &label)?;
         let outcome = match await_reply(seq) {
