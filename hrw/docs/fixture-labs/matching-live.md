@@ -45,7 +45,7 @@ silently. That notice is the feature; a silent successful-looking run is what it
 > **Predict.** The link above names `decision`, not a file and a line. Why would a lab refuse to
 > name the line?
 
-**Expected:** a red dot appears at `matching.rs:730`, the
+**Expected:** a red dot appears at `matching.rs:864`, the
 `let Some(owner) = matching.match_var[variable]` expression inside `next_augment_step`. HRW's
 status bar names the line it asked for.
 
@@ -78,7 +78,7 @@ algorithm makes* rather than a place in a file.
 Continue (F5) until you stop at the decision anchor a few times, then look at the
 `stack` local in `run_augment_search` rather than at the call stack.
 
-Then arm `descend` as well. It sits at `matching.rs:683`, the
+Then arm `descend` as well. It sits at `matching.rs:817`, the
 `stack.push(AugmentFrame::new(owner))` that extends the path — **the line that used
 to be the recursive call.** Every stop there is one more equation asked to move, and
 `stack.len()` immediately afterwards is the path's new length.
@@ -134,7 +134,7 @@ watching a dead end abandoned.
 > **Predict.** With two anchors armed and a system that cannot be matched, which one stops first,
 > and how many times does each fire?
 
-**Expected:** red dots at `matching.rs:730` and `matching.rs:707`, the latter on the bare `false`
+**Expected:** red dots at `matching.rs:864` and `matching.rs:841`, the latter on the bare `false`
 that ends `run_augment_search`. The decision anchor fires while the search explores; `give_up`
 fires
 when it exhausts the alternatives for the unmatchable equation — reporting `f_x[1]` unmatched and

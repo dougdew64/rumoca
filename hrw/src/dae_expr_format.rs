@@ -391,9 +391,10 @@ fn write_expr<'dae>(view: dae::DaeView<'dae>, id: dae::ExprId<'dae>, floor: u8, 
             write_expr(view, source, 0, out);
             out.push(')');
         }
-        // The three remaining kinds exist only inside a lowered function body —
-        // a local value, and a fold's carried input and output. They have no
-        // model-level spelling at all.
+        // The four remaining kinds exist only inside a lowered function body —
+        // a local value, a fold's carried input and output, and (new in 0.10.4)
+        // one output of an ordered conditional. They have no model-level
+        // spelling at all.
         // These ids are owner-local: a function or fold plus an ordinal within
         // it, so both halves are printed. An ordinal alone would collide across
         // functions and read as though two unrelated locals were the same one.
@@ -419,6 +420,22 @@ fn write_expr<'dae>(view: dae::DaeView<'dae>, id: dae::ExprId<'dae>, floor: u8, 
                 "<function {} fold {} carried out {carried}>",
                 fold.function().index(),
                 fold.ordinal()
+            );
+        }
+        // **Two owner-local ordinals, not one.** A conditional's output is
+        // identified by *which* conditional and *which* of its values, and both
+        // are local to the same function, so printing either alone would read as
+        // though unrelated outputs were the same one. `definition` is skipped
+        // because it names the same function the ids already carry.
+        dae::ExpressionOperation::FunctionConditionalOutput {
+            conditional, value, ..
+        } => {
+            let _ = write!(
+                out,
+                "<function {} conditional {} value {}>",
+                conditional.function().index(),
+                conditional.ordinal(),
+                value.ordinal()
             );
         }
     }
