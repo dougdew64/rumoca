@@ -3595,3 +3595,51 @@ this class found on 11-04 were each caught by a human or a photograph.
 | 11-04 | the Index Reduction banner called a reduced model **Singular**, in red | Claude, reading the regenerated trace | `inspect_prepare_for_solve` refuses `CartesianPendulum` while the compiler lowers and simulates it on 2 coordinates. True about the entry point, false about the compiler |
 | 11-04 | `x` and `y` reported as **states** when both are reconstructed algebraics | chasing the banner into the data | `is_state` was `i < n_states`, a positional rule. v0.10.4 lowers one `State` declaration — a 2-vector chart — and `SimVariableMeta::is_state` was being dropped on the floor |
 | 11-04 | `Drivetrain`'s three panes report 5, 3 and 3 states with nothing reconciling them | re-testing an upstream entry | the row above |
+
+### 11-04 night, F4 has been blind since v0.10.0 — and nobody ran the large suite to see it
+
+**Step 3b's first post-rebase run reported 24 violations across 20 MSL models, every one F4, and
+every one a false positive.**
+
+`BlockReport::StructuredScalar` arrived in **v0.10.0**. It is a compaction — a regular equation
+family whose rows are each their own scalar block, reported once with its point count instead of
+expanded into one line per element — and `worker::block_to_json` emits `point_count` and
+`equations_per_point` for it, deliberately carrying **no `equation` or `equations` key** and no
+`id`, because the family names no single equation.
+
+`fidelity::check_f4` matches on exactly those two keys:
+
+```rust
+let names: Vec<&str> = match (&b["equation"], &b["equations"]) {
+    (Value::String(one), _) => vec![one.as_str()],
+    (_, Value::Array(many)) => ...,
+    _ => { v.push(format!("{}: block {bi} names no equations", s.label)); continue }
+};
+```
+
+**This is the failure mode `fidelity_msl.rs`'s own header names** — *"a check that knows one form
+of the truth reports every other form as a defect"* — nine of twelve first-run violations were
+this shape. It is the tenth.
+
+**The noise is the smaller half.** F4's claim is that the BLT blocks **partition** the equations.
+A `StructuredScalar` block contributes nothing to `seen`, so on any model containing one the
+partition is checked over a *subset* and the missing rows are reported as holes
+(`blocks cover 2 of 3 equations; missing rows [2]`). **So F4 is simultaneously loud and blind:**
+it fails models that are fine and cannot detect a real partition defect in any model with a
+compacted family.
+
+**NOT FIXED TONIGHT, deliberately.** The repair needs a decision this run is not allowed to take
+alone: what rows a compacted family covers for partition purposes. The block publishes
+`point_count × equations_per_point` as a *size*, but `check_f4` resolves names through
+`row_labels`/`index_of`, and a family has no per-row label to resolve. Expanding it needs the
+incidence row range the family occupies — which `StructuredScalarBlock::row_range()` has and the
+JSON does not publish. **That is an HRW publishing change plus an F4 change, and it is a pair for
+Doug:** publish the family's row range, or teach F4 to skip compacted blocks and say so in the
+report rather than counting them as holes.
+
+**`docs/reports.md` is therefore stale as well as wrong**, and the suite has not been run since
+before the 0.10.0 rebase — which is how a check could go blind for two releases unnoticed.
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 11-04 | F4 reports every `StructuredScalar` block as "names no equations", and cannot see a partition defect in any model containing one | the large fidelity suite, step 3b, on its first post-rebase run | blind since v0.10.0. The large suite is trigger 1 of the fidelity policy and is the only thing that runs F4 at scale; the pre-commit suite's 16 curated specimens do not reach the shape |
