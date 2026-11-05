@@ -71,15 +71,35 @@ fn rotational_inertia_specimen_resolves_against_msl() {
         .strict_compile_resolved()
         .unwrap_or_else(|e| panic!("the library could not be resolved at all:\n{e:#}"));
 
+    // **Scoped to the packages this specimen uses, since v0.10.4 — the library-wide
+    // form was measuring the wrong unit.**
+    //
+    // It asserted *zero* "unresolved" diagnostics anywhere in the resolved library.
+    // v0.10.4 surfaces three the specimen cannot possibly cause —
+    // `Medium.density_pTX`, `Medium.p_default`, `Medium.T_default` — which are
+    // `Modelica.Media`/`Fluid` members of an un-redeclared `replaceable package
+    // Medium`, with nothing to bind to until a medium is supplied.
+    // `RotationalInertia.mo` contains the string `Medium` zero times.
+    //
+    // So the old assertion failed on a library the specimen resolved against
+    // perfectly. The discriminating property this test's header always claimed —
+    // *"an unresolved reference means the MSL did not load"* — is about the
+    // specimen's own references, and those live in exactly two packages.
+    //
+    // **Not scoped by file**, because `Label` carries only a `Span` and a span needs
+    // the right source map to name a file; `docs/tech-debt.md` records four sites that
+    // resolved one against whichever file the caller happened to hold.
+    const PACKAGES_THIS_SPECIMEN_USES: [&str; 2] = ["Modelica.Mechanics", "Modelica.Blocks"];
     let unresolved: Vec<&str> = diagnostics
         .iter()
         .filter(|d| d.message.contains("unresolved"))
         .map(|d| d.message.as_str())
+        .filter(|m| PACKAGES_THIS_SPECIMEN_USES.iter().any(|p| m.contains(p)))
         .collect();
     assert!(
         unresolved.is_empty(),
-        "an unresolved reference means the MSL did not load, which is what this test \
-         exists to catch:\n  {}",
+        "an unresolved reference in a package this specimen uses means the MSL did not \
+         load, which is what this test exists to catch:\n  {}",
         unresolved.join("\n  "),
     );
 
