@@ -7737,3 +7737,98 @@ fn the_emitted_capture_reports_a_flag_as_a_flag() {
          continued: {note:?}",
     );
 }
+
+/// **A window must not grow every frame.** Doug, 2026-11-05, smoke-testing the rebase:
+/// *"When I open the settings dialog, it slowly expands to the right, beyond the right
+/// edge of the screen."*
+///
+/// # Why this one IS testable, when layout usually is not
+///
+/// `CLAUDE.md` records that `egui_kittest` cannot judge layout — a clipped child is still
+/// in the accessibility tree, so a widget can be correct in the tree and wrong on screen.
+/// **That is a claim about pixels, and this is not one.** *"Slowly expands"* is a claim
+/// about a **width over successive frames**, and an area's rect is in `egui::Memory`,
+/// readable headlessly and exactly.
+///
+/// So this is the rule's own counter-case: *check whether every probe was aimed at the
+/// same level before concluding something cannot be tested.* A wrong **negative** is the
+/// error nobody catches, because acting on it means not looking.
+///
+/// # The mechanism it pins
+///
+/// An auto-sizing `egui::Window` whose content asks for `desired_width(f32::INFINITY)` is
+/// a feedback loop: the field claims all available width, the window grows to fit its
+/// content, which makes more width available next frame. It creeps by roughly the frame's
+/// margin per repaint — **slowly**, and without bound, which is why it walks off the
+/// screen rather than snapping to a wrong size. `About` never did this because it is
+/// `.resizable(false)`.
+#[test]
+fn an_opened_window_settles_instead_of_growing_every_frame() {
+    let mut app = App::test_default();
+    app.show_settings = true;
+    let mut h = crate::ui_tests::harness(app);
+
+    // **The window is found as "the one area that is not the viewport", not by an Id.**
+    //
+    // `egui::Window::new(title)` keys its area on `Id::new(title.text())`, and
+    // `Id::new("Settings")` does **not** reproduce it — measured, not assumed. Rather
+    // than reverse-engineer `Atoms::text()` and bake the result in, this identifies the
+    // window the way the situation already defines it: `harness` opens exactly one, and
+    // the only other layer is the full-viewport background. Verified by running the
+    // harness with `show_settings` false, which leaves exactly one area.
+    //
+    // The `assert_eq!` below makes that sound rather than lucky: if a tooltip or a second
+    // window ever appears, this fails loudly instead of silently measuring the wrong one.
+    let width = |h: &egui_kittest::Harness<'static, App>| {
+        let viewport = h.ctx.viewport_rect();
+        let mut found: Vec<f32> = h.ctx.memory(|m| {
+            m.layer_ids()
+                .filter_map(|l| m.area_rect(l.id))
+                .filter(|r| r.size() != viewport.size())
+                .map(|r| r.width())
+                .collect()
+        });
+        assert_eq!(
+            found.len(),
+            1,
+            "expected exactly one floating window to measure, found {}",
+            found.len(),
+        );
+        found.pop().expect("length checked above")
+    };
+
+    // Two frames have already run inside `harness`. Let it settle further, then
+    // measure across a span long enough that a per-frame creep is unmistakable.
+    h.run_steps(5);
+    let settled = width(&h);
+    h.run_steps(30);
+    let later = width(&h);
+
+    assert!(
+        later <= settled + 0.5,
+        "the Settings window grew from {settled:.1} to {later:.1} over 30 frames -- it is \
+         sizing itself from its own previous size. An auto-sizing window whose content \
+         asks for `desired_width(f32::INFINITY)` claims all available width, which makes \
+         the window wider, which makes more width available. Nothing bounds it, so it \
+         walks off the right edge of the screen.",
+    );
+
+    // **The property Doug actually reported**: not "it grew" but "it went off the
+    // screen". Asserted separately because a window could be bounded and still too wide,
+    // and because this is the sentence a failure should print.
+    let viewport = h.ctx.viewport_rect().width();
+    assert!(
+        later <= viewport,
+        "the Settings window is {later:.1} wide in a {viewport:.1} viewport, so its right \
+         edge is off the screen",
+    );
+
+    // Non-vacuity, two ways. A window that never laid out, or one measured at zero, would
+    // satisfy both inequalities above while proving nothing; and one that had collapsed
+    // to a sliver would "fix" the growth by breaking the dialog.
+    assert!(
+        (400.0..=viewport).contains(&settled),
+        "expected a real, usable window to measure against -- roughly its configured 560 \
+         wide -- and got {settled:.1}",
+    );
+}
