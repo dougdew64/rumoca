@@ -7770,7 +7770,21 @@ fn the_corpus_outcome_matrix_is_unchanged() {
         // records whether `prepare_for_solve` admitted the system, and it admits
         // none of the three. **What distinguishes this specimen is not visible in
         // this table**, so the pointer to #83 is the whole of what this row says.
-        ("CartesianPendulum", "OOOOOOFF.OX"),
+        //
+        // **The final cell moved `X` -> `O` on v0.10.4, and it is the only cell in the
+        // whole matrix that did.** Solve lowering used to fail here with "DAE structural
+        // proof failed: structurally singular system: 4 matched out of 5 equations and 5
+        // unknowns"; it now lowers the canonical index-3 pendulum on two independent
+        // coordinates, and the model simulates with the rod constraint holding to 4.6e-12.
+        //
+        // **The two `F`s before it did NOT move**, and that is the interesting part.
+        // Structural and Index Reduction still report a singular system, because
+        // `prepare_for_solve`'s search still declines it — the Holonomic lane finds the
+        // constraint, attempts it, and refuses with `would_create_vacuous_residual`. The
+        // reduction that works happens afterwards, in `rumoca-phase-solve`'s state
+        // selection. So this row now reads as a phase failing and the next one succeeding
+        // anyway, which is exactly what happens.
+        ("CartesianPendulum", "OOOOOOFF.OO"),
         // A flagged typecheck stops the pipeline; everything after is `.`.
         ("DimensionMismatch", "OOOF......."),
         // Flatten and DAE fail with a payload, then nothing is reached.

@@ -209,11 +209,22 @@ mod tests {
     /// residue sums **both** deficits, so a square system's residue is twice its
     /// rank deficiency.
     ///
-    /// The ladder's shape is unchanged by any of this. Rungs 2-5 stay ignored on
-    /// `docs/ideas.md` #83, and the measured reason is sharper than before: the
-    /// Direct lane discovers **0** candidates in both proof groups and the Holonomic
-    /// lane **0**, across three alternations. Rumoca does not refuse to
-    /// differentiate `x^2 + y^2 = L^2` — it finds nothing to try.
+    /// **v0.10.4 moved this, and the ladder's shape with it.** Through v0.10.0 the
+    /// Direct lane discovered **0** candidates in both proof groups and the Holonomic
+    /// lane **0**, across three alternations: Rumoca did not refuse to differentiate
+    /// `x^2 + y^2 = L^2`, it found nothing to try. On v0.10.4 the **Holonomic lane
+    /// finds the constraint and attempts it**, and the attempt is refused with
+    /// `would_create_vacuous_residual` — differentiating and substituting it leaves
+    /// `0 = 0`.
+    ///
+    /// **And the model now simulates anyway, which is the part this rung cannot see.**
+    /// v0.10.4 added `rumoca-phase-solve`'s state selection, which picks independent
+    /// coordinates on the constraint manifold rather than reducing in place. Rung 5 —
+    /// the only rung that reads the *trajectory* instead of this report — passes:
+    /// lambda peaks at 3mg and the rod holds across the whole swing. **Rungs 2-4 fail
+    /// for the same reason this rung had to be rewritten: they interrogate the
+    /// reducer's report, which is a sub-step, and call it the phase.** See
+    /// `docs/ideas.md` #83.
     #[test]
     #[cfg_attr(
         not(feature = "slow-tests"),
@@ -295,19 +306,50 @@ mod tests {
         // **Nothing to try, rather than something refused** — the sharpest statement
         // of what #83 is missing.
         let search = stage["search"].as_array().expect("a search log");
-        let discovered: u64 = search
-            .iter()
-            .filter(|r| r["kind"] == "candidates")
-            .filter_map(|r| r["discovered"].as_u64())
-            .sum();
+
+        // **v0.10.4 changed what this rung measures, and the new answer is sharper.**
+        // Through v0.10.0 no lane discovered anything: the reducer did not refuse to
+        // differentiate `x^2 + y^2 = L^2`, it found nothing to try, and this rung
+        // asserted a flat zero. On v0.10.4 the **Holonomic lane finds the constraint**,
+        // attempts it, and declines that route — differentiating and substituting it
+        // would leave `0 = 0`, which the attempt reports as `would_create_vacuous_residual`.
+        //
+        // So the deficiency is now detected *and named*, which is what this rung is
+        // called. The Direct lane still finds nothing, in both proof groups, across
+        // every alternation — correctly, since a nonlinear two-variable constraint is
+        // not a direct definition of anything.
+        let by_lane = |lane: &str| -> u64 {
+            search
+                .iter()
+                .filter(|r| r["kind"] == "candidates" && r["lane"] == lane)
+                .filter_map(|r| r["discovered"].as_u64())
+                .sum()
+        };
         assert_eq!(
-            discovered, 0,
-            "no lane discovers a candidate for the pendulum; if this is now non-zero, \
-             #83 may have moved and rungs 2-5 are waiting",
+            by_lane("direct"),
+            0,
+            "the Direct lane has nothing to offer a nonlinear constraint in two \
+             variables, in either proof group",
         );
-        assert!(
-            !search.iter().any(|r| r["kind"] == "attempt"),
-            "and so nothing is attempted",
+        assert_eq!(
+            by_lane("holonomic"),
+            1,
+            "the Holonomic lane must find the rod constraint; a zero here would mean \
+             v0.10.4's discovery regressed, and a larger number that it found more \
+             than the one constraint this model has",
+        );
+
+        let refusals: Vec<&str> = search
+            .iter()
+            .filter(|r| r["kind"] == "attempt")
+            .filter_map(|r| r["outcome"]["kind"].as_str())
+            .collect();
+        assert_eq!(
+            refusals,
+            ["would_create_vacuous_residual"],
+            "the one attempt must be refused for the reason that explains the whole \
+             model: substituting a differentiated `x^2 + y^2 = L^2` leaves nothing \
+             behind. Rumoca's own word for it, not ours",
         );
     }
 
@@ -322,7 +364,7 @@ mod tests {
     /// Today both are zero and empty: the funnel runs every step and moves
     /// nothing.
     #[test]
-    #[ignore = "general Pantelides is not implemented — docs/ideas.md #83 (rung 2 of 5: no constraint is differentiated; `n_differentiations` is 0 today)"]
+    #[ignore = "measures the reducer's report, which is not where v0.10.4 reduces — docs/ideas.md #83 (rung 2 of 5: the Holonomic lane attempts the constraint and refuses it; the differentiation that works happens in solve lowering's state selection, which this rung cannot see)"]
     fn rung_2_a_constraint_equation_is_differentiated() {
         let stage = reduction_stage();
         let reduction = &stage["reduction"];
@@ -355,7 +397,7 @@ mod tests {
     /// `funnel_completed` alone was never the interesting half. This rung asserts
     /// both, so a future implementation cannot satisfy it by giving up tidily.
     #[test]
-    #[ignore = "general Pantelides is not implemented — docs/ideas.md #83 (rung 3 of 5: the funnel completes today, but the system it leaves behind is still singular)"]
+    #[ignore = "measures the reducer's report, which is not where v0.10.4 reduces — docs/ideas.md #83 (rung 3 of 5: `prepare_for_solve` stops without admitting the system, so `stopped_at` is null; the fixed point that matters is reached downstream)"]
     fn rung_3_the_reduction_reaches_a_non_singular_fixed_point() {
         let stage = reduction_stage();
 
@@ -388,7 +430,7 @@ mod tests {
     /// dummy-derivative methods do. Pinning the identity would encode one tool's
     /// choice as truth, the trap the oracle's README names.
     #[test]
-    #[ignore = "general Pantelides is not implemented — docs/ideas.md #83 (rung 4 of 5: 4 states after reduction today, oracle says 2)"]
+    #[ignore = "measures the reducer's report, which is not where v0.10.4 reduces — docs/ideas.md #83 (rung 4 of 5: `n_states_after` is null because nothing was admitted; solve lowering integrates 2, which is what the oracle says and what rung 5 confirms)"]
     fn rung_4_the_pendulum_reduces_to_two_states() {
         let stage = reduction_stage();
         let after = stage["reduction"]["n_states_after"].as_u64();
@@ -427,8 +469,17 @@ mod tests {
     ///    relative to each series' own scale — see [`max_relative_error`] on why
     ///    pointwise relative error is the wrong metric for a signal that crosses
     ///    zero.
+    ///
+    /// **Un-ignored on v0.10.4, the first rung of this ladder ever to pass.** It was
+    /// ignored for *"the model is structurally singular, so it does not simulate at
+    /// all"*; it simulates now, and leaving the attribute in place would have been a
+    /// claim of absence about something that works — the wrong-negative nobody catches,
+    /// because acting on it means not running the test.
     #[test]
-    #[ignore = "general Pantelides is not implemented — docs/ideas.md #83 (rung 5 of 5: the model is structurally singular, so it does not simulate at all today)"]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
     fn rung_5_the_trajectory_matches_the_independent_oracle() {
         let oracle = oracle();
         let t_end = oracle["simulation"]["t_end"].as_f64().unwrap_or(10.0);
@@ -559,7 +610,14 @@ mod tests {
             );
         }
         // Every red rung cites the idea it is waiting on, so a reader who runs
-        // the suite and sees four ignores learns why from the output alone.
+        // the suite and sees the ignores learns why from the output alone.
+        //
+        // **Three, not four, since v0.10.4 un-ignored rung 5.** The pendulum
+        // simulates and its trajectory matches the oracle, so the ladder's top
+        // rung is green while three below it are red -- which looks wrong and is
+        // not: rungs 2-4 interrogate `prepare_for_solve`'s report, and that is no
+        // longer where this model is reduced. Lowering the number without saying
+        // so would hide the only interesting thing about the ladder today.
         //
         // **The needle is assembled**, because the first draft counted six: four
         // ignore reasons, a since-deleted constant, and *this line matching
@@ -568,7 +626,7 @@ mod tests {
         let cited = format!("docs/ideas.md {}83 (rung", '#');
         assert_eq!(
             src.matches(cited.as_str()).count(),
-            4,
+            3,
             "each red rung must cite the idea it waits on, in the reason a test run \
              prints — four rungs are red today"
         );

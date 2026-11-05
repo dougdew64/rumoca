@@ -159,6 +159,92 @@ fn reduction_rounds(stages: &StageBundle) -> u64 {
         .unwrap_or(0)
 }
 
+/// The Index Reduction status banner: label, colour and gloss.
+///
+/// # Out of the paint path so a test can reach it
+///
+/// The banner is a reporter, and the claim it was making about `CartesianPendulum` was
+/// false in the most expensive way — so the must-fire rule applies and a test has to be
+/// able to ask it directly. `report_sub_view`'s `ui` is not reachable headlessly; these
+/// three inputs are.
+///
+/// # A refusal from the reducer is not the compiler's verdict, since v0.10.4
+///
+/// `inspect_prepare_for_solve`'s search declines the canonical index-3 pendulum —
+/// residue 2, *"no candidate in either lane"* — while the compiler goes on to lower and
+/// simulate it on two states, because v0.10.4 added `rumoca-phase-solve`'s state
+/// selection, which picks independent coordinates on the constraint manifold. The
+/// banner said **Singular**, in red, about a model whose rod constraint holds to
+/// 4.6e-12 over two seconds.
+///
+/// `lowered_state_scalars` is **the count the real lowering produced**, read from the
+/// Solve Lowering payload one stage over. `rumoca_phase_solve::integrated_state_names`
+/// answers the same question by running state selection a second time, which would be a
+/// re-execution presented as the compile — the fiction this repository has removed twice.
+fn reduction_banner(
+    outcome: Option<&str>,
+    rounds: u64,
+    lowered_state_scalars: Option<u64>,
+) -> (&'static str, egui::Color32, String) {
+    match outcome {
+        Some("borrowed") => (
+            "Index-1",
+            crate::colors::ANIM_PATH_FOUND,
+            "\u{2014} already index-1; the system sorted as it stood and nothing was rebuilt"
+                .to_owned(),
+        ),
+        Some("sorted") if rounds == 0 => (
+            "Rebuilt",
+            crate::colors::ANIM_PATH_FOUND,
+            "\u{2014} sorted with no reduction round: derivative-alias normalization rebuilt \
+             the system"
+                .to_owned(),
+        ),
+        Some("sorted") => (
+            "Reduced",
+            crate::colors::ANIM_PATH_FOUND,
+            "\u{2014} the raw DAE was structurally singular; reduction ran until it sorted"
+                .to_owned(),
+        ),
+        // **The reducer declined and solve lowering carried the model anyway.** Named for
+        // what happened rather than for which component did it: a reader on this tab is
+        // asking whether the index came down, and it did.
+        Some("singular") if lowered_state_scalars.is_some() => {
+            let states = lowered_state_scalars.unwrap_or_default();
+            (
+                "Reduced by state selection",
+                crate::colors::ANIM_PATH_FOUND,
+                format!(
+                    "\u{2014} this reducer's search admitted nothing, but solve lowering \
+                     selected {states} independent coordinate(s) on the constraint manifold \
+                     and lowered the model. The rounds below are that search, not the \
+                     selection \u{2014} see the Solve Lowering tab for what runs."
+                ),
+            )
+        }
+        Some("singular") => (
+            "Singular",
+            crate::colors::ANIM_FAIL,
+            "\u{2014} still singular after reduction; no candidate in either lane could \
+             reduce the residue, and solve lowering did not lower the model"
+                .to_owned(),
+        ),
+        // A stop this banner does not know, or a stage with no payload. Named rather than
+        // folded into one of the above, because guessing here is what produced the claim
+        // this replaced.
+        other => (
+            "Unreported",
+            crate::colors::ANIM_FAIL,
+            other
+                .map_or(
+                    "\u{2014} this stage published no outcome to report",
+                    |_| "\u{2014} the stage reports an outcome this banner does not know",
+                )
+                .to_owned(),
+        ),
+    }
+}
+
 /// The sub-view a reader lands on when the report stage changes.
 ///
 /// Singular Structural and Index Reduction open on **Summary**, because that is where the
@@ -255,43 +341,35 @@ pub(crate) fn report_sub_view_row_ui(
         // The outcome word is Rumoca's own and distinguishes the three cases the note
         // cannot: `borrowed` (nothing to do), `sorted` (reduction ran, or normalization
         // did), and a refusal.
-        let (label, colour, gloss) = match reduction_outcome(stages) {
-            Some("borrowed") => (
-                "Index-1",
-                crate::colors::ANIM_PATH_FOUND,
-                "\u{2014} already index-1; the system sorted as it stood and nothing was \
-                 rebuilt",
-            ),
-            Some("sorted") if reduction_rounds(stages) == 0 => (
-                "Rebuilt",
-                crate::colors::ANIM_PATH_FOUND,
-                "\u{2014} sorted with no reduction round: derivative-alias normalization \
-                 rebuilt the system",
-            ),
-            Some("sorted") => (
-                "Reduced",
-                crate::colors::ANIM_PATH_FOUND,
-                "\u{2014} the raw DAE was structurally singular; reduction ran until it \
-                 sorted",
-            ),
-            Some("singular") => (
-                "Singular",
-                crate::colors::ANIM_FAIL,
-                "\u{2014} still singular after reduction; no candidate in either lane \
-                 could reduce the residue",
-            ),
-            // A stop this banner does not know, or a stage with no payload. Named rather
-            // than folded into one of the above, because guessing here is what produced
-            // the claim this replaced.
-            other => (
-                "Unreported",
-                crate::colors::ANIM_FAIL,
-                other.map_or(
-                    "\u{2014} this stage published no outcome to report",
-                    |_| "\u{2014} the stage reports an outcome this banner does not know",
-                ),
-            ),
-        };
+        // **A refusal here is one entry point's verdict, not the compiler's — since
+        // v0.10.4.** `inspect_prepare_for_solve`'s search still declines
+        // `CartesianPendulum`, the canonical index-3 DAE: *"no candidate in either lane
+        // could reduce the residue"*, residue 2. The compiler nevertheless lowers and
+        // simulates it, on two states, with the rod constraint holding to 4.6e-12 —
+        // because v0.10.4 added `rumoca-phase-solve`'s state selection, which picks
+        // independent coordinates on the constraint manifold and leaves
+        // `$formal_derivative.2.*` in the lowered layout.
+        //
+        // So this banner said **Singular**, in red, about a model that reduces
+        // correctly. That is the worst failure this project has: a specific, confident,
+        // false claim, on the tab for the phase it is about, with nothing on screen to
+        // contradict it.
+        //
+        // **Read from the compile's own solve-lowering result, never from a re-query.**
+        // `rumoca_phase_solve::integrated_state_names` would answer the same question by
+        // running state selection a *second* time — a re-execution presented as the
+        // compile, which this repository has removed twice. The count below is the one
+        // the real lowering produced, already published one stage over.
+        let lowered_state_scalars = stages
+            .get(StageKind::SolveLowering)
+            .value
+            .as_ref()
+            .and_then(|v| v["solve_layout"]["state_scalar_count"].as_u64());
+        let (label, colour, gloss) = reduction_banner(
+            reduction_outcome(stages),
+            reduction_rounds(stages),
+            lowered_state_scalars,
+        );
         ui.horizontal(|ui| {
             ui.label(egui::RichText::new(label).color(colour).strong());
             ui.weak(gloss);
@@ -1065,6 +1143,72 @@ mod tests {
             drawn_total > 12,
             "only {drawn_total} tabs were drawn across four cases, so the row is not \
              being exercised",
+        );
+    }
+
+    /// **A reducer that declined is not a compiler that failed.**
+    ///
+    /// `CartesianPendulum` on v0.10.4: `inspect_prepare_for_solve`'s search admits
+    /// nothing — residue 2, outcome `singular` — and solve lowering nevertheless lowers
+    /// the model on two independent coordinates. The banner said **Singular** in red,
+    /// which is a specific, confident, false claim on the tab for the very phase it is
+    /// about, with nothing on screen to contradict it.
+    ///
+    /// Both directions are asserted on purpose. Checking only the new case would pass
+    /// equally if the terminal case had been swept into it, and a banner that never says
+    /// `Singular` is as wrong as one that always does.
+    #[test]
+    fn a_declined_reduction_that_still_lowered_is_not_reported_as_failure() {
+        let (label, colour, gloss) = reduction_banner(Some("singular"), 1, Some(2));
+        assert_ne!(
+            label, "Singular",
+            "the reducer declined but solve lowering produced a 2-state problem, so the \
+             banner must not call the model singular"
+        );
+        assert_ne!(
+            colour,
+            crate::colors::ANIM_FAIL,
+            "a model that lowers is not painted in the failure colour"
+        );
+        assert!(
+            gloss.contains('2'),
+            "the banner must say how many coordinates were selected, since that count is \
+             the evidence the index came down: {gloss}"
+        );
+
+        // Non-vacuity: with no lowered problem the refusal IS terminal and must say so.
+        let (label, colour, _) = reduction_banner(Some("singular"), 1, None);
+        assert_eq!(
+            label, "Singular",
+            "a refusal that solve lowering did not rescue must still read as singular"
+        );
+        assert_eq!(
+            colour,
+            crate::colors::ANIM_FAIL,
+            "a genuinely singular model keeps the failure colour"
+        );
+    }
+
+    /// The three non-refusal outcomes stay distinguishable from each other.
+    ///
+    /// They were distinguishable in the paint path too; this pins them now that the
+    /// judgement moved, so the extraction cannot quietly collapse two of them.
+    #[test]
+    fn each_reduction_outcome_gets_its_own_banner() {
+        let labels = [
+            reduction_banner(Some("borrowed"), 0, None).0,
+            reduction_banner(Some("sorted"), 0, None).0,
+            reduction_banner(Some("sorted"), 6, None).0,
+            reduction_banner(Some("singular"), 1, None).0,
+            reduction_banner(Some("singular"), 1, Some(2)).0,
+            reduction_banner(None, 0, None).0,
+        ];
+        let unique: std::collections::BTreeSet<&str> = labels.iter().copied().collect();
+        assert_eq!(
+            unique.len(),
+            labels.len(),
+            "two outcomes share a banner label, so a reader cannot tell them apart: \
+             {labels:?}"
         );
     }
 }
