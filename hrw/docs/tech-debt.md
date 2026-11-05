@@ -3608,6 +3608,34 @@ this class found on 11-04 were each caught by a human or a photograph.
 | 11-05 | `Outcome::Flagged` painted `error_fg_color`, on **six** specimens that simulate | measuring the corpus while chasing the tab | the split exists to tell a flagged stage from a failed one, and `Outcome`'s own doc recorded that the UI was *"unchanged"* — true, harmless-sounding, and the whole defect |
 | 11-05 | `the_reconciled_note_still_offers_the_summary_view` **passed with the fix stubbed out** | the must-fire check, run before trusting the test | the note it falls back to contains the asserted word too. A substring assertion cannot tell a replacement from no replacement; it needed a non-vacuity guard |
 
+### 11-05, a file's age read as a process's liveness — the hook now says which
+
+**Claude asserted "HRW is open" twice while it was closed**, from the hook line *"focus.json written
+54s ago"*. Doug corrected it. The inference was never stated as one: a bridge file **outlives the
+process that wrote it**, so a write 54 seconds ago is equally consistent with an app that exited 53
+seconds ago, and the age ticking up across prompts (54s → 2m → 4m) is one write ageing rather than a
+session recording actions.
+
+**`tasklist` was available and had already been used earlier in the same session.** So this is not a
+missing instrument; it is a reporter whose output invited a wrong reading and a reader who did not
+check. **The repository's own name for it is *a true measurement of the wrong unit*** — `focus.json`'s
+mtime is a true fact about a write, reported as a fact about a running app.
+
+**`hrw-context.ps1` now reports the process**, both ways, and says in the negative case that *"every
+age below is a file's, not a live session's"* — the inference blocked where it was being made rather
+than in prose someone would have to already be reading. Verified in both states before being
+trusted: launched HRW and saw `HRW IS RUNNING`, killed it and saw the line flip.
+
+**The same script already carried the previous version of this mistake**, in a comment: its first
+version took the *age* from `focus.json` and the *content* from `session.json`, conflating two file
+ages with each other. **This one is that defect one step out — a file age conflated with a
+process** — which suggests the family is the hazard, not the instance. Anything this hook reports
+should say what it is a fact *about*.
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 11-05 | "HRW is open" asserted twice while it was closed | **Doug** | nothing in the hook reported the process, and every other line was an age |
+
 ### 11-05, `note_is_error` has six remaining callers and one of them feeds Claude
 
 > ### ⟶ DOUG WIDENED THE SCOPE THE SAME DAY — `App::failure_context` IS THE NEXT PIECE OF WORK
