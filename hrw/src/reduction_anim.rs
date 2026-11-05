@@ -19,20 +19,26 @@
 //! a cursor over them; nothing is recomputed, and there is no second implementation that
 //! could drift from the first.
 //!
-//! **It is not live yet, and that gap is an upstream API question rather than a missing
-//! vocabulary.** `ReductionObserver` and `ReductionEvent` are `pub(super)` in
-//! `rumoca-phase-structural`; `inspect_prepare_for_solve` is the crate-external surface
-//! and it returns an owned report *after the run completes*. HRW's live stepping paces a
-//! real algorithm against a breakpoint, so feeding a finished report into the frame
-//! channel on a timer would be **a recording wearing a live label** — the fiction this
-//! repository has removed twice. `docs/tech-debt.md` carries the shape of the candidate
-//! change, and `CLAUDE.md` is why it matters: `PendingLiveDebug::Reduction` is named
-//! there as one of the four live paths that must not be "fixed" by deletion.
+//! **And there is also a live path, which is a different thing from the replay above.**
+//! [`ReductionAnimation::start_live`] spawns a real run through
+//! [`crate::live_trace::spawn_reduction_live`] and paces it against a breakpoint, so its
+//! frames arrive as the algorithm produces them rather than being read off a finished
+//! report. Both are legitimate, and `CLAUDE.md` says which is not: feeding an
+//! already-completed report into the frame channel on a timer would be **a recording
+//! wearing a live label**, the fiction this repository has removed twice.
 //!
-//! So [`ReductionAnimation::start_live`] still returns `None`, and
-//! [`Animated::live_state`] delegates to the playback — which is what
-//! `playback::tests_animated_contract::only_the_views_with_a_live_path_report_a_live_session`
-//! requires of a view `app.rs` gates, and which answers `Idle` for a recorded cursor.
+//! **The seam that makes it real is ours and is additive**: `watch_prepare_for_solve`
+//! and the `ReductionWatcher` trait in `rumoca-phase-structural`, observation-only and
+//! committed separately from `hrw/` so an upstream cherry-pick stays clean. Before it
+//! existed, `start_live` returned `None` unconditionally and this pane's Debug button
+//! armed a breakpoint that reported nothing — the same symptom PreLowering had, but for
+//! the opposite reason: the seam here was merely *private*, not absent. `CLAUDE.md`
+//! carries that distinction, because from the HRW side the two look identical.
+//!
+//! So this view is **not** exempt from
+//! `playback::tests_animated_contract::only_the_views_with_a_live_path_report_a_live_session`:
+//! `DISABLED_VIEWS` is empty, and a `start_live` that went back to returning `None`
+//! would now fail that test by name rather than passing quietly.
 //!
 //! ## What replaced the funnel
 //!

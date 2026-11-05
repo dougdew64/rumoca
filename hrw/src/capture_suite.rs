@@ -53,20 +53,73 @@ use serde_json::Value;
 
 use crate::bridge;
 
-/// The sub-views that are drawn with `Painter` calls, and so are invisible to
-/// `egui_kittest`.
+/// One sub-view the suite photographs: its name, the module that renders it, and
+/// whether that module draws with `Painter`.
+///
+/// **`painted` is a claim about the source and is checked against it** by
+/// [`tests::the_painted_flag_matches_the_module`], because the list it replaced was
+/// wrong about a third of its entries and nothing could tell.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PhotographedView {
+    pub view: &'static str,
+    pub module: &'static str,
+    pub painted: bool,
+}
+
+/// Every sub-view the suite photographs.
+///
+/// **Four of the six are painter-drawn and are the reason this suite exists** — nothing
+/// else in the project can see them, because `egui_kittest` reads the accessibility
+/// tree and a `Painter` puts nothing in it.
+///
+/// **`TearingAnim` and `Animate` are label-only and are walked for a different reason:**
+/// the suite requests every sub-view on every stage so that *availability* is asked
+/// rather than re-derived (see the module header), and a tab that is offered over an
+/// empty pane is a defect a photograph catches and a query does not. Both of this
+/// file's defects so far were exactly that.
+///
+/// **Their being label-only is worth stating, because the previous wording said the
+/// opposite** — this roster was documented as "the sub-views that are drawn with
+/// `Painter` calls, and so are invisible to `egui_kittest`", which for these two is a
+/// claim that they *cannot* be tested headlessly. That is the wrong-negative class
+/// `CLAUDE.md` names: acting on it means not looking, so nobody finds out. It cost
+/// `matrix_panes.rs` eight days under the same misreading.
 ///
 /// **The roster is checked against the enum** by
 /// [`tests::every_structural_view_is_either_photographed_or_excused`], so a new
 /// sub-view forces a decision here rather than being silently never photographed —
 /// the "forgetting is loud" rule `StructuralView::ALL` already carries.
-pub const CANVAS_VIEWS: &[&str] = &[
-    "SpyPlot",
-    "Incidence",
-    "MatchingAnim",
-    "TarjanAnim",
-    "TearingAnim",
-    "Animate",
+pub const PHOTOGRAPHED_VIEWS: &[PhotographedView] = &[
+    PhotographedView {
+        view: "SpyPlot",
+        module: "src/spyplot.rs",
+        painted: true,
+    },
+    PhotographedView {
+        view: "Incidence",
+        module: "src/incidence_view.rs",
+        painted: true,
+    },
+    PhotographedView {
+        view: "MatchingAnim",
+        module: "src/matching_anim.rs",
+        painted: true,
+    },
+    PhotographedView {
+        view: "TarjanAnim",
+        module: "src/tarjan_anim.rs",
+        painted: true,
+    },
+    PhotographedView {
+        view: "TearingAnim",
+        module: "src/tearing_anim.rs",
+        painted: false,
+    },
+    PhotographedView {
+        view: "Animate",
+        module: "src/reduction_anim.rs",
+        painted: false,
+    },
 ];
 
 /// The sub-views the accessibility tree can already reach, which therefore need no
@@ -111,10 +164,13 @@ impl Shot {
 /// Deliberately **not** filtered by what the app offers; see the module header.
 #[must_use]
 pub fn plan() -> Vec<Shot> {
-    let mut shots = Vec::with_capacity(CANVAS_STAGES.len() * CANVAS_VIEWS.len());
+    let mut shots = Vec::with_capacity(CANVAS_STAGES.len() * PHOTOGRAPHED_VIEWS.len());
     for stage in CANVAS_STAGES {
-        for view in CANVAS_VIEWS {
-            shots.push(Shot { stage, view });
+        for v in PHOTOGRAPHED_VIEWS {
+            shots.push(Shot {
+                stage,
+                view: v.view,
+            });
         }
     }
     shots
@@ -326,18 +382,18 @@ mod tests {
     /// treats as the error nobody catches, because acting on it means not looking.
     #[test]
     fn every_structural_view_is_either_photographed_or_excused() {
-        let listed: Vec<&str> = CANVAS_VIEWS
+        let listed: Vec<&str> = PHOTOGRAPHED_VIEWS
             .iter()
-            .chain(QUERYABLE_VIEWS.iter())
-            .copied()
+            .map(|v| v.view)
+            .chain(QUERYABLE_VIEWS.iter().copied())
             .collect();
         for view in crate::stage_view::StructuralView::ALL {
             let name = crate::stage_view::structural_view_name(*view);
             assert!(
                 listed.contains(&name),
-                "`{name}` is in StructuralView::ALL and in neither CANVAS_VIEWS nor \
-                 QUERYABLE_VIEWS, so the capture suite would never photograph it and \
-                 would report a clean run anyway"
+                "`{name}` is in StructuralView::ALL and in neither PHOTOGRAPHED_VIEWS \
+                 nor QUERYABLE_VIEWS, so the capture suite would never photograph it \
+                 and would report a clean run anyway"
             );
         }
         assert_eq!(
@@ -347,11 +403,77 @@ mod tests {
         );
     }
 
+    /// **`painted` must match the module it describes.**
+    ///
+    /// The roster used to assert in prose that every entry was "drawn with `Painter`
+    /// calls, and so invisible to `egui_kittest`". Two of the six — `TearingAnim` and
+    /// `Animate` — are built entirely from `ui.label`, and the parity test above could
+    /// not notice, because it checks only that each view is named in the *union* of the
+    /// two lists. A view in the wrong list passed exactly as a view in the right one
+    /// did: a true measurement of the wrong unit.
+    ///
+    /// **Why it is worth a test rather than a corrected sentence.** The false half was
+    /// a claim of *impossibility* — that these panes cannot be checked headlessly — and
+    /// acting on it means not writing the headless test, so nothing ever contradicts
+    /// it. `matrix_panes.rs` spent eight days filed as untestable with six tests
+    /// available, on the same misreading.
+    ///
+    /// Comment lines are stripped before the search so that prose *about* painting —
+    /// this very sentence's neighbours in those modules — cannot satisfy it.
+    #[test]
+    fn the_painted_flag_matches_the_module() {
+        let hrw = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        for v in PHOTOGRAPHED_VIEWS {
+            let path = hrw.join(v.module);
+            let src = std::fs::read_to_string(&path).unwrap_or_else(|e| {
+                panic!(
+                    "`{}` names `{}`, which must be readable: {e}",
+                    v.view, v.module
+                )
+            });
+            let paints = src
+                .lines()
+                .filter(|l| !l.trim_start().starts_with("//"))
+                .any(|l| l.contains("painter"));
+            assert_eq!(
+                paints,
+                v.painted,
+                "`{}` says painted = {} but `{}` {} `painter` outside its comments.\n\n\
+                 If the pane gained a painter, flip the flag: it is now invisible to \
+                 `egui_kittest` and the photograph is the only check of it. If it lost \
+                 one, flip the flag the other way and WRITE THE HEADLESS TEST \u{2014} a \
+                 stale `true` here is a standing claim that the pane cannot be checked \
+                 without a camera.",
+                v.view,
+                v.painted,
+                v.module,
+                if paints {
+                    "mentions"
+                } else {
+                    "does not mention"
+                },
+            );
+        }
+
+        // Non-vacuity, both halves: with every entry on one side of the flag, the
+        // comparison above would hold for a reason that says nothing about the source.
+        assert!(
+            PHOTOGRAPHED_VIEWS.iter().any(|v| v.painted),
+            "no photographed view is painter-drawn, so this suite has lost the reason \
+             it exists"
+        );
+        assert!(
+            PHOTOGRAPHED_VIEWS.iter().any(|v| !v.painted),
+            "every photographed view is painter-drawn, so the label-only branch this \
+             guards is no longer exercised"
+        );
+    }
+
     /// The plan is the full product, unfiltered — availability is the app's to say.
     #[test]
     fn the_plan_requests_every_canvas_view_on_every_canvas_stage() {
         let plan = plan();
-        assert_eq!(plan.len(), CANVAS_STAGES.len() * CANVAS_VIEWS.len());
+        assert_eq!(plan.len(), CANVAS_STAGES.len() * PHOTOGRAPHED_VIEWS.len());
         assert!(
             plan.iter()
                 .any(|s| s.stage == "IndexReduction" && s.view == "MatchingAnim"),

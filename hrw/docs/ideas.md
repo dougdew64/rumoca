@@ -6795,26 +6795,35 @@ fighting it — see `docs/pointing-plan.md` for why that sense was chosen.
 
 `examples/capture_suite.rs` photographs the canvas sub-views of **one** specimen per run. The
 headless test it complements, `app::tests::every_offered_sub_view_has_something_to_draw`, walks
-**four**: `Drivetrain`, `CapacitorLoop`, `CartesianPendulum`, `SingleInertia`. **Two of the four
-have now been run** — Drivetrain and SingleInertia, on 2026-11-04 — and no code change was needed
-for the second: the runner already takes the specimen as an argument.
+**four**: `Drivetrain`, `CapacitorLoop`, `CartesianPendulum`, `SingleInertia`. **Three of the four
+have now been run** — Drivetrain, SingleInertia and CartesianPendulum, all on 2026-11-04 — and no
+code change was needed for any of them after the first: the runner already takes the specimen as
+an argument.
 
-**The entry is therefore about the remaining two, and about whether a standing multi-specimen walk
-is worth building at all.** Both runs found defects (three and two, all in the 11-04 ledger), so
-*"does this instrument find anything"* is answered twice over. What is not answered is whether the
-rate holds: the first two were chosen as the extremes — 97x97 singular-then-reduced, and 2x2
-clean — and the remaining two sit between them.
+**Only `CapacitorLoop` remains, and it is the weakest of the four.** All three runs found defects
+(three, two and three, all in the 11-04 ledger), so *"does this instrument find anything"* is
+answered three times over — but **the third run's defects were all in the suite and its documents
+rather than in a pane**, which is the first sign the specimen axis is yielding less than it was.
+Drivetrain and SingleInertia were chosen as the extremes (97x97 singular-then-reduced, and 2x2
+clean); CartesianPendulum added the refused-reduction kind. `CapacitorLoop` adds only a size
+between two already seen.
+
+**So the open question is no longer "which specimen next" but "which axis next".** The third run
+suggests two that are not the specimen: **frame depth** (the suite photographs frame 1 only, and
+`Outcome::Landed` is decided by image dimensions, so a blank canvas lands like a full one — see
+the 11-04 ledger) and **pane width** (every shot so far is one window size, and the defect the
+first run found was a camera that never refit).
 
 ### What the first run measured, so a later one can be budgeted
 
-| | Drivetrain | SingleInertia |
-|---|---|---|
-| shots requested | 12 (2 canvas stages x 6 canvas views) | 12 |
-| landed | 5 | 7 |
-| refused by the app | 7 | 5 |
-| defects found | 3 | 2 |
-| wall clock | ~2 min, dominated by the first shot's cold MSL compile | ~2 min |
-| PNG size, `region: pane` | 2048x1307, ~300 KB each | same |
+| | Drivetrain | SingleInertia | CartesianPendulum |
+|---|---|---|---|
+| shots requested | 12 (2 canvas stages x 6 canvas views) | 12 | 12 |
+| landed | 5 | 7 | 3 |
+| refused by the app | 7 | 5 | 9 |
+| defects found | 3 | 2 | 3 (none in a pane) |
+| wall clock | ~2 min, dominated by the first shot's cold MSL compile | ~2 min | ~2 min |
+| PNG size, `region: pane` | 2048x1307, ~300 KB each | same | same |
 
 **The two specimens overlap less than their shot counts suggest.** Drivetrain refuses `SpyPlot`,
 `TarjanAnim` and `TearingAnim` on Structural because it is singular; SingleInertia offers the
@@ -6849,17 +6858,27 @@ this entry used to pose about `CapacitorLoop`: its 2x2 matrix renders **full, un
 labels (`0 = der(phi) - w`), so the labelled-matrix path is seen and correct — and it is what
 confirmed the graph labels were dropping content the matrix next door shows whole.
 
-The two that remain are weaker cases, and neither is a view nothing has seen:
+**`CartesianPendulum` was run on 2026-11-04 and is no longer part of this entry.** It was the
+better of the two remaining, for the reason this entry gave: a *kind* of pane nothing had
+photographed — four consecutive stages whose honest answer is an absence — rather than a size
+between two already seen. **Three landed, nine refused, and every refusal was correct**, which the
+photograph of the Structural tab row settles in a way no query could: four tabs, `Summary ·
+Incidence · Matching ▶ · Tree`, so the app was answering rather than hiding. The run also
+confirmed the previous day's own fix from the other side, since
+`CartesianPendulum / IndexReduction / Incidence` is the case that drove it.
+
+**Its three defects were all in the suite and its documents**, not in a pane: a roster that
+claimed all six photographed views were painter-drawn when two are label-only, a module doc
+asserting three times that live reduction stepping does not exist a day after it started working,
+and the runner's own status column colliding with the view name.
+
+One remains, and it is a size rather than a kind:
 
 - **`CapacitorLoop`** — 14x14, between SingleInertia's 2x2 and Drivetrain's 97x97. The labelled
   path is now covered at the small end; what this would add is the **middle**, where labels are
   drawn but crowded, and `LABEL_ZOOM_THRESHOLD`'s 16 px cutoff is actually doing work rather than
-  being trivially above or below it.
-- **`CartesianPendulum`** — the reduction *refuses* on this one (`tech-debt.md` records
-  `CartesianPendulum / IndexReduction / Incidence` as the case the availability check caught), so
-  it is the specimen for the **honest-absence** panes: what a refused reduction looks like, and
-  whether "unavailable" reads as a statement or as a blank. This is the better of the two,
-  because it is a *kind* of pane nothing has photographed rather than a size between two that have.
+  being trivially above or below it. **Weigh it against the two non-specimen axes above**, which
+  the third run argues are now the richer ground.
 
 ### Two things the runner would need
 

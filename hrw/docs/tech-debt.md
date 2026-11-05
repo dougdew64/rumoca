@@ -1528,6 +1528,48 @@ the same specimen's incidence matrix renders its row labels **in full** — `0 =
 tabs away from the graph that was truncating them. The two panes disagreed on screen about the same
 equation, and no test compared them.
 
+### 11-04, the third capture run — `CartesianPendulum`, and the defects moved into the suite itself
+
+**Three landed, nine refused, nothing failed — and every one of the nine refusals is correct.**
+This specimen is the corpus's index-3 case: structurally singular, *"still singular after
+reduction"*, no initialization IR, no simulation. Four consecutive stages whose honest answer is
+an absence, which is the kind of pane nothing had photographed before. The photograph of the
+Structural tab row — `Summary · Incidence · Matching ▶ · Tree`, four tabs and no more — is what
+confirms the refusals are the app answering rather than the app hiding.
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 11-04 | `CANVAS_VIEWS` was documented as *"the sub-views drawn with `Painter` calls, and so invisible to `egui_kittest`"* — **false for a third of its entries** | the third capture run | `tearing_anim.rs` and `reduction_anim.rs` contain **zero** painter calls; both are built entirely from `ui.label`. The parity test could not notice: it checks only that each view is named in the *union* of the two rosters, so a view in the wrong list passes exactly as one in the right list does |
+| 11-04 | `reduction_anim.rs`'s module doc asserted **three times** that live stepping does not exist | reading the file the photograph sent me into | *"It is not live yet"*, *"`start_live` still returns `None`"*, and that the gap *"is an upstream API question"*. All three were true until `watch_prepare_for_solve` landed the day before; `start_live` now spawns `spawn_reduction_live`, `DISABLED_VIEWS` is empty, and Doug stepped the live session by hand on 11-04 |
+| 11-04 | the runner's own status column read `Incidencerefused` | the third capture run's output | the label width was a hard-coded `46`, which `Drivetrain`'s labels fit and `CartesianPendulum / IndexReduction / Incidence` (49) does not. Now measured from the plan before the first shot |
+
+**The roster defect is the one worth keeping, and it is the wrong-negative class again.** The
+false half was a claim of *impossibility* — that these two panes cannot be checked headlessly —
+and `CLAUDE.md` already names why that is the error nobody catches: acting on it means not
+looking, so nothing ever contradicts it. `matrix_panes.rs` spent eight days filed as untestable
+with six tests available, on precisely this misreading. A corrected sentence would have rotted the
+same way, so the classification is **data** now (`PhotographedView::painted`) and
+`the_painted_flag_matches_the_module` reads each module and fails by name in either direction.
+Verified failing before being trusted: flipping `Animate` back to `painted: true` fails that test
+while `every_structural_view_is_either_photographed_or_excused` passes in the same run, which is
+the gap stated as a measurement.
+
+**Both label-only views stay in the suite**, because the suite's second job is to ask availability
+rather than re-derive it, and a tab offered over an empty pane is a defect a photograph catches
+and a query does not. Both of the previous run's defects were exactly that.
+
+**A limit of the suite this run exposed and nothing yet closes:** it photographs **frame 1 only**,
+and `Outcome::Landed` is decided by image dimensions. So an animation that draws nothing lands
+identically to one that draws a matrix — the Reduction animation's empty canvas was indistinguish-
+able from a full one until I stepped it to frame 6 by hand through the screenshot channel. <!-- unbuilt: capture_suite::is_blank -->
+
+**And a legibility question left open rather than guessed at**, the same shape as
+`tarjan_anim::NODE_LABEL_MAX_CHARS`: the matching animation truncates `0 = m*der(vx) - -(l…`
+while the incidence matrix one tab over renders the same equation in full, and ~540 px of blank
+pane sits immediately left of the truncated label. Both are *marked* as truncated, so neither
+reads as a false equation — this is budget, not accuracy, and nobody has measured what the budget
+should be.
+
 ## Owed sweeps — small `src/` fixes that must not buy a gate of their own
 
 **Doug, 2026-08-31**, asked whether a five-second imprecision should be swept up next time
