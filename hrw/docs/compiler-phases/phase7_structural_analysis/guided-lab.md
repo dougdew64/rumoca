@@ -156,86 +156,140 @@ The outer function iterates over equations in order:
 
 ```
 for eq in 0..n_eq {                        // try each equation in turn
-    emit_matching_frame(TryEquation(eq));   // → you see this in the debugger
-    augment_traced(eq, ...);               // DFS for an augmenting path
-    if !found { emit_matching_frame(EquationFailed(eq)); }
+    emit(TryEquation(eq));                  // → you see this in the debugger
+    augment(eq, ...);                      // sets up the stack, then
+                                           // run_augment_search drives it
+    if !found { emit(EquationFailed(eq)); }
 }
 ```
 
-Each `emit_matching_frame` call pushes to your `LiveTrace`, so the debugger
+Each `emit` call pushes to your `LiveTrace`, so the debugger
 pauses there. The `TryEquation(eq)` frame tells you: "the algorithm is now
 trying to match equation `eq`."
 
-**Walking through `augment_traced` — the recursive augmenting-path search:**
+**Walking through the augmenting-path search — `run_augment_search` and
+`next_augment_step`:**
 
-This is the heart of Kuhn's algorithm. The function tries to match equation
-`eq` by exploring each variable it references:
+> **Rewritten for Rumoca 0.10.4.** This described a recursive `augment_traced`, which
+> **no longer exists**. The search is iterative, and the reason is worth knowing: the
+> recursive form **overflowed the thread stack** on array-shaped models, where a
+> displacement chain can run hundreds of thousands long. `matching.rs` says so at the
+> top.
 
-```rust
-fn augment_traced(eq, match_eq, match_var, eq_vars, visited, frames, live) {
-    let vars = eq_vars[eq];          // variables this equation references
-    for var in vars {                // try each variable
-        if !visited[var] {           // skip already-explored variables
-            visited[var] = true;
-```
-
-At the breakpoint, inspect `eq` (which equation is searching) and `var` (which
-variable it's trying). The `visited` array shows which variables have already
-been explored in this round — the algorithm never revisits a variable.
-
-**The three outcomes at each variable:**
+This is the heart of Kuhn's algorithm. `next_augment_step` tries to match equation `eq`
+by scanning the variables it references, resuming from a `cursor` so the scan survives
+descending into another equation and coming back:
 
 ```rust
-match match_var[var] {
-    None => {
-        // Variable is FREE — augmenting path found!
-        emit(FoundFree { eq, var });    // ← pause here: green flash
-        true
-    }
-    Some(holder) => {
-        // Variable is TAKEN by `holder` — try to displace
-        emit(TryDisplace { eq, var, holder });  // ← pause here
-        let ok = augment_traced(holder, ...);   // RECURSE into holder
-```
-
-This is the key moment to understand. When `match_var[var]` is `Some(holder)`,
-the algorithm doesn't give up — it asks: "can `holder` find a *different*
-variable?" That question is answered by *recursing* — calling `augment_traced`
-on `holder`. At the breakpoint, inspect `holder` to see which equation is being
-displaced, and watch the recursion unfold as a nested sequence of `Explore` →
-`FoundFree`/`TryDisplace` frames.
-
-```rust
-        if ok {
-            emit(DisplaceOk { eq, var });   // ← holder found alternative
-        } else {
-            emit(DisplaceFail { eq, var }); // ← holder stuck, backtrack
+fn next_augment_step(eq, cursor, matching, context, scratch, observer) -> AugmentStep {
+    let order = RowOrder::new(context, eq);
+    while let Some(variable) = order.get(*cursor) {
+        *cursor += 1;
+        if scratch.visited_epoch[variable] == scratch.epoch {
+            continue;                       // already explored this round
         }
-        ok
+        scratch.visited_epoch[variable] = scratch.epoch;
+        emit(observer, MatchingStep::Explore { eq, var: variable }, ...);
+
+        let Some(owner) = matching.match_var[variable] else {
+            return AugmentStep::Claim(variable);          // FREE
+        };
+        return AugmentStep::Descend { variable, owner };  // TAKEN
     }
-};
-if can_augment {
-    match_eq[eq] = Some(var);    // record the assignment
-    match_var[var] = Some(eq);
-    emit(Assign { eq, var });    // ← pause here: green circle
-    return true;
+    AugmentStep::Exhausted
 }
 ```
 
-When displacement succeeds, the algorithm *unwinds the recursion*, and each
-returning call records an `Assign` — so you see a chain of assignments as the
-augmenting path is "flipped." Watch `match_eq` at each `Assign` frame: you'll
-see the partial matching change as each equation gets its new variable.
+At the breakpoint, inspect `eq` (which equation is searching) and `variable` (which one
+it is trying).
+
+**`visited` is an epoch counter, not a boolean array.** `scratch.visited_epoch[variable]
+== scratch.epoch` means "explored in *this* round". Bumping `epoch` retires every mark
+at once, so a fresh round costs one increment instead of clearing a vector — worth
+knowing at a breakpoint, because the array is full of stale numbers from previous rounds
+and they do **not** mean the variable was visited.
+
+**The three outcomes, and the driver that acts on them:**
+
+```rust
+fn run_augment_search(stack, matching, context, scratch, observer) -> bool {
+    while let Some(top) = stack.last().copied() {
+        let mut cursor = top.cursor;
+        let step = next_augment_step(top.eq, &mut cursor, ...);
+        stack.last_mut()?.cursor = cursor;          // save progress
+        match step {
+            AugmentStep::Claim(variable) => {       // augmenting path found
+                frame.chosen = Some(variable);
+                emit(observer, MatchingStep::FoundFree { eq: top.eq, var: variable }, ...);
+                commit_augment(stack, matching, observer);
+                return true;
+            }
+            AugmentStep::Descend { variable, owner } => {
+                frame.chosen = Some(variable);
+                // push an AugmentFrame for `owner` -- the "recursion"
+            }
+            // AugmentStep::Exhausted => pop, and backtrack
+        }
+    }
+}
+```
+
+This is the key moment to understand. When `match_var[variable]` is `Some(owner)`, the
+algorithm doesn't give up — it asks: *"can `owner` find a different variable?"* On
+0.9.20 that question was answered by recursing, and a reader walked **up the debugger
+stack** to see how deep a displacement chain had gone.
+
+**Now the chain is data, not stack.** It pushes an `AugmentFrame` onto an explicit
+`Vec<AugmentFrame>`, so at the breakpoint you inspect **`stack`** and see the entire
+displacement chain in one local, rather than counting call frames. That is strictly
+better for this lab's purpose: the thing you are trying to see is now a value you can
+print.
+
+**And the path is committed only once it is known to exist.** `Claim` calls
+`commit_augment`, which assigns the whole alternating path innermost-first. Nothing is
+reassigned while the search is still groping — so a chain that dead-ends leaves the
+matching untouched, and `Exhausted` simply pops the frame and backtracks.
+
+```rust
+**Flipping the path — `commit_augment`:**
+
+```rust
+fn commit_augment(stack, matching, observer) {
+    for (depth, frame) in stack.iter().rev().enumerate() {   // innermost first
+        let Some(variable) = frame.chosen else { continue };
+        if depth > 0 {
+            emit(observer, MatchingStep::DisplaceOk { eq: frame.eq, var: variable }, ...);
+        }
+        matching.match_eq[frame.eq] = Some(variable);        // record the assignment
+        matching.match_var[variable] = Some(frame.eq);
+        emit(observer, MatchingStep::Assign { eq: frame.eq, var: variable }, ...);
+    }
+}
+```
+
+**The frame order you see is unchanged from the recursive version, deliberately.** The
+loop runs `stack.iter().rev()` — innermost first — which the crate's own doc says
+*"reproduc[es] the assignment order of the recursive form's unwind exactly."* Every
+frame below the innermost one got its variable by displacing the frame beneath it, which
+has just been re-matched, so each of those is a `DisplaceOk`; the innermost took a free
+variable and already reported `FoundFree`.
+
+So you still see a chain of assignments as the augmenting path is "flipped." Watch
+`matching.match_eq` at each `Assign` frame: the partial matching changes as each
+equation gets its new variable. What changed is only *where the chain lives* — in
+`stack`, which you can print, instead of in call frames you had to count.
 
 **Locals to inspect in the debugger:**
 
 | Local | Type | What it tells you |
 |-------|------|-------------------|
 | `eq` | `usize` | Which equation is currently searching |
-| `var` | `usize` | Which variable it's trying right now |
-| `match_eq` | `&mut [Option<usize>]` | Current matching: `match_eq[i] = Some(j)` means eq i → var j |
-| `match_var` | `&mut [Option<usize>]` | Reverse mapping: `match_var[j] = Some(i)` means var j ← eq i |
-| `visited` | `&mut [bool]` | Variables already explored this round (prevents infinite loops) |
+| `variable` | `usize` | Which variable it's trying right now |
+| **`stack`** (`scratch.stack` further out) | `&mut Vec<AugmentFrame>` | **The displacement chain, in one local.** Each frame is `{ eq, cursor, chosen: Option<usize> }`. This is what the recursion used to hide |
+| `matching.match_eq` | `&mut [Option<usize>]` | Current matching: `match_eq[i] = Some(j)` means eq i → var j |
+| `matching.match_var` | `&mut [Option<usize>]` | Reverse mapping: `match_var[j] = Some(i)` means var j ← eq i |
+| `scratch.visited_epoch` | `Vec<usize>` | Explored **this round** iff the entry equals `scratch.epoch`. Not a boolean — stale entries from earlier rounds are everywhere and mean nothing |
+| `scratch.epoch` | `usize` | The current round. Bumping it retires every mark at once |
 | `frame.step` | `MatchingStep` | The algorithmic decision just made |
 
 **Key insight:** The matching algorithm is **Kuhn's algorithm** — for each
@@ -317,96 +371,185 @@ This tier connects each line of Tarjan's DFS to its textbook description.
 5. **Continue** (F5) to advance one frame at a time. HRW updates between
    each pause.
 
-**Walking through `tarjan_scc_with_trace` (tarjan.rs):**
+**Walking through `tarjan_scc_with_observer` (tarjan.rs):**
 
 The outer function drives the DFS:
 
 ```rust
-fn tarjan_scc_with_trace(n, adj, live) {
-    let mut state = TracedTarjanState::new(n, live);
+pub(crate) fn tarjan_scc_with_observer(n, adj, equation_of_node, observer) {
+    let mut state = TarjanState::new(n);
+    state.emit(observer, TarjanStep::Start { n_nodes: n, equation_of_node });
     for v in 0..n {                     // visit every node
         if state.index[v].is_none() {   // skip already-visited
-            state.strongconnect(v, adj);
+            state.strongconnect(v, adj, observer);
+        }
+    }
+    state.sccs
+}
+```
+
+The DFS starts from each unvisited node. Most nodes are reached from the first
+`strongconnect` call, so this loop usually only fires once.
+
+`TarjanStep::Start` is the one place the **node numbering** is stated. When compact
+equation families were condensed out of the node set, `equation_of_node` is `Some` and
+node `i` means equation `equation_of_node[i]`; `None` means nodes *are* equation
+indices. Read it before trusting any node number in a later frame.
+
+> **This section was rewritten for Rumoca 0.10.4, and the change is not cosmetic.**
+> It described `tarjan_scc_with_trace`, a type called `TracedTarjanState`, and a
+> **recursive** `strongconnect` that called itself. None of those exist. If you set a
+> breakpoint expecting a deepening call stack you will find a loop instead, and the
+> lab would have been lying to the debugger.
+
+**Walking through `strongconnect` — an explicit-stack DFS:**
+
+This is Tarjan's algorithm, and the algorithm is unchanged. What changed is that the
+recursion is now **spelled out as a stack of frames** rather than left to the call
+stack:
+
+```rust
+fn strongconnect(&mut self, root, adj, observer) {
+    self.enter(root, observer);
+    self.frames.push(TarjanFrame { node: root, cursor: 0 });
+    while let Some(frame) = self.frames.last().copied() {
+        match self.next_child(frame, adj, observer) {
+            Some(child) => self.descend(child, observer),  // the "call"
+            None        => self.finish_node(frame.node, observer),  // the "return"
         }
     }
 }
 ```
 
-The DFS starts from each unvisited node. Most nodes are reached by recursion
-from the first `strongconnect` call, so this loop usually only fires once.
+**A `TarjanFrame` is one recursive call made visible**: the node being processed, plus
+a `cursor` saying how far along its adjacency list the scan has got. A recursive
+implementation keeps that cursor implicitly, in the loop variable of each live call —
+which is exactly why you cannot see it in a debugger. Here `self.frames` *is* the call
+stack, and you can print it.
 
-**Walking through `strongconnect` — the recursive DFS:**
+Four helpers carry what the recursion used to:
 
-This is Tarjan's algorithm. Each call processes one node `v`:
+| helper | the recursive form's | emits |
+|---|---|---|
+| `enter` | the top of the call | `Visit` |
+| `next_child` | the `for` loop over `adj[v]` | `ExploreEdge`, then `TreeEdge` or `BackEdge` |
+| `descend` | the recursive call | `Visit` (via `enter`) |
+| `finish_node` | everything after the loop | `SccFound`, `Return` |
+
+`enter` is the top of a call — reached once per node:
 
 ```rust
-fn strongconnect(&mut self, v: usize, adj: &[Vec<usize>]) {
+fn enter(&mut self, node: usize, observer: &mut impl StructuralObserver) {
     // Assign the next DFS index to this node
-    self.index[v] = Some(self.index_counter);
-    self.lowlink[v] = self.index_counter;
+    self.index[node] = Some(self.index_counter);
+    self.lowlink[node] = self.index_counter;
     self.index_counter += 1;
 
     // Push onto Tarjan's stack
-    self.stack.push(v);
-    self.on_stack[v] = true;
+    self.stack.push(node);
+    self.on_stack[node] = true;
 
-    self.record(TarjanStep::Visit(v));    // ← first pause: node v discovered
+    // Emitted AFTER the state update, so the reported stack already
+    // contains the node the step announces.
+    self.emit(observer, TarjanStep::Visit(node));   // ← first pause
+}
 ```
 
-At the breakpoint, inspect `v` (which node), `self.index_counter` (the DFS
-discovery order), and `self.stack` (the current DFS path). The `Visit` frame
-corresponds to the textbook "assign index and lowlink, push onto stack."
+At the breakpoint, inspect `node`, `self.index_counter` (the DFS discovery order),
+`self.stack` (the SCC stack), and `self.frames` (the DFS path — the thing a recursive
+version would hide in the call stack). The `Visit` frame corresponds to the textbook
+"assign index and lowlink, push onto stack."
 
 **Exploring edges — tree edges vs back edges:**
 
+`next_child` resumes the adjacency scan at the frame's cursor, which is how the loop
+survives "returning" from a child:
+
 ```rust
-    for &w in &adj[v] {
-        self.record(TarjanStep::ExploreEdge { from: v, to: w });
+fn next_child(&mut self, frame, adj, observer) -> Option<usize> {
+    let neighbors = adj.get(frame.node)?;
+    let mut cursor = frame.cursor;              // resume where we left off
+    while let Some(&w) = neighbors.get(cursor) {
+        cursor += 1;
+        let from = frame.node;
+        self.emit(observer, TarjanStep::ExploreEdge { from, to: w });
 
         if self.index[w].is_none() {
             // w is UNVISITED — this is a TREE EDGE
-            self.record(TarjanStep::TreeEdge { from: v, to: w });
-            self.strongconnect(w, adj);   // RECURSE deeper into the DFS
+            self.emit(observer, TarjanStep::TreeEdge { from, to: w });
+            self.set_cursor(cursor);            // save progress, then
+            return Some(w);                     // descend (the "call")
+        }
 
-            // Back from recursion: inherit w's lowlink if it reaches higher
-            self.lowlink[v] = self.lowlink[v].min(self.lowlink[w]);
-            self.record(TarjanStep::Return { from: v, to: w });
-
-        } else if self.on_stack[w] {
+        if self.on_stack[w] {
             // w is ON THE STACK — this is a BACK EDGE (cycle!)
-            self.lowlink[v] = self.lowlink[v].min(self.index[w].unwrap());
-            self.record(TarjanStep::BackEdge { from: v, to: w });
+            let child_index = self.index[w].expect("on-stack node must have index");
+            self.lowlink[frame.node] = self.lowlink[frame.node].min(child_index);
+            self.emit(observer, TarjanStep::BackEdge { from, to: w });
         }
     }
+    self.set_cursor(cursor);
+    None                                        // no child left: finish this node
+}
 ```
 
-This is the core of Tarjan's insight. At a `TreeEdge` pause, you're about to
-recurse — the DFS goes deeper. At a `BackEdge` pause, you've found a cycle:
-node `w` is already on the stack, meaning there's a path from `w` to `v` (the
-DFS path) *and* an edge from `v` back to `w`. These two paths form a cycle —
-every node on the path between `w` and `v` must be in the same SCC.
+This is the core of Tarjan's insight. At a `TreeEdge` pause, you're about to descend —
+the DFS goes deeper and a new frame is pushed. At a `BackEdge` pause, you've found a
+cycle: node `w` is already on the stack, meaning there's a path from `w` to `v` (the
+DFS path) *and* an edge from `v` back to `w`. These two paths form a cycle — every
+node on the path between `w` and `v` must be in the same SCC.
 
-Inspect `self.lowlink[v]` at each pause. The `lowlink` is the lowest DFS index
-reachable from `v` — when a back edge is found, `lowlink` drops to
-`self.index[w]`, propagating the "I can reach something higher" information
-up the recursion.
+Inspect `self.lowlink[frame.node]` at each pause. The `lowlink` is the lowest DFS index
+reachable from the node — when a back edge is found, `lowlink` drops to
+`self.index[w]`, propagating the "I can reach something higher" information back down
+the frame stack.
 
-**SCC detection — the lowlink == index test:**
+**Note which index the back edge folds in.** It is `index[w]`, not `lowlink[w]` — the
+discovery number of the node the edge points at, not how far *that* node can reach.
+That is what the definition of lowlink asks for, and it is what this code does
+(`tarjan.rs`, `next_child`). You will meet the `lowlink[w]` variant in the wild;
+whether it changes the components found is a question this lab has **not** checked, so
+do not repeat either claim about it on my authority.
+
+**SCC detection and the "return" — `finish_node`:**
 
 ```rust
-    // After exploring all edges from v:
-    if self.lowlink[v] == self.index[v].unwrap() {
-        // v is an SCC ROOT — pop everything above v off the stack
-        let mut scc = Vec::new();
-        loop {
-            let w = self.stack.pop().unwrap();
-            self.on_stack[w] = false;
-            scc.push(w);
-            if w == v { break; }
-        }
-        self.record(TarjanStep::SccFound { root: v, members: scc.clone() });
-        self.sccs.push(scc);
+fn finish_node(&mut self, node: usize, observer: &mut impl StructuralObserver) {
+    self.frames.pop();                          // the "return"
+
+    if self.lowlink[node] == self.index[node].expect("visited node must have index") {
+        self.pop_scc(node, observer);           // emits SccFound
     }
+
+    if let Some(parent) = self.frames.last().copied() {
+        // The recursive form's post-call fold, which is what `Return` names.
+        // A root pop has no parent and so emits no `Return`.
+        self.lowlink[parent.node] = self.lowlink[parent.node].min(self.lowlink[node]);
+        self.emit(observer, TarjanStep::Return { from: parent.node, to: node });
+    }
+}
+```
+
+**`Return` is the step that explains why this rewrite is worth reading.** In a recursive
+Tarjan the line `lowlink[v] = min(lowlink[v], lowlink[w])` sits *after* the recursive
+call, and it is easy to read past — it looks like bookkeeping. Here it has nowhere to
+hide: it is the only thing `finish_node` does with its parent, and the frame it emits is
+named for it. **A node's lowlink is finished only when its last child has returned**,
+which is why the SCC-root test lives in the same function and not in the loop above.
+
+`pop_scc` is the textbook pop:
+
+```rust
+    // v is an SCC ROOT — pop everything above v off the stack
+    let mut scc = Vec::new();
+    loop {
+        let w = self.stack.pop().unwrap();
+        self.on_stack[w] = false;
+        scc.push(w);
+        if w == root { break; }
+    }
+    self.emit(observer, TarjanStep::SccFound { root, members: &scc });
+    self.sccs.push(scc);
 ```
 
 When `lowlink[v] == index[v]`, it means no node in `v`'s subtree can reach
@@ -532,7 +675,7 @@ was structural, not a bug in the algorithm.
 ### Tier 3 — Live-stepped execution: trace the failure path in the code
 
 The matching failure path is the same code as the success path in Lesson 2 —
-`augment_traced` — but now you watch it *exhaust every possibility* and return
+`run_augment_search` — but now you watch it *exhaust every possibility* and return
 `false`.
 
 **Setup:**
@@ -545,54 +688,51 @@ The matching failure path is the same code as the success path in Lesson 2 —
 
 **What's different from Lesson 2:**
 
-The code path is identical — `augment_traced` recurses through variables, tries
-displacements, backtracks. But for the unmatched equations, *every path fails*:
+The code path is identical — `next_augment_step` scans variables, the driver descends
+into displacements and backtracks. But for the unmatched equations, *every path fails*:
 
 ```rust
-for var in vars {               // try each variable this equation references
-    if !visited[var] {
-        visited[var] = true;
+while let Some(top) = stack.last().copied() {
+    match next_augment_step(top.eq, &mut cursor, ...) {
         // Explore { eq, var } — debugger pauses, you see the yellow border
-        match match_var[var] {
-            None => { ... true }        // never happens — all vars are taken
-            Some(holder) => {
-                // TryDisplace { eq, var, holder }
-                let ok = augment_traced(holder, ...);  // recurse into holder
-                // holder also can't move → DisplaceFail { eq, var }
-                ok  // false
-            }
-        };
-        // can_augment is false — try the next variable
+        AugmentStep::Claim(v)  => { ... }   // never happens — all vars are taken
+        AugmentStep::Descend { variable, owner } => {
+            // TryDisplace { eq, var, holder } — push a frame for `owner`
+        }
+        AugmentStep::Exhausted => {
+            // this equation has no variable left: pop the frame,
+            // emit DisplaceFail for the parent, and resume ITS cursor
+        }
     }
 }
-// Exhausted all variables: return false
+// Stack emptied: return false
 ```
 
-After the `for` loop exits without returning `true`, control returns to the
-outer function:
+When the stack empties without a `Claim`, control returns to the outer function:
 
 ```rust
 if !found {
-    emit_matching_frame(EquationFailed(eq));  // ← the failure frame
+    emit(EquationFailed(eq));  // ← the failure frame
 }
 ```
 
-At the `EquationFailed` breakpoint, inspect `match_eq`: all entries are
-`Some(...)` except the current equation. The `visited` array is fully `true`
-for every variable this equation could reach — the algorithm explored
-everything. This is the *proof* (by exhaustive search) that no augmenting path
-exists.
+At the `EquationFailed` breakpoint, inspect `matching.match_eq`: all entries are
+`Some(...)` except the current equation. Every variable this equation could reach has
+`visited_epoch[var] == epoch` — the algorithm explored everything. This is the *proof*
+(by exhaustive search) that no augmenting path exists.
 
 **What to watch for in the debugger:**
 
-- **Deep recursion**: the displacement chain goes many levels deep as the
-  algorithm tries to reshuffle existing assignments. Watch the call stack grow
-  as `augment_traced` calls itself.
-- **`visited` fills up**: each recursive call marks more variables as visited.
-  When the array is full, no more paths exist.
-- **The `false` propagates up**: each recursive `augment_traced` returns `false`,
-  causing the caller's `DisplaceFail` and trying the next variable. Eventually
-  the top-level call exhausts its `for` loop and returns `false`.
+- **A deep `stack`, not a deep call stack**: the displacement chain goes many levels
+  down as the algorithm tries to reshuffle existing assignments. **Watch `stack.len()`
+  grow** — the chain is a `Vec` you can print, and on an array-shaped model it can reach
+  hundreds of thousands, which is precisely why the recursive version was replaced.
+- **`visited_epoch` fills up**: each descent stamps more variables with the current
+  `epoch`. When every reachable variable carries it, no more paths exist.
+- **Failure propagates by popping**: an `Exhausted` frame pops, the parent records
+  `DisplaceFail`, and the parent's `cursor` resumes at the next variable. Eventually the
+  stack empties and the search returns `false` — the same sequence of frames the
+  recursive form produced, without the call depth.
 
 **Locals to inspect (same as Lesson 2, but now watch the failure):**
 
