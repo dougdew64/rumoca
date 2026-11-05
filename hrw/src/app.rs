@@ -4521,11 +4521,37 @@ impl App {
         // collect intent and act after the closure.
         let mut load_libraries = false;
         let mut rescan_specimens = false;
+        // **Bounded at both ends, because an unbounded one walked off the screen.**
+        //
+        // Doug, 2026-11-05, smoke-testing the rebase: *"When I open the settings dialog,
+        // it slowly expands to the right, beyond the right edge of the screen."*
+        //
+        // Two `TextEdit`s below ask for `desired_width(f32::INFINITY)`, which means *all
+        // the width available*. In a side panel that is a bounded request and the normal
+        // idiom — `model_list.rs` does it safely. In a window that sizes itself to its
+        // content it is a **feedback loop**: the field claims the available width, the
+        // window grows to fit the field, so more width is available next frame. It
+        // creeps by about one frame margin per repaint, which is why it *slowly* expands
+        // rather than snapping to a wrong size, and nothing stops it at the viewport
+        // edge. Measured: 836 px wide seven frames after opening, 1627 px thirty frames
+        // later, in a 1600 px viewport.
+        //
+        // `max_width` stops the window being driven wider; `set_max_width` inside stops
+        // the content asking. **Both, deliberately** — the first alone would merely move
+        // the destination, letting it creep to the cap and stop there, which is the same
+        // defect with a shorter runway.
+        //
+        // `About` never did this because its content is labels, and `Using HRW` because
+        // of the same; this is the only window in HRW carrying an infinite-width request.
+        // `an_opened_window_settles_instead_of_growing_every_frame` pins it.
+        const SETTINGS_WIDTH: f32 = 560.0;
         egui::Window::new("Settings")
             .open(&mut self.show_settings)
             .collapsible(false)
-            .default_width(560.0)
+            .default_width(SETTINGS_WIDTH)
+            .max_width(SETTINGS_WIDTH)
             .show(ui.ctx(), |ui| {
+                ui.set_max_width(SETTINGS_WIDTH);
                 ui.strong("Display");
                 let mut zoom = ui.ctx().zoom_factor();
                 if ui
