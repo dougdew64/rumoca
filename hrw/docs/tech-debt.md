@@ -3643,3 +3643,77 @@ before the 0.10.0 rebase — which is how a check could go blind for two release
 | date | defect | caught by | note |
 |---|---|---|---|
 | 11-04 | F4 reports every `StructuredScalar` block as "names no equations", and cannot see a partition defect in any model containing one | the large fidelity suite, step 3b, on its first post-rebase run | blind since v0.10.0. The large suite is trigger 1 of the fidelity policy and is the only thing that runs F4 at scale; the pre-commit suite's 16 curated specimens do not reach the shape |
+
+### 11-04 night, the Initialization pane has no tooltips and the docs for them are already on disk
+
+**Step 4 of the rebase procedure warns about exactly this and calls it silent.**
+`StageKind::ir_crate()` decides which crate's harvested `///` docs a stage's tooltips come from,
+and the step says: *"`IR_CRATES` failing to resolve is loud. `StageKind::ir_crate()` pointing a
+stage at a crate that no longer holds its type is silent — the stage simply loses its tooltips."*
+
+**It is not pointing at the wrong crate. It is pointing at nothing:**
+
+```rust
+StageKind::Initialization | StageKind::Simulation => return None,
+```
+
+**That was correct on 0.9.20 and stopped being correct during the 0.10.0 rebase**, when the
+Initialization pane was re-modelled onto `initial_pins`. The stage publishes two keys,
+`determinacy` and `pins`, and `rumoca-phase-structural` — already a harvested crate — documents
+`pins` as *"MLS 3.6 §8.6 initial equations rewritten onto the state each one determines. The
+proof that decides which state…"*. The text is in `src/field_help.json` right now. Nothing can
+reach it.
+
+**Simulation is the same shape but needs more than a mapping.** Its pane is fed by
+`rumoca_solver::SimVariableMeta`, and `rumoca-solver` is not in `field_help::IR_CRATES` at all,
+so there is no harvested doc to point at. That matters more since 11-04, because
+`SimVariableMeta::state_coordinate` — *"the source scalar a generated reduced-selection state
+scalar equals"* — is now rendered in that pane and is exactly the field a reader will not guess.
+
+**NOT FIXED TONIGHT.** Adding a mapping changes what a pane displays, and the honest fix may not
+be a mapping at all: `Structural` and `IndexReduction` already draw from
+`rumoca-phase-structural`, so pointing `Initialization` there too gives three stages one
+namespace with no disambiguation — which is the collision the per-stage split was built to end
+(66 field names are documented in two or more crates, and a flat map once served an AST import
+clause's doc as Solve lowering's `names` tooltip). Within a single crate the table has no key
+finer than the field name.
+
+### ⟶ AND STEP 4 WAS REVERTED, because regenerating the table restores a lie Doug reported
+
+**`gen_field_help` ran clean and its output was thrown away.** The regenerated table is a
+faithful reading of v0.10.4 — and committing it would reintroduce a defect with a name.
+
+**v0.10.4 deleted two `///` doc comments that HRW's per-stage keying depends on**, and the two
+guards that exist for exactly this caught both:
+
+| field | crate that lost its doc | what the pane would say instead |
+|---|---|---|
+| `names` | `rumoca-ir-solve` | `rumoca-ir-ast`'s *"All names imported from the package"* — an **import clause** |
+| `causality` | `rumoca-ir-dae` | `rumoca-ir-ast`'s type-alias causality, not the FMI meaning |
+
+**The `names` one is Doug's own 2026-09-03 report**, which
+`solve_lowerings_names_is_documented_as_slots_not_imports` is named after: five times in one
+afternoon he could not find `Y` in Solve lowering, and part of why was that hovering `names`
+produced a doc about imports. The fix needed **both** halves — the per-stage keying *and* the
+`rumoca-ir-solve` doc comment giving the stage something of its own to prefer. **Upstream removed
+the second half.** Per-stage keying alone cannot help: with only one crate documenting the name,
+every stage gets that one.
+
+**So `src/field_help.json` is deliberately left at its v0.10.0 content and step 4 is UNFINISHED.**
+A stale-but-true tooltip beats a fresh-but-false one, and the guards are right — weakening them to
+let the regeneration through would delete the only thing that noticed.
+
+**The pair for Doug.** Either carry the two doc comments as part of this fork's instrumentation —
+they are `///` text on upstream fields, additive and semantics-preserving, and plausibly a welcome
+PR in their own right — or give `FieldHelp` a local override table for names upstream has stopped
+documenting, and say in the tooltip that the text is HRW's. **The first keeps one source of truth;
+the second admits a second one.** Not a 3 a.m. choice.
+
+**The pair for Doug:** map `Initialization` to `rumoca-phase-structural` and accept
+within-crate collisions, or key the table by something finer than `(field, crate)` before
+mapping anything new to a crate another stage already uses.
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 11-04 | regenerating `field_help.json` for v0.10.4 would restore an import-clause doc as Solve lowering's `names` tooltip | `field_help`'s two guards, on the gate | upstream deleted `rumoca-ir-solve`'s `names` doc and `rumoca-ir-dae`'s `causality` doc. The `names` case is Doug's own 2026-09-03 report, and the test is named after it |
+| 11-04 | the Initialization pane shows no field tooltips although its `pins` doc is harvested and committed | step 4 of the rebase procedure, which names this failure as silent | introduced by the 0.10.0 re-model of the pane onto `initial_pins`; survived into 0.10.4 because nothing checks that a stage with IR has a crate to draw docs from |
