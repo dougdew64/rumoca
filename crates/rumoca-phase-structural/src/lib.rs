@@ -361,11 +361,16 @@ fn block_report<'dae>(view: dae::DaeView<'dae>, block: &BltBlock<'dae>) -> Block
                 .as_ref()
                 .map(|tearing| tearing_report(view, equations, unknowns, tearing)),
         },
-        BltBlock::StructuredScalar(family) => BlockReport::StructuredScalar {
-            origin: equation_label(view, &EquationRef(family.first_equation_index())),
-            point_count: family.point_count(),
-            equations_per_point: family.equations_per_point(),
-        },
+        BltBlock::StructuredScalar(family) => {
+            let rows = family.row_range();
+            BlockReport::StructuredScalar {
+                origin: equation_label(view, &EquationRef(family.first_equation_index())),
+                point_count: family.point_count(),
+                equations_per_point: family.equations_per_point(),
+                first_row: rows.start,
+                row_count: rows.len(),
+            }
+        }
     }
 }
 

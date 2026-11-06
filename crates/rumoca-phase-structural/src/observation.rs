@@ -958,6 +958,7 @@ mod algorithms {
     #[test]
     fn a_structured_family_seed_is_reported_before_kuhn_runs() {
         let family = StructuredMatchingFamily {
+            source_owner_index: 0,
             first_equation_index: 0,
             equations_per_point: 1,
             point_count: 2,

@@ -928,7 +928,7 @@ mod growth_tests {
                 })
                 .collect();
             let rows = IncidenceRows::from_sets(sets);
-            let (reference, _) = maximum_matching_with_structured(4, 4, &rows, &[], &[]);
+            let (reference, _) = maximum_matching_with_structured(4, 4, &rows, &[], &[], &mut ());
             let expected = reference.iter().flatten().count();
             let mut taken = [false; 4];
             let greedy = (0..4)
