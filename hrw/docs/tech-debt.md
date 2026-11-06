@@ -4229,6 +4229,109 @@ precisely to catch a partial survey and could not, because a complete *old* surv
    returns the right names; nothing has shown the field rendering into a `.meta.json`, because that
    needs a survey that runs.
 
+### 11-06, the survey runs again — and 0.10.4 loses 409 MSL models that 0.9.20 compiled
+
+**The first real 0.10.4 capability map exists**: 2,791 models, `partial_survey: false`, every shard
+verified complete before the merge. Two repairs were needed, and the second was only reachable
+after the first.
+
+#### Repair 1 — the enumeration asked for a guarantee MSL cannot give
+
+`session.model_names()` reaches `ResolveBuildMode::Standard`, which requires a
+`ResolutionPlanningTree::Complete` and returns `Err` otherwise. **MSL as a whole never resolves
+completely and never will** — `Modelica.Fluid`'s `Medium.*` references are unresolved until a medium
+is redeclared, which is what `replaceable` means. The survey was demanding library-wide resolution
+in order to obtain a list of names that does not depend on it.
+
+Per-model compiles were never affected, which is why HRW, the gate's `msl_resolve` test and
+`fidelity_msl` all kept working: `build_resolution_plan_for_strict_compile` *"ignores parse-error
+diagnostics from unrelated documents"* and resolves only the target's closure.
+
+**The pre-rebase `hrw` branch has the identical line**, so Rumoca's behaviour changed in 0.10.x; the
+survey did not. **No `crates/` change was needed**: `rumoca_compile::parsing::collect_model_names`
+is public, is the function the resolved path itself calls, and its sibling's doc states the property
+that matters — the names *"address the same targets as compilation **without resolving the AST**"*.
+
+#### Repair 2 — D1 was killing whole shards, and only the first repair revealed it
+
+With enumeration fixed the survey reached two models it had never got to, and both abort the process
+at `temporal.rs:15` (**`upstream-issues.md` D1**). Unguarded that took their slices with them:
+**shard 1 wrote 0 rows of 465 and shard 3 wrote 175.** `catch_unwind` around `survey_one` now records
+`outcome = panicked` with the message and rebuilds the session, exactly as `fidelity_msl` does.
+
+**D1 therefore blocks the survey as well as the fidelity report** — it is not only a reporting
+defect.
+
+#### The corpus grew by 165, and it is accounted for exactly
+
+2,626 → 2,791, with **nothing removed**: `ModelicaReference` (147) and `ObsoleteModelica4` (18),
+neither of which the old three-root list included. That closes the open question this page recorded
+when `msl_roots` collapsed to `["msl"]` — those libraries are *in* the corpus now, and the count
+moved by exactly their contribution. `msl_libraries` is also **verified end to end** at last, naming
+all five libraries with their versions.
+
+#### The result: 409 regressions and 59 improvements against 0.9.20
+
+On the 2,626 models both artifacts share:
+
+| transition | count |
+|---|---|
+| `success` → `failed:ToDae` | **353** |
+| `success` → `failed:Flatten` | 32 |
+| `success` → `failed:Instantiate` | 10 |
+| `success` → `failed:Typecheck` | 8 |
+| `success` → `no_result` | 4 |
+| `success` → `panicked` | 2 |
+| `failed:ToDae` → `success` | 48 |
+| `failed:Typecheck` → `success` | 11 |
+
+**409 models that compiled on 0.9.20 no longer do; 59 that failed now succeed.**
+
+#### Why this is not an artifact of repair 1 — checked, because it would be the obvious suspect
+
+Removing the `model_names()` call also removed a *warm-up*: the old run built and cached a complete
+standard resolution before compiling anything. So the regressions had to be tested against the
+alternative that they are caused by its absence.
+
+**The failure messages settle it.** Not one names an unresolved reference:
+
+| count | message |
+|---|---|
+| 78 | `unbalanced model` |
+| 40 | `unsupported runtime operator \`sample\`` |
+| 34 | `unsupported model algorithm in canonical DAE` |
+| 26 | `unsupported Flat semantic owner \`function conditional\`` |
+| 22 | `unsupported equation form` |
+| 18 | `unsupported Flat semantic owner \`clocked equation ownership proof\`` |
+| 16 | `canonical DAE construction rejected an invalid operation` |
+| 14 | `unresolved clock schedule for \`clock\`` |
+
+These are **feature-coverage and model-balance diagnostics from DAE construction**. The shape is a
+re-implemented canonical DAE with narrower support for synchronous/clocked constructs, model
+algorithms and function conditionals, plus a balance check 0.9.20 did not enforce — and an
+`unbalanced model` rejection may well be a *correctness improvement* rather than a loss.
+
+**What is not yet known** is which of the 409 are deliberate narrowings and which are defects. That
+is the next question, and it is now answerable, which it was not this morning.
+
+#### One test was pinned to the corpus size, and eight comments still are
+
+`the_corpus_is_visible_unfiltered_and_opens_on_click` asserted the literal `2626` and so **failed on
+a correct change**. It now derives the count from `docs/reports/msl-survey.csv` with the same parser
+the header uses, plus a floor so a missing artifact cannot make it pass vacuously. Its sensitivity
+to the number needs no separate proof: the pinned version failing against a 2,791-row corpus *is*
+the falsification.
+
+`model_list.rs`'s two module docs called it "the 2,626-row MSL corpus" — a present-tense definition
+a reader would take as current — and now name no number at all.
+
+**Eight mentions of 2,626 remain in `app.rs`, `doc_citations.rs` and `fidelity.rs`**, and are left
+alone on purpose: each is an argument about *scale* at the time it was written ("2,626 models in one
+widget", "2,626 rows of noise from a check that is simply wrong"), not a claim about the corpus's
+present size. Re-pinning them to 2,791 would make them wrong again at the next consolidation, and
+rewriting ten reasoning passages is a larger and more error-prone edit than the staleness costs.
+Worth a sweep only if one of them is ever read as a definition.
+
 ### 11-06, a key spelled `(tree root)` cannot navigate back — and F7's must-fire test now depends on it
 
 Writing F7's must-fire coverage required an input the path grammar gets **wrong**, because F7 is a
