@@ -382,6 +382,69 @@ and a ceiling above what the machine has free can never fire.
 
 ---
 
+## The oracle run — System Modeler's verdict, and Claude runs it himself
+
+```bash
+ls hrw/specimens/*.mo > /tmp/specimens.txt
+"/c/Program Files/Wolfram Research/WolframScript/wolframscript" \
+  -script hrw/scripts/oracle.wls \
+  -models /tmp/specimens.txt \
+  -out "$TEMP/oracle-specimens.csv" \
+  -kinds hrw/docs/reports/specimen-fidelity-report.csv \
+  -timeout 90
+```
+
+**28 specimens in about 110 seconds**, ~3–7 s each. Nothing about this run is long; it is here
+because it belongs beside the other two in the chain, not because it costs anything.
+
+### `-script`, not `-file` or `-args`
+
+`wolframscript -file … -models x` fails with **`Parsing of options failed`**: `wolframscript`
+claims the flags for itself, and `-args` is documented for `-api`/`-function` rather than scripts.
+`-script <file> <args…>` is the form that populates `$ScriptCommandLine`. Three invocations were
+lost to this; it is the first thing to check if the script seems to ignore its arguments.
+
+### Do NOT drive it through the Wolfram MCP server
+
+The recipe in `ideas.md` #43 is written for MCP tool calls, and that is fine for **one**
+adjudication. For a sweep it is the wrong instrument, measured on 2026-11-06:
+
+- The MCP tool aborts a call after **30 minutes of silence**, and a sweep prints nothing until it
+  returns. Three calls were lost that way — **90 minutes**.
+- An aborted call **discards everything the kernel computed.** Four results survived only because
+  System Modeler leaves `.mat` files in `%LOCALAPPDATA%\Temp\WolframSystemModeler-15.0\WL`, which is
+  evidence by accident, not a procedure.
+- The server stayed wedged afterwards while the kernel sat **idle** — so even a one-line probe
+  timed out. `wolframscript` has no such coupling and is the same kernel.
+
+**The diagnosis that wasted most of that time was wrong.** The batch failing was read as "~2 minutes
+per model, so a 28-model sweep cannot fit in one call". The `.mat` timestamps say the first three
+models took **3, 3 and 4 seconds**. The sweep had always fitted; the server was the problem. Measure
+the per-model cost from an artifact before concluding anything about batch size.
+
+### What it emits, and why the columns are not negotiable
+
+`name,kind,outcome,message,t_end,secs`, with `name` the join key — `docs/reports.md` is the
+authority and says retrofitting that key later would cost the join. `kind` is **joined** from
+whichever report `-kinds` names, never recomputed: `survey::classify` is the one definition of that
+column and a second one in Wolfram would be the duplicate-definition shape
+`no_second_copy_of_the_msl_root_list` exists to forbid. With no `-kinds` the column is left empty
+rather than guessed.
+
+`outcome` is one of `simulated`, `refused`, `import-failed`, `timeout`, `no-class`, `wrong-model`.
+
+### Two traps the script handles for you
+
+**`Import[…, "MO"]` returns the LAST class in a file; HRW compiles the FIRST.** A multi-class file
+therefore adjudicates the wrong model and reports success while doing it. The script names the model
+explicitly and then checks `sim["ModelName"]`, emitting `wrong-model` if they disagree. The first
+class is found textually, which approximates HRW's AST order — which is exactly why the ModelName
+check is not optional.
+
+**One row is written and flushed per model**, so an interrupted run loses at most the model in
+flight, and re-running skips what is already in the report. This is the same resume discipline
+`measure-fidelity.ps1` has, and it exists for the same reason.
+
 ## Staging — do not jump straight to the full run
 
 Of the twelve violations F6–F9 produced on their first real run, **nine were the check's

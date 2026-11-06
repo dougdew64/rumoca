@@ -1,0 +1,29 @@
+name,kind,outcome,message,t_end,secs
+BenchActuator,,simulated,,1,7.1
+BouncingBall,Component,simulated,,1,3.6
+CapacitorLoop,Component,simulated,,1,3.7
+CartesianPendulum,,simulated,,1,3.7
+DimensionMismatch,,refused,SystemModelSimulate returned $Failed,1,1.9
+Drivetrain,Component,simulated,,1,3.8
+GearWithBrake,,simulated,,1,3.8
+HarmonicOscillator,,simulated,,1,3.4
+IncompatibleConnect,,refused,SystemModelSimulate returned $Failed,1,2.
+LoopWithInertia,,simulated,,1,3.7
+MissingComponentClass,,refused,SystemModelSimulate returned $Failed,1,1.9
+MixedLoop,Component,simulated,,1,3.7
+MotorWithBrake,Component,simulated,,1,3.7
+NonlinearLoop,Component,simulated,,1,3.7
+OverDeterminedShaft,,refused,SystemModelSimulate returned $Failed,1,2.2
+OverInitRc,,refused,SystemModelSimulate returned $Failed,1,2.1
+ProportionalLoop,Component,simulated,,1,4.1
+RcCircuit,Component,simulated,,1,3.7
+RotationalInertia,,simulated,,1,3.6
+ScopedConnect,,simulated,,1,3.7
+SingleInertia,Component,simulated,,1,3.5
+StabilizedPendulum,,simulated,,1,3.6
+StiffDecay,,simulated,,1,3.7
+TwiceDefined,,refused,SystemModelSimulate returned $Failed,1,1.8
+TwoLoops,Component,simulated,,1,3.6
+UnbalancedShaft,,refused,SystemModelSimulate returned $Failed,1,1.9
+UnclosedModel,,import-failed,System Modeler could not import the file,1,0.
+UndefinedRef,,refused,SystemModelSimulate returned $Failed,1,1.9
