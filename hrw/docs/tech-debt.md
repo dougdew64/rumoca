@@ -3960,14 +3960,23 @@ singular, and one having an empty system, is the kind of coincidence worth start
 
 #### The recommended order — three separable fixes, widening blast radius
 
-1. **`measure-fidelity.ps1` records `crashed:exit-<n>`.** PowerShell only, no Rust, no rebuild; makes
-   this entire class visible from now on and belongs in `-RetryVerdicts`' documented taxonomy beside
-   `aborted:free-ram`.
-2. **`fidelity_msl` calls `diagnostics::init()` and guards the compile**, so a panicking model leaves
-   a report row carrying the panic message instead of killing the run. This is also what finally
-   *prints* the message that step 3 needs.
-3. **Root-cause the panic.** The only one of the three that is an accuracy bug in Rumoca/HRW rather
-   than in the instrument around it.
+1. ~~**`measure-fidelity.ps1` records `crashed:exit-<n>`.**~~ **DONE 2026-11-06.** The verdict is
+   decided after `WaitForExit` and is deliberately absent from the default `-RetryVerdicts`: a panic
+   is deterministic, exactly like `aborted:proc-ceiling`.
+2. ~~**`fidelity_msl` guards the compile.**~~ **DONE 2026-11-06**, and `diagnostics::init()` turned
+   out to be unnecessary — `catch_unwind` recovers the panic **payload**, which the fd redirect never
+   touches, so the message needs no crash file. The model now gets a row with outcome `panicked`
+   carrying the message, the session is rebuilt rather than reused, and the non-`Compiled` path that
+   used to `continue` silently writes a `no-compile` row. Both previously-fatal models now exit 0.
+3. ~~**Root-cause the panic.**~~ **DONE 2026-11-06 — and it is one upstream defect, not two.**
+   Both models abort at `rumoca-phase-dae/src/construction/expression/temporal.rs:15`, where
+   `lower_derivative` calls `.expect("analysis proves derivative role")` on a `Result` that returns
+   `Err(UnsupportedFlatSemantics { feature: "derivative target", … })` for a `der()` target that is
+   not a continuous state. The condition is diagnosed correctly and then asserted away, in a function
+   whose own signature already returns `DaeConstructionError`. **The same file disagrees with
+   itself**: `lower_pre` at line 102 maps and propagates the identical class of failure with `?`.
+   Written up as `upstream-issues.md` **D1**; the fix is a change to Rumoca *semantics* rather than
+   observability, so it is **Doug's call**, not a unilateral instrumentation edit.
 
 ### Last night's sweep ran FIVE checks, not eight, and silently dropped the one that matters most
 
@@ -4049,10 +4058,16 @@ measured": a true statement about the wrong thing. The roster was four greps awa
 
 #### What is owed
 
-1. **`--only-checks` must reject a name that is not on the roster**, and the roster must be one
-   exhaustively-matched list in the `StageKind::ALL` shape. This is first because it is the only item
-   that prevents the *next* sweep from being mis-scoped, and because it would have turned last
-   night's silent narrowing into a startup error.
+1. ~~**`--only-checks` must reject a name that is not on the roster.**~~ **DONE 2026-11-06.**
+   `fidelity::CHECKS` is the roster, `unknown_checks` is the guard, and the runner exits 2 naming
+   both the offending names and the roster. `the_check_roster_matches_the_code` scans this file's
+   gates and the runner's for `want(…)` and requires their union to equal `CHECKS` — so a check
+   added without a roster entry fails, and **a roster entry nothing gates fails too**, which is the
+   half that would have caught F1 and F8. F9 is now gated in the runner with the same spelling
+   instead of running unconditionally. The runner also prints **`NOT running: …`**, because printing
+   the request back can never reveal a check left out of it, and the omission of F10 is the failure
+   this flag actually suffered. Verified by falsification: adding `F1` to the roster fails both
+   tests, and the sweep's own string now exits 2.
 2. **Re-run the sweep with the real roster.** Last night's measured neither F4 nor F10, so the corpus
    is unmeasured under both — and F10 is the check with the best demonstrated ability to fail.
 3. **Must-fire for F2, F6, F7 and F9** — the floor, and it closes the four falsifiable-in-principle

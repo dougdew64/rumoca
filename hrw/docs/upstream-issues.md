@@ -2286,6 +2286,107 @@ does about which is wanted.
 for *enhancement*. This entry is egui, so it takes `E4` by the older sense. Renumbering would
 break any citation of `E3`, so this is recorded rather than fixed — **Doug's call.**
 
+## D1. **Rumoca** — DAE construction `.expect()`s on a condition it has just diagnosed, so two stock MSL models abort the process instead of being reported
+
+**Project:** Rumoca, [CogniPilot/rumoca](https://github.com/CogniPilot/rumoca).
+**Baseline:** `0.10.4`, branch `hrw-rebase-0.10.4` at `f1468a6a`. Reproduced 2026-11-06.
+
+**A new `D` prefix, for *defect*.** `E` already means two things in this file (egui, and
+*enhancement* for `E3`), and this is neither an enhancement nor egui. Numbering forward as `E5`
+would have deepened a collision this file already records as Doug's call.
+
+### Reproduction
+
+Two models from the vendored MSL 4.1.0, each on its own:
+
+```text
+Modelica.Blocks.Continuous.Der
+Modelica.Electrical.Machines.Utilities.DQCurrentController
+```
+
+Both are stock Modelica Standard Library classes, so their validity is not in question and no
+independent adjudication is needed — **the report is about internal consistency, not language
+semantics.**
+
+### Actual
+
+The process aborts. Rust exit code `101`, and in a host that redirects file descriptors during
+the compile, **no message at all**:
+
+```text
+analysis proves derivative role: UnsupportedFlatSemantics {
+    feature: "derivative target",
+    detail: "der(...) must name a coordinate classified as a continuous state",
+    span: Span { .. },
+}
+```
+
+### Expected
+
+A `DaeConstructionError` returned to the caller, so the stage is reported as failed and the
+host decides what to do. **This is the behaviour every other diagnosable condition in the phase
+already gets** — Rumoca's design is to flag a problem and let the pipeline continue, and the
+surrounding code is built for exactly that.
+
+### Mechanism — read from source and reproduced
+
+`crates/rumoca-phase-dae/src/construction/expression/temporal.rs:13-15`, in `lower_derivative`:
+
+```rust
+let coordinate = symbols.coordinates[name.var_name()]
+    .derivative(span)
+    .expect("analysis proves derivative role");
+```
+
+`.derivative(span)` returns a `Result`, and for a `der()` whose target is not classified as a
+continuous state it returns `Err(ToDaeError::UnsupportedFlatSemantics { .. })` — the message
+above. **The condition is detected correctly; only the response is wrong.**
+
+`lower_derivative`'s own signature is
+`Result<dae::ExprId<'dae>, dae::DaeConstructionError>`, so the error channel the `.expect()`
+discards is already there.
+
+### The strongest evidence that this is an oversight: the same file disagrees with itself
+
+`lower_pre`, twenty lines below, handles the **same class of failure** on the sibling accessor
+by mapping and propagating it:
+
+```rust
+// temporal.rs:102
+let previous_coordinate = coordinate.previous(span).map_err(|_| missing())?;
+```
+
+One function treats the failure as impossible; its neighbour treats it as ordinary. Only one of
+them can be right about the invariant.
+
+### Suspected fix — UNVERIFIED
+
+Propagate instead of asserting, in the shape line 102 already uses. Whether the mapping should
+preserve `UnsupportedFlatSemantics`' feature/detail/span or collapse to the local `missing()` is
+a maintainer's call about how much the DAE phase's error type should carry.
+
+### Three siblings share the shape, and their reachability is NOT established
+
+`temporal.rs` lines **12**, **35** and **38** are the same construct — `.expect()` on a
+`Result` inside a function that returns one, each asserting that analysis has proved something.
+Line 15 is the one with a reproduction. **The other three are suspects, not findings**, and
+should not be presented to the maintainer as defects without an input that reaches them.
+
+### Why it matters more than two models out of 2,626
+
+A panic in a library crate takes the **host process** with it, and a host that captures output
+during the compile loses the message too: this reached HRW as exit 101 with an empty stderr,
+even under `RUST_BACKTRACE=full`. Two models in a corpus sweep is a small number; a compiler
+that aborts its embedder with no diagnosis is not a small defect. HRW now recovers the payload
+with `catch_unwind` and records it, which is a workaround in the host, not a fix in the phase.
+
+### Honestly bounded
+
+**The limitation itself may well be intended** — `der()` of a non-state may simply be outside
+what the DAE phase supports, and `UnsupportedFlatSemantics` says exactly that. Nothing here
+asks for the feature. The report is only that an unsupported feature should be **reported**
+rather than asserted away.
+
 ## Adding to this file
 
 One entry per bug, and only for bugs **reproduced**, not suspected. Include the
