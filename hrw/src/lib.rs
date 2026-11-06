@@ -164,6 +164,47 @@ pub fn msl_roots() -> Vec<std::path::PathBuf> {
     ))]
 }
 
+/// The library names present under [`msl_roots`], discovered rather than spelled.
+///
+/// # Why this exists: an artifact stopped being able to say what it measured
+///
+/// The root list used to be three explicit paths, and the survey's `.meta.json`
+/// recorded their file names — which is how a committed capability map stated **which
+/// MSL it was a map of**, versions included. Consolidating to the single root
+/// `vendor/msl` reduced that record to `["msl"]`, losing the one question the metadata
+/// most needs to answer. Noticed on 2026-11-06 by reading the `.meta.json` diff of a
+/// regenerated survey rather than only the CSV.
+///
+/// Reading the directory restores it **without re-introducing a second copy of the root
+/// list**: the names are discovered at runtime and never written down here, so
+/// [`tests_one_home`] stays satisfied.
+///
+/// # This reports PRESENCE, and presence is not the corpus
+///
+/// The single root also exposes two libraries the old three-entry list did not, while
+/// the surveyed model count did not change across the consolidation. Whether those are
+/// correctly outside the corpus or silently missing from it is **unresolved** and
+/// recorded in `docs/tech-debt.md`. The field is named for presence so that it cannot
+/// be read as the answer: it says what is on disk under the roots, nothing more.
+///
+/// Directories and `.mo` files only — a `LICENSE` or `README.md` beside them is not a
+/// library.
+pub fn msl_libraries() -> Vec<String> {
+    let mut names: Vec<String> = msl_roots()
+        .iter()
+        .filter_map(|root| std::fs::read_dir(root).ok())
+        .flatten()
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let is_dir = entry.file_type().ok()?.is_dir();
+            (is_dir || name.ends_with(".mo")).then_some(name)
+        })
+        .collect();
+    names.sort();
+    names
+}
+
 #[cfg(test)]
 mod tests_one_home {
     /// **Nothing outside [`super::msl_roots`] spells the MSL root list.**
@@ -231,6 +272,47 @@ mod tests_one_home {
              silently in the app and loudly in tests. Call `crate::msl_roots()`:\
              \n  {}",
             offenders.join("\n  "),
+        );
+    }
+
+    /// **`msl_libraries` finds the vendored libraries, and reports only libraries.**
+    ///
+    /// The survey's `.meta.json` provenance field is built from this, so an empty or
+    /// polluted list would write a wrong answer into a **committed artifact** — which is
+    /// the exact failure the field exists to repair, reintroduced one layer down.
+    ///
+    /// The non-emptiness assertion is the load-bearing one: a `read_dir` that silently
+    /// fails returns an empty vector, and an empty `msl_libraries` would render as
+    /// `"msl_libraries": []` — indistinguishable from a vendored tree with no libraries
+    /// in it, and just as uninformative as the `["msl"]` it replaced.
+    #[test]
+    fn msl_libraries_lists_the_vendored_libraries_and_nothing_else() {
+        let libs = super::msl_libraries();
+        assert!(
+            !libs.is_empty(),
+            "the vendored MSL must contribute at least one library; an empty list is \
+             what a failed read_dir produces and would be written into the artifact",
+        );
+
+        let roots = super::msl_roots();
+        for name in &libs {
+            assert!(
+                roots.iter().any(|r| r.join(name).exists()),
+                "{name} is reported but exists under no root",
+            );
+            assert!(
+                name.ends_with(".mo") || roots.iter().any(|r| r.join(name).is_dir()),
+                "{name} is neither a .mo file nor a directory, so it is not a library",
+            );
+        }
+
+        assert!(
+            !libs.iter().any(|n| n == "LICENSE" || n == "README.md"),
+            "a licence or readme sitting beside the libraries is not one: {libs:?}",
+        );
+        assert!(
+            libs.iter().any(|n| n.starts_with("Modelica")),
+            "the Modelica Standard Library itself must be among them: {libs:?}",
         );
     }
 }
