@@ -422,8 +422,15 @@ place in `fidelity::MODELS`.
 `cargo run -p hrw --example gen_trace -- <Model>`), or `cd hrw/` first. The steps **above** still
 read `cargo build` / `cargo test` for brevity — this note sits at the end of the document, so
 "below" pointed at nothing.
-- Still manual (prose, not derived): update the pinned rev noted in `CLAUDE.md` (Reference
-  documentation) and add a `DECISIONS.md` line recording the bump and anything non-trivial it required.
+- Still manual (prose, not derived): **check the pinned base SHA and version in `CLAUDE.md`'s
+  rebase box** — the line reading `upstream/main@<sha>` (version `<x.y.z>`) — and add a
+  `DECISIONS.md` entry recording the bump and anything non-trivial it required.
+  - *(Corrected 2026-11-06: this said "the pinned rev noted in `CLAUDE.md` (Reference
+    documentation)". There is no such section, and a step that sends the next rebase looking for
+    one wastes its time. The box is what it meant.)*
+  - **Do not spell a commit count there.** The line said "95 commits on top of" and was at 147
+    before anyone looked; it now names no number. Same rule as the corpus size — a figure that
+    drifts with ordinary work does not belong in prose.
 
 ---
 

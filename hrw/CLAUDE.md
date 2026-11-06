@@ -580,7 +580,7 @@ the next phase touches — is procedure and lives there.
 > ### ⟶ YOU ARE ON `hrw-rebase-0.10.4` NOW — hopped 2026-11-04, same day as the 0.10.0 rebase
 >
 > **Read this before anything else; `hrw-rebase-0.10.0` is the PREVIOUS branch and is behind.**
-> The 0.10.4 branch is 95 commits on top of `upstream/main@590ac739` (version 0.10.4), replayed
+> The 0.10.4 branch sits on top of `upstream/main@590ac739` (version 0.10.4), replayed
 > with `git rebase --onto`. **There is no v0.10.x tag** — upstream's tags stop at `v0.9.20` — so
 > the target was chosen as `main`, pinned to a SHA, because that is where merged PRs land.
 > `pre-0.10.4-rebase` tags the pre-hop tip.
