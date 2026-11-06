@@ -2970,8 +2970,24 @@ fn a_lab_renders_none_of_its_html_markers() {
 ///
 /// Same shape as `pantelides_ladder`'s rungs: the acceptance test exists and is ignored
 /// until the thing it accepts is built. **Un-ignore it when a fix lands.**
+///
+/// # UN-IGNORED 2026-11-06 — it passes, and the fix is real rather than vacuous
+///
+/// Found by `updating-rumoca.md` step 10's `--ignored` run, which exists for exactly this:
+/// *"every slow test, including the ignored set a release may have repaired."* Somewhere
+/// between the ignore being written and v0.10.4 the behaviour changed, and nothing noticed
+/// because the test was not being run.
+///
+/// **Checked for vacuity before trusting it**, because this test's own comment records that
+/// *three earlier drafts passed vacuously*. Inverting the assertion printed the geometry:
+/// **590pt wide before the table and 591pt after, both 45pt tall.** Panel width on both
+/// sides — had the prose still inherited the table's wrap width the two would differ. The
+/// labels are also proven present, since `rect` panics when one is missing.
+///
+/// **What fixed it is NOT established.** The candidates are the 0.10.4 rebase's egui pin and
+/// some layout change in HRW itself, and no attempt was made to bisect. The test is the
+/// guard either way; the cause would be worth knowing only if it regresses.
 #[test]
-#[ignore = "no fix known: prose after a wide table inherits the table's wrap width"]
 fn lab_prose_after_a_table_wraps_to_the_panel_not_the_table() {
     let real = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),

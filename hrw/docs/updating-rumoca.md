@@ -377,9 +377,40 @@ cargo test -p hrw --lib --features notebook-check -- --test-threads=1 the_commit
 ```
 
 **Then the oracle**, which is the strongest single statement this project can make about a release:
-System Modeler through the Wolfram MCP server over the 28 specimens (recipe in
-[`ideas.md`](ideas.md) #43). **Oracle-first still applies** — where Rumoca and the oracle disagree,
-that is not yet a Rumoca bug until the specimen itself has been cleared.
+System Modeler over the 28 specimens.
+
+```bash
+ls hrw/specimens/*.mo > /tmp/specimens.txt
+"/c/Program Files/Wolfram Research/WolframScript/wolframscript" \
+  -script hrw/scripts/oracle.wls \
+  -models /tmp/specimens.txt \
+  -out "$TEMP/oracle-specimens.csv" \
+  -kinds hrw/docs/reports/specimen-fidelity-report.csv \
+  -timeout 90
+```
+
+About **110 seconds** for all 28 — this is the one part of step 10 that is not long.
+
+**Use the script, NOT the Wolfram MCP server.** This step read *"through the Wolfram MCP server …
+(recipe in `ideas.md` #43)"* until 2026-11-06, and that recipe is right for **one** adjudication
+and wrong for a sweep: the MCP tool aborts a call after 30 minutes of silence, a sweep prints
+nothing until it returns, and an aborted call **discards everything the kernel computed**. Three
+calls and 90 minutes went that way. [`long-runs.md`](long-runs.md) has the full account, including
+the `-script` flag trap and the two silent traps the script handles for you.
+
+**Oracle-first still applies** — where Rumoca and the oracle disagree, that is not yet a Rumoca bug
+until the specimen itself has been cleared.
+
+**And `Flagged` is a rejection.** On 2026-11-06 three specimens were nearly filed as mismatches
+because Rumoca *flagged* them while System Modeler refused them. A flag means the problem was
+reported and the pipeline continued; it is not acceptance. Compare **"did the tool report a
+problem"**, not "did the tool stop" — one of the three was a specimen authored to provoke exactly
+the diagnosis Rumoca gave it.
+
+**A mismatch is not yet a finding.** [`reports.md`](reports.md) requires fidelity green for the
+model first, or the mismatch may be the instrument lying rather than the compiler erring — which
+means a specimen the oracle disagrees about needs a row in `specimen-fidelity-report.csv`, i.e. a
+place in `fidelity::MODELS`.
 
 **Announce the cost before starting.** These are hours, not minutes, and
 [`long-runs.md`](long-runs.md) owns the safety rules.

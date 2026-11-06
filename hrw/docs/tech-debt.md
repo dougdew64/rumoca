@@ -4336,7 +4336,34 @@ present size. Re-pinning them to 2,791 would make them wrong again at the next c
 rewriting ten reasoning passages is a larger and more error-prone edit than the staleness costs.
 Worth a sweep only if one of them is ever read as a definition.
 
-### 11-06, the oracle ran — four specimens System Modeler rejects and Rumoca does not, and none is admissible yet
+### 11-06, step 10's `--ignored` run repaired itself — a lab-prose fix landed and nobody knew
+
+**`updating-rumoca.md` step 10 includes `--ignored` for one stated reason** — *"the ignored set a
+release may have repaired"* — and on its first run that is exactly what it found.
+
+`ui_tests::lab_prose_after_a_table_wraps_to_the_panel_not_the_table` was ignored with the reason
+*"no fix known: prose after a wide table inherits the table's wrap width"*, and its doc said **"Un-
+ignore it when a fix lands."** It **passes**. The ignore is retired.
+
+**Vacuity was checked before it was trusted**, because the test's own comment records that *three
+earlier drafts passed vacuously* — a synthetic table narrow enough to fit the panel does not
+reproduce the bug, which is why it reads the real `the-pipeline.md`. Inverting the assertion printed
+the geometry: **590pt wide before the table, 591pt after, both 45pt tall.** Panel width on both
+sides; had the prose still inherited the table's wrap width the two would differ. `rect` panics on a
+missing label, so both paragraphs are proven to render.
+
+**The cause is NOT established.** Candidates are the 0.10.4 rebase's egui pin and a layout change in
+HRW; no bisect was attempted, and the test is the guard either way.
+
+#### The prediction that was wrong, and why
+
+This run was announced as *"one of the three will fail by design."* It did not. The `#[ignore]`
+reason string said "no fix known", and that was read as a live fact — **it is a note from the day it
+was written.** The doc two lines above it said the truer thing: an *acceptance* test, awaiting a fix.
+An acceptance test that starts passing is the good outcome, and the only way to find out is to run
+it, which is the whole argument for step 10 carrying `--ignored` at all.
+
+### 11-06, the oracle ran — one specimen System Modeler rejects that Rumoca accepts silently
 
 First oracle sweep over all 28 specimens: **19 simulated, 8 refused, 1 import-failed**, in 110
 seconds. `scripts/oracle.wls` and the runbook section in `long-runs.md` make it repeatable.
