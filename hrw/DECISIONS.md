@@ -5523,3 +5523,58 @@ HRW at half width beside VS Code: the `matching-live.md` debugger layout. `the_l
 had grown a per-mode special case at 640 to accommodate it, **and the comment justifying that
 case was wrong about why** — it said Specimen mode sat at its own content minimum, when it was
 pinned by this global floor like everything else. One expectation per width again.
+
+## 2026-11-06 — the 0.10.4 bump, and the four things it actually cost
+
+**The hop itself was mechanical**: `hrw/` replayed with `git rebase --onto` on
+`upstream/main@590ac739` (version 0.10.4), there being no `v0.10.x` tag to aim at —
+upstream's tags stop at `v0.9.20`. `pre-0.10.4-rebase` tags the pre-hop tip. What follows is
+the non-mechanical part, recorded because none of it was visible from the diff.
+
+### 1. The survey had been dead since 2026-08-01, and a stale merge hid it
+
+`session.model_names()` requires a *complete* standard resolution, and **MSL as a whole never
+resolves completely** — `Modelica.Fluid`'s `Medium.*` references are unresolved until a medium
+is redeclared, which is what `replaceable` means. 0.10.x made that fatal where 0.9.20 had not.
+The survey was demanding a library-wide guarantee in order to obtain a list of names that does
+not depend on one.
+
+**Nothing noticed for three months** because the sweep script's six shards died instantly,
+`while (Get-Process survey_msl)` could not tell instant death from completion, and
+`survey_msl --merge` returns before it loads MSL — so it merged `C:\tmp\part-*.csv` files
+dated July 31 and August 1. A 0.9.x survey was committed as a 0.10.4 regeneration.
+
+**The fix needed no `crates/` change**: `rumoca_compile::parsing::collect_model_names` is
+public and is the function the resolved path itself calls.
+
+### 2. The corpus is 2,791 models, not 2,626
+
+Consolidating `msl_roots()` to a single `vendor/msl` brought `ModelicaReference` (147) and
+`ObsoleteModelica4` (18) into scope. Nothing was removed. The count is whatever
+`msl-survey.csv` holds and **no code or document should spell it** — a UI test pinned to
+`2626` failed on this correct change and now derives the number from the artifact.
+
+### 3. 0.10.4 loses 409 MSL models that 0.9.20 compiled, and 78 of those are 0.9.20's fault
+
+353 of the losses are at DAE construction. **The 78 `unbalanced model` rejections are not
+regressions**: 73 of them fail `n_equations = n_states + n_algebraic` by 0.9.20's *own*
+published columns, so 0.9.20 was reporting success on systems its own numbers called
+unbalanced. 283 of the 409 are three capability gaps whose every message says `unsupported` —
+synchronous/clocked constructs, model algorithms and function bodies, expression and record
+forms — which reads as work not yet carried across the 0.10.0 re-implementation.
+
+**Consequence for study planning:** clocked and algorithm-bearing MSL models do not reach a
+DAE on 0.10.4, so they cannot be studied at DAE level or below until that lands.
+
+### 4. One `crates/` change was made, and deliberately
+
+`rumoca-phase-dae`'s `lower_derivative` and `lower_pre` called `.expect()` on fallible
+accessors inside functions that already return `DaeConstructionError`, so a `der()` of a
+non-state **aborted the process** rather than being reported — taking both corpus runners with
+it, which is how the survey lost whole 465-model shards. `lower_history_operator`, in the same
+file, had always propagated the identical failure. Fixed to match it; recorded as
+`upstream-issues.md` **D1** and not filed.
+
+This is a semantics change rather than observability, which the charter would normally keep out
+of `crates/`. It was made because the alternative was an instrument that cannot measure the
+corpus, and because the repair was a transposition of a pattern already in that file.
