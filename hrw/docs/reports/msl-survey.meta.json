@@ -1,14 +1,15 @@
 {
-  "rumoca_version": "0.9.20",
+  "rumoca_version": "0.10.4",
   "hrw_version": "0.1.0",
-  "msl_roots": ["Modelica 4.1.0", "ModelicaServices 4.1.0", "Complex.mo"],
-  "models_surveyed": 2626,
-  "models_available": 2626,
+  "msl_roots": ["msl"],
+  "msl_libraries": ["Complex.mo", "Modelica 4.1.0", "ModelicaReference 4.1.0", "ModelicaServices 4.1.0", "ObsoleteModelica4.mo"],
+  "models_surveyed": 2791,
+  "models_available": 2791,
   "partial_survey": false,
   "max_reduce_equations": null,
-  "largest_reduction_attempted": 799,
-  "reductions_skipped": 71,
+  "largest_reduction_attempted": 0,
+  "reductions_skipped": 0,
   "seconds": null,
-  "generated_unix": 1785529736,
-  "outcomes": {"failed:Flatten": 182, "failed:Instantiate": 20, "failed:ToDae": 170, "failed:Typecheck": 17, "success": 2237}
+  "generated_unix": 1793968193,
+  "outcomes": {"failed:Flatten": 228, "failed:Instantiate": 41, "failed:ToDae": 447, "failed:Typecheck": 13, "no_result": 11, "panicked": 2, "success": 2049}
 }
