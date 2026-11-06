@@ -31,6 +31,10 @@ use crate::bridge;
 /// Station 1 look as though it has already been done. **That reset is not this
 /// struct's business.** `select` and `poll` return *whether the selection
 /// changed*; `App::reset_for_new_lab` decides what that invalidates.
+/// **`Default` is derived again**, as it was before the Play button existed. It was
+/// hand-written for one field — a run length that had to start at 90 seconds rather
+/// than at zero — and that field went with the clock on 2026-11-05.
+#[derive(Default)]
 pub(crate) struct LabState {
     /// The selected lab's text and the mtime it was read at.
     pub(crate) cached: Option<(String, std::time::SystemTime)>,
@@ -102,96 +106,6 @@ pub(crate) struct LabState {
     /// Outranks [`Self::scroll_to_top`], which every switch requests: going *back* is the
     /// one navigation for which the top of the document is the wrong answer.
     pub(crate) restore_scroll_y: Option<f32>,
-
-    /// **The self-running run** of whichever lab is showing.
-    ///
-    /// Lives here rather than on `App` because it plays *this* lab and means
-    /// nothing without one — `app_does_not_regrow_its_field_count` asked the
-    /// question ("does the new field belong on App, or on the pane that owns
-    /// it?") and this was the answer. The seam is the one this struct already
-    /// documents: the pane holds its own world, and `App` keeps the
-    /// consequences, since dispatching a beat needs `dispatch_hrw_link` and
-    /// knowing when to hold the clock needs `compiling`.
-    pub(crate) autoplay: crate::autoplay::Autoplay,
-    /// Requested run length, from [`crate::autoplay::TOTAL_CHOICES`].
-    pub(crate) autoplay_total: std::time::Duration,
-    /// **Measured y of the current beat's link** inside the lab text.
-    ///
-    /// `app.rs` splits the markdown at the link's line and renders both halves; the
-    /// cursor between them is this. Measured rather than estimated because two
-    /// estimates failed — by beat ordinal, then by character offset — and rendered
-    /// height per character is simply not constant: prose wraps in a narrow panel
-    /// and a code block does not.
-    pub(crate) lab_link_y: Option<f32>,
-    /// The previous beat's measured y, to travel *from*.
-    pub(crate) lab_prev_link_y: Option<f32>,
-    /// Which beat `lab_link_y` was measured for, so a beat change can roll the
-    /// current position into the previous one exactly once.
-    pub(crate) lab_measured_beat: Option<usize>,
-    /// Maximum scroll offset of the lab text, measured last frame — the clamp.
-    pub(crate) lab_max_scroll: Option<f32>,
-
-    /// **The mode a self-running run started in**, to return to when it ends.
-    ///
-    /// A lab stop may legitimately leave Lab mode: `hrw://source/<line>` switches
-    /// to Specimen mode because that is the only place the source renders, and a
-    /// reader clicking it wants to be taken there. `matching.md` ends Station 3 with one,
-    /// so a Play run finished in Specimen mode with the lab nowhere on screen —
-    /// Doug, 2026-08-03: *"at the completion of the lab, the mode is being switched
-    /// from lab mode to specimen mode."*
-    ///
-    /// **The stop is not wrong; the run just has to clean up after itself.** A run
-    /// is a round trip, so it restores what it borrowed, on finishing *or* on Stop.
-    pub(crate) mode_before_autoplay: Option<crate::ui_state::UiMode>,
-    /// **Which document the running schedule's byte offsets belong to.**
-    ///
-    /// A beat carries an offset into the text [`crate::autoplay::schedule`] was built
-    /// from, and the pane cuts the *displayed* document there. Those are the same
-    /// document right up until a beat follows `hrw://lab/<other>` — which is an
-    /// ordinary, supported thing for a stop to do — and from then on the schedule is
-    /// measuring one file while the pane slices another.
-    ///
-    /// Doug, 2026-11-05, playing an Answer that opens the matching lab at beat 4:
-    /// *"the animation runs correctly until beat 7. At beat 7, all formatting of the
-    /// Answer view is lost."* Beat 7's offset, 3,882 bytes into the Answer, landed
-    /// **inside a fenced code block** of `matching.md`. The half before it then held an
-    /// unterminated fence and the half after it began mid-code, so the real closing
-    /// fence was read as an *opening* one and the rest of the document became one code
-    /// block. Beats 4 to 6 landed on even fence counts and were harmless, which is why
-    /// the failure looked like it started at 7.
-    ///
-    /// **Nothing crashed and nothing was out of range**, because `.min(text.len())`
-    /// kept every offset inside the string. It was a valid cut of the wrong document —
-    /// this repository's recurring shape, a true measurement of the wrong unit.
-    pub(crate) autoplay_scheduled_for: Option<LabSource>,
-}
-
-impl Default for LabState {
-    /// Hand-written for one field: `autoplay_total` starts at
-    /// [`crate::autoplay::DEFAULT_TOTAL`] rather than at zero, and a derived
-    /// `Default` would schedule every beat into no time at all.
-    fn default() -> Self {
-        Self {
-            cached: None,
-            available: Vec::new(),
-            selected: None,
-            polled_at: None,
-            row_specimens: std::collections::HashMap::new(),
-            scroll_to_offset: None,
-            scroll_to_top: false,
-            history: Vec::new(),
-            current_scroll_y: 0.0,
-            restore_scroll_y: None,
-            autoplay: crate::autoplay::Autoplay::default(),
-            autoplay_total: crate::autoplay::DEFAULT_TOTAL,
-            lab_link_y: None,
-            lab_prev_link_y: None,
-            lab_measured_beat: None,
-            lab_max_scroll: None,
-            mode_before_autoplay: None,
-            autoplay_scheduled_for: None,
-        }
-    }
 }
 
 impl LabState {
@@ -201,29 +115,24 @@ impl LabState {
     /// them *is* a real y position — see `lab_panel`, which spent four attempts proving
     /// a byte offset cannot be turned into a pixel position by arithmetic.
     ///
-    /// Extracted from the paint path on 2026-11-05 so the rules below can be tested.
-    /// All three are rules about **when an offset may be trusted**, and each is bought
-    /// with a defect:
+    /// Only `hrw://lab/<name>/station/<slug>` asks for a cut now: it records the
+    /// heading's byte offset, and the cursor at the split is where to scroll to.
     ///
-    /// 1. **A run's offsets apply only to the document the run was scheduled from.**
-    ///    See [`Self::autoplay_scheduled_for`] for the beat-7 failure this prevents.
-    /// 2. **An offset must be a char boundary**, or slicing panics. Labs are edited
-    ///    while they are being read, so an offset recorded against the previous text is
-    ///    expected rather than exotic. The station path already checked this; the
-    ///    autoplay path did not, and was one multi-byte character away from a crash.
-    /// 3. **A run owns the split.** A pending station request is consumed by the caller
-    ///    but must not move anything mid-run, or it fights the interpolation.
+    /// **The offset is validated, not trusted**, and that is the one rule left of the
+    /// three this function was extracted to hold on 2026-11-05. Slicing a `str` off a
+    /// char boundary **panics**, and these documents are edited while Doug is reading
+    /// them, so an offset recorded against the previous text is the expected case
+    /// rather than a corner one.
+    ///
+    /// The other two rules were about a self-running lab, and went with it — including
+    /// the one bought that same day, when a run's offsets were applied to a document it
+    /// had never measured and cut a code fence in half. `DECISIONS.md` has the account;
+    /// the failure is no longer reachable, because nothing now holds an offset from one
+    /// document while another is on screen.
     pub(crate) fn render_split(&self, text: &str) -> usize {
-        let usable = |n: usize| (text.is_char_boundary(n)).then_some(n);
-        if self.autoplay.is_running() {
-            // Rule 1. Not "clamp it into range" — `.min(text.len())` did exactly that
-            // and produced a perfectly valid cut of the wrong file.
-            if self.autoplay_scheduled_for != self.selected {
-                return 0;
-            }
-            return usable(self.autoplay.current_byte_offset()).unwrap_or(0);
-        }
-        self.scroll_to_offset.and_then(usable).unwrap_or(0)
+        self.scroll_to_offset
+            .filter(|n| text.is_char_boundary(*n))
+            .unwrap_or(0)
     }
 
     /// Switch to `source`, discarding the previous text.
@@ -279,31 +188,14 @@ impl LabState {
         (ordered, hoisted)
     }
 
-    /// **Forget where the text was scrolled to.**
+    /// **Put the new document at its top.**
     ///
-    /// These are pixel positions measured in *one particular document at one
-    /// particular beat*, so they mean nothing after a lab changes or a run starts
-    /// over — and they are worse than meaningless, because the scroll interpolates
-    /// **from** the stale value on the first frame of a new run.
-    ///
-    /// Doug, 2026-08-03: stop mid-lab, switch labs, switch back, press Play, and
-    /// *"the matching lab rescrolls very visibly from the stopped position back up
-    /// to the top before the lab begins playing."* The pane was correctly at the top
-    /// already; the *bookkeeping* still held the stopped position, so the first frame
-    /// aimed there and then travelled back.
-    ///
-    /// With these cleared, both ends of the interpolation are zero on the first beat,
-    /// so a lab that is already at the top does not move at all — which is the
-    /// behaviour asked for. `lab_max_scroll` is deliberately **kept**: it describes
-    /// the pane, not the position, and re-measures on the next frame anyway.
+    /// Until 2026-11-05 this also cleared three measured pixel positions that a
+    /// self-running lab interpolated its scroll between. Those went with the Play
+    /// button; what remains is the half that was always the real fix, and its account
+    /// is below because it is about egui rather than about autoplay.
     pub(crate) fn reset_scroll(&mut self) {
-        self.lab_link_y = None;
-        self.lab_prev_link_y = None;
-        self.lab_measured_beat = None;
-        // **And put the new document at its top.**
-        //
-        // The three fields above are HRW's *own* measurements, used to interpolate an
-        // autoplay scroll. Clearing them was never enough, because **none of them is
+        // Clearing HRW's own measurements was never enough, because **none of them is
         // what positions the view** — that is egui's `ScrollArea`, which keeps an offset
         // per id, and the lab panel's id (`id_salt("lab")`) is deliberately stable.
         //
@@ -791,88 +683,15 @@ mod tests_comment_stripping {
 #[cfg(test)]
 mod tests_render_split {
     use super::*;
-    use std::path::PathBuf;
 
-    /// A document whose fence sits where the *other* document's beat offset lands.
-    const OTHER: &str = "# Other lab\n\nSome prose.\n\n```\ncode line one\ncode line two\n```\n\nMore prose after the block.\n";
-
-    fn running_at(offset: usize) -> crate::autoplay::Autoplay {
-        let mut a = crate::autoplay::Autoplay::default();
-        a.start(vec![crate::autoplay::Beat {
-            stop: 0,
-            link: None,
-            dwell: std::time::Duration::from_secs(1),
-            byte_offset: offset,
-        }]);
-        assert!(
-            a.is_running(),
-            "precondition: the clock must actually be running"
-        );
-        a
-    }
-
-    /// A lab mid-run: beats measured against `scheduled`, `showing` on screen.
+    /// **A stale offset inside a character would panic**, and these documents are
+    /// edited while they are being read, so an offset recorded against the previous
+    /// text is the expected case rather than a corner one.
     ///
-    /// One initializer rather than field assignments, because the gate runs clippy
-    /// with `--all-targets` and `field_reassign_with_default` is denied in tests too.
-    fn mid_run(offset: usize, scheduled: LabSource, showing: LabSource) -> LabState {
-        LabState {
-            autoplay: running_at(offset),
-            autoplay_scheduled_for: Some(scheduled),
-            selected: Some(showing),
-            ..Default::default()
-        }
-    }
-
-    /// **A run's byte offsets belong to one document, and the pane may be showing
-    /// another.** Doug, 2026-11-05: *"the animation runs correctly until beat 7. At
-    /// beat 7, all formatting of the Answer view is lost."*
-    ///
-    /// His Answer opened the matching lab at beat 4 — `hrw://lab/<name>` is an
-    /// ordinary thing for a stop to do. From there the schedule measured the Answer
-    /// while the pane sliced `matching.md`. Beat 7's offset, 3,882 bytes into the
-    /// Answer, landed **inside a fenced code block** of the lab now on screen: the
-    /// first half ended with an unterminated fence, the second began mid-code, and the
-    /// real closing fence was then read as an opening one, so everything after it
-    /// became a single code block.
-    ///
-    /// **Nothing was out of range and nothing panicked** — `.min(text.len())` saw to
-    /// that. It was a valid cut of the wrong document, which is why it reached a
-    /// reader. Beats 4 to 6 happened to land on even fence counts and looked fine.
-    #[test]
-    fn a_runs_offsets_are_not_applied_to_a_document_it_did_not_measure() {
-        // Where the fence opens — the position that produced Doug's symptom.
-        let inside_fence = OTHER.find("code line one").expect("the sample has a block");
-
-        let mut lab = mid_run(
-            inside_fence,
-            LabSource::Answer,
-            LabSource::Fixture(PathBuf::from("matching.md")),
-        );
-
-        assert_eq!(
-            lab.render_split(OTHER),
-            0,
-            "the pane is showing a document this run never measured, so there is no \
-             beat position in it -- cutting at the offset anyway splits whatever \
-             happens to be there, and an unterminated fence turns the rest of the lab \
-             into one code block",
-        );
-
-        // **The same offset on the document the run DID measure is honoured**, or the
-        // rule above would be indistinguishable from switching the split off.
-        lab.selected = Some(LabSource::Answer);
-        lab.autoplay_scheduled_for = Some(LabSource::Answer);
-        assert_eq!(
-            lab.render_split(OTHER),
-            inside_fence,
-            "non-vacuity: a run still splits the document it is actually playing",
-        );
-    }
-
-    /// **An offset that is not a char boundary would panic**, and the autoplay path
-    /// never checked — only the station path did. Labs are edited while they are being
-    /// read, so an offset recorded against the previous text is the expected case.
+    /// This is the surviving third of a rule that was bought on 2026-11-05, when a
+    /// self-running lab applied one document's byte offsets to another and cut a code
+    /// fence in half. The run is gone; the validation is not, because a
+    /// `station/<slug>` citation can still outlive an edit to the lab it names.
     #[test]
     fn a_stale_offset_inside_a_character_does_not_slice_it() {
         let text = "# Title\n\nx — y\n"; // the em dash is three bytes
@@ -882,8 +701,10 @@ mod tests_render_split {
             "precondition: mid-character"
         );
 
-        let lab = mid_run(dash + 1, LabSource::Answer, LabSource::Answer);
-
+        let lab = LabState {
+            scroll_to_offset: Some(dash + 1),
+            ..Default::default()
+        };
         assert_eq!(
             lab.render_split(text),
             0,
@@ -892,12 +713,28 @@ mod tests_render_split {
         );
     }
 
-    /// And past the end, which is the other way a stale offset arrives: the lab was
-    /// edited shorter while the run was playing it.
+    /// Past the end is the other way a stale offset arrives: the lab was edited
+    /// shorter after the citation recorded its position.
     #[test]
     fn an_offset_past_the_end_does_not_split() {
         let text = "# Short\n";
-        let lab = mid_run(text.len() + 500, LabSource::Answer, LabSource::Answer);
+        let lab = LabState {
+            scroll_to_offset: Some(text.len() + 500),
+            ..Default::default()
+        };
         assert_eq!(lab.render_split(text), 0);
+    }
+
+    /// Non-vacuity: a usable offset is still honoured, or the two rules above would be
+    /// indistinguishable from switching the split off altogether.
+    #[test]
+    fn a_usable_station_offset_is_still_honoured() {
+        let text = "# T\n\n## Station 1\n\nbody\n";
+        let at = text.find("## Station 1").expect("the sample has a station");
+        let lab = LabState {
+            scroll_to_offset: Some(at),
+            ..Default::default()
+        };
+        assert_eq!(lab.render_split(text), at);
     }
 }

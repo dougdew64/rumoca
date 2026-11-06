@@ -5447,3 +5447,79 @@ came across wholesale. Content verified byte-identical against `backup/pre-rewor
 **Why rewording beat keeping the exception**, which is the part worth keeping: a standing carve-out
 is a thing someone has to know at exactly the moment they are least likely to check it — pushing.
 Six false positives cost nothing to reword and the exception cost attention forever.
+
+---
+
+## 2026-11-05 — the self-running lab is REMOVED, because a recording feature had begun constraining the answers
+
+**Doug:** *"We created that feature to enable screen recordings for LinkedIn videos rather than
+for my personal education. The primary purpose of HRW is to help me learn, so a
+LinkedIn-motivated feature was always kind of suspect."*
+
+**What it was.** `DECISIONS.md`, 2026-08-03: a LinkedIn screenshot of HRW drew interest,
+explaining *what a lab is* in prose to people who had never seen the tool proved harder than
+showing one, so a lab needed to walk itself for long enough to be screen-recorded. Every design
+decision in that entry served a recording — a beat was a *link* rather than a station so
+something was always moving, dwell was weighted by prose length, and the run lengths were, in
+its own words, *"conventional social-video lengths rather than a measured optimum"*.
+
+### What decided it, and it was not the origin story
+
+The origin made it *suspect*; what made it go was that it had started **taxing the artifact it
+was supposed to serve**. Earlier the same day, an Answer played from the Play button lost all
+its formatting at beat 7 — the run had followed an `hrw://lab/` link at beat 4, so the schedule
+was measuring one document while the pane sliced another, and beat 7's offset landed inside a
+code fence. The corruption was fixed. The *authoring rule* it implied — do not cite a lab
+except at the end — was then written into `check_answer`.
+
+**That rule is what Doug objected to**, and the objection is the real finding:
+
+> *"One of the ways that HRW helps me to learn is to serve as a platform for your answers. A few
+> minutes ago, we were forced to implement authoring guidance for your answers due to autoplay
+> problems. I am concerned about such authoring guidance interfering with your ability to provide
+> good answers. Also, the latency for your answers is way too long."*
+
+**A feature with no educational purpose was constraining the one artifact that has nothing
+else.** The wander check went back out with the clock.
+
+### What went, what stayed, and the distinction that matters most
+
+**Three things in this repository wear the word "playback", and only one was removed.**
+`CLAUDE.md`'s rule — *"replay means three things and only one is forbidden"* — exists because
+sessions have twice read that word and deleted something correct. Checked before cutting:
+
+- **Removed:** `autoplay.rs`'s clock (`Autoplay`, `Beat`, `Phase`, `schedule`), the transport
+  bar, the progress bar and station caption, the scroll interpolation and its measured
+  endpoints, `App::start_autoplay` / `tick_autoplay` / `dispatch_beat` /
+  `restore_mode_after_autoplay`, and `HrwLink::leaves_hrw`, whose only purpose was to give an
+  external hop a longer beat.
+- **Kept:** `parse_stations` and `station_slug`, which live in the same module and are not the
+  clock. They serve `hrw://lab/<name>/station/<slug>`, the generated `CATALOGUE.md`, the panel's
+  station list and `fixture_lab_links_all_resolve`.
+- **Untouched:** `playback.rs`, the frame player behind the matching, Tarjan and reduction
+  animations. It is the **replay tier of the three-tier progression** (`docs/vision.md`:
+  snapshot → recorded replay → live-stepped execution) and is central to the learning mission,
+  not peripheral to it.
+
+### Three things that turned out not to be entangled, each checked rather than assumed
+
+- **The screenshot instrument does not depend on it.** `screenshot.rs` and `bridge.rs` mention
+  autoplay only in comments, as the model their own timer was written against.
+- **No fixture lab references Play.** Zero hits across `docs/fixture-labs/`, so no lab prose
+  needed rewriting.
+- **The document split survives**, because `station/<slug>` uses the same trick: split the
+  markdown at a byte offset and let the cursor between the halves be the scroll position. What
+  that path keeps is the char-boundary validation added hours earlier — a `str` sliced off a
+  boundary panics, and these documents are edited while they are being read.
+
+### A defect class went with it, and a floor came back down
+
+**The beat-7 failure is no longer reachable**, because nothing now holds an offset measured
+against one document while another is on screen.
+
+And `MIN_LEFT_POINTS` fell from **435 to 210**. That floor was never about the lab list — it was
+the width of the un-wrapped transport row, and at 640pt it took most of the window, which is
+HRW at half width beside VS Code: the `matching-live.md` debugger layout. `the_left_panel_content_never_detaches_from_the_divider`
+had grown a per-mode special case at 640 to accommodate it, **and the comment justifying that
+case was wrong about why** — it said Specimen mode sat at its own content minimum, when it was
+pinned by this global floor like everything else. One expectation per width again.

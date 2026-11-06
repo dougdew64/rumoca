@@ -811,102 +811,6 @@ fn a_link_far_down_a_long_lab_still_dispatches() {
     );
 }
 
-/// **Links still work after a run has been played and stopped.**
-///
-/// The state Doug reads labs in is rarely a fresh one — he plays, stops, and then
-/// goes back to reading manually. That leaves autoplay holding a schedule: `stop()`
-/// clears the beats but a *finished* run does not, so `current_byte_offset` kept
-/// naming the last link and the lab text stayed rendered as **two** markdown
-/// documents for all subsequent manual reading.
-///
-/// Splitting is now gated on a run actually running, so the idle path is byte for
-/// byte the plain one. This test pins that: a click after a run must behave exactly
-/// like a click before one.
-#[test]
-fn a_link_still_dispatches_after_a_session_has_been_stopped() {
-    let mut h = harness(App::test_default());
-    h.state_mut().test_set_specimen_files(&["RcCircuit.mo"]);
-    assert!(h.state_mut().test_select_fixture_lab("node-pointing"));
-    h.run_steps(2);
-
-    // Play, then stop — the state manual reading actually happens in.
-    h.state_mut().test_start_autoplay();
-    h.run_steps(2);
-    h.state_mut().test_stop_autoplay();
-    h.run_steps(2);
-    h.state_mut().test_clear_model();
-
-    h.get_by_label_contains("RcCircuit \u{2192} Structural")
-        .click();
-    h.run_steps(2);
-
-    assert_eq!(
-        h.state().test_selected_name().as_deref(),
-        Some("RcCircuit.mo"),
-        "a stopped run must leave the lab readable and its links live",
-    );
-}
-
-/// **The Play button exists, and the running readout reports.**
-///
-/// The pane-is-a-reporter rule applied to the transport built on 2026-08-03: a
-/// self-running lab whose progress readout silently rendered nothing would look
-/// exactly like one that was working, because the *stage side* would still be
-/// moving. That is the partial-report shape the Context Bar defect had — every
-/// visible thing correct, and the missing part leaving no gap where it was.
-///
-/// The clock itself is tested in `autoplay::tests`, without a window. This test's
-/// job is only that the button is reachable and the readout reaches the screen.
-#[test]
-fn the_play_button_starts_a_session_and_the_readout_reports_it() {
-    let mut h = harness(App::test_default());
-
-    // Exact label, not `contains`: the animation views have their own Play button,
-    // and a substring query matches both.
-    assert!(
-        h.query_by_label("\u{25b6} Play").is_some(),
-        "lab mode must offer a Play button; it is the whole transport",
-    );
-
-    // Choose the curriculum lab, which is the one this was built to record.
-    assert!(
-        h.state_mut().test_select_fixture_lab("dae-construction"),
-        "the fixture lab must be readable, or the run below is vacuous",
-    );
-    h.run_steps(2);
-
-    h.state_mut().test_start_autoplay();
-    h.run_steps(2);
-
-    // **`LeadIn` is what clicking Play produces**, and the readout below must say so
-    // rather than "playing": a second of stillness that reads as "playing" is a readout
-    // describing something the screen is not doing. Added 2026-09-04 with the lead-in.
-    assert_eq!(
-        h.state().test_autoplay_phase(),
-        crate::autoplay::Phase::LeadIn,
-        "clicking Play must actually start the run",
-    );
-
-    // Non-vacuity: a real lab schedules many beats, not one.
-    let (_, total) = h.state().test_autoplay_progress();
-    assert!(
-        total >= 15,
-        "the DAE lab should schedule ~20 beats, got {total}"
-    );
-
-    // The readout is on screen. Its exact wording is the UI's business; that it
-    // says *something* about which beat is showing is this test's business.
-    assert!(
-        h.query_by_label_contains("beat 1/").is_some(),
-        "the running run must say where it is — a progress readout that renders \
-         nothing is indistinguishable from a run that is not running",
-    );
-    assert!(
-        h.query_by_label("\u{23f8} Pause").is_some(),
-        "a running run must offer Pause, or a recording cannot be stopped mid-take",
-    );
-}
-
 /// Selecting a different lab clears the stage side — **on screen**.
 ///
 /// The bug this guards against was found by running: *"the RHS doesn't
@@ -2342,7 +2246,13 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
     // *is* the decision.
     for (w, h_px, expect_movement) in [
         (1280.0_f32, 720.0_f32, true),
-        (640.0, 360.0, false),
+        // **640 regained its range on 2026-11-05**, when the transport controls went and
+        // the floor fell from 435pt to 210pt. The panel opens near 0.4 of the window —
+        // 256pt here — which the old floor was *above*, pinning both modes; 210 is below
+        // it, so the divider can be dragged down to it again.
+        (640.0, 360.0, true),
+        // 500 still cannot: 0.4 of it is 200pt, already under the floor, so the panel
+        // opens clamped at 210 with nowhere left to go.
         (500.0, 340.0, false),
     ] {
         for mode_is_lab in [true, false] {
@@ -2466,17 +2376,12 @@ fn the_left_panel_content_never_detaches_from_the_divider() {
             // anything — and a synthetic drag landing on the wrong pixel is exactly
             // the way this test would rot into a tautology. The defect needed a drag
             // *in progress* to appear, so a test that never drags cannot see it.
-            // **At 640 the answer differs by mode, since 2026-08-19.** The un-wrapped
-            // lab bar sets a 435pt floor, which on a 640pt window leaves the lab panel
-            // a usable range — while Specimen mode, whose left panel has no bar and so no
-            // floor of its own, is already at its content minimum and cannot move. One
-            // expectation per width stopped being expressible when the two modes acquired
-            // different minimums.
-            let expect_movement = if (w - 640.0).abs() < 1.0 {
-                mode_is_lab
-            } else {
-                expect_movement
-            };
+            // **One expectation per width again, since 2026-11-05.** From 2026-08-19 the
+            // two modes needed different answers at 640, because the lab bar's transport
+            // set a 435pt floor the specimen panel had no reason to want. The transport
+            // is gone and so is the divergence — and the comment that justified it was
+            // wrong about *why*: it said Specimen mode sat at its own content minimum,
+            // when it was pinned by this global floor like everything else.
             assert_eq!(
                 moved,
                 expect_movement,

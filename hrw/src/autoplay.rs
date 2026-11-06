@@ -1,195 +1,76 @@
-//! **Self-running labs** — the schedule and the clock behind the Play button.
+//! **Lab structure** — splitting a lab or an Answer into its stations, and naming them.
 //!
-//! Doug, 2026-08-03: a LinkedIn screenshot of HRW drew immediate interest, and
-//! explaining *what a lab is* in prose to people who have never seen the tool is
-//! harder than showing one. So a lab needs to run itself, for long enough to be
-//! captured as a video and no longer.
+//! # What this module used to be, and why most of it is gone
 //!
-//! # Why this module is pure
+//! It was the schedule and clock behind a Play button that ran a lab by itself.
+//! `DECISIONS.md`, 2026-08-03: a LinkedIn screenshot of HRW drew interest, explaining
+//! *what a lab is* in prose turned out to be harder than showing one, so a lab needed to
+//! run itself for long enough to be screen-recorded. Every design decision in it served a
+//! recording — a beat was a link rather than a station so something was always moving,
+//! time was weighted by prose length, and the run lengths were, in that entry's own
+//! words, *"conventional social-video lengths rather than a measured optimum"*.
 //!
-//! Everything here is arithmetic over `Duration` and `&str`. No egui, no
-//! `App`, no clock of its own — [`Autoplay::tick`] is *told* how much time
-//! passed. That is what makes a timing feature testable at all: a schedule that
-//! could only be checked by watching it is a schedule nobody checks. The two
-//! properties worth guaranteeing (the run lasts exactly as long as asked; a stop
-//! with more prose gets more time) are both plain assertions here and would be
-//! stopwatch work anywhere else.
+//! **Doug removed it on 2026-11-05, and the reason is worth keeping**: HRW exists to help
+//! him learn, and one of the main ways it does that is as the platform for Claude's
+//! answers. The recording feature had begun imposing authoring rules on those answers —
+//! a stray `hrw://lab/` link mid-document would make a run abandon the Answer and narrate
+//! another file — so a feature with no educational purpose was taxing the one artifact
+//! that has nothing but. *"I am concerned about such authoring guidance interfering with
+//! your ability to provide good answers."* The full account is in `DECISIONS.md`.
 //!
-//! # The three decisions that shape a watchable video
+//! **The animation players are a different thing and were not touched.** `playback.rs`
+//! steps the frames recorded during a real compile — matching, Tarjan, reduction — and is
+//! the *replay* tier of the three-tier progression (`docs/vision.md`). `CLAUDE.md`'s rule
+//! that "replay means three things and only one is forbidden" exists precisely so a later
+//! session reading this file does not conclude that frame playback went with the clock.
 //!
-//! 1. **A beat is a link, not a stop.** `dae-construction.md` has seven stops and
-//!    about twenty links. Advancing per *stop* would mean seven jumps separated by
-//!    long stillness; advancing per *link* keeps something moving — the tree opens,
-//!    then a node highlights, then another — which is what makes a recording read
-//!    as a demonstration rather than a slideshow.
+//! # What remains, and who needs it
 //!
-//! 2. **Time is weighted by prose length.** Stops are not equal: a stop that sets
-//!    up the phase deserves longer on screen than one that points at a field. Prose
-//!    length is a crude proxy for that and a good one, now that
-//!    [`the lab prose is load-bearing`](../docs/fixture-labs/README.md).
+//! Splitting a document into stations and slugifying their headings, which serve:
 //!
-//! 3. **The clock stops while the app is busy.** A `load` beat compiles a
-//!    specimen. If the countdown ran through the compile, the video would spend its
-//!    budget on "compiling…" and the interesting frame would be cut off by the next
-//!    beat. [`Autoplay::tick`] takes a `busy` flag and simply does not advance —
-//!    so a slow machine produces a *longer* video, never a broken one.
+//! - **`hrw://lab/<name>/station/<slug>`** — a citation that lands at a station rather
+//!   than at the top of a lab.
+//! - **`CATALOGUE.md`** — the generated index Claude reads to answer from the fixtures.
+//! - **The lab panel's station list**, and `doc_citations`' link checker.
 //!
-//!    **This is the one place the promised duration is deliberately not honoured**,
-//!    and that trade is the right way round: a video that runs eight seconds long
-//!    is fine, one that cuts away mid-compile is not.
+//! None of those needs a link roster or a prose-length measurement, so `LabLink`,
+//! `prose_chars` and `links_in_order` went with the clock. A station is now its heading
+//! and where that heading starts.
 
-use std::time::Duration;
-
-/// Total run lengths offered in the UI.
+/// One station of a lab: a `##` heading, and where it begins.
 ///
-/// **These are conventional social-video lengths, not a measured optimum**, and
-/// they are a picker rather than a constant because the guidance moves and the
-/// judgement is the author's. The default is [`DEFAULT_TOTAL`].
-pub const TOTAL_CHOICES: [(&str, u64); 4] = [("30s", 30), ("60s", 60), ("90s", 90), ("3min", 180)];
-
-/// Default run length: 90 seconds.
-///
-/// The middle of the commonly cited 30–90s range for feed video, and long
-/// enough that a seven-stop lab still gets several seconds per beat.
-pub const DEFAULT_TOTAL: Duration = Duration::from_secs(90);
-
-/// Floor on any single beat, so a short stop is still readable.
-///
-/// Without it, a stop whose prose is one line would flash past at a fraction of a
-/// second on a 30s run and read as a glitch rather than a step.
-const MIN_BEAT: Duration = Duration::from_millis(900);
-
-/// How long the lab text takes to travel to a new beat's position.
-///
-/// **After this, it holds still for the rest of the beat.** Doug, 2026-08-03:
-/// *"the scrolling never pauses when a frame is being displayed."* The scroll was
-/// driven by [`Autoplay::fraction`], which is a **clock** — it advances every frame,
-/// so the prose crept continuously while the reader was trying to read it, and a
-/// paused animation sat under text that would not stay still.
-///
-/// Position and time are different quantities and this is where they part company.
-/// The progress bar still tracks the clock, because that is what a progress bar is
-/// for; the text tracks the *beat*, which changes in steps.
-const SCROLL_TRAVEL: Duration = Duration::from_millis(450);
-
-/// How long a run holds at the document's top before the first beat.
-///
-/// # The defect this fixes, reported 2026-09-04
-///
-/// Doug: *"When I press the play triangle for your answer to start autoplay, the progress
-/// bar is displayed over the top few lines of your answer's text… My goal is for the
-/// progress bar to NOT obscure any of your answer."*
-///
-/// Nothing was overlapping — the bar is in-layout and cannot paint over the prose. What
-/// happened is that pressing play dispatched beat one **immediately**, and the scroll
-/// target is the current beat's link minus `LAB_CONTEXT_ABOVE`. The first `hrw://` link in
-/// an Answer sits below its title, its opening paragraph and often a code fence, so the
-/// document's beginning slid off the top within `SCROLL_TRAVEL` of the click — while the
-/// progress bar appeared above it in the same instant. The two together read as the bar
-/// covering the text.
-///
-/// So the fix is the one Doug asked for from the other end: hold at the top, with the bar
-/// already showing, and *then* begin. A second is long enough to read a title.
-const LEAD_IN: Duration = Duration::from_millis(1000);
-
-/// **A beat that dispatches a link rests this much longer than plain prose.**
-///
-/// Doug, 2026-08-03: *"let's double the time that scrolling is paused at links"* —
-/// and earlier, drawing the same distinction: *"while that is ok while advancing
-/// through prose, my request is that when a link for a frame is encountered …"*.
-///
-/// A prose beat is read at reading speed. A link beat asks the viewer to look at the
-/// right-hand side, take in an algorithm step, and come back to the text — which is
-/// a different and slower job.
-///
-/// **The run length is fixed, so this takes time from prose-only stops rather than
-/// adding it.** That is the intended trade: the stops with links are where the lab
-/// is actually doing something. For absolutely longer pauses rather than relatively
-/// longer ones, pick a longer total.
-const LINK_WEIGHT_MULTIPLIER: f64 = 2.0;
-
-/// Beats that open another application get this much extra weight, on top of
-/// [`LINK_WEIGHT_MULTIPLIER`].
-///
-/// Wolfram Desktop and System Modeler come to the front and need a moment to be
-/// *seen* — and, unlike an HRW beat, the viewer has to reorient to a different
-/// window. Prestarting them (as Doug does when recording) removes the launch cost
-/// but not the reorientation.
-const EXTERNAL_WEIGHT_MULTIPLIER: f64 = 2.5;
-
-/// One link, and **where in the document it sits**.
-///
-/// The position is what lets the lab text scroll to the link being dispatched
-/// rather than to a guess. Doug, 2026-08-03: *"when a link for a frame is
-/// encountered … the scrolling should be paused with that frame link showing with
-/// perhaps a line or two of text which is above that frame link."*
-///
-/// `doc_fraction` is the link's character offset over the document's length. It is
-/// an **approximation of rendered position** — a code block or a table is denser per
-/// character than prose — but it tracks the actual document, which the previous
-/// beat-ordinal scheme did not: that spaced beats evenly regardless of how much text
-/// lay between them, so a stop with seven links and a stop with one advanced by the
-/// same distance.
-#[derive(Debug, Clone, PartialEq)]
-pub struct LabLink {
-    pub url: String,
-    /// Byte offset of the **start of the line** this link is on.
-    ///
-    /// A byte offset rather than a fraction because the consumer splits the
-    /// markdown here and renders the two halves, which yields the link's exact
-    /// pixel position. A fraction can only ever be an estimate of that, and the
-    /// estimate was wrong in a direction no constant could correct.
-    pub byte_offset: usize,
-}
-
-/// One stop of a lab: a heading, its prose, and the links inside it in order.
-#[derive(Debug, Clone, PartialEq)]
+/// The preamble — everything before the first `##` — is a station too, titled from the
+/// document's `#` heading. That is deliberate rather than accidental: `CATALOGUE.md`
+/// lists a lab's title among its stations, and a `station/<slug>` link can address it.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LabStation {
-    /// The heading text, with the `##` and any leading `Station N —` intact, because
-    /// that is what a viewer sees as the caption.
+    /// The heading text, with its `#` markers and surrounding space removed.
     pub heading: String,
-    /// Characters of prose, used to weight this stop's share of the run.
-    pub prose_chars: usize,
-    /// Byte offset of the heading line, for a stop that dispatches nothing.
-    pub heading_offset: usize,
-    /// Every `hrw://` link in this stop, **in document order and not deduplicated**.
+    /// Byte offset of the heading's line start, **in the text it was parsed from**.
     ///
-    /// Deduplicating would be wrong here in a way it is not for hook registration:
-    /// `dae-construction.md` returns to `hrw://load/SingleInertia/Dae` three times,
-    /// and those are three different moments in the run.
-    pub links: Vec<LabLink>,
+    /// The pane splits the document here and lets egui compute the scroll position from
+    /// the resulting cursor — see `LabState::render_split`, which also carries why a byte
+    /// offset cannot be turned into a pixel position by arithmetic.
+    ///
+    /// Offsets are measured against the **stripped** text (`lab::strip_html_comments`),
+    /// which is what the pane renders. `lab::tests_comment_stripping::offsets_are_measured_against_the_stripped_text`
+    /// pins that, because stripping at render time would shift every one of them.
+    pub heading_offset: usize,
 }
 
-/// One dispatched moment: show this link for this long.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Beat {
-    /// Index into the stop list, for the caption and the progress readout.
-    pub stop: usize,
-    /// The link to dispatch, or `None` for a stop that is prose only.
-    pub link: Option<String>,
-    /// How long to remain here once the app is idle.
-    pub dwell: Duration,
-    /// Byte offset of the line this beat's link is on. The lab text is split
-    /// here and rendered in two halves, so the seam **is** the link's position and
-    /// the scroll lands on it exactly.
-    pub byte_offset: usize,
-}
-
-/// The addressable name of a stop, derived from its heading.
-///
 /// `## Station 2 — The surprise` becomes `station-2-the-surprise`. Lowercased, with every
 /// run of non-alphanumerics collapsed to a single `-` and the ends trimmed.
 ///
 /// **This is what makes `hrw://lab/<name>/station/<slug>` stable.** An ordinal would
-/// have been easier and is the wrong choice: inserting a stop shifts every later
+/// have been easier and is the wrong choice: inserting a station shifts every later
 /// citation **silently**, which is exactly how the `worker.rs:3434` citation in
 /// `docs/tech-debt.md` rotted inside a day. A slug is immune to insertion and **fails
 /// loudly** when a heading is renamed — and loud failure is the only kind
 /// `fixture_lab_links_all_resolve` can act on.
 ///
 /// Deliberately derived rather than authored. An explicit `<!-- anchor: … -->` per
-/// stop would be more stable still and would put the burden on the lab author for
-/// every stop, including the ones nothing ever links to. Renames are rare; the
+/// station would be more stable still and would put the burden on the lab author for
+/// every station, including the ones nothing ever links to. Renames are rare; the
 /// checker catches them.
 pub fn station_slug(heading: &str) -> String {
     let mut out = String::new();
@@ -208,15 +89,13 @@ pub fn station_slug(heading: &str) -> String {
     out
 }
 
-/// Split lab markdown into stops.
+/// Split lab markdown into stations.
 ///
-/// A `##` heading starts a stop; everything before the first one becomes the
-/// **preamble stop**, titled from the `#` heading. The preamble is a stop rather
-/// than being skipped because a video needs a beat of title card before it starts
-/// moving, and the lab already has the words for one.
+/// A `##` heading starts a station; everything before the first one becomes the
+/// **preamble station**, titled from the `#` heading.
 ///
 /// Fenced code blocks are skipped when looking for headings, so a `##` comment
-/// inside a Modelica or shell block cannot invent a stop.
+/// inside a Modelica or shell block cannot invent a station.
 pub fn parse_stations(text: &str) -> Vec<LabStation> {
     let mut stops: Vec<LabStation> = Vec::new();
     let mut title = String::from("Lab");
@@ -244,37 +123,21 @@ pub fn parse_stations(text: &str) -> Vec<LabStation> {
         if !in_fence && let Some(rest) = trimmed.strip_prefix("## ") {
             if let Some(done) = current.take() {
                 stops.push(done);
-            } else if !stops.is_empty() || title != "Lab" {
-                // Close the preamble, if anything preceded the first `##`.
             }
             current = Some(LabStation {
                 heading: rest.trim().to_owned(),
-                prose_chars: 0,
                 heading_offset: line_start,
-                links: Vec::new(),
             });
             continue;
         }
-        let stop = match current.as_mut() {
-            Some(s) => s,
-            None => {
-                // Still in the preamble; open it lazily so a lab that starts
-                // with `##` does not get an empty leading card.
-                current = Some(LabStation {
-                    heading: title.clone(),
-                    prose_chars: 0,
-                    heading_offset: 0,
-                    links: Vec::new(),
-                });
-                current.as_mut().expect("just set")
-            }
-        };
-        stop.prose_chars += line.trim().chars().count();
-        stop.links
-            .extend(links_in_order(line).into_iter().map(|url| LabLink {
-                url,
-                byte_offset: line_start,
-            }));
+        if current.is_none() {
+            // Still in the preamble; open it lazily so a lab that starts with `##`
+            // does not get an empty leading card.
+            current = Some(LabStation {
+                heading: title.clone(),
+                heading_offset: 0,
+            });
+        }
     }
     if let Some(done) = current.take() {
         stops.push(done);
@@ -282,491 +145,17 @@ pub fn parse_stations(text: &str) -> Vec<LabStation> {
     stops
 }
 
-/// Every `hrw://` URL on one line, in order, **keeping duplicates**.
-///
-/// Terminator set matches `app::extract_hrw_links`, including the backtick: a verb
-/// named inside a code span is prose *about* the link, not a link.
-fn links_in_order(line: &str) -> Vec<String> {
-    let mut out = Vec::new();
-    for (start, _) in line.match_indices("hrw://") {
-        let rest = &line[start..];
-        let end = rest
-            .find([')', ' ', '\n', '"', '>', '`'])
-            .unwrap_or(rest.len());
-        out.push(rest[..end].to_owned());
-    }
-    out
-}
-
-/// Build the run: one beat per link, weighted by prose, summing to `total`.
-///
-/// `is_external` marks links that leave HRW (a notebook or System Modeler), which
-/// earn extra dwell. It is a closure so this module stays ignorant of the link
-/// grammar, which lives in `app.rs`.
-///
-/// # The guarantee
-///
-/// **The dwells sum to exactly `total`.** Rounding is absorbed by the final beat
-/// rather than distributed, so the promise the UI makes ("90 seconds") is one the
-/// schedule keeps rather than approximately keeps. What the *run* may exceed is
-/// covered in the module docs: waiting on a compile is untimed by design.
-pub fn schedule(
-    stops: &[LabStation],
-    total: Duration,
-    is_external: impl Fn(&str) -> bool,
-) -> Vec<Beat> {
-    // Every stop contributes at least one beat, so a prose-only stop still shows.
-    let mut raw: Vec<(usize, Option<String>, f64, usize)> = Vec::new();
-    for (i, stop) in stops.iter().enumerate() {
-        let n = stop.links.len().max(1) as f64;
-        // Prose is shared across the stop's beats: a long stop with one link
-        // lingers, a long stop with six links moves through them.
-        let per = (stop.prose_chars as f64 / n).max(1.0);
-        if stop.links.is_empty() {
-            raw.push((i, None, per, stop.heading_offset));
-            continue;
-        }
-        for link in &stop.links {
-            let mut w = per * LINK_WEIGHT_MULTIPLIER;
-            if is_external(&link.url) {
-                w *= EXTERNAL_WEIGHT_MULTIPLIER;
-            }
-            raw.push((i, Some(link.url.clone()), w, link.byte_offset));
-        }
-    }
-    if raw.is_empty() {
-        return Vec::new();
-    }
-
-    let total_ms = total.as_millis() as f64;
-    let sum: f64 = raw.iter().map(|(_, _, w, _)| w).sum();
-    let min_ms = MIN_BEAT.as_millis() as f64;
-
-    // The floor can overrun the budget on a long lab with a short total. When it
-    // does, honouring the floor would silently break the duration promise, so the
-    // floor yields: an even split is the least-bad answer and is still uniform.
-    let floored = min_ms * raw.len() as f64 > total_ms;
-
-    let mut beats: Vec<Beat> = Vec::with_capacity(raw.len());
-    let mut spent_ms = 0u128;
-    for (idx, (stop, link, w, byte_offset)) in raw.iter().enumerate() {
-        let share = if floored {
-            total_ms / raw.len() as f64
-        } else {
-            (total_ms * w / sum).max(min_ms)
-        };
-        let ms = if idx + 1 == raw.len() {
-            // Last beat absorbs all rounding, so the sum is exact.
-            (total.as_millis()).saturating_sub(spent_ms)
-        } else {
-            let ms = share.round() as u128;
-            spent_ms += ms;
-            ms
-        };
-        beats.push(Beat {
-            stop: *stop,
-            link: link.clone(),
-            dwell: Duration::from_millis(ms as u64),
-            byte_offset: *byte_offset,
-        });
-    }
-    beats
-}
-
-/// What the clock is doing.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Phase {
-    /// No run in progress.
-    Idle,
-    /// Started, holding at the document's top for [`LEAD_IN`] before the first beat.
-    ///
-    /// A run phase, not a pause: [`Autoplay::is_running`] includes it, so the transport
-    /// shows its bar and the caption while the reader sees the title. Nothing is dispatched
-    /// and the beat clock does not advance.
-    LeadIn,
-    /// Running; the current beat is counting down.
-    Playing,
-    /// Held by the user, or by the window losing focus.
-    Paused,
-    /// The last beat finished.
-    Finished,
-}
-
-/// The clock. Told how much time passed; says when to move.
-#[derive(Debug, Default)]
-pub struct Autoplay {
-    beats: Vec<Beat>,
-    /// Index of the beat currently showing.
-    index: usize,
-    /// Time spent on the current beat.
-    in_beat: Duration,
-    phase: Option<Phase>,
-    /// Set while a beat has been dispatched but the app has not gone idle.
-    waiting: bool,
-    /// Total time actually spent, including waits — what the recording will be.
-    real_elapsed: Duration,
-    /// Time since the current beat was **dispatched**, which keeps running while
-    /// the app is busy. Drives [`Self::travel_t`] so the lab text moves to the
-    /// link *during* the compile it caused rather than after it.
-    since_dispatch: Duration,
-    /// Real time spent in [`Phase::LeadIn`]. Separate from every other clock here
-    /// because it precedes them: the run's budget has not started while this fills.
-    lead_in: Duration,
-    /// **Who paused matters.** A pause caused by the window losing focus should
-    /// lift the moment focus returns; a pause the user asked for must survive
-    /// clicking into another window and back, or the Pause button would be
-    /// undone by the act of using anything else.
-    paused_by_focus: bool,
-}
-
-impl Autoplay {
-    pub fn phase(&self) -> Phase {
-        self.phase.unwrap_or(Phase::Idle)
-    }
-
-    pub fn is_running(&self) -> bool {
-        matches!(self.phase(), Phase::LeadIn | Phase::Playing | Phase::Paused)
-    }
-
-    /// Begin a run. Returns the first beat to dispatch, if there is one.
-    pub fn start(&mut self, beats: Vec<Beat>) -> Option<Beat> {
-        self.beats = beats;
-        self.index = 0;
-        self.in_beat = Duration::ZERO;
-        self.real_elapsed = Duration::ZERO;
-        self.since_dispatch = Duration::ZERO;
-        self.waiting = true;
-        if self.beats.is_empty() {
-            self.phase = Some(Phase::Finished);
-            return None;
-        }
-        // **Nothing is dispatched yet.** The lead-in holds at the top with the transport
-        // already showing; `tick` dispatches beat one when it elapses. Returning the beat
-        // here is what made the document scroll away in the same instant as the click.
-        self.lead_in = Duration::ZERO;
-        self.phase = Some(Phase::LeadIn);
-        None
-    }
-
-    /// Pause because the user asked. Survives focus changes.
-    pub fn pause(&mut self) {
-        // **`LeadIn` too, because the transport offers Pause during it.** A button that
-        // does nothing for a second is worse than one that appears a second late, and the
-        // phase to come back to is derived rather than stored — see `resume`.
-        if matches!(self.phase(), Phase::Playing | Phase::LeadIn) {
-            self.phase = Some(Phase::Paused);
-            self.paused_by_focus = false;
-        }
-    }
-
-    /// Resume because the user asked.
-    pub fn resume(&mut self) {
-        if self.phase() == Phase::Paused {
-            // **Derived from the lead-in clock, not remembered.** A stored "was in the
-            // lead-in" flag is a second copy of a fact `lead_in` already carries, and the
-            // two could disagree; this cannot. Resuming an unfinished lead-in returns to
-            // it, so beat one is still dispatched exactly once.
-            self.phase = Some(if self.lead_in < LEAD_IN {
-                Phase::LeadIn
-            } else {
-                Phase::Playing
-            });
-            self.paused_by_focus = false;
-        }
-    }
-
-    /// Track window focus, pausing while HRW is not the front window.
-    ///
-    /// An external stop brings Wolfram Desktop or System Modeler forward, and a
-    /// clock that kept running behind another window would advance the run while
-    /// nobody was looking at it — the recording would come back to a lab that had
-    /// moved on. Focus returning lifts *this* pause and no other, so a user-pressed
-    /// Pause is not undone by clicking away and back.
-    ///
-    /// **This is also what makes an external hop last as long as the viewer wants**
-    /// rather than as long as the schedule guessed.
-    pub fn set_focused(&mut self, focused: bool) {
-        match (focused, self.phase()) {
-            // `LeadIn` counts as running, so losing focus during it must hold too —
-            // otherwise the second at the top elapses behind another window and the run
-            // begins unwatched, which is the whole thing this guard exists to prevent.
-            (false, Phase::Playing | Phase::LeadIn) => {
-                self.phase = Some(Phase::Paused);
-                self.paused_by_focus = true;
-            }
-            (true, Phase::Paused) if self.paused_by_focus => {
-                // Same derivation as `resume`: an unfinished lead-in resumes as a lead-in.
-                self.phase = Some(if self.lead_in < LEAD_IN {
-                    Phase::LeadIn
-                } else {
-                    Phase::Playing
-                });
-                self.paused_by_focus = false;
-            }
-            _ => {}
-        }
-    }
-
-    /// Abandon the run. The lab text and the app's state stay as they are — a
-    /// viewer who stops halfway is looking at something they wanted to look at.
-    pub fn stop(&mut self) {
-        self.phase = Some(Phase::Idle);
-        self.beats.clear();
-        self.index = 0;
-        self.in_beat = Duration::ZERO;
-    }
-
-    /// Advance by `dt`. Returns the next beat to dispatch, when one is due.
-    ///
-    /// `busy` is the app compiling or otherwise mid-work. **While busy the clock
-    /// does not advance at all** — see the module docs: the dwell is time the
-    /// viewer spends *looking at a finished frame*, and counting a compile against
-    /// it would spend the budget on a progress spinner.
-    pub fn tick(&mut self, dt: Duration, busy: bool) -> Option<Beat> {
-        // **The lead-in runs on real time and ignores `busy`.** A compile triggered by the
-        // previous lab may still be finishing; holding the title on screen is exactly what
-        // there is to do while it does, and the clock this delays has not started.
-        if self.phase() == Phase::LeadIn {
-            self.lead_in += dt;
-            if self.lead_in < LEAD_IN {
-                return None;
-            }
-            self.phase = Some(Phase::Playing);
-            return self.beats.first().cloned();
-        }
-        if self.phase() != Phase::Playing {
-            return None;
-        }
-        self.real_elapsed += dt;
-        // **Before the `busy` return.** The text must travel to the link while the
-        // compile it triggered is still running; see `travel_t`.
-        self.since_dispatch += dt;
-        if busy {
-            self.waiting = true;
-            return None;
-        }
-        // First idle frame after a dispatch: the beat's own time starts here.
-        if self.waiting {
-            self.waiting = false;
-            self.in_beat = Duration::ZERO;
-            return None;
-        }
-        self.in_beat += dt;
-        let due = self
-            .beats
-            .get(self.index)
-            .map(|b| b.dwell)
-            .unwrap_or_default();
-        if self.in_beat < due {
-            return None;
-        }
-        self.index += 1;
-        self.in_beat = Duration::ZERO;
-        self.since_dispatch = Duration::ZERO;
-        match self.beats.get(self.index).cloned() {
-            Some(next) => {
-                self.waiting = true;
-                Some(next)
-            }
-            None => {
-                self.phase = Some(Phase::Finished);
-                None
-            }
-        }
-    }
-
-    /// Which beat is showing, out of how many (1-based for display).
-    pub fn progress(&self) -> (usize, usize) {
-        (
-            self.index.min(self.beats.len().saturating_sub(1)) + 1,
-            self.beats.len(),
-        )
-    }
-
-    /// Fraction of the run completed, for a progress bar and for scrolling the
-    /// lab text in step with the run.
-    pub fn fraction(&self) -> f32 {
-        if self.beats.is_empty() || self.phase() == Phase::LeadIn {
-            return 0.0;
-        }
-        if self.phase() == Phase::Finished {
-            return 1.0;
-        }
-        let done: u128 = self.beats[..self.index]
-            .iter()
-            .map(|b| b.dwell.as_millis())
-            .sum();
-        let total: u128 = self.beats.iter().map(|b| b.dwell.as_millis()).sum();
-        if total == 0 {
-            return 0.0;
-        }
-        ((done + self.in_beat.as_millis()) as f64 / total as f64).clamp(0.0, 1.0) as f32
-    }
-
-    /// **How far the text has travelled toward this beat's link**, 0.0 to 1.0.
-    ///
-    /// The caller interpolates the scroll offset between the previous link's
-    /// measured position and this one's; at 1.0 the text is on the link and
-    /// **stops**, leaving the rest of the beat for reading.
-    ///
-    /// # It advances while the app is busy, and that is the fix
-    ///
-    /// Doug, 2026-08-03: *"while that log view is showing that compilation is
-    /// happening … the link which caused all of the changes on the RHS is not being
-    /// shown."* The travel used to run off `in_beat`, which [`Self::tick`] freezes at
-    /// zero for the whole compile — so the text sat at the *previous* beat's link
-    /// until the compile finished, which is precisely when the reader wants to see
-    /// **which link asked for this**.
-    ///
-    /// So this runs off `since_dispatch`, which starts when the beat is dispatched
-    /// and keeps running regardless of `busy`. **The text leads and the right-hand
-    /// side follows**, rather than both arriving after the wait.
-    ///
-    /// The dwell is still not charged during a compile — that separation is the
-    /// point. *When the reader is shown the link* and *how long the beat lasts* are
-    /// different questions, and conflating them is what produced this bug.
-    pub fn travel_t(&self) -> f32 {
-        if self.beats.is_empty() {
-            return 1.0;
-        }
-        // Held at the start of the travel during the lead-in, which puts the scroll target
-        // at the top of the document rather than at beat one's link.
-        if self.phase() == Phase::LeadIn {
-            return 0.0;
-        }
-        let travel = SCROLL_TRAVEL;
-        let t = (self.since_dispatch.as_secs_f32() / travel.as_secs_f32()).clamp(0.0, 1.0);
-        // Smoothstep: a hard jump reads as a glitch, a linear ramp as drift.
-        t * t * (3.0 - 2.0 * t)
-    }
-
-    /// Byte offset in the lab text of the line the current beat's link is on.
-    ///
-    /// The consumer splits the markdown here and renders both halves, so the seam
-    /// is the link's exact pixel position — no estimate involved.
-    pub fn current_byte_offset(&self) -> usize {
-        self.beats
-            .get(self.index.min(self.beats.len().saturating_sub(1)))
-            .map(|b| b.byte_offset)
-            .unwrap_or(0)
-    }
-
-    /// The stop index currently showing, for the caption.
-    pub fn current_station(&self) -> Option<usize> {
-        self.beats
-            .get(self.index.min(self.beats.len().saturating_sub(1)))
-            .map(|b| b.stop)
-    }
-
-    /// Wall-clock time actually spent, which exceeds the requested total by
-    /// however long the compiles took.
-    pub fn real_elapsed(&self) -> Duration {
-        self.real_elapsed
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    /// A run past its [`LEAD_IN`], with the first beat already dispatched.
-    ///
-    /// **What every test below used to get from `start` alone.** The lead-in added on
-    /// 2026-09-04 means `start` dispatches nothing, so six tests that were about beat
-    /// *timing* would otherwise each carry a tick to skip it — six copies of a detail none
-    /// of them is testing. `a_run_holds_at_the_top_before_its_first_beat` is the one that
-    /// tests the lead-in itself, and it does not use this.
-    ///
-    /// Returns the first dispatched beat, which is what `start` used to return.
-    fn playing(beats: Vec<Beat>) -> (Autoplay, Option<Beat>) {
-        let mut ap = Autoplay::default();
-        assert_eq!(
-            ap.start(beats),
-            None,
-            "start dispatches nothing; the lead-in does"
-        );
-        let first = ap.tick(LEAD_IN, false);
-        assert_eq!(ap.phase(), Phase::Playing, "the lead-in is over");
-        (ap, first)
-    }
-
-    /// A beat for tests, positioned a quarter of the document apart.
-    ///
-    /// A constructor rather than struct literals at every site: `Beat` gained
-    /// `doc_fraction` on 2026-08-03 and broke seven literals at once, which is the
-    /// tax that makes tests feel expensive to keep.
-    fn beat(stop: usize, link: Option<&str>, secs: u64) -> Beat {
-        Beat {
-            stop,
-            link: link.map(str::to_owned),
-            dwell: Duration::from_secs(secs),
-            byte_offset: stop * 100,
-        }
-    }
-
-    /// Every link in a document becomes a beat — several on one line, or one per line.
-    ///
-    /// # What Doug suspected, and why it was worth measuring
-    ///
-    /// 2026-09-04: *"I wonder if that is because it is the second link on the line. Which
-    /// makes me wonder if other links in the answer are not being clicked because they are
-    /// not the first links in their lines."* The failure he saw had another cause — a follow
-    /// link went through a toggle — but the question was the right one to ask, and a lost
-    /// beat is invisible: a link that never fires looks exactly like one whose action did
-    /// nothing.
-    ///
-    /// Measured on the Answer he was reading: 29 links, 29 beats carrying one. This pins the
-    /// property so it cannot drift, in both arrangements, because they are different code
-    /// paths — `links_in_order` handles several URLs on one source line, and the outer loop
-    /// over lines handles a paragraph that markdown renders as one line but whose links sit
-    /// on separate source lines. **Seven of the Answer's paragraphs are the second kind, and
-    /// an earlier count of this missed all of them** by counting source lines instead.
-    #[test]
-    fn every_link_becomes_a_beat_however_the_lines_are_broken() {
-        // Three arrangements: two on one source line, two soft-wrapped into one rendered
-        // paragraph, and one alone.
-        let text = "\
-# Lab
-
-## Station 1 — several ways to break a line
-
-[a](hrw://load/BouncingBall) \u{b7} [b](hrw://follow/v)
-
-[c](hrw://load/BouncingBall/Parse) \u{b7}
-[d](hrw://stage/Dae/node/x)
-
-[e](hrw://source/10)
-";
-        let stations = parse_stations(text);
-        let beats = schedule(&stations, Duration::from_secs(30), |_| false);
-        let urls: Vec<&str> = beats.iter().filter_map(|b| b.link.as_deref()).collect();
-
-        assert_eq!(
-            urls.len(),
-            text.matches("hrw://").count(),
-            "every link must produce a beat; got {urls:?}",
-        );
-        // Named individually, because a count alone would pass if one link were duplicated
-        // and another dropped.
-        for want in [
-            "hrw://load/BouncingBall",
-            "hrw://follow/v",
-            "hrw://load/BouncingBall/Parse",
-            "hrw://stage/Dae/node/x",
-            "hrw://source/10",
-        ] {
-            assert!(urls.contains(&want), "{want} produced no beat: {urls:?}");
-        }
-    }
-
     const SAMPLE: &str = "\
 # Fixture lab — demo
 
-Preamble prose that sets the scene for the whole thing.
+Preamble prose.
 
 ## Station 1 — first
 
-Some prose here, a moderate amount of it, enough to weigh more than stop two.
 More prose on a second line to make the difference unmistakable.
 
 [a](hrw://load/M/Dae)
@@ -787,531 +176,40 @@ Short.
             stops[0].heading, "Fixture lab — demo",
             "the preamble is titled by `#`"
         );
-        assert!(stops[0].links.is_empty(), "the preamble has no links here");
         assert_eq!(stops[1].heading, "Station 1 — first");
-        let urls: Vec<&str> = stops[1].links.iter().map(|l| l.url.as_str()).collect();
-        assert_eq!(urls, vec!["hrw://load/M/Dae", "hrw://stage/Dae/node/x"]);
-        assert_eq!(stops[2].links[0].url, "hrw://notebook/n.nb");
-        assert!(
-            stops[1].prose_chars > stops[2].prose_chars,
-            "stop 1 is visibly longer, and the schedule depends on noticing that",
-        );
+        assert_eq!(stops[2].heading, "Station 2 — second");
     }
 
-    /// **Duplicate links are kept**, unlike hook registration.
-    ///
-    /// `dae-construction.md` returns to the same DAE tab three times, and those are
-    /// three different moments in the run. Deduplicating would silently shorten
-    /// the run and drop two of them.
+    /// Each station's offset must land on its own heading, because the pane slices the
+    /// document there. An off-by-one line here sends a `station/<slug>` citation to the
+    /// paragraph above or below the station it names.
     #[test]
-    fn a_repeated_link_is_a_repeated_beat() {
-        let stops = parse_stations("## S\n[a](hrw://load/M/Dae)\ntext\n[b](hrw://load/M/Dae)\n");
-        assert_eq!(
-            stops[0].links.len(),
-            2,
-            "the same target twice is two beats"
-        );
+    fn a_stations_offset_lands_on_its_own_heading() {
+        for stop in parse_stations(SAMPLE).iter().skip(1) {
+            assert!(
+                SAMPLE[stop.heading_offset..].starts_with("## "),
+                "{:?} points at {:?}",
+                stop.heading,
+                &SAMPLE[stop.heading_offset..stop.heading_offset + 20],
+            );
+        }
     }
 
-    /// A `##` inside a fenced block is code, not a stop.
+    /// A `##` inside a fenced block is code, not a station.
     #[test]
     fn a_heading_inside_a_code_fence_does_not_invent_a_station() {
         let stops = parse_stations("## Real\n```sh\n## not a heading\n```\ntext\n");
         assert_eq!(stops.len(), 1, "one real stop: {stops:#?}");
     }
 
-    /// **The schedule lasts exactly as long as it promised.**
-    ///
-    /// The reason this is a test and not a comment: the run length is the entire
-    /// feature request. A schedule that drifts by a few percent per beat is
-    /// invisible in review and obvious in a recording that overruns its slot.
+    /// Slugs are what citations are written against, so the shape is pinned rather than
+    /// left to whatever the loop happens to produce.
     #[test]
-    fn the_dwells_sum_to_the_requested_total() {
-        let stops = parse_stations(SAMPLE);
-        for secs in [30u64, 60, 90, 180] {
-            let total = Duration::from_secs(secs);
-            let beats = schedule(&stops, total, |l| l.contains("notebook"));
-            let sum: Duration = beats.iter().map(|b| b.dwell).sum();
-            assert_eq!(sum, total, "a {secs}s run must schedule exactly {secs}s");
-            assert!(!beats.is_empty());
-        }
-    }
-
-    /// More prose earns more time, and an external hop earns more still.
-    #[test]
-    fn weighting_favours_long_stations_and_external_hops() {
-        let stops = parse_stations(SAMPLE);
-        let beats = schedule(&stops, Duration::from_secs(90), |l| l.contains("notebook"));
-
-        let stop1: Duration = beats.iter().filter(|b| b.stop == 1).map(|b| b.dwell).sum();
-        let stop2: Duration = beats.iter().filter(|b| b.stop == 2).map(|b| b.dwell).sum();
-        assert!(
-            stop1 > stop2,
-            "stop 1 has far more prose and two links; it must not get less time \
-             ({stop1:?} vs {stop2:?})",
-        );
-
-        // The external beat outweighs a plain beat drawn from the same stop's prose.
-        let external = beats
-            .iter()
-            .find(|b| b.link.as_deref() == Some("hrw://notebook/n.nb"));
-        assert!(
-            external.is_some_and(|b| b.dwell >= MIN_BEAT),
-            "external beats are not clipped"
-        );
-    }
-
-    /// Every stop appears, including one with no links at all.
-    #[test]
-    fn a_prose_only_station_still_gets_a_beat() {
-        let stops = parse_stations("# T\nintro\n\n## Silent\njust words, no links\n");
-        let beats = schedule(&stops, Duration::from_secs(30), |_| false);
-        let covered: Vec<usize> = beats.iter().map(|b| b.stop).collect();
-        for i in 0..stops.len() {
-            assert!(
-                covered.contains(&i),
-                "stop {i} was scheduled out of the run"
-            );
-        }
-        assert!(
-            beats.iter().any(|b| b.link.is_none()),
-            "a prose stop dwells without dispatching"
-        );
-    }
-
-    /// **The clock does not run while the app is busy.**
-    ///
-    /// The behaviour that keeps a recording watchable: a `load` beat compiles, and
-    /// counting the compile against the dwell would spend the beat on a spinner and
-    /// cut away as the interesting frame arrived.
-    #[test]
-    fn a_busy_app_does_not_burn_the_dwell() {
-        let beats = vec![beat(0, Some("a"), 2), beat(1, Some("b"), 2)];
-        let (mut ap, first) = playing(beats);
-        assert_eq!(first.and_then(|b| b.link), Some("a".to_owned()));
-
-        // Ten seconds of compiling: no advance, and no time charged to the beat.
-        for _ in 0..10 {
-            assert!(
-                ap.tick(Duration::from_secs(1), true).is_none(),
-                "busy must not advance"
-            );
-        }
-        // First idle frame arms the beat without consuming it.
-        assert!(ap.tick(Duration::from_millis(16), false).is_none());
-        // Now the dwell runs.
-        assert!(
-            ap.tick(Duration::from_millis(1_500), false).is_none(),
-            "not due yet"
-        );
-        let next = ap.tick(Duration::from_millis(600), false);
+    fn a_slug_is_lowercase_with_single_dashes_and_no_edges() {
         assert_eq!(
-            next.and_then(|b| b.link),
-            Some("b".to_owned()),
-            "due, so it advances"
+            station_slug("## Station 2 — The surprise"),
+            "station-2-the-surprise"
         );
-
-        // And the run reports the real cost, which is longer than the schedule.
-        assert!(
-            ap.real_elapsed() >= Duration::from_secs(12),
-            "the wait is invisible to the schedule but not to the recording",
-        );
-    }
-
-    /// Pause holds the clock; resume continues from where it stopped.
-    #[test]
-    fn pause_holds_and_resume_continues() {
-        let beats = vec![beat(0, None, 2)];
-        let (mut ap, _) = playing(beats);
-        ap.tick(Duration::from_millis(16), false); // arm
-        ap.tick(Duration::from_millis(1_000), false);
-        ap.pause();
-        assert_eq!(ap.phase(), Phase::Paused);
-        for _ in 0..100 {
-            assert!(
-                ap.tick(Duration::from_secs(1), false).is_none(),
-                "paused must not advance"
-            );
-        }
-        ap.resume();
-        assert!(
-            ap.tick(Duration::from_millis(1_100), false).is_none(),
-            "last beat, so no next"
-        );
-        assert_eq!(
-            ap.phase(),
-            Phase::Finished,
-            "the run ends rather than looping"
-        );
-        assert_eq!(ap.fraction(), 1.0);
-    }
-
-    /// **The text travels to the link and then stops.**
-    ///
-    /// Doug: *"the scrolling never pauses when a frame is being displayed."* The
-    /// travel used to be driven by `fraction()`, a **clock**, so the prose crept
-    /// every frame -- worst exactly where the lab is best, with a deliberately
-    /// paused animation under text that would not stay still.
-    #[test]
-    fn the_text_travels_then_stops_until_the_beat_changes() {
-        let (mut ap, _) = playing(vec![beat(0, Some("a"), 6), beat(1, Some("b"), 6)]);
-        assert_eq!(ap.travel_t(), 0.0, "a fresh beat has not travelled yet");
-
-        ap.tick(SCROLL_TRAVEL, false);
-        assert_eq!(ap.travel_t(), 1.0, "and arrives within the travel window");
-
-        // Then it is STILL -- five seconds of ticking must not move it.
-        for _ in 0..50 {
-            ap.tick(Duration::from_millis(100), false);
-            assert_eq!(
-                ap.travel_t(),
-                1.0,
-                "the text must hold still for the rest of the beat; a reader cannot                  read prose that is sliding, and the animation under it is paused",
-            );
-        }
-
-        // **Non-vacuity**: a new beat restarts the travel and re-aims it, so
-        // `travel_t` is not simply pinned at 1.0.
-        ap.tick(Duration::from_secs(2), false);
-        assert_eq!(ap.progress().0, 2, "precondition: the beat advanced");
-        assert!(ap.travel_t() < 1.0, "a new beat starts a new travel");
-        assert_eq!(
-            ap.current_byte_offset(),
-            100,
-            "and aims at the new link's line"
-        );
-    }
-
-    /// **The text reaches the link WHILE the app is still compiling.**
-    ///
-    /// Doug, 2026-08-03: *"while that log view is showing that compilation is
-    /// happening, and when the RHS is navigated to the Structural -> Matching view,
-    /// the link which caused all of the changes on the RHS is not being shown."*
-    ///
-    /// The travel ran off `in_beat`, which `tick` freezes at zero for the whole
-    /// compile -- so the text stayed at the *previous* link until the compile
-    /// finished, which is exactly when a viewer wants to know **which link asked for
-    /// this**. `since_dispatch` runs regardless of `busy`, so the text leads and the
-    /// right-hand side follows.
-    ///
-    /// The dwell is still not charged during a compile, and keeping those apart is
-    /// the point: *when the reader is shown the link* and *how long the beat lasts*
-    /// are different questions, and conflating them produced this bug.
-    #[test]
-    fn the_text_reaches_the_link_while_the_app_is_still_busy() {
-        let (mut ap, _) = playing(vec![beat(0, Some("a"), 6), beat(1, Some("load"), 6)]);
-        ap.tick(Duration::from_millis(16), false);
-        ap.tick(Duration::from_secs(7), false); // finish beat 0, dispatch beat 1
-        assert_eq!(ap.progress().0, 2, "precondition: the load beat is showing");
-
-        // The compile starts. The clock is held...
-        ap.tick(SCROLL_TRAVEL, true);
-        // ...but the text has already arrived at the link that caused it.
-        assert_eq!(
-            ap.travel_t(),
-            1.0,
-            "the link must be on screen DURING its own compile, not after it",
-        );
-
-        // And the dwell genuinely was not charged.
-        let before = ap.progress().0;
-        for _ in 0..100 {
-            ap.tick(Duration::from_millis(100), true);
-        }
-        assert_eq!(
-            ap.progress().0,
-            before,
-            "a busy app must not burn the dwell"
-        );
-        assert_eq!(
-            ap.travel_t(),
-            1.0,
-            "and the text stays on the link throughout"
-        );
-    }
-
-    /// A run holds at the document's top for a second before dispatching anything.
-    ///
-    /// # What this reproduces
-    ///
-    /// Doug, 2026-09-04, on pressing play: the top few lines of an Answer disappeared and
-    /// read as being covered by the progress bar. Nothing overlapped — `start` dispatched
-    /// beat one immediately, and the scroll target is that beat's link, which in an Answer
-    /// sits below the title and opening paragraph. The document's beginning left the screen
-    /// in the same instant as the click.
-    ///
-    /// Three assertions, and the middle one is the fix: `start` returns **no** beat, so
-    /// nothing is dispatched and `travel_t` stays at 0, which puts the scroll target at the
-    /// top rather than at beat one's link.
-    #[test]
-    fn a_run_holds_at_the_top_before_its_first_beat() {
-        let mut ap = Autoplay::default();
-        let first = ap.start(vec![beat(0, Some("a"), 6), beat(1, Some("b"), 6)]);
-
-        assert_eq!(
-            first, None,
-            "nothing is dispatched on the click \u{2014} that is what moved the document",
-        );
-        assert_eq!(ap.phase(), Phase::LeadIn);
-        assert!(
-            ap.is_running(),
-            "the lead-in is a run, so the transport shows its bar while the title is read",
-        );
-        assert_eq!(
-            ap.travel_t(),
-            0.0,
-            "held at the start of the travel, which is the top of the document",
-        );
-        assert_eq!(
-            ap.fraction(),
-            0.0,
-            "and the bar reads zero rather than a first slice"
-        );
-
-        // Most of the way through the lead-in: still nothing.
-        assert_eq!(ap.tick(LEAD_IN - Duration::from_millis(50), false), None);
-        assert_eq!(ap.phase(), Phase::LeadIn, "still holding");
-
-        // Crossing it dispatches beat one, exactly once.
-        let dispatched = ap.tick(Duration::from_millis(60), false);
-        assert!(
-            dispatched.is_some(),
-            "the first beat lands when the lead-in elapses"
-        );
-        assert_eq!(ap.phase(), Phase::Playing);
-    }
-
-    /// The lead-in is pausable, and pausing it does not lose the first beat.
-    ///
-    /// The transport offers Pause from the first frame rather than changing identity a
-    /// second after the click, so this has to hold: a reader who pressed play by mistake
-    /// stops it before anything moves, and resuming still begins at beat one.
-    #[test]
-    fn pausing_during_the_lead_in_still_begins_at_the_first_beat() {
-        let mut ap = Autoplay::default();
-        ap.start(vec![beat(0, Some("a"), 6), beat(1, Some("b"), 6)]);
-
-        ap.tick(Duration::from_millis(200), false);
-        ap.pause();
-        assert_eq!(ap.phase(), Phase::Paused);
-        assert_eq!(
-            ap.tick(Duration::from_secs(10), false),
-            None,
-            "a paused lead-in dispatches nothing however long it is held",
-        );
-
-        ap.resume();
-        // The lead-in resumes where it left off rather than restarting.
-        let dispatched = ap.tick(LEAD_IN, false);
-        assert!(dispatched.is_some(), "resuming still reaches beat one");
-        assert_eq!(
-            ap.progress().0,
-            1,
-            "and it is the FIRST beat, not the second"
-        );
-    }
-
-    /// The clock and the text are **different quantities**, and only one of them
-    /// advances continuously.
-    #[test]
-    fn the_progress_bar_tracks_time_while_the_text_tracks_the_beat() {
-        let (mut ap, _) = playing(vec![beat(0, None, 10), beat(1, None, 10)]);
-        ap.tick(Duration::from_millis(16), false);
-        ap.tick(SCROLL_TRAVEL, false);
-
-        let f0 = ap.fraction();
-        ap.tick(Duration::from_secs(4), false);
-
-        assert!(
-            ap.fraction() > f0,
-            "the clock must keep running: {f0} -> {}",
-            ap.fraction()
-        );
-        assert_eq!(ap.travel_t(), 1.0, "the text must not");
-    }
-
-    /// **A beat's position is the byte offset of its link's line, exactly.**
-    ///
-    /// Two estimates preceded this and both failed. The first scrolled by the clock,
-    /// so the text crept continuously. The second scrolled by beat *ordinal* -- Doug:
-    /// *"the scroll is being advanced by a constant number of lab prose lines for
-    /// each advancement"* -- which spaced beats evenly regardless of how much text
-    /// lay between them.
-    ///
-    /// A character-offset *fraction* was the third, and it failed too, because
-    /// rendered height per character is not constant: prose wraps in a narrow panel
-    /// and a code block does not. **No constant corrects an estimate that is wrong in
-    /// both directions**, so `app.rs` splits the markdown at this offset and measures
-    /// the seam instead.
-    ///
-    /// **Checks the correspondence, not the arithmetic**: adjacent links stay close,
-    /// a link after a wall of prose lands far below it, and the offsets index the
-    /// text they claim to.
-    #[test]
-    fn a_beats_position_is_its_links_line_not_its_ordinal() {
-        // Built by joining lines rather than as one long literal. The first version
-        // used a `\` continuation, which left indentation in front of `[d]`, and the
-        // test then failed on its own fixture rather than on the code.
-        let mut lines: Vec<String> = vec![
-            "# T".to_owned(),
-            "intro".to_owned(),
-            String::new(),
-            "## Crowded".to_owned(),
-            "[a](hrw://x/1)".to_owned(),
-            "[b](hrw://x/2)".to_owned(),
-            "[c](hrw://x/3)".to_owned(),
-            "[d](hrw://x/4)".to_owned(),
-            String::new(),
-        ];
-        for _ in 0..40 {
-            lines.push("padding prose that occupies real document space".to_owned());
-        }
-        lines.push("## Far below".to_owned());
-        lines.push("[e](hrw://x/5)".to_owned());
-        let text = lines.join("\n");
-        let stops = parse_stations(&text);
-        let beats = schedule(&stops, Duration::from_secs(60), |_| false);
-
-        let by_url = |u: &str| {
-            beats
-                .iter()
-                .find(|b| b.link.as_deref() == Some(u))
-                .unwrap_or_else(|| panic!("{u} missing from the run"))
-        };
-
-        // **The offset must actually index this link's line.** This is the property
-        // `app.rs` relies on when it splits the string, and the one an ordinal or a
-        // fraction cannot provide.
-        for u in ["hrw://x/1", "hrw://x/4", "hrw://x/5"] {
-            let b = by_url(u);
-            assert!(
-                text[b.byte_offset..].starts_with('['),
-                "{u} must point at the start of its own line, got {:?}",
-                &text[b.byte_offset..(b.byte_offset + 20).min(text.len())],
-            );
-            assert!(
-                text[b.byte_offset..].contains(u),
-                "and that line must contain {u}",
-            );
-        }
-
-        // Four adjacent links are close; the one past 40 lines of filler is not.
-        let (a, d, e) = (
-            by_url("hrw://x/1"),
-            by_url("hrw://x/4"),
-            by_url("hrw://x/5"),
-        );
-        let crowded = d.byte_offset - a.byte_offset;
-        let gap = e.byte_offset - d.byte_offset;
-        assert!(
-            gap > crowded * 10,
-            "the big gap in the document must be the big gap in the scroll              ({gap} bytes vs {crowded})",
-        );
-
-        // Positions must not go backwards; the run reads top to bottom.
-        for w in beats.windows(2) {
-            assert!(
-                w[1].byte_offset >= w[0].byte_offset,
-                "beats must advance down the page: {} then {}",
-                w[0].byte_offset,
-                w[1].byte_offset,
-            );
-        }
-    }
-
-    /// **Losing focus pauses; regaining it resumes — but only its own pause.**
-    ///
-    /// The two pauses look identical in `phase()` and must not behave identically.
-    /// If focus-return lifted a user pause, pressing Pause and then clicking any
-    /// other window would silently restart the recording.
-    #[test]
-    fn focus_pauses_itself_without_undoing_a_user_pause() {
-        let beats = vec![beat(0, None, 5)];
-
-        // Focus loss pauses, focus return resumes.
-        let (mut ap, _) = playing(beats.clone());
-        ap.set_focused(false);
-        assert_eq!(
-            ap.phase(),
-            Phase::Paused,
-            "an external window pauses the run"
-        );
-        assert!(
-            ap.tick(Duration::from_secs(10), false).is_none(),
-            "and the clock is held"
-        );
-        ap.set_focused(true);
-        assert_eq!(ap.phase(), Phase::Playing, "coming back resumes it");
-
-        // **The lead-in is held too, and comes back as a lead-in.** Otherwise the second
-        // at the document's top would elapse behind another window and the run would begin
-        // unwatched, which is the thing this guard exists to prevent.
-        let mut lead = Autoplay::default();
-        lead.start(beats.clone());
-        lead.set_focused(false);
-        assert_eq!(
-            lead.phase(),
-            Phase::Paused,
-            "losing focus holds the lead-in"
-        );
-        lead.set_focused(true);
-        assert_eq!(
-            lead.phase(),
-            Phase::LeadIn,
-            "and coming back resumes the LEAD-IN rather than the run, because the beat it \
-             precedes has still not been dispatched",
-        );
-
-        // A user pause survives the same round trip.
-        let (mut ap, _) = playing(beats);
-        ap.pause();
-        ap.set_focused(false);
-        ap.set_focused(true);
-        assert_eq!(
-            ap.phase(),
-            Phase::Paused,
-            "clicking away and back must not undo a deliberate Pause",
-        );
-        ap.resume();
-        assert_eq!(ap.phase(), Phase::Playing);
-    }
-
-    /// The whole of `dae-construction.md` schedules, and does so sanely.
-    ///
-    /// **Non-vacuity for the feature as a whole**: the lab this was built for must
-    /// produce a run with real structure, not one giant beat or a hundred flashes.
-    #[test]
-    fn the_dae_lab_schedules_into_a_watchable_run() {
-        let path = concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/docs/fixture-labs/dae-construction.md"
-        );
-        let text = std::fs::read_to_string(path).expect("the lab is versioned");
-        let stops = parse_stations(&text);
-        assert!(
-            stops.len() >= 8,
-            "preamble plus seven stops, got {}",
-            stops.len()
-        );
-
-        let beats = schedule(&stops, DEFAULT_TOTAL, |l| {
-            l.starts_with("hrw://notebook/") || l.starts_with("hrw://systemmodeler/")
-        });
-        assert!(
-            beats.len() >= 15,
-            "about twenty links; a run of {} beats would be a slideshow",
-            beats.len(),
-        );
-        assert_eq!(
-            beats.iter().map(|b| b.dwell).sum::<Duration>(),
-            DEFAULT_TOTAL,
-        );
-        // Every stop of the lab is represented; none is scheduled out.
-        for i in 0..stops.len() {
-            assert!(
-                beats.iter().any(|b| b.stop == i),
-                "stop {i} missing from the run"
-            );
-        }
+        assert_eq!(station_slug("  Trailing — "), "trailing");
     }
 }

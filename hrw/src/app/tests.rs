@@ -102,27 +102,6 @@ impl App {
         self.lab.text().is_some()
     }
 
-    /// Start a self-running run, as the Play button does.
-    pub(crate) fn test_start_autoplay(&mut self) {
-        self.start_autoplay();
-    }
-
-    /// Stop a run, as the Stop button does.
-    pub(crate) fn test_stop_autoplay(&mut self) {
-        self.lab.autoplay.stop();
-        self.restore_mode_after_autoplay();
-    }
-
-    /// The autoplay clock's phase, for asserting a run is actually under way.
-    pub(crate) fn test_autoplay_phase(&self) -> crate::autoplay::Phase {
-        self.lab.autoplay.phase()
-    }
-
-    /// Beats done and beats total, as the readout shows them.
-    pub(crate) fn test_autoplay_progress(&self) -> (usize, usize) {
-        self.lab.autoplay.progress()
-    }
-
     /// Put the right-hand side on the log, as it is while a compile runs.
     pub(crate) fn test_view_log(&mut self) {
         self.viewing_log = true;
@@ -3167,39 +3146,6 @@ fn link_verbs_declare_whether_they_need_a_specimen() {
     );
 }
 
-/// **A verb that opens another application gets autoplay's longer beat.**
-///
-/// Same shape as the test above and the same reason for existing: the exhaustive match in
-/// `leaves_hrw` guarantees an *answer* per verb, never a *correct* one. The two cases that
-/// separate a right answer from a plausible one are here — `OpenDoc` spawns `code` and so
-/// hops out, while `OpenLab` opens in HRW's own panel and does not, which is the pair a
-/// reader skimming "the Open* verbs" would get wrong.
-#[test]
-fn a_verb_that_opens_another_application_gets_a_longer_beat() {
-    for link in [
-        HrwLink::OpenDoc("upstream-issues.md".to_owned()),
-        HrwLink::OpenSource("crates/rumoca-core/src/lib.rs#VarName".to_owned()),
-        HrwLink::OpenNotebook("structural-vs-numerical-rank.nb".to_owned()),
-        HrwLink::OpenInSystemModeler("RcCircuit".to_owned()),
-    ] {
-        assert!(
-            link.leaves_hrw(),
-            "{} puts another window in front of the reader",
-            link.describe(),
-        );
-    }
-    for link in [
-        HrwLink::OpenLab {
-            lab: "the-pipeline".to_owned(),
-            stop: None,
-        },
-        HrwLink::LoadSpecimen("RcCircuit".to_owned()),
-        HrwLink::SwitchStage(StageKind::Structural, None),
-    ] {
-        assert!(!link.leaves_hrw(), "{} happens inside HRW", link.describe(),);
-    }
-}
-
 /// **The lab-citation forms parse.** Missing when the form shipped, which is
 /// exactly the gap a must-fire test exists to close: `fixture_lab_links_all_resolve`
 /// only checks links found in *fixture* labs, and `lab_citations_…` only checks
@@ -5329,121 +5275,6 @@ fn a_sub_view_link_for_another_stage_is_not_refused() {
         FlattenView::Equations,
         "and it must not be applied either \u{2014} `apply_sub_view` matches the stage",
     );
-}
-
-/// **A self-running run puts the mode back when it ends.**
-///
-/// Doug, 2026-08-03: *"at the completion of the lab, the mode is being switched
-/// from lab mode to specimen mode."*
-///
-/// The stop that does it is not wrong. `hrw://source/<line>` *must* switch to
-/// Specimen mode, because that is the only place the source renders, and a reader
-/// clicking it wants to be taken there. But `matching.md` ends Station 3 with one, so
-/// an unattended run finished with the lab nowhere on screen — and the last two
-/// stops played to nobody.
-///
-/// **A run is a round trip.** Only the mode is restored: the stage and the
-/// specimen are the *result* of the run and worth keeping.
-#[test]
-fn a_finished_session_returns_to_the_mode_it_started_in() {
-    let mut app = App::test_default();
-    app.ui_mode = UiMode::Lab;
-    app.selected = Some(PathBuf::from("/x/RcCircuit.mo"));
-    app.lab.mode_before_autoplay = Some(UiMode::Lab);
-
-    app.dispatch_hrw_link(HrwLink::ShowSource(Some(9)));
-    assert_eq!(
-        app.ui_mode,
-        UiMode::Specimen,
-        "precondition: a source stop legitimately leaves Lab mode",
-    );
-
-    app.restore_mode_after_autoplay();
-    assert_eq!(app.ui_mode, UiMode::Lab, "the run must put the mode back");
-    assert!(
-        app.lab.mode_before_autoplay.is_none(),
-        "and consume the record"
-    );
-
-    // Idempotent: a second call (Stop after Finished) must not fight the user.
-    app.ui_mode = UiMode::Specimen;
-    app.restore_mode_after_autoplay();
-    assert_eq!(
-        app.ui_mode,
-        UiMode::Specimen,
-        "with nothing recorded there is nothing to restore, and a stray call must \
-             not drag the user out of the mode they chose",
-    );
-}
-
-/// **A new run does not scroll back from where the last one stopped.**
-///
-/// Doug's sequence, 2026-08-03: watch `matching` to the middle, Stop, select
-/// `frame-seeking`, select `matching` again, press Play — and *"the matching lab
-/// rescrolls very visibly from the stopped position back up to the top before the
-/// lab begins playing."*
-///
-/// **The pane was believed correct at the time, and it was not** — re-selecting a
-/// lab did *not* put it at the top, which Doug reported on 2026-08-17 and
-/// `switching_labs_asks_the_pane_to_return_to_the_top` now holds. The sentence that
-/// stood here ("the pane itself was correct") is corrected rather than deleted,
-/// because believing it is what kept the search inside HRW's own bookkeeping and
-/// away from the `ScrollArea` that actually holds the offset.
-///
-/// **The bookkeeping was also wrong, and this test is about that half.**
-/// `lab_link_y` and `lab_prev_link_y` are pixel positions
-/// measured in one document at one beat, and nothing cleared them — so the first
-/// frame of the new run interpolated *from* the stopped position and travelled
-/// back over the full window.
-///
-/// Cleared at both boundaries: selecting a lab, and starting a run. Either alone
-/// would have fixed Doug's sequence; both are needed because a run can also be
-/// restarted on the *same* lab without a selection change.
-#[test]
-fn starting_a_session_forgets_where_the_last_one_stopped() {
-    let mut app = App::test_default();
-
-    // Stand in for a run stopped half way down a lab.
-    app.lab.lab_link_y = Some(4_000.0);
-    app.lab.lab_prev_link_y = Some(3_800.0);
-    app.lab.lab_measured_beat = Some(12);
-
-    // Boundary 1: choosing a lab. Positions from another document are not
-    // merely stale, they are measured against a different length of text.
-    app.reset_for_new_lab();
-    assert_eq!(
-        app.lab.lab_link_y, None,
-        "a new lab forgets the old positions"
-    );
-    assert_eq!(app.lab.lab_prev_link_y, None);
-    assert_eq!(app.lab.lab_measured_beat, None);
-
-    // Boundary 2: pressing Play, which also covers replaying the *same* lab
-    // with no selection change in between — the case boundary 1 cannot see.
-    //
-    // The staging order matters. `test_select_fixture_lab` routes through
-    // `select_lab`, which itself resets — so setting the stale values before it
-    // would let this assertion pass on boundary 1's work and prove nothing about
-    // Play at all.
-    assert!(
-        app.test_select_fixture_lab("matching"),
-        "the fixture must be readable, or Play below does nothing",
-    );
-    app.lab.lab_link_y = Some(4_000.0);
-    app.lab.lab_prev_link_y = Some(3_800.0);
-    app.test_start_autoplay();
-    assert_eq!(
-        app.lab.lab_link_y, None,
-        "pressing Play must start from the pane's own position; interpolating \
-             from the last run's makes the text scroll backwards before it begins",
-    );
-    assert_eq!(app.lab.lab_prev_link_y, None);
-
-    // Non-vacuity: the run really did start, so this is not passing because
-    // nothing happened. **`LeadIn`, not `Playing`** — a run now holds at the document's
-    // top for a second before its first beat, which is what this test's subject (the
-    // scroll positions being cleared) exists to make look right.
-    assert_eq!(app.test_autoplay_phase(), crate::autoplay::Phase::LeadIn);
 }
 
 /// **A `stop/<slug>` link records where that stop actually begins.**
@@ -8088,7 +7919,6 @@ fn every_floating_window_is_reachable_by_link() {
             !link.requires_specimen(),
             "{url} must not need a specimen -- it says nothing about a model",
         );
-        assert!(!link.leaves_hrw(), "{url} opens one of HRW's own windows");
 
         // **Through the harness, as the screenshot instrument does it** — build the app,
         // follow the link, let it paint. Not by setting the flag, which would test
