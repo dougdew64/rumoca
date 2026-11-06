@@ -94,7 +94,11 @@ If[FileExistsQ[outFile],
      is not the header the survey and fidelity reports carry. One loader reads
      all three (`docs/reports.md`), so the bytes have to match, not just the
      column order. *)
-  Module[{h = OpenWrite[outFile]},
+  (* `BinaryFormat -> True` so the newline is LF. A Wolfram text stream on
+     Windows translates "\n" to CRLF, and the survey and fidelity reports are LF
+     -- a loader that splits on "\n" would then leave "\r" on every last field,
+     which is precisely the bug that broke a name join during this day's work. *)
+  Module[{h = OpenWrite[outFile, BinaryFormat -> True]},
     WriteString[h, "name,kind,outcome,message,t_end,secs\n"]; Close[h]]];
 
 (* ---------------------------------------------------------------- input *)
@@ -173,7 +177,8 @@ Do[
     If[! MissingQ[probe] && MemberQ[done, probe],
       Print["[skip] " <> probe <> " (already in report)"],
       row = adjudicate[entry];
-      stream = OpenAppend[outFile];
+      (* BinaryFormat for the same reason as the header: LF, not CRLF. *)
+      stream = OpenAppend[outFile, BinaryFormat -> True];
       WriteString[stream, StringRiffle[csvField /@ row, ","] <> "\n"];
       Close[stream];
       Print["[" <> ToString[i] <> "/" <> ToString[Length[entries]] <> "] " <>

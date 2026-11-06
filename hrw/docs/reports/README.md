@@ -25,7 +25,7 @@ among the documents.*
 | `msl-fidelity-profile.csv` | `scripts/measure-fidelity.ps1` | peak resident memory and wall time per model, plus the abort verdict |
 | `msl-fidelity-report.meta.json` | `examples/promote_run.rs` | provenance, **including the `not_checked` bound** |
 | `specimen-fidelity-report.csv` | the pre-commit test in `src/fidelity.rs` | the specimens named by `fidelity::MODELS` — **10 of the 28 specimen files**, not all of them. **Churns on every full test run** — that is expected. |
-| `specimen-oracle-report.csv` | `scripts/oracle.wls` | **System Modeler's verdict** on all 28 specimens: `simulated`, `refused`, `import-failed`, `timeout`. The other side of every mismatch. |
+| `specimen-oracle-report.csv` | `scripts/oracle.wls` | **System Modeler's verdict** on all 28 specimens: `simulated`, `refused`, `import-failed`, `timeout`. The other side of every mismatch. **`secs` is wall-clock and unstable** — exclude it from a diff, exactly as `compile_cost` is excluded from the survey's; the first four columns were byte-identical across two consecutive runs. |
 
 ## Read at runtime — do not move or rename
 

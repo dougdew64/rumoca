@@ -4336,6 +4336,60 @@ present size. Re-pinning them to 2,791 would make them wrong again at the next c
 rewriting ten reasoning passages is a larger and more error-prone edit than the staleness costs.
 Worth a sweep only if one of them is ever read as a definition.
 
+### 11-06, the oracle ran — four specimens System Modeler rejects and Rumoca does not, and none is admissible yet
+
+First oracle sweep over all 28 specimens: **19 simulated, 8 refused, 1 import-failed**, in 110
+seconds. `scripts/oracle.wls` and the runbook section in `long-runs.md` make it repeatable.
+
+#### Agreement on five rejections — these confirm Rumoca is right
+
+| specimen | Rumoca | System Modeler |
+|---|---|---|
+| `UnclosedModel` | Parse **Failed** | import-failed |
+| `MissingComponentClass` | Resolve **Failed** | refused |
+| `UndefinedRef` | Resolve **Failed** | refused |
+| `UnbalancedShaft` | Dae **Failed** — `2 equations, 3 unknowns` | refused |
+| `OverDeterminedShaft` | Dae **Failed** — `3 equations, 2 unknowns` | refused |
+
+An independent implementation rejecting the same five is what "oracle first" exists to buy: these
+specimens are genuinely bad, and Rumoca's diagnosis is not in question.
+
+#### Four mismatches — the oracle rejects, Rumoca accepts or merely flags
+
+| specimen | Rumoca | reading |
+|---|---|---|
+| **`OverInitRc`** | **all Ok** | the sharpest one. Over-initialisation, and Rumoca reports *nothing at all* |
+| **`DimensionMismatch`** | Typecheck **Flagged**, 1 diagnostic | Rumoca notices and continues; a dimension mismatch is not recoverable |
+| **`TwiceDefined`** | Structural **Flagged** `singular` | something is flagged, but the diagnosis is wrong — a duplicate definition is not a singularity |
+| **`IncompatibleConnect`** | Structural **Flagged** `singular` | already `upstream-issues.md` issue 2; the oracle now adjudicates it |
+
+**`OverInitRc` is the one to look at first.** `Flagged` at least puts something on screen;
+`all Ok` is HRW telling Doug a model is fine while an independent implementation refuses it.
+
+#### NOT admissible — and that is the chain working, not a disappointment
+
+`reports.md`'s rule: a mismatch is a finding only once fidelity is green for that model, because
+otherwise the mismatch may be *the instrument lying rather than the compiler erring*.
+
+**None of the four is in the fidelity report.** It covers `fidelity::MODELS` — 10 of the 28
+specimen files — and the four mismatching specimens are among the 18 it does not reach. So the
+table's verdict is neither "file it" nor "inadmissible because fidelity failed": it is **fidelity
+has no opinion**, which the rule treats the same way.
+
+**The owed work is therefore specific**: add these four to `fidelity::MODELS` and re-run, which
+converts four unattributable mismatches into four admissible findings or four instrument bugs.
+That is a small change with an unusually clear payoff, and it is the first time the three reports
+have actually chained.
+
+#### Six `Flagged singular` specimens that System Modeler simulates are NOT mismatches
+
+`BenchActuator`, `CapacitorLoop`, `CartesianPendulum`, `Drivetrain`, `GearWithBrake` and
+`MotorWithBrake` are flagged singular by Rumoca and simulate cleanly in System Modeler. That looked
+like a disagreement and is not: `Outcome::Flagged` means Rumoca produced usable IR and *continued* —
+index reduction then runs, and `BenchActuator`'s own line reads `sorted after 1 round(s): 4 state(s)
+→ 3`. Both tools resolve the singularity; Rumoca merely reports the intermediate fact. **Counting
+these as findings would have put six false positives in front of a maintainer.**
+
 ### 11-06, triage of the 409 — about a fifth are 0.10.4 being RIGHT, and two thirds are one unported feature set
 
 Buckets, over the 409 models that compiled on 0.9.20 and do not on 0.10.4:
