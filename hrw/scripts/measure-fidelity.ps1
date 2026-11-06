@@ -50,7 +50,20 @@ param(
     # worth retrying; `aborted:timeout` is worth it on a QUIETER machine, but
     # is not retried by default or a genuinely unfinishable model would burn
     # the full timeout on every re-run forever.
-    [string[]]$RetryVerdicts = @('aborted:free-ram')
+    [string[]]$RetryVerdicts = @('aborted:free-ram'),
+    # **Which checks to run, comma-separated — empty means all of F1-F9.**
+    #
+    # Passed through to `fidelity_msl --only-checks`, which the binary has always
+    # supported and this script had no way to reach. Added 2026-11-05 for a specific
+    # situation that will recur: **a check that is known-broken makes the whole sweep
+    # unreadable.** F4 has been blind since v0.10.0 — it reports every `StructuredScalar`
+    # block as naming no equations — so a full-corpus run with it enabled buries the other
+    # eight checks under its own false positives. `docs/tech-debt.md`, 11-04 night.
+    #
+    # The staging section of `docs/long-runs.md` is the same lesson at a different scale:
+    # nine of twelve first-run violations were the check's fault, not HRW's. A sweep whose
+    # output is dominated by a known instrument bug has not measured anything.
+    [string]$OnlyChecks  = ""
 )
 
 # **Normalise -RetryVerdicts before anything reads it.**
@@ -220,7 +233,11 @@ foreach ($m in $list) {
     $t0 = Get-Date
     $proc = Start-Process -FilePath $exe -PassThru -NoNewWindow -RedirectStandardOutput "$env:TEMP\fid-one.out" `
         -RedirectStandardError $errFile `
-        -ArgumentList @("--models", $m, "--out", $Out, "--resume", "--max-models", "1", "--rebuild-every", "1")
+        -ArgumentList $(
+            $a = @("--models", $m, "--out", $Out, "--resume", "--max-models", "1", "--rebuild-every", "1")
+            if ($OnlyChecks) { $a += @("--only-checks", $OnlyChecks) }
+            $a
+        )
 
     $peakMB = 0
     $verdict = "ok"

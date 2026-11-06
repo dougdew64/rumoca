@@ -219,8 +219,15 @@ Three things that are easy to get wrong:
 
 ```powershell
 cd C:\Users\dougd\source\repos\rumoca\hrw
-python -c "import csv,io; rows=list(csv.DictReader(io.open('docs/reports/msl-survey.csv',encoding='utf-8'))); io.open('C:/tmp/all-models.txt','w',encoding='utf-8',newline='').write('\n'.join(sorted(r['name'] for r in rows))+'\n')"
+Import-Csv docs\reports\msl-survey.csv | Select-Object -ExpandProperty name | Sort-Object | Set-Content -Encoding utf8 C:\tmp\all-models.txt
 ```
+
+> **This was a `python -c` one-liner until 2026-11-05, and python is not installed on this
+> machine.** `python` there resolves to the Microsoft Store shim, which prints an
+> installation advert and exits non-zero — so the step fails *before* the hours-long run,
+> which is the good direction, but it fails at the moment you are least able to debug it.
+> Found while preparing an overnight run. PowerShell is the one interpreter this runbook
+> can assume, since every other command here is already PowerShell.
 
 **Interrupted?** Run the identical command again. It resumes from the two CSVs, skips
 everything settled, and retries free-RAM aborts. Nothing is lost — rows are flushed as
