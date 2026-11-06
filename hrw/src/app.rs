@@ -8182,6 +8182,22 @@ impl HrwLink {
     }
 }
 
+/// **Whether an `hrw://` URL names something HRW can actually do** — the public face of
+/// [`parse_hrw_link`], which cannot itself be public because [`HrwLink`] is not.
+///
+/// Exists for `examples/check_answer`, so that verifying an Answer's links is one
+/// command rather than a throwaway test compiled on the spot. Doug, 2026-11-05: *"the
+/// latency for your answers is way too long… we need to find ways to reduce that
+/// latency."* A link that silently does nothing is the worst outcome an Answer can
+/// carry, and nothing checks `.hrw-bridge/answer.md`, which is gitignored.
+///
+/// **It answers "would this parse", not "does the target exist".** `hrw://load/Nope`
+/// parses; whether a specimen called `Nope` is on disk is a different question, and the
+/// pointer checks in that example cover the ones that can be judged.
+pub fn link_parses(url: &str) -> bool {
+    parse_hrw_link(url).is_some()
+}
+
 /// Parse an `hrw://` URL into a navigation action, or `None` if malformed.
 fn parse_hrw_link(url: &str) -> Option<HrwLink> {
     let path = url.strip_prefix("hrw://")?;

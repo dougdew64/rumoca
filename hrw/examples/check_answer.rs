@@ -196,27 +196,38 @@ fn main() -> std::process::ExitCode {
         println!("\n  This is the check that would have caught `Y[1]` and `Minus` on 2026-09-03.");
     }
 
-    // **An Answer carries no bold, and nothing was checking that.**
+    // **Every `hrw://` link must parse**, because a link that does not is a link that
+    // silently does nothing — the worst thing an Answer can carry. The reader clicks,
+    // the status bar says something they are not looking at, and the Answer appears
+    // simply to be broken. `fixture_lab_links_all_resolve` has covered the labs for
+    // months; nothing covers `.hrw-bridge/answer.md`, which is gitignored.
     //
-    // Doug ruled on 2026-09-01 that labs are plain prose — measured then at 98 bold spans in
-    // one lab, and swept across all 22 from 667 to 153. `docs/fixture-labs/README.md` keeps
-    // exactly three exceptions, and **not one of them can occur in an Answer**: `Predict.`
-    // and `Expected:` are the station grammar, and the first bolded line is read by
-    // `LabSource::blurb_of` to build the catalogue, which an Answer is not in. So the
-    // correct count here is zero.
+    // Added 2026-11-05 to cut answer latency rather than to add a rule. Verifying
+    // these by hand meant writing a throwaway test and compiling it, twice, every time
+    // — Doug: *"the latency for your answers is way too long."* One command now.
     //
-    // He had to point it out again on 2026-09-04, at 24 spans. A ruling with no mechanism
-    // is a ruling Claude re-breaks, and this is the sixth thing today that was true of the
-    // labs and unchecked for the Answer.
-    let bold = text.matches("**").count();
-    if bold > 0 {
+    // The terminator set matches `app::extract_hrw_links`, backtick included: a verb
+    // named inside a code span is prose *about* a link, not a link.
+    let mut dead: Vec<&str> = Vec::new();
+    for (start, _) in text.match_indices("hrw://") {
+        let rest = &text[start..];
+        let end = rest
+            .find([')', ' ', '\n', '"', '>', '`'])
+            .unwrap_or(rest.len());
+        let url = &rest[..end];
+        if !hrw::app::link_parses(url) && !dead.contains(&url) {
+            dead.push(url);
+        }
+    }
+    if !dead.is_empty() {
         println!(
-            "\nBOLD: {} `**` marker(s), and an Answer's correct count is ZERO.\n  \
-             The three exceptions in docs/fixture-labs/README.md are the station grammar\n  \
-             and the catalogue blurb; an Answer has neither. Write plain prose \u{2014} the\n  \
-             renderings, code fences and links already carry the emphasis.",
-            bold
+            "\nDEAD LINKS: {} that HRW cannot act on. Clicking one does nothing \
+             visible,\n  so the Answer reads as broken rather than as refused:",
+            dead.len(),
         );
+        for url in &dead {
+            println!("  {url}");
+        }
         return std::process::ExitCode::FAILURE;
     }
 

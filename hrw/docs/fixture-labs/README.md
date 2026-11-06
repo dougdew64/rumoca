@@ -890,6 +890,15 @@ spans across 288 lines of prose** — roughly one styled fragment per line. **Em
 differential**, so at that density nothing reads as emphasised and the texture has to be parsed
 before the sentence can be read. Across all 22 labs the sweep took **667 bold spans to 153**.
 
+**This rule is about LABS, and does NOT extend to an Answer** *(Doug, 2026-11-05: "I want to
+eliminate that rule for Answers")*. A session derived the extension by argument — the three
+exceptions below are lab structure, an Answer has none of them, therefore zero — and wrote it
+into `examples/check_answer`, where it stood until Doug ruled the other way. **The derivation
+was sound and the conclusion was still wrong**, because it reasoned from the exceptions rather
+than from the complaint: the complaint was a *density* measured in a lab Doug reads
+start-to-finish, and an Answer is scanned for the part that answers him. Bold is navigation
+there. **Do not re-derive it.**
+
 **Write plain prose. Three things carry bold, and each is machine-read or structural:**
 
 | kept | why |
