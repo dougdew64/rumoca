@@ -7804,6 +7804,7 @@ fn the_corpus_outcome_matrix_is_unchanged() {
     //    re-keyed to the opposite of what it used to assert.
     const MATRIX: &[(&str, &str)] = &[
         // Healthy: every phase produces IR.
+        ("ArrayFamily", "OOOOOOOOOOO"),
         ("BouncingBall", "OOOOOOOOOOO"),
         ("HarmonicOscillator", "OOOOOOOOOOO"),
         ("LoopWithInertia", "OOOOOOOOOOO"),

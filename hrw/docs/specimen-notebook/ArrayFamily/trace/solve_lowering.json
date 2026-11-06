@@ -1,0 +1,404 @@
+{
+  "schema_version": 89,
+  "layout": {
+    "bindings": {
+      "x": {
+        "Y": {
+          "index": 0,
+          "byte_offset": 0
+        }
+      }
+    },
+    "shapes": {
+      "x": [
+        8
+      ]
+    },
+    "shape_spans": {
+      "x": {
+        "source": 7077285335715512691,
+        "start": 1514,
+        "end": 1520
+      }
+    },
+    "y_scalars": 8,
+    "p_scalars": 0
+  },
+  "solve_layout": {
+    "variable_storage_runs": [
+      {
+        "base": {
+          "Y": {
+            "index": 0,
+            "byte_offset": 0
+          }
+        },
+        "scalar_count": 8,
+        "role": "State",
+        "value_kind": "Real"
+      }
+    ],
+    "variable_declarations": [
+      {
+        "role": "State",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      }
+    ],
+    "state_scalar_count": 8,
+    "algebraic_scalar_count": 0,
+    "output_scalar_count": 0,
+    "parameter_count": 0,
+    "compiled_parameter_len": 0,
+    "input_scalar_names": [],
+    "discrete_real_scalar_names": [],
+    "discrete_valued_scalar_names": [],
+    "relation_memory_parameter_indices": [],
+    "initial_event_parameter_index": null,
+    "terminal_event_parameter_index": null,
+    "initial_homotopy_parameter_index": null,
+    "pre_param_bindings": []
+  },
+  "continuous": {
+    "implicit_rhs": {
+      "nodes": []
+    },
+    "implicit_row_targets": "Projection",
+    "algebraic_projection_plan": {
+      "blocks": []
+    },
+    "residual": {
+      "nodes": []
+    },
+    "manifold_residual": {
+      "nodes": []
+    },
+    "manifold_projection_plan": {
+      "blocks": []
+    },
+    "derivative_rhs": {
+      "nodes": [
+        {
+          "Map": {
+            "domain": {
+              "binders": [
+                {
+                  "provenance": {
+                    "Source": 100
+                  },
+                  "id": 0,
+                  "display_name": "i",
+                  "lower": 1,
+                  "upper": 8,
+                  "step": 1
+                }
+              ]
+            },
+            "output_map": {
+              "start": 0,
+              "strides": [
+                {
+                  "dimension": 0,
+                  "stride": 1
+                }
+              ]
+            },
+            "base_ops": [
+              {
+                "LoadY": {
+                  "dst": 1,
+                  "index": 0
+                }
+              },
+              {
+                "Unary": {
+                  "dst": 2,
+                  "op": "Neg",
+                  "arg": 1
+                }
+              },
+              {
+                "StoreOutput": {
+                  "src": 2
+                }
+              }
+            ],
+            "load_strides": [
+              {
+                "op_position": 0,
+                "terms": [
+                  {
+                    "dimension": 0,
+                    "stride": 1
+                  }
+                ]
+              }
+            ],
+            "const_strides": [],
+            "metadata": {
+              "element_type": "Real64",
+              "layout": "RowMajorDense",
+              "scalar_fallback": "Exact"
+            },
+            "span": {
+              "source": 7077285335715512691,
+              "start": 1558,
+              "end": 1559
+            }
+          }
+        }
+      ]
+    },
+    "refresh_owners": {
+      "compact_projection": null,
+      "algebraic": {
+        "simultaneous_plan": {
+          "blocks": []
+        },
+        "simultaneous_block_indices": [],
+        "value_projection_plan": {
+          "blocks": []
+        },
+        "rows": [],
+        "causal_seed_rows": [],
+        "static_causal_seed_rows": [],
+        "dynamic_causal_seed_rows": [],
+        "value_stages": [],
+        "causal_solution_certified": true
+      },
+      "derivative": {
+        "simultaneous_plan": {
+          "blocks": []
+        },
+        "simultaneous_block_indices": [],
+        "value_projection_plan": {
+          "blocks": []
+        },
+        "rows": [],
+        "causal_seed_rows": [],
+        "static_causal_seed_rows": [],
+        "dynamic_causal_seed_rows": [],
+        "value_stages": [],
+        "causal_solution_certified": true
+      },
+      "root": {
+        "simultaneous_plan": {
+          "blocks": []
+        },
+        "simultaneous_block_indices": [],
+        "value_projection_plan": {
+          "blocks": []
+        },
+        "rows": [],
+        "causal_seed_rows": [],
+        "static_causal_seed_rows": [],
+        "dynamic_causal_seed_rows": [],
+        "value_stages": [],
+        "causal_solution_certified": true
+      },
+      "event": {
+        "simultaneous_plan": {
+          "blocks": []
+        },
+        "simultaneous_block_indices": [],
+        "value_projection_plan": {
+          "blocks": []
+        },
+        "rows": [],
+        "causal_seed_rows": [],
+        "static_causal_seed_rows": [],
+        "dynamic_causal_seed_rows": [],
+        "value_stages": [],
+        "causal_solution_certified": true
+      },
+      "clock_events": []
+    }
+  },
+  "initialization": {
+    "residual": {
+      "nodes": []
+    },
+    "row_roles": [],
+    "projection_plan": {
+      "blocks": [],
+      "iterates_discretes": false
+    },
+    "update_rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "update_targets": [],
+    "manifold_row_count": 0,
+    "given_state_indices": []
+  },
+  "discrete": {
+    "event_iteration_plan": {
+      "runs": [],
+      "partitions": [],
+      "schedule": {
+        "event_pass": [
+          "RelationOverrides",
+          "RuntimeAssignments",
+          "AlgebraicProjection",
+          "RuntimeAssignments",
+          "RelationRefresh",
+          "RelationSettle"
+        ],
+        "relation_pass": [
+          "DiscreteSettle",
+          "SettledIfRelationsUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "settle_pass": [
+          "DiscreteOwners",
+          "RuntimeAssignments",
+          "SettledIfUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "fixed_point_cap": 32,
+        "stalled_settle": {
+          "iteration_cap": 32,
+          "line_search_halvings": 16
+        },
+        "relation_surface_window": 8,
+        "mode_search_relations": 4
+      }
+    },
+    "runtime_assignment_rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "runtime_assignment_targets": [],
+    "runtime_assignment_roles": [],
+    "post_commit_assignment_rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "post_commit_assignment_targets": [],
+    "post_commit_assignment_runtime_rows": [],
+    "rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "update_targets": [],
+    "row_roles": [],
+    "pre_modes": [],
+    "observation_refresh": [],
+    "observation_refresh_reads_y": false,
+    "integrator_history_effects": [],
+    "clock_owners": [],
+    "guarded_assignments": [],
+    "event_transactions": [],
+    "structured_rhs": {
+      "nodes": []
+    },
+    "structured_updates": [],
+    "clock_partition_order": [],
+    "clock_partition_intermediates": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "clock_partition_intermediate_targets": [],
+    "clock_partition_intermediate_clocks": []
+  },
+  "events": {
+    "root_conditions": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "root_relation_memory_targets": [],
+    "root_zero_domains": [],
+    "root_relation_refresh_roles": [],
+    "condition_memory_parameter_indices": [],
+    "scheduled_root_conditions": [],
+    "scheduled_time_events": [],
+    "dynamic_time_event_names": [],
+    "dynamic_time_event_rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "action_conditions": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "actions": [],
+    "has_terminal_event": false,
+    "delays": {
+      "source_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "delay_time_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "delay_max_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "value_parameter_indices": [],
+      "source_is_discrete": []
+    }
+  },
+  "clocks": {
+    "periodic_event_schedules": [],
+    "activation_parameter_indices": []
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "t_end": 2.0,
+  "n_time_points": 501,
+  "n_variables": 8,
+  "n_states": 8,
+  "has_discontinuities": false,
+  "t_start": 0.0,
+  "t_final": 2.0,
+  "variables": [
+    {
+      "name": "x[1]",
+      "is_state": true,
+      "state_coordinate": null,
+      "initial": 1.0,
+      "final": 0.13533732466803755,
+      "min": 0.13533732466803755,
+      "max": 1.0
+    },
+    {
+      "name": "x[2]",
+      "is_state": true,
+      "state_coordinate": null,
+      "initial": 1.0,
+      "final": 0.13533732466803755,
+      "min": 0.13533732466803755,
+      "max": 1.0
+    },
+    {
+      "name": "x[3]",
+      "is_state": true,
+      "state_coordinate": null,
+      "initial": 1.0,
+      "final": 0.13533732466803755,
+      "min": 0.13533732466803755,
+      "max": 1.0
+    },
+    {
+      "name": "x[4]",
+      "is_state": true,
+      "state_coordinate": null,
+      "initial": 1.0,
+      "final": 0.13533732466803755,
+      "min": 0.13533732466803755,
+      "max": 1.0
+    },
+    {
+      "name": "x[5]",
+      "is_state": true,
+      "state_coordinate": null,
+      "initial": 1.0,
+      "final": 0.13533732466803755,
+      "min": 0.13533732466803755,
+      "max": 1.0
+    },
+    {
+      "name": "x[6]",
+      "is_state": true,
+      "state_coordinate": null,
+      "initial": 1.0,
+      "final": 0.13533732466803755,
+      "min": 0.13533732466803755,
+      "max": 1.0
+    },
+    {
+      "name": "x[7]",
+      "is_state": true,
+      "state_coordinate": null,
+      "initial": 1.0,
+      "final": 0.13533732466803755,
+      "min": 0.13533732466803755,
+      "max": 1.0
+    },
+    {
+      "name": "x[8]",
+      "is_state": true,
+      "state_coordinate": null,
+      "initial": 1.0,
+      "final": 0.13533732466803755,
+      "min": 0.13533732466803755,
+      "max": 1.0
+    }
+  ]
+}

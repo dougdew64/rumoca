@@ -753,6 +753,40 @@ pub fn check_f4(s: &Subject) -> Vec<String> {
 
     let mut seen: BTreeMap<usize, usize> = BTreeMap::new();
     for (bi, b) in blocks.iter().enumerate() {
+        // **A compacted family names no equation, and that is not a defect.**
+        //
+        // `BlockReport::StructuredScalar` arrived in v0.10.0: a regular equation family
+        // whose rows are each their own scalar block, reported once with its counts
+        // rather than expanded into one line per element. It deliberately carries no
+        // `equation`/`equations` key, because it names no single equation — so the match
+        // below reported every one as "names no equations" AND, contributing nothing to
+        // `seen`, left the family's rows looking like holes in the partition. **F4 was
+        // loud and blind at once from v0.10.0 to 2026-11-06**, which is the failure
+        // `fidelity_msl.rs`'s header names: *a check that knows one form of the truth
+        // reports every other form as a defect.*
+        //
+        // The repair is the rows themselves. `first_row`/`row_count` are now published
+        // (`worker::block_to_json`, from `StructuredScalarBlock::row_range()`), so the
+        // family resolves to the rows it accounts for and the partition is checked over
+        // all of them rather than over a subset.
+        if let (Some(first), Some(count)) = (
+            b["first_row"].as_u64().map(|n| n as usize),
+            b["row_count"].as_u64().map(|n| n as usize),
+        ) {
+            for row in first..first.saturating_add(count) {
+                if row >= labels.len() {
+                    v.push(format!(
+                        "{}: block {bi} covers row {row}, beyond the incidence's {}",
+                        s.label,
+                        labels.len(),
+                    ));
+                } else {
+                    *seen.entry(row).or_default() += 1;
+                }
+            }
+            continue;
+        }
+
         let names: Vec<&str> = match (&b["equation"], &b["equations"]) {
             (Value::String(one), _) => vec![one.as_str()],
             (_, Value::Array(many)) => many.iter().filter_map(Value::as_str).collect(),
@@ -1115,6 +1149,13 @@ mod tests {
         "OverInitRc",
         "TwiceDefined",
         "IncompatibleConnect",
+        // **The only specimen that reaches a compacted family**, added 2026-11-06 with
+        // F4's repair. A `for` equation over an 8-element array becomes one
+        // `BlockReport::StructuredScalar` instead of eight scalar blocks, and F4 was
+        // blind to that shape for two releases *because no curated specimen produced
+        // it* — only the hours-long MSL sweep did. With this here, a regression in F4's
+        // compacted path fails the pre-commit suite in seconds.
+        "ArrayFamily",
     ];
 
     // ---------------------------------------------------------------- report
@@ -2094,6 +2135,99 @@ mod tests {
             "F2 re-derives the incidence with build_incidence and compares it against the \
              published one; against the wrong DAE that comparison must fail for at least \
              one of the {subjects_seen} subjects",
+        );
+    }
+
+    /// **F4 reads a compacted family, and still catches a hole and a double-cover.**
+    ///
+    /// The must-fire test F4 did not have, and the absence of which let it stay broken
+    /// for two releases. `each_invariant_catches_its_own_violation` drives F4 with
+    /// `{"kind": "scalar", "equation": …}` — the shape F4 was written against — and so
+    /// proved only that the handled shape is handled. `BlockReport::StructuredScalar`
+    /// arrived in v0.10.0 carrying no `equation` key, and F4 reported **every** such
+    /// block as naming no equations while *also* counting the family's rows as holes in
+    /// the partition: loud and blind at once, across 24 violations on 20 MSL models,
+    /// every one a false positive.
+    ///
+    /// So this drives the compacted shape specifically, and asserts both directions —
+    /// that a correct family is quiet, and that F4 can still see a real partition defect
+    /// through one. The second is the half that matters: skipping compacted blocks would
+    /// have silenced the noise and left F4 unable to find anything in any model
+    /// containing a family.
+    #[test]
+    fn f4_reads_a_compacted_family_and_still_sees_a_partition_defect() {
+        let subject = |blocks: serde_json::Value| {
+            serde_json::json!({
+                "n_equations": 4, "n_unknowns": 4,
+                "incidence": {
+                    "n_eq": 4, "n_var": 4,
+                    "unknown_names": ["a", "b", "c", "d"],
+                    "rows": [
+                        { "equation": "f[0]", "unknowns": [0] },
+                        { "equation": "f[1]", "unknowns": [1] },
+                        { "equation": "f[2]", "unknowns": [2] },
+                        { "equation": "f[3]", "unknowns": [3] },
+                    ],
+                },
+                "blocks": blocks,
+            })
+        };
+        let run = |report: &Value| {
+            check_f4(&Subject {
+                label: "T".into(),
+                report,
+                dae: None,
+            })
+        };
+
+        // A family covering every row: quiet. Before the repair this produced BOTH
+        // "names no equations" and "blocks cover 0 of 4".
+        let whole = subject(serde_json::json!([
+            { "kind": "structured_scalar", "origin": "f[0] (der(x[i]) = -x[i])",
+              "point_count": 4, "equations_per_point": 1, "first_row": 0, "row_count": 4 }
+        ]));
+        assert!(
+            run(&whole).is_empty(),
+            "a family covering the whole incidence must be quiet: {:?}",
+            run(&whole),
+        );
+
+        // A HOLE: the family covers rows 0..2, nothing covers 2 and 3.
+        let hole = subject(serde_json::json!([
+            { "kind": "structured_scalar", "origin": "f[0] (der(x[i]) = -x[i])",
+              "point_count": 2, "equations_per_point": 1, "first_row": 0, "row_count": 2 }
+        ]));
+        assert!(
+            run(&hole).iter().any(|m| m.contains("missing rows [2, 3]")),
+            "F4 must still see a partition hole through a compacted family: {:?}",
+            run(&hole),
+        );
+
+        // A DOUBLE COVER: a scalar block claims a row the family already covers.
+        let overlap = subject(serde_json::json!([
+            { "kind": "structured_scalar", "origin": "f[0] (der(x[i]) = -x[i])",
+              "point_count": 4, "equations_per_point": 1, "first_row": 0, "row_count": 4 },
+            { "kind": "scalar", "equation": "f[2]", "unknown": "c" }
+        ]));
+        assert!(
+            run(&overlap)
+                .iter()
+                .any(|m| m.contains("row 2 appears in 2 blocks")),
+            "F4 must still see a double-covered row: {:?}",
+            run(&overlap),
+        );
+
+        // Out of range: a family claiming rows the incidence does not have.
+        let past_end = subject(serde_json::json!([
+            { "kind": "structured_scalar", "origin": "f[0] (der(x[i]) = -x[i])",
+              "point_count": 6, "equations_per_point": 1, "first_row": 0, "row_count": 6 }
+        ]));
+        assert!(
+            run(&past_end)
+                .iter()
+                .any(|m| m.contains("beyond the incidence")),
+            "a family claiming rows past the incidence must be reported: {:?}",
+            run(&past_end),
         );
     }
 

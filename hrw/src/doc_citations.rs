@@ -295,7 +295,27 @@ mod tests {
         for doc in doc_files() {
             let text = std::fs::read_to_string(&doc).unwrap_or_default();
             let dir = doc.parent().unwrap_or(Path::new("."));
+            // **Fenced code is code, not prose, and a link inside it is not a link.**
+            //
+            // Inline spans were already stripped below; fences were not, and on
+            // 2026-11-06 `specimen-notebook/ArrayFamily/purpose.md` became the first
+            // document to show the Modelica array-with-modifier idiom —
+            // `Real x[8](each start = 1.0);` — which reads to the extractor as a markdown
+            // link `[8](each start = 1.0)` and was reported as pointing at a file that
+            // does not exist. The idiom is ordinary Modelica, so every doc quoting an
+            // array declaration would have tripped this.
+            //
+            // Tracked rather than stripped, so a fence's *content* is skipped while the
+            // line numbering and the rest of the document are untouched.
+            let mut in_fence = false;
             for line in text.lines() {
+                if line.trim_start().starts_with("```") {
+                    in_fence = !in_fence;
+                    continue;
+                }
+                if in_fence {
+                    continue;
+                }
                 // A line whose links are all inside code spans is demonstrating markdown,
                 // not using it. Cheap test: strip `...` spans before extracting.
                 let mut outside = String::with_capacity(line.len());

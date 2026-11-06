@@ -1,0 +1,287 @@
+{
+  "rounds": 0,
+  "n_records": 1,
+  "outcome": {
+    "kind": "borrowed",
+    "admitted": true,
+    "rounds": 0,
+    "meaning": "the raw system sorted and normalization left it unchanged: already index-1, nothing rebuilt"
+  },
+  "lanes": [],
+  "residue_definition": "(n_equations - n_matched) + (n_unknowns - n_matched): both deficits summed, so a square system's residue is twice its rank deficiency",
+  "ordinals_note": "state_ordinal, rhs_ordinal, variable_ordinal and the holonomic ordinals index the rebuilt system of their own round, not the raw DAE. They are deliberately unnamed; resolve a candidate through declared_at, which is a span and stable across rebuilds",
+  "before": {
+    "n_equations": 0,
+    "n_unknowns": 8,
+    "coupled_block_count": 0,
+    "matching": [
+      {
+        "equation": "f_x[0] (i)",
+        "id": "f_x[0]",
+        "unknown": "der(x[1])"
+      },
+      {
+        "equation": "f_x[1] (i)",
+        "id": "f_x[1]",
+        "unknown": "der(x[2])"
+      },
+      {
+        "equation": "f_x[2] (i)",
+        "id": "f_x[2]",
+        "unknown": "der(x[3])"
+      },
+      {
+        "equation": "f_x[3] (i)",
+        "id": "f_x[3]",
+        "unknown": "der(x[4])"
+      },
+      {
+        "equation": "f_x[4] (i)",
+        "id": "f_x[4]",
+        "unknown": "der(x[5])"
+      },
+      {
+        "equation": "f_x[5] (i)",
+        "id": "f_x[5]",
+        "unknown": "der(x[6])"
+      },
+      {
+        "equation": "f_x[6] (i)",
+        "id": "f_x[6]",
+        "unknown": "der(x[7])"
+      },
+      {
+        "equation": "f_x[7] (i)",
+        "id": "f_x[7]",
+        "unknown": "der(x[8])"
+      }
+    ],
+    "blocks": [
+      {
+        "kind": "structured_scalar",
+        "size": 8,
+        "origin": "f_x[0] (i)",
+        "point_count": 8,
+        "equations_per_point": 1,
+        "first_row": 0,
+        "row_count": 8
+      }
+    ],
+    "incidence": {
+      "n_eq": 8,
+      "n_var": 8,
+      "unknown_names": [
+        "der(x[1])",
+        "der(x[2])",
+        "der(x[3])",
+        "der(x[4])",
+        "der(x[5])",
+        "der(x[6])",
+        "der(x[7])",
+        "der(x[8])"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (i)",
+          "id": "f_x[0]",
+          "unknowns": [
+            0
+          ]
+        },
+        {
+          "equation": "f_x[1] (i)",
+          "id": "f_x[1]",
+          "unknowns": [
+            1
+          ]
+        },
+        {
+          "equation": "f_x[2] (i)",
+          "id": "f_x[2]",
+          "unknowns": [
+            2
+          ]
+        },
+        {
+          "equation": "f_x[3] (i)",
+          "id": "f_x[3]",
+          "unknowns": [
+            3
+          ]
+        },
+        {
+          "equation": "f_x[4] (i)",
+          "id": "f_x[4]",
+          "unknowns": [
+            4
+          ]
+        },
+        {
+          "equation": "f_x[5] (i)",
+          "id": "f_x[5]",
+          "unknowns": [
+            5
+          ]
+        },
+        {
+          "equation": "f_x[6] (i)",
+          "id": "f_x[6]",
+          "unknowns": [
+            6
+          ]
+        },
+        {
+          "equation": "f_x[7] (i)",
+          "id": "f_x[7]",
+          "unknowns": [
+            7
+          ]
+        }
+      ]
+    },
+    "n_states": 1,
+    "n_algebraics": 0
+  },
+  "after": {
+    "n_equations": 0,
+    "n_unknowns": 8,
+    "coupled_block_count": 0,
+    "matching": [
+      {
+        "equation": "f_x[0] (i)",
+        "id": "f_x[0]",
+        "unknown": "der(x[1])"
+      },
+      {
+        "equation": "f_x[1] (i)",
+        "id": "f_x[1]",
+        "unknown": "der(x[2])"
+      },
+      {
+        "equation": "f_x[2] (i)",
+        "id": "f_x[2]",
+        "unknown": "der(x[3])"
+      },
+      {
+        "equation": "f_x[3] (i)",
+        "id": "f_x[3]",
+        "unknown": "der(x[4])"
+      },
+      {
+        "equation": "f_x[4] (i)",
+        "id": "f_x[4]",
+        "unknown": "der(x[5])"
+      },
+      {
+        "equation": "f_x[5] (i)",
+        "id": "f_x[5]",
+        "unknown": "der(x[6])"
+      },
+      {
+        "equation": "f_x[6] (i)",
+        "id": "f_x[6]",
+        "unknown": "der(x[7])"
+      },
+      {
+        "equation": "f_x[7] (i)",
+        "id": "f_x[7]",
+        "unknown": "der(x[8])"
+      }
+    ],
+    "blocks": [
+      {
+        "kind": "structured_scalar",
+        "size": 8,
+        "origin": "f_x[0] (i)",
+        "point_count": 8,
+        "equations_per_point": 1,
+        "first_row": 0,
+        "row_count": 8
+      }
+    ],
+    "n_states": 1,
+    "n_algebraics": 0,
+    "incidence": {
+      "n_eq": 8,
+      "n_var": 8,
+      "unknown_names": [
+        "der(x[1])",
+        "der(x[2])",
+        "der(x[3])",
+        "der(x[4])",
+        "der(x[5])",
+        "der(x[6])",
+        "der(x[7])",
+        "der(x[8])"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (i)",
+          "id": "f_x[0]",
+          "unknowns": [
+            0
+          ]
+        },
+        {
+          "equation": "f_x[1] (i)",
+          "id": "f_x[1]",
+          "unknowns": [
+            1
+          ]
+        },
+        {
+          "equation": "f_x[2] (i)",
+          "id": "f_x[2]",
+          "unknowns": [
+            2
+          ]
+        },
+        {
+          "equation": "f_x[3] (i)",
+          "id": "f_x[3]",
+          "unknowns": [
+            3
+          ]
+        },
+        {
+          "equation": "f_x[4] (i)",
+          "id": "f_x[4]",
+          "unknowns": [
+            4
+          ]
+        },
+        {
+          "equation": "f_x[5] (i)",
+          "id": "f_x[5]",
+          "unknowns": [
+            5
+          ]
+        },
+        {
+          "equation": "f_x[6] (i)",
+          "id": "f_x[6]",
+          "unknowns": [
+            6
+          ]
+        },
+        {
+          "equation": "f_x[7] (i)",
+          "id": "f_x[7]",
+          "unknowns": [
+            7
+          ]
+        }
+      ]
+    },
+    "n_manifold_constraints": 0
+  },
+  "search": [
+    {
+      "kind": "stopped",
+      "outcome": {
+        "kind": "borrowed"
+      }
+    }
+  ],
+  "stalled": null
+}

@@ -1,0 +1,363 @@
+{
+  "schema_version": 52,
+  "source_map": {
+    "hrw_note": "Published by HRW, not by Rumoca's Serialize. Rumoca's node carries every registered file's full text; this one carries the id-to-file index for the files this DAE's spans name, and no text. Names are workspace-relative, so source_id_for_name(file) does NOT equal source_id the way Rumoca's own node requires (SPEC_0029 §3a) — resolve a span by its source_id, never by re-deriving one from the name.",
+    "registered_files": 2556,
+    "files": [
+      {
+        "source_id": 7077285335715512691,
+        "file": "hrw/specimens/ArrayFamily.mo",
+        "content_bytes": 1623
+      }
+    ]
+  },
+  "storage": {
+    "predefined_string_declaration": 4,
+    "value_types": [
+      {
+        "scalar": "real",
+        "dimensions": [
+          8
+        ],
+        "record_name": null,
+        "record_fields": []
+      },
+      {
+        "scalar": "real",
+        "dimensions": [],
+        "record_name": null,
+        "record_fields": []
+      },
+      {
+        "scalar": "integer",
+        "dimensions": [],
+        "record_name": null,
+        "record_fields": []
+      }
+    ],
+    "flat_type_ids": [
+      8,
+      null,
+      null
+    ],
+    "value_type_provenance": [
+      {
+        "origin": "source",
+        "span": {
+          "source": 7077285335715512691,
+          "start": 1514,
+          "end": 1520
+        }
+      },
+      {
+        "origin": "source",
+        "span": {
+          "source": 7077285335715512691,
+          "start": 1537,
+          "end": 1540
+        }
+      },
+      {
+        "origin": "source",
+        "span": {
+          "source": 7077285335715512691,
+          "start": 1582,
+          "end": 1583
+        }
+      }
+    ],
+    "variables": [
+      {
+        "name": "x",
+        "role": "state",
+        "variability": "continuous",
+        "value_type": 0,
+        "declaration": {
+          "origin": "source",
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1514,
+            "end": 1520
+          }
+        },
+        "attributes": {
+          "component_ref": {
+            "local": false,
+            "span": {
+              "source": 7077285335715512691,
+              "start": 1514,
+              "end": 1520
+            },
+            "parts": [
+              {
+                "ident": "x",
+                "span": {
+                  "source": 7077285335715512691,
+                  "start": 1514,
+                  "end": 1520
+                },
+                "subs": [],
+                "def_id": 99
+              }
+            ]
+          },
+          "binding": null,
+          "start": 0,
+          "fixed": null,
+          "min": null,
+          "max": null,
+          "nominal": null,
+          "unit": null,
+          "state_select": "Default",
+          "description": null,
+          "enumeration": null,
+          "causality": "local",
+          "declared_causality": "none",
+          "is_tunable": false,
+          "is_held": false,
+          "evaluable": false,
+          "origin": "source"
+        }
+      }
+    ],
+    "functions": [],
+    "domains": [
+      {
+        "parent": null,
+        "domain": {
+          "binders": [
+            {
+              "provenance": {
+                "Source": 100
+              },
+              "id": 0,
+              "display_name": "i",
+              "lower": 1,
+              "upper": 8,
+              "step": 1
+            }
+          ]
+        },
+        "provenance": {
+          "origin": "source",
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1558,
+            "end": 1559
+          }
+        }
+      }
+    ],
+    "model_conditionals": [],
+    "expressions": {
+      "model_contexts": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "nodes": [
+        {
+          "literal": {
+            "real": 1.0
+          }
+        },
+        {
+          "coordinate": {
+            "derivative": 0
+          }
+        },
+        {
+          "coordinate": {
+            "binder": {
+              "domain": 0,
+              "ordinal": 0
+            }
+          }
+        },
+        {
+          "index": {
+            "base": 1,
+            "subscript_count": 1
+          }
+        },
+        {
+          "coordinate": {
+            "state": 0
+          }
+        },
+        {
+          "coordinate": {
+            "binder": {
+              "domain": 0,
+              "ordinal": 0
+            }
+          }
+        },
+        {
+          "index": {
+            "base": 4,
+            "subscript_count": 1
+          }
+        },
+        {
+          "unary": {
+            "operator": "negate",
+            "operand": 6
+          }
+        },
+        {
+          "binary": {
+            "operator": "subtract",
+            "lhs": 3,
+            "rhs": 7
+          }
+        }
+      ],
+      "provenance": [
+        {
+          "origin": "source",
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1537,
+            "end": 1540
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1576,
+            "end": 1585
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1582,
+            "end": 1583
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1576,
+            "end": 1585
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1589,
+            "end": 1590
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1591,
+            "end": 1592
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1589,
+            "end": 1590
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1588,
+            "end": 1590
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1576,
+            "end": 1585
+          }
+        }
+      ],
+      "operands": [],
+      "subscripts": [
+        {
+          "kind": {
+            "index": 2
+          },
+          "provenance": {
+            "origin": "source",
+            "span": {
+              "source": 7077285335715512691,
+              "start": 1582,
+              "end": 1583
+            }
+          }
+        },
+        {
+          "kind": {
+            "index": 5
+          },
+          "provenance": {
+            "origin": "source",
+            "span": {
+              "source": 7077285335715512691,
+              "start": 1591,
+              "end": 1592
+            }
+          }
+        }
+      ]
+    },
+    "continuous_equation_operations": [
+      {
+        "structured": {
+          "domain": 0,
+          "scalar_view": "BinderSubstitution",
+          "bodies": [
+            8
+          ],
+          "provenance": {
+            "origin": "source",
+            "span": {
+              "source": 7077285335715512691,
+              "start": 1558,
+              "end": 1559
+            }
+          }
+        }
+      }
+    ],
+    "initialization_equation_operations": [],
+    "initial_discrete_values": [],
+    "initial_parameter_values": [],
+    "discrete_real_equations": [],
+    "discrete_value_owners": [],
+    "model_event_transactions": [],
+    "relations": [],
+    "conditions": [],
+    "roots": [],
+    "structured_roots": [],
+    "time_events": [],
+    "event_actions": [],
+    "clocks": [],
+    "clock_ownerships": [],
+    "previous_values": [],
+    "terminals": [],
+    "delays": []
+  }
+}

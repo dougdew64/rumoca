@@ -6824,12 +6824,23 @@ fn block_to_json(b: &rumoca_phase_structural::BlockReport) -> serde_json::Value 
             origin,
             point_count,
             equations_per_point,
+            first_row,
+            row_count,
         } => serde_json::json!({
             "kind": "structured_scalar",
             "size": point_count * equations_per_point,
             "origin": origin,
             "point_count": point_count,
             "equations_per_point": equations_per_point,
+            // **The rows the family accounts for**, published 2026-11-06 so a consumer
+            // checking that the blocks PARTITION the equations can see what this one
+            // covers. Without it `fidelity::check_f4` had no way to resolve a compacted
+            // family to rows -- it resolves names through the incidence labels and a
+            // family has no per-row label -- so it reported every such block as naming
+            // no equations AND counted the family's rows as holes in the partition.
+            // Loud and blind at once, from v0.10.0 until this. `docs/tech-debt.md`.
+            "first_row": first_row,
+            "row_count": row_count,
         }),
     }
 }

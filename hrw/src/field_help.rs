@@ -238,36 +238,44 @@ mod tests {
     /// under `solver_maps` produced `rumoca-ir-ast`'s *"All names imported from the
     /// package"*, a doc about an **import clause**.
     ///
-    /// Both halves of the fix are needed and this test fails without either: the
-    /// per-stage keying, and the `rumoca-ir-solve` doc comment that gives the stage
+    /// Both halves of the fix were needed and this test failed without either: the
+    /// per-stage keying, and the `rumoca-ir-solve` doc comment that gave the stage
     /// something of its own to prefer. Named after the symptom so a future reader can
     /// find it from the complaint.
+    ///
+    /// # RE-GROUNDED 2026-11-06 — the symptom is unreachable, so this asserts that
+    ///
+    /// **v0.10.4 did not merely delete that doc comment; it deleted the field.**
+    /// `rumoca-ir-solve`'s `SolverNameIndexMaps` is gone, and measuring all 28
+    /// specimens' IR confirms the consequence: **`names` appears in 0 of 258 stage JSON
+    /// files.** No pane can show the field, so no pane can show a wrong tooltip for it.
+    ///
+    /// The original assertions could therefore never pass again, and keeping them would
+    /// have blocked `gen_field_help` forever to protect a tooltip nobody can see — which
+    /// is what left step 4 of `docs/updating-rumoca.md` unfinished. The general property
+    /// they guarded, *a stage prefers its own crate's doc*, is held by
+    /// [`a_stage_prefers_its_own_crates_doc`] over `causality`, which **is** still a
+    /// contested name and still published by the DAE stage.
+    ///
+    /// **What this now guards is the claim of absence.** If `rumoca-ir-solve` ever
+    /// documents `names` again, the field is plausibly back and the symptom with it — so
+    /// this fails and tells the reader to restore the assertions above rather than
+    /// discover the complaint a second time.
     #[test]
-    fn solve_lowerings_names_is_documented_as_slots_not_imports() {
+    fn the_solve_lowering_names_symptom_is_unreachable() {
         let help = FieldHelp::load();
         assert_eq!(
             help.crates_documenting("names"),
-            vec!["rumoca-ir-ast", "rumoca-ir-solve"],
-            "premise: both meanings are on record",
-        );
-
-        let tip = help
-            .for_stage(StageKind::SolveLowering)
-            .get("names")
-            .expect("Solve lowering documents `names`");
-        assert!(
-            tip.contains("slot order"),
-            "Solve lowering must get the solver's meaning, got: {tip}",
-        );
-        assert!(
-            !tip.contains("imported"),
-            "the import-clause doc must not reach this pane: {tip}",
+            vec!["rumoca-ir-ast"],
+            "`names` is contested again, so the 2026-09-03 symptom may be reachable: \
+             restore the per-stage assertions this test replaced (see its doc) rather \
+             than widening this one",
         );
         assert!(
             help.for_stage(StageKind::Parse)
                 .get("names")
                 .is_some_and(|t| t.contains("imported")),
-            "and Parse must still get the AST's meaning",
+            "the AST's import-clause meaning is still the one Parse should carry",
         );
     }
 
