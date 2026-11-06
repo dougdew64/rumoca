@@ -173,6 +173,14 @@ if (-not (Test-Path $Profile)) {
 # 2026-11-06 after two models panicked the runner and were recorded as `ok`; see
 # `docs/tech-debt.md`, 11-05 night, for the five layers that turned a hard compiler
 # crash into a clean-looking sweep.
+#
+# `no-row` means the process came back CLEANLY and still produced no row for the model:
+# it was not measured, whatever the reason. Added 2026-11-06, after the exit-code check
+# above proved insufficient -- two `ModelicaReference` names containing spaces were
+# declined by the runner, which exited 0 and scored `ok`. Three separate causes have now
+# produced the same false `ok` (a panic, a non-`Compiled` event, an unmatched name), so
+# this one asks the only question that generalises: **is the row there?** Also stays
+# done; a name the runner cannot match will not match on a retry.
 $alreadyProfiled = @{}
 $retryable = @()
 Get-Content $Profile | Select-Object -Skip 1 | ForEach-Object {
@@ -250,7 +258,15 @@ foreach ($m in $list) {
     $proc = Start-Process -FilePath $exe -PassThru -NoNewWindow -RedirectStandardOutput "$env:TEMP\fid-one.out" `
         -RedirectStandardError $errFile `
         -ArgumentList $(
-            $a = @("--models", $m, "--out", $Out, "--resume", "--max-models", "1", "--rebuild-every", "1")
+            # **The model name is quoted, because MSL contains names with spaces in them.**
+            #
+            # `ModelicaReference` declares classes with single-quoted Modelica identifiers
+            # such as `Classes.'function'.'pure function'`. Passed raw, Start-Process joins
+            # the argument list on spaces and the child sees `...'pure` as the whole value,
+            # matches no model, writes no row and exits 0 -- so the watchdog scored it `ok`.
+            # Two models were lost that way on 2026-11-06 and the loss was invisible in the
+            # report. docs/tech-debt.md.
+            $a = @("--models", ('"' + $m + '"'), "--out", $Out, "--resume", "--max-models", "1", "--rebuild-every", "1")
             if ($OnlyChecks) { $a += @("--only-checks", $OnlyChecks) }
             $a
         )
@@ -371,6 +387,31 @@ foreach ($m in $list) {
         $code = $null
         try { $code = $proc.ExitCode } catch { }
         if ($null -ne $code -and $code -ne 0) { $verdict = "crashed:exit-$code" }
+    }
+
+    # **The last thing standing between `ok` and "was measured".**
+    #
+    # The exit-code check above catches a crash. It does not catch a runner that
+    # declined the model and exited CLEANLY -- which is what happened on 2026-11-06 to
+    # the two `ModelicaReference` names containing spaces: 0 models matched, no row
+    # written, exit 0, verdict `ok`. Three different causes have now produced the same
+    # false `ok` (a panic, a non-`Compiled` event, an unmatched name), so the check that
+    # generalises is not another cause-specific guard but **asking whether the row
+    # exists**.
+    #
+    # Matched by name against the report rather than by row growth, because `--resume`
+    # legitimately writes nothing for a model already recorded; the question is whether
+    # the row is THERE, not whether this process added it.
+    # A MISSING report is the strongest evidence of a missing row, not a reason to stay
+    # quiet. The first version of this guard read `if ($verdict -eq "ok" -and (Test-Path
+    # $Out))`, which short-circuited when the runner declined every model and returned
+    # before creating the file -- so the check went silent in exactly the case it was
+    # written for. Falsified with a nonexistent model name, which it scored `ok`.
+    if ($verdict -eq "ok") {
+        $escaped = [regex]::Escape($m)
+        $present = (Test-Path $Out) -and
+            (Select-String -Path $Out -Pattern "^`"?$escaped`"?," -Quiet)
+        if (-not $present) { $verdict = "no-row" }
     }
 
     $secs = [math]::Round(((Get-Date) - $t0).TotalSeconds, 1)
