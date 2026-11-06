@@ -82,6 +82,7 @@ use std::io::{BufWriter, Write};
 use std::time::Instant;
 
 use rumoca_compile::compile::{PhaseResult, SourceRootKind};
+use rumoca_compile::parsing::{collect_class_type_counts, collect_model_names};
 use rumoca_compile::source_roots::{parse_source_root_with_cache, source_root_source_set_key};
 use rumoca_compile::{Session, SessionConfig};
 
@@ -91,11 +92,50 @@ use rumoca_ir_dae as dae;
 /// Marks a reduction the cap declined to attempt. Part 2 looks for exactly this.
 const SKIPPED: &str = "skipped:too-large";
 
-fn load_msl() -> Session {
+/// What the parsed MSL contains, taken from the ASTs rather than from a resolution.
+struct MslInventory {
+    model_names: Vec<String>,
+    class_type_counts: HashMap<String, usize>,
+}
+
+/// Load the MSL, and inventory it **from the parsed documents**.
+///
+/// # Why the inventory does not come from the `Session`
+///
+/// This used to be `session.model_names().expect("MSL should resolve")`, and on
+/// 2026-11-06 that line was found to have been **aborting the survey since some point in
+/// the 0.10.x rebase** — the whole corpus run with it, for three months, because the
+/// sweep script merged stale shard files and nobody saw the shards die.
+///
+/// `model_names()` reaches `ResolveBuildMode::Standard`, which requires a
+/// `ResolutionPlanningTree::Complete` and returns `Err` otherwise. **The MSL as a whole
+/// does not resolve completely and never will**: `Modelica.Fluid`'s `Medium.*` references
+/// are unresolved until a medium is redeclared, which is what `replaceable` means. So the
+/// survey was asking for a guarantee the library cannot give, to obtain a list of names
+/// that does not depend on it.
+///
+/// Per-model compiles are unaffected, which is why HRW, the gate's `msl_resolve` test and
+/// `fidelity_msl` all kept working while this was broken:
+/// `build_resolution_plan_for_strict_compile` *"ignores parse-error diagnostics from
+/// unrelated documents"* and resolves only the target's closure.
+///
+/// `collect_model_names` is the same function the resolved path itself calls, and its
+/// sibling's doc states the property that matters here — the names *"address the same
+/// targets as compilation **without resolving the AST**"*. So this is not a looser
+/// approximation of the old list; it is where the old list came from.
+fn load_msl() -> (Session, MslInventory) {
     let mut session = Session::new(SessionConfig::default());
+    let mut model_names = Vec::new();
+    let mut class_type_counts: HashMap<String, usize> = HashMap::new();
     for root in hrw::msl_roots() {
         let parsed = parse_source_root_with_cache(&root)
             .unwrap_or_else(|e| panic!("parse {}: {e:#}", root.display()));
+        for (_uri, def) in &parsed.documents {
+            model_names.extend(collect_model_names(def));
+            for (kind, n) in collect_class_type_counts(def) {
+                *class_type_counts.entry(kind).or_default() += n;
+            }
+        }
         let key = source_root_source_set_key(&root.to_string_lossy());
         session.replace_parsed_source_set(
             &key,
@@ -104,7 +144,13 @@ fn load_msl() -> Session {
             None,
         );
     }
-    session
+    (
+        session,
+        MslInventory {
+            model_names,
+            class_type_counts,
+        },
+    )
 }
 
 struct Config {
@@ -160,9 +206,9 @@ fn main() {
 fn run(cfg: Config) {
     eprintln!("loading MSL…");
     let t0 = Instant::now();
-    let mut session = load_msl();
-    let counts = session.class_type_counts().unwrap_or_default();
-    let mut names: Vec<String> = session.model_names().expect("MSL should resolve").to_vec();
+    let (mut session, inventory) = load_msl();
+    let counts = inventory.class_type_counts;
+    let mut names: Vec<String> = inventory.model_names;
     names.sort();
     names.dedup();
     let available = names.len();
@@ -264,10 +310,48 @@ fn run(cfg: Config) {
         // resolve can poison a later compile in the same session.
         if i > 0 && i % cfg.rebuild_every == 0 {
             eprintln!("  [rebuild] fresh session after {i} models");
-            session = load_msl();
+            // The inventory is discarded: the name list is already fixed for this run,
+            // and re-reading it here would let the corpus change mid-sweep.
+            session = load_msl().0;
         }
 
-        let row = survey_one(&mut session, name, cap);
+        // **One bad model must not end a shard of 465, and on 2026-11-06 it did.**
+        //
+        // With the enumeration repaired, the survey reached two models it had never got
+        // to before, and both abort the process at
+        // `rumoca-phase-dae/src/construction/expression/temporal.rs:15`
+        // (`docs/upstream-issues.md` D1). Unguarded, that took their whole slices with
+        // them: shard 1 wrote 0 rows of 465 and shard 3 wrote 175. **A survey whose
+        // entire job is to record how models fail cannot be ended by one of them
+        // failing** — and a shard that dies mid-slice is exactly the silent partial this
+        // file's `partial_survey` flag cannot see, because the process never reaches it.
+        //
+        // `AssertUnwindSafe` is sound only because the session is DISCARDED on the error
+        // path, the same contract `worker.rs`'s `guard` documents: a panicked `Session`
+        // can be mid-mutation, and reusing it would risk rows that are subtly wrong
+        // rather than absent.
+        let t_model = Instant::now();
+        let row = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            survey_one(&mut session, name, cap)
+        })) {
+            Ok(row) => row,
+            Err(payload) => {
+                let message = hrw::panic_message(payload.as_ref());
+                eprintln!("  [PANIC] {name}: {message}");
+                session = load_msl().0;
+                let secs = t_model.elapsed().as_secs_f64();
+                SurveyRow {
+                    name: name.clone(),
+                    kind: classify(name),
+                    package: package_of(name),
+                    outcome: "panicked".to_owned(),
+                    message: first_line(&message),
+                    secs,
+                    compile_cost: SurveyRow::cost_bucket(secs).to_owned(),
+                    ..Default::default()
+                }
+            }
+        };
         if let Err(e) = writeln!(sink, "{}", row.to_csv()).and_then(|()| sink.flush()) {
             eprintln!("write failed after {} rows: {e}", rows.len());
             break;

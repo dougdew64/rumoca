@@ -205,6 +205,36 @@ pub fn msl_libraries() -> Vec<String> {
     names
 }
 
+/// The readable half of a panic payload.
+///
+/// `panic!("literal")` boxes a `&str` and `panic!("{x}")` boxes a `String`; anything else
+/// is a payload nothing can read.
+///
+/// # One copy, because there were about to be three
+///
+/// `worker::guard` has done this since it was written, for the GUI. The corpus runners
+/// then each needed it on 2026-11-06 — `fidelity_msl` so a panicking model yields a report
+/// row instead of killing the sweep, and `survey_msl` so one model cannot end a shard of
+/// 465. Three identical downcasts in a repository that keeps a test named
+/// `no_second_copy_of_the_msl_root_list` would be the same mistake with a different
+/// subject.
+///
+/// **Why a payload and not a hook.** The default panic hook prints to stderr, and both
+/// runners hold an `OutputCapture` that redirects stderr at the file-descriptor level
+/// during a compile — so the hook's message goes into a pipe and dies with the process.
+/// The payload is untouched by that redirect, which is the whole reason this is reachable
+/// at all.
+#[must_use]
+pub fn panic_message(payload: &(dyn std::any::Any + Send)) -> String {
+    if let Some(s) = payload.downcast_ref::<&str>() {
+        (*s).to_owned()
+    } else if let Some(s) = payload.downcast_ref::<String>() {
+        s.clone()
+    } else {
+        "panicked with a payload that cannot be read".to_owned()
+    }
+}
+
 #[cfg(test)]
 mod tests_one_home {
     /// **Nothing outside [`super::msl_roots`] spells the MSL root list.**
