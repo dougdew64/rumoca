@@ -388,6 +388,25 @@ a mismatch may be fixed by changing the *pane*, and on 2026-08-13 one was. But *
 expose Rumoca's structure, not a pedagogically convenient one**; when prose and pane disagree,
 **Rumoca is the arbiter.**
 
+**AN ANSWER IS A PRIMARY ARTIFACT OF HRW'S PURPOSE, SO NOTHING MAY TAX IT** *(Doug,
+2026-11-05)*: *"One of the ways that HRW helps me to learn is to serve as a platform for your
+answers… I am concerned about such authoring guidance interfering with your ability to provide
+good answers. Also, the latency for your answers is way too long. If anything, we need to find
+ways to reduce that latency."*
+
+**This decided the removal of the Play button** (`DECISIONS.md`, same day). A recording feature
+had produced a defect, the defect had produced an authoring rule for Answers, and the rule was
+the thing he objected to — a feature with no educational purpose constraining the one artifact
+that has nothing else. **So an authoring rule on Answers now needs a reason beyond "the labs
+have one", and a feature that imposes one is suspect rather than the rule being justified.**
+*(The no-bold rule is the worked example: it was derived for Answers from a lab ruling, by
+sound argument, and was still wrong. `docs/fixture-labs/README.md` carries why.)*
+
+**And latency is a cost to minimise, not a neutral.** Most of it is fact-gathering, which is the
+value; the waste is verification ritual. `cargo run -p hrw --example check_answer` covers links,
+pointers and style in one command — **run it before handing an Answer over, not after**, which
+is where a rewrite gets paid for twice.
+
 **ANSWER THROUGH HRW WHEN HRW CAN SHOW IT — a standing expectation, and its failure is silent**
 *(Doug, 2026-09-02)*: *"Enabling you to provide richer answers is a big reason for this HRW project.
 This HRW project provides less advantage over this text conversation if you don't make use of HRW to
