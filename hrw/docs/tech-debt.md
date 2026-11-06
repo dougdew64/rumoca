@@ -4336,6 +4336,91 @@ present size. Re-pinning them to 2,791 would make them wrong again at the next c
 rewriting ten reasoning passages is a larger and more error-prone edit than the staleness costs.
 Worth a sweep only if one of them is ever read as a definition.
 
+### 11-06, triage of the 409 — about a fifth are 0.10.4 being RIGHT, and two thirds are one unported feature set
+
+Buckets, over the 409 models that compiled on 0.9.20 and do not on 0.10.4:
+
+| count | bucket | reading |
+|---|---|---|
+| **78** | balance check | **not a regression** — see below |
+| **127** | synchronous / clocked features | capability gap |
+| **89** | algorithm and function-body lowering | capability gap |
+| **67** | expression and record forms | capability gap |
+| 2 | D1 | **already fixed**; this artifact predates it |
+| 46 | long tail | **where defects are likely** |
+
+#### The 78 `unbalanced model` rejections are 0.9.20's defect, not 0.10.4's
+
+**73 of the 78 do not satisfy `n_equations = n_states + n_algebraic` according to 0.9.20's own
+published columns.** It reported `success` on systems its own numbers called unbalanced;
+0.10.4 added a check and rejects them. Examples, with 0.9.20's figures:
+
+```text
+Modelica.Electrical.QuasiStatic.SinglePhase.Sensors.PotentialSensor   eq=6  states=1 alg=7
+Modelica.Magnetic.QuasiStatic.FluxTubes.Basic.Ground                  eq=2  states=0 alg=5
+```
+
+**Bounded honestly.** `n_equations = n_states + n_algebraic` is the test used here, and 12 of the 78
+are `QuasiStatic`, where complex-valued connectors may count differently — so the confound touches
+at most 12 and the robust floor is **61 genuinely imbalanced**. The group is dominated by
+`Modelica.Mechanics` (65 of 78), not QuasiStatic, so the confound is marginal rather than
+structural. An earlier reading of this group cited only QuasiStatic examples and so looked like the
+opposite.
+
+**The five that WERE balanced by 0.9.20's counts are the real suspects** — the candidates for
+0.10.4's check being wrong:
+
+```text
+Modelica.Mechanics.MultiBody.Forces.ForceAndTorque              eq=245 states=0 alg=245
+Modelica.Mechanics.MultiBody.Forces.WorldForce                  eq=197 states=0 alg=197
+Modelica.Mechanics.MultiBody.Forces.WorldTorque                 eq=197 states=0 alg=197
+Modelica.Mechanics.MultiBody.Parts.Rotor1D                      eq=228 states=7 alg=221
+Modelica.Thermal.HeatTransfer.Components.ThermalCollectorMatrix eq=2   states=0 alg=2
+```
+
+#### 283 of the 409 are three capability gaps, and they read as unported rather than broken
+
+Every message in buckets B, C and D says **`unsupported`** or **`unresolved clock`** — the phase
+naming a limit, not failing an invariant. They cluster so cleanly that they look like work not yet
+carried across the 0.10.0 re-implementation rather than defects in what was:
+
+- **Synchronous / clocked (127)** — `sample`, `delay`, `Clock`, clock schedules, clocked ownership
+  proofs. Modelica 3.3's synchronous language, essentially absent.
+- **Algorithms and function bodies (89)** — `model algorithm in canonical DAE`, `function
+  conditional`, call statements, element assignment, branch selection, shape proofs.
+- **Expression and record forms (67)** — `equation form`, `derivative`/`change`/`pre`/`edge`
+  expressions, `native table constructor`, record-array slices and output assembly.
+
+**This is the most useful single fact for study planning.** Clocked and algorithm-bearing MSL models
+do not reach a DAE on 0.10.4, so they cannot be studied at DAE level or below until that work lands.
+
+#### The 46-model tail is where to look for defects
+
+Nothing here is a feature name; the phrasing is internal:
+
+| count | message |
+|---|---|
+| 9 | `canonical DAE construction rejected an invalid operation` |
+| 6 | `flat variable is missing structured identity` |
+| 9 | `conditional component … requires parameter expression` (4 distinct components) |
+| 4 | `unresolved Flat reference …` |
+| 4 | `… could not be compiled` (no reason given) |
+| 4 | `unevaluable array dimensions for …` |
+| 2 | `unordered foreign library state` |
+
+**`rejected an invalid operation` (9) is the most suspicious**: it reads as an internal invariant
+refusing something, not as a user-facing limit. `could not be compiled` (4) gives no reason at all,
+which is its own small finding.
+
+#### Two things this artifact gets wrong about today
+
+1. **It contains 2 `panicked` rows** — the D1 models. D1 is fixed, so a fresh survey would record
+   them as ordinary `failed:ToDae`. The artifact is one fix stale and a re-run is ~4 minutes.
+2. Nothing here is adjudicated against an independent implementation. The 5 balance suspects, the 9
+   `invalid operation` models and the 4 `could not be compiled` models are the **oracle candidates**:
+   System Modeler either simulates them or it does not, and that answer is worth more than any
+   reading of the messages.
+
 ### 11-06, the fidelity sweep completed and reconciles — 2,780 measured, 0 violations, 7 checks
 
 **The first fidelity sweep whose arithmetic closes.** Over the repaired 2,791-model corpus:
