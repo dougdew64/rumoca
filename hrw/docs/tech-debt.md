@@ -4070,14 +4070,18 @@ measured": a true statement about the wrong thing. The roster was four greps awa
    tests, and the sweep's own string now exits 2.
 2. **Re-run the sweep with the real roster.** Last night's measured neither F4 nor F10, so the corpus
    is unmeasured under both — and F10 is the check with the best demonstrated ability to fail.
-3. **Must-fire for F2, F6, F7 and F9** — the floor, and it closes the four falsifiable-in-principle
-   checks that nothing has ever falsified.
-4. **Must-fire driven by IR shapes taken from the corpus**, not hand-built JSON, for every check that
-   reads a block kind or any other tagged variant. F4 is the proof that the synthetic shape is the
-   one case guaranteed to pass. For F2 and F6, whose signatures need a real `Dae`, the lever is
-   **cross-pairing**: hand one specimen's equation sheet or report to another specimen's DAE and the
-   check must complain, which needs no IR construction and uses only shapes the compiler really
-   produces.
+3. ~~**Must-fire for F2, F6, F7 and F9.**~~ **DONE 2026-11-06.** All four now have one, and
+   **F9 moved out of the example into `fidelity.rs`** to get it: living in
+   `examples/fidelity_msl.rs` put it outside `--only-checks` *and* out of reach of `cargo test`, and
+   `check_f10` has the same signature and never left, so the split bought nothing. The roster
+   exception it required is now empty. Each test was verified by falsification, not by passing.
+4. ~~**Must-fire driven by IR shapes taken from the corpus.**~~ **DONE for F2 and F6, by
+   cross-pairing** — compile two specimens and hand one's equation sheet and published incidence to
+   the other's DAE. The violation is then built entirely out of IR the compiler really emits, which
+   is the property F4's synthetic `{"kind": "scalar"}` test lacked. Measured on `SingleInertia`
+   against `TwoLoops`: 2 equations versus 4, and **the equation-count assertion is load-bearing** —
+   if the two specimens ever converge the pairing becomes valid and the test would pass having
+   proved nothing, so it asserts they differ before anything else.
 5. **Decide what F1 and F8 are.** `fidelity-plan.md`, the runner's module doc and `--only-checks`'
    vocabulary all say "F1-F9", and two of those nine are not checks. Either implement F1 and give F8
    a violation it can raise, or stop naming them as checks — the present state lets a sweep *request*
@@ -4094,6 +4098,34 @@ measured": a true statement about the wrong thing. The roster was four greps awa
 | 11-05 | F2, F6, F7 and F9 have no must-fire test, so nothing has ever falsified them | checking whether "zero violations" was informative before reporting it as good news | F3/F4/F5/F10 are covered. `check_f6` and `check_f7` are reachable only from `check_model` and the corpus test |
 | 11-05 | **a passing must-fire test did not stop F4 going blind** | reading `each_invariant_catches_its_own_violation` after claiming no such test existed | the test uses `"kind": "scalar"`; F4 is blind on `StructuredScalar`. Must-fire over author-chosen JSON proves only that the handled shape is handled |
 | 11-05 | Claude wrote "no vacuity test exists", "the checks did not fire", and "eight checks" into this file and into its report; all three false | re-measuring each claim before building on it | one file read and four greps would have prevented all three. Each was asserted from the CSVs alone because the CSV evidence felt sufficient, which is how a true statement about the wrong unit gets recorded as a finding |
+
+### 11-06, a key spelled `(tree root)` cannot navigate back — and F7's must-fire test now depends on it
+
+Writing F7's must-fire coverage required an input the path grammar gets **wrong**, because F7 is a
+round-trip property over `describe_path` / `parse_path` / `navigate` and no input the grammar handles
+correctly can falsify it. One exists:
+
+`bridge::key_needs_quoting` is `k.is_empty() || k.contains(['.', '[', ']', '"', '\\'])`. The string
+`(tree root)` contains none of those, so a JSON key spelled that way is written **bare** — and
+`describe_path` returns exactly `(tree root)` for the *empty* path. The description of
+`[Key("(tree root)")]` is therefore indistinguishable from the root's, and navigating the parsed
+description lands on the whole tree instead of the child. **F7 catches it**, which is the proof that
+F7 can fire.
+
+**Latent, not active.** No Modelica IR key is spelled `(tree root)`; the corpus run reads 11 stage
+IRs per model across 2,626 models and has never produced one. The collision is reachable only by a
+hand-written document.
+
+**The pair, and it must be done as a pair.** Adding the sentinel to `key_needs_quoting` is a
+one-line fix *that breaks F7's must-fire test* — the defect is currently load-bearing, which is not
+a state to leave unremarked. So either:
+
+- **make `check_f7` injectable first** — parameterise the round trip over its describer so a test
+  can supply a deliberately broken one — then fix the grammar and replace the test's input; or
+- **fix the grammar and accept that F7 loses must-fire coverage again**, which puts it back in the
+  category this morning's work existed to empty.
+
+The first is the real repair. Doing the second half alone is the trap.
 
 ### 11-05, the survey artifact stopped recording which MSL it surveyed
 
