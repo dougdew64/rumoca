@@ -67,7 +67,7 @@ param(
     # **The roster is F2,F3,F4,F5,F6,F7,F9,F10** (`fidelity::CHECKS`), and the runner now
     # REJECTS any name not on it instead of selecting nothing for it. That guard exists
     # because of this parameter's own first use: the 11-05 sweep was given
-    # `F1,F2,F3,F5,F6,F7,F8,F9`, in which F1 is not implemented, F8 is not a check, and
+    # `F1,F2,F3,F5,F6,F7,F8,F9`, in which F1 is retired, F8 is not a check, and
     # the absence of F10 silently dropped the only check that asks whether a pane's claim
     # about the compiler is honest. Five checks ran and the report was read as eight.
     #

@@ -163,12 +163,22 @@ impl CheckTiming {
 ///
 /// # What is deliberately NOT here
 ///
-/// **F1 is not implemented.** Every `F1` left in this crate is prose; the module doc
-/// above says it "lives in `worker.rs`", where the one remaining mention is a remark
-/// about a bug it once found. **F8 is not a check** — it is the size accounting in
-/// `examples/fidelity_msl.rs`, which raises no violation and is covered by
-/// `every_stage_serializes_without_panicking`. Both are rejected on purpose, so that
-/// asking for them fails rather than quietly measuring nothing.
+/// **F1 is retired, not missing**, and the distinction matters. It had three checks in
+/// `worker.rs`. The two that re-derived the matching and the BLT were removed when the
+/// animations began reading the compile's own steps, because a test comparing a thing
+/// against itself passes for no reason — which is worse than no test, since it reports a
+/// guarantee it is not providing. Its surviving half, the report → names → indices round
+/// trip, is [`check_f2`], which compares against a fresh `build_incidence` rather than
+/// against whatever a second implementation happened to produce. The full account is
+/// written out in `worker/tests.rs`.
+///
+/// **F8 is a measurement, not a check** — the size accounting in
+/// `examples/fidelity_msl.rs` raises no violation at all, and
+/// `every_stage_serializes_without_panicking` is what covers the property it records.
+///
+/// Both names are rejected deliberately. A retired check and a measurement are each
+/// fine things to be; what is not fine is a flag that accepts their names and then
+/// reports nothing about either.
 pub const CHECKS: &[&str] = &["F2", "F3", "F4", "F5", "F6", "F7", "F9", "F10"];
 
 /// The roster entries enforced by the runner instead of by [`check_model`].
