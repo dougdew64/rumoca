@@ -71,7 +71,7 @@ use std::time::Instant;
 
 use hrw::fidelity::{CheckTiming, Coverage, Violation, check_model, group_by_check};
 use hrw::survey::{SurveyRow, classify};
-use hrw::worker::{FromWorker, Outcome, StageKind, WorkerState};
+use hrw::worker::{FromWorker, StageKind, WorkerState};
 
 /// Candidate models, read from the survey rather than re-derived.
 ///
@@ -147,8 +147,6 @@ fn main() {
             eprintln!("  NOT running: {}", skipped.join(","));
         }
     }
-    // Mirrors `check_model`'s own gate so the roster test can scan for one spelling.
-    let want = |c: &str| only.as_ref().is_none_or(|set| set.contains(c));
     // **Process lifetime is the only hard memory bound.** A session rebuild
     // releases what the session holds; it cannot release what the allocator has
     // fragmented or what any other cache retains. Exiting does, because the OS
@@ -415,14 +413,12 @@ fn main() {
         } else {
             no_dae += 1;
         }
-        // **F9 is gated, and until 2026-11-06 it was not.** It lives here rather than in
-        // `check_model` because it needs the whole bundle, and that placement put it
-        // outside `--only-checks` entirely: asking for F9 did not select it and omitting
-        // F9 did not skip it, so the flag was wrong about this check in both directions.
-        // `the_check_roster_matches_the_code` now requires this exact spelling.
-        if want("F9") {
-            violations.extend(check_failures(&stages));
-        }
+        // **F9 moved into `check_model` on 2026-11-06**, with the rest of the checks.
+        // It lived here because it needs the whole bundle rather than a subject, which
+        // also put it outside `--only-checks` -- asking for F9 did not select it and
+        // omitting F9 did not skip it -- and out of reach of `cargo test`, which is why
+        // nothing had ever driven it with a deliberate violation. `check_f10` has the
+        // same signature and never left `fidelity.rs`, so the split bought nothing.
 
         // One compact line per model: the phases that actually cost something.
         // Sorted by cost and truncated, because a full ten-phase dump per model
@@ -529,43 +525,6 @@ fn main() {
         }
     }
     eprintln!("\nwrote {out}");
-}
-
-/// F9, which needs the whole bundle rather than a subject.
-fn check_failures(stages: &hrw::worker::StageBundle) -> Vec<Violation> {
-    let mut v = Vec::new();
-    for kind in StageKind::COMPILATION {
-        let stage = stages.get(*kind);
-        if stage.outcome == Outcome::Ok {
-            continue;
-        }
-        let Some(note) = stage.note.as_deref() else {
-            v.push(Violation {
-                check: "F9",
-                detail: format!("{kind:?}: abnormal with no note"),
-            });
-            continue;
-        };
-        match stage.value.as_ref() {
-            None => {
-                if note.trim().len() < 12 || !note.contains(' ') {
-                    v.push(Violation {
-                        check: "F9",
-                        detail: format!("{kind:?}: no value and note {note:?} is a label"),
-                    });
-                }
-            }
-            Some(value) => {
-                if value.as_object().is_none_or(serde_json::Map::is_empty) {
-                    v.push(Violation {
-                        check: "F9",
-                        detail: format!("{kind:?}: note {note:?} with a value carrying no fields"),
-                    });
-                }
-            }
-        }
-    }
-    v
 }
 
 /// One row of the fidelity report, sharing its first four columns with every
