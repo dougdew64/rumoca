@@ -8,11 +8,25 @@ pub(super) fn lower_derivative<'dae>(
     provenance: dae::DaeProvenance,
     span: Span,
 ) -> Result<dae::ExprId<'dae>, dae::DaeConstructionError> {
-    let (name, subscripts) =
-        derivative_reference(&arguments[0]).expect("analysis proves the derivative target shape");
+    // Report a missing certificate rather than assert one. `derivative()` returns
+    // `Err(UnsupportedFlatSemantics)` for a `der()` target that is not classified as a
+    // continuous state — a diagnosable condition, and one this function's own signature
+    // can carry. `lower_history_operator` below already handles the identical failure on
+    // the sibling accessor this way; asserting it instead aborts the whole process, and
+    // takes the embedder with it.
+    let missing = || dae::DaeConstructionError::MissingHistoryOperatorCertificate {
+        operator: "der",
+        span,
+    };
+    let [argument] = arguments else {
+        return Err(missing());
+    };
+    let Some((name, subscripts)) = derivative_reference(argument) else {
+        return Err(missing());
+    };
     let coordinate = symbols.coordinates[name.var_name()]
         .derivative(span)
-        .expect("analysis proves derivative role");
+        .map_err(|_| missing())?;
     lower_coordinate_reference(
         construction,
         symbols,
@@ -31,11 +45,23 @@ pub(super) fn lower_pre<'dae>(
     provenance: dae::DaeProvenance,
     span: Span,
 ) -> Result<dae::ExprId<'dae>, dae::DaeConstructionError> {
-    let (name, subscripts) =
-        derivative_reference(&arguments[0]).expect("analysis proves the pre-value target shape");
+    // Same reasoning as `lower_derivative`, and on the very accessor
+    // `lower_history_operator` propagates from at the end of this file: `previous()` is
+    // fallible, so a missing certificate is reported rather than asserted. No input is
+    // known to reach this one, which is exactly why it should not abort if one does.
+    let missing = || dae::DaeConstructionError::MissingHistoryOperatorCertificate {
+        operator: "pre",
+        span,
+    };
+    let [argument] = arguments else {
+        return Err(missing());
+    };
+    let Some((name, subscripts)) = derivative_reference(argument) else {
+        return Err(missing());
+    };
     let coordinate = symbols.coordinates[name.var_name()]
         .previous(span)
-        .expect("analysis proves the pre-value role");
+        .map_err(|_| missing())?;
     lower_coordinate_reference(
         construction,
         symbols,
