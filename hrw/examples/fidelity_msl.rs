@@ -113,7 +113,7 @@ fn main() {
         // **An unrecognised check name is fatal now, and this is what it cost.**
         //
         // On 2026-11-05 this flag was handed `F1,F2,F3,F5,F6,F7,F8,F9` to exclude the
-        // blind F4. `F1` is not implemented and `F8` raises no violation, so both
+        // blind F4. `F1` is retired and `F8` raises no violation, so both
         // selected nothing; `F10` was simply absent and so was skipped; and the 2.5-hour
         // result was read as eight checks when five had run. Every part of that was
         // accepted in silence. Exiting here costs one retyped command.
@@ -121,8 +121,9 @@ fn main() {
         if !unknown.is_empty() {
             eprintln!(
                 "--only-checks: {} is not a check. The roster is {}.\n  \
-                 F1 is not implemented and F8 raises no violation, so neither can be \
-                 selected -- see fidelity::CHECKS.",
+                 F1 is retired (its surviving half is F2) and F8 is a size measurement \
+                 that raises no violation, so neither can be selected -- see \
+                 fidelity::CHECKS.",
                 unknown.join(", "),
                 hrw::fidelity::CHECKS.join(","),
             );
