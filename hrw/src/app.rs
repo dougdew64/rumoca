@@ -1585,6 +1585,10 @@ impl App {
         // source only renders in Specimen mode — and `matching.md` ends Station 3 with
         // exactly that, so the run used to finish with the lab off screen.
         self.lab.mode_before_autoplay = Some(self.ui_mode);
+        // **Which document these beats measure.** Their byte offsets are meaningless
+        // against any other, and a stop may legitimately open another lab — see
+        // `LabState::autoplay_scheduled_for` for what that cost on 2026-11-05.
+        self.lab.autoplay_scheduled_for = self.lab.selected.clone();
 
         // **Start from where the pane is, not from where the last run stopped.**
         //

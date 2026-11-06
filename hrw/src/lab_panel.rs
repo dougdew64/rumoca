@@ -636,8 +636,13 @@ pub(crate) fn lab_prose_ui(
     //
     // The markdown is split at the link's line and rendered as two
     // documents. The cursor between them *is* the link's y position. The
-    // split falls on a line start, and every link in these labs is its
-    // own paragraph, so no markdown construct is cut in half.
+    // split falls on a line start, so no markdown construct is cut in half.
+    //
+    // **That last sentence is only true of the document the schedule was
+    // built from**, and it used to be asserted of whatever happened to be
+    // on screen. A beat that follows `hrw://lab/<other>` changes the
+    // document and not the offsets; `LabState::render_split` is where that
+    // is now decided, and `autoplay_scheduled_for` carries the account.
     let mut measured: Option<f32> = None;
     let out = area.show(ui, |ui| {
         set_markdown_text_sizes(ui);
@@ -671,14 +676,14 @@ pub(crate) fn lab_prose_ui(
                 // edit — and slicing a `str` off a char boundary panics.
                 // These documents are edited *while* Doug runs them, so
                 // that is the expected case rather than a corner one.
+                // **The rules live in `LabState::render_split`**, out of the paint
+                // path and tested. `station_split` survives here only because the
+                // scroll decision below needs to know whether a station request was
+                // usable, which the split alone cannot say.
                 let station_split = lab
                     .scroll_to_offset
                     .filter(|n| *n <= text.len() && text.is_char_boundary(*n));
-                let split = if lab.autoplay.is_running() {
-                    lab.autoplay.current_byte_offset().min(text.len())
-                } else {
-                    station_split.unwrap_or(0)
-                };
+                let split = lab.render_split(text);
                 let top = ui.cursor().top();
                 if split > 0 {
                     show_lab_markdown(ui, &mut *cache, &text[..split], LabPart::BeforeCursor);
