@@ -34,7 +34,15 @@ pub use dae_transform::{
     FormalDerivativeStage, FormalDerivativeSystem, FormalDerivativeView, FormalStageCoordinate,
     FormalStageEquation, FormalStateCandidate, FormalStateCandidateView, FormalStateCoordinate,
     InitialValuePin, InitialValueRole, PinTerm, PreparedDae, PreparedReducedChart,
-    PreparedStateCoordinate, PreparedStateCoordinates, PreparedStructuralAnalysis, PreparedSystem, ReducedSelectionChart, ReducedSelectionMaps, ReductionCandidateGroup, ReductionIdentity, ReductionLane, ReductionOutcome, ReductionRecord, ReductionReport, ReductionSnapshot, ReductionStop, ReductionWatcher, StateSelection, UnlocalizableGuard, UnmatchedKind, UnmatchedName, alias_quotient_report, construct_formal_derivatives, demote_inert_states, fold_constant_values, fold_evaluable_parameters, formal_alias_quotient_report, inline_annotated_calls, inline_formal_calls, inspect_prepare_for_solve, inspect_quotient_aliases, own_loop_guarded_relations, prepare_for_solve, quotient_aliases, quotient_formal_aliases, unlocalizable_loop_guards, watch_prepare_for_solve,
+    PreparedStateCoordinate, PreparedStateCoordinates, PreparedStructuralAnalysis, PreparedSystem,
+    ReducedSelectionChart, ReducedSelectionMaps, ReductionCandidateGroup, ReductionIdentity,
+    ReductionLane, ReductionOutcome, ReductionRecord, ReductionReport, ReductionSnapshot,
+    ReductionStop, ReductionWatcher, StateSelection, UnlocalizableGuard, UnmatchedKind,
+    UnmatchedName, alias_quotient_report, construct_formal_derivatives, demote_inert_states,
+    fold_constant_values, fold_evaluable_parameters, formal_alias_quotient_report,
+    inline_annotated_calls, inline_formal_calls, inspect_prepare_for_solve,
+    inspect_quotient_aliases, own_loop_guarded_relations, prepare_for_solve, quotient_aliases,
+    quotient_formal_aliases, unlocalizable_loop_guards, watch_prepare_for_solve,
 };
 pub use dae_transform::{SourceStructuralAnalysis, prepare_for_solve_from_source};
 pub use diagnostic_codes::STRUCTURAL_DIAGNOSTIC_CODES;
@@ -352,11 +360,16 @@ fn block_report<'dae>(view: dae::DaeView<'dae>, block: &BltBlock<'dae>) -> Block
                 .as_ref()
                 .map(|tearing| tearing_report(view, equations, unknowns, tearing)),
         },
-        BltBlock::StructuredScalar(family) => BlockReport::StructuredScalar {
-            origin: equation_label(view, &EquationRef(family.first_equation_index())),
-            point_count: family.point_count(),
-            equations_per_point: family.equations_per_point(),
-        },
+        BltBlock::StructuredScalar(family) => {
+            let rows = family.row_range();
+            BlockReport::StructuredScalar {
+                origin: equation_label(view, &EquationRef(family.first_equation_index())),
+                point_count: family.point_count(),
+                equations_per_point: family.equations_per_point(),
+                first_row: rows.start,
+                row_count: rows.len(),
+            }
+        }
     }
 }
 

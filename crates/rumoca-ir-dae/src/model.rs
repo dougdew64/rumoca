@@ -357,6 +357,13 @@ pub struct VariableAttributes<'dae> {
     /// (MLS §4.9.5), so a consumer that exposes the variable names its
     /// literals.
     pub enumeration: Option<rumoca_core::EnumerationDeclaration>,
+    /// FMI-style causality metadata for downstream JSON consumers: one of
+    /// `Input`, `Output`, `Parameter`, `CalculatedParameter`, `Independent` or
+    /// `Local`, matching the values of FMI's `causality` attribute.
+    ///
+    /// This is the **exported** classification, not the source `input`/`output`
+    /// prefix — see `declared_causality` for that, which an exported `Input` or
+    /// `Output` must agree with (SPEC_0040 DAE-C24).
     pub causality: VariableCausality,
     /// The source `input`/`output` prefix. An exported `Input` or `Output`
     /// causality requires the same declared causality (SPEC_0040 DAE-C24).

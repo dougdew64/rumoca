@@ -71,6 +71,16 @@ pub enum BlockReport {
         point_count: usize,
         /// Scalar equations emitted per domain point.
         equations_per_point: usize,
+        /// First incidence row the family occupies.
+        ///
+        /// Published because the compact form names no individual equation, so a
+        /// consumer checking that the blocks **partition** the equations has no other
+        /// way to learn which rows this block accounts for. `origin` is a description
+        /// and the two counts are a size; neither locates the family in the incidence.
+        first_row: usize,
+        /// Number of consecutive incidence rows the family occupies, from
+        /// [`first_row`](Self::StructuredScalar::first_row).
+        row_count: usize,
     },
 }
 
@@ -190,6 +200,7 @@ impl BlockReport {
                 origin,
                 point_count,
                 equations_per_point,
+                ..
             } => writeln!(
                 f,
                 "  [{index:>4}] family   {} scalar block(s) ({point_count} point(s) x {equations_per_point}) <- {origin}",
@@ -241,6 +252,8 @@ mod tests {
             origin: "f_x[12] (der(x[i]) = -x[i])".to_string(),
             point_count: 512,
             equations_per_point: 2,
+            first_row: 12,
+            row_count: 1024,
         }
     }
 
