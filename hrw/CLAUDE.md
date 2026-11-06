@@ -578,13 +578,13 @@ the next phase touches — is procedure and lives there.
 >
 > ### ⟶ THE ORDER DOUG SET 2026-11-05 — step 1 is DONE, 2 and 3 are next
 >
-> 1. ~~**Fix `App::failure_context`**~~ — **DONE in Chicago.** Now `App::pipeline_context`, and
->    `focus.json` carries `pipeline_flags` beside `pipeline_failure`. **Measuring first turned one
->    defect into three** and refuted two candidate fixes before either was written; the account is
->    in `docs/tech-debt.md`. The reusable part: `Stage::says_not_reached` — **a stage with no IR
->    has not necessarily been skipped**, and `value.is_none()` is a different question.
-> 2. **Finish the 0.10.4 rebase** — steps 6, 6b, 7 (labs, lectures, `compiler-phases`) and 8, the
->    smoke test. All prose, all Doug's.
+> 1. ~~**Fix `App::failure_context`**~~ — **DONE**; `docs/tech-debt.md` carries the account. The
+>    reusable part: **a stage with no IR has not necessarily been skipped**
+>    (`Stage::says_not_reached`), and `value.is_none()` is a different question.
+> 2. **Finish the 0.10.4 rebase** — steps 6, 6b and 7 are **DONE**; **step 8, the smoke test, is
+>    RUNNING and is Doug's.** Four defects so far, all in Settings, and **two of them were caused
+>    by the fix before them** — so re-check a reported fix on the screen rather than on a green
+>    suite, which `hrw://window/settings` now allows.
 > 3. **Then `updating-rumoca.md` step 10**: the hours-long suites — `fidelity_msl`, the full
 >    `slow-tests` set including `--ignored`, `notebook-check`, and the **oracle** over the 28
 >    specimens. **Night 8's 3b run does not count**, because F4 was blind while it ran.
