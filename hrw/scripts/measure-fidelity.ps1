@@ -63,6 +63,16 @@ param(
     # The staging section of `docs/long-runs.md` is the same lesson at a different scale:
     # nine of twelve first-run violations were the check's fault, not HRW's. A sweep whose
     # output is dominated by a known instrument bug has not measured anything.
+    #
+    # **The roster is F2,F3,F4,F5,F6,F7,F9,F10** (`fidelity::CHECKS`), and the runner now
+    # REJECTS any name not on it instead of selecting nothing for it. That guard exists
+    # because of this parameter's own first use: the 11-05 sweep was given
+    # `F1,F2,F3,F5,F6,F7,F8,F9`, in which F1 is not implemented, F8 is not a check, and
+    # the absence of F10 silently dropped the only check that asks whether a pane's claim
+    # about the compiler is honest. Five checks ran and the report was read as eight.
+    #
+    # **To exclude only F4, pass the other seven: `F2,F3,F5,F6,F7,F9,F10`.** Naming what
+    # you want is safer than naming what you remember.
     [string]$OnlyChecks  = ""
 )
 
@@ -157,6 +167,12 @@ if (-not (Test-Path $Profile)) {
 #
 # `aborted:proc-ceiling` stays done: a model that wants more than the ceiling
 # wants it regardless of what else is running.
+#
+# `crashed:exit-<n>` stays done for the same reason -- the runner died on that model
+# and will die again -- and it is a FINDING rather than a retry candidate. Added
+# 2026-11-06 after two models panicked the runner and were recorded as `ok`; see
+# `docs/tech-debt.md`, 11-05 night, for the five layers that turned a hard compiler
+# crash into a clean-looking sweep.
 $alreadyProfiled = @{}
 $retryable = @()
 Get-Content $Profile | Select-Object -Skip 1 | ForEach-Object {
@@ -333,6 +349,28 @@ foreach ($m in $list) {
         $phaseLines = Select-String -Path $errFile -Pattern ([regex]::Escape('[phases]')) |
             ForEach-Object { $_.Line.Trim() }
         foreach ($pl in $phaseLines) { "$m  $pl" | Out-File $PhaseLog -Append -Encoding utf8 }
+    }
+
+    # **A verdict of `ok` meant only "did not exceed memory or time".**
+    #
+    # Every `aborted:*` above is decided from a property of a RUNNING process -- free
+    # RAM, the process ceiling, the elapsed clock -- and nothing ever looked at how the
+    # process ENDED. On 2026-11-05 two MSL models panicked the runner (exit 101, empty
+    # stderr, no report row) and this script recorded both as `ok`, so the sweep reported
+    # 2,613 clean models and was silent about the two it never measured. That is a true
+    # statement about the wrong unit: true of the process, false of the model.
+    #
+    # `--resume` keys off rows in the REPORT, not this profile, so a crashed model is
+    # retried on every run and crashes every time at no visible cost. This verdict is the
+    # only place the fact gets written down.
+    #
+    # Deliberately NOT in the default -RetryVerdicts: a panic is deterministic, exactly
+    # like `aborted:proc-ceiling`. It is a finding to act on, not a transient to re-run.
+    if ($verdict -eq "ok") {
+        try { $proc.WaitForExit() } catch { }
+        $code = $null
+        try { $code = $proc.ExitCode } catch { }
+        if ($null -ne $code -and $code -ne 0) { $verdict = "crashed:exit-$code" }
     }
 
     $secs = [math]::Round(((Get-Date) - $t0).TotalSeconds, 1)

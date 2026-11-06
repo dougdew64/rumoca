@@ -110,11 +110,45 @@ fn main() {
     let only: Option<std::collections::BTreeSet<String>> = arg(&args, "--only-checks")
         .map(|v| v.split(',').map(|c| c.trim().to_uppercase()).collect());
     if let Some(set) = &only {
+        // **An unrecognised check name is fatal now, and this is what it cost.**
+        //
+        // On 2026-11-05 this flag was handed `F1,F2,F3,F5,F6,F7,F8,F9` to exclude the
+        // blind F4. `F1` is not implemented and `F8` raises no violation, so both
+        // selected nothing; `F10` was simply absent and so was skipped; and the 2.5-hour
+        // result was read as eight checks when five had run. Every part of that was
+        // accepted in silence. Exiting here costs one retyped command.
+        let unknown = hrw::fidelity::unknown_checks(set.iter().map(String::as_str));
+        if !unknown.is_empty() {
+            eprintln!(
+                "--only-checks: {} is not a check. The roster is {}.\n  \
+                 F1 is not implemented and F8 raises no violation, so neither can be \
+                 selected -- see fidelity::CHECKS.",
+                unknown.join(", "),
+                hrw::fidelity::CHECKS.join(","),
+            );
+            std::process::exit(2);
+        }
+        // **Report what is being SKIPPED, not only what was asked for.**
+        //
+        // Printing the request back cannot reveal a check left out of it, and an
+        // omission is the failure this flag actually suffered: F10 — the only check
+        // about whether a pane's claim is honest, and the one with the best must-fire
+        // coverage — was dropped by a string nobody re-read against the roster.
+        let skipped: Vec<&str> = hrw::fidelity::CHECKS
+            .iter()
+            .copied()
+            .filter(|c| !set.contains(*c))
+            .collect();
         eprintln!(
-            "--only-checks: {}",
+            "--only-checks: running {}",
             set.iter().cloned().collect::<Vec<_>>().join(",")
         );
+        if !skipped.is_empty() {
+            eprintln!("  NOT running: {}", skipped.join(","));
+        }
     }
+    // Mirrors `check_model`'s own gate so the roster test can scan for one spelling.
+    let want = |c: &str| only.as_ref().is_none_or(|set| set.contains(c));
     // **Process lifetime is the only hard memory bound.** A session rebuild
     // releases what the session holds; it cannot release what the allocator has
     // fragmented or what any other cache retains. Exiting does, because the OS
@@ -286,14 +320,62 @@ fn main() {
             }
         };
 
+        // **A panic here used to kill the sweep and leave no trace of the model.**
+        //
+        // `compile_model_by_name` is not wrapped in `worker.rs`'s `guard`, whose only
+        // caller is `Worker::spawn`'s message loop — which is why the GUI survives a
+        // model that kills this binary. Worse, `WorkerState::compile` holds an
+        // `OutputCapture` that redirects fds 1 and 2 through a pipe, and the default
+        // panic hook prints BEFORE unwinding reaches that guard's `Drop`, so the message
+        // went into the pipe and died with the process. Two MSL models did exactly that
+        // on 2026-11-05: exit 101, an empty stderr even under `RUST_BACKTRACE=full`, and
+        // no report row — while the watchdog recorded both as `ok`.
+        //
+        // `catch_unwind` recovers the PAYLOAD, which the fd redirect never touches, so
+        // the message survives into the report rather than going nowhere.
+        //
+        // **The session is rebuilt, not reused.** `AssertUnwindSafe` is honest only
+        // because of that: a panicked `Session` can be mid-mutation, and `worker.rs`'s
+        // `guard` carries the same note for the same reason — reusing it would risk IR
+        // that is subtly wrong rather than absent, which this project ranks as worse.
+        let attempt = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            w.compile_model_by_name(&row.name, &on_event)
+        }));
+        let event = match attempt {
+            Ok(event) => event,
+            Err(payload) => {
+                let message = panic_message(payload.as_ref());
+                eprintln!("  [PANIC] {}: {message}", row.name);
+                let _ = writeln!(sink, "{}", note_row(&row.name, "panicked", &message))
+                    .and_then(|()| sink.flush());
+                w = WorkerState::new();
+                w.load_libraries(hrw::msl_roots()).expect("reload MSL");
+                continue;
+            }
+        };
         let FromWorker::Compiled {
             stages,
             dae,
             equation_sheet,
             identifier_index,
             ..
-        } = w.compile_model_by_name(&row.name, &on_event)
+        } = event
         else {
+            // **Not a panic, but the same silent drop.** A non-`Compiled` event used to
+            // `continue` with no row and no note, so the report's row count could
+            // disagree with the corpus and nothing would say so. It did not happen on
+            // 2026-11-05 — 2,613 rows plus 11 ceiling aborts plus 2 panics accounts for
+            // all 2,626 — which is the reason to close it now rather than after it does.
+            let _ = writeln!(
+                sink,
+                "{}",
+                note_row(
+                    &row.name,
+                    "no-compile",
+                    "compile produced no Compiled event"
+                )
+            )
+            .and_then(|()| sink.flush());
             continue;
         };
 
@@ -333,7 +415,14 @@ fn main() {
         } else {
             no_dae += 1;
         }
-        violations.extend(check_failures(&stages));
+        // **F9 is gated, and until 2026-11-06 it was not.** It lives here rather than in
+        // `check_model` because it needs the whole bundle, and that placement put it
+        // outside `--only-checks` entirely: asking for F9 did not select it and omitting
+        // F9 did not skip it, so the flag was wrong about this check in both directions.
+        // `the_check_roster_matches_the_code` now requires this exact spelling.
+        if want("F9") {
+            violations.extend(check_failures(&stages));
+        }
 
         // One compact line per model: the phases that actually cost something.
         // Sorted by cost and truncated, because a full ten-phase dump per model
@@ -499,6 +588,42 @@ fn report_row(name: &str, violations: &[Violation]) -> String {
         f(&checks.join(" ")),
         violations.len(),
     )
+}
+
+/// One row for a model that produced **no checks at all**, with the reason in the
+/// `message` column.
+///
+/// Shares [`report_row`]'s six columns so the report keeps one schema, and carries
+/// `panicked` or `no-compile` in `outcome` rather than `ok`. That distinction is the
+/// whole point: in the 2026-11-05 report, 2,613 rows meaning "measured and clean" and
+/// two models meaning "never compiled" were indistinguishable, because the second kind
+/// had no row and the watchdog beside it said `ok`. **A model the runner could not
+/// measure must appear, and must not read as a pass.**
+fn note_row(name: &str, outcome: &str, message: &str) -> String {
+    let f = hrw::survey::csv_field;
+    format!(
+        "{},{},{},{},,0",
+        f(name),
+        f(&classify(name)),
+        f(outcome),
+        f(message),
+    )
+}
+
+/// The readable half of a panic payload.
+///
+/// `panic!("literal")` boxes a `&str` and `panic!("{x}")` boxes a `String`; anything
+/// else is a payload nothing can read. Mirrors `worker::guard`, which does the same for
+/// the GUI path — and which is the reason the GUI reports these two models as a message
+/// while this binary used to die of them.
+fn panic_message(payload: &(dyn std::any::Any + Send)) -> String {
+    if let Some(s) = payload.downcast_ref::<&str>() {
+        (*s).to_owned()
+    } else if let Some(s) = payload.downcast_ref::<String>() {
+        s.clone()
+    } else {
+        "panicked with a payload the runner cannot read".to_owned()
+    }
 }
 
 /// Serialised size of a JSON value **without building it**.
