@@ -4336,6 +4336,61 @@ present size. Re-pinning them to 2,791 would make them wrong again at the next c
 rewriting ten reasoning passages is a larger and more error-prone edit than the staleness costs.
 Worth a sweep only if one of them is ever read as a definition.
 
+### 11-06, the fidelity sweep completed and reconciles — 2,780 measured, 0 violations, 7 checks
+
+**The first fidelity sweep whose arithmetic closes.** Over the repaired 2,791-model corpus:
+
+| | |
+|---|---|
+| report rows | **2,780** |
+| `aborted:proc-ceiling` | 11 (the Spice3 / EngineV6 / FullRobot family, as before) |
+| 2,780 + 11 | **= 2,791, the whole corpus** |
+| checks run | **F2, F3, F5, F6, F7, F9, F10** — F4 excluded, still blind |
+| violations | **0** |
+
+**The zero now means something.** This morning a zero carried no information because four of the
+checks had never been shown able to fire. All seven in this run have must-fire coverage, F10's
+proving it fails three distinct ways — so 0 violations over 2,780 models is a result rather than an
+absence. **F10 ran for the first time at corpus scale**, having been silently dropped from the 11-05
+sweep by the `-OnlyChecks` string.
+
+No `panicked` rows, which is D1's fix showing: the two models that aborted the process this morning
+compiled and were measured.
+
+#### And a third cause of a false `ok`, found by the same reconciliation
+
+The first count was **2,778** rows against 2,780 profiled `ok` — two short, exactly the shape that
+exposed D1. The missing pair:
+
+```text
+ModelicaReference.Classes.'function'.'function partial application'
+ModelicaReference.Classes.'function'.'pure function'
+```
+
+**Quoted Modelica identifiers containing spaces.** `measure-fidelity.ps1` passed the name raw in
+`-ArgumentList`, so `Start-Process` split it on the space, the runner received a truncated name,
+matched no model, wrote no row — and **exited 0**, so the `crashed:exit-<n>` guard added hours
+earlier could not see it.
+
+Both are fixed: the name is quoted, and the two models re-run and are now in the report.
+
+**Three different causes have produced the same false `ok`** — a panic, a non-`Compiled` event, and
+an unmatched name. Each previous fix was cause-specific. The new `no-row` verdict asks the only
+question that generalises: **is the row there?** A clean exit with no row is no longer `ok`.
+
+#### The new guard was vacuous on first write, and falsification caught it
+
+It began as `if ($verdict -eq "ok" -and (Test-Path $Out))`. When the runner declines every model it
+returns *before creating the report*, so `Test-Path` was false, the condition short-circuited, and
+**the check went silent in precisely the case it was written for** — a missing report is the
+strongest possible evidence of a missing row, and the guard treated it as grounds for saying
+nothing. Driven with a nonexistent model name, it scored `ok`.
+
+Corrected, and verified both ways: a nonexistent model now records `no-row`, and a real one still
+records `ok`. **That is the second guard today whose first version could not fail** (the other
+reported `ok` for everything via an empty `ExitCode`), and both were written while fixing this
+exact class of defect.
+
 ### 11-06, a key spelled `(tree root)` cannot navigate back — and F7's must-fire test now depends on it
 
 Writing F7's must-fire coverage required an input the path grammar gets **wrong**, because F7 is a
