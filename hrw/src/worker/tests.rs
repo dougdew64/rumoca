@@ -2282,6 +2282,82 @@ fn a_library_compile_identifies_itself_by_qualified_name() {
     );
 }
 
+/// **`der()` of a non-state is reported, not a process abort** — `upstream-issues.md` D1.
+///
+/// `Modelica.Blocks.Continuous.Der` computes `y = der(u)` where `u` is an *input*, so the
+/// `der()` target is not classified as a continuous state. DAE construction diagnoses
+/// that correctly — and until 2026-11-06 `lower_derivative` called `.expect()` on the
+/// diagnosis, turning a reportable limitation into a process abort.
+///
+/// **The abort was silent, which is what made it expensive.** `WorkerState::compile`
+/// holds an `OutputCapture` with stdout and stderr redirected at the file-descriptor
+/// level, and the default panic hook prints before unwinding reaches that guard's `Drop`
+/// — so the message went into a pipe and died with the process: exit 101, empty stderr
+/// even under `RUST_BACKTRACE=full`. It took out both corpus runners. `fidelity_msl`
+/// dropped the model from its report while the watchdog beside it recorded `ok`, and
+/// `survey_msl` lost whole 465-model shards, which is how the survey came to produce
+/// nothing for three months.
+///
+/// The GUI was never affected: `Worker::spawn` wraps compiles in `guard`.
+///
+/// # What this asserts, and what it leaves to Rumoca
+///
+/// That the compile **returns**, that no DAE is produced, and that the stage **says why**.
+/// Whether the condition is a permanent limitation or something DAE construction will one
+/// day support is Rumoca's business; this guards only that a diagnosable condition cannot
+/// take the embedder down, and cannot do it quietly.
+///
+/// Both models are checked because they are the two the MSL corpus is known to reach, and
+/// they fail in different packages — one on a `der` of an input, one deeper in a machine
+/// controller.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compile-heavy; run with --features slow-tests"
+)]
+fn a_derivative_of_a_non_state_is_reported_rather_than_aborting() {
+    for name in [
+        "Modelica.Blocks.Continuous.Der",
+        "Modelica.Electrical.Machines.Utilities.DQCurrentController",
+    ] {
+        let out = {
+            let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
+            w.compile_model_by_name(name, &|_| {})
+        };
+        let FromWorker::Compiled { dae, stages, .. } = out else {
+            panic!("{name}: expected Compiled");
+        };
+
+        assert!(
+            dae.is_none(),
+            "{name}: `der()` of a non-state is outside what DAE construction supports, so \
+             there must be no DAE. A DAE appearing here would mean the repair changed \
+             semantics rather than the failure path, which is the one thing it must not do.",
+        );
+
+        // **Absence stated, never silent.** Surviving is not enough: the pane has to say
+        // why, and D1's whole shape was a true condition reported as nothing.
+        let stage = stages.get(crate::worker::StageKind::Dae);
+        assert_ne!(
+            stage.outcome,
+            crate::worker::Outcome::Ok,
+            "{name}: DAE construction did not produce a DAE, so its stage must not read \
+             as Ok",
+        );
+        let note = stage.note.as_deref().unwrap_or("");
+        assert!(
+            note.contains("certificate"),
+            "{name}: the note must name the condition, not merely exist -- got {note:?}",
+        );
+        // **Deliberately specific.** This was first written as
+        // `contains("der") || contains("certificate") || contains("state")`, which would
+        // have passed on the word "state" appearing in some unrelated note. Narrowing it
+        // to "certificate" and re-running proved the note really is the
+        // `MissingHistoryOperatorCertificate` text the repair raises. If the variant ever
+        // changes, this should fail and be re-read rather than quietly keep passing.
+    }
+}
+
 /// A library compile **carries the source of the file that declares the model**.
 ///
 /// The source view refused MSL models outright until 2026-08-01, on the stated
