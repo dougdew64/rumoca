@@ -667,7 +667,7 @@ fn write_meta(
     tally.sort_by_key(|(k, _)| k.as_str());
     let meta = format!(
         "{{\n  \"rumoca_version\": \"{}\",\n  \"hrw_version\": \"{}\",\n  \
-         \"msl_roots\": [{}],\n  \"models_surveyed\": {},\n  \"models_available\": {},\n  \
+         \"msl_roots\": [{}],\n  \"msl_libraries\": [{}],\n  \"models_surveyed\": {},\n  \"models_available\": {},\n  \
          \"partial_survey\": {},\n  \"max_reduce_equations\": {},
   \"largest_reduction_attempted\": {},\n  \"reductions_skipped\": {},\n  \
          \"seconds\": {},\n  \"generated_unix\": {},\n  \"outcomes\": {{{}}}\n}}\n",
@@ -679,6 +679,17 @@ fn write_meta(
                 "\"{}\"",
                 r.file_name().unwrap_or_default().to_string_lossy()
             ))
+            .collect::<Vec<_>>()
+            .join(", "),
+        // **What the roots CONTAIN, because their names no longer say it.** One root
+        // called `msl` records nothing about which MSL this map describes; the three
+        // paths it replaced did, by their versioned names. `msl_libraries` restores
+        // that, and is named for presence because whether every library under the root
+        // reaches the corpus is an open question (`docs/tech-debt.md`), not a claim this
+        // field should be making.
+        hrw::msl_libraries()
+            .iter()
+            .map(|l| format!("\"{l}\""))
             .collect::<Vec<_>>()
             .join(", "),
         rows.len(),
