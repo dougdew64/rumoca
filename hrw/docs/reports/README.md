@@ -19,12 +19,13 @@ among the documents.*
 
 | File | Written by | Covers |
 |---|---|---|
-| `msl-survey.csv` | `examples/survey_msl.rs` | **The corpus definition.** Rumoca's reach across all 2,626 MSL models, plus the IR-shape metrics that stratify a sample. |
+| `msl-survey.csv` | `examples/survey_msl.rs` | **The corpus definition.** Rumoca's reach across every MSL model, plus the IR-shape metrics that stratify a sample. 2,791 models as of 2026-11-06, up from 2,626 when the root list was consolidated and `ModelicaReference` and `ObsoleteModelica4` entered it — the count is whatever the file holds, and nothing should spell it. |
 | `msl-survey.meta.json` | same | provenance for the above |
 | `msl-fidelity-report.csv` | `examples/fidelity_msl.rs`, promoted by `examples/promote_run.rs` | **The artifact.** F1-F9 over the corpus — 2,614 of 2,626 models, all green (2026-08-01). |
 | `msl-fidelity-profile.csv` | `scripts/measure-fidelity.ps1` | peak resident memory and wall time per model, plus the abort verdict |
 | `msl-fidelity-report.meta.json` | `examples/promote_run.rs` | provenance, **including the `not_checked` bound** |
-| `specimen-fidelity-report.csv` | the pre-commit test in `src/fidelity.rs` | the 16 curated specimens. **Churns on every full test run** — that is expected. |
+| `specimen-fidelity-report.csv` | the pre-commit test in `src/fidelity.rs` | the specimens named by `fidelity::MODELS` — **10 of the 28 specimen files**, not all of them. **Churns on every full test run** — that is expected. |
+| `specimen-oracle-report.csv` | `scripts/oracle.wls` | **System Modeler's verdict** on all 28 specimens: `simulated`, `refused`, `import-failed`, `timeout`. The other side of every mismatch. |
 
 ## Read at runtime — do not move or rename
 
@@ -45,6 +46,14 @@ Three paths are compiled in. Moving a file means editing code, not just document
 also writes the provenance sidecar and refuses to replace a larger report with a smaller one.
 `fidelity_msl` **requires `--out`** for exactly this reason: a bare invocation used to default
 into `docs/`, and on 2026-07-31 a profiling run overwrote a committed artifact that way.
+
+**The oracle report is specimen-scale, which is why it may be written here directly.** The rule
+above is about *corpus* runs — the thing that overwrote a committed artifact in 2026-07-31 was an
+MSL-scale profiling run. `specimen-fidelity-report.csv` has always been written straight into this
+directory by the pre-commit test, and `specimen-oracle-report.csv` follows it. **A corpus-scale
+oracle run would not qualify** and would need the same `promote_run` treatment, including a
+provenance sidecar. The run is still kept in `C:\Users\dougd\rumoca-runs\` as
+`oracle-specimens-<stamp>.csv`, so the committed copy is never the only one.
 
 **The bound travels with the data.** A table handed to a maintainer arrives without its
 conversation, so whatever it does *not* cover has to be readable from the artifact itself.
