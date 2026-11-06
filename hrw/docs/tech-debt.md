@@ -4099,6 +4099,72 @@ measured": a true statement about the wrong thing. The roster was four greps awa
 | 11-05 | **a passing must-fire test did not stop F4 going blind** | reading `each_invariant_catches_its_own_violation` after claiming no such test existed | the test uses `"kind": "scalar"`; F4 is blind on `StructuredScalar`. Must-fire over author-chosen JSON proves only that the handled shape is handled |
 | 11-05 | Claude wrote "no vacuity test exists", "the checks did not fire", and "eight checks" into this file and into its report; all three false | re-measuring each claim before building on it | one file read and four greps would have prevented all three. Each was asserted from the CSVs alone because the CSV evidence felt sufficient, which is how a true statement about the wrong unit gets recorded as a finding |
 
+### 11-06, THE SURVEY CANNOT RUN — it worked nine hours ago, with the same binary
+
+**This blocks the re-run, and it is the largest open item on this page.**
+
+#### Reproduced
+
+`survey_msl` panics during startup at `survey_msl.rs:165`:
+
+```text
+MSL should resolve: Resolve errors: annotation Evaluate has no effect on function local 'm' …
+… unresolved function call: 'Medium.density' …
+```
+
+- Reproduced with `--limit 2` **and** with `--slice 0/6 --rebuild-every 200`, the exact
+  invocation the 11-05 sweep used.
+- Reproduced with `target/release/examples/survey_msl.exe` **built at 20:16 on 11-05** — the same
+  binary that surveyed 2,626 models successfully at 20:20 that night. So this is not caused by any
+  change committed on 11-06; attribution was checked before anything else.
+- The failing call is `session.model_names()`, which the survey `.expect()`s.
+
+#### The asymmetry, which is the useful part
+
+**MSL still loads and still compiles.** `fidelity_msl` loads the same roots and compiles models
+right now, in seconds, exit 0. The gate's `msl_resolve` integration test —
+`rotational_inertia_specimen_resolves_against_msl` — passed minutes before this was found.
+
+So the libraries parse and a specimen resolves against them. What fails is **enumerating the model
+names from the session**, which only the survey does. Both paths reach the same on-disk cache
+through `parse_source_root_with_cache`, so the loader is *not* the difference.
+
+#### Mechanism — HYPOTHESIS, explicitly not established
+
+The diagnostics are MSL's own, and most are warning-shaped (deprecated bare `external`, `Evaluate`
+with no effect, `Medium.*` unresolved inside `replaceable` packages that are legitimately not
+redeclared yet). If `model_names()` returns `Err` whenever *any* resolve diagnostic exists, it
+would always have failed — so something about the diagnostic set or the resolution state changed
+between 20:20 and now.
+
+**The candidate worth testing first** is this page's own neighbour, `upstream-issues.md` **P1**: *a
+workspace-document change invalidates resolution of durable external source roots.* The 11-05
+script runs the survey **first** and the 2,626-model fidelity sweep second. Today the survey ran
+*after* thousands of specimen compiles. If a workspace document poisons the durable roots'
+resolution in a way that persists in `%LOCALAPPDATA%\Rumoca`, then **the fidelity sweep breaks the
+survey, and the script's ordering has been hiding it.** That is a coherent story and nothing here
+confirms it.
+
+#### The experiment that settles it, and why it was not run
+
+Move or clear `%LOCALAPPDATA%\Rumoca` and re-run the survey. If a cold cache resolves, the cache
+is poisoned and the ordering story is probably right.
+
+It was not run because **it destroys the reproduction**, and because renaming the directory was
+refused (`Permission denied`), which itself wants explaining — a held handle would be a separate
+finding. The cache is regenerable but the broken state is not, so clearing it is **Doug's call**,
+not a unilateral cleanup. The directory has been left exactly as found;
+`.rumoca-prune-checked` is dated 11-05 17:05 and `source-roots/` dates from 07-29.
+
+#### Two consequences to carry
+
+1. **The re-run under the correct roster is blocked** until the survey runs. `fidelity_msl`'s
+   corpus is read from `msl-survey.csv`, which is committed and current, so the *fidelity* sweep is
+   not blocked — only the survey half.
+2. **`msl_libraries` is committed but unproven end to end.** The unit test shows the function
+   returns the right library names; nothing has yet shown the field rendering into a `.meta.json`,
+   because producing one requires the survey to run. Do not read the field as verified.
+
 ### 11-06, a key spelled `(tree root)` cannot navigate back — and F7's must-fire test now depends on it
 
 Writing F7's must-fire coverage required an input the path grammar gets **wrong**, because F7 is a
