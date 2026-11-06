@@ -3974,7 +3974,11 @@ singular, and one having an empty system, is the kind of coincidence worth start
    `Err(UnsupportedFlatSemantics { feature: "derivative target", … })` for a `der()` target that is
    not a continuous state. The condition is diagnosed correctly and then asserted away, in a function
    whose own signature already returns `DaeConstructionError`. **The same file disagrees with
-   itself**: `lower_pre` at line 102 maps and propagates the identical class of failure with `?`.
+   itself**: of its three functions, `lower_derivative` and `lower_pre` assert while
+   `lower_history_operator` propagates with `map_err(|_| missing())?` — and line 102 propagates on
+   `coordinate.previous(span)`, *the identical call* `lower_pre` asserts on at line 38. (First
+   recorded here as "`lower_pre` at line 102", which was wrong: line 102 is
+   `lower_history_operator`'s, and `lower_pre` shares the defect rather than the fix.)
    Written up as `upstream-issues.md` **D1**; the fix is a change to Rumoca *semantics* rather than
    observability, so it is **Doug's call**, not a unilateral instrumentation edit.
 

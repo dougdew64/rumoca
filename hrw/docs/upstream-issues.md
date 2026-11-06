@@ -2348,29 +2348,100 @@ discards is already there.
 
 ### The strongest evidence that this is an oversight: the same file disagrees with itself
 
-`lower_pre`, twenty lines below, handles the **same class of failure** on the sibling accessor
-by mapping and propagating it:
+`temporal.rs` holds three functions. Two assert; the third propagates.
+
+| line | function | on a failed accessor |
+|---|---|---|
+| 3 | `lower_derivative` | `.expect("analysis proves derivative role")` |
+| 26 | `lower_pre` | `.expect("analysis proves the pre-value role")` |
+| 54 | `lower_history_operator` | `.map_err(\|_\| missing())?` |
+
+**And `lower_history_operator` calls the very accessor `lower_pre` asserts on:**
 
 ```rust
-// temporal.rs:102
+// temporal.rs:102, inside lower_history_operator
 let previous_coordinate = coordinate.previous(span).map_err(|_| missing())?;
 ```
 
-One function treats the failure as impossible; its neighbour treats it as ordinary. Only one of
-them can be right about the invariant.
+`coordinate.previous(span)` — the same call, in the same file, on the same type — is treated as
+impossible by one function and as ordinary by another. Only one of them can be right about the
+invariant, and the one that propagates is also the one that guards its argument list and its map
+lookups.
 
-### Suspected fix — UNVERIFIED
+**Corrected 2026-11-06:** an earlier version of this entry credited line 102 to `lower_pre`. It
+belongs to `lower_history_operator`; `lower_pre` has the *same* `.expect()` defect as
+`lower_derivative`. The substance is unchanged and the comparison is in fact stronger, but a bug
+report that names the wrong function wastes the time it is asking for.
 
-Propagate instead of asserting, in the shape line 102 already uses. Whether the mapping should
-preserve `UnsupportedFlatSemantics`' feature/detail/span or collapse to the local `missing()` is
-a maintainer's call about how much the DAE phase's error type should carry.
+### Suspected fix — UNVERIFIED, but it is a transposition rather than an invention
+
+`lower_history_operator` is already the template. Applied to `lower_derivative`:
+
+```rust
+pub(super) fn lower_derivative<'dae>(
+    construction: &mut dae::DaeConstruction<'dae>,
+    symbols: LoweringSymbols<'_, 'dae>,
+    binders: &HashMap<VarName, dae::DomainBinderId<'dae>>,
+    arguments: &[Expression],
+    provenance: dae::DaeProvenance,
+    span: Span,
+) -> Result<dae::ExprId<'dae>, dae::DaeConstructionError> {
+    let missing = || dae::DaeConstructionError::MissingHistoryOperatorCertificate {
+        operator: "der",
+        span,
+    };
+    let [argument] = arguments else {
+        return Err(missing());
+    };
+    let Some((name, subscripts)) = derivative_reference(argument) else {
+        return Err(missing());
+    };
+    let coordinate = symbols.coordinates[name.var_name()]
+        .derivative(span)
+        .map_err(|_| missing())?;
+    lower_coordinate_reference(
+        construction, symbols, binders, coordinate, subscripts, provenance,
+    )
+}
+```
+
+`lower_pre` takes the same change with `operator: "pre"`.
+
+**It is not the one-liner it first looks like**, and three things in it are the maintainer's call,
+not ours:
+
+1. **`MissingHistoryOperatorCertificate` may be the wrong variant.** It is what
+   `lower_history_operator` raises and `der` is a temporal operator in this very file, so it fits —
+   but `DaeConstructionError` has no derivative-specific variant and adding one may be preferable.
+2. **`map_err(|_| missing())` discards the diagnosis.** `ToDaeError::UnsupportedFlatSemantics`
+   carries `feature`, `detail` and `span`, and all of it is thrown away — including the sentence
+   *"der(...) must name a coordinate classified as a continuous state"*, which is the part a user
+   would want. Preserving it would mean a new `DaeConstructionError` variant carrying a detail
+   string, i.e. a change to `rumoca-ir-dae` as well. Line 102 already accepts this loss, so the fix
+   above is consistent with the file without being ideal.
+
+   **What is NOT lost**: `impl From<DaeConstructionError> for ToDaeError` maps a variant with a span
+   to `ToDaeError::Construction { source, span }`, so the error travels with its location, and
+   `MissingHistoryOperatorCertificate`'s own `#[error]` text names the operator —
+   *"history operator `der` has no matching checked occurrence certificate"*. (An earlier version of
+   this entry said there was **no `From` impl in either direction**. That was wrong: the
+   `DaeConstructionError → ToDaeError` direction exists, at `rumoca-phase-dae/src/errors.rs:329`,
+   and it is what makes this fix diagnose rather than merely survive.)
+3. **The index on `symbols.coordinates[name.var_name()]` can still panic** if the name is absent.
+   `lower_history_operator` uses `.ok_or_else(missing)?` for its lookups. Hardening it is a
+   separate, smaller question and is **not** part of the reproduction above — no input is known to
+   reach it.
 
 ### Three siblings share the shape, and their reachability is NOT established
 
-`temporal.rs` lines **12**, **35** and **38** are the same construct — `.expect()` on a
-`Result` inside a function that returns one, each asserting that analysis has proved something.
-Line 15 is the one with a reproduction. **The other three are suspects, not findings**, and
-should not be presented to the maintainer as defects without an input that reaches them.
+`temporal.rs` lines **12** (in `lower_derivative`), **35** and **38** (both in `lower_pre`) are the
+same construct — `.expect()` on a `Result` inside a function that returns one, each asserting that
+analysis has proved something. Line 15 is the one with a reproduction.
+
+**The other three are suspects, not findings.** Lines 35 and 38 are the more interesting pair: they
+are `lower_pre`'s, and line 38 asserts on `coordinate.previous(span)` — *the identical call line 102
+propagates*. That makes them likely rather than merely possible, and still not reproduced. They
+should not be put to a maintainer as defects without an input that reaches them.
 
 ### Why it matters more than two models out of 2,626
 
