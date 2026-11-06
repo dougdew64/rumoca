@@ -48,7 +48,7 @@ Modelica.Blocks.Examples.Noise.UniformNoiseProperties,Examples,success,,Blocks,f
 Modelica.Blocks.Examples.Noise.Utilities.ImpureRandom,Examples,success,,Blocks,fast,0,0,0,2,9,error:empty system: no equations or unknowns,,,,,0,0,2,1,false,1,7
 Modelica.Blocks.Examples.Noise.Utilities.NormalDensity,Examples,success,,Blocks,fast,1,0,0,0,2,ok,,1,0,0,0,0,0,0,false,0,2
 Modelica.Blocks.Examples.Noise.Utilities.Parts.Controller,Examples,success,,Blocks,fast,18,4,8,0,20,ok,,18,0,0,9,0,0,0,false,1,0
-Modelica.Blocks.Examples.Noise.Utilities.Parts.MotorWithCurrentControl,Examples,success,,Blocks,fast,598,15,478,4,313,singular,singular,,,,206,135,6,3,true,4,22
+Modelica.Blocks.Examples.Noise.Utilities.Parts.MotorWithCurrentControl,Examples,success,,Blocks,slow,598,15,478,4,313,singular,singular,,,,206,135,6,3,true,4,22
 Modelica.Blocks.Examples.Noise.Utilities.UniformDensity,Examples,success,,Blocks,fast,1,0,0,0,2,ok,,1,0,0,0,0,0,0,false,0,1
 Modelica.Blocks.Examples.Noise.Utilities.WeibullDensity,Examples,success,,Blocks,fast,1,0,0,0,2,ok,,1,0,0,0,0,0,0,false,0,2
 Modelica.Blocks.Examples.PID_Controller,Examples,success,,Blocks,fast,86,10,59,4,71,singular,ok,52,0,0,27,4,21,3,false,2,0
@@ -591,7 +591,7 @@ Modelica.Electrical.Analog.Examples.AD_DA_conversion,Examples,success,,Electrica
 Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed,Examples,success,,Electrical,fast,78,7,70,1,61,ok,,66,1,13,12,6,6,0,false,2,3
 Modelica.Electrical.Analog.Examples.CauerLowPassAnalog,Examples,success,,Electrical,fast,69,7,61,1,31,singular,ok,13,1,5,16,5,5,0,false,2,0
 Modelica.Electrical.Analog.Examples.CauerLowPassOPV,Examples,success,,Electrical,fast,240,9,230,1,78,singular,ok,27,1,7,65,36,14,0,false,2,0
-Modelica.Electrical.Analog.Examples.CauerLowPassSC,Examples,success,,Electrical,fast,537,20,505,122,232,singular,ok,115,12,10,142,102,157,121,false,3,0
+Modelica.Electrical.Analog.Examples.CauerLowPassSC,Examples,success,,Electrical,slow,537,20,505,122,232,singular,ok,115,12,10,142,102,157,121,false,3,0
 Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes,Examples,success,,Electrical,fast,77,0,74,4,64,ok,,50,3,10,12,7,22,3,false,2,1
 Modelica.Electrical.Analog.Examples.CharacteristicThyristors,Examples,success,,Electrical,fast,84,0,82,15,94,ok,,48,4,10,14,6,37,14,false,3,10
 Modelica.Electrical.Analog.Examples.ChuaCircuit,Examples,success,,Electrical,fast,44,3,41,1,17,ok,,44,0,0,9,4,6,0,false,2,0
@@ -975,7 +975,7 @@ Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Initialize,Examples,
 Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Inverter,Examples,success,,Electrical,fast,425,15,350,1,212,singular,singular,,,,123,102,16,0,true,4,5
 Modelica.Electrical.Machines.Examples.InductionMachines.IMC_InverterDrive,Examples,success,,Electrical,slow,916,20,785,67,502,singular,skipped:too-large,,,,259,202,113,70,true,4,12
 Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Steinmetz,Examples,success,,Electrical,fast,446,18,371,7,231,singular,singular,,,,124,96,16,6,true,4,6
-Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Transformer,Examples,success,,Electrical,fast,866,21,733,18,413,singular,skipped:too-large,,,,237,212,32,21,true,4,7
+Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Transformer,Examples,success,,Electrical,slow,866,21,733,18,413,singular,skipped:too-large,,,,237,212,32,21,true,4,7
 Modelica.Electrical.Machines.Examples.InductionMachines.IMC_YD,Examples,success,,Electrical,slow,571,15,482,41,327,singular,singular,,,,153,131,56,48,true,4,6
 Modelica.Electrical.Machines.Examples.InductionMachines.IMC_YDarc,Examples,success,,Electrical,slow,646,18,546,53,402,singular,singular,,,,171,149,101,60,true,4,6
 Modelica.Electrical.Machines.Examples.InductionMachines.IMC_withLosses,Examples,success,,Electrical,fast,485,18,379,1,274,singular,singular,,,,133,106,19,0,true,4,16
@@ -994,8 +994,8 @@ Modelica.Electrical.Machines.Examples.SynchronousMachines.SMR_DOL,Examples,succe
 Modelica.Electrical.Machines.Examples.SynchronousMachines.SMR_Inverter,Examples,success,,Electrical,fast,500,15,404,1,251,singular,singular,,,,159,116,16,0,true,4,6
 Modelica.Electrical.Machines.Examples.Transformers.AsymmetricalLoad,Examples,success,,Electrical,fast,466,6,401,1,186,singular,singular,,,,132,121,14,0,true,4,5
 Modelica.Electrical.Machines.Examples.Transformers.IMC_Transformer,Examples,success,,Electrical,fast,866,21,733,18,413,singular,skipped:too-large,,,,237,212,32,21,true,4,7
-Modelica.Electrical.Machines.Examples.Transformers.Rectifier12pulse,Examples,success,,Electrical,fast,1018,14,883,13,411,singular,skipped:too-large,,,,289,250,67,12,true,4,5
-Modelica.Electrical.Machines.Examples.Transformers.Rectifier6pulse,Examples,success,,Electrical,fast,565,8,490,7,236,singular,singular,,,,161,141,37,6,true,4,5
+Modelica.Electrical.Machines.Examples.Transformers.Rectifier12pulse,Examples,success,,Electrical,slow,1018,14,883,13,411,singular,skipped:too-large,,,,289,250,67,12,true,4,5
+Modelica.Electrical.Machines.Examples.Transformers.Rectifier6pulse,Examples,success,,Electrical,slow,565,8,490,7,236,singular,singular,,,,161,141,37,6,true,4,5
 Modelica.Electrical.Machines.Examples.Transformers.TransformerTestbench,Examples,success,,Electrical,slow,748,6,629,1,265,singular,singular,,,,248,194,16,0,true,4,7
 Modelica.Electrical.Machines.Icons.Drive,Icons,success,,Electrical,fast,0,0,0,0,0,error:empty system: no equations or unknowns,,,,,0,0,0,0,false,0,0
 Modelica.Electrical.Machines.Icons.FundamentalWaveMachine,Icons,success,,Electrical,fast,0,0,0,0,0,error:empty system: no equations or unknowns,,,,,0,0,0,0,false,0,0
@@ -1437,7 +1437,7 @@ Modelica.Electrical.Spice3.Examples.InvertersExtendedModel.MNmos,Examples,failed
 Modelica.Electrical.Spice3.Examples.InvertersExtendedModel.MPmos,Examples,failed:ToDae,unresolved reference: SpiceConstants.CKTgmin,Electrical,fast,,,,,,,,,,,,,,,false,0,
 Modelica.Electrical.Spice3.Examples.Nand,Examples,success,,Electrical,slow,140,16,124,7,980,singular,singular,,,,17,6,34,6,false,2,27
 Modelica.Electrical.Spice3.Examples.Nor,Examples,success,,Electrical,slow,140,16,124,10,994,singular,singular,,,,17,6,51,9,false,2,27
-Modelica.Electrical.Spice3.Examples.Oscillator,Examples,success,,Electrical,fast,128,10,118,4,485,singular,ok,28,0,0,17,7,17,3,false,2,16
+Modelica.Electrical.Spice3.Examples.Oscillator,Examples,success,,Electrical,slow,128,10,118,4,485,singular,ok,28,0,0,17,7,17,3,false,2,16
 Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair,Examples,success,,Electrical,slow,151,8,143,7,541,singular,ok,21,1,7,25,20,35,6,false,2,18
 Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder,Examples,success,,Electrical,very_slow,10175,936,9334,25,49831,singular,skipped:too-large,,,,1511,998,129,24,false,6,37
 Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.FOURBIT,Examples,success,,Electrical,very_slow,10046,936,9218,0,49647,singular,skipped:too-large,,,,1467,983,0,0,false,5,37
@@ -1563,9 +1563,9 @@ Modelica.Fluid.Examples.AST_BatchPlant.Test.TankWithEmptyingPipe2,Examples,succe
 Modelica.Fluid.Examples.AST_BatchPlant.Test.TanksWithEmptyingPipe1,Examples,success,,Fluid,slow,226,4,244,5,246,singular,singular,,,,10,8,49,8,true,3,31
 Modelica.Fluid.Examples.AST_BatchPlant.Test.TanksWithEmptyingPipe2,Examples,success,,Fluid,fast,277,6,303,9,291,singular,singular,,,,14,11,101,14,true,3,28
 Modelica.Fluid.Examples.AST_BatchPlant.Test.TwoTanks,Examples,success,,Fluid,fast,108,4,128,5,135,singular,singular,,,,6,4,37,4,true,3,26
-Modelica.Fluid.Examples.BranchingDynamicPipes,Examples,failed:ToDae,"unbalanced model: 2347 equations, 1859 unknowns (balance = 488)",Fluid,fast,,,,,,,,,,,,,,,false,0,
-Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks,Examples,success,,Fluid,fast,259,4,258,243,384,singular,singular,,,,29,10,162,246,true,6,25
-Modelica.Fluid.Examples.ControlledTankSystem.Utilities.NormalOperation,Examples,failed:ToDae,invalid Appendix B discrete solved form: f_m assignments have cyclic dependency: stateGraphRoot.subgraphStatePort.resume -> stateGraphRoot.resume -> outerState.subgraphStatePort.resume -> wait2.outerS,Fluid,fast,,,,,,,,,,,,,,,false,0,
+Modelica.Fluid.Examples.BranchingDynamicPipes,Examples,failed:ToDae,"unbalanced model: 2347 equations, 1859 unknowns (balance = 488)",Fluid,slow,,,,,,,,,,,,,,,false,0,
+Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks,Examples,success,,Fluid,slow,259,4,258,243,384,singular,singular,,,,29,10,162,246,true,6,25
+Modelica.Fluid.Examples.ControlledTankSystem.Utilities.NormalOperation,Examples,failed:ToDae,invalid Appendix B discrete solved form: f_m assignments have cyclic dependency: stateGraphRoot.resume -> outerState.subgraphStatePort.resume -> wait2.outerStatePort.subgraphStatePort.resume -> wait1.,Fluid,fast,,,,,,,,,,,,,,,false,0,
 Modelica.Fluid.Examples.ControlledTankSystem.Utilities.TankController,Examples,success,,Fluid,fast,43,0,33,212,100,ok,,43,0,0,10,2,60,211,true,5,1
 Modelica.Fluid.Examples.DrumBoiler.BaseClasses.EquilibriumDrumBoiler,Examples,success,,Fluid,fast,27,2,28,0,28,singular,singular,,,,0,3,1,0,false,1,32
 Modelica.Fluid.Examples.DrumBoiler.DrumBoiler,Examples,success,,Fluid,fast,135,3,135,18,106,singular,singular,,,,22,5,28,17,true,3,97
@@ -1578,7 +1578,7 @@ Modelica.Fluid.Examples.HeatExchanger.BaseClasses.BasicHX.HeatTransfer_1,Example
 Modelica.Fluid.Examples.HeatExchanger.BaseClasses.BasicHX.HeatTransfer_2,Examples,failed:ToDae,unresolved reference: states,Fluid,fast,,,,,,,,,,,,,,,false,0,
 Modelica.Fluid.Examples.HeatExchanger.BaseClasses.WallConstProps,Examples,success,,Fluid,fast,7,1,6,0,27,ok,,7,0,0,0,2,1,0,true,1,0
 Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation,Examples,failed:ToDae,"unbalanced model: 3848 equations, 3150 unknowns (balance = 698)",Fluid,slow,,,,,,,,,,,,,,,false,0,
-Modelica.Fluid.Examples.HeatingSystem,Examples,failed:ToDae,"unbalanced model: 560 equations, 506 unknowns (balance = 54)",Fluid,fast,,,,,,,,,,,,,,,false,0,
+Modelica.Fluid.Examples.HeatingSystem,Examples,failed:ToDae,"unbalanced model: 560 equations, 506 unknowns (balance = 54)",Fluid,slow,,,,,,,,,,,,,,,false,0,
 Modelica.Fluid.Examples.IncompressibleFluidNetwork,Examples,failed:ToDae,"unbalanced model: 1677 equations, 1394 unknowns (balance = 283)",Fluid,slow,,,,,,,,,,,,,,,false,0,
 Modelica.Fluid.Examples.InverseParameterization,Examples,failed:ToDae,unresolved reference: V_flow_op,Fluid,fast,,,,,,,,,,,,,,,false,0,
 Modelica.Fluid.Examples.NonCircularPipes,Examples,failed:ToDae,"unbalanced model: 413 equations, 353 unknowns (balance = 60)",Fluid,fast,,,,,,,,,,,,,,,false,0,
@@ -1736,8 +1736,8 @@ Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.Components.ConstantActua
 Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.Components.PermeanceActuator,Examples,success,,Magnetic,fast,131,5,126,3,71,singular,singular,,,,22,15,9,2,false,3,1
 Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceCurrentBehaviour,Examples,success,,Magnetic,fast,241,11,226,5,150,singular,singular,,,,45,30,30,4,false,4,8
 Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour,Examples,success,,Magnetic,fast,151,5,142,3,96,singular,singular,,,,28,15,17,2,false,4,8
-Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke,Examples,success,,Magnetic,fast,526,17,504,7,371,singular,ok,83,5,24,76,48,46,6,false,4,9
-Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonQuasiStatic,Examples,success,,Magnetic,fast,526,17,503,5,370,singular,ok,83,3,24,79,46,47,4,false,4,8
+Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke,Examples,success,,Magnetic,slow,526,17,504,7,371,singular,ok,83,5,24,76,48,46,6,false,4,9
+Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonQuasiStatic,Examples,success,,Magnetic,slow,526,17,503,5,370,singular,ok,83,3,24,79,46,47,4,false,4,8
 Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.Components.AdvancedSolenoid,Examples,success,,Magnetic,fast,290,8,282,3,187,singular,singular,,,,41,26,20,2,false,3,1
 Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.Components.SimpleSolenoid,Examples,success,,Magnetic,fast,200,5,195,3,142,singular,singular,,,,27,20,15,2,false,3,1
 Modelica.Magnetic.FluxTubes.Examples.Utilities.TranslatoryArmatureAndStopper,Examples,success,,Magnetic,fast,42,4,38,3,28,singular,ok,18,0,0,6,6,8,2,false,2,0
@@ -1793,7 +1793,7 @@ Modelica.Magnetic.FluxTubes.UsersGuide.Hysteresis.StaticHysteresis.Tellinen,Comp
 Modelica.Magnetic.FluxTubes.UsersGuide.Literature,Component,success,,Magnetic,fast,0,0,0,0,0,error:empty system: no equations or unknowns,,,,,0,0,0,0,false,0,0
 Modelica.Magnetic.FluxTubes.UsersGuide.ReleaseNotes,Component,success,,Magnetic,fast,0,0,0,0,0,error:empty system: no equations or unknowns,,,,,0,0,0,0,false,0,0
 Modelica.Magnetic.FluxTubes.UsersGuide.ReluctanceForceCalculation,Component,success,,Magnetic,fast,0,0,0,0,0,error:empty system: no equations or unknowns,,,,,0,0,0,0,false,0,0
-Modelica.Magnetic.FundamentalWave.BaseClasses.Machine,BaseClasses,success,,Magnetic,fast,461,16,430,0,149,singular,singular,,,,109,96,3,0,true,5,16
+Modelica.Magnetic.FundamentalWave.BaseClasses.Machine,BaseClasses,success,,Magnetic,slow,461,16,430,0,149,singular,singular,,,,109,96,3,0,true,5,16
 Modelica.Magnetic.FundamentalWave.BasicMachines.Components.PermanentMagnet,Component,success,,Magnetic,fast,20,1,22,0,11,singular,singular,,,,0,6,0,0,false,2,6
 Modelica.Magnetic.FundamentalWave.BasicMachines.Components.RotorSaliencyAirGap,Component,success,,Magnetic,fast,27,0,36,0,5,singular,singular,,,,0,10,0,0,false,2,6
 Modelica.Magnetic.FundamentalWave.BasicMachines.Components.SaliencyCageWinding,Component,success,,Magnetic,fast,134,4,133,0,49,singular,singular,,,,31,28,2,0,true,4,12
@@ -1818,7 +1818,7 @@ Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.Compa
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMC_DOL_Polyphase,Examples,success,,Magnetic,slow,2101,58,1937,27,780,singular,skipped:too-large,,,,571,464,53,32,true,6,16
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.ComparisonPolyphase.IMS_Start_Polyphase,Examples,success,,Magnetic,slow,2747,64,2537,45,1020,singular,skipped:too-large,,,,759,612,78,56,true,6,17
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_Conveyor,Examples,success,,Magnetic,fast,833,26,774,3,335,singular,skipped:too-large,,,,232,182,16,2,true,6,24
-Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_DOL,Examples,success,,Magnetic,fast,1291,40,1146,11,519,singular,skipped:too-large,,,,361,291,27,12,true,6,17
+Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_DOL,Examples,success,,Magnetic,slow,1291,40,1146,11,519,singular,skipped:too-large,,,,361,291,27,12,true,6,17
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_Initialize,Examples,success,,Magnetic,fast,815,28,753,1,334,singular,skipped:too-large,,,,225,179,15,0,true,6,16
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_Inverter,Examples,success,,Magnetic,fast,814,25,757,1,307,singular,skipped:too-large,,,,228,179,18,0,true,6,16
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_Steinmetz,Examples,success,,Magnetic,fast,834,28,777,7,326,singular,skipped:too-large,,,,229,173,18,6,true,6,16
@@ -1827,7 +1827,7 @@ Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_Y
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMC_withLosses,Examples,success,,Magnetic,fast,873,30,783,1,369,singular,skipped:too-large,,,,238,183,21,0,true,6,26
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMS_Start,Examples,success,,Magnetic,slow,1747,44,1576,25,728,singular,skipped:too-large,,,,486,399,48,30,true,6,18
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.ComparisonPolyphase.SMEE_Generator_Polyphase,Examples,success,,Magnetic,slow,2291,52,2069,1,801,singular,skipped:too-large,,,,689,506,40,0,true,6,20
-Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.ComparisonPolyphase.SMPM_Inverter_Polyphase,Examples,success,,Magnetic,fast,1936,52,1774,1,701,singular,skipped:too-large,,,,572,424,29,0,true,6,17
+Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.ComparisonPolyphase.SMPM_Inverter_Polyphase,Examples,success,,Magnetic,slow,1936,52,1774,1,701,singular,skipped:too-large,,,,572,424,29,0,true,6,17
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.ComparisonPolyphase.SMR_Inverter_Polyphase,Examples,success,,Magnetic,fast,1870,50,1710,1,599,singular,skipped:too-large,,,,556,414,29,0,true,6,17
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMEE_DOL,Examples,success,,Magnetic,fast,1024,23,926,11,427,singular,skipped:too-large,,,,289,214,28,10,true,6,18
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMEE_Generator,Examples,success,,Magnetic,fast,1437,39,1263,1,615,singular,skipped:too-large,,,,411,299,27,0,true,6,21
@@ -1956,7 +1956,7 @@ Modelica.Magnetic.QuasiStatic.FundamentalWave.Examples.BasicMachines.InductionMa
 Modelica.Magnetic.QuasiStatic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMS_Characteristics,Examples,success,,Magnetic,slow,2602,33,2740,1,542,singular,skipped:too-large,,,,1018,573,15,0,true,8,25
 Modelica.Magnetic.QuasiStatic.FundamentalWave.Examples.BasicMachines.InductionMachines.IMS_Start,Examples,success,,Magnetic,slow,4491,67,4619,32,1091,singular,skipped:too-large,,,,1685,1017,54,39,true,8,27
 Modelica.Magnetic.QuasiStatic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMEE_Generator,Examples,success,,Magnetic,slow,2760,46,2727,1,742,singular,skipped:too-large,,,,1043,613,24,0,true,8,29
-Modelica.Magnetic.QuasiStatic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMPM_CurrentSource,Examples,success,,Magnetic,fast,3053,59,3052,0,748,singular,skipped:too-large,,,,1194,653,9,0,true,8,27
+Modelica.Magnetic.QuasiStatic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMPM_CurrentSource,Examples,success,,Magnetic,slow,3053,59,3052,0,748,singular,skipped:too-large,,,,1194,653,9,0,true,8,27
 Modelica.Magnetic.QuasiStatic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMPM_FieldWeakening,Examples,success,,Magnetic,fast,1635,29,1667,2,434,singular,skipped:too-large,,,,638,319,23,1,true,8,24
 Modelica.Magnetic.QuasiStatic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMPM_MTPA,Examples,success,,Magnetic,fast,2248,37,2335,0,482,singular,skipped:too-large,,,,937,477,6,0,true,8,25
 Modelica.Magnetic.QuasiStatic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMPM_Mains,Examples,success,,Magnetic,slow,2998,54,3022,1,793,singular,skipped:too-large,,,,1096,662,21,0,true,8,26
@@ -2001,7 +2001,7 @@ Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum,Examples,success
 Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulumInitTip,Examples,success,,Mechanics,fast,416,20,388,25,221,singular,singular,,,,60,28,1,25,true,4,30
 Modelica.Mechanics.MultiBody.Examples.Elementary.ForceAndTorque,Examples,success,,Mechanics,fast,428,11,408,27,197,singular,singular,,,,58,28,2,27,true,4,31
 Modelica.Mechanics.MultiBody.Examples.Elementary.FreeBody,Examples,success,,Mechanics,fast,377,6,372,23,180,singular,singular,,,,40,24,1,23,false,4,31
-Modelica.Mechanics.MultiBody.Examples.Elementary.HeatLosses,Examples,success,,Mechanics,fast,676,15,660,34,259,singular,singular,,,,60,28,4,34,false,4,33
+Modelica.Mechanics.MultiBody.Examples.Elementary.HeatLosses,Examples,success,,Mechanics,slow,676,15,660,34,259,singular,singular,,,,60,28,4,34,false,4,33
 Modelica.Mechanics.MultiBody.Examples.Elementary.InitSpringConstant,Examples,success,,Mechanics,fast,367,9,359,20,169,singular,singular,,,,33,22,1,20,false,4,29
 Modelica.Mechanics.MultiBody.Examples.Elementary.LineForceWithTwoMasses,Examples,success,,Mechanics,slow,685,29,663,33,344,singular,singular,,,,66,38,8,33,false,4,33
 Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum,Examples,success,,Mechanics,fast,259,7,252,12,96,singular,singular,,,,10,8,2,12,false,4,28
@@ -2447,10 +2447,10 @@ Modelica.StateGraph.Examples.FirstExample_Variant2,Examples,success,,StateGraph,
 Modelica.StateGraph.Examples.FirstExample_Variant3,Examples,success,,StateGraph,fast,11,0,8,50,24,ok,,11,0,0,2,1,18,49,true,4,1
 Modelica.StateGraph.Examples.ShowCompositeStep,Examples,failed:ToDae,"unbalanced model: 254 equations, 261 unknowns (balance = -7)",StateGraph,fast,,,,,,,,,,,,,,,false,0,
 Modelica.StateGraph.Examples.ShowExceptions,Examples,failed:ToDae,"unbalanced model: 297 equations, 299 unknowns (balance = -2)",StateGraph,fast,,,,,,,,,,,,,,,false,0,
-Modelica.StateGraph.Examples.Utilities.CompositeStep,Examples,failed:ToDae,invalid Appendix B discrete solved form: f_m assignments have cyclic dependency: stateGraphRoot.subgraphStatePort.resume -> stateGraphRoot.resume -> outerState.subgraphStatePort.resume -> exitStep.out,StateGraph,fast,,,,,,,,,,,,,,,false,0,
-Modelica.StateGraph.Examples.Utilities.CompositeStep1,Examples,failed:ToDae,invalid Appendix B discrete solved form: f_m assignments have cyclic dependency: stateGraphRoot.suspend -> outerState.subgraphStatePort.suspend -> compositeStep12.outerState.subgraphStatePort.suspend ,StateGraph,fast,,,,,,,,,,,,,,,false,0,
-Modelica.StateGraph.Examples.Utilities.CompositeStep2,Examples,failed:ToDae,invalid Appendix B discrete solved form: f_m assignments have cyclic dependency: stateGraphRoot.suspend -> outerState.subgraphStatePort.suspend -> exitStep.outerStatePort.subgraphStatePort.suspend -> ,StateGraph,fast,,,,,,,,,,,,,,,false,0,
-Modelica.StateGraph.Examples.Utilities.MakeProduct,Examples,failed:ToDae,invalid Appendix B discrete solved form: f_m assignments have cyclic dependency: fillTank2.outerStatePort.subgraphStatePort.resume -> stateGraphRoot.subgraphStatePort.resume -> stateGraphRoot.resume -,StateGraph,fast,,,,,,,,,,,,,,,false,0,
+Modelica.StateGraph.Examples.Utilities.CompositeStep,Examples,failed:ToDae,invalid Appendix B discrete solved form: f_m assignments have cyclic dependency: step4.outerStatePort.subgraphStatePort.suspend -> stateGraphRoot.subgraphStatePort.suspend -> stateGraphRoot.suspend ->,StateGraph,fast,,,,,,,,,,,,,,,false,0,
+Modelica.StateGraph.Examples.Utilities.CompositeStep1,Examples,failed:ToDae,invalid Appendix B discrete solved form: f_m assignments have cyclic dependency: stateGraphRoot.subgraphStatePort.resume -> stateGraphRoot.resume -> outerState.subgraphStatePort.resume -> compositeSte,StateGraph,fast,,,,,,,,,,,,,,,false,0,
+Modelica.StateGraph.Examples.Utilities.CompositeStep2,Examples,failed:ToDae,invalid Appendix B discrete solved form: f_m assignments have cyclic dependency: stateGraphRoot.resume -> outerState.subgraphStatePort.resume -> exitStep.outerStatePort.subgraphStatePort.resume -> sta,StateGraph,fast,,,,,,,,,,,,,,,false,0,
+Modelica.StateGraph.Examples.Utilities.MakeProduct,Examples,failed:ToDae,invalid Appendix B discrete solved form: f_m assignments have cyclic dependency: wait1.outerStatePort.subgraphStatePort.resume -> emptyTank2.outerStatePort.subgraphStatePort.resume -> fillTank2.outerS,StateGraph,fast,,,,,,,,,,,,,,,false,0,
 Modelica.StateGraph.Examples.Utilities.Source,Examples,success,,StateGraph,fast,1,0,0,1,2,ok,,1,0,0,0,0,2,0,false,1,0
 Modelica.StateGraph.Examples.Utilities.Tank,Examples,success,,StateGraph,fast,3,1,0,1,4,ok,,3,0,0,0,0,2,0,false,1,0
 Modelica.StateGraph.Examples.Utilities.TankController,Examples,failed:ToDae,"unbalanced model: 256 equations, 253 unknowns (balance = 3)",StateGraph,fast,,,,,,,,,,,,,,,false,0,
@@ -2463,7 +2463,7 @@ Modelica.StateGraph.Interfaces.PartialStep,Interfaces,failed:ToDae,unresolved re
 Modelica.StateGraph.Interfaces.PartialStep.OuterStatePort,Interfaces,success,,StateGraph,fast,2,0,2,1,1,singular,singular,,,,0,1,2,0,false,1,0
 Modelica.StateGraph.Interfaces.PartialTransition,Interfaces,success,,StateGraph,fast,2,0,1,5,4,ok,,2,0,0,0,0,0,5,false,1,0
 Modelica.StateGraph.Parallel,Component,failed:ToDae,"unbalanced model: 6 equations, 2 unknowns (balance = 4)",StateGraph,fast,,,,,,,,,,,,,,,false,0,
-Modelica.StateGraph.PartialCompositeStep,Component,failed:ToDae,invalid Appendix B discrete solved form: f_m assignments have cyclic dependency: outerState.subgraphStatePort.suspend -> stateGraphRoot.subgraphStatePort.suspend -> stateGraphRoot.suspend -> outerStat,StateGraph,fast,,,,,,,,,,,,,,,false,0,
+Modelica.StateGraph.PartialCompositeStep,Component,failed:ToDae,invalid Appendix B discrete solved form: f_m assignments have cyclic dependency: stateGraphRoot.subgraphStatePort.suspend -> stateGraphRoot.suspend -> outerState.subgraphStatePort.suspend -> stateGrap,StateGraph,fast,,,,,,,,,,,,,,,false,0,
 Modelica.StateGraph.PartialCompositeStep.InnerState,Component,success,,StateGraph,fast,2,0,2,4,0,ok,,2,0,0,0,1,0,4,false,2,0
 Modelica.StateGraph.PartialCompositeStep.OuterState,Component,success,,StateGraph,fast,2,0,2,1,1,singular,singular,,,,0,1,2,0,false,1,0
 Modelica.StateGraph.StateGraphRoot,Component,failed:ToDae,"invalid Appendix B discrete solved form: duplicate f_m assignment target `suspend` (new origin='explicit top-level model equation', prior origin='binding equation for suspend')",StateGraph,fast,,,,,,,,,,,,,,,false,0,
