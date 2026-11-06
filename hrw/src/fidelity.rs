@@ -145,6 +145,61 @@ impl CheckTiming {
     }
 }
 
+/// **Every check name `--only-checks` accepts** — the roster, in one place.
+///
+/// # Why this exists, and it cost a whole sweep
+///
+/// On 2026-11-05 a 2.5-hour corpus run was launched with
+/// `--only-checks 'F1,F2,F3,F5,F6,F7,F8,F9'`, written to exclude the blind F4. That
+/// string also **excluded F10**; named **F1** and **F8**, which are not checks at
+/// all; and named **F9**, which [`check_model`] cannot gate. Five checks ran, the
+/// report was read as though eight had, and nothing said otherwise — the flag
+/// accepted every name and silently selected nothing for the ones it did not know.
+///
+/// A check name is data about the code, so it belongs in one list that
+/// `unknown_checks` validates against, the same discipline as `StageKind::ALL` and
+/// `FloatingWindow::ALL` and for the same reason: **the roster is the thing that
+/// turns a stale name into an error instead of a quieter sweep.**
+///
+/// # What is deliberately NOT here
+///
+/// **F1 is not implemented.** Every `F1` left in this crate is prose; the module doc
+/// above says it "lives in `worker.rs`", where the one remaining mention is a remark
+/// about a bug it once found. **F8 is not a check** — it is the size accounting in
+/// `examples/fidelity_msl.rs`, which raises no violation and is covered by
+/// `every_stage_serializes_without_panicking`. Both are rejected on purpose, so that
+/// asking for them fails rather than quietly measuring nothing.
+pub const CHECKS: &[&str] = &["F2", "F3", "F4", "F5", "F6", "F7", "F9", "F10"];
+
+/// The roster entries enforced by the runner instead of by [`check_model`].
+///
+/// F9 needs the whole [`StageBundle`] rather than a subject, so it is gated in
+/// `examples/fidelity_msl.rs`. It is still on [`CHECKS`] because the flag's
+/// vocabulary is what a caller types, not where the code happens to live —
+/// `the_check_roster_matches_the_code` is what keeps that split honest, by requiring
+/// the runner to spell its gate `want("F9")` exactly as this file spells its own.
+pub const CHECKS_OWNED_BY_RUNNER: &[&str] = &["F9"];
+
+/// The requested names that are **not** on the [`CHECKS`] roster.
+///
+/// Returned rather than reported, so the caller can name all of them in one message
+/// and a must-fire test can drive the predicate directly. Sorted and de-duplicated.
+///
+/// An empty result means every name was recognised. **It does not mean the selection
+/// is useful**: a caller can still ask for a valid subset and omit a check that
+/// matters, which is why the runner prints the checks it is *skipping* as well as the
+/// ones it will run.
+pub fn unknown_checks<'a>(requested: impl IntoIterator<Item = &'a str>) -> Vec<String> {
+    let mut bad: Vec<String> = requested
+        .into_iter()
+        .filter(|c| !CHECKS.contains(c))
+        .map(str::to_owned)
+        .collect();
+    bad.sort_unstable();
+    bad.dedup();
+    bad
+}
+
 /// Run every subject-based and view-based check on one compiled model.
 ///
 /// **The `reduced` parameter is gone for the v0.10.0 rebase, and the reason it
@@ -1759,6 +1814,106 @@ mod tests {
         assert!(
             check_f2(&clean).is_empty(),
             "F2 skips when there is no DAE to compare against"
+        );
+    }
+
+    /// **The roster names exactly the checks the code can gate, and nothing else.**
+    ///
+    /// Scans this file's production half for `want(…)` gates and requires their union
+    /// with [`super::CHECKS_OWNED_BY_RUNNER`] to equal [`super::CHECKS`]. Adding a check
+    /// without rostering it fails here; rostering a name that no gate reads fails here
+    /// too — and that second half is the one that would have caught **F1 and F8 being
+    /// advertised as checks**, which `--only-checks` accepted for months while
+    /// selecting nothing.
+    ///
+    /// # Two exclusions, each of which would otherwise let the test agree with itself
+    ///
+    /// **Comment lines are stripped.** `CHECKS_OWNED_BY_RUNNER`'s own documentation
+    /// spells `want("F9")` to say what the runner must contain, and a prose mention is
+    /// not a gate. Without the filter, documenting a check would satisfy the roster for
+    /// it.
+    ///
+    /// **Only the text before `#[cfg(test)]` is read**, so this module's assertions —
+    /// which necessarily contain the same spellings — are not their own evidence.
+    #[test]
+    fn the_check_roster_matches_the_code() {
+        let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let this =
+            std::fs::read_to_string(manifest.join("src/fidelity.rs")).expect("read fidelity.rs");
+        let runner = std::fs::read_to_string(manifest.join("examples/fidelity_msl.rs"))
+            .expect("read examples/fidelity_msl.rs");
+
+        let needle = "want(\"";
+        let code_only = |text: &str| -> String {
+            text.split("#[cfg(test)]")
+                .next()
+                .unwrap_or(text)
+                .lines()
+                .filter(|l| !l.trim_start().starts_with("//"))
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
+
+        let production = code_only(&this);
+        let mut gated: Vec<String> = Vec::new();
+        for (i, _) in production.match_indices(needle) {
+            let rest = &production[i + needle.len()..];
+            if let Some(end) = rest.find('"') {
+                gated.push(rest[..end].to_owned());
+            }
+        }
+
+        let runner_code = code_only(&runner);
+        for name in super::CHECKS_OWNED_BY_RUNNER {
+            assert!(
+                runner_code.contains(&format!("{needle}{name}\")")),
+                "{name} is rostered as the runner's own, so examples/fidelity_msl.rs must gate \
+                 it with the same spelling this file uses -- no such gate found. A rostered \
+                 check that nothing gates runs unconditionally or not at all, and either way \
+                 --only-checks is lying about it.",
+            );
+            gated.push((*name).to_owned());
+        }
+        gated.sort_unstable();
+        gated.dedup();
+
+        let mut roster: Vec<String> = super::CHECKS.iter().map(|c| (*c).to_owned()).collect();
+        roster.sort_unstable();
+        assert_eq!(
+            gated, roster,
+            "the gates and the roster disagree. CHECKS is the vocabulary --only-checks \
+             accepts: a gate with no roster entry cannot be asked for, and a roster entry \
+             with no gate silently measures nothing -- which is exactly what F1 and F8 did \
+             to the 2026-11-05 sweep.",
+        );
+    }
+
+    /// **An off-roster check name is rejected** — the must-fire half of the roster.
+    ///
+    /// Driven with the exact string the 2026-11-05 sweep ran with, because a guard that
+    /// has not been shown to reject the real input is not protection, and this one
+    /// exists for precisely that input.
+    ///
+    /// Note what it does **not** claim: `F10`'s absence from that string is not an
+    /// error and cannot be, since a caller may legitimately want a subset. Catching a
+    /// *forgotten* check is the runner's job, and it does it by printing the checks it
+    /// is skipping — not this predicate's.
+    #[test]
+    fn an_off_roster_check_name_is_rejected() {
+        assert_eq!(
+            super::unknown_checks("F1,F2,F3,F5,F6,F7,F8,F9".split(',')),
+            vec!["F1".to_owned(), "F8".to_owned()],
+            "the overnight sweep's own string names two things that are not checks",
+        );
+        assert!(
+            super::unknown_checks(super::CHECKS.iter().copied()).is_empty(),
+            "every rostered name must be accepted by the guard that reads the roster",
+        );
+        assert_eq!(
+            super::unknown_checks(["F2", "f2", "F11", "F2"]),
+            vec!["F11".to_owned(), "f2".to_owned()],
+            "matching is exact and de-duplicated: a case difference and an out-of-range \
+             number are both unknown names, and a repeated good name is not a complaint",
         );
     }
 
