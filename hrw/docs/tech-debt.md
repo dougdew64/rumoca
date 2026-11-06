@@ -4354,32 +4354,50 @@ seconds. `scripts/oracle.wls` and the runbook section in `long-runs.md` make it 
 An independent implementation rejecting the same five is what "oracle first" exists to buy: these
 specimens are genuinely bad, and Rumoca's diagnosis is not in question.
 
-#### Four mismatches — the oracle rejects, Rumoca accepts or merely flags
+#### ONE mismatch, not four — and the correction is the lesson
 
-| specimen | Rumoca | reading |
+First reading called four specimens mismatches, on the rule *"System Modeler refuses and Rumoca
+does not **fail**"*. That rule is wrong, because **in Rumoca's idiom `Flagged` IS a rejection** —
+the problem is reported and the pipeline continues. Re-run on *"did the tool report a problem"*:
+
+| specimen | Rumoca | both reject? |
 |---|---|---|
-| **`OverInitRc`** | **all Ok** | the sharpest one. Over-initialisation, and Rumoca reports *nothing at all* |
-| **`DimensionMismatch`** | Typecheck **Flagged**, 1 diagnostic | Rumoca notices and continues; a dimension mismatch is not recoverable |
-| **`TwiceDefined`** | Structural **Flagged** `singular` | something is flagged, but the diagnosis is wrong — a duplicate definition is not a singularity |
-| **`IncompatibleConnect`** | Structural **Flagged** `singular` | already `upstream-issues.md` issue 2; the oracle now adjudicates it |
+| `DimensionMismatch` | Typecheck **Flagged**, downstream stages not reached | yes — not a mismatch |
+| `TwiceDefined` | Structural **Flagged** `singular`; initialization states it cannot plan | yes — not a mismatch |
+| `IncompatibleConnect` | Structural **Flagged** `singular` | yes; diagnosis quality is `upstream-issues.md` issue 2 |
+| **`OverInitRc`** | **every stage `Ok`, Initialization `Ok`, no note** | **no — the one true mismatch** |
 
-**`OverInitRc` is the one to look at first.** `Flagged` at least puts something on screen;
-`all Ok` is HRW telling Doug a model is fine while an independent implementation refuses it.
+Checked exhaustively rather than by eye: of the 14 specimens Rumoca reports `all Ok` and the 9
+System Modeler rejects, the intersection is **`OverInitRc` alone**.
 
-#### NOT admissible — and that is the chain working, not a disappointment
+**`TwiceDefined` was the clearest error of the four.** Its own header reads *"Breaks at: STRUCTURAL
+ANALYSIS … the specimen that shows why counting is not enough, which is the whole reason matching
+exists as a phase."* Rumoca's `singular` is the diagnosis the specimen was authored to provoke, and
+it was nearly filed as a defect.
 
-`reports.md`'s rule: a mismatch is a finding only once fidelity is green for that model, because
-otherwise the mismatch may be *the instrument lying rather than the compiler erring*.
+**This is the same trap, taken in both directions in one sitting.** Six `Flagged singular`
+specimens that System Modeler *simulates* were correctly excluded for exactly this reason — and
+then three `Flagged` specimens that System Modeler *refuses* were wrongly included. `Flagged` means
+the same thing in both cases.
 
-**None of the four is in the fidelity report.** It covers `fidelity::MODELS` — 10 of the 28
-specimen files — and the four mismatching specimens are among the 18 it does not reach. So the
-table's verdict is neither "file it" nor "inadmissible because fidelity failed": it is **fidelity
-has no opinion**, which the rule treats the same way.
+#### It is now ADMISSIBLE, and the chain produced its first result
 
-**The owed work is therefore specific**: add these four to `fidelity::MODELS` and re-run, which
-converts four unattributable mismatches into four admissible findings or four instrument bugs.
-That is a small change with an unusually clear payoff, and it is the first time the three reports
-have actually chained.
+`reports.md`: a mismatch is a finding only once fidelity is green for the model, or it may be *the
+instrument lying rather than the compiler erring*.
+
+`OverInitRc`, `TwiceDefined` and `IncompatibleConnect` were added to `fidelity::MODELS` — all three
+reach `Dae` with IR, so the structural invariants have something to check — and all three come back
+clean, with the specimen report now carrying `OverInitRc,Component,ok,,,0`. All 13 fidelity tests
+pass, including the pinned `subjects_checked == MODELS.len()`.
+
+So **survey → eligible, fidelity → trustworthy, oracle → finding** has delivered one
+high-confidence upstream bug: `upstream-issues.md` **D2**, with System Modeler's own derivation of
+the contradiction quoted verbatim.
+
+`DimensionMismatch` stays in `FAILING_MODELS` alone: it stops at Typecheck with **no IR**, so it
+yields no subject and cannot join `MODELS` without breaking that pinned equality — whose comment
+says it must be rewritten deliberately rather than nudged. `TwiceDefined` was also missing from
+`FAILING_MODELS` entirely and has been added.
 
 #### Six `Flagged singular` specimens that System Modeler simulates are NOT mismatches
 

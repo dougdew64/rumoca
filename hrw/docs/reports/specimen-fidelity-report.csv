@@ -9,3 +9,6 @@ SingleInertia,Component,ok,,,0
 CapacitorLoop,Component,ok,,,0
 BouncingBall,Component,ok,,,0
 MotorWithBrake,Component,ok,,,0
+OverInitRc,Component,ok,,,0
+TwiceDefined,Component,ok,,,0
+IncompatibleConnect,Component,ok,,,0

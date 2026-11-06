@@ -1100,6 +1100,21 @@ mod tests {
         "CapacitorLoop",
         "BouncingBall",
         "MotorWithBrake",
+        // **Added 2026-11-06 because the oracle disagrees about them**, and a
+        // mismatch is only a finding once fidelity is green for that model
+        // (`docs/reports.md`). System Modeler refuses all three; Rumoca accepts
+        // `OverInitRc` outright and flags the other two as `singular`. Without a
+        // row in the specimen report there is no way to tell a compiler defect
+        // from HRW misreporting one, so the mismatches were unattributable.
+        //
+        // All three reach `Dae` with IR — 23, 2 and 3 continuous equations — so
+        // they yield an incidence-bearing subject and the structural invariants
+        // have something to check. `DimensionMismatch`, the fourth mismatch, does
+        // NOT: it stops at Typecheck with no IR, so it stays in `FAILING_MODELS`
+        // alone and its admissibility needs the report to cover that list too.
+        "OverInitRc",
+        "TwiceDefined",
+        "IncompatibleConnect",
     ];
 
     // ---------------------------------------------------------------- report
@@ -1357,6 +1372,11 @@ mod tests {
         "CapacitorLoop",
         "OverInitRc",
         "UnbalancedShaft",
+        // Authored to fail and absent from this list until 2026-11-06, found while
+        // adjudicating the oracle's four mismatches. System Modeler refuses it;
+        // Rumoca reports `Structural: singular`, which is the wrong diagnosis for
+        // a duplicate definition even though something is flagged.
+        "TwiceDefined",
     ];
 
     /// **F8 — no stage panics, and the sizes are on the record.**
