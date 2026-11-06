@@ -996,6 +996,16 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
     layout question is about the screen; this is what reaches it. `FloatingWindow::ALL` is the
     roster and `every_floating_window_is_reachable_by_link` fails by name for a fourth.
   - **HRW must be closed before the gate**, which relinks `hrw.exe`; the runner says so.
+  - **NEVER ASK DOUG WHETHER HRW IS OPEN — run the gate and let it answer** *(2026-11-05)*. The
+    hook's `HRW IS RUNNING` line is a `Get-Process` taken at **prompt submit**, and a session
+    typically spends many minutes working before it gets to the gate. Relaying that line as a
+    present-tense fact was wrong **three times in one day**, and Doug had to correct it each
+    time: *"HRW is not running"*, then *"it was closed when you asked me a moment ago."* The
+    detector is sound — nothing else on the machine matches the name, and no orphan process was
+    found. **A point-in-time reading reported later is simply stale**, which is the same
+    file-age-conflated-with-a-process defect the hook itself was written to fix, one step out.
+    The gate fails fast on the relink and names the cause, so asking buys nothing and spends a
+    round trip. Same asymmetry as the cost rule: the mechanism belongs on Claude's side.
   - **`cargo run -p hrw --example capture_suite [specimen] [pane|window]`** walks every canvas
     sub-view of a specimen against a *running* HRW and writes `.hrw-bridge/capture-suite.md`. It
     is the complement of `every_offered_sub_view_has_something_to_draw` and a **survey, not a
