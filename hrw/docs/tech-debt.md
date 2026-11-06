@@ -4002,9 +4002,11 @@ zeros carry no information.
 sweep was launched with, `-OnlyChecks 'F1,F2,F3,F5,F6,F7,F8,F9'`:
 
 - **omits F10**, which is gated by `want("F10")` and therefore did not run;
-- **names F1, which is not implemented.** Every `F1` in the source is a comment; `fidelity.rs`'s own
-  module doc says it "lives in `worker.rs`", and the only `F1` left there is a remark about a bug it
-  once found. The flag accepts the name and selects nothing.
+- **names F1, which is RETIRED — not missing, and the difference matters.** Its two re-derivation
+  checks in `worker.rs` were deliberately removed when the animations began reading the compile's
+  own steps, on the ground that *a test comparing a thing against itself passes for no reason*; its
+  surviving half is `check_f2`. `worker/tests.rs` records all of it. The flag accepts the name and
+  selects nothing.
 - **names F8, which is not a check.** It is inline size accounting at `fidelity_msl.rs:300` that
   produces no violations at all; `every_stage_serializes_without_panicking` is what covers it.
 - **names F9, which `--only-checks` cannot gate** — it lives in the runner outside `check_model`, so
@@ -4082,16 +4084,35 @@ measured": a true statement about the wrong thing. The roster was four greps awa
    against `TwoLoops`: 2 equations versus 4, and **the equation-count assertion is load-bearing** —
    if the two specimens ever converge the pairing becomes valid and the test would pass having
    proved nothing, so it asserts they differ before anything else.
-5. **Decide what F1 and F8 are.** `fidelity-plan.md`, the runner's module doc and `--only-checks`'
-   vocabulary all say "F1-F9", and two of those nine are not checks. Either implement F1 and give F8
-   a violation it can raise, or stop naming them as checks — the present state lets a sweep *request*
-   both and report nothing about either.
+5. ~~**Decide what F1 and F8 are.**~~ **CLOSED 2026-11-06 — there was nothing to decide, and the
+   item's premise was wrong.** It read "either implement F1 and give F8 a violation it can raise, or
+   stop naming them as checks", on the belief that F1 was simply unimplemented. **F1 is retired by
+   design.** Two of its three checks were removed when the animations began reading the compile's
+   own steps — *a test comparing a thing against itself passes for no reason, which is worse than no
+   test* — and its surviving half became `check_f2`, which compares against a fresh
+   `build_incidence` instead of a second implementation. `worker/tests.rs` had that account written
+   out the whole time. F8 is a size measurement, covered by
+   `every_stage_serializes_without_panicking`.
+
+   So nothing needs implementing. What needed fixing was **the flag accepting their names**, and the
+   roster does that. **`fidelity-plan.md`'s "F1-F9" is left alone deliberately**: it is a dated
+   record of what was true on 2026-07-31, and this repository keeps such accounts rather than
+   back-editing them — the retirement note itself is the model for that.
+
+   **Fourth correction of the day, same shape as the first three.** "F1 is not implemented" came
+   from grepping `\bF1\b` and finding only comments — but a test is named for what it checks, never
+   for its plan number, so the grep could not have found it. Reading one neighbouring file would
+   have. Corrected in `fidelity::CHECKS`, the runner's rejection message, `measure-fidelity.ps1` and
+   above.
 
 | date | defect | caught by | note |
 |---|---|---|---|
 | 11-05 | two MSL models panic the fidelity runner; the report omits them and the wrapper calls them `ok` | Claude, reconciling the report's row count against the memory profile | 2,615 profiled `ok` against 2,613 reported. Five layers converted a hard crash into silence; the GUI path is guarded and unaffected |
 | 11-05 | a panic inside `WorkerState::compile` can never be read | reproducing the crash with `RUST_BACKTRACE=full` and getting an empty stderr | the `OutputCapture` dup2 redirect is still installed when the default hook prints. `diagnostics::init()`'s crash file would bypass it and is not installed in the examples |
 | 11-05 | `measure-fidelity.ps1` reports `ok` for a process that exited 101 | reading the verdict logic after the row count failed to reconcile | the verdict is sampled from RAM, ceiling and timeout while running, and the exit code is never consulted at all |
+| 11-06 | **the survey has not run since 2026-08-01**; six shards die instantly and the merge silently uses three-month-old part files | asking why a byte-identical cache could give two different results, which forced "was the 20:20 run a run?" | the transcript's whole survey phase is two lines with no shard output. `while (Get-Process survey_msl)` cannot tell instant death from completion, and `--merge` returns before `load_msl()` so it never fails with them |
+| 11-06 | **Claude committed a survey artifact stamped `0.10.4` that holds 0.9.x data**, then built a provenance feature on top of it | the row above; reverted the same hour | `5601dfc8`'s message claims a re-run that never happened. The ≥2,000-model guard exists to catch a partial survey and passes a complete stale one |
+| 11-06 | "zero stable-column differences across 2,626 models" was reported as the strongest rebase-health signal available; it was the same data compared against itself | the row above | the cleanliness was flagged out loud as suspicious and the one cause that explains it exactly was not checked |
 | 11-05 | **a 2.5-hour sweep ran five checks while reporting as though it ran eight**, F10 among the missing | reading `check_model`'s `want()` calls instead of trusting the flag string | `-OnlyChecks` omitted F10, named F1 and F8 which are not checks, and named F9 which it cannot gate. `[check cost] F7, F2, F5, F6, F3` is the per-model proof the runner printed all night |
 | 11-05 | `--only-checks` accepts any string; an unknown check name selects nothing and is never rejected | the row above, asking why the omission was silent | the repo's own `StageKind::ALL` / `FloatingWindow::ALL` roster pattern is the fix and was not applied here |
 | 11-05 | the end-of-run note says F10's absence clause "was never exercised" even when F10 was deselected | reading the note beside a check list that lacked F10 | reads as "F10 ran and found nothing to act on", which is the opposite of what happened |
@@ -4099,7 +4120,7 @@ measured": a true statement about the wrong thing. The roster was four greps awa
 | 11-05 | **a passing must-fire test did not stop F4 going blind** | reading `each_invariant_catches_its_own_violation` after claiming no such test existed | the test uses `"kind": "scalar"`; F4 is blind on `StructuredScalar`. Must-fire over author-chosen JSON proves only that the handled shape is handled |
 | 11-05 | Claude wrote "no vacuity test exists", "the checks did not fire", and "eight checks" into this file and into its report; all three false | re-measuring each claim before building on it | one file read and four greps would have prevented all three. Each was asserted from the CSVs alone because the CSV evidence felt sufficient, which is how a true statement about the wrong unit gets recorded as a finding |
 
-### 11-06, THE SURVEY CANNOT RUN — it worked nine hours ago, with the same binary
+### 11-06, THE SURVEY HAS NOT RUN SINCE 2026-08-01, and a stale merge hid it for three months
 
 **This blocks the re-run, and it is the largest open item on this page.**
 
@@ -4114,9 +4135,10 @@ MSL should resolve: Resolve errors: annotation Evaluate has no effect on functio
 
 - Reproduced with `--limit 2` **and** with `--slice 0/6 --rebuild-every 200`, the exact
   invocation the 11-05 sweep used.
-- Reproduced with `target/release/examples/survey_msl.exe` **built at 20:16 on 11-05** — the same
-  binary that surveyed 2,626 models successfully at 20:20 that night. So this is not caused by any
-  change committed on 11-06; attribution was checked before anything else.
+- Reproduced with `target/release/examples/survey_msl.exe` **built at 20:16 on 11-05**, which is the
+  binary the sweep used, so nothing committed on 11-06 is responsible. (This was first written as
+  "the same binary that surveyed 2,626 models successfully at 20:20" — it did no such thing; see
+  below.)
 - The failing call is `session.model_names()`, which the survey `.expect()`s.
 
 #### The asymmetry, which is the useful part
@@ -4129,41 +4151,83 @@ So the libraries parse and a specimen resolves against them. What fails is **enu
 names from the session**, which only the survey does. Both paths reach the same on-disk cache
 through `parse_source_root_with_cache`, so the loader is *not* the difference.
 
-#### Mechanism — HYPOTHESIS, explicitly not established
+#### The first mechanism recorded here was WRONG, and the correction is the finding
 
-The diagnostics are MSL's own, and most are warning-shaped (deprecated bare `external`, `Evaluate`
-with no effect, `Medium.*` unresolved inside `replaceable` packages that are legitimately not
-redeclared yet). If `model_names()` returns `Err` whenever *any* resolve diagnostic exists, it
-would always have failed — so something about the diagnostic set or the resolution state changed
-between 20:20 and now.
+This entry originally blamed `upstream-issues.md` **P1** — a workspace document poisoning the
+durable roots' resolution in `%LOCALAPPDATA%\Rumoca`, with the sweep's survey-then-fidelity
+ordering hiding it. **The cache disproves it.** `source-roots/parsed-files` has mtime **11-05
+17:04** and `.rumoca-prune-checked` **17:05**, both *before* the 20:20 sweep; nothing has written
+to or pruned it since, which is consistent with no `crates/` change having been made.
 
-**The candidate worth testing first** is this page's own neighbour, `upstream-issues.md` **P1**: *a
-workspace-document change invalidates resolution of durable external source roots.* The 11-05
-script runs the survey **first** and the 2,626-model fidelity sweep second. Today the survey ran
-*after* thousands of specimen compiles. If a workspace document poisons the durable roots'
-resolution in a way that persists in `%LOCALAPPDATA%\Rumoca`, then **the fidelity sweep breaks the
-survey, and the script's ordering has been hiding it.** That is a coherent story and nothing here
-confirms it.
+So the cache is byte-identical to what the 20:20 run used. Same binary, same cache, same vendored
+MSL — which forces the real question: **was the 20:20 run actually a run?**
 
-#### The experiment that settles it, and why it was not run
+#### It was not. The survey did not run on 11-05 either
 
-Move or clear `%LOCALAPPDATA%\Rumoca` and re-run the survey. If a cold cache resolves, the cache
-is poisoned and the ordering story is probably right.
+The sweep transcript's entire survey phase:
 
-It was not run because **it destroys the reproduction**, and because renaming the directory was
-refused (`Permission denied`), which itself wants explaining — a held handle would be a separate
-finding. The cache is regenerable but the broken state is not, so clearing it is **Doug's call**,
-not a unilateral cleanup. The directory has been left exactly as found;
-`.rumoca-prune-checked` is dated 11-05 17:05 and `source-roots/` dates from 07-29.
+```text
+=== MSL survey: 6 shards ===
 
-#### Two consequences to carry
+[survey] merged -> hrw\docs\reports\msl-survey.csv
+[survey] 2626 models listed for the fidelity sweep
+```
 
-1. **The re-run under the correct roster is blocked** until the survey runs. `fidelity_msl`'s
-   corpus is read from `msl-survey.csv`, which is committed and current, so the *fidelity* sweep is
-   not blocked — only the survey half.
-2. **`msl_libraries` is committed but unproven end to end.** The unit test shows the function
-   returns the right library names; nothing has yet shown the field rendering into a `.meta.json`,
-   because producing one requires the survey to run. Do not read the field as verified.
+**No shard produced a single line.** Three things combined:
+
+1. The six shards panicked immediately, on this same resolve failure.
+2. The script waits with `while (Get-Process survey_msl) { Start-Sleep 15 }`. Processes that die
+   before the first poll are indistinguishable from processes that finished, so it fell straight
+   through. **Instant death reads as completion.**
+3. `--merge` returns at `survey_msl.rs:125`, *before* `run()` calls `load_msl()` — so the merge
+   cannot fail for the reason the shards did. It merged whatever was at `C:\tmp\part-*.csv`.
+
+And what was there: **`part-0..3` dated Aug 1 16:29–16:32 (657/657/656/656 rows) and `part-4,5`
+dated Jul 31 14:55–14:56 (437/437 rows)** — three months old, and from *two different shard
+generations*.
+
+**The survey therefore last ran successfully on 2026-08-01, before the 0.10.0 rebase.** The rebase
+is the obvious suspect for the resolve failure, and the stale-merge path is why three months passed
+without anyone learning that.
+
+#### The damage, and it reached a commit
+
+- **`msl-survey.csv` committed in `5601dfc8` was 0.9.x data re-merged**, and the merge binary
+  stamped its `.meta.json` `rumoca_version: 0.10.4` — a file asserting provenance it does not have,
+  which is strictly worse than the `["msl"]` loss recorded below it. **Reverted.**
+- **"Zero stable-column differences across 2,626 models" was not evidence of anything.** It was the
+  same data compared against itself. It was reported to Doug as *the strongest rebase-health signal
+  available*, and its suspicious cleanliness was even flagged out loud — without checking the one
+  cause that explains it exactly.
+- **The 0.10.4 capability map does not exist.** Nothing is known about how 0.10.4 compiles MSL at
+  corpus scale.
+
+#### Why nothing noticed — the same wrong unit, one level up
+
+The script's guards are real and were all satisfied: binaries newer than the newest `.rs`, ≥8 GB
+free, ≥2,000 models listed. **Every one measures a precondition; none measures an outcome.**
+`[survey] 2626 models listed` was a true measurement of a stale file. The ≥2,000 guard was written
+precisely to catch a partial survey and could not, because a complete *old* survey passes it.
+
+#### What the script needs before it is trusted again
+
+1. **Wait on process handles and check exit codes**, not on `Get-Process` by name.
+2. **Delete the part files before launching**, so a merge cannot reach a previous generation.
+3. **Verify the part files exist, are newer than the run's start, and number exactly `$shards`**
+   before merging.
+4. **Compare `models_surveyed` against the number of rows the shards actually wrote**, so the
+   corpus count is derived from this run rather than from whatever was on disk.
+
+#### Consequences to carry
+
+1. **The 11-05 fidelity results are over a corpus list of 0.9.x vintage.** The model *names* are
+   very likely still valid — the stable columns did not move between the two committed artifacts —
+   but every statement about "2,626 models" inherits that provenance and should say so.
+2. **The re-run is blocked on the survey**, and the survey is blocked on the resolve failure, which
+   is now known to be months old rather than hours.
+3. **`msl_libraries` is committed but unproven end to end.** The unit test shows the function
+   returns the right names; nothing has shown the field rendering into a `.meta.json`, because that
+   needs a survey that runs.
 
 ### 11-06, a key spelled `(tree root)` cannot navigate back — and F7's must-fire test now depends on it
 
