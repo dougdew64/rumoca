@@ -3903,3 +3903,205 @@ mapping anything new to a crate another stage already uses.
 |---|---|---|---|
 | 11-04 | regenerating `field_help.json` for v0.10.4 would restore an import-clause doc as Solve lowering's `names` tooltip | `field_help`'s two guards, on the gate | upstream deleted `rumoca-ir-solve`'s `names` doc and `rumoca-ir-dae`'s `causality` doc. The `names` case is Doug's own 2026-09-03 report, and the test is named after it |
 | 11-04 | the Initialization pane shows no field tooltips although its `pins` doc is harvested and committed | step 4 of the rebase procedure, which names this failure as silent | introduced by the 0.10.0 re-model of the pane onto `initial_pins`; survived into 0.10.4 because nothing checks that a stage with IR has a crate to draw docs from |
+
+### 11-05 night, two MSL models crash the fidelity runner and every layer reports a clean sweep
+
+**The overnight sweep's report reads 2,613 models, every outcome `ok`, `n_violations = 0`. Two of
+the models it claims to have swept were never compiled: the runner died on them.**
+
+The arithmetic is where it shows. The memory profile accounts for all 2,626 models — 2,615 `ok` and
+11 `aborted:proc-ceiling` — while the report carries 2,613 rows. The 11 ceiling aborts are
+*correctly* absent, because a killed process writes no row and the profile records the verdict. The
+remaining **two** are called `ok` by the profile and do not exist in the report:
+
+- `Modelica.Blocks.Continuous.Der` — profile says 759 MB, 3 s, `ok`
+- `Modelica.Electrical.Machines.Utilities.DQCurrentController` — 785 MB, 2.9 s, `ok`
+
+Both reproduce on demand. The runner prints `--models: 1 matched`, `loading MSL…`, `loaded in 1.4s`
+and then **exits 101 with an empty stderr and a header-only report**. With and without
+`--only-checks`, so the crash is in the compile, before any check runs.
+
+#### The chain, and every link was verified rather than assumed
+
+1. **The compile panics, and nothing catches it.** `compile_model_by_name` (`worker.rs:2732`) is not
+   wrapped in `guard`, whose only non-test caller is `Worker::spawn`'s message loop
+   (`worker.rs:1641`). So the **GUI survives these two models** and would surface the panic as a
+   message; only the examples, which call the method directly, die of it.
+2. **The panic message is destroyed.** `WorkerState::compile` holds an `OutputCapture` that
+   redirects fds 1 and 2 through a pipe (`worker.rs:7220`) so Rumoca's own `println!` diagnostics can
+   be forwarded as log entries. The default panic hook prints *before* unwinding reaches that
+   guard's `Drop`, so the message goes into the pipe and dies with the process. `RUST_BACKTRACE=full`
+   changes nothing — this is not a missing-backtrace problem, the text never reaches a live fd.
+3. **No crash file is written either.** `fidelity_msl` never calls `diagnostics::init()`, whose hook
+   writes `crash-<utc>.json` **to a file** and would have bypassed the redirect entirely. The one
+   mechanism built for exactly this is not installed in the binary that needs it.
+4. **`measure-fidelity.ps1` never looks at the exit code.** Its verdict is chosen from free RAM, the
+   process ceiling and the timeout — all sampled *while the process runs*. A process that panicked
+   after 3 s at 759 MB trips none of them, so it is recorded `ok`. Searching the script for
+   `ExitCode` returns nothing.
+5. **A missing row then reads as "not yet done".** `--resume` keys off rows in the report, which is
+   right for a ceiling abort and wrong here: the model is retried every run and crashes every run,
+   forever, at no visible cost.
+
+**Why this one matters more than its size suggests.** A hard compiler crash on a stock MSL model is
+the strongest finding this instrument can produce, and five layers in sequence each turned it into
+silence — ending in a report whose denominator is wrong and which says nothing about being wrong.
+The failure is not that a model crashed; it is that **`ok` here means "did not exceed memory or
+time", while every reader takes it to mean "was measured"**.
+
+#### What the crash probably is — hypothesis, not a measurement
+
+The survey compiles both models *successfully*: `Der` as `n_equations=1`, `structural=singular`,
+`index_reduced=error:empty system: no equations or unknowns`; `DQCurrentController` as
+`structural=singular`, `index_reduced=singular`. The difference between the two instruments is that
+fidelity destructures `equation_sheet` and `identifier_index` out of the compile and the survey does
+not. **Suspect the sheet or the identifier index on a singular or empty system.** Both models being
+singular, and one having an empty system, is the kind of coincidence worth starting from.
+
+#### The recommended order — three separable fixes, widening blast radius
+
+1. **`measure-fidelity.ps1` records `crashed:exit-<n>`.** PowerShell only, no Rust, no rebuild; makes
+   this entire class visible from now on and belongs in `-RetryVerdicts`' documented taxonomy beside
+   `aborted:free-ram`.
+2. **`fidelity_msl` calls `diagnostics::init()` and guards the compile**, so a panicking model leaves
+   a report row carrying the panic message instead of killing the run. This is also what finally
+   *prints* the message that step 3 needs.
+3. **Root-cause the panic.** The only one of the three that is an accuracy bug in Rumoca/HRW rather
+   than in the instrument around it.
+
+### Last night's sweep ran FIVE checks, not eight, and silently dropped the one that matters most
+
+No full-corpus fidelity run on disk has ever recorded a violation: `fid-full.csv`, `fid-0804.csv`
+and last night's carry 2,614, 2,614 and 2,613 rows, with `checks_failed` empty and `n_violations`
+at `0` in every one. The question that matters is whether those zeros are evidence.
+
+**Partly.** Must-fire coverage does exist. `each_invariant_catches_its_own_violation`
+(`fidelity.rs:1673`) drives **F3, F4 and F5** with deliberate violations and asserts each fires, and
+`f10_catches_each_way_a_pane_can_mislead` covers F10's three claims. F2 appears in the first test
+*only* as a skip assertion — `check_f2` returns empty when there is no DAE — which proves nothing
+about firing.
+
+**F2, F6, F7 and F9 have no must-fire test at all.** `check_f6` and `check_f7` are reachable only
+from `check_model` and the corpus test; nothing anywhere hands either one a violation.
+`a_rumoca_failure_is_represented_faithfully` is a corpus *observation* of F9, not a must-fire. Their
+zeros carry no information.
+
+#### But first, what actually ran — and it is not what the sweep was asked for
+
+**`check_model`'s selectable roster is F2, F3, F4, F5, F6, F7 and F10** — those are its seven
+`want()` calls, and nothing else is gated by `--only-checks`. Against that roster, the string this
+sweep was launched with, `-OnlyChecks 'F1,F2,F3,F5,F6,F7,F8,F9'`:
+
+- **omits F10**, which is gated by `want("F10")` and therefore did not run;
+- **names F1, which is not implemented.** Every `F1` in the source is a comment; `fidelity.rs`'s own
+  module doc says it "lives in `worker.rs`", and the only `F1` left there is a remark about a bug it
+  once found. The flag accepts the name and selects nothing.
+- **names F8, which is not a check.** It is inline size accounting at `fidelity_msl.rs:300` that
+  produces no violations at all; `every_stage_serializes_without_panicking` is what covers it.
+- **names F9, which `--only-checks` cannot gate** — it lives in the runner outside `check_model`, so
+  it ran regardless of being listed.
+
+The runner prints the proof per model, and the last model's stderr says it plainly:
+`[check cost] F7, F2, F5, F6, F3`. **Five checks**, plus ungated F9. F4 was excluded on purpose;
+**F10 was excluded by accident, by the same string.**
+
+**F10 is the worst one to lose.** It is the only check about a *verb* — whether a pane's claim about
+the compiler is honest rather than whether a structure matches — and it is the one check with
+must-fire coverage proving it can fail three distinct ways. The check most able to find something is
+the one the sweep dropped, and nothing reported the loss.
+
+**The missing mechanism is roster discipline.** `--only-checks` accepts any string: an unknown name
+selects nothing and is never rejected. This repository already has the pattern that would have
+caught it — `StageKind::ALL` and `FloatingWindow::ALL`, matched exhaustively with no `_ =>` arm — and
+the fidelity checks have no equivalent, so a stale or mistyped name narrows a 2.5-hour sweep in
+silence. **The run is not a measurement of the corpus under the checks; it is a measurement under
+five of them.**
+
+One smaller consequence, same cause: the runner's end-of-run note reads *"0 empty stages, so F10's
+absence clause was never exercised"* **even when F10 was deselected**, which reads as "F10 ran and
+had nothing to act on."
+
+#### The part worth more than the count
+
+**F4's must-fire test passes while F4 is blind in production.** The test builds blocks as
+`{ "kind": "scalar", … }`; F4's blindness is on **`StructuredScalar`** blocks. The test exercised the
+shape the check already handles and said nothing about the shape v0.10.x actually produces — so a
+must-fire test demonstrates that a check fires *on the input its author had in mind*, which is the
+same input the check was written against. **It cannot detect blindness to a shape neither of them
+considered.** That is now measured rather than argued, and it is the reason "add must-fire coverage"
+is a floor and not the fix.
+
+#### Correcting the first version of this entry, written the same morning
+
+It claimed no vacuity test existed, and that last night's zero should be read as *"the checks did not
+fire"*. **Both were wrong.** Three checks are proven able to fire. And the August runs were made on
+**0.9.x, before F4 went blind**, so their zeros are consistent with a genuinely clean corpus rather
+than evidence of vacuity — the two runs that would have shown F4's 24 false positives postdate those
+files. The defensible reading is narrower than the one first recorded: **plausibly real for the
+checks with must-fire coverage, uninformative for the four without.**
+
+**And a second correction, an hour later and larger.** The first two versions of this entry both
+said "the eight enabled checks", and the report to Doug said the same. There were never eight. Two
+of the names in the flag do not exist as checks, one cannot be gated by it, and one real check —
+F10 — was silently deselected by it. **The count was taken from the string that was typed rather
+than from the roster the code offers**, which is the same error as reading a verdict of `ok` as "was
+measured": a true statement about the wrong thing. The roster was four greps away the whole time.
+
+#### What is owed
+
+1. **`--only-checks` must reject a name that is not on the roster**, and the roster must be one
+   exhaustively-matched list in the `StageKind::ALL` shape. This is first because it is the only item
+   that prevents the *next* sweep from being mis-scoped, and because it would have turned last
+   night's silent narrowing into a startup error.
+2. **Re-run the sweep with the real roster.** Last night's measured neither F4 nor F10, so the corpus
+   is unmeasured under both — and F10 is the check with the best demonstrated ability to fail.
+3. **Must-fire for F2, F6, F7 and F9** — the floor, and it closes the four falsifiable-in-principle
+   checks that nothing has ever falsified.
+4. **Must-fire driven by IR shapes taken from the corpus**, not hand-built JSON, for every check that
+   reads a block kind or any other tagged variant. F4 is the proof that the synthetic shape is the
+   one case guaranteed to pass. For F2 and F6, whose signatures need a real `Dae`, the lever is
+   **cross-pairing**: hand one specimen's equation sheet or report to another specimen's DAE and the
+   check must complain, which needs no IR construction and uses only shapes the compiler really
+   produces.
+5. **Decide what F1 and F8 are.** `fidelity-plan.md`, the runner's module doc and `--only-checks`'
+   vocabulary all say "F1-F9", and two of those nine are not checks. Either implement F1 and give F8
+   a violation it can raise, or stop naming them as checks — the present state lets a sweep *request*
+   both and report nothing about either.
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 11-05 | two MSL models panic the fidelity runner; the report omits them and the wrapper calls them `ok` | Claude, reconciling the report's row count against the memory profile | 2,615 profiled `ok` against 2,613 reported. Five layers converted a hard crash into silence; the GUI path is guarded and unaffected |
+| 11-05 | a panic inside `WorkerState::compile` can never be read | reproducing the crash with `RUST_BACKTRACE=full` and getting an empty stderr | the `OutputCapture` dup2 redirect is still installed when the default hook prints. `diagnostics::init()`'s crash file would bypass it and is not installed in the examples |
+| 11-05 | `measure-fidelity.ps1` reports `ok` for a process that exited 101 | reading the verdict logic after the row count failed to reconcile | the verdict is sampled from RAM, ceiling and timeout while running, and the exit code is never consulted at all |
+| 11-05 | **a 2.5-hour sweep ran five checks while reporting as though it ran eight**, F10 among the missing | reading `check_model`'s `want()` calls instead of trusting the flag string | `-OnlyChecks` omitted F10, named F1 and F8 which are not checks, and named F9 which it cannot gate. `[check cost] F7, F2, F5, F6, F3` is the per-model proof the runner printed all night |
+| 11-05 | `--only-checks` accepts any string; an unknown check name selects nothing and is never rejected | the row above, asking why the omission was silent | the repo's own `StageKind::ALL` / `FloatingWindow::ALL` roster pattern is the fix and was not applied here |
+| 11-05 | the end-of-run note says F10's absence clause "was never exercised" even when F10 was deselected | reading the note beside a check list that lacked F10 | reads as "F10 ran and found nothing to act on", which is the opposite of what happened |
+| 11-05 | F2, F6, F7 and F9 have no must-fire test, so nothing has ever falsified them | checking whether "zero violations" was informative before reporting it as good news | F3/F4/F5/F10 are covered. `check_f6` and `check_f7` are reachable only from `check_model` and the corpus test |
+| 11-05 | **a passing must-fire test did not stop F4 going blind** | reading `each_invariant_catches_its_own_violation` after claiming no such test existed | the test uses `"kind": "scalar"`; F4 is blind on `StructuredScalar`. Must-fire over author-chosen JSON proves only that the handled shape is handled |
+| 11-05 | Claude wrote "no vacuity test exists", "the checks did not fire", and "eight checks" into this file and into its report; all three false | re-measuring each claim before building on it | one file read and four greps would have prevented all three. Each was asserted from the CSVs alone because the CSV evidence felt sufficient, which is how a true statement about the wrong unit gets recorded as a finding |
+
+### 11-05, the survey artifact stopped recording which MSL it surveyed
+
+Regenerating `msl-survey.csv` moved `msl_roots` in the sibling `.meta.json` from
+`["Modelica 4.1.0", "ModelicaServices 4.1.0", "Complex.mo"]` to **`["msl"]`**. The meta file exists
+to make the artifact auditable, and the single question it most needs to answer — *which MSL version
+is this a map of?* — it no longer answers.
+
+The cause is not the rebase. `msl_roots()` was deliberately consolidated to one root,
+`hrw/vendor/msl`, and `no_second_copy_of_the_msl_root_list` now guards that shape; the survey writes
+each root's file name, so one root means one uninformative name. The versions are still **right
+there** as subdirectory names under `vendor/msl`, so the fix is to record the libraries found under
+the roots rather than the roots themselves.
+
+**And an open question that consolidation raises.** `vendor/msl` also contains
+`ModelicaReference 4.1.0` and `ObsoleteModelica4.mo`, neither of which was in the old three-entry
+root list — yet `models_surveyed` and `models_available` are **2,626 before and after**, and the
+`outcomes` block is identical to the model. Either Rumoca's loader selects libraries by name under a
+root and those two are correctly excluded, or two libraries are now in scope and absent from a survey
+that calls itself complete. **Not measured.** It needs one look at what the loader does with a root
+directory, and whichever answer comes back, `models_available` should be made to state it rather
+than leaving the two readings indistinguishable.
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 11-05 | the survey's metadata no longer names the MSL version it surveyed | reading the `.meta.json` diff rather than only the CSV's | a consequence of the deliberate one-root consolidation; the versions remain available as subdirectory names |
