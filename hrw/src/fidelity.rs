@@ -173,12 +173,17 @@ pub const CHECKS: &[&str] = &["F2", "F3", "F4", "F5", "F6", "F7", "F9", "F10"];
 
 /// The roster entries enforced by the runner instead of by [`check_model`].
 ///
-/// F9 needs the whole [`StageBundle`] rather than a subject, so it is gated in
-/// `examples/fidelity_msl.rs`. It is still on [`CHECKS`] because the flag's
-/// vocabulary is what a caller types, not where the code happens to live —
-/// `the_check_roster_matches_the_code` is what keeps that split honest, by requiring
-/// the runner to spell its gate `want("F9")` exactly as this file spells its own.
-pub const CHECKS_OWNED_BY_RUNNER: &[&str] = &["F9"];
+/// **Empty, and worth keeping empty.** F9 was the only entry: it lived in
+/// `examples/fidelity_msl.rs` because it needs the whole [`StageBundle`] rather than a
+/// subject — which also put it outside `--only-checks` entirely, and out of reach of
+/// `cargo test`. [`check_f10`] has the same signature and never left this file, so the
+/// separation bought nothing; F9 moved here on 2026-11-06 and `check_model` gates it.
+///
+/// The constant stays because the mechanism is the point: if a future check must be
+/// enforced by the runner, listing it here is what keeps
+/// `the_check_roster_matches_the_code` honest instead of forcing an exemption into the
+/// test itself. A gate that lives outside this file must still be *declared* in it.
+pub const CHECKS_OWNED_BY_RUNNER: &[&str] = &[];
 
 /// The requested names that are **not** on the [`CHECKS`] roster.
 ///
@@ -295,6 +300,11 @@ pub fn check_model(
                 timing.add("F7", t);
             }
         }
+    }
+    if want("F9") {
+        let t = std::time::Instant::now();
+        out.extend(tag("F9", check_f9(stages)));
+        timing.add("F9", t);
     }
     if want("F10") {
         let t = std::time::Instant::now();
@@ -977,6 +987,52 @@ pub fn sample_paths(root: &Value, cap: usize) -> Vec<Vec<crate::bridge::Seg>> {
     }
     out.truncate(cap);
     out
+}
+
+/// **F9 — a stage that went abnormal says something usable about why.**
+///
+/// Rumoca is a recovering compiler: almost nothing hard-fails, problems are *flagged*
+/// and the pipeline continues. That makes the note on an abnormal stage the only thing
+/// the reader has, so this check holds it to three conditions — it exists, it is a
+/// sentence rather than a label, and a value published beside it carries fields.
+///
+/// # Why it moved here on 2026-11-06
+///
+/// It lived in `examples/fidelity_msl.rs` as `check_failures`, which had two costs.
+/// It sat **outside `check_model`**, so `--only-checks` could not gate it: asking for
+/// F9 did not select it and omitting F9 did not skip it. And a check in an example is
+/// not reachable from `cargo test`, which is why F9 was one of the checks nothing had
+/// ever driven with a deliberate violation.
+///
+/// It only ever needed `stages`, exactly like [`check_f10`], so there was nothing to
+/// justify the separation.
+pub fn check_f9(stages: &StageBundle) -> Vec<String> {
+    let mut v = Vec::new();
+    for kind in crate::worker::StageKind::COMPILATION {
+        let stage = stages.get(*kind);
+        if stage.outcome == crate::worker::Outcome::Ok {
+            continue;
+        }
+        let Some(note) = stage.note.as_deref() else {
+            v.push(format!("{kind:?}: abnormal with no note"));
+            continue;
+        };
+        match stage.value.as_ref() {
+            None => {
+                if note.trim().len() < 12 || !note.contains(' ') {
+                    v.push(format!("{kind:?}: no value and note {note:?} is a label"));
+                }
+            }
+            Some(value) => {
+                if value.as_object().is_none_or(serde_json::Map::is_empty) {
+                    v.push(format!(
+                        "{kind:?}: note {note:?} with a value carrying no fields"
+                    ));
+                }
+            }
+        }
+    }
+    v
 }
 
 /// **F7 — every capture noun survives the round trip on real IR.**
@@ -1914,6 +1970,239 @@ mod tests {
             vec!["F11".to_owned(), "f2".to_owned()],
             "matching is exact and de-duplicated: a case difference and an out-of-range \
              number are both unknown names, and a repeated good name is not a complaint",
+        );
+    }
+
+    /// **F2 and F6 fire when a view is paired with the wrong model's DAE.**
+    ///
+    /// The must-fire half for the two checks whose signatures need a real
+    /// `rumoca_ir_dae::Dae`, which cannot be hand-built — the reason both went without
+    /// coverage while F3, F4 and F5 got theirs from hand-written JSON.
+    ///
+    /// # Cross-pairing, and why it is the right lever rather than a trick
+    ///
+    /// Both checks ask the same question: *does this derived view describe the DAE beside
+    /// it?* Compiling two specimens and handing one's view to the other's DAE is a
+    /// violation **constructed entirely out of real IR** — no synthetic block kinds, no
+    /// invented field shapes, nothing the compiler would never emit.
+    ///
+    /// That matters because of F4. F4 has had a must-fire test since it was written, and
+    /// went blind on `StructuredScalar` blocks anyway, because its test builds blocks as
+    /// `{"kind": "scalar"}` — the shape F4 already handled. **A must-fire test over
+    /// author-chosen JSON proves only that the handled shape is handled.** Cross-pairing
+    /// cannot drift that way: its inputs are whatever the compiler currently produces.
+    ///
+    /// # The vacuity guard comes first
+    ///
+    /// If the two specimens happened to have the same equation count, the F6 pairing
+    /// would be *valid* and the test would pass having proved nothing. The assertion on
+    /// the counts is therefore load-bearing, not a sanity check — it is what stops this
+    /// test from joining the checks it exists to falsify.
+    #[test]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
+    fn f2_and_f6_catch_a_view_paired_with_the_wrong_model() {
+        let open = |name: &'static str| {
+            let FromWorker::Compiled {
+                stages,
+                dae,
+                equation_sheet,
+                identifier_index,
+                ..
+            } = compile_specimen_shared(name)
+            else {
+                panic!("{name}: expected Compiled");
+            };
+            let dae = dae.unwrap_or_else(|| panic!("{name}: no DAE"));
+            (stages, dae, equation_sheet, identifier_index)
+        };
+
+        let (stages_a, dae_a, sheet_a, index_a) = open("SingleInertia");
+        let (_stages_b, dae_b, _sheet_b, _index_b) = open("TwoLoops");
+
+        let n_a = dae_a.inspect(|v| v.continuous_equation_count());
+        let n_b = dae_b.inspect(|v| v.continuous_equation_count());
+        assert_ne!(
+            n_a, n_b,
+            "the two specimens must differ in equation count or the cross-pairing below \
+             is a VALID pairing and proves nothing. Pick two that differ.",
+        );
+
+        // The honest baseline: each view against its own DAE is clean.
+        assert!(
+            check_f6(sheet_a.as_ref(), index_a.as_ref(), &dae_a).is_empty(),
+            "SingleInertia's own views must agree with its own DAE: {:?}",
+            check_f6(sheet_a.as_ref(), index_a.as_ref(), &dae_a),
+        );
+
+        // F6 — the equation sheet now describes a different system.
+        let crossed = check_f6(sheet_a.as_ref(), index_a.as_ref(), &dae_b);
+        assert!(
+            !crossed.is_empty(),
+            "F6 compares a sheet's equation count against the DAE's ({n_a} vs {n_b}) and \
+             must notice the mismatch",
+        );
+
+        // F2 — the published incidence belongs to a different DAE, so re-deriving the
+        // incidence from this DAE cannot reproduce it.
+        let mut fired = 0usize;
+        let mut subjects_seen = 0usize;
+        for s in subjects(&stages_a, &dae_b) {
+            subjects_seen += 1;
+            if !check_f2(&s).is_empty() {
+                fired += 1;
+            }
+        }
+        assert!(
+            subjects_seen > 0,
+            "cross-pairing produced no subjects at all, so F2 was never asked anything",
+        );
+        assert!(
+            fired > 0,
+            "F2 re-derives the incidence with build_incidence and compares it against the \
+             published one; against the wrong DAE that comparison must fail for at least \
+             one of the {subjects_seen} subjects",
+        );
+    }
+
+    /// **F7 fires on a path whose description does not navigate back to it.**
+    ///
+    /// F7 is a round-trip property over `describe_path` / `parse_path` / `navigate`, so
+    /// it cannot be made to fail by an input the grammar handles correctly — which is
+    /// why it had no must-fire test. The input below is one the grammar does **not**
+    /// handle: a key spelled exactly like the string `describe_path` returns for the
+    /// empty path.
+    ///
+    /// `key_needs_quoting` is `k.is_empty() || k.contains(['.', '[', ']', '"', '\\'])`,
+    /// and `(tree root)` contains none of those, so the key is written bare and its
+    /// description is indistinguishable from the root's. **That is a real collision in
+    /// the grammar, not a contrivance** — and F7 catching it is exactly the drift F7
+    /// exists to catch, which is what makes it the honest must-fire input.
+    ///
+    /// # This test's input is an UNFIXED defect, and that is a liability to retire
+    ///
+    /// Adding `(tree root)` to `key_needs_quoting` is a one-line fix, and it would make
+    /// this test fail — **the bug is currently load-bearing**, which is not a state to
+    /// leave unremarked. It is tolerable only because no Modelica IR key is spelled
+    /// `(tree root)`: the corpus run over 11 stage IRs per model has never produced one,
+    /// so the collision is latent rather than active.
+    ///
+    /// The principled repair is to make F7 **injectable** — parameterise the round trip
+    /// over its describer so a test can supply a deliberately broken one — after which
+    /// the grammar can be fixed and this input replaced. Recorded in
+    /// `docs/tech-debt.md` as a pair, because doing either half alone leaves F7 with no
+    /// must-fire coverage again.
+    #[test]
+    fn f7_catches_a_description_that_does_not_navigate_back() {
+        // The baseline: ordinary keys, including ones that DO need quoting, round-trip.
+        let fine = serde_json::json!({
+            "components": { "inertia.J": { "def_id": 7 } },
+            "equations": [ { "Connect": 1 } ],
+        });
+        assert!(
+            check_f7("T", &fine).is_empty(),
+            "a key carrying the grammar's separators is bracketed and must round-trip: \
+             {:?}",
+            check_f7("T", &fine),
+        );
+
+        // The collision: a key whose bare description is the root's own spelling.
+        let collides = serde_json::json!({ "(tree root)": { "x": 1 } });
+        let found = check_f7("T", &collides);
+        assert!(
+            !found.is_empty(),
+            "a key that describes to the root sentinel cannot navigate back to itself, \
+             and F7 is the check that is supposed to notice",
+        );
+    }
+
+    /// **F9 fires on each of the three ways an abnormal stage can say nothing useful.**
+    ///
+    /// The must-fire half for a check that had none until 2026-11-06, because it lived in
+    /// an example where `cargo test` could not reach it. Rumoca flags far more than it
+    /// fails — almost nothing hard-stops — so the note on an abnormal stage is usually
+    /// the only account of what went wrong, and a check that has never been shown to fail
+    /// is no evidence that the account is there.
+    ///
+    /// The last assertion is the half that keeps the check honest in the other
+    /// direction: a flagged stage that explains itself and publishes IR is **correct**,
+    /// and a check that flagged it would put 1,209 singular MSL models into the report as
+    /// violations.
+    #[test]
+    fn f9_catches_each_way_an_abnormal_stage_can_say_nothing() {
+        use crate::worker::{Outcome, Stage, StageBundle, StageKind};
+
+        // The clean baseline: `Outcome::Ok` is also `Default`, so a fresh bundle gives F9
+        // nothing to look at and must stay quiet.
+        let clean = StageBundle::default();
+        assert!(
+            check_f9(&clean).is_empty(),
+            "a bundle with no abnormal stage must pass: {:?}",
+            check_f9(&clean),
+        );
+
+        let with = |stage: Stage| {
+            let mut b = StageBundle::default();
+            *b.get_mut(StageKind::Flatten) = stage;
+            b
+        };
+
+        // 1. Abnormal with no note at all — nothing on screen and nothing to read.
+        let silent = with(Stage {
+            outcome: Outcome::Failed,
+            note: None,
+            ..Stage::default()
+        });
+        assert!(
+            check_f9(&silent)
+                .iter()
+                .any(|v| v.contains("abnormal with no note")),
+            "{:?}",
+            check_f9(&silent),
+        );
+
+        // 2. No value, and a note that is a label rather than an account of anything.
+        let label = with(Stage {
+            outcome: Outcome::Failed,
+            note: Some("singular".to_owned()),
+            ..Stage::default()
+        });
+        assert!(
+            check_f9(&label).iter().any(|v| v.contains("is a label")),
+            "a one-word note is a classification, not an explanation: {:?}",
+            check_f9(&label),
+        );
+
+        // 3. A real note with a value beside it that carries no fields — the pane offers
+        //    a tab with nothing in it.
+        let hollow = with(Stage {
+            outcome: Outcome::Flagged,
+            note: Some("the system is structurally singular".to_owned()),
+            value: Some(serde_json::json!({})),
+            ..Stage::default()
+        });
+        assert!(
+            check_f9(&hollow)
+                .iter()
+                .any(|v| v.contains("carrying no fields")),
+            "{:?}",
+            check_f9(&hollow),
+        );
+
+        // The shape F9 must NOT complain about.
+        let good = with(Stage {
+            outcome: Outcome::Flagged,
+            note: Some("the system is structurally singular".to_owned()),
+            value: Some(serde_json::json!({ "residue": 2 })),
+            ..Stage::default()
+        });
+        assert!(
+            check_f9(&good).is_empty(),
+            "a flagged stage that explains itself and publishes IR is correct, not a \
+             violation: {:?}",
+            check_f9(&good),
         );
     }
 
