@@ -2458,6 +2458,105 @@ what the DAE phase supports, and `UnsupportedFlatSemantics` says exactly that. N
 asks for the feature. The report is only that an unsupported feature should be **reported**
 rather than asserted away.
 
+## D2. **Rumoca** — an over-determined, inconsistent `initial equation` system is accepted with every stage reporting `Ok`
+
+**Project:** Rumoca, [CogniPilot/rumoca](https://github.com/CogniPilot/rumoca).
+**Baseline:** `0.10.4`, branch `hrw-rebase-0.10.4`. Reproduced 2026-11-06.
+**Adjudicated against System Modeler 15.0.1** — and this is the first entry in this file that
+the admissibility rule in [`reports.md`](reports.md) actually clears.
+
+### Reproduction
+
+`hrw/specimens/OverInitRc.mo` — an RC circuit with two initial equations for one state:
+
+```modelica
+model OverInitRc
+  Modelica.Electrical.Analog.Sources.ConstantVoltage src(V = 5);
+  Modelica.Electrical.Analog.Basic.Resistor R(R = 100);
+  Modelica.Electrical.Analog.Basic.Capacitor C(C = 1e-3);
+  Modelica.Electrical.Analog.Basic.Ground gnd;
+equation
+  connect(src.p, R.p); connect(R.n, C.p); connect(C.n, src.n); connect(src.n, gnd.p);
+initial equation
+  C.v = 0;
+  der(C.v) = 0;
+end OverInitRc;
+```
+
+One state, two initial conditions. They are not merely surplus, they are **contradictory**:
+`C.v = 0` with `der(C.v) = 0` forces zero current, which forces `src.V = 0` against its
+declared `5`.
+
+### Actual
+
+**Every phase reports `Ok`, including Initialization**, and no note anywhere:
+
+```text
+Dae              Ok   1 state(s), 22 algebraic(s), 23 continuous equation(s)
+Structural       Ok
+IndexReduction   Ok   already index-1: no reduction needed
+Initialization   Ok
+Events           Ok
+SolveLowering    Ok
+```
+
+### Expected
+
+A diagnostic. Rumoca flags rather than fails for most problems, so **a flag would be enough** —
+what is wrong is that there is nothing at all. Initialization is the phase that plans the initial
+system; an initial system that cannot be satisfied is that phase's business.
+
+### The oracle's adjudication, quoted
+
+System Modeler refuses the model and derives the contradiction:
+
+```text
+SystemModelSimulate::bld:  Failed to build model OverInitRc.
+SystemModelSimulate::bldl: Error: The initial equation system is overdetermined and
+                           inconsistent in the equations:
+                             src.V = 0.0
+                           The equations are equivalent to:
+                             5.0 = 0.0
+                           (inconsistent)
+                           This analysis required evaluation of the following parameters:
+                             * 'src.V' (= '5.0')
+```
+
+**"System Modeler rejects this and you accept it"** is the report this file asks for, and it is
+available verbatim.
+
+### Why this is ADMISSIBLE, which matters as much as the mismatch
+
+[`reports.md`](reports.md) holds that a mismatch is a finding only once fidelity is green for the
+model, *"because otherwise the mismatch may be the instrument lying rather than the compiler
+erring."* On 2026-11-06 `OverInitRc` was added to `fidelity::MODELS` for exactly this purpose and
+the specimen report now carries:
+
+```text
+OverInitRc,Component,ok,,,0
+```
+
+So HRW is known to be reporting what Rumoca actually did. The chain the three reports were designed
+for — **survey → eligible, fidelity → trustworthy, oracle → finding** — has produced its first
+result here.
+
+### Mechanism — NOT investigated
+
+No attempt has been made to locate where the initial system is planned or what it does with a
+surplus equation. The finding is behavioural and adjudicated; the cause is open, and a guess would
+be worth less than the reproduction.
+
+### Honestly bounded
+
+**Three sibling specimens are NOT findings**, and were nearly reported as such. `DimensionMismatch`,
+`TwiceDefined` and `IncompatibleConnect` are also refused by System Modeler, but Rumoca reports a
+problem for each — `Flagged` at Typecheck or Structural. In Rumoca's idiom a flag *is* a rejection;
+the pipeline merely continues. Only `OverInitRc` reports nothing at all, and only it is a mismatch.
+
+`TwiceDefined` in particular is working exactly as designed: its own header says *"Breaks at:
+STRUCTURAL ANALYSIS … the specimen that shows why counting is not enough"*, and Rumoca's
+`Structural: singular` is the intended diagnosis.
+
 ## Adding to this file
 
 One entry per bug, and only for bugs **reproduced**, not suspected. Include the
