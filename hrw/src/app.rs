@@ -394,7 +394,13 @@ const MAX_LEFT_FRACTION: f32 = 0.75;
 /// this one cannot straddle the content minimum again. If content grows past it,
 /// `the_left_panel_content_never_detaches_from_the_divider` fails rather than the
 /// gap silently returning.
-const MIN_LEFT_POINTS: f32 = 435.0;
+///
+/// **It was 435 between 2026-08-19 and 2026-11-05**, because the lab bar carried a
+/// transport — Play, Pause, Stop and a run-length picker — whose un-wrapped row would
+/// not fit in less. That floor was most of a 640pt window, which is HRW at half width
+/// beside VS Code, so it cost the `matching-live.md` debugger layout real room. The
+/// transport went with the self-running lab and the floor came back down with it.
+const MIN_LEFT_POINTS: f32 = 210.0;
 
 /// The draggable LHS/RHS split (`docs/ideas.md` #59).
 ///
@@ -1552,116 +1558,6 @@ impl App {
             // that would say why.
             Err(e) => diagnostics::record_action("shot-result-failed", e.to_string()),
         }
-    }
-
-    /// Build and begin a self-running run of the lab currently showing.
-    ///
-    /// Only links that **parse** become beats. A lab that names a verb in prose
-    /// would otherwise contribute a beat that dispatches nothing and stalls the run
-    /// on a blank screen — and since `parse_hrw_link` is the same gate
-    /// `fixture_lab_links_all_resolve` applies, a scheduled run and a checked lab
-    /// cannot disagree about what a link is.
-    fn start_autoplay(&mut self) {
-        let Some(text) = self.lab.text().map(str::to_owned) else {
-            self.notify("no lab is showing \u{2014} pick one first");
-            return;
-        };
-        let mut stops = crate::autoplay::parse_stations(&text);
-        for stop in &mut stops {
-            stop.links.retain(|l| parse_hrw_link(&l.url).is_some());
-        }
-        let beats = crate::autoplay::schedule(&stops, self.lab.autoplay_total, |l| {
-            // An external hop needs longer on screen. The ruling is per verb and lives
-            // on the verb — see `HrwLink::leaves_hrw`, which is exhaustive so a new
-            // form cannot default into the wrong beat length unnoticed.
-            parse_hrw_link(l).is_some_and(|link| link.leaves_hrw())
-        });
-        if beats.is_empty() {
-            self.notify("this lab has no stops to play");
-            return;
-        }
-        // Remember where we started, so the run can put it back. A stop may
-        // legitimately leave Lab mode — `hrw://source/<line>` must, since the
-        // source only renders in Specimen mode — and `matching.md` ends Station 3 with
-        // exactly that, so the run used to finish with the lab off screen.
-        self.lab.mode_before_autoplay = Some(self.ui_mode);
-        // **Which document these beats measure.** Their byte offsets are meaningless
-        // against any other, and a stop may legitimately open another lab — see
-        // `LabState::autoplay_scheduled_for` for what that cost on 2026-11-05.
-        self.lab.autoplay_scheduled_for = self.lab.selected.clone();
-
-        // **Start from where the pane is, not from where the last run stopped.**
-        //
-        // These positions are measured per document per beat, and a stopped run
-        // leaves its last one behind. The first frame of a new run interpolates
-        // *from* that value, so pressing Play scrolled to the old spot and then
-        // travelled back — visibly, over the full travel window, before the lab
-        // had begun. Clearing them makes both ends of the first interpolation zero,
-        // so a lab already at the top simply does not move.
-        self.lab.reset_scroll();
-
-        if let Some(first) = self.lab.autoplay.start(beats) {
-            self.dispatch_beat(first);
-        }
-    }
-
-    /// End a run and restore what it borrowed.
-    ///
-    /// **A run is a round trip.** Called both when the last beat elapses and when
-    /// Stop is pressed, because a viewer who stops halfway is no more interested in
-    /// being left in Specimen mode than one who watches to the end.
-    ///
-    /// Only the *mode* is restored, not the stage or the specimen: those are the
-    /// result of the run and worth keeping on screen. It is the **frame** the lab
-    /// was being read in that has to come back.
-    fn restore_mode_after_autoplay(&mut self) {
-        if let Some(mode) = self.lab.mode_before_autoplay.take()
-            && self.ui_mode != mode
-        {
-            self.ui_mode = mode;
-            self.split.request_reset(MODE_SWITCH_RESET);
-        }
-    }
-
-    /// Advance a running lab by one frame.
-    ///
-    /// **Pauses itself when the window loses focus.** An external stop brings
-    /// Wolfram Desktop or System Modeler to the front, and a clock that kept
-    /// running behind another window would advance HRW while nobody was watching
-    /// it — the recording would return to a lab that had moved on without them.
-    /// Clicking back into HRW resumes. That makes an external hop as long as the
-    /// viewer wants rather than as long as the schedule guessed.
-    fn tick_autoplay(&mut self, ctx: &egui::Context) {
-        if !self.lab.autoplay.is_running() {
-            return;
-        }
-        self.lab.autoplay.set_focused(ctx.input(|i| i.focused));
-
-        // `stable_dt` rather than `unstable_dt`: a single slow frame should not
-        // jump the run forward by its own hitch.
-        let dt = std::time::Duration::from_secs_f32(ctx.input(|i| i.stable_dt).min(0.25));
-        if let Some(next) = self.lab.autoplay.tick(dt, self.compiling) {
-            self.dispatch_beat(next);
-        }
-        // The last beat has elapsed: put the mode back before the reader notices it
-        // moved. A stop that switched to Specimen mode (`hrw://source/<line>`) would
-        // otherwise leave the run ending with no lab on screen.
-        if self.lab.autoplay.phase() == crate::autoplay::Phase::Finished {
-            self.restore_mode_after_autoplay();
-        }
-        // A timed run must keep painting even when nothing else asks it to.
-        ctx.request_repaint();
-    }
-
-    /// Apply one beat: dispatch its link, if it has one.
-    ///
-    /// A prose-only beat is not a no-op — it is a deliberate pause on the stop's
-    /// caption, which is how a title card and a section break get their moment.
-    fn dispatch_beat(&mut self, beat: crate::autoplay::Beat) {
-        let Some(link) = beat.link.as_deref().and_then(parse_hrw_link) else {
-            return;
-        };
-        self.dispatch_hrw_link(link);
     }
 
     /// Whether this view has the data its algorithm needs — gates the Debug button.
@@ -6867,9 +6763,9 @@ impl App {
                 // its own. Doug, 2026-08-16: the "Labs (23)" header and its divider
                 // stopped making sense once the list became one combo box and one
                 // button — a titled bar around two controls is chrome announcing
-                // chrome. Both moved into `autoplay_controls_ui`, which already owns
+                // chrome. Both moved into `lab_controls_ui`, which already owns
                 // a bar and already sits directly above the prose.
-                switch_to = self.autoplay_controls_ui(ui, &lab_text);
+                switch_to = self.lab_controls_ui(ui);
                 ui.separator();
 
                 // **Region 1 of `docs/pointing-plan.md` step 3, and the one Doug asked for
@@ -7051,27 +6947,20 @@ impl App {
         drain_hrw_hooks(&mut self.commonmark_cache, &links)
     }
 
-    /// The lab transport bar — see [`lab_panel::autoplay_controls_ui`], which
-    /// holds the body and the rationale.
+    /// The lab picker bar — see [`lab_panel::lab_controls_ui`], which holds the body
+    /// and the rationale.
     ///
-    /// **The presses stay here on purpose.** Back, Play and Stop each reach past the
-    /// lab into the application — the lab file, the beat dispatcher, the UI mode a
-    /// run borrowed — so the bar reports what was pressed and `App` performs it, the
-    /// same split [`Self::specimen_source_ui`] uses for a clicked identifier.
+    /// **The presses stay here on purpose.** Back reaches past the lab into the
+    /// application, so the bar reports what was pressed and `App` performs it — the
+    /// same split [`Self::specimen_source_ui`] uses for a clicked identifier. It was
+    /// Back, Play and Stop until the Play button went on 2026-11-05.
     ///
     /// Returns a lab to switch to, because that one is the caller's own business:
     /// `lab_panel_ui` applies it after the panel has finished drawing.
-    fn autoplay_controls_ui(
-        &mut self,
-        ui: &mut egui::Ui,
-        lab_text: &Option<String>,
-    ) -> Option<LabSource> {
-        let request = lab_panel::autoplay_controls_ui(ui, &mut self.lab, self.compiling, lab_text)?;
-        match request {
+    fn lab_controls_ui(&mut self, ui: &mut egui::Ui) -> Option<LabSource> {
+        match lab_panel::lab_controls_ui(ui, &mut self.lab)? {
             TransportRequest::Switch(source) => return Some(source),
             TransportRequest::Back => self.lab_back(),
-            TransportRequest::Play => self.start_autoplay(),
-            TransportRequest::Stopped => self.restore_mode_after_autoplay(),
         }
         None
     }
@@ -7414,13 +7303,10 @@ impl App {
         // frames. See `Prewarm`.
         self.tick_prewarm(ui.ctx());
 
-        // A self-running lab advances here, after `drain_worker` so `compiling`
-        // reflects this frame rather than the last one — the clock must see the
-        // compile finish on the frame it finishes.
-        self.tick_autoplay(ui.ctx());
-
-        // The screenshot channel, for the same reason and in the same place: it also
-        // dispatches links and also has to see `compiling` as of this frame. Before
+        // The screenshot channel runs here, after `drain_worker` so `compiling`
+        // reflects this frame rather than the last one: it dispatches links and has to
+        // see `compiling` as of this frame. A self-running lab used to tick here too,
+        // for exactly the same reason, until the Play button went on 2026-11-05. Before
         // the panels draw, so the viewport command it may send is queued for the paint
         // that is about to happen rather than for the next one.
         self.tick_screenshot(ui.ctx());
@@ -8244,47 +8130,6 @@ impl HrwLink {
             // Simulating needs a model to simulate, and `simulate_from_link` says so by
             // name rather than starting a run of nothing.
             | Self::Simulate(_) => true,
-        }
-    }
-
-    /// Whether following this link puts a **different application** in front of the
-    /// reader.
-    ///
-    /// Autoplay gives such a beat longer on screen: the viewer has to reorient to
-    /// another window, which prestarting the app removes the launch cost of but not the
-    /// cost of.
-    ///
-    /// **Extracted from a `matches!` inside `start_autoplay` on 2026-08-31, in the audit
-    /// that the `requires_specimen` bug called for** — and it was the second silent
-    /// per-variant list in this one type. It was an *allow*-list, so its default is the
-    /// gentler failure — a beat too short rather than a dead link — but silent in exactly
-    /// the same way, and `OpenDoc` was missing from it for exactly the same reason.
-    /// Exhaustive here too, so the question is asked of every future verb whether or not
-    /// anyone thinks of autoplay.
-    fn leaves_hrw(&self) -> bool {
-        match self {
-            // `OpenDoc` spawns `code` and `OpenNotebook` hands the file to Wolfram, so
-            // both put another window in front of the reader. `OpenLab` does not: a
-            // lab opens in HRW's own panel.
-            Self::OpenNotebook(_)
-            | Self::OpenDoc(_)
-            | Self::OpenSource(_)
-            | Self::OpenInSystemModeler(_) => true,
-            Self::OpenLab { .. }
-            | Self::LoadSpecimen(_)
-            | Self::LoadAndSwitch(..)
-            | Self::ArmBreakpoint(_)
-            | Self::SwitchStage(..)
-            | Self::ShowSource(_)
-            | Self::AimAtEquation(..)
-            | Self::SeekFrame(..)
-            | Self::PointAtNode(..)
-            | Self::Follow(_)
-            // A floating window is HRW's own window, not another application's — the
-            // reader does not have to reorient to a different app.
-            | Self::OpenWindow(_)
-            // A run happens inside HRW, on the Simulation tab.
-            | Self::Simulate(_) => false,
         }
     }
 

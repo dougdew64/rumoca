@@ -68,54 +68,33 @@ use crate::app::{section_style, set_markdown_text_sizes};
 use crate::bridge;
 use crate::lab::{LabSource, LabState};
 
-/// Height of the autoplay progress bar, and the clear space above and below it.
-///
-/// The bar draws its percentage *inside* itself, so it has to be tall enough for a
-/// line of text rather than tall enough for a rule. At 6px with no surrounding space
-/// it was clipped between the transport row and the stop caption.
-const LAB_PROGRESS_HEIGHT: f32 = 18.0;
-const LAB_PROGRESS_MARGIN: f32 = 6.0;
-
 /// A press on the transport that only [`crate::app::App`] can carry out.
 ///
 /// **The bar never acts on these itself.** Each one reaches state the lab panel does
-/// not own — the lab file, the beat dispatcher, the UI mode a run borrowed — so the
-/// bar reports and the application decides. See the module docs for why
-/// [`Self::Stopped`] is phrased as a report rather than a request.
+/// not own — the lab history, the lab file — so the bar reports and the application
+/// decides.
+///
+/// It carried `Play` and `Stopped` too, until the self-running lab went on
+/// 2026-11-05. `DECISIONS.md` has why.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum TransportRequest {
     /// A different lab was chosen — from the picker, or from the Answer button.
     Switch(LabSource),
     /// **Back** — return to the lab a cross-lab link was followed from.
     Back,
-    /// **Play** — build a schedule from the showing lab and start the clock.
-    Play,
-    /// **Stop was pressed and the clock is already stopped.** What remains is the UI
-    /// mode the run borrowed, which only `App` can put back.
-    Stopped,
 }
 
-/// **The Play button** — transport for a self-running lab.
+/// **The lab bar** — which lab is showing, and how to get back.
 ///
-/// Built 2026-08-03 for recording a run as video, after a LinkedIn screenshot
-/// drew interest and explaining *what a lab is* to people who have never seen
-/// HRW proved harder in prose than in motion.
-///
-/// The controls sit between the lab list and the lab text rather than in the
-/// menu bar, because they belong to the lab showing below them and a recording
-/// should show the viewer where the run came from.
-///
-/// **Everything decidable lives in [`crate::autoplay`]**; this function only
-/// draws. That split is what lets the schedule and the clock be tested without
-/// a window, which for a *timing* feature is the difference between a checkable
-/// claim and a stopwatch.
-///
-/// The lab transport bar: **which lab**, then **the run**.
+/// It was a transport for a self-running lab until 2026-11-05: Play, Pause, Stop, a
+/// run-length picker, a progress bar and a caption naming the current station. All of
+/// that existed to make a screen recording, and `DECISIONS.md` carries why it went —
+/// the short form is that a recording feature had begun constraining how Claude may
+/// write an Answer, which is the one artifact here with nothing but an educational
+/// purpose.
 ///
 /// Returns the press that `App` must carry out, if there was one — see
-/// [`TransportRequest`]. `lab_text` is the showing lab’s markdown, which the bar
-/// needs for two things: whether Play is enabled at all, and re-parsing the stop
-/// headings for the running caption.
+/// [`TransportRequest`].
 ///
 /// # Why the picker is in here
 ///
@@ -125,21 +104,11 @@ pub(crate) enum TransportRequest {
 /// chrome, and it cost a header, a separator and the space between them for no
 /// information — the count it carried is now in the picker's own hover.
 ///
-/// Left to right, in the order he specified: **Claude's answer**, the **picker**,
-/// then the transport. That reads as a sentence — *which lab, then what to do with
-/// it* — and it puts the one control whose state changes mid-conversation at the
-/// end of the eye's travel from the prose below.
-pub(crate) fn autoplay_controls_ui(
-    ui: &mut egui::Ui,
-    lab: &mut LabState,
-    compiling: bool,
-    lab_text: &Option<String>,
-) -> Option<TransportRequest> {
-    use crate::autoplay::Phase;
-
+/// Left to right, in the order he specified: **Claude's answer**, then the **picker**.
+/// That reads as a sentence — *which lab* — and the transport that used to follow it
+/// is gone.
+pub(crate) fn lab_controls_ui(ui: &mut egui::Ui, lab: &mut LabState) -> Option<TransportRequest> {
     let mut request: Option<TransportRequest> = None;
-    let has_lab = lab_text.is_some();
-    let phase = lab.autoplay.phase();
 
     // **Same palette as the section headers above it** (Doug, 2026-08-03). The
     // transport is a left-panel *bar*, like "Labs (8)" and "Specimens", not a
@@ -336,172 +305,10 @@ pub(crate) fn autoplay_controls_ui(
                 // recurs, restoring this line is the fix.
                 // <!-- unbuilt: visible_lab_count -->
 
-                ui.separator();
-
-                match phase {
-                    // **Pausable from the first frame.** The lead-in is a run, so offering
-                    // Pause here rather than Play means the button does not change identity
-                    // one second after the click — and a reader who pressed play by mistake
-                    // can stop it before anything has moved.
-                    Phase::LeadIn | Phase::Playing | Phase::Paused => {
-                        let (label, hover) = if phase != Phase::Paused {
-                            ("\u{23f8} Pause", "Hold the run here.")
-                        } else {
-                            ("\u{25b6} Resume", "Continue from this beat.")
-                        };
-                        if ui.button(label).on_hover_text(hover).clicked() {
-                            // Anything that is not already paused pauses, which now
-                            // includes the lead-in.
-                            if phase == Phase::Paused {
-                                lab.autoplay.resume();
-                            } else {
-                                lab.autoplay.pause();
-                            }
-                        }
-                        if ui
-                            .button("\u{23f9} Stop")
-                            .on_hover_text(
-                                "End the run. Whatever is on screen stays \u{2014} stopping \
-                                 halfway leaves you looking at the thing you stopped for.",
-                            )
-                            .clicked()
-                        {
-                            lab.autoplay.stop();
-                            request = Some(TransportRequest::Stopped);
-                        }
-                    }
-                    Phase::Idle | Phase::Finished => {
-                        let play = ui
-                            .add_enabled(has_lab, egui::Button::new("\u{25b6} Play"))
-                            .on_hover_text(
-                                "Walk this lab by itself, for recording. The clock pauses \
-                                 while a specimen compiles and while another window has \
-                                 focus, so a slow machine makes a longer video, never a \
-                                 broken one.",
-                            );
-                        if play.clicked() {
-                            request = Some(TransportRequest::Play);
-                        }
-                    }
-                }
-
-                // The length picker. Disabled mid-run: changing the budget under a
-                // running schedule would leave the progress bar describing a plan that
-                // no longer exists.
-                ui.add_enabled_ui(!lab.autoplay.is_running(), |ui| {
-                    let current = crate::autoplay::TOTAL_CHOICES
-                        .iter()
-                        .find(|(_, s)| *s == lab.autoplay_total.as_secs())
-                        .map(|(l, _)| *l)
-                        .unwrap_or("custom");
-                    egui::ComboBox::from_id_salt("autoplay_total")
-                        // **Sized to its labels.** With no `width` egui applies its
-                        // default `combo_width` of 100pt, which was invisible while the
-                        // labels read `90s — standard` and became obvious the moment they
-                        // became `90s`. Doug: *"Why is the time selector combobox so wide?
-                        // It is much wider than necessary for the labels."*
-                        //
-                        // A constant is safe *here* although it was not for the lab
-                        // picker: that one needed to shrink on a narrow panel, so a fixed
-                        // width forced the panel wider. These four labels never exceed
-                        // four characters, so this width is an upper bound rather than a
-                        // demand — and since the bar stopped wrapping, its contribution to
-                        // the panel floor is now simply additive.
-                        .width(52.0)
-                        .selected_text(current)
-                        .show_ui(ui, |ui| {
-                            for (label, secs) in crate::autoplay::TOTAL_CHOICES {
-                                let d = std::time::Duration::from_secs(secs);
-                                ui.selectable_value(&mut lab.autoplay_total, d, label);
-                            }
-                        })
-                        .response
-                        .on_hover_text(
-                            "Total length of the run. Conventional social-video lengths \
-                             \u{2014} pick to fit where it is going.",
-                        );
-                });
-
             });
-
-            if !lab.autoplay.is_running() {
-                return;
-            }
-
-            // --- The running readout ---
-            //
-            // A caption naming the stop, because a recording is watched by people who
-            // cannot see the cursor and have no idea which part of the lab they are in.
-            let (beat, total) = lab.autoplay.progress();
-            let phase = lab.autoplay.phase();
-            // **Margin above and below.** At 6px with no spacing the bar was clipped by
-            // its neighbours and its percentage was only half legible — Doug, 2026-08-03:
-            // *"the progress bar is not entirely visible because not enough vertical
-            // space is being provided"*. The bar carries the percentage text, so it needs
-            // room for a line of text, not for a rule.
-            ui.add_space(LAB_PROGRESS_MARGIN);
-            ui.add(
-                egui::ProgressBar::new(lab.autoplay.fraction())
-                    .desired_height(LAB_PROGRESS_HEIGHT)
-                    .show_percentage(),
-            );
-            ui.add_space(LAB_PROGRESS_MARGIN);
-            // The caption takes the header's `active_color` and the status line its
-            // `inactive_color`, so the bar reads as one element with a primary and a
-            // secondary line — the same relationship the section headers already have.
-            if let Some(caption) = lab
-                .autoplay
-                .current_station()
-                .and_then(|i| autoplay_station_heading(lab_text.as_deref(), i))
-            {
-                ui.label(
-                    egui::RichText::new(caption)
-                        .strong()
-                        .size(13.0)
-                        .color(style.active_color),
-                );
-            }
-            ui.label(
-                egui::RichText::new(format!(
-                    "beat {beat}/{total} \u{00b7} {}",
-                    match phase {
-                        Phase::Paused => "paused",
-                        // Named, so a second of stillness reads as the run starting rather
-                        // than as the run being stuck.
-                        Phase::LeadIn => "starting",
-                        _ if compiling => "compiling \u{2014} clock held",
-                        _ => "playing",
-                    }
-                ))
-                .color(style.inactive_color),
-            );
         });
     request
 }
-
-/// The heading of stop `index` in the lab text, for the running caption.
-///
-/// Re-parsed rather than stored with the schedule: the lab file is re-read
-/// whenever it changes on disk, and a caption cached at Play time would keep
-/// naming a stop that had since been rewritten. Doug regenerates labs *while*
-/// running them, which makes that the normal case rather than an edge one.
-///
-/// **It never used `self`**, which is why it left `App` as a free function rather
-/// than acquiring a parameter.
-fn autoplay_station_heading(text: Option<&str>, index: usize) -> Option<String> {
-    let stops = crate::autoplay::parse_stations(text?);
-    stops.get(index).map(|s| s.heading.clone())
-}
-
-/// How much lab text to keep **above** the link a beat is dispatching.
-///
-/// Doug, 2026-08-03: *"the scrolling should be paused with that frame link showing
-/// with perhaps a line or two of text which is above that frame link. The frame link
-/// and the lines of text above the link document the animation frame."*
-///
-/// Roughly two lines. Scrolling the link to the very top would put its introduction
-/// off-screen, and the pair — lead-in and link — is what names the frame.
-const LAB_CONTEXT_ABOVE: f32 = 48.0;
 
 /// The lab prose — the scrolling markdown beneath the transport bar.
 ///
@@ -608,74 +415,22 @@ pub(crate) fn lab_prose_ui(
         (None, _) => {}
     }
 
-    if lab.autoplay.is_running()
-        && measurements_match_beat(lab.lab_measured_beat, lab.autoplay.progress().0)
-        && let Some(max_scroll) = lab.lab_max_scroll
-    {
-        // **Interpolate between two MEASURED positions.** Both come from
-        // the split below, so neither is an estimate of anything.
-        let to = lab.lab_link_y.unwrap_or(0.0);
-        let from = lab.lab_prev_link_y.unwrap_or(0.0);
-        let y = from + (to - from) * lab.autoplay.travel_t();
-        // Leave a little above the link, so the line or two introducing
-        // it stays on screen with it. Doug: "the frame link and the lines
-        // of text above the link document the animation frame."
-        let target = (y - LAB_CONTEXT_ABOVE).clamp(0.0, max_scroll.max(0.0));
-        area = area.vertical_scroll_offset(target);
-    }
-
-    // **Where the current beat's link actually renders**, measured rather
-    // than estimated from character offsets.
+    // **A byte offset cannot be turned into a pixel position by arithmetic**, because
+    // rendered height per character is not constant: prose wraps in a narrow panel and
+    // a code block does not. Two attempts at estimating it failed in both directions,
+    // and no constant corrects an estimate that is wrong both ways.
     //
-    // Two earlier attempts guessed this position — first from the beat's
-    // ordinal, then from the link's character offset over the document —
-    // and both were wrong, because rendered height per character is not
-    // constant: prose wraps in a narrow panel and a code block does not.
-    // **No constant corrects an estimate that is wrong in both
-    // directions**, so this stops estimating.
+    // So the markdown is split at the station's heading line and rendered as two
+    // documents. The cursor between them *is* the position, and `scroll_to_cursor`
+    // asks egui to compute the offset from something it already knows exactly.
     //
-    // The markdown is split at the link's line and rendered as two
-    // documents. The cursor between them *is* the link's y position. The
-    // split falls on a line start, so no markdown construct is cut in half.
-    //
-    // **That last sentence is only true of the document the schedule was
-    // built from**, and it used to be asserted of whatever happened to be
-    // on screen. A beat that follows `hrw://lab/<other>` changes the
-    // document and not the offsets; `LabState::render_split` is where that
-    // is now decided, and `autoplay_scheduled_for` carries the account.
-    let mut measured: Option<f32> = None;
+    // This was built for a self-running lab and inherited by `hrw://lab/<name>/
+    // station/<slug>`, which is now its only caller. The run went on 2026-11-05; the
+    // reasoning is older than it and outlived it.
     let out = area.show(ui, |ui| {
         set_markdown_text_sizes(ui);
         match lab_text {
             Some(text) => {
-                // **Only split while a run is running.**
-                //
-                // The split exists to measure one beat's link position.
-                // Idle, it buys nothing — and it does not go away by
-                // itself: a *finished* run keeps its beats, so
-                // `current_byte_offset` still names the last link and the
-                // document stayed cut in two for all subsequent manual
-                // reading. Rendering one markdown document as two is not
-                // free of consequence, and doing it when nothing needs it
-                // is a difference from the plain path with no upside.
-                //
-                // **And the same split serves a stop link**, which is why
-                // that feature costs almost nothing here. `hrw://lab/<t>/
-                // stop/<slug>` records the heading's *byte* offset, and the
-                // problem it faces is the one the autoplay scroll already
-                // solved the hard way: a byte offset cannot be converted to
-                // a pixel position by arithmetic, because rendered height
-                // per character is not constant.
-                //
-                // Splitting there puts the **cursor** exactly at the stop,
-                // and a cursor is a real position rather than an estimate.
-                //
-                // **The offset is validated, not trusted.** A lab is
-                // re-read whenever its mtime changes, so an offset recorded
-                // against the previous text can land mid-character after an
-                // edit — and slicing a `str` off a char boundary panics.
-                // These documents are edited *while* Doug runs them, so
-                // that is the expected case rather than a corner one.
                 // **The rules live in `LabState::render_split`**, out of the paint
                 // path and tested. `station_split` survives here only because the
                 // scroll decision below needs to know whether a station request was
@@ -684,24 +439,18 @@ pub(crate) fn lab_prose_ui(
                     .scroll_to_offset
                     .filter(|n| *n <= text.len() && text.is_char_boundary(*n));
                 let split = lab.render_split(text);
-                let top = ui.cursor().top();
                 if split > 0 {
                     show_lab_markdown(ui, &mut *cache, &text[..split], LabPart::BeforeCursor);
                 }
-                measured = Some(ui.cursor().top() - top);
 
                 // **egui does the scrolling, and that is the whole trick.**
                 // Asking the `ScrollArea` for an offset would mean computing
                 // one; asking it to bring the cursor into view means it
                 // computes one, from a position it already knows exactly.
                 //
-                // A run in progress owns the scroll, so a stop request is
-                // still *consumed* but not acted on — otherwise it would
-                // fight the interpolation for the rest of the run.
-                if lab.scroll_to_offset.take().is_some()
-                    && station_split.is_some()
-                    && !lab.autoplay.is_running()
-                {
+                // The request is consumed whether or not it was usable: leaving
+                // it pending would fire it at whatever document came next.
+                if lab.scroll_to_offset.take().is_some() && station_split.is_some() {
                     ui.scroll_to_cursor(Some(egui::Align::TOP));
                 }
 
@@ -711,15 +460,6 @@ pub(crate) fn lab_prose_ui(
         }
     });
 
-    // A new beat means a new split, so the position measured last frame
-    // becomes the one to travel *from*.
-    let beat = lab.autoplay.progress().0;
-    if lab.lab_measured_beat != Some(beat) {
-        lab.lab_prev_link_y = lab.lab_link_y.or(Some(0.0));
-        lab.lab_measured_beat = Some(beat);
-    }
-    lab.lab_link_y = measured;
-    lab.lab_max_scroll = Some((out.content_size.y - out.inner_rect.height()).max(0.0));
     // **Where the reader actually is**, from the scroll area's own output
     // rather than tracked alongside it, so it cannot drift from the screen.
     // Every frame, because a switch can happen at any moment and the offset
@@ -879,33 +619,6 @@ fn code_block_ui(ui: &mut egui::Ui, lang: &str, body: &str) {
         .show(ui, |ui| {
             ui.add(egui::Label::new(text).selectable(true));
         });
-}
-
-/// Whether the measured link positions belong to the beat now showing.
-///
-/// # The one-frame flash, diagnosed 2026-09-04
-///
-/// Doug: *"The flashes happen when the beat number increments… The flash happens for the
-/// entire answer pane, and appears to be a different scroll position being temporarily
-/// rendered for a very small fraction of a second."*
-///
-/// It was, and the position was **two beats back.** `lab_link_y` and `lab_prev_link_y` are
-/// measured from the rendered document and stored *after* the render, so on the frame a beat
-/// increments they still describe the previous beat. `travel_t` is 0 on that frame — the
-/// dispatch just reset it — and `y = from + (to - from) * 0` is exactly `from`, which at that
-/// moment is the link position from **two** beats earlier. One frame at that offset, then
-/// the post-render update makes the endpoints current and the next frame interpolates
-/// correctly. Hence a flash on every increment, including one where the destination is
-/// unchanged.
-///
-/// **So the fix is to force no offset at all on that frame** and let the scroll area keep
-/// what it has. Holding still for one frame is invisible; jumping two beats back is not.
-///
-/// A function rather than an inline comparison because it is the whole of the fix, and this
-/// pane's logic is otherwise unreachable from a test — the rule that says push a computation
-/// out of the paint path before adding one to it.
-fn measurements_match_beat(measured_beat: Option<usize>, beat: usize) -> bool {
-    measured_beat == Some(beat)
 }
 
 /// Which half of the split document [`show_lab_markdown`] is rendering.
@@ -1154,37 +867,6 @@ mod tests_code_segments {
 #[cfg(test)]
 mod tests_split_ids {
     use super::*;
-
-    /// No offset is forced on the frame a beat increments, because the measurements are
-    /// still the previous beat's.
-    ///
-    /// This is the flash Doug reported on 2026-09-04, reduced to the one comparison that
-    /// decides it. The endpoints `lab_link_y` and `lab_prev_link_y` are stored after the
-    /// render, so on an increment frame they describe the beat before — and `travel_t` is 0
-    /// there, which makes the target exactly `from`, the position from **two** beats back.
-    ///
-    /// The pane itself cannot be asserted on: nothing in `egui_kittest` reads a scroll
-    /// offset out of a markdown pane. What is checkable is the decision, and the decision is
-    /// the whole fix.
-    #[test]
-    fn no_scroll_is_forced_until_the_new_beat_has_been_measured() {
-        // Steady state within a beat: measurements are current, so the offset applies.
-        assert!(measurements_match_beat(Some(3), 3));
-
-        // The increment frame: the beat moved, nothing has been re-measured yet.
-        assert!(
-            !measurements_match_beat(Some(3), 4),
-            "an offset computed from the previous beat's endpoints must not be forced \u{2014} \
-             that is the frame that rendered two beats back",
-        );
-
-        // First frame of a run, before anything has been measured at all.
-        assert!(
-            !measurements_match_beat(None, 1),
-            "and nothing is forced before the first measurement, which is what keeps the \
-             lead-in at the top",
-        );
-    }
 
     /// The two halves of a split lab derive different ids for the same segment index.
     ///

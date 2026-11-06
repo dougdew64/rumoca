@@ -115,33 +115,31 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**73 modules, 93,773 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**73 modules, 91,770 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `worker/tests.rs` | 9,482 |
-| `app.rs` | 8,730 |
-| `app/tests.rs` | 8,176 |
+| `app.rs` | 8,575 |
+| `app/tests.rs` | 8,006 |
 | `worker.rs` | 7,858 |
 | `doc_citations.rs` | 7,233 |
 | `bridge.rs` | 5,119 |
-| `ui_tests.rs` | 3,094 |
+| `ui_tests.rs` | 2,999 |
 | `fidelity.rs` | 2,016 |
 | `equation_sheet.rs` | 1,569 |
 | `tree.rs` | 1,432 |
 | `diagnostics.rs` | 1,397 |
-| `autoplay.rs` | 1,317 |
 | `matching_anim.rs` | 1,310 |
 | `lib.rs` | 1,278 |
-| `lab_panel.rs` | 1,264 |
 | `incidence_view.rs` | 1,219 |
 | `report_sub_view.rs` | 1,214 |
 | `playback.rs` | 1,135 |
 | `connection_anim.rs` | 1,106 |
 | `reduction_view.rs` | 1,048 |
 | `tarjan_anim.rs` | 1,001 |
+| `lab_panel.rs` | 946 |
 | `matching_ledger.rs` | 928 |
-| `lab.rs` | 903 |
 | `dae_expr_format.rs` | 898 |
 | `context_bar.rs` | 890 |
 | `model_list.rs` | 842 |
@@ -152,6 +150,7 @@ showing 48 equations. They are derived now, and
 | `reduction_anim.rs` | 786 |
 | `survey.rs` | 769 |
 | `arch_doc.rs` | 758 |
+| `lab.rs` | 740 |
 | `pantelides_ladder.rs` | 716 |
 | `answer_check.rs` | 706 |
 | `identifier_index.rs` | 688 |
@@ -185,6 +184,7 @@ showing 48 equations. They are derived now, and
 | `test_support.rs` | 234 |
 | `log_view.rs` | 229 |
 | `worker/test_msl.rs` | 221 |
+| `autoplay.rs` | 215 |
 | `timing.rs` | 200 |
 | `main.rs` | 178 |
 | `ui_state.rs` | 170 |
@@ -192,7 +192,7 @@ showing 48 equations. They are derived now, and
 | `stage_caches.rs` | 117 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 100 |
-| **total** | **93,773** |
+| **total** | **91,770** |
 <!-- END GENERATED module-sizes -->
 
 
